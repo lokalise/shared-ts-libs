@@ -1,0 +1,44 @@
+{
+	"name": "@lokalise/id-utils",
+	"version": "1.0.0",
+	"type": "module",
+	"files": [
+		"dist"
+	],
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"require": "./dist/index.cjs",
+			"import": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"build": "rimraf dist && vite build",
+		"dev": "vite watch",
+		"clean": "rimraf dist .eslintcache",
+		"lint": "eslint --cache --max-warnings=0  && prettier --check --log-level warn src \\\"**/*.{json,md}\\\" && tsc --noEmit",
+		"lint:fix": "eslint  --fix && prettier --write src \\\"**/*.{json,md}\\\"",
+		"test": "vitest run",
+		"test:coverage": "npm test -- --coverage",
+		"test:ci": "npm run test:coverage"
+	},
+	"dependencies": {
+		"ulid-uuid-converter": "^1.0.4",
+		"ulidx": "^2.1.0"
+	},
+	"devDependencies": {
+		"@lokalise/eslint-config": "*",
+		"@lokalise/prettier-config": "*",
+		"@lokalise/vite-config": "*",
+		"@vitest/coverage-v8": "^0.34.6",
+		"prettier": "^3.0.3",
+		"rimraf": "^5.0.1",
+		"typescript": "5.2.2",
+		"vite": "^4.4.11",
+		"vitest": "^0.34.6"
+	},
+	"prettier": "@lokalise/prettier-config"
+}

@@ -1,0 +1,42 @@
+{
+	"name": "@lokalise/vite-config",
+	"version": "1.0.0",
+	"type": "module",
+	"files": [
+		"package.config.ts"
+	],
+	"exports": {
+		"./package": {
+			"types": "./dist/package.config.d.ts",
+			"default": "./dist/package.config.js"
+		}
+	},
+	"typesVersions": {
+		"*": {
+			"package": [
+				"dist/package.config.d.ts"
+			]
+		}
+	},
+	"scripts": {
+		"build": "rimraf dist && tsc",
+		"dev": "tsc --watch",
+		"clean": "rimraf dist .eslintcache",
+		"lint": "eslint --cache --max-warnings=0 . && prettier --check --log-level warn \"**/*.{json,md}\" && tsc --noEmit",
+		"lint:fix": "eslint . --fix && prettier --write \"**/*.{json,md}\""
+	},
+	"dependencies": {
+		"vite": "^4.4.11",
+		"vite-plugin-dts": "^3.6.0",
+		"vitest": "^0.34.6"
+	},
+	"devDependencies": {
+		"@lokalise/eslint-config": "*",
+		"@lokalise/prettier-config": "*",
+		"eslint": "^8.51.0",
+		"prettier": "^3.0.3",
+		"rimraf": "^5.0.5",
+		"typescript": "5.2.2"
+	},
+	"prettier": "@lokalise/prettier-config"
+}

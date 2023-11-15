@@ -1,0 +1,18 @@
+{
+  "name": "@lokalise/prettier-config",
+  "version": "1.0.0",
+  "type": "module",
+  "files": [
+    "index.json"
+  ],
+  "main": "./index.json",
+  "module": "./index.json",
+  "types": "./index.json",
+  "exports": {
+    ".": {
+      "types": "./index.json",
+      "import": "./index.json",
+      "require": "./index.json"
+    }
+  }
+}
