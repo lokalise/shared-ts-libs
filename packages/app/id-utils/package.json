@@ -23,7 +23,8 @@
 		"lint:fix": "eslint  --fix && prettier --write src \\\"**/*.{json,md}\\\"",
 		"test": "vitest run",
 		"test:coverage": "npm test -- --coverage",
-		"test:ci": "npm run test:coverage"
+		"test:ci": "npm run test:coverage",
+		"prepublishOnly": "npm run build"
 	},
 	"dependencies": {
 		"ulid-uuid-converter": "^1.0.4",

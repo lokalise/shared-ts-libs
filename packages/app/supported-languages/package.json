@@ -1,6 +1,6 @@
 {
 	"name": "@lokalise/supported-languages",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"type": "module",
 	"main": "./dist/cjs/index.cjs",
 	"module": "./dist/index.js",
@@ -27,7 +27,8 @@
 		"clean": "rimraf dist .eslintcache",
 		"lint": "eslint --cache --max-warnings=0  && prettier --check --log-level warn src \\\"**/*.{json,md}\\\" && tsc --noEmit",
 		"lint:fix": "eslint  --fix && prettier --write src \\\"**/*.{json,md}\\\"",
-		"test": "vitest run"
+		"test": "vitest run",
+		"prepublishOnly": "npm run build"
 	},
 	"peerDependencies": {
 		"@lokalise/node-core": "^8.1.1"
