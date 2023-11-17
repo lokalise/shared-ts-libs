@@ -1,10 +1,10 @@
 {
-	"name": "@lokalise/id-utils",
+	"name": "@lokalise/api-common",
 	"version": "1.0.0",
-	"type": "module",
 	"files": [
-		"dist"
+		"src"
 	],
+	"type": "module",
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -15,30 +15,28 @@
 	},
 	"exports": {
 		".": {
-			"types": "./dist/index.d.ts",
-			"require": "./dist/index.cjs",
-			"import": "./dist/index.js"
+			"types": "./src/index.ts",
+			"import": "./src/index.ts",
+			"require": "./dist/index.cjs"
 		}
 	},
 	"scripts": {
 		"build": "rimraf dist && vite build",
 		"dev": "vite watch",
 		"clean": "rimraf dist .eslintcache",
-		"lint": "eslint --cache --max-warnings=0  && prettier --check --log-level warn src \\\"**/*.{json,md}\\\" && tsc --noEmit",
-		"lint:fix": "eslint  --fix && prettier --write src \\\"**/*.{json,md}\\\"",
+		"lint": "eslint --cache --max-warnings=0 . && prettier --check --log-level warn src \"**/*.{json,md}\" && tsc --noEmit",
+		"lint:fix": "eslint . --fix && prettier --write src \"**/*.{json,md}\"",
 		"test": "vitest run --coverage",
 		"prepublishOnly": "npm run build"
 	},
-	"dependencies": {
-		"ulid-uuid-converter": "^1.0.4",
-		"ulidx": "^2.1.0"
+	"peerDependencies": {
+		"zod": "^3.22.0"
 	},
 	"devDependencies": {
 		"@lokalise/eslint-config": "*",
 		"@lokalise/prettier-config": "*",
 		"@lokalise/vite-config": "*",
-		"@vitest/coverage-v8": "^0.34.6",
-		"prettier": "^3.0.3",
+		"prettier": "3.1.0",
 		"rimraf": "^5.0.1",
 		"typescript": "5.2.2",
 		"vite": "^4.4.11",

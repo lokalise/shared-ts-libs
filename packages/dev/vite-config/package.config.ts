@@ -78,7 +78,7 @@ export default ({
 				provider: 'v8',
 				include: ['src/**/*.ts'],
 				exclude: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
-				reporter: ['lcov', 'text-summary'],
+				reporter: ['lcov', 'text'],
 				all: true,
 				lines: 100,
 				functions: 100,
