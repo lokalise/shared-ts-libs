@@ -8,4 +8,9 @@ import packageJson from './package.json'
 export default defineConfig({
 	entry: resolve(__dirname, 'src/index.ts'),
 	dependencies: Object.keys(packageJson.dependencies),
+	test: {
+		coverage: {
+			exclude: ['src/types', 'src/events', 'src/index.ts', 'src/utils/schemaUtils.ts'],
+		},
+	},
 })
