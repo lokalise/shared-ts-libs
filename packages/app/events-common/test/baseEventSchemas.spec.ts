@@ -1,4 +1,4 @@
-import { BASE_EVENT_SCHEMA, BaseEventType } from './baseEventSchemas'
+import { BASE_EVENT_SCHEMA, BaseEventType } from '../src/baseEventSchemas'
 
 describe('BASE_EVENT_SCHEMA', () => {
 	it('validates correct data', () => {
