@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getRoomFromRoomId, getRoomId, RoomIdSchema } from './rooms'
+import { getRoomFromRoomId, getRoomId, ROOM_ID_SCHEMA } from './rooms'
 
 const projectId = '0000000a-aa00-0aaa-a00a-00aaa0000001'
 const userId = '0000000a-aa00-0aaa-a00a-00aaa0000002'
@@ -38,12 +38,12 @@ describe('Rooms', () => {
 	})
 
 	it('should successfully parse valid room id', () => {
-		const parseResult = RoomIdSchema.safeParse(`import|{"projectId":"${projectId}"}`)
+		const parseResult = ROOM_ID_SCHEMA.safeParse(`import|{"projectId":"${projectId}"}`)
 		expect(parseResult.success).toBe(true)
 	})
 
 	it('should return error for invalid room id', () => {
-		const parseResult = RoomIdSchema.safeParse(`invalid-room-id`)
+		const parseResult = ROOM_ID_SCHEMA.safeParse(`invalid-room-id`)
 		expect(parseResult.success).toBe(false)
 	})
 })
