@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getRoomFromRoomId, getRoomId, ROOM_ID_SCHEMA } from './rooms'
+import { getRoomFromRoomId, getRoomId, ROOM_ID_SCHEMA } from '../src/rooms'
 
 const projectId = '0000000a-aa00-0aaa-a00a-00aaa0000001'
 const userId = '0000000a-aa00-0aaa-a00a-00aaa0000002'
