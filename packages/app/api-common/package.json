@@ -8,6 +8,11 @@
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",
+	"homepage": "https://github.com/lokalise/shared-ts-libs",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/lokalise/shared-ts-libs.git"
+	},
 	"exports": {
 		".": {
 			"types": "./src/index.ts",
