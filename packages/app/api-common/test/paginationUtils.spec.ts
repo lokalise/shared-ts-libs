@@ -1,4 +1,4 @@
-import { getMetaFor } from './paginationUtils'
+import { getMetaFor } from '../src/paginationUtils'
 
 describe('getMetaFor', () => {
 	it('cursor is defined', () => {
