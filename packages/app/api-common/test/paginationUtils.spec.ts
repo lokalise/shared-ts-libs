@@ -94,7 +94,7 @@ describe('paginationUtils', () => {
 
 const market = {
 	getApples: async (params: PaginationParams) => {
-		return await Promise.resolve({
+		return Promise.resolve({
 			data: [{ id: 'red' }],
 			meta: {
 				count: params.limit ?? 1,
