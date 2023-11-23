@@ -17,14 +17,12 @@ export async function getPaginatedEntries<T>(
 	apiCall: (params: PaginationParams) => Promise<PaginatedResponse<T>>,
 ): Promise<T[]> {
 	const resultArray: T[] = []
-	const result = await apiCall(pagination)
-	resultArray.push(...result.data)
-	let currentCursor = result.meta.cursor
-	while (currentCursor) {
+	let currentCursor: string | undefined = undefined
+	do {
 		const pageResult = await apiCall({ ...pagination, after: currentCursor })
 		resultArray.push(...pageResult.data)
 		currentCursor = pageResult.meta.cursor
-	}
+	} while (currentCursor)
 
 	return resultArray
 }
