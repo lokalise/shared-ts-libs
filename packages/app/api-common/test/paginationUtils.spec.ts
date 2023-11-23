@@ -93,15 +93,14 @@ describe('paginationUtils', () => {
 })
 
 const market = {
-	// @ts-expect-error mock example
 	getApples: async (params: PaginationParams) => {
-		return {
+		return await Promise.resolve({
 			data: [{ id: 'red' }],
 			meta: {
 				count: params.limit ?? 1,
 				cursor: 'red',
 			},
-		}
+		})
 	},
 }
 
