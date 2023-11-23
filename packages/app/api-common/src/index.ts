@@ -6,4 +6,4 @@ export {
 	type CommonErrorResponse,
 } from './apiSchemas'
 
-export { getMetaFor } from './paginationUtils'
+export * from './paginationUtils'
