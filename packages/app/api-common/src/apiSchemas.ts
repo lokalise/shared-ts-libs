@@ -13,6 +13,8 @@ export const zMeta = z.object({
 	cursor: z.string().optional().describe('Pagination cursor, a last item id from this result set'),
 })
 
+export type PaginationMeta = z.infer<typeof zMeta>
+
 export const COMMON_ERROR_RESPONSE_SCHEMA = z.object({
 	message: z.string(),
 	errorCode: z.string(),
