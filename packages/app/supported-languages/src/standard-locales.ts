@@ -11,7 +11,7 @@ export const standardLocales = [
 	'ar-KW', // Arabic - Kuwait
 	'ar-LB', // Arabic - Lebanon
 	'ar-LY', // Arabic - Libya
-	'ar-MO', // Arabic - Morocco
+	'ar-MA', // Arabic - Morocco
 	'ar-OM', // Arabic - Oman
 	'ar-QA', // Arabic - Qatar
 	'ar-SA', // Arabic - Saudi Arabia
