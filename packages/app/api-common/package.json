@@ -39,7 +39,7 @@
 		"prettier": "3.1.0",
 		"rimraf": "^5.0.1",
 		"typescript": "5.3.2",
-		"vite": "^4.4.11",
+		"vite": "^5.0.3",
 		"vitest": "^0.34.6"
 	},
 	"prettier": "@lokalise/prettier-config"
