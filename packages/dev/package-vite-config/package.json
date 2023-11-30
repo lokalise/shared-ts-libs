@@ -6,6 +6,11 @@
 		"README.md",
 		"dist"
 	],
+	"homepage": "https://github.com/lokalise/shared-ts-libs",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/lokalise/shared-ts-libs.git"
+	},
 	"exports": {
 		"./package": {
 			"types": "./dist/package.config.d.ts",
