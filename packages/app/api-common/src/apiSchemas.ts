@@ -8,7 +8,7 @@ export const PAGINATION_CONFIG_SCHEMA = z.object({
 export type PaginationParams = z.infer<typeof PAGINATION_CONFIG_SCHEMA>
 
 export const MANDATORY_PAGINATION_CONFIG_SCHEMA = PAGINATION_CONFIG_SCHEMA.extend({
-	limit: z.number().gt(0)
+	limit: z.number().gt(0),
 })
 export type MandatoryPaginationParams = z.infer<typeof MANDATORY_PAGINATION_CONFIG_SCHEMA>
 
