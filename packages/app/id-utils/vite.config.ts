@@ -1,6 +1,6 @@
 import { resolve } from 'path'
 
-import defineConfig from '@lokalise/vite-config/package'
+import defineConfig from '@lokalise/package-vite-config/package'
 
 import packageJson from './package.json'
 

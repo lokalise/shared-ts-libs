@@ -8,6 +8,11 @@
   "main": "./index.json",
   "module": "./index.json",
   "types": "./index.json",
+  "homepage": "https://github.com/lokalise/shared-ts-libs",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/lokalise/shared-ts-libs.git"
+  },
   "exports": {
     ".": {
       "types": "./index.json",

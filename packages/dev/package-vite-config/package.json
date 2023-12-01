@@ -1,10 +1,16 @@
 {
-	"name": "@lokalise/vite-config",
-	"version": "1.0.0",
+	"name": "@lokalise/package-vite-config",
+	"version": "1.0.1",
 	"type": "module",
 	"files": [
-		"package.config.ts"
+		"README.md",
+		"dist"
 	],
+	"homepage": "https://github.com/lokalise/shared-ts-libs",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/lokalise/shared-ts-libs.git"
+	},
 	"exports": {
 		"./package": {
 			"types": "./dist/package.config.d.ts",
@@ -23,7 +29,8 @@
 		"dev": "tsc --watch",
 		"clean": "rimraf dist .eslintcache",
 		"lint": "eslint --cache --max-warnings=0 . && prettier --check --log-level warn \"**/*.{json,md}\" && tsc --noEmit",
-		"lint:fix": "eslint . --fix && prettier --write \"**/*.{json,md}\""
+		"lint:fix": "eslint . --fix && prettier --write \"**/*.{json,md}\"",
+		"prepublishOnly": "npm run build"
 	},
 	"dependencies": {
 		"vite": "^4.4.11",

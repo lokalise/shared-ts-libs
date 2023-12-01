@@ -5,6 +5,11 @@
 	"files": [
 		"configs/*"
 	],
+	"homepage": "https://github.com/lokalise/shared-ts-libs",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/lokalise/shared-ts-libs.git"
+	},
 	"exports": {
 		"./*": [
 			"./configs/*.cjs"
@@ -17,7 +22,7 @@
 	"dependencies": {
 		"@lokalise/eslint-config-frontend": "^4.1.0",
 		"@tanstack/eslint-plugin-query": "^5.6.0",
-		"@typescript-eslint/parser": "^6.9.1"
+		"@typescript-eslint/parser": "^6.13.1"
 	},
 	"devDependencies": {
 		"@lokalise/prettier-config": "*",

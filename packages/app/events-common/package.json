@@ -36,7 +36,7 @@
 	"devDependencies": {
 		"@lokalise/eslint-config": "*",
 		"@lokalise/prettier-config": "*",
-		"@lokalise/vite-config": "*",
+		"@lokalise/package-vite-config": "*",
 		"@message-queue-toolkit/sns": "^6.0.0",
 		"prettier": "3.1.0",
 		"rimraf": "^5.0.1",
