@@ -1,4 +1,4 @@
-import { PaginationParams } from '../src'
+import { OptionalPaginationParams } from '../src'
 import { getMetaFor, getPaginatedEntries } from '../src/paginationUtils'
 
 describe('paginationUtils', () => {
@@ -93,7 +93,7 @@ describe('paginationUtils', () => {
 })
 
 const market = {
-	getApples: async (params: PaginationParams) => {
+	getApples: async (params: OptionalPaginationParams) => {
 		return Promise.resolve({
 			data: [{ id: 'red' }],
 			meta: {

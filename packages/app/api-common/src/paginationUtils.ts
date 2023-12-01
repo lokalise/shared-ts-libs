@@ -1,4 +1,4 @@
-import type { PaginationMeta, PaginationParams } from './apiSchemas'
+import type { PaginationMeta, OptionalPaginationParams } from './apiSchemas'
 
 export function getMetaFor<T extends { id: string }>(data: T[]) {
 	return {
@@ -13,8 +13,8 @@ type PaginatedResponse<T> = {
 }
 
 export async function getPaginatedEntries<T>(
-	pagination: PaginationParams,
-	apiCall: (params: PaginationParams) => Promise<PaginatedResponse<T>>,
+	pagination: OptionalPaginationParams,
+	apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,
 ): Promise<T[]> {
 	const resultArray: T[] = []
 	let currentCursor: string | undefined = undefined
