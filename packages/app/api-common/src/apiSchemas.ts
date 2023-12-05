@@ -20,9 +20,12 @@ export const zMeta = z.object({
 export type PaginationMeta = z.infer<typeof zMeta>
 
 export const COMMON_ERROR_RESPONSE_SCHEMA = z.object({
-	message: z.string(),
-	errorCode: z.string(),
-	details: z.any().optional(),
+	statusCode: z.number(),
+	payload: z.object({
+		message: z.string(),
+		errorCode: z.string(),
+		details: z.any().optional(),
+	}),
 })
 
 export type CommonErrorResponse = z.infer<typeof COMMON_ERROR_RESPONSE_SCHEMA>
