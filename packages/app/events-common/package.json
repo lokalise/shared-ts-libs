@@ -37,10 +37,10 @@
 		"@lokalise/eslint-config": "*",
 		"@lokalise/prettier-config": "*",
 		"@lokalise/package-vite-config": "*",
-		"@message-queue-toolkit/sns": "^6.0.0",
-		"prettier": "3.1.0",
+		"@message-queue-toolkit/sns": "^7.0.0",
+		"prettier": "3.1.1",
 		"rimraf": "^5.0.1",
-		"typescript": "5.3.2",
+		"typescript": "5.3.3",
 		"vite": "^4.4.11",
 		"vitest": "0.34.6"
 	},
