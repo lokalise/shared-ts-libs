@@ -39,12 +39,12 @@
 		"@lokalise/eslint-config": "*",
 		"@lokalise/prettier-config": "*",
 		"@rollup/plugin-typescript": "^11.1.3",
-		"@vitest/coverage-v8": "^0.34.6",
+		"@vitest/coverage-v8": "^1.0.4",
 		"prettier": "^3.1.1",
 		"rimraf": "^5.0.1",
 		"rollup": "^4.4.1",
 		"typescript": "5.3.3",
-		"vitest": "^0.34.6"
+		"vitest": "^1.0.4"
 	},
 	"prettier": "@lokalise/prettier-config"
 }
