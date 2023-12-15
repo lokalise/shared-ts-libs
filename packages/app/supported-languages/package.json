@@ -35,9 +35,6 @@
 		"test": "vitest run --coverage",
 		"prepublishOnly": "npm run build"
 	},
-	"peerDependencies": {
-		"@lokalise/node-core": "^8.1.1"
-	},
 	"devDependencies": {
 		"@lokalise/eslint-config": "*",
 		"@lokalise/prettier-config": "*",
