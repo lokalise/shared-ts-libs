@@ -3,18 +3,30 @@ import { getMetaFor, getPaginatedEntries } from '../src/paginationUtils'
 
 describe('paginationUtils', () => {
 	describe('getMetaFor', () => {
-		it('cursor is defined', () => {
+		it('starting position is defined', () => {
 			const mockedArray = [{ id: 'a' }, { id: 'b' }]
 			getMetaFor(mockedArray)
 
-			expect(getMetaFor(mockedArray)).toEqual({ count: 2, cursor: 'b' })
+			expect(getMetaFor(mockedArray)).toEqual({
+				page: {
+					count: 2,
+					startingAfter: 'a',
+					endingBefore: 'b',
+				},
+			})
 		})
 
-		it('cursor is undefined', () => {
+		it('starting position is undefined', () => {
 			const mockedArray: Entity[] = []
 			getMetaFor(mockedArray)
 
-			expect(getMetaFor(mockedArray)).toEqual({ count: 0 })
+			expect(getMetaFor(mockedArray)).toEqual({
+				page: {
+					count: 0,
+					endingBefore: undefined,
+					startingAfter: undefined,
+				},
+			})
 		})
 	})
 
@@ -25,14 +37,21 @@ describe('paginationUtils', () => {
 				.mockResolvedValueOnce({
 					data: [{ id: 'red' }],
 					meta: {
-						count: 1,
-						cursor: 'red',
+						page: {
+							count: 1,
+							startingBefore: undefined,
+							startingAfter: 'red',
+						},
 					},
 				})
 				.mockResolvedValueOnce({
 					data: [],
 					meta: {
-						count: 0,
+						page: {
+							count: 0,
+							startingBefore: undefined,
+							startingAfter: undefined,
+						},
 					},
 				})
 
@@ -47,7 +66,9 @@ describe('paginationUtils', () => {
 			const spy = vi.spyOn(market, 'getApples').mockResolvedValueOnce({
 				data: [],
 				meta: {
-					count: 0,
+					page: {
+						count: 0,
+					},
 				},
 			})
 
@@ -64,21 +85,27 @@ describe('paginationUtils', () => {
 				.mockResolvedValueOnce({
 					data: [{ id: 'red' }],
 					meta: {
-						count: 1,
-						cursor: 'red',
+						page: {
+							count: 1,
+							startingAfter: 'red',
+						},
 					},
 				})
 				.mockResolvedValueOnce({
 					data: [{ id: 'blue' }],
 					meta: {
-						count: 1,
-						cursor: 'blue',
+						page: {
+							count: 1,
+							startingAfter: 'blue',
+						},
 					},
 				})
 				.mockResolvedValueOnce({
 					data: [],
 					meta: {
-						count: 0,
+						page: {
+							count: 0,
+						},
 					},
 				})
 
@@ -87,6 +114,38 @@ describe('paginationUtils', () => {
 			})
 
 			expect(spy).toHaveBeenCalledTimes(3)
+			expect(result).toEqual([{ id: 'red' }, { id: 'blue' }])
+		})
+
+		it('should call api 2 times when having a cursor but hasMore set to false', async () => {
+			const spy = vi
+				.spyOn(market, 'getApples')
+				.mockResolvedValueOnce({
+					data: [{ id: 'red' }],
+					meta: {
+						page: {
+							count: 1,
+							startingAfter: 'red',
+							hasMore: true,
+						},
+					},
+				})
+				.mockResolvedValueOnce({
+					data: [{ id: 'blue' }],
+					meta: {
+						page: {
+							count: 1,
+							startingAfter: 'blue',
+							hasMore: false,
+						},
+					},
+				})
+
+			const result = await getPaginatedEntries({ limit: 1 }, (params) => {
+				return market.getApples(params)
+			})
+
+			expect(spy).toHaveBeenCalledTimes(2)
 			expect(result).toEqual([{ id: 'red' }, { id: 'blue' }])
 		})
 	})

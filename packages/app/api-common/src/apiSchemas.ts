@@ -12,9 +12,20 @@ export const MANDATORY_PAGINATION_CONFIG_SCHEMA = OPTIONAL_PAGINATION_CONFIG_SCH
 })
 export type MandatoryPaginationParams = z.infer<typeof MANDATORY_PAGINATION_CONFIG_SCHEMA>
 
-export const zMeta = z.object({
+const page = z.object({
+	limit: z.number(),
+	hasMore: z.boolean(),
+	startingAfter: z.string().optional().describe('First item id from this result set'),
+	endingBefore: z.string().optional().describe('Last item id from this result set'),
 	count: z.number(),
-	cursor: z.string().optional().describe('Pagination cursor, a last item id from this result set'),
+})
+
+export const zMeta = z.object({
+	statusUrl: z
+		.string()
+		.optional()
+		.describe('URL to use for polling about asynchronous operation status'),
+	page,
 })
 
 export type PaginationMeta = z.infer<typeof zMeta>
