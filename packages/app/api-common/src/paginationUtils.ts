@@ -9,8 +9,8 @@ export function getMetaFor<T extends { id: string }>(data: T[], params?: metaPar
 	return {
 		...(params && { statusUrl: params.statusUrl }),
 		page: {
-			...(params && params.limit && { limit: params.limit }),
-			...(params && params.hasMore && { hasMore: params.hasMore }),
+			...(params && params.limit !== undefined && { limit: params.limit }),
+			...(params && params.hasMore !== undefined && { hasMore: params.hasMore }),
 			endingBefore: data.length > 0 ? data[data.length - 1].id : undefined,
 			startingAfter: data.length > 0 ? data[0].id : undefined,
 			count: data.length,

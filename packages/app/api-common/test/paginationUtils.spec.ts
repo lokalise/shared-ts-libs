@@ -28,6 +28,28 @@ describe('paginationUtils', () => {
 				},
 			})
 		})
+
+		it('status url is defined', () => {
+			const mockedArray: Entity[] = []
+			getMetaFor(mockedArray)
+
+			expect(
+				getMetaFor(mockedArray, {
+					statusUrl: 'https://lokalise.com/api',
+					hasMore: false,
+					limit: 0,
+				}),
+			).toEqual({
+				statusUrl: 'https://lokalise.com/api',
+				page: {
+					count: 0,
+					endingBefore: undefined,
+					startingAfter: undefined,
+					limit: 0,
+					hasMore: false,
+				},
+			})
+		})
 	})
 
 	describe('getPaginatedEntries', () => {
