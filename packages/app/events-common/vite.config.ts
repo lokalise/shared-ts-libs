@@ -11,10 +11,12 @@ export default defineConfig({
 	test: {
 		coverage: {
 			exclude: ['src/**/*.spec.ts', 'src/**/*.test.ts', 'src/**/*Types.ts', 'src/**/*types.ts'],
-			lines: 70,
-			functions: 0, // not applicable
-			branches: 0, // not applicable
-			statements: 70,
+			thresholds: {
+				lines: 96,
+				functions: 0, // not applicable
+				branches: 0, // not applicable
+				statements: 96,
+			},
 		},
 	},
 })
