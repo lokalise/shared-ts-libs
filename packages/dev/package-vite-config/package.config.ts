@@ -70,7 +70,11 @@ export default ({
 		],
 		test: {
 			globals: true,
-			threads: false,
+			poolOptions: {
+				threads: {
+					singleThread: true,
+				},
+			},
 			watch: false,
 			environment: 'node',
 			...test,
@@ -80,10 +84,12 @@ export default ({
 				exclude: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
 				reporter: ['lcov', 'text'],
 				all: true,
-				lines: 100,
-				functions: 100,
-				branches: 100,
-				statements: 100,
+				thresholds: {
+					lines: 100,
+					functions: 100,
+					branches: 100,
+					statements: 100,
+				},
 				...(test?.coverage as Record<string, string>),
 			},
 		},
