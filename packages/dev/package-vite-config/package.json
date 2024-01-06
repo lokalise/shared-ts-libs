@@ -1,6 +1,6 @@
 {
 	"name": "@lokalise/package-vite-config",
-	"version": "1.0.1",
+	"version": "2.0.0",
 	"type": "module",
 	"files": [
 		"README.md",
@@ -33,9 +33,9 @@
 		"prepublishOnly": "npm run build"
 	},
 	"dependencies": {
-		"vite": "^4.4.11",
+		"vite": "^5.0.11",
 		"vite-plugin-dts": "^3.6.0",
-		"vitest": "^0.34.6"
+		"vitest": "^1.1.3"
 	},
 	"devDependencies": {
 		"@lokalise/eslint-config": "*",
