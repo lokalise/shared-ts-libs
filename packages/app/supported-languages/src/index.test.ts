@@ -201,7 +201,7 @@ describe('supported-languages package', () => {
 		it('get language name in English', () => {
 			expect(getLanguageNameInEnglish('es')).toBe('Spanish')
 			expect(getLanguageNameInEnglish('en')).toBe('English')
-			expect(getLanguageNameInEnglish('en-US')).toBe('American English')
+			expect(getLanguageNameInEnglish('en-US')).toBe('English (United States)')
 			expect(getLanguageNameInEnglish('bs-Latn-BA')).toBe('Bosnian (Latin, Bosnia & Herzegovina)')
 		})
 
@@ -214,7 +214,10 @@ describe('supported-languages package', () => {
 	describe('getLocalisedLanguageName', () => {
 		it('get language name in French', () => {
 			expect(getLocalisedLanguageName('es', 'fr')).toBe('espagnol')
-			expect(getLocalisedLanguageName('en-US', 'fr')).toBe('anglais américain')
+			expect(getLocalisedLanguageName('en-US', 'fr')).toBe('anglais (États-Unis)')
+			expect(getLocalisedLanguageName('en-US', 'fr', { languageDisplay: 'dialect' })).toBe(
+				'anglais américain',
+			)
 			expect(getLocalisedLanguageName('bs-Latn-BA', 'fr')).toBe(
 				'bosniaque (latin, Bosnie-Herzégovine)',
 			)

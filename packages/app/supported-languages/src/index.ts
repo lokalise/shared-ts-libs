@@ -171,12 +171,17 @@ export const getLanguageNameInEnglish = (tag: LocaleString): string | null => {
 export const getLocalisedLanguageName = (
 	tag: LocaleString,
 	destinationTag: LocaleString,
+	options?: Omit<Partial<Intl.DisplayNamesOptions>, 'type'>,
 ): string | null => {
 	if (!isSupportedLocale(tag) || !isSupportedLocale(destinationTag)) {
 		return null
 	}
 
-	const displayNames = new Intl.DisplayNames([destinationTag], { type: 'language' })
+	const displayNames = new Intl.DisplayNames([destinationTag], {
+		type: 'language',
+		languageDisplay: 'standard',
+		...options,
+	})
 
 	try {
 		const displayName = displayNames.of(tag)
