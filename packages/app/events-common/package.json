@@ -39,7 +39,7 @@
 		"@lokalise/package-vite-config": "*",
 		"@message-queue-toolkit/sns": "^8.0.0",
 		"@vitest/coverage-v8": "^1.1.3",
-		"prettier": "3.1.1",
+		"prettier": "3.2.2",
 		"rimraf": "^5.0.1",
 		"typescript": "5.3.3",
 		"vite": "^5.0.11",
