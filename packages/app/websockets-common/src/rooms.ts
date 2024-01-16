@@ -11,6 +11,7 @@ const PROJECT_USER_ID_SCHEMA = z.object({
 
 const RoomSchemas = {
 	import: PROJECT_ID_SCHEMA,
+	git: PROJECT_ID_SCHEMA,
 	upload: USER_ID_SCHEMA,
 	export: PROJECT_ID_SCHEMA,
 	translation: PROJECT_ID_SCHEMA,
