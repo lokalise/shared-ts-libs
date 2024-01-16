@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { ROOM_ID_SCHEMA } from '../../rooms'
 
-const ROOM_EVENT_SCHEMA = z.tuple([ROOM_ID_SCHEMA])
+const ROOM_EVENT_SCHEMA = z.object({ roomId: ROOM_ID_SCHEMA })
 
 export const ReservedRoomEvents = {
 	'room.join': {
