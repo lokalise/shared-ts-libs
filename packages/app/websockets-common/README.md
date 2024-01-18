@@ -19,8 +19,8 @@ Event schema is a Zod object. The object will be passed as an argument for the e
 
 ```typescript
 const DEMO_EVENT_SCHEMA = z.object({
-    first: z.string(),
-    second: z.string(),
+	first: z.string(),
+	second: z.string(),
 })
 ```
 
