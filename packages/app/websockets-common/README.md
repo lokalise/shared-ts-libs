@@ -15,39 +15,18 @@ The names are pretty self-explanatory, but the gist of it is - these dictate whi
 
 ### Event schemas
 
-Event schema is a Zod tuple. Each item in a tuple represents an argument for the event.
+Event schema is a Zod object. The object will be passed as an argument for the event.
 
 ```typescript
-const DEMO_EVENT_SCHEMA = z.tuple([
-	z.string().describe('First argument'),
-	z.string().describe('Second argument'),
-])
-```
-
-Unfortunately Zod currently does not support optional entries for tuples. But you can always use objects as your event arguments instead of individual ones.
-
-```typescript
-const DEMO_EVENT_SCHEMA = z.tuple([
-	z.object({
-		firstArgument: z.string().describe('This is my argument'),
-		optionalArgument: z.string().optional().describe('This is optional argument'),
-	}),
-])
-```
-
-There is a utility `createObjectSchema` that helps you to create an event schema that accepts given object shape (instead of tuple).
-
-```typescript
-import { createObjectSchema } from '@lokalise/websockets-common'
-
-const DEMO_EVENT_SCHEMA = createObjectSchema({
-	message: z.string().describe('A message for the server'),
+const DEMO_EVENT_SCHEMA = z.object({
+    first: z.string(),
+    second: z.string(),
 })
 ```
 
 ### Creating an event contract
 
-An event contract is basically an object containing entries with a `schema`. Each `key` in that object is represents the event name. Here is an example event definition.
+An event contract is basically an object containing entries with a `schema`. Each `key` in that object represents the event name. Here is an example event definition.
 
 ```typescript
 export const DemoEvents = {
