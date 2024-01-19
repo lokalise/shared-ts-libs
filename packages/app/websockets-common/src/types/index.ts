@@ -1,9 +1,11 @@
-import { type z, type ZodTuple } from 'zod'
+import type { z, ZodObject } from 'zod'
 
-import { type ReservedClientToServerEvents, type ReservedServerToClientEvents } from '../events'
+import type { ReservedClientToServerEvents, ReservedServerToClientEvents } from '../events'
 
 export interface WebsocketEvent {
-	schema: ZodTuple | ZodTuple<[]>
+	// We do not care about specific type
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	schema: ZodObject<any>
 }
 
 export type WebsocketEventMap = Record<string, WebsocketEvent>
@@ -34,7 +36,7 @@ export type WebsocketEventSchema<
  */
 export type SocketIoEventMap<EventMap extends WebsocketEventMap> = {
 	[EventName in WebsocketEventName<EventMap>]: (
-		...args: WebsocketEventSchema<EventMap, EventName>
+		args: WebsocketEventSchema<EventMap, EventName>,
 	) => void
 }
 
