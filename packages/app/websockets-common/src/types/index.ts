@@ -28,14 +28,6 @@ export type WebsocketEventSchema<
 	WEN extends WebsocketEventName<WEM>,
 > = z.infer<WEM[WEN]['schema']>
 
-type IsEmpty<T> = {
-	[P in keyof T]: false
-} extends {
-	[key: string]: true
-}
-	? true
-	: false
-
 /**
  * Socket.IO expects types to be defined as a Record with eventName:callbackFn.
  * See https://socket.io/docs/v4/typescript for examples.
@@ -43,12 +35,9 @@ type IsEmpty<T> = {
  * This generics converts our Zod schemas to compatible Socket.IO format.
  */
 export type SocketIoEventMap<EventMap extends WebsocketEventMap> = {
-	// if the schema is an empty object, we forbid passing args whatsoever, because otherwise an object with arbitrary keys would be allowed
-	[EventName in WebsocketEventName<EventMap>]: IsEmpty<
-		WebsocketEventSchema<EventMap, EventName>
-	> extends true
-		? () => void
-		: (args: WebsocketEventSchema<EventMap, EventName>) => void
+	[EventName in WebsocketEventName<EventMap>]: (
+		args: WebsocketEventSchema<EventMap, EventName>,
+	) => void
 }
 
 export type SocketIoEventHandler<
