@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 const Uuid = z.string().uuid()
 
+const WORKSPACE_ID_SCHEMA = z.object({ workspaceId: Uuid })
 const PROJECT_ID_SCHEMA = z.object({ projectId: Uuid })
 const USER_ID_SCHEMA = z.object({ userId: Uuid })
 const PROJECT_USER_ID_SCHEMA = z.object({
@@ -16,6 +17,7 @@ const RoomSchemas = {
 	export: PROJECT_ID_SCHEMA,
 	translation: PROJECT_ID_SCHEMA,
 	segment: PROJECT_ID_SCHEMA,
+	workspace: WORKSPACE_ID_SCHEMA,
 	// Unused room - this is an example how to use room with multiple parameters.
 	'project-user': PROJECT_USER_ID_SCHEMA,
 }
