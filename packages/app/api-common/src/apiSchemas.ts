@@ -16,8 +16,8 @@ export type MandatoryPaginationParams = z.infer<typeof MANDATORY_PAGINATION_CONF
  * Offset pagination should be used when sorting by non-unique column
  */
 export const OFFSET_PAGINATION_CONFIG_SCHEMA = z.object({
-	skip: z.number().int().gt(0),
-	limit: z.number().int().gt(0),
+	skip: z.number().int().gt(0).optional(),
+	limit: z.number().int().gt(0).optional(),
 })
 export type OffsetPaginationParams = z.infer<typeof OFFSET_PAGINATION_CONFIG_SCHEMA>
 
