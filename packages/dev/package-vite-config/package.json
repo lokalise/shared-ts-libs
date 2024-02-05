@@ -41,7 +41,7 @@
 		"@lokalise/eslint-config": "*",
 		"@lokalise/prettier-config": "*",
 		"eslint": "^8.51.0",
-		"prettier": "^3.2.2",
+		"prettier": "^3.2.5",
 		"rimraf": "^5.0.5",
 		"typescript": "5.3.3"
 	},
