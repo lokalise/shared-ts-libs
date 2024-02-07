@@ -1,9 +1,21 @@
+import { pick } from '@lokalise/node-core'
+
 import type { PaginationMeta, OptionalPaginationParams } from './apiSchemas'
 
-export function getMetaFor<T extends { id: string }>(data: T[]) {
+export function getMetaFor<T extends { id: string }, K extends Exclude<keyof T, 'id'>>(
+	data: T[],
+	cursorKeys?: K[],
+): PaginationMeta {
+	if (data.length === 0) {
+		return { count: 0 }
+	}
+
 	return {
 		count: data.length,
-		cursor: data.length > 0 ? data[data.length - 1].id : undefined,
+		cursor:
+			cursorKeys && cursorKeys.length > 0
+				? JSON.stringify(pick(data[data.length - 1], ['id', ...cursorKeys]))
+				: data[data.length - 1].id,
 	}
 }
 
