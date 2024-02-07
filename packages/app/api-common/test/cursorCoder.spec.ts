@@ -1,0 +1,16 @@
+import { describe, expect, it } from 'vitest'
+
+import { decodeCursor, encodeCursor } from '../src/cursorCoder'
+
+describe('cursorCoder', () => {
+	it('encode and decode works', () => {
+		const value = {
+			id: '1',
+			name: 'apple',
+			sub: { id: 1 },
+			array1: ['1', '2'],
+			array2: [{ name: 'hello' }, { name: 'world' }],
+		}
+		expect(decodeCursor(encodeCursor(value))).toEqual(value)
+	})
+})

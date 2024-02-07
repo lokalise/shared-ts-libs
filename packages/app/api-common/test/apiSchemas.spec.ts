@@ -6,7 +6,7 @@ import {
 	multiCursorMandatoryPaginationSchema,
 	multiCursorOptionalPaginationSchema,
 } from '../src'
-import { encode } from '../src/stringCoder'
+import { encodeCursor } from '../src/cursorCoder'
 
 describe('apiSchemas', () => {
 	describe('multi cursor pagination schemas', () => {
@@ -24,7 +24,7 @@ describe('apiSchemas', () => {
 			it('should parse object and return correct type', () => {
 				const object: schemaTypeInput = {
 					limit: 1,
-					before: encode(JSON.stringify({ id: uuid, name: 'apple' })),
+					before: encodeCursor({ id: uuid, name: 'apple' }),
 				}
 
 				const result: schemaType = schema.parse(object)
@@ -66,7 +66,7 @@ describe('apiSchemas', () => {
 				try {
 					schema.parse({
 						limit: 10,
-						after: encode('heyo'),
+						after: 'heyo',
 					})
 				} catch (e) {
 					error = e instanceof ZodError ? e : undefined
@@ -77,7 +77,7 @@ describe('apiSchemas', () => {
 						{
 							message: 'Invalid cursor',
 							code: 'custom',
-							params: { message: 'Unexpected token \'h\', "heyo" is not valid JSON' },
+							params: { message: expect.any(String) },
 							path: ['after'],
 						},
 					],
@@ -91,15 +91,12 @@ describe('apiSchemas', () => {
 				try {
 					schema.parse({
 						limit: 10,
-						after: encode(
-							JSON.stringify({
-								id: '1',
-								name: 'apple',
-							} satisfies cursorType),
-						),
+						after: encodeCursor({
+							id: '1',
+							name: 'apple',
+						} satisfies cursorType),
 					})
 				} catch (e) {
-					console.log(JSON.stringify(e))
 					error = e instanceof ZodError ? e : undefined
 				}
 				expect(error).toBeDefined()
@@ -124,7 +121,7 @@ describe('apiSchemas', () => {
 
 			it('limit is optional', () => {
 				const object: schemaTypeInput = {
-					before: encode(JSON.stringify({ id: uuid, name: 'apple' })),
+					before: encodeCursor({ id: uuid, name: 'apple' }),
 				}
 
 				const result: schemaType = schema.parse(object)

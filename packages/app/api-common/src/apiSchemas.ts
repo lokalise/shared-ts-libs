@@ -1,7 +1,7 @@
 import z from 'zod'
 import type { RefinementCtx } from 'zod/lib/types'
 
-import { decode } from './stringCoder'
+import { decodeCursor } from './cursorCoder'
 
 export const MANDATORY_PAGINATION_CONFIG_SCHEMA = z.object({
 	limit: z.coerce.number().gt(0).gt(0),
@@ -15,23 +15,16 @@ export const OPTIONAL_PAGINATION_CONFIG_SCHEMA = MANDATORY_PAGINATION_CONFIG_SCH
 })
 export type OptionalPaginationParams = z.infer<typeof OPTIONAL_PAGINATION_CONFIG_SCHEMA>
 
-// TODO: decode cursor (not just simple json string)
-const decodeCursor = (value: string, ctx: RefinementCtx) => {
-	let errorMessage: string | undefined
+const decodeCursorHook = (value: string, ctx: RefinementCtx) => {
 	try {
-		const result: unknown = JSON.parse(decode(value))
-		if (result && typeof result === 'object') {
-			return result
-		}
-		errorMessage = 'json is not an object'
+		return decodeCursor(value)
 	} catch (e) {
-		errorMessage = e instanceof Error ? e.message : undefined
+		ctx.addIssue({
+			message: 'Invalid cursor',
+			code: z.ZodIssueCode.custom,
+			params: { message: e instanceof Error ? e.message : undefined },
+		})
 	}
-	ctx.addIssue({
-		message: 'Invalid cursor',
-		code: z.ZodIssueCode.custom,
-		params: { message: errorMessage },
-	})
 }
 
 export const BASE_MULTI_CURSOR_SCHEMA = z.object({
@@ -43,7 +36,7 @@ export const multiCursorMandatoryPaginationSchema = <
 >(
 	cursorType: CursorType,
 ) => {
-	const cursor = z.string().transform(decodeCursor).pipe(cursorType).optional()
+	const cursor = z.string().transform(decodeCursorHook).pipe(cursorType).optional()
 	return z.object({
 		limit: z.coerce.number().gt(0),
 		before: cursor,
