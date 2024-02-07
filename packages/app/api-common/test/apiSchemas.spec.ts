@@ -1,17 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { z, ZodError } from 'zod'
 
-import {
-	BASE_MULTI_CURSOR_SCHEMA,
-	multiCursorMandatoryPaginationSchema,
-	multiCursorOptionalPaginationSchema,
-} from '../src'
+import { multiCursorMandatoryPaginationSchema, multiCursorOptionalPaginationSchema } from '../src'
 import { encodeCursor } from '../src/cursorCoder'
 
 describe('apiSchemas', () => {
 	describe('multi cursor pagination schemas', () => {
 		const uuid = '00000000-0000-0000-0000-000000000000'
-		const cursorSchema = BASE_MULTI_CURSOR_SCHEMA.extend({
+		const cursorSchema = z.object({
+			id: z.string().uuid(),
 			name: z.string(),
 		})
 		type cursorType = z.infer<typeof cursorSchema>

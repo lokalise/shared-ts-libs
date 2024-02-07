@@ -5,16 +5,25 @@ import { encodeCursor } from '../src/cursorCoder'
 
 describe('paginationUtils', () => {
 	describe('getMetaFor', () => {
-		it('cursor is defined', () => {
+		it('cursor is undefined', () => {
+			const mockedArray: Entity[] = []
+			const result = getMetaFor(mockedArray)
+			expect(result).toEqual({ count: 0 })
+		})
+
+		it('cursor is defined using id as default', () => {
 			const mockedArray = [{ id: 'a' }, { id: 'b' }]
 			const result = getMetaFor(mockedArray)
 			expect(result).toEqual({ count: 2, cursor: 'b' })
 		})
 
-		it('cursor is undefined', () => {
-			const mockedArray: Entity[] = []
-			const result = getMetaFor(mockedArray)
-			expect(result).toEqual({ count: 0 })
+		it('cursor is defined using specified prop', () => {
+			const mockedArray = [
+				{ id: 'a', name: 'hello' },
+				{ id: 'b', name: 'world' },
+			]
+			const result = getMetaFor(mockedArray, ['name'])
+			expect(result).toEqual({ count: 2, cursor: 'world' })
 		})
 
 		it('cursor has multiple fields', () => {

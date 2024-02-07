@@ -3,7 +3,7 @@ import { pick } from '@lokalise/node-core'
 import type { PaginationMeta, OptionalPaginationParams } from './apiSchemas'
 import { encodeCursor } from './cursorCoder'
 
-export function getMetaFor<T extends { id: string }, K extends Exclude<keyof T, 'id'>>(
+export function getMetaFor<T extends { id: string }, K extends keyof T>(
 	data: T[],
 	cursorKeys?: K[],
 ): PaginationMeta {
@@ -11,12 +11,20 @@ export function getMetaFor<T extends { id: string }, K extends Exclude<keyof T, 
 		return { count: 0 }
 	}
 
+	const lastElement = data[data.length - 1]
+	let cursor: string = ''
+	if (cursorKeys === undefined || cursorKeys.length === 0) {
+		cursor = lastElement.id
+	} else if (cursorKeys.length === 1) {
+		cursor =
+			cursorKeys.length === 1
+				? (lastElement[cursorKeys[0]] as string)
+				: encodeCursor(pick(lastElement, cursorKeys))
+	}
+
 	return {
 		count: data.length,
-		cursor:
-			cursorKeys && cursorKeys.length > 0
-				? encodeCursor(pick(data[data.length - 1], ['id', ...cursorKeys]))
-				: data[data.length - 1].id,
+		cursor,
 	}
 }
 

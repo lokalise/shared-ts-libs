@@ -4,7 +4,7 @@ import type { RefinementCtx } from 'zod/lib/types'
 import { decodeCursor } from './cursorCoder'
 
 export const MANDATORY_PAGINATION_CONFIG_SCHEMA = z.object({
-	limit: z.coerce.number().gt(0).gt(0),
+	limit: z.coerce.number().gt(0),
 	before: z.string().min(1).optional(),
 	after: z.string().min(1).optional(),
 })
@@ -27,13 +27,7 @@ const decodeCursorHook = (value: string, ctx: RefinementCtx) => {
 	}
 }
 
-export const BASE_MULTI_CURSOR_SCHEMA = z.object({
-	id: z.string().uuid(),
-})
-type MultiCursorBaseType = z.infer<typeof BASE_MULTI_CURSOR_SCHEMA>
-export const multiCursorMandatoryPaginationSchema = <
-	CursorType extends z.ZodSchema<MultiCursorBaseType>,
->(
+export const multiCursorMandatoryPaginationSchema = <CursorType extends z.ZodSchema>(
 	cursorType: CursorType,
 ) => {
 	const cursor = z.string().transform(decodeCursorHook).pipe(cursorType).optional()
@@ -43,9 +37,7 @@ export const multiCursorMandatoryPaginationSchema = <
 		after: cursor,
 	})
 }
-export const multiCursorOptionalPaginationSchema = <
-	CursorType extends z.ZodSchema<MultiCursorBaseType>,
->(
+export const multiCursorOptionalPaginationSchema = <CursorType extends z.ZodSchema>(
 	cursorType: CursorType,
 ) => multiCursorMandatoryPaginationSchema(cursorType).partial({ limit: true })
 
