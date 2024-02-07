@@ -15,7 +15,7 @@ export function getMetaFor<T extends { id: string }, K extends keyof T>(
 	let cursor: string = ''
 	if (cursorKeys === undefined || cursorKeys.length === 0) {
 		cursor = lastElement.id
-	} else if (cursorKeys.length === 1) {
+	} else {
 		cursor =
 			cursorKeys.length === 1
 				? (lastElement[cursorKeys[0]] as string)

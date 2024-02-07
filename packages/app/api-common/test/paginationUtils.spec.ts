@@ -44,7 +44,7 @@ describe('paginationUtils', () => {
 					description: 'orange',
 				},
 			]
-			const result = getMetaFor(mockedArray, ['name'])
+			const result = getMetaFor(mockedArray, ['id', 'name'])
 			expect(result).toEqual({
 				count: 3,
 				cursor: encodeCursor({ id: '3', name: 'orange' }),
