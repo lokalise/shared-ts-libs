@@ -1,6 +1,8 @@
 import z from 'zod'
 import type { RefinementCtx } from 'zod/lib/types'
 
+import { decode } from './stringCoder'
+
 export const MANDATORY_PAGINATION_CONFIG_SCHEMA = z.object({
 	limit: z.coerce.number().gt(0).gt(0),
 	before: z.string().min(1).optional(),
@@ -17,7 +19,7 @@ export type OptionalPaginationParams = z.infer<typeof OPTIONAL_PAGINATION_CONFIG
 const decodeCursor = (value: string, ctx: RefinementCtx) => {
 	let errorMessage: string | undefined
 	try {
-		const result: unknown = JSON.parse(value)
+		const result: unknown = JSON.parse(decode(value))
 		if (result && typeof result === 'object') {
 			return result
 		}

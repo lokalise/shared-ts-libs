@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 
 import { OptionalPaginationParams, getMetaFor, getPaginatedEntries } from '../src'
+import { encode } from '../src/stringCoder'
 
 describe('paginationUtils', () => {
 	describe('getMetaFor', () => {
@@ -21,18 +22,24 @@ describe('paginationUtils', () => {
 				{
 					id: '1',
 					name: 'apple',
+					description: 'red',
 				},
 				{
 					id: '2',
 					name: 'banana',
+					description: 'yellow',
 				},
 				{
 					id: '3',
 					name: 'orange',
+					description: 'orange',
 				},
 			]
 			const result = getMetaFor(mockedArray, ['name'])
-			expect(result).toEqual({ count: 3, cursor: JSON.stringify({ id: '3', name: 'orange' }) })
+			expect(result).toEqual({
+				count: 3,
+				cursor: encode(JSON.stringify({ id: '3', name: 'orange' })),
+			})
 		})
 	})
 

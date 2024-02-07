@@ -6,6 +6,7 @@ import {
 	multiCursorMandatoryPaginationSchema,
 	multiCursorOptionalPaginationSchema,
 } from '../src'
+import { encode } from '../src/stringCoder'
 
 describe('apiSchemas', () => {
 	describe('multi cursor pagination schemas', () => {
@@ -23,7 +24,7 @@ describe('apiSchemas', () => {
 			it('should parse object and return correct type', () => {
 				const object: schemaTypeInput = {
 					limit: 1,
-					before: JSON.stringify({ id: uuid, name: 'apple' }),
+					before: encode(JSON.stringify({ id: uuid, name: 'apple' })),
 				}
 
 				const result: schemaType = schema.parse(object)
@@ -59,13 +60,13 @@ describe('apiSchemas', () => {
 				})
 			})
 
-			it('wrong json should produce error', () => {
+			it('wrong cursor string should produce error', () => {
 				const schema = multiCursorMandatoryPaginationSchema(cursorSchema)
 				let error: ZodError | undefined
 				try {
 					schema.parse({
 						limit: 10,
-						after: 'heyo',
+						after: encode('heyo'),
 					})
 				} catch (e) {
 					error = e instanceof ZodError ? e : undefined
@@ -90,10 +91,12 @@ describe('apiSchemas', () => {
 				try {
 					schema.parse({
 						limit: 10,
-						after: JSON.stringify({
-							id: '1',
-							name: 'apple',
-						} satisfies cursorType),
+						after: encode(
+							JSON.stringify({
+								id: '1',
+								name: 'apple',
+							} satisfies cursorType),
+						),
 					})
 				} catch (e) {
 					console.log(JSON.stringify(e))
@@ -121,7 +124,7 @@ describe('apiSchemas', () => {
 
 			it('limit is optional', () => {
 				const object: schemaTypeInput = {
-					before: JSON.stringify({ id: uuid, name: 'apple' }),
+					before: encode(JSON.stringify({ id: uuid, name: 'apple' })),
 				}
 
 				const result: schemaType = schema.parse(object)
