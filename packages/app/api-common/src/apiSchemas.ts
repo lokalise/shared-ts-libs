@@ -49,16 +49,6 @@ export const multiCursorOptionalPaginationSchema = <
 	cursorType: CursorType,
 ) => multiCursorMandatoryPaginationSchema(cursorType).partial({ limit: true })
 
-/**
- * Offset pagination should be used when sorting by non-unique column
- * // TODO: remove?
- */
-export const OFFSET_PAGINATION_CONFIG_SCHEMA = z.object({
-	skip: z.number().int().gt(0).optional(),
-	limit: z.number().int().gt(0).optional(),
-})
-export type OffsetPaginationParams = z.infer<typeof OFFSET_PAGINATION_CONFIG_SCHEMA>
-
 export const zMeta = z.object({
 	count: z.number(),
 	cursor: z.string().optional().describe('Pagination cursor, a last item id from this result set'),
