@@ -9,5 +9,5 @@ export const decodeCursor = (value: string): Record<string, unknown> => {
 	if (result && isObject(result)) {
 		return result
 	}
-	throw new Error('Invalid cursor')
+	throw new Error(`Invalid cursor: ${value}`)
 }

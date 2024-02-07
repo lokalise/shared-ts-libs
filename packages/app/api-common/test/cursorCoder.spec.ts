@@ -13,4 +13,15 @@ describe('cursorCoder', () => {
 		}
 		expect(decodeCursor(encodeCursor(value))).toEqual(value)
 	})
+
+	it('trying to decode not encoded text', () => {
+		let error: Error | undefined
+		try {
+			decodeCursor('should fail')
+		} catch (e) {
+			error = e instanceof Error ? e : undefined
+		}
+		expect(error).toBeDefined()
+		expect(error.message).toContain('is not valid JSON')
+	})
 })
