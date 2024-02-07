@@ -1,20 +1,38 @@
-import { OptionalPaginationParams } from '../src'
-import { getMetaFor, getPaginatedEntries } from '../src/paginationUtils'
+import { describe, it, expect, vi } from 'vitest'
+
+import { OptionalPaginationParams, getMetaFor, getPaginatedEntries } from '../src'
 
 describe('paginationUtils', () => {
 	describe('getMetaFor', () => {
 		it('cursor is defined', () => {
 			const mockedArray = [{ id: 'a' }, { id: 'b' }]
-			getMetaFor(mockedArray)
-
-			expect(getMetaFor(mockedArray)).toEqual({ count: 2, cursor: 'b' })
+			const result = getMetaFor(mockedArray)
+			expect(result).toEqual({ count: 2, cursor: 'b' })
 		})
 
 		it('cursor is undefined', () => {
 			const mockedArray: Entity[] = []
-			getMetaFor(mockedArray)
+			const result = getMetaFor(mockedArray)
+			expect(result).toEqual({ count: 0 })
+		})
 
-			expect(getMetaFor(mockedArray)).toEqual({ count: 0 })
+		it('cursor has multiple fields', () => {
+			const mockedArray = [
+				{
+					id: '1',
+					name: 'apple',
+				},
+				{
+					id: '2',
+					name: 'banana',
+				},
+				{
+					id: '3',
+					name: 'orange',
+				},
+			]
+			const result = getMetaFor(mockedArray, ['name'])
+			expect(result).toEqual({ count: 3, cursor: JSON.stringify({ id: '3', name: 'orange' }) })
 		})
 	})
 
@@ -92,8 +110,18 @@ describe('paginationUtils', () => {
 	})
 })
 
+type Entity = {
+	id: string
+}
+type GetApplesResponse = {
+	data: Entity[]
+	meta: {
+		count: number
+		cursor?: string
+	}
+}
 const market = {
-	getApples: async (params: OptionalPaginationParams) => {
+	getApples: async (params: OptionalPaginationParams): Promise<GetApplesResponse> => {
 		return Promise.resolve({
 			data: [{ id: 'red' }],
 			meta: {
@@ -102,8 +130,4 @@ const market = {
 			},
 		})
 	},
-}
-
-type Entity = {
-	id: string
 }

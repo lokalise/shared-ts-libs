@@ -2,6 +2,7 @@ import { pick } from '@lokalise/node-core'
 
 import type { PaginationMeta, OptionalPaginationParams } from './apiSchemas'
 
+// TODO: encode json (not just simple json string)
 export function getMetaFor<T extends { id: string }, K extends Exclude<keyof T, 'id'>>(
 	data: T[],
 	cursorKeys?: K[],
