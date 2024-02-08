@@ -1,6 +1,7 @@
+import { isFailure } from '@lokalise/node-core'
 import { describe, expect, it } from 'vitest'
 
-import { decodeCursor, encodeCursor } from '../src/cursorCodec'
+import { decodeCursor, encodeCursor } from '../src'
 
 describe('cursorCodec', () => {
 	it('encode and decode works', () => {
@@ -11,17 +12,13 @@ describe('cursorCodec', () => {
 			array1: ['1', '2'],
 			array2: [{ name: 'hello' }, { name: 'world' }],
 		}
-		expect(decodeCursor(encodeCursor(value))).toEqual(value)
+		expect(decodeCursor(encodeCursor(value))).toEqual({ result: value })
 	})
 
 	it('trying to decode not encoded text', () => {
-		let error: Error | undefined
-		try {
-			decodeCursor('should fail')
-		} catch (e) {
-			error = e instanceof Error ? e : undefined
-		}
-		expect(error).toBeDefined()
-		expect(error.message).toContain('is not valid JSON')
+		const result = decodeCursor('should fail')
+		expect(isFailure(result)).toBe(true)
+		expect(result.error).toBeInstanceOf(Error)
+		expect((result.error as Error).message).toContain('is not valid JSON')
 	})
 })

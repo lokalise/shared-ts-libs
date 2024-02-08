@@ -1,3 +1,4 @@
+import { isSuccess } from '@lokalise/node-core'
 import z from 'zod'
 import type { RefinementCtx } from 'zod/lib/types'
 
@@ -16,15 +17,15 @@ export const OPTIONAL_PAGINATION_CONFIG_SCHEMA = MANDATORY_PAGINATION_CONFIG_SCH
 export type OptionalPaginationParams = z.infer<typeof OPTIONAL_PAGINATION_CONFIG_SCHEMA>
 
 const decodeCursorHook = (value: string, ctx: RefinementCtx) => {
-	try {
-		return decodeCursor(value)
-	} catch (e) {
-		ctx.addIssue({
-			message: 'Invalid cursor',
-			code: z.ZodIssueCode.custom,
-			params: { message: e instanceof Error ? e.message : undefined },
-		})
+	const result = decodeCursor(value)
+	if (isSuccess(result)) {
+		return result.result
 	}
+	ctx.addIssue({
+		message: 'Invalid cursor',
+		code: z.ZodIssueCode.custom,
+		params: { message: result.error instanceof Error ? result.error.message : undefined },
+	})
 }
 
 export const multiCursorMandatoryPaginationSchema = <CursorType extends z.ZodSchema>(

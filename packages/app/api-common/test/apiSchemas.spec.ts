@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { z, ZodError } from 'zod'
+import { z } from 'zod'
 
 import {
 	multiCursorMandatoryPaginationSchema,
@@ -36,17 +36,10 @@ describe('apiSchemas', () => {
 
 			it('wrong cursor type should produce error', () => {
 				const schema = multiCursorMandatoryPaginationSchema(cursorSchema)
-				let error: ZodError | undefined
-				try {
-					schema.parse({
-						limit: 10,
-						after: {},
-					})
-				} catch (e) {
-					error = e instanceof ZodError ? e : undefined
-				}
-				expect(error).toBeDefined()
-				expect(error).toMatchObject({
+				const result = schema.safeParse({ limit: 10, after: {} })
+				expect(result.success).toBe(false)
+				expect(result.error).toBeDefined()
+				expect(result.error).toMatchObject({
 					issues: [
 						{
 							code: 'invalid_type',
@@ -62,17 +55,13 @@ describe('apiSchemas', () => {
 
 			it('wrong cursor string should produce error', () => {
 				const schema = multiCursorMandatoryPaginationSchema(cursorSchema)
-				let error: ZodError | undefined
-				try {
-					schema.parse({
-						limit: 10,
-						after: 'heyo',
-					})
-				} catch (e) {
-					error = e instanceof ZodError ? e : undefined
-				}
-				expect(error).toBeDefined()
-				expect(error).toMatchObject({
+				const result = schema.safeParse({
+					limit: 10,
+					after: 'heyo',
+				})
+				expect(result.success).toBe(false)
+				expect(result.error).toBeDefined()
+				expect(result.error).toMatchObject({
 					issues: [
 						{
 							message: 'Invalid cursor',
@@ -87,20 +76,16 @@ describe('apiSchemas', () => {
 
 			it('wrong cursor object should produce error', () => {
 				const schema = multiCursorMandatoryPaginationSchema(cursorSchema)
-				let error: ZodError | undefined
-				try {
-					schema.parse({
-						limit: 10,
-						after: encodeCursor({
-							id: '1',
-							name: 'apple',
-						} satisfies cursorType),
-					})
-				} catch (e) {
-					error = e instanceof ZodError ? e : undefined
-				}
-				expect(error).toBeDefined()
-				expect(error).toMatchObject({
+				const result = schema.safeParse({
+					limit: 10,
+					after: encodeCursor({
+						id: '1',
+						name: 'apple',
+					} satisfies cursorType),
+				})
+				expect(result.success).toBe(false)
+				expect(result.error).toBeDefined()
+				expect(result.error).toMatchObject({
 					issues: [
 						{
 							validation: 'uuid',
