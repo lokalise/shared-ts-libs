@@ -4,9 +4,21 @@ import type { PaginationMeta, OptionalPaginationParams } from './apiSchemas'
 import { encodeCursor } from './cursorCodec'
 
 /**
- * TODO: ADD
- * @param data
- * @param cursorKeys
+ * Constructs a PaginationMeta object encapsulating the total count and the cursor for fetching the next page.
+ *
+ * The resultant cursor can be either a simple string or an encoded string based on the 'cursorKeys' parameter.
+ * 	- If 'cursorKeys' is undefined or empty, the cursor will default to the 'id' property of the last element in 'data'.
+ * 	- If 'cursorKeys' contains a single key, the cursor will correspond to the value of that key from the last element
+ * 		in 'data'.
+ * 	- If 'cursorKeys' features multiple keys, the cursor will be an encoded string incorporating the values of these
+ * 		keys from the last element in 'data'.
+ *
+ * @param data - A generic array of objects, each object expected to extend { id: string }.
+ * @param cursorKeys - An optional array of keys that determine the formation of the cursor. By default, this uses
+ * 	the 'id' property.
+ *
+ * @returns PaginationMeta - An object detailing two crucial properties required for effective pagination: total item
+ * 	count and the cursor.
  */
 export function getMetaFor<T extends { id: string }, K extends keyof T>(
 	data: T[],
