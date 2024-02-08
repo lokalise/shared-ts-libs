@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { z, ZodError } from 'zod'
 
-import { multiCursorMandatoryPaginationSchema, multiCursorOptionalPaginationSchema } from '../src'
-import { encodeCursor } from '../src/cursorCoder'
+import {
+	multiCursorMandatoryPaginationSchema,
+	multiCursorOptionalPaginationSchema,
+	encodeCursor,
+} from '../src'
 
 describe('apiSchemas', () => {
 	describe('multi cursor pagination schemas', () => {
@@ -16,7 +19,7 @@ describe('apiSchemas', () => {
 		describe('multiCursorMandatoryPaginationSchema', () => {
 			const schema = multiCursorMandatoryPaginationSchema(cursorSchema)
 			type schemaType = z.infer<typeof schema>
-			type schemaTypeInput = z.infer<typeof schema>
+			type schemaTypeInput = z.input<typeof schema>
 
 			it('should parse object and return correct type', () => {
 				const object: schemaTypeInput = {

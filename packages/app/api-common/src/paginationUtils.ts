@@ -1,8 +1,13 @@
 import { pick } from '@lokalise/node-core'
 
 import type { PaginationMeta, OptionalPaginationParams } from './apiSchemas'
-import { encodeCursor } from './cursorCoder'
+import { encodeCursor } from './cursorCodec'
 
+/**
+ * TODO: ADD
+ * @param data
+ * @param cursorKeys
+ */
 export function getMetaFor<T extends { id: string }, K extends keyof T>(
 	data: T[],
 	cursorKeys?: K[],

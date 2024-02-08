@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 
 import { OptionalPaginationParams, getMetaFor, getPaginatedEntries } from '../src'
-import { encodeCursor } from '../src/cursorCoder'
+import { encodeCursor } from '../src/cursorCodec'
 
 describe('paginationUtils', () => {
 	describe('getMetaFor', () => {

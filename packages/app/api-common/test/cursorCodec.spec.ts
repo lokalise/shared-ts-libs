@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { decodeCursor, encodeCursor } from '../src/cursorCoder'
+import { decodeCursor, encodeCursor } from '../src/cursorCodec'
 
-describe('cursorCoder', () => {
+describe('cursorCodec', () => {
 	it('encode and decode works', () => {
 		const value = {
 			id: '1',
