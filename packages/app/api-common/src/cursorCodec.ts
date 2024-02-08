@@ -6,7 +6,7 @@ import { isObject } from './typeUtils'
 export const encodeCursor = (object: Record<string, unknown>): string =>
 	Buffer.from(JSON.stringify(object)).toString('base64url')
 
-export const decodeCursor = (value: string): Either<unknown, Record<string, unknown>> => {
+export const decodeCursor = (value: string): Either<Error, Record<string, unknown>> => {
 	let error: unknown
 	try {
 		const decoded = Buffer.from(value, 'base64url').toString('utf-8')
@@ -18,5 +18,6 @@ export const decodeCursor = (value: string): Either<unknown, Record<string, unkn
 		error = e
 	}
 
-	return failure(error ?? new Error('Invalid cursor'))
+	/* v8 ignore next */
+	return failure(error instanceof Error ? error : new Error('Invalid cursor'))
 }

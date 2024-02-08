@@ -24,7 +24,7 @@ const decodeCursorHook = (value: string, ctx: RefinementCtx) => {
 	ctx.addIssue({
 		message: 'Invalid cursor',
 		code: z.ZodIssueCode.custom,
-		params: { message: result.error instanceof Error ? result.error.message : undefined },
+		params: { message: result.error.message },
 	})
 }
 
