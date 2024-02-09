@@ -1,15 +1,11 @@
-import { InternalError, PublicNonRecoverableError } from '@lokalise/node-core'
+import { describe, expect, it } from 'vitest'
 
 import { isAutopilotError, isObject } from '../src'
 
 describe('typeUtils', () => {
 	describe('isObject', () => {
 		it('true for object', () => {
-			const error = new InternalError({
-				message: 'dummy',
-				errorCode: 'code',
-			})
-
+			const error = new Error()
 			expect(isObject(error)).toBe(true)
 		})
 
@@ -32,25 +28,6 @@ describe('typeUtils', () => {
 				message: 'dummy',
 				errorCode: 'code',
 			}
-
-			expect(isAutopilotError(error)).toBe(true)
-		})
-
-		it('true for InternalError', () => {
-			const error = new InternalError({
-				message: 'dummy',
-				errorCode: 'code',
-			})
-
-			expect(isAutopilotError(error)).toBe(true)
-		})
-
-		it('true for PublicNonRecoverableError', () => {
-			const error = new PublicNonRecoverableError({
-				message: 'dummy',
-				httpStatusCode: 400,
-				errorCode: 'code',
-			})
 
 			expect(isAutopilotError(error)).toBe(true)
 		})

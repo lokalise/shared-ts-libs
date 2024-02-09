@@ -1,4 +1,3 @@
-import { isSuccess } from '@lokalise/node-core'
 import z from 'zod'
 import type { RefinementCtx } from 'zod/lib/types'
 
@@ -22,7 +21,7 @@ const decodeCursorHook = (value: string | undefined, ctx: RefinementCtx) => {
 	}
 
 	const result = decodeCursor(value)
-	if (isSuccess(result)) {
+	if (result.result) {
 		return result.result
 	}
 	ctx.addIssue({
