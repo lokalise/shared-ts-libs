@@ -1,32 +1,41 @@
 import { describe, it, expect, vi } from 'vitest'
 
-import { OptionalPaginationParams, getMetaFor, getPaginatedEntries } from '../src'
-import { encodeCursor } from '../src/cursorCodec'
+import {
+	OptionalPaginationParams,
+	getMetaForNextPage,
+	getPaginatedEntries,
+	encodeCursor,
+} from '../src'
 
 describe('paginationUtils', () => {
-	describe('getMetaFor', () => {
-		it('cursor is undefined', () => {
+	describe('getMetaForNextPage', () => {
+		it('array is empty', () => {
 			const mockedArray: Entity[] = []
-			const result = getMetaFor(mockedArray)
+			const result = getMetaForNextPage(mockedArray)
 			expect(result).toEqual({ count: 0 })
 		})
 
-		it('cursor is defined using id as default', () => {
+		it('cursor using id as default', () => {
 			const mockedArray = [{ id: 'a' }, { id: 'b' }]
-			const result = getMetaFor(mockedArray)
+			const result = getMetaForNextPage(mockedArray)
 			expect(result).toEqual({ count: 2, cursor: 'b' })
 		})
 
-		it('cursor is defined using specified prop', () => {
+		it('empty cursorKeys produce error', () => {
+			expect(() => getMetaForNextPage([], [])).toThrowError('cursorKeys cannot be an empty array')
+		})
+
+		it('cursor using single prop', () => {
+			// not using id as prop to test type checking
 			const mockedArray = [
-				{ id: 'a', name: 'hello' },
-				{ id: 'b', name: 'world' },
+				{ extra: 'a', name: 'hello' },
+				{ extra: 'b', name: 'world' },
 			]
-			const result = getMetaFor(mockedArray, ['name'])
+			const result = getMetaForNextPage(mockedArray, ['name'])
 			expect(result).toEqual({ count: 2, cursor: 'world' })
 		})
 
-		it('cursor has multiple fields', () => {
+		it('cursor with multiple fields', () => {
 			const mockedArray = [
 				{
 					id: '1',
@@ -44,7 +53,7 @@ describe('paginationUtils', () => {
 					description: 'orange',
 				},
 			]
-			const result = getMetaFor(mockedArray, ['id', 'name'])
+			const result = getMetaForNextPage(mockedArray, ['id', 'name'])
 			expect(result).toEqual({
 				count: 3,
 				cursor: encodeCursor({ id: '3', name: 'orange' }),
