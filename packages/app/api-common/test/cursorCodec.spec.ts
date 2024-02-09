@@ -1,4 +1,3 @@
-import { isFailure } from '@lokalise/node-core'
 import { describe, expect, it } from 'vitest'
 
 import { decodeCursor, encodeCursor } from '../src'
@@ -17,7 +16,7 @@ describe('cursorCodec', () => {
 
 	it('trying to decode not encoded text', () => {
 		const result = decodeCursor('should fail')
-		expect(isFailure(result)).toBe(true)
+		expect(result.error).toBeDefined()
 		expect((result.error as Error).message).toContain('is not valid JSON')
 	})
 })

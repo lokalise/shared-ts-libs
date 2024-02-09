@@ -1,7 +1,23 @@
-import { pick } from '@lokalise/node-core'
-
 import type { PaginationMeta, OptionalPaginationParams } from './apiSchemas'
 import { encodeCursor } from './cursorCodec'
+
+const pick = <T, K extends string | number | symbol>(
+	source: T,
+	propNames: readonly K[],
+): Pick<T, Exclude<keyof T, Exclude<keyof T, K>>> => {
+	const result = {} as T
+	let idx = 0
+	while (idx < propNames.length) {
+		// @ts-ignore
+		if (propNames[idx] in source) {
+			// @ts-ignore
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+			result[propNames[idx]] = source[propNames[idx]]
+		}
+		idx += 1
+	}
+	return result
+}
 
 /**
  * Constructs a PaginationMeta object encapsulating the total count and the cursor for fetching the next page.
