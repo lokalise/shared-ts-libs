@@ -1,20 +1,63 @@
-import { OptionalPaginationParams } from '../src'
-import { getMetaFor, getPaginatedEntries } from '../src/paginationUtils'
+import { describe, it, expect, vi } from 'vitest'
+
+import {
+	OptionalPaginationParams,
+	getMetaForNextPage,
+	getPaginatedEntries,
+	encodeCursor,
+} from '../src'
 
 describe('paginationUtils', () => {
-	describe('getMetaFor', () => {
-		it('cursor is defined', () => {
-			const mockedArray = [{ id: 'a' }, { id: 'b' }]
-			getMetaFor(mockedArray)
-
-			expect(getMetaFor(mockedArray)).toEqual({ count: 2, cursor: 'b' })
+	describe('getMetaForNextPage', () => {
+		it('array is empty', () => {
+			const mockedArray: Entity[] = []
+			const result = getMetaForNextPage(mockedArray)
+			expect(result).toEqual({ count: 0 })
 		})
 
-		it('cursor is undefined', () => {
-			const mockedArray: Entity[] = []
-			getMetaFor(mockedArray)
+		it('cursor using id as default', () => {
+			const mockedArray = [{ id: 'a' }, { id: 'b' }]
+			const result = getMetaForNextPage(mockedArray)
+			expect(result).toEqual({ count: 2, cursor: 'b' })
+		})
 
-			expect(getMetaFor(mockedArray)).toEqual({ count: 0 })
+		it('empty cursorKeys produce error', () => {
+			expect(() => getMetaForNextPage([], [])).toThrowError('cursorKeys cannot be an empty array')
+		})
+
+		it('cursor using single prop', () => {
+			// not using id as prop to test type checking
+			const mockedArray = [
+				{ extra: 'a', name: 'hello' },
+				{ extra: 'b', name: 'world' },
+			]
+			const result = getMetaForNextPage(mockedArray, ['name'])
+			expect(result).toEqual({ count: 2, cursor: 'world' })
+		})
+
+		it('cursor with multiple fields', () => {
+			const mockedArray = [
+				{
+					id: '1',
+					name: 'apple',
+					description: 'red',
+				},
+				{
+					id: '2',
+					name: 'banana',
+					description: 'yellow',
+				},
+				{
+					id: '3',
+					name: 'orange',
+					description: 'orange',
+				},
+			]
+			const result = getMetaForNextPage(mockedArray, ['id', 'name'])
+			expect(result).toEqual({
+				count: 3,
+				cursor: encodeCursor({ id: '3', name: 'orange' }),
+			})
 		})
 	})
 
@@ -92,8 +135,18 @@ describe('paginationUtils', () => {
 	})
 })
 
+type Entity = {
+	id: string
+}
+type GetApplesResponse = {
+	data: Entity[]
+	meta: {
+		count: number
+		cursor?: string
+	}
+}
 const market = {
-	getApples: async (params: OptionalPaginationParams) => {
+	getApples: async (params: OptionalPaginationParams): Promise<GetApplesResponse> => {
 		return Promise.resolve({
 			data: [{ id: 'red' }],
 			meta: {
@@ -102,8 +155,4 @@ const market = {
 			},
 		})
 	},
-}
-
-type Entity = {
-	id: string
 }

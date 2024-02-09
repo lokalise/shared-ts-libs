@@ -1,25 +1,50 @@
+import { isSuccess } from '@lokalise/node-core'
 import z from 'zod'
+import type { RefinementCtx } from 'zod/lib/types'
 
-export const OPTIONAL_PAGINATION_CONFIG_SCHEMA = z.object({
-	limit: z.number().gt(0).optional(),
+import { decodeCursor } from './cursorCodec'
+
+export const MANDATORY_PAGINATION_CONFIG_SCHEMA = z.object({
+	limit: z.coerce.number().gt(0),
 	before: z.string().min(1).optional(),
 	after: z.string().min(1).optional(),
 })
-export type OptionalPaginationParams = z.infer<typeof OPTIONAL_PAGINATION_CONFIG_SCHEMA>
-
-export const MANDATORY_PAGINATION_CONFIG_SCHEMA = OPTIONAL_PAGINATION_CONFIG_SCHEMA.extend({
-	limit: z.number().gt(0),
-})
 export type MandatoryPaginationParams = z.infer<typeof MANDATORY_PAGINATION_CONFIG_SCHEMA>
 
-/**
- * Offset pagination should be used when sorting by non-unique column
- */
-export const OFFSET_PAGINATION_CONFIG_SCHEMA = z.object({
-	skip: z.number().int().gt(0).optional(),
-	limit: z.number().int().gt(0).optional(),
+export const OPTIONAL_PAGINATION_CONFIG_SCHEMA = MANDATORY_PAGINATION_CONFIG_SCHEMA.partial({
+	limit: true,
 })
-export type OffsetPaginationParams = z.infer<typeof OFFSET_PAGINATION_CONFIG_SCHEMA>
+export type OptionalPaginationParams = z.infer<typeof OPTIONAL_PAGINATION_CONFIG_SCHEMA>
+
+const decodeCursorHook = (value: string | undefined, ctx: RefinementCtx) => {
+	if (!value) {
+		return undefined
+	}
+
+	const result = decodeCursor(value)
+	if (isSuccess(result)) {
+		return result.result
+	}
+	ctx.addIssue({
+		message: 'Invalid cursor',
+		code: z.ZodIssueCode.custom,
+		params: { message: result.error.message },
+	})
+}
+
+export const multiCursorMandatoryPaginationSchema = <CursorType extends z.ZodSchema>(
+	cursorType: CursorType,
+) => {
+	const cursor = z.string().transform(decodeCursorHook).pipe(cursorType.optional()).optional()
+	return z.object({
+		limit: z.coerce.number().gt(0),
+		before: cursor,
+		after: cursor,
+	})
+}
+export const multiCursorOptionalPaginationSchema = <CursorType extends z.ZodSchema>(
+	cursorType: CursorType,
+) => multiCursorMandatoryPaginationSchema(cursorType).partial({ limit: true })
 
 export const zMeta = z.object({
 	count: z.number(),
