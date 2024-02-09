@@ -34,6 +34,32 @@ describe('apiSchemas', () => {
 				} satisfies schemaType)
 			})
 
+			it('should ignore undefined cursor', () => {
+				const object: schemaTypeInput = {
+					limit: 1,
+					before: '',
+				}
+
+				const result: schemaType = schema.parse(object)
+				expect(result).toEqual({
+					limit: 1,
+					before: undefined,
+				} satisfies schemaType)
+			})
+
+			it('should ignore empty cursor', () => {
+				const object: schemaTypeInput = {
+					limit: 1,
+					before: '',
+				}
+
+				const result: schemaType = schema.parse(object)
+				expect(result).toEqual({
+					limit: 1,
+					before: undefined,
+				} satisfies schemaType)
+			})
+
 			it('wrong cursor type should produce error', () => {
 				const schema = multiCursorMandatoryPaginationSchema(cursorSchema)
 				const result = schema.safeParse({ limit: 10, after: {} })

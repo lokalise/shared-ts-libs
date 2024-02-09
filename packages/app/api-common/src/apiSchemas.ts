@@ -16,7 +16,11 @@ export const OPTIONAL_PAGINATION_CONFIG_SCHEMA = MANDATORY_PAGINATION_CONFIG_SCH
 })
 export type OptionalPaginationParams = z.infer<typeof OPTIONAL_PAGINATION_CONFIG_SCHEMA>
 
-const decodeCursorHook = (value: string, ctx: RefinementCtx) => {
+const decodeCursorHook = (value: string | undefined, ctx: RefinementCtx) => {
+	if (value === undefined || value.length === 0) {
+		return undefined
+	}
+
 	const result = decodeCursor(value)
 	if (isSuccess(result)) {
 		return result.result
@@ -31,7 +35,7 @@ const decodeCursorHook = (value: string, ctx: RefinementCtx) => {
 export const multiCursorMandatoryPaginationSchema = <CursorType extends z.ZodSchema>(
 	cursorType: CursorType,
 ) => {
-	const cursor = z.string().transform(decodeCursorHook).pipe(cursorType).optional()
+	const cursor = z.string().transform(decodeCursorHook).pipe(cursorType.optional()).optional()
 	return z.object({
 		limit: z.coerce.number().gt(0),
 		before: cursor,
