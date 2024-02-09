@@ -13,7 +13,7 @@ import { encodeCursor } from './cursorCodec'
  * 	- If 'cursorKeys' features multiple keys, the cursor will be an encoded string incorporating the values of these
  * 		keys from the last element in 'data'.
  *
- * @param data - A generic array of objects, each object expected to extend { id: string }.
+ * @param currentPageData - A generic array of objects, each object expected to extend { id: string }.
  * @param cursorKeys - An optional array of keys that determine the formation of the cursor. By default, this uses
  * 	the 'id' property.
  *
@@ -21,25 +21,25 @@ import { encodeCursor } from './cursorCodec'
  * 	count and the cursor.
  */
 export function getMetaForNextPage<T extends { id: string }>(
-	data: T[],
+	currentPageData: T[],
 	cursorKeys?: undefined,
 ): PaginationMeta
 export function getMetaForNextPage<T extends Record<string, unknown>, K extends keyof T>(
-	data: T[],
+	currentPageData: T[],
 	cursorKeys: K[],
 ): PaginationMeta
 export function getMetaForNextPage<T extends Record<string, unknown>, K extends keyof T>(
-	data: T[],
+	currentPageData: T[],
 	cursorKeys?: K[],
 ): PaginationMeta {
 	if (cursorKeys !== undefined && cursorKeys.length === 0) {
 		throw new Error('cursorKeys cannot be an empty array')
 	}
-	if (data.length === 0) {
+	if (currentPageData.length === 0) {
 		return { count: 0 }
 	}
 
-	const lastElement = data[data.length - 1]
+	const lastElement = currentPageData[currentPageData.length - 1]
 	let cursor: string = ''
 	if (!cursorKeys) {
 		cursor = lastElement.id as string
@@ -51,7 +51,7 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
 	}
 
 	return {
-		count: data.length,
+		count: currentPageData.length,
 		cursor,
 	}
 }
