@@ -18,6 +18,7 @@ const RoomSchemas = {
 	translation: PROJECT_ID_SCHEMA,
 	segment: PROJECT_ID_SCHEMA,
 	workspace: WORKSPACE_ID_SCHEMA,
+	contentManager: PROJECT_ID_SCHEMA,
 	user: USER_ID_SCHEMA,
 	// Unused room - this is an example how to use room with multiple parameters.
 	'project-user': PROJECT_USER_ID_SCHEMA,
