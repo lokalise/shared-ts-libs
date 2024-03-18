@@ -35,7 +35,7 @@
 	"dependencies": {
 		"vite": "^5.0.11",
 		"vite-plugin-dts": "^3.6.0",
-		"vitest": "^1.3.1"
+		"vitest": "^1.4.0"
 	},
 	"devDependencies": {
 		"@lokalise/eslint-config": "*",
