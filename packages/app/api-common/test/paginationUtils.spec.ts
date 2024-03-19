@@ -60,7 +60,7 @@ describe('paginationUtils', () => {
 			})
 		})
 
-		describe('expectedCount is provided', () => {
+		describe('pageLimit is provided', () => {
 			const mockedArray = [
 				{
 					id: '1',
@@ -79,16 +79,16 @@ describe('paginationUtils', () => {
 				},
 			]
 
-			it('expectedCount less than input array length produces truthy hasMore', () => {
+			it('pageLimit less than input array length produces truthy hasMore and limits count to pageLimit', () => {
 				const result = getMetaForNextPage(mockedArray, ['id', 'name'], 2)
 				expect(result).toEqual({
-					count: 3,
+					count: 2,
 					cursor: encodeCursor({ id: '3', name: 'orange' }),
 					hasMore: true,
 				})
 			})
 
-			it('expectedCount equal to input array length produces falsy hasMore', () => {
+			it('pageLimit equal to input array length produces falsy hasMore', () => {
 				const result = getMetaForNextPage(mockedArray, ['id', 'name'], 3)
 				expect(result).toEqual({
 					count: 3,
@@ -97,7 +97,7 @@ describe('paginationUtils', () => {
 				})
 			})
 
-			it('expectedCount greater than input array length produces falsy hasMore', () => {
+			it('pageLimit greater than input array length produces falsy hasMore', () => {
 				const result = getMetaForNextPage(mockedArray, ['id', 'name'], 4)
 				expect(result).toEqual({
 					count: 3,
