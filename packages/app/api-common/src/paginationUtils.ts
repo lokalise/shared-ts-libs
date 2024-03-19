@@ -1,4 +1,4 @@
-import type { OptionalPaginationParams, PaginationMeta } from './apiSchemas'
+import type { OptionalPaginationParams, PageResponse, PaginationMeta } from './apiSchemas'
 import { encodeCursor } from './cursorCodec'
 
 const pick = <T, K extends string | number | symbol>(
@@ -85,11 +85,6 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
 	}
 }
 
-export type PaginatedResponse<T> = {
-	data: T[]
-	meta: PaginationMeta
-}
-
 /**
  * Constructs a PaginatedResponse object with the current page respecting page limit and building meta to retrieve next page.
  *
@@ -107,23 +102,23 @@ export type PaginatedResponse<T> = {
  *  - If 'cursorKeys' features multiple keys, the cursor will be an encoded string incorporating the values of these
  *    keys from the last element in 'data'.
  *
- * @returns PaginatedResponse
+ * @returns PageResponse
  */
 export function createPaginatedResponse<T extends { id: string }>(
 	page: T[],
 	pageLimit: number | undefined,
 	cursorKeys?: undefined,
-): PaginatedResponse<T>
+): PageResponse<T>
 export function createPaginatedResponse<T extends Record<string, unknown>, K extends keyof T>(
 	page: T[],
 	pageLimit: number | undefined,
 	cursorKeys: K[],
-): PaginatedResponse<T>
+): PageResponse<T>
 export function createPaginatedResponse<T extends Record<string, unknown>, K extends keyof T>(
 	page: T[],
 	pageLimit?: number,
 	cursorKeys?: K[],
-): PaginatedResponse<T> {
+): PageResponse<T> {
 	return {
 		data: page.slice(0, pageLimit),
 		// @ts-ignore -> on next major version, we can simplify getMetaForNextPage signature and remove ts-ignore
@@ -133,7 +128,7 @@ export function createPaginatedResponse<T extends Record<string, unknown>, K ext
 
 export async function getPaginatedEntries<T>(
 	pagination: OptionalPaginationParams,
-	apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,
+	apiCall: (params: OptionalPaginationParams) => Promise<PageResponse<T>>,
 ): Promise<T[]> {
 	const resultArray: T[] = []
 	let currentCursor: string | undefined = undefined
