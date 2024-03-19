@@ -53,12 +53,12 @@ export const zMeta = z.object({
 
 export type PaginationMeta = z.infer<typeof zMeta>
 
-export const pageResponseSchema = <T extends z.ZodSchema>(dataSchema: T) => {
-	return z.object({
+export const pageResponseSchema = <T extends z.ZodSchema>(dataSchema: T) =>
+	z.object({
 		data: z.array(dataSchema),
 		meta: zMeta,
 	})
-}
+
 export type PageResponse<T> = {
 	data: T[]
 	meta: PaginationMeta
