@@ -22,6 +22,14 @@ describe('paginationUtils', () => {
 		describe('pageLimit', () => {
 			const mockedArray = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }]
 
+			it('pageLimit is undefined', () => {
+				const result = createPaginatedResponse(mockedArray, undefined)
+				expect(result).toEqual({
+					data: mockedArray,
+					meta: { count: 4, cursor: 'd', hasMore: undefined },
+				})
+			})
+
 			it('pageLimit less than input array', () => {
 				const result = createPaginatedResponse(mockedArray, 2)
 				expect(result).toEqual({
