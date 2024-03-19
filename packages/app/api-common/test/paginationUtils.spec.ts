@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import {
+	createPaginatedResponse,
 	encodeCursor,
 	getMetaForNextPage,
 	getPaginatedEntries,
@@ -103,6 +104,102 @@ describe('paginationUtils', () => {
 					count: 3,
 					cursor: encodeCursor({ id: '3', name: 'orange' }),
 					hasMore: false,
+				})
+			})
+		})
+	})
+
+	describe('createPaginatedResponse', () => {
+		it('array is empty', () => {
+			const mockedArray: Entity[] = []
+			const result = createPaginatedResponse(mockedArray, 2)
+			expect(result).toEqual({
+				data: [],
+				meta: { count: 0, hasMore: false },
+			})
+		})
+
+		describe('pageLimit', () => {
+			const mockedArray = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }]
+
+			it('pageLimit less than input array', () => {
+				const result = createPaginatedResponse(mockedArray, 2)
+				expect(result).toEqual({
+					data: [mockedArray[0], mockedArray[1]],
+					meta: { count: 2, cursor: 'b', hasMore: true },
+				})
+			})
+
+			it('pageLimit equal to input array', () => {
+				const result = createPaginatedResponse(mockedArray, 4)
+				expect(result).toEqual({
+					data: mockedArray,
+					meta: { count: 4, cursor: 'd', hasMore: false },
+				})
+			})
+
+			it('pageLimit greater than input array', () => {
+				const result = createPaginatedResponse(mockedArray, 6)
+				expect(result).toEqual({
+					data: mockedArray,
+					meta: { count: 4, cursor: 'd', hasMore: false },
+				})
+			})
+		})
+
+		describe('cursor', () => {
+			it('empty cursorKeys produce error', () => {
+				expect(() => getMetaForNextPage([], [])).toThrowError('cursorKeys cannot be an empty array')
+			})
+
+			it('cursor using id as default', () => {
+				const mockedArray = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+				const result = createPaginatedResponse(mockedArray, 2)
+				expect(result).toEqual({
+					data: [mockedArray[0], mockedArray[1]],
+					meta: { count: 2, cursor: 'b', hasMore: true },
+				})
+			})
+
+			it('cursor using single prop', () => {
+				// not using id as prop to test type checking
+				const mockedArray = [
+					{ extra: 'a', name: 'hello' },
+					{ extra: 'b', name: 'world' },
+				]
+				const result = createPaginatedResponse(mockedArray, 3, ['name'])
+				expect(result).toEqual({
+					data: mockedArray,
+					meta: { count: 2, cursor: 'world', hasMore: false },
+				})
+			})
+
+			it('cursor with multiple fields', () => {
+				const mockedArray = [
+					{
+						id: '1',
+						name: 'apple',
+						description: 'red',
+					},
+					{
+						id: '2',
+						name: 'banana',
+						description: 'yellow',
+					},
+					{
+						id: '3',
+						name: 'orange',
+						description: 'orange',
+					},
+				]
+				const result = createPaginatedResponse(mockedArray, 3, ['id', 'name'])
+				expect(result).toEqual({
+					data: mockedArray,
+					meta: {
+						count: 3,
+						cursor: encodeCursor({ id: '3', name: 'orange' }),
+						hasMore: false,
+					},
 				})
 			})
 		})

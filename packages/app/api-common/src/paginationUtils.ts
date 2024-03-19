@@ -89,6 +89,47 @@ export type PaginatedResponse<T> = {
 	meta: PaginationMeta
 }
 
+/**
+ * Constructs a PaginatedResponse object with the current page respecting page limit and building meta to retrieve next page.
+ *
+ * @param page - Current page of objects which will be included in `data`.
+ * @param pageLimit - An optional number that can be used to specify the expected count of items in the current page.
+ * 	- If it is provided and page length is less than or equal to pageLimit, it means that there are no more items to fetch.
+ * 		In that case, hasMore flag will be set to false. Otherwise, hasMore flag will be set to true.
+ * 		If currentPageData length is greater than pageLimit, count will be set to pageLimit.
+ * 	- If the parameter is not provided, hasMore flag will be undefined.
+ * @param cursorKeys - An optional array of keys that determine the formation of the cursor. By default, this uses
+ *    the 'id' property.
+ *  - If 'cursorKeys' is undefined, the cursor will default to the 'id' property of the last element in 'data'.
+ *  - If 'cursorKeys' contains a single key, the cursor will correspond to the value of that key from the last element
+ *    in 'data'.
+ *  - If 'cursorKeys' features multiple keys, the cursor will be an encoded string incorporating the values of these
+ *    keys from the last element in 'data'.
+ *
+ * @returns PaginatedResponse
+ */
+export function createPaginatedResponse<T extends { id: string }>(
+	page: T[],
+	pageLimit: number | undefined,
+	cursorKeys?: undefined,
+): PaginatedResponse<T>
+export function createPaginatedResponse<T extends Record<string, unknown>, K extends keyof T>(
+	page: T[],
+	pageLimit: number | undefined,
+	cursorKeys: K[],
+): PaginatedResponse<T>
+export function createPaginatedResponse<T extends Record<string, unknown>, K extends keyof T>(
+	page: T[],
+	pageLimit?: number,
+	cursorKeys?: K[],
+): PaginatedResponse<T> {
+	return {
+		data: page.slice(0, pageLimit),
+		// @ts-ignore -> on next major version, we can simplify getMetaForNextPage signature and remove ts-ignore
+		meta: getMetaForNextPage(page, cursorKeys, pageLimit),
+	}
+}
+
 export async function getPaginatedEntries<T>(
 	pagination: OptionalPaginationParams,
 	apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,
