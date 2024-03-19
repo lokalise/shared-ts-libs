@@ -1,10 +1,10 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
-	OptionalPaginationParams,
+	encodeCursor,
 	getMetaForNextPage,
 	getPaginatedEntries,
-	encodeCursor,
+	OptionalPaginationParams,
 } from '../src'
 
 describe('paginationUtils', () => {
@@ -57,6 +57,53 @@ describe('paginationUtils', () => {
 			expect(result).toEqual({
 				count: 3,
 				cursor: encodeCursor({ id: '3', name: 'orange' }),
+			})
+		})
+
+		describe('expectedCount is provided', () => {
+			const mockedArray = [
+				{
+					id: '1',
+					name: 'apple',
+					description: 'red',
+				},
+				{
+					id: '2',
+					name: 'banana',
+					description: 'yellow',
+				},
+				{
+					id: '3',
+					name: 'orange',
+					description: 'orange',
+				},
+			]
+
+			it('expectedCount less than input array length produces truthy hasMore', () => {
+				const result = getMetaForNextPage(mockedArray, ['id', 'name'], 2)
+				expect(result).toEqual({
+					count: 3,
+					cursor: encodeCursor({ id: '3', name: 'orange' }),
+					hasMore: true,
+				})
+			})
+
+			it('expectedCount equal to input array length produces falsy hasMore', () => {
+				const result = getMetaForNextPage(mockedArray, ['id', 'name'], 3)
+				expect(result).toEqual({
+					count: 3,
+					cursor: encodeCursor({ id: '3', name: 'orange' }),
+					hasMore: false,
+				})
+			})
+
+			it('expectedCount greater than input array length produces falsy hasMore', () => {
+				const result = getMetaForNextPage(mockedArray, ['id', 'name'], 4)
+				expect(result).toEqual({
+					count: 3,
+					cursor: encodeCursor({ id: '3', name: 'orange' }),
+					hasMore: false,
+				})
 			})
 		})
 	})

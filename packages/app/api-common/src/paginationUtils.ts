@@ -1,4 +1,4 @@
-import type { PaginationMeta, OptionalPaginationParams } from './apiSchemas'
+import type { OptionalPaginationParams, PaginationMeta } from './apiSchemas'
 import { encodeCursor } from './cursorCodec'
 
 const pick = <T, K extends string | number | symbol>(
@@ -32,21 +32,28 @@ const pick = <T, K extends string | number | symbol>(
  * @param currentPageData - A generic array of objects, each object expected to extend { id: string }.
  * @param cursorKeys - An optional array of keys that determine the formation of the cursor. By default, this uses
  * 	the 'id' property.
+ * @param expectedCount - An optional number that can be used to specify the expected count of the current page.
+ * 	If currentPageData length is less than or equal to expectedCount, it means that there are no more items to fetch.
+ * 	In that case, hasMore flag will be set to false. Otherwise, hasMore flag will be set to true.
+ * 	If the parameter is not provided, hasMore flag will be undefined.
  *
  * @returns PaginationMeta - An object detailing two crucial properties required for effective pagination: total item
- * 	count and the cursor.
+ * 	count, the cursor and has more flag.
  */
 export function getMetaForNextPage<T extends { id: string }>(
 	currentPageData: T[],
 	cursorKeys?: undefined,
+	expectedCount?: number,
 ): PaginationMeta
 export function getMetaForNextPage<T extends Record<string, unknown>, K extends keyof T>(
 	currentPageData: T[],
 	cursorKeys: K[],
+	expectedCount?: number,
 ): PaginationMeta
 export function getMetaForNextPage<T extends Record<string, unknown>, K extends keyof T>(
 	currentPageData: T[],
 	cursorKeys?: K[],
+	expectedCount?: number,
 ): PaginationMeta {
 	if (cursorKeys !== undefined && cursorKeys.length === 0) {
 		throw new Error('cursorKeys cannot be an empty array')
@@ -66,9 +73,12 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
 				: encodeCursor(pick(lastElement, cursorKeys))
 	}
 
+	const hasMore = expectedCount ? currentPageData.length > expectedCount : undefined
+
 	return {
 		count: currentPageData.length,
 		cursor,
+		hasMore,
 	}
 }
 
