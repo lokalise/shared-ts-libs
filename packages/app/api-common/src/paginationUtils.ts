@@ -1,4 +1,4 @@
-import type { PaginationMeta, OptionalPaginationParams } from './apiSchemas'
+import type { OptionalPaginationParams, PaginationMeta } from './apiSchemas'
 import { encodeCursor } from './cursorCodec'
 
 const pick = <T, K extends string | number | symbol>(
@@ -32,21 +32,29 @@ const pick = <T, K extends string | number | symbol>(
  * @param currentPageData - A generic array of objects, each object expected to extend { id: string }.
  * @param cursorKeys - An optional array of keys that determine the formation of the cursor. By default, this uses
  * 	the 'id' property.
+ * @param pageLimit - An optional number that can be used to specify the expected count of items in the current page.
+ * 	- If it is provided and currentPageData length is less than or equal to pageLimit, it means that there are no more items to fetch.
+ * 		In that case, hasMore flag will be set to false. Otherwise, hasMore flag will be set to true.
+ * 		If currentPageData length is greater than pageLimit, count will be set to pageLimit.
+ * 	- If the parameter is not provided, hasMore flag will be undefined.
  *
  * @returns PaginationMeta - An object detailing two crucial properties required for effective pagination: total item
- * 	count and the cursor.
+ * 	count, the cursor and has more flag.
  */
 export function getMetaForNextPage<T extends { id: string }>(
 	currentPageData: T[],
 	cursorKeys?: undefined,
+	pageLimit?: number,
 ): PaginationMeta
 export function getMetaForNextPage<T extends Record<string, unknown>, K extends keyof T>(
 	currentPageData: T[],
 	cursorKeys: K[],
+	pageLimit?: number,
 ): PaginationMeta
 export function getMetaForNextPage<T extends Record<string, unknown>, K extends keyof T>(
 	currentPageData: T[],
 	cursorKeys?: K[],
+	pageLimit?: number,
 ): PaginationMeta {
 	if (cursorKeys !== undefined && cursorKeys.length === 0) {
 		throw new Error('cursorKeys cannot be an empty array')
@@ -66,9 +74,13 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
 				: encodeCursor(pick(lastElement, cursorKeys))
 	}
 
+	const hasMore = pageLimit ? currentPageData.length > pageLimit : undefined
+	const count = pageLimit ? Math.min(currentPageData.length, pageLimit) : currentPageData.length
+
 	return {
-		count: currentPageData.length,
+		count,
 		cursor,
+		hasMore,
 	}
 }
 
