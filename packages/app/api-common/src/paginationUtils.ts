@@ -20,6 +20,7 @@ const pick = <T, K extends string | number | symbol>(
 }
 
 /**
+ * @deprecated use `createPaginatedResponse` instead
  * Constructs a PaginationMeta object encapsulating the total count and the cursor for fetching the next page.
  *
  * The resultant cursor can be either a simple string or an encoded string based on the 'cursorKeys' parameter.
@@ -60,14 +61,13 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
 		throw new Error('cursorKeys cannot be an empty array')
 	}
 	if (currentPageData.length === 0) {
-		return { count: 0 }
+		return { count: 0, hasMore: false }
 	}
 
-	const lastElementIndex = pageLimit
-		? Math.min(currentPageData.length, pageLimit) - 1
-		: currentPageData.length - 1
-	const lastElement = currentPageData[lastElementIndex]
-	let cursor: string = ''
+	const count = pageLimit ? Math.min(currentPageData.length, pageLimit) : currentPageData.length
+
+	const lastElement = currentPageData[count - 1]
+	let cursor: string
 	if (!cursorKeys) {
 		cursor = lastElement.id as string
 	} else {
@@ -77,17 +77,14 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
 				: encodeCursor(pick(lastElement, cursorKeys))
 	}
 
-	const hasMore = pageLimit ? currentPageData.length > pageLimit : undefined
-	const count = pageLimit ? Math.min(currentPageData.length, pageLimit) : currentPageData.length
-
 	return {
 		count,
 		cursor,
-		hasMore,
+		hasMore: pageLimit ? currentPageData.length > pageLimit : undefined,
 	}
 }
 
-type PaginatedResponse<T> = {
+export type PaginatedResponse<T> = {
 	data: T[]
 	meta: PaginationMeta
 }

@@ -12,7 +12,7 @@ describe('paginationUtils', () => {
 		it('array is empty', () => {
 			const mockedArray: Entity[] = []
 			const result = getMetaForNextPage(mockedArray)
-			expect(result).toEqual({ count: 0 })
+			expect(result).toEqual({ count: 0, hasMore: false })
 		})
 
 		it('cursor using id as default', () => {
