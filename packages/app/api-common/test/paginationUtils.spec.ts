@@ -83,7 +83,7 @@ describe('paginationUtils', () => {
 				const result = getMetaForNextPage(mockedArray, ['id', 'name'], 2)
 				expect(result).toEqual({
 					count: 2,
-					cursor: encodeCursor({ id: '2', name: 'orange' }),
+					cursor: encodeCursor({ id: '2', name: 'banana' }),
 					hasMore: true,
 				})
 			})
