@@ -63,7 +63,10 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
 		return { count: 0 }
 	}
 
-	const lastElement = currentPageData[currentPageData.length - 1]
+	const lastElementIndex = pageLimit
+		? Math.min(currentPageData.length, pageLimit) - 1
+		: currentPageData.length - 1
+	const lastElement = currentPageData[lastElementIndex]
 	let cursor: string = ''
 	if (!cursorKeys) {
 		cursor = lastElement.id as string
