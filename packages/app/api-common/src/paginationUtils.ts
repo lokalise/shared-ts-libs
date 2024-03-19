@@ -104,17 +104,17 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
  *
  * @returns PageResponse
  */
-export function createPaginatedResponse<T extends { id: string }>(
+export function createPageResponse<T extends { id: string }>(
 	page: T[],
 	pageLimit: number | undefined,
 	cursorKeys?: undefined,
 ): PageResponse<T>
-export function createPaginatedResponse<T extends Record<string, unknown>, K extends keyof T>(
+export function createPageResponse<T extends Record<string, unknown>, K extends keyof T>(
 	page: T[],
 	pageLimit: number | undefined,
 	cursorKeys: K[],
 ): PageResponse<T>
-export function createPaginatedResponse<T extends Record<string, unknown>, K extends keyof T>(
+export function createPageResponse<T extends Record<string, unknown>, K extends keyof T>(
 	page: T[],
 	pageLimit?: number,
 	cursorKeys?: K[],
