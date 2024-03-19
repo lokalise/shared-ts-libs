@@ -21,6 +21,7 @@ const pick = <T, K extends string | number | symbol>(
 
 /**
  * @deprecated use `createPaginatedResponse` instead
+ *
  * Constructs a PaginationMeta object encapsulating the total count and the cursor for fetching the next page.
  *
  * The resultant cursor can be either a simple string or an encoded string based on the 'cursorKeys' parameter.
