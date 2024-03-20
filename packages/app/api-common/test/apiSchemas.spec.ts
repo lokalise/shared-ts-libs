@@ -5,6 +5,7 @@ import {
 	multiCursorMandatoryPaginationSchema,
 	multiCursorOptionalPaginationSchema,
 	encodeCursor,
+	paginatedResponseSchema,
 } from '../src'
 
 describe('apiSchemas', () => {
@@ -139,6 +140,39 @@ describe('apiSchemas', () => {
 				expect(result).toEqual({
 					before: { id: uuid, name: 'apple' },
 				} satisfies schemaType)
+			})
+		})
+
+		describe('paginatedResponseSchema', () => {
+			const objectSchema = z.object({
+				id: z.string().min(1),
+			})
+			const pageSchema = paginatedResponseSchema(objectSchema)
+			type pageType = z.infer<typeof pageSchema>
+
+			it('validation success', () => {
+				const page: pageType = {
+					data: [{ id: '1' }],
+					meta: {
+						count: 1,
+						cursor: '1',
+						hasMore: false,
+					},
+				}
+				const result = pageSchema.safeParse(page)
+				expect(result.success).toBe(true)
+			})
+			it('validation error', () => {
+				const page: pageType = {
+					data: [{ fake: '1' }] as any,
+					meta: {
+						count: 1,
+						cursor: '1',
+						hasMore: false,
+					},
+				}
+				const result = pageSchema.safeParse(page)
+				expect(result.success).toBe(false)
 			})
 		})
 	})
