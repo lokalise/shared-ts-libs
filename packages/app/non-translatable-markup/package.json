@@ -20,6 +20,9 @@
 			"import": "./dist/index.js"
 		}
 	},
+	"publishConfig": {
+		"access": "public"
+	},
 	"scripts": {
 		"build": "rimraf dist && vite build",
 		"dev": "vite watch",
