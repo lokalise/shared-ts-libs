@@ -30,8 +30,8 @@
 		"build": "rimraf dist && rollup -c --failAfterWarnings",
 		"dev": "tsc --watch",
 		"clean": "rimraf dist .eslintcache",
-		"lint": "eslint --cache --max-warnings=0  && prettier --check --log-level warn src \\\"**/*.{json,md}\\\" && tsc --noEmit",
-		"lint:fix": "eslint  --fix && prettier --write src \\\"**/*.{json,md}\\\"",
+		"lint": "eslint --cache --max-warnings=0 && prettier --check --log-level warn src \"**/*.{json,md}\" && tsc --noEmit",
+		"lint:fix": "eslint  --fix && prettier --write src \"**/*.{json,md}\"",
 		"test": "vitest run --coverage",
 		"prepublishOnly": "npm run build"
 	},
