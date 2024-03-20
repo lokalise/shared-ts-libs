@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import {
-	createPageResponse,
+	createPaginatedResponse,
 	encodeCursor,
 	getMetaForNextPage,
 	getPaginatedEntries,
@@ -9,10 +9,10 @@ import {
 } from '../src'
 
 describe('paginationUtils', () => {
-	describe('createPageResponse', () => {
+	describe('createPaginatedResponse', () => {
 		it('array is empty', () => {
 			const mockedArray: Entity[] = []
-			const result = createPageResponse(mockedArray, 2)
+			const result = createPaginatedResponse(mockedArray, 2)
 			expect(result).toEqual({
 				data: [],
 				meta: { count: 0, hasMore: false },
@@ -23,7 +23,7 @@ describe('paginationUtils', () => {
 			const mockedArray = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }]
 
 			it('pageLimit is undefined', () => {
-				const result = createPageResponse(mockedArray, undefined)
+				const result = createPaginatedResponse(mockedArray, undefined)
 				expect(result).toEqual({
 					data: mockedArray,
 					meta: { count: 4, cursor: 'd', hasMore: undefined },
@@ -31,7 +31,7 @@ describe('paginationUtils', () => {
 			})
 
 			it('pageLimit less than input array', () => {
-				const result = createPageResponse(mockedArray, 2)
+				const result = createPaginatedResponse(mockedArray, 2)
 				expect(result).toEqual({
 					data: [mockedArray[0], mockedArray[1]],
 					meta: { count: 2, cursor: 'b', hasMore: true },
@@ -39,7 +39,7 @@ describe('paginationUtils', () => {
 			})
 
 			it('pageLimit equal to input array', () => {
-				const result = createPageResponse(mockedArray, 4)
+				const result = createPaginatedResponse(mockedArray, 4)
 				expect(result).toEqual({
 					data: mockedArray,
 					meta: { count: 4, cursor: 'd', hasMore: false },
@@ -47,7 +47,7 @@ describe('paginationUtils', () => {
 			})
 
 			it('pageLimit greater than input array', () => {
-				const result = createPageResponse(mockedArray, 6)
+				const result = createPaginatedResponse(mockedArray, 6)
 				expect(result).toEqual({
 					data: mockedArray,
 					meta: { count: 4, cursor: 'd', hasMore: false },
@@ -62,7 +62,7 @@ describe('paginationUtils', () => {
 
 			it('cursor using id as default', () => {
 				const mockedArray = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
-				const result = createPageResponse(mockedArray, 2)
+				const result = createPaginatedResponse(mockedArray, 2)
 				expect(result).toEqual({
 					data: [mockedArray[0], mockedArray[1]],
 					meta: { count: 2, cursor: 'b', hasMore: true },
@@ -75,7 +75,7 @@ describe('paginationUtils', () => {
 					{ extra: 'a', name: 'hello' },
 					{ extra: 'b', name: 'world' },
 				]
-				const result = createPageResponse(mockedArray, 3, ['name'])
+				const result = createPaginatedResponse(mockedArray, 3, ['name'])
 				expect(result).toEqual({
 					data: mockedArray,
 					meta: { count: 2, cursor: 'world', hasMore: false },
@@ -100,7 +100,7 @@ describe('paginationUtils', () => {
 						description: 'orange',
 					},
 				]
-				const result = createPageResponse(mockedArray, 3, ['id', 'name'])
+				const result = createPaginatedResponse(mockedArray, 3, ['id', 'name'])
 				expect(result).toEqual({
 					data: mockedArray,
 					meta: {

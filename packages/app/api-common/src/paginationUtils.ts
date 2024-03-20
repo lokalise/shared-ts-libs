@@ -1,4 +1,4 @@
-import type { OptionalPaginationParams, PageResponse, PaginationMeta } from './apiSchemas'
+import type { OptionalPaginationParams, PaginatedResponse, PaginationMeta } from './apiSchemas'
 import { encodeCursor } from './cursorCodec'
 
 const pick = <T, K extends string | number | symbol>(
@@ -104,21 +104,21 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
  *
  * @returns PageResponse
  */
-export function createPageResponse<T extends { id: string }>(
+export function createPaginatedResponse<T extends { id: string }>(
 	page: T[],
 	pageLimit: number | undefined,
 	cursorKeys?: undefined,
-): PageResponse<T>
-export function createPageResponse<T extends Record<string, unknown>, K extends keyof T>(
+): PaginatedResponse<T>
+export function createPaginatedResponse<T extends Record<string, unknown>, K extends keyof T>(
 	page: T[],
 	pageLimit: number | undefined,
 	cursorKeys: K[],
-): PageResponse<T>
-export function createPageResponse<T extends Record<string, unknown>, K extends keyof T>(
+): PaginatedResponse<T>
+export function createPaginatedResponse<T extends Record<string, unknown>, K extends keyof T>(
 	page: T[],
 	pageLimit?: number,
 	cursorKeys?: K[],
-): PageResponse<T> {
+): PaginatedResponse<T> {
 	return {
 		data: page.slice(0, pageLimit),
 		// @ts-ignore -> on next major version, we can simplify getMetaForNextPage signature and remove ts-ignore
@@ -126,9 +126,9 @@ export function createPageResponse<T extends Record<string, unknown>, K extends 
 	}
 }
 
-export async function getPaginatedEntries<T>(
+export async function getPaginatedEntries<T extends Record<string, unknown>>(
 	pagination: OptionalPaginationParams,
-	apiCall: (params: OptionalPaginationParams) => Promise<PageResponse<T>>,
+	apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,
 ): Promise<T[]> {
 	const resultArray: T[] = []
 	let currentCursor: string | undefined = undefined

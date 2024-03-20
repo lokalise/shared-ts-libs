@@ -5,7 +5,7 @@ import {
 	multiCursorMandatoryPaginationSchema,
 	multiCursorOptionalPaginationSchema,
 	encodeCursor,
-	pageResponseSchema,
+	paginatedResponseSchema,
 } from '../src'
 
 describe('apiSchemas', () => {
@@ -143,11 +143,11 @@ describe('apiSchemas', () => {
 			})
 		})
 
-		describe('pageResponseSchema', () => {
+		describe('paginatedResponseSchema', () => {
 			const objectSchema = z.object({
 				id: z.string().min(1),
 			})
-			const pageSchema = pageResponseSchema(objectSchema)
+			const pageSchema = paginatedResponseSchema(objectSchema)
 			type pageType = z.infer<typeof pageSchema>
 
 			it('validation success', () => {
