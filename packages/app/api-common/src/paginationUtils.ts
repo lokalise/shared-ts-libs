@@ -103,6 +103,8 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
  *    keys from the last element in 'data'.
  *
  * @returns PageResponse
+ *
+ * Note: `hasMore` flag will be undefined if `pageLimit` is not provided, please read the param doc for more details.
  */
 export function createPaginatedResponse<T extends { id: string }>(
 	page: T[],
