@@ -59,6 +59,7 @@ describe('nonTranslatableContentHelper', () => {
 			'\uE101{% if MyVariable %}\uE102 Hello \uE101{% endif %}\uE102 world', // removed non translatable content
 			'\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Goodbye \uE101{% endif %} world', // unbalanced tags
 			'\uE101{% if MyVariable %}\uE102 Hello \uE101{% endif %}\uE102 Goodbye \uE101{% else %}\uE102 world', // swapped non translatable content
+			'\uE101{% if MyVariable %} Hello {% endif %} Goodbye {% else %}\uE102', // whole content is non-translatable
 		])('returns true if non translatable content is edited', (updatedValue) => {
 			const originalValue =
 				'\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Goodbye \uE101{% endif %}\uE102 world'
