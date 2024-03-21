@@ -35,7 +35,7 @@ export type Room<Rn extends RoomName> = Rooms[Rn]
  */
 export type RoomId = `${RoomName}|${string}`
 
-const SEPARATOR = '|' as const
+const SEPARATOR = '|'
 
 export const getRoomId = <Rn extends RoomName>(
 	roomName: Rn,
