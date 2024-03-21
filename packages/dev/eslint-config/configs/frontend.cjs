@@ -13,11 +13,6 @@ module.exports = {
 		browser: true,
 		node: true,
 	},
-	settings: {
-		jest: {
-			version: '>= 27',
-		},
-	},
 	rules: {
 		'import/no-extraneous-dependencies': ['error', { packageDir: './' }],
 	},
