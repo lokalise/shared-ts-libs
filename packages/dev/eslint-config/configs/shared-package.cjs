@@ -1,9 +1,8 @@
 module.exports = {
 	ignorePatterns: ['node_modules', 'dist'],
-	plugins: ['@typescript-eslint', 'prettier', 'vitest', 'import'],
+	plugins: ['@typescript-eslint', 'vitest', 'import'],
 	extends: [
 		'eslint:recommended',
-		'plugin:prettier/recommended',
 		'plugin:import/recommended',
 		'plugin:import/typescript',
 		'plugin:vitest/recommended',
@@ -11,7 +10,6 @@ module.exports = {
 		'./tests.cjs',
 	],
 	rules: {
-		'prettier/prettier': 'error',
 		// Disabling since rule has a bug where it has false positive when named export matches module name
 		'import/no-named-as-default': 'off',
 		'import/no-named-as-default-member': 'off',
