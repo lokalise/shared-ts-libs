@@ -9,12 +9,7 @@
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
-    "lint:fix": "npm run lint:fix --workspaces --if-present",
-    "version": "auto-changelog -p && git add CHANGELOG.md"
+    "lint:fix": "npm run lint:fix --workspaces --if-present"
   },
-  "dependencies": {
-  },
-  "devDependencies": {
-    "auto-changelog": "^2.4.0"
-  }
+  "dependencies": {}
 }
