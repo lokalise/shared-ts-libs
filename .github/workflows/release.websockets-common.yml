@@ -1,0 +1,19 @@
+name: Package release to NPM -> websockets-common
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+    paths:
+      - 'packages/app/websockets-common/**'
+
+jobs:
+  call-build-flow:
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@branch
+    with:
+      working_directory: 'packages/app/websockets-common'
+      package_name: 'websockets-common'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+      # bot_token: ${{ secrets.BOT_TOKEN }} # not used for now, but might be useful in the future for changelog generation
