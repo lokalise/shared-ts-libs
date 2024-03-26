@@ -34,7 +34,7 @@
 		"zod": "^3.22.0"
 	},
 	"devDependencies": {
-		"@lokalise/eslint-config": "*",
+		"@lokalise/eslint-config": "^1.0.1",
 		"@lokalise/prettier-config": "^1.0.0",
 		"@lokalise/package-vite-config": "^2.0.0",
 		"@vitest/coverage-v8": "^1.4.0",
