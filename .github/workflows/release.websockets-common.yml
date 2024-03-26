@@ -16,4 +16,3 @@ jobs:
       package_name: 'websockets-common'
     secrets:
       npm_token: ${{ secrets.NPM_TOKEN }}
-      # bot_token: ${{ secrets.BOT_TOKEN }} # not used for now, but might be useful in the future for changelog generation

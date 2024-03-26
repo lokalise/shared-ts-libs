@@ -19,6 +19,9 @@ jobs:
     name: release
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -55,7 +58,7 @@ jobs:
         working-directory: ${{ inputs.working_directory }}
 
       - name: Git push
-        run: COMMIT_MSG=$(npm run --silent package-version --workspace=${{ inputs.working_directory }})) && git commit -am "${{ inputs.package_name }} $COMMIT_MSG" && git push origin main
+        run: COMMIT_MSG=$(npm run --silent package-version --workspace=${{ inputs.working_directory }}) && git commit -am "${{ inputs.package_name }} $COMMIT_MSG" && git push origin main
 
       - name: Release Package
         env:
