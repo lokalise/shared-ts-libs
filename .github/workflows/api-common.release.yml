@@ -19,6 +19,9 @@ jobs:
       WORKING_DIRECTORY: packages/app/api-common
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -55,7 +58,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: Git push
-        run: COMMIT_MSG=$(npm run --silent package-version --workspace=${{ env.WORKING_DIRECTORY }})) && git commit -am "${{ env.PACKAGE_NAME }}) $COMMIT_MSG" && git push origin main
+        run: COMMIT_MSG=$(npm run --silent package-version --workspace=${{ env.WORKING_DIRECTORY }}) && git commit -am "${{ env.PACKAGE_NAME }} $COMMIT_MSG" && git push origin main
 
       - name: Release Package
         env:
