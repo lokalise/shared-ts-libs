@@ -1,6 +1,6 @@
 module.exports = {
 	ignorePatterns: ['node_modules', 'dist'],
-	plugins: ['@typescript-eslint', 'vitest', 'import'],
+	plugins: ['@typescript-eslint', 'vitest', 'import', 'sonarjs'],
 	extends: [
 		'eslint:recommended',
 		'plugin:import/recommended',
@@ -27,6 +27,7 @@ module.exports = {
 		'max-params': ['error', { max: 4 }],
 		'max-statements': ['error', { max: 15 }],
 		complexity: ['error', { max: 20 }],
+		'sonarjs/cognitive-complexity': 'error',
 	},
 	overrides: [
 		{
