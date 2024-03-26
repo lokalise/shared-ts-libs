@@ -10,7 +10,7 @@ on:
 
 jobs:
   call-build-flow:
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@branch
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
     with:
       working_directory: 'packages/app/websockets-common'
       package_name: 'websockets-common'
