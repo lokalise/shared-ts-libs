@@ -8,6 +8,7 @@
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",
+	"enableTransparentWorkspaces": "false",
 	"homepage": "https://github.com/lokalise/shared-ts-libs",
 	"repository": {
 		"type": "git",
@@ -34,10 +35,10 @@
 		"zod": "^3.22.0"
 	},
 	"devDependencies": {
-		"@lokalise/eslint-config": "*",
-		"@lokalise/prettier-config": "*",
-		"@lokalise/package-vite-config": "*",
-		"@vitest/coverage-v8": "^1.1.3",
+		"@lokalise/eslint-config": "latest",
+		"@lokalise/prettier-config": "latest",
+		"@lokalise/package-vite-config": "latest",
+		"@vitest/coverage-v8": "^1.4.0",
 		"prettier": "3.2.5",
 		"rimraf": "^5.0.1",
 		"typescript": "5.4.3",
