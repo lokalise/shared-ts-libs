@@ -1,5 +1,5 @@
 {
-	"name": "@lokalise/id-utils",
+	"name": "@lokalise/error-utils",
 	"version": "1.0.0",
 	"type": "module",
 	"files": [
@@ -30,11 +30,11 @@
 		"prepublishOnly": "npm run build"
 	},
 	"dependencies": {
-		"ulid-uuid-converter": "^1.0.4",
-		"ulidx": "^2.1.0"
+		"@bugsnag/js": "^7.22.4"
 	},
 	"devDependencies": {
 		"@lokalise/eslint-config": "*",
+		"@lokalise/node-core": "^9.6.1",
 		"@lokalise/prettier-config": "*",
 		"@lokalise/package-vite-config": "*",
 		"@vitest/coverage-v8": "^1.1.3",
