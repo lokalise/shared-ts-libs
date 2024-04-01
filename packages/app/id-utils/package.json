@@ -24,8 +24,8 @@
 		"build": "rimraf dist && vite build",
 		"dev": "vite watch",
 		"clean": "rimraf dist .eslintcache",
-		"lint": "eslint --cache --max-warnings=0  && prettier --check --log-level warn src \\\"**/*.{json,md}\\\" && tsc --noEmit",
-		"lint:fix": "eslint  --fix && prettier --write src \\\"**/*.{json,md}\\\"",
+		"lint": "eslint --cache --max-warnings=0  && prettier --check --log-level warn src \"**/*.{json,md}\" && tsc --noEmit",
+		"lint:fix": "eslint  --fix && prettier --write src \"**/*.{json,md}\"",
 		"test": "vitest run --coverage",
 		"prepublishOnly": "npm run build"
 	},

@@ -37,8 +37,11 @@ export const isAttemptToEditNonTranslatableContent = (
 		return true
 	}
 
-	for (let i = 0; i < nonTranslatableContentInText.length; i++) {
-		if (nonTranslatableContentInText[i] !== nonTranslatableContentInUpdatedText[i]) {
+	const sortedNonTranslatableContentInText = nonTranslatableContentInText.sort()
+	const sortedNonTranslatableContentInUpdatedText = nonTranslatableContentInUpdatedText.sort()
+
+	for (let i = 0; i < sortedNonTranslatableContentInText.length; i++) {
+		if (sortedNonTranslatableContentInText[i] !== sortedNonTranslatableContentInUpdatedText[i]) {
 			return true
 		}
 	}
