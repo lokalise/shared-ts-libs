@@ -1,4 +1,4 @@
-name: Package release to NPM -> websockets-common
+name: Package release to NPM -> events-common
 on:
   pull_request:
     types:

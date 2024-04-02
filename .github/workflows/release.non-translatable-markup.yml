@@ -1,4 +1,4 @@
-name: Package release to NPM -> websockets-common
+name: Package release to NPM -> non-translatable-markup
 on:
   pull_request:
     types:
