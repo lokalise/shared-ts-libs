@@ -28,15 +28,16 @@
 		"lint:fix": "eslint . --fix && prettier --write src test \"**/*.{json,md}\"",
 		"test": "vitest run --coverage",
 		"pretest:ci": "cross-env NODE_ENV=test npm run build",
-		"prepublishOnly": "npm run build"
+		"prepublishOnly": "npm run build",
+		"package-version": "echo $npm_package_version"
 	},
 	"peerDependencies": {
 		"zod": "^3.22.0"
 	},
 	"devDependencies": {
-		"@lokalise/eslint-config": "*",
-		"@lokalise/prettier-config": "*",
-		"@lokalise/package-vite-config": "*",
+		"@lokalise/eslint-config": "latest",
+		"@lokalise/prettier-config": "latest",
+		"@lokalise/package-vite-config": "latest",
 		"@message-queue-toolkit/sns": "^12.0.2",
 		"@vitest/coverage-v8": "^1.1.3",
 		"prettier": "3.2.5",
