@@ -1,0 +1,67 @@
+name: Package release to NPM
+on:
+  workflow_call:
+    inputs:
+      working_directory:
+        required: true
+        type: string
+      package_name:
+        required: true
+        type: string
+    secrets:
+      npm_token:
+        required: true
+
+jobs:
+  release:
+    # Only run for pull requests that has been merged (not closed) and that doesn't have `skip-release` label
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'skip-release') == false
+    name: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          scope: '@lokalise'
+          always-auth: true
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: ${{ inputs.working_directory }}
+
+      - name: Build Package
+        run: npm run build
+        working-directory: ${{ inputs.working_directory }}
+
+      - name: Setup git config
+        run: |
+          git config --global user.email "auto-release@lokalise.com"
+          git config --global user.name "AUTO RELEASE"
+
+      # Apply proper semver according to GitHub labels
+      - name: Major label detected
+        if: contains(github.event.pull_request.labels.*.name, 'major')
+        run: npm version major
+        working-directory: ${{ inputs.working_directory }}
+      - name: Minor label detected
+        if: contains(github.event.pull_request.labels.*.name, 'minor')
+        run: npm version minor
+        working-directory: ${{ inputs.working_directory }}
+      - name: Patch label detected
+        if: contains(github.event.pull_request.labels.*.name, 'patch')
+        run: npm version patch
+        working-directory: ${{ inputs.working_directory }}
+
+      - name: Git push
+        run: COMMIT_MSG=$(npm run --silent package-version --workspace=${{ inputs.working_directory }}) && git commit -am "${{ inputs.package_name }} $COMMIT_MSG" && git push origin main
+
+      - name: Release Package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+        run: npm publish
+        working-directory: ${{ inputs.working_directory }}
