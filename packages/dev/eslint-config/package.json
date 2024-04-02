@@ -17,7 +17,8 @@
 	},
 	"scripts": {
 		"lint": "prettier --check .",
-		"lint:fix": "prettier --write ."
+		"lint:fix": "prettier --write .",
+		"package-version": "echo $npm_package_version"
 	},
 	"dependencies": {
 		"@lokalise/eslint-config-frontend": "^4.4.0",
@@ -25,7 +26,7 @@
 		"@typescript-eslint/parser": "^7.3.1"
 	},
 	"devDependencies": {
-		"@lokalise/prettier-config": "*",
+		"@lokalise/prettier-config": "latest",
 		"prettier": "^3.2.5"
 	},
 	"prettier": "@lokalise/prettier-config"
