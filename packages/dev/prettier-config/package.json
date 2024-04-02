@@ -19,5 +19,8 @@
       "import": "./index.json",
       "require": "./index.json"
     }
+  },
+  "scripts": {
+    "package-version": "echo $npm_package_version"
   }
 }
