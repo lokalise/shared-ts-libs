@@ -1,0 +1,18 @@
+name: Package release to NPM -> supported-languages
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+    paths:
+      - 'packages/app/supported-languages/**'
+
+jobs:
+  call-build-flow:
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/supported-languages'
+      package_name: 'supported-languages'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
