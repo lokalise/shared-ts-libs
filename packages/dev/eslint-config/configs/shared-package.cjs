@@ -13,6 +13,7 @@ module.exports = {
 		// Disabling since rule has a bug where it has false positive when named export matches module name
 		'import/no-named-as-default': 'off',
 		'import/no-named-as-default-member': 'off',
+		'no-mixed-spaces-and-tabs': 'off',
 		'import/no-default-export': 'error',
 		'import/no-extraneous-dependencies': ['error', { packageDir: './' }],
 		'import/order': [
@@ -22,7 +23,6 @@ module.exports = {
 				'newlines-between': 'always',
 			},
 		],
-		'no-mixed-spaces-and-tabs': 'off',
 		'object-shorthand': ['error', 'always'],
 		'max-lines': ['error', { max: 600 }],
 		'max-params': ['error', { max: 4 }],
