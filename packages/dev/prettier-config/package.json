@@ -21,6 +21,8 @@
     }
   },
   "scripts": {
+    "build": "echo 'No build step required.'",
+    "lint": "echo 'No lint step required.'",
     "package-version": "echo $npm_package_version"
   }
 }

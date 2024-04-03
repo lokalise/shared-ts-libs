@@ -16,6 +16,7 @@
 		]
 	},
 	"scripts": {
+		"build": "echo 'No build step required.'",
 		"lint": "prettier --check .",
 		"lint:fix": "prettier --write .",
 		"package-version": "echo $npm_package_version"
