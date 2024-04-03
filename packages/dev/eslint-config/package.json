@@ -20,7 +20,7 @@
 		"lint:fix": "prettier --write ."
 	},
 	"dependencies": {
-		"@lokalise/eslint-config-frontend": "^4.4.0",
+		"@lokalise/eslint-config-frontend": "^4.6.0",
 		"@tanstack/eslint-plugin-query": "^5.28.6",
 		"@typescript-eslint/parser": "^7.3.1"
 	},

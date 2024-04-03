@@ -22,6 +22,7 @@ module.exports = {
 				'newlines-between': 'always',
 			},
 		],
+		'no-mixed-spaces-and-tabs': 'off',
 		'object-shorthand': ['error', 'always'],
 		'max-lines': ['error', { max: 600 }],
 		'max-params': ['error', { max: 4 }],
