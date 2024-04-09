@@ -27,7 +27,7 @@ module.exports = {
 		'object-shorthand': ['error', 'always'],
 		'max-lines': ['error', { max: 600 }],
 		'max-params': ['error', { max: 4 }],
-		'max-statements': ['error', { max: 20 }],
+		'max-statements': ['error', { max: 18 }],
 		complexity: ['error', { max: 20 }],
 	},
 	overrides: [
