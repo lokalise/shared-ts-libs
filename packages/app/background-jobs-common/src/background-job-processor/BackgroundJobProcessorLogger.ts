@@ -1,6 +1,7 @@
-import type { Job } from 'bullmq'
 import type { BaseLogger, Bindings, ChildLoggerOptions, Logger } from 'pino'
 import type pino from 'pino'
+
+import type { SafeJob } from './types'
 
 const hasMsgProperty = (obj: unknown): obj is { msg: string } => {
 	return typeof obj === 'object' && obj !== null && 'msg' in obj && typeof obj.msg === 'string'
@@ -14,9 +15,9 @@ const hasMessageProperty = (obj: unknown): obj is { message: string } => {
 
 export class BackgroundJobProcessorLogger implements BaseLogger {
 	private readonly logger: Logger
-	private readonly job: Job<unknown>
+	private readonly job: SafeJob<unknown>
 
-	constructor(logger: Logger, job: Job<unknown>) {
+	constructor(logger: Logger, job: SafeJob<unknown>) {
 		this.logger = logger
 		this.job = job
 	}
