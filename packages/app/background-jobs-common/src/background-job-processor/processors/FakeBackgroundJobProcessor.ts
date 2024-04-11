@@ -3,6 +3,7 @@ import type { Job } from 'bullmq'
 import type { BackgroundJobProcessorDependencies } from '../types'
 
 import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor'
+import { CommonBullmqFactory } from './factories/CommonBullmqFactory'
 
 export class FakeBackgroundJobProcessor<
 	T extends object,
@@ -10,17 +11,23 @@ export class FakeBackgroundJobProcessor<
 	private _processCalls: T[] = []
 
 	constructor(
-		dependencies: BackgroundJobProcessorDependencies<T>,
+		dependencies: Omit<BackgroundJobProcessorDependencies<T>, 'bullmqFactory'>,
 		queueName: string,
 		isTest = true,
 	) {
-		super(dependencies, {
-			queueId: queueName,
-			isTest,
-			workerOptions: {
-				concurrency: 1,
+		super(
+			{
+				...dependencies,
+				bullmqFactory: new CommonBullmqFactory(),
 			},
-		})
+			{
+				queueId: queueName,
+				isTest,
+				workerOptions: {
+					concurrency: 1,
+				},
+			},
+		)
 	}
 	protected override process(job: Job<T>): Promise<void> {
 		this._processCalls.push(job.data)
