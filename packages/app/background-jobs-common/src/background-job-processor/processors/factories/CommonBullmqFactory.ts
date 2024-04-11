@@ -1,6 +1,5 @@
-import type { Processor, QueueOptions, WorkerOptions, Job } from 'bullmq'
 import { Queue, Worker } from 'bullmq'
-import type { JobsOptions } from 'bullmq/dist/esm/types'
+import type { Processor, QueueOptions, WorkerOptions, Job , JobsOptions } from 'bullmq'
 
 import type { BullmqProcessor } from '../../types'
 

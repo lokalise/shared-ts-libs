@@ -1,6 +1,5 @@
 import type { ErrorReporter } from '@lokalise/node-core'
-import type { Job, FinishedStatus, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
-import type { JobsOptions } from 'bullmq/dist/esm/types'
+import type { Job, FinishedStatus, Queue, QueueOptions, Worker, WorkerOptions , JobsOptions } from 'bullmq'
 import type Redis from 'ioredis'
 import type { Logger } from 'pino'
 
