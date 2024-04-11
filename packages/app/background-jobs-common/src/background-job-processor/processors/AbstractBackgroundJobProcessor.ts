@@ -220,7 +220,8 @@ export abstract class AbstractBackgroundJobProcessor<
 		}
 
 		if (this.config.isTest && typeof preparedOptions.backoff === 'object') {
-			preparedOptions.backoff.delay = 0
+			preparedOptions.backoff.delay = 1
+			preparedOptions.backoff.type = 'fixed'
 			preparedOptions.removeOnFail = true
 			preparedOptions.removeOnComplete = true
 		}
