@@ -13,7 +13,7 @@ export class CommonBullmqFactory<JobPayload extends object, JobReturn = void>
 			Worker<JobPayload, JobReturn>,
 			WorkerOptions,
 			BullmqProcessor<Job, JobPayload, JobReturn>,
-			Job,
+			Job<JobPayload, JobReturn>,
 			JobPayload,
 			JobReturn
 		>
