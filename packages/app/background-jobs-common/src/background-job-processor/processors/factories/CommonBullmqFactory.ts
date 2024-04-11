@@ -1,5 +1,5 @@
 import { Queue, Worker } from 'bullmq'
-import type { Processor, QueueOptions, WorkerOptions, Job , JobsOptions } from 'bullmq'
+import type { Processor, QueueOptions, WorkerOptions, Job, JobsOptions } from 'bullmq'
 
 import type { BullmqProcessor } from '../../types'
 
