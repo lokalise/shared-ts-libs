@@ -18,6 +18,8 @@ import type {
 	BackgroundJobProcessorConfig,
 	BackgroundJobProcessorDependencies,
 	BullmqProcessor,
+	SafeJob,
+	SafeQueue,
 	TransactionObservabilityManager,
 } from '../types'
 import { daysToMilliseconds, daysToSeconds, isStalledJobError, resolveJobId } from '../utils'
@@ -64,8 +66,8 @@ const DEFAULT_WORKER_OPTIONS = {
 export abstract class AbstractBackgroundJobProcessor<
 	JobPayload extends object,
 	JobReturn = void,
-	JobType extends Job<JobPayload, JobReturn> = Job,
-	QueueType extends Queue<JobPayload, JobReturn> = Queue<JobPayload, JobReturn>,
+	JobType extends SafeJob<JobPayload, JobReturn> = Job,
+	QueueType extends SafeQueue<JobOptionsType, JobPayload, JobReturn> = Queue<JobPayload, JobReturn>,
 	QueueOptionsType extends QueueOptions = QueueOptions,
 	WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
 	WorkerOptionsType extends WorkerOptions = WorkerOptions,
@@ -94,7 +96,8 @@ export abstract class AbstractBackgroundJobProcessor<
 		ProcessorType,
 		JobType,
 		JobPayload,
-		JobReturn
+		JobReturn,
+		JobOptionsType
 	>
 
 	protected constructor(
@@ -102,6 +105,7 @@ export abstract class AbstractBackgroundJobProcessor<
 			JobPayload,
 			JobReturn,
 			JobType,
+			JobOptionsType,
 			QueueType,
 			QueueOptionsType,
 			WorkerType,
@@ -321,12 +325,9 @@ export abstract class AbstractBackgroundJobProcessor<
 		return this.queue
 	}
 
-	protected abstract process(
-		job: Job<JobPayload>,
-		requestContext: RequestContext,
-	): Promise<JobReturn>
+	protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
 	protected abstract onFailed(
-		job: Job<JobPayload>,
+		job: JobType,
 		error: Error,
 		requestContext: RequestContext,
 	): Promise<void>

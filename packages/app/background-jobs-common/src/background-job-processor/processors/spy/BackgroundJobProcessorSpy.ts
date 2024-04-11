@@ -1,7 +1,7 @@
 import { removeNullish } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 
-import type { JobFinalState } from '../../types'
+import type { JobFinalState, SafeJob } from '../../types'
 
 import type { BackgroundJobProcessorSpyInterface, JobSpyResult, JobDataSelector } from './types'
 
@@ -10,11 +10,11 @@ type JobProcessingResult<T extends object> = {
 	state?: JobFinalState
 }
 type PromiseResolve<T extends object> = (value: T | PromiseLike<T>) => void
-type JobSelector<T extends object> = (job: Job<T>) => boolean
+type JobSelector<T extends object> = (job: SafeJob<T>) => boolean
 type SpyPromise<T extends object> = {
 	selector: JobSelector<T>
 	awaitedState: JobFinalState
-	resolve: PromiseResolve<Job<T>>
+	resolve: PromiseResolve<SafeJob<T>>
 	promise: Promise<Job<T>>
 }
 
@@ -87,7 +87,7 @@ export class BackgroundJobProcessorSpy<JobData extends object>
 	 * @param  state - Final state of the job.
 	 * @returns void
 	 */
-	addJobProcessingResult(job: Job<JobData>, state: JobFinalState): void {
+	addJobProcessingResult(job: SafeJob<JobData>, state: JobFinalState): void {
 		if (!job.id) return
 		this.jobProcessingResults.set(job.id, { job, state })
 

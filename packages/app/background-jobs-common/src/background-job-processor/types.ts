@@ -1,5 +1,13 @@
 import type { ErrorReporter } from '@lokalise/node-core'
-import type { Job, FinishedStatus, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
+import type {
+	Job,
+	FinishedStatus,
+	Queue,
+	QueueOptions,
+	Worker,
+	WorkerOptions,
+	JobsOptions,
+} from 'bullmq'
 import type Redis from 'ioredis'
 import type { Logger } from 'pino'
 
@@ -26,6 +34,21 @@ export type TransactionObservabilityManager = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SafeJob<T = any, R = any, N extends string = string> = Omit<Job<T, R, N>, 'scripts'>
 
+export type SafeQueue<
+	JobsOptionsType = JobsOptions,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	DataType = any,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	ResultType = any,
+	NameType extends string = string,
+> = Omit<Queue<DataType, ResultType, NameType>, 'add'> & {
+	add(
+		name: NameType,
+		data: DataType,
+		opts?: JobsOptionsType,
+	): Promise<SafeJob<DataType, ResultType, NameType>>
+}
+
 export type BullmqProcessor<
 	J extends SafeJob<T, R, N>,
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,7 +62,11 @@ export type BackgroundJobProcessorDependencies<
 	JobPayload extends object,
 	JobReturn = void,
 	JobType extends SafeJob<JobPayload, JobReturn> = Job,
-	QueueType extends Queue<JobPayload, JobReturn> = Queue<JobPayload, JobReturn>,
+	JobsOptionsType extends JobsOptions = JobsOptions,
+	QueueType extends SafeQueue<JobsOptionsType, JobPayload, JobReturn> = Queue<
+		JobPayload,
+		JobReturn
+	>,
 	QueueOptionsType extends QueueOptions = QueueOptions,
 	WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
 	WorkerOptionsType extends WorkerOptions = WorkerOptions,
@@ -61,6 +88,7 @@ export type BackgroundJobProcessorDependencies<
 		ProcessorType,
 		JobType,
 		JobPayload,
-		JobReturn
+		JobReturn,
+		JobsOptionsType
 	>
 }
