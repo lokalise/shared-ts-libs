@@ -5,13 +5,11 @@
 		"dist",
 		"README.md"
 	],
-	"type": "module",
-	"main": "./dist/index.cjs",
-	"module": "./dist/index.js",
+	"type": "commonjs",
+	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"scripts": {
-		"build": "rimraf dist && vite build",
-		"build:ts": "rimraf dist && tsc",
+		"build": "rimraf dist && tsc",
 		"clean": "rimraf dist .eslintcache",
 		"lint": "eslint --cache --max-warnings=0 . && prettier --check --log-level warn src \"**/*.{json,md,ts,tsx}\" && tsc --noEmit",
 		"lint:fix": "prettier --write src \"**/*.{json,md,ts,tsx}\" --log-level=warn && eslint . --fix",
@@ -42,7 +40,6 @@
 		"prettier": "3.2.5",
 		"rimraf": "^5.0.5",
 		"typescript": "5.4.5",
-		"vite": "^5.2.8",
 		"vitest": "^1.4.0"
 	},
 	"prettier": "@lokalise/prettier-config"
