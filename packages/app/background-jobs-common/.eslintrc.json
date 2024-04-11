@@ -1,0 +1,6 @@
+{
+	"extends": ["@lokalise/eslint-config/shared-package"],
+	"parserOptions": {
+		"project": "./tsconfig.lint.json"
+	}
+}
