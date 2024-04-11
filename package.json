@@ -6,7 +6,7 @@
     "packages/app/*"
   ],
   "scripts": {
-    "build": "npm run build -w packages/app/id-utils && npm run build --workspaces --if-present",
+    "build": "npm run build -w packages/dev/package-vite-config && npm run build -w packages/app/id-utils && npm run build --workspaces --if-present",
     "test:ci": "npm run test:ci --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "lint:fix": "npm run lint:fix --workspaces --if-present"
