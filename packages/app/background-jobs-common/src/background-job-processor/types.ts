@@ -22,16 +22,23 @@ export type TransactionObservabilityManager = {
 	stop: (transactionSpanId: string) => unknown
 }
 
+// "scripts" field is incompatible between free and pro versions, and it's not particularly important
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type BullmqProcessor<J extends Job<T, R, N>, T = any, R = any, N extends string = string> = (
-	job: J,
-	token?: string,
-) => Promise<R>
+export type SafeJob<T = any, R = any, N extends string = string> = Omit<Job<T, R, N>, 'scripts'>
+
+export type BullmqProcessor<
+	J extends SafeJob<T, R, N>,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	T = any,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	R = any,
+	N extends string = string,
+> = (job: J, token?: string) => Promise<R>
 
 export type BackgroundJobProcessorDependencies<
 	JobPayload extends object,
 	JobReturn = void,
-	JobType extends Job<JobPayload, JobReturn> = Job,
+	JobType extends SafeJob<JobPayload, JobReturn> = Job,
 	QueueType extends Queue<JobPayload, JobReturn> = Queue<JobPayload, JobReturn>,
 	QueueOptionsType extends QueueOptions = QueueOptions,
 	WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,

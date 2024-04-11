@@ -1,6 +1,6 @@
-import type { Job, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
+import type { Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
 
-import type { BullmqProcessor } from '../../types'
+import type { BullmqProcessor, SafeJob } from '../../types'
 
 export abstract class AbstractBullmqFactory<
 	QueueType extends Queue<JobPayload, JobReturn>,
@@ -8,7 +8,7 @@ export abstract class AbstractBullmqFactory<
 	WorkerType extends Worker<JobPayload, JobReturn>,
 	WorkerOptionsType extends WorkerOptions,
 	ProcessorType extends BullmqProcessor<JobType, JobPayload, JobReturn>,
-	JobType extends Job,
+	JobType extends SafeJob<JobPayload, JobReturn>,
 	JobPayload extends object,
 	JobReturn,
 > {
