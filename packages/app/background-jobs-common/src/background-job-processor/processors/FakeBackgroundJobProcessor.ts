@@ -11,7 +11,10 @@ export class FakeBackgroundJobProcessor<
 	private _processCalls: T[] = []
 
 	constructor(
-		dependencies: Omit<BackgroundJobProcessorDependencies<T>, 'bullmqFactory'>,
+		dependencies: Omit<
+			BackgroundJobProcessorDependencies<T>,
+			'bullmqFactory' | 'transactionObservabilityManager'
+		>,
 		queueName: string,
 		isTest = true,
 	) {
