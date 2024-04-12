@@ -33,6 +33,10 @@ export const startBugsnag = (config: NodeConfig) => {
 	}
 }
 
+export const addFeatureFlag = (name: string, variant: string | null) => {
+	Bugsnag.addFeatureFlag(name, variant)
+}
+
 export const bugsnagErrorReporter: ErrorReporter = {
 	report: (report) => reportErrorToBugsnag(report),
 }
