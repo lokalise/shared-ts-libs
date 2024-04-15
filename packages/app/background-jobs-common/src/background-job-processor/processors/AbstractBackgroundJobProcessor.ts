@@ -247,7 +247,6 @@ export abstract class AbstractBackgroundJobProcessor<
 				{
 					origin: this.constructor.name,
 					jobId,
-					jobData: job.data,
 				},
 				`Started job ${job.name}`,
 			)
