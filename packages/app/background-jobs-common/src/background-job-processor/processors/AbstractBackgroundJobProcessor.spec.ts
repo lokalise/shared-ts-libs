@@ -135,7 +135,6 @@ describe('AbstractBackgroundJobProcessor', () => {
 				{
 					origin: 'FakeBackgroundJobProcessor',
 					jobId,
-					jobData,
 				},
 				'Started job FakeBackgroundJobProcessor',
 				[],
@@ -219,7 +218,6 @@ describe('AbstractBackgroundJobProcessor', () => {
 			expect(job.attemptsMade).toBe(3)
 			expect(processor.errorsOnProcess[0]).toMatchObject(errors[2])
 
-			// @ts-expect-error accessing pino internals
 			expect(processor.lastLogger[symbols.chindingsSym]).toContain('"x-request-id"')
 		})
 
@@ -323,7 +321,6 @@ describe('AbstractBackgroundJobProcessor', () => {
 					errorJson: expect.stringContaining(onFailedCall.error.message),
 				},
 			})
-			// @ts-expect-error accessing pino internals
 			expect(processor.lastLogger[symbols.chindingsSym]).toContain('"x-request-id"')
 		})
 	})
