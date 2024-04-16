@@ -199,21 +199,25 @@ export abstract class AbstractBackgroundJobProcessor<
 	}
 
 	public async scheduleBulk(jobData: JobPayload[], options?: JobOptionsType): Promise<string[]> {
-		const jobs = await this.initializedQueue.addBulk(
+		if (!this.queue) {
+			await this.start()
+		}
+
+		const jobs = await this.queue?.addBulk(
 			jobData.map((data) => ({
 				name: this.constructor.name,
 				data,
 				opts: this.prepareJobOptions(options ?? ({} as JobOptionsType)),
 			})),
 		)
-
-		if (!jobs.every((job) => !!job.id)) {
+		const jobIds = jobs?.map((job) => job.id) ?? []
+		if (jobIds.length === 0 || !jobIds.every((id) => !!id)) {
 			// Practically unreachable, but we want to simplify the signature of the method and avoid
 			// stating that it could return undefined.
 			throw new Error('Some scheduled job IDs are undefined')
 		}
 
-		return jobs.map((job) => job.id as string)
+		return jobIds as string[]
 	}
 
 	private prepareJobOptions(options: JobOptionsType): JobOptionsType {
@@ -313,15 +317,6 @@ export abstract class AbstractBackgroundJobProcessor<
 
 	protected resolveExecutionLogger(jobId: string) {
 		return this.logger.child({ 'x-request-id': jobId })
-	}
-
-	private get initializedQueue(): QueueType {
-		if (!this.queue)
-			throw new Error(
-				`Job queue "${this.config.queueId}" is not initialized. Please call "start" method before scheduling jobs.`,
-			)
-
-		return this.queue
 	}
 
 	protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
