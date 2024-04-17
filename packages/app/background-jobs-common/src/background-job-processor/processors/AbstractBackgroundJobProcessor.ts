@@ -170,18 +170,23 @@ export abstract class AbstractBackgroundJobProcessor<
 				connection: this.redis,
 			} as WorkerOptionsType,
 		)
-		this.worker.on('failed', (job, error) => {
+		if (this.config.isTest) {
+			// unlike queue, the docs for worker state that this is only useful in tests
+			await this.worker.waitUntilReady()
+		}
+
+		this.registerListeners()
+	}
+
+	private registerListeners() {
+		this.worker?.on('failed', (job, error) => {
 			if (!job) return // Should not be possible with our current config, check 'failed' for more info
 			// @ts-expect-error
 			this.handleFailedEvent(job, error)
 		})
 
 		if (this.config.isTest) {
-			// unlike queue, the docs for worker state that this is only useful in tests
-			await this.worker.waitUntilReady()
-			this._spy = new BackgroundJobProcessorSpy()
-
-			this.worker.on('completed', (job) => this._spy?.addJobProcessingResult(job, 'completed'))
+			this.worker?.on('completed', (job) => this._spy?.addJobProcessingResult(job, 'completed'))
 		}
 	}
 
