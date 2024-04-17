@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { DependencyMocks, lastInfoSpy } from '../../../test/dependencyMocks'
 import { TestFailingBackgroundJobProcessor } from '../../../test/processors/TestFailingBackgroundJobProcessor'
+import { TestReturnValueBackgroundJobProcessor } from '../../../test/processors/TestReturnValueBackgroundJobProcessor'
 import { TestStalledBackgroundJobProcessor } from '../../../test/processors/TestStalledBackgroundJobProcessor'
 import { RETENTION_QUEUE_IDS_IN_DAYS } from '../constants'
 import { BackgroundJobProcessorDependencies } from '../types'
@@ -23,7 +24,7 @@ const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
 
 describe('AbstractBackgroundJobProcessor', () => {
 	let mocks: DependencyMocks
-	let deps: BackgroundJobProcessorDependencies<JobData>
+	let deps: BackgroundJobProcessorDependencies<JobData, any>
 
 	beforeEach(() => {
 		mocks = new DependencyMocks()
@@ -349,6 +350,24 @@ describe('AbstractBackgroundJobProcessor', () => {
 			expect(() => processor.spy).throws(
 				'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
 			)
+
+			await processor.dispose()
+		})
+
+		it('spy contain returnValue', async () => {
+			type JobReturn = { result: string }
+
+			const returnValue: JobReturn = { result: 'done' }
+			const processor = new TestReturnValueBackgroundJobProcessor<JobData, JobReturn>(
+				deps,
+				returnValue,
+			)
+			await processor.start()
+
+			const jobId = await processor.schedule({ id: 'test_id', value: 'test' })
+			const jobSpy = await processor.spy.waitForJobWithId(jobId, 'completed')
+
+			expect(jobSpy.returnvalue).toMatchObject(returnValue)
 
 			await processor.dispose()
 		})
