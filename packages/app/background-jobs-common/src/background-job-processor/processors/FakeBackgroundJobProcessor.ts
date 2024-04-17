@@ -35,11 +35,11 @@ export class FakeBackgroundJobProcessor<
 	}
 	protected override process(job: Job<T>): Promise<void> {
 		this._processCalls.push(job.data)
-		return Promise.resolve(undefined)
+		return Promise.resolve()
 	}
 
 	protected onFailed(_job: Job<T>, _error: Error): Promise<void> {
-		return Promise.resolve(undefined)
+		return Promise.resolve()
 	}
 
 	/**
