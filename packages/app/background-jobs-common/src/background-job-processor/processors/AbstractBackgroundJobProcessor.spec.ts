@@ -69,20 +69,33 @@ describe('AbstractBackgroundJobProcessor', () => {
 			await job2.dispose()
 		})
 
-		it('schedule throws error if called before processor started', async () => {
+		it('Multiple start calls not produce errors', async () => {
 			const processor = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1')
 
-			await expect(processor.schedule({ id: 'test_id', value: 'test' })).rejects.toThrow(
-				'Job queue "queue1" is not initialized. Please call "start" method before scheduling jobs.',
-			)
+			await expect(processor.start()).resolves.not.toThrowError()
+			await expect(processor.start()).resolves.not.toThrowError()
+
+			await processor.dispose()
 		})
 
-		it('scheduleBulk throws error if called before processor started', async () => {
+		it('lazy loading on schedule', async () => {
 			const processor = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1')
 
-			await expect(processor.scheduleBulk([{ id: 'test_id', value: 'test' }])).rejects.toThrow(
-				'Job queue "queue1" is not initialized. Please call "start" method before scheduling jobs.',
-			)
+			const jobId = await processor.schedule({ id: 'test_id', value: 'test' })
+			const spyResult = await processor.spy.waitForJobWithId(jobId, 'completed')
+
+			expect(spyResult.data).toMatchObject({ id: 'test_id', value: 'test' })
+			await processor.dispose()
+		})
+
+		it('lazy loading on scheduleBulk', async () => {
+			const processor = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1')
+
+			const jobIds = await processor.scheduleBulk([{ id: 'test_id', value: 'test' }])
+			const spyResult = await processor.spy.waitForJobWithId(jobIds[0], 'completed')
+
+			expect(spyResult.data).toMatchObject({ id: 'test_id', value: 'test' })
+			await processor.dispose()
 		})
 
 		it('queue id is stored/updated on redis with current timestamp', async () => {
