@@ -279,6 +279,7 @@ export abstract class AbstractBackgroundJobProcessor<
 			const result = await this.process(job, requestContext)
 			isSuccess = true
 
+			await job.updateProgress(100)
 			return result
 		} finally {
 			requestContext.logger.info({ isSuccess, jobId }, `Finished job ${job.name}`)
