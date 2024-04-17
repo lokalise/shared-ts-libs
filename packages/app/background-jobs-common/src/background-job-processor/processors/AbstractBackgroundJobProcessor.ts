@@ -180,6 +180,8 @@ export abstract class AbstractBackgroundJobProcessor<
 			// unlike queue, the docs for worker state that this is only useful in tests
 			await this.worker.waitUntilReady()
 			this._spy = new BackgroundJobProcessorSpy()
+
+			this.worker.on('completed', (job) => this._spy?.addJobProcessingResult(job, 'completed'))
 		}
 	}
 
@@ -270,7 +272,6 @@ export abstract class AbstractBackgroundJobProcessor<
 			const result = await this.process(job, requestContext)
 			isSuccess = true
 
-			this._spy?.addJobProcessingResult(job, 'completed')
 			return result
 		} finally {
 			requestContext.logger.info({ isSuccess, jobId }, `Finished job ${job.name}`)
