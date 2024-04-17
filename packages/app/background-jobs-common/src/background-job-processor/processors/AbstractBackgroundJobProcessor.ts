@@ -84,10 +84,10 @@ export abstract class AbstractBackgroundJobProcessor<
 	private readonly newRelicBackgroundTransactionManager: TransactionObservabilityManager
 	private readonly errorReporter: ErrorReporter
 	private readonly config: BackgroundJobProcessorConfig<QueueOptionsType, WorkerOptionsType>
+	private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
 
 	private queue?: QueueType
 	private worker?: WorkerType
-	protected _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
 	private factory: AbstractBullmqFactory<
 		QueueType,
 		QueueOptionsType,
@@ -120,6 +120,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		this.newRelicBackgroundTransactionManager = dependencies.transactionObservabilityManager
 		this.logger = dependencies.logger
 		this.errorReporter = dependencies.errorReporter
+		this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
 	}
 
 	public static async getActiveQueueIds(redis: Redis): Promise<string[]> {
@@ -203,6 +204,7 @@ export abstract class AbstractBackgroundJobProcessor<
 
 		this.worker = undefined
 		this.queue = undefined
+		this._spy?.clear()
 	}
 
 	public async schedule(jobData: JobPayload, options?: JobOptionsType): Promise<string> {
