@@ -87,7 +87,7 @@ export abstract class AbstractBackgroundJobProcessor<
 
 	private queue?: QueueType
 	private worker?: WorkerType
-	protected _spy?: BackgroundJobProcessorSpy<JobPayload>
+	protected _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
 	private factory: AbstractBullmqFactory<
 		QueueType,
 		QueueOptionsType,
@@ -132,7 +132,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		return queueIds.sort()
 	}
 
-	public get spy(): BackgroundJobProcessorSpyInterface<JobPayload> {
+	public get spy(): BackgroundJobProcessorSpyInterface<JobPayload, JobReturn> {
 		if (!this._spy)
 			throw new Error(
 				'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
