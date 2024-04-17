@@ -142,6 +142,8 @@ export abstract class AbstractBackgroundJobProcessor<
 	}
 
 	public async start(): Promise<void> {
+		if (this.queue) return // Skip if processor is already started
+
 		if (queueIdsSet.has(this.config.queueId))
 			throw new Error(`Queue id "${this.config.queueId}" is not unique.`)
 
@@ -191,6 +193,9 @@ export abstract class AbstractBackgroundJobProcessor<
 		} catch {
 			// do nothing
 		}
+
+		this.worker = undefined
+		this.queue = undefined
 	}
 
 	public async schedule(jobData: JobPayload, options?: JobOptionsType): Promise<string> {

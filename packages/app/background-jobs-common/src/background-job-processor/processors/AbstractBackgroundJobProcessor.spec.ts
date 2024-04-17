@@ -69,6 +69,15 @@ describe('AbstractBackgroundJobProcessor', () => {
 			await job2.dispose()
 		})
 
+		it('Multiple start calls not produce errors', async () => {
+			const processor = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1')
+
+			await expect(processor.start()).resolves.not.toThrowError()
+			await expect(processor.start()).resolves.not.toThrowError()
+
+			await processor.dispose()
+		})
+
 		it('lazy loading on schedule', async () => {
 			const processor = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1')
 
