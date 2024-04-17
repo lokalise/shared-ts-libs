@@ -200,6 +200,13 @@ export abstract class AbstractBackgroundJobProcessor<
 
 	public async scheduleBulk(jobData: JobPayload[], options?: JobOptionsType): Promise<string[]> {
 		if (!this.queue) {
+			this.logger.warn(
+				{
+					origin: this.constructor.name,
+					queueId: this.config.queueId,
+				},
+				'Processor ${this.constructor.name} is not started, starting with lazy loading',
+			)
 			await this.start()
 		}
 
