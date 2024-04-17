@@ -21,10 +21,7 @@ export class FakeBackgroundJobProcessor<
 		super(
 			{
 				redis: dependencies.redis,
-				transactionObservabilityManager: {
-					start: () => {},
-					stop: () => {},
-				},
+				transactionObservabilityManager: { start: () => {}, stop: () => {} },
 				logger: dependencies.logger,
 				errorReporter: dependencies.errorReporter,
 				bullmqFactory: new CommonBullmqFactory(),
@@ -32,9 +29,7 @@ export class FakeBackgroundJobProcessor<
 			{
 				queueId: queueName,
 				isTest,
-				workerOptions: {
-					concurrency: 1,
-				},
+				workerOptions: { concurrency: 1 },
 			},
 		)
 	}
