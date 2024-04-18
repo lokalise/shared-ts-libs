@@ -10,7 +10,7 @@ import { merge } from 'ts-deepmerge'
 
 import { BackgroundJobProcessorLogger } from '../BackgroundJobProcessorLogger'
 import {
-	RETENTION_COMPLETED_JOBS_IN_DAYS,
+	RETENTION_COMPLETED_JOBS_IN_AMOUNT,
 	RETENTION_FAILED_JOBS_IN_DAYS,
 	RETENTION_QUEUE_IDS_IN_DAYS,
 } from '../constants'
@@ -37,7 +37,7 @@ export interface RequestContext {
  * Default config
  * 	- Retry config: 3 retries with 30s of total amount of wait time between retries using
  * 			exponential strategy https://docs.bullmq.io/guide/retrying-failing-jobs#built-in-backoff-strategies
- * 	- Job retention: 3 days for completed jobs, 7 days for failed jobs
+ * 	- Job retention: 50 last completed jobs, 7 days for failed jobs
  */
 const DEFAULT_JOB_CONFIG: JobsOptions = {
 	attempts: 3,
@@ -46,7 +46,7 @@ const DEFAULT_JOB_CONFIG: JobsOptions = {
 		delay: 5000,
 	},
 	removeOnComplete: {
-		age: daysToSeconds(RETENTION_COMPLETED_JOBS_IN_DAYS),
+		count: daysToSeconds(RETENTION_COMPLETED_JOBS_IN_AMOUNT),
 	},
 	removeOnFail: {
 		age: daysToSeconds(RETENTION_FAILED_JOBS_IN_DAYS),

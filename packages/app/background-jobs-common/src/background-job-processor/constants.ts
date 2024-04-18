@@ -1,7 +1,7 @@
 /**
  * How many days we retain completed jobs
  */
-export const RETENTION_COMPLETED_JOBS_IN_DAYS = 3
+export const RETENTION_COMPLETED_JOBS_IN_AMOUNT = 50
 
 /**
  * How many days we retain failed jobs
