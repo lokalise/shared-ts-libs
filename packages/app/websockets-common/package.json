@@ -34,7 +34,7 @@
 		"@lokalise/eslint-config": "latest",
 		"@lokalise/prettier-config": "latest",
 		"@lokalise/package-vite-config": "latest",
-		"eslint": "^8.53.0",
+		"eslint": "^9.0.0",
 		"prettier": "^3.2.5",
 		"rimraf": "^5.0.1",
 		"typescript": "~5.4.5",
