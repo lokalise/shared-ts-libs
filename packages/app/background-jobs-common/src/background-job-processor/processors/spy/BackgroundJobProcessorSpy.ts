@@ -5,24 +5,24 @@ import type { JobFinalState, SafeJob } from '../../types'
 
 import type { BackgroundJobProcessorSpyInterface, JobSpyResult, JobDataSelector } from './types'
 
-type JobProcessingResult<T extends object> = {
-	job: JobSpyResult<T>
+type JobProcessingResult<JobData extends object, jobReturn> = {
+	job: JobSpyResult<JobData, jobReturn>
 	state?: JobFinalState
 }
-type PromiseResolve<T extends object> = (value: T | PromiseLike<T>) => void
-type JobSelector<T extends object> = (job: SafeJob<T>) => boolean
-type SpyPromise<T extends object> = {
-	selector: JobSelector<T>
+type PromiseResolve<JobData extends object> = (value: JobData | PromiseLike<JobData>) => void
+type JobSelector<JobData extends object, JobReturn> = (job: SafeJob<JobData, JobReturn>) => boolean
+type SpyPromise<JobData extends object, JobReturn> = {
+	selector: JobSelector<JobData, JobReturn>
 	awaitedState: JobFinalState
-	resolve: PromiseResolve<SafeJob<T>>
-	promise: Promise<Job<T>>
+	resolve: PromiseResolve<SafeJob<JobData, JobReturn>>
+	promise: Promise<Job<JobData, JobReturn>>
 }
 
-export class BackgroundJobProcessorSpy<JobData extends object>
-	implements BackgroundJobProcessorSpyInterface<JobData>
+export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
+	implements BackgroundJobProcessorSpyInterface<JobData, JobReturn>
 {
-	private readonly jobProcessingResults: Map<string, JobProcessingResult<JobData>>
-	private promises: SpyPromise<JobData>[]
+	private readonly jobProcessingResults: Map<string, JobProcessingResult<JobData, JobReturn>>
+	private promises: SpyPromise<JobData, JobReturn>[]
 
 	constructor() {
 		this.jobProcessingResults = new Map()
@@ -37,7 +37,7 @@ export class BackgroundJobProcessorSpy<JobData extends object>
 	waitForJobWithId(
 		id: string | undefined,
 		awaitedState: JobFinalState,
-	): Promise<JobSpyResult<JobData>> {
+	): Promise<JobSpyResult<JobData, JobReturn>> {
 		if (!id) {
 			throw new Error('Job id is not defined or empty')
 		}
@@ -53,7 +53,7 @@ export class BackgroundJobProcessorSpy<JobData extends object>
 	waitForJob(
 		jobSelector: JobDataSelector<JobData>,
 		awaitedState: JobFinalState,
-	): Promise<JobSpyResult<JobData>> {
+	): Promise<JobSpyResult<JobData, JobReturn>> {
 		const result = Array.from(this.jobProcessingResults.values()).find(
 			(spy) => jobSelector(spy.job.data) && spy.state === awaitedState,
 		)
@@ -65,11 +65,11 @@ export class BackgroundJobProcessorSpy<JobData extends object>
 	}
 
 	private async registerPromise(
-		selector: JobSelector<JobData>,
+		selector: JobSelector<JobData, JobReturn>,
 		state: JobFinalState,
-	): Promise<Job<JobData>> {
+	): Promise<Job<JobData, JobReturn>> {
 		let resolve: PromiseResolve<Job<JobData>>
-		const promise = new Promise<Job<JobData>>((_resolve) => {
+		const promise = new Promise<Job<JobData, JobReturn>>((_resolve) => {
 			resolve = _resolve
 		})
 		// @ts-ignore

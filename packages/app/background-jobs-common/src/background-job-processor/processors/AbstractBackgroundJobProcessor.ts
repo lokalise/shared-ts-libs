@@ -89,10 +89,10 @@ export abstract class AbstractBackgroundJobProcessor<
 	private readonly newRelicBackgroundTransactionManager: TransactionObservabilityManager
 	private readonly errorReporter: ErrorReporter
 	private readonly config: BackgroundJobProcessorConfig<QueueOptionsType, WorkerOptionsType>
+	private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
 
 	private queue?: QueueType
 	private worker?: WorkerType
-	protected _spy?: BackgroundJobProcessorSpy<JobPayload>
 	private factory: AbstractBullmqFactory<
 		QueueType,
 		QueueOptionsType,
@@ -125,6 +125,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		this.newRelicBackgroundTransactionManager = dependencies.transactionObservabilityManager
 		this.logger = dependencies.logger
 		this.errorReporter = dependencies.errorReporter
+		this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
 	}
 
 	public static async getActiveQueueIds(redis: Redis): Promise<string[]> {
@@ -137,7 +138,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		return queueIds.sort()
 	}
 
-	public get spy(): BackgroundJobProcessorSpyInterface<JobPayload> {
+	public get spy(): BackgroundJobProcessorSpyInterface<JobPayload, JobReturn> {
 		if (!this._spy)
 			throw new Error(
 				'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
@@ -175,16 +176,23 @@ export abstract class AbstractBackgroundJobProcessor<
 				connection: this.redis,
 			} as WorkerOptionsType,
 		)
-		this.worker.on('failed', (job, error) => {
+		if (this.config.isTest) {
+			// unlike queue, the docs for worker state that this is only useful in tests
+			await this.worker.waitUntilReady()
+		}
+
+		this.registerListeners()
+	}
+
+	private registerListeners() {
+		this.worker?.on('failed', (job, error) => {
 			if (!job) return // Should not be possible with our current config, check 'failed' for more info
 			// @ts-expect-error
 			this.handleFailedEvent(job, error)
 		})
 
 		if (this.config.isTest) {
-			// unlike queue, the docs for worker state that this is only useful in tests
-			await this.worker.waitUntilReady()
-			this._spy = new BackgroundJobProcessorSpy()
+			this.worker?.on('completed', (job) => this._spy?.addJobProcessingResult(job, 'completed'))
 		}
 	}
 
@@ -201,6 +209,7 @@ export abstract class AbstractBackgroundJobProcessor<
 
 		this.worker = undefined
 		this.queue = undefined
+		this._spy?.clear()
 	}
 
 	public async schedule(jobData: JobPayload, options?: JobOptionsType): Promise<string> {
@@ -275,7 +284,7 @@ export abstract class AbstractBackgroundJobProcessor<
 			const result = await this.process(job, requestContext)
 			isSuccess = true
 
-			this._spy?.addJobProcessingResult(job, 'completed')
+			await job.updateProgress(100)
 			return result
 		} finally {
 			requestContext.logger.info({ isSuccess, jobId }, `Finished job ${job.name}`)
