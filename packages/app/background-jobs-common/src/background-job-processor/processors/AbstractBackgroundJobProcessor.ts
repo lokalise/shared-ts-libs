@@ -1,7 +1,6 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { ErrorReporter } from '@lokalise/node-core'
 import { resolveGlobalErrorLogObject } from '@lokalise/node-core'
-import { UnrecoverableError } from 'bullmq'
 import type { Queue, Worker, WorkerOptions, JobsOptions, Job, QueueOptions } from 'bullmq'
 import type Redis from 'ioredis'
 import type { BaseLogger, Logger } from 'pino'
@@ -10,7 +9,7 @@ import { merge } from 'ts-deepmerge'
 
 import { BackgroundJobProcessorLogger } from '../BackgroundJobProcessorLogger'
 import {
-	RETENTION_COMPLETED_JOBS_IN_DAYS,
+	RETENTION_COMPLETED_JOBS_IN_AMOUNT,
 	RETENTION_FAILED_JOBS_IN_DAYS,
 	RETENTION_QUEUE_IDS_IN_DAYS,
 } from '../constants'
@@ -22,7 +21,13 @@ import type {
 	SafeQueue,
 	TransactionObservabilityManager,
 } from '../types'
-import { daysToMilliseconds, daysToSeconds, isStalledJobError, resolveJobId } from '../utils'
+import {
+	daysToMilliseconds,
+	daysToSeconds,
+	isStalledJobError,
+	isUnrecoverableJobError,
+	resolveJobId,
+} from '../utils'
 
 import type { AbstractBullmqFactory } from './factories/AbstractBullmqFactory'
 import { BackgroundJobProcessorSpy } from './spy/BackgroundJobProcessorSpy'
@@ -37,7 +42,7 @@ export interface RequestContext {
  * Default config
  * 	- Retry config: 3 retries with 30s of total amount of wait time between retries using
  * 			exponential strategy https://docs.bullmq.io/guide/retrying-failing-jobs#built-in-backoff-strategies
- * 	- Job retention: 3 days for completed jobs, 7 days for failed jobs
+ * 	- Job retention: 50 last completed jobs, 7 days for failed jobs
  */
 const DEFAULT_JOB_CONFIG: JobsOptions = {
 	attempts: 3,
@@ -46,7 +51,7 @@ const DEFAULT_JOB_CONFIG: JobsOptions = {
 		delay: 5000,
 	},
 	removeOnComplete: {
-		age: daysToSeconds(RETENTION_COMPLETED_JOBS_IN_DAYS),
+		count: daysToSeconds(RETENTION_COMPLETED_JOBS_IN_AMOUNT),
 	},
 	removeOnFail: {
 		age: daysToSeconds(RETENTION_FAILED_JOBS_IN_DAYS),
@@ -304,7 +309,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		})
 
 		if (
-			error instanceof UnrecoverableError ||
+			isUnrecoverableJobError(error) ||
 			isStalledJobError(error) ||
 			job.opts.attempts === job.attemptsMade
 		) {
