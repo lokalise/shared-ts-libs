@@ -1,7 +1,6 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { ErrorReporter } from '@lokalise/node-core'
 import { resolveGlobalErrorLogObject } from '@lokalise/node-core'
-import { UnrecoverableError } from 'bullmq'
 import type { Queue, Worker, WorkerOptions, JobsOptions, Job, QueueOptions } from 'bullmq'
 import type Redis from 'ioredis'
 import type { BaseLogger, Logger } from 'pino'
@@ -22,7 +21,13 @@ import type {
 	SafeQueue,
 	TransactionObservabilityManager,
 } from '../types'
-import { daysToMilliseconds, daysToSeconds, isStalledJobError, resolveJobId } from '../utils'
+import {
+	daysToMilliseconds,
+	daysToSeconds,
+	isStalledJobError,
+	isUnrecoverableJobError,
+	resolveJobId,
+} from '../utils'
 
 import type { AbstractBullmqFactory } from './factories/AbstractBullmqFactory'
 import { BackgroundJobProcessorSpy } from './spy/BackgroundJobProcessorSpy'
@@ -295,7 +300,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		})
 
 		if (
-			error instanceof UnrecoverableError ||
+			isUnrecoverableJobError(error) ||
 			isStalledJobError(error) ||
 			job.opts.attempts === job.attemptsMade
 		) {
