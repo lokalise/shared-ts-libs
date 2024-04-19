@@ -50,9 +50,7 @@ const DEFAULT_JOB_CONFIG: JobsOptions = {
 		type: 'exponential',
 		delay: 5000,
 	},
-	removeOnComplete: {
-		count: daysToSeconds(RETENTION_COMPLETED_JOBS_IN_AMOUNT),
-	},
+	removeOnComplete: { count: RETENTION_COMPLETED_JOBS_IN_AMOUNT },
 	removeOnFail: {
 		age: daysToSeconds(RETENTION_FAILED_JOBS_IN_DAYS),
 	},
