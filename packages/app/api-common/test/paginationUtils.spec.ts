@@ -204,7 +204,6 @@ const market = {
 			meta: {
 				count: params.limit ?? 1,
 				cursor: 'red',
-				hasMore: false,
 			},
 		})
 	},
