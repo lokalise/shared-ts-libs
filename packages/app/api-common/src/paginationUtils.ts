@@ -128,6 +128,19 @@ export function createPaginatedResponse<T extends Record<string, unknown>, K ext
 	}
 }
 
+/**
+ * This function will collect all paginated entries based on returned 'cursor'.
+ * For function to behave correctly the last result should have 'cursor === undefined'.
+ *
+ * @param pagination
+ * @param apiCall
+ *
+ * @example
+ * &lt;caption>Example usage of method1.&lt;/caption>
+ * await getPaginatedEntries({ limit: 1 }, (params) => {
+ *                return market.getApples(params)
+ *            }
+ */
 export async function getPaginatedEntries<T extends Record<string, unknown>>(
 	pagination: OptionalPaginationParams,
 	apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,

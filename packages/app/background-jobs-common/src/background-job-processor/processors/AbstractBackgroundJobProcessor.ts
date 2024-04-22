@@ -383,6 +383,13 @@ export abstract class AbstractBackgroundJobProcessor<
 
 	protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
 
+	/**
+	 * The hook will be triggered on 'completed' job state.
+	 *
+	 * @param _job
+	 * @param _requestContext
+	 * @protected
+	 */
 	protected onSuccess(_job: JobType, _requestContext: RequestContext): Promise<void> {
 		return Promise.resolve()
 	}
