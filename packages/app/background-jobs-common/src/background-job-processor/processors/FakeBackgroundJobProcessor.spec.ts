@@ -1,3 +1,4 @@
+import { generateMonotonicUuid } from '@lokalise/id-utils'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { DependencyMocks } from '../../../test/dependencyMocks'
@@ -7,6 +8,7 @@ import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 
 type JobData = {
 	value: string
+	correlationId: string
 }
 
 // Adding test to deprecated methods
@@ -29,7 +31,7 @@ describe('FakeBackgroundJobProcessor', () => {
 	})
 
 	it('process calls and clean works', async () => {
-		const data = { value: 'test' }
+		const data = { value: 'test', correlationId: generateMonotonicUuid() }
 		await processor.schedule(data)
 
 		await processor.spy?.waitForJob((data) => data.value === 'test', 'completed')

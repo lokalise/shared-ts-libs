@@ -11,6 +11,7 @@ import type {
 import type Redis from 'ioredis'
 import type { Logger } from 'pino'
 
+import type { RequestContext } from './processors/AbstractBackgroundJobProcessor'
 import type { AbstractBullmqFactory } from './processors/factories/AbstractBullmqFactory'
 
 export type JobFinalState = FinishedStatus
@@ -32,7 +33,9 @@ export type TransactionObservabilityManager = {
 
 // "scripts" field is incompatible between free and pro versions, and it's not particularly important
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type SafeJob<T = any, R = any, N extends string = string> = Omit<Job<T, R, N>, 'scripts'>
+export type SafeJob<T = any, R = any, N extends string = string> = Omit<Job<T, R, N>, 'scripts'> & {
+	requestContext?: RequestContext
+}
 
 export type SafeQueue<
 	JobsOptionsType = JobsOptions,
@@ -91,4 +94,8 @@ export type BackgroundJobProcessorDependencies<
 		JobReturn,
 		JobsOptionsType
 	>
+}
+
+export type BaseJobPayload = {
+	correlationId: string
 }

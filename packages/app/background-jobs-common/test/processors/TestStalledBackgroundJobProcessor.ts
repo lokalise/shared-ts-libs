@@ -5,6 +5,7 @@ import { AbstractBackgroundJobProcessor, BackgroundJobProcessorDependencies } fr
 
 type Data = {
 	id?: string
+	correlationId: string
 }
 
 type OnFailedError = {

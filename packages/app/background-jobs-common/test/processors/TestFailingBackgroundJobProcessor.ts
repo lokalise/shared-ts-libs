@@ -5,6 +5,7 @@ import { BackgroundJobProcessorDependencies, FakeBackgroundJobProcessor } from '
 
 type TestFailingBackgroundJobProcessorData = {
 	id?: string
+	correlationId: string
 }
 
 export class TestFailingBackgroundJobProcessor<

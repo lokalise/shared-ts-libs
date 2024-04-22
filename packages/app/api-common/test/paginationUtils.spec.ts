@@ -122,12 +122,14 @@ describe('paginationUtils', () => {
 					meta: {
 						count: 1,
 						cursor: 'red',
+						hasMore: false,
 					},
 				})
 				.mockResolvedValueOnce({
 					data: [],
 					meta: {
 						count: 0,
+						hasMore: false,
 					},
 				})
 
@@ -143,6 +145,7 @@ describe('paginationUtils', () => {
 				data: [],
 				meta: {
 					count: 0,
+					hasMore: false,
 				},
 			})
 
@@ -161,6 +164,7 @@ describe('paginationUtils', () => {
 					meta: {
 						count: 1,
 						cursor: 'red',
+						hasMore: true,
 					},
 				})
 				.mockResolvedValueOnce({
@@ -168,12 +172,14 @@ describe('paginationUtils', () => {
 					meta: {
 						count: 1,
 						cursor: 'blue',
+						hasMore: false,
 					},
 				})
 				.mockResolvedValueOnce({
 					data: [],
 					meta: {
 						count: 0,
+						hasMore: false,
 					},
 				})
 
@@ -195,6 +201,7 @@ type GetApplesResponse = {
 	meta: {
 		count: number
 		cursor?: string
+		hasMore: boolean
 	}
 }
 const market = {
@@ -204,6 +211,7 @@ const market = {
 			meta: {
 				count: params.limit ?? 1,
 				cursor: 'red',
+				hasMore: false,
 			},
 		})
 	},
