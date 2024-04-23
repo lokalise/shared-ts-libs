@@ -1,11 +1,14 @@
 import type { Job } from 'bullmq'
 
-import { BackgroundJobProcessorDependencies, FakeBackgroundJobProcessor } from '../../src'
+import {
+	BackgroundJobProcessorDependencies,
+	BaseJobPayload,
+	FakeBackgroundJobProcessor,
+} from '../../src'
 
 type TestSuccessBackgroundJobProcessorData = {
 	id?: string
-	correlationId: string
-}
+} & BaseJobPayload
 
 export class TestSuccessBackgroundJobProcessor<
 	T extends TestSuccessBackgroundJobProcessorData,

@@ -1,12 +1,15 @@
 import { Job } from 'bullmq'
 import { Logger } from 'pino'
 
-import { BackgroundJobProcessorDependencies, FakeBackgroundJobProcessor } from '../../src'
+import {
+	BackgroundJobProcessorDependencies,
+	BaseJobPayload,
+	FakeBackgroundJobProcessor,
+} from '../../src'
 
 type TestFailingBackgroundJobProcessorData = {
 	id?: string
-	correlationId: string
-}
+} & BaseJobPayload
 
 export class TestFailingBackgroundJobProcessor<
 	T extends TestFailingBackgroundJobProcessorData,

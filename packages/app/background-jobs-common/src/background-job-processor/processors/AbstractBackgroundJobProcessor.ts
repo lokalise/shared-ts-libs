@@ -403,7 +403,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		const jobOptsRemoveOnComplete = job.opts.removeOnComplete
 		if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
 		// @ts-ignore
-		await job.updateData({ correlationId: job.data.correlationId })
+		await job.updateData({ metadata: job.data.metadata })
 	}
 
 	protected abstract onFailed(

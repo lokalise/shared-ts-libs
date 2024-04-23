@@ -1,12 +1,15 @@
 import { Job } from 'bullmq'
 import { Logger } from 'pino'
 
-import { AbstractBackgroundJobProcessor, BackgroundJobProcessorDependencies } from '../../src'
+import {
+	AbstractBackgroundJobProcessor,
+	BackgroundJobProcessorDependencies,
+	BaseJobPayload,
+} from '../../src'
 
 type Data = {
 	id?: string
-	correlationId: string
-}
+} & BaseJobPayload
 
 type OnFailedError = {
 	error: Error

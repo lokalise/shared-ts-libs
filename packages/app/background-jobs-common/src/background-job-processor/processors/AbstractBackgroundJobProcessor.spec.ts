@@ -10,7 +10,7 @@ import { TestReturnValueBackgroundJobProcessor } from '../../../test/processors/
 import { TestStalledBackgroundJobProcessor } from '../../../test/processors/TestStalledBackgroundJobProcessor'
 import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/TestSucessBackgroundJobProcessor'
 import { RETENTION_QUEUE_IDS_IN_DAYS } from '../constants'
-import { BackgroundJobProcessorDependencies } from '../types'
+import { BackgroundJobProcessorDependencies, BaseJobPayload } from '../types'
 import { daysToMilliseconds } from '../utils'
 
 import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor'
@@ -18,9 +18,8 @@ import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 
 type JobData = {
 	id: string
-	correlationId: string
 	value: string
-}
+} & BaseJobPayload
 
 const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
 
@@ -87,14 +86,14 @@ describe('AbstractBackgroundJobProcessor', () => {
 			const jobId = await processor.schedule({
 				id: 'test_id',
 				value: 'test',
-				correlationId: 'correlation_id',
+				metadata: { correlationId: 'correlation_id' },
 			})
 			const spyResult = await processor.spy.waitForJobWithId(jobId, 'completed')
 
 			expect(spyResult.data).toMatchObject({
 				id: 'test_id',
 				value: 'test',
-				correlationId: 'correlation_id',
+				metadata: { correlationId: 'correlation_id' },
 			})
 			await processor.dispose()
 		})
@@ -103,14 +102,14 @@ describe('AbstractBackgroundJobProcessor', () => {
 			const processor = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1')
 
 			const jobIds = await processor.scheduleBulk([
-				{ id: 'test_id', value: 'test', correlationId: 'correlation_id' },
+				{ id: 'test_id', value: 'test', metadata: { correlationId: 'correlation_id' } },
 			])
 			const spyResult = await processor.spy.waitForJobWithId(jobIds[0], 'completed')
 
 			expect(spyResult.data).toMatchObject({
 				id: 'test_id',
 				value: 'test',
-				correlationId: 'correlation_id',
+				metadata: { correlationId: 'correlation_id' },
 			})
 			await processor.dispose()
 		})
@@ -157,7 +156,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			const jobData = {
 				id: generateMonotonicUuid(),
 				value: 'test',
-				correlationId: generateMonotonicUuid(),
+				metadata: { correlationId: generateMonotonicUuid() },
 			}
 			const jobId = await processor.schedule(jobData)
 
@@ -185,8 +184,16 @@ describe('AbstractBackgroundJobProcessor', () => {
 
 		it('schedules and runs multiple jobs', async () => {
 			const scheduledJobIds = await processor.scheduleBulk([
-				{ id: generateMonotonicUuid(), value: 'first', correlationId: generateMonotonicUuid() },
-				{ id: generateMonotonicUuid(), value: 'second', correlationId: generateMonotonicUuid() },
+				{
+					id: generateMonotonicUuid(),
+					value: 'first',
+					metadata: { correlationId: generateMonotonicUuid() },
+				},
+				{
+					id: generateMonotonicUuid(),
+					value: 'second',
+					metadata: { correlationId: generateMonotonicUuid() },
+				},
 			])
 
 			expect(scheduledJobIds.length).toBe(2)
@@ -203,7 +210,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			const jobData = {
 				id: generateMonotonicUuid(),
 				value: 'test',
-				correlationId: generateMonotonicUuid(),
+				metadata: { correlationId: generateMonotonicUuid() },
 			}
 
 			await processor.schedule(jobData)
@@ -218,7 +225,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			await processor.schedule({
 				id: generateMonotonicUuid(),
 				value: 'test',
-				correlationId: generateMonotonicUuid(),
+				metadata: { correlationId: generateMonotonicUuid() },
 			})
 
 			// Further scheduled jobs are not executed
@@ -231,7 +238,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			const jobData = {
 				id: generateMonotonicUuid(),
 				value: 'test',
-				correlationId: generateMonotonicUuid(),
+				metadata: { correlationId: generateMonotonicUuid() },
 			}
 
 			const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessor(
@@ -257,7 +264,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			const jobData = {
 				id: generateMonotonicUuid(),
 				value: 'test',
-				correlationId: generateMonotonicUuid(),
+				metadata: { correlationId: generateMonotonicUuid() },
 			}
 
 			const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessor(
@@ -286,7 +293,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			const jobData = {
 				id: generateMonotonicUuid(),
 				value: 'test',
-				correlationId: generateMonotonicUuid(),
+				metadata: { correlationId: generateMonotonicUuid() },
 			}
 
 			const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessor(
@@ -305,7 +312,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 
 			// Then
 			expect(successBackgroundJobProcessor.onSuccessCallsCounter).toBe(1)
-			expect(job.data).toStrictEqual({ correlationId: jobData.correlationId })
+			expect(job.data).toStrictEqual({ metadata: jobData.metadata })
 		})
 	})
 
@@ -330,7 +337,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			]
 			processor.errorsToThrowOnProcess = errors
 			const scheduledJobId = await processor.schedule(
-				{ id: 'test_id', value: 'test', correlationId: 'correlation_id' },
+				{ id: 'test_id', value: 'test', metadata: { correlationId: 'correlation_id' } },
 				{
 					attempts: 3,
 					delay: 0,
@@ -349,7 +356,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			const errors = [new UnrecoverableError('unrecoverable test error 1')]
 			processor.errorsToThrowOnProcess = errors
 			await processor.schedule(
-				{ id: 'test_id', value: 'test', correlationId: 'correlation_id' },
+				{ id: 'test_id', value: 'test', metadata: { correlationId: 'correlation_id' } },
 				{
 					attempts: 3,
 					delay: 0,
@@ -370,7 +377,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			]
 			processor.errorsToThrowOnProcess = errors
 			await processor.schedule(
-				{ id: 'test_id', value: 'test', correlationId: 'correlation_id' },
+				{ id: 'test_id', value: 'test', metadata: { correlationId: 'correlation_id' } },
 				{
 					attempts: 3,
 					delay: 0,
@@ -392,7 +399,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			const reportSpy = vi.spyOn(deps.errorReporter, 'report')
 
 			await processor.schedule(
-				{ id: 'test_id', value: 'test', correlationId: 'correlation_id' },
+				{ id: 'test_id', value: 'test', metadata: { correlationId: 'correlation_id' } },
 				{
 					attempts: 3,
 					delay: 0,
@@ -426,7 +433,10 @@ describe('AbstractBackgroundJobProcessor', () => {
 
 		it('handling stalled errors', async () => {
 			const errorReporterSpy = vi.spyOn(deps.errorReporter, 'report')
-			const jobData = { id: generateMonotonicUuid(), correlationId: generateMonotonicUuid() }
+			const jobData = {
+				id: generateMonotonicUuid(),
+				metadata: { correlationId: generateMonotonicUuid() },
+			}
 			const jobId = await processor.schedule(jobData)
 
 			await waitAndRetry(() => processor.onFailedErrors.length > 0, 100, 20)
@@ -477,7 +487,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			const jobId = await processor.schedule({
 				id: 'test_id',
 				value: 'test',
-				correlationId: 'correlation_id',
+				metadata: { correlationId: 'correlation_id' },
 			})
 			const jobSpy = await processor.spy.waitForJobWithId(jobId, 'completed')
 

@@ -97,5 +97,7 @@ export type BackgroundJobProcessorDependencies<
 }
 
 export type BaseJobPayload = {
-	correlationId: string
+	metadata: {
+		correlationId: string
+	}
 }
