@@ -1,6 +1,6 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { ErrorReporter } from '@lokalise/node-core'
-import { resolveGlobalErrorLogObject } from '@lokalise/node-core'
+import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type { Queue, Worker, WorkerOptions, JobsOptions, Job, QueueOptions } from 'bullmq'
 import type Redis from 'ioredis'
 import type { BaseLogger, Logger } from 'pino'
@@ -301,7 +301,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		this.errorReporter.report({
 			error,
 			context: {
-				id: jobId,
+				jobId,
 				errorJson: JSON.stringify(pino.stdSerializers.err(error)),
 			},
 		})
@@ -323,17 +323,18 @@ export abstract class AbstractBackgroundJobProcessor<
 		try {
 			await this.onFailed(job, error, requestContext)
 		} catch (error) {
-			requestContext.logger.error(resolveGlobalErrorLogObject(error, job.id))
+			const jobId = resolveJobId(job)
+			requestContext.logger.error(resolveGlobalErrorLogObject(error, jobId))
 
-			if (error instanceof Error) {
-				this.errorReporter.report({
-					error,
-					context: {
-						id: job.id,
-						errorJson: JSON.stringify(pino.stdSerializers.err(error)),
-					},
-				})
-			}
+			this.errorReporter.report({
+				error: isError(error)
+					? error
+					: new Error(`${this.constructor.name} onFailed non-error exception`),
+				context: {
+					jobId,
+					error: JSON.stringify(isError(error) ? pino.stdSerializers.err(error) : error),
+				},
+			})
 		}
 
 		this._spy?.addJobProcessingResult(job, 'failed')
