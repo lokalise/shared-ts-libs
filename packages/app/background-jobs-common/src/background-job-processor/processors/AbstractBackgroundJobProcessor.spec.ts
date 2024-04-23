@@ -295,8 +295,8 @@ describe('AbstractBackgroundJobProcessor', () => {
 			expect(reportSpy).toHaveBeenCalledWith({
 				error: onFailedError,
 				context: {
-					id: job.id,
-					errorJson: expect.stringContaining(onFailedError.message),
+					jobId: job.id,
+					error: expect.stringContaining(onFailedError.message),
 				},
 			})
 		})
@@ -331,7 +331,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			expect(errorReporterSpy).toHaveBeenCalledWith({
 				error: onFailedCall.error,
 				context: {
-					id: jobId,
+					jobId,
 					errorJson: expect.stringContaining(onFailedCall.error.message),
 				},
 			})
