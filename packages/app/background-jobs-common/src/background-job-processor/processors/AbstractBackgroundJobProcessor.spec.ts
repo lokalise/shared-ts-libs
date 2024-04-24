@@ -398,7 +398,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 
 			const reportSpy = vi.spyOn(deps.errorReporter, 'report')
 
-			await processor.schedule(
+			const jobId = await processor.schedule(
 				{ id: 'test_id', value: 'test', metadata: { correlationId: 'correlation_id' } },
 				{
 					attempts: 3,
@@ -406,7 +406,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 				},
 			)
 
-			const job = await processor.spy.waitForJob((data) => data.id === 'test_id', 'failed')
+			const job = await processor.spy.waitForJobWithId(jobId, 'failed')
 
 			expect(processor.errorsOnProcess).length(1)
 			expect(reportSpy).toHaveBeenCalledWith({
