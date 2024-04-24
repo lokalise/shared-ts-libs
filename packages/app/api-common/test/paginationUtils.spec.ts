@@ -5,6 +5,7 @@ import {
 	encodeCursor,
 	getMetaForNextPage,
 	getPaginatedEntries,
+	getPaginatedEntriesByHasMore,
 	OptionalPaginationParams,
 } from '../src'
 
@@ -122,12 +123,14 @@ describe('paginationUtils', () => {
 					meta: {
 						count: 1,
 						cursor: 'red',
+						hasMore: false,
 					},
 				})
 				.mockResolvedValueOnce({
 					data: [],
 					meta: {
 						count: 0,
+						hasMore: false,
 					},
 				})
 
@@ -143,6 +146,7 @@ describe('paginationUtils', () => {
 				data: [],
 				meta: {
 					count: 0,
+					hasMore: false,
 				},
 			})
 
@@ -161,6 +165,7 @@ describe('paginationUtils', () => {
 					meta: {
 						count: 1,
 						cursor: 'red',
+						hasMore: false,
 					},
 				})
 				.mockResolvedValueOnce({
@@ -168,12 +173,14 @@ describe('paginationUtils', () => {
 					meta: {
 						count: 1,
 						cursor: 'blue',
+						hasMore: false,
 					},
 				})
 				.mockResolvedValueOnce({
 					data: [],
 					meta: {
 						count: 0,
+						hasMore: false,
 					},
 				})
 
@@ -183,6 +190,87 @@ describe('paginationUtils', () => {
 
 			expect(spy).toHaveBeenCalledTimes(3)
 			expect(result).toEqual([{ id: 'red' }, { id: 'blue' }])
+		})
+	})
+	describe('getPaginatedEntriesByHasMore', () => {
+		it('should call api 1 time and return value', async () => {
+			const spy = vi.spyOn(market, 'getApples').mockResolvedValueOnce({
+				data: [{ id: 'red' }],
+				meta: {
+					count: 1,
+					cursor: 'red',
+					hasMore: false,
+				},
+			})
+
+			const result = await getPaginatedEntriesByHasMore({ limit: 1 }, (params) => {
+				return market.getApples(params)
+			})
+
+			expect(spy).toHaveBeenCalledTimes(1)
+			expect(spy).toHaveBeenCalledWith({ limit: 1 })
+			expect(result).toEqual([{ id: 'red' }])
+		})
+		it('should call api 1 time', async () => {
+			const spy = vi.spyOn(market, 'getApples').mockResolvedValueOnce({
+				data: [],
+				meta: {
+					count: 0,
+					hasMore: false,
+				},
+			})
+
+			const result = await getPaginatedEntriesByHasMore({ limit: 1 }, (params) => {
+				return market.getApples(params)
+			})
+
+			expect(spy).toHaveBeenCalledTimes(1)
+			expect(result).toEqual([])
+		})
+		it('should call api 2 time', async () => {
+			const spy = vi
+				.spyOn(market, 'getApples')
+				.mockResolvedValueOnce({
+					data: [{ id: 'red' }],
+					meta: {
+						count: 1,
+						cursor: 'red',
+						hasMore: true,
+					},
+				})
+				.mockResolvedValueOnce({
+					data: [{ id: 'blue' }],
+					meta: {
+						count: 1,
+						cursor: 'blue',
+						hasMore: false,
+					},
+				})
+
+			const result = await getPaginatedEntriesByHasMore({ limit: 1 }, (params) => {
+				return market.getApples(params)
+			})
+
+			expect(spy).toHaveBeenCalledTimes(2)
+			expect(result).toEqual([{ id: 'red' }, { id: 'blue' }])
+		})
+		it('should respect initial cursor', async () => {
+			const spy = vi.spyOn(market, 'getApples').mockResolvedValueOnce({
+				data: [{ id: 'red' }],
+				meta: {
+					count: 1,
+					cursor: 'red',
+					hasMore: false,
+				},
+			})
+
+			const result = await getPaginatedEntriesByHasMore({ limit: 1, after: 'red' }, (params) => {
+				return market.getApples(params)
+			})
+
+			expect(spy).toHaveBeenCalledTimes(1)
+			expect(spy).toHaveBeenCalledWith({ limit: 1, after: 'red' })
+			expect(result).toEqual([{ id: 'red' }])
 		})
 	})
 })
@@ -195,6 +283,7 @@ type GetApplesResponse = {
 	meta: {
 		count: number
 		cursor?: string
+		hasMore: boolean
 	}
 }
 const market = {
@@ -204,6 +293,7 @@ const market = {
 			meta: {
 				count: params.limit ?? 1,
 				cursor: 'red',
+				hasMore: false,
 			},
 		})
 	},

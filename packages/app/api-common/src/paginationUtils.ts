@@ -116,6 +116,14 @@ export function createPaginatedResponse<T extends Record<string, unknown>, K ext
 	pageLimit: number | undefined,
 	cursorKeys: K[],
 ): PaginatedResponse<T>
+
+/**
+ * @deprecated use other versions of {@link createPaginatedResponse}
+ *
+ * @param page
+ * @param pageLimit
+ * @param cursorKeys
+ */
 export function createPaginatedResponse<T extends Record<string, unknown>, K extends keyof T>(
 	page: T[],
 	pageLimit?: number,
@@ -128,6 +136,21 @@ export function createPaginatedResponse<T extends Record<string, unknown>, K ext
 	}
 }
 
+/**
+ * @deprecated use {@link getPaginatedEntriesByHasMore}
+ *
+ * This function will collect all paginated entries based on returned 'cursor'.
+ * For function to behave correctly the last result should have 'cursor === undefined'.
+ *
+ * @param pagination
+ * @param apiCall
+ *
+ * @example
+ * &lt;caption>Example usage of method&lt;/caption>
+ * await getPaginatedEntries({ limit: 1 }, (params) => {
+ *                return market.getApples(params)
+ *            }
+ */
 export async function getPaginatedEntries<T extends Record<string, unknown>>(
 	pagination: OptionalPaginationParams,
 	apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,
@@ -139,6 +162,41 @@ export async function getPaginatedEntries<T extends Record<string, unknown>>(
 		resultArray.push(...pageResult.data)
 		currentCursor = pageResult.meta.cursor
 	} while (currentCursor)
+
+	return resultArray
+}
+
+/**
+ * This function will collect all paginated entries based on returned 'cursor' and 'hasMore' fields.
+ *
+ * For better experience should be used in combine with {@link createPaginatedResponse} function.
+ *
+ * @param pagination
+ * @param apiCall
+ *
+ * @example
+ * &lt;caption>Example of usage with limit&lt;/caption>
+ * await getPaginatedEntries({ limit: 1 }, (params) => {
+ *                return market.getApples(params)
+ *            }
+ *
+ * &lt;caption>Example of usage with limit and start cursor&lt;/caption>
+ * await getPaginatedEntries({ limit: 1, after: 'red' }, (params) => {
+ *                return market.getApples(params)
+ *            }
+ */
+export async function getPaginatedEntriesByHasMore<T extends Record<string, unknown>>(
+	pagination: OptionalPaginationParams,
+	apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,
+): Promise<T[]> {
+	const resultArray: T[] = []
+	let hasMore: boolean | undefined
+	const currentCursor: string | undefined = pagination.after
+	do {
+		const pageResult = await apiCall({ ...pagination, after: currentCursor })
+		resultArray.push(...pageResult.data)
+		hasMore = pageResult.meta.hasMore
+	} while (hasMore)
 
 	return resultArray
 }
