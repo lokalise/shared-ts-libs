@@ -1,9 +1,9 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import type { ErrorReporter } from '@lokalise/node-core'
+import type { CommonLogger, ErrorReporter } from '@lokalise/node-core'
 import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type { Queue, Worker, WorkerOptions, JobsOptions, Job, QueueOptions } from 'bullmq'
 import type Redis from 'ioredis'
-import type { BaseLogger, Logger } from 'pino'
+import type { Logger } from 'pino'
 import pino from 'pino'
 import { merge } from 'ts-deepmerge'
 
@@ -35,7 +35,7 @@ import { BackgroundJobProcessorSpy } from './spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from './spy/types'
 
 export interface RequestContext {
-	logger: BaseLogger
+	logger: CommonLogger
 	reqId: string
 }
 

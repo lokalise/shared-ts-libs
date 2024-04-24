@@ -1,4 +1,5 @@
-import type { BaseLogger, Bindings, ChildLoggerOptions, Logger } from 'pino'
+import type { CommonLogger } from '@lokalise/node-core'
+import type { Bindings, ChildLoggerOptions, Logger } from 'pino'
 import type pino from 'pino'
 
 import type { SafeJob } from './types'
@@ -13,7 +14,7 @@ const hasMessageProperty = (obj: unknown): obj is { message: string } => {
 	)
 }
 
-export class BackgroundJobProcessorLogger implements BaseLogger {
+export class BackgroundJobProcessorLogger implements CommonLogger {
 	private readonly logger: Logger
 	private readonly job: SafeJob<unknown>
 
@@ -65,7 +66,7 @@ export class BackgroundJobProcessorLogger implements BaseLogger {
 		this.jobLog('fatal', obj, msg)
 	}
 
-	child(bindings: Bindings, options?: ChildLoggerOptions): BaseLogger {
+	child(bindings: Bindings, options?: ChildLoggerOptions): CommonLogger {
 		return new BackgroundJobProcessorLogger(this.logger.child(bindings, options), this.job)
 	}
 

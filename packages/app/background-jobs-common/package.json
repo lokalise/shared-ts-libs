@@ -35,8 +35,8 @@
 	},
 	"dependencies": {
 		"@lokalise/id-utils": "1.0.0",
-		"@lokalise/node-core": "^9.14.0",
-		"pino": "^8.20.0",
+		"@lokalise/node-core": "^9.15.0",
+		"pino": "^8.21.0",
 		"ts-deepmerge": "^7.0.0"
 	},
 	"peerDependencies": {
