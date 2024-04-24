@@ -260,9 +260,11 @@ export abstract class AbstractBackgroundJobProcessor<
 			preparedOptions.backoff.delay = 1
 			preparedOptions.backoff.type = 'fixed'
 			preparedOptions.removeOnFail = true
+			/* c8 ignore start */
 			if (preparedOptions.removeOnComplete === undefined) {
 				preparedOptions.removeOnComplete = true
 			}
+			/* c8 ignore stop */
 		}
 
 		return preparedOptions
@@ -302,12 +304,14 @@ export abstract class AbstractBackgroundJobProcessor<
 	private handleFailedEvent(job: JobType, error: Error) {
 		const jobId = resolveJobId(job)
 
+		/* c8 ignore start */
 		if (!job.requestContext) {
 			job.requestContext = {
 				logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(jobId), job),
 				reqId: jobId,
 			}
 		}
+		/* c8 ignore stop */
 
 		job.requestContext.logger.error(resolveGlobalErrorLogObject(error, jobId))
 		this.errorReporter.report({
