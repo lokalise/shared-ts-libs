@@ -16,6 +16,7 @@ import {
 import type {
 	BackgroundJobProcessorConfig,
 	BackgroundJobProcessorDependencies,
+	BaseJobPayload,
 	BullmqProcessor,
 	SafeJob,
 	SafeQueue,
@@ -40,9 +41,9 @@ export interface RequestContext {
 
 /**
  * Default config
- * 	- Retry config: 3 retries with 30s of total amount of wait time between retries using
- * 			exponential strategy https://docs.bullmq.io/guide/retrying-failing-jobs#built-in-backoff-strategies
- * 	- Job retention: 50 last completed jobs, 7 days for failed jobs
+ *    - Retry config: 3 retries with 30s of total amount of wait time between retries using
+ *            exponential strategy https://docs.bullmq.io/guide/retrying-failing-jobs#built-in-backoff-strategies
+ *    - Job retention: 50 last completed jobs, 7 days for failed jobs
  */
 const DEFAULT_JOB_CONFIG: JobsOptions = {
 	attempts: 3,
@@ -67,7 +68,7 @@ const DEFAULT_WORKER_OPTIONS = {
 } as const satisfies Omit<WorkerOptions, 'connection'> & { ttl: number }
 
 export abstract class AbstractBackgroundJobProcessor<
-	JobPayload extends object,
+	JobPayload extends BaseJobPayload,
 	JobReturn = void,
 	JobType extends SafeJob<JobPayload, JobReturn> = Job,
 	QueueType extends SafeQueue<JobOptionsType, JobPayload, JobReturn> = Queue<JobPayload, JobReturn>,
@@ -189,9 +190,13 @@ export abstract class AbstractBackgroundJobProcessor<
 			this.handleFailedEvent(job, error)
 		})
 
-		if (this.config.isTest) {
-			this.worker?.on('completed', (job) => this._spy?.addJobProcessingResult(job, 'completed'))
-		}
+		this.worker?.on('completed', (job) => {
+			// @ts-expect-error
+			this.internalOnSuccess(job, job.requestContext).catch(() => undefined) // nothing to do in case of success
+			if (this.config.isTest) {
+				this._spy?.addJobProcessingResult(job, 'completed')
+			}
+		})
 	}
 
 	public async dispose(): Promise<void> {
@@ -255,7 +260,9 @@ export abstract class AbstractBackgroundJobProcessor<
 			preparedOptions.backoff.delay = 1
 			preparedOptions.backoff.type = 'fixed'
 			preparedOptions.removeOnFail = true
-			preparedOptions.removeOnComplete = true
+			if (preparedOptions.removeOnComplete === undefined) {
+				preparedOptions.removeOnComplete = true
+			}
 		}
 
 		return preparedOptions
@@ -264,14 +271,16 @@ export abstract class AbstractBackgroundJobProcessor<
 	private async processInternal(job: JobType) {
 		const jobId = resolveJobId(job)
 		let isSuccess = false
-		const requestContext: RequestContext = {
-			logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(jobId), job),
-			reqId: jobId,
+		if (!job.requestContext) {
+			job.requestContext = {
+				logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(jobId), job),
+				reqId: jobId,
+			}
 		}
 
 		try {
 			this.newRelicBackgroundTransactionManager.start(job.name)
-			requestContext.logger.info(
+			job.requestContext.logger.info(
 				{
 					origin: this.constructor.name,
 					jobId,
@@ -279,25 +288,28 @@ export abstract class AbstractBackgroundJobProcessor<
 				`Started job ${job.name}`,
 			)
 
-			const result = await this.process(job, requestContext)
+			const result = await this.process(job, job.requestContext)
 			isSuccess = true
 
 			await job.updateProgress(100)
 			return result
 		} finally {
-			requestContext.logger.info({ isSuccess, jobId }, `Finished job ${job.name}`)
+			job.requestContext.logger.info({ isSuccess, jobId }, `Finished job ${job.name}`)
 			this.newRelicBackgroundTransactionManager.stop(job.name)
 		}
 	}
 
 	private handleFailedEvent(job: JobType, error: Error) {
 		const jobId = resolveJobId(job)
-		const requestContext: RequestContext = {
-			logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(jobId), job),
-			reqId: jobId,
+
+		if (!job.requestContext) {
+			job.requestContext = {
+				logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(jobId), job),
+				reqId: jobId,
+			}
 		}
 
-		requestContext.logger.error(resolveGlobalErrorLogObject(error, jobId))
+		job.requestContext.logger.error(resolveGlobalErrorLogObject(error, jobId))
 		this.errorReporter.report({
 			error,
 			context: {
@@ -311,8 +323,22 @@ export abstract class AbstractBackgroundJobProcessor<
 			isStalledJobError(error) ||
 			job.opts.attempts === job.attemptsMade
 		) {
-			void this.internalOnFailed(job, error, requestContext).catch(() => undefined) // nothing to do in case of error
+			void this.internalOnFailed(job, error, job.requestContext).catch(() => undefined) // nothing to do in case of error
 		}
+	}
+
+	private async internalOnSuccess(job: JobType): Promise<void> {
+		const jobId = resolveJobId(job)
+		if (!job.requestContext) {
+			job.requestContext = {
+				logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(jobId), job),
+				reqId: jobId,
+			}
+		}
+
+		await this.internalOnHook(job, job.requestContext, async (job, requestContext) => {
+			await this.onSuccess(job, requestContext)
+		})
 	}
 
 	private async internalOnFailed(
@@ -320,8 +346,20 @@ export abstract class AbstractBackgroundJobProcessor<
 		error: Error,
 		requestContext: RequestContext,
 	): Promise<void> {
-		try {
+		await this.internalOnHook(job, requestContext, async (job, requestContext) => {
 			await this.onFailed(job, error, requestContext)
+		})
+
+		this._spy?.addJobProcessingResult(job, 'failed')
+	}
+
+	private async internalOnHook(
+		job: JobType,
+		requestContext: RequestContext,
+		onHook: (job: JobType, requestContext: RequestContext) => Promise<void>,
+	) {
+		try {
+			await onHook(job, requestContext)
 		} catch (error) {
 			const jobId = resolveJobId(job)
 			requestContext.logger.error(resolveGlobalErrorLogObject(error, jobId))
@@ -336,8 +374,6 @@ export abstract class AbstractBackgroundJobProcessor<
 				},
 			})
 		}
-
-		this._spy?.addJobProcessingResult(job, 'failed')
 	}
 
 	protected resolveExecutionLogger(jobId: string) {
@@ -345,6 +381,32 @@ export abstract class AbstractBackgroundJobProcessor<
 	}
 
 	protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
+
+	/**
+	 * The hook will be triggered on 'completed' job state.
+	 *
+	 * @param _job
+	 * @param _requestContext
+	 * @protected
+	 */
+	protected onSuccess(_job: JobType, _requestContext: RequestContext): Promise<void> {
+		return Promise.resolve()
+	}
+
+	/**
+	 * Removes all data associated with the job, keeps only correlationId.
+	 * This method only works if the result of the job is not removed right after it is finished.
+	 *
+	 * @param job
+	 * @protected
+	 */
+	protected async purgeJobData(job: JobType): Promise<void> {
+		const jobOptsRemoveOnComplete = job.opts.removeOnComplete
+		if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
+		// @ts-ignore
+		await job.updateData({ metadata: job.data.metadata })
+	}
+
 	protected abstract onFailed(
 		job: JobType,
 		error: Error,

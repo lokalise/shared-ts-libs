@@ -1,12 +1,12 @@
 import type { Job } from 'bullmq'
 
-import type { BackgroundJobProcessorDependencies } from '../types'
+import type { BackgroundJobProcessorDependencies, BaseJobPayload } from '../types'
 
 import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor'
 import { CommonBullmqFactory } from './factories/CommonBullmqFactory'
 
 export class FakeBackgroundJobProcessor<
-	JobData extends object,
+	JobData extends BaseJobPayload,
 > extends AbstractBackgroundJobProcessor<JobData> {
 	private _processCalls: JobData[] = []
 

@@ -1,9 +1,13 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 
-import { AbstractBackgroundJobProcessor, BackgroundJobProcessorDependencies } from '../../src'
+import {
+	AbstractBackgroundJobProcessor,
+	BackgroundJobProcessorDependencies,
+	BaseJobPayload,
+} from '../../src'
 
 export class TestReturnValueBackgroundJobProcessor<
-	JobData extends object,
+	JobData extends BaseJobPayload,
 	JobReturn,
 > extends AbstractBackgroundJobProcessor<JobData, JobReturn> {
 	private readonly returnValue: JobReturn
@@ -29,6 +33,10 @@ export class TestReturnValueBackgroundJobProcessor<
 	}
 
 	protected override onFailed(): Promise<void> {
+		return Promise.resolve()
+	}
+
+	protected override onSuccess(): Promise<void> {
 		return Promise.resolve()
 	}
 }
