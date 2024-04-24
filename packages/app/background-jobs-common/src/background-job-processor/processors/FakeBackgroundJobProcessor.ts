@@ -55,8 +55,4 @@ export class FakeBackgroundJobProcessor<
 	public clean(): void {
 		this._processCalls = []
 	}
-
-	protected onSuccess(_job: Job<JobData>): Promise<void> {
-		return Promise.resolve()
-	}
 }

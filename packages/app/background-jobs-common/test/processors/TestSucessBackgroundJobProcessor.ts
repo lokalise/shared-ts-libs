@@ -4,6 +4,7 @@ import {
 	BackgroundJobProcessorDependencies,
 	BaseJobPayload,
 	FakeBackgroundJobProcessor,
+	RequestContext,
 } from '../../src'
 
 type TestSuccessBackgroundJobProcessorData = {
@@ -36,10 +37,10 @@ export class TestSuccessBackgroundJobProcessor<
 		return Promise.resolve()
 	}
 
-	protected override onSuccess(job: Job<T>): Promise<void> {
+	protected override onSuccess(job: Job<T>, requestContext: RequestContext): Promise<void> {
 		this.onSuccessCounter += 1
 		this.onSuccessCall(job)
-		return Promise.resolve()
+		return super.onSuccess(job, requestContext)
 	}
 
 	override async purgeJobData(job: Job<T>): Promise<void> {
