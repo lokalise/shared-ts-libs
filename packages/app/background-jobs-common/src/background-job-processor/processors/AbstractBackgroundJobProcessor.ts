@@ -191,11 +191,11 @@ export abstract class AbstractBackgroundJobProcessor<
 		})
 
 		this.worker?.on('completed', (job) => {
-			// @ts-expect-error
-			this.internalOnSuccess(job, job.requestContext).catch(() => undefined) // nothing to do in case of success
 			if (this.config.isTest) {
 				this._spy?.addJobProcessingResult(job, 'completed')
 			}
+			// @ts-expect-error
+			this.internalOnSuccess(job, job.requestContext).catch(() => undefined) // nothing to do in case of success
 		})
 	}
 
