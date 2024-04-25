@@ -1,6 +1,6 @@
 {
 	"name": "@lokalise/background-jobs-common",
-	"version": "2.0.4",
+	"version": "2.0.5",
 	"files": [
 		"dist",
 		"LICENSE",
@@ -35,7 +35,7 @@
 	},
 	"dependencies": {
 		"@lokalise/id-utils": "1.0.0",
-		"@lokalise/node-core": "^9.15.0",
+		"@lokalise/node-core": "^9.16.0",
 		"pino": "^8.21.0",
 		"ts-deepmerge": "^7.0.0"
 	},
