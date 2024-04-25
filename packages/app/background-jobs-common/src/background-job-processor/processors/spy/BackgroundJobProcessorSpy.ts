@@ -91,14 +91,14 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 	 */
 	addJobProcessingResult(job: SafeJob<JobData>, state: JobFinalState): void {
 		if (!job.id) return
-		const clonedJobData = deepClone(job.data)
-		this.jobProcessingResults.set(job.id, { job: { ...job, data: clonedJobData }, state })
+		const clonedJob = { ...job, data: deepClone(job.data) }
+		this.jobProcessingResults.set(job.id, { job: clonedJob, state })
 
 		if (this.promises.length === 0) return
 
 		const indexes = this.promises.map((promise, index) => {
-			if (promise.selector(job) && state === promise.awaitedState) {
-				promise.resolve(job)
+			if (promise.selector(clonedJob) && state === promise.awaitedState) {
+				promise.resolve(clonedJob)
 				return index
 			}
 		})
