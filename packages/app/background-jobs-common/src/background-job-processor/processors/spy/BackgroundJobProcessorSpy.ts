@@ -1,4 +1,4 @@
-import { removeNullish } from '@lokalise/node-core'
+import { deepClone, removeNullish } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 
 import type { JobFinalState, SafeJob } from '../../types'
@@ -80,8 +80,10 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 
 	/**
 	 * Adds a job processing result and resolves any promises waiting for a matching job in the given final state.
-	 * Note: This method is not exposed on BackgroundJobProcessorSpyInterface, it is intended to be
+	 * Note: This method is not exposed on {@link BackgroundJobProcessorSpyInterface}, it is intended to be
 	 * a private package method
+	 *
+	 * JobData is cloned, to be protected against purge after the job is completed.
 	 *
 	 * @param job - The job to be added or updated.
 	 * @param  state - Final state of the job.
@@ -89,7 +91,8 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 	 */
 	addJobProcessingResult(job: SafeJob<JobData>, state: JobFinalState): void {
 		if (!job.id) return
-		this.jobProcessingResults.set(job.id, { job, state })
+		const clonedJobData = deepClone(job.data)
+		this.jobProcessingResults.set(job.id, { job: { ...job, data: clonedJobData }, state })
 
 		if (this.promises.length === 0) return
 
