@@ -1,4 +1,4 @@
-import {deepClone, removeNullish} from '@lokalise/node-core'
+import { deepClone, removeNullish } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 
 import type { JobFinalState, SafeJob } from '../../types'
@@ -92,7 +92,7 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 	addJobProcessingResult(job: SafeJob<JobData>, state: JobFinalState): void {
 		if (!job.id) return
 		const clonedJobData = deepClone(job.data)
-		this.jobProcessingResults.set(job.id, { job: {...job, data: clonedJobData}, state })
+		this.jobProcessingResults.set(job.id, { job: { ...job, data: clonedJobData }, state })
 
 		if (this.promises.length === 0) return
 
