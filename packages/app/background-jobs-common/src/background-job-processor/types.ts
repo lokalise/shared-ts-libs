@@ -17,8 +17,8 @@ import type { AbstractBullmqFactory } from './processors/factories/AbstractBullm
 export type JobFinalState = FinishedStatus
 
 export type BackgroundJobProcessorConfig<
-	QueueOptionsType extends QueueOptions,
-	WorkerOptionsType extends WorkerOptions,
+	QueueOptionsType extends QueueOptions = QueueOptions,
+	WorkerOptionsType extends WorkerOptions = WorkerOptions,
 > = {
 	queueId: string
 	isTest: boolean
