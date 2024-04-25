@@ -16,6 +16,7 @@ export class TestSuccessBackgroundJobProcessor<
 > extends FakeBackgroundJobProcessor<T> {
 	private onSuccessCounter: number = 0
 	private onSuccessCall: (job: Job<T>) => void
+	private _jobDataResult: TestSuccessBackgroundJobProcessorData
 
 	constructor(
 		dependencies: BackgroundJobProcessorDependencies<T>,
@@ -40,7 +41,12 @@ export class TestSuccessBackgroundJobProcessor<
 	protected override onSuccess(job: Job<T>, requestContext: RequestContext): Promise<void> {
 		this.onSuccessCounter += 1
 		this.onSuccessCall(job)
+		this._jobDataResult = job.data
 		return super.onSuccess(job, requestContext)
+	}
+
+	get jobDataResult(): TestSuccessBackgroundJobProcessorData {
+		return this._jobDataResult
 	}
 
 	override async purgeJobData(job: Job<T>): Promise<void> {

@@ -312,7 +312,10 @@ describe('AbstractBackgroundJobProcessor', () => {
 
 			// Then
 			expect(successBackgroundJobProcessor.onSuccessCallsCounter).toBe(1)
-			expect(job.data).toStrictEqual({ metadata: jobData.metadata })
+			expect(successBackgroundJobProcessor.jobDataResult).toStrictEqual({
+				metadata: jobData.metadata,
+			})
+			expect(job.data).toStrictEqual(jobData)
 		})
 	})
 
