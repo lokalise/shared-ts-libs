@@ -1,5 +1,5 @@
 import type { CommonLogger } from '@lokalise/node-core'
-import type { Bindings, ChildLoggerOptions, Logger } from 'pino'
+import type { Bindings, ChildLoggerOptions } from 'pino'
 import type pino from 'pino'
 
 import type { SafeJob } from './types'
@@ -15,10 +15,10 @@ const hasMessageProperty = (obj: unknown): obj is { message: string } => {
 }
 
 export class BackgroundJobProcessorLogger implements CommonLogger {
-	private readonly logger: Logger
+	private readonly logger: CommonLogger
 	private readonly job: SafeJob<unknown>
 
-	constructor(logger: Logger, job: SafeJob<unknown>) {
+	constructor(logger: CommonLogger, job: SafeJob<unknown>) {
 		this.logger = logger
 		this.job = job
 	}
@@ -71,8 +71,9 @@ export class BackgroundJobProcessorLogger implements CommonLogger {
 	}
 
 	private jobLog(level: pino.Level, obj: unknown, msg?: string) {
-		const levelValue = this.logger.levels.values[level]
-		if (levelValue < this.logger.levelVal) return
+		if (!this.isLevelEnabled(level)) {
+			return
+		}
 
 		let message: string | undefined
 
@@ -84,5 +85,9 @@ export class BackgroundJobProcessorLogger implements CommonLogger {
 		if (!message) return
 
 		void this.job.log(`[${level}] ${message}`).catch(() => undefined) // in case of error just ignore
+	}
+
+	isLevelEnabled(level: string): boolean {
+		return this.logger.isLevelEnabled(level)
 	}
 }
