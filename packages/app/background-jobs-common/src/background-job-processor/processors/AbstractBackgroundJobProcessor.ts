@@ -3,7 +3,6 @@ import type { CommonLogger, ErrorReporter } from '@lokalise/node-core'
 import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type { Queue, Worker, WorkerOptions, JobsOptions, Job, QueueOptions } from 'bullmq'
 import type Redis from 'ioredis'
-import type { Logger } from 'pino'
 import pino from 'pino'
 import { merge } from 'ts-deepmerge'
 
@@ -82,7 +81,7 @@ export abstract class AbstractBackgroundJobProcessor<
 	>,
 	JobOptionsType extends JobsOptions = JobsOptions,
 > {
-	protected readonly logger: Logger
+	protected readonly logger: CommonLogger
 
 	private readonly redis: Redis
 	private readonly newRelicBackgroundTransactionManager: TransactionObservabilityManager

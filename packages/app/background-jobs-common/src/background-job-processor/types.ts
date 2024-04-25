@@ -1,4 +1,4 @@
-import type { ErrorReporter } from '@lokalise/node-core'
+import type { CommonLogger, ErrorReporter } from '@lokalise/node-core'
 import type {
 	Job,
 	FinishedStatus,
@@ -9,7 +9,6 @@ import type {
 	JobsOptions,
 } from 'bullmq'
 import type Redis from 'ioredis'
-import type { Logger } from 'pino'
 
 import type { RequestContext } from './processors/AbstractBackgroundJobProcessor'
 import type { AbstractBullmqFactory } from './processors/factories/AbstractBullmqFactory'
@@ -81,7 +80,7 @@ export type BackgroundJobProcessorDependencies<
 > = {
 	redis: Redis
 	transactionObservabilityManager: TransactionObservabilityManager
-	logger: Logger
+	logger: CommonLogger
 	errorReporter: ErrorReporter
 	bullmqFactory: AbstractBullmqFactory<
 		QueueType,
