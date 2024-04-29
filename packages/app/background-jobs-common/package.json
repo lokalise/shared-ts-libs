@@ -45,7 +45,7 @@
 	"devDependencies": {
 		"@types/node": "^20.12.7",
 		"@lokalise/eslint-config": "latest",
-		"@lokalise/fastify-extras": "^17.0.3",
+		"@lokalise/fastify-extras": "^18.0.0",
 		"@lokalise/prettier-config": "latest",
 		"@lokalise/package-vite-config": "latest",
 		"@vitest/coverage-v8": "^1.5.0",
