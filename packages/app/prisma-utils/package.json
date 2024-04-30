@@ -29,7 +29,7 @@
 		"clean": "rimraf dist .eslintcache",
 		"lint": "eslint --cache --max-warnings=0  && prettier --check --log-level warn src \\\"**/*.{json,md}\\\" && tsc --noEmit",
 		"lint:fix": "eslint  --fix && prettier --write src \\\"**/*.{json,md}\\\"",
-		"docker:start:ci": "docker compose up -d --quiet-pull cockroachdb",
+		"docker:start:ci": "docker compose up -d cockroachdb",
 		"db:migration:dev": "dotenv -c test -- dotenv prisma migrate dev",
 		"db:update-client": "dotenv -c test prisma generate",
 		"test": "vitest run",
