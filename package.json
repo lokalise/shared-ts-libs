@@ -7,8 +7,8 @@
   ],
   "scripts": {
     "clean": "turbo run clean",
-    "build2": "turbo run build",
-    "test:ci2": "turbo run test:ci",
+    "build": "turbo run build",
+    "test:ci": "turbo run test:ci",
     "lint": "turbo run lint --continue",
     "lint:fix": "turbo run lint:fix --continue"
   },
