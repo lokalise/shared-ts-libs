@@ -1,7 +1,7 @@
 import { Either } from '@lokalise/node-core'
 import { PrismaClient } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vitest } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vitest } from 'vitest'
 
 import { cleanTables, DB_MODEL } from '../test/DbCleaner'
 
