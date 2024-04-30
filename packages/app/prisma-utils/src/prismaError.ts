@@ -1,4 +1,5 @@
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+import { isError } from '@lokalise/node-core'
 
 /**
  * What is checked?
@@ -11,7 +12,7 @@ export const isPrismaClientKnownRequestError = (
 	error: unknown,
 ): error is PrismaClientKnownRequestError =>
 	!!error &&
-	error instanceof Error &&
+	isError(error) &&
 	'code' in error &&
 	typeof error.code === 'string' &&
 	error.code.startsWith('P')

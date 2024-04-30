@@ -32,9 +32,10 @@
 		"docker:start:ci": "docker compose up -d cockroachdb",
 		"db:migration:dev": "dotenv -c test -- dotenv prisma migrate dev",
 		"db:update-client": "dotenv -c test prisma generate",
+		"db:wait": "while ! echo \"SELECT 1;\" | dotenv -c test -- prisma db execute --stdin; do sleep 1; done",
 		"test": "vitest run",
 		"test:migrate": "cross-env NODE_ENV=test dotenv -c test -- prisma migrate reset --force",
-		"pretest:ci": "npm run docker:start:ci && npm run test:migrate",
+		"pretest:ci": "npm run docker:start:ci && npm run db:wait && npm run test:migrate",
 		"test:ci": "npm run test -- --coverage",
 		"test:ci:teardown": "docker compose down",
 		"prepublishOnly": "npm run build"
