@@ -38,7 +38,8 @@
 		"pretest:ci": "npm run docker:start:ci && npm run db:wait && npm run test:migrate",
 		"test:ci": "npm run test -- --coverage",
 		"test:ci:teardown": "docker compose down",
-		"prepublishOnly": "npm run build"
+		"prepublishOnly": "npm run build",
+		"package-version": "echo $npm_package_version"
 	},
 	"dependencies": {
 		"@lokalise/node-core": "^9.16.0"
