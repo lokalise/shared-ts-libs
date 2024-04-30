@@ -32,7 +32,6 @@ jobs:
 
       - name: Install Dependencies
         run: npm install
-        working-directory: ${{ inputs.working_directory }}
 
       - name: Build Package
         run: npm run build
