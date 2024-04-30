@@ -24,7 +24,7 @@
 		}
 	},
 	"scripts": {
-		"build": "rimraf dist && vite build",
+		"build": "rimraf dist && npm run db:update-client && vite build",
 		"dev": "vite watch",
 		"clean": "rimraf dist .eslintcache",
 		"lint": "eslint --cache --max-warnings=0  && prettier --check --log-level warn src \\\"**/*.{json,md}\\\" && tsc --noEmit",
