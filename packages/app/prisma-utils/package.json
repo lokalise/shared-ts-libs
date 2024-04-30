@@ -27,8 +27,8 @@
 		"build": "rimraf dist && npm run db:update-client && vite build",
 		"dev": "vite watch",
 		"clean": "rimraf dist .eslintcache",
-		"lint": "eslint --cache --max-warnings=0  && prettier --check --log-level warn src \\\"**/*.{json,md}\\\" && tsc --noEmit",
-		"lint:fix": "eslint  --fix && prettier --write src \\\"**/*.{json,md}\\\"",
+		"lint": "eslint --cache --max-warnings=0 . && prettier --check --log-level warn src \"**/*.{json,md,ts,tsx}\" && tsc --noEmit",
+		"lint:fix": "prettier --write src \"**/*.{json,md,ts,tsx}\" --log-level=warn && eslint . --fix",
 		"docker:start:ci": "docker compose up -d cockroachdb",
 		"db:migration:dev": "dotenv -c test -- dotenv prisma migrate dev",
 		"db:update-client": "dotenv -c test prisma generate",
@@ -38,7 +38,8 @@
 		"pretest:ci": "npm run docker:start:ci && npm run db:wait && npm run test:migrate",
 		"test:ci": "npm run test -- --coverage",
 		"test:ci:teardown": "docker compose down",
-		"prepublishOnly": "npm run build"
+		"prepublishOnly": "npm run build",
+		"package-version": "echo $npm_package_version"
 	},
 	"dependencies": {
 		"@lokalise/node-core": "^9.16.0"

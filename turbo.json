@@ -1,0 +1,13 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "pipeline": {
+    "build": {
+      "outputMode": "new-only",
+      "dependsOn": ["^build"]
+    },
+    "clean": { "cache": false },
+    "test:ci": {},
+    "lint": { "outputMode": "errors-only" },
+    "lint:fix": { "outputMode": "errors-only" }
+  }
+}
