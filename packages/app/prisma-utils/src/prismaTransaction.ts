@@ -16,9 +16,9 @@ export type PrismaTransactionBasicOptions = Pick<
 	'retriesAllowed' | 'isolationLevel'
 >
 
-export type PrismaTransactionClient = Omit<PrismaClient, runtime.ITXClientDenyList>
+export type PrismaTransactionClient<P> = Omit<P, runtime.ITXClientDenyList>
 
-export type PrismaTransactionFn<T> = (prisma: PrismaTransactionClient) => Promise<T>
+export type PrismaTransactionFn<T, P> = (prisma: PrismaTransactionClient<P>) => Promise<T>
 
 type PrismaTransactionReturnType<T> = Either<
 	unknown,
@@ -34,9 +34,9 @@ type PrismaTransactionReturnType<T> = Either<
  * @param {PrismaTransactionOptions | PrismaTransactionBasicOptions} options transaction configuration
  * @return {Promise<PrismaTransactionReturnType<T>>}
  */
-export const prismaTransaction = (async <T>(
-	prisma: PrismaClient,
-	arg: PrismaTransactionFn<T>,
+export const prismaTransaction = (async <T, P extends PrismaClient>(
+	prisma: P,
+	arg: PrismaTransactionFn<T, P>,
 	options: PrismaTransactionOptions = { retriesAllowed: 3 },
 ): Promise<PrismaTransactionReturnType<T>> => {
 	let result: PrismaTransactionReturnType<T> | undefined = undefined
@@ -58,21 +58,21 @@ export const prismaTransaction = (async <T>(
 
 	return result ?? { error: new Error('No transaction retry executed') }
 }) as {
-	<T>(
-		prisma: PrismaClient,
-		fn: PrismaTransactionFn<T>,
+	<T, P extends PrismaClient>(
+		prisma: P,
+		fn: PrismaTransactionFn<T, P>,
 		options?: PrismaTransactionOptions,
 	): Promise<Either<unknown, T>>
-	<T extends Prisma.PrismaPromise<unknown>[]>(
-		prisma: PrismaClient,
+	<T extends Prisma.PrismaPromise<unknown>[], P extends PrismaClient>(
+		prisma: P,
 		args: [...T],
 		options?: PrismaTransactionBasicOptions,
 	): Promise<Either<unknown, runtime.Types.Utils.UnwrapTuple<T>>>
 }
 
-const executeTransactionTry = async <T>(
-	prisma: PrismaClient,
-	arg: PrismaTransactionFn<T>,
+const executeTransactionTry = async <T, P extends PrismaClient>(
+	prisma: P,
+	arg: PrismaTransactionFn<T, P>,
 	options: PrismaTransactionOptions,
 ): Promise<PrismaTransactionReturnType<T>> => {
 	try {

@@ -52,6 +52,16 @@ describe('prismaTransaction', () => {
 			expect(result.result).toMatchObject(TEST_ITEM_1)
 		})
 
+		it('interactive transaction returns correct types', async () => {
+			expect.assertions(1)
+
+			// When
+			await prismaTransaction(prisma, async (client) => {
+				const item1 = await client.item1.create({ data: TEST_ITEM_1 })
+				expect(item1.value).toMatchObject(TEST_ITEM_1.value)
+			})
+		})
+
 		it('by default, 3 retries in case of PRISMA_SERIALIZATION_ERROR', async () => {
 			// Given
 			const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
