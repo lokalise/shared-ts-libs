@@ -1,0 +1,65 @@
+{
+	"name": "@lokalise/prisma-utils",
+	"version": "1.0.0",
+	"type": "module",
+	"license": "Apache-2.0",
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE.md"
+	],
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"homepage": "https://github.com/lokalise/shared-ts-libs",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/lokalise/shared-ts-libs.git"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"require": "./dist/index.cjs",
+			"import": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"build": "rimraf dist && vite build",
+		"dev": "vite watch",
+		"clean": "rimraf dist .eslintcache",
+		"lint": "eslint --cache --max-warnings=0  && prettier --check --log-level warn src \\\"**/*.{json,md}\\\" && tsc --noEmit",
+		"lint:fix": "eslint  --fix && prettier --write src \\\"**/*.{json,md}\\\"",
+		"docker:start:ci": "docker compose up -d --quiet-pull cockroachdb",
+		"db:migration:dev": "dotenv -c test -- dotenv prisma migrate dev",
+		"db:update-client": "dotenv -c test prisma generate",
+		"test": "vitest run",
+		"test:migrate": "cross-env NODE_ENV=test dotenv -c test -- prisma migrate reset --force",
+		"pretest:ci": "npm run docker:start:ci && npm run test:migrate",
+		"test:ci": "npm run test -- --coverage",
+		"test:ci:teardown": "docker compose down",
+		"prepublishOnly": "npm run build"
+	},
+	"dependencies": {
+		"@lokalise/node-core": "^9.16.0"
+	},
+	"peerDependencies": {
+		"prisma": "^5.12.1",
+		"@prisma/client": "^5.12.1"
+	},
+	"devDependencies": {
+		"@prisma/client": "^5.13.0",
+		"@lokalise/eslint-config": "*",
+		"@lokalise/prettier-config": "*",
+		"@lokalise/package-vite-config": "*",
+		"@vitest/coverage-v8": "^1.5.3",
+		"cross-env": "^7.0.3",
+		"dotenv-cli": "^7.4.1",
+		"prisma": "^5.13.0",
+		"prettier": "^3.2.5",
+		"rimraf": "^5.0.1",
+		"typescript": "5.4.5",
+		"vite": "^5.2.10",
+		"vitest": "^1.5.3"
+	},
+	"prettier": "@lokalise/prettier-config"
+}
