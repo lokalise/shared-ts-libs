@@ -1,11 +1,12 @@
 import { Either } from '@lokalise/node-core'
+import { PrismaClient } from '@prisma/client'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vitest } from 'vitest'
+
+import { cleanTables, DB_MODEL } from '../test/DbCleaner'
 
 import { PRISMA_NOT_FOUND_ERROR, PRISMA_SERIALIZATION_ERROR } from './prismaError'
 import { prismaTransaction } from './prismaTransaction'
-import { PrismaClient } from '@prisma/client'
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
-import { cleanTables, DB_MODEL } from '../test/DbCleaner'
 
 type Item1 = {
 	value: string
@@ -35,7 +36,7 @@ describe('prismaTransaction', () => {
 		await cleanTables(prisma, [DB_MODEL.item1, DB_MODEL.item2])
 	})
 
-	afterEach(async () => {
+	afterEach(() => {
 		vitest.resetAllMocks()
 		vitest.restoreAllMocks()
 	})

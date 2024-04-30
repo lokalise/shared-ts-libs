@@ -1,10 +1,8 @@
 import type { Either } from '@lokalise/node-core'
-
 import type { PrismaClient, Prisma } from '@prisma/client'
 import type * as runtime from '@prisma/client/runtime/library'
 
 import { isPrismaClientKnownRequestError, PRISMA_SERIALIZATION_ERROR } from './prismaError'
-import type { Types } from '@prisma/client/runtime/library'
 
 export type PrismaTransactionOptions = {
 	retriesAllowed: number
@@ -24,7 +22,7 @@ export type PrismaTransactionFn<T> = (prisma: PrismaTransactionClient) => Promis
 
 type PrismaTransactionReturnType<T> = Either<
 	unknown,
-	T | Types.Utils.UnwrapTuple<Prisma.PrismaPromise<unknown>[]>
+	T | runtime.Types.Utils.UnwrapTuple<Prisma.PrismaPromise<unknown>[]>
 >
 
 /**
