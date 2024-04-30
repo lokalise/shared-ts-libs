@@ -10,6 +10,7 @@ export default defineConfig({
     },
     watch: false,
     environment: 'node',
+    restoreMocks: true,
     setupFiles: ['test/envSetupHook.ts'],
     reporters: ['default'],
     coverage: {

@@ -1,7 +1,7 @@
 import { Either } from '@lokalise/node-core'
 import { PrismaClient } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vitest } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vitest } from 'vitest'
 
 import { cleanTables, DB_MODEL } from '../test/DbCleaner'
 
@@ -36,9 +36,8 @@ describe('prismaTransaction', () => {
 		await cleanTables(prisma, [DB_MODEL.item1, DB_MODEL.item2])
 	})
 
-	afterEach(() => {
-		vitest.resetAllMocks()
-		vitest.restoreAllMocks()
+	afterAll(async () => {
+		await prisma.$disconnect()
 	})
 
 	describe('with function callback', () => {
