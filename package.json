@@ -6,10 +6,13 @@
     "packages/app/*"
   ],
   "scripts": {
-    "build": "npm run build -w packages/dev/package-vite-config && npm run build -w packages/app/id-utils && npm run build --workspaces --if-present",
-    "test:ci": "npm run test:ci --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
-    "lint:fix": "npm run lint:fix --workspaces --if-present"
+    "clean": "turbo run clean",
+    "build2": "turbo run build",
+    "test:ci2": "turbo run test:ci",
+    "lint": "turbo run lint --continue",
+    "lint:fix": "turbo run lint:fix --continue"
   },
-  "dependencies": {}
+  "devDependencies": {
+    "turbo": "^1.13.3"
+  }
 }
