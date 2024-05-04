@@ -84,7 +84,7 @@ export abstract class AbstractBackgroundJobProcessor<
 	protected readonly logger: CommonLogger
 
 	private readonly redis: Redis
-	private readonly newRelicBackgroundTransactionManager: TransactionObservabilityManager
+	private readonly transactionObservabilityManager: TransactionObservabilityManager
 	private readonly errorReporter: ErrorReporter
 	private readonly config: BackgroundJobProcessorConfig<QueueOptionsType, WorkerOptionsType>
 	private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
@@ -120,7 +120,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		this.config = config
 		this.factory = dependencies.bullmqFactory
 		this.redis = dependencies.redis
-		this.newRelicBackgroundTransactionManager = dependencies.transactionObservabilityManager
+		this.transactionObservabilityManager = dependencies.transactionObservabilityManager
 		this.logger = dependencies.logger
 		this.errorReporter = dependencies.errorReporter
 		this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
@@ -226,14 +226,14 @@ export abstract class AbstractBackgroundJobProcessor<
 					origin: this.constructor.name,
 					queueId: this.config.queueId,
 				},
-				'Processor ${this.constructor.name} is not started, starting with lazy loading',
+				`Processor ${this.constructor.name} is not started, starting with lazy loading`,
 			)
 			await this.start()
 		}
 
 		const jobs = await this.queue?.addBulk(
 			jobData.map((data) => ({
-				name: this.constructor.name,
+				name: this.config.queueId,
 				data,
 				opts: this.prepareJobOptions(options ?? ({} as JobOptionsType)),
 			})),
@@ -278,7 +278,8 @@ export abstract class AbstractBackgroundJobProcessor<
 		}
 
 		try {
-			this.newRelicBackgroundTransactionManager.start(job.name)
+			const transactionName = `bg_job:${this.config.ownerName}:${this.config.queueId}`
+			this.transactionObservabilityManager.start(transactionName)
 			job.requestContext.logger.info(
 				{
 					origin: this.constructor.name,
@@ -294,7 +295,7 @@ export abstract class AbstractBackgroundJobProcessor<
 			return result
 		} finally {
 			job.requestContext.logger.info({ isSuccess, jobId }, `Finished job ${job.name}`)
-			this.newRelicBackgroundTransactionManager.stop(job.name)
+			this.transactionObservabilityManager.stop(job.name)
 		}
 	}
 

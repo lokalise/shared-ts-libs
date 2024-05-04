@@ -21,6 +21,9 @@ export type BackgroundJobProcessorConfig<
 > = {
 	queueId: string
 	isTest: boolean
+
+	// Name of a webservice or a module running the bg job. Used for logging/observability
+	ownerName: string
 	queueOptions?: Partial<QueueOptionsType>
 	workerOptions: Partial<WorkerOptionsType>
 }

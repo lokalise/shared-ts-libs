@@ -169,7 +169,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 					origin: 'FakeBackgroundJobProcessor',
 					jobId,
 				},
-				'Started job FakeBackgroundJobProcessor',
+				`Started job ${QueueName}`,
 				[],
 			])
 			expect(lastInfoSpy.mock.calls[1]).toMatchObject([
@@ -177,7 +177,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 					isSuccess: true,
 					jobId,
 				},
-				'Finished job FakeBackgroundJobProcessor',
+				`Finished job ${QueueName}`,
 				[],
 			])
 		})

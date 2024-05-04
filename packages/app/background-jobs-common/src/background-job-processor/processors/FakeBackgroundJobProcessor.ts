@@ -28,6 +28,7 @@ export class FakeBackgroundJobProcessor<
 			},
 			{
 				queueId: queueName,
+				ownerName: 'testOwner',
 				isTest,
 				workerOptions: { concurrency: 1 },
 			},
