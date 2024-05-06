@@ -21,7 +21,11 @@ export class FakeBackgroundJobProcessor<
 		super(
 			{
 				redis: dependencies.redis,
-				transactionObservabilityManager: { start: () => {}, stop: () => {} },
+				transactionObservabilityManager: {
+					start: () => {},
+					startWithGroup: () => {},
+					stop: () => {},
+				},
 				logger: dependencies.logger,
 				errorReporter: dependencies.errorReporter,
 				bullmqFactory: new CommonBullmqFactory(),

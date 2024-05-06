@@ -279,7 +279,7 @@ export abstract class AbstractBackgroundJobProcessor<
 
 		try {
 			const transactionName = `bg_job:${this.config.ownerName}:${this.config.queueId}`
-			this.transactionObservabilityManager.start(transactionName)
+			this.transactionObservabilityManager.start(transactionName, jobId)
 			job.requestContext.logger.info(
 				{
 					origin: this.constructor.name,
@@ -295,7 +295,7 @@ export abstract class AbstractBackgroundJobProcessor<
 			return result
 		} finally {
 			job.requestContext.logger.info({ isSuccess, jobId }, `Finished job ${job.name}`)
-			this.transactionObservabilityManager.stop(job.name)
+			this.transactionObservabilityManager.stop(jobId)
 		}
 	}
 
