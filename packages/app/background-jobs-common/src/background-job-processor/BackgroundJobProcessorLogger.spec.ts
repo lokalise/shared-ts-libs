@@ -1,5 +1,4 @@
-import { globalLogger } from '@lokalise/node-core'
-import { Logger } from 'pino'
+import { CommonLogger, globalLogger } from '@lokalise/node-core'
 import { beforeEach, describe, expect, it, MockInstance, vitest } from 'vitest'
 
 import { BackgroundJobProcessorLogger } from './BackgroundJobProcessorLogger'
@@ -7,7 +6,7 @@ import { BackgroundJobProcessorLogger } from './BackgroundJobProcessorLogger'
 const logger = globalLogger
 
 describe('BackgroundJobProcessorLogger', () => {
-	let testLogger: Logger
+	let testLogger: CommonLogger
 	let backgroundJobProcessorLogger: BackgroundJobProcessorLogger
 	let jobLogSpy: MockInstance
 
@@ -108,6 +107,14 @@ describe('BackgroundJobProcessorLogger', () => {
 			testLogger.level = 'warn'
 
 			backgroundJobProcessorLogger.info({ msg: 'test' })
+			expect(jobLogSpy).not.toHaveBeenCalled()
+		})
+
+		it('does not log empty messages', () => {
+			testLogger.level = 'info'
+
+			// @ts-expect-error We are simulating wrong input
+			backgroundJobProcessorLogger.info()
 			expect(jobLogSpy).not.toHaveBeenCalled()
 		})
 	})

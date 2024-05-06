@@ -1,4 +1,8 @@
-import type { CommonLogger, ErrorReporter } from '@lokalise/node-core'
+import type {
+	CommonLogger,
+	ErrorReporter,
+	TransactionObservabilityManager,
+} from '@lokalise/node-core'
 import type {
 	Job,
 	FinishedStatus,
@@ -21,14 +25,14 @@ export type BackgroundJobProcessorConfig<
 > = {
 	queueId: string
 	isTest: boolean
+
+	// Name of a webservice or a module running the bg job. Used for logging/observability
+	ownerName: string
 	queueOptions?: Partial<QueueOptionsType>
 	workerOptions: Partial<WorkerOptionsType>
 }
 
-export type TransactionObservabilityManager = {
-	start: (transactionSpanId: string) => unknown
-	stop: (transactionSpanId: string) => unknown
-}
+export { TransactionObservabilityManager }
 
 // "scripts" field is incompatible between free and pro versions, and it's not particularly important
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

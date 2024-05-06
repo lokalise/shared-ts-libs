@@ -169,7 +169,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 					origin: 'FakeBackgroundJobProcessor',
 					jobId,
 				},
-				'Started job FakeBackgroundJobProcessor',
+				`Started job ${QueueName}`,
 				[],
 			])
 			expect(lastInfoSpy.mock.calls[1]).toMatchObject([
@@ -177,7 +177,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 					isSuccess: true,
 					jobId,
 				},
-				'Finished job FakeBackgroundJobProcessor',
+				`Finished job ${QueueName}`,
 				[],
 			])
 		})
@@ -352,6 +352,8 @@ describe('AbstractBackgroundJobProcessor', () => {
 			expect(job.attemptsMade).toBe(3)
 			expect(processor.errorsOnProcess[0]).toMatchObject(errors[2])
 
+			// Note that this relies on "background-jobs-common" and "node-core" using the same "pino" package instance, otherwise symbol won't match
+			// For this reason there is an explicit pino dependency in root package.json, so that both node-core and pino are resolved from a global node_modules
 			expect(processor.lastLogger[symbols.chindingsSym]).toContain('"x-request-id"')
 		})
 
