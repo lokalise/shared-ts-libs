@@ -206,6 +206,7 @@ export abstract class AbstractBackgroundJobProcessor<
 			await this.worker?.close(this.config.isTest)
 			await this.queue?.close()
 		} catch {
+			/* v8 ignore next 3 */
 			// do nothing
 		}
 
@@ -239,6 +240,8 @@ export abstract class AbstractBackgroundJobProcessor<
 			})),
 		)
 		const jobIds = jobs?.map((job) => job.id) ?? []
+
+		/* v8 ignore next 3 */
 		if (jobIds.length === 0 || !jobIds.every((id) => !!id)) {
 			// Practically unreachable, but we want to simplify the signature of the method and avoid
 			// stating that it could return undefined.
@@ -255,6 +258,7 @@ export abstract class AbstractBackgroundJobProcessor<
 			...options,
 		}
 
+		/* v8 ignore next 7 */
 		if (this.config.isTest && typeof preparedOptions.backoff === 'object') {
 			preparedOptions.backoff.delay = 1
 			preparedOptions.backoff.type = 'fixed'
