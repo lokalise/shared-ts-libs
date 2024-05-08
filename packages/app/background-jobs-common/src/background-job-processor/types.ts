@@ -26,14 +26,11 @@ export type BackgroundJobProcessorConfig<
 > = {
 	queueId: string
 	isTest: boolean
-
 	// Name of a webservice or a module running the bg job. Used for logging/observability
 	ownerName: string
 	queueOptions?: Partial<QueueOptionsType>
 	workerOptions: Partial<WorkerOptionsType>
 }
-
-export { TransactionObservabilityManager }
 
 // "scripts" field is incompatible between free and pro versions, and it's not particularly important
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -81,7 +78,7 @@ export type BullmqProcessor<
 export type BackgroundJobProcessorDependencies<
 	JobPayload extends object,
 	JobReturn = void,
-	JobType extends SafeJob<JobPayload, JobReturn> = Job,
+	JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
 	JobsOptionsType extends JobsOptions = JobsOptions,
 	QueueType extends SafeQueue<JobsOptionsType, JobPayload, JobReturn> = Queue<
 		JobPayload,
