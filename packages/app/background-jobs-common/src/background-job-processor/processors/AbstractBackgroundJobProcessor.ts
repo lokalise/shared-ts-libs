@@ -186,16 +186,26 @@ export abstract class AbstractBackgroundJobProcessor<
 		this.worker?.on('failed', (job, error) => {
 			if (!job) return // Should not be possible with our current config, check 'failed' for more info
 			// @ts-expect-error
-			this.handleFailedEvent(job, error)
+			this.internalOnFailed(job, error).catch(() => undefined) // nothing to do
 		})
 
 		this.worker?.on('completed', (job) => {
-			if (this.config.isTest) {
-				this._spy?.addJobProcessingResult(job, 'completed')
-			}
 			// @ts-expect-error
-			this.internalOnSuccess(job, job.requestContext).catch(() => undefined) // nothing to do in case of success
+			this.internalOnSuccess(job, job.requestContext).catch(() => undefined) // nothing to do
 		})
+	}
+
+	private async startIfNotStarted() {
+		if (!this.queue) {
+			this.logger.warn(
+				{
+					origin: this.constructor.name,
+					queueId: this.config.queueId,
+				},
+				`Processor ${this.constructor.name} is not started, starting with lazy loading`,
+			)
+			await this.start()
+		}
 	}
 
 	public async dispose(): Promise<void> {
@@ -221,16 +231,7 @@ export abstract class AbstractBackgroundJobProcessor<
 	}
 
 	public async scheduleBulk(jobData: JobPayload[], options?: JobOptionsType): Promise<string[]> {
-		if (!this.queue) {
-			this.logger.warn(
-				{
-					origin: this.constructor.name,
-					queueId: this.config.queueId,
-				},
-				`Processor ${this.constructor.name} is not started, starting with lazy loading`,
-			)
-			await this.start()
-		}
+		await this.startIfNotStarted()
 
 		const jobs = await this.queue?.addBulk(
 			jobData.map((data) => ({
@@ -303,7 +304,24 @@ export abstract class AbstractBackgroundJobProcessor<
 		}
 	}
 
-	private handleFailedEvent(job: JobType, error: Error) {
+	private async internalOnSuccess(job: JobType): Promise<void> {
+		const jobId = resolveJobId(job)
+		if (!job.requestContext) {
+			job.requestContext = {
+				logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(jobId), job),
+				reqId: jobId,
+			}
+		}
+
+		this._spy?.addJobProcessingResult(job, 'completed') // this should be executed before the hook to not be affected by it
+		await this.internalOnHook(
+			job,
+			job.requestContext,
+			async (job, requestContext) => await this.onSuccess(job, requestContext),
+		)
+	}
+
+	private async internalOnFailed(job: JobType, error: Error): Promise<void> {
 		const jobId = resolveJobId(job)
 
 		if (!job.requestContext) {
@@ -316,10 +334,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		job.requestContext.logger.error(resolveGlobalErrorLogObject(error, jobId))
 		this.errorReporter.report({
 			error,
-			context: {
-				jobId,
-				errorJson: JSON.stringify(pino.stdSerializers.err(error)),
-			},
+			context: { jobId, errorJson: JSON.stringify(pino.stdSerializers.err(error)) },
 		})
 
 		if (
@@ -327,34 +342,11 @@ export abstract class AbstractBackgroundJobProcessor<
 			isStalledJobError(error) ||
 			job.opts.attempts === job.attemptsMade
 		) {
-			void this.internalOnFailed(job, error, job.requestContext).catch(() => undefined) // nothing to do in case of error
+			await this.internalOnHook(job, job.requestContext, async (job, requestContext) =>
+				this.onFailed(job, error, requestContext),
+			)
+			this._spy?.addJobProcessingResult(job, 'failed')
 		}
-	}
-
-	private async internalOnSuccess(job: JobType): Promise<void> {
-		const jobId = resolveJobId(job)
-		if (!job.requestContext) {
-			job.requestContext = {
-				logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(jobId), job),
-				reqId: jobId,
-			}
-		}
-
-		await this.internalOnHook(job, job.requestContext, async (job, requestContext) => {
-			await this.onSuccess(job, requestContext)
-		})
-	}
-
-	private async internalOnFailed(
-		job: JobType,
-		error: Error,
-		requestContext: RequestContext,
-	): Promise<void> {
-		await this.internalOnHook(job, requestContext, async (job, requestContext) => {
-			await this.onFailed(job, error, requestContext)
-		})
-
-		this._spy?.addJobProcessingResult(job, 'failed')
 	}
 
 	private async internalOnHook(
@@ -384,8 +376,6 @@ export abstract class AbstractBackgroundJobProcessor<
 		return this.logger.child({ 'x-request-id': jobId })
 	}
 
-	protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
-
 	/**
 	 * The hook will be triggered on 'completed' job state.
 	 *
@@ -411,6 +401,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		await job.updateData({ metadata: job.data.metadata })
 	}
 
+	protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
 	protected abstract onFailed(
 		job: JobType,
 		error: Error,
