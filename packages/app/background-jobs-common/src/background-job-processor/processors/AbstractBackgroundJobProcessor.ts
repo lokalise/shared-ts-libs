@@ -402,7 +402,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		}
 	}
 
-	protected resolveExecutionLogger(jobId: string) {
+	protected resolveExecutionLogger(jobId: string): CommonLogger {
 		return this.logger.child({ 'x-request-id': jobId })
 	}
 

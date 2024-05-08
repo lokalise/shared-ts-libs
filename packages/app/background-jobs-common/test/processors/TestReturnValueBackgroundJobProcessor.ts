@@ -18,6 +18,7 @@ export class TestReturnValueBackgroundJobProcessor<
 	) {
 		super(dependencies, {
 			queueId: generateMonotonicUuid(),
+			ownerName: 'test',
 			isTest: true,
 			workerOptions: { concurrency: 1 },
 		})

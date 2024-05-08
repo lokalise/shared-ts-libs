@@ -1,3 +1,4 @@
+import { RequestContext } from '@lokalise/fastify-extras'
 import { CommonLogger } from '@lokalise/node-core'
 import { Job } from 'bullmq'
 
@@ -54,8 +55,8 @@ export class TestFailingBackgroundJobProcessor<
 		return this._errorsOnProcess
 	}
 
-	protected override async onFailed(job: Job<T>, error: Error) {
-		await super.onFailed(job, error)
+	protected override async onFailed(job: Job<T>, error: Error, requestContext: RequestContext) {
+		await super.onFailed(job, error, requestContext)
 		this._errorsOnProcess.push(error)
 		if (this._errorToThrowOnFailed) {
 			throw this._errorToThrowOnFailed
