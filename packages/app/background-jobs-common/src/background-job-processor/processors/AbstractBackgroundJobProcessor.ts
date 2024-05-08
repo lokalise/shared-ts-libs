@@ -418,6 +418,18 @@ export abstract class AbstractBackgroundJobProcessor<
 	}
 
 	/**
+	 * The hook will be triggered on 'failed' job state.
+	 *
+	 * @param _job
+	 * @param _error
+	 * @param _requestContext
+	 * @protected
+	 */
+	protected onFailed(_job: JobType, _error: Error, _requestContext: RequestContext): Promise<void> {
+		return Promise.resolve()
+	}
+
+	/**
 	 * Removes all data associated with the job, keeps only correlationId.
 	 * This method only works if the result of the job is not removed right after it is finished.
 	 *
@@ -432,9 +444,4 @@ export abstract class AbstractBackgroundJobProcessor<
 	}
 
 	protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
-	protected abstract onFailed(
-		job: JobType,
-		error: Error,
-		requestContext: RequestContext,
-	): Promise<void>
 }

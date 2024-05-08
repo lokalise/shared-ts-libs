@@ -44,10 +44,6 @@ export class FakeBackgroundJobProcessor<
 		return Promise.resolve()
 	}
 
-	protected onFailed(_job: Job<JobData>, _error: Error): Promise<void> {
-		return Promise.resolve()
-	}
-
 	/**
 	 * @deprecated use job spy instead
 	 */
