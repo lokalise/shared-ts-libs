@@ -11,6 +11,7 @@ import type {
 	Worker,
 	WorkerOptions,
 	JobsOptions,
+	JobState,
 } from 'bullmq'
 import type Redis from 'ioredis'
 
@@ -61,7 +62,7 @@ export type SafeQueue<
 		}[],
 	): Promise<SafeJob<DataType, ResultType, NameType>[]>
 	getJobs(
-		types?: JobType[] | JobType,
+		types?: JobState[] | JobState,
 		start?: number,
 		end?: number,
 		asc?: boolean,

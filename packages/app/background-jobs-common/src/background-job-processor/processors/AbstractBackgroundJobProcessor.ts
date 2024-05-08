@@ -2,6 +2,7 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { CommonLogger, ErrorReporter } from '@lokalise/node-core'
 import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type { Queue, Worker, WorkerOptions, JobsOptions, Job, QueueOptions } from 'bullmq'
+import type { JobState } from 'bullmq/dist/esm/types/job-type'
 import type Redis from 'ioredis'
 import pino from 'pino'
 import { merge } from 'ts-deepmerge'
@@ -69,7 +70,7 @@ const DEFAULT_WORKER_OPTIONS = {
 export abstract class AbstractBackgroundJobProcessor<
 	JobPayload extends BaseJobPayload,
 	JobReturn = void,
-	JobType extends SafeJob<JobPayload, JobReturn> = Job,
+	JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
 	QueueType extends SafeQueue<JobOptionsType, JobPayload, JobReturn> = Queue<JobPayload, JobReturn>,
 	QueueOptionsType extends QueueOptions = QueueOptions,
 	WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
@@ -182,19 +183,6 @@ export abstract class AbstractBackgroundJobProcessor<
 		this.registerListeners()
 	}
 
-	private registerListeners() {
-		this.worker?.on('failed', (job, error) => {
-			if (!job) return // Should not be possible with our current config, check 'failed' for more info
-			// @ts-expect-error
-			this.internalOnFailed(job, error).catch(() => undefined) // nothing to do
-		})
-
-		this.worker?.on('completed', (job) => {
-			// @ts-expect-error
-			this.internalOnSuccess(job, job.requestContext).catch(() => undefined) // nothing to do
-		})
-	}
-
 	private async startIfNotStarted() {
 		if (!this.queue) {
 			this.logger.warn(
@@ -206,6 +194,19 @@ export abstract class AbstractBackgroundJobProcessor<
 			)
 			await this.start()
 		}
+	}
+
+	private registerListeners() {
+		this.worker?.on('failed', (job, error) => {
+			if (!job) return // Should not be possible with our current config, check 'failed' for more info
+			// @ts-expect-error
+			this.internalOnFailed(job, error).catch(() => undefined) // nothing to do
+		})
+
+		this.worker?.on('completed', (job) => {
+			// @ts-expect-error
+			this.internalOnSuccess(job, job.requestContext).catch(() => undefined) // nothing to do
+		})
 	}
 
 	public async dispose(): Promise<void> {
@@ -250,6 +251,26 @@ export abstract class AbstractBackgroundJobProcessor<
 		}
 
 		return jobIds as string[]
+	}
+
+	/**
+	 * Get jobs in the given states.
+	 *
+	 * @param states
+	 * @param start default 0
+	 * @param end default 10
+	 * @param asc default true (oldest first)
+	 */
+	public async getJobsInQueue(
+		states: JobState[],
+		start: number = 0,
+		end: number = 10,
+		asc: boolean = true,
+	): Promise<JobType[]> {
+		await this.startIfNotStarted()
+		const jobs = (await this.queue?.getJobs(states, start, end, asc)) ?? []
+		// TODO: we should not expose all properties of the job (no setters)
+		return (jobs ?? []) as JobType[]
 	}
 
 	private prepareJobOptions(options: JobOptionsType): JobOptionsType {
