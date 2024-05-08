@@ -5,7 +5,7 @@ import type { JobFinalState } from '../types'
 export type JobDataSelector<JobData extends object> = (jobData: JobData) => boolean
 export type JobSpyResult<JobData extends object, jobReturn> = Pick<
 	Job<JobData, jobReturn>,
-	'data' | 'attemptsMade' | 'id' | 'progress' | 'returnvalue' | 'failedReason'
+	'data' | 'attemptsMade' | 'id' | 'progress' | 'returnvalue' | 'failedReason' | 'finishedOn'
 >
 
 export interface BackgroundJobProcessorSpyInterface<JobData extends object, jobReturn> {

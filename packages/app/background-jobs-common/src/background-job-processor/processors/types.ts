@@ -55,3 +55,21 @@ export type BackgroundJobProcessorDependencies<
 		JobsOptionsType
 	>
 }
+
+export type JobInQueue<JobData extends object, jobReturn> = Pick<
+	Job<JobData, jobReturn>,
+	| 'id'
+	| 'data'
+	| 'attemptsMade'
+	| 'attemptsStarted'
+	| 'progress'
+	| 'returnvalue'
+	| 'failedReason'
+	| 'finishedOn'
+	| 'getState'
+>
+
+export type JobsPaginatedResponse<JobData extends object, jobReturn> = {
+	jobs: JobInQueue<JobData, jobReturn>[]
+	hasMore: boolean
+}
