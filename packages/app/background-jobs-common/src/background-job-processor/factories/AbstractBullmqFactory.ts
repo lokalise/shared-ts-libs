@@ -1,7 +1,7 @@
 import type { QueueOptions, Worker, WorkerOptions } from 'bullmq'
 import type { JobsOptions } from 'bullmq/dist/esm/types'
 
-import type { BullmqProcessor, SafeJob, SafeQueue } from '../../types'
+import type { BullmqProcessor, SafeJob, SafeQueue } from '../types'
 
 export abstract class AbstractBullmqFactory<
 	QueueType extends SafeQueue<JobsOptionsType, JobPayload, JobReturn>,

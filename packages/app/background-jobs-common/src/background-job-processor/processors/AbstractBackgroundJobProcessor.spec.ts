@@ -259,6 +259,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			// Then
 			expect(successBackgroundJobProcessor.onSuccessCallsCounter).toBe(1)
 		})
+
 		it('should handle onSuccess hook error', async () => {
 			// Given
 			const jobData = {
@@ -288,6 +289,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			// Then
 			expect(successBackgroundJobProcessor.onSuccessCallsCounter).toBe(1)
 		})
+
 		it('should clear job data onSuccess', async () => {
 			// Given
 			const jobData = {

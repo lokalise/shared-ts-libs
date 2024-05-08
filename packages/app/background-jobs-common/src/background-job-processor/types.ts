@@ -15,8 +15,8 @@ import type {
 } from 'bullmq'
 import type Redis from 'ioredis'
 
+import type { AbstractBullmqFactory } from './factories/AbstractBullmqFactory'
 import type { RequestContext } from './processors/AbstractBackgroundJobProcessor'
-import type { AbstractBullmqFactory } from './processors/factories/AbstractBullmqFactory'
 
 export type JobFinalState = FinishedStatus
 

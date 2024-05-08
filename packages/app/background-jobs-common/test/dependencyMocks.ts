@@ -3,7 +3,7 @@ import { Redis } from 'ioredis'
 import { MockInstance, vi, vitest } from 'vitest'
 
 import type { BackgroundJobProcessorDependencies } from '../src'
-import { CommonBullmqFactory } from '../src/background-job-processor/processors/factories/CommonBullmqFactory'
+import { CommonBullmqFactory } from '../src/background-job-processor/factories/CommonBullmqFactory'
 
 const MAX_DB_INDEX = 16 // Redis supports up to 16 logical databases
 

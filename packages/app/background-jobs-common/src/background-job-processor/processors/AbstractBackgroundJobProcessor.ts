@@ -12,7 +12,10 @@ import {
 	RETENTION_FAILED_JOBS_IN_DAYS,
 	RETENTION_QUEUE_IDS_IN_DAYS,
 } from '../constants'
+import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
 import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger'
+import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
 import type {
 	BackgroundJobProcessorConfig,
 	BackgroundJobProcessorDependencies,
@@ -29,10 +32,6 @@ import {
 	isUnrecoverableJobError,
 	resolveJobId,
 } from '../utils'
-
-import type { AbstractBullmqFactory } from './factories/AbstractBullmqFactory'
-import { BackgroundJobProcessorSpy } from './spy/BackgroundJobProcessorSpy'
-import type { BackgroundJobProcessorSpyInterface } from './spy/types'
 
 export interface RequestContext {
 	logger: CommonLogger
