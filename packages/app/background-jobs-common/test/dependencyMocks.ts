@@ -2,8 +2,7 @@ import { globalLogger } from '@lokalise/node-core'
 import { Redis } from 'ioredis'
 import { MockInstance, vi, vitest } from 'vitest'
 
-import type { BackgroundJobProcessorDependencies } from '../src'
-import { CommonBullmqFactory } from '../src/background-job-processor/factories/CommonBullmqFactory'
+import { BackgroundJobProcessorDependencies, CommonBullmqFactory } from '../src'
 
 const MAX_DB_INDEX = 16 // Redis supports up to 16 logical databases
 

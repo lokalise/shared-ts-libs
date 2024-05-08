@@ -4,6 +4,7 @@ import { UnrecoverableError } from 'bullmq'
 import { symbols } from 'pino'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cleanRedis } from '../../../test/RedisCleaner'
 import { DependencyMocks, lastInfoSpy } from '../../../test/dependencyMocks'
 import { TestFailingBackgroundJobProcessor } from '../../../test/processors/TestFailingBackgroundJobProcessor'
 import { TestReturnValueBackgroundJobProcessor } from '../../../test/processors/TestReturnValueBackgroundJobProcessor'
@@ -480,28 +481,68 @@ describe('AbstractBackgroundJobProcessor', () => {
 			await processor.dispose()
 		})
 
-		// TODO: complete
-		// eslint-disable-next-line vitest/expect-expect
+		it('empty states should throw error', async () => {
+			await expect(processor.getJobsInQueue([])).rejects.toThrow('states must not be empty')
+		})
+
+		it('start bigger than end should throw error', async () => {
+			await expect(processor.getJobsInQueue(['active'], 2, 1)).rejects.toThrow(
+				'start must be less than or equal to end',
+			)
+		})
+
 		it('returns jobs in the given states', async () => {
-			const [jobData1, jobData2] = [
-				{
-					id: generateMonotonicUuid(),
-					value: 'test1',
-					metadata: { correlationId: generateMonotonicUuid() },
-				},
-				{
-					id: generateMonotonicUuid(),
-					value: 'test2',
-					metadata: { correlationId: generateMonotonicUuid() },
-				},
-			]
+			const jobIds = await processor.scheduleBulk(
+				[
+					{
+						id: generateMonotonicUuid(),
+						value: 'test1',
+						metadata: { correlationId: generateMonotonicUuid() },
+					},
+					{
+						id: generateMonotonicUuid(),
+						value: 'test2',
+						metadata: { correlationId: generateMonotonicUuid() },
+					},
+					{
+						id: generateMonotonicUuid(),
+						value: 'test3',
+						metadata: { correlationId: generateMonotonicUuid() },
+					},
+				],
+				{ delay: 1000 },
+			)
 
-			const jobId1 = await processor.schedule(jobData1)
-			const jobId2 = await processor.schedule(jobData2)
-			console.log(jobId1, jobId2)
+			const jobs1 = await processor.getJobsInQueue(['delayed'])
+			expect(jobs1).toMatchObject({
+				jobs: expect.arrayContaining(jobIds.map((id) => expect.objectContaining({ id }))),
+				hasMore: false,
+			})
+			expect(jobs1.jobs.map((e) => e.id)).toEqual(jobIds) // order is respected - by default asc
 
-			const jobs = [] //await processor.getJobsInStates(['active'], 0, 5)
-			console.log(jobs.map((job) => job.id))
+			const jobs2 = await processor.getJobsInQueue(['delayed'], 0, 0)
+			expect(jobs2).toMatchObject({
+				jobs: expect.arrayContaining([expect.objectContaining({ id: jobIds[0] })]),
+				hasMore: true,
+			})
+
+			const jobs3 = await processor.getJobsInQueue(['delayed'], 0, 1, false)
+			expect(jobs3).toMatchObject({
+				jobs: expect.arrayContaining([
+					expect.objectContaining({ id: jobIds[2] }),
+					expect.objectContaining({ id: jobIds[1] }),
+				]),
+				hasMore: true,
+			})
+
+			const jobs4 = await processor.getJobsInQueue(['delayed'], 1, 2)
+			expect(jobs4).toMatchObject({
+				jobs: expect.arrayContaining([
+					expect.objectContaining({ id: jobIds[1] }),
+					expect.objectContaining({ id: jobIds[2] }),
+				]),
+				hasMore: false,
+			})
 		})
 	})
 

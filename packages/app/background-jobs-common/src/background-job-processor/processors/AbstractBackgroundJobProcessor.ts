@@ -269,7 +269,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		asc: boolean = true,
 	): Promise<JobsPaginatedResponse<JobPayload, JobReturn>> {
 		if (states.length === 0) throw new Error('states must not be empty')
-		if (start >= end) throw new Error('start must be less than end')
+		if (start > end) throw new Error('start must be less than or equal to end')
 
 		await this.startIfNotStarted()
 
@@ -277,7 +277,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		const expectedNumberOfJobs = 1 + (end - start)
 
 		return {
-			jobs: jobs.splice(0, expectedNumberOfJobs),
+			jobs: jobs.slice(0, expectedNumberOfJobs),
 			hasMore: jobs.length > expectedNumberOfJobs,
 		}
 	}
