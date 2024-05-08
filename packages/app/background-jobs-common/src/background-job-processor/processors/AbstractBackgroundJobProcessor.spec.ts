@@ -10,11 +10,12 @@ import { TestReturnValueBackgroundJobProcessor } from '../../../test/processors/
 import { TestStalledBackgroundJobProcessor } from '../../../test/processors/TestStalledBackgroundJobProcessor'
 import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/TestSucessBackgroundJobProcessor'
 import { RETENTION_QUEUE_IDS_IN_DAYS } from '../constants'
-import { BackgroundJobProcessorDependencies, BaseJobPayload } from '../types'
+import { BaseJobPayload } from '../types'
 import { daysToMilliseconds } from '../utils'
 
 import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
+import { BackgroundJobProcessorDependencies } from './types'
 
 type JobData = {
 	id: string
@@ -463,6 +464,44 @@ describe('AbstractBackgroundJobProcessor', () => {
 				},
 			})
 			expect(processor.lastLogger[symbols.chindingsSym]).toContain('"x-request-id"')
+		})
+	})
+
+	describe('getJobsInStates', () => {
+		const QueueName = 'AbstractBackgroundJobProcessor_getJobsInStates'
+		let processor: FakeBackgroundJobProcessor<JobData>
+
+		beforeEach(async () => {
+			processor = new FakeBackgroundJobProcessor<JobData>(deps, QueueName)
+			await processor.start()
+		})
+
+		afterEach(async () => {
+			await processor.dispose()
+		})
+
+		// TODO: complete
+		// eslint-disable-next-line vitest/expect-expect
+		it('returns jobs in the given states', async () => {
+			const [jobData1, jobData2] = [
+				{
+					id: generateMonotonicUuid(),
+					value: 'test1',
+					metadata: { correlationId: generateMonotonicUuid() },
+				},
+				{
+					id: generateMonotonicUuid(),
+					value: 'test2',
+					metadata: { correlationId: generateMonotonicUuid() },
+				},
+			]
+
+			const jobId1 = await processor.schedule(jobData1)
+			const jobId2 = await processor.schedule(jobData2)
+			console.log(jobId1, jobId2)
+
+			const jobs = [] //await processor.getJobsInStates(['active'], 0, 5)
+			console.log(jobs.map((job) => job.id))
 		})
 	})
 

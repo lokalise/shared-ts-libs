@@ -1,5 +1,9 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import type { CommonLogger, ErrorReporter } from '@lokalise/node-core'
+import type {
+	CommonLogger,
+	ErrorReporter,
+	TransactionObservabilityManager,
+} from '@lokalise/node-core'
 import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type { Queue, Worker, WorkerOptions, JobsOptions, Job, QueueOptions } from 'bullmq'
 import type { JobState } from 'bullmq/dist/esm/types/job-type'
@@ -16,15 +20,7 @@ import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
 import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import type {
-	BackgroundJobProcessorConfig,
-	BackgroundJobProcessorDependencies,
-	BaseJobPayload,
-	BullmqProcessor,
-	SafeJob,
-	SafeQueue,
-	TransactionObservabilityManager,
-} from '../types'
+import type { BaseJobPayload, BullmqProcessor, SafeJob, SafeQueue } from '../types'
 import {
 	daysToMilliseconds,
 	daysToSeconds,
@@ -32,6 +28,8 @@ import {
 	isUnrecoverableJobError,
 	resolveJobId,
 } from '../utils'
+
+import type { BackgroundJobProcessorConfig, BackgroundJobProcessorDependencies } from './types'
 
 export interface RequestContext {
 	logger: CommonLogger
