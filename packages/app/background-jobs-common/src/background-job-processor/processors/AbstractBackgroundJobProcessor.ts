@@ -259,13 +259,13 @@ export abstract class AbstractBackgroundJobProcessor<
 	 *
 	 * @param states
 	 * @param start default 0
-	 * @param end default 10
+	 * @param end default 20
 	 * @param asc default true (oldest first)
 	 */
 	public async getJobsInQueue(
 		states: JobState[],
 		start: number = 0,
-		end: number = 10,
+		end: number = 20,
 		asc: boolean = true,
 	): Promise<JobsPaginatedResponse<JobPayload, JobReturn>> {
 		if (states.length === 0) throw new Error('states must not be empty')
