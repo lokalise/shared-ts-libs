@@ -1,6 +1,5 @@
 import { CommonLogger } from '@lokalise/node-core'
 import { Job } from 'bullmq'
-import { Logger } from 'pino'
 
 import {
 	AbstractBackgroundJobProcessor,
