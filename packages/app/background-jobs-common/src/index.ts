@@ -6,4 +6,4 @@ export * from './background-job-processor/processors/factories/CommonBullmqFacto
 export * from './background-job-processor/processors/factories/AbstractBullmqFactory'
 export * from './background-job-processor/utils'
 export * from './background-job-processor/constants'
-export * from './background-job-processor/BackgroundJobProcessorLogger'
+export * from './background-job-processor/logger/BackgroundJobProcessorLogger'

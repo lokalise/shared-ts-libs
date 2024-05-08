@@ -7,12 +7,12 @@ import type Redis from 'ioredis'
 import pino from 'pino'
 import { merge } from 'ts-deepmerge'
 
-import { BackgroundJobProcessorLogger } from '../BackgroundJobProcessorLogger'
 import {
 	RETENTION_COMPLETED_JOBS_IN_AMOUNT,
 	RETENTION_FAILED_JOBS_IN_DAYS,
 	RETENTION_QUEUE_IDS_IN_DAYS,
 } from '../constants'
+import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger'
 import type {
 	BackgroundJobProcessorConfig,
 	BackgroundJobProcessorDependencies,
