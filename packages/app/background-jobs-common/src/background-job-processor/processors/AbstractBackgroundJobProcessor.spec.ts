@@ -4,7 +4,6 @@ import { UnrecoverableError } from 'bullmq'
 import { symbols } from 'pino'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { cleanRedis } from '../../../test/RedisCleaner'
 import { DependencyMocks, lastInfoSpy } from '../../../test/dependencyMocks'
 import { TestFailingBackgroundJobProcessor } from '../../../test/processors/TestFailingBackgroundJobProcessor'
 import { TestReturnValueBackgroundJobProcessor } from '../../../test/processors/TestReturnValueBackgroundJobProcessor'

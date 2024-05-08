@@ -1,4 +1,4 @@
-import type { Job, FinishedStatus, Queue, JobsOptions, JobState } from 'bullmq'
+import type { Job, FinishedStatus, Queue, JobsOptions } from 'bullmq'
 
 import type { RequestContext } from './processors/AbstractBackgroundJobProcessor'
 
