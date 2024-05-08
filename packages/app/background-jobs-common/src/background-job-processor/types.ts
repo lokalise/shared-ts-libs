@@ -18,7 +18,7 @@ export type SafeQueue<
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	ResultType = any,
 	NameType extends string = string,
-> = Omit<Queue<DataType, ResultType, NameType>, 'add' | 'addBulk' | 'getJobs'> & {
+> = Omit<Queue<DataType, ResultType, NameType>, 'add' | 'addBulk'> & {
 	add(
 		name: NameType,
 		data: DataType,
@@ -30,12 +30,6 @@ export type SafeQueue<
 			data: DataType
 			opts?: JobsOptionsType
 		}[],
-	): Promise<SafeJob<DataType, ResultType, NameType>[]>
-	getJobs(
-		types?: JobState[] | JobState,
-		start?: number,
-		end?: number,
-		asc?: boolean,
 	): Promise<SafeJob<DataType, ResultType, NameType>[]>
 }
 

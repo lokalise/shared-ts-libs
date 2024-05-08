@@ -29,7 +29,11 @@ import {
 	resolveJobId,
 } from '../utils'
 
-import type { BackgroundJobProcessorConfig, BackgroundJobProcessorDependencies } from './types'
+import type {
+	BackgroundJobProcessorConfig,
+	BackgroundJobProcessorDependencies,
+	JobsPaginatedResponse,
+} from './types'
 
 export interface RequestContext {
 	logger: CommonLogger
@@ -263,11 +267,19 @@ export abstract class AbstractBackgroundJobProcessor<
 		start: number = 0,
 		end: number = 10,
 		asc: boolean = true,
-	): Promise<JobType[]> {
+	): Promise<JobsPaginatedResponse<JobPayload, JobReturn>> {
+		if (states.length === 0) throw new Error('states must not be empty')
+		if (start >= end) throw new Error('start must be less than end')
+
 		await this.startIfNotStarted()
-		const jobs = (await this.queue?.getJobs(states, start, end, asc)) ?? []
-		// TODO: we should not expose all properties of the job (no setters)
-		return (jobs ?? []) as JobType[]
+
+		const jobs = (await this.queue?.getJobs(states, start, end + 1, asc)) ?? []
+		const expectedNumberOfJobs = 1 + (end - start)
+
+		return {
+			jobs: jobs.splice(0, expectedNumberOfJobs),
+			hasMore: jobs.length > expectedNumberOfJobs,
+		}
 	}
 
 	private prepareJobOptions(options: JobOptionsType): JobOptionsType {
