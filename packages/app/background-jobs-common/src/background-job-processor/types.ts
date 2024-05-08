@@ -47,12 +47,25 @@ export type SafeQueue<
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	ResultType = any,
 	NameType extends string = string,
-> = Omit<Queue<DataType, ResultType, NameType>, 'add'> & {
+> = Omit<Queue<DataType, ResultType, NameType>, 'add' | 'addBulk' | 'getJobs'> & {
 	add(
 		name: NameType,
 		data: DataType,
 		opts?: JobsOptionsType,
 	): Promise<SafeJob<DataType, ResultType, NameType>>
+	addBulk(
+		jobs: {
+			name: NameType
+			data: DataType
+			opts?: JobsOptionsType
+		}[],
+	): Promise<SafeJob<DataType, ResultType, NameType>[]>
+	getJobs(
+		types?: JobType[] | JobType,
+		start?: number,
+		end?: number,
+		asc?: boolean,
+	): Promise<SafeJob<DataType, ResultType, NameType>[]>
 }
 
 export type BullmqProcessor<
