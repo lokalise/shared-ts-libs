@@ -3,7 +3,7 @@
 	"version": "3.0.0",
 	"files": [
 		"dist",
-		"LICENSE",
+		"LICENSE.md",
 		"README.md"
 	],
 	"author": {

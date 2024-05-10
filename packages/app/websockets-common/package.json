@@ -2,6 +2,7 @@
 	"name": "@lokalise/websockets-common",
 	"version": "2.4.1",
 	"type": "module",
+	"license": "Apache-2.0",
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",
