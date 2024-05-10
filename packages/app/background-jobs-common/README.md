@@ -66,3 +66,5 @@ expect(secondJob.data.value).toBe('second')
 Here, `processor.spy.waitForJobWithId()` returns an instance of a job with a given id, and with the expected status, and `processor.spy.waitForJob()` performs lookup by a custom predicate, accordingly.
 
 Note that spies do not rely on being invoked before the job was processed, to account for the unpredictability of asynchronous operations. Even if you call `await processor.spy.waitForJobWithId(scheduledJobIds[0], 'completed')` after the job was already processed, spy will be able to resolve the processing result for you.
+
+Spies are disabled in production. In order to enable them, you need to set the `isTest` option of `BackgroundJobProcessorConfig` of your processor to true.
