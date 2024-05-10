@@ -18,6 +18,7 @@ export class TestReturnValueBackgroundJobProcessor<
 	) {
 		super(dependencies, {
 			queueId: generateMonotonicUuid(),
+			ownerName: 'test',
 			isTest: true,
 			workerOptions: { concurrency: 1 },
 		})
@@ -30,13 +31,5 @@ export class TestReturnValueBackgroundJobProcessor<
 
 	protected override async process(): Promise<JobReturn> {
 		return Promise.resolve(this.returnValue)
-	}
-
-	protected override onFailed(): Promise<void> {
-		return Promise.resolve()
-	}
-
-	protected override onSuccess(): Promise<void> {
-		return Promise.resolve()
 	}
 }

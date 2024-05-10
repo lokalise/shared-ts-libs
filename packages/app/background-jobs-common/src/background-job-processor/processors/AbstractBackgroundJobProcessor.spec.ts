@@ -10,11 +10,12 @@ import { TestReturnValueBackgroundJobProcessor } from '../../../test/processors/
 import { TestStalledBackgroundJobProcessor } from '../../../test/processors/TestStalledBackgroundJobProcessor'
 import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/TestSucessBackgroundJobProcessor'
 import { RETENTION_QUEUE_IDS_IN_DAYS } from '../constants'
-import { BackgroundJobProcessorDependencies, BaseJobPayload } from '../types'
+import { BaseJobPayload } from '../types'
 import { daysToMilliseconds } from '../utils'
 
 import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
+import { BackgroundJobProcessorDependencies } from './types'
 
 type JobData = {
 	id: string
@@ -259,6 +260,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			// Then
 			expect(successBackgroundJobProcessor.onSuccessCallsCounter).toBe(1)
 		})
+
 		it('should handle onSuccess hook error', async () => {
 			// Given
 			const jobData = {
@@ -288,6 +290,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			// Then
 			expect(successBackgroundJobProcessor.onSuccessCallsCounter).toBe(1)
 		})
+
 		it('should clear job data onSuccess', async () => {
 			// Given
 			const jobData = {
@@ -461,6 +464,84 @@ describe('AbstractBackgroundJobProcessor', () => {
 				},
 			})
 			expect(processor.lastLogger[symbols.chindingsSym]).toContain('"x-request-id"')
+		})
+	})
+
+	describe('getJobsInStates', () => {
+		const QueueName = 'AbstractBackgroundJobProcessor_getJobsInStates'
+		let processor: FakeBackgroundJobProcessor<JobData>
+
+		beforeEach(async () => {
+			processor = new FakeBackgroundJobProcessor<JobData>(deps, QueueName)
+			await processor.start()
+		})
+
+		afterEach(async () => {
+			await processor.dispose()
+		})
+
+		it('empty states should throw error', async () => {
+			await expect(processor.getJobsInQueue([])).rejects.toThrow('states must not be empty')
+		})
+
+		it('start bigger than end should throw error', async () => {
+			await expect(processor.getJobsInQueue(['active'], 2, 1)).rejects.toThrow(
+				'start must be less than or equal to end',
+			)
+		})
+
+		it('returns jobs in the given states', async () => {
+			const jobIds = await processor.scheduleBulk(
+				[
+					{
+						id: generateMonotonicUuid(),
+						value: 'test1',
+						metadata: { correlationId: generateMonotonicUuid() },
+					},
+					{
+						id: generateMonotonicUuid(),
+						value: 'test2',
+						metadata: { correlationId: generateMonotonicUuid() },
+					},
+					{
+						id: generateMonotonicUuid(),
+						value: 'test3',
+						metadata: { correlationId: generateMonotonicUuid() },
+					},
+				],
+				{ delay: 1000 },
+			)
+
+			const jobs1 = await processor.getJobsInQueue(['delayed'])
+			expect(jobs1).toMatchObject({
+				jobs: expect.arrayContaining(jobIds.map((id) => expect.objectContaining({ id }))),
+				hasMore: false,
+			})
+			expect(jobs1.jobs.map((e) => e.id)).toEqual(jobIds) // order is respected - by default asc
+
+			const jobs2 = await processor.getJobsInQueue(['delayed'], 0, 0)
+			expect(jobs2).toMatchObject({
+				jobs: expect.arrayContaining([expect.objectContaining({ id: jobIds[0] })]),
+				hasMore: true,
+			})
+
+			const jobs3 = await processor.getJobsInQueue(['delayed'], 0, 1, false)
+			expect(jobs3).toMatchObject({
+				jobs: expect.arrayContaining([
+					expect.objectContaining({ id: jobIds[2] }),
+					expect.objectContaining({ id: jobIds[1] }),
+				]),
+				hasMore: true,
+			})
+
+			const jobs4 = await processor.getJobsInQueue(['delayed'], 1, 2)
+			expect(jobs4).toMatchObject({
+				jobs: expect.arrayContaining([
+					expect.objectContaining({ id: jobIds[1] }),
+					expect.objectContaining({ id: jobIds[2] }),
+				]),
+				hasMore: false,
+			})
 		})
 	})
 

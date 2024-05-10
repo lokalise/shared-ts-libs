@@ -34,10 +34,6 @@ export class TestSuccessBackgroundJobProcessor<
 		return Promise.resolve()
 	}
 
-	protected override onFailed(): Promise<void> {
-		return Promise.resolve()
-	}
-
 	protected override onSuccess(job: Job<T>, requestContext: RequestContext): Promise<void> {
 		this.onSuccessCounter += 1
 		this.onSuccessCall(job)

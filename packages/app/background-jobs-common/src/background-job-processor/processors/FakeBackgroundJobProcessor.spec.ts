@@ -2,9 +2,10 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { DependencyMocks } from '../../../test/dependencyMocks'
-import { BackgroundJobProcessorDependencies, BaseJobPayload } from '../types'
+import { BaseJobPayload } from '../types'
 
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
+import { BackgroundJobProcessorDependencies } from './types'
 
 type JobData = {
 	value: string

@@ -1,5 +1,5 @@
+import { CommonLogger } from '@lokalise/node-core'
 import { Job } from 'bullmq'
-import { Logger } from 'pino'
 
 import {
 	AbstractBackgroundJobProcessor,
@@ -18,11 +18,12 @@ type OnFailedError = {
 
 export class TestStalledBackgroundJobProcessor extends AbstractBackgroundJobProcessor<Data> {
 	private _onFailedErrors: OnFailedError[] = []
-	public lastLogger: Logger | undefined
+	public lastLogger: CommonLogger | undefined
 
 	constructor(dependencies: BackgroundJobProcessorDependencies<Data>) {
 		super(dependencies, {
 			queueId: 'TestStalledBackgroundJobProcessor queue',
+			ownerName: 'test',
 			isTest: false, // We don't want to override job options for this processor
 			workerOptions: {
 				lockDuration: 1,
@@ -44,7 +45,7 @@ export class TestStalledBackgroundJobProcessor extends AbstractBackgroundJobProc
 		return new Promise((resolve) => setTimeout(resolve, 1000))
 	}
 
-	protected resolveExecutionLogger(jobId: string): Logger {
+	protected resolveExecutionLogger(jobId: string): CommonLogger {
 		const logger = super.resolveExecutionLogger(jobId)
 		this.lastLogger = logger
 		return logger

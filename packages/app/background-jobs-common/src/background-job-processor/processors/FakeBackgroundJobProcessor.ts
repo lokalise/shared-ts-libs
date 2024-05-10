@@ -1,9 +1,10 @@
 import type { Job } from 'bullmq'
 
-import type { BackgroundJobProcessorDependencies, BaseJobPayload } from '../types'
+import { CommonBullmqFactory } from '../factories/CommonBullmqFactory'
+import type { BaseJobPayload } from '../types'
 
 import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor'
-import { CommonBullmqFactory } from './factories/CommonBullmqFactory'
+import type { BackgroundJobProcessorDependencies } from './types'
 
 export class FakeBackgroundJobProcessor<
 	JobData extends BaseJobPayload,
@@ -40,10 +41,6 @@ export class FakeBackgroundJobProcessor<
 	}
 	protected override process(job: Job<JobData>): Promise<void> {
 		this._processCalls.push(job.data)
-		return Promise.resolve()
-	}
-
-	protected onFailed(_job: Job<JobData>, _error: Error): Promise<void> {
 		return Promise.resolve()
 	}
 
