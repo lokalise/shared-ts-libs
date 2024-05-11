@@ -1,56 +1,58 @@
 {
-  "name": "@lokalise/backend-http-client",
-  "version": "1.0.0",
-  "author": {
-    "name": "Lokalise",
-    "url": "https://lokalise.com/"
-  },
-  "homepage": "https://github.com/lokalise/backend-http-client",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/lokalise/backend-http-client.git"
-  },
-  "license": "Apache-2.0",
-  "files": [
-    "dist/**",
-    "LICENSE.md",
-    "README.md"
-  ],
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "type": "commonjs",
-  "private": false,
-  "publishConfig": {
-    "access": "public"
-  },
-  "scripts": {
-    "build": "tsc",
-    "test": "vitest",
-    "test:coverage": "vitest --coverage",
-    "test:ci": "npm run lint && npm run test:coverage",
-    "test:update-snapshots": "vitest -u",
-    "lint": "eslint . --ext .ts && prettier --check --log-level warn \"**/*.{json,md,ts}\" !CHANGELOG.md",
-    "lint:fix": "eslint . --fix && prettier --write --log-level warn \"**/*.{json,md,ts}\" !CHANGELOG.md",
-    "version": "auto-changelog -p && git add CHANGELOG.md",
-    "prepublishOnly": "npm run build"
-  },
-  "dependencies": {
-    "@lokalise/node-core": "^9.17.1",
-    "undici": "^6.16.1",
-    "undici-retry": "^5.0.3",
-    "zod": "^3.23.8"
-  },
-  "devDependencies": {
-    "@types/node": "^20.12.11",
-    "@typescript-eslint/eslint-plugin": "^7.8.0",
-    "@typescript-eslint/parser": "^7.8.0",
-    "@vitest/coverage-v8": "1.6.0",
-    "auto-changelog": "^2.4.0",
-    "eslint": "^8.57.0",
-    "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-vitest": "0.4.1",
-    "prettier": "^3.2.5",
-    "typescript": "^5.4.5",
-    "vitest": "1.6.0"
-  }
+	"name": "@lokalise/backend-http-client",
+	"version": "1.0.0",
+	"author": {
+		"name": "Lokalise",
+		"url": "https://lokalise.com/"
+	},
+	"homepage": "https://github.com/lokalise/backend-http-client",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/lokalise/backend-http-client.git"
+	},
+	"license": "Apache-2.0",
+	"files": [
+		"dist/**",
+		"LICENSE.md",
+		"README.md"
+	],
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"type": "commonjs",
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"scripts": {
+		"build": "tsc",
+		"test": "vitest",
+		"test:coverage": "vitest --coverage",
+		"test:ci": "npm run lint && npm run test:coverage",
+		"test:update-snapshots": "vitest -u",
+		"lint": "eslint . --ext .ts && prettier --check --log-level warn \"**/*.{json,md,ts}\" !CHANGELOG.md",
+		"lint:fix": "eslint . --fix && prettier --write --log-level warn \"**/*.{json,md,ts}\" !CHANGELOG.md",
+		"version": "auto-changelog -p && git add CHANGELOG.md",
+		"prepublishOnly": "npm run build"
+	},
+	"dependencies": {
+		"@lokalise/node-core": "^9.17.1",
+		"undici": "^6.16.1",
+		"undici-retry": "^5.0.3",
+		"zod": "^3.23.8"
+	},
+	"devDependencies": {
+		"@lokalise/prettier-config": "latest",
+		"@types/node": "^20.12.11",
+		"@typescript-eslint/eslint-plugin": "^7.8.0",
+		"@typescript-eslint/parser": "^7.8.0",
+		"@vitest/coverage-v8": "1.6.0",
+		"auto-changelog": "^2.4.0",
+		"eslint": "^8.57.0",
+		"eslint-plugin-import": "^2.29.1",
+		"eslint-plugin-vitest": "0.4.1",
+		"prettier": "^3.2.5",
+		"typescript": "^5.4.5",
+		"vitest": "1.6.0"
+	},
+	"prettier": "@lokalise/prettier-config"
 }
