@@ -1,0 +1,5 @@
+node_modules/
+coverage/
+dist/
+vitest.config.mts
+src/logging/example.script.js
