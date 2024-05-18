@@ -35,8 +35,8 @@
 		"prepublishOnly": "npm run build"
 	},
 	"dependencies": {
-		"@lokalise/node-core": "^9.17.1",
-		"undici": "^6.16.1",
+		"@lokalise/node-core": "^9.18.0",
+		"undici": "^6.17.0",
 		"undici-retry": "^5.0.3",
 		"zod": "^3.23.8"
 	},

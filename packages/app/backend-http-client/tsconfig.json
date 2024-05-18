@@ -7,7 +7,7 @@
 		"sourceMap": true,
 		"declaration": true,
 		"declarationMap": false,
-		"types": ["node", "vitest/globals"],
+		"types": ["node"],
 		"strict": true,
 		"skipLibCheck": true,
 		"moduleResolution": "node",
