@@ -7,6 +7,8 @@ import { z } from 'zod'
 
 import type { HttpRequestContext } from './httpClient'
 import {
+	UNKNOWN_RESPONSE_SCHEMA,
+	NO_CONTENT_RESPONSE_SCHEMA,
 	buildClient,
 	sendDelete,
 	sendGet,
@@ -22,7 +24,6 @@ import mockProductsLimit3 from './mock-data/mockProductsLimit3.json'
 const TEXT_HEADERS = {
 	'content-type': 'text/plain',
 }
-const ANY_SCHEMA = z.any()
 
 const baseUrl = 'https://fakestoreapi.com'
 const reqContext: HttpRequestContext = {
@@ -132,7 +133,7 @@ describe('httpClient', () => {
 
 			try {
 				await sendGet(client, '/products/1', {
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					throwOnError: true,
 					safeParseJson: true,
 					requestLabel: 'label',
@@ -161,7 +162,7 @@ describe('httpClient', () => {
 				.reply(200, 'this is not a real json', { headers: JSON_HEADERS })
 
 			const result = await sendGet(client, '/products/1', {
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				throwOnError: false,
 				safeParseJson: true,
 				requestLabel: 'label',
@@ -186,7 +187,7 @@ describe('httpClient', () => {
 				.reply(200, mockProduct1, { headers: JSON_HEADERS })
 
 			const result = await sendGet(client, '/products/1', {
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -204,7 +205,7 @@ describe('httpClient', () => {
 				})
 
 			const result = await sendGet(client, '/products/1', {
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -220,7 +221,7 @@ describe('httpClient', () => {
 				.reply(200, 'just text', {})
 
 			const result = await sendGet<string>(client, '/products/1', {
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -242,7 +243,7 @@ describe('httpClient', () => {
 
 			const result = await sendGet(client, '/products', {
 				query,
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -266,7 +267,7 @@ describe('httpClient', () => {
 			await expect(
 				sendGet(client, '/products', {
 					query,
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					requestLabel: 'dummy',
 				}),
 			).rejects.toMatchObject({
@@ -285,7 +286,7 @@ describe('httpClient', () => {
 					requestLabel: 'label',
 					throwOnError: true,
 					query,
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				})
 			} catch (err) {
 				if (!isInternalRequestError(err)) {
@@ -314,7 +315,7 @@ describe('httpClient', () => {
 				sendGet(client, '/products', {
 					query,
 					requestLabel: 'label',
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				}),
 			).rejects.toMatchObject({
 				message: 'Response status code 400',
@@ -355,7 +356,7 @@ describe('httpClient', () => {
 
 			const response = await sendGet(client, '/products', {
 				query,
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 				retryConfig: {
 					statusCodesToRetry: [500],
@@ -376,11 +377,11 @@ describe('httpClient', () => {
 					path: '/products/1',
 					method: 'DELETE',
 				})
-				.reply(204, undefined, { headers: TEXT_HEADERS })
+				.reply(204, undefined)
 
 			const result = await sendDelete(client, '/products/1', {
 				reqContext,
-				responseSchema: ANY_SCHEMA,
+				responseSchema: NO_CONTENT_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -399,11 +400,11 @@ describe('httpClient', () => {
 					method: 'DELETE',
 					query,
 				})
-				.reply(204, undefined, { headers: TEXT_HEADERS })
+				.reply(204)
 
 			const result = await sendDelete(client, '/products', {
 				query,
-				responseSchema: ANY_SCHEMA,
+				responseSchema: NO_CONTENT_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -428,7 +429,7 @@ describe('httpClient', () => {
 			await expect(
 				sendDelete(client, '/products', {
 					query,
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					requestLabel: 'dummy',
 				}),
 			).rejects.toMatchObject({
@@ -535,7 +536,7 @@ describe('httpClient', () => {
 				.reply(200, { id: 21 }, { headers: JSON_HEADERS })
 
 			const result = await sendPost(client, '/products', mockProduct1, {
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -551,7 +552,7 @@ describe('httpClient', () => {
 				.reply(200, { id: 21 }, { headers: JSON_HEADERS })
 
 			const result = await sendPost(client, '/products', undefined, {
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -573,7 +574,7 @@ describe('httpClient', () => {
 
 			const result = await sendPost(client, '/products', mockProduct1, {
 				query,
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -590,7 +591,7 @@ describe('httpClient', () => {
 
 			await expect(
 				sendPost(client, '/products', mockProduct1, {
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					requestLabel: 'dummy',
 				}),
 			).rejects.toThrow('Response status code 400')
@@ -613,7 +614,7 @@ describe('httpClient', () => {
 			await expect(
 				sendPost(client, '/products', undefined, {
 					query,
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					requestLabel: 'dummy',
 				}),
 			).rejects.toMatchObject({
@@ -709,7 +710,7 @@ describe('httpClient', () => {
 				'/products',
 				Buffer.from(JSON.stringify(mockProduct1)),
 				{
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					requestLabel: 'dummy',
 				},
 			)
@@ -736,7 +737,7 @@ describe('httpClient', () => {
 				Buffer.from(JSON.stringify(mockProduct1)),
 				{
 					query,
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					requestLabel: 'dummy',
 				},
 			)
@@ -754,7 +755,7 @@ describe('httpClient', () => {
 
 			await expect(
 				sendPostBinary(client, '/products', Buffer.from(JSON.stringify(mockProduct1)), {
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					requestLabel: 'dummy',
 				}),
 			).rejects.toThrow('Response status code 400')
@@ -777,7 +778,7 @@ describe('httpClient', () => {
 			await expect(
 				sendPostBinary(client, '/products', Buffer.from(JSON.stringify({})), {
 					query,
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					requestLabel: 'dummy',
 				}),
 			).rejects.toMatchObject({
@@ -797,7 +798,7 @@ describe('httpClient', () => {
 
 			const result = await sendPut(client, '/products/1', mockProduct1, {
 				reqContext,
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -813,7 +814,7 @@ describe('httpClient', () => {
 				.reply(200, { id: 21 }, { headers: JSON_HEADERS })
 
 			const result = await sendPut(client, '/products/1', undefined, {
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -835,7 +836,7 @@ describe('httpClient', () => {
 
 			const result = await sendPut(client, '/products/1', mockProduct1, {
 				query,
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -852,7 +853,7 @@ describe('httpClient', () => {
 
 			await expect(
 				sendPut(client, '/products/1', mockProduct1, {
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					requestLabel: 'dummy',
 				}),
 			).rejects.toThrow('Response status code 400')
@@ -875,7 +876,7 @@ describe('httpClient', () => {
 			await expect(
 				sendPut(client, '/products', undefined, {
 					query,
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					requestLabel: 'dummy',
 				}),
 			).rejects.toMatchObject({
@@ -895,7 +896,7 @@ describe('httpClient', () => {
 
 			const result = await sendPutBinary(client, '/products/1', Buffer.from('text'), {
 				reqContext,
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -917,7 +918,7 @@ describe('httpClient', () => {
 
 			const result = await sendPutBinary(client, '/products/1', Buffer.from('text'), {
 				query,
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -934,7 +935,7 @@ describe('httpClient', () => {
 
 			await expect(
 				sendPutBinary(client, '/products/1', Buffer.from('text'), {
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					requestLabel: 'dummy',
 				}),
 			).rejects.toThrow('Response status code 400')
@@ -957,7 +958,7 @@ describe('httpClient', () => {
 			await expect(
 				sendPutBinary(client, '/products', null, {
 					query,
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					requestLabel: 'dummy',
 				}),
 			).rejects.toMatchObject({
@@ -976,7 +977,7 @@ describe('httpClient', () => {
 				.reply(200, { id: 21 }, { headers: JSON_HEADERS })
 
 			const result = await sendPatch(client, '/products/1', mockProduct1, {
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -992,7 +993,7 @@ describe('httpClient', () => {
 				.reply(200, { id: 21 }, { headers: JSON_HEADERS })
 
 			const result = await sendPatch(client, '/products/1', undefined, {
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -1015,7 +1016,7 @@ describe('httpClient', () => {
 			const result = await sendPatch(client, '/products/1', mockProduct1, {
 				query,
 				reqContext,
-				responseSchema: ANY_SCHEMA,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				requestLabel: 'dummy',
 			})
 
@@ -1032,7 +1033,7 @@ describe('httpClient', () => {
 
 			await expect(
 				sendPatch(client, '/products/1', mockProduct1, {
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					requestLabel: 'dummy',
 				}),
 			).rejects.toThrow('Response status code 400')
@@ -1055,7 +1056,7 @@ describe('httpClient', () => {
 			await expect(
 				sendPatch(client, '/products', undefined, {
 					query,
-					responseSchema: ANY_SCHEMA,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					requestLabel: 'dummy',
 				}),
 			).rejects.toMatchObject({

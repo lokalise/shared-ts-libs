@@ -12,9 +12,20 @@ import type {
 	InternalRequestError,
 	Either,
 } from 'undici-retry'
+import { z } from 'zod'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RecordObject = Record<string, any>
+
+/**
+ * Technically 204 will send an empty body, but undici-retry defaults to parsing unknown mimetype as text for compatibility reasons, so we should expect to get an empty string here
+ */
+export const NO_CONTENT_RESPONSE_SCHEMA = z.string().length(0)
+
+/**
+ * This schema is to be used when we don't really care about the response type and are prepared to accept any value
+ */
+export const UNKNOWN_RESPONSE_SCHEMA = z.unknown()
 
 export type HttpRequestContext = {
 	reqId: string
