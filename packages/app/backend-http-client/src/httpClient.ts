@@ -12,9 +12,20 @@ import type {
 	InternalRequestError,
 	Either,
 } from 'undici-retry'
+import { z } from 'zod'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RecordObject = Record<string, any>
+
+/**
+ * Technically 204 will send an empty body, but undici-retry defaults to parsing unknown mimetype as text for compatibility reasons, so we should expect to get an empty string here
+ */
+export const NO_CONTENT_RESPONSE_SCHEMA = z.string().length(0)
+
+/**
+ * This schema is to be used when we don't really care about the response type and are prepared to accept any value
+ */
+export const UNKNOWN_RESPONSE_SCHEMA = z.unknown()
 
 export type HttpRequestContext = {
 	reqId: string
@@ -28,7 +39,7 @@ export type ResponseSchema<Output = any> = {
 export type RequestOptions<T> = {
 	headers?: RecordObject
 	query?: RecordObject
-	timeout: number | undefined
+	timeout?: number | null
 	throwOnError?: boolean
 	reqContext?: HttpRequestContext
 
@@ -39,15 +50,15 @@ export type RequestOptions<T> = {
 	disableKeepAlive?: boolean
 	retryConfig?: RetryConfig
 	clientOptions?: Client.Options
-	responseSchema?: ResponseSchema<T>
-	validateResponse: boolean
+	responseSchema: ResponseSchema<T>
+	validateResponse?: boolean
 }
 
 const DEFAULT_OPTIONS = {
 	validateResponse: true,
 	throwOnError: true,
 	timeout: 30000,
-} satisfies MayOmit<RequestOptions<unknown>, 'requestLabel'>
+} satisfies MayOmit<RequestOptions<unknown>, 'requestLabel' | 'responseSchema'>
 
 const defaultClientOptions: Partial<Client.Options> = {
 	keepAliveMaxTimeout: 300_000,
@@ -63,7 +74,7 @@ export type Response<T> = {
 export async function sendGet<T>(
 	client: Client,
 	path: string,
-	options: Partial<RequestOptions<T>> = {},
+	options: RequestOptions<T>,
 ): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
 	const result = await sendWithRetry<T>(
 		client,
@@ -97,7 +108,7 @@ export async function sendGet<T>(
 export async function sendDelete<T>(
 	client: Client,
 	path: string,
-	options: Partial<RequestOptions<T>> = {},
+	options: RequestOptions<T>,
 ): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
 	const result = await sendWithRetry<T>(
 		client,
@@ -132,7 +143,7 @@ export async function sendPost<T>(
 	client: Client,
 	path: string,
 	body: RecordObject | undefined,
-	options: Partial<RequestOptions<T>> = {},
+	options: RequestOptions<T>,
 ): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
 	const result = await sendWithRetry<T>(
 		client,
@@ -168,7 +179,7 @@ export async function sendPostBinary<T>(
 	client: Client,
 	path: string,
 	body: Buffer | Uint8Array | Readable | FormData | null,
-	options: Partial<RequestOptions<T>> = {},
+	options: RequestOptions<T>,
 ): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
 	const result = await sendWithRetry<T>(
 		client,
@@ -204,7 +215,7 @@ export async function sendPut<T>(
 	client: Client,
 	path: string,
 	body: RecordObject | undefined,
-	options: Partial<RequestOptions<T>> = {},
+	options: RequestOptions<T>,
 ): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
 	const result = await sendWithRetry<T>(
 		client,
@@ -240,7 +251,7 @@ export async function sendPutBinary<T>(
 	client: Client,
 	path: string,
 	body: Buffer | Uint8Array | Readable | FormData | null,
-	options: Partial<RequestOptions<T>> = {},
+	options: RequestOptions<T>,
 ): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
 	const result = await sendWithRetry<T>(
 		client,
@@ -276,7 +287,7 @@ export async function sendPatch<T>(
 	client: Client,
 	path: string,
 	body: RecordObject | undefined,
-	options: Partial<RequestOptions<T>> = {},
+	options: RequestOptions<T>,
 ): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
 	const result = await sendWithRetry<T>(
 		client,
@@ -308,7 +319,7 @@ export async function sendPatch<T>(
 	)
 }
 
-function resolveRequestConfig(options: Partial<RequestOptions<unknown>>): RequestParams {
+function resolveRequestConfig(options: RequestOptions<unknown>): RequestParams {
 	return {
 		safeParseJson: options.safeParseJson ?? false,
 		blobBody: options.blobResponseBody ?? false,
@@ -333,8 +344,8 @@ function resolveResult<T>(
 	requestResult: Either<RequestResult<unknown> | InternalRequestError, RequestResult<T>>,
 	throwOnError: boolean,
 	validateResponse: boolean,
-	validationSchema?: ResponseSchema,
-	requestLabel?: string,
+	validationSchema: ResponseSchema,
+	requestLabel: string,
 ): DefiniteEither<RequestResult<unknown>, RequestResult<T>> {
 	// Throw response error
 	if (requestResult.error && throwOnError) {
@@ -343,7 +354,7 @@ function resolveResult<T>(
 		}
 		throw requestResult.error
 	}
-	if (requestResult.result && validateResponse && validationSchema) {
+	if (requestResult.result && validateResponse) {
 		requestResult.result.body = validationSchema.parse(requestResult.result.body)
 	}
 

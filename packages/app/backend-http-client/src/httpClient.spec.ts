@@ -1,10 +1,14 @@
+import { JSON_HEADERS } from '@lokalise/node-core'
 import type { Interceptable } from 'undici'
 import { Client, MockAgent, setGlobalDispatcher } from 'undici'
 import { isInternalRequestError } from 'undici-retry'
+import { beforeEach, expect, it, describe } from 'vitest'
 import { z } from 'zod'
 
 import type { HttpRequestContext } from './httpClient'
 import {
+	UNKNOWN_RESPONSE_SCHEMA,
+	NO_CONTENT_RESPONSE_SCHEMA,
 	buildClient,
 	sendDelete,
 	sendGet,
@@ -16,10 +20,6 @@ import {
 } from './httpClient'
 import mockProduct1 from './mock-data/mockProduct1.json'
 import mockProductsLimit3 from './mock-data/mockProductsLimit3.json'
-
-const JSON_HEADERS = {
-	'content-type': 'application/json',
-}
 
 const TEXT_HEADERS = {
 	'content-type': 'text/plain',
@@ -64,6 +64,7 @@ describe('httpClient', () => {
 				sendGet(client, '/products/1', {
 					responseSchema: schema,
 					reqContext,
+					requestLabel: 'dummy',
 					validateResponse: true,
 				}),
 			).rejects.toThrow(/Expected string, received number/)
@@ -92,6 +93,7 @@ describe('httpClient', () => {
 
 			const result = await sendGet(client, '/products/1', {
 				responseSchema: schema,
+				requestLabel: 'dummy',
 				validateResponse: true,
 			})
 
@@ -112,22 +114,9 @@ describe('httpClient', () => {
 
 			const result = await sendGet(client, '/products/1', {
 				responseSchema: schema,
+				requestLabel: 'dummy',
+
 				validateResponse: false,
-			})
-
-			expect(result.result.body).toEqual(mockProduct1)
-		})
-
-		it('validates response structure with provided schema, no validation specified', async () => {
-			client
-				.intercept({
-					path: '/products/1',
-					method: 'GET',
-				})
-				.reply(200, mockProduct1, { headers: JSON_HEADERS })
-
-			const result = await sendGet(client, '/products/1', {
-				validateResponse: true,
 			})
 
 			expect(result.result.body).toEqual(mockProduct1)
@@ -144,6 +133,7 @@ describe('httpClient', () => {
 
 			try {
 				await sendGet(client, '/products/1', {
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 					throwOnError: true,
 					safeParseJson: true,
 					requestLabel: 'label',
@@ -172,6 +162,7 @@ describe('httpClient', () => {
 				.reply(200, 'this is not a real json', { headers: JSON_HEADERS })
 
 			const result = await sendGet(client, '/products/1', {
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				throwOnError: false,
 				safeParseJson: true,
 				requestLabel: 'label',
@@ -195,7 +186,10 @@ describe('httpClient', () => {
 				})
 				.reply(200, mockProduct1, { headers: JSON_HEADERS })
 
-			const result = await sendGet(client, '/products/1')
+			const result = await sendGet(client, '/products/1', {
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
+			})
 
 			expect(result.result.body).toEqual(mockProduct1)
 		})
@@ -210,7 +204,10 @@ describe('httpClient', () => {
 					headers: TEXT_HEADERS,
 				})
 
-			const result = await sendGet(client, '/products/1')
+			const result = await sendGet(client, '/products/1', {
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
+			})
 
 			expect(result.result.body).toBe('just text')
 		})
@@ -223,7 +220,10 @@ describe('httpClient', () => {
 				})
 				.reply(200, 'just text', {})
 
-			const result = await sendGet<string>(client, '/products/1')
+			const result = await sendGet<string>(client, '/products/1', {
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
+			})
 
 			expect(result.result.body).toBe('just text')
 		})
@@ -243,6 +243,8 @@ describe('httpClient', () => {
 
 			const result = await sendGet(client, '/products', {
 				query,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
 			})
 
 			expect(result.result.body).toEqual(mockProductsLimit3)
@@ -265,6 +267,8 @@ describe('httpClient', () => {
 			await expect(
 				sendGet(client, '/products', {
 					query,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+					requestLabel: 'dummy',
 				}),
 			).rejects.toMatchObject({
 				message: 'connection error',
@@ -282,6 +286,7 @@ describe('httpClient', () => {
 					requestLabel: 'label',
 					throwOnError: true,
 					query,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				})
 			} catch (err) {
 				if (!isInternalRequestError(err)) {
@@ -310,6 +315,7 @@ describe('httpClient', () => {
 				sendGet(client, '/products', {
 					query,
 					requestLabel: 'label',
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 				}),
 			).rejects.toMatchObject({
 				message: 'Response status code 400',
@@ -350,6 +356,8 @@ describe('httpClient', () => {
 
 			const response = await sendGet(client, '/products', {
 				query,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
 				retryConfig: {
 					statusCodesToRetry: [500],
 					retryOnTimeout: false,
@@ -369,10 +377,12 @@ describe('httpClient', () => {
 					path: '/products/1',
 					method: 'DELETE',
 				})
-				.reply(204, undefined, { headers: TEXT_HEADERS })
+				.reply(204, undefined)
 
 			const result = await sendDelete(client, '/products/1', {
 				reqContext,
+				responseSchema: NO_CONTENT_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
 			})
 
 			expect(result.result.statusCode).toBe(204)
@@ -390,10 +400,12 @@ describe('httpClient', () => {
 					method: 'DELETE',
 					query,
 				})
-				.reply(204, undefined, { headers: TEXT_HEADERS })
+				.reply(204)
 
 			const result = await sendDelete(client, '/products', {
 				query,
+				responseSchema: NO_CONTENT_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
 			})
 
 			expect(result.result.statusCode).toBe(204)
@@ -417,6 +429,8 @@ describe('httpClient', () => {
 			await expect(
 				sendDelete(client, '/products', {
 					query,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+					requestLabel: 'dummy',
 				}),
 			).rejects.toMatchObject({
 				message: 'connection error',
@@ -445,6 +459,7 @@ describe('httpClient', () => {
 					{
 						responseSchema: schema,
 						validateResponse: true,
+						requestLabel: 'dummy',
 					},
 				),
 			).rejects.toThrow(/Expected string, received number/)
@@ -478,6 +493,7 @@ describe('httpClient', () => {
 				{
 					responseSchema: schema,
 					validateResponse: true,
+					requestLabel: 'dummy',
 					reqContext,
 				},
 			)
@@ -503,6 +519,7 @@ describe('httpClient', () => {
 				{},
 				{
 					responseSchema: schema,
+					requestLabel: 'dummy',
 					validateResponse: false,
 				},
 			)
@@ -518,7 +535,10 @@ describe('httpClient', () => {
 				})
 				.reply(200, { id: 21 }, { headers: JSON_HEADERS })
 
-			const result = await sendPost(client, '/products', mockProduct1)
+			const result = await sendPost(client, '/products', mockProduct1, {
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
+			})
 
 			expect(result.result.body).toEqual({ id: 21 })
 		})
@@ -531,7 +551,10 @@ describe('httpClient', () => {
 				})
 				.reply(200, { id: 21 }, { headers: JSON_HEADERS })
 
-			const result = await sendPost(client, '/products', undefined)
+			const result = await sendPost(client, '/products', undefined, {
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
+			})
 
 			expect(result.result.body).toEqual({ id: 21 })
 		})
@@ -551,6 +574,8 @@ describe('httpClient', () => {
 
 			const result = await sendPost(client, '/products', mockProduct1, {
 				query,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
 			})
 
 			expect(result.result.body).toEqual({ id: 21 })
@@ -564,9 +589,12 @@ describe('httpClient', () => {
 				})
 				.reply(400, { errorCode: 'err' }, { headers: JSON_HEADERS })
 
-			await expect(sendPost(client, '/products', mockProduct1)).rejects.toThrow(
-				'Response status code 400',
-			)
+			await expect(
+				sendPost(client, '/products', mockProduct1, {
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+					requestLabel: 'dummy',
+				}),
+			).rejects.toThrow('Response status code 400')
 		})
 
 		it('Throws an error on internal error', async () => {
@@ -586,6 +614,8 @@ describe('httpClient', () => {
 			await expect(
 				sendPost(client, '/products', undefined, {
 					query,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+					requestLabel: 'dummy',
 				}),
 			).rejects.toMatchObject({
 				message: 'connection error',
@@ -610,6 +640,7 @@ describe('httpClient', () => {
 				sendPostBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
 					responseSchema: schema,
 					validateResponse: true,
+					requestLabel: 'dummy',
 				}),
 			).rejects.toThrow(/Expected string, received number/)
 		})
@@ -638,6 +669,7 @@ describe('httpClient', () => {
 			const result = await sendPostBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
 				responseSchema: schema,
 				validateResponse: true,
+				requestLabel: 'dummy',
 				reqContext,
 			})
 
@@ -658,6 +690,7 @@ describe('httpClient', () => {
 
 			const result = await sendPostBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
 				responseSchema: schema,
+				requestLabel: 'dummy',
 				validateResponse: false,
 			})
 
@@ -676,6 +709,10 @@ describe('httpClient', () => {
 				client,
 				'/products',
 				Buffer.from(JSON.stringify(mockProduct1)),
+				{
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+					requestLabel: 'dummy',
+				},
 			)
 
 			expect(result.result.body).toEqual({ id: 21 })
@@ -700,6 +737,8 @@ describe('httpClient', () => {
 				Buffer.from(JSON.stringify(mockProduct1)),
 				{
 					query,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+					requestLabel: 'dummy',
 				},
 			)
 
@@ -715,7 +754,10 @@ describe('httpClient', () => {
 				.reply(400, { errorCode: 'err' }, { headers: JSON_HEADERS })
 
 			await expect(
-				sendPostBinary(client, '/products', Buffer.from(JSON.stringify(mockProduct1))),
+				sendPostBinary(client, '/products', Buffer.from(JSON.stringify(mockProduct1)), {
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+					requestLabel: 'dummy',
+				}),
 			).rejects.toThrow('Response status code 400')
 		})
 
@@ -736,6 +778,8 @@ describe('httpClient', () => {
 			await expect(
 				sendPostBinary(client, '/products', Buffer.from(JSON.stringify({})), {
 					query,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+					requestLabel: 'dummy',
 				}),
 			).rejects.toMatchObject({
 				message: 'connection error',
@@ -754,6 +798,8 @@ describe('httpClient', () => {
 
 			const result = await sendPut(client, '/products/1', mockProduct1, {
 				reqContext,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
 			})
 
 			expect(result.result.body).toEqual({ id: 21 })
@@ -767,7 +813,10 @@ describe('httpClient', () => {
 				})
 				.reply(200, { id: 21 }, { headers: JSON_HEADERS })
 
-			const result = await sendPut(client, '/products/1', undefined)
+			const result = await sendPut(client, '/products/1', undefined, {
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
+			})
 
 			expect(result.result.body).toEqual({ id: 21 })
 		})
@@ -787,6 +836,8 @@ describe('httpClient', () => {
 
 			const result = await sendPut(client, '/products/1', mockProduct1, {
 				query,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
 			})
 
 			expect(result.result.body).toEqual({ id: 21 })
@@ -800,9 +851,12 @@ describe('httpClient', () => {
 				})
 				.reply(400, { errorCode: 'err' }, { headers: JSON_HEADERS })
 
-			await expect(sendPut(client, '/products/1', mockProduct1)).rejects.toThrow(
-				'Response status code 400',
-			)
+			await expect(
+				sendPut(client, '/products/1', mockProduct1, {
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+					requestLabel: 'dummy',
+				}),
+			).rejects.toThrow('Response status code 400')
 		})
 
 		it('Throws an error on internal error', async () => {
@@ -822,6 +876,8 @@ describe('httpClient', () => {
 			await expect(
 				sendPut(client, '/products', undefined, {
 					query,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+					requestLabel: 'dummy',
 				}),
 			).rejects.toMatchObject({
 				message: 'connection error',
@@ -840,6 +896,8 @@ describe('httpClient', () => {
 
 			const result = await sendPutBinary(client, '/products/1', Buffer.from('text'), {
 				reqContext,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
 			})
 
 			expect(result.result.body).toEqual({ id: 21 })
@@ -860,6 +918,8 @@ describe('httpClient', () => {
 
 			const result = await sendPutBinary(client, '/products/1', Buffer.from('text'), {
 				query,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
 			})
 
 			expect(result.result.body).toEqual({ id: 21 })
@@ -873,9 +933,12 @@ describe('httpClient', () => {
 				})
 				.reply(400, { errorCode: 'err' }, { headers: JSON_HEADERS })
 
-			await expect(sendPutBinary(client, '/products/1', Buffer.from('text'))).rejects.toThrow(
-				'Response status code 400',
-			)
+			await expect(
+				sendPutBinary(client, '/products/1', Buffer.from('text'), {
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+					requestLabel: 'dummy',
+				}),
+			).rejects.toThrow('Response status code 400')
 		})
 
 		it('Throws an error on internal error', async () => {
@@ -895,6 +958,8 @@ describe('httpClient', () => {
 			await expect(
 				sendPutBinary(client, '/products', null, {
 					query,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+					requestLabel: 'dummy',
 				}),
 			).rejects.toMatchObject({
 				message: 'connection error',
@@ -911,7 +976,10 @@ describe('httpClient', () => {
 				})
 				.reply(200, { id: 21 }, { headers: JSON_HEADERS })
 
-			const result = await sendPatch(client, '/products/1', mockProduct1)
+			const result = await sendPatch(client, '/products/1', mockProduct1, {
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
+			})
 
 			expect(result.result.body).toEqual({ id: 21 })
 		})
@@ -924,7 +992,10 @@ describe('httpClient', () => {
 				})
 				.reply(200, { id: 21 }, { headers: JSON_HEADERS })
 
-			const result = await sendPatch(client, '/products/1', undefined)
+			const result = await sendPatch(client, '/products/1', undefined, {
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
+			})
 
 			expect(result.result.body).toEqual({ id: 21 })
 		})
@@ -945,6 +1016,8 @@ describe('httpClient', () => {
 			const result = await sendPatch(client, '/products/1', mockProduct1, {
 				query,
 				reqContext,
+				responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+				requestLabel: 'dummy',
 			})
 
 			expect(result.result.body).toEqual({ id: 21 })
@@ -958,9 +1031,12 @@ describe('httpClient', () => {
 				})
 				.reply(400, { errorCode: 'err' }, { headers: JSON_HEADERS })
 
-			await expect(sendPatch(client, '/products/1', mockProduct1)).rejects.toThrow(
-				'Response status code 400',
-			)
+			await expect(
+				sendPatch(client, '/products/1', mockProduct1, {
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+					requestLabel: 'dummy',
+				}),
+			).rejects.toThrow('Response status code 400')
 		})
 
 		it('Throws an error on internal error', async () => {
@@ -980,6 +1056,8 @@ describe('httpClient', () => {
 			await expect(
 				sendPatch(client, '/products', undefined, {
 					query,
+					responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+					requestLabel: 'dummy',
 				}),
 			).rejects.toMatchObject({
 				message: 'connection error',
