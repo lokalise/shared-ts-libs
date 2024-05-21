@@ -33,7 +33,7 @@ describe('prismaTransaction', () => {
 	})
 
 	beforeEach(async () => {
-		await cleanTables(prisma, [DB_MODEL.item1, DB_MODEL.item2])
+		await cleanTables(prisma, [DB_MODEL.item1, DB_MODEL.item2], 'public')
 	})
 
 	afterAll(async () => {
