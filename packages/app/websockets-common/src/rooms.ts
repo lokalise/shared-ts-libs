@@ -9,6 +9,10 @@ const PROJECT_USER_ID_SCHEMA = z.object({
 	projectId: Uuid,
 	userId: Uuid,
 })
+const PROJECT_LANGUAGE_ID_SCHEMA = z.object({
+	projectId: Uuid,
+	languageId: Uuid.optional(),
+})
 
 const RoomSchemas = {
 	import: PROJECT_ID_SCHEMA, // to be removed
@@ -20,7 +24,7 @@ const RoomSchemas = {
 	workspace: WORKSPACE_ID_SCHEMA,
 	project: PROJECT_ID_SCHEMA,
 	user: USER_ID_SCHEMA,
-	'content-manager': PROJECT_ID_SCHEMA,
+	'content-manager': PROJECT_LANGUAGE_ID_SCHEMA,
 	// Unused room - this is an example how to use room with multiple parameters.
 	'project-user': PROJECT_USER_ID_SCHEMA,
 }
