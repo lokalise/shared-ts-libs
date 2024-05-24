@@ -12,7 +12,6 @@ const COCKROACHDB_RETRY_TRANSACTION_MESSAGE = 'restart transaction'
  * Check if the error is a CockroachDB transaction retry error
  *
  * @param error
- * TODO: add tests
  */
 export const isCockroachDBRetryTransaction = (error: PrismaClientKnownRequestError): boolean => {
 	const meta = error.meta
