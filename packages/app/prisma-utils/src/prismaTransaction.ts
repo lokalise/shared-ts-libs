@@ -2,6 +2,7 @@ import type { Either } from '@lokalise/node-core'
 import type { PrismaClient, Prisma } from '@prisma/client'
 import type * as runtime from '@prisma/client/runtime/library'
 
+import { isCockroachDBRetryTransaction } from './cockroachdbError'
 import { isPrismaClientKnownRequestError, PRISMA_SERIALIZATION_ERROR } from './prismaError'
 
 export type PrismaTransactionOptions = {
@@ -45,11 +46,7 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 	while (retries < options.retriesAllowed) {
 		result = await executeTransactionTry(prisma, arg, options)
 
-		if (
-			result.result ||
-			!isPrismaClientKnownRequestError(result.error) ||
-			result.error.code !== PRISMA_SERIALIZATION_ERROR
-		) {
+		if (result.result || !isRetryAllowed(result)) {
 			break
 		}
 
@@ -83,4 +80,14 @@ const executeTransactionTry = async <T, P extends PrismaClient>(
 	} catch (error) {
 		return { error }
 	}
+}
+
+const isRetryAllowed = <T>(result: PrismaTransactionReturnType<T>): boolean => {
+	if (isPrismaClientKnownRequestError(result.error)) {
+		const error = result.error
+		if (error.code === PRISMA_SERIALIZATION_ERROR) return true
+		if (isCockroachDBRetryTransaction(error)) return true
+	}
+
+	return false
 }
