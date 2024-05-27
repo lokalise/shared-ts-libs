@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vitest } from 'vitest'
 
-import { cleanTables, DB_MODEL } from '../test/DbCleaner'
+import { DbCleaner } from '../test/DbCleaner'
 
 import { PRISMA_NOT_FOUND_ERROR, PRISMA_SERIALIZATION_ERROR } from './prismaError'
 import { prismaTransaction } from './prismaTransaction'
@@ -23,8 +23,14 @@ const TEST_ITEM_2: Item2 = {
 	value: 'two',
 }
 
+enum DB_MODEL {
+	item1 = 'item1',
+	item2 = 'item2',
+}
+
 describe('prismaTransaction', () => {
 	let prisma: PrismaClient
+	const dbCleaner: DbCleaner<DB_MODEL> = new DbCleaner('public', DB_MODEL)
 
 	beforeAll(() => {
 		prisma = new PrismaClient({
@@ -33,7 +39,7 @@ describe('prismaTransaction', () => {
 	})
 
 	beforeEach(async () => {
-		await cleanTables(prisma, [DB_MODEL.item1, DB_MODEL.item2], 'public')
+		await dbCleaner.cleanTables(prisma)
 	})
 
 	afterAll(async () => {
