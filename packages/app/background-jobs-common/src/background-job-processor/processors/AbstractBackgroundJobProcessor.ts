@@ -443,7 +443,6 @@ export abstract class AbstractBackgroundJobProcessor<
 		// @ts-ignore
 		await job.updateData({ metadata: job.data.metadata })
 		await job.clearLogs()
-		job.
 	}
 
 	protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
