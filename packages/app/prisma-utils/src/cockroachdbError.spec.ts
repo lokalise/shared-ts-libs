@@ -33,19 +33,7 @@ describe('cockroachdbError', () => {
 		const error = new PrismaClientKnownRequestError('test', {
 			code: 'P100',
 			clientVersion: '1',
-			meta: { code: '40002', message: 'restart transaction' },
-		})
-
-		// When - Then
-		expect(isCockroachDBRetryTransaction(error)).toBe(false)
-	})
-
-	it('wrong meta.message', () => {
-		// Given
-		const error = new PrismaClientKnownRequestError('test', {
-			code: 'P100',
-			clientVersion: '1',
-			meta: { code: '40001', message: 'wrong message' },
+			meta: { code: '40002' },
 		})
 
 		// When - Then
@@ -57,7 +45,7 @@ describe('cockroachdbError', () => {
 		const error = new PrismaClientKnownRequestError('test', {
 			code: 'P100',
 			clientVersion: '1',
-			meta: { code: '40001', message: 'restart transaction' },
+			meta: { code: '40001' },
 		})
 
 		// When - Then
