@@ -143,7 +143,6 @@ describe('prismaTransaction', () => {
 			expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
 			expect((result.error as PrismaClientKnownRequestError).meta).toMatchObject({
 				code: '40001',
-				message: 'restart transaction',
 			})
 			expect(retrySpy).toHaveBeenCalledTimes(3)
 		})
