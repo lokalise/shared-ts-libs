@@ -104,7 +104,7 @@ describe('prismaTransaction', () => {
 			expect(retrySpy).toHaveBeenCalledTimes(5)
 		})
 
-		it('Only PRISMA_SERIALIZATION_ERROR code is retried', async () => {
+		it('not all prisma code are retried', async () => {
 			// Given
 			const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
 				new PrismaClientKnownRequestError('test', {
@@ -122,6 +122,29 @@ describe('prismaTransaction', () => {
 			expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
 			expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_NOT_FOUND_ERROR)
 			expect(retrySpy).toHaveBeenCalledTimes(1)
+		})
+
+		it('CockroachDB retry transaction error is retried', async () => {
+			// Given
+			const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
+				new PrismaClientKnownRequestError('test', {
+					code: 'P100',
+					clientVersion: '1',
+					meta: { code: '40001' },
+				}),
+			)
+
+			// When
+			const result = await prismaTransaction(prisma, (client) =>
+				client.item1.create({ data: TEST_ITEM_1 }),
+			)
+
+			// Then
+			expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
+			expect((result.error as PrismaClientKnownRequestError).meta).toMatchObject({
+				code: '40001',
+			})
+			expect(retrySpy).toHaveBeenCalledTimes(3)
 		})
 	})
 
