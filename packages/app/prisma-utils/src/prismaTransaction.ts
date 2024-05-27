@@ -4,22 +4,12 @@ import type * as runtime from '@prisma/client/runtime/library'
 
 import { isCockroachDBRetryTransaction } from './cockroachdbError'
 import { isPrismaClientKnownRequestError, PRISMA_SERIALIZATION_ERROR } from './prismaError'
-
-export type PrismaTransactionOptions = {
-	retriesAllowed: number
-	maxWait?: number
-	timeout?: number
-	isolationLevel?: string
-}
-
-export type PrismaTransactionBasicOptions = Pick<
+import type {
+	DbDriver,
+	PrismaTransactionBasicOptions,
+	PrismaTransactionFn,
 	PrismaTransactionOptions,
-	'retriesAllowed' | 'isolationLevel'
->
-
-export type PrismaTransactionClient<P> = Omit<P, runtime.ITXClientDenyList>
-
-export type PrismaTransactionFn<T, P> = (prisma: PrismaTransactionClient<P>) => Promise<T>
+} from './types'
 
 type PrismaTransactionReturnType<T> = Either<
 	unknown,
@@ -31,7 +21,7 @@ type PrismaTransactionReturnType<T> = Either<
  *
  * @template T | T extends Prisma.PrismaPromise<unknown>[]
  * @param {PrismaClient} prisma
- * @param {PrismaTransactionFn<T> | Prisma.PrismaPromise<unknown>[]} arg		 operation to perform into the transaction
+ * @param {PrismaTransactionFn<T> | Prisma.PrismaPromise<unknown>[]} arg	 operation to perform into the transaction
  * @param {PrismaTransactionOptions | PrismaTransactionBasicOptions} options transaction configuration
  * @return {Promise<PrismaTransactionReturnType<T>>}
  */
@@ -46,7 +36,7 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 	while (retries < options.retriesAllowed) {
 		result = await executeTransactionTry(prisma, arg, options)
 
-		if (result.result || !isRetryAllowed(result)) {
+		if (result.result || !isRetryAllowed(result, options.DbDriver ?? 'CockroachDb')) {
 			break
 		}
 
@@ -82,11 +72,11 @@ const executeTransactionTry = async <T, P extends PrismaClient>(
 	}
 }
 
-const isRetryAllowed = <T>(result: PrismaTransactionReturnType<T>): boolean => {
+const isRetryAllowed = <T>(result: PrismaTransactionReturnType<T>, dbDriver: DbDriver): boolean => {
 	if (isPrismaClientKnownRequestError(result.error)) {
 		const error = result.error
 		if (error.code === PRISMA_SERIALIZATION_ERROR) return true
-		if (isCockroachDBRetryTransaction(error)) return true
+		if (dbDriver === 'CockroachDb' && isCockroachDBRetryTransaction(error)) return true
 	}
 
 	return false

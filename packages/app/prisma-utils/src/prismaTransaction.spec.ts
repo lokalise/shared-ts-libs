@@ -130,7 +130,7 @@ describe('prismaTransaction', () => {
 				new PrismaClientKnownRequestError('test', {
 					code: 'P100',
 					clientVersion: '1',
-					meta: { code: '40001', message: 'restart transaction' },
+					meta: { code: '40001' },
 				}),
 			)
 
