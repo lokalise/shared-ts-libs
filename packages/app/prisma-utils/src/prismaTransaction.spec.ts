@@ -30,7 +30,7 @@ enum DB_MODEL {
 
 describe('prismaTransaction', () => {
 	let prisma: PrismaClient
-	const dbCleaner: DbCleaner<DB_MODEL> = new DbCleaner('public', DB_MODEL)
+	const dbCleaner: DbCleaner<typeof DB_MODEL> = new DbCleaner('public')
 
 	beforeAll(() => {
 		prisma = new PrismaClient({
@@ -39,7 +39,7 @@ describe('prismaTransaction', () => {
 	})
 
 	beforeEach(async () => {
-		await dbCleaner.cleanTables(prisma)
+		await dbCleaner.cleanTables(prisma, DB_MODEL)
 	})
 
 	afterAll(async () => {
