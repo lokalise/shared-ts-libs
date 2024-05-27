@@ -439,8 +439,10 @@ export abstract class AbstractBackgroundJobProcessor<
 	protected async purgeJobData(job: JobType): Promise<void> {
 		const jobOptsRemoveOnComplete = job.opts.removeOnComplete
 		if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
+
 		// @ts-ignore
 		await job.updateData({ metadata: job.data.metadata })
+		await job.clearLogs()
 	}
 
 	protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
