@@ -412,7 +412,7 @@ export abstract class AbstractBackgroundJobProcessor<
 	logJobFinished(job: JobType, requestContext: RequestContext, isSuccess: boolean): void {
 		requestContext.logger.info(
 			{
-				isSuccess
+				isSuccess,
 			},
 			`Finished job ${job.name}`,
 		)
