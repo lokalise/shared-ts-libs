@@ -168,7 +168,6 @@ describe('AbstractBackgroundJobProcessor', () => {
 			expect(lastInfoSpy.mock.calls[0]).toMatchObject([
 				{
 					origin: 'FakeBackgroundJobProcessor',
-					jobId,
 				},
 				`Started job ${QueueName}`,
 				[],
@@ -176,7 +175,6 @@ describe('AbstractBackgroundJobProcessor', () => {
 			expect(lastInfoSpy.mock.calls[1]).toMatchObject([
 				{
 					isSuccess: true,
-					jobId,
 				},
 				`Finished job ${QueueName}`,
 				[],
