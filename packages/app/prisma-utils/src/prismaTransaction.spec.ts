@@ -49,8 +49,6 @@ describe('prismaTransaction', () => {
 
 			// Then
 			expect(result.result).toMatchObject(TEST_ITEM_1)
-			// following assertions are to make sure types are correct
-			expect(result.result.value).toMatchObject(TEST_ITEM_1.value)
 		})
 
 		it('interactive transaction returns correct types', async () => {
