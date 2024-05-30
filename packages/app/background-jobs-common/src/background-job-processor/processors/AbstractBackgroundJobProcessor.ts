@@ -307,7 +307,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		let isSuccess = false
 		if (!job.requestContext) {
 			job.requestContext = {
-				logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(jobId), job),
+				logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(job), job),
 				reqId: jobId,
 			}
 		}
@@ -315,13 +315,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		try {
 			const transactionName = `bg_job:${this.config.ownerName}:${this.config.queueId}`
 			this.transactionObservabilityManager.start(transactionName, jobId)
-			job.requestContext.logger.info(
-				{
-					origin: this.constructor.name,
-					jobId,
-				},
-				`Started job ${job.name}`,
-			)
+			this.logJobStarted(job, job.requestContext)
 
 			const result = await this.process(job, job.requestContext)
 			isSuccess = true
@@ -329,7 +323,7 @@ export abstract class AbstractBackgroundJobProcessor<
 			await job.updateProgress(100)
 			return result
 		} finally {
-			job.requestContext.logger.info({ isSuccess, jobId }, `Finished job ${job.name}`)
+			this.logJobFinished(job, job.requestContext, isSuccess)
 			this.transactionObservabilityManager.stop(jobId)
 		}
 	}
@@ -338,7 +332,7 @@ export abstract class AbstractBackgroundJobProcessor<
 		const jobId = resolveJobId(job)
 		if (!job.requestContext) {
 			job.requestContext = {
-				logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(jobId), job),
+				logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(job), job),
 				reqId: jobId,
 			}
 		}
@@ -356,7 +350,7 @@ export abstract class AbstractBackgroundJobProcessor<
 
 		if (!job.requestContext) {
 			job.requestContext = {
-				logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(jobId), job),
+				logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(job), job),
 				reqId: jobId,
 			}
 		}
@@ -402,8 +396,26 @@ export abstract class AbstractBackgroundJobProcessor<
 		}
 	}
 
-	protected resolveExecutionLogger(jobId: string): CommonLogger {
-		return this.logger.child({ 'x-request-id': jobId })
+	protected resolveExecutionLogger(job: JobType): CommonLogger {
+		return this.logger.child({ 'x-request-id': job.data.metadata.correlationId, jobId: job.id })
+	}
+
+	logJobStarted(job: JobType, requestContext: RequestContext): void {
+		requestContext.logger.info(
+			{
+				origin: this.constructor.name,
+			},
+			`Started job ${job.name}`,
+		)
+	}
+
+	logJobFinished(job: JobType, requestContext: RequestContext, isSuccess: boolean): void {
+		requestContext.logger.info(
+			{
+				isSuccess,
+			},
+			`Finished job ${job.name}`,
+		)
 	}
 
 	/**
