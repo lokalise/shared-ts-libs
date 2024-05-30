@@ -1,3 +1,5 @@
+import { setTimeout } from 'node:timers/promises'
+
 import type { Either } from '@lokalise/node-core'
 import type { PrismaClient, Prisma } from '@prisma/client'
 import type * as runtime from '@prisma/client/runtime/library'
