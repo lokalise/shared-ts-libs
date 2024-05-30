@@ -31,7 +31,7 @@ describe('bugsnag', () => {
 			expect(notifySpy).toHaveBeenCalled()
 
 			const callback = notifySpy.mock.calls[0][1]
-			const event = {} as any
+			const event = { addMetadata: (_, __) => undefined } as any
 			await callback(event, () => {})
 			expect(event).toMatchObject({ severity: 'error', unhandled: true })
 		})
@@ -48,7 +48,7 @@ describe('bugsnag', () => {
 			expect(notifySpy).toHaveBeenCalled()
 
 			const callback = notifySpy.mock.calls[0][1]
-			const event = {} as any
+			const event = { addMetadata: (_, __) => undefined } as any
 			await callback(event, () => {})
 			expect(event).toMatchObject({ severity: 'info', unhandled: false })
 		})
