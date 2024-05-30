@@ -41,7 +41,9 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 
 	let retries = 0
 	while (retries < optionsWithDefaults.retriesAllowed) {
-		if (retries > 0) await sleep(calculateRetryDelay(retries, optionsWithDefaults.baseRetryDelayMs))
+		if (retries > 0) {
+			await setTimeout(calculateRetryDelay(retries, optionsWithDefaults.baseRetryDelayMs))
+		}
 
 		result = await executeTransactionTry(prisma, arg, options)
 		if (result.result || !isRetryAllowed(result, optionsWithDefaults.DbDriver)) {
@@ -79,8 +81,6 @@ const executeTransactionTry = async <T, P extends PrismaClient>(
 		return { error }
 	}
 }
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const calculateRetryDelay = (retries: number, baseRetryDelayMs: number): number => {
 	// exponential backoff -> 2^(retry-1) * baseRetryDelayMs
