@@ -9,7 +9,7 @@ export type DbDriver = ObjectValues<typeof DbDriverEnum>
 
 export type PrismaTransactionOptions = {
 	// Prisma utils library custom options
-	DbDriver: DbDriver
+	DbDriver?: DbDriver
 	retriesAllowed?: number
 	baseRetryDelayMs?: number
 

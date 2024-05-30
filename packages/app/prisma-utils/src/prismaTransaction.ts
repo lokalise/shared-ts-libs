@@ -18,8 +18,9 @@ type PrismaTransactionReturnType<T> = Either<
 
 const DEFAULT_OPTIONS = {
 	retriesAllowed: 3,
+	DbDriver: 'CockroachDb',
 	baseRetryDelayMs: 100,
-} satisfies Pick<PrismaTransactionOptions, 'retriesAllowed' | 'baseRetryDelayMs'>
+} satisfies Pick<PrismaTransactionOptions, 'retriesAllowed' | 'DbDriver' | 'baseRetryDelayMs'>
 
 /**
  * Perform a Prisma DB transaction with automatic retries if needed.
@@ -33,7 +34,7 @@ const DEFAULT_OPTIONS = {
 export const prismaTransaction = (async <T, P extends PrismaClient>(
 	prisma: P,
 	arg: PrismaTransactionFn<T, P> | Prisma.PrismaPromise<unknown>[],
-	options: PrismaTransactionOptions | PrismaTransactionBasicOptions,
+	options?: PrismaTransactionOptions | PrismaTransactionBasicOptions,
 ): Promise<PrismaTransactionReturnType<T>> => {
 	const optionsWithDefaults = { ...DEFAULT_OPTIONS, ...options }
 	let result: PrismaTransactionReturnType<T> | undefined = undefined
@@ -55,19 +56,19 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 	<T, P extends PrismaClient>(
 		prisma: P,
 		fn: PrismaTransactionFn<T, P>,
-		options: PrismaTransactionOptions,
+		options?: PrismaTransactionOptions,
 	): Promise<Either<unknown, T>>
 	<T extends Prisma.PrismaPromise<unknown>[], P extends PrismaClient>(
 		prisma: P,
 		args: [...T],
-		options: PrismaTransactionBasicOptions,
+		options?: PrismaTransactionBasicOptions,
 	): Promise<Either<unknown, runtime.Types.Utils.UnwrapTuple<T>>>
 }
 
 const executeTransactionTry = async <T, P extends PrismaClient>(
 	prisma: P,
 	arg: PrismaTransactionFn<T, P> | Prisma.PrismaPromise<unknown>[],
-	options: PrismaTransactionOptions,
+	options?: PrismaTransactionOptions,
 ): Promise<PrismaTransactionReturnType<T>> => {
 	try {
 		return {
