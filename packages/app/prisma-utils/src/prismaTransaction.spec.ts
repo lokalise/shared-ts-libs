@@ -53,15 +53,9 @@ describe('prismaTransaction', () => {
 
 		it('interactive transaction returns correct types', async () => {
 			// When
-			const result = await prismaTransaction(
-				prisma,
-				async (client) => {
-					return await client.item1.create({ data: TEST_ITEM_1 })
-				},
-				{
-					DbDriver: 'CockroachDb',
-				},
-			)
+			const result = await prismaTransaction(prisma, async (client) => {
+				return await client.item1.create({ data: TEST_ITEM_1 })
+			})
 
 			// Then
 			expect(result.result.value).toMatchObject(TEST_ITEM_1.value)
