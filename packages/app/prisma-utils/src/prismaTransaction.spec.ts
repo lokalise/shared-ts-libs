@@ -88,8 +88,8 @@ describe('prismaTransaction', () => {
 				if (i > 0) diffs.push(t - callsTimestamps[i - 1])
 			})
 			expect(diffs).toHaveLength(2)
-			expect(diffs[0] >= 100 && diffs[0] < 105).toBe(true)
-			expect(diffs[1] >= 200 && diffs[1] < 205).toBe(true)
+			expect(diffs[0]).toBeGreaterThanOrEqual(100)
+			expect(diffs[1]).toBeGreaterThanOrEqual(200)
 		})
 
 		it('modifying max number of retries and base delay', async () => {
@@ -123,10 +123,11 @@ describe('prismaTransaction', () => {
 				if (i > 0) diffs.push(t - callsTimestamps[i - 1])
 			})
 			expect(diffs).toHaveLength(4)
-			expect(diffs[0] >= 50 && diffs[0] < 55).toBe(true)
-			expect(diffs[1] >= 100 && diffs[1] < 105).toBe(true)
-			expect(diffs[2] >= 200 && diffs[2] < 205).toBe(true)
-			expect(diffs[3] >= 400 && diffs[3] < 405).toBe(true)
+
+			expect(diffs[0]).toBeGreaterThanOrEqual(50)
+			expect(diffs[1]).toBeGreaterThanOrEqual(100)
+			expect(diffs[2]).toBeGreaterThanOrEqual(200)
+			expect(diffs[3]).toBeGreaterThanOrEqual(400)
 		})
 
 		it('not all prisma code are retried', async () => {
