@@ -8,17 +8,20 @@ export const DbDriverEnum = {
 export type DbDriver = ObjectValues<typeof DbDriverEnum>
 
 export type PrismaTransactionOptions = {
-	retriesAllowed: number
+	// Prisma utils library custom options
+	DbDriver?: DbDriver
+	retriesAllowed?: number
+	baseRetryDelayMs?: number
+	maxRetryDelayMs?: number
+
+	// Prisma $transaction options
 	maxWait?: number
 	timeout?: number
 	isolationLevel?: string
-	DbDriver?: DbDriver
 }
 
-export type PrismaTransactionBasicOptions = Pick<
-	PrismaTransactionOptions,
-	'retriesAllowed' | 'isolationLevel' | 'DbDriver'
->
+// Prisma $transaction with array does not support maxWait and timeout options
+export type PrismaTransactionBasicOptions = Omit<PrismaTransactionOptions, 'maxWait' | 'timeout'>
 
 export type PrismaTransactionClient<P> = Omit<P, runtime.ITXClientDenyList>
 

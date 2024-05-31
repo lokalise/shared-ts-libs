@@ -1,3 +1,5 @@
+import { setTimeout } from 'node:timers/promises'
+
 import type { Either } from '@lokalise/node-core'
 import type { PrismaClient, Prisma } from '@prisma/client'
 import type * as runtime from '@prisma/client/runtime/library'
@@ -16,6 +18,16 @@ type PrismaTransactionReturnType<T> = Either<
 	T | runtime.Types.Utils.UnwrapTuple<Prisma.PrismaPromise<unknown>[]>
 >
 
+const DEFAULT_OPTIONS = {
+	retriesAllowed: 3,
+	DbDriver: 'CockroachDb',
+	baseRetryDelayMs: 100,
+	maxRetryDelayMs: 30000, // 30s
+} satisfies Pick<
+	PrismaTransactionOptions,
+	'retriesAllowed' | 'DbDriver' | 'baseRetryDelayMs' | 'maxRetryDelayMs'
+>
+
 /**
  * Perform a Prisma DB transaction with automatic retries if needed.
  *
@@ -27,16 +39,26 @@ type PrismaTransactionReturnType<T> = Either<
  */
 export const prismaTransaction = (async <T, P extends PrismaClient>(
 	prisma: P,
-	arg: PrismaTransactionFn<T, P>,
-	options: PrismaTransactionOptions = { retriesAllowed: 3 },
+	arg: PrismaTransactionFn<T, P> | Prisma.PrismaPromise<unknown>[],
+	options?: PrismaTransactionOptions | PrismaTransactionBasicOptions,
 ): Promise<PrismaTransactionReturnType<T>> => {
+	const optionsWithDefaults = { ...DEFAULT_OPTIONS, ...options }
 	let result: PrismaTransactionReturnType<T> | undefined = undefined
 
 	let retries = 0
-	while (retries < options.retriesAllowed) {
-		result = await executeTransactionTry(prisma, arg, options)
+	while (retries < optionsWithDefaults.retriesAllowed) {
+		if (retries > 0) {
+			await setTimeout(
+				calculateRetryDelay(
+					retries,
+					optionsWithDefaults.baseRetryDelayMs,
+					optionsWithDefaults.maxRetryDelayMs,
+				),
+			)
+		}
 
-		if (result.result || !isRetryAllowed(result, options.DbDriver ?? 'CockroachDb')) {
+		result = await executeTransactionTry(prisma, arg, options)
+		if (result.result || !isRetryAllowed(result, optionsWithDefaults.DbDriver)) {
 			break
 		}
 
@@ -59,8 +81,8 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 
 const executeTransactionTry = async <T, P extends PrismaClient>(
 	prisma: P,
-	arg: PrismaTransactionFn<T, P>,
-	options: PrismaTransactionOptions,
+	arg: PrismaTransactionFn<T, P> | Prisma.PrismaPromise<unknown>[],
+	options?: PrismaTransactionOptions,
 ): Promise<PrismaTransactionReturnType<T>> => {
 	try {
 		return {
@@ -70,6 +92,16 @@ const executeTransactionTry = async <T, P extends PrismaClient>(
 	} catch (error) {
 		return { error }
 	}
+}
+
+const calculateRetryDelay = (
+	retries: number,
+	baseRetryDelayMs: number,
+	maxDelayMs: number,
+): number => {
+	// exponential backoff -> 2^(retry-1) * baseRetryDelayMs
+	const expDelay = Math.pow(2, retries - 1) * baseRetryDelayMs
+	return Math.min(expDelay, maxDelayMs)
 }
 
 const isRetryAllowed = <T>(result: PrismaTransactionReturnType<T>, dbDriver: DbDriver): boolean => {

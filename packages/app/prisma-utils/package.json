@@ -45,18 +45,18 @@
 		"@lokalise/node-core": "^9.16.0"
 	},
 	"peerDependencies": {
-		"prisma": "^5.12.1",
-		"@prisma/client": "^5.12.1"
+		"prisma": "^5.14.0",
+		"@prisma/client": "^5.14.0"
 	},
 	"devDependencies": {
-		"@prisma/client": "^5.13.0",
+		"@prisma/client": "^5.14.0",
 		"@lokalise/eslint-config": "*",
 		"@lokalise/prettier-config": "*",
 		"@lokalise/package-vite-config": "*",
 		"@vitest/coverage-v8": "^1.5.3",
 		"cross-env": "^7.0.3",
 		"dotenv-cli": "^7.4.1",
-		"prisma": "^5.13.0",
+		"prisma": "^5.14.0",
 		"prettier": "^3.2.5",
 		"rimraf": "^5.0.1",
 		"typescript": "5.4.5",
