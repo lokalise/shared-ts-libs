@@ -130,6 +130,42 @@ describe('prismaTransaction', () => {
 			expect(diffs[3]).toBeGreaterThanOrEqual(400)
 		})
 
+		it('max delay is respected', async () => {
+			// Given
+			const baseRetryDelayMs = 1000
+			const maxRetryDelayMs = 10
+
+			const callsTimestamps: number[] = []
+			const retrySpy = vitest.spyOn(prisma, '$transaction').mockImplementation(() => {
+				callsTimestamps.push(Date.now())
+				throw new PrismaClientKnownRequestError('test', {
+					code: PRISMA_SERIALIZATION_ERROR,
+					clientVersion: '1',
+				})
+			})
+
+			// When
+			const result = await prismaTransaction(
+				prisma,
+				(client) => client.item1.create({ data: TEST_ITEM_1 }),
+				{ maxRetryDelayMs, baseRetryDelayMs },
+			)
+
+			// Then
+			expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
+			expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_SERIALIZATION_ERROR)
+			expect(retrySpy).toHaveBeenCalledTimes(3)
+
+			const diffs = []
+			callsTimestamps.forEach((t, i) => {
+				if (i > 0) diffs.push(t - callsTimestamps[i - 1])
+			})
+			expect(diffs).toHaveLength(2)
+
+			expect(diffs[0] >= 10 && diffs[0] < 20).toBe(true)
+			expect(diffs[1] >= 10 && diffs[1] < 20).toBe(true)
+		})
+
 		it('not all prisma code are retried', async () => {
 			// Given
 			const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(

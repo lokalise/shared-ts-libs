@@ -22,7 +22,11 @@ const DEFAULT_OPTIONS = {
 	retriesAllowed: 3,
 	DbDriver: 'CockroachDb',
 	baseRetryDelayMs: 100,
-} satisfies Pick<PrismaTransactionOptions, 'retriesAllowed' | 'DbDriver' | 'baseRetryDelayMs'>
+	maxRetryDelayMs: 30000, // 30s
+} satisfies Pick<
+	PrismaTransactionOptions,
+	'retriesAllowed' | 'DbDriver' | 'baseRetryDelayMs' | 'maxRetryDelayMs'
+>
 
 /**
  * Perform a Prisma DB transaction with automatic retries if needed.
@@ -44,7 +48,13 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 	let retries = 0
 	while (retries < optionsWithDefaults.retriesAllowed) {
 		if (retries > 0) {
-			await setTimeout(calculateRetryDelay(retries, optionsWithDefaults.baseRetryDelayMs))
+			await setTimeout(
+				calculateRetryDelay(
+					retries,
+					optionsWithDefaults.baseRetryDelayMs,
+					optionsWithDefaults.maxRetryDelayMs,
+				),
+			)
 		}
 
 		result = await executeTransactionTry(prisma, arg, options)
@@ -84,9 +94,14 @@ const executeTransactionTry = async <T, P extends PrismaClient>(
 	}
 }
 
-const calculateRetryDelay = (retries: number, baseRetryDelayMs: number): number => {
+const calculateRetryDelay = (
+	retries: number,
+	baseRetryDelayMs: number,
+	maxDelayMs: number,
+): number => {
 	// exponential backoff -> 2^(retry-1) * baseRetryDelayMs
-	return Math.pow(2, retries - 1) * baseRetryDelayMs
+	const expDelay = Math.pow(2, retries - 1) * baseRetryDelayMs
+	return Math.min(expDelay, maxDelayMs)
 }
 
 const isRetryAllowed = <T>(result: PrismaTransactionReturnType<T>, dbDriver: DbDriver): boolean => {

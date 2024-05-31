@@ -12,6 +12,7 @@ export type PrismaTransactionOptions = {
 	DbDriver?: DbDriver
 	retriesAllowed?: number
 	baseRetryDelayMs?: number
+	maxRetryDelayMs?: number
 
 	// Prisma $transaction options
 	maxWait?: number
