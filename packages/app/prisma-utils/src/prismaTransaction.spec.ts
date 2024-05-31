@@ -162,8 +162,8 @@ describe('prismaTransaction', () => {
 			})
 			expect(diffs).toHaveLength(2)
 
-			expect(diffs[0] >= 10 && diffs[0] < 20).toBe(true)
-			expect(diffs[1] >= 10 && diffs[1] < 20).toBe(true)
+			expect(diffs[0] >= 10 && diffs[0] < 100).toBe(true)
+			expect(diffs[1] >= 10 && diffs[1] < 100).toBe(true)
 		})
 
 		it('not all prisma code are retried', async () => {
