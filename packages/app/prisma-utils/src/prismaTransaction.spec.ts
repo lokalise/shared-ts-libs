@@ -85,7 +85,7 @@ describe('prismaTransaction', () => {
 
 			const diffs = []
 			callsTimestamps.forEach((t, i) => {
-				if (i > 0) diffs.push(Math.round(t - callsTimestamps[i - 1] / 100) * 100)
+				if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 100) * 100)
 			})
 			expect(diffs).toHaveLength(2)
 			expect(diffs[0]).toBe(100)
