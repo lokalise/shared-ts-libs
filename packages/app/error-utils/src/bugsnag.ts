@@ -2,6 +2,7 @@ import type { Event, NotifiableError } from '@bugsnag/js'
 import Bugsnag from '@bugsnag/js'
 import type { NodeConfig } from '@bugsnag/node'
 import type { ErrorReporter } from '@lokalise/node-core'
+import { isInternalError, isPublicNonRecoverableError } from '@lokalise/node-core'
 
 export type Severity = Event['severity']
 
@@ -20,11 +21,18 @@ export const reportErrorToBugsnag = ({
 }: ErrorReport) =>
 	Bugsnag.isStarted() &&
 	Bugsnag.notify(error, (event) => {
+		let computedContext = { ...(context ?? {}) }
+		if (isPublicNonRecoverableError(error) || isInternalError(error)) {
+			computedContext = {
+				...computedContext,
+				errorDetails: error.details,
+				errorCode: error.errorCode,
+			}
+		}
+
+		event.addMetadata('Context', computedContext)
 		event.severity = severity
 		event.unhandled = unhandled
-		if (context) {
-			event.addMetadata('Context', context)
-		}
 	})
 
 export const startBugsnag = (config: NodeConfig) => {
