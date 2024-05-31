@@ -162,7 +162,6 @@ describe('prismaTransaction', () => {
 			})
 			expect(diffs).toHaveLength(2)
 
-			expect(diffs).toEqual([10, 10]) // test
 			expect(diffs[0] >= 10 && diffs[0] < 100).toBe(true)
 			expect(diffs[1] >= 10 && diffs[1] < 100).toBe(true)
 		})
