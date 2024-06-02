@@ -9,8 +9,24 @@ export default defineConfig({
 	entry: resolve(__dirname, 'src/index.ts'),
 	dependencies: Object.keys(packageJson.dependencies),
 	test: {
+		setupFiles: ['./test/setup.ts'],
+		hookTimeout: 60000,
+		restoreMocks: true,
+		poolOptions: {
+			threads: {
+				singleThread: true,
+				isolate: false,
+			},
+		},
 		coverage: {
-			exclude: ['src/**/*.spec.ts', 'src/**/*.test.ts', 'src/**/*Types.ts', 'src/bugsnag.ts', 'src/index.ts'],
+			provider: 'v8',
+			all: false,
+			thresholds: {
+				lines: 98,
+				functions: 98,
+				branches: 90,
+				statements: 98,
+			},
 		},
 	},
 })
