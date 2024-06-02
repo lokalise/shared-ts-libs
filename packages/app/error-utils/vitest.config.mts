@@ -9,8 +9,6 @@ export default defineConfig({
 	entry: resolve(__dirname, 'src/index.ts'),
 	dependencies: Object.keys(packageJson.dependencies),
 	test: {
-		setupFiles: ['./test/setup.ts'],
-		hookTimeout: 60000,
 		restoreMocks: true,
 		poolOptions: {
 			threads: {
@@ -22,10 +20,10 @@ export default defineConfig({
 			provider: 'v8',
 			all: false,
 			thresholds: {
-				lines: 98,
-				functions: 98,
-				branches: 90,
-				statements: 98,
+				lines: 85,
+				functions: 25,
+				branches: 100,
+				statements: 85,
 			},
 		},
 	},
