@@ -1,0 +1,73 @@
+{
+	"name": "@lokalise/context-fastify-plugins",
+	"version": "3.3.0",
+	"files": [
+		"dist",
+		"LICENSE.md",
+		"README.md"
+	],
+	"author": {
+		"name": "Lokalise",
+		"url": "https://lokalise.com/"
+	},
+	"homepage": "https://github.com/lokalise/shared-ts-libs",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/lokalise/shared-ts-libs.git"
+	},
+	"private": false,
+	"license": "Apache-2.0",
+	"type": "commonjs",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"scripts": {
+		"build": "rimraf dist && tsc",
+		"clean": "rimraf dist .eslintcache",
+		"lint": "eslint --cache --max-warnings=0 . && prettier --check --log-level warn src \"**/*.{json,md,ts,tsx}\" && tsc --noEmit",
+		"lint:fix": "prettier --write src \"**/*.{json,md,ts,tsx}\" --log-level=warn && eslint . --fix",
+		"test": "vitest run",
+		"test:ci": "npm run test -- --coverage",
+		"prepublishOnly": "npm run build",
+		"package-version": "echo $npm_package_version"
+	},
+	"dependencies": {
+		"@lokalise/node-core": "^9.17.0",
+		"@opentelemetry/api": "1.8.0",
+		"@opentelemetry/exporter-trace-otlp-grpc": "0.50.0",
+		"@opentelemetry/instrumentation": "0.50.0",
+		"@opentelemetry/resources": "1.23.0",
+		"@opentelemetry/sdk-trace-base": "1.23.0",
+		"@opentelemetry/sdk-trace-node": "1.23.0",
+		"@opentelemetry/semantic-conventions": "1.23.0",
+		"fastify-plugin": "^4.5.1"
+	},
+	"peerDependencies": {
+		"@fastify/request-context": "^5.1.0",
+		"@prisma/instrumentation": "^5.13.0",
+		"fastify": "^4.27.0",
+		"pino": "^9.1.0"
+	},
+	"devDependencies": {
+		"@fastify/request-context": "^5.1.0",
+		"@lokalise/eslint-config": "latest",
+		"@lokalise/node-core": "^9.20.0",
+		"@lokalise/prettier-config": "latest",
+		"@lokalise/package-vite-config": "latest",
+		"@prisma/instrumentation": "^5.13.0",
+		"@types/node": "^20.12.13",
+		"@typescript-eslint/eslint-plugin": "^7.11.0",
+		"@typescript-eslint/parser": "^7.11.0",
+		"@vitest/coverage-v8": "1.6.0",
+		"eslint": "^8.57.0",
+		"eslint-plugin-import": "^2.29.1",
+		"eslint-plugin-vitest": "0.4.1",
+		"fastify": "^4.27.0",
+		"pino": "^9.1.0",
+		"pino-pretty": "^11.1.0",
+		"prettier": "^3.2.5",
+		"rimraf": "^5.0.1",
+		"typescript": "^5.4.5",
+		"vitest": "1.6.0"
+	},
+	"prettier": "@lokalise/prettier-config"
+}
