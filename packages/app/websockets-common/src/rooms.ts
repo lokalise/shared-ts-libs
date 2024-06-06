@@ -13,8 +13,10 @@ const PROJECT_LANGUAGE_ID_SCHEMA = z.object({
 	projectId: Uuid,
 	languageId: Uuid.optional(),
 })
+const INTEGRATION_ID_SCHEMA = z.object({ integrationId: Uuid })
 
 const RoomSchemas = {
+	shopify: INTEGRATION_ID_SCHEMA,
 	import: PROJECT_ID_SCHEMA, // to be removed
 	git: PROJECT_ID_SCHEMA,
 	upload: USER_ID_SCHEMA, // to be removed
