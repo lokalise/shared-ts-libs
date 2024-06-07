@@ -175,12 +175,12 @@ export async function getPaginatedEntries<T extends Record<string, unknown>>(
  * @param apiCall
  *
  * @example
- * &lt;caption>Example of usage with limit&lt;/caption>
+ * <caption>Example of usage with limit</caption>
  * await getPaginatedEntries({ limit: 1 }, (params) => {
  *                return market.getApples(params)
  *            }
  *
- * &lt;caption>Example of usage with limit and start cursor&lt;/caption>
+ * <caption>Example of usage with limit and start cursor</caption>
  * await getPaginatedEntries({ limit: 1, after: 'red' }, (params) => {
  *                return market.getApples(params)
  *            }

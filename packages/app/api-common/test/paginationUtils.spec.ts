@@ -225,6 +225,7 @@ describe('paginationUtils', () => {
 			})
 
 			expect(spy).toHaveBeenCalledTimes(1)
+			expect(spy).toHaveBeenNthCalledWith(1, { limit: 1 })
 			expect(result).toEqual([])
 		})
 		it('should call api 2 time', async () => {
@@ -252,6 +253,8 @@ describe('paginationUtils', () => {
 			})
 
 			expect(spy).toHaveBeenCalledTimes(2)
+			expect(spy).toHaveBeenNthCalledWith(1, { limit: 1 })
+			expect(spy).toHaveBeenNthCalledWith(2, { after: 'red', limit: 1 })
 			expect(result).toEqual([{ id: 'red' }, { id: 'blue' }])
 		})
 		it('should respect initial cursor', async () => {
