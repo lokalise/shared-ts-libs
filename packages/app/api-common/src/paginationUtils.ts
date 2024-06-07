@@ -191,11 +191,12 @@ export async function getPaginatedEntriesByHasMore<T extends Record<string, unkn
 ): Promise<T[]> {
 	const resultArray: T[] = []
 	let hasMore: boolean | undefined
-	const currentCursor: string | undefined = pagination.after
+	let currentCursor: string | undefined = pagination.after
 	do {
 		const pageResult = await apiCall({ ...pagination, after: currentCursor })
 		resultArray.push(...pageResult.data)
 		hasMore = pageResult.meta.hasMore
+		currentCursor = pageResult.meta.cursor
 	} while (hasMore)
 
 	return resultArray
