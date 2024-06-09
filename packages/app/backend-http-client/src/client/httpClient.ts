@@ -1,6 +1,6 @@
 import type { Readable } from 'stream'
 
-import { copyWithoutUndefined, ResponseStatusError } from '@lokalise/node-core'
+import { copyWithoutUndefined } from '@lokalise/node-core'
 import type { DefiniteEither, MayOmit } from '@lokalise/node-core'
 import { Client } from 'undici'
 import type { FormData } from 'undici'
@@ -13,6 +13,8 @@ import type {
 	Either,
 } from 'undici-retry'
 import { z } from 'zod'
+
+import { ResponseStatusError } from '../errors/ResponseStatusError'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RecordObject = Record<string, any>

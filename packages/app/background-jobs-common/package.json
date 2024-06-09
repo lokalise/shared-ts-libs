@@ -35,24 +35,24 @@
 	},
 	"dependencies": {
 		"@lokalise/id-utils": "1.0.0",
-		"@lokalise/node-core": "^9.17.0",
-		"pino": "^9.0.0",
+		"@lokalise/node-core": "^9.22.0",
+		"pino": "^9.1.0",
 		"ts-deepmerge": "^7.0.0"
 	},
 	"peerDependencies": {
-		"bullmq": "^5.4.6"
+		"bullmq": "^5.7.15"
 	},
 	"devDependencies": {
-		"@types/node": "^20.12.7",
+		"@types/node": "^20.14.2",
 		"@lokalise/eslint-config": "latest",
-		"@lokalise/fastify-extras": "^20.0.0",
+		"@lokalise/fastify-extras": "^21.0.0",
 		"@lokalise/prettier-config": "latest",
 		"@lokalise/package-vite-config": "latest",
-		"@vitest/coverage-v8": "^1.5.0",
-		"bullmq": "^5.4.6",
-		"ioredis": "^5.3.2",
-		"prettier": "3.2.5",
-		"rimraf": "^5.0.5",
+		"@vitest/coverage-v8": "^1.6.0",
+		"bullmq": "^5.7.15",
+		"ioredis": "^5.4.1",
+		"prettier": "3.3.1",
+		"rimraf": "^5.0.7",
 		"typescript": "5.4.5",
 		"vitest": "^1.6.0"
 	},

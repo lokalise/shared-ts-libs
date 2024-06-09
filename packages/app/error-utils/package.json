@@ -25,18 +25,18 @@
 		"package-version": "echo $npm_package_version"
 	},
 	"dependencies": {
-		"@bugsnag/js": "^7.22.4"
+		"@bugsnag/js": "^7.23.0"
 	},
 	"devDependencies": {
 		"@lokalise/eslint-config": "latest",
-		"@lokalise/node-core": "^9.6.1",
+		"@lokalise/node-core": "^10.0.0",
 		"@lokalise/prettier-config": "latest",
 		"@lokalise/package-vite-config": "latest",
 		"@vitest/coverage-v8": "^1.6.0",
-		"prettier": "^3.2.5",
-		"rimraf": "^5.0.1",
+		"prettier": "^3.3.1",
+		"rimraf": "^5.0.7",
 		"typescript": "5.4.5",
-		"vite": "^5.2.12",
+		"vite": "^5.2.13",
 		"vitest": "^1.6.0"
 	},
 	"prettier": "@lokalise/prettier-config"

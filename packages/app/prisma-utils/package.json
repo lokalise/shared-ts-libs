@@ -42,7 +42,7 @@
 		"package-version": "echo $npm_package_version"
 	},
 	"dependencies": {
-		"@lokalise/node-core": "^9.16.0"
+		"@lokalise/node-core": "^10.0.0"
 	},
 	"peerDependencies": {
 		"prisma": "^5.14.0",
@@ -53,14 +53,14 @@
 		"@lokalise/eslint-config": "*",
 		"@lokalise/prettier-config": "*",
 		"@lokalise/package-vite-config": "*",
-		"@vitest/coverage-v8": "^1.5.3",
+		"@vitest/coverage-v8": "^1.6.0",
 		"cross-env": "^7.0.3",
 		"dotenv-cli": "^7.4.1",
 		"prisma": "^5.14.0",
-		"prettier": "^3.2.5",
-		"rimraf": "^5.0.1",
+		"prettier": "^3.3.1",
+		"rimraf": "^5.0.7",
 		"typescript": "5.4.5",
-		"vite": "^5.2.12",
+		"vite": "^5.2.13",
 		"vitest": "^1.6.0"
 	},
 	"prettier": "@lokalise/prettier-config"
