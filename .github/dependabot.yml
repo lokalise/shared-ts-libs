@@ -11,6 +11,12 @@ updates:
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 10
+    labels:
+      - 'skip-release'
+    ignore:
+      - dependency-name: 'eslint'
+      - dependency-name: 'eslint-plugin-vitest'
+
     groups:
       lint:
         patterns:
