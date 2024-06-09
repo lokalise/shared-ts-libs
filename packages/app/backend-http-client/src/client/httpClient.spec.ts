@@ -1,4 +1,3 @@
-import { JSON_HEADERS } from '@lokalise/node-core'
 import type { Interceptable } from 'undici'
 import { Client, MockAgent, setGlobalDispatcher } from 'undici'
 import { isInternalRequestError } from 'undici-retry'
@@ -7,6 +6,7 @@ import { z } from 'zod'
 
 import type { HttpRequestContext } from './httpClient'
 import {
+	JSON_HEADERS,
 	UNKNOWN_RESPONSE_SCHEMA,
 	NO_CONTENT_RESPONSE_SCHEMA,
 	buildClient,
