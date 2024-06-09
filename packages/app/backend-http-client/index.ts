@@ -15,4 +15,6 @@ export {
 	JSON_HEADERS,
 	NO_CONTENT_RESPONSE_SCHEMA,
 	UNKNOWN_RESPONSE_SCHEMA,
-} from './src/httpClient'
+} from './src/client/httpClient'
+
+export { isResponseStatusError, ResponseStatusError } from './src/errors/ResponseStatusError'
