@@ -1,0 +1,18 @@
+name: Package release to NPM -> script-utils
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+    paths:
+      - 'packages/app/script-utils/**'
+
+jobs:
+  call-build-flow:
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/script-utils'
+      package_name: 'script-utils'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
