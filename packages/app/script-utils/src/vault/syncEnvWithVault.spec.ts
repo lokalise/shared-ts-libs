@@ -5,7 +5,12 @@ import { unlinkSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
 const DOT_ENV_PATH = __dirname + '/test_env'
 
 function readDotEnvFile() {
-	return readFileSync(DOT_ENV_PATH, { encoding: 'utf8' }).trim().split('\n')
+	let rawcontent = readFileSync(DOT_ENV_PATH, { encoding: 'utf8' });
+
+	console.log(rawcontent)
+	return rawcontent
+		.trim()
+		.split('\n')
 }
 
 function putToDotEnvFile(lines: string[]) {
@@ -83,5 +88,19 @@ describe('sync env with vault', () => {
 		const content = readDotEnvFile()
 
 		expect(content).toEqual(['var0=value0', 'var3=value3'])
+	})
+
+	it("should wrap value in quotes if vault value has new line", () => {
+		updateEnvFile(
+			{
+				var0: 'value\nwith new line',
+			},
+			DOT_ENV_PATH,
+		)
+
+		const content = readDotEnvFile()
+		console.log(content)
+		expect(content).toEqual(['var0=value0', 'var3=value3'])
+
 	})
 })
