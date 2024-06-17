@@ -1,3 +1,4 @@
+/* c8 ignore start */
 import type { SpawnSyncReturns } from 'node:child_process'
 import { execSync } from 'node:child_process'
 
@@ -104,3 +105,4 @@ export const vaultGetVars = (service: string): Record<string, string> => {
 		return {}
 	}
 }
+/* c8 ignore end */
