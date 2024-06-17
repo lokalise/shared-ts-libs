@@ -42,10 +42,7 @@ const upsertEnvValue = (
  * @param envVars Record of variable key-values
  * @param file Path to the .env file
  */
-export const updateEnvFile = (
-	envVars: Record<string, string>,
-	file: string,
-) => {
+export const updateEnvFile = (envVars: Record<string, string>, file: string) => {
 	if (Object.entries(envVars).length === 0) {
 		globalLogger.info(`Skipping env file ${file}`)
 		return

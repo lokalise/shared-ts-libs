@@ -64,14 +64,9 @@ describe('sync env with vault', () => {
 		expect(content).toEqual(['var0=value1', 'var3=value3'])
 	})
 
-	it("should do nothing if provided env vars are empty", ()=> {
-		updateEnvFile(
-			{
-			},
-			DOT_ENV_PATH,
-		)
+	it('should do nothing if provided env vars are empty', () => {
+		updateEnvFile({}, DOT_ENV_PATH)
 
 		expect(existsSync(DOT_ENV_PATH)).toEqual(false)
 	})
-
 })
