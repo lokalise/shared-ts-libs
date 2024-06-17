@@ -41,14 +41,12 @@ const upsertEnvValue = (
  *
  * @param envVars Record of variable key-values
  * @param file Path to the .env file
- * @param createEmpty Create the file even if there are no variables to update
  */
 export const updateEnvFile = (
 	envVars: Record<string, string>,
 	file: string,
-	createEmpty = false,
 ) => {
-	if (Object.entries(envVars).length === 0 && !createEmpty) {
+	if (Object.entries(envVars).length === 0) {
 		globalLogger.info(`Skipping env file ${file}`)
 		return
 	}

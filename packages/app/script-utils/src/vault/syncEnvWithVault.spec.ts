@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { updateEnvFile } from './syncEnvWithVault'
-import { unlinkSync, readFileSync, writeFileSync } from 'node:fs'
+import { unlinkSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
 
 const DOT_ENV_PATH = __dirname + '/test_env'
 
@@ -14,7 +14,9 @@ function putToDotEnvFile(lines: string[]) {
 
 describe('sync env with vault', () => {
 	afterEach(() => {
-		unlinkSync(DOT_ENV_PATH)
+		if (existsSync(DOT_ENV_PATH)) {
+			unlinkSync(DOT_ENV_PATH)
+		}
 	})
 
 	it('should add env vars to file', () => {
@@ -61,4 +63,15 @@ describe('sync env with vault', () => {
 
 		expect(content).toEqual(['var0=value1', 'var3=value3'])
 	})
+
+	it("should do nothing if provided env vars are empty", ()=> {
+		updateEnvFile(
+			{
+			},
+			DOT_ENV_PATH,
+		)
+
+		expect(existsSync(DOT_ENV_PATH)).toEqual(false)
+	})
+
 })
