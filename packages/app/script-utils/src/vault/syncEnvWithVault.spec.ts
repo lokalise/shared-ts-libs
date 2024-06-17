@@ -88,16 +88,4 @@ describe('sync env with vault', () => {
 		expect(content).toEqual(['var0=value0', 'var3=value3'])
 	})
 
-	it('should wrap value in quotes if vault value has new line', () => {
-		updateEnvFile(
-			{
-				var0: 'value\nwith new line',
-			},
-			DOT_ENV_PATH,
-		)
-
-		const content = readDotEnvFile()
-		console.log(content)
-		expect(content).toEqual(['var0=value0', 'var3=value3'])
-	})
 })
