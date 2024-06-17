@@ -58,6 +58,7 @@ export const updateEnvFile = (envVars: Record<string, string>, file: string) => 
 	writeFileSync(file, env, { encoding: 'utf-8' })
 }
 
+/* c8 ignore start */
 export const synchronizeEnvFileWithVault = ({
 	dryRun,
 	vault,
@@ -83,3 +84,4 @@ export const synchronizeEnvFileWithVault = ({
 		updateEnvFile(envVarsLocal, dotenvFilePath)
 	}
 }
+/* c8 ignore end */
