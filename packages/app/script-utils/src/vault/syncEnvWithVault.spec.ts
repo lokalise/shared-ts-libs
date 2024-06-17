@@ -69,4 +69,19 @@ describe('sync env with vault', () => {
 
 		expect(existsSync(DOT_ENV_PATH)).toEqual(false)
 	})
+
+	it("should replace value of key if in file it is empty", () => {
+		putToDotEnvFile(['var0=', 'var3=value3'])
+
+		updateEnvFile(
+			{
+				var0: 'value0',
+			},
+			DOT_ENV_PATH,
+		)
+
+		const content = readDotEnvFile()
+
+		expect(content).toEqual(['var0=value0', 'var3=value3'])
+	})
 })
