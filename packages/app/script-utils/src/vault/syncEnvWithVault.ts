@@ -1,8 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { parseEnv } from 'node:util'
 import { globalLogger } from '@lokalise/node-core'
-import { rootDir } from './dir'
 import { vaultGetVars, vaultLogin } from './vault'
 
 /**
