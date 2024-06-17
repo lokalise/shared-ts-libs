@@ -12,6 +12,7 @@ import { synchronizeEnvFileWithVault } from '@lokalise/script-utils'
 ```
 
 `tsx` is recommended to be used as a script runner, so you can add the following script to your `package.json` file:
+
 ```
 "scripts": {
     "sync-with-vault": "tsx sync-with-vault.ts"

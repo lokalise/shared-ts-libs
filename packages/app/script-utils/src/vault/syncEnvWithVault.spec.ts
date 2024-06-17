@@ -47,18 +47,18 @@ describe('sync env with vault', () => {
 		expect(content).toEqual(['var0=value0', 'var3=value3', 'var1=value1', 'var2=value2'])
 	})
 
-    it("should update value if exists in file", () => {
-        putToDotEnvFile(['var0=value0', 'var3=value3'])
+	it('should update value if exists in file', () => {
+		putToDotEnvFile(['var0=value0', 'var3=value3'])
 
-        updateEnvFile(
-            {
-                var0: 'value1',
-            },
-            DOT_ENV_PATH,
-        )
+		updateEnvFile(
+			{
+				var0: 'value1',
+			},
+			DOT_ENV_PATH,
+		)
 
-        const content = readDotEnvFile()
+		const content = readDotEnvFile()
 
-        expect(content).toEqual(['var0=value1', 'var3=value3'])
-    })
+		expect(content).toEqual(['var0=value1', 'var3=value3'])
+	})
 })
