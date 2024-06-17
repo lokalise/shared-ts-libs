@@ -1,14 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { updateEnvFile } from './syncEnvWithVault'
-import { unlinkSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 
 const DOT_ENV_PATH = __dirname + '/test_env'
 
 function readDotEnvFile() {
-	let rawcontent = readFileSync(DOT_ENV_PATH, { encoding: 'utf8' })
-
-	console.log(rawcontent)
-	return rawcontent.trim().split('\n')
+	return readFileSync(DOT_ENV_PATH, { encoding: 'utf8' }).trim().split('\n')
 }
 
 function putToDotEnvFile(lines: string[]) {
