@@ -87,5 +87,4 @@ describe('sync env with vault', () => {
 
 		expect(content).toEqual(['var0=value0', 'var3=value3'])
 	})
-
 })
