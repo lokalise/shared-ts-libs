@@ -459,10 +459,21 @@ describe('httpClient', () => {
 					{
 						responseSchema: schema,
 						validateResponse: true,
-						requestLabel: 'dummy',
+						requestLabel: 'Test request',
 					},
 				),
-			).rejects.toThrow(/Expected string, received number/)
+			).rejects.toThrow(`[
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "id"
+    ],
+    "message": "Expected string, received number",
+    "requestLabel": "Test request"
+  }
+]`)
 		})
 
 		it('validates response structure with provided schema, passes validation', async () => {

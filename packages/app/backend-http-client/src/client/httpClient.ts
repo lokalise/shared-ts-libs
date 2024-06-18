@@ -362,7 +362,17 @@ function resolveResult<T>(
 		throw requestResult.error
 	}
 	if (requestResult.result && validateResponse) {
-		requestResult.result.body = validationSchema.parse(requestResult.result.body)
+		try {
+			requestResult.result.body = validationSchema.parse(requestResult.result.body)
+			// @ts-ignore
+		} catch (err: ZodError) {
+			// @ts-ignore
+			for (const issue of err.issues) {
+				issue.requestLabel = requestLabel
+			}
+			err.requestLabel = requestLabel
+			throw err
+		}
 	}
 
 	return requestResult as DefiniteEither<RequestResult<unknown>, RequestResult<T>>
