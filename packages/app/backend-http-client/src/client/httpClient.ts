@@ -29,6 +29,11 @@ export const NO_CONTENT_RESPONSE_SCHEMA = z.string().length(0)
  */
 export const UNKNOWN_RESPONSE_SCHEMA = z.unknown()
 
+export const TEST_OPTIONS: RequestOptions<unknown> = {
+	requestLabel: 'test',
+	responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+}
+
 export type HttpRequestContext = {
 	reqId: string
 }

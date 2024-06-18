@@ -12,6 +12,7 @@ export {
 	type Response,
 	type HttpRequestContext,
 	type ResponseSchema,
+	TEST_OPTIONS,
 	JSON_HEADERS,
 	NO_CONTENT_RESPONSE_SCHEMA,
 	UNKNOWN_RESPONSE_SCHEMA,
