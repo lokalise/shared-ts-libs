@@ -36,7 +36,7 @@
 		"package-version": "echo $npm_package_version"
 	},
 	"dependencies": {
-		"vite": "5.2.13",
+		"vite": "5.3.1",
 		"vite-plugin-dts": "3.9.1",
 		"vitest": "^1.6.0"
 	},
@@ -44,7 +44,7 @@
 		"@lokalise/eslint-config": "latest",
 		"@lokalise/prettier-config": "latest",
 		"eslint": "^8.57.0",
-		"prettier": "^3.3.1",
+		"prettier": "^3.3.2",
 		"rimraf": "^5.0.7",
 		"typescript": "5.4.5"
 	},
