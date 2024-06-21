@@ -1,5 +1,6 @@
 import { ULIDtoUUID } from 'ulid-uuid-converter'
 import { monotonicFactory } from 'ulidx'
+import { uuidv7 } from 'uuidv7'
 
 const ulid = monotonicFactory()
 
@@ -14,4 +15,8 @@ export function generateMonotonicUuid(): string {
 	const id = ulid()
 
 	return ULIDtoUUID(id)
+}
+
+export function generateUuid7(): string {
+	return uuidv7()
 }

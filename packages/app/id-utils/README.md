@@ -28,3 +28,13 @@ const sorted = ids.sort()
 
 // sorted == ids
 ```
+
+### UUID7
+
+This package also provides a function to generate a UUID7. It is a:
+
+```
+import { generateUuid7 } from '@lokalise/id-utils'
+
+generateUuid7()
+```
