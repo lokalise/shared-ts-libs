@@ -1,4 +1,4 @@
-import { generateMonotonicUuid } from './index'
+import {generateMonotonicUuid, generateUuid7} from './index'
 
 const abstractUuidRegex =
 	/^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/i
@@ -21,6 +21,14 @@ describe('idUtils', () => {
 			const sortedIds = [...ids].sort()
 
 			expect(sortedIds).toMatchObject(ids)
+		})
+	})
+
+	describe('generateUuid7', () => {
+		it('generates a UUID-like string', () => {
+			const id = generateUuid7()
+
+			expect(id).toMatch(abstractUuidRegex)
 		})
 	})
 })
