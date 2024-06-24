@@ -38,7 +38,7 @@
 		"@lokalise/eslint-config": "latest",
 		"@lokalise/prettier-config": "latest",
 		"@lokalise/package-vite-config": "latest",
-		"@message-queue-toolkit/sns": "^15.3.0",
+		"@message-queue-toolkit/sns": "^16.0.0",
 		"@vitest/coverage-v8": "^1.6.0",
 		"prettier": "3.3.2",
 		"rimraf": "^5.0.7",
