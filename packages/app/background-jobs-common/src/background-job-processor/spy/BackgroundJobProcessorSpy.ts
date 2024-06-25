@@ -2,6 +2,7 @@ import { deepClone, removeNullish } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 
 import type { SafeJob } from '../types'
+import { JobFinalState } from '../types'
 
 import type {
 	BackgroundJobProcessorSpyInterface,
@@ -47,7 +48,7 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 			throw new Error('Job id is not defined or empty')
 		}
 
-		const result = this.jobResults.get(id)
+		const result = this.jobResults.get(this.getJobResultKey(id, awaitedState))
 		if (result && result.state === awaitedState) {
 			return Promise.resolve(result.job)
 		}
@@ -83,6 +84,10 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 		return promise
 	}
 
+	private getJobResultKey(jobId: string | undefined, state: JobSpyState): string {
+		return state === 'failed' || state === 'completed' ? `${jobId}#final` : `${jobId}#${state}`
+	}
+
 	/**
 	 * Adds a job processing result and resolves any promises waiting for a matching job in the given final state.
 	 * Note: This method is not exposed on {@link BackgroundJobProcessorSpyInterface}, it is intended to be
@@ -95,10 +100,10 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 	 * @returns void
 	 */
 	addJob(job: SafeJob<JobData>, state: JobSpyState): void {
-		// TODO: we might need to change this to accommodate new job state so even when job is done we can have another entry with the scheduled one
 		if (!job.id) return
 		const clonedJob = { ...job, data: deepClone(job.data) }
-		this.jobResults.set(job.id, { job: clonedJob, state })
+		const key = this.getJobResultKey(job.id, state)
+		this.jobResults.set(key, { job: clonedJob, state })
 
 		if (this.promises.length === 0) return
 
