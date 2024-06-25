@@ -251,6 +251,12 @@ export abstract class AbstractBackgroundJobProcessor<
 			throw new Error('Some scheduled job IDs are undefined')
 		}
 
+		if (this._spy && jobs) {
+			for (const job of jobs) {
+				this._spy.addJobScheduled(job)
+			}
+		}
+
 		return jobIds as string[]
 	}
 

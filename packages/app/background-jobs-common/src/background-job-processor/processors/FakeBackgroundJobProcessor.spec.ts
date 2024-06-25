@@ -34,7 +34,7 @@ describe('FakeBackgroundJobProcessor', () => {
 		const data = { value: 'test', metadata: { correlationId: generateMonotonicUuid() } }
 		await processor.schedule(data)
 
-		await processor.spy?.waitForJob((data) => data.value === 'test', 'completed')
+		await processor.spy?.waitForFinishedJob((data) => data.value === 'test', 'completed')
 		expect(processor.processCalls).toHaveLength(1)
 		expect(processor.processCalls[0]).toEqual(data)
 

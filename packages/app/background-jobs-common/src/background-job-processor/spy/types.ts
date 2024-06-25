@@ -8,15 +8,19 @@ export type JobSpyResult<JobData extends object, jobReturn> = Pick<
 	'data' | 'attemptsMade' | 'id' | 'progress' | 'returnvalue' | 'failedReason' | 'finishedOn'
 >
 
-export interface BackgroundJobProcessorSpyInterface<JobData extends object, jobReturn> {
+export interface BackgroundJobProcessorSpyInterface<JobData extends object, JobReturn> {
 	clear(): void
-	waitForJob(
+	waitForFinishedJob(
 		jobSelector: JobDataSelector<JobData>,
 		state: JobFinalState,
-	): Promise<JobSpyResult<JobData, jobReturn>>
+	): Promise<JobSpyResult<JobData, JobReturn>>
 
-	waitForJobWithId(
+	waitForFinishedJobWithId(
 		id: string | undefined,
 		awaitedState: JobFinalState,
-	): Promise<JobSpyResult<JobData, jobReturn>>
+	): Promise<JobSpyResult<JobData, JobReturn>>
+
+	waitForScheduledJob(
+		jobSelector: JobDataSelector<JobData>,
+	): Promise<JobSpyResult<JobData, JobReturn>>
 }
