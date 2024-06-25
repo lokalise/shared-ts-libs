@@ -94,8 +94,7 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 	 * @param  state - Final state of the job.
 	 * @returns void
 	 */
-	// TODO: change method to something more meaningful
-	addJobProcessingResult(job: SafeJob<JobData>, state: JobSpyState): void {
+	addJob(job: SafeJob<JobData>, state: JobSpyState): void {
 		// TODO: we might need to change this to accommodate new job state so even when job is done we can have another entry with the scheduled one
 		if (!job.id) return
 		const clonedJob = { ...job, data: deepClone(job.data) }

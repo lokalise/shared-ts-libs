@@ -30,7 +30,7 @@ describe('BackgroundJobProcessorSpy', () => {
 
 			it('existing job is returned immediately', async () => {
 				const id = generateMonotonicUuid()
-				spy.addJobProcessingResult(createFakeJob({ value: 'test' }, id), 'completed')
+				spy.addJob(createFakeJob({ value: 'test' }, id), 'completed')
 
 				const result = await spy.waitForJobWithId(id, 'completed')
 				expect(result.id).toBe(id)
@@ -41,7 +41,7 @@ describe('BackgroundJobProcessorSpy', () => {
 				const promise = spy.waitForJobWithId(id, 'completed')
 				await expect(isPromiseFinished(promise)).resolves.toBe(false)
 
-				spy.addJobProcessingResult(createFakeJob({ value: 'test' }, id), 'completed')
+				spy.addJob(createFakeJob({ value: 'test' }, id), 'completed')
 
 				const result = await promise
 				expect(result.id).toBe(id)
@@ -54,7 +54,7 @@ describe('BackgroundJobProcessorSpy', () => {
 				await expect(isPromiseFinished(promise1)).resolves.toBe(false)
 				await expect(isPromiseFinished(promise2)).resolves.toBe(false)
 
-				spy.addJobProcessingResult(createFakeJob({ value: 'test' }, id), 'failed')
+				spy.addJob(createFakeJob({ value: 'test' }, id), 'failed')
 
 				await expect(isPromiseFinished(promise1)).resolves.toBe(false)
 				await expect(isPromiseFinished(promise2)).resolves.toBe(true)
@@ -66,7 +66,7 @@ describe('BackgroundJobProcessorSpy', () => {
 
 		describe('waitForJob', () => {
 			it('existing job is returned immediately', async () => {
-				spy.addJobProcessingResult(createFakeJob({ value: 'test_1' }), 'completed')
+				spy.addJob(createFakeJob({ value: 'test_1' }), 'completed')
 
 				const result = await spy.waitForJob((data) => data.value === 'test_1', 'completed')
 				expect(result.data.value).toBe('test_1')
@@ -76,7 +76,7 @@ describe('BackgroundJobProcessorSpy', () => {
 				const promise = spy.waitForJob((data) => data.value === 'test_2', 'completed')
 				await expect(isPromiseFinished(promise)).resolves.toBe(false)
 
-				spy.addJobProcessingResult(createFakeJob({ value: 'test_2' }), 'completed')
+				spy.addJob(createFakeJob({ value: 'test_2' }), 'completed')
 
 				const result = await promise
 				expect(result.data.value).toBe('test_2')
@@ -88,7 +88,7 @@ describe('BackgroundJobProcessorSpy', () => {
 				await expect(isPromiseFinished(promise1)).resolves.toBe(false)
 				await expect(isPromiseFinished(promise2)).resolves.toBe(false)
 
-				spy.addJobProcessingResult(createFakeJob({ value: 'test_3' }), 'failed')
+				spy.addJob(createFakeJob({ value: 'test_3' }), 'failed')
 
 				await expect(isPromiseFinished(promise1)).resolves.toBe(false)
 				await expect(isPromiseFinished(promise2)).resolves.toBe(true)
@@ -102,11 +102,11 @@ describe('BackgroundJobProcessorSpy', () => {
 				await expect(isPromiseFinished(promise)).resolves.toBe(false)
 
 				const job = createFakeJob({ value: 'wrong' })
-				spy.addJobProcessingResult(job, 'completed')
+				spy.addJob(job, 'completed')
 				await expect(isPromiseFinished(promise)).resolves.toBe(false)
 
 				job.data.value = 'expected'
-				spy.addJobProcessingResult(job, 'completed')
+				spy.addJob(job, 'completed')
 				const result = await promise
 				expect(result.id).toBe(job.id)
 			})
@@ -118,7 +118,7 @@ describe('BackgroundJobProcessorSpy', () => {
 
 				spy.clear()
 
-				spy.addJobProcessingResult(createFakeJob({ value: 'test' }), 'completed')
+				spy.addJob(createFakeJob({ value: 'test' }), 'completed')
 				await expect(isPromiseFinished(promise)).resolves.toBe(false)
 			})
 		})
@@ -139,10 +139,7 @@ describe('BackgroundJobProcessorSpy', () => {
 
 		it('waitForJobWithId promise returns proper returnedValue', async () => {
 			const jobId = generateMonotonicUuid()
-			spy.addJobProcessingResult(
-				createFakeJob({ value: 'test_1' }, jobId, { value: 'done' }),
-				'completed',
-			)
+			spy.addJob(createFakeJob({ value: 'test_1' }, jobId, { value: 'done' }), 'completed')
 
 			const result = await spy.waitForJobWithId(jobId, 'completed')
 			expect(result.data).toMatchObject({ value: 'test_1' })
@@ -151,10 +148,7 @@ describe('BackgroundJobProcessorSpy', () => {
 
 		it('waitForJob promise returns proper returnedValue', async () => {
 			const jobId = generateMonotonicUuid()
-			spy.addJobProcessingResult(
-				createFakeJob({ value: 'test_2' }, jobId, { value: 'done' }),
-				'completed',
-			)
+			spy.addJob(createFakeJob({ value: 'test_2' }, jobId, { value: 'done' }), 'completed')
 
 			const result = await spy.waitForJob((data) => data.value === 'test_2', 'completed')
 			expect(result.data).toMatchObject({ value: 'test_2' })
