@@ -2,7 +2,6 @@ import { deepClone, removeNullish } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 
 import type { SafeJob } from '../types'
-import { JobFinalState } from '../types'
 
 import type {
 	BackgroundJobProcessorSpyInterface,
