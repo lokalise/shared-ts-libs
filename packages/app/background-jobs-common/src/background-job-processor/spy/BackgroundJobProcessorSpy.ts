@@ -101,6 +101,7 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 	 */
 	addJob(job: SafeJob<JobData>, state: JobSpyState): void {
 		if (!job.id) return
+
 		const clonedJob = { ...job, data: deepClone(job.data) }
 		const key = this.getJobResultKey(job.id, state)
 		this.jobResults.set(key, { job: clonedJob, state })
