@@ -21,24 +21,24 @@ describe('BackgroundJobProcessorSpy', () => {
 		describe('waitForJobWithId', () => {
 			it('throws error when id is not defined or empty', async () => {
 				await expect(
-					async () => await spy.waitForJobWithId(undefined, 'completed'),
+					async () => await spy.waitForFinishedJobWithId(undefined, 'completed'),
 				).rejects.toThrowError('Job id is not defined or empty')
-				await expect(async () => await spy.waitForJobWithId('', 'completed')).rejects.toThrowError(
-					'Job id is not defined or empty',
-				)
+				await expect(
+					async () => await spy.waitForFinishedJobWithId('', 'completed'),
+				).rejects.toThrowError('Job id is not defined or empty')
 			})
 
 			it('existing job is returned immediately', async () => {
 				const id = generateMonotonicUuid()
 				spy.addJobProcessingResult(createFakeJob({ value: 'test' }, id), 'completed')
 
-				const result = await spy.waitForJobWithId(id, 'completed')
+				const result = await spy.waitForFinishedJobWithId(id, 'completed')
 				expect(result.id).toBe(id)
 			})
 
 			it('non existing job creates promise', async () => {
 				const id = generateMonotonicUuid()
-				const promise = spy.waitForJobWithId(id, 'completed')
+				const promise = spy.waitForFinishedJobWithId(id, 'completed')
 				await expect(isPromiseFinished(promise)).resolves.toBe(false)
 
 				spy.addJobProcessingResult(createFakeJob({ value: 'test' }, id), 'completed')
@@ -49,8 +49,8 @@ describe('BackgroundJobProcessorSpy', () => {
 
 			it('promise is resolved when the job pass to the right state', async () => {
 				const id = generateMonotonicUuid()
-				const promise1 = spy.waitForJobWithId(id, 'completed')
-				const promise2 = spy.waitForJobWithId(id, 'failed')
+				const promise1 = spy.waitForFinishedJobWithId(id, 'completed')
+				const promise2 = spy.waitForFinishedJobWithId(id, 'failed')
 				await expect(isPromiseFinished(promise1)).resolves.toBe(false)
 				await expect(isPromiseFinished(promise2)).resolves.toBe(false)
 
@@ -68,12 +68,12 @@ describe('BackgroundJobProcessorSpy', () => {
 			it('existing job is returned immediately', async () => {
 				spy.addJobProcessingResult(createFakeJob({ value: 'test_1' }), 'completed')
 
-				const result = await spy.waitForJob((data) => data.value === 'test_1', 'completed')
+				const result = await spy.waitForFinishedJob((data) => data.value === 'test_1', 'completed')
 				expect(result.data.value).toBe('test_1')
 			})
 
 			it('non existing job creates promise', async () => {
-				const promise = spy.waitForJob((data) => data.value === 'test_2', 'completed')
+				const promise = spy.waitForFinishedJob((data) => data.value === 'test_2', 'completed')
 				await expect(isPromiseFinished(promise)).resolves.toBe(false)
 
 				spy.addJobProcessingResult(createFakeJob({ value: 'test_2' }), 'completed')
@@ -83,8 +83,8 @@ describe('BackgroundJobProcessorSpy', () => {
 			})
 
 			it('promise is resolved when the job pass to the right state', async () => {
-				const promise1 = spy.waitForJob((data) => data.value === 'test_3', 'completed')
-				const promise2 = spy.waitForJob((data) => data.value === 'test_3', 'failed')
+				const promise1 = spy.waitForFinishedJob((data) => data.value === 'test_3', 'completed')
+				const promise2 = spy.waitForFinishedJob((data) => data.value === 'test_3', 'failed')
 				await expect(isPromiseFinished(promise1)).resolves.toBe(false)
 				await expect(isPromiseFinished(promise2)).resolves.toBe(false)
 
@@ -98,7 +98,7 @@ describe('BackgroundJobProcessorSpy', () => {
 			})
 
 			it('promise is not resolved until the selector condition is met', async () => {
-				const promise = spy.waitForJob((data) => data.value === 'expected', 'completed')
+				const promise = spy.waitForFinishedJob((data) => data.value === 'expected', 'completed')
 				await expect(isPromiseFinished(promise)).resolves.toBe(false)
 
 				const job = createFakeJob({ value: 'wrong' })
@@ -114,7 +114,7 @@ describe('BackgroundJobProcessorSpy', () => {
 
 		describe('clean', () => {
 			it('clean works', async () => {
-				const promise = spy.waitForJob((data) => data.value === 'test', 'completed')
+				const promise = spy.waitForFinishedJob((data) => data.value === 'test', 'completed')
 
 				spy.clear()
 
@@ -144,7 +144,7 @@ describe('BackgroundJobProcessorSpy', () => {
 				'completed',
 			)
 
-			const result = await spy.waitForJobWithId(jobId, 'completed')
+			const result = await spy.waitForFinishedJobWithId(jobId, 'completed')
 			expect(result.data).toMatchObject({ value: 'test_1' })
 			expect(result.returnvalue).toMatchObject({ value: 'done' })
 		})
@@ -156,9 +156,60 @@ describe('BackgroundJobProcessorSpy', () => {
 				'completed',
 			)
 
-			const result = await spy.waitForJob((data) => data.value === 'test_2', 'completed')
+			const result = await spy.waitForFinishedJob((data) => data.value === 'test_2', 'completed')
 			expect(result.data).toMatchObject({ value: 'test_2' })
 			expect(result.returnvalue).toMatchObject({ value: 'done' })
+		})
+	})
+
+	describe('Awaiting for job to be scheduled', () => {
+		type JobReturn = JobData
+		let spy: BackgroundJobProcessorSpy<JobData, JobReturn>
+
+		beforeAll(() => {
+			spy = new BackgroundJobProcessorSpy()
+		})
+
+		beforeEach(() => {
+			spy.clear()
+		})
+
+		it('Job is scheduled upfront', async () => {
+			const job = createFakeJob({ value: 'test_1' }, '01904ef3-31dd-de36-7a10-c0201e1697ea')
+			spy.addJobScheduled(job)
+
+			const awaitResult = await spy.waitForScheduledJob(() => job.data.value === 'test_1')
+			expect(awaitResult).toMatchInlineSnapshot(`
+				{
+				  "attemptsMade": 0,
+				  "data": {
+				    "value": "test_1",
+				  },
+				  "id": "01904ef3-31dd-de36-7a10-c0201e1697ea",
+				  "progress": 100,
+				  "returnvalue": undefined,
+				}
+			`)
+		})
+
+		it('Job is scheduled later', async () => {
+			const job = createFakeJob({ value: 'test_1' }, '01904ef3-31dd-de36-7a10-c0201e1697ea')
+
+			const awaitResult = spy.waitForScheduledJob(() => job.data.value === 'test_1')
+
+			spy.addJobScheduled(job)
+
+			expect(await awaitResult).toMatchInlineSnapshot(`
+				{
+				  "attemptsMade": 0,
+				  "data": {
+				    "value": "test_1",
+				  },
+				  "id": "01904ef3-31dd-de36-7a10-c0201e1697ea",
+				  "progress": 100,
+				  "returnvalue": undefined,
+				}
+			`)
 		})
 	})
 })
