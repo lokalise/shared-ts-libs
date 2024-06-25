@@ -102,8 +102,7 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 		if (!job.id) return
 
 		const clonedJob = { ...job, data: deepClone(job.data) }
-		const key = this.getJobResultKey(job.id, state)
-		this.jobResults.set(key, { job: clonedJob, state })
+		this.jobResults.set(this.getJobResultKey(job.id, state), { job: clonedJob, state })
 
 		if (this.promises.length === 0) return
 
