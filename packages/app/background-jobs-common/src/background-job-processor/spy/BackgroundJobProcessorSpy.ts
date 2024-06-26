@@ -43,14 +43,11 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 		id: string | undefined,
 		awaitedState: JobSpyState,
 	): Promise<JobSpyResult<JobData, JobReturn>> {
-		if (!id) {
-			throw new Error('Job id is not defined or empty')
-		}
+		if (!id) throw new Error('Job id is not defined or empty')
 
 		const result = this.jobResults.get(this.getJobResultKey(id, awaitedState))
-		if (result && result.state === awaitedState) {
-			return Promise.resolve(result.job)
-		}
+
+		if (result && result.state === awaitedState) return Promise.resolve(result.job)
 
 		return this.registerPromise((job) => job.id === id, awaitedState)
 	}
@@ -62,9 +59,8 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 		const result = Array.from(this.jobResults.values()).find(
 			(spy) => jobSelector(spy.job.data) && spy.state === awaitedState,
 		)
-		if (result) {
-			return Promise.resolve(result.job)
-		}
+
+		if (result) return Promise.resolve(result.job)
 
 		return this.registerPromise((job) => jobSelector(job.data), awaitedState)
 	}
