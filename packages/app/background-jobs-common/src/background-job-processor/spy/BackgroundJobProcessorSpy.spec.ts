@@ -62,6 +62,26 @@ describe('BackgroundJobProcessorSpy', () => {
 				const result = await promise2
 				expect(result.id).toBe(id)
 			})
+
+			it('waits for job to be schedule and it is not removed after completion', async () => {
+				const id = generateMonotonicUuid()
+				const promise1 = spy.waitForJobWithId(id, 'scheduled')
+				await expect(isPromiseFinished(promise1)).resolves.toBe(false)
+
+				spy.addJob(createFakeJob({ value: 'test' }, id), 'scheduled')
+				const result1 = await promise1
+				expect(result1.id).toBe(id)
+
+				const promise2 = spy.waitForJobWithId(id, 'completed')
+				await expect(isPromiseFinished(promise2)).resolves.toBe(false)
+
+				spy.addJob(createFakeJob({ value: 'test' }, id), 'completed')
+				const result2 = await promise2
+				expect(result2.id).toBe(id)
+
+				const scheduledAfterCompletion = await spy.waitForJobWithId(id, 'completed')
+				expect(scheduledAfterCompletion.id).toBe(id)
+			})
 		})
 
 		describe('waitForJob', () => {
@@ -109,6 +129,26 @@ describe('BackgroundJobProcessorSpy', () => {
 				spy.addJob(job, 'completed')
 				const result = await promise
 				expect(result.id).toBe(job.id)
+			})
+
+			it('waits for job to be schedule and it is not removed after completion', async () => {
+				const value = 'test'
+				const promise1 = spy.waitForJob((e) => e.value === value, 'scheduled')
+				await expect(isPromiseFinished(promise1)).resolves.toBe(false)
+
+				spy.addJob(createFakeJob({ value }), 'scheduled')
+				const result1 = await promise1
+				expect(result1.data.value).toBe(value)
+
+				const promise2 = spy.waitForJob((e) => e.value === value, 'completed')
+				await expect(isPromiseFinished(promise2)).resolves.toBe(false)
+
+				spy.addJob(createFakeJob({ value }, result1.id), 'completed')
+				const result2 = await promise2
+				expect(result2.id).toBe(result1.id)
+
+				const scheduledAfterCompletion = await spy.waitForJob((e) => e.value === value, 'completed')
+				expect(scheduledAfterCompletion.id).toBe(result1.id)
 			})
 		})
 
