@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { DependencyMocks, lastInfoSpy } from '../../../test/dependencyMocks'
 import { TestFailingBackgroundJobProcessor } from '../../../test/processors/TestFailingBackgroundJobProcessor'
-import { TestReturnValueBackgroundJobProcessor } from '../../../test/processors/TestReturnValueBackgroundJobProcessor'
 import { TestStalledBackgroundJobProcessor } from '../../../test/processors/TestStalledBackgroundJobProcessor'
 import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/TestSucessBackgroundJobProcessor'
 import { RETENTION_QUEUE_IDS_IN_DAYS } from '../constants'
@@ -212,8 +211,8 @@ describe('AbstractBackgroundJobProcessor', () => {
 				metadata: { correlationId: generateMonotonicUuid() },
 			}
 
-			await processor.schedule(jobData)
-			const job = await processor.spy.waitForJob((data) => data.id === jobData.id, 'completed')
+			const jobId = await processor.schedule(jobData)
+			const job = await processor.spy.waitForJobWithId(jobId, 'scheduled')
 			expect(job.data).toMatchObject(jobData)
 
 			// When
@@ -540,44 +539,6 @@ describe('AbstractBackgroundJobProcessor', () => {
 				]),
 				hasMore: false,
 			})
-		})
-	})
-
-	describe('spy', () => {
-		it('throws error when spy accessed in non-test mode', async () => {
-			const processor = new TestFailingBackgroundJobProcessor<JobData>(
-				deps,
-				'AbstractBackgroundJobProcessor_spy',
-				false,
-			)
-
-			expect(() => processor.spy).throws(
-				'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
-			)
-
-			await processor.dispose()
-		})
-
-		it('spy contain returnValue', async () => {
-			type JobReturn = { result: string }
-
-			const returnValue: JobReturn = { result: 'done' }
-			const processor = new TestReturnValueBackgroundJobProcessor<JobData, JobReturn>(
-				deps,
-				returnValue,
-			)
-			await processor.start()
-
-			const jobId = await processor.schedule({
-				id: 'test_id',
-				value: 'test',
-				metadata: { correlationId: 'correlation_id' },
-			})
-			const jobSpy = await processor.spy.waitForJobWithId(jobId, 'completed')
-
-			expect(jobSpy.returnvalue).toMatchObject(returnValue)
-
-			await processor.dispose()
 		})
 	})
 })

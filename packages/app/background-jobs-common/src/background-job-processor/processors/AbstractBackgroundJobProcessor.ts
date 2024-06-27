@@ -235,20 +235,27 @@ export abstract class AbstractBackgroundJobProcessor<
 	public async scheduleBulk(jobData: JobPayload[], options?: JobOptionsType): Promise<string[]> {
 		await this.startIfNotStarted()
 
-		const jobs = await this.queue?.addBulk(
-			jobData.map((data) => ({
-				name: this.config.queueId,
-				data,
-				opts: this.prepareJobOptions(options ?? ({} as JobOptionsType)),
-			})),
-		)
-		const jobIds = jobs?.map((job) => job.id) ?? []
+		const jobs =
+			(await this.queue?.addBulk(
+				jobData.map((data) => ({
+					name: this.config.queueId,
+					data,
+					opts: this.prepareJobOptions(options ?? ({} as JobOptionsType)),
+				})),
+			)) ?? []
 
+		const jobIds = jobs.map((job) => job.id)
 		/* v8 ignore next 3 */
 		if (jobIds.length === 0 || !jobIds.every((id) => !!id)) {
 			// Practically unreachable, but we want to simplify the signature of the method and avoid
 			// stating that it could return undefined.
 			throw new Error('Some scheduled job IDs are undefined')
+		}
+
+		if (this._spy) {
+			for (const job of jobs) {
+				this._spy.addJob(job, 'scheduled')
+			}
 		}
 
 		return jobIds as string[]
@@ -337,7 +344,7 @@ export abstract class AbstractBackgroundJobProcessor<
 			}
 		}
 
-		this._spy?.addJobProcessingResult(job, 'completed') // this should be executed before the hook to not be affected by it
+		this._spy?.addJob(job, 'completed') // this should be executed before the hook to not be affected by it
 		await this.internalOnHook(
 			job,
 			job.requestContext,
@@ -369,7 +376,7 @@ export abstract class AbstractBackgroundJobProcessor<
 			await this.internalOnHook(job, job.requestContext, async (job, requestContext) =>
 				this.onFailed(job, error, requestContext),
 			)
-			this._spy?.addJobProcessingResult(job, 'failed')
+			this._spy?.addJob(job, 'failed')
 		}
 	}
 

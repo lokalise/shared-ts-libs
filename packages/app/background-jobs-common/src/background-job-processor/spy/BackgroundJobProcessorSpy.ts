@@ -1,19 +1,24 @@
 import { deepClone, removeNullish } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 
-import type { JobFinalState, SafeJob } from '../types'
+import type { SafeJob } from '../types'
 
-import type { BackgroundJobProcessorSpyInterface, JobSpyResult, JobDataSelector } from './types'
+import type {
+	BackgroundJobProcessorSpyInterface,
+	JobSpyResult,
+	JobDataSelector,
+	JobSpyState,
+} from './types'
 
 type JobProcessingResult<JobData extends object, jobReturn> = {
 	job: JobSpyResult<JobData, jobReturn>
-	state?: JobFinalState
+	state?: JobSpyState
 }
 type PromiseResolve<JobData extends object> = (value: JobData | PromiseLike<JobData>) => void
 type JobSelector<JobData extends object, JobReturn> = (job: SafeJob<JobData, JobReturn>) => boolean
 type SpyPromise<JobData extends object, JobReturn> = {
 	selector: JobSelector<JobData, JobReturn>
-	awaitedState: JobFinalState
+	awaitedState: JobSpyState
 	resolve: PromiseResolve<SafeJob<JobData, JobReturn>>
 	promise: Promise<Job<JobData, JobReturn>>
 }
@@ -21,52 +26,48 @@ type SpyPromise<JobData extends object, JobReturn> = {
 export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 	implements BackgroundJobProcessorSpyInterface<JobData, JobReturn>
 {
-	private readonly jobProcessingResults: Map<string, JobProcessingResult<JobData, JobReturn>>
+	private readonly jobResults: Map<string, JobProcessingResult<JobData, JobReturn>>
 	private promises: SpyPromise<JobData, JobReturn>[]
 
 	constructor() {
-		this.jobProcessingResults = new Map()
+		this.jobResults = new Map()
 		this.promises = []
 	}
 
 	clear(): void {
-		this.jobProcessingResults.clear()
+		this.jobResults.clear()
 		this.promises = []
 	}
 
 	waitForJobWithId(
 		id: string | undefined,
-		awaitedState: JobFinalState,
+		awaitedState: JobSpyState,
 	): Promise<JobSpyResult<JobData, JobReturn>> {
-		if (!id) {
-			throw new Error('Job id is not defined or empty')
-		}
+		if (!id) throw new Error('Job id is not defined or empty')
 
-		const result = this.jobProcessingResults.get(id)
-		if (result && result.state === awaitedState) {
-			return Promise.resolve(result.job)
-		}
+		const result = this.jobResults.get(this.getJobResultKey(id, awaitedState))
+
+		if (result && result.state === awaitedState) return Promise.resolve(result.job)
 
 		return this.registerPromise((job) => job.id === id, awaitedState)
 	}
 
 	waitForJob(
 		jobSelector: JobDataSelector<JobData>,
-		awaitedState: JobFinalState,
+		awaitedState: JobSpyState,
 	): Promise<JobSpyResult<JobData, JobReturn>> {
-		const result = Array.from(this.jobProcessingResults.values()).find(
+		const result = Array.from(this.jobResults.values()).find(
 			(spy) => jobSelector(spy.job.data) && spy.state === awaitedState,
 		)
-		if (result) {
-			return Promise.resolve(result.job)
-		}
+
+		if (result) return Promise.resolve(result.job)
 
 		return this.registerPromise((job) => jobSelector(job.data), awaitedState)
 	}
 
 	private async registerPromise(
 		selector: JobSelector<JobData, JobReturn>,
-		state: JobFinalState,
+		state: JobSpyState,
 	): Promise<Job<JobData, JobReturn>> {
 		let resolve: PromiseResolve<Job<JobData>>
 		const promise = new Promise<Job<JobData, JobReturn>>((_resolve) => {
@@ -76,6 +77,10 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 		this.promises.push({ selector, awaitedState: state, resolve, promise })
 
 		return promise
+	}
+
+	private getJobResultKey(jobId: string | undefined, state: JobSpyState): string {
+		return state === 'failed' || state === 'completed' ? `${jobId}#final` : `${jobId}#${state}`
 	}
 
 	/**
@@ -89,10 +94,11 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
 	 * @param  state - Final state of the job.
 	 * @returns void
 	 */
-	addJobProcessingResult(job: SafeJob<JobData>, state: JobFinalState): void {
+	addJob(job: SafeJob<JobData>, state: JobSpyState): void {
 		if (!job.id) return
+
 		const clonedJob = { ...job, data: deepClone(job.data) }
-		this.jobProcessingResults.set(job.id, { job: clonedJob, state })
+		this.jobResults.set(this.getJobResultKey(job.id, state), { job: clonedJob, state })
 
 		if (this.promises.length === 0) return
 
