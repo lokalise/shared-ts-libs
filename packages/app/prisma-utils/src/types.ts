@@ -22,7 +22,10 @@ export type PrismaTransactionOptions = {
 }
 
 // Prisma $transaction with array does not support maxWait and timeout options
-export type PrismaTransactionBasicOptions = Omit<PrismaTransactionOptions, 'maxWait' | 'timeout'>
+export type PrismaTransactionBasicOptions = Omit<
+	PrismaTransactionOptions,
+	'maxWait' | 'timeout' | 'maxTimeout'
+>
 
 export type PrismaTransactionClient<P> = Omit<P, runtime.ITXClientDenyList>
 
