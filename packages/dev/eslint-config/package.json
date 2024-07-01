@@ -23,7 +23,7 @@
 		"package-version": "echo $npm_package_version"
 	},
 	"dependencies": {
-		"@lokalise/eslint-config-frontend": "^4.6.0",
+		"@lokalise/eslint-config-frontend": "^4.6.1",
 		"@tanstack/eslint-plugin-query": "^5.35.6",
 		"@typescript-eslint/parser": "^7.12.0"
 	},
