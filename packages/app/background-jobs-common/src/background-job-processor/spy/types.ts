@@ -2,25 +2,22 @@ import type { Job } from 'bullmq'
 
 import type { JobFinalState } from '../types'
 
+export type JobSpyState = JobFinalState | 'scheduled'
 export type JobDataSelector<JobData extends object> = (jobData: JobData) => boolean
 export type JobSpyResult<JobData extends object, jobReturn> = Pick<
 	Job<JobData, jobReturn>,
 	'data' | 'attemptsMade' | 'id' | 'progress' | 'returnvalue' | 'failedReason' | 'finishedOn'
 >
 
-export interface BackgroundJobProcessorSpyInterface<JobData extends object, JobReturn> {
+export interface BackgroundJobProcessorSpyInterface<JobData extends object, jobReturn> {
 	clear(): void
-	waitForFinishedJob(
+	waitForJob(
 		jobSelector: JobDataSelector<JobData>,
-		state: JobFinalState,
-	): Promise<JobSpyResult<JobData, JobReturn>>
+		state: JobSpyState,
+	): Promise<JobSpyResult<JobData, jobReturn>>
 
-	waitForFinishedJobWithId(
+	waitForJobWithId(
 		id: string | undefined,
-		awaitedState: JobFinalState,
-	): Promise<JobSpyResult<JobData, JobReturn>>
-
-	waitForScheduledJob(
-		jobSelector: JobDataSelector<JobData>,
-	): Promise<JobSpyResult<JobData, JobReturn>>
+		awaitedState: JobSpyState,
+	): Promise<JobSpyResult<JobData, jobReturn>>
 }

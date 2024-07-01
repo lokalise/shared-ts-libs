@@ -1,5 +1,5 @@
 import Bugsnag from '@bugsnag/js'
-import { InternalError, PublicNonRecoverableError } from '@lokalise/node-core'
+import { FreeformRecord, InternalError, PublicNonRecoverableError } from '@lokalise/node-core'
 import { describe, expect, it, vi } from 'vitest'
 
 import { reportErrorToBugsnag } from './bugsnag'
@@ -122,5 +122,43 @@ describe('bugsnag', () => {
 				errorDetails: { hello: 'world' },
 			})
 		})
+
+		it('unknown error with details field', async () => {
+			// Given
+			vi.spyOn(Bugsnag, 'isStarted').mockReturnValue(true)
+			const notifySpy = vi.spyOn(Bugsnag, 'notify').mockReturnValue(undefined)
+
+			// When
+			reportErrorToBugsnag({
+				error: new CustomError('test', { hello: 'world' }),
+				context: { good: 'bye' },
+			})
+
+			// Then
+			expect(notifySpy).toHaveBeenCalled()
+
+			const callback = notifySpy.mock.calls[0][1]
+			let context = {}
+			const event = {
+				addMetadata: (key, obj) => {
+					if (key === 'Context') context = obj
+					else throw new Error('wrong key')
+				},
+			} as any
+			await callback(event, () => {})
+			expect(event).toMatchObject({ severity: 'error', unhandled: true })
+			expect(context).toMatchObject({
+				good: 'bye',
+				errorDetails: { hello: 'world' },
+			})
+		})
 	})
 })
+
+class CustomError extends Error {
+	public readonly details: FreeformRecord
+	constructor(message: string, details: FreeformRecord) {
+		super(message)
+		this.details = details
+	}
+}

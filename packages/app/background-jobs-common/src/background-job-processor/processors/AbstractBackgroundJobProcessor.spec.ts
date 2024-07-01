@@ -88,7 +88,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 				value: 'test',
 				metadata: { correlationId: 'correlation_id' },
 			})
-			const spyResult = await processor.spy.waitForFinishedJobWithId(jobId, 'completed')
+			const spyResult = await processor.spy.waitForJobWithId(jobId, 'completed')
 
 			expect(spyResult.data).toMatchObject({
 				id: 'test_id',
@@ -104,7 +104,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			const jobIds = await processor.scheduleBulk([
 				{ id: 'test_id', value: 'test', metadata: { correlationId: 'correlation_id' } },
 			])
-			const spyResult = await processor.spy.waitForFinishedJobWithId(jobIds[0], 'completed')
+			const spyResult = await processor.spy.waitForJobWithId(jobIds[0], 'completed')
 
 			expect(spyResult.data).toMatchObject({
 				id: 'test_id',
@@ -160,7 +160,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			}
 			const jobId = await processor.schedule(jobData)
 
-			const job = await processor.spy.waitForFinishedJobWithId(jobId, 'completed')
+			const job = await processor.spy.waitForJobWithId(jobId, 'completed')
 			expect(job.data).toMatchObject(jobData)
 
 			expect(lastInfoSpy).toHaveBeenCalledTimes(2)
@@ -196,11 +196,8 @@ describe('AbstractBackgroundJobProcessor', () => {
 
 			expect(scheduledJobIds.length).toBe(2)
 
-			const firstJob = await processor.spy.waitForFinishedJobWithId(scheduledJobIds[0], 'completed')
-			const secondJob = await processor.spy.waitForFinishedJobWithId(
-				scheduledJobIds[1],
-				'completed',
-			)
+			const firstJob = await processor.spy.waitForJobWithId(scheduledJobIds[0], 'completed')
+			const secondJob = await processor.spy.waitForJobWithId(scheduledJobIds[1], 'completed')
 
 			expect(firstJob.data.value).toBe('first')
 			expect(secondJob.data.value).toBe('second')
@@ -214,11 +211,8 @@ describe('AbstractBackgroundJobProcessor', () => {
 				metadata: { correlationId: generateMonotonicUuid() },
 			}
 
-			await processor.schedule(jobData)
-			const job = await processor.spy.waitForFinishedJob(
-				(data) => data.id === jobData.id,
-				'completed',
-			)
+			const jobId = await processor.schedule(jobData)
+			const job = await processor.spy.waitForJobWithId(jobId, 'scheduled')
 			expect(job.data).toMatchObject(jobData)
 
 			// When
@@ -251,7 +245,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			)
 
 			await successBackgroundJobProcessor.schedule(jobData)
-			const job = await successBackgroundJobProcessor.spy.waitForFinishedJob(
+			const job = await successBackgroundJobProcessor.spy.waitForJob(
 				(data) => data.id === jobData.id,
 				'completed',
 			)
@@ -281,7 +275,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			}
 
 			await successBackgroundJobProcessor.schedule(jobData)
-			const job = await successBackgroundJobProcessor.spy.waitForFinishedJob(
+			const job = await successBackgroundJobProcessor.spy.waitForJob(
 				(data) => data.id === jobData.id,
 				'completed',
 			)
@@ -311,10 +305,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 			}
 
 			const jobId = await successBackgroundJobProcessor.schedule(jobData)
-			const job = await successBackgroundJobProcessor.spy.waitForFinishedJobWithId(
-				jobId,
-				'completed',
-			)
+			const job = await successBackgroundJobProcessor.spy.waitForJobWithId(jobId, 'completed')
 
 			// When
 			await successBackgroundJobProcessor.dispose()
@@ -355,7 +346,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 					delay: 0,
 				},
 			)
-			const job = await processor.spy.waitForFinishedJobWithId(scheduledJobId, 'failed')
+			const job = await processor.spy.waitForJobWithId(scheduledJobId, 'failed')
 
 			expect(processor.errorsOnProcess).length(1)
 			expect(job.attemptsMade).toBe(3)
@@ -377,7 +368,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 				},
 			)
 
-			const job = await processor.spy.waitForFinishedJob((data) => data.id === 'test_id', 'failed')
+			const job = await processor.spy.waitForJob((data) => data.id === 'test_id', 'failed')
 
 			expect(processor.errorsOnProcess).length(1)
 			expect(job.attemptsMade).toBe(1)
@@ -398,7 +389,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 				},
 			)
 
-			const job = await processor.spy.waitForFinishedJob((data) => data.id === 'test_id', 'failed')
+			const job = await processor.spy.waitForJob((data) => data.id === 'test_id', 'failed')
 
 			expect(processor.errorsOnProcess).length(1)
 			expect(job.attemptsMade).toBe(2)
@@ -420,7 +411,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 				},
 			)
 
-			const job = await processor.spy.waitForFinishedJobWithId(jobId, 'failed')
+			const job = await processor.spy.waitForJobWithId(jobId, 'failed')
 
 			expect(processor.errorsOnProcess).length(1)
 			expect(reportSpy).toHaveBeenCalledWith({

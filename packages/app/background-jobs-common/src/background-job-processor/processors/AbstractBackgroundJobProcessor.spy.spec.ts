@@ -56,7 +56,7 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
 				value: 'test',
 				metadata: { correlationId: 'correlation_id' },
 			})
-			const jobSpy = await processor.spy.waitForFinishedJobWithId(jobId, 'completed')
+			const jobSpy = await processor.spy.waitForJobWithId(jobId, 'completed')
 
 			expect(jobSpy.returnvalue).toMatchObject(returnValue)
 
@@ -65,7 +65,7 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
 
 		it('can await job to be scheduled', async () => {
 			const jobProcessor = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1')
-			await jobProcessor.schedule({
+			const jobId = await jobProcessor.schedule({
 				id: '123',
 				value: 'val1',
 				metadata: {
@@ -73,8 +73,12 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
 				},
 			})
 
-			const awaitResult = await jobProcessor.spy.waitForScheduledJob((job) => job.value === 'val1')
-			expect(awaitResult.data).toMatchInlineSnapshot(`
+			const [result1, result2] = await Promise.all([
+				jobProcessor.spy.waitForJob((job) => job.value === 'val1', 'scheduled'),
+				jobProcessor.spy.waitForJobWithId(jobId, 'scheduled'),
+			])
+			expect(result1).toEqual(result2)
+			expect(result1.data).toMatchInlineSnapshot(`
 				{
 				  "id": "123",
 				  "metadata": {
