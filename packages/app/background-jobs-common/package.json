@@ -34,18 +34,18 @@
 		"package-version": "echo $npm_package_version"
 	},
 	"dependencies": {
-		"@lokalise/id-utils": "^2.1.0",
-		"@lokalise/node-core": "^10.0.1",
-		"pino": "^9.2.0",
+		"@lokalise/id-utils": "1.0.0",
+		"@lokalise/node-core": "^10.0.0",
+		"pino": "^9.1.0",
 		"ts-deepmerge": "^7.0.0"
 	},
 	"peerDependencies": {
 		"bullmq": "^5.7.15"
 	},
 	"devDependencies": {
-		"@types/node": "^20.14.8",
+		"@types/node": "^20.14.2",
 		"@lokalise/eslint-config": "latest",
-		"@lokalise/fastify-extras": "^21.2.2",
+		"@lokalise/fastify-extras": "^21.0.0",
 		"@lokalise/prettier-config": "latest",
 		"@lokalise/package-vite-config": "latest",
 		"@vitest/coverage-v8": "^1.6.0",
@@ -53,7 +53,7 @@
 		"ioredis": "^5.4.1",
 		"prettier": "3.3.2",
 		"rimraf": "^5.0.7",
-		"typescript": "5.5.2",
+		"typescript": "5.4.5",
 		"vitest": "^1.6.0"
 	},
 	"prettier": "@lokalise/prettier-config"
