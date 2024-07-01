@@ -1,3 +1,5 @@
+import type { Either } from '@lokalise/node-core'
+import type { Prisma } from '@prisma/client'
 import type * as runtime from '@prisma/client/runtime/library'
 
 type ObjectValues<T> = T[keyof T]
@@ -30,3 +32,8 @@ export type PrismaTransactionBasicOptions = Omit<
 export type PrismaTransactionClient<P> = Omit<P, runtime.ITXClientDenyList>
 
 export type PrismaTransactionFn<T, P> = (prisma: PrismaTransactionClient<P>) => Promise<T>
+
+export type PrismaTransactionReturnType<T> = Either<
+	unknown,
+	T | runtime.Types.Utils.UnwrapTuple<Prisma.PrismaPromise<unknown>[]>
+>
