@@ -23,9 +23,10 @@ const DEFAULT_OPTIONS = {
 	DbDriver: 'CockroachDb',
 	baseRetryDelayMs: 100,
 	maxRetryDelayMs: 30000, // 30s
+	timeout: 5000, // 5s
 } satisfies Pick<
 	PrismaTransactionOptions,
-	'retriesAllowed' | 'DbDriver' | 'baseRetryDelayMs' | 'maxRetryDelayMs'
+	'retriesAllowed' | 'DbDriver' | 'baseRetryDelayMs' | 'maxRetryDelayMs' | 'timeout'
 >
 
 /**
@@ -57,10 +58,13 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 			)
 		}
 
-		result = await executeTransactionTry(prisma, arg, options)
-		if (result.result || !isRetryAllowed(result, optionsWithDefaults.DbDriver)) {
-			break
-		}
+		result = await executeTransactionTry(prisma, arg, optionsWithDefaults)
+		if (result.result) break
+
+		const { retryAllowed, increaseTimeout } = isRetryAllowed(result, optionsWithDefaults.DbDriver)
+		if (!retryAllowed) break
+
+		if (increaseTimeout) optionsWithDefaults.timeout *= 2
 
 		retries++
 	}
@@ -104,12 +108,23 @@ const calculateRetryDelay = (
 	return Math.min(expDelay, maxDelayMs)
 }
 
-const isRetryAllowed = <T>(result: PrismaTransactionReturnType<T>, dbDriver: DbDriver): boolean => {
+type isRetryAllowedResult = {
+	retryAllowed: boolean
+	increaseTimeout?: boolean
+}
+
+const isRetryAllowed = <T>(
+	result: PrismaTransactionReturnType<T>,
+	dbDriver: DbDriver,
+): isRetryAllowedResult => {
 	if (isPrismaClientKnownRequestError(result.error)) {
 		const error = result.error
-		if (error.code === PRISMA_SERIALIZATION_ERROR) return true
-		if (dbDriver === 'CockroachDb' && isCockroachDBRetryTransaction(error)) return true
+		if (error.code === PRISMA_SERIALIZATION_ERROR) return { retryAllowed: true }
+		if (dbDriver === 'CockroachDb' && isCockroachDBRetryTransaction(error))
+			return { retryAllowed: true }
+		// TODO
+		if (false) return { retryAllowed: true, increaseTimeout: true }
 	}
 
-	return false
+	return { retryAllowed: false }
 }
