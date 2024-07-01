@@ -5,18 +5,18 @@ import type { PrismaClient, Prisma } from '@prisma/client'
 import type * as runtime from '@prisma/client/runtime/library'
 
 import { isCockroachDBRetryTransaction } from './cockroachdbError'
-import { isPrismaClientKnownRequestError, PRISMA_SERIALIZATION_ERROR } from './prismaError'
+import {
+	isPrismaClientKnownRequestError,
+	isPrismaTransactionClosedError,
+	PRISMA_SERIALIZATION_ERROR,
+} from './prismaError'
 import type {
 	DbDriver,
 	PrismaTransactionBasicOptions,
 	PrismaTransactionFn,
 	PrismaTransactionOptions,
+	PrismaTransactionReturnType,
 } from './types'
-
-type PrismaTransactionReturnType<T> = Either<
-	unknown,
-	T | runtime.Types.Utils.UnwrapTuple<Prisma.PrismaPromise<unknown>[]>
->
 
 const DEFAULT_OPTIONS = {
 	retriesAllowed: 3,
@@ -59,10 +59,10 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 		result = await executeTransactionTry(prisma, arg, optionsWithDefaults)
 		if (result.result) break
 
-		const { retryAllowed, increaseTimeout } = isRetryAllowed(result, optionsWithDefaults.DbDriver)
+		const retryAllowed = isRetryAllowed(result, optionsWithDefaults.DbDriver)
 		if (!retryAllowed) break
 
-		if (increaseTimeout)
+		if (retryAllowed === 'increase-timeout')
 			Math.min((optionsWithDefaults.timeout *= 2), optionsWithDefaults.maxTimeout)
 
 		retries++
@@ -107,10 +107,7 @@ const calculateRetryDelay = (
 	return Math.min(expDelay, maxDelayMs)
 }
 
-type isRetryAllowedResult = {
-	retryAllowed: boolean
-	increaseTimeout?: boolean
-}
+type isRetryAllowedResult = boolean | 'increase-timeout'
 
 const isRetryAllowed = <T>(
 	result: PrismaTransactionReturnType<T>,
@@ -118,12 +115,10 @@ const isRetryAllowed = <T>(
 ): isRetryAllowedResult => {
 	if (isPrismaClientKnownRequestError(result.error)) {
 		const error = result.error
-		if (error.code === PRISMA_SERIALIZATION_ERROR) return { retryAllowed: true }
-		// TODO
-		if (false) return { retryAllowed: true, increaseTimeout: true }
-		if (dbDriver === 'CockroachDb' && isCockroachDBRetryTransaction(error))
-			return { retryAllowed: true }
+		if (error.code === PRISMA_SERIALIZATION_ERROR) return true
+		if (dbDriver === 'CockroachDb' && isCockroachDBRetryTransaction(error)) return true
+		if (isPrismaTransactionClosedError(error)) return 'increase-timeout'
 	}
 
-	return { retryAllowed: false }
+	return false
 }
