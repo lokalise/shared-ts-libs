@@ -24,10 +24,8 @@ const DEFAULT_OPTIONS = {
 	baseRetryDelayMs: 100,
 	maxRetryDelayMs: 30000, // 30s
 	timeout: 5000, // 5s
-} satisfies Pick<
-	PrismaTransactionOptions,
-	'retriesAllowed' | 'DbDriver' | 'baseRetryDelayMs' | 'maxRetryDelayMs' | 'timeout'
->
+	maxTimeout: 30000, // 30s
+} satisfies Partial<PrismaTransactionOptions>
 
 /**
  * Perform a Prisma DB transaction with automatic retries if needed.
@@ -64,7 +62,8 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 		const { retryAllowed, increaseTimeout } = isRetryAllowed(result, optionsWithDefaults.DbDriver)
 		if (!retryAllowed) break
 
-		if (increaseTimeout) optionsWithDefaults.timeout *= 2
+		if (increaseTimeout)
+			Math.min((optionsWithDefaults.timeout *= 2), optionsWithDefaults.maxTimeout)
 
 		retries++
 	}
@@ -120,10 +119,10 @@ const isRetryAllowed = <T>(
 	if (isPrismaClientKnownRequestError(result.error)) {
 		const error = result.error
 		if (error.code === PRISMA_SERIALIZATION_ERROR) return { retryAllowed: true }
-		if (dbDriver === 'CockroachDb' && isCockroachDBRetryTransaction(error))
-			return { retryAllowed: true }
 		// TODO
 		if (false) return { retryAllowed: true, increaseTimeout: true }
+		if (dbDriver === 'CockroachDb' && isCockroachDBRetryTransaction(error))
+			return { retryAllowed: true }
 	}
 
 	return { retryAllowed: false }

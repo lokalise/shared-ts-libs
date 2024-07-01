@@ -13,6 +13,7 @@ export type PrismaTransactionOptions = {
 	retriesAllowed?: number
 	baseRetryDelayMs?: number
 	maxRetryDelayMs?: number
+	maxTimeout?: number
 
 	// Prisma $transaction options
 	maxWait?: number
