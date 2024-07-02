@@ -41,7 +41,7 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 	arg: PrismaTransactionFn<T, P> | Prisma.PrismaPromise<unknown>[],
 	options?: PrismaTransactionOptions | PrismaTransactionBasicOptions,
 ): Promise<PrismaTransactionReturnType<T>> => {
-	const optionsWithDefaults = { ...DEFAULT_OPTIONS, ...options }
+	let optionsWithDefaults = { ...DEFAULT_OPTIONS, ...options }
 	let result: PrismaTransactionReturnType<T> | undefined = undefined
 
 	let retries = 0
@@ -62,8 +62,12 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 		const retryAllowed = isRetryAllowed(result, optionsWithDefaults.DbDriver)
 		if (!retryAllowed) break
 
-		if (retryAllowed === 'increase-timeout')
-			Math.min((optionsWithDefaults.timeout *= 2), optionsWithDefaults.maxTimeout)
+		if (retryAllowed === 'increase-timeout') {
+			optionsWithDefaults = {
+				...optionsWithDefaults,
+				timeout: Math.min((optionsWithDefaults.timeout *= 2), optionsWithDefaults.maxTimeout),
+			}
+		}
 
 		retries++
 	}
