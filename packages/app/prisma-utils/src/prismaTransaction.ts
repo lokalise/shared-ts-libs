@@ -1,6 +1,7 @@
 import { setTimeout } from 'node:timers/promises'
 
 import type { Either } from '@lokalise/node-core'
+import { deepClone } from '@lokalise/node-core'
 import type { PrismaClient, Prisma } from '@prisma/client'
 import type * as runtime from '@prisma/client/runtime/library'
 
@@ -63,10 +64,11 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 		if (!retryAllowed) break
 
 		if (retryAllowed === 'increase-timeout') {
-			optionsWithDefaults = {
-				...optionsWithDefaults,
-				timeout: Math.min((optionsWithDefaults.timeout *= 2), optionsWithDefaults.maxTimeout),
-			}
+			optionsWithDefaults = deepClone(optionsWithDefaults)
+			optionsWithDefaults.timeout = Math.min(
+				(optionsWithDefaults.timeout *= 2),
+				optionsWithDefaults.maxTimeout,
+			)
 		}
 
 		retries++
