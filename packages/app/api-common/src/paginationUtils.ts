@@ -88,11 +88,11 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
 /**
  * Constructs a PaginatedResponse object with the current page respecting page limit and building meta to retrieve next page.
  *
- * @param page - Current page of objects which will be included in `data`.
+ * @param page - Current page of objects which will be included in `data`. It will be sliced to pageLimit if provided
  * @param pageLimit - An optional number that can be used to specify the expected count of items in the current page.
  * 	- If it is provided and page length is less than or equal to pageLimit, it means that there are no more items to fetch.
  * 		In that case, hasMore flag will be set to false. Otherwise, hasMore flag will be set to true.
- * 		If currentPageData length is greater than pageLimit, count will be set to pageLimit.
+ * 		If currentPageData length is greater than pageLimit, it will be sliced and count will be set to pageLimit.
  * 	- If the parameter is not provided, hasMore flag will be undefined.
  * @param cursorKeys - An optional array of keys that determine the formation of the cursor. By default, this uses
  *    the 'id' property.
