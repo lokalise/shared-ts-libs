@@ -1,0 +1,18 @@
+name: Package release to NPM -> biome-config
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+    paths:
+      - 'packages/dev/biome-config/**'
+
+jobs:
+  call-build-flow:
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/dev/biome-config'
+      package_name: 'biome-config'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}

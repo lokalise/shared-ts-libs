@@ -1,0 +1,14 @@
+{
+  "$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
+  "javascript": {
+    "globals": ["vitest"],
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "tab",
+      "semicolons": "asNeeded",
+      "lineWidth": 100,
+      "quoteStyle": "single",
+      "trailingCommas": "all"
+    }
+  }
+}

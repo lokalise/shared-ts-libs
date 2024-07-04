@@ -1,0 +1,78 @@
+{
+  "$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "json": {
+    "formatter": {
+      "enabled": true,
+      "lineWidth": 100,
+      "indentStyle": "space"
+    }
+  },
+  "javascript": {
+    "globals": ["vitest"],
+    "formatter": {
+      "enabled": true,
+      "indentWidth": 2,
+      "indentStyle": "space",
+      "semicolons": "asNeeded",
+      "lineWidth": 100,
+      "quoteStyle": "single",
+      "trailingCommas": "all"
+    }
+  },
+  "files": {
+    "include": ["./**/*.ts", "./**/*.tsx", "./**/*.json", "./**/*.jsonc"],
+    "ignore": ["./dist", "./coverage", "./node_modules"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2
+  },
+  "linter": {
+    "rules": {
+      "performance": {
+        "noBarrelFile": "error"
+      },
+      "style": {
+        "noDefaultExport": "error",
+        "useShorthandAssign": "error",
+        "useForOf": "error",
+        "useExponentiationOperator": "off"
+      },
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "noUnusedPrivateClassMembers": "error",
+        "noUndeclaredVariables": "error"
+      },
+      "suspicious": {
+        "noConsoleLog": "error",
+        "useAwait": "error"
+      },
+      "complexity": {
+        "noEmptyTypeParameters": "off",
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": {
+            "maxAllowedComplexity": 15
+          }
+        }
+      }
+    }
+  },
+  "overrides": [
+    {
+      "include": ["./**/*.spec.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    }
+  ]
+}
