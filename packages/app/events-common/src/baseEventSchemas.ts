@@ -5,7 +5,7 @@ export const BASE_EVENT_SCHEMA = z.object({
 	id: z.string().uuid().describe('event unique identifier'),
 	type: z.literal<string>('<replace.me>').describe('event type name'),
 	timestamp: z.string().datetime().describe('iso 8601 datetime'),
-	source: z.string().nonempty().describe('source service of the event'),
+	source: z.string().min(1).describe('source service of the event'),
 	payload: z.optional(z.object({})).describe('event payload based on type'),
 	metadata: z
 		.object({
@@ -13,11 +13,8 @@ export const BASE_EVENT_SCHEMA = z.object({
 			originalApp: z.string().nonempty().describe('app/service initiated workflow'),
 		})
 		.describe('event metadata'),
-	correlationId: z
-		.string()
-		.uuid()
-		.describe('unique identifier passed to all events in workflow chain'),
-	version: z.string().nonempty().describe('event payload version'),
+	correlationId: z.string().describe('unique identifier passed to all events in workflow chain'),
+	version: z.string().min(1).describe('event payload version'),
 })
 
 export type BaseEventType = z.infer<typeof BASE_EVENT_SCHEMA>
