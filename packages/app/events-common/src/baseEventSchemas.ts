@@ -9,8 +9,8 @@ export const BASE_EVENT_SCHEMA = z.object({
 	payload: z.optional(z.object({})).describe('event payload based on type'),
 	metadata: z
 		.object({
-			schemaVersion: z.string().nonempty().describe('base event schema version'),
-			originalApp: z.string().nonempty().describe('app/service initiated workflow'),
+			schemaVersion: z.string().min(1).describe('base event schema version'),
+			originalApp: z.string().min(1).describe('app/service initiated workflow'),
 		})
 		.describe('event metadata'),
 	correlationId: z.string().describe('unique identifier passed to all events in workflow chain'),
