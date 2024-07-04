@@ -1,24 +1,22 @@
 {
-	"name": "@lokalise/biome-config",
-	"version": "1.0.0",
-	"license": "Apache-2.0",
-	"files": [
-		"configs/*"
-	],
-	"type": "module",
-	"scripts": {
-		"format": "biome check --write ."
-	},
-	"homepage": "https://github.com/lokalise/shared-ts-libs",
-	"repository": {
-		"type": "git",
-		"url": "git://github.com/lokalise/shared-ts-libs.git"
-	},
-	"exports": {
-		"./*": ["./configs/*.json"]
-	},
-	"private": false,
-	"devDependencies": {
-		"@biomejs/biome": "^1.8.3"
-	}
+  "name": "@lokalise/biome-config",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "files": ["configs/*"],
+  "type": "module",
+  "scripts": {
+    "format": "biome check --write . --config-path=./configs/biome-base.jsonc"
+  },
+  "homepage": "https://github.com/lokalise/shared-ts-libs",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/lokalise/shared-ts-libs.git"
+  },
+  "exports": {
+    "./*": ["./configs/*.jsonc"]
+  },
+  "private": false,
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.3"
+  }
 }
