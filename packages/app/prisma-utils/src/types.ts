@@ -1,3 +1,5 @@
+import type { Either } from '@lokalise/node-core'
+import type { Prisma } from '@prisma/client'
 import type * as runtime from '@prisma/client/runtime/library'
 
 type ObjectValues<T> = T[keyof T]
@@ -13,6 +15,7 @@ export type PrismaTransactionOptions = {
 	retriesAllowed?: number
 	baseRetryDelayMs?: number
 	maxRetryDelayMs?: number
+	maxTimeout?: number
 
 	// Prisma $transaction options
 	maxWait?: number
@@ -21,8 +24,16 @@ export type PrismaTransactionOptions = {
 }
 
 // Prisma $transaction with array does not support maxWait and timeout options
-export type PrismaTransactionBasicOptions = Omit<PrismaTransactionOptions, 'maxWait' | 'timeout'>
+export type PrismaTransactionBasicOptions = Omit<
+	PrismaTransactionOptions,
+	'maxWait' | 'timeout' | 'maxTimeout'
+>
 
 export type PrismaTransactionClient<P> = Omit<P, runtime.ITXClientDenyList>
 
 export type PrismaTransactionFn<T, P> = (prisma: PrismaTransactionClient<P>) => Promise<T>
+
+export type PrismaTransactionReturnType<T> = Either<
+	unknown,
+	T | runtime.Types.Utils.UnwrapTuple<Prisma.PrismaPromise<unknown>[]>
+>

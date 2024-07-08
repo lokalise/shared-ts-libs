@@ -1,32 +1,32 @@
 import { setTimeout } from 'node:timers/promises'
 
 import type { Either } from '@lokalise/node-core'
+import { deepClone } from '@lokalise/node-core'
 import type { PrismaClient, Prisma } from '@prisma/client'
 import type * as runtime from '@prisma/client/runtime/library'
 
 import { isCockroachDBRetryTransaction } from './cockroachdbError'
-import { isPrismaClientKnownRequestError, PRISMA_SERIALIZATION_ERROR } from './prismaError'
+import {
+	isPrismaClientKnownRequestError,
+	isPrismaTransactionClosedError,
+	PRISMA_SERIALIZATION_ERROR,
+} from './prismaError'
 import type {
 	DbDriver,
 	PrismaTransactionBasicOptions,
 	PrismaTransactionFn,
 	PrismaTransactionOptions,
+	PrismaTransactionReturnType,
 } from './types'
-
-type PrismaTransactionReturnType<T> = Either<
-	unknown,
-	T | runtime.Types.Utils.UnwrapTuple<Prisma.PrismaPromise<unknown>[]>
->
 
 const DEFAULT_OPTIONS = {
 	retriesAllowed: 3,
 	DbDriver: 'CockroachDb',
 	baseRetryDelayMs: 100,
 	maxRetryDelayMs: 30000, // 30s
-} satisfies Pick<
-	PrismaTransactionOptions,
-	'retriesAllowed' | 'DbDriver' | 'baseRetryDelayMs' | 'maxRetryDelayMs'
->
+	timeout: 5000, // 5s
+	maxTimeout: 30000, // 30s
+} satisfies Partial<PrismaTransactionOptions>
 
 /**
  * Perform a Prisma DB transaction with automatic retries if needed.
@@ -42,7 +42,7 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 	arg: PrismaTransactionFn<T, P> | Prisma.PrismaPromise<unknown>[],
 	options?: PrismaTransactionOptions | PrismaTransactionBasicOptions,
 ): Promise<PrismaTransactionReturnType<T>> => {
-	const optionsWithDefaults = { ...DEFAULT_OPTIONS, ...options }
+	let optionsWithDefaults = { ...DEFAULT_OPTIONS, ...options }
 	let result: PrismaTransactionReturnType<T> | undefined = undefined
 
 	let retries = 0
@@ -57,9 +57,18 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 			)
 		}
 
-		result = await executeTransactionTry(prisma, arg, options)
-		if (result.result || !isRetryAllowed(result, optionsWithDefaults.DbDriver)) {
-			break
+		result = await executeTransactionTry(prisma, arg, optionsWithDefaults)
+		if (result.result) break
+
+		const retryAllowed = isRetryAllowed(result, optionsWithDefaults.DbDriver)
+		if (!retryAllowed) break
+
+		if (retryAllowed === 'increase-timeout') {
+			optionsWithDefaults = deepClone(optionsWithDefaults)
+			optionsWithDefaults.timeout = Math.min(
+				(optionsWithDefaults.timeout *= 2),
+				optionsWithDefaults.maxTimeout,
+			)
 		}
 
 		retries++
@@ -104,11 +113,17 @@ const calculateRetryDelay = (
 	return Math.min(expDelay, maxDelayMs)
 }
 
-const isRetryAllowed = <T>(result: PrismaTransactionReturnType<T>, dbDriver: DbDriver): boolean => {
+type isRetryAllowedResult = boolean | 'increase-timeout'
+
+const isRetryAllowed = <T>(
+	result: PrismaTransactionReturnType<T>,
+	dbDriver: DbDriver,
+): isRetryAllowedResult => {
 	if (isPrismaClientKnownRequestError(result.error)) {
 		const error = result.error
 		if (error.code === PRISMA_SERIALIZATION_ERROR) return true
 		if (dbDriver === 'CockroachDb' && isCockroachDBRetryTransaction(error)) return true
+		if (isPrismaTransactionClosedError(error)) return 'increase-timeout'
 	}
 
 	return false

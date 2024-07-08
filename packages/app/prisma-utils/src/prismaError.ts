@@ -17,6 +17,9 @@ export const isPrismaClientKnownRequestError = (
 	typeof error.code === 'string' &&
 	error.code.startsWith('P')
 
+export const isPrismaTransactionClosedError = (error: PrismaClientKnownRequestError): boolean =>
+	error.code === PRISMA_TRANSACTION_ERROR && error.message.includes('Transaction already closed')
+
 /*
  * Prisma error code P2025 indicates that the operation failed because it depends on one or more
  * records that were required but not found
@@ -35,3 +38,9 @@ export const PRISMA_SERIALIZATION_ERROR = 'P2034'
  * violated. This can happen if you try to create a record with a unique field that already exists
  */
 export const PRISMA_UNIQUE_CONSTRAINT_ERROR = 'P2002'
+
+/*
+ * Prisma error code P2028 indicates a transaction API error, essentially a placeholder for errors that do not fit into
+ * a more specific category. You should look into the error message for more details
+ */
+export const PRISMA_TRANSACTION_ERROR = 'P2028'

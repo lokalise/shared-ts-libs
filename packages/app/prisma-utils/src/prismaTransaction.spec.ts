@@ -5,7 +5,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vitest } from 'v
 
 import { cleanTables, DB_MODEL } from '../test/DbCleaner'
 
-import { PRISMA_NOT_FOUND_ERROR, PRISMA_SERIALIZATION_ERROR } from './prismaError'
+import {
+	PRISMA_NOT_FOUND_ERROR,
+	PRISMA_SERIALIZATION_ERROR,
+	PRISMA_TRANSACTION_ERROR,
+} from './prismaError'
 import { prismaTransaction } from './prismaTransaction'
 
 type Item1 = {
@@ -184,6 +188,46 @@ describe('prismaTransaction', () => {
 			expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
 			expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_NOT_FOUND_ERROR)
 			expect(retrySpy).toHaveBeenCalledTimes(1)
+		})
+
+		it('timeout auto increase', async () => {
+			// Given
+			const spy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
+				new PrismaClientKnownRequestError(
+					'Transaction already closed: Could not perform operation.',
+					{
+						code: PRISMA_TRANSACTION_ERROR,
+						clientVersion: '1',
+					},
+				),
+			)
+
+			// When
+			const resultWithDefaults = await prismaTransaction(prisma, (client) =>
+				client.item1.create({ data: TEST_ITEM_1 }),
+			)
+			const resultWithCustomTimeout = await prismaTransaction(
+				prisma,
+				(client) => client.item1.create({ data: TEST_ITEM_1 }),
+				{ timeout: 1000, maxTimeout: 2000 },
+			)
+
+			// Then
+			expect(resultWithDefaults.error).toBeInstanceOf(PrismaClientKnownRequestError)
+			expect(resultWithCustomTimeout.error).toBeInstanceOf(PrismaClientKnownRequestError)
+			expect(spy).toHaveBeenCalledTimes(6) // 3 per transaction call
+
+			const callsOptions = spy.mock.calls.map(([_, options]) => options)
+			expect(callsOptions).toMatchObject([
+				// resultWithDefaults call
+				{ timeout: 5000 },
+				{ timeout: 10000 },
+				{ timeout: 20000 },
+				// resultWithCustomTimeout call
+				{ timeout: 1000 },
+				{ timeout: 2000 },
+				{ timeout: 2000 },
+			])
 		})
 
 		it('CockroachDB retry transaction error is retried', async () => {
