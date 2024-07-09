@@ -1,4 +1,4 @@
-name: Package release to NPM -> context-plugins
+name: Package release to NPM -> context-fastify-plugins
 on:
   pull_request:
     types:
@@ -6,13 +6,13 @@ on:
     branches:
       - main
     paths:
-      - 'packages/app/context-plugins/**'
+      - 'packages/app/context-fastify-plugins/**'
 
 jobs:
   call-build-flow:
     uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
     with:
-      working_directory: 'packages/app/context-plugins'
+      working_directory: 'packages/app/context-fastify-plugins'
       package_name: 'context-fastify-plugins'
     secrets:
       npm_token: ${{ secrets.NPM_TOKEN }}
