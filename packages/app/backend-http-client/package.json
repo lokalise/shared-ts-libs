@@ -1,58 +1,48 @@
 {
-	"name": "@lokalise/backend-http-client",
-	"version": "1.4.0",
-	"author": {
-		"name": "Lokalise",
-		"url": "https://lokalise.com/"
-	},
-	"homepage": "https://github.com/lokalise/backend-http-client",
-	"repository": {
-		"type": "git",
-		"url": "git://github.com/lokalise/backend-http-client.git"
-	},
-	"license": "Apache-2.0",
-	"files": [
-		"dist/**",
-		"LICENSE.md",
-		"README.md"
-	],
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"type": "commonjs",
-	"private": false,
-	"publishConfig": {
-		"access": "public"
-	},
-	"scripts": {
-		"build": "tsc",
-		"test": "vitest",
-		"test:coverage": "vitest --coverage",
-		"test:ci": "npm run lint && npm run test:coverage",
-		"test:update-snapshots": "vitest -u",
-		"lint": "eslint . --ext .ts && prettier --check --log-level warn \"**/*.{json,md,ts}\" !CHANGELOG.md",
-		"lint:fix": "eslint . --fix && prettier --write --log-level warn \"**/*.{json,md,ts}\" !CHANGELOG.md",
-		"version": "auto-changelog -p && git add CHANGELOG.md",
-		"prepublishOnly": "npm run build"
-	},
-	"dependencies": {
-		"@lokalise/node-core": "^10.0.0",
-		"undici": "^6.18.2",
-		"undici-retry": "^5.0.3",
-		"zod": "^3.23.8"
-	},
-	"devDependencies": {
-		"@lokalise/prettier-config": "latest",
-		"@types/node": "^20.14.2",
-		"@typescript-eslint/eslint-plugin": "^7.12.0",
-		"@typescript-eslint/parser": "^7.12.0",
-		"@vitest/coverage-v8": "1.6.0",
-		"auto-changelog": "^2.4.0",
-		"eslint": "^8.57.0",
-		"eslint-plugin-import": "^2.29.1",
-		"eslint-plugin-vitest": "0.4.1",
-		"prettier": "^3.3.2",
-		"typescript": "^5.4.5",
-		"vitest": "1.6.0"
-	},
-	"prettier": "@lokalise/prettier-config"
+  "name": "@lokalise/backend-http-client",
+  "version": "1.4.0",
+  "author": {
+    "name": "Lokalise",
+    "url": "https://lokalise.com/"
+  },
+  "homepage": "https://github.com/lokalise/backend-http-client",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/lokalise/backend-http-client.git"
+  },
+  "license": "Apache-2.0",
+  "files": ["dist/**", "LICENSE.md", "README.md"],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "commonjs",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "test:ci": "npm run lint && npm run test:coverage",
+    "test:update-snapshots": "vitest -u",
+    "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
+    "lint:fix": "biome check --write",
+    "version": "auto-changelog -p && git add CHANGELOG.md",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@lokalise/node-core": "^10.0.1",
+    "undici": "^6.19.2",
+    "undici-retry": "^5.0.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.3",
+    "@lokalise/biome-config": "^1.0.0",
+    "@types/node": "^20.14.10",
+    "@vitest/coverage-v8": "^2.0.1",
+    "auto-changelog": "^2.4.0",
+    "typescript": "^5.5.3",
+    "vitest": "^2.0.1"
+  }
 }
