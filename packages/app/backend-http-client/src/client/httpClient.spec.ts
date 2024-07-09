@@ -220,7 +220,7 @@ describe('httpClient', () => {
         })
         .reply(200, 'just text', {})
 
-      const result = await sendGet<string>(client, '/products/1', {
+      const result = await sendGet(client, '/products/1', {
         responseSchema: UNKNOWN_RESPONSE_SCHEMA,
         requestLabel: 'dummy',
       })
