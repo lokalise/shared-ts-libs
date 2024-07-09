@@ -57,9 +57,9 @@ jobs:
 
       - name: Git push
         run: COMMIT_MSG=$(npm run --silent package-version --workspace=${{ inputs.working_directory }}) && git commit -am "${{ inputs.package_name }} $COMMIT_MSG" && git push origin main
-
+01
       - name: Release Package
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
-        run: npm publish
+        run: npm publish --access public
         working-directory: ${{ inputs.working_directory }}
