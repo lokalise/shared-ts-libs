@@ -61,5 +61,5 @@ jobs:
       - name: Release Package
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
-        run: npm publish
+        run: npm publish --access public
         working-directory: ${{ inputs.working_directory }}

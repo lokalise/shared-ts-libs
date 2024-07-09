@@ -1,0 +1,18 @@
+name: Package release to NPM -> universal-ts-utils
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+    paths:
+      - 'packages/app/universal-ts-utils/**'
+
+jobs:
+  call-build-flow:
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/universal-ts-utils'
+      package_name: 'universal-ts-utils'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
