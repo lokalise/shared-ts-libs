@@ -15,7 +15,7 @@ export const NO_CONTENT_RESPONSE_SCHEMA = z.string().length(0); // TODO: not exp
 export const UNKNOWN_RESPONSE_SCHEMA = z.unknown(); // TODO: not export this constant, use it only in tests
 
 // TODO: not export this constant, use it only in tests
-export const TEST_OPTIONS: RequestOptions<unknown> = {
+export const TEST_OPTIONS: RequestOptions<unknown, any> = {
   requestLabel: "test",
   responseSchema: UNKNOWN_RESPONSE_SCHEMA,
 };
@@ -25,11 +25,15 @@ export const DEFAULT_OPTIONS = {
   throwOnError: true,
   timeout: 30000,
 } satisfies MayOmit<
-  RequestOptions<unknown>,
+  RequestOptions<unknown, any>,
   "requestLabel" | "responseSchema" | "isEmptyResponseExpected"
 >;
 
 export const defaultClientOptions: Partial<Client.Options> = {
   keepAliveMaxTimeout: 300_000,
   keepAliveTimeout: 4000,
+};
+
+export const JSON_HEADERS = {
+  "Content-Type": "application/json",
 };

@@ -1,15 +1,11 @@
-export {
-  type RequestOptions,
-  type HttpRequestContext,
-  type ResponseSchema,
-  type Response,
+export type {
+  RequestOptions,
+  HttpRequestContext,
+  ResponseSchema,
+  RequestResultDefinitiveEither,
 } from "./src/client/types";
 
-export {
-  TEST_OPTIONS,
-  NO_CONTENT_RESPONSE_SCHEMA,
-  UNKNOWN_RESPONSE_SCHEMA,
-} from "./src/client/constants";
+export { JSON_HEADERS } from "./src/client/constants";
 
 export {
   sendPut,
@@ -21,7 +17,6 @@ export {
   sendPostBinary,
   httpClient,
   buildClient,
-  JSON_HEADERS,
 } from "./src/client/httpClient";
 
 export {

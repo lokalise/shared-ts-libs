@@ -1,7 +1,7 @@
 import type { Readable } from "node:stream";
 
 import { copyWithoutUndefined } from "@lokalise/node-core";
-import type { DefiniteEither, MayOmit } from "@lokalise/node-core";
+import type { DefiniteEither } from "@lokalise/node-core";
 import { Client } from "undici";
 import type { FormData } from "undici";
 import { NO_RETRY_CONFIG, isRequestResult, sendWithRetry } from "undici-retry";
@@ -12,25 +12,33 @@ import type {
   RequestResult,
   RetryConfig,
 } from "undici-retry";
-import { type ZodError, z } from "zod";
+import { type ZodError } from "zod";
 
 import { ResponseStatusError } from "../errors/ResponseStatusError";
-import { RecordObject, RequestOptions, ResponseSchema } from "./types";
+import {
+  InternalRequestOptions,
+  RecordObject,
+  RequestOptions,
+  RequestResultDefinitiveEither,
+  ResponseSchema,
+} from "./types";
 import { DEFAULT_OPTIONS, defaultClientOptions } from "./constants";
 
 export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
-  const newClient = new Client(baseUrl, {
+  return new Client(baseUrl, {
     ...defaultClientOptions,
     ...clientOptions,
   });
-  return newClient;
 }
 
-export async function sendGet<T>(
+export async function sendGet<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+>(
   client: Client,
   path: string,
-  options: RequestOptions<T>,
-): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
+  options: RequestOptions<T, IsEmptyResponseExpected>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -55,13 +63,17 @@ export async function sendGet<T>(
     resolveRequestConfig(options),
   );
 
+  return {} as any;
+  /*
   return resolveResult(
     result,
     options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
+    options.isEmptyResponseExpected ?? false,
   );
+  */
 }
 
 export async function sendDelete<T>(
@@ -92,7 +104,8 @@ export async function sendDelete<T>(
     resolveRetryConfig(options),
     resolveRequestConfig(options),
   );
-
+  return { result: {} } as any;
+  /*
   return resolveResult(
     result,
     options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
@@ -100,6 +113,7 @@ export async function sendDelete<T>(
     options.responseSchema,
     options.requestLabel,
   );
+     */
 }
 
 export async function sendPost<T>(
@@ -133,6 +147,8 @@ export async function sendPost<T>(
     resolveRequestConfig(options),
   );
 
+  return { result: {} } as any;
+  /*
   return resolveResult(
     result,
     options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
@@ -140,6 +156,7 @@ export async function sendPost<T>(
     options.responseSchema,
     options.requestLabel,
   );
+     */
 }
 
 export async function sendPostBinary<T>(
@@ -172,7 +189,8 @@ export async function sendPostBinary<T>(
     resolveRetryConfig(options),
     resolveRequestConfig(options),
   );
-
+  return { result: {} } as any;
+  /*
   return resolveResult(
     result,
     options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
@@ -180,6 +198,7 @@ export async function sendPostBinary<T>(
     options.responseSchema,
     options.requestLabel,
   );
+   */
 }
 
 export async function sendPut<T>(
@@ -212,7 +231,8 @@ export async function sendPut<T>(
     resolveRetryConfig(options),
     resolveRequestConfig(options),
   );
-
+  return { result: {} } as any;
+  /*
   return resolveResult(
     result,
     options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
@@ -220,6 +240,7 @@ export async function sendPut<T>(
     options.responseSchema,
     options.requestLabel,
   );
+  */
 }
 
 export async function sendPutBinary<T>(
@@ -253,13 +274,15 @@ export async function sendPutBinary<T>(
     resolveRequestConfig(options),
   );
 
+  return { result: {} } as any;
+  /*
   return resolveResult(
     result,
     options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
-  );
+  );*/
 }
 
 export async function sendPatch<T>(
@@ -292,17 +315,20 @@ export async function sendPatch<T>(
     resolveRetryConfig(options),
     resolveRequestConfig(options),
   );
+  return { result: {} } as any;
 
-  return resolveResult(
+  /*return resolveResult(
     result,
     options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
-  );
+  );*/
 }
 
-function resolveRequestConfig(options: RequestOptions<unknown>): RequestParams {
+function resolveRequestConfig(
+  options: InternalRequestOptions<unknown>,
+): RequestParams {
   return {
     safeParseJson: options.safeParseJson ?? false,
     blobBody: options.blobResponseBody ?? false,
@@ -312,12 +338,12 @@ function resolveRequestConfig(options: RequestOptions<unknown>): RequestParams {
 }
 
 function resolveRetryConfig(
-  options: Partial<RequestOptions<unknown>>,
+  options: InternalRequestOptions<unknown>,
 ): RetryConfig {
   return options.retryConfig ?? NO_RETRY_CONFIG;
 }
 
-function resolveResult<T>(
+function resolveResult<T, IsEmptyResponseExpected extends boolean>(
   requestResult: Either<
     RequestResult<unknown> | InternalRequestError,
     RequestResult<T>
@@ -326,34 +352,42 @@ function resolveResult<T>(
   validateResponse: boolean,
   validationSchema: ResponseSchema,
   requestLabel: string,
-): DefiniteEither<RequestResult<unknown>, RequestResult<T>> {
+  isEmptyResponseExpected: boolean,
+): RequestResultDefinitiveEither<T, IsEmptyResponseExpected> {
   // Throw response error
   if (requestResult.error && throwOnError) {
     if (isRequestResult(requestResult.error)) {
       throw new ResponseStatusError(requestResult.error, requestLabel);
     }
+
     throw requestResult.error;
   }
-  if (requestResult.result && validateResponse) {
-    try {
-      requestResult.result.body = validationSchema.parse(
-        requestResult.result.body,
-      );
+
+  if (requestResult.result) {
+    if (requestResult.result.statusCode === 204 && isEmptyResponseExpected) {
       // @ts-ignore
-    } catch (err: unknown) {
-      for (const issue of (err as ZodError).issues) {
+      requestResult.result.body = null;
+    } else if (validateResponse) {
+      try {
+        requestResult.result.body = validationSchema.parse(
+          requestResult.result.body,
+        );
         // @ts-ignore
-        issue.requestLabel = requestLabel;
+      } catch (err: unknown) {
+        for (const issue of (err as ZodError).issues) {
+          // @ts-ignore
+          issue.requestLabel = requestLabel;
+        }
+        // @ts-ignore
+        err.requestLabel = requestLabel;
+        throw err;
       }
-      // @ts-ignore
-      err.requestLabel = requestLabel;
-      throw err;
     }
   }
 
-  return requestResult as DefiniteEither<
-    RequestResult<unknown>,
-    RequestResult<T>
+  return requestResult as RequestResultDefinitiveEither<
+    T,
+    IsEmptyResponseExpected
   >;
 }
 
@@ -363,8 +397,4 @@ export const httpClient = {
   put: sendPut,
   patch: sendPatch,
   del: sendDelete,
-};
-
-export const JSON_HEADERS = {
-  "Content-Type": "application/json",
 };
