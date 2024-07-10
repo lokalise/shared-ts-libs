@@ -11,7 +11,7 @@ import type {
   RequestResult,
   RetryConfig,
 } from "undici-retry";
-import { type ZodError } from "zod";
+import { type ZodError, ZodSchema } from "zod";
 
 import { ResponseStatusError } from "../errors/ResponseStatusError";
 import {
@@ -19,7 +19,6 @@ import {
   RecordObject,
   RequestOptions,
   RequestResultDefinitiveEither,
-  ResponseSchema,
 } from "./types";
 import { DEFAULT_OPTIONS, defaultClientOptions } from "./constants";
 
@@ -358,7 +357,7 @@ function resolveResult<T, IsEmptyResponseExpected extends boolean>(
   >,
   throwOnError: boolean,
   validateResponse: boolean,
-  validationSchema: ResponseSchema,
+  validationSchema: ZodSchema<T>,
   requestLabel: string,
   isEmptyResponseExpected: boolean,
 ): RequestResultDefinitiveEither<T, IsEmptyResponseExpected> {
