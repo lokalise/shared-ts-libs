@@ -19,11 +19,7 @@ import mockProduct1 from "./mock-data/mockProduct1.json";
 // @ts-ignore
 import mockProductsLimit3 from "./mock-data/mockProductsLimit3.json";
 import { HttpRequestContext } from "./types";
-import {
-  JSON_HEADERS,
-  NO_CONTENT_RESPONSE_SCHEMA,
-  UNKNOWN_RESPONSE_SCHEMA,
-} from "./constants";
+import { JSON_HEADERS } from "./constants";
 
 const TEXT_HEADERS = {
   "content-type": "text/plain",
@@ -33,6 +29,8 @@ const baseUrl = "https://fakestoreapi.com";
 const reqContext: HttpRequestContext = {
   reqId: "dummyId",
 };
+
+const UNKNOWN_RESPONSE_SCHEMA = z.unknown();
 
 describe("httpClient", () => {
   let mockAgent: MockAgent;
@@ -385,7 +383,7 @@ describe("httpClient", () => {
 
       const result = await sendDelete(client, "/products/1", {
         reqContext,
-        responseSchema: NO_CONTENT_RESPONSE_SCHEMA,
+        responseSchema: z.any(), // TODO
         requestLabel: "dummy",
       });
 
@@ -408,7 +406,7 @@ describe("httpClient", () => {
 
       const result = await sendDelete(client, "/products", {
         query,
-        responseSchema: NO_CONTENT_RESPONSE_SCHEMA,
+        responseSchema: z.any(), // TODO
         requestLabel: "dummy",
       });
 

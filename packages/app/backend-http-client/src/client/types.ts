@@ -10,12 +10,6 @@ export type HttpRequestContext = {
   reqId: string;
 };
 
-// TODO: remove
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ResponseSchema<Output = any> = {
-  parse(data: unknown): Output;
-};
-
 export type InternalRequestOptions<T> = {
   headers?: RecordObject;
   query?: RecordObject;

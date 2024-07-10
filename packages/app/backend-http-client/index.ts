@@ -1,7 +1,6 @@
 export type {
   RequestOptions,
   HttpRequestContext,
-  ResponseSchema,
   RequestResultDefinitiveEither,
 } from "./src/client/types";
 
