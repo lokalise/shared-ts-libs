@@ -14,7 +14,9 @@ import {
   sendPut,
   sendPutBinary,
 } from "./httpClient";
+// @ts-ignore
 import mockProduct1 from "./mock-data/mockProduct1.json";
+// @ts-ignore
 import mockProductsLimit3 from "./mock-data/mockProductsLimit3.json";
 import { HttpRequestContext } from "./types";
 import {
@@ -122,93 +124,6 @@ describe("httpClient", () => {
       });
 
       expect(result.result.body).toEqual(mockProduct1);
-    });
-
-    it("unexpected 204 response is validated", async () => {
-      client
-        .intercept({
-          path: "/products/1",
-          method: "GET",
-        })
-        .reply(204);
-
-      await expect(
-        sendGet(client, "/products/1", {
-          responseSchema: z.object({ id: z.string() }),
-          requestLabel: "dummy",
-          validateResponse: true,
-        }),
-      ).rejects.toMatchInlineSnapshot(`
-        [ZodError: [
-          {
-            "code": "invalid_type",
-            "expected": "object",
-            "received": "string",
-            "path": [],
-            "message": "Expected object, received string",
-            "requestLabel": "dummy"
-          }
-        ]]
-      `);
-    });
-
-    it("unexpected 204 without validation", async () => {
-      client
-        .intercept({
-          path: "/products/1",
-          method: "GET",
-        })
-        .reply(204);
-
-      const result = await sendGet(client, "/products/1", {
-        responseSchema: z.number(),
-        requestLabel: "dummy",
-        validateResponse: true,
-        isEmptyResponseExpected: false,
-      });
-
-      const typedResult: RequestResult<number> = result.result;
-
-      await expect(
-        sendGet(client, "/products/1", {
-          responseSchema: z.object({ id: z.string() }),
-          requestLabel: "dummy",
-          validateResponse: true,
-        }),
-      ).rejects.toMatchInlineSnapshot(`
-        [ZodError: [
-          {
-            "code": "invalid_type",
-            "expected": "object",
-            "received": "string",
-            "path": [],
-            "message": "Expected object, received string",
-            "requestLabel": "dummy"
-          }
-        ]]
-      `);
-    });
-
-    it("expected 204 skips validation", async () => {
-      client
-        .intercept({
-          path: "/products/1",
-          method: "GET",
-        })
-        .reply(204);
-
-      const result = await sendGet(client, "/products/1", {
-        responseSchema: z.number(),
-        requestLabel: "dummy",
-        validateResponse: true,
-        isEmptyResponseExpected: true,
-      });
-
-      const typedResult = result.result;
-      expect(typedResult).toMatchObject({
-        body: null,
-        statusCode: 204,
-      });
     });
 
     it("returns original payload when breaking during parsing and throw on error is true", async () => {

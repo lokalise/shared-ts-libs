@@ -46,7 +46,5 @@ export type RequestResultDefinitiveEither<
   IsEmptyResponseExpected extends boolean,
 > = DefiniteEither<
   RequestResult<unknown>,
-  IsEmptyResponseExpected extends true
-    ? RequestResult<T | null>
-    : RequestResult<T>
+  RequestResult<IsEmptyResponseExpected extends true ? T | null : T>
 >;

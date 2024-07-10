@@ -1,7 +1,6 @@
 import type { Readable } from "node:stream";
 
 import { copyWithoutUndefined } from "@lokalise/node-core";
-import type { DefiniteEither } from "@lokalise/node-core";
 import { Client } from "undici";
 import type { FormData } from "undici";
 import { NO_RETRY_CONFIG, isRequestResult, sendWithRetry } from "undici-retry";
@@ -63,8 +62,6 @@ export async function sendGet<
     resolveRequestConfig(options),
   );
 
-  return {} as any;
-  /*
   return resolveResult(
     result,
     options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
@@ -73,14 +70,16 @@ export async function sendGet<
     options.requestLabel,
     options.isEmptyResponseExpected ?? false,
   );
-  */
 }
 
-export async function sendDelete<T>(
+export async function sendDelete<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+>(
   client: Client,
   path: string,
-  options: RequestOptions<T>,
-): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
+  options: RequestOptions<T, IsEmptyResponseExpected>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -104,24 +103,26 @@ export async function sendDelete<T>(
     resolveRetryConfig(options),
     resolveRequestConfig(options),
   );
-  return { result: {} } as any;
-  /*
+
   return resolveResult(
     result,
     options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
+    options.isEmptyResponseExpected ?? true,
   );
-     */
 }
 
-export async function sendPost<T>(
+export async function sendPost<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
-  options: RequestOptions<T>,
-): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
+  options: RequestOptions<T, IsEmptyResponseExpected>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -147,24 +148,25 @@ export async function sendPost<T>(
     resolveRequestConfig(options),
   );
 
-  return { result: {} } as any;
-  /*
   return resolveResult(
     result,
     options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
+    options.isEmptyResponseExpected ?? true,
   );
-     */
 }
 
-export async function sendPostBinary<T>(
+export async function sendPostBinary<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+>(
   client: Client,
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
-  options: RequestOptions<T>,
-): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
+  options: RequestOptions<T, IsEmptyResponseExpected>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -189,24 +191,26 @@ export async function sendPostBinary<T>(
     resolveRetryConfig(options),
     resolveRequestConfig(options),
   );
-  return { result: {} } as any;
-  /*
+
   return resolveResult(
     result,
     options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
+    options.isEmptyResponseExpected ?? true,
   );
-   */
 }
 
-export async function sendPut<T>(
+export async function sendPut<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
-  options: RequestOptions<T>,
-): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
+  options: RequestOptions<T, IsEmptyResponseExpected>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -231,24 +235,26 @@ export async function sendPut<T>(
     resolveRetryConfig(options),
     resolveRequestConfig(options),
   );
-  return { result: {} } as any;
-  /*
+
   return resolveResult(
     result,
     options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
+    options.isEmptyResponseExpected ?? true,
   );
-  */
 }
 
-export async function sendPutBinary<T>(
+export async function sendPutBinary<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+>(
   client: Client,
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
-  options: RequestOptions<T>,
-): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
+  options: RequestOptions<T, IsEmptyResponseExpected>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -274,23 +280,25 @@ export async function sendPutBinary<T>(
     resolveRequestConfig(options),
   );
 
-  return { result: {} } as any;
-  /*
   return resolveResult(
     result,
     options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
-  );*/
+    options.isEmptyResponseExpected ?? true,
+  );
 }
 
-export async function sendPatch<T>(
+export async function sendPatch<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
-  options: RequestOptions<T>,
-): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
+  options: RequestOptions<T, IsEmptyResponseExpected>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -315,15 +323,15 @@ export async function sendPatch<T>(
     resolveRetryConfig(options),
     resolveRequestConfig(options),
   );
-  return { result: {} } as any;
 
-  /*return resolveResult(
+  return resolveResult(
     result,
     options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
-  );*/
+    options.isEmptyResponseExpected ?? true,
+  );
 }
 
 function resolveRequestConfig(
