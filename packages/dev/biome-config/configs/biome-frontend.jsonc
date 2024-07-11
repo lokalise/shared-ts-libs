@@ -10,5 +10,25 @@
       "quoteStyle": "single",
       "trailingCommas": "all"
     }
+  },
+  "files": {
+    "include": ["**/*.css"]
+  },
+  "css": {
+    "parser": {
+      "cssModules": true
+    },
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "tab",
+      "quoteStyle": "single"
+    }
+  },
+  "linter": {
+    "rules": {
+      "correctness": {
+        "useHookAtTopLevel": "error"
+      }
+    }
   }
 }
