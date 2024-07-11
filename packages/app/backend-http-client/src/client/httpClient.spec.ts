@@ -443,17 +443,17 @@ describe('httpClient', () => {
           path: '/products/1',
           method: 'DELETE',
         })
-        .reply(204)
+        .reply(200)
 
       const result = await sendDelete(client, '/products/1', {
         reqContext,
-        responseSchema: z.number(), // should not check body
+        responseSchema: z.unknown(),
         requestLabel: 'dummy',
         validateResponse: true,
       })
 
-      expect(result.result.statusCode).toBe(204)
-      expect(result.result.body).toBe(null)
+      expect(result.result.statusCode).toBe(200)
+      expect(result.result.body).toBe('')
     })
 
     it('DELETE with queryParams', async () => {
@@ -467,16 +467,15 @@ describe('httpClient', () => {
           method: 'DELETE',
           query,
         })
-        .reply(204)
+        .reply(200)
 
       const result = await sendDelete(client, '/products', {
         query,
-        responseSchema: z.any(),
+        responseSchema: z.unknown(),
         requestLabel: 'dummy',
-        isEmptyResponseExpected: false,
       })
 
-      expect(result.result.statusCode).toBe(204)
+      expect(result.result.statusCode).toBe(200)
       expect(result.result.body).toBe('')
     })
 
@@ -503,6 +502,72 @@ describe('httpClient', () => {
       ).rejects.toMatchObject({
         message: 'connection error',
       })
+    })
+
+    it('unexpected 204, with validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'DELETE',
+        })
+        .reply(204)
+
+      await expect(
+        sendDelete(client, '/products/1', {
+          responseSchema: z.number(),
+          requestLabel: 'dummy',
+          validateResponse: true,
+          isEmptyResponseExpected: false,
+        }),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `)
+    })
+
+    it('unexpected 204, without validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'DELETE',
+        })
+        .reply(204)
+
+      const result = await sendDelete(client, '/products/1', {
+        responseSchema: z.number(),
+        requestLabel: 'dummy',
+        validateResponse: false,
+        isEmptyResponseExpected: false,
+      })
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBe('')
+    })
+
+    it('expected 204', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'DELETE',
+        })
+        .reply(204)
+
+      const result = await sendDelete(client, '/products/1', {
+        responseSchema: z.number(),
+        requestLabel: 'dummy',
+        validateResponse: true,
+      })
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBeNull()
     })
   })
 
@@ -623,7 +688,6 @@ describe('httpClient', () => {
             responseSchema: z.number(),
             requestLabel: 'dummy',
             validateResponse: true,
-            isEmptyResponseExpected: false,
           },
         ),
       ).rejects.toMatchInlineSnapshot(`
@@ -656,7 +720,6 @@ describe('httpClient', () => {
           responseSchema: z.number(),
           requestLabel: 'dummy',
           validateResponse: false,
-          isEmptyResponseExpected: false,
         },
       )
 
@@ -680,6 +743,7 @@ describe('httpClient', () => {
           responseSchema: z.number(),
           requestLabel: 'dummy',
           validateResponse: true,
+          isEmptyResponseExpected: true,
         },
       )
 
@@ -870,7 +934,6 @@ describe('httpClient', () => {
           responseSchema: z.number(),
           requestLabel: 'dummy',
           validateResponse: true,
-          isEmptyResponseExpected: false,
         }),
       ).rejects.toMatchInlineSnapshot(`
         [ZodError: [
@@ -898,7 +961,6 @@ describe('httpClient', () => {
         responseSchema: z.number(),
         requestLabel: 'dummy',
         validateResponse: false,
-        isEmptyResponseExpected: false,
       })
 
       expect(result.result.statusCode).toBe(204)
@@ -917,6 +979,7 @@ describe('httpClient', () => {
         responseSchema: z.number(),
         requestLabel: 'dummy',
         validateResponse: true,
+        isEmptyResponseExpected: true,
       })
 
       expect(result.result.statusCode).toBe(204)
@@ -1127,7 +1190,6 @@ describe('httpClient', () => {
             responseSchema: z.number(),
             requestLabel: 'dummy',
             validateResponse: true,
-            isEmptyResponseExpected: false,
           },
         ),
       ).rejects.toMatchInlineSnapshot(`
@@ -1160,7 +1222,6 @@ describe('httpClient', () => {
           responseSchema: z.number(),
           requestLabel: 'dummy',
           validateResponse: false,
-          isEmptyResponseExpected: false,
         },
       )
 
@@ -1184,6 +1245,7 @@ describe('httpClient', () => {
           responseSchema: z.number(),
           requestLabel: 'dummy',
           validateResponse: true,
+          isEmptyResponseExpected: true,
         },
       )
 
@@ -1286,7 +1348,6 @@ describe('httpClient', () => {
           responseSchema: z.number(),
           requestLabel: 'dummy',
           validateResponse: true,
-          isEmptyResponseExpected: false,
         }),
       ).rejects.toMatchInlineSnapshot(`
         [ZodError: [
@@ -1314,7 +1375,6 @@ describe('httpClient', () => {
         responseSchema: z.number(),
         requestLabel: 'dummy',
         validateResponse: false,
-        isEmptyResponseExpected: false,
       })
 
       expect(result.result.statusCode).toBe(204)
@@ -1333,6 +1393,7 @@ describe('httpClient', () => {
         responseSchema: z.number(),
         requestLabel: 'dummy',
         validateResponse: true,
+        isEmptyResponseExpected: true,
       })
 
       expect(result.result.statusCode).toBe(204)
@@ -1454,7 +1515,6 @@ describe('httpClient', () => {
             responseSchema: z.number(),
             requestLabel: 'dummy',
             validateResponse: true,
-            isEmptyResponseExpected: false,
           },
         ),
       ).rejects.toMatchInlineSnapshot(`
@@ -1487,7 +1547,6 @@ describe('httpClient', () => {
           responseSchema: z.number(),
           requestLabel: 'dummy',
           validateResponse: false,
-          isEmptyResponseExpected: false,
         },
       )
 
@@ -1511,6 +1570,7 @@ describe('httpClient', () => {
           responseSchema: z.number(),
           requestLabel: 'dummy',
           validateResponse: true,
+          isEmptyResponseExpected: true,
         },
       )
 

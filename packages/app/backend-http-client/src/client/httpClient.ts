@@ -99,7 +99,7 @@ export async function sendDelete<T, IsEmptyResponseExpected extends boolean = tr
   )
 }
 
-export async function sendPost<T, IsEmptyResponseExpected extends boolean = true>(
+export async function sendPost<T, IsEmptyResponseExpected extends boolean = false>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
@@ -132,11 +132,11 @@ export async function sendPost<T, IsEmptyResponseExpected extends boolean = true
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
-    options.isEmptyResponseExpected ?? true,
+    options.isEmptyResponseExpected ?? false,
   )
 }
 
-export async function sendPostBinary<T, IsEmptyResponseExpected extends boolean = true>(
+export async function sendPostBinary<T, IsEmptyResponseExpected extends boolean = false>(
   client: Client,
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
@@ -169,11 +169,11 @@ export async function sendPostBinary<T, IsEmptyResponseExpected extends boolean 
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
-    options.isEmptyResponseExpected ?? true,
+    options.isEmptyResponseExpected ?? false,
   )
 }
 
-export async function sendPut<T, IsEmptyResponseExpected extends boolean = true>(
+export async function sendPut<T, IsEmptyResponseExpected extends boolean = false>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
@@ -206,11 +206,11 @@ export async function sendPut<T, IsEmptyResponseExpected extends boolean = true>
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
-    options.isEmptyResponseExpected ?? true,
+    options.isEmptyResponseExpected ?? false,
   )
 }
 
-export async function sendPutBinary<T, IsEmptyResponseExpected extends boolean = true>(
+export async function sendPutBinary<T, IsEmptyResponseExpected extends boolean = false>(
   client: Client,
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
@@ -243,11 +243,11 @@ export async function sendPutBinary<T, IsEmptyResponseExpected extends boolean =
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
-    options.isEmptyResponseExpected ?? true,
+    options.isEmptyResponseExpected ?? false,
   )
 }
 
-export async function sendPatch<T, IsEmptyResponseExpected extends boolean = true>(
+export async function sendPatch<T, IsEmptyResponseExpected extends boolean = false>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
@@ -280,7 +280,7 @@ export async function sendPatch<T, IsEmptyResponseExpected extends boolean = tru
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
-    options.isEmptyResponseExpected ?? true,
+    options.isEmptyResponseExpected ?? false,
   )
 }
 
