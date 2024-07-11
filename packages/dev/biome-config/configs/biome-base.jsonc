@@ -14,7 +14,6 @@
     }
   },
   "javascript": {
-    "globals": ["vitest"],
     "formatter": {
       "enabled": true,
       "indentWidth": 2,
@@ -69,6 +68,19 @@
   "overrides": [
     {
       "include": ["./**/*.spec.ts", "./**/*.test.ts", "./**/*.test.tsx", "./test/**/*"],
+      "javascript": {
+        // Allow Vitest globals in test files
+        "globals": [
+          "describe",
+          "it",
+          "expect",
+          "beforeEach",
+          "afterEach",
+          "beforeAll",
+          "afterAll",
+          "vi"
+        ]
+      },
       "linter": {
         "rules": {
           "style": {
