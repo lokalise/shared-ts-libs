@@ -4,7 +4,11 @@ export type {
   RequestResultDefinitiveEither,
 } from './src/client/types'
 
-export { JSON_HEADERS } from './src/client/constants'
+export {
+  JSON_HEADERS,
+  TEST_OPTIONS,
+  NO_CONTENT_RESPONSE_SCHEMA,
+} from './src/client/constants'
 
 export {
   sendPut,
