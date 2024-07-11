@@ -1,11 +1,12 @@
 {
   "name": "@lokalise/biome-config",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "license": "Apache-2.0",
   "files": ["configs/*"],
   "type": "module",
   "scripts": {
-    "format": "biome check --write . --config-path=./configs/biome-base.jsonc"
+    "format": "biome check --write . --config-path=./configs/biome-base.jsonc",
+    "package-version": "echo $npm_package_version"
   },
   "homepage": "https://github.com/lokalise/shared-ts-libs",
   "repository": {
