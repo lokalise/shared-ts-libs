@@ -73,7 +73,7 @@ export async function sendGet<
 
 export async function sendDelete<
   T,
-  IsEmptyResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = true,
 >(
   client: Client,
   path: string,
@@ -115,7 +115,7 @@ export async function sendDelete<
 
 export async function sendPost<
   T,
-  IsEmptyResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = true,
 >(
   client: Client,
   path: string,
@@ -159,7 +159,7 @@ export async function sendPost<
 
 export async function sendPostBinary<
   T,
-  IsEmptyResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = true,
 >(
   client: Client,
   path: string,
@@ -203,7 +203,7 @@ export async function sendPostBinary<
 
 export async function sendPut<
   T,
-  IsEmptyResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = true,
 >(
   client: Client,
   path: string,
@@ -247,7 +247,7 @@ export async function sendPut<
 
 export async function sendPutBinary<
   T,
-  IsEmptyResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = true,
 >(
   client: Client,
   path: string,
@@ -291,7 +291,7 @@ export async function sendPutBinary<
 
 export async function sendPatch<
   T,
-  IsEmptyResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = true,
 >(
   client: Client,
   path: string,
