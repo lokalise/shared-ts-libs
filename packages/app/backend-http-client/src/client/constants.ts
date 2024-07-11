@@ -8,6 +8,7 @@ export const DEFAULT_OPTIONS = {
   throwOnError: true,
   timeout: 30000,
 } satisfies MayOmit<
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   RequestOptions<unknown, any>,
   'requestLabel' | 'responseSchema' | 'isEmptyResponseExpected'
 >
