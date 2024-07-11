@@ -1,13 +1,13 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type {
   CommonLogger,
-  ErrorReporter,
+  ErrorReporter, RedisConfig,
   TransactionObservabilityManager,
 } from '@lokalise/node-core'
 import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
 import type { JobState } from 'bullmq/dist/esm/types/job-type'
-import type Redis from 'ioredis'
+import Redis from 'ioredis'
 import pino from 'pino'
 import { merge } from 'ts-deepmerge'
 
@@ -85,7 +85,7 @@ export abstract class AbstractBackgroundJobProcessor<
 > {
   protected readonly logger: CommonLogger
 
-  private readonly redis: Redis
+  private redis?: Redis
   private readonly transactionObservabilityManager: TransactionObservabilityManager
   private readonly errorReporter: ErrorReporter
   private readonly config: BackgroundJobProcessorConfig<QueueOptionsType, WorkerOptionsType>
@@ -121,7 +121,9 @@ export abstract class AbstractBackgroundJobProcessor<
   ) {
     this.config = config
     this.factory = dependencies.bullmqFactory
-    this.redis = dependencies.redis
+    this.redis = new Redis(
+			config.redisConfig
+		)
     this.transactionObservabilityManager = dependencies.transactionObservabilityManager
     this.logger = dependencies.logger
     this.errorReporter = dependencies.errorReporter
@@ -150,17 +152,24 @@ export abstract class AbstractBackgroundJobProcessor<
   public async start(): Promise<void> {
     if (this.queue) return // Skip if processor is already started
 
-    if (queueIdsSet.has(this.config.queueId))
-      throw new Error(`Queue id "${this.config.queueId}" is not unique.`)
+    if (!this.redis) {
+			this.redis = new Redis(
+				this.config.redisConfig
+			)
+		}
+
+		if (queueIdsSet.has(this.config.queueId))
+			throw new Error(`Queue id "${this.config.queueId}" is not unique.`)
 
     queueIdsSet.add(this.config.queueId)
     await this.redis.zadd(QUEUE_IDS_KEY, Date.now(), this.config.queueId)
 
     this.queue = this.factory.buildQueue(this.config.queueId, {
-      connection: this.redis,
       ...this.config.queueOptions,
-    } as QueueOptionsType)
-    await this.queue.waitUntilReady()
+			connection: this.sanitizeRedisConfig(),
+      prefix: this.config.redisConfig?.keyPrefix ?? undefined,
+    } as unknown as QueueOptionsType)
+		await this.queue.waitUntilReady()
 
     const mergedWorkerOptions = merge(
       DEFAULT_WORKER_OPTIONS,
@@ -173,8 +182,9 @@ export abstract class AbstractBackgroundJobProcessor<
       }) as ProcessorType,
       {
         ...mergedWorkerOptions,
-        connection: this.redis,
-      } as WorkerOptionsType,
+        connection: this.sanitizeRedisConfig(),
+				prefix: this.config.redisConfig?.keyPrefix ?? undefined,
+			} as unknown as WorkerOptionsType,
     )
     if (this.config.isTest) {
       // unlike queue, the docs for worker state that this is only useful in tests
@@ -222,10 +232,17 @@ export abstract class AbstractBackgroundJobProcessor<
       // do nothing
     }
 
-    this.worker = undefined
-    this.queue = undefined
-    this._spy?.clear()
-  }
+    try {
+			this.redis.disconnect()
+			this.redis = undefined
+		} catch {
+			//
+		}
+
+		this.worker = undefined
+		this.queue = undefined
+		this._spy?.clear()
+	}
 
   public async schedule(jobData: JobPayload, options?: JobOptionsType): Promise<string> {
     const jobIds = await this.scheduleBulk([jobData], options)
@@ -465,4 +482,8 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
+
+	private sanitizeRedisConfig(): RedisConfig {
+		return {...this.config.redisConfig, keyPrefix: undefined}
+	}
 }

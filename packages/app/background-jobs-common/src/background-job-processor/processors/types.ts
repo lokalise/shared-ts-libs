@@ -1,13 +1,13 @@
 import type {
   CommonLogger,
-  ErrorReporter,
+  ErrorReporter, RedisConfig,
   TransactionObservabilityManager,
 } from '@lokalise/node-core'
 import type { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
-import type Redis from 'ioredis'
 
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
 import type { BullmqProcessor, SafeJob, SafeQueue } from '../types'
+import Redis from "ioredis";
 
 export type BackgroundJobProcessorConfig<
   QueueOptionsType extends QueueOptions = QueueOptions,
@@ -19,6 +19,7 @@ export type BackgroundJobProcessorConfig<
   ownerName: string
   queueOptions?: Partial<QueueOptionsType>
   workerOptions: Partial<WorkerOptionsType>
+	redisConfig: RedisConfig
 }
 
 export type BackgroundJobProcessorDependencies<
@@ -39,7 +40,7 @@ export type BackgroundJobProcessorDependencies<
     JobReturn
   >,
 > = {
-  redis: Redis
+  redis?: Redis
   transactionObservabilityManager: TransactionObservabilityManager
   logger: CommonLogger
   errorReporter: ErrorReporter

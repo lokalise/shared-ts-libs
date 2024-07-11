@@ -27,10 +27,12 @@ describe('AbstractBackgroundJobProcessor', () => {
   let mocks: DependencyMocks
   let deps: BackgroundJobProcessorDependencies<JobData, any>
 
-  beforeEach(() => {
-    mocks = new DependencyMocks()
-    deps = mocks.create()
-  })
+  beforeEach(async () => {
+		mocks = new DependencyMocks()
+		deps = mocks.create()
+
+		await deps.redis.flushall('SYNC')
+	})
 
   afterEach(async () => {
     await mocks.dispose()
@@ -86,14 +88,14 @@ describe('AbstractBackgroundJobProcessor', () => {
       const jobId = await processor.schedule({
         id: 'test_id',
         value: 'test',
-        metadata: { correlationId: 'correlation_id' },
+        metadata: {correlationId: 'correlation_id'},
       })
       const spyResult = await processor.spy.waitForJobWithId(jobId, 'completed')
 
       expect(spyResult.data).toMatchObject({
         id: 'test_id',
         value: 'test',
-        metadata: { correlationId: 'correlation_id' },
+        metadata: {correlationId: 'correlation_id'},
       })
       await processor.dispose()
     })

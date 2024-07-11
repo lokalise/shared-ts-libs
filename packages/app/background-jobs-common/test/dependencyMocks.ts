@@ -4,10 +4,6 @@ import { type MockInstance, vi, vitest } from 'vitest'
 
 import { type BackgroundJobProcessorDependencies, CommonBullmqFactory } from '../src'
 
-const MAX_DB_INDEX = 16 // Redis supports up to 16 logical databases
-
-let db = 0
-
 const testLogger = globalLogger
 export let lastInfoSpy: MockInstance
 export let lastErrorSpy: MockInstance
@@ -44,13 +40,11 @@ export class DependencyMocks {
   }
 
   async dispose(): Promise<void> {
-    await this.client?.flushall('SYNC')
     await this.client?.quit()
-  }
+	}
 
   private startRedis(): Redis {
-    // Increment DB to avoid duplicates/overlap. Each run should have its own DB.
-    db++
+    const db = process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : undefined
     const host = process.env.REDIS_HOST
     const port = process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : undefined
     const username = process.env.REDIS_USERNAME
@@ -61,9 +55,11 @@ export class DependencyMocks {
     const commandTimeout = process.env.REDIS_COMMAND_TIMEOUT
       ? Number.parseInt(process.env.REDIS_COMMAND_TIMEOUT, 10)
       : undefined
-    this.client = new Redis({
-      host,
-      db: db % MAX_DB_INDEX,
+    const keyPrefix = process.env.REDIS_KEY_PREFIX
+		this.client = new Redis({
+			host,
+			db,
+			keyPrefix,
       port,
       username,
       password,

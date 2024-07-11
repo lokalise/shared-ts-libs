@@ -2,7 +2,7 @@
 
 This library provides a basic abstraction over BullMQ-powered background jobs. There are two types available:
 
-- AbstractBackgroundJobProcessor: a base class for running jobs, it provides a instrumentation and logger integration plus
+- AbstractBackgroundJobProcessor: a base class for running jobs, it provides an instrumentation and logger integration plus
   basic API for enqueuing jobs.
 
 ## Getting Started
@@ -11,6 +11,11 @@ Install all dependencies:
 
 ```shell
 npm install
+```
+
+Start Docker containers:
+```shell
+docker compose up -d
 ```
 
 Run all tests:
