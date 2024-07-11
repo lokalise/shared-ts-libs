@@ -101,7 +101,12 @@ describe('httpClient', () => {
 
       expect(result.result.body).toEqual(mockProduct1)
     })
+
     it('validates response structure with provided schema, skips validation', async () => {
+      const schema = z.object({
+        id: z.string(),
+      })
+
       client
         .intercept({
           path: '/products/1',
@@ -110,9 +115,9 @@ describe('httpClient', () => {
         .reply(200, mockProduct1, { headers: JSON_HEADERS })
 
       const result = await sendGet(client, '/products/1', {
-        responseSchema: z.number(),
+        responseSchema: schema,
         requestLabel: 'dummy',
-        validateResponse: true,
+        validateResponse: false,
       })
 
       expect(result.result.body).toEqual(mockProduct1)
