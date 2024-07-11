@@ -438,16 +438,17 @@ describe("httpClient", () => {
           path: "/products/1",
           method: "DELETE",
         })
-        .reply(204, undefined);
+        .reply(204);
 
       const result = await sendDelete(client, "/products/1", {
         reqContext,
-        responseSchema: z.any(), // TODO
+        responseSchema: z.number(), // should not check body
         requestLabel: "dummy",
+        validateResponse: true,
       });
 
       expect(result.result.statusCode).toBe(204);
-      expect(result.result.body).toBe("");
+      expect(result.result.body).toBe(null);
     });
 
     it("DELETE with queryParams", async () => {
@@ -465,8 +466,9 @@ describe("httpClient", () => {
 
       const result = await sendDelete(client, "/products", {
         query,
-        responseSchema: z.any(), // TODO
+        responseSchema: z.any(),
         requestLabel: "dummy",
+        isEmptyResponseExpected: false,
       });
 
       expect(result.result.statusCode).toBe(204);
@@ -597,6 +599,87 @@ describe("httpClient", () => {
       );
 
       expect(result.result.body).toEqual(mockProduct1);
+    });
+
+    it("unexpected 204, with validation", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "POST",
+        })
+        .reply(204);
+
+      await expect(
+        sendPost(
+          client,
+          "/products/1",
+          {},
+          {
+            responseSchema: z.number(),
+            requestLabel: "dummy",
+            validateResponse: true,
+            isEmptyResponseExpected: false,
+          },
+        ),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `);
+    });
+
+    it("unexpected 204, without validation", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "POST",
+        })
+        .reply(204);
+
+      const result = await sendPost(
+        client,
+        "/products/1",
+        {},
+        {
+          responseSchema: z.number(),
+          requestLabel: "dummy",
+          validateResponse: false,
+          isEmptyResponseExpected: false,
+        },
+      );
+
+      expect(result.result.statusCode).toBe(204);
+      expect(result.result.body).toBe("");
+    });
+
+    it("expected 204", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "POST",
+        })
+        .reply(204);
+
+      const result = await sendPost(
+        client,
+        "/products/1",
+        {},
+        {
+          responseSchema: z.number(),
+          requestLabel: "dummy",
+          validateResponse: true,
+        },
+      );
+
+      expect(result.result.statusCode).toBe(204);
+      expect(result.result.body).toBeNull();
     });
 
     it("POST without queryParams", async () => {
@@ -777,6 +860,82 @@ describe("httpClient", () => {
       );
 
       expect(result.result.body).toEqual(mockProduct1);
+    });
+
+    it("unexpected 204, with validation", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "POST",
+        })
+        .reply(204);
+
+      await expect(
+        sendPostBinary(client, "/products/1", Buffer.from(JSON.stringify({})), {
+          responseSchema: z.number(),
+          requestLabel: "dummy",
+          validateResponse: true,
+          isEmptyResponseExpected: false,
+        }),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `);
+    });
+
+    it("unexpected 204, without validation", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "POST",
+        })
+        .reply(204);
+
+      const result = await sendPostBinary(
+        client,
+        "/products/1",
+        Buffer.from(JSON.stringify({})),
+        {
+          responseSchema: z.number(),
+          requestLabel: "dummy",
+          validateResponse: false,
+          isEmptyResponseExpected: false,
+        },
+      );
+
+      expect(result.result.statusCode).toBe(204);
+      expect(result.result.body).toBe("");
+    });
+
+    it("expected 204", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "POST",
+        })
+        .reply(204);
+
+      const result = await sendPostBinary(
+        client,
+        "/products/1",
+        Buffer.from(JSON.stringify({})),
+        {
+          responseSchema: z.number(),
+          requestLabel: "dummy",
+          validateResponse: true,
+        },
+      );
+
+      expect(result.result.statusCode).toBe(204);
+      expect(result.result.body).toBeNull();
     });
 
     it("POST without queryParams", async () => {
@@ -970,6 +1129,87 @@ describe("httpClient", () => {
         message: "connection error",
       });
     });
+
+    it("unexpected 204, with validation", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "PUT",
+        })
+        .reply(204);
+
+      await expect(
+        sendPut(
+          client,
+          "/products/1",
+          {},
+          {
+            responseSchema: z.number(),
+            requestLabel: "dummy",
+            validateResponse: true,
+            isEmptyResponseExpected: false,
+          },
+        ),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `);
+    });
+
+    it("unexpected 204, without validation", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "PUT",
+        })
+        .reply(204);
+
+      const result = await sendPut(
+        client,
+        "/products/1",
+        {},
+        {
+          responseSchema: z.number(),
+          requestLabel: "dummy",
+          validateResponse: false,
+          isEmptyResponseExpected: false,
+        },
+      );
+
+      expect(result.result.statusCode).toBe(204);
+      expect(result.result.body).toBe("");
+    });
+
+    it("expected 204", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "PUT",
+        })
+        .reply(204);
+
+      const result = await sendPut(
+        client,
+        "/products/1",
+        {},
+        {
+          responseSchema: z.number(),
+          requestLabel: "dummy",
+          validateResponse: true,
+        },
+      );
+
+      expect(result.result.statusCode).toBe(204);
+      expect(result.result.body).toBeNull();
+    });
   });
 
   describe("PUT binary", () => {
@@ -1061,6 +1301,82 @@ describe("httpClient", () => {
       ).rejects.toMatchObject({
         message: "connection error",
       });
+    });
+
+    it("unexpected 204, with validation", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "PUT",
+        })
+        .reply(204);
+
+      await expect(
+        sendPutBinary(client, "/products/1", Buffer.from(JSON.stringify({})), {
+          responseSchema: z.number(),
+          requestLabel: "dummy",
+          validateResponse: true,
+          isEmptyResponseExpected: false,
+        }),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `);
+    });
+
+    it("unexpected 204, without validation", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "PUT",
+        })
+        .reply(204);
+
+      const result = await sendPutBinary(
+        client,
+        "/products/1",
+        Buffer.from(JSON.stringify({})),
+        {
+          responseSchema: z.number(),
+          requestLabel: "dummy",
+          validateResponse: false,
+          isEmptyResponseExpected: false,
+        },
+      );
+
+      expect(result.result.statusCode).toBe(204);
+      expect(result.result.body).toBe("");
+    });
+
+    it("expected 204", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "PUT",
+        })
+        .reply(204);
+
+      const result = await sendPutBinary(
+        client,
+        "/products/1",
+        Buffer.from(JSON.stringify({})),
+        {
+          responseSchema: z.number(),
+          requestLabel: "dummy",
+          validateResponse: true,
+        },
+      );
+
+      expect(result.result.statusCode).toBe(204);
+      expect(result.result.body).toBeNull();
     });
   });
 
@@ -1159,6 +1475,87 @@ describe("httpClient", () => {
       ).rejects.toMatchObject({
         message: "connection error",
       });
+    });
+
+    it("unexpected 204, with validation", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "PATCH",
+        })
+        .reply(204);
+
+      await expect(
+        sendPatch(
+          client,
+          "/products/1",
+          {},
+          {
+            responseSchema: z.number(),
+            requestLabel: "dummy",
+            validateResponse: true,
+            isEmptyResponseExpected: false,
+          },
+        ),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `);
+    });
+
+    it("unexpected 204, without validation", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "PATCH",
+        })
+        .reply(204);
+
+      const result = await sendPatch(
+        client,
+        "/products/1",
+        {},
+        {
+          responseSchema: z.number(),
+          requestLabel: "dummy",
+          validateResponse: false,
+          isEmptyResponseExpected: false,
+        },
+      );
+
+      expect(result.result.statusCode).toBe(204);
+      expect(result.result.body).toBe("");
+    });
+
+    it("expected 204", async () => {
+      client
+        .intercept({
+          path: "/products/1",
+          method: "PATCH",
+        })
+        .reply(204);
+
+      const result = await sendPatch(
+        client,
+        "/products/1",
+        {},
+        {
+          responseSchema: z.number(),
+          requestLabel: "dummy",
+          validateResponse: true,
+        },
+      );
+
+      expect(result.result.statusCode).toBe(204);
+      expect(result.result.body).toBeNull();
     });
   });
 });
