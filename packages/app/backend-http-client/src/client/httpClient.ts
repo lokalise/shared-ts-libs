@@ -1,38 +1,35 @@
-import type { Readable } from "node:stream";
+import type { Readable } from 'node:stream'
 
-import { copyWithoutUndefined } from "@lokalise/node-core";
-import { Client } from "undici";
-import type { FormData } from "undici";
-import { NO_RETRY_CONFIG, isRequestResult, sendWithRetry } from "undici-retry";
+import { copyWithoutUndefined } from '@lokalise/node-core'
+import { Client } from 'undici'
+import type { FormData } from 'undici'
+import { NO_RETRY_CONFIG, isRequestResult, sendWithRetry } from 'undici-retry'
 import type {
   Either,
   InternalRequestError,
   RequestParams,
   RequestResult,
   RetryConfig,
-} from "undici-retry";
-import type { ZodError, ZodSchema } from "zod";
+} from 'undici-retry'
+import type { ZodError, ZodSchema } from 'zod'
 
-import { ResponseStatusError } from "../errors/ResponseStatusError";
-import { DEFAULT_OPTIONS, defaultClientOptions } from "./constants";
+import { ResponseStatusError } from '../errors/ResponseStatusError'
+import { DEFAULT_OPTIONS, defaultClientOptions } from './constants'
 import type {
   InternalRequestOptions,
   RecordObject,
   RequestOptions,
   RequestResultDefinitiveEither,
-} from "./types";
+} from './types'
 
 export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
   return new Client(baseUrl, {
     ...defaultClientOptions,
     ...clientOptions,
-  });
+  })
 }
 
-export async function sendGet<
-  T,
-  IsEmptyResponseExpected extends boolean = false,
->(
+export async function sendGet<T, IsEmptyResponseExpected extends boolean = false>(
   client: Client,
   path: string,
   options: RequestOptions<T, IsEmptyResponseExpected>,
@@ -42,24 +39,20 @@ export async function sendGet<
     {
       ...DEFAULT_OPTIONS,
       path: path,
-      method: "GET",
+      method: 'GET',
       query: options.query,
       headers: copyWithoutUndefined({
-        "x-request-id": options.reqContext?.reqId,
+        'x-request-id': options.reqContext?.reqId,
         ...options.headers,
       }),
       reset: options.disableKeepAlive ?? false,
-      bodyTimeout: Object.hasOwn(options, "timeout")
-        ? options.timeout
-        : DEFAULT_OPTIONS.timeout,
-      headersTimeout: Object.hasOwn(options, "timeout")
-        ? options.timeout
-        : DEFAULT_OPTIONS.timeout,
+      bodyTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
+      headersTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
       throwOnError: false,
     },
     resolveRetryConfig(options),
     resolveRequestConfig(options),
-  );
+  )
 
   return resolveResult(
     result,
@@ -68,13 +61,10 @@ export async function sendGet<
     options.responseSchema,
     options.requestLabel,
     options.isEmptyResponseExpected ?? false,
-  );
+  )
 }
 
-export async function sendDelete<
-  T,
-  IsEmptyResponseExpected extends boolean = true,
->(
+export async function sendDelete<T, IsEmptyResponseExpected extends boolean = true>(
   client: Client,
   path: string,
   options: RequestOptions<T, IsEmptyResponseExpected>,
@@ -84,24 +74,20 @@ export async function sendDelete<
     {
       ...DEFAULT_OPTIONS,
       path,
-      method: "DELETE",
+      method: 'DELETE',
       query: options.query,
       headers: copyWithoutUndefined({
-        "x-request-id": options.reqContext?.reqId,
+        'x-request-id': options.reqContext?.reqId,
         ...options.headers,
       }),
       reset: options.disableKeepAlive ?? false,
-      bodyTimeout: Object.hasOwn(options, "timeout")
-        ? options.timeout
-        : DEFAULT_OPTIONS.timeout,
-      headersTimeout: Object.hasOwn(options, "timeout")
-        ? options.timeout
-        : DEFAULT_OPTIONS.timeout,
+      bodyTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
+      headersTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
       throwOnError: false,
     },
     resolveRetryConfig(options),
     resolveRequestConfig(options),
-  );
+  )
 
   return resolveResult(
     result,
@@ -110,13 +96,10 @@ export async function sendDelete<
     options.responseSchema,
     options.requestLabel,
     options.isEmptyResponseExpected ?? true,
-  );
+  )
 }
 
-export async function sendPost<
-  T,
-  IsEmptyResponseExpected extends boolean = true,
->(
+export async function sendPost<T, IsEmptyResponseExpected extends boolean = true>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
@@ -127,25 +110,21 @@ export async function sendPost<
     {
       ...DEFAULT_OPTIONS,
       path: path,
-      method: "POST",
+      method: 'POST',
       body: body ? JSON.stringify(body) : undefined,
       query: options.query,
       headers: copyWithoutUndefined({
-        "x-request-id": options.reqContext?.reqId,
+        'x-request-id': options.reqContext?.reqId,
         ...options.headers,
       }),
       reset: options.disableKeepAlive ?? false,
-      bodyTimeout: Object.hasOwn(options, "timeout")
-        ? options.timeout
-        : DEFAULT_OPTIONS.timeout,
-      headersTimeout: Object.hasOwn(options, "timeout")
-        ? options.timeout
-        : DEFAULT_OPTIONS.timeout,
+      bodyTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
+      headersTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
       throwOnError: false,
     },
     resolveRetryConfig(options),
     resolveRequestConfig(options),
-  );
+  )
 
   return resolveResult(
     result,
@@ -154,13 +133,10 @@ export async function sendPost<
     options.responseSchema,
     options.requestLabel,
     options.isEmptyResponseExpected ?? true,
-  );
+  )
 }
 
-export async function sendPostBinary<
-  T,
-  IsEmptyResponseExpected extends boolean = true,
->(
+export async function sendPostBinary<T, IsEmptyResponseExpected extends boolean = true>(
   client: Client,
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
@@ -171,25 +147,21 @@ export async function sendPostBinary<
     {
       ...DEFAULT_OPTIONS,
       path: path,
-      method: "POST",
+      method: 'POST',
       body,
       query: options.query,
       headers: copyWithoutUndefined({
-        "x-request-id": options.reqContext?.reqId,
+        'x-request-id': options.reqContext?.reqId,
         ...options.headers,
       }),
       reset: options.disableKeepAlive ?? false,
-      bodyTimeout: Object.hasOwn(options, "timeout")
-        ? options.timeout
-        : DEFAULT_OPTIONS.timeout,
-      headersTimeout: Object.hasOwn(options, "timeout")
-        ? options.timeout
-        : DEFAULT_OPTIONS.timeout,
+      bodyTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
+      headersTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
       throwOnError: false,
     },
     resolveRetryConfig(options),
     resolveRequestConfig(options),
-  );
+  )
 
   return resolveResult(
     result,
@@ -198,13 +170,10 @@ export async function sendPostBinary<
     options.responseSchema,
     options.requestLabel,
     options.isEmptyResponseExpected ?? true,
-  );
+  )
 }
 
-export async function sendPut<
-  T,
-  IsEmptyResponseExpected extends boolean = true,
->(
+export async function sendPut<T, IsEmptyResponseExpected extends boolean = true>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
@@ -215,25 +184,21 @@ export async function sendPut<
     {
       ...DEFAULT_OPTIONS,
       path: path,
-      method: "PUT",
+      method: 'PUT',
       body: body ? JSON.stringify(body) : undefined,
       query: options.query,
       headers: copyWithoutUndefined({
-        "x-request-id": options.reqContext?.reqId,
+        'x-request-id': options.reqContext?.reqId,
         ...options.headers,
       }),
       reset: options.disableKeepAlive ?? false,
-      bodyTimeout: Object.hasOwn(options, "timeout")
-        ? options.timeout
-        : DEFAULT_OPTIONS.timeout,
-      headersTimeout: Object.hasOwn(options, "timeout")
-        ? options.timeout
-        : DEFAULT_OPTIONS.timeout,
+      bodyTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
+      headersTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
       throwOnError: false,
     },
     resolveRetryConfig(options),
     resolveRequestConfig(options),
-  );
+  )
 
   return resolveResult(
     result,
@@ -242,13 +207,10 @@ export async function sendPut<
     options.responseSchema,
     options.requestLabel,
     options.isEmptyResponseExpected ?? true,
-  );
+  )
 }
 
-export async function sendPutBinary<
-  T,
-  IsEmptyResponseExpected extends boolean = true,
->(
+export async function sendPutBinary<T, IsEmptyResponseExpected extends boolean = true>(
   client: Client,
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
@@ -259,25 +221,21 @@ export async function sendPutBinary<
     {
       ...DEFAULT_OPTIONS,
       path: path,
-      method: "PUT",
+      method: 'PUT',
       body,
       query: options.query,
       headers: copyWithoutUndefined({
-        "x-request-id": options.reqContext?.reqId,
+        'x-request-id': options.reqContext?.reqId,
         ...options.headers,
       }),
       reset: options.disableKeepAlive ?? false,
-      bodyTimeout: Object.hasOwn(options, "timeout")
-        ? options.timeout
-        : DEFAULT_OPTIONS.timeout,
-      headersTimeout: Object.hasOwn(options, "timeout")
-        ? options.timeout
-        : DEFAULT_OPTIONS.timeout,
+      bodyTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
+      headersTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
       throwOnError: false,
     },
     resolveRetryConfig(options),
     resolveRequestConfig(options),
-  );
+  )
 
   return resolveResult(
     result,
@@ -286,13 +244,10 @@ export async function sendPutBinary<
     options.responseSchema,
     options.requestLabel,
     options.isEmptyResponseExpected ?? true,
-  );
+  )
 }
 
-export async function sendPatch<
-  T,
-  IsEmptyResponseExpected extends boolean = true,
->(
+export async function sendPatch<T, IsEmptyResponseExpected extends boolean = true>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
@@ -303,25 +258,21 @@ export async function sendPatch<
     {
       ...DEFAULT_OPTIONS,
       path: path,
-      method: "PATCH",
+      method: 'PATCH',
       body: body ? JSON.stringify(body) : undefined,
       query: options.query,
       headers: copyWithoutUndefined({
-        "x-request-id": options.reqContext?.reqId,
+        'x-request-id': options.reqContext?.reqId,
         ...options.headers,
       }),
       reset: options.disableKeepAlive ?? false,
-      bodyTimeout: Object.hasOwn(options, "timeout")
-        ? options.timeout
-        : DEFAULT_OPTIONS.timeout,
-      headersTimeout: Object.hasOwn(options, "timeout")
-        ? options.timeout
-        : DEFAULT_OPTIONS.timeout,
+      bodyTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
+      headersTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
       throwOnError: false,
     },
     resolveRetryConfig(options),
     resolveRequestConfig(options),
-  );
+  )
 
   return resolveResult(
     result,
@@ -330,31 +281,24 @@ export async function sendPatch<
     options.responseSchema,
     options.requestLabel,
     options.isEmptyResponseExpected ?? true,
-  );
+  )
 }
 
-function resolveRequestConfig(
-  options: InternalRequestOptions<unknown>,
-): RequestParams {
+function resolveRequestConfig(options: InternalRequestOptions<unknown>): RequestParams {
   return {
     safeParseJson: options.safeParseJson ?? false,
     blobBody: options.blobResponseBody ?? false,
     throwOnInternalError: false,
     requestLabel: options.requestLabel,
-  };
+  }
 }
 
-function resolveRetryConfig(
-  options: InternalRequestOptions<unknown>,
-): RetryConfig {
-  return options.retryConfig ?? NO_RETRY_CONFIG;
+function resolveRetryConfig(options: InternalRequestOptions<unknown>): RetryConfig {
+  return options.retryConfig ?? NO_RETRY_CONFIG
 }
 
 function resolveResult<T, IsEmptyResponseExpected extends boolean>(
-  requestResult: Either<
-    RequestResult<unknown> | InternalRequestError,
-    RequestResult<T>
-  >,
+  requestResult: Either<RequestResult<unknown> | InternalRequestError, RequestResult<T>>,
   throwOnError: boolean,
   validateResponse: boolean,
   validationSchema: ZodSchema<T>,
@@ -365,7 +309,7 @@ function resolveResult<T, IsEmptyResponseExpected extends boolean>(
   if (requestResult.error && throwOnError) {
     throw isRequestResult(requestResult.error)
       ? new ResponseStatusError(requestResult.error, requestLabel)
-      : requestResult.error;
+      : requestResult.error
   }
 
   if (requestResult.result) {
@@ -375,13 +319,10 @@ function resolveResult<T, IsEmptyResponseExpected extends boolean>(
       validationSchema,
       requestLabel,
       isEmptyResponseExpected,
-    );
+    )
   }
 
-  return requestResult as RequestResultDefinitiveEither<
-    T,
-    IsEmptyResponseExpected
-  >;
+  return requestResult as RequestResultDefinitiveEither<T, IsEmptyResponseExpected>
 }
 
 function handleRequestResultSuccess<T>(
@@ -393,25 +334,25 @@ function handleRequestResultSuccess<T>(
 ) {
   if (result.statusCode === 204 && isEmptyResponseExpected) {
     // @ts-ignore
-    result.body = null;
-    return result;
+    result.body = null
+    return result
   }
 
   if (validateResponse) {
     try {
-      result.body = validationSchema.parse(result.body);
+      result.body = validationSchema.parse(result.body)
     } catch (err: unknown) {
       for (const issue of (err as ZodError).issues) {
         // @ts-ignore
-        issue.requestLabel = requestLabel;
+        issue.requestLabel = requestLabel
       }
       // @ts-ignore
-      err.requestLabel = requestLabel;
-      throw err;
+      err.requestLabel = requestLabel
+      throw err
     }
   }
 
-  return result;
+  return result
 }
 
 export const httpClient = {
@@ -420,4 +361,4 @@ export const httpClient = {
   put: sendPut,
   patch: sendPatch,
   del: sendDelete,
-};
+}
