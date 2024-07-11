@@ -11,16 +11,16 @@ import type {
   RequestResult,
   RetryConfig,
 } from "undici-retry";
-import { type ZodError, ZodSchema } from "zod";
+import type { ZodError, ZodSchema } from "zod";
 
 import { ResponseStatusError } from "../errors/ResponseStatusError";
-import {
+import { DEFAULT_OPTIONS, defaultClientOptions } from "./constants";
+import type {
   InternalRequestOptions,
   RecordObject,
   RequestOptions,
   RequestResultDefinitiveEither,
 } from "./types";
-import { DEFAULT_OPTIONS, defaultClientOptions } from "./constants";
 
 export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
   return new Client(baseUrl, {
@@ -363,39 +363,55 @@ function resolveResult<T, IsEmptyResponseExpected extends boolean>(
 ): RequestResultDefinitiveEither<T, IsEmptyResponseExpected> {
   // Throw response error
   if (requestResult.error && throwOnError) {
-    if (isRequestResult(requestResult.error)) {
-      throw new ResponseStatusError(requestResult.error, requestLabel);
-    }
-
-    throw requestResult.error;
+    throw isRequestResult(requestResult.error)
+      ? new ResponseStatusError(requestResult.error, requestLabel)
+      : requestResult.error;
   }
 
   if (requestResult.result) {
-    if (requestResult.result.statusCode === 204 && isEmptyResponseExpected) {
-      // @ts-ignore
-      requestResult.result.body = null;
-    } else if (validateResponse) {
-      try {
-        requestResult.result.body = validationSchema.parse(
-          requestResult.result.body,
-        );
-        // @ts-ignore
-      } catch (err: unknown) {
-        for (const issue of (err as ZodError).issues) {
-          // @ts-ignore
-          issue.requestLabel = requestLabel;
-        }
-        // @ts-ignore
-        err.requestLabel = requestLabel;
-        throw err;
-      }
-    }
+    requestResult.result = handleRequestResultSuccess(
+      requestResult.result,
+      validateResponse,
+      validationSchema,
+      requestLabel,
+      isEmptyResponseExpected,
+    );
   }
 
   return requestResult as RequestResultDefinitiveEither<
     T,
     IsEmptyResponseExpected
   >;
+}
+
+function handleRequestResultSuccess<T>(
+  result: RequestResult<T>,
+  validateResponse: boolean,
+  validationSchema: ZodSchema<T>,
+  requestLabel: string,
+  isEmptyResponseExpected: boolean,
+) {
+  if (result.statusCode === 204 && isEmptyResponseExpected) {
+    // @ts-ignore
+    result.body = null;
+    return result;
+  }
+
+  if (validateResponse) {
+    try {
+      result.body = validationSchema.parse(result.body);
+    } catch (err: unknown) {
+      for (const issue of (err as ZodError).issues) {
+        // @ts-ignore
+        issue.requestLabel = requestLabel;
+      }
+      // @ts-ignore
+      err.requestLabel = requestLabel;
+      throw err;
+    }
+  }
+
+  return result;
 }
 
 export const httpClient = {

@@ -2,9 +2,9 @@ export type {
   RequestOptions,
   HttpRequestContext,
   RequestResultDefinitiveEither,
-} from "./src/client/types";
+} from './src/client/types'
 
-export { JSON_HEADERS } from "./src/client/constants";
+export { JSON_HEADERS } from './src/client/constants'
 
 export {
   sendPut,
@@ -16,9 +16,9 @@ export {
   sendPostBinary,
   httpClient,
   buildClient,
-} from "./src/client/httpClient";
+} from './src/client/httpClient'
 
 export {
   isResponseStatusError,
   ResponseStatusError,
-} from "./src/errors/ResponseStatusError";
+} from './src/errors/ResponseStatusError'

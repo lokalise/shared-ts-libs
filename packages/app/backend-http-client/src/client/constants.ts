@@ -1,8 +1,7 @@
-import type { MayOmit } from "@lokalise/node-core";
-import type { Client } from "undici";
-import { z } from "zod";
+import type { MayOmit } from '@lokalise/node-core'
+import type { Client } from 'undici'
 
-import type { RequestOptions } from "./types";
+import type { RequestOptions } from './types'
 
 export const DEFAULT_OPTIONS = {
   validateResponse: true,
@@ -10,14 +9,14 @@ export const DEFAULT_OPTIONS = {
   timeout: 30000,
 } satisfies MayOmit<
   RequestOptions<unknown, any>,
-  "requestLabel" | "responseSchema" | "isEmptyResponseExpected"
->;
+  'requestLabel' | 'responseSchema' | 'isEmptyResponseExpected'
+>
 
 export const defaultClientOptions: Partial<Client.Options> = {
   keepAliveMaxTimeout: 300_000,
   keepAliveTimeout: 4000,
-};
+}
 
 export const JSON_HEADERS = {
-  "Content-Type": "application/json",
-};
+  'Content-Type': 'application/json',
+}
