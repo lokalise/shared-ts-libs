@@ -43,6 +43,7 @@ All _send_ methods accept a type parameter and the following arguments:
   - `clientOptions`;
   - `responseSchema`, used both for inferring the response type of the call, and also (if `validateResponse` is `true`) for validating the response structure;
   - `validateResponse`;
+  - `isEmptyResponseExpected`, used to specify if a 204 response should be treated as an error or not
 
   The following options are applied by default:
 
@@ -57,6 +58,7 @@ All _send_ methods accept a type parameter and the following arguments:
       retryOnTimeout: false,
   }
   ```
+  For `sendDelete()` `isEmptyResponseExpected` by default is set to `true`, for all other methods it is `false`.
 
 Additionally, `sendPost()`, `sendPut()`, `sendPutBinary()`, and `sendPatch()` also accept a `body` parameter.
 
