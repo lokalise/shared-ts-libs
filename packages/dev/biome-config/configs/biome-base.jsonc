@@ -65,7 +65,7 @@
   },
   "overrides": [
     {
-      "include": ["./**/*.spec.ts"],
+      "include": ["./**/*.spec.ts", "./**/*.test.ts", "./**/*.test.tsx", "./test/**/*"],
       "linter": {
         "rules": {
           "style": {
