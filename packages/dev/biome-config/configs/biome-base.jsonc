@@ -40,8 +40,7 @@
         "noDefaultExport": "error",
         "useShorthandAssign": "error",
         "useForOf": "error",
-        "useExponentiationOperator": "off",
-        "noUnusedTemplateLiteral": "off"
+        "useExponentiationOperator": "off"
       },
       "correctness": {
         "noUnusedVariables": "error",
