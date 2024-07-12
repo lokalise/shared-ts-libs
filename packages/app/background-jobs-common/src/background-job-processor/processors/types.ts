@@ -41,7 +41,6 @@ export type BackgroundJobProcessorDependencies<
     JobReturn
   >,
 > = {
-  redis?: Redis
   transactionObservabilityManager: TransactionObservabilityManager
   logger: CommonLogger
   errorReporter: ErrorReporter
