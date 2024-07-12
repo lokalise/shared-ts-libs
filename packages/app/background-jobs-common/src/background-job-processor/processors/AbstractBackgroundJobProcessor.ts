@@ -477,7 +477,7 @@ export abstract class AbstractBackgroundJobProcessor<
    * @param job
    * @protected
    */
-  protected async purgeJobData(job: JobType): Promise<void> {
+  async purgeJobData(job: JobType): Promise<void> {
     const jobOptsRemoveOnComplete = job.opts.removeOnComplete
     if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
 
