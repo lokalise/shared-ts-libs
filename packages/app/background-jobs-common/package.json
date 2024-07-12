@@ -18,7 +18,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "rimraf dist && tsc",
-    "clean": "rimraf dist .eslintcache",
+    "clean": "rimraf dist",
     "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
     "lint:fix": "biome check --write",
     "docker:start:ci": "docker compose up -d --quiet-pull redis",
