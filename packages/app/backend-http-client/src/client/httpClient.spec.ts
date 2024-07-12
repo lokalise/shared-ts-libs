@@ -4,11 +4,8 @@ import { isInternalRequestError } from 'undici-retry'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import type { HttpRequestContext } from './httpClient'
+import { JSON_HEADERS } from './constants'
 import {
-  JSON_HEADERS,
-  NO_CONTENT_RESPONSE_SCHEMA,
-  UNKNOWN_RESPONSE_SCHEMA,
   buildClient,
   sendDelete,
   sendGet,
@@ -18,8 +15,11 @@ import {
   sendPut,
   sendPutBinary,
 } from './httpClient'
+// @ts-ignore
 import mockProduct1 from './mock-data/mockProduct1.json'
+// @ts-ignore
 import mockProductsLimit3 from './mock-data/mockProductsLimit3.json'
+import type { HttpRequestContext } from './types'
 
 const TEXT_HEADERS = {
   'content-type': 'text/plain',
@@ -29,6 +29,8 @@ const baseUrl = 'https://fakestoreapi.com'
 const reqContext: HttpRequestContext = {
   reqId: 'dummyId',
 }
+
+const UNKNOWN_RESPONSE_SCHEMA = z.unknown()
 
 describe('httpClient', () => {
   let mockAgent: MockAgent
@@ -115,11 +117,75 @@ describe('httpClient', () => {
       const result = await sendGet(client, '/products/1', {
         responseSchema: schema,
         requestLabel: 'dummy',
-
         validateResponse: false,
       })
 
       expect(result.result.body).toEqual(mockProduct1)
+    })
+
+    it('unexpected 204, with validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(204)
+
+      await expect(
+        sendGet(client, '/products/1', {
+          responseSchema: z.number(),
+          requestLabel: 'dummy',
+          validateResponse: true,
+        }),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `)
+    })
+
+    it('unexpected 204, without validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(204)
+
+      const result = await sendGet(client, '/products/1', {
+        responseSchema: z.number(),
+        requestLabel: 'dummy',
+        validateResponse: false,
+      })
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBe('')
+    })
+
+    it('expected 204', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(204)
+
+      const result = await sendGet(client, '/products/1', {
+        responseSchema: z.number(),
+        requestLabel: 'dummy',
+        isEmptyResponseExpected: true,
+        validateResponse: true,
+      })
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBeNull()
     })
 
     it('returns original payload when breaking during parsing and throw on error is true', async () => {
@@ -377,15 +443,16 @@ describe('httpClient', () => {
           path: '/products/1',
           method: 'DELETE',
         })
-        .reply(204, undefined)
+        .reply(200)
 
       const result = await sendDelete(client, '/products/1', {
         reqContext,
-        responseSchema: NO_CONTENT_RESPONSE_SCHEMA,
+        responseSchema: z.unknown(),
         requestLabel: 'dummy',
+        validateResponse: true,
       })
 
-      expect(result.result.statusCode).toBe(204)
+      expect(result.result.statusCode).toBe(200)
       expect(result.result.body).toBe('')
     })
 
@@ -400,15 +467,15 @@ describe('httpClient', () => {
           method: 'DELETE',
           query,
         })
-        .reply(204)
+        .reply(200)
 
       const result = await sendDelete(client, '/products', {
         query,
-        responseSchema: NO_CONTENT_RESPONSE_SCHEMA,
+        responseSchema: z.unknown(),
         requestLabel: 'dummy',
       })
 
-      expect(result.result.statusCode).toBe(204)
+      expect(result.result.statusCode).toBe(200)
       expect(result.result.body).toBe('')
     })
 
@@ -435,6 +502,72 @@ describe('httpClient', () => {
       ).rejects.toMatchObject({
         message: 'connection error',
       })
+    })
+
+    it('unexpected 204, with validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'DELETE',
+        })
+        .reply(204)
+
+      await expect(
+        sendDelete(client, '/products/1', {
+          responseSchema: z.number(),
+          requestLabel: 'dummy',
+          validateResponse: true,
+          isEmptyResponseExpected: false,
+        }),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `)
+    })
+
+    it('unexpected 204, without validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'DELETE',
+        })
+        .reply(204)
+
+      const result = await sendDelete(client, '/products/1', {
+        responseSchema: z.number(),
+        requestLabel: 'dummy',
+        validateResponse: false,
+        isEmptyResponseExpected: false,
+      })
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBe('')
+    })
+
+    it('expected 204', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'DELETE',
+        })
+        .reply(204)
+
+      const result = await sendDelete(client, '/products/1', {
+        responseSchema: z.number(),
+        requestLabel: 'dummy',
+        validateResponse: true,
+      })
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBeNull()
     })
   })
 
@@ -536,6 +669,86 @@ describe('httpClient', () => {
       )
 
       expect(result.result.body).toEqual(mockProduct1)
+    })
+
+    it('unexpected 204, with validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'POST',
+        })
+        .reply(204)
+
+      await expect(
+        sendPost(
+          client,
+          '/products/1',
+          {},
+          {
+            responseSchema: z.number(),
+            requestLabel: 'dummy',
+            validateResponse: true,
+          },
+        ),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `)
+    })
+
+    it('unexpected 204, without validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'POST',
+        })
+        .reply(204)
+
+      const result = await sendPost(
+        client,
+        '/products/1',
+        {},
+        {
+          responseSchema: z.number(),
+          requestLabel: 'dummy',
+          validateResponse: false,
+        },
+      )
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBe('')
+    })
+
+    it('expected 204', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'POST',
+        })
+        .reply(204)
+
+      const result = await sendPost(
+        client,
+        '/products/1',
+        {},
+        {
+          responseSchema: z.number(),
+          requestLabel: 'dummy',
+          validateResponse: true,
+          isEmptyResponseExpected: true,
+        },
+      )
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBeNull()
     })
 
     it('POST without queryParams', async () => {
@@ -706,6 +919,71 @@ describe('httpClient', () => {
       })
 
       expect(result.result.body).toEqual(mockProduct1)
+    })
+
+    it('unexpected 204, with validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'POST',
+        })
+        .reply(204)
+
+      await expect(
+        sendPostBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
+          responseSchema: z.number(),
+          requestLabel: 'dummy',
+          validateResponse: true,
+        }),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `)
+    })
+
+    it('unexpected 204, without validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'POST',
+        })
+        .reply(204)
+
+      const result = await sendPostBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
+        responseSchema: z.number(),
+        requestLabel: 'dummy',
+        validateResponse: false,
+      })
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBe('')
+    })
+
+    it('expected 204', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'POST',
+        })
+        .reply(204)
+
+      const result = await sendPostBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
+        responseSchema: z.number(),
+        requestLabel: 'dummy',
+        validateResponse: true,
+        isEmptyResponseExpected: true,
+      })
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBeNull()
     })
 
     it('POST without queryParams', async () => {
@@ -894,6 +1172,86 @@ describe('httpClient', () => {
         message: 'connection error',
       })
     })
+
+    it('unexpected 204, with validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'PUT',
+        })
+        .reply(204)
+
+      await expect(
+        sendPut(
+          client,
+          '/products/1',
+          {},
+          {
+            responseSchema: z.number(),
+            requestLabel: 'dummy',
+            validateResponse: true,
+          },
+        ),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `)
+    })
+
+    it('unexpected 204, without validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'PUT',
+        })
+        .reply(204)
+
+      const result = await sendPut(
+        client,
+        '/products/1',
+        {},
+        {
+          responseSchema: z.number(),
+          requestLabel: 'dummy',
+          validateResponse: false,
+        },
+      )
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBe('')
+    })
+
+    it('expected 204', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'PUT',
+        })
+        .reply(204)
+
+      const result = await sendPut(
+        client,
+        '/products/1',
+        {},
+        {
+          responseSchema: z.number(),
+          requestLabel: 'dummy',
+          validateResponse: true,
+          isEmptyResponseExpected: true,
+        },
+      )
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBeNull()
+    })
   })
 
   describe('PUT binary', () => {
@@ -975,6 +1333,71 @@ describe('httpClient', () => {
       ).rejects.toMatchObject({
         message: 'connection error',
       })
+    })
+
+    it('unexpected 204, with validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'PUT',
+        })
+        .reply(204)
+
+      await expect(
+        sendPutBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
+          responseSchema: z.number(),
+          requestLabel: 'dummy',
+          validateResponse: true,
+        }),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `)
+    })
+
+    it('unexpected 204, without validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'PUT',
+        })
+        .reply(204)
+
+      const result = await sendPutBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
+        responseSchema: z.number(),
+        requestLabel: 'dummy',
+        validateResponse: false,
+      })
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBe('')
+    })
+
+    it('expected 204', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'PUT',
+        })
+        .reply(204)
+
+      const result = await sendPutBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
+        responseSchema: z.number(),
+        requestLabel: 'dummy',
+        validateResponse: true,
+        isEmptyResponseExpected: true,
+      })
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBeNull()
     })
   })
 
@@ -1073,6 +1496,86 @@ describe('httpClient', () => {
       ).rejects.toMatchObject({
         message: 'connection error',
       })
+    })
+
+    it('unexpected 204, with validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'PATCH',
+        })
+        .reply(204)
+
+      await expect(
+        sendPatch(
+          client,
+          '/products/1',
+          {},
+          {
+            responseSchema: z.number(),
+            requestLabel: 'dummy',
+            validateResponse: true,
+          },
+        ),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `)
+    })
+
+    it('unexpected 204, without validation', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'PATCH',
+        })
+        .reply(204)
+
+      const result = await sendPatch(
+        client,
+        '/products/1',
+        {},
+        {
+          responseSchema: z.number(),
+          requestLabel: 'dummy',
+          validateResponse: false,
+        },
+      )
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBe('')
+    })
+
+    it('expected 204', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'PATCH',
+        })
+        .reply(204)
+
+      const result = await sendPatch(
+        client,
+        '/products/1',
+        {},
+        {
+          responseSchema: z.number(),
+          requestLabel: 'dummy',
+          validateResponse: true,
+          isEmptyResponseExpected: true,
+        },
+      )
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBeNull()
     })
   })
 })
