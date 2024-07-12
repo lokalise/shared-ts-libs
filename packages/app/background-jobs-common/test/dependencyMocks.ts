@@ -41,10 +41,10 @@ export class DependencyMocks {
 
   async dispose(): Promise<void> {
     await this.client?.quit()
-	}
+  }
 
   private startRedis(): Redis {
-    const db = process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : undefined
+    const db = process.env.REDIS_DB ? Number.parseInt(process.env.REDIS_DB) : undefined
     const host = process.env.REDIS_HOST
     const port = process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : undefined
     const username = process.env.REDIS_USERNAME
@@ -56,10 +56,10 @@ export class DependencyMocks {
       ? Number.parseInt(process.env.REDIS_COMMAND_TIMEOUT, 10)
       : undefined
     const keyPrefix = process.env.REDIS_KEY_PREFIX
-		this.client = new Redis({
-			host,
-			db,
-			keyPrefix,
+    this.client = new Redis({
+      host,
+      db,
+      keyPrefix,
       port,
       username,
       password,

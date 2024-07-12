@@ -1,7 +1,8 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type {
   CommonLogger,
-  ErrorReporter, RedisConfig,
+  ErrorReporter,
+  RedisConfig,
   TransactionObservabilityManager,
 } from '@lokalise/node-core'
 import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
@@ -90,6 +91,7 @@ export abstract class AbstractBackgroundJobProcessor<
   private readonly errorReporter: ErrorReporter
   private readonly config: BackgroundJobProcessorConfig<QueueOptionsType, WorkerOptionsType>
   private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
+  private readonly runningPromises: Promise<unknown>[]
 
   private queue?: QueueType
   private worker?: WorkerType
@@ -121,13 +123,12 @@ export abstract class AbstractBackgroundJobProcessor<
   ) {
     this.config = config
     this.factory = dependencies.bullmqFactory
-    this.redis = new Redis(
-			config.redisConfig
-		)
+    this.redis = new Redis(config.redisConfig)
     this.transactionObservabilityManager = dependencies.transactionObservabilityManager
     this.logger = dependencies.logger
     this.errorReporter = dependencies.errorReporter
     this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
+    this.runningPromises = []
   }
 
   public static async getActiveQueueIds(redis: Redis): Promise<string[]> {
@@ -153,23 +154,21 @@ export abstract class AbstractBackgroundJobProcessor<
     if (this.queue) return // Skip if processor is already started
 
     if (!this.redis) {
-			this.redis = new Redis(
-				this.config.redisConfig
-			)
-		}
+      this.redis = new Redis(this.config.redisConfig)
+    }
 
-		if (queueIdsSet.has(this.config.queueId))
-			throw new Error(`Queue id "${this.config.queueId}" is not unique.`)
+    if (queueIdsSet.has(this.config.queueId))
+      throw new Error(`Queue id "${this.config.queueId}" is not unique.`)
 
     queueIdsSet.add(this.config.queueId)
     await this.redis.zadd(QUEUE_IDS_KEY, Date.now(), this.config.queueId)
 
     this.queue = this.factory.buildQueue(this.config.queueId, {
       ...this.config.queueOptions,
-			connection: this.sanitizeRedisConfig(),
+      connection: this.sanitizeRedisConfig(),
       prefix: this.config.redisConfig?.keyPrefix ?? undefined,
     } as unknown as QueueOptionsType)
-		await this.queue.waitUntilReady()
+    await this.queue.waitUntilReady()
 
     const mergedWorkerOptions = merge(
       DEFAULT_WORKER_OPTIONS,
@@ -183,8 +182,8 @@ export abstract class AbstractBackgroundJobProcessor<
       {
         ...mergedWorkerOptions,
         connection: this.sanitizeRedisConfig(),
-				prefix: this.config.redisConfig?.keyPrefix ?? undefined,
-			} as unknown as WorkerOptionsType,
+        prefix: this.config.redisConfig?.keyPrefix ?? undefined,
+      } as unknown as WorkerOptionsType,
     )
     if (this.config.isTest) {
       // unlike queue, the docs for worker state that this is only useful in tests
@@ -233,16 +232,22 @@ export abstract class AbstractBackgroundJobProcessor<
     }
 
     try {
-			this.redis.disconnect()
-			this.redis = undefined
-		} catch {
-			//
-		}
+      await Promise.allSettled(this.runningPromises)
+    } catch {
+      //
+    }
 
-		this.worker = undefined
-		this.queue = undefined
-		this._spy?.clear()
-	}
+    try {
+      this.redis?.disconnect()
+      this.redis = undefined
+    } catch {
+      //
+    }
+
+    this.worker = undefined
+    this.queue = undefined
+    this._spy?.clear()
+  }
 
   public async schedule(jobData: JobPayload, options?: JobOptionsType): Promise<string> {
     const jobIds = await this.scheduleBulk([jobData], options)
@@ -477,13 +482,21 @@ export abstract class AbstractBackgroundJobProcessor<
     if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
 
     // @ts-ignore
-    await job.updateData({ metadata: job.data.metadata })
-    await job.clearLogs()
+    const updateDataPromise = job.updateData({ metadata: job.data.metadata })
+    const clearLogsPromise = job.clearLogs()
+
+    const updateDataPromiseIndex = this.runningPromises.push(updateDataPromise) - 1
+    const clearLogsPromiseIndex = this.runningPromises.push(clearLogsPromise) - 1
+
+    await Promise.all([updateDataPromise, clearLogsPromise]).then(() => {
+      this.runningPromises.splice(updateDataPromiseIndex, 1)
+      this.runningPromises.splice(clearLogsPromiseIndex, 1)
+    })
   }
 
   protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
 
-	private sanitizeRedisConfig(): RedisConfig {
-		return {...this.config.redisConfig, keyPrefix: undefined}
-	}
+  private sanitizeRedisConfig(): RedisConfig {
+    return { ...this.config.redisConfig, keyPrefix: undefined }
+  }
 }

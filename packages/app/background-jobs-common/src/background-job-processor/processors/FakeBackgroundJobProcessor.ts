@@ -3,10 +3,9 @@ import type { Job } from 'bullmq'
 import { CommonBullmqFactory } from '../factories/CommonBullmqFactory'
 import type { BaseJobPayload } from '../types'
 
+import { getTestRedisConfig } from '../../../test/setup'
 import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
-import * as process from "process";
-import {getTestRedisConfig} from "../../../test/setup";
 
 export class FakeBackgroundJobProcessor<
   JobData extends BaseJobPayload,
@@ -24,20 +23,20 @@ export class FakeBackgroundJobProcessor<
     super(
       {
         transactionObservabilityManager: {
-					start: () => {},
-					startWithGroup: () => {},
-					stop: () => {},
-				},
-				logger: dependencies.logger,
-				errorReporter: dependencies.errorReporter,
-				bullmqFactory: new CommonBullmqFactory(),
-			},
-			{
-				queueId: queueName,
-				ownerName: 'testOwner',
-				isTest,
-				workerOptions: { concurrency: 1 },
-				redisConfig: getTestRedisConfig()
+          start: () => {},
+          startWithGroup: () => {},
+          stop: () => {},
+        },
+        logger: dependencies.logger,
+        errorReporter: dependencies.errorReporter,
+        bullmqFactory: new CommonBullmqFactory(),
+      },
+      {
+        queueId: queueName,
+        ownerName: 'testOwner',
+        isTest,
+        workerOptions: { concurrency: 1 },
+        redisConfig: getTestRedisConfig(),
       },
     )
   }

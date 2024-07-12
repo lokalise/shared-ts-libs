@@ -6,7 +6,7 @@ import {
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
 } from '../../src'
-import {getTestRedisConfig} from "../setup";
+import { getTestRedisConfig } from '../setup'
 
 type Data = {
   id?: string
@@ -21,18 +21,18 @@ export class TestStalledBackgroundJobProcessor extends AbstractBackgroundJobProc
   private _onFailedErrors: OnFailedError[] = []
   public lastLogger: CommonLogger | undefined
 
-	constructor(dependencies: BackgroundJobProcessorDependencies<Data>) {
-		super(dependencies, {
-			queueId: 'TestStalledBackgroundJobProcessor queue',
-			ownerName: 'test',
-			isTest: false, // We don't want to override job options for this processor
-			workerOptions: {
-				lockDuration: 1,
-				stalledInterval: 1,
-			},
-			redisConfig: getTestRedisConfig()
-		})
-	}
+  constructor(dependencies: BackgroundJobProcessorDependencies<Data>) {
+    super(dependencies, {
+      queueId: 'TestStalledBackgroundJobProcessor queue',
+      ownerName: 'test',
+      isTest: false, // We don't want to override job options for this processor
+      workerOptions: {
+        lockDuration: 1,
+        stalledInterval: 1,
+      },
+      redisConfig: getTestRedisConfig(),
+    })
+  }
 
   schedule(jobData: Data): Promise<string> {
     return super.schedule(jobData, {

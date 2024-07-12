@@ -18,7 +18,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "rimraf dist && tsc",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist ",
     "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
     "lint:fix": "biome check --write",
     "docker:start:ci": "docker compose up -d --quiet-pull redis",
@@ -43,7 +43,6 @@
     "@lokalise/biome-config": "^1.2.2",
     "@types/node": "^20.14.8",
     "@lokalise/fastify-extras": "^21.2.2",
-    "@lokalise/prettier-config": "latest",
     "@lokalise/package-vite-config": "latest",
     "@vitest/coverage-v8": "^1.6.0",
     "bullmq": "^5.7.15",
@@ -51,6 +50,5 @@
     "rimraf": "^5.0.7",
     "typescript": "5.5.3",
     "vitest": "^1.6.0"
-  },
-  "prettier": "@lokalise/prettier-config"
+  }
 }
