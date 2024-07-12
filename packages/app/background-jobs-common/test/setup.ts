@@ -5,7 +5,6 @@ process.loadEnvFile('./.env.test')
 
 export const getTestRedisConfig = (): RedisConfig => {
   return {
-    // biome-ignore lint/style/noNonNullAssertion: it's not null, it's defined in .env.test
     host: process.env.REDIS_HOST!,
     password: process.env.REDIS_PASSWORD,
     keyPrefix: process.env.REDIS_KEY_PREFIX,

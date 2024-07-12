@@ -11,7 +11,6 @@ export let lastErrorSpy: MockInstance
 export class DependencyMocks {
   private client?: Redis
 
-  // biome-ignore lint/suspicious/noExplicitAny: it's okay
   create(): BackgroundJobProcessorDependencies<any> {
     const originalChildFn = testLogger.child
 
@@ -29,12 +28,10 @@ export class DependencyMocks {
       transactionObservabilityManager: {
         start: vi.fn(),
         stop: vi.fn(),
-        // biome-ignore lint/suspicious/noExplicitAny: it's okay
       } as any,
       logger: testLogger,
       errorReporter: {
         report: vi.fn(),
-        // biome-ignore lint/suspicious/noExplicitAny: it's okay
       } as any,
     }
   }

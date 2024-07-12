@@ -239,14 +239,14 @@ export abstract class AbstractBackgroundJobProcessor<
     try {
       await Promise.allSettled(this.runningPromises)
     } catch {
-      //
+      // do nothing
     }
 
     try {
       this.redis?.disconnect()
       this.redis = undefined
     } catch {
-      //
+      // do nothing
     }
 
     this.worker = undefined
