@@ -12,11 +12,11 @@ import { RETENTION_QUEUE_IDS_IN_DAYS } from '../constants'
 import type { BaseJobPayload } from '../types'
 import { daysToMilliseconds } from '../utils'
 
+import Redis from 'ioredis'
+import { getSanitizedTestRedisConfig, getTestRedisConfig } from '../../../test/setup'
 import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
-import {getSanitizedTestRedisConfig, getTestRedisConfig} from "../../../test/setup";
-import Redis from "ioredis";
 
 type JobData = {
   id: string
@@ -54,7 +54,9 @@ describe('AbstractBackgroundJobProcessor', () => {
       await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs + 100, 'queue1')
       redisWithoutPrefix.disconnect()
 
-      const queues = await AbstractBackgroundJobProcessor.getActiveQueueIds(getSanitizedTestRedisConfig())
+      const queues = await AbstractBackgroundJobProcessor.getActiveQueueIds(
+        getSanitizedTestRedisConfig(),
+      )
       expect(queues).toEqual(['queue1', 'queue2'])
     })
   })
@@ -140,10 +142,19 @@ describe('AbstractBackgroundJobProcessor', () => {
       await processor.dispose()
       await processor.start()
 
-      const [, scoreAfterRestart] = await redisWithoutPrefix.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
-      const queueIdsAfterRestart = await FakeBackgroundJobProcessor.getActiveQueueIds(getTestRedisConfig())
+      const [, scoreAfterRestart] = await redisWithoutPrefix.zrange(
+        QUEUE_IDS_KEY,
+        0,
+        -1,
+        'WITHSCORES',
+      )
+      const queueIdsAfterRestart = await FakeBackgroundJobProcessor.getActiveQueueIds(
+        getTestRedisConfig(),
+      )
       expect(queueIdsAfterRestart).toStrictEqual(['queue1'])
-      expect(new Date(Number.parseInt(score))).not.toEqual(new Date(Number.parseInt(scoreAfterRestart)))
+      expect(new Date(Number.parseInt(score))).not.toEqual(
+        new Date(Number.parseInt(scoreAfterRestart)),
+      )
 
       await processor.dispose()
       redisWithoutPrefix.disconnect()

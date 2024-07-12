@@ -1,5 +1,5 @@
+import type { RedisConfig } from '@lokalise/node-core'
 import type { SafeJob } from './types'
-import type {RedisConfig} from "@lokalise/node-core";
 
 export const daysToSeconds = (days: number): number => days * 24 * 60 * 60
 

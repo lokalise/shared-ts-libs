@@ -27,7 +27,8 @@ import {
   daysToSeconds,
   isStalledJobError,
   isUnrecoverableJobError,
-  resolveJobId, sanitizeRedisConfig,
+  resolveJobId,
+  sanitizeRedisConfig,
 } from '../utils'
 
 import type {
