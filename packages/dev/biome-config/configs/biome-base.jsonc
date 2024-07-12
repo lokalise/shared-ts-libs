@@ -8,10 +8,12 @@
       "enabled": true,
       "lineWidth": 100,
       "indentStyle": "space"
+    },
+    "parser": {
+      "allowComments": true
     }
   },
   "javascript": {
-    "globals": ["vitest"],
     "formatter": {
       "enabled": true,
       "indentWidth": 2,
@@ -65,7 +67,20 @@
   },
   "overrides": [
     {
-      "include": ["./**/*.spec.ts"],
+      "include": ["./**/*.spec.ts", "./**/*.test.ts", "./**/*.test.tsx", "**/test/**/*"],
+      "javascript": {
+        // Allow Vitest globals in test files
+        "globals": [
+          "describe",
+          "it",
+          "expect",
+          "beforeEach",
+          "afterEach",
+          "beforeAll",
+          "afterAll",
+          "vi"
+        ]
+      },
       "linter": {
         "rules": {
           "style": {

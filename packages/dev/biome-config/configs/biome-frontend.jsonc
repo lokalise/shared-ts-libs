@@ -1,7 +1,6 @@
 {
   "$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
   "javascript": {
-    "globals": ["vitest"],
     "formatter": {
       "enabled": true,
       "indentStyle": "tab",
@@ -9,6 +8,26 @@
       "lineWidth": 100,
       "quoteStyle": "single",
       "trailingCommas": "all"
+    }
+  },
+  "files": {
+    "include": ["**/*.css"]
+  },
+  "css": {
+    "parser": {
+      "cssModules": true
+    },
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "tab",
+      "quoteStyle": "single"
+    }
+  },
+  "linter": {
+    "rules": {
+      "correctness": {
+        "useHookAtTopLevel": "error"
+      }
     }
   }
 }

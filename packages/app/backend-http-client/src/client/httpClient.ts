@@ -1,7 +1,6 @@
 import type { Readable } from 'node:stream'
 
 import { copyWithoutUndefined } from '@lokalise/node-core'
-import type { DefiniteEither, MayOmit } from '@lokalise/node-core'
 import { Client } from 'undici'
 import type { FormData } from 'undici'
 import { NO_RETRY_CONFIG, isRequestResult, sendWithRetry } from 'undici-retry'
@@ -12,77 +11,29 @@ import type {
   RequestResult,
   RetryConfig,
 } from 'undici-retry'
-import { type ZodError, z } from 'zod'
+import type { ZodError, ZodSchema } from 'zod'
 
 import { ResponseStatusError } from '../errors/ResponseStatusError'
+import { DEFAULT_OPTIONS, defaultClientOptions } from './constants'
+import type {
+  InternalRequestOptions,
+  RecordObject,
+  RequestOptions,
+  RequestResultDefinitiveEither,
+} from './types'
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-type RecordObject = Record<string, any>
-
-/**
- * Technically 204 will send an empty body, but undici-retry defaults to parsing unknown mimetype as text for compatibility reasons, so we should expect to get an empty string here
- */
-export const NO_CONTENT_RESPONSE_SCHEMA = z.string().length(0)
-
-/**
- * This schema is to be used when we don't really care about the response type and are prepared to accept any value
- */
-export const UNKNOWN_RESPONSE_SCHEMA = z.unknown()
-
-export const TEST_OPTIONS: RequestOptions<unknown> = {
-  requestLabel: 'test',
-  responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
+  return new Client(baseUrl, {
+    ...defaultClientOptions,
+    ...clientOptions,
+  })
 }
 
-export type HttpRequestContext = {
-  reqId: string
-}
-
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-export type ResponseSchema<Output = any> = {
-  parse(data: unknown): Output
-}
-
-export type RequestOptions<T> = {
-  headers?: RecordObject
-  query?: RecordObject
-  timeout?: number | null
-  throwOnError?: boolean
-  reqContext?: HttpRequestContext
-
-  safeParseJson?: boolean
-  blobResponseBody?: boolean
-  requestLabel: string
-
-  disableKeepAlive?: boolean
-  retryConfig?: RetryConfig
-  clientOptions?: Client.Options
-  responseSchema: ResponseSchema<T>
-  validateResponse?: boolean
-}
-
-const DEFAULT_OPTIONS = {
-  validateResponse: true,
-  throwOnError: true,
-  timeout: 30000,
-} satisfies MayOmit<RequestOptions<unknown>, 'requestLabel' | 'responseSchema'>
-
-const defaultClientOptions: Partial<Client.Options> = {
-  keepAliveMaxTimeout: 300_000,
-  keepAliveTimeout: 4000,
-}
-
-export type Response<T> = {
-  body: T
-  headers: RecordObject
-  statusCode: number
-}
-
-export async function sendGet<T>(
+export async function sendGet<T, IsEmptyResponseExpected extends boolean = false>(
   client: Client,
   path: string,
-  options: RequestOptions<T>,
-): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
+  options: RequestOptions<T, IsEmptyResponseExpected>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -109,14 +60,15 @@ export async function sendGet<T>(
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
+    options.isEmptyResponseExpected ?? false,
   )
 }
 
-export async function sendDelete<T>(
+export async function sendDelete<T, IsEmptyResponseExpected extends boolean = true>(
   client: Client,
   path: string,
-  options: RequestOptions<T>,
-): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
+  options: RequestOptions<T, IsEmptyResponseExpected>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -143,15 +95,16 @@ export async function sendDelete<T>(
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
+    options.isEmptyResponseExpected ?? true,
   )
 }
 
-export async function sendPost<T>(
+export async function sendPost<T, IsEmptyResponseExpected extends boolean = false>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
-  options: RequestOptions<T>,
-): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
+  options: RequestOptions<T, IsEmptyResponseExpected>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -179,15 +132,16 @@ export async function sendPost<T>(
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
+    options.isEmptyResponseExpected ?? false,
   )
 }
 
-export async function sendPostBinary<T>(
+export async function sendPostBinary<T, IsEmptyResponseExpected extends boolean = false>(
   client: Client,
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
-  options: RequestOptions<T>,
-): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
+  options: RequestOptions<T, IsEmptyResponseExpected>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -215,15 +169,16 @@ export async function sendPostBinary<T>(
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
+    options.isEmptyResponseExpected ?? false,
   )
 }
 
-export async function sendPut<T>(
+export async function sendPut<T, IsEmptyResponseExpected extends boolean = false>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
-  options: RequestOptions<T>,
-): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
+  options: RequestOptions<T, IsEmptyResponseExpected>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -251,15 +206,16 @@ export async function sendPut<T>(
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
+    options.isEmptyResponseExpected ?? false,
   )
 }
 
-export async function sendPutBinary<T>(
+export async function sendPutBinary<T, IsEmptyResponseExpected extends boolean = false>(
   client: Client,
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
-  options: RequestOptions<T>,
-): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
+  options: RequestOptions<T, IsEmptyResponseExpected>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -287,15 +243,16 @@ export async function sendPutBinary<T>(
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
+    options.isEmptyResponseExpected ?? false,
   )
 }
 
-export async function sendPatch<T>(
+export async function sendPatch<T, IsEmptyResponseExpected extends boolean = false>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
-  options: RequestOptions<T>,
-): Promise<DefiniteEither<RequestResult<unknown>, RequestResult<T>>> {
+  options: RequestOptions<T, IsEmptyResponseExpected>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -323,10 +280,11 @@ export async function sendPatch<T>(
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
+    options.isEmptyResponseExpected ?? false,
   )
 }
 
-function resolveRequestConfig(options: RequestOptions<unknown>): RequestParams {
+function resolveRequestConfig(options: InternalRequestOptions<unknown>): RequestParams {
   return {
     safeParseJson: options.safeParseJson ?? false,
     blobBody: options.blobResponseBody ?? false,
@@ -335,36 +293,54 @@ function resolveRequestConfig(options: RequestOptions<unknown>): RequestParams {
   }
 }
 
-function resolveRetryConfig(options: Partial<RequestOptions<unknown>>): RetryConfig {
+function resolveRetryConfig(options: InternalRequestOptions<unknown>): RetryConfig {
   return options.retryConfig ?? NO_RETRY_CONFIG
 }
 
-export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
-  const newClient = new Client(baseUrl, {
-    ...defaultClientOptions,
-    ...clientOptions,
-  })
-  return newClient
-}
-
-function resolveResult<T>(
+function resolveResult<T, IsEmptyResponseExpected extends boolean>(
   requestResult: Either<RequestResult<unknown> | InternalRequestError, RequestResult<T>>,
   throwOnError: boolean,
   validateResponse: boolean,
-  validationSchema: ResponseSchema,
+  validationSchema: ZodSchema<T>,
   requestLabel: string,
-): DefiniteEither<RequestResult<unknown>, RequestResult<T>> {
+  isEmptyResponseExpected: boolean,
+): RequestResultDefinitiveEither<T, IsEmptyResponseExpected> {
   // Throw response error
   if (requestResult.error && throwOnError) {
-    if (isRequestResult(requestResult.error)) {
-      throw new ResponseStatusError(requestResult.error, requestLabel)
-    }
-    throw requestResult.error
+    throw isRequestResult(requestResult.error)
+      ? new ResponseStatusError(requestResult.error, requestLabel)
+      : requestResult.error
   }
-  if (requestResult.result && validateResponse) {
+
+  if (requestResult.result) {
+    requestResult.result = handleRequestResultSuccess(
+      requestResult.result,
+      validateResponse,
+      validationSchema,
+      requestLabel,
+      isEmptyResponseExpected,
+    )
+  }
+
+  return requestResult as RequestResultDefinitiveEither<T, IsEmptyResponseExpected>
+}
+
+function handleRequestResultSuccess<T>(
+  result: RequestResult<T>,
+  validateResponse: boolean,
+  validationSchema: ZodSchema<T>,
+  requestLabel: string,
+  isEmptyResponseExpected: boolean,
+) {
+  if (result.statusCode === 204 && isEmptyResponseExpected) {
+    // @ts-ignore
+    result.body = null
+    return result
+  }
+
+  if (validateResponse) {
     try {
-      requestResult.result.body = validationSchema.parse(requestResult.result.body)
-      // @ts-ignore
+      result.body = validationSchema.parse(result.body)
     } catch (err: unknown) {
       for (const issue of (err as ZodError).issues) {
         // @ts-ignore
@@ -376,7 +352,7 @@ function resolveResult<T>(
     }
   }
 
-  return requestResult as DefiniteEither<RequestResult<unknown>, RequestResult<T>>
+  return result
 }
 
 export const httpClient = {
@@ -385,8 +361,4 @@ export const httpClient = {
   put: sendPut,
   patch: sendPatch,
   del: sendDelete,
-}
-
-export const JSON_HEADERS = {
-  'Content-Type': 'application/json',
 }

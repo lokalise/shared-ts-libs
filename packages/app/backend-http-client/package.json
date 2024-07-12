@@ -1,6 +1,6 @@
 {
   "name": "@lokalise/backend-http-client",
-  "version": "1.4.0",
+  "version": "2.0.1",
   "author": {
     "name": "Lokalise",
     "url": "https://lokalise.com/"
@@ -27,7 +27,7 @@
     "test:update-snapshots": "vitest -u",
     "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
     "lint:fix": "biome check --write",
-    "version": "auto-changelog -p && git add CHANGELOG.md",
+    "package-version": "auto-changelog -p && git add CHANGELOG.md",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
