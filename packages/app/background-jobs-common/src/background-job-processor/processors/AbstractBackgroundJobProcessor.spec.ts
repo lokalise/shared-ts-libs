@@ -33,7 +33,7 @@ describe('AbstractBackgroundJobProcessor', () => {
     mocks = new DependencyMocks()
     deps = mocks.create()
 
-    await deps.redis.flushall('SYNC')
+    await deps.redis?.flushall('SYNC')
   })
 
   afterEach(async () => {
@@ -42,7 +42,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 
   describe('getActiveQueueIds', () => {
     beforeEach(async () => {
-      await deps.redis.del(QUEUE_IDS_KEY)
+      await deps.redis?.del(QUEUE_IDS_KEY)
     })
 
     it('returns not expired elements on the set', async () => {
@@ -63,7 +63,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 
   describe('start', () => {
     beforeEach(async () => {
-      await deps.redis.del(QUEUE_IDS_KEY)
+      await deps.redis?.del(QUEUE_IDS_KEY)
     })
 
     it('throws an error if queue id is not unique', async () => {
@@ -452,7 +452,8 @@ describe('AbstractBackgroundJobProcessor', () => {
     let processor: TestStalledBackgroundJobProcessor
 
     beforeEach(async () => {
-      // @ts-ignoreprocessor = new TestStalledBackgroundJobProcessor(deps)
+      // @ts-ignore this is intentional
+      processor = new TestStalledBackgroundJobProcessor(deps)
       await processor.start()
     })
 
