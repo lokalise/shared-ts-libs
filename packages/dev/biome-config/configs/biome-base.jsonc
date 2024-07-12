@@ -67,7 +67,7 @@
   },
   "overrides": [
     {
-      "include": ["./**/*.spec.ts", "./**/*.test.ts", "./**/*.test.tsx", "./test/**/*"],
+      "include": ["./**/*.spec.ts", "./**/*.test.ts", "./**/*.test.tsx", "**/test/**/*"],
       "javascript": {
         // Allow Vitest globals in test files
         "globals": [
