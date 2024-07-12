@@ -43,7 +43,7 @@ All _send_ methods accept a type parameter and the following arguments:
   - `clientOptions`;
   - `responseSchema`, used both for inferring the response type of the call, and also (if `validateResponse` is `true`) for validating the response structure;
   - `validateResponse`;
-  - `isEmptyResponseExpected`, used to specify if a 204 response should be treated as an error or not
+  - `isEmptyResponseExpected`, used to specify if a 204 response should be treated as an error or not. when `true` the response body type is adjusted to include potential `null`
 
   The following options are applied by default:
 
