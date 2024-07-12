@@ -131,13 +131,15 @@ export abstract class AbstractBackgroundJobProcessor<
     this.runningPromises = []
   }
 
-  public static async getActiveQueueIds(redis: Redis): Promise<string[]> {
-    await redis.zremrangebyscore(
+  public static async getActiveQueueIds(redisConfig: RedisConfig): Promise<string[]> {
+    const redisWithoutPrefix = new Redis(AbstractBackgroundJobProcessor.sanitizeRedisConfig(redisConfig))
+    await redisWithoutPrefix.zremrangebyscore(
       QUEUE_IDS_KEY,
       '-inf',
       Date.now() - daysToMilliseconds(RETENTION_QUEUE_IDS_IN_DAYS),
     )
-    const queueIds = await redis.zrange(QUEUE_IDS_KEY, 0, -1)
+    const queueIds = await redisWithoutPrefix.zrange(QUEUE_IDS_KEY, 0, -1)
+    redisWithoutPrefix.disconnect()
     return queueIds.sort()
   }
 
@@ -161,11 +163,13 @@ export abstract class AbstractBackgroundJobProcessor<
       throw new Error(`Queue id "${this.config.queueId}" is not unique.`)
 
     queueIdsSet.add(this.config.queueId)
-    await this.redis.zadd(QUEUE_IDS_KEY, Date.now(), this.config.queueId)
+    const redisWithoutPrefix = new Redis(AbstractBackgroundJobProcessor.sanitizeRedisConfig(this.config.redisConfig))
+    await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now(), this.config.queueId)
+    redisWithoutPrefix.disconnect()
 
     this.queue = this.factory.buildQueue(this.config.queueId, {
       ...this.config.queueOptions,
-      connection: this.sanitizeRedisConfig(),
+      connection: AbstractBackgroundJobProcessor.sanitizeRedisConfig(this.config.redisConfig),
       prefix: this.config.redisConfig?.keyPrefix ?? undefined,
     } as unknown as QueueOptionsType)
     await this.queue.waitUntilReady()
@@ -181,7 +185,7 @@ export abstract class AbstractBackgroundJobProcessor<
       }) as ProcessorType,
       {
         ...mergedWorkerOptions,
-        connection: this.sanitizeRedisConfig(),
+        connection: AbstractBackgroundJobProcessor.sanitizeRedisConfig(this.config.redisConfig),
         prefix: this.config.redisConfig?.keyPrefix ?? undefined,
       } as unknown as WorkerOptionsType,
     )
@@ -496,7 +500,7 @@ export abstract class AbstractBackgroundJobProcessor<
 
   protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
 
-  private sanitizeRedisConfig(): RedisConfig {
-    return { ...this.config.redisConfig, keyPrefix: undefined }
+  static sanitizeRedisConfig(config: RedisConfig): RedisConfig {
+    return { ...config, keyPrefix: undefined }
   }
 }
