@@ -27,7 +27,7 @@
     "test:update-snapshots": "vitest -u",
     "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
     "lint:fix": "biome check --write",
-    "version": "auto-changelog -p && git add CHANGELOG.md",
+    "package-version": "auto-changelog -p && git add CHANGELOG.md",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
