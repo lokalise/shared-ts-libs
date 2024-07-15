@@ -3,6 +3,7 @@ import type { Job } from 'bullmq'
 import { CommonBullmqFactory } from '../factories/CommonBullmqFactory'
 import type { BaseJobPayload } from '../types'
 
+import { getTestRedisConfig } from '../../../test/setup'
 import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
 
@@ -21,7 +22,6 @@ export class FakeBackgroundJobProcessor<
   ) {
     super(
       {
-        redis: dependencies.redis,
         transactionObservabilityManager: {
           start: () => {},
           startWithGroup: () => {},
@@ -36,6 +36,7 @@ export class FakeBackgroundJobProcessor<
         ownerName: 'testOwner',
         isTest,
         workerOptions: { concurrency: 1 },
+        redisConfig: getTestRedisConfig(),
       },
     )
   }

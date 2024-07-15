@@ -8,7 +8,8 @@ describe('DependencyMocks', () => {
   let redis: Redis
   beforeAll(() => {
     mocks = new DependencyMocks()
-    ;({ redis } = mocks.create())
+    // @ts-ignore redis is not undefined
+    redis = mocks.startRedis()
   })
   afterAll(async () => {
     await mocks.dispose()

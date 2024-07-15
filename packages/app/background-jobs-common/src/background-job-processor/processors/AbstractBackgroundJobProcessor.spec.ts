@@ -12,6 +12,8 @@ import { RETENTION_QUEUE_IDS_IN_DAYS } from '../constants'
 import type { BaseJobPayload } from '../types'
 import { daysToMilliseconds } from '../utils'
 
+import Redis from 'ioredis'
+import { getSanitizedTestRedisConfig, getTestRedisConfig } from '../../../test/setup'
 import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
@@ -26,10 +28,14 @@ const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
 describe('AbstractBackgroundJobProcessor', () => {
   let mocks: DependencyMocks
   let deps: BackgroundJobProcessorDependencies<JobData, any>
+  let redis: Redis
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mocks = new DependencyMocks()
     deps = mocks.create()
+    redis = mocks.startRedis()
+
+    await redis?.flushall('SYNC')
   })
 
   afterEach(async () => {
@@ -38,23 +44,31 @@ describe('AbstractBackgroundJobProcessor', () => {
 
   describe('getActiveQueueIds', () => {
     beforeEach(async () => {
-      await deps.redis.del(QUEUE_IDS_KEY)
+      await redis?.del(QUEUE_IDS_KEY)
     })
 
-    it('returns not expired elements on the set', async () => {
-      const retentionMs = daysToMilliseconds(RETENTION_QUEUE_IDS_IN_DAYS)
-      await deps.redis.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs, 'expired')
-      await deps.redis.zadd(QUEUE_IDS_KEY, Date.now(), 'queue2')
-      await deps.redis.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs + 100, 'queue1')
+    it.each([[true], [false]])(
+      'returns not expired elements on the set using redis client=%s',
+      async (useRedisClient) => {
+        const retentionMs = daysToMilliseconds(RETENTION_QUEUE_IDS_IN_DAYS)
 
-      const queues = await AbstractBackgroundJobProcessor.getActiveQueueIds(deps.redis)
-      expect(queues).toEqual(['queue1', 'queue2'])
-    })
+        const redisWithoutPrefix = new Redis(getSanitizedTestRedisConfig())
+        await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs, 'expired')
+        await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now(), 'queue2')
+        await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs + 100, 'queue1')
+
+        const queues = await AbstractBackgroundJobProcessor.getActiveQueueIds(
+          useRedisClient ? redisWithoutPrefix : getSanitizedTestRedisConfig(),
+        )
+        expect(queues).toEqual(['queue1', 'queue2'])
+        redisWithoutPrefix.disconnect()
+      },
+    )
   })
 
   describe('start', () => {
     beforeEach(async () => {
-      await deps.redis.del(QUEUE_IDS_KEY)
+      await redis?.del(QUEUE_IDS_KEY)
     })
 
     it('throws an error if queue id is not unique', async () => {
@@ -119,8 +133,10 @@ describe('AbstractBackgroundJobProcessor', () => {
       await processor.start()
 
       const today = new Date()
-      const [value, score] = await deps.redis.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
-      expect(value).toBe('queue1')
+      const redisWithoutPrefix = new Redis(getSanitizedTestRedisConfig())
+      const [, score] = await redisWithoutPrefix.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
+      const queueIds = await FakeBackgroundJobProcessor.getActiveQueueIds(getTestRedisConfig())
+      expect(queueIds).toStrictEqual(['queue1'])
       // Comparing timestamps in seconds
       const todaySeconds = Math.floor(today.getTime() / 1000)
       const scoreSeconds = Math.floor(new Date(Number.parseInt(score)).getTime() / 1000)
@@ -131,11 +147,22 @@ describe('AbstractBackgroundJobProcessor', () => {
       await processor.dispose()
       await processor.start()
 
-      const [value2, score2] = await deps.redis.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
-      expect(value2).toBe('queue1')
-      expect(new Date(Number.parseInt(score))).not.toEqual(new Date(Number.parseInt(score2)))
+      const [, scoreAfterRestart] = await redisWithoutPrefix.zrange(
+        QUEUE_IDS_KEY,
+        0,
+        -1,
+        'WITHSCORES',
+      )
+      const queueIdsAfterRestart = await FakeBackgroundJobProcessor.getActiveQueueIds(
+        getTestRedisConfig(),
+      )
+      expect(queueIdsAfterRestart).toStrictEqual(['queue1'])
+      expect(new Date(Number.parseInt(score))).not.toEqual(
+        new Date(Number.parseInt(scoreAfterRestart)),
+      )
 
       await processor.dispose()
+      redisWithoutPrefix.disconnect()
     })
   })
 
@@ -430,7 +457,7 @@ describe('AbstractBackgroundJobProcessor', () => {
     let processor: TestStalledBackgroundJobProcessor
 
     beforeEach(async () => {
-      // @ts-ignore
+      // @ts-ignore this is intentional
       processor = new TestStalledBackgroundJobProcessor(deps)
       await processor.start()
     })

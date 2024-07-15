@@ -4,10 +4,6 @@ import { type MockInstance, vi, vitest } from 'vitest'
 
 import { type BackgroundJobProcessorDependencies, CommonBullmqFactory } from '../src'
 
-const MAX_DB_INDEX = 16 // Redis supports up to 16 logical databases
-
-let db = 0
-
 const testLogger = globalLogger
 export let lastInfoSpy: MockInstance
 export let lastErrorSpy: MockInstance
@@ -15,7 +11,6 @@ export let lastErrorSpy: MockInstance
 export class DependencyMocks {
   private client?: Redis
 
-  // biome-ignore lint/suspicious/noExplicitAny: it's okay
   create(): BackgroundJobProcessorDependencies<any> {
     const originalChildFn = testLogger.child
 
@@ -28,29 +23,24 @@ export class DependencyMocks {
     })
 
     return {
-      redis: this.startRedis(),
       bullmqFactory: new CommonBullmqFactory(),
       transactionObservabilityManager: {
         start: vi.fn(),
         stop: vi.fn(),
-        // biome-ignore lint/suspicious/noExplicitAny: it's okay
       } as any,
       logger: testLogger,
       errorReporter: {
         report: vi.fn(),
-        // biome-ignore lint/suspicious/noExplicitAny: it's okay
       } as any,
     }
   }
 
   async dispose(): Promise<void> {
-    await this.client?.flushall('SYNC')
     await this.client?.quit()
   }
 
-  private startRedis(): Redis {
-    // Increment DB to avoid duplicates/overlap. Each run should have its own DB.
-    db++
+  startRedis(): Redis {
+    const db = process.env.REDIS_DB ? Number.parseInt(process.env.REDIS_DB) : undefined
     const host = process.env.REDIS_HOST
     const port = process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : undefined
     const username = process.env.REDIS_USERNAME
@@ -61,9 +51,11 @@ export class DependencyMocks {
     const commandTimeout = process.env.REDIS_COMMAND_TIMEOUT
       ? Number.parseInt(process.env.REDIS_COMMAND_TIMEOUT, 10)
       : undefined
+    const keyPrefix = process.env.REDIS_KEY_PREFIX
     this.client = new Redis({
       host,
-      db: db % MAX_DB_INDEX,
+      db,
+      keyPrefix,
       port,
       username,
       password,

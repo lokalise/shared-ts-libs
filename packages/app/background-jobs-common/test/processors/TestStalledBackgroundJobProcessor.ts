@@ -6,6 +6,7 @@ import {
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
 } from '../../src'
+import { getTestRedisConfig } from '../setup'
 
 type Data = {
   id?: string
@@ -29,6 +30,7 @@ export class TestStalledBackgroundJobProcessor extends AbstractBackgroundJobProc
         lockDuration: 1,
         stalledInterval: 1,
       },
+      redisConfig: getTestRedisConfig(),
     })
   }
 

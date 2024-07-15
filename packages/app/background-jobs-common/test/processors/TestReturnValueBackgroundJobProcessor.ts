@@ -5,6 +5,7 @@ import {
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
 } from '../../src'
+import { getTestRedisConfig } from '../setup'
 
 export class TestReturnValueBackgroundJobProcessor<
   JobData extends BaseJobPayload,
@@ -21,6 +22,7 @@ export class TestReturnValueBackgroundJobProcessor<
       ownerName: 'test',
       isTest: true,
       workerOptions: { concurrency: 1 },
+      redisConfig: getTestRedisConfig(),
     })
     this.returnValue = returnValue
   }

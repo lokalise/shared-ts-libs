@@ -2,12 +2,13 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type {
   CommonLogger,
   ErrorReporter,
+  RedisConfig,
   TransactionObservabilityManager,
 } from '@lokalise/node-core'
 import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
 import type { JobState } from 'bullmq/dist/esm/types/job-type'
-import type Redis from 'ioredis'
+import Redis from 'ioredis'
 import pino from 'pino'
 import { merge } from 'ts-deepmerge'
 
@@ -27,6 +28,7 @@ import {
   isStalledJobError,
   isUnrecoverableJobError,
   resolveJobId,
+  sanitizeRedisConfig,
 } from '../utils'
 
 import type {
@@ -85,11 +87,11 @@ export abstract class AbstractBackgroundJobProcessor<
 > {
   protected readonly logger: CommonLogger
 
-  private readonly redis: Redis
   private readonly transactionObservabilityManager: TransactionObservabilityManager
   private readonly errorReporter: ErrorReporter
   private readonly config: BackgroundJobProcessorConfig<QueueOptionsType, WorkerOptionsType>
   private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
+  private readonly runningPromises: Promise<unknown>[]
 
   private queue?: QueueType
   private worker?: WorkerType
@@ -121,20 +123,24 @@ export abstract class AbstractBackgroundJobProcessor<
   ) {
     this.config = config
     this.factory = dependencies.bullmqFactory
-    this.redis = dependencies.redis
     this.transactionObservabilityManager = dependencies.transactionObservabilityManager
     this.logger = dependencies.logger
     this.errorReporter = dependencies.errorReporter
     this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
+    this.runningPromises = []
   }
 
-  public static async getActiveQueueIds(redis: Redis): Promise<string[]> {
-    await redis.zremrangebyscore(
+  public static async getActiveQueueIds(redis: RedisConfig | Redis): Promise<string[]> {
+    const redisWithoutPrefix = isRedisClient(redis) ? redis : new Redis(sanitizeRedisConfig(redis))
+    await redisWithoutPrefix.zremrangebyscore(
       QUEUE_IDS_KEY,
       '-inf',
       Date.now() - daysToMilliseconds(RETENTION_QUEUE_IDS_IN_DAYS),
     )
-    const queueIds = await redis.zrange(QUEUE_IDS_KEY, 0, -1)
+    const queueIds = await redisWithoutPrefix.zrange(QUEUE_IDS_KEY, 0, -1)
+    if (!isRedisClient(redis)) {
+      redisWithoutPrefix.disconnect()
+    }
     return queueIds.sort()
   }
 
@@ -154,12 +160,15 @@ export abstract class AbstractBackgroundJobProcessor<
       throw new Error(`Queue id "${this.config.queueId}" is not unique.`)
 
     queueIdsSet.add(this.config.queueId)
-    await this.redis.zadd(QUEUE_IDS_KEY, Date.now(), this.config.queueId)
+    const redisWithoutPrefix = new Redis(sanitizeRedisConfig(this.config.redisConfig))
+    await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now(), this.config.queueId)
+    redisWithoutPrefix.disconnect()
 
     this.queue = this.factory.buildQueue(this.config.queueId, {
-      connection: this.redis,
       ...this.config.queueOptions,
-    } as QueueOptionsType)
+      connection: sanitizeRedisConfig(this.config.redisConfig),
+      prefix: this.config.redisConfig?.keyPrefix ?? undefined,
+    } as unknown as QueueOptionsType)
     await this.queue.waitUntilReady()
 
     const mergedWorkerOptions = merge(
@@ -173,8 +182,9 @@ export abstract class AbstractBackgroundJobProcessor<
       }) as ProcessorType,
       {
         ...mergedWorkerOptions,
-        connection: this.redis,
-      } as WorkerOptionsType,
+        connection: sanitizeRedisConfig(this.config.redisConfig),
+        prefix: this.config.redisConfig?.keyPrefix ?? undefined,
+      } as unknown as WorkerOptionsType,
     )
     if (this.config.isTest) {
       // unlike queue, the docs for worker state that this is only useful in tests
@@ -219,6 +229,12 @@ export abstract class AbstractBackgroundJobProcessor<
       await this.queue?.close()
     } catch {
       /* v8 ignore next 3 */
+      // do nothing
+    }
+
+    try {
+      await Promise.allSettled(this.runningPromises)
+    } catch {
       // do nothing
     }
 
@@ -460,9 +476,21 @@ export abstract class AbstractBackgroundJobProcessor<
     if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
 
     // @ts-ignore
-    await job.updateData({ metadata: job.data.metadata })
-    await job.clearLogs()
+    const updateDataPromise = job.updateData({ metadata: job.data.metadata })
+    const clearLogsPromise = job.clearLogs()
+
+    const updateDataPromiseIndex = this.runningPromises.push(updateDataPromise) - 1
+    const clearLogsPromiseIndex = this.runningPromises.push(clearLogsPromise) - 1
+
+    await Promise.all([updateDataPromise, clearLogsPromise]).then(() => {
+      this.runningPromises.splice(updateDataPromiseIndex, 1)
+      this.runningPromises.splice(clearLogsPromiseIndex, 1)
+    })
   }
 
   protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
+}
+
+function isRedisClient(redis: RedisConfig | Redis): redis is Redis {
+  return 'options' in redis
 }

@@ -1,3 +1,4 @@
+import type { RedisConfig } from '@lokalise/node-core'
 import type { SafeJob } from './types'
 
 export const daysToSeconds = (days: number): number => days * 24 * 60 * 60
@@ -11,3 +12,7 @@ export const isUnrecoverableJobError = (error: Error): boolean =>
 
 export const isStalledJobError = (error: Error): boolean =>
   error.message === 'job stalled more than allowable limit'
+
+export const sanitizeRedisConfig = (config: RedisConfig): RedisConfig => {
+  return { ...config, keyPrefix: undefined }
+}
