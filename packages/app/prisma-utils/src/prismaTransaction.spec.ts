@@ -64,8 +64,8 @@ describe('prismaTransaction', () => {
       })
 
       // Then
-      expect(result.result.value).toMatchObject(TEST_ITEM_1.value)
-      expect(result.result.id).toBeDefined()
+      expect(result.result?.value).toMatchObject(TEST_ITEM_1.value)
+      expect(result.result?.id).toBeDefined()
     })
 
     it('default reties (3) and delay (100)', async () => {
@@ -89,7 +89,7 @@ describe('prismaTransaction', () => {
       expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_SERIALIZATION_ERROR)
       expect(retrySpy).toHaveBeenCalledTimes(3)
 
-      const diffs = []
+      const diffs: number[] = []
       callsTimestamps.forEach((t, i) => {
         if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 100) * 100)
       })
@@ -124,7 +124,7 @@ describe('prismaTransaction', () => {
       expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_SERIALIZATION_ERROR)
       expect(retrySpy).toHaveBeenCalledTimes(5)
 
-      const diffs = []
+      const diffs: number[] = []
       callsTimestamps.forEach((t, i) => {
         if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 10) * 10)
       })
@@ -162,7 +162,7 @@ describe('prismaTransaction', () => {
       expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_SERIALIZATION_ERROR)
       expect(retrySpy).toHaveBeenCalledTimes(3)
 
-      const diffs = []
+      const diffs: number[] = []
       callsTimestamps.forEach((t, i) => {
         if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 10) * 10)
       })
@@ -279,10 +279,10 @@ describe('prismaTransaction', () => {
 
       // Then
       expect(result.result).toMatchObject([TEST_ITEM_1, TEST_ITEM_2])
-      expect(result.result[0].value).toBe(TEST_ITEM_1.value)
-      expect(result.result[0].id).toBeDefined()
-      expect(result.result[1].value).toBe(TEST_ITEM_2.value)
-      expect(result.result[1].id).toBeDefined()
+      expect(result.result![0].value).toBe(TEST_ITEM_1.value)
+      expect(result.result![0].id).toBeDefined()
+      expect(result.result![1].value).toBe(TEST_ITEM_2.value)
+      expect(result.result![1].id).toBeDefined()
     })
   })
 })
