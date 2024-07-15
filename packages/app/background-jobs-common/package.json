@@ -1,7 +1,11 @@
 {
   "name": "@lokalise/background-jobs-common",
-  "version": "4.0.0",
-  "files": ["dist", "LICENSE.md", "README.md"],
+  "version": "4.0.1",
+  "files": [
+    "dist",
+    "LICENSE.md",
+    "README.md"
+  ],
   "author": {
     "name": "Lokalise",
     "url": "https://lokalise.com/"
