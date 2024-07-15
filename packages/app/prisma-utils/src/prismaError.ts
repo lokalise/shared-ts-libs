@@ -9,16 +9,16 @@ import type { PrismaClientKnownRequestError } from '@prisma/client/runtime/libra
  * 	4. code starts by `P` ([doc](https://www.prisma.io/docs/reference/api-reference/error-reference#error-codes))
  */
 export const isPrismaClientKnownRequestError = (
-	error: unknown,
+  error: unknown,
 ): error is PrismaClientKnownRequestError =>
-	!!error &&
-	isError(error) &&
-	'code' in error &&
-	typeof error.code === 'string' &&
-	error.code.startsWith('P')
+  !!error &&
+  isError(error) &&
+  'code' in error &&
+  typeof error.code === 'string' &&
+  error.code.startsWith('P')
 
 export const isPrismaTransactionClosedError = (error: PrismaClientKnownRequestError): boolean =>
-	error.code === PRISMA_TRANSACTION_ERROR && error.message.includes('Transaction already closed')
+  error.code === PRISMA_TRANSACTION_ERROR && error.message.includes('Transaction already closed')
 
 /*
  * Prisma error code P2025 indicates that the operation failed because it depends on one or more

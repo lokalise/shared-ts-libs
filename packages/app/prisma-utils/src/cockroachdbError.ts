@@ -13,8 +13,8 @@ const COCKROACHDB_RETRY_TRANSACTION_CODE = '40001'
  * @param error
  */
 export const isCockroachDBRetryTransaction = (error: PrismaClientKnownRequestError): boolean => {
-	const meta = error.meta
-	if (!meta) return false
+  const meta = error.meta
+  if (!meta) return false
 
-	return meta.code === COCKROACHDB_RETRY_TRANSACTION_CODE
+  return meta.code === COCKROACHDB_RETRY_TRANSACTION_CODE
 }
