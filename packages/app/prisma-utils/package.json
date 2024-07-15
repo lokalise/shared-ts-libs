@@ -1,67 +1,68 @@
 {
-	"name": "@lokalise/prisma-utils",
-	"version": "1.3.0",
-	"type": "module",
-	"license": "Apache-2.0",
-	"files": [
-		"dist",
-		"README.md",
-		"LICENSE.md"
-	],
-	"main": "./dist/index.cjs",
-	"module": "./dist/index.js",
-	"types": "./dist/index.d.ts",
-	"homepage": "https://github.com/lokalise/shared-ts-libs",
-	"repository": {
-		"type": "git",
-		"url": "git://github.com/lokalise/shared-ts-libs.git"
-	},
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"require": "./dist/index.cjs",
-			"import": "./dist/index.js"
-		}
-	},
-	"scripts": {
-		"build": "rimraf dist && npm run db:update-client && vite build",
-		"dev": "vite watch",
-		"clean": "rimraf dist .eslintcache",
-		"lint": "eslint --cache --max-warnings=0 . && prettier --check --log-level warn src \"**/*.{json,md,ts,tsx}\" && tsc --noEmit",
-		"lint:fix": "prettier --write src \"**/*.{json,md,ts,tsx}\" --log-level=warn && eslint . --fix",
-		"docker:start:ci": "docker compose up -d cockroachdb",
-		"db:migration:dev": "dotenv -c test -- dotenv prisma migrate dev",
-		"db:update-client": "dotenv -c test prisma generate",
-		"db:wait": "while ! echo \"SELECT 1;\" | dotenv -c test -- prisma db execute --stdin; do sleep 1; done",
-		"test": "vitest run",
-		"test:migrate": "cross-env NODE_ENV=test dotenv -c test -- prisma migrate reset --force",
-		"pretest:ci": "npm run docker:start:ci && npm run db:wait && npm run test:migrate",
-		"test:ci": "npm run test -- --coverage",
-		"test:ci:teardown": "docker compose down",
-		"prepublishOnly": "npm run build",
-		"package-version": "echo $npm_package_version"
-	},
-	"dependencies": {
-		"@lokalise/node-core": "^10.0.0"
-	},
-	"peerDependencies": {
-		"prisma": "^5.14.0",
-		"@prisma/client": "^5.14.0"
-	},
-	"devDependencies": {
-		"@prisma/client": "^5.14.0",
-		"@lokalise/eslint-config": "*",
-		"@lokalise/prettier-config": "*",
-		"@lokalise/package-vite-config": "*",
-		"@vitest/coverage-v8": "^1.6.0",
-		"cross-env": "^7.0.3",
-		"dotenv-cli": "^7.4.1",
-		"prisma": "^5.14.0",
-		"prettier": "^3.3.2",
-		"rimraf": "^5.0.7",
-		"typescript": "5.5.3",
-		"vite": "^5.3.3",
-		"vitest": "^1.6.0"
-	},
-	"prettier": "@lokalise/prettier-config"
+  "name": "@lokalise/prisma-utils",
+  "version": "1.3.0",
+  "type": "module",
+  "license": "Apache-2.0",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "homepage": "https://github.com/lokalise/shared-ts-libs",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/lokalise/shared-ts-libs.git"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "rimraf dist && npm run db:update-client && vite build",
+    "dev": "vite watch",
+    "clean": "rimraf dist .eslintcache",
+    "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
+    "lint:fix": "biome check --write",
+    "docker:start:ci": "docker compose up -d cockroachdb",
+    "db:migration:dev": "dotenv -c test -- dotenv prisma migrate dev",
+    "db:update-client": "dotenv -c test prisma generate",
+    "db:wait": "while ! echo \"SELECT 1;\" | dotenv -c test -- prisma db execute --stdin; do sleep 1; done",
+    "test": "vitest run",
+    "test:migrate": "cross-env NODE_ENV=test dotenv -c test -- prisma migrate reset --force",
+    "pretest:ci": "npm run docker:start:ci && npm run db:wait && npm run test:migrate",
+    "test:ci": "npm run test -- --coverage",
+    "test:ci:teardown": "docker compose down",
+    "prepublishOnly": "npm run build",
+    "package-version": "echo $npm_package_version"
+  },
+  "dependencies": {
+    "@lokalise/node-core": "^10.0.0"
+  },
+  "peerDependencies": {
+    "@prisma/client": "^5.14.0",
+    "prisma": "^5.14.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.3",
+    "@lokalise/biome-config": "^1.2.2",
+    "@lokalise/package-vite-config": "*",
+    "@lokalise/prettier-config": "*",
+    "@prisma/client": "^5.14.0",
+    "@vitest/coverage-v8": "^1.6.0",npm
+    "cross-env": "^7.0.3",
+    "dotenv-cli": "^7.4.1",
+    "prettier": "^3.3.2",
+    "prisma": "^5.14.0",
+    "rimraf": "^5.0.7",
+    "typescript": "5.5.3",
+    "vite": "^5.3.3",
+    "vitest": "^1.6.0"
+  },
+  "prettier": "@lokalise/prettier-config"
 }
