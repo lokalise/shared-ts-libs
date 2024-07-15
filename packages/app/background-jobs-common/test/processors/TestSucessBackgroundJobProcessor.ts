@@ -6,6 +6,7 @@ import {
   FakeBackgroundJobProcessor,
   type RequestContext,
 } from '../../src'
+import { getTestRedisConfig } from '../setup'
 
 type TestSuccessBackgroundJobProcessorData = {
   id?: string
@@ -23,7 +24,7 @@ export class TestSuccessBackgroundJobProcessor<
     queueName: string,
     isTest = true,
   ) {
-    super(dependencies, queueName, isTest)
+    super(dependencies, queueName, getTestRedisConfig(), isTest)
   }
 
   schedule(jobData: T): Promise<string> {

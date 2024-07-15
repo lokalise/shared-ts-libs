@@ -5,6 +5,7 @@ import { TestFailingBackgroundJobProcessor } from '../../../test/processors/Test
 import { TestReturnValueBackgroundJobProcessor } from '../../../test/processors/TestReturnValueBackgroundJobProcessor'
 import type { BaseJobPayload } from '../types'
 
+import { getTestRedisConfig } from '../../../test/setup'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
 
@@ -64,7 +65,11 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
     })
 
     it('can await job to be scheduled', async () => {
-      const jobProcessor = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1')
+      const jobProcessor = new FakeBackgroundJobProcessor<JobData>(
+        deps,
+        'queue1',
+        getTestRedisConfig(),
+      )
       const jobId = await jobProcessor.schedule({
         id: '123',
         value: 'val1',
