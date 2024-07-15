@@ -12,6 +12,8 @@ import {
 } from './prismaError'
 import { prismaTransaction } from './prismaTransaction'
 
+const EnvDatabaseUrlKey = 'DATABASE_URL'
+
 type Item1 = {
   value: string
 }
@@ -32,7 +34,7 @@ describe('prismaTransaction', () => {
 
   beforeAll(() => {
     prisma = new PrismaClient({
-      datasourceUrl: process.env['DATABASE_URL'],
+      datasourceUrl: process.env[EnvDatabaseUrlKey],
     })
   })
 

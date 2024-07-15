@@ -66,7 +66,7 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
     if (retryAllowed === 'increase-timeout') {
       optionsWithDefaults = deepClone(optionsWithDefaults)
       optionsWithDefaults.timeout = Math.min(
-        (optionsWithDefaults.timeout *= 2),
+        optionsWithDefaults.timeout * 2,
         optionsWithDefaults.maxTimeout,
       )
     }
