@@ -7,6 +7,7 @@ import {
   type BaseJobPayload,
   FakeBackgroundJobProcessor,
 } from '../../src'
+import { getTestRedisConfig } from '../setup'
 
 type TestFailingBackgroundJobProcessorData = {
   id?: string
@@ -26,7 +27,7 @@ export class TestFailingBackgroundJobProcessor<
     queueName: string,
     isTest = true,
   ) {
-    super(dependencies, queueName, isTest)
+    super(dependencies, queueName, getTestRedisConfig(), isTest)
   }
 
   protected override async process(job: Job<T>): Promise<void> {

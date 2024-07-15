@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { DependencyMocks } from '../../../test/dependencyMocks'
 import type { BaseJobPayload } from '../types'
 
+import { getTestRedisConfig } from '../../../test/setup'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
 
@@ -21,7 +22,7 @@ describe('FakeBackgroundJobProcessor', () => {
   beforeEach(async () => {
     mocks = new DependencyMocks()
     deps = mocks.create()
-    processor = new FakeBackgroundJobProcessor<JobData>(deps, QueueName)
+    processor = new FakeBackgroundJobProcessor<JobData>(deps, QueueName, getTestRedisConfig())
     await processor.start()
   })
 

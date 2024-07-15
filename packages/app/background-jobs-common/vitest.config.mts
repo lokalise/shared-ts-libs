@@ -2,6 +2,7 @@ import { resolve } from 'path'
 
 import defineConfig from '@lokalise/package-vite-config/package'
 
+// @ts-ignore
 import packageJson from './package.json'
 
 /* eslint-disable import/no-default-export */

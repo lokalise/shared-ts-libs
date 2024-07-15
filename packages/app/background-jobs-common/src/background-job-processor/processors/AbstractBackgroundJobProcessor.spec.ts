@@ -72,21 +72,25 @@ describe('AbstractBackgroundJobProcessor', () => {
     })
 
     it('throws an error if queue id is not unique', async () => {
-      const job1 = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1')
-      const job2 = new FakeBackgroundJobProcessor<JobData>(deps, 'queue2')
+      const job1 = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1', getTestRedisConfig())
+      const job2 = new FakeBackgroundJobProcessor<JobData>(deps, 'queue2', getTestRedisConfig())
 
       await job1.start()
       await job2.start()
-      await expect(new FakeBackgroundJobProcessor<JobData>(deps, 'queue1').start()).rejects.toThrow(
-        /Queue id "queue1" is not unique/,
-      )
+      await expect(
+        new FakeBackgroundJobProcessor<JobData>(deps, 'queue1', getTestRedisConfig()).start(),
+      ).rejects.toThrow(/Queue id "queue1" is not unique/)
 
       await job1.dispose()
       await job2.dispose()
     })
 
     it('Multiple start calls not produce errors', async () => {
-      const processor = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1')
+      const processor = new FakeBackgroundJobProcessor<JobData>(
+        deps,
+        'queue1',
+        getTestRedisConfig(),
+      )
 
       await expect(processor.start()).resolves.not.toThrowError()
       await expect(processor.start()).resolves.not.toThrowError()
@@ -95,7 +99,11 @@ describe('AbstractBackgroundJobProcessor', () => {
     })
 
     it('lazy loading on schedule', async () => {
-      const processor = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1')
+      const processor = new FakeBackgroundJobProcessor<JobData>(
+        deps,
+        'queue1',
+        getTestRedisConfig(),
+      )
 
       const jobId = await processor.schedule({
         id: 'test_id',
@@ -113,7 +121,11 @@ describe('AbstractBackgroundJobProcessor', () => {
     })
 
     it('lazy loading on scheduleBulk', async () => {
-      const processor = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1')
+      const processor = new FakeBackgroundJobProcessor<JobData>(
+        deps,
+        'queue1',
+        getTestRedisConfig(),
+      )
 
       const jobIds = await processor.scheduleBulk([
         { id: 'test_id', value: 'test', metadata: { correlationId: 'correlation_id' } },
@@ -129,7 +141,11 @@ describe('AbstractBackgroundJobProcessor', () => {
     })
 
     it('queue id is stored/updated on redis with current timestamp', async () => {
-      const processor = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1')
+      const processor = new FakeBackgroundJobProcessor<JobData>(
+        deps,
+        'queue1',
+        getTestRedisConfig(),
+      )
       await processor.start()
 
       const today = new Date()
@@ -171,7 +187,7 @@ describe('AbstractBackgroundJobProcessor', () => {
     let processor: FakeBackgroundJobProcessor<JobData>
 
     beforeEach(async () => {
-      processor = new FakeBackgroundJobProcessor<JobData>(deps, QueueName)
+      processor = new FakeBackgroundJobProcessor<JobData>(deps, QueueName, getTestRedisConfig())
       await processor.start()
     })
 
@@ -501,7 +517,7 @@ describe('AbstractBackgroundJobProcessor', () => {
     let processor: FakeBackgroundJobProcessor<JobData>
 
     beforeEach(async () => {
-      processor = new FakeBackgroundJobProcessor<JobData>(deps, QueueName)
+      processor = new FakeBackgroundJobProcessor<JobData>(deps, QueueName, getTestRedisConfig())
       await processor.start()
     })
 
