@@ -22,7 +22,7 @@
   "scripts": {
     "build": "rimraf dist && npm run db:update-client && vite build",
     "dev": "vite watch",
-    "clean": "rimraf dist .eslintcache",
+    "clean": "rimraf dist",
     "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
     "lint:fix": "biome check --write",
     "docker:start:ci": "docker compose up -d cockroachdb",
@@ -48,17 +48,14 @@
     "@biomejs/biome": "^1.8.3",
     "@lokalise/biome-config": "^1.2.2",
     "@lokalise/package-vite-config": "*",
-    "@lokalise/prettier-config": "*",
     "@prisma/client": "^5.14.0",
     "@vitest/coverage-v8": "^1.6.0",
     "cross-env": "^7.0.3",
     "dotenv-cli": "^7.4.1",
-    "prettier": "^3.3.2",
     "prisma": "^5.14.0",
     "rimraf": "^5.0.7",
     "typescript": "5.5.3",
     "vite": "^5.3.3",
     "vitest": "^1.6.0"
   },
-  "prettier": "@lokalise/prettier-config"
 }
