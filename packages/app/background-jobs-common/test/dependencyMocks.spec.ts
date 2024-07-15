@@ -9,7 +9,7 @@ describe('DependencyMocks', () => {
   beforeAll(() => {
     mocks = new DependencyMocks()
     // @ts-ignore redis is not undefined
-    ;({ redis } = mocks.create())
+    redis = mocks.startRedis()
   })
   afterAll(async () => {
     await mocks.dispose()

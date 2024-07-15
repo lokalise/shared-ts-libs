@@ -23,7 +23,6 @@ export class DependencyMocks {
     })
 
     return {
-      redis: this.startRedis(),
       bullmqFactory: new CommonBullmqFactory(),
       transactionObservabilityManager: {
         start: vi.fn(),
@@ -40,7 +39,7 @@ export class DependencyMocks {
     await this.client?.quit()
   }
 
-  private startRedis(): Redis {
+  startRedis(): Redis {
     const db = process.env.REDIS_DB ? Number.parseInt(process.env.REDIS_DB) : undefined
     const host = process.env.REDIS_HOST
     const port = process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : undefined

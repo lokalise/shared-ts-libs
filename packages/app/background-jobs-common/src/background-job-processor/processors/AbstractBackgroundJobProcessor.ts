@@ -87,7 +87,6 @@ export abstract class AbstractBackgroundJobProcessor<
 > {
   protected readonly logger: CommonLogger
 
-  private redis?: Redis
   private readonly transactionObservabilityManager: TransactionObservabilityManager
   private readonly errorReporter: ErrorReporter
   private readonly config: BackgroundJobProcessorConfig<QueueOptionsType, WorkerOptionsType>
@@ -124,7 +123,6 @@ export abstract class AbstractBackgroundJobProcessor<
   ) {
     this.config = config
     this.factory = dependencies.bullmqFactory
-    this.redis = new Redis(config.redisConfig)
     this.transactionObservabilityManager = dependencies.transactionObservabilityManager
     this.logger = dependencies.logger
     this.errorReporter = dependencies.errorReporter
@@ -132,15 +130,17 @@ export abstract class AbstractBackgroundJobProcessor<
     this.runningPromises = []
   }
 
-  public static async getActiveQueueIds(redisConfig: RedisConfig): Promise<string[]> {
-    const redisWithoutPrefix = new Redis(sanitizeRedisConfig(redisConfig))
+  public static async getActiveQueueIds(redis: RedisConfig | Redis): Promise<string[]> {
+    const redisWithoutPrefix = isRedisClient(redis) ? redis : new Redis(sanitizeRedisConfig(redis))
     await redisWithoutPrefix.zremrangebyscore(
       QUEUE_IDS_KEY,
       '-inf',
       Date.now() - daysToMilliseconds(RETENTION_QUEUE_IDS_IN_DAYS),
     )
     const queueIds = await redisWithoutPrefix.zrange(QUEUE_IDS_KEY, 0, -1)
-    redisWithoutPrefix.disconnect()
+    if (!isRedisClient(redis)) {
+      redisWithoutPrefix.disconnect()
+    }
     return queueIds.sort()
   }
 
@@ -155,10 +155,6 @@ export abstract class AbstractBackgroundJobProcessor<
 
   public async start(): Promise<void> {
     if (this.queue) return // Skip if processor is already started
-
-    if (!this.redis) {
-      this.redis = new Redis(this.config.redisConfig)
-    }
 
     if (queueIdsSet.has(this.config.queueId))
       throw new Error(`Queue id "${this.config.queueId}" is not unique.`)
@@ -238,13 +234,6 @@ export abstract class AbstractBackgroundJobProcessor<
 
     try {
       await Promise.allSettled(this.runningPromises)
-    } catch {
-      // do nothing
-    }
-
-    try {
-      this.redis?.disconnect()
-      this.redis = undefined
     } catch {
       // do nothing
     }
@@ -500,4 +489,8 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
+}
+
+function isRedisClient(redis: RedisConfig | Redis): redis is Redis {
+  return 'options' in redis
 }

@@ -28,12 +28,14 @@ const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
 describe('AbstractBackgroundJobProcessor', () => {
   let mocks: DependencyMocks
   let deps: BackgroundJobProcessorDependencies<JobData, any>
+  let redis: Redis
 
   beforeEach(async () => {
     mocks = new DependencyMocks()
     deps = mocks.create()
+    redis = mocks.startRedis()
 
-    await deps.redis?.flushall('SYNC')
+    await redis?.flushall('SYNC')
   })
 
   afterEach(async () => {
@@ -42,28 +44,31 @@ describe('AbstractBackgroundJobProcessor', () => {
 
   describe('getActiveQueueIds', () => {
     beforeEach(async () => {
-      await deps.redis?.del(QUEUE_IDS_KEY)
+      await redis?.del(QUEUE_IDS_KEY)
     })
 
-    it('returns not expired elements on the set', async () => {
-      const retentionMs = daysToMilliseconds(RETENTION_QUEUE_IDS_IN_DAYS)
+    it.each([[true], [false]])(
+      'returns not expired elements on the set using redis client=%s',
+      async (useRedisClient) => {
+        const retentionMs = daysToMilliseconds(RETENTION_QUEUE_IDS_IN_DAYS)
 
-      const redisWithoutPrefix = new Redis(getSanitizedTestRedisConfig())
-      await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs, 'expired')
-      await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now(), 'queue2')
-      await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs + 100, 'queue1')
-      redisWithoutPrefix.disconnect()
+        const redisWithoutPrefix = new Redis(getSanitizedTestRedisConfig())
+        await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs, 'expired')
+        await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now(), 'queue2')
+        await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs + 100, 'queue1')
 
-      const queues = await AbstractBackgroundJobProcessor.getActiveQueueIds(
-        getSanitizedTestRedisConfig(),
-      )
-      expect(queues).toEqual(['queue1', 'queue2'])
-    })
+        const queues = await AbstractBackgroundJobProcessor.getActiveQueueIds(
+          useRedisClient ? redisWithoutPrefix : getSanitizedTestRedisConfig(),
+        )
+        expect(queues).toEqual(['queue1', 'queue2'])
+        redisWithoutPrefix.disconnect()
+      },
+    )
   })
 
   describe('start', () => {
     beforeEach(async () => {
-      await deps.redis?.del(QUEUE_IDS_KEY)
+      await redis?.del(QUEUE_IDS_KEY)
     })
 
     it('throws an error if queue id is not unique', async () => {
