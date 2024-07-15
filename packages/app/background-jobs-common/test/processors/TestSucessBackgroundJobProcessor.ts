@@ -45,6 +45,10 @@ export class TestSuccessBackgroundJobProcessor<
     return this._jobDataResult
   }
 
+  override purgeJobData(job: Job<T>): Promise<void> {
+    return super.purgeJobData(job)
+  }
+
   set onSuccessHook(hook: (job: Job<T>) => void) {
     this.onSuccessCall = hook
   }
