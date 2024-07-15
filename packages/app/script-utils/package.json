@@ -41,7 +41,7 @@
 		"@lokalise/package-vite-config": "latest",
 		"@lokalise/prettier-config": "latest",
 		"@vitest/coverage-v8": "^1.6.0",
-		"prettier": "^3.3.1",
+		"prettier": "^3.3.3",
 		"rimraf": "^5.0.7",
 		"typescript": "5.5.3",
 		"vite": "^5.3.3",
