@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
-    "@lokalise/biome-config": "^1.2.2",
+    "@lokalise/biome-config": "*",
     "@lokalise/package-vite-config": "*",
     "@prisma/client": "^5.14.0",
     "@vitest/coverage-v8": "^1.6.0",
