@@ -50,3 +50,16 @@ Create a new `.eslintrc.json` file within your repository with the following con
 }
 
 ```
+
+### Add npm run command
+
+Add following command to the `package.json`.
+
+```jsonc
+{
+  "scripts": {
+    "lint": "eslint --cache --max-warnings=0 ."
+  }
+}
+```
+
