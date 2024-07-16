@@ -19,7 +19,7 @@ Packages:
 ```json
 {
     "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-    "extends": ["./node_modules/@lokalise/biome-config/configs/biome-base.jsonc", "./node_modules/@lokalise/biome-config/configs/biome-packages.jsonc"]
+    "extends": ["./node_modules/@lokalise/biome-config/configs/biome-base.jsonc", "./node_modules/@lokalise/biome-config/configs/biome-package.jsonc"]
 }
 ```
 
