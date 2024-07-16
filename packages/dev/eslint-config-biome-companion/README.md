@@ -2,11 +2,11 @@
 
 This package is an addition to our [biome-config](https://github.com/lokalise/shared-ts-libs/tree/main/packages/dev/biome-config) setup.
 
-Currently, the config is a copy-paste. In the future, it may become a standalone package.
+Currently, the configuration is a copy-paste. In the future, it may become a standalone package.
 
 ### Install dependencies
 
-We're still using ESLint in v8. The packages that we rely on do not provide v9 compatible configuration yet.
+We are still using ESLint version 8. The packages that we rely on do not yet provide configurations compatible with version 9.
 
 ```sh
 npm install --save-dev eslint@8 @typescript-eslint/parser eslint-plugin-testing-library eslint-plugin-i18next @tanstack/eslint-plugin-query
@@ -14,7 +14,7 @@ npm install --save-dev eslint@8 @typescript-eslint/parser eslint-plugin-testing-
 
 ### Create eslint config
 
-Create new `.eslintrc.json` within your repository with the following content.
+Create a new `.eslintrc.json` file within your repository with the following content:
 
 ```jsonc
 {
