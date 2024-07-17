@@ -3,9 +3,10 @@ import { uniq } from './uniq'
 
 describe('uniq', () => {
 	it('returns a new array of mixed primitive value without duplicates', () => {
-		const input = [1, 'a', 1, 'b', true, true, false]
+		const objectA = {};
+		const values = [1, 'a', Number.NaN, true, false, objectA, null, undefined];
+		const duplicateValues =  [...values, ...values];
 
-		expect(uniq(input)).toEqual([1, 'a', 'b', true, false])
-		expect(input).toEqual([1, 'a', 1, 'b', true, true, false])
+		expect(uniq(duplicateValues)).toEqual([1, 'a', Number.NaN, true, false, objectA, null, undefined])
 	})
 })
