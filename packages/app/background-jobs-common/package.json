@@ -44,11 +44,11 @@
     "@types/node": "^20.14.8",
     "@lokalise/fastify-extras": "^21.2.2",
     "@lokalise/package-vite-config": "latest",
-    "@vitest/coverage-v8": "^1.6.0",
+    "@vitest/coverage-v8": "^2.0.3",
     "bullmq": "^5.7.15",
     "ioredis": "^5.4.1",
     "rimraf": "^6.0.1",
     "typescript": "5.5.3",
-    "vitest": "^1.6.0"
+    "vitest": "^2.0.3"
   }
 }

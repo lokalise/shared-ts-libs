@@ -49,13 +49,13 @@
     "@lokalise/biome-config": "*",
     "@lokalise/package-vite-config": "*",
     "@prisma/client": "^5.14.0",
-    "@vitest/coverage-v8": "^1.6.0",
+    "@vitest/coverage-v8": "^2.0.3",
     "cross-env": "^7.0.3",
     "dotenv-cli": "^7.4.1",
     "prisma": "^5.14.0",
     "rimraf": "^5.0.7",
     "typescript": "5.5.3",
     "vite": "^5.3.3",
-    "vitest": "^1.6.0"
+    "vitest": "^2.0.3"
   }
 }
