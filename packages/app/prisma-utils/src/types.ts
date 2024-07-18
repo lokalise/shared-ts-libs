@@ -1,6 +1,7 @@
 import type { Either } from '@lokalise/node-core'
 import type { Prisma } from '@prisma/client'
 import type * as runtime from '@prisma/client/runtime/library'
+import type { CockroachDbIsolationLevel } from './isolation_level/isolationLevel'
 
 type ObjectValues<T> = T[keyof T]
 
@@ -20,7 +21,11 @@ export type PrismaTransactionOptions = {
   // Prisma $transaction options
   maxWait?: number
   timeout?: number
-  isolationLevel?: string
+  /*
+    For not library only supports CockroachDB, when we add support for other databases we need to update this to
+    use union types and depending on DbDriver allow different isolation levels
+   */
+  isolationLevel?: CockroachDbIsolationLevel
 }
 
 // Prisma $transaction with array does not support maxWait and timeout options
