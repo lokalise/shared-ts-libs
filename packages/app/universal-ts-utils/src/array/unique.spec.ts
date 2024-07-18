@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { uniq } from './uniq'
+import { unique } from './unique'
 
-describe('uniq', () => {
+describe('unique', () => {
   it('returns a new array of mixed primitive value without duplicates', () => {
     const objectA = {}
     const objectB = {}
@@ -26,7 +26,7 @@ describe('uniq', () => {
       objectB,
     ]
 
-    expect(uniq(duplicateValues)).toEqual([
+    expect(unique(duplicateValues)).toEqual([
       1,
       'a',
       Number.NaN,
