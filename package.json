@@ -2,10 +2,7 @@
   "name": "shared-ts-libs",
   "version": "1.0.0",
   "description": "Opinionated HTTP client for the Node.js backend",
-  "workspaces": [
-    "packages/dev/*",
-    "packages/app/*"
-  ],
+  "workspaces": ["packages/dev/*", "packages/app/*"],
   "scripts": {
     "clean": "turbo run clean",
     "build": "turbo run build",
@@ -15,6 +12,6 @@
   },
   "devDependencies": {
     "pino": "^9.0.0",
-    "turbo": "^1.13.3"
+    "turbo": "^1.13.4"
   }
 }
