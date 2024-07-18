@@ -9,7 +9,7 @@ import {
   PRISMA_NOT_FOUND_ERROR,
   PRISMA_SERIALIZATION_ERROR,
   PRISMA_TRANSACTION_ERROR,
-} from './prismaError'
+} from './errors/prismaError'
 import { prismaTransaction } from './prismaTransaction'
 
 const EnvDatabaseUrlKey = 'DATABASE_URL'
