@@ -22,7 +22,7 @@ export type PrismaTransactionOptions = {
   maxWait?: number
   timeout?: number
   /*
-    For not library only supports CockroachDB, when we add support for other databases we need to update this to
+    For now library only supports CockroachDB, when we add support for other databases we need to update this to
     use union types and depending on DbDriver allow different isolation levels
    */
   isolationLevel?: CockroachDbIsolationLevel
