@@ -3,11 +3,7 @@
   "version": "3.0.0",
   "type": "module",
   "license": "Apache-2.0",
-  "files": [
-    "README.md",
-    "LICENSE.md",
-    "dist"
-  ],
+  "files": ["README.md", "LICENSE.md", "dist"],
   "homepage": "https://github.com/lokalise/shared-ts-libs",
   "repository": {
     "type": "git",
@@ -21,9 +17,7 @@
   },
   "typesVersions": {
     "*": {
-      "package": [
-        "dist/package.config.d.ts"
-      ]
+      "package": ["dist/package.config.d.ts"]
     }
   },
   "scripts": {
