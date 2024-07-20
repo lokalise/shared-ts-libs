@@ -9,7 +9,7 @@ import {
   PRISMA_NOT_FOUND_ERROR,
   PRISMA_SERIALIZATION_ERROR,
   PRISMA_TRANSACTION_ERROR,
-} from './prismaError'
+} from './errors/prismaError'
 import { prismaTransaction } from './prismaTransaction'
 
 const EnvDatabaseUrlKey = 'DATABASE_URL'
@@ -283,6 +283,64 @@ describe('prismaTransaction', () => {
       expect(result.result![0].id).toBeDefined()
       expect(result.result![1].value).toBe(TEST_ITEM_2.value)
       expect(result.result![1].id).toBeDefined()
+    })
+  })
+
+  describe('isolation level', () => {
+    const transactionIsolationKey = 'transaction_isolation'
+    const extractIsolationLevel = (result: any) => {
+      if (!result) return null
+      if (Array.isArray(result)) return extractIsolationLevel(result[0])
+
+      return result[transactionIsolationKey] ?? null
+    }
+
+    it('default isolation level is serializable', async () => {
+      const res1 = await prismaTransaction(
+        prisma,
+        async (client) => client.$queryRaw`SHOW transaction_isolation`,
+      )
+      const res2 = await prismaTransaction(prisma, [prisma.$queryRaw`SHOW transaction_isolation`])
+
+      const result = [res1.result, res2.result].map(extractIsolationLevel)
+      expect(result).toEqual(['serializable', 'serializable'])
+    })
+
+    it('serializable isolation level', async () => {
+      const res1 = await prismaTransaction(
+        prisma,
+        async (client) => client.$queryRaw`SHOW transaction_isolation`,
+        { isolationLevel: 'Serializable' },
+      )
+      const res2 = await prismaTransaction(prisma, [prisma.$queryRaw`SHOW transaction_isolation`], {
+        isolationLevel: 'Serializable',
+      })
+
+      const result = [res1.result, res2.result].map(extractIsolationLevel)
+      expect(result).toEqual(['serializable', 'serializable'])
+    })
+
+    it('read committed isolation level', async () => {
+      /**
+       * Read committed isolation level is not supported by CockroachDB without enterprise license
+       * So checking that proper isolation level is passed to the transaction method
+       */
+      const transactionSpy = vitest.spyOn(prisma, '$transaction')
+
+      await prismaTransaction(
+        prisma,
+        async (client) => client.$queryRaw`SHOW transaction_isolation`,
+        { isolationLevel: 'ReadCommitted' },
+      )
+      await prismaTransaction(prisma, [prisma.$queryRaw`SHOW transaction_isolation`], {
+        isolationLevel: 'ReadCommitted',
+      })
+
+      expect(transactionSpy).toHaveBeenCalledTimes(2)
+      expect(transactionSpy.mock.calls.map(([, options]) => options)).toMatchObject([
+        { isolationLevel: 'ReadCommitted' },
+        { isolationLevel: 'ReadCommitted' },
+      ])
     })
   })
 })

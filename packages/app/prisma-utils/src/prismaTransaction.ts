@@ -5,12 +5,12 @@ import { deepClone } from '@lokalise/node-core'
 import type { Prisma, PrismaClient } from '@prisma/client'
 import type * as runtime from '@prisma/client/runtime/library'
 
-import { isCockroachDBRetryTransaction } from './cockroachdbError'
+import { isCockroachDBRetryTransaction } from './errors/cockroachdbError'
 import {
   PRISMA_SERIALIZATION_ERROR,
   isPrismaClientKnownRequestError,
   isPrismaTransactionClosedError,
-} from './prismaError'
+} from './errors/prismaError'
 import type {
   DbDriver,
   PrismaTransactionBasicOptions,
