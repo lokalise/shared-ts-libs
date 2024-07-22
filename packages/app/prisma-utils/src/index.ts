@@ -1,5 +1,5 @@
 export type * from './types'
 
-export * from './prismaError'
+export * from './errors'
 
 export { prismaTransaction } from './prismaTransaction'
