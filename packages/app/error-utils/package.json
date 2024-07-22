@@ -29,7 +29,7 @@
 	},
 	"devDependencies": {
 		"@lokalise/eslint-config": "latest",
-		"@lokalise/node-core": "^10.0.0",
+		"@lokalise/node-core": "^11.2.0",
 		"@lokalise/prettier-config": "latest",
 		"@lokalise/package-vite-config": "latest",
 		"@vitest/coverage-v8": "^1.6.0",

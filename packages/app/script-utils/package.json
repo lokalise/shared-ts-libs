@@ -34,7 +34,7 @@
 		"package-version": "echo $npm_package_version"
 	},
 	"dependencies": {
-		"@lokalise/node-core": "^10.0.0"
+		"@lokalise/node-core": "^11.2.0"
 	},
 	"devDependencies": {
 		"@lokalise/eslint-config": "latest",
