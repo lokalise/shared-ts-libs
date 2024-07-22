@@ -98,7 +98,7 @@ describe('prismaTransaction', () => {
       expect(diffs[1]).toBe(200)
     })
 
-    it.skip('modifying max number of retries and base delay', async () => {
+    it('modifying max number of retries and base delay', async () => {
       // Given
       const retriesAllowed = 5
       const baseRetryDelayMs = 50
