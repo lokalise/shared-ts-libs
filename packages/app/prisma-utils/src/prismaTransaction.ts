@@ -74,7 +74,7 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
     retries++
   } while (retries <= optionsWithDefaults.retriesAllowed)
 
-  return result ?? { error: new Error('No transaction retry executed') }
+  return result ?? { error: new Error('No transaction executed') }
 }) as {
   <T, P extends PrismaClient>(
     prisma: P,
