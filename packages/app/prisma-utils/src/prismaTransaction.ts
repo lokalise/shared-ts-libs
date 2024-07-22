@@ -20,7 +20,7 @@ import type {
 } from './types'
 
 const DEFAULT_OPTIONS = {
-  retriesAllowed: 3,
+  retriesAllowed: 2, // first try + 2 retries = 3 tries
   DbDriver: 'CockroachDb',
   baseRetryDelayMs: 100,
   maxRetryDelayMs: 30000, // 30s
@@ -46,7 +46,7 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
   let result: PrismaTransactionReturnType<T> | undefined = undefined
 
   let retries = 0
-  while (retries < optionsWithDefaults.retriesAllowed) {
+  do {
     if (retries > 0) {
       await setTimeout(
         calculateRetryDelay(
@@ -72,9 +72,9 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
     }
 
     retries++
-  }
+  } while (retries <= optionsWithDefaults.retriesAllowed)
 
-  return result ?? { error: new Error('No transaction retry executed') }
+  return result ?? { error: new Error('No transaction executed') }
 }) as {
   <T, P extends PrismaClient>(
     prisma: P,

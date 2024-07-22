@@ -1,4 +1,3 @@
-import type { RequestContext } from '@lokalise/fastify-extras'
 import type { CommonLogger } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 
@@ -6,6 +5,7 @@ import {
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
   FakeBackgroundJobProcessor,
+  type RequestContext,
 } from '../../src'
 import { getTestRedisConfig } from '../setup'
 

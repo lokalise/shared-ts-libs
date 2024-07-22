@@ -42,7 +42,6 @@
     "@biomejs/biome": "^1.8.3",
     "@lokalise/biome-config": "^1.2.2",
     "@types/node": "^20.14.8",
-    "@lokalise/fastify-extras": "^21.2.2",
     "@lokalise/package-vite-config": "latest",
     "@vitest/coverage-v8": "^1.6.0",
     "bullmq": "^5.7.15",
