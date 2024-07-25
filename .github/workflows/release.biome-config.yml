@@ -13,6 +13,6 @@ jobs:
     uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
     with:
       working_directory: 'packages/dev/biome-config'
-      package_name: 'biome-config'
+      package_name: '@lokalise/biome-config'
     secrets:
       npm_token: ${{ secrets.NPM_TOKEN }}

@@ -13,6 +13,6 @@ jobs:
     uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
     with:
       working_directory: 'packages/app/error-utils'
-      package_name: 'error-utils'
+      package_name: '@lokalise/error-utils'
     secrets:
       npm_token: ${{ secrets.NPM_TOKEN }}

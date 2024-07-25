@@ -13,6 +13,6 @@ jobs:
     uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
     with:
       working_directory: 'packages/app/id-utils'
-      package_name: 'id-utils'
+      package_name: '@lokalise/id-utils'
     secrets:
       npm_token: ${{ secrets.NPM_TOKEN }}
