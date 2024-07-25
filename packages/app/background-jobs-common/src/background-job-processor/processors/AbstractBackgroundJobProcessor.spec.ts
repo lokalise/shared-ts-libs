@@ -85,17 +85,22 @@ describe('AbstractBackgroundJobProcessor', () => {
       await job2.dispose()
     })
 
-    it('Multiple start calls not produce errors', async () => {
-      const processor = new FakeBackgroundJobProcessor<JobData>(
-        deps,
-        'queue1',
-        getTestRedisConfig(),
-      )
+    it('Multiple start calls (sequential or concurrent) not produce errors', async () => {
+      const redisConfig = getTestRedisConfig()
+      const processor1 = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1', redisConfig)
+      const processor2 = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1', redisConfig)
 
-      await expect(processor.start()).resolves.not.toThrowError()
-      await expect(processor.start()).resolves.not.toThrowError()
+      // sequential start calls
+      await expect(processor1.start()).resolves.not.toThrowError()
+      await expect(processor1.start()).resolves.not.toThrowError()
 
-      await processor.dispose()
+      // concurrent start calls
+      await expect(
+        Promise.all([processor2.start(), processor2.start()]),
+      ).resolves.not.toThrowError()
+
+      await processor1.dispose()
+      await processor2.dispose()
     })
 
     it('lazy loading on schedule', async () => {
@@ -128,7 +133,11 @@ describe('AbstractBackgroundJobProcessor', () => {
       )
 
       const jobIds = await processor.scheduleBulk([
-        { id: 'test_id', value: 'test', metadata: { correlationId: 'correlation_id' } },
+        {
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        },
       ])
       const spyResult = await processor.spy.waitForJobWithId(jobIds[0], 'completed')
 
@@ -383,7 +392,11 @@ describe('AbstractBackgroundJobProcessor', () => {
       ]
       processor.errorsToThrowOnProcess = errors
       const scheduledJobId = await processor.schedule(
-        { id: 'test_id', value: 'test', metadata: { correlationId: 'correlation_id' } },
+        {
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        },
         {
           attempts: 3,
           delay: 0,
@@ -406,7 +419,11 @@ describe('AbstractBackgroundJobProcessor', () => {
       const errors = [new UnrecoverableError('unrecoverable test error 1')]
       processor.errorsToThrowOnProcess = errors
       await processor.schedule(
-        { id: 'test_id', value: 'test', metadata: { correlationId: 'correlation_id' } },
+        {
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        },
         {
           attempts: 3,
           delay: 0,
@@ -427,7 +444,11 @@ describe('AbstractBackgroundJobProcessor', () => {
       ]
       processor.errorsToThrowOnProcess = errors
       await processor.schedule(
-        { id: 'test_id', value: 'test', metadata: { correlationId: 'correlation_id' } },
+        {
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        },
         {
           attempts: 3,
           delay: 0,
@@ -449,7 +470,11 @@ describe('AbstractBackgroundJobProcessor', () => {
       const reportSpy = vi.spyOn(deps.errorReporter, 'report')
 
       const jobId = await processor.schedule(
-        { id: 'test_id', value: 'test', metadata: { correlationId: 'correlation_id' } },
+        {
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        },
         {
           attempts: 3,
           delay: 0,
