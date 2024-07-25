@@ -1,48 +1,50 @@
 {
-  "name": "@lokalise/websockets-common",
-  "version": "2.6.0",
-  "type": "module",
-  "license": "Apache-2.0",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "homepage": "https://github.com/lokalise/shared-ts-libs",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/lokalise/shared-ts-libs.git"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.cjs",
-      "import": "./dist/index.js"
-    }
-  },
-  "scripts": {
-    "build": "rimraf dist && vite build && tsc --emitDeclarationOnly",
-    "dev": "vite watch",
-    "clean": "rimraf dist .eslintcache",
-    "lint": "eslint --cache --max-warnings=0 . && prettier --check --log-level warn src test \"**/*.{json,md}\" && tsc --noEmit",
-    "lint:fix": "eslint . --fix && prettier --write src test \"**/*.{json,md}\"",
-    "test": "vitest run --coverage",
-    "prepublishOnly": "npm run build",
-    "package-version": "echo $npm_package_version"
-  },
-  "files": ["dist"],
-  "devDependencies": {
-    "@lokalise/eslint-config": "latest",
-    "@lokalise/prettier-config": "latest",
-    "@lokalise/package-vite-config": "latest",
-    "eslint": "^8.57.0",
-    "prettier": "^3.3.3",
-    "rimraf": "^5.0.7",
-    "typescript": "~5.5.3",
-    "vite": "5.3.4",
-    "vitest": "1.6.0"
-  },
-  "dependencies": {
-    "socket.io": "^4.7.5",
-    "zod": "^3.23.8"
-  },
-  "prettier": "@lokalise/prettier-config"
+	"name": "@lokalise/websockets-common",
+	"version": "2.6.0",
+	"type": "module",
+	"license": "Apache-2.0",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"homepage": "https://github.com/lokalise/shared-ts-libs",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/lokalise/shared-ts-libs.git"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"require": "./dist/index.cjs",
+			"import": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"build": "rimraf dist && vite build && tsc --emitDeclarationOnly",
+		"dev": "vite watch",
+		"clean": "rimraf dist .eslintcache",
+		"lint": "eslint --cache --max-warnings=0 . && prettier --check --log-level warn src test \"**/*.{json,md}\" && tsc --noEmit",
+		"lint:fix": "eslint . --fix && prettier --write src test \"**/*.{json,md}\"",
+		"test": "vitest run --coverage",
+		"prepublishOnly": "npm run build",
+		"package-version": "echo $npm_package_version"
+	},
+	"files": [
+		"dist"
+	],
+	"devDependencies": {
+		"@lokalise/eslint-config": "latest",
+		"@lokalise/prettier-config": "latest",
+		"@lokalise/package-vite-config": "latest",
+		"eslint": "^8.57.0",
+		"prettier": "^3.3.3",
+		"rimraf": "^5.0.7",
+		"typescript": "~5.5.3",
+		"vite": "5.3.4",
+		"vitest": "1.6.0"
+	},
+	"dependencies": {
+		"socket.io": "^4.7.5",
+		"zod": "^3.23.8"
+	},
+	"prettier": "@lokalise/prettier-config"
 }
