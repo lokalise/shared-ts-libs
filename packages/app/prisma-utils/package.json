@@ -3,11 +3,7 @@
   "version": "1.4.0",
   "type": "module",
   "license": "Apache-2.0",
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE.md"
-  ],
+  "files": ["dist", "README.md", "LICENSE.md"],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -59,7 +55,7 @@
     "prisma": "^5.14.0",
     "rimraf": "^5.0.7",
     "typescript": "5.5.3",
-    "vite": "^5.3.3",
+    "vite": "5.3.4",
     "vitest": "^1.6.0"
   }
 }
