@@ -13,6 +13,6 @@ jobs:
     uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
     with:
       working_directory: 'packages/dev/prettier-config'
-      package_name: 'prettier-config'
+      package_name: '@lokalise/prettier-config'
     secrets:
       npm_token: ${{ secrets.NPM_TOKEN }}
