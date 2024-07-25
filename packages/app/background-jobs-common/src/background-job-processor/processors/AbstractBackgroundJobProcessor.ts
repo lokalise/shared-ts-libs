@@ -93,6 +93,9 @@ export abstract class AbstractBackgroundJobProcessor<
   private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
   private readonly runningPromises: Promise<unknown>[]
 
+  private isStarted = false
+  private startPromise?: Promise<void>
+
   private queue?: QueueType
   private worker?: WorkerType
   private factory: AbstractBullmqFactory<
@@ -154,8 +157,24 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   public async start(): Promise<void> {
-    if (this.queue) return // Skip if processor is already started
+    if (this.isStarted) return // if it is already started -> skip
+    if (this.startPromise) return await this.startPromise // if it is already starting -> wait (avoid concurrent start)
 
+    this.startPromise = this.internalInit()
+    await this.startPromise
+  }
+
+  private async startIfNotStarted() {
+    if (!this.queue) {
+      this.logger.warn(
+        { origin: this.constructor.name, queueId: this.config.queueId },
+        `Processor ${this.constructor.name} is not started, starting with lazy loading`,
+      )
+      await this.start()
+    }
+  }
+
+  private async internalInit() {
     if (queueIdsSet.has(this.config.queueId))
       throw new Error(`Queue id "${this.config.queueId}" is not unique.`)
 
@@ -192,19 +211,7 @@ export abstract class AbstractBackgroundJobProcessor<
     }
 
     this.registerListeners()
-  }
-
-  private async startIfNotStarted() {
-    if (!this.queue) {
-      this.logger.warn(
-        {
-          origin: this.constructor.name,
-          queueId: this.config.queueId,
-        },
-        `Processor ${this.constructor.name} is not started, starting with lazy loading`,
-      )
-      await this.start()
-    }
+    this.isStarted = true
   }
 
   private registerListeners() {
@@ -221,26 +228,19 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   public async dispose(): Promise<void> {
-    queueIdsSet.delete(this.config.queueId)
-
     try {
-      // On test forcing the worker to close to not wait for current job to finish
-      await this.worker?.close(this.config.isTest)
+      await this.worker?.close(this.config.isTest) // On test forcing the worker to close to not wait for current job to finish
       await this.queue?.close()
-    } catch {
-      /* v8 ignore next 3 */
-      // do nothing
-    }
-
-    try {
       await Promise.allSettled(this.runningPromises)
     } catch {
-      // do nothing
+      //do nothing
     }
 
     this.worker = undefined
     this.queue = undefined
     this._spy?.clear()
+    queueIdsSet.delete(this.config.queueId)
+    this.isStarted = false
   }
 
   public async schedule(jobData: JobPayload, options?: JobOptionsType): Promise<string> {
@@ -381,7 +381,10 @@ export abstract class AbstractBackgroundJobProcessor<
     job.requestContext.logger.error(resolveGlobalErrorLogObject(error, jobId))
     this.errorReporter.report({
       error,
-      context: { jobId, errorJson: JSON.stringify(pino.stdSerializers.err(error)) },
+      context: {
+        jobId,
+        errorJson: JSON.stringify(pino.stdSerializers.err(error)),
+      },
     })
 
     if (
@@ -420,7 +423,10 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   protected resolveExecutionLogger(job: JobType): CommonLogger {
-    return this.logger.child({ 'x-request-id': job.data.metadata.correlationId, jobId: job.id })
+    return this.logger.child({
+      'x-request-id': job.data.metadata.correlationId,
+      jobId: job.id,
+    })
   }
 
   logJobStarted(job: JobType, requestContext: RequestContext): void {
@@ -439,29 +445,6 @@ export abstract class AbstractBackgroundJobProcessor<
       },
       `Finished job ${job.name}`,
     )
-  }
-
-  /**
-   * The hook will be triggered on 'completed' job state.
-   *
-   * @param _job
-   * @param _requestContext
-   * @protected
-   */
-  protected onSuccess(_job: JobType, _requestContext: RequestContext): Promise<void> {
-    return Promise.resolve()
-  }
-
-  /**
-   * The hook will be triggered on 'failed' job state.
-   *
-   * @param _job
-   * @param _error
-   * @param _requestContext
-   * @protected
-   */
-  protected onFailed(_job: JobType, _error: Error, _requestContext: RequestContext): Promise<void> {
-    return Promise.resolve()
   }
 
   /**
@@ -489,6 +472,29 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
+
+  /**
+   * The hook will be triggered on 'completed' job state.
+   *
+   * @param _job
+   * @param _requestContext
+   * @protected
+   */
+  protected onSuccess(_job: JobType, _requestContext: RequestContext): Promise<void> {
+    return Promise.resolve()
+  }
+
+  /**
+   * The hook will be triggered on 'failed' job state.
+   *
+   * @param _job
+   * @param _error
+   * @param _requestContext
+   * @protected
+   */
+  protected onFailed(_job: JobType, _error: Error, _requestContext: RequestContext): Promise<void> {
+    return Promise.resolve()
+  }
 }
 
 function isRedisClient(redis: RedisConfig | Redis): redis is Redis {
