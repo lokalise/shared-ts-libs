@@ -87,20 +87,16 @@ describe('AbstractBackgroundJobProcessor', () => {
 
     it('Multiple start calls (sequential or concurrent) not produce errors', async () => {
       const redisConfig = getTestRedisConfig()
-      const processor1 = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1', redisConfig)
-      const processor2 = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1', redisConfig)
+      const processor = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1', redisConfig)
 
       // sequential start calls
-      await expect(processor1.start()).resolves.not.toThrowError()
-      await expect(processor1.start()).resolves.not.toThrowError()
+      await expect(processor.start()).resolves.not.toThrowError()
+      await expect(processor.start()).resolves.not.toThrowError()
+      await processor.dispose()
 
       // concurrent start calls
-      await expect(
-        Promise.all([processor2.start(), processor2.start()]),
-      ).resolves.not.toThrowError()
-
-      await processor1.dispose()
-      await processor2.dispose()
+      await expect(Promise.all([processor.start(), processor.start()])).resolves.not.toThrowError()
+      await processor.dispose()
     })
 
     it('lazy loading on schedule', async () => {

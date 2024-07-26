@@ -162,6 +162,7 @@ export abstract class AbstractBackgroundJobProcessor<
 
     this.startPromise = this.internalInit()
     await this.startPromise
+    this.startPromise = undefined
   }
 
   private async startIfNotStarted() {
