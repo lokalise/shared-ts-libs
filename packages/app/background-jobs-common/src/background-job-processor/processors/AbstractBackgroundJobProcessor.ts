@@ -158,9 +158,8 @@ export abstract class AbstractBackgroundJobProcessor<
 
   public async start(): Promise<void> {
     if (this.isStarted) return // if it is already started -> skip
-    if (this.startPromise) return await this.startPromise // if it is already starting -> wait (avoid concurrent start)
 
-    this.startPromise = this.internalInit()
+    if (!this.startPromise) this.startPromise = this.internalInit()
     await this.startPromise
     this.startPromise = undefined
   }
