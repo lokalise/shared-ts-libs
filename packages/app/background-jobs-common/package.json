@@ -1,11 +1,7 @@
 {
   "name": "@lokalise/background-jobs-common",
   "version": "4.0.2",
-  "files": [
-    "dist",
-    "LICENSE.md",
-    "README.md"
-  ],
+  "files": ["dist", "LICENSE.md", "README.md"],
   "author": {
     "name": "Lokalise",
     "url": "https://lokalise.com/"
@@ -45,13 +41,13 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@lokalise/biome-config": "^1.2.2",
-    "@types/node": "^20.14.8",
+    "@types/node": "^20.14.12",
     "@lokalise/package-vite-config": "latest",
-    "@vitest/coverage-v8": "^1.6.0",
-    "bullmq": "^5.7.15",
+    "@vitest/coverage-v8": "^2.0.4",
+    "bullmq": "^5.10.4",
     "ioredis": "^5.4.1",
     "rimraf": "^6.0.1",
-    "typescript": "5.5.3",
-    "vitest": "^1.6.0"
+    "typescript": "5.5.4",
+    "vitest": "^2.0.4"
   }
 }
