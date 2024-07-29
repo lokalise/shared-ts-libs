@@ -308,7 +308,10 @@ export abstract class AbstractBackgroundJobProcessor<
     try {
       const transactionName = `bg_job:${this.config.ownerName}:${this.config.queueId}`
       this.transactionObservabilityManager.start(transactionName, jobId)
-      this.logJobStarted(job, job.requestContext)
+      job.requestContext.logger.info(
+        { origin: this.constructor.name, jobId },
+        `Started job ${job.name}`,
+      )
 
       const result = await this.process(job, job.requestContext)
       isSuccess = true
@@ -316,7 +319,14 @@ export abstract class AbstractBackgroundJobProcessor<
       await job.updateProgress(100)
       return result
     } finally {
-      this.logJobFinished(job, job.requestContext, isSuccess)
+      job.requestContext.logger.info(
+        {
+          origin: this.constructor.name,
+          jobId,
+          isSuccess,
+        },
+        `Finished job ${job.name}`,
+      )
       this.transactionObservabilityManager.stop(jobId)
     }
   }
@@ -397,24 +407,6 @@ export abstract class AbstractBackgroundJobProcessor<
       'x-request-id': job.data.metadata.correlationId,
       jobId: job.id,
     })
-  }
-
-  logJobStarted(job: JobType, requestContext: RequestContext): void {
-    requestContext.logger.info(
-      {
-        origin: this.constructor.name,
-      },
-      `Started job ${job.name}`,
-    )
-  }
-
-  logJobFinished(job: JobType, requestContext: RequestContext, isSuccess: boolean): void {
-    requestContext.logger.info(
-      {
-        isSuccess,
-      },
-      `Finished job ${job.name}`,
-    )
   }
 
   /**
