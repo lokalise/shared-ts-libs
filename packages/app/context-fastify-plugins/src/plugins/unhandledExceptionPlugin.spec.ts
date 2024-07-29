@@ -1,4 +1,5 @@
 import type { ErrorReport } from '@lokalise/error-utils'
+import { isInternalError } from '@lokalise/node-core'
 import fastify from 'fastify'
 import type { RouteHandlerMethod } from 'fastify/types/route'
 import { beforeEach } from 'vitest'
@@ -37,26 +38,26 @@ async function initApp(routeHandler: RouteHandlerMethod) {
 		handler: routeHandler,
 	})
 	await app.ready()
+
 	return app
 }
 
-// This needs to be skipped in CI, because vitest fails the run if there are any unhandled errors. See https://github.com/vitest-dev/vitest/issues/5796
-describe.skip('unhandledExceptionPlugin', () => {
+describe('unhandledExceptionPlugin', () => {
 	beforeEach(() => {
 		errors.splice(0, errors.length)
 	})
 
-	it('handled unhandled rejection', async () => {
+	it('handled unhandled rejection with Error type', async () => {
 		const app = await initApp((req, res) => {
 			void new Promise(() => {
-				throw new Error('new unhandled error')
+				throw new Error('new test unhandled error')
 			})
 			return res.status(204).send()
 		})
 		const response = await app.inject().get('/').end()
 		expect(response.statusCode).toBe(204)
 
-		const errorsReported = await vitest.waitUntil(
+		await vitest.waitUntil(
 			() => {
 				return errors.length > 0
 			},
@@ -66,6 +67,38 @@ describe.skip('unhandledExceptionPlugin', () => {
 			},
 		)
 
-		expect(errorsReported).toBe(true)
+		expect(errors).toHaveLength(1)
+		const error = errors[0]
+		expect(error.error.message).toBe('new test unhandled error')
+	})
+
+	it('handled unhandled rejection with not error type', async () => {
+		const app = await initApp((req, res) => {
+			void new Promise(() => {
+				throw 'this is my test unhandled error'
+			})
+			return res.status(204).send()
+		})
+		const response = await app.inject().get('/').end()
+		expect(response.statusCode).toBe(204)
+
+		await vitest.waitUntil(
+			() => {
+				return errors.length > 0
+			},
+			{
+				interval: 50,
+				timeout: 2000,
+			},
+		)
+
+		expect(errors).toHaveLength(1)
+		const error = errors[0]
+		expect(isInternalError(error.error)).toBe(true)
+		expect(error.error).toMatchObject({
+			errorCode: 'UNHANDLED_REJECTION',
+			message: 'Unhandled rejection',
+			details: { errorObject: '"this is my test unhandled error"' },
+		})
 	})
 })
