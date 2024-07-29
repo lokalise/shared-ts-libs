@@ -1,4 +1,4 @@
-import { resolve } from 'path'
+import { resolve } from 'node:path'
 
 import defineConfig from '@lokalise/package-vite-config/package'
 
@@ -19,6 +19,7 @@ export default defineConfig({
 				isolate: false,
 			},
 		},
+		pool: 'threads',
 		coverage: {
 			provider: 'v8',
 			all: false,

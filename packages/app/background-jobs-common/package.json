@@ -1,6 +1,6 @@
 {
   "name": "@lokalise/background-jobs-common",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "files": ["dist", "LICENSE.md", "README.md"],
   "author": {
     "name": "Lokalise",
@@ -41,13 +41,13 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@lokalise/biome-config": "^1.2.2",
-    "@types/node": "^20.14.8",
+    "@types/node": "^22.0.0",
     "@lokalise/package-vite-config": "latest",
     "@vitest/coverage-v8": "^2.0.4",
-    "bullmq": "^5.7.15",
+    "bullmq": "^5.10.4",
     "ioredis": "^5.4.1",
     "rimraf": "^6.0.1",
-    "typescript": "5.5.3",
+    "typescript": "5.5.4",
     "vitest": "^2.0.4"
   }
 }
