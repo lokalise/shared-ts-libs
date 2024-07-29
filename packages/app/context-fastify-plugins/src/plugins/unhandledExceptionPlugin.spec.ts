@@ -2,7 +2,6 @@ import type { ErrorReport } from '@lokalise/error-utils'
 import { isInternalError } from '@lokalise/node-core'
 import fastify from 'fastify'
 import type { RouteHandlerMethod } from 'fastify/types/route'
-import { beforeEach } from 'vitest'
 
 import {
 	getRequestIdFastifyAppConfig,
@@ -10,14 +9,12 @@ import {
 } from './requestContextProviderPlugin'
 import { unhandledExceptionPlugin } from './unhandledExceptionPlugin'
 
-const errors: ErrorReport[] = []
-
 process.on('unhandledRejection', (error) => {
 	console.error('Unhandled Rejection:', error)
 	// Optionally throw an error here to fail the test
 })
 
-async function initApp(routeHandler: RouteHandlerMethod) {
+async function initApp(routeHandler: RouteHandlerMethod, errors: ErrorReport[]) {
 	const app = fastify({
 		...getRequestIdFastifyAppConfig(),
 	})
@@ -43,17 +40,14 @@ async function initApp(routeHandler: RouteHandlerMethod) {
 }
 
 describe('unhandledExceptionPlugin', () => {
-	beforeEach(() => {
-		errors.splice(0, errors.length)
-	})
-
 	it('handled unhandled rejection with Error type', async () => {
-		const app = await initApp((req, res) => {
+		const errors: ErrorReport[] = []
+		const app = await initApp((_req, res) => {
 			void new Promise(() => {
 				throw new Error('new test unhandled error')
 			})
 			return res.status(204).send()
-		})
+		}, errors)
 		const response = await app.inject().get('/').end()
 		expect(response.statusCode).toBe(204)
 
@@ -73,12 +67,13 @@ describe('unhandledExceptionPlugin', () => {
 	})
 
 	it('handled unhandled rejection with not error type', async () => {
-		const app = await initApp((req, res) => {
+		const errors: ErrorReport[] = []
+		const app = await initApp((_req, res) => {
 			void new Promise(() => {
 				throw 'this is my test unhandled error'
 			})
 			return res.status(204).send()
-		})
+		}, errors)
 		const response = await app.inject().get('/').end()
 		expect(response.statusCode).toBe(204)
 
