@@ -41,7 +41,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@lokalise/biome-config": "^1.2.2",
-    "@types/node": "^20.14.12",
+    "@types/node": "^22.0.0",
     "@lokalise/package-vite-config": "latest",
     "@vitest/coverage-v8": "^2.0.4",
     "bullmq": "^5.10.4",
