@@ -1,6 +1,11 @@
 import type { FinishedStatus, Job, JobsOptions, Queue } from 'bullmq'
 
-import type { RequestContext } from './processors/AbstractBackgroundJobProcessor'
+import type { CommonLogger } from '@lokalise/node-core'
+
+export interface RequestContext {
+  logger: CommonLogger
+  reqId: string
+}
 
 export type JobFinalState = FinishedStatus
 export type BaseJobPayload = { metadata: { correlationId: string } }

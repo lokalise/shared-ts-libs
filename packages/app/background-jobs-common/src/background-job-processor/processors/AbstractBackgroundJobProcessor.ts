@@ -13,18 +13,19 @@ import pino from 'pino'
 import { merge } from 'ts-deepmerge'
 
 import {
-  RETENTION_COMPLETED_JOBS_IN_AMOUNT,
-  RETENTION_FAILED_JOBS_IN_DAYS,
+  DEFAULT_JOB_CONFIG,
+  DEFAULT_WORKER_OPTIONS,
+  QUEUE_IDS_KEY,
   RETENTION_QUEUE_IDS_IN_DAYS,
 } from '../constants'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
 import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import type { BaseJobPayload, BullmqProcessor, SafeJob, SafeQueue } from '../types'
+import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob, SafeQueue } from '../types'
 import {
   daysToMilliseconds,
-  daysToSeconds,
+  isRedisClient,
   isStalledJobError,
   isUnrecoverableJobError,
   resolveJobId,
@@ -37,38 +38,7 @@ import type {
   JobsPaginatedResponse,
 } from './types'
 
-export interface RequestContext {
-  logger: CommonLogger
-  reqId: string
-}
-
-/**
- * Default config
- *    - Retry config: 3 retries with 30s of total amount of wait time between retries using
- *            exponential strategy https://docs.bullmq.io/guide/retrying-failing-jobs#built-in-backoff-strategies
- *    - Job retention: 50 last completed jobs, 7 days for failed jobs
- */
-const DEFAULT_JOB_CONFIG: JobsOptions = {
-  attempts: 3,
-  backoff: {
-    type: 'exponential',
-    delay: 5000,
-  },
-  removeOnComplete: { count: RETENTION_COMPLETED_JOBS_IN_AMOUNT },
-  removeOnFail: {
-    age: daysToSeconds(RETENTION_FAILED_JOBS_IN_DAYS),
-  },
-}
-
-const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
-
 const queueIdsSet = new Set<string>()
-
-const DEFAULT_WORKER_OPTIONS = {
-  concurrency: 10,
-  maxStalledCount: 3, // same as default attempts by default
-  ttl: 60,
-} as const satisfies Omit<WorkerOptions, 'connection'> & { ttl: number }
 
 export abstract class AbstractBackgroundJobProcessor<
   JobPayload extends BaseJobPayload,
@@ -495,8 +465,4 @@ export abstract class AbstractBackgroundJobProcessor<
   protected onFailed(_job: JobType, _error: Error, _requestContext: RequestContext): Promise<void> {
     return Promise.resolve()
   }
-}
-
-function isRedisClient(redis: RedisConfig | Redis): redis is Redis {
-  return 'options' in redis
 }

@@ -1,4 +1,5 @@
 import type { RedisConfig } from '@lokalise/node-core'
+import type Redis from 'ioredis'
 import type { SafeJob } from './types'
 
 export const daysToSeconds = (days: number): number => days * 24 * 60 * 60
@@ -16,3 +17,5 @@ export const isStalledJobError = (error: Error): boolean =>
 export const sanitizeRedisConfig = (config: RedisConfig): RedisConfig => {
   return { ...config, keyPrefix: undefined }
 }
+
+export const isRedisClient = (redis: RedisConfig | Redis): redis is Redis => 'options' in redis
