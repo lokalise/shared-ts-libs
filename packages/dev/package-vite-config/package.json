@@ -32,7 +32,7 @@
   "dependencies": {
     "vite": "5.3.4",
     "vite-plugin-dts": "3.9.1",
-    "vitest": "^2.0.3"
+    "vitest": "^2.0.4"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
