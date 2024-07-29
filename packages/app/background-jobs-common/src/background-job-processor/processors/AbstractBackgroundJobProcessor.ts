@@ -103,6 +103,7 @@ export abstract class AbstractBackgroundJobProcessor<
     this.runningPromises = []
   }
 
+  // TODO: would makes sense to have a BullMQMonitoring class that would be responsible for this
   public static async getActiveQueueIds(redis: RedisConfig | Redis): Promise<string[]> {
     const redisWithoutPrefix = isRedisClient(redis) ? redis : new Redis(sanitizeRedisConfig(redis))
     await redisWithoutPrefix.zremrangebyscore(
@@ -185,6 +186,7 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   private registerListeners() {
+    // TODO: could we extract hooks handling to a separate class
     this.worker?.on('failed', (job, error) => {
       if (!job) return // Should not be possible with our current config, check 'failed' for more info
       // @ts-expect-error
@@ -275,6 +277,7 @@ export abstract class AbstractBackgroundJobProcessor<
     }
   }
 
+  // TODO: extract to a utils method
   private prepareJobOptions(options: JobOptionsType): JobOptionsType {
     const preparedOptions: JobOptionsType = {
       jobId: generateMonotonicUuid(),
