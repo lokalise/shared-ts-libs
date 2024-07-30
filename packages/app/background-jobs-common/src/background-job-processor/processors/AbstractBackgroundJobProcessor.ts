@@ -28,6 +28,7 @@ import {
   isRedisClient,
   isStalledJobError,
   isUnrecoverableJobError,
+  prepareJobOptions,
   resolveJobId,
   sanitizeRedisConfig,
 } from '../utils'
@@ -223,13 +224,10 @@ export abstract class AbstractBackgroundJobProcessor<
   public async scheduleBulk(jobData: JobPayload[], options?: JobOptionsType): Promise<string[]> {
     await this.startIfNotStarted()
 
+    const opts = prepareJobOptions(this.config.isTest, options)
     const jobs =
       (await this.queue?.addBulk(
-        jobData.map((data) => ({
-          name: this.config.queueId,
-          data,
-          opts: this.prepareJobOptions(options ?? ({} as JobOptionsType)),
-        })),
+        jobData.map((data) => ({ name: this.config.queueId, data, opts })),
       )) ?? []
 
     const jobIds = jobs.map((job) => job.id)
@@ -275,27 +273,6 @@ export abstract class AbstractBackgroundJobProcessor<
       jobs: jobs.slice(0, expectedNumberOfJobs),
       hasMore: jobs.length > expectedNumberOfJobs,
     }
-  }
-
-  // TODO: extract to a utils method
-  private prepareJobOptions(options: JobOptionsType): JobOptionsType {
-    const preparedOptions: JobOptionsType = {
-      jobId: generateMonotonicUuid(),
-      ...DEFAULT_JOB_CONFIG,
-      ...options,
-    }
-
-    /* v8 ignore next 7 */
-    if (this.config.isTest && typeof preparedOptions.backoff === 'object') {
-      preparedOptions.backoff.delay = 1
-      preparedOptions.backoff.type = 'fixed'
-      preparedOptions.removeOnFail = true
-      if (preparedOptions.removeOnComplete === undefined) {
-        preparedOptions.removeOnComplete = true
-      }
-    }
-
-    return preparedOptions
   }
 
   private async processInternal(job: JobType) {
