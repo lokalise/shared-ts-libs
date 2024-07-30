@@ -64,7 +64,7 @@ describe('prismaTransaction', () => {
       })
 
       // Then
-      expect(result.result?.value).toMatchObject(TEST_ITEM_1.value)
+      expect(result.result?.value).toBe(TEST_ITEM_1.value)
       expect(result.result?.id).toBeDefined()
     })
 
