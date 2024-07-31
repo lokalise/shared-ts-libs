@@ -14,7 +14,7 @@ import { daysToMilliseconds } from '../utils'
 
 import Redis from 'ioredis'
 import { getSanitizedTestRedisConfig, getTestRedisConfig } from '../../../test/setup'
-import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor'
+import { backgroundJobProcessorGetActiveQueueIds } from '../monitoring/backgroundJobProcessorGetActiveQueueIds'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
 
@@ -57,7 +57,7 @@ describe('AbstractBackgroundJobProcessor', () => {
         await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now(), 'queue2')
         await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs + 100, 'queue1')
 
-        const queues = await AbstractBackgroundJobProcessor.getActiveQueueIds(
+        const queues = await backgroundJobProcessorGetActiveQueueIds(
           useRedisClient ? redisWithoutPrefix : getSanitizedTestRedisConfig(),
         )
         expect(queues).toEqual(['queue1', 'queue2'])
@@ -156,7 +156,7 @@ describe('AbstractBackgroundJobProcessor', () => {
       const today = new Date()
       const redisWithoutPrefix = new Redis(getSanitizedTestRedisConfig())
       const [, score] = await redisWithoutPrefix.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
-      const queueIds = await FakeBackgroundJobProcessor.getActiveQueueIds(getTestRedisConfig())
+      const queueIds = await backgroundJobProcessorGetActiveQueueIds(getTestRedisConfig())
       expect(queueIds).toStrictEqual(['queue1'])
       // Comparing timestamps in seconds
       const todaySeconds = Math.floor(today.getTime() / 1000)
@@ -174,7 +174,7 @@ describe('AbstractBackgroundJobProcessor', () => {
         -1,
         'WITHSCORES',
       )
-      const queueIdsAfterRestart = await FakeBackgroundJobProcessor.getActiveQueueIds(
+      const queueIdsAfterRestart = await backgroundJobProcessorGetActiveQueueIds(
         getTestRedisConfig(),
       )
       expect(queueIdsAfterRestart).toStrictEqual(['queue1'])

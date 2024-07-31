@@ -1,31 +1,16 @@
-import { generateMonotonicUuid } from '@lokalise/id-utils'
-import type {
-  CommonLogger,
-  ErrorReporter,
-  RedisConfig,
-  TransactionObservabilityManager,
-} from '@lokalise/node-core'
+import type { ErrorReporter } from '@lokalise/node-core'
 import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
 import type { JobState } from 'bullmq/dist/esm/types/job-type'
-import Redis from 'ioredis'
 import pino from 'pino'
 import { merge } from 'ts-deepmerge'
 
-import {
-  DEFAULT_JOB_CONFIG,
-  DEFAULT_WORKER_OPTIONS,
-  QUEUE_IDS_KEY,
-  RETENTION_QUEUE_IDS_IN_DAYS,
-} from '../constants'
+import { DEFAULT_WORKER_OPTIONS } from '../constants'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
-import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
 import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob, SafeQueue } from '../types'
 import {
-  daysToMilliseconds,
-  isRedisClient,
   isStalledJobError,
   isUnrecoverableJobError,
   prepareJobOptions,
@@ -33,13 +18,12 @@ import {
   sanitizeRedisConfig,
 } from '../utils'
 
+import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor'
 import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
   JobsPaginatedResponse,
 } from './types'
-
-const queueIdsSet = new Set<string>()
 
 export abstract class AbstractBackgroundJobProcessor<
   JobPayload extends BaseJobPayload,
@@ -56,12 +40,10 @@ export abstract class AbstractBackgroundJobProcessor<
   >,
   JobOptionsType extends JobsOptions = JobsOptions,
 > {
-  protected readonly logger: CommonLogger
-
-  private readonly transactionObservabilityManager: TransactionObservabilityManager
   private readonly errorReporter: ErrorReporter
   private readonly config: BackgroundJobProcessorConfig<QueueOptionsType, WorkerOptionsType>
   private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
+  private readonly monitor: BackgroundJobProcessorMonitor<JobPayload, JobType>
   private readonly runningPromises: Promise<unknown>[]
 
   private isStarted = false
@@ -95,28 +77,12 @@ export abstract class AbstractBackgroundJobProcessor<
     >,
     config: BackgroundJobProcessorConfig<QueueOptionsType, WorkerOptionsType>,
   ) {
+    this.monitor = new BackgroundJobProcessorMonitor(dependencies, config, this.constructor.name)
     this.config = config
     this.factory = dependencies.bullmqFactory
-    this.transactionObservabilityManager = dependencies.transactionObservabilityManager
-    this.logger = dependencies.logger
     this.errorReporter = dependencies.errorReporter
     this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
     this.runningPromises = []
-  }
-
-  // TODO: would makes sense to have a BullMQMonitoring class that would be responsible for this
-  public static async getActiveQueueIds(redis: RedisConfig | Redis): Promise<string[]> {
-    const redisWithoutPrefix = isRedisClient(redis) ? redis : new Redis(sanitizeRedisConfig(redis))
-    await redisWithoutPrefix.zremrangebyscore(
-      QUEUE_IDS_KEY,
-      '-inf',
-      Date.now() - daysToMilliseconds(RETENTION_QUEUE_IDS_IN_DAYS),
-    )
-    const queueIds = await redisWithoutPrefix.zrange(QUEUE_IDS_KEY, 0, -1)
-    if (!isRedisClient(redis)) {
-      redisWithoutPrefix.disconnect()
-    }
-    return queueIds.sort()
   }
 
   public get spy(): BackgroundJobProcessorSpyInterface<JobPayload, JobReturn> {
@@ -137,23 +103,11 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   private async startIfNotStarted() {
-    if (!this.queue) {
-      this.logger.warn(
-        { origin: this.constructor.name, queueId: this.config.queueId },
-        `Processor ${this.constructor.name} is not started, starting with lazy loading`,
-      )
-      await this.start()
-    }
+    if (!this.isStarted) await this.start()
   }
 
   private async internalInit() {
-    if (queueIdsSet.has(this.config.queueId))
-      throw new Error(`Queue id "${this.config.queueId}" is not unique.`)
-
-    queueIdsSet.add(this.config.queueId)
-    const redisWithoutPrefix = new Redis(sanitizeRedisConfig(this.config.redisConfig))
-    await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now(), this.config.queueId)
-    redisWithoutPrefix.disconnect()
+    await this.monitor.registerQueue()
 
     this.queue = this.factory.buildQueue(this.config.queueId, {
       ...this.config.queueOptions,
@@ -209,10 +163,8 @@ export abstract class AbstractBackgroundJobProcessor<
       //do nothing
     }
 
-    this.worker = undefined
-    this.queue = undefined
     this._spy?.clear()
-    queueIdsSet.delete(this.config.queueId)
+    this.monitor.unregisterQueue()
     this.isStarted = false
   }
 
@@ -276,73 +228,38 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   private async processInternal(job: JobType) {
-    const jobId = resolveJobId(job)
-    let isSuccess = false
-    if (!job.requestContext) {
-      job.requestContext = {
-        logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(job), job),
-        reqId: jobId,
-      }
-    }
+    const requestContext = this.monitor.getRequestContext(job)
 
     try {
-      const transactionName = `bg_job:${this.config.ownerName}:${this.config.queueId}`
-      this.transactionObservabilityManager.start(transactionName, jobId)
-      job.requestContext.logger.info(
-        { origin: this.constructor.name, jobId },
-        `Started job ${job.name}`,
-      )
+      this.monitor.jobStart(job, requestContext)
 
-      const result = await this.process(job, job.requestContext)
-      isSuccess = true
-
+      const result = await this.process(job, requestContext)
       await job.updateProgress(100)
       return result
     } finally {
-      job.requestContext.logger.info(
-        {
-          origin: this.constructor.name,
-          jobId,
-          isSuccess,
-        },
-        `Finished job ${job.name}`,
-      )
-      this.transactionObservabilityManager.stop(jobId)
+      this.monitor.jobEnd(job, requestContext)
     }
   }
 
   private async internalOnSuccess(job: JobType): Promise<void> {
-    const jobId = resolveJobId(job)
-    if (!job.requestContext) {
-      job.requestContext = {
-        logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(job), job),
-        reqId: jobId,
-      }
-    }
+    const requestContext = this.monitor.getRequestContext(job)
 
     this._spy?.addJob(job, 'completed') // this should be executed before the hook to not be affected by it
     await this.internalOnHook(
       job,
-      job.requestContext,
+      requestContext,
       async (job, requestContext) => await this.onSuccess(job, requestContext),
     )
   }
 
   private async internalOnFailed(job: JobType, error: Error): Promise<void> {
-    const jobId = resolveJobId(job)
+    const requestContext = this.monitor.getRequestContext(job)
 
-    if (!job.requestContext) {
-      job.requestContext = {
-        logger: new BackgroundJobProcessorLogger(this.resolveExecutionLogger(job), job),
-        reqId: jobId,
-      }
-    }
-
-    job.requestContext.logger.error(resolveGlobalErrorLogObject(error, jobId))
+    requestContext.logger.error(resolveGlobalErrorLogObject(error))
     this.errorReporter.report({
       error,
       context: {
-        jobId,
+        jobId: resolveJobId(job),
         errorJson: JSON.stringify(pino.stdSerializers.err(error)),
       },
     })
@@ -352,7 +269,7 @@ export abstract class AbstractBackgroundJobProcessor<
       isStalledJobError(error) ||
       job.opts.attempts === job.attemptsMade
     ) {
-      await this.internalOnHook(job, job.requestContext, async (job, requestContext) =>
+      await this.internalOnHook(job, requestContext, async (job, requestContext) =>
         this.onFailed(job, error, requestContext),
       )
       this._spy?.addJob(job, 'failed')
@@ -380,13 +297,6 @@ export abstract class AbstractBackgroundJobProcessor<
         },
       })
     }
-  }
-
-  protected resolveExecutionLogger(job: JobType): CommonLogger {
-    return this.logger.child({
-      'x-request-id': job.data.metadata.correlationId,
-      jobId: job.id,
-    })
   }
 
   /**
