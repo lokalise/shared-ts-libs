@@ -1,5 +1,4 @@
 import type { RedisConfig } from '@lokalise/node-core'
-import { sanitizeRedisConfig } from '../src'
 
 process.loadEnvFile('./.env.test')
 
@@ -14,5 +13,5 @@ export const getTestRedisConfig = (): RedisConfig => {
 }
 
 export const getSanitizedTestRedisConfig = (): RedisConfig => {
-  return sanitizeRedisConfig(getTestRedisConfig())
+  return { ...getTestRedisConfig(), keyPrefix: undefined }
 }
