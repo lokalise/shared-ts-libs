@@ -176,10 +176,13 @@ export abstract class AbstractBackgroundJobProcessor<
   public async scheduleBulk(jobData: JobPayload[], options?: JobOptionsType): Promise<string[]> {
     await this.startIfNotStarted()
 
-    const opts = prepareJobOptions(this.config.isTest, options)
     const jobs =
       (await this.queue?.addBulk(
-        jobData.map((data) => ({ name: this.config.queueId, data, opts })),
+        jobData.map((data) => ({
+          name: this.config.queueId,
+          data,
+          opts: prepareJobOptions(this.config.isTest, options),
+        })),
       )) ?? []
 
     const jobIds = jobs.map((job) => job.id)
