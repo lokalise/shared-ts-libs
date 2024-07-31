@@ -56,22 +56,24 @@ export class BackgroundJobProcessorMonitor<
   }
 
   public getRequestContext(job: JobType): RequestContext {
-    if (!('requestContext' in job)) {
-      const jobId = resolveJobId(job)
-      const loggerChild = this.logger.child({
-        'x-request-id': job.data.metadata.correlationId,
-        jobId,
-      })
+    if (hasRequestContext(job)) return job.requestContext
 
-      // @ts-ignore
-      job.requestContext = {
-        logger: new BackgroundJobProcessorLogger(loggerChild, job),
-        reqId: jobId,
-      }
+    const jobId = resolveJobId(job)
+    const requestContext: RequestContext = {
+      reqId: jobId,
+      logger: new BackgroundJobProcessorLogger(
+        this.logger.child({
+          'x-request-id': job.data.metadata.correlationId,
+          jobId,
+        }),
+        job,
+      ),
     }
 
     // @ts-ignore
-    return job.requestContext
+    job.requestContext = requestContext
+
+    return requestContext
   }
 
   public jobStart(job: JobType, requestContext: RequestContext): void {
@@ -93,4 +95,18 @@ export class BackgroundJobProcessorMonitor<
     )
     this.transactionObservabilityManager.stop(jobId)
   }
+}
+
+const hasRequestContext = <T extends object>(
+  job: T,
+): job is T & { requestContext: RequestContext } => {
+  return (
+    'requestContext' in job &&
+    typeof job.requestContext === 'object' &&
+    job.requestContext !== null &&
+    'logger' in job.requestContext &&
+    'reqId' in job.requestContext &&
+    typeof job.requestContext.reqId === 'string' &&
+    typeof job.requestContext.logger === 'object'
+  )
 }
