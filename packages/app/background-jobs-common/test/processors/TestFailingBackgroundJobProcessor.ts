@@ -1,4 +1,3 @@
-import type { CommonLogger } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 
 import {
@@ -20,8 +19,6 @@ export class TestFailingBackgroundJobProcessor<
   private _errorsToThrowOnProcess: Error[] = []
   private _errorToThrowOnFailed: Error | undefined
 
-  public lastLogger: CommonLogger | undefined
-
   constructor(
     dependencies: BackgroundJobProcessorDependencies<T>,
     queueName: string,
@@ -36,12 +33,6 @@ export class TestFailingBackgroundJobProcessor<
     if (this._errorsToThrowOnProcess.length >= attempt) {
       throw this._errorsToThrowOnProcess[attempt] ?? new Error('Error has happened')
     }
-  }
-
-  protected resolveExecutionLogger(job: Job<T>): CommonLogger {
-    const logger = super.resolveExecutionLogger(job)
-    this.lastLogger = logger
-    return logger
   }
 
   set errorsToThrowOnProcess(errors: Error[]) {

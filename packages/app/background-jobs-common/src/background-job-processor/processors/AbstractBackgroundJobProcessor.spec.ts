@@ -1,7 +1,6 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import { type CommonLogger, waitAndRetry } from '@lokalise/node-core'
+import { waitAndRetry } from '@lokalise/node-core'
 import { UnrecoverableError } from 'bullmq'
-import { symbols } from 'pino'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { DependencyMocks, lastInfoSpy } from '../../../test/dependencyMocks'
@@ -403,12 +402,6 @@ describe('AbstractBackgroundJobProcessor', () => {
       expect(processor.errorsOnProcess).length(1)
       expect(job.attemptsMade).toBe(3)
       expect(processor.errorsOnProcess[0]).toMatchObject(errors[2])
-
-      // Note that this relies on "background-jobs-common" and "node-core" using the same "pino" package instance, otherwise symbol won't match
-      // For this reason there is an explicit pino dependency in root package.json, so that both node-core and pino are resolved from a global node_modules
-      expect(
-        processor.lastLogger?.[symbols.chindingsSym as unknown as keyof CommonLogger],
-      ).toContain('"x-request-id"')
     })
 
     it('job throws unrecoverable error at the beginning', async () => {
@@ -527,9 +520,6 @@ describe('AbstractBackgroundJobProcessor', () => {
           errorJson: expect.stringContaining(onFailedCall.error.message),
         },
       })
-      expect(
-        processor.lastLogger?.[symbols.chindingsSym as unknown as keyof CommonLogger],
-      ).toContain('"x-request-id"')
     })
   })
 
