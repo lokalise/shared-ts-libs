@@ -19,7 +19,7 @@
     "docker:start:ci": "docker compose up -d --quiet-pull redis",
     "test": "vitest run --coverage",
     "pretest:ci": "npm run docker:start:ci",
-    "test:ci": "npm run test -- --coverage",
+    "test:ci": "npm run test",
     "test:ci:teardown": "docker compose down",
     "prepublishOnly": "npm run build",
     "package-version": "echo $npm_package_version"
