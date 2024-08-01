@@ -15,6 +15,8 @@ export type HealthcheckDependencies<SupportedHealthchecks extends string> = {
   healthcheckStore: HealthcheckResultsStore<SupportedHealthchecks>
 }
 
+let metricsRegistered = false
+
 export abstract class AbstractHealthcheck<SupportedHealthchecks extends string>
   implements Healthcheck
 {
@@ -40,7 +42,7 @@ export abstract class AbstractHealthcheck<SupportedHealthchecks extends string>
   }
 
   instantiateMetrics(): void {
-    if (!this.areMetricsEnabled) {
+    if (!this.areMetricsEnabled || metricsRegistered) {
       return
     }
     const store = this.store
@@ -61,6 +63,8 @@ export abstract class AbstractHealthcheck<SupportedHealthchecks extends string>
         this.set(checkLength ?? 0)
       },
     })
+
+    metricsRegistered = true
   }
 
   async execute(): Promise<void> {

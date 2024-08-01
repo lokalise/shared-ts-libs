@@ -1,0 +1,7 @@
+services:
+  redis:
+    image: redis:6.2.7-alpine
+    command: redis-server --requirepass sOmE_sEcUrE_pAsS
+    ports:
+      - ${DOCKER_REDIS_PORT:-6380}:6380
+    restart: on-failure
