@@ -2,11 +2,7 @@
   "name": "@lokalise/healthcheck-utils",
   "version": "1.1.0",
   "license": "Apache-2.0",
-  "files": [
-    "dist/**",
-    "LICENSE.md",
-    "README.md"
-  ],
+  "files": ["dist/**", "LICENSE.md", "README.md"],
   "type": "commonjs",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -20,15 +16,22 @@
     "clean": "rimraf dist",
     "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
     "lint:fix": "biome check --write",
-    "test:ci": "vitest run --coverage",
+    "docker:start:ci": "docker compose up -d --quiet-pull redis",
+    "test": "vitest run --coverage",
+    "pretest:ci": "npm run docker:start:ci",
+    "test:ci": "npm run test -- --coverage",
+    "test:ci:teardown": "docker compose down",
     "prepublishOnly": "npm run build",
     "package-version": "echo $npm_package_version"
   },
   "dependencies": {
     "@lokalise/node-core": "^11.2.0",
+    "@supercharge/promise-pool": "^3.2.0",
+    "redis-semaphore": "^5.6.0",
     "toad-cache": "^3.7.0"
   },
   "peerDependencies": {
+    "ioredis": "^5.4.1",
     "prom-client": "^15.1.3",
     "toad-scheduler": "^3.0.1"
   },
@@ -38,6 +41,7 @@
     "@lokalise/node-core": "^11.2.0",
     "@lokalise/package-vite-config": "latest",
     "@vitest/coverage-v8": "^2.0.4",
+    "ioredis": "^5.4.1",
     "prom-client": "^15.1.3",
     "rimraf": "^6.0.1",
     "toad-scheduler": "^3.0.1",

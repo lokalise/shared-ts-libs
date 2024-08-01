@@ -8,7 +8,7 @@ export type HealthcheckEntry = {
 }
 
 export type HealthcheckResultsStoreParams = {
-  healthcheckNumber: number
+  healthcheckNumber: number // how many healthchecks does the system have
   stalenessThresholdInMsecs?: number
   healthCheckResultTtlInMsecs?: number
 }
