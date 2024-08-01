@@ -92,7 +92,7 @@ describe('HealthcheckRefreshJob', () => {
   let job: HealthcheckRefreshJob
   beforeAll(() => {
     redis = new Redis(getTestRedisConfig())
-    store = new HealthcheckResultsStore({ healthcheckNumber: 1 })
+    store = new HealthcheckResultsStore({ maxHealthcheckNumber: 1 })
   })
   beforeEach(() => {
     store.resetHealthcheckStores()

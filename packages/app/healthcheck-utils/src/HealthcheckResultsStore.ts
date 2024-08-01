@@ -8,7 +8,7 @@ export type HealthcheckEntry = {
 }
 
 export type HealthcheckResultsStoreParams = {
-  healthcheckNumber: number // maximum amount of healthchecks that the system can have
+  maxHealthcheckNumber: number // maximum amount of healthchecks that the system can have
   stalenessThresholdInMsecs?: number
   healthCheckResultTtlInMsecs?: number
 }
@@ -24,7 +24,7 @@ export class HealthcheckResultsStore<SupportedHealthchecks extends string> {
     this.stalenessThresholdInMsecs =
       params.stalenessThresholdInMsecs ?? DEFAULT_STALENESS_THRESHOLD_IN_MSECS
     this.store = new FifoMap<HealthcheckEntry>(
-      params.healthcheckNumber,
+      params.maxHealthcheckNumber,
       params.healthCheckResultTtlInMsecs ?? DEFAULT_HEALTHCHECK_TTL_IN_MSECS,
     )
   }
