@@ -1,8 +1,12 @@
 {
   "name": "@lokalise/healthcheck-utils",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "Apache-2.0",
-  "files": ["dist/**", "LICENSE.md", "README.md"],
+  "files": [
+    "dist/**",
+    "LICENSE.md",
+    "README.md"
+  ],
   "type": "commonjs",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
