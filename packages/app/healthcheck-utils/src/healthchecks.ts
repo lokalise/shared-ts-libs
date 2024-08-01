@@ -15,7 +15,7 @@ export type HealthcheckDependencies<SupportedHealthchecks extends string> = {
   healthcheckStore: HealthcheckResultsStore<SupportedHealthchecks>
 }
 
-let metricsRegistered = false
+const metricsRegistered = new Map<string, boolean>()
 
 export abstract class AbstractHealthcheck<SupportedHealthchecks extends string>
   implements Healthcheck
@@ -42,11 +42,11 @@ export abstract class AbstractHealthcheck<SupportedHealthchecks extends string>
   }
 
   instantiateMetrics(): void {
-    if (!this.areMetricsEnabled || metricsRegistered) {
+    const id = this.getId()
+    if (!this.areMetricsEnabled || metricsRegistered.get(id)) {
       return
     }
     const store = this.store
-    const id = this.getId()
     new Gauge({
       name: `${id}_availability`,
       help: `Whether ${id} was available at the time`,
@@ -64,7 +64,7 @@ export abstract class AbstractHealthcheck<SupportedHealthchecks extends string>
       },
     })
 
-    metricsRegistered = true
+    metricsRegistered.set(id, true)
   }
 
   async execute(): Promise<void> {
