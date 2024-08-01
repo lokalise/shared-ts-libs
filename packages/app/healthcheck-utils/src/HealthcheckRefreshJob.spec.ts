@@ -17,7 +17,7 @@ import {
   type HealthcheckDependencies,
 } from './healthchecks.js'
 
-type SupportedHealthchecks = 'test'
+type SupportedHealthchecks = 'test' | 'test2'
 
 class TestHealthcheck extends AbstractHealthcheck<SupportedHealthchecks> implements Healthcheck {
   private readonly throwError: boolean
@@ -33,6 +33,29 @@ class TestHealthcheck extends AbstractHealthcheck<SupportedHealthchecks> impleme
 
   getId(): SupportedHealthchecks {
     return 'test'
+  }
+
+  check(): Promise<Either<Error, number>> {
+    return this.throwError
+      ? Promise.resolve({ error: new Error('error') })
+      : Promise.resolve({ result: 5 })
+  }
+}
+
+class TestHealthcheck2 extends AbstractHealthcheck<SupportedHealthchecks> implements Healthcheck {
+  private readonly throwError: boolean
+
+  constructor(
+    dependencies: HealthcheckDependencies<SupportedHealthchecks>,
+    areMetricsEnabled: boolean,
+    throwError = false,
+  ) {
+    super(dependencies, areMetricsEnabled)
+    this.throwError = throwError
+  }
+
+  getId(): SupportedHealthchecks {
+    return 'test2'
   }
 
   check(): Promise<Either<Error, number>> {
@@ -69,7 +92,7 @@ describe('HealthcheckRefreshJob', () => {
   let job: HealthcheckRefreshJob
   beforeAll(() => {
     redis = new Redis(getTestRedisConfig())
-    store = new HealthcheckResultsStore({ healthcheckNumber: 1 })
+    store = new HealthcheckResultsStore({ maxHealthcheckNumber: 1 })
   })
   beforeEach(() => {
     store.resetHealthcheckStores()
@@ -84,6 +107,14 @@ describe('HealthcheckRefreshJob', () => {
   it('updates successful redis healthcheck', async () => {
     const healthchecks = [
       new TestHealthcheck(
+        {
+          healthcheckStore: store,
+        },
+        true,
+        false,
+      ),
+
+      new TestHealthcheck2(
         {
           healthcheckStore: store,
         },

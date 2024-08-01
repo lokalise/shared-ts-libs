@@ -5,7 +5,7 @@ import {
 } from './HealthcheckResultsStore'
 
 const testParams: HealthcheckResultsStoreParams = {
-  healthcheckNumber: 2,
+  maxHealthcheckNumber: 2,
   healthCheckResultTtlInMsecs: 5000,
   stalenessThresholdInMsecs: 1000,
 }
