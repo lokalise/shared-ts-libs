@@ -2,7 +2,7 @@ import { CommonBullmqFactory } from '../factories/CommonBullmqFactory'
 import type { BaseJobPayload } from '../types'
 
 import type { RedisConfig } from '@lokalise/node-core'
-import { Job } from 'bullmq'
+import type { Job } from 'bullmq'
 import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
 
