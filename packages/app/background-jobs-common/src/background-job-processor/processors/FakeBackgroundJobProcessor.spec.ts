@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { DependencyMocks } from '../../../test/dependencyMocks'
 import type { BaseJobPayload } from '../types'
 
-import { getTestRedisConfig } from '../../../test/setup'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
 
@@ -22,7 +21,7 @@ describe('FakeBackgroundJobProcessor', () => {
   beforeEach(async () => {
     mocks = new DependencyMocks()
     deps = mocks.create()
-    processor = new FakeBackgroundJobProcessor<JobData>(deps, QueueName, getTestRedisConfig())
+    processor = new FakeBackgroundJobProcessor<JobData>(deps, QueueName, mocks.getRedisConfig())
     await processor.start()
   })
 
@@ -32,7 +31,10 @@ describe('FakeBackgroundJobProcessor', () => {
   })
 
   it('process calls and clean works', async () => {
-    const data = { value: 'test', metadata: { correlationId: generateMonotonicUuid() } }
+    const data = {
+      value: 'test',
+      metadata: { correlationId: generateMonotonicUuid() },
+    }
     await processor.schedule(data)
 
     await processor.spy?.waitForJob((data) => data.value === 'test', 'completed')
