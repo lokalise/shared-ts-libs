@@ -23,8 +23,8 @@ const queueIdsSet = new Set<string>()
  * It utilizes observability tools and a logger to provide detailed insights.
  */
 export class BackgroundJobProcessorMonitor<
-  JobPayload extends BaseJobPayload,
-  JobType extends SafeJob<JobPayload>,
+  JobPayload extends BaseJobPayload = BaseJobPayload,
+  JobType extends SafeJob<JobPayload> = SafeJob<JobPayload>,
 > {
   private readonly logger: CommonLogger
   private readonly transactionObservabilityManager: TransactionObservabilityManager
