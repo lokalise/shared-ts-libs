@@ -1,12 +1,12 @@
 import type { Job } from 'bullmq'
 
+import type { RedisConfig } from '@lokalise/node-core'
 import {
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
   FakeBackgroundJobProcessor,
   type RequestContext,
 } from '../../src'
-import { getTestRedisConfig } from '../setup'
 
 type TestSuccessBackgroundJobProcessorData = {
   id?: string
@@ -22,9 +22,9 @@ export class TestSuccessBackgroundJobProcessor<
   constructor(
     dependencies: BackgroundJobProcessorDependencies<T>,
     queueName: string,
-    isTest = true,
+    redisConfig: RedisConfig,
   ) {
-    super(dependencies, queueName, getTestRedisConfig(), isTest)
+    super(dependencies, queueName, redisConfig, true)
   }
 
   schedule(jobData: T): Promise<string> {

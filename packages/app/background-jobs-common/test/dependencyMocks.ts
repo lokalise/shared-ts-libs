@@ -1,4 +1,4 @@
-import { globalLogger } from '@lokalise/node-core'
+import { type RedisConfig, globalLogger } from '@lokalise/node-core'
 import { Redis } from 'ioredis'
 import { type MockInstance, vi, vitest } from 'vitest'
 
@@ -39,28 +39,29 @@ export class DependencyMocks {
     await this.client?.quit()
   }
 
+  getRedisConfig(): RedisConfig {
+    return {
+      host: process.env.REDIS_HOST!,
+      port: Number(process.env.REDIS_PORT),
+      db: process.env.REDIS_DB ? Number.parseInt(process.env.REDIS_DB) : undefined,
+      username: process.env.REDIS_USERNAME,
+      password: process.env.REDIS_PASSWORD,
+      keyPrefix: process.env.REDIS_KEY_PREFIX,
+      useTls: false,
+      commandTimeout: process.env.REDIS_COMMAND_TIMEOUT
+        ? Number.parseInt(process.env.REDIS_COMMAND_TIMEOUT, 10)
+        : undefined,
+      connectTimeout: process.env.REDIS_CONNECT_TIMEOUT
+        ? Number.parseInt(process.env.REDIS_CONNECT_TIMEOUT, 10)
+        : undefined,
+    }
+  }
+
   startRedis(): Redis {
-    const db = process.env.REDIS_DB ? Number.parseInt(process.env.REDIS_DB) : undefined
-    const host = process.env.REDIS_HOST
-    const port = process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : undefined
-    const username = process.env.REDIS_USERNAME
-    const password = process.env.REDIS_PASSWORD
-    const connectTimeout = process.env.REDIS_CONNECT_TIMEOUT
-      ? Number.parseInt(process.env.REDIS_CONNECT_TIMEOUT, 10)
-      : undefined
-    const commandTimeout = process.env.REDIS_COMMAND_TIMEOUT
-      ? Number.parseInt(process.env.REDIS_COMMAND_TIMEOUT, 10)
-      : undefined
-    const keyPrefix = process.env.REDIS_KEY_PREFIX
+    const redisConfig = this.getRedisConfig()
     this.client = new Redis({
-      host,
-      db,
-      keyPrefix,
-      port,
-      username,
-      password,
-      connectTimeout,
-      commandTimeout,
+      ...redisConfig,
+      keyPrefix: undefined,
       maxRetriesPerRequest: null,
       enableReadyCheck: false,
     })
