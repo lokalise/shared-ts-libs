@@ -1,32 +1,35 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import {
+  type MockInstance,
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 
 import type Redis from 'ioredis'
+import pino from 'pino'
 import { DependencyMocks } from '../../../test/dependencyMocks'
 import { QUEUE_IDS_KEY } from '../constants'
-import { FakeBackgroundJobProcessor } from '../processors/FakeBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from '../processors/types'
+import type { BaseJobPayload, RequestContext, SafeJob } from '../types'
 import { BackgroundJobProcessorMonitor } from './BackgroundJobProcessorMonitor'
 import { backgroundJobProcessorGetActiveQueueIds } from './backgroundJobProcessorGetActiveQueueIds'
+import symbols = pino.symbols
+import { generateMonotonicUuid } from '@lokalise/id-utils'
+import type { CommonLogger } from '@lokalise/node-core'
 
 describe('BackgroundJobProcessorMonitor', () => {
   let mocks: DependencyMocks
   let deps: BackgroundJobProcessorDependencies<any>
   let redis: Redis
-  let monitor: BackgroundJobProcessorMonitor
 
   beforeAll(() => {
     mocks = new DependencyMocks()
     deps = mocks.create()
     redis = mocks.startRedis()
-    monitor = new BackgroundJobProcessorMonitor(
-      deps,
-      {
-        queueId: 'test-queue',
-        ownerName: 'test-owner',
-        redisConfig: mocks.getRedisConfig(),
-      },
-      'BackgroundJobProcessorMonitor tests',
-    )
   })
 
   beforeEach(async () => {
@@ -132,14 +135,140 @@ describe('BackgroundJobProcessorMonitor', () => {
   })
 
   describe('getRequestContext', () => {
-    // TODO
+    let monitor: BackgroundJobProcessorMonitor
+
+    beforeAll(() => {
+      monitor = new BackgroundJobProcessorMonitor(
+        deps,
+        {
+          queueId: 'test-queue-getRequestContext',
+          ownerName: 'test-owner',
+          redisConfig: mocks.getRedisConfig(),
+        },
+        'BackgroundJobProcessorMonitor tests',
+      )
+    })
+
+    it('request context not in job so a new one is generated', () => {
+      const job = createFakeJob('test-correlation-id')
+      const requestContext = monitor.getRequestContext(job)
+      expect(requestContext.reqId).toEqual(job.id)
+      expect(requestContext.logger).toBeDefined()
+
+      const pinoLogger = requestContext.logger?.['logger' as any]
+      const loggerProps = pinoLogger?.[symbols.chindingsSym as unknown as keyof CommonLogger]
+      expect(loggerProps).toContain(`"x-request-id":"${job.data.metadata.correlationId}"`)
+      expect(loggerProps).toContain(`"jobId":"${job.id}"`)
+    })
+
+    it('request context exists so it is not recreated', () => {
+      const job = createFakeJob('test-correlation-id')
+      // @ts-ignore
+      job.requestContext = {
+        reqId: 'test-req-id',
+        logger: { hello: 'world' } as any,
+      }
+
+      const requestContext = monitor.getRequestContext(job)
+      expect(requestContext.reqId).toEqual('test-req-id')
+      expect(requestContext.logger).toEqual({ hello: 'world' })
+    })
   })
 
   describe('logJobStarted', () => {
-    // TODO
+    let monitor: BackgroundJobProcessorMonitor
+    let transactionManagerSpy: MockInstance
+    let job: SafeJob<BaseJobPayload>
+
+    beforeAll(() => {
+      monitor = new BackgroundJobProcessorMonitor(
+        deps,
+        {
+          queueId: 'test-queue-logJobStarted',
+          ownerName: 'test-owner',
+          redisConfig: mocks.getRedisConfig(),
+        },
+        'BackgroundJobProcessorMonitor tests',
+      )
+      job = createFakeJob('test_correlation_id')
+    })
+
+    beforeEach(() => {
+      transactionManagerSpy = vi.spyOn(deps.transactionObservabilityManager, 'start')
+    })
+
+    it('should start transaction and log', () => {
+      const requestContext = {
+        reqId: 'test-req-id',
+        logger: { info: (_obj, _msg) => undefined },
+      } as RequestContext
+      const loggerSpy = vi.spyOn(requestContext.logger, 'info')
+
+      monitor.jobStart(job, requestContext)
+
+      expect(transactionManagerSpy).toHaveBeenCalledWith(
+        'bg_job:test-owner:test-queue-logJobStarted',
+        job.id,
+      )
+      expect(loggerSpy).toHaveBeenCalledWith(
+        { origin: 'BackgroundJobProcessorMonitor tests', jobId: job.id },
+        'Started job test-test_correlation_id-job',
+      )
+    })
   })
 
   describe('logJobCompleted', () => {
-    // TODO
+    let monitor: BackgroundJobProcessorMonitor
+    let transactionManagerSpy: MockInstance
+
+    beforeAll(() => {
+      monitor = new BackgroundJobProcessorMonitor(
+        deps,
+        {
+          queueId: 'test-queue-logJobStarted',
+          ownerName: 'test-owner',
+          redisConfig: mocks.getRedisConfig(),
+        },
+        'BackgroundJobProcessorMonitor tests',
+      )
+    })
+
+    beforeEach(() => {
+      transactionManagerSpy = vi.spyOn(deps.transactionObservabilityManager, 'stop')
+    })
+
+    it.each([[undefined], [0], [50], [100]])(
+      'should stop transaction and log result - %s',
+      (progress) => {
+        const job = createFakeJob('test_correlation_id', progress)
+
+        const requestContext = {
+          reqId: 'test-req-id',
+          logger: { info: (_obj, _msg) => undefined },
+        } as RequestContext
+        const loggerSpy = vi.spyOn(requestContext.logger, 'info')
+
+        monitor.jobEnd(job, requestContext)
+
+        expect(transactionManagerSpy).toHaveBeenCalledWith(job.id)
+        expect(loggerSpy).toHaveBeenCalledWith(
+          {
+            origin: 'BackgroundJobProcessorMonitor tests',
+            jobId: job.id,
+            isSuccess: progress === 100,
+          },
+          'Finished job test-test_correlation_id-job',
+        )
+      },
+    )
   })
 })
+
+const createFakeJob = (correlationId: string, progress?: number) =>
+  ({
+    id: generateMonotonicUuid(),
+    name: `test-${correlationId}-job`,
+    data: { metadata: { correlationId } },
+    progress,
+    log: (_: string) => Promise.resolve(undefined),
+  }) as SafeJob<BaseJobPayload>
