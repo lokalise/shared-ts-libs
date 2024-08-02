@@ -1,0 +1,18 @@
+name: Package release to NPM -> healthcheck-utils
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+    paths:
+      - 'packages/app/healthcheck-utils/**'
+
+jobs:
+  call-build-flow:
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/healthcheck-utils'
+      package_name: '@lokalise/healthcheck-utils'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
