@@ -15,6 +15,13 @@ import { resolveJobId, sanitizeRedisConfig } from '../utils'
 
 const queueIdsSet = new Set<string>()
 
+/**
+ * Internal class to group and manage job processing monitoring tools.
+ *
+ * This class is responsible for managing and monitoring the lifecycle of background jobs, including
+ * registering and unregistering job queues and creating request contexts, and logging main job events.
+ * It utilizes observability tools and a logger to provide detailed insights.
+ */
 export class BackgroundJobProcessorMonitor<
   JobPayload extends BaseJobPayload,
   JobType extends SafeJob<JobPayload>,
@@ -56,7 +63,9 @@ export class BackgroundJobProcessorMonitor<
   }
 
   public getRequestContext(job: JobType): RequestContext {
+    // try to reuse request context if it's already attached to the job
     if (hasRequestContext(job)) return job.requestContext
+    // if not creating it and attaching to the job for next time
 
     const jobId = resolveJobId(job)
     const requestContext: RequestContext = {
