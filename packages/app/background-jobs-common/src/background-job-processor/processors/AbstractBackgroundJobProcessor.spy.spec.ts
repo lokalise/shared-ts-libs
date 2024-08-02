@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { DependencyMocks } from '../../../test/dependencyMocks'
-import { TestFailingBackgroundJobProcessor } from '../../../test/processors/TestFailingBackgroundJobProcessor'
 import { TestReturnValueBackgroundJobProcessor } from '../../../test/processors/TestReturnValueBackgroundJobProcessor'
 import type { BaseJobPayload } from '../types'
 
+import { TestStalledBackgroundJobProcessor } from '../../../test/processors/TestStalledBackgroundJobProcessor'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
 
@@ -28,11 +28,7 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
 
   describe('spy', () => {
     it('throws error when spy accessed in non-test mode', async () => {
-      const processor = new TestFailingBackgroundJobProcessor<JobData>(
-        deps,
-        'AbstractBackgroundJobProcessor_spy',
-        mocks.getRedisConfig(),
-      )
+      const processor = new TestStalledBackgroundJobProcessor(deps, mocks.getRedisConfig())
 
       expect(() => processor.spy).throws(
         'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
