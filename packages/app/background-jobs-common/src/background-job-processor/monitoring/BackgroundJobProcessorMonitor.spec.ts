@@ -19,8 +19,6 @@ import { BackgroundJobProcessorMonitor } from './BackgroundJobProcessorMonitor'
 import { backgroundJobProcessorGetActiveQueueIds } from './backgroundJobProcessorGetActiveQueueIds'
 import symbols = pino.symbols
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import type { CommonLogger } from '@lokalise/node-core'
-import type { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger'
 
 describe('BackgroundJobProcessorMonitor', () => {
   let mocks: DependencyMocks
@@ -156,9 +154,11 @@ describe('BackgroundJobProcessorMonitor', () => {
       expect(requestContext.reqId).toEqual(job.id)
       expect(requestContext.logger).toBeDefined()
 
-      const pinoLogger =
-        requestContext.logger?.['logger' as unknown as keyof BackgroundJobProcessorLogger]
-      const loggerProps = pinoLogger?.[symbols.chindingsSym as unknown as keyof CommonLogger]
+      // @ts-ignore
+
+      const pinoLogger = requestContext.logger?.logger
+      // @ts-ignore
+      const loggerProps = pinoLogger?.[symbols.chindingsSym]
       expect(loggerProps).toContain(`"x-request-id":"${job.data.metadata.correlationId}"`)
       expect(loggerProps).toContain(`"jobId":"${job.id}"`)
     })
