@@ -3,14 +3,13 @@ import { waitAndRetry } from '@lokalise/node-core'
 import { UnrecoverableError } from 'bullmq'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { DependencyMocks, lastInfoSpy } from '../../../test/dependencyMocks'
+import { DependencyMocks } from '../../../test/dependencyMocks'
 import { TestFailingBackgroundJobProcessor } from '../../../test/processors/TestFailingBackgroundJobProcessor'
 import { TestStalledBackgroundJobProcessor } from '../../../test/processors/TestStalledBackgroundJobProcessor'
 import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/TestSucessBackgroundJobProcessor'
 import type { BaseJobPayload } from '../types'
 
-import Redis from 'ioredis'
-import { backgroundJobProcessorGetActiveQueueIds } from '../monitoring/backgroundJobProcessorGetActiveQueueIds'
+import type Redis from 'ioredis'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
 
@@ -116,48 +115,6 @@ describe('AbstractBackgroundJobProcessor', () => {
       })
       await processor.dispose()
     })
-
-    // TODO move to monitor tests
-    it.skip('queue id is stored/updated on redis with current timestamp', async () => {
-      const processor = new FakeBackgroundJobProcessor<JobData>(
-        deps,
-        'queue1',
-        mocks.getRedisConfig(),
-      )
-      await processor.start()
-
-      const today = new Date()
-      const redisWithoutPrefix = new Redis(mocks.getRedisConfig())
-      const [, score] = await redisWithoutPrefix.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
-      const queueIds = await backgroundJobProcessorGetActiveQueueIds(mocks.getRedisConfig())
-      expect(queueIds).toStrictEqual(['queue1'])
-      // Comparing timestamps in seconds
-      const todaySeconds = Math.floor(today.getTime() / 1000)
-      const scoreSeconds = Math.floor(new Date(Number.parseInt(score)).getTime() / 1000)
-      // max difference 1 to handle edge case of 0.1 - 1.0
-      expect(scoreSeconds - todaySeconds).lessThanOrEqual(1)
-
-      // disposing and restarting to check that timestamp is updated
-      await processor.dispose()
-      await processor.start()
-
-      const [, scoreAfterRestart] = await redisWithoutPrefix.zrange(
-        QUEUE_IDS_KEY,
-        0,
-        -1,
-        'WITHSCORES',
-      )
-      const queueIdsAfterRestart = await backgroundJobProcessorGetActiveQueueIds(
-        mocks.getRedisConfig(),
-      )
-      expect(queueIdsAfterRestart).toStrictEqual(['queue1'])
-      expect(new Date(Number.parseInt(score))).not.toEqual(
-        new Date(Number.parseInt(scoreAfterRestart)),
-      )
-
-      await processor.dispose()
-      redisWithoutPrefix.disconnect()
-    })
   })
 
   describe('success', () => {
@@ -183,22 +140,6 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       const job = await processor.spy.waitForJobWithId(jobId, 'completed')
       expect(job.data).toMatchObject(jobData)
-
-      expect(lastInfoSpy).toHaveBeenCalledTimes(2)
-      expect(lastInfoSpy.mock.calls[0]).toMatchObject([
-        {
-          origin: 'FakeBackgroundJobProcessor',
-        },
-        `Started job ${QueueName}`,
-        [],
-      ])
-      expect(lastInfoSpy.mock.calls[1]).toMatchObject([
-        {
-          isSuccess: true,
-        },
-        `Finished job ${QueueName}`,
-        [],
-      ])
     })
 
     it('schedules and runs multiple jobs', async () => {

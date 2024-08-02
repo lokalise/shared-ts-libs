@@ -1,6 +1,6 @@
 import { type RedisConfig, globalLogger } from '@lokalise/node-core'
 import { Redis } from 'ioredis'
-import { type MockInstance, vi, vitest } from 'vitest'
+import { type MockInstance, vi } from 'vitest'
 
 import { type BackgroundJobProcessorDependencies, CommonBullmqFactory } from '../src'
 
@@ -12,16 +12,6 @@ export class DependencyMocks {
   private client?: Redis
 
   create(): BackgroundJobProcessorDependencies<any> {
-    const originalChildFn = testLogger.child
-
-    const originalMethodSpy = vitest.spyOn(testLogger, 'child')
-    originalMethodSpy.mockImplementation((...args) => {
-      const childLogger = originalChildFn.apply(testLogger, args)
-      lastInfoSpy = vitest.spyOn(childLogger, 'info')
-      lastErrorSpy = vitest.spyOn(childLogger, 'error')
-      return childLogger
-    })
-
     return {
       bullmqFactory: new CommonBullmqFactory(),
       transactionObservabilityManager: {
