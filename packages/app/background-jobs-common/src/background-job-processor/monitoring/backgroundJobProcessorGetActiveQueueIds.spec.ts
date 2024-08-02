@@ -8,12 +8,10 @@ import { backgroundJobProcessorGetActiveQueueIds } from './backgroundJobProcesso
 
 describe('backgroundJobProcessorGetActiveQueueIds', () => {
   let mocks: DependencyMocks
-  //let deps: BackgroundJobProcessorDependencies<any>
   let redis: Redis
 
   beforeAll(() => {
     mocks = new DependencyMocks()
-    //deps = mocks.create()
     redis = mocks.startRedis()
   })
 
