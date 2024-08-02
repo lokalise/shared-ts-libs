@@ -1,4 +1,3 @@
-import type { CommonLogger } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 
 import {
@@ -19,7 +18,6 @@ type OnFailedError = {
 
 export class TestStalledBackgroundJobProcessor extends AbstractBackgroundJobProcessor<Data> {
   private _onFailedErrors: OnFailedError[] = []
-  public lastLogger: CommonLogger | undefined
 
   constructor(dependencies: BackgroundJobProcessorDependencies<Data>) {
     super(dependencies, {
@@ -45,12 +43,6 @@ export class TestStalledBackgroundJobProcessor extends AbstractBackgroundJobProc
 
   protected override process(): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, 1000))
-  }
-
-  protected resolveExecutionLogger(job: Job<Data>): CommonLogger {
-    const logger = super.resolveExecutionLogger(job)
-    this.lastLogger = logger
-    return logger
   }
 
   protected override onFailed(job: Job<Data>, error: Error): Promise<void> {
