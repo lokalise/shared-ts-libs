@@ -2,6 +2,7 @@ import { CommonBullmqFactory } from '../factories/CommonBullmqFactory'
 import type { BaseJobPayload } from '../types'
 
 import type { RedisConfig } from '@lokalise/node-core'
+import { Job } from 'bullmq'
 import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
 
@@ -37,7 +38,7 @@ export class FakeBackgroundJobProcessor<
       },
     )
   }
-  protected override process(): Promise<void> {
+  protected override process(_job: Job<JobData>): Promise<void> {
     return Promise.resolve()
   }
 }

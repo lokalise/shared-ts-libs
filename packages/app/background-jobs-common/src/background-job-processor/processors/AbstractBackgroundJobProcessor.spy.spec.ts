@@ -47,6 +47,7 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
       const returnValue: JobReturn = { result: 'done' }
       const processor = new TestReturnValueBackgroundJobProcessor<JobData, JobReturn>(
         deps,
+        mocks.getRedisConfig(),
         returnValue,
       )
       await processor.start()
