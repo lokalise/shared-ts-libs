@@ -8,9 +8,10 @@
   - The deprecated `processCalls` property from `FakeBackgroundJobProcessor` has been removed.
 
 2. **Method Changes in `AbstractBackgroundJobProcessor`**
-  - The method `getActiveQueueIds` has been removed. A new constant method now serves this purpose.
+  - The method `getActiveQueueIds` has been removed. A new constant method now serves this purpose, please check
+    [Migration Steps](#migration-steps) for more info.
   - `logJobStarted` and `logJobFinished` methods are no longer public. The SDK now offers basic logging, and there are
-    alternative ways to extend logging if needed.
+    alternative ways to extend logging if needed, please check [Migration Steps](#migration-steps) for more info.
   - The method `resolveExecutionLogger` can no longer be overridden. The SDK will now automatically create the 
     recommended logger.
 
@@ -25,17 +26,19 @@
     - `isUnrecoverableJobError`
     - `sanitizeRedisConfig`
 
+
 ### Migration Steps
 
 #### For `FakeBackgroundJobProcessor`
 - If you were using the `processCalls` property, you should remove it and switch to using the spy feature which was 
-  introduced in an earlier version.
+  introduced in an earlier version (Please check the Spies section on README for more information).
 
 #### For `AbstractBackgroundJobProcessor`
 - **Replacing `getActiveQueueIds`:**
   - Replace any usage of `getActiveQueueIds` with the new public method `backgroundJobProcessorGetActiveQueueIds`.
 - **Logging with `logJobStarted` and `logJobFinished`:**
-  - As these methods are no longer public, extend the logged data using hooks or within the `process` method.
+  - As these methods are no longer public, extend the logged data using `requestContext.logger` on hooks (`onSucess` and `onFailed`) or
+    `process` methods.
 - **Custom Logger with `resolveExecutionLogger`:**
   - Since overriding `resolveExecutionLogger` is no longer possible, pass your custom logger (e.g., `logger.child`) 
     through the constructor.
