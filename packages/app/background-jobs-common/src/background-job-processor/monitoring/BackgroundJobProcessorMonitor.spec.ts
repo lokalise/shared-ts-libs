@@ -161,6 +161,7 @@ describe('BackgroundJobProcessorMonitor', () => {
       const loggerProps = pinoLogger?.[symbols.chindingsSym]
       expect(loggerProps).toContain(`"x-request-id":"${job.data.metadata.correlationId}"`)
       expect(loggerProps).toContain(`"jobId":"${job.id}"`)
+      expect(loggerProps).toContain('"jobName":"name_test-correlation-id_job"')
     })
 
     it('request context exists so it is not recreated', () => {
@@ -192,7 +193,7 @@ describe('BackgroundJobProcessorMonitor', () => {
         },
         'BackgroundJobProcessorMonitor tests',
       )
-      job = createFakeJob('test_correlation_id')
+      job = createFakeJob('test-correlation-id')
     })
 
     beforeEach(() => {
@@ -213,8 +214,10 @@ describe('BackgroundJobProcessorMonitor', () => {
         job.id,
       )
       expect(loggerSpy).toHaveBeenCalledWith(
-        { origin: 'BackgroundJobProcessorMonitor tests', jobId: job.id },
-        'Started job test-test_correlation_id-job',
+        {
+          origin: 'BackgroundJobProcessorMonitor tests',
+        },
+        'Started job name_test-correlation-id_job',
       )
     })
   })
@@ -242,7 +245,7 @@ describe('BackgroundJobProcessorMonitor', () => {
     it.each([[undefined], [0], [50], [100]])(
       'should stop transaction and log result - %s',
       (progress) => {
-        const job = createFakeJob('test_correlation_id', progress)
+        const job = createFakeJob('test-correlation-id', progress)
 
         const requestContext = {
           reqId: 'test-req-id',
@@ -256,10 +259,9 @@ describe('BackgroundJobProcessorMonitor', () => {
         expect(loggerSpy).toHaveBeenCalledWith(
           {
             origin: 'BackgroundJobProcessorMonitor tests',
-            jobId: job.id,
             isSuccess: progress === 100,
           },
-          'Finished job test-test_correlation_id-job',
+          'Finished job name_test-correlation-id_job',
         )
       },
     )
@@ -269,7 +271,7 @@ describe('BackgroundJobProcessorMonitor', () => {
 const createFakeJob = (correlationId: string, progress?: number) =>
   ({
     id: generateMonotonicUuid(),
-    name: `test-${correlationId}-job`,
+    name: `name_${correlationId}_job`,
     data: { metadata: { correlationId } },
     progress,
     log: (_: string) => Promise.resolve(undefined),

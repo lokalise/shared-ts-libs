@@ -74,6 +74,7 @@ export class BackgroundJobProcessorMonitor<
         this.logger.child({
           'x-request-id': job.data.metadata.correlationId,
           jobId,
+          jobName: job.name,
         }),
         job,
       ),
@@ -86,23 +87,20 @@ export class BackgroundJobProcessorMonitor<
   }
 
   public jobStart(job: JobType, requestContext: RequestContext): void {
-    const jobId = resolveJobId(job)
     const transactionName = `bg_job:${this.ownerName}:${this.queueId}`
-    this.transactionObservabilityManager.start(transactionName, jobId)
-    requestContext.logger.info({ origin: this.processorName, jobId }, `Started job ${job.name}`)
+    this.transactionObservabilityManager.start(transactionName, resolveJobId(job))
+    requestContext.logger.info({ origin: this.processorName }, `Started job ${job.name}`)
   }
 
   public jobEnd(job: JobType, requestContext: RequestContext): void {
-    const jobId = resolveJobId(job)
     requestContext.logger.info(
       {
-        jobId,
         origin: this.processorName,
         isSuccess: job.progress === 100,
       },
       `Finished job ${job.name}`,
     )
-    this.transactionObservabilityManager.stop(jobId)
+    this.transactionObservabilityManager.stop(resolveJobId(job))
   }
 }
 
