@@ -40,7 +40,7 @@ export abstract class AbstractBackgroundJobProcessor<
   >,
   JobOptionsType extends JobsOptions = JobsOptions,
 > {
-  private readonly errorReporter: ErrorReporter
+  private readonly errorReporter: ErrorReporter // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
   private readonly config: BackgroundJobProcessorConfig<QueueOptionsType, WorkerOptionsType>
   private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
   private readonly monitor: BackgroundJobProcessorMonitor<JobPayload, JobType>
@@ -141,7 +141,7 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   private registerListeners() {
-    // TODO: could we extract hooks handling to a separate class
+    // TODO: extract hooks handling to a separate class
     this.worker?.on('failed', (job, error) => {
       if (!job) return // Should not be possible with our current config, check 'failed' for more info
       // @ts-expect-error
