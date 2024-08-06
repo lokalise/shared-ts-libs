@@ -39,7 +39,6 @@
     "@lokalise/biome-config": "^1.0.0",
     "@lokalise/package-vite-config": "latest",
     "@vitest/coverage-v8": "^2.0.4",
-    "prettier": "3.3.3",
     "rimraf": "^5.0.7",
     "typescript": "5.5.4",
     "vite": "5.3.5",
