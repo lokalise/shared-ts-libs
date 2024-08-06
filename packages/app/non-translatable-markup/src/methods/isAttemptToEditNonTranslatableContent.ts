@@ -1,5 +1,5 @@
 import { isTextTranslatable } from './isTextTranslatable'
-import { nonTranslatableTagsRegexpG, nonTranslatableTextRegexpG } from './regex'
+import { nonTranslatableTextRegexpG } from './utils'
 
 /**
  * Compares two strings and returns true if the new string tries to edit the non-translatable content within
@@ -42,11 +42,4 @@ const extractTextBetweenTags = (text: string): string[] => {
   }
 
   return matches
-}
-
-/**
- * Removes any non-translatable tag.
- */
-export const removeNonTranslatableTags = (text: string): string => {
-  return text.replace(nonTranslatableTagsRegexpG, '')
 }

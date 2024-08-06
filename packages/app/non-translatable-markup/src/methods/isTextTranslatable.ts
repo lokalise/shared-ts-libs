@@ -1,4 +1,4 @@
-import { nonTranslatableTextRegexp } from './regex'
+import { nonTranslatableTextRegexp } from './utils'
 
 /**
  * Returns true if the text is entirely encapsulated in non-translatable tags.
