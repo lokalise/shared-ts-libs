@@ -1,12 +1,11 @@
-import type { CommonLogger } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 
+import type { RedisConfig } from '@lokalise/node-core'
 import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
 } from '../../src'
-import { getTestRedisConfig } from '../setup'
 
 type Data = {
   id?: string
@@ -19,9 +18,8 @@ type OnFailedError = {
 
 export class TestStalledBackgroundJobProcessor extends AbstractBackgroundJobProcessor<Data> {
   private _onFailedErrors: OnFailedError[] = []
-  public lastLogger: CommonLogger | undefined
 
-  constructor(dependencies: BackgroundJobProcessorDependencies<Data>) {
+  constructor(dependencies: BackgroundJobProcessorDependencies<Data>, redisConfig: RedisConfig) {
     super(dependencies, {
       queueId: 'TestStalledBackgroundJobProcessor queue',
       ownerName: 'test',
@@ -30,7 +28,7 @@ export class TestStalledBackgroundJobProcessor extends AbstractBackgroundJobProc
         lockDuration: 1,
         stalledInterval: 1,
       },
-      redisConfig: getTestRedisConfig(),
+      redisConfig: redisConfig,
     })
   }
 
@@ -45,12 +43,6 @@ export class TestStalledBackgroundJobProcessor extends AbstractBackgroundJobProc
 
   protected override process(): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, 1000))
-  }
-
-  protected resolveExecutionLogger(job: Job<Data>): CommonLogger {
-    const logger = super.resolveExecutionLogger(job)
-    this.lastLogger = logger
-    return logger
   }
 
   protected override onFailed(job: Job<Data>, error: Error): Promise<void> {

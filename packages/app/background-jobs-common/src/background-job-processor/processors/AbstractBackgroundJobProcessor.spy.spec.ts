@@ -1,11 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { DependencyMocks } from '../../../test/dependencyMocks'
-import { TestFailingBackgroundJobProcessor } from '../../../test/processors/TestFailingBackgroundJobProcessor'
 import { TestReturnValueBackgroundJobProcessor } from '../../../test/processors/TestReturnValueBackgroundJobProcessor'
 import type { BaseJobPayload } from '../types'
 
-import { getTestRedisConfig } from '../../../test/setup'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
 
@@ -29,9 +27,10 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
 
   describe('spy', () => {
     it('throws error when spy accessed in non-test mode', async () => {
-      const processor = new TestFailingBackgroundJobProcessor<JobData>(
+      const processor = new FakeBackgroundJobProcessor<JobData>(
         deps,
-        'AbstractBackgroundJobProcessor_spy',
+        'myQueue1',
+        mocks.getRedisConfig(),
         false,
       )
 
@@ -48,6 +47,7 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
       const returnValue: JobReturn = { result: 'done' }
       const processor = new TestReturnValueBackgroundJobProcessor<JobData, JobReturn>(
         deps,
+        mocks.getRedisConfig(),
         returnValue,
       )
       await processor.start()
@@ -68,7 +68,7 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
       const jobProcessor = new FakeBackgroundJobProcessor<JobData>(
         deps,
         'queue1',
-        getTestRedisConfig(),
+        mocks.getRedisConfig(),
       )
       const jobId = await jobProcessor.schedule({
         id: '123',
