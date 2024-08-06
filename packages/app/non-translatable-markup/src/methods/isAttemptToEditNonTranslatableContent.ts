@@ -1,17 +1,5 @@
-import {
-  nonTranslatableTagsRegexpG,
-  nonTranslatableTextRegexp,
-  nonTranslatableTextRegexpG,
-} from './regex'
-
-/**
- * Returns true if the text is entirely encapsulated in non-translatable tags.
- */
-export const isTextTranslatable = (text: string): boolean => {
-  const parts = text.split(nonTranslatableTextRegexp).map((part) => part.trim())
-
-  return parts.some((part) => part !== '')
-}
+import { isTextTranslatable } from './isTextTranslatable'
+import { nonTranslatableTagsRegexpG, nonTranslatableTextRegexpG } from './regex'
 
 /**
  * Compares two strings and returns true if the new string tries to edit the non-translatable content within
@@ -44,6 +32,7 @@ export const isAttemptToEditNonTranslatableContent = (
   return false
 }
 
+// TODO: extract to utils file so we can test it independently
 const extractTextBetweenTags = (text: string): string[] => {
   const matches = []
   let match

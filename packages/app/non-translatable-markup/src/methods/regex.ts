@@ -1,4 +1,4 @@
-import { NON_TRANSLATABLE_END_TAG, NON_TRANSLATABLE_START_TAG } from './nonTranslatableTags'
+import { NON_TRANSLATABLE_END_TAG, NON_TRANSLATABLE_START_TAG } from '../nonTranslatableTags'
 
 const nonTranslatableTextPattern = `${NON_TRANSLATABLE_START_TAG}.*?${NON_TRANSLATABLE_END_TAG}`
 const nonTranslatableTagsPattern = `[${NON_TRANSLATABLE_START_TAG}${NON_TRANSLATABLE_END_TAG}]`
