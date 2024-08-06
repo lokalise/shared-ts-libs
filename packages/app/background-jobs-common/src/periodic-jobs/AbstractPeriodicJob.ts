@@ -16,7 +16,7 @@ import type { ToadScheduler } from 'toad-scheduler'
 import { AsyncTask, SimpleIntervalJob } from 'toad-scheduler'
 
 const DEFAULT_JOB_INTERVAL = 60000
-const DEFAULT_LOCK_SUFFIX = 'EXCLUSIVE'
+const DEFAULT_EXCLUSIVE_LOCK_SUFFIX = 'EXCLUSIVE'
 
 export type BackgroundJobConfiguration = {
   /**
@@ -237,12 +237,12 @@ export abstract class AbstractPeriodicJob {
     } satisfies LockOptions
 
     // Try to acquire a fresh lock
-    let lock = this.getJobMutex(lockConfiguration?.lockSuffix ?? DEFAULT_LOCK_SUFFIX, mutexOptions)
+    let lock = this.getJobMutex(lockConfiguration?.lockSuffix ?? DEFAULT_EXCLUSIVE_LOCK_SUFFIX, mutexOptions)
     let acquired = await lock.tryAcquire()
 
     // If lock has been acquired previously by this instance, try to refresh
     if (!acquired && lockConfiguration?.identifier) {
-      lock = this.getJobMutex(lockConfiguration.lockSuffix ?? DEFAULT_LOCK_SUFFIX, {
+      lock = this.getJobMutex(lockConfiguration.lockSuffix ?? DEFAULT_EXCLUSIVE_LOCK_SUFFIX, {
         ...mutexOptions,
 
         acquiredExternally: true,
@@ -265,7 +265,7 @@ export abstract class AbstractPeriodicJob {
     onLockLost?: LockLostCallback,
     refreshInterval?: number,
   ) {
-    const newMutex = new Mutex(this.redis, this.getJobLockName(lockSuffix ?? DEFAULT_LOCK_SUFFIX), {
+    const newMutex = new Mutex(this.redis, this.getJobLockName(lockSuffix ?? DEFAULT_EXCLUSIVE_LOCK_SUFFIX), {
       acquiredExternally: true,
       identifier: mutex.identifier,
       lockTimeout: newLockTimeout,
