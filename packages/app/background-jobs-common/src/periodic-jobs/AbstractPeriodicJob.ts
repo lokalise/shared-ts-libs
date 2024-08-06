@@ -16,7 +16,7 @@ import type { ToadScheduler } from 'toad-scheduler'
 import { AsyncTask, SimpleIntervalJob } from 'toad-scheduler'
 
 const DEFAULT_JOB_INTERVAL = 60000
-const DEFAULT_LOCK_SUFFIX = 'EXCLUSIVE:'
+const DEFAULT_LOCK_SUFFIX = 'EXCLUSIVE'
 
 export type BackgroundJobConfiguration = {
   /**
