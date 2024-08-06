@@ -1,52 +1,48 @@
 {
-	"name": "@lokalise/non-translatable-markup",
-	"version": "2.1.0",
-	"files": [
-		"dist"
-	],
-	"license": "Apache-2.0",
-	"type": "module",
-	"main": "./dist/index.cjs",
-	"module": "./dist/index.js",
-	"types": "./dist/index.d.ts",
-	"homepage": "https://github.com/lokalise/shared-ts-libs",
-	"repository": {
-		"type": "git",
-		"url": "git://github.com/lokalise/shared-ts-libs.git"
-	},
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"require": "./dist/index.cjs",
-			"import": "./dist/index.js"
-		}
-	},
-	"publishConfig": {
-		"access": "public"
-	},
-	"scripts": {
-		"build": "rimraf dist && vite build",
-		"dev": "vite watch",
-		"clean": "rimraf dist .eslintcache",
-		"lint": "eslint --cache --max-warnings=0 . && prettier --check --log-level warn src test \"**/*.{json,md}\" && tsc --noEmit",
-		"lint:fix": "eslint . --fix && prettier --write src test \"**/*.{json,md}\"",
-		"test:ci": "vitest run --coverage",
-		"prepublishOnly": "npm run build",
-		"package-version": "echo $npm_package_version"
-	},
-	"peerDependencies": {
-		"zod": "^3.23.8"
-	},
-	"devDependencies": {
-		"@lokalise/eslint-config": "latest",
-		"@lokalise/prettier-config": "latest",
-		"@lokalise/package-vite-config": "latest",
-		"@vitest/coverage-v8": "^2.0.4",
-		"prettier": "3.3.3",
-		"rimraf": "^5.0.7",
-		"typescript": "5.5.4",
-		"vite": "5.3.5",
-		"vitest": "^2.0.4"
-	},
-	"prettier": "@lokalise/prettier-config"
+  "name": "@lokalise/non-translatable-markup",
+  "version": "2.1.0",
+  "files": ["dist"],
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "homepage": "https://github.com/lokalise/shared-ts-libs",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/lokalise/shared-ts-libs.git"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "rimraf dist && vite build",
+    "clean": "rimraf dist",
+    "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
+    "lint:fix": "biome check --write",
+    "test:ci": "vitest run --coverage",
+    "prepublishOnly": "npm run build",
+    "package-version": "echo $npm_package_version"
+  },
+  "peerDependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.3",
+    "@lokalise/biome-config": "^1.0.0",
+    "@lokalise/package-vite-config": "latest",
+    "@vitest/coverage-v8": "^2.0.4",
+    "prettier": "3.3.3",
+    "rimraf": "^5.0.7",
+    "typescript": "5.5.4",
+    "vite": "5.3.5",
+    "vitest": "^2.0.4"
+  }
 }
