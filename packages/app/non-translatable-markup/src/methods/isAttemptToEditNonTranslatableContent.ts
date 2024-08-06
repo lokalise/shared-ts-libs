@@ -35,10 +35,11 @@ export const isAttemptToEditNonTranslatableContent = (
 // TODO: extract to utils file so we can test it independently
 const extractTextBetweenTags = (text: string): string[] => {
   const matches = []
-  let match
 
-  while ((match = nonTranslatableTextRegexpG.exec(text)) !== null) {
+  let match = nonTranslatableTextRegexpG.exec(text)
+  while (match !== null) {
     matches.push(match[0])
+    match = nonTranslatableTextRegexpG.exec(text)
   }
 
   return matches
