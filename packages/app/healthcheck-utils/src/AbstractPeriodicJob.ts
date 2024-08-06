@@ -113,7 +113,7 @@ export abstract class AbstractPeriodicJob {
       shouldLogExecution: false,
       ...options,
       singleConsumerMode: {
-        enabled: false,
+        enabled: true,
         lockTimeout: (options.intervalInMs ?? DEFAULT_JOB_INTERVAL) * 2,
         ...options.singleConsumerMode,
       },

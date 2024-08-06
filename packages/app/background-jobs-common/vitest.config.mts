@@ -23,7 +23,7 @@ export default defineConfig({
 		coverage: {
 			provider: 'v8',
 			all: false,
-			exclude: ['src/periodic-jobs', 'src/**/types.ts', 'test', '**/*.spec.ts'],
+			exclude: ['src/**/types.ts', 'test', '**/*.spec.ts'],
 			thresholds: {
 				lines: 98,
 				functions: 98,
