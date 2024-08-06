@@ -32,7 +32,6 @@ export const isAttemptToEditNonTranslatableContent = (
   return false
 }
 
-// TODO: extract to utils file so we can test it independently
 const extractTextBetweenTags = (text: string): string[] => {
   const matches = []
 
