@@ -35,7 +35,7 @@ export type BackgroundJobConfiguration = {
     lockTimeoutAfterSuccess?: number
   }
   /**
-   * If true, the job will log when it starts and finishes. Default is true
+   * If true, the job will log when it starts and finishes. Default is false
    */
   shouldLogExecution?: boolean
 }
