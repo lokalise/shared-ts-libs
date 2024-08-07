@@ -27,7 +27,8 @@
     "lint": "biome check . && tsc --noEmit",
     "lint:fix": "biome check --write",
     "prepublishOnly": "npm run build",
-    "package-version": "echo $npm_package_version"
+    "package-version": "echo $npm_package_version",
+    "postversion": "biome check --write package.json"
   },
   "dependencies": {
     "vite": "5.3.5",
