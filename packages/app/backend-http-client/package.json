@@ -1,6 +1,6 @@
 {
   "name": "@lokalise/backend-http-client",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "author": {
     "name": "Lokalise",
     "url": "https://lokalise.com/"
@@ -11,7 +11,11 @@
     "url": "git://github.com/lokalise/backend-http-client.git"
   },
   "license": "Apache-2.0",
-  "files": ["dist/**", "LICENSE.md", "README.md"],
+  "files": [
+    "dist/**",
+    "LICENSE.md",
+    "README.md"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "commonjs",
