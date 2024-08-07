@@ -93,12 +93,26 @@ describe('isTextTranslatable', () => {
     '∑',
     '∫',
     '❤',
+    '♂',
+    '♀',
+    '♂',
 
     // testing emojis
     '🥳',
     '😊',
     '🌟',
     '🚀',
+    '🎉',
+    '💯',
+    '🔥',
+    '🚴',
+    '🤹',
+    '🎭',
+    '🎨',
+    '🎸',
+    '🎺',
+    '🎻',
+    '🥁',
   ])(
     'should return false if text contains only non-translatable content (test case: %s)',
     (testCase) => {
