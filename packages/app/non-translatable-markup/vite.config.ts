@@ -11,6 +11,7 @@ export default defineConfig({
   dependencies: Object.keys(packageJson.peerDependencies),
   test: {
     coverage: {
+      exclude: ['src/**/index.ts'],
       provider: 'v8',
       thresholds: {
         lines: 100,

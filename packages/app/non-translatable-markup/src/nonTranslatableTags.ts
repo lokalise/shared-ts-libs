@@ -1,0 +1,2 @@
+export const NON_TRANSLATABLE_START_TAG = '\uE101'
+export const NON_TRANSLATABLE_END_TAG = '\uE102'
