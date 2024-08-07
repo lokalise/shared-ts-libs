@@ -11,11 +11,7 @@
     "url": "git://github.com/lokalise/backend-http-client.git"
   },
   "license": "Apache-2.0",
-  "files": [
-    "dist/**",
-    "LICENSE.md",
-    "README.md"
-  ],
+  "files": ["dist/**", "LICENSE.md", "README.md"],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "commonjs",
@@ -32,7 +28,8 @@
     "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
     "lint:fix": "biome check --write",
     "package-version": "auto-changelog -p && git add CHANGELOG.md",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "postversion": "biome check --write package.json"
   },
   "dependencies": {
     "@lokalise/node-core": "^11.2.0",
