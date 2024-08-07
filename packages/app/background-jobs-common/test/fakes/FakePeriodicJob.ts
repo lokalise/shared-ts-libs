@@ -2,6 +2,7 @@ import { type CommonLogger, type ErrorReporter, globalLogger } from '@lokalise/n
 import {
   AbstractPeriodicJob,
   type BackgroundJobConfiguration,
+  type JobExecutionContext,
   type PeriodicJobDependencies,
 } from '../../src'
 
@@ -14,12 +15,14 @@ export type FakePeriodicJobDependencies = Omit<
 }
 
 export class FakePeriodicJob extends AbstractPeriodicJob {
-  private readonly processFn: (executionId: string) => Promise<void>
+  private readonly processFn: (executionContext: JobExecutionContext) => Promise<void>
 
   constructor(
-    processFn: (executionId: string) => Promise<void>,
+    processFn: (executionContext: JobExecutionContext) => Promise<void>,
     dependencies: FakePeriodicJobDependencies,
-    options?: Omit<BackgroundJobConfiguration, 'jobId'>,
+    options?: Omit<BackgroundJobConfiguration, 'jobId' | 'intervalInMs'> & {
+      intervalInMs?: number
+    },
   ) {
     super(
       {
@@ -43,7 +46,7 @@ export class FakePeriodicJob extends AbstractPeriodicJob {
     this.processFn = processFn
   }
 
-  protected async processInternal(executionUuid: string): Promise<void> {
-    await this.processFn(executionUuid)
+  protected async processInternal(context: JobExecutionContext): Promise<void> {
+    await this.processFn(context)
   }
 }

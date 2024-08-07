@@ -5,6 +5,7 @@ import type { Redis } from 'ioredis'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createRedisClient, getTestRedisConfig } from '../../test/TestRedis'
 import { FakePeriodicJob } from '../../test/fakes/FakePeriodicJob'
+import type { JobExecutionContext } from './periodicJobTypes'
 
 describe('AbstractPeriodicJob', () => {
   let redis: Redis
@@ -27,8 +28,8 @@ describe('AbstractPeriodicJob', () => {
 
   it('should run processing multiple times', async () => {
     const executionIds: string[] = []
-    const processMock = (uuid: string) => {
-      executionIds.push(uuid)
+    const processMock = (executionContext: JobExecutionContext) => {
+      executionIds.push(executionContext.executorId)
       return Promise.resolve()
     }
     const job = new FakePeriodicJob(processMock, {

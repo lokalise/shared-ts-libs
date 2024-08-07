@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto'
-
 import {
   type CommonLogger,
   type ErrorReporter,
@@ -8,98 +7,29 @@ import {
 } from '@lokalise/node-core'
 import { resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type Redis from 'ioredis'
-import { stdSerializers } from 'pino'
 import type { LockOptions } from 'redis-semaphore'
 import { Mutex } from 'redis-semaphore'
 import type { LockLostCallback } from 'redis-semaphore'
 import type { ToadScheduler } from 'toad-scheduler'
-import { AsyncTask, SimpleIntervalJob } from 'toad-scheduler'
+import { SimpleIntervalJob } from 'toad-scheduler'
+import type {
+  BackgroundJobConfiguration,
+  JobExecutionContext,
+  LockConfiguration,
+  PeriodicJobDependencies,
+} from './periodicJobTypes'
+import { createTask } from './periodicJobUtils'
 
-const DEFAULT_JOB_INTERVAL = 60000
 const DEFAULT_EXCLUSIVE_LOCK_SUFFIX = 'EXCLUSIVE'
 
-export type BackgroundJobConfiguration = {
-  /**
-   * Job unique name
-   */
-  jobId: string
-  /**
-   * The interval in milliseconds at which the job should run.
-   */
-  intervalInMs?: number
-  /**
-   * Allows to run the job exclusively in a single instance of the application.
-   * The first consumer that acquires the lock will be the only one to run the job until it stops refreshing the lock.
-   */
-  singleConsumerMode?: {
-    exclusiveLockSuffix?: string
-    enabled: boolean
-    /**
-     * By default, the lock TTL is 2 * intervalInMs, to prevent the lock from expiring before the next execution.
-     */
-    lockTimeout?: number
-
-    /**
-     * Lock will be reset to this value after success, so that other node could potentially acquire the lock after it expires, but in order to prevent immediate acquire
-     */
-    lockTimeoutAfterSuccess?: number
-  }
-  /**
-   * If true, the job will log when it starts and finishes.
-   */
-  shouldLogExecution?: boolean
-}
-
-export type LockConfiguration = {
-  lockSuffix?: string
-  identifier?: string
-  refreshInterval?: number
-  lockTimeout?: number
-  acquiredExternally?: true
-}
-
-export function createTask(logger: CommonLogger, job: AbstractPeriodicJob) {
-  const executorId = randomUUID()
-
-  logger.info({
-    msg: 'Periodic job registered',
-    jobId: job.options.jobId,
-    executorId,
-  })
-
-  return new AsyncTask(
-    job.options.jobId,
-    () => {
-      return job.process(executorId)
-    },
-    /* v8 ignore next 9 */
-    (error) => {
-      logger.error(
-        stdSerializers.err({
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-        }),
-      )
-    },
-  )
-}
-
-export type PeriodicJobDependencies = {
-  redis: Redis
-  logger: CommonLogger
-  transactionObservabilityManager: TransactionObservabilityManager
-  errorReporter: ErrorReporter
-  scheduler: ToadScheduler
-}
-
 export abstract class AbstractPeriodicJob {
-  public readonly options: Required<BackgroundJobConfiguration>
-  protected readonly redis: Redis
-  protected readonly transactionObservabilityManager: TransactionObservabilityManager
-  protected readonly logger: CommonLogger
+  public readonly jobId: string
+  protected readonly options: Required<BackgroundJobConfiguration>
   protected readonly errorReporter: ErrorReporter
-  protected readonly scheduler: ToadScheduler
+  protected readonly redis: Redis
+  private readonly logger: CommonLogger
+  private readonly transactionObservabilityManager: TransactionObservabilityManager
+  private readonly scheduler: ToadScheduler
   private singleConsumerLock?: Mutex
 
   protected constructor(
@@ -112,14 +42,14 @@ export abstract class AbstractPeriodicJob {
       scheduler,
     }: PeriodicJobDependencies,
   ) {
+    this.jobId = options.jobId
     this.options = {
-      intervalInMs: DEFAULT_JOB_INTERVAL,
       shouldLogExecution: false,
       ...options,
       singleConsumerMode: {
         enabled: false,
         exclusiveLockSuffix: options.singleConsumerMode?.exclusiveLockSuffix ?? 'EXCLUSIVE',
-        lockTimeout: (options.intervalInMs ?? DEFAULT_JOB_INTERVAL) * 2,
+        lockTimeout: options.intervalInMs * 2,
         ...options.singleConsumerMode,
       },
     }
@@ -141,7 +71,7 @@ export abstract class AbstractPeriodicJob {
         },
         task,
         {
-          id: this.options.jobId,
+          id: this.jobId,
           preventOverrun: true,
         },
       ),
@@ -149,14 +79,15 @@ export abstract class AbstractPeriodicJob {
   }
 
   public async dispose() {
-    this.scheduler.stopById(this.options.jobId)
+    this.scheduler.stopById(this.jobId)
     await this.singleConsumerLock?.release()
   }
 
-  protected abstract processInternal(executionUuid: string): Promise<unknown>
+  protected abstract processInternal(context: JobExecutionContext): Promise<unknown>
 
   public async process(executorId: string) {
-    const logger = this.resolveExecutionLogger(executorId)
+    const correlationId = randomUUID()
+    const logger = this.resolveExecutionLogger(executorId, correlationId)
 
     if (this.options.singleConsumerMode.enabled) {
       // acquire or update lock
@@ -173,10 +104,14 @@ export abstract class AbstractPeriodicJob {
     }
 
     try {
-      this.transactionObservabilityManager.start(this.options.jobId, executorId)
+      this.transactionObservabilityManager.start(this.jobId, executorId)
       if (this.options.shouldLogExecution) logger.info('Periodic job started')
 
-      await this.processInternal(executorId)
+      await this.processInternal({
+        logger,
+        executorId,
+        correlationId,
+      })
     } catch (err) {
       logger.error({
         ...resolveGlobalErrorLogObject(err, executorId),
@@ -230,7 +165,7 @@ export abstract class AbstractPeriodicJob {
         this.errorReporter.report({
           error,
           context: {
-            jobId: this.options.jobId,
+            jobId: this.jobId,
           },
         })
       },
@@ -289,13 +224,14 @@ export abstract class AbstractPeriodicJob {
   }
 
   protected getJobLockName(keySuffix: string) {
-    return `${this.options.jobId}:locks:${keySuffix}`
+    return `${this.jobId}:locks:${keySuffix}`
   }
 
-  protected resolveExecutionLogger(executorId: string): CommonLogger {
+  protected resolveExecutionLogger(executorId: string, correlationId: string): CommonLogger {
     return this.logger.child({
       executorId,
-      jobId: this.options.jobId,
+      'x-request-id': correlationId,
+      jobId: this.jobId,
     })
   }
 }
