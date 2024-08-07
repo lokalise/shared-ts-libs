@@ -20,6 +20,14 @@ describe('isTextTranslatable', () => {
     'Hello1, World2', // Contains text and numbers
     'Hello!<> world', // symbols mixed with text
     'Hello\uE101bold\uE102! 123\uE101bold\uE102 world', // numbers mixed with NT regions and symbols
+
+    // translatable symbols (currency symbols atm)
+    '€',
+    '$',
+    '£',
+    '¥',
+    '₽',
+    '¢',
   ])('should return true if text contains translatable content (test case: %s)', (testCase) => {
     expect(isTextTranslatable(testCase)).toBe(true)
   })
@@ -39,7 +47,6 @@ describe('isTextTranslatable', () => {
     '?',
     '@',
     '#',
-    '$',
     '^',
     '&',
     '*',
@@ -80,11 +87,6 @@ describe('isTextTranslatable', () => {
     '©',
     '®',
     '™',
-    '€',
-    '£',
-    '¥',
-    '₽',
-    '¢',
     '←',
     '↑',
     '→',
