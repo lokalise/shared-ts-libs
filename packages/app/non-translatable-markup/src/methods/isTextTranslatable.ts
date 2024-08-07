@@ -6,7 +6,9 @@ import { nonTranslatableTextRegexp, symbolsRegexp } from './utils'
  * symbols or a number.
  */
 export const isTextTranslatable = (text: string): boolean =>
-  filterEmpty(text.split(nonTranslatableTextRegexp)).some((piece) => isPieceTranslatable(piece))
+  trimAndFilterEmpty(text.split(nonTranslatableTextRegexp)).some((piece) =>
+    isPieceTranslatable(piece),
+  )
 
 const isPieceTranslatable = (piece: string): boolean => {
   // numbers are not translatable
@@ -14,9 +16,10 @@ const isPieceTranslatable = (piece: string): boolean => {
 
   // if it contains symbols, split the piece and check each part
   if (symbolsRegexp.test(piece))
-    return filterEmpty(piece.split(symbolsRegexp)).some((e) => isPieceTranslatable(e))
+    return trimAndFilterEmpty(piece.split(symbolsRegexp)).some((e) => isPieceTranslatable(e))
 
   return true
 }
 
-const filterEmpty = (pieces: string[]): string[] => pieces.filter((piece) => piece.trim() !== '')
+const trimAndFilterEmpty = (pieces: string[]): string[] =>
+  pieces.map((p) => p.trim()).filter((p) => p !== '')
