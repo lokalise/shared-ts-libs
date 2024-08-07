@@ -41,6 +41,9 @@ jobs:
           git config --global user.email "auto-release@lokalise.com"
           git config --global user.name "AUTO RELEASE"
 
+      - name: Git pull
+        run: git pull origin main
+
       # Apply proper semver according to GitHub labels
       - name: Major label detected
         if: contains(github.event.pull_request.labels.*.name, 'major')
