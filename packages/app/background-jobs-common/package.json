@@ -27,7 +27,8 @@
     "test:ci": "npm run test -- --coverage",
     "test:ci:teardown": "docker compose down",
     "prepublishOnly": "npm run build",
-    "package-version": "echo $npm_package_version"
+    "package-version": "echo $npm_package_version",
+    "postversion": "biome check --write package.json"
   },
   "dependencies": {
     "@lokalise/id-utils": "^2.1.0",
