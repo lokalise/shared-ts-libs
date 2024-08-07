@@ -44,7 +44,7 @@ export abstract class AbstractPeriodicJob {
   ) {
     this.jobId = options.jobId
     this.options = {
-      shouldLogExecution: false,
+      shouldLogExecution: true,
       ...options,
       singleConsumerMode: {
         enabled: false,

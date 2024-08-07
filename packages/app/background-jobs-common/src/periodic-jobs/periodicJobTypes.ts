@@ -19,6 +19,7 @@ export type BackgroundJobConfiguration = {
   /**
    * Allows to run the job exclusively in a single instance of the application.
    * The first consumer that acquires the lock will be the only one to run the job until it stops refreshing the lock.
+   * Default is false
    */
   singleConsumerMode?: {
     exclusiveLockSuffix?: string
@@ -34,7 +35,7 @@ export type BackgroundJobConfiguration = {
     lockTimeoutAfterSuccess?: number
   }
   /**
-   * If true, the job will log when it starts and finishes.
+   * If true, the job will log when it starts and finishes. Default is true
    */
   shouldLogExecution?: boolean
 }
