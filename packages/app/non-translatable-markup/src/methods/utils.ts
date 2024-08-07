@@ -16,6 +16,8 @@ export const nonTranslatableTagsRegexpG = new RegExp(nonTranslatableTagsPattern,
  *      `\p{Emoji}` -> matches any emoji character
  *      `\p{Math}` -> matches any math symbol character
  *  `u` -> enables unicode mode
+ *
+ * For more info see -> https://github.com/mdn/content/blob/main/files/en-us/web/javascript/reference/regular_expressions/unicode_character_class_escape/index.md
  */
 const symbolsPattern = /[\p{P}\p{S}\p{So}\p{Emoji}\p{Math}']/u
 
