@@ -1,1 +1,2 @@
-export * from './nonTranslatableContentHelper'
+export * from './nonTranslatableTags'
+export * from './methods'
