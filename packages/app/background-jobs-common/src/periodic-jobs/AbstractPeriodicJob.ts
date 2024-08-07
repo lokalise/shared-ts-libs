@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto'
+import { generateMonotonicUuid } from '@lokalise/id-utils'
 import {
   type CommonLogger,
   type ErrorReporter,
@@ -86,7 +86,7 @@ export abstract class AbstractPeriodicJob {
   protected abstract processInternal(context: JobExecutionContext): Promise<unknown>
 
   public async process(executorId: string) {
-    const correlationId = randomUUID()
+    const correlationId = generateMonotonicUuid()
     const logger = this.resolveExecutionLogger(executorId, correlationId)
 
     if (this.options.singleConsumerMode.enabled) {
