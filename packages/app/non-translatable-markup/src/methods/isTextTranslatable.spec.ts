@@ -29,7 +29,10 @@ describe('isTextTranslatable', () => {
     ' \uE101Hello world!\uE102 \uE101How are you\uE102 ', // all is between several NT regions
     '123456', // only numbers
     '123\uE101hello\uE102 123', // numbers with translatable text
-    // all single symbols
+    '123! 4 | 56', // numbers with symbols
+    '\uE101hello\uE102 123! \uE1012060\uE102 | 56', // numbers with symbols
+
+    // Testing single symbols
     '¡',
     '!',
     '¿',
@@ -37,12 +40,27 @@ describe('isTextTranslatable', () => {
     '@',
     '#',
     '$',
-    '%',
     '^',
     '&',
     '*',
-    '/',
+    '÷',
+    '%',
+    '>',
+    '<',
+    '≥',
+    '≤',
+    '+',
+    '±',
+    '=',
+    '≈',
+    '≠',
+    '.',
+    ',',
+    '_',
+    '∞',
     '\\',
+    '-',
+    '/',
     '|',
     '"',
     "'",
@@ -54,16 +72,33 @@ describe('isTextTranslatable', () => {
     '[',
     '}',
     '{',
-    '>',
-    '<',
-    '+',
-    '=',
-    '.',
-    ',',
-    '_',
-    '-',
-    '123! 4 | 56', // numbers with symbols
-    '\uE101hello\uE102 123! \uE1012060\uE102 | 56', // numbers with symbols
+    '§',
+    '†',
+    '‡',
+    '•',
+    '°',
+    '©',
+    '®',
+    '™',
+    '€',
+    '£',
+    '¥',
+    '₽',
+    '¢',
+    '←',
+    '↑',
+    '→',
+    '↓',
+    '√',
+    '∑',
+    '∫',
+    '❤',
+
+    // testing emojis
+    '🥳',
+    '😊',
+    '🌟',
+    '🚀',
   ])(
     'should return false if text contains only non-translatable content (test case: %s)',
     (testCase) => {
