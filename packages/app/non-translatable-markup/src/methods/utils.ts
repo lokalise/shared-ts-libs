@@ -17,8 +17,9 @@ export const nonTranslatableTagsRegexpG = new RegExp(nonTranslatableTagsPattern,
  *      `\p{Emoji}` -> matches any emoji character
  *  `u` -> enables unicode mode
  *
- *  Note: `\p{S}` -> matches any kind of symbol character ,cover all the symbols from the
- *      `\p{Sm}`, `\p{Sc}`, `\p{Sk}`, and `\p{So}` but we don't want to cover Sc (Currency Symbol) for now
+ * Note: `\p{S}` matches any kind of symbol character, and it covers all the symbols from `\p{Sm}`, `\p{Sc}`, `\p{Sk}`,
+ *  and `\p{So}` categories. However, we don't want to cover `\p{Sc}` (Currency Symbol), so we specify the relevant
+ *  subcategories separately.
  *
  * For more info see -> https://github.com/mdn/content/blob/main/files/en-us/web/javascript/reference/regular_expressions/unicode_character_class_escape/index.md
  */
