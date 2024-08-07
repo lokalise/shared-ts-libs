@@ -11,7 +11,7 @@ export const nonTranslatableTagsRegexpG = new RegExp(nonTranslatableTagsPattern,
  * Explanation of the pattern:
  *  `[...]` -> matches any one of the characters or Unicode property escapes specified within it
  *      `\p{P}` -> matches any kind of punctuation character
- *      `\p{S}` -> matches any kind of symbol character
+ *      `\p{S}` -> matches any kind of symbol character (cover all the symbols from the `\p{Sm}`, `\p{Sc}`, `\p{Sk}`, and `\p{So}` subcategories)
  *      `\p{Emoji}` -> matches any emoji character
  *  `u` -> enables unicode mode
  *
