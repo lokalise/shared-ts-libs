@@ -110,7 +110,7 @@ export abstract class AbstractPeriodicJob {
       await this.processInternal({
         logger,
         executorId,
-        correlationId,
+        reqId: correlationId,
       })
     } catch (err) {
       logger.error({

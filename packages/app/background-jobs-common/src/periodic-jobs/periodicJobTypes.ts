@@ -5,6 +5,7 @@ import type {
 } from '@lokalise/node-core'
 import type Redis from 'ioredis'
 import type { ToadScheduler } from 'toad-scheduler'
+import type { RequestContext } from '../background-job-processor'
 
 export type BackgroundJobConfiguration = {
   /**
@@ -54,8 +55,6 @@ export type PeriodicJobDependencies = {
   scheduler: ToadScheduler
 }
 
-export type JobExecutionContext = {
-  logger: CommonLogger
-  correlationId: string
+export type JobExecutionContext = RequestContext & {
   executorId: string
 }
