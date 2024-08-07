@@ -1,4 +1,3 @@
-import { isTextTranslatable } from './isTextTranslatable'
 import { nonTranslatableTextRegexpG } from './utils'
 
 /**
@@ -9,9 +8,8 @@ export const isAttemptToEditNonTranslatableContent = (
   text: string,
   updatedText: string,
 ): boolean => {
-  if (!isTextTranslatable(updatedText)) {
-    return true
-  }
+  // early return if the text is the same
+  if (text === updatedText) return false
 
   const nonTranslatableContentInText = extractTextBetweenTags(text)
   const nonTranslatableContentInUpdatedText = extractTextBetweenTags(updatedText)
