@@ -89,6 +89,7 @@ export abstract class AbstractBackgroundJobProcessor<
     QueueType,
     'close' | 'disconnect' | 'obliterate' | 'clean' | 'drain'
   > {
+    /* v8 ignore next 3 */
     if (!this._queue) {
       throw new Error(`queue ${this.config.queueId} was not instantiated yet, please run "start()"`)
     }
@@ -97,6 +98,7 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   protected get worker(): Omit<WorkerType, 'disconnect' | 'close'> {
+    /* v8 ignore next 5 */
     if (!this._worker) {
       throw new Error(
         `worker for queue ${this.config.queueId} was not instantiated yet, please run "start()"`,
@@ -207,7 +209,7 @@ export abstract class AbstractBackgroundJobProcessor<
       )) ?? []
 
     const jobIds = jobs.map((job) => job.id)
-    /* v8 ignore next 3 */
+    /* v8 ignore next 4 */
     if (jobIds.length === 0 || !jobIds.every((id) => !!id)) {
       // Practically unreachable, but we want to simplify the signature of the method and avoid
       // stating that it could return undefined.
