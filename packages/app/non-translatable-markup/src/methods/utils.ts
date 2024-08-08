@@ -31,3 +31,24 @@ export const nonTranslatableTagsRegexpG = new RegExp(nonTranslatableTagsPattern,
 const symbolsAndNumberPattern = /^[\p{N}\p{P}\p{Sm}\p{Sk}\p{So}\p{Emoji}\s]+$/u
 
 export const symbolsAndNumberRegexp = new RegExp(symbolsAndNumberPattern)
+
+/**
+ * Explanation of the pattern:
+ *  (
+ *      `\d{2,4}` -> matches year format YYYY | YY
+ *      `([-\/])` -> matches the separator character '-' | '/' | '.'
+ *      `\d{1,2}` -> matches month format MM | M
+ *      `\2`      -> matches the same separator character as the one matched before
+ *      `\d{1,2}` -> matches day format DD | D
+ *  )
+ *  | -> OR
+ *  (
+ *      `\d{1,2}` -> matches day format DD | D
+ *      `([-\/])` -> matches the separator character '-' | '/' | '.'
+ *      `\d{1,2}` -> matches month format MM | M
+ *      `\2`      -> matches the same separator character as the one matched before
+ *      `\d{2,4}` -> matches year format YYYY | YY
+ *  )
+ */
+const datePattern = /(\d{2,4}([-\/.])\d{1,2}\2\d{1,2})|(\d{1,2}([-\/.])\d{1,2}\4\d{2,4})/
+export const dateRegexp = new RegExp(datePattern)

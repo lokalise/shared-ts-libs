@@ -29,13 +29,25 @@ describe('isTextTranslatable', () => {
     '₽',
     '¢',
 
-    // dates are translatable (TDD: expected to fail)
+    // dates are translatable
     '2024-01-01',
     '2024/01/01',
+    '2024.01.01',
     '24-01-01',
     '24/01/01',
+    '24.01.01',
+    '24-1-1',
+    '24/1/1',
+    '24.1.1',
     '01-01-2024',
     '01/01/2024',
+    '01.01.2024',
+    '01-01-24',
+    '01/01/24',
+    '01.01.24',
+    '1-1-24',
+    '1/1/24',
+    '1.1.24',
   ])('should return true if text contains translatable content (test case: %s)', (testCase) => {
     expect(isTextTranslatable(testCase)).toBe(true)
   })
@@ -47,6 +59,11 @@ describe('isTextTranslatable', () => {
     '123\uE101hello\uE102 123', // numbers with translatable text
     '123! 4 | 56', // numbers with symbols
     '\uE101hello\uE102 123! \uE1012060\uE102 | 56', // numbers with symbols
+
+    // bad formatted dates
+    '2024/01.01',
+    '01-01/24',
+    '01-01-1',
 
     // Testing single symbols
     '¡',
