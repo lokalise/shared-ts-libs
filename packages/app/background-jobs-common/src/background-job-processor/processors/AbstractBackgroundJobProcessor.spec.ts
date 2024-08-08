@@ -141,9 +141,11 @@ describe('AbstractBackgroundJobProcessor', () => {
       const job = await processor.spy.waitForJobWithId(jobId, 'completed')
       expect(job.data).toMatchObject(jobData)
 
+      // @ts-expect-error executing protected method for testing
       const resolvedJob = await processor.queue.getJob(job.id)
       expect(resolvedJob.data).toMatchObject(jobData)
 
+      // @ts-expect-error executing protected method for testing
       expect(processor.worker.isRunning()).toBe(true)
     })
 

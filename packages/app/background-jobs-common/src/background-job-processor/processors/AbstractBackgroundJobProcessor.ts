@@ -85,7 +85,10 @@ export abstract class AbstractBackgroundJobProcessor<
     this.runningPromises = []
   }
 
-  public get queue(): Omit<QueueType, 'close' | 'disconnect' | 'obliterate' | 'clean' | 'drain'> {
+  protected get queue(): Omit<
+    QueueType,
+    'close' | 'disconnect' | 'obliterate' | 'clean' | 'drain'
+  > {
     if (!this._queue) {
       throw new Error(`queue ${this.config.queueId} was not instantiated yet, please run "start()"`)
     }
@@ -93,7 +96,7 @@ export abstract class AbstractBackgroundJobProcessor<
     return this._queue
   }
 
-  public get worker(): Omit<WorkerType, 'disconnect' | 'close'> {
+  protected get worker(): Omit<WorkerType, 'disconnect' | 'close'> {
     if (!this._worker) {
       throw new Error(
         `worker for queue ${this.config.queueId} was not instantiated yet, please run "start()"`,
