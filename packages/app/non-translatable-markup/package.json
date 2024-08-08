@@ -1,9 +1,7 @@
 {
   "name": "@lokalise/non-translatable-markup",
   "version": "2.4.1",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -31,7 +29,8 @@
     "lint:fix": "biome check --write",
     "test:ci": "vitest run --coverage",
     "prepublishOnly": "npm run build",
-    "package-version": "echo $npm_package_version"
+    "package-version": "echo $npm_package_version",
+    "postversion": "biome check --write package.json"
   },
   "peerDependencies": {
     "zod": "^3.23.8"
