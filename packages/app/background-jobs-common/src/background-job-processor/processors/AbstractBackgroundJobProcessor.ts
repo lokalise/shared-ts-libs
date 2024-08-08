@@ -49,8 +49,8 @@ export abstract class AbstractBackgroundJobProcessor<
   private isStarted = false
   private startPromise?: Promise<void>
 
-  private queue?: QueueType
-  private worker?: WorkerType
+  private _queue?: QueueType
+  private _worker?: WorkerType
   private factory: AbstractBullmqFactory<
     QueueType,
     QueueOptionsType,
@@ -85,6 +85,29 @@ export abstract class AbstractBackgroundJobProcessor<
     this.runningPromises = []
   }
 
+  protected get queue(): Omit<
+    QueueType,
+    'close' | 'disconnect' | 'obliterate' | 'clean' | 'drain'
+  > {
+    /* v8 ignore next 3 */
+    if (!this._queue) {
+      throw new Error(`queue ${this.config.queueId} was not instantiated yet, please run "start()"`)
+    }
+
+    return this._queue
+  }
+
+  protected get worker(): Omit<WorkerType, 'disconnect' | 'close'> {
+    /* v8 ignore next 5 */
+    if (!this._worker) {
+      throw new Error(
+        `worker for queue ${this.config.queueId} was not instantiated yet, please run "start()"`,
+      )
+    }
+
+    return this._worker
+  }
+
   public get spy(): BackgroundJobProcessorSpyInterface<JobPayload, JobReturn> {
     if (!this._spy)
       throw new Error(
@@ -109,18 +132,18 @@ export abstract class AbstractBackgroundJobProcessor<
   private async internalInit() {
     await this.monitor.registerQueue()
 
-    this.queue = this.factory.buildQueue(this.config.queueId, {
+    this._queue = this.factory.buildQueue(this.config.queueId, {
       ...this.config.queueOptions,
       connection: sanitizeRedisConfig(this.config.redisConfig),
       prefix: this.config.redisConfig?.keyPrefix ?? undefined,
     } as unknown as QueueOptionsType)
-    await this.queue.waitUntilReady()
+    await this._queue.waitUntilReady()
 
     const mergedWorkerOptions = merge(
       DEFAULT_WORKER_OPTIONS,
       this.config.workerOptions,
     ) as unknown as Omit<WorkerOptionsType, 'connection'>
-    this.worker = this.factory.buildWorker(
+    this._worker = this.factory.buildWorker(
       this.config.queueId,
       (async (job: JobType) => {
         return await this.processInternal(job)
@@ -133,7 +156,7 @@ export abstract class AbstractBackgroundJobProcessor<
     )
     if (this.config.isTest) {
       // unlike queue, the docs for worker state that this is only useful in tests
-      await this.worker.waitUntilReady()
+      await this._worker.waitUntilReady()
     }
 
     this.registerListeners()
@@ -142,13 +165,13 @@ export abstract class AbstractBackgroundJobProcessor<
 
   private registerListeners() {
     // TODO: extract hooks handling to a separate class
-    this.worker?.on('failed', (job, error) => {
+    this._worker?.on('failed', (job, error) => {
       if (!job) return // Should not be possible with our current config, check 'failed' for more info
       // @ts-expect-error
       this.internalOnFailed(job, error).catch(() => undefined) // nothing to do
     })
 
-    this.worker?.on('completed', (job) => {
+    this._worker?.on('completed', (job) => {
       // @ts-expect-error
       this.internalOnSuccess(job, job.requestContext).catch(() => undefined) // nothing to do
     })
@@ -156,8 +179,8 @@ export abstract class AbstractBackgroundJobProcessor<
 
   public async dispose(): Promise<void> {
     try {
-      await this.worker?.close(this.config.isTest) // On test forcing the worker to close to not wait for current job to finish
-      await this.queue?.close()
+      await this._worker?.close(this.config.isTest) // On test forcing the worker to close to not wait for current job to finish
+      await this._queue?.close()
       await Promise.allSettled(this.runningPromises)
     } catch {
       //do nothing
@@ -177,7 +200,7 @@ export abstract class AbstractBackgroundJobProcessor<
     await this.startIfNotStarted()
 
     const jobs =
-      (await this.queue?.addBulk(
+      (await this._queue?.addBulk(
         jobData.map((data) => ({
           name: this.config.queueId,
           data,
@@ -186,7 +209,7 @@ export abstract class AbstractBackgroundJobProcessor<
       )) ?? []
 
     const jobIds = jobs.map((job) => job.id)
-    /* v8 ignore next 3 */
+    /* v8 ignore next 4 */
     if (jobIds.length === 0 || !jobIds.every((id) => !!id)) {
       // Practically unreachable, but we want to simplify the signature of the method and avoid
       // stating that it could return undefined.
@@ -221,7 +244,7 @@ export abstract class AbstractBackgroundJobProcessor<
 
     await this.startIfNotStarted()
 
-    const jobs = (await this.queue?.getJobs(states, start, end + 1, asc)) ?? []
+    const jobs = (await this._queue?.getJobs(states, start, end + 1, asc)) ?? []
     const expectedNumberOfJobs = 1 + (end - start)
 
     return {
