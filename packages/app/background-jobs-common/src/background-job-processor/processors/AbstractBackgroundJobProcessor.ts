@@ -40,6 +40,7 @@ export abstract class AbstractBackgroundJobProcessor<
   >,
   JobOptionsType extends JobsOptions = JobsOptions,
 > {
+  protected queue!: QueueType
   private readonly errorReporter: ErrorReporter // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
   private readonly config: BackgroundJobProcessorConfig<QueueOptionsType, WorkerOptionsType>
   private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
@@ -49,7 +50,6 @@ export abstract class AbstractBackgroundJobProcessor<
   private isStarted = false
   private startPromise?: Promise<void>
 
-  private queue?: QueueType
   private worker?: WorkerType
   private factory: AbstractBullmqFactory<
     QueueType,
