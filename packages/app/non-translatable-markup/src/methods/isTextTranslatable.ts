@@ -1,4 +1,4 @@
-import { nonTranslatableTextRegexp, symbolsRegexp } from './utils'
+import { nonTranslatableTextRegexp, symbolsAndNumberRegexp } from './utils'
 
 /**
  * Returns true if the text contain at least one translatable piece of text.
@@ -11,14 +11,16 @@ export const isTextTranslatable = (text: string): boolean =>
   )
 
 const isPieceTranslatable = (piece: string): boolean => {
-  // numbers are not translatable
-  if (!Number.isNaN(+piece)) return false
+  // dates are translatable
+  if (includesDate(piece)) return true
 
-  // if it contains symbols, split the piece and check each part
-  if (symbolsRegexp.test(piece))
-    return trimAndFilterEmpty(piece.split(symbolsRegexp)).some((e) => isPieceTranslatable(e))
+  return !symbolsAndNumberRegexp.test(piece)
+}
 
-  return true
+const includesDate = (text: string) => {
+  // TODO: improve this check to cover all possibilities
+  const date = new Date(text)
+  return !Number.isNaN(date.getTime())
 }
 
 const trimAndFilterEmpty = (pieces: string[]): string[] =>

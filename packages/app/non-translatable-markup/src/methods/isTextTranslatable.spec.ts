@@ -28,6 +28,14 @@ describe('isTextTranslatable', () => {
     '¥',
     '₽',
     '¢',
+
+    // dates are translatable (TDD: expected to fail)
+    '2024-01-01',
+    '2024/01/01',
+    '24-01-01',
+    '24/01/01',
+    '01-01-2024',
+    '01/01/2024',
   ])('should return true if text contains translatable content (test case: %s)', (testCase) => {
     expect(isTextTranslatable(testCase)).toBe(true)
   })

@@ -9,12 +9,17 @@ export const nonTranslatableTagsRegexpG = new RegExp(nonTranslatableTagsPattern,
 
 /**
  * Explanation of the pattern:
+ *  `^` -> asserts position at the start of a line
  *  `[...]` -> matches any one of the characters or Unicode property escapes specified within it
+ *      `\p{N}` -> matches any kind of numeric character in any script
  *      `\p{P}` -> matches any kind of punctuation character
  *      `\p{Sm}` -> matches any math symbol character
  *      `\p{Sk}` -> matches any modifier symbol character
  *      `\p{So}` -> matches any other symbol character
  *      `\p{Emoji}` -> matches any emoji character
+ *      `\s` -> matches any whitespace character
+ *  `+` -> matches between one and n times
+ *  `$` -> asserts position at the end of a line
  *  `u` -> enables unicode mode
  *
  * Note: `\p{S}` matches any kind of symbol character, and it covers all the symbols from `\p{Sm}`, `\p{Sc}`, `\p{Sk}`,
@@ -23,6 +28,6 @@ export const nonTranslatableTagsRegexpG = new RegExp(nonTranslatableTagsPattern,
  *
  * For more info see -> https://github.com/mdn/content/blob/main/files/en-us/web/javascript/reference/regular_expressions/unicode_character_class_escape/index.md
  */
-const symbolsPattern = /[\p{P}\p{Sm}\p{Sk}\p{So}\p{Emoji}']/u
+const symbolsAndNumberPattern = /^[\p{N}\p{P}\p{Sm}\p{Sk}\p{So}\p{Emoji}\s]+$/u
 
-export const symbolsRegexp = new RegExp(symbolsPattern)
+export const symbolsAndNumberRegexp = new RegExp(symbolsAndNumberPattern)
