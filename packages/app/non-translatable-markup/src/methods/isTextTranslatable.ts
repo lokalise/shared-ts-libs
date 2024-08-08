@@ -6,12 +6,11 @@ import { dateRegexp, nonTranslatableTextRegexp, symbolsAndNumberRegexp } from '.
  * symbols or a number.
  */
 export const isTextTranslatable = (text: string): boolean =>
-  trimAndFilterEmpty(text.split(nonTranslatableTextRegexp)).some((piece) =>
-    isPieceTranslatable(piece),
-  )
+  text
+    .split(nonTranslatableTextRegexp)
+    .map((p) => p.trim())
+    .filter((p) => p !== '')
+    .some((piece) => isPieceTranslatable(piece))
 
 const isPieceTranslatable = (piece: string): boolean =>
   dateRegexp.test(piece) || !symbolsAndNumberRegexp.test(piece)
-
-const trimAndFilterEmpty = (pieces: string[]): string[] =>
-  pieces.map((p) => p.trim()).filter((p) => p !== '')
