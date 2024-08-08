@@ -1,2 +1,5 @@
 export * from './nonTranslatableTags'
-export * from './methods'
+
+export { isAttemptToEditNonTranslatableContent } from './methods/isAttemptToEditNonTranslatableContent'
+export { isTextTranslatable } from './methods/isTextTranslatable'
+export { removeNonTranslatableTags } from './methods/removeNonTranslatableTags'
