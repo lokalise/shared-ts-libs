@@ -29,7 +29,8 @@
     "lint:fix": "biome check --write",
     "test:ci": "vitest run --coverage",
     "prepublishOnly": "npm run build",
-    "package-version": "echo $npm_package_version"
+    "package-version": "echo $npm_package_version",
+    "postversion": "biome check --write package.json"
   },
   "peerDependencies": {
     "zod": "^3.23.8"
