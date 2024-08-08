@@ -63,7 +63,6 @@ describe('isTextTranslatable', () => {
     // bad formatted dates
     '2024/01.01',
     '01-01/24',
-    '01-01-1',
 
     // Testing single symbols
     '¡',

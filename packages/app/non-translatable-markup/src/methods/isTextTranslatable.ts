@@ -11,7 +11,7 @@ export const isTextTranslatable = (text: string): boolean =>
   )
 
 const isPieceTranslatable = (piece: string): boolean =>
-  dateRegexp.test(piece) && !symbolsAndNumberRegexp.test(piece)
+  dateRegexp.test(piece) || !symbolsAndNumberRegexp.test(piece)
 
 const trimAndFilterEmpty = (pieces: string[]): string[] =>
   pieces.map((p) => p.trim()).filter((p) => p !== '')
