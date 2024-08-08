@@ -1,9 +1,7 @@
 {
   "name": "@lokalise/non-translatable-markup",
   "version": "2.4.1",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.cjs",
