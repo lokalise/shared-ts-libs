@@ -140,6 +140,11 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       const job = await processor.spy.waitForJobWithId(jobId, 'completed')
       expect(job.data).toMatchObject(jobData)
+
+      const resolvedJob = await processor.queue.getJob(job.id)
+      expect(resolvedJob.data).toMatchObject(jobData)
+
+      expect(processor.worker.isRunning()).toBe(true)
     })
 
     it('schedules and runs multiple jobs', async () => {
