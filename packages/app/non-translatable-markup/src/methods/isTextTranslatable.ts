@@ -8,8 +8,8 @@ import { dateRegexp, nonTranslatableTextRegexp, symbolsAndNumberRegexp } from '.
 export const isTextTranslatable = (text: string): boolean =>
   text
     .split(nonTranslatableTextRegexp)
-    .map((p) => p.trim())
-    .filter((p) => p !== '')
+    .map((piece) => piece.trim())
+    .filter((piece) => piece !== '')
     .some((piece) => isPieceTranslatable(piece))
 
 const isPieceTranslatable = (piece: string): boolean =>
