@@ -8,8 +8,9 @@ import { DB_MODEL, cleanTables } from '../test/DbCleaner'
 import {
   PRISMA_NOT_FOUND_ERROR,
   PRISMA_SERIALIZATION_ERROR,
+  PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
   PRISMA_TRANSACTION_ERROR,
-} from './errors/prismaError'
+} from './errors'
 import { prismaTransaction } from './prismaTransaction'
 
 const EnvDatabaseUrlKey = 'DATABASE_URL'
@@ -68,16 +69,72 @@ describe('prismaTransaction', () => {
       expect(result.result?.id).toBeDefined()
     })
 
-    it('default reties (2) and delay (100)', async () => {
-      // Given
-      const callsTimestamps: number[] = []
-      const retrySpy = vitest.spyOn(prisma, '$transaction').mockImplementation(() => {
-        callsTimestamps.push(Date.now())
-        throw new PrismaClientKnownRequestError('test', {
-          code: PRISMA_SERIALIZATION_ERROR,
-          clientVersion: '1',
+    it.each([PRISMA_SERIALIZATION_ERROR, PRISMA_SERVER_CLOSED_CONNECTION_ERROR])(
+      'prisma %s error is retried',
+      async (prismaErrorCode) => {
+        // Given
+        const callsTimestamps: number[] = []
+        const retrySpy = vitest.spyOn(prisma, '$transaction').mockImplementation(() => {
+          callsTimestamps.push(Date.now())
+          throw new PrismaClientKnownRequestError('test', {
+            code: prismaErrorCode,
+            clientVersion: '1',
+          })
         })
+
+        // When
+        const result = await prismaTransaction(prisma, (client) =>
+          client.item1.create({ data: TEST_ITEM_1 }),
+        )
+
+        // Then
+        expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
+        expect(result.error).toMatchObject({ code: prismaErrorCode })
+        expect(retrySpy).toHaveBeenCalledTimes(3)
+
+        const diffs: number[] = []
+        callsTimestamps.forEach((t, i) => {
+          if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 100) * 100)
+        })
+        expect(diffs).toHaveLength(2)
+        expect(diffs[0]).toBe(100)
+        expect(diffs[1]).toBe(200)
+      },
+    )
+
+    it('CockroachDB retry transaction error is retried', async () => {
+      // Given
+      const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
+        new PrismaClientKnownRequestError('test', {
+          code: 'P100',
+          clientVersion: '1',
+          meta: { code: '40001' },
+        }),
+      )
+
+      // When
+      const result = await prismaTransaction(
+        prisma,
+        (client) => client.item1.create({ data: TEST_ITEM_1 }),
+        { DbDriver: 'CockroachDb' },
+      )
+
+      // Then
+      expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
+      expect((result.error as PrismaClientKnownRequestError).meta).toMatchObject({
+        code: '40001',
       })
+      expect(retrySpy).toHaveBeenCalledTimes(3)
+    })
+
+    it('not all prisma code are retried', async () => {
+      // Given
+      const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
+        new PrismaClientKnownRequestError('test', {
+          code: PRISMA_NOT_FOUND_ERROR,
+          clientVersion: '1',
+        }),
+      )
 
       // When
       const result = await prismaTransaction(prisma, (client) =>
@@ -86,16 +143,8 @@ describe('prismaTransaction', () => {
 
       // Then
       expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
-      expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_SERIALIZATION_ERROR)
-      expect(retrySpy).toHaveBeenCalledTimes(3)
-
-      const diffs: number[] = []
-      callsTimestamps.forEach((t, i) => {
-        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 100) * 100)
-      })
-      expect(diffs).toHaveLength(2)
-      expect(diffs[0]).toBe(100)
-      expect(diffs[1]).toBe(200)
+      expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_NOT_FOUND_ERROR)
+      expect(retrySpy).toHaveBeenCalledTimes(1)
     })
 
     it('modifying max number of retries and base delay', async () => {
@@ -168,26 +217,6 @@ describe('prismaTransaction', () => {
       expect(diffs[1]).toBe(10)
     })
 
-    it('not all prisma code are retried', async () => {
-      // Given
-      const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
-        new PrismaClientKnownRequestError('test', {
-          code: PRISMA_NOT_FOUND_ERROR,
-          clientVersion: '1',
-        }),
-      )
-
-      // When
-      const result = await prismaTransaction(prisma, (client) =>
-        client.item1.create({ data: TEST_ITEM_1 }),
-      )
-
-      // Then
-      expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
-      expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_NOT_FOUND_ERROR)
-      expect(retrySpy).toHaveBeenCalledTimes(1)
-    })
-
     it('timeout auto increase', async () => {
       // Given
       const spy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
@@ -226,31 +255,6 @@ describe('prismaTransaction', () => {
         { timeout: 2000 },
         { timeout: 2000 },
       ])
-    })
-
-    it('CockroachDB retry transaction error is retried', async () => {
-      // Given
-      const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
-        new PrismaClientKnownRequestError('test', {
-          code: 'P100',
-          clientVersion: '1',
-          meta: { code: '40001' },
-        }),
-      )
-
-      // When
-      const result = await prismaTransaction(
-        prisma,
-        (client) => client.item1.create({ data: TEST_ITEM_1 }),
-        { DbDriver: 'CockroachDb' },
-      )
-
-      // Then
-      expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
-      expect((result.error as PrismaClientKnownRequestError).meta).toMatchObject({
-        code: '40001',
-      })
-      expect(retrySpy).toHaveBeenCalledTimes(3)
     })
   })
 
