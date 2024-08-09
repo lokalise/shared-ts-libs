@@ -11,6 +11,7 @@ import {
   PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
   isPrismaClientKnownRequestError,
   isPrismaTransactionClosedError,
+  isPrismaUnableToStartTransactionInTimeError,
 } from './errors/prismaError'
 import type {
   DbDriver,
@@ -125,9 +126,11 @@ const isRetryAllowed = <T>(
     const error = result.error
     // retry if the error code is in the list of codes to retry
     if (PrismaCodesToRetry.includes(error.code)) return true
-    // also retry if the error is a CockroachDB retry transaction error
+    // retry if the error is a Prisma unable to start transaction in time error
+    if (isPrismaUnableToStartTransactionInTimeError(error)) return true
+    // retry if the error is a CockroachDB retry transaction error
     if (dbDriver === 'CockroachDb' && isCockroachDBRetryTransaction(error)) return true
-    // In case transaction is closed (timeout), retry increasing the timeout
+    // in case transaction is closed (timeout), retry increasing the timeout
     if (isPrismaTransactionClosedError(error)) return 'increase-timeout'
   }
 

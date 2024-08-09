@@ -102,6 +102,25 @@ describe('prismaTransaction', () => {
       },
     )
 
+    it('retry on P2028 with unable to start a transaction in the given time error', async () => {
+      const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
+        new PrismaClientKnownRequestError('Unable to start a transaction in the given time.', {
+          code: PRISMA_TRANSACTION_ERROR,
+          clientVersion: '1',
+        }),
+      )
+
+      // When
+      const result = await prismaTransaction(prisma, (client) =>
+        client.item1.create({ data: TEST_ITEM_1 }),
+      )
+
+      // Then
+      expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
+      expect(result.error).toMatchObject({ code: PRISMA_TRANSACTION_ERROR })
+      expect(retrySpy).toHaveBeenCalledTimes(3)
+    })
+
     it('CockroachDB retry transaction error is retried', async () => {
       // Given
       const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
