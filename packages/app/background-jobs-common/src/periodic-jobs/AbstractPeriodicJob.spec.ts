@@ -106,6 +106,9 @@ describe('AbstractPeriodicJob', () => {
         errorReporter,
       },
       {
+        schedule: {
+          intervalInMs: 50,
+        },
         singleConsumerMode: {
           enabled: true,
           lockTimeout: 60,
@@ -139,6 +142,9 @@ describe('AbstractPeriodicJob', () => {
         scheduler,
       },
       {
+        schedule: {
+          intervalInMs: 50,
+        },
         singleConsumerMode: {
           enabled: true,
           lockTimeout: 60,
@@ -156,12 +162,14 @@ describe('AbstractPeriodicJob', () => {
         scheduler: anotherScheduler,
       },
       {
+        schedule: {
+          intervalInMs: 20,
+        },
         singleConsumerMode: {
           enabled: true,
           lockTimeout: 60,
           lockTimeoutAfterSuccess: 20,
         },
-        intervalInMs: 20,
       },
     )
 
