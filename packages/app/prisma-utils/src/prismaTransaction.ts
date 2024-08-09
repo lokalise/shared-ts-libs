@@ -9,9 +9,9 @@ import { isCockroachDBRetryTransaction } from './errors/cockroachdbError'
 import {
   PRISMA_SERIALIZATION_ERROR,
   PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
+  PRISMA_TRANSACTION_ERROR,
   isPrismaClientKnownRequestError,
   isPrismaTransactionClosedError,
-  isPrismaUnableToStartTransactionInTimeError,
 } from './errors/prismaError'
 import type {
   DbDriver,
@@ -115,7 +115,11 @@ const calculateRetryDelay = (
   return Math.min(expDelay, maxDelayMs)
 }
 
-const PrismaCodesToRetry = [PRISMA_SERIALIZATION_ERROR, PRISMA_SERVER_CLOSED_CONNECTION_ERROR]
+const PrismaCodesToRetry = [
+  PRISMA_SERIALIZATION_ERROR,
+  PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
+  PRISMA_TRANSACTION_ERROR,
+]
 type isRetryAllowedResult = boolean | 'increase-timeout'
 
 const isRetryAllowed = <T>(
@@ -124,14 +128,13 @@ const isRetryAllowed = <T>(
 ): isRetryAllowedResult => {
   if (isPrismaClientKnownRequestError(result.error)) {
     const error = result.error
+    // in case transaction is closed (timeout), retry increasing the timeout
+    // this should be the first check as the code error is PRISMA_TRANSACTION_ERROR covered also in the next check
+    if (isPrismaTransactionClosedError(error)) return 'increase-timeout'
     // retry if the error code is in the list of codes to retry
     if (PrismaCodesToRetry.includes(error.code)) return true
-    // retry if the error is a Prisma unable to start transaction in time error
-    if (isPrismaUnableToStartTransactionInTimeError(error)) return true
     // retry if the error is a CockroachDB retry transaction error
     if (dbDriver === 'CockroachDb' && isCockroachDBRetryTransaction(error)) return true
-    // in case transaction is closed (timeout), retry increasing the timeout
-    if (isPrismaTransactionClosedError(error)) return 'increase-timeout'
   }
 
   return false

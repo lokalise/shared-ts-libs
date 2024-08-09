@@ -21,12 +21,6 @@ export const isPrismaTransactionClosedError = (error: PrismaClientKnownRequestEr
   error.code === PRISMA_TRANSACTION_ERROR &&
   error.message.toLowerCase().includes('transaction already closed')
 
-export const isPrismaUnableToStartTransactionInTimeError = (
-  error: PrismaClientKnownRequestError,
-): boolean =>
-  error.code === PRISMA_TRANSACTION_ERROR &&
-  error.message.toLowerCase().includes('unable to start a transaction in the given time')
-
 /**
  * Prisma error code P2025 indicates that the operation failed because it depends on one or more
  * records that were required but not found
