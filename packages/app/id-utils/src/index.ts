@@ -12,11 +12,11 @@ const ulid = monotonicFactory()
  * generated within a millisecond can not be guaranteed.
  */
 export function generateMonotonicUuid(): string {
-	const id = ulid()
+  const id = ulid()
 
-	return ULIDtoUUID(id)
+  return ULIDtoUUID(id)
 }
 
 export function generateUuid7(): string {
-	return uuidv7()
+  return uuidv7()
 }
