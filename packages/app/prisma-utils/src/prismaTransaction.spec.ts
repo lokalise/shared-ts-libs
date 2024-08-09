@@ -73,12 +73,14 @@ describe('prismaTransaction', () => {
       'prisma %s error is retried',
       async (prismaErrorCode) => {
         // Given
-        const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
-          new PrismaClientKnownRequestError('test', {
+        const callsTimestamps: number[] = []
+        const retrySpy = vitest.spyOn(prisma, '$transaction').mockImplementation(() => {
+          callsTimestamps.push(Date.now())
+          throw new PrismaClientKnownRequestError('test', {
             code: prismaErrorCode,
             clientVersion: '1',
-          }),
-        )
+          })
+        })
 
         // When
         const result = await prismaTransaction(prisma, (client) =>
@@ -89,6 +91,14 @@ describe('prismaTransaction', () => {
         expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
         expect(result.error).toMatchObject({ code: prismaErrorCode })
         expect(retrySpy).toHaveBeenCalledTimes(3)
+
+        const diffs: number[] = []
+        callsTimestamps.forEach((t, i) => {
+          if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 100) * 100)
+        })
+        expect(diffs).toHaveLength(2)
+        expect(diffs[0]).toBe(100)
+        expect(diffs[1]).toBe(200)
       },
     )
 
@@ -135,36 +145,6 @@ describe('prismaTransaction', () => {
       expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
       expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_NOT_FOUND_ERROR)
       expect(retrySpy).toHaveBeenCalledTimes(1)
-    })
-
-    it('default delay (100)', async () => {
-      // Given
-      const callsTimestamps: number[] = []
-      const retrySpy = vitest.spyOn(prisma, '$transaction').mockImplementation(() => {
-        callsTimestamps.push(Date.now())
-        throw new PrismaClientKnownRequestError('test', {
-          code: PRISMA_SERIALIZATION_ERROR,
-          clientVersion: '1',
-        })
-      })
-
-      // When
-      const result = await prismaTransaction(prisma, (client) =>
-        client.item1.create({ data: TEST_ITEM_1 }),
-      )
-
-      // Then
-      expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
-      expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_SERIALIZATION_ERROR)
-      expect(retrySpy).toHaveBeenCalledTimes(3)
-
-      const diffs: number[] = []
-      callsTimestamps.forEach((t, i) => {
-        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 100) * 100)
-      })
-      expect(diffs).toHaveLength(2)
-      expect(diffs[0]).toBe(100)
-      expect(diffs[1]).toBe(200)
     })
 
     it('modifying max number of retries and base delay', async () => {
