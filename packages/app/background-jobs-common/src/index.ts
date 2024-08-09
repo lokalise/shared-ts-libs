@@ -11,4 +11,5 @@ export type {
   BackgroundJobConfiguration,
   LockConfiguration,
   JobExecutionContext,
+  Schedule,
 } from './periodic-jobs/periodicJobTypes'
