@@ -7,15 +7,38 @@ import type Redis from 'ioredis'
 import type { ToadScheduler } from 'toad-scheduler'
 import type { RequestContext } from '../background-job-processor'
 
+export type Schedule =
+  | {
+      /**
+       * The interval in milliseconds at which the job should run.
+       */
+      intervalInMs: number
+      cron?: never
+    }
+  | {
+      intervalInMs?: never
+      cron?: {
+        /**
+         * Cron expression with 5 mandatory and 1 optional positions (optional second, then minute, hour, day of month, month, day of week)
+         */
+        cronExpression: string
+
+        /**
+         * If not specified, local timezone will be used
+         */
+        timezone?: string
+      }
+      /**
+       * The cron interval at which the job should run.
+       */
+    }
+
 export type BackgroundJobConfiguration = {
   /**
    * Job unique name
    */
   jobId: string
-  /**
-   * The interval in milliseconds at which the job should run.
-   */
-  intervalInMs: number
+  schedule: Schedule
   /**
    * Allows to run the job exclusively in a single instance of the application.
    * The first consumer that acquires the lock will be the only one to run the job until it stops refreshing the lock.

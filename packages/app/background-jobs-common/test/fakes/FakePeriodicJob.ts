@@ -20,14 +20,14 @@ export class FakePeriodicJob extends AbstractPeriodicJob {
   constructor(
     processFn: (executionContext: JobExecutionContext) => Promise<void>,
     dependencies: FakePeriodicJobDependencies,
-    options?: Omit<BackgroundJobConfiguration, 'jobId' | 'intervalInMs'> & {
-      intervalInMs?: number
-    },
+    options?: Omit<BackgroundJobConfiguration, 'jobId'>,
   ) {
     super(
       {
         jobId: FakePeriodicJob.name,
-        intervalInMs: 50,
+        schedule: {
+          intervalInMs: 50,
+        },
         ...options,
       },
       {

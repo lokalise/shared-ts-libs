@@ -10,7 +10,7 @@ import type Redis from 'ioredis'
 import type { LockOptions } from 'redis-semaphore'
 import { Mutex } from 'redis-semaphore'
 import type { LockLostCallback } from 'redis-semaphore'
-import type { ToadScheduler } from 'toad-scheduler'
+import { CronJob, type ToadScheduler } from 'toad-scheduler'
 import { SimpleIntervalJob } from 'toad-scheduler'
 import type {
   BackgroundJobConfiguration,
@@ -21,6 +21,7 @@ import type {
 import { createTask } from './periodicJobUtils'
 
 const DEFAULT_EXCLUSIVE_LOCK_SUFFIX = 'EXCLUSIVE'
+const DEFAULT_LOCK_TIMEOUT = 120000
 
 export abstract class AbstractPeriodicJob {
   public readonly jobId: string
@@ -49,7 +50,9 @@ export abstract class AbstractPeriodicJob {
       singleConsumerMode: {
         enabled: false,
         exclusiveLockSuffix: options.singleConsumerMode?.exclusiveLockSuffix ?? 'EXCLUSIVE',
-        lockTimeout: options.intervalInMs * 2,
+        lockTimeout: options.schedule.intervalInMs
+          ? options.schedule.intervalInMs * 2
+          : DEFAULT_LOCK_TIMEOUT,
         ...options.singleConsumerMode,
       },
     }
@@ -60,22 +63,37 @@ export abstract class AbstractPeriodicJob {
     this.scheduler = scheduler
   }
 
-  public register() {
+  public register(): void {
     const task = createTask(this.logger, this)
 
-    this.scheduler.addSimpleIntervalJob(
-      new SimpleIntervalJob(
-        {
-          milliseconds: this.options.intervalInMs,
-          runImmediately: true,
-        },
-        task,
-        {
+    if (this.options.schedule.intervalInMs) {
+      this.scheduler.addSimpleIntervalJob(
+        new SimpleIntervalJob(
+          {
+            milliseconds: this.options.schedule.intervalInMs,
+            runImmediately: true,
+          },
+          task,
+          {
+            id: this.jobId,
+            preventOverrun: true,
+          },
+        ),
+      )
+      return
+    }
+
+    if (this.options.schedule.cron) {
+      this.scheduler.addCronJob(
+        new CronJob(this.options.schedule.cron, task, {
           id: this.jobId,
           preventOverrun: true,
-        },
-      ),
-    )
+        }),
+      )
+      return
+    }
+
+    throw new Error('Invalid config, please specify intervalInMs or cron parameters')
   }
 
   public async dispose() {
@@ -139,7 +157,9 @@ export abstract class AbstractPeriodicJob {
     if (this.singleConsumerLock) {
       await this.updateMutex(
         this.singleConsumerLock,
-        this.options.singleConsumerMode.lockTimeoutAfterSuccess ?? this.options.intervalInMs,
+        this.options.singleConsumerMode.lockTimeoutAfterSuccess ??
+          this.options.schedule.intervalInMs ??
+          DEFAULT_LOCK_TIMEOUT,
         this.options.singleConsumerMode.exclusiveLockSuffix,
         // it is fine to lose lock at this point
         () => {},

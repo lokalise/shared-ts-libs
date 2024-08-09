@@ -1,7 +1,6 @@
-import { ToadScheduler } from 'toad-scheduler'
-
 import type { ErrorReport, ErrorReporter } from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
+import { ToadScheduler } from 'toad-scheduler'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createRedisClient, getTestRedisConfig } from '../../test/TestRedis'
 import { FakePeriodicJob } from '../../test/fakes/FakePeriodicJob'
@@ -42,6 +41,51 @@ describe('AbstractPeriodicJob', () => {
     expect(executionIds).toMatchObject([expect.any(String), expect.any(String), expect.any(String)])
 
     await job.dispose()
+  })
+
+  it('should run processing when using cron expression', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 6, 6, 0, 0, 0))
+
+    const executionIds: string[] = []
+    const processMock = (executionContext: JobExecutionContext) => {
+      executionIds.push(executionContext.executorId)
+      return Promise.resolve()
+    }
+    const job = new FakePeriodicJob(
+      processMock,
+      {
+        scheduler,
+        redis,
+      },
+      {
+        schedule: {
+          cron: {
+            cronExpression: '*/2 * * * * *',
+          },
+        },
+      },
+    )
+    job.register()
+
+    vi.advanceTimersByTime(50)
+    await Promise.resolve()
+    expect(executionIds).toHaveLength(0)
+
+    vi.advanceTimersByTime(500)
+    await Promise.resolve()
+
+    expect(executionIds).toHaveLength(0)
+
+    vi.advanceTimersByTime(1500)
+    await Promise.resolve()
+
+    expect(executionIds).toHaveLength(1)
+
+    await job.dispose()
+
+    // ToDo implement tests for multiple processings
+    vi.useRealTimers()
   })
 
   it('handles errors', async () => {
