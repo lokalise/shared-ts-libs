@@ -4,6 +4,11 @@ import { isAttemptToEditNonTranslatableContent } from './isAttemptToEditNonTrans
 describe('isAttemptToEditNonTranslatableContent', () => {
   it.each([
     ['Hello world', 'Hello friends'],
+    ['Hello world', 'Hello world'],
+    [
+      '\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Goodbye \uE101{% endif %}\uE102 world',
+      '\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Goodbye \uE101{% endif %}\uE102 world',
+    ],
     [
       '\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Goodbye \uE101{% endif %}\uE102 world',
       '\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Sayonara \uE101{% endif %}\uE102 world',
