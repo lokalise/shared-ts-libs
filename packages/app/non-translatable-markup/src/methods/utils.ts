@@ -36,7 +36,7 @@ export const symbolsAndNumberRegexp = new RegExp(symbolsAndNumberPattern)
  * Explanation of the pattern:
  *  (
  *      `\d{2,4}` -> matches year format YYYY | YY
- *      `([-\/])` -> matches the separator character '-' | '/' | '.'
+ *      `([-\/.])` -> matches the separator character '-' | '/' | '.'
  *      `\d{1,2}` -> matches month format MM | M
  *      `\2`      -> matches the same separator character as the one matched before
  *      `\d{1,2}` -> matches day format DD | D
@@ -44,9 +44,9 @@ export const symbolsAndNumberRegexp = new RegExp(symbolsAndNumberPattern)
  *  | -> or
  *  (
  *      `\d{1,2}` -> matches day format DD | D
- *      `([-\/])` -> matches the separator character '-' | '/' | '.'
+ *      `([-\/.])` -> matches the separator character '-' | '/' | '.'
  *      `\d{1,2}` -> matches month format MM | M
- *      `\2`      -> matches the same separator character as the one matched before
+ *      `\4`      -> matches the same separator character as the one matched before
  *      `\d{2,4}` -> matches year format YYYY | YY
  *  )
  */
