@@ -11,11 +11,11 @@ export const nonTranslatableTagsRegexpG = new RegExp(nonTranslatableTagsPattern,
  * Explanation of the pattern:
  *  `^` -> asserts position at the start of a line
  *  `[...]` -> matches any one of the characters or Unicode property escapes specified within it
- *      `\p{N}` -> matches any kind of numeric character in any script
- *      `\p{P}` -> matches any kind of punctuation character
- *      `\p{Sm}` -> matches any math symbol character
- *      `\p{Sk}` -> matches any modifier symbol character
- *      `\p{So}` -> matches any other symbol character
+ *      `\p{N}`     -> matches any kind of numeric character
+ *      `\p{P}`     -> matches any kind of punctuation character
+ *      `\p{Sm}`    -> matches any math symbol character
+ *      `\p{Sk}`    -> matches any modifier symbol character
+ *      `\p{So}`    -> matches any other symbol character
  *      `\p{Emoji}` -> matches any emoji character
  *      `\s` -> matches any whitespace character
  *  `+` -> matches between one and n times
@@ -41,7 +41,7 @@ export const symbolsAndNumberRegexp = new RegExp(symbolsAndNumberPattern)
  *      `\2`      -> matches the same separator character as the one matched before
  *      `\d{1,2}` -> matches day format DD | D
  *  )
- *  | -> OR
+ *  | -> or
  *  (
  *      `\d{1,2}` -> matches day format DD | D
  *      `([-\/])` -> matches the separator character '-' | '/' | '.'
