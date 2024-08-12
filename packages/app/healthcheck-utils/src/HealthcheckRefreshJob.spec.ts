@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import type { PeriodicJobDependencies } from '@lokalise/background-jobs-common'
 import {
   type Either,
   type TransactionObservabilityManager,
@@ -8,7 +9,6 @@ import Redis from 'ioredis'
 import { ToadScheduler } from 'toad-scheduler'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { getTestRedisConfig } from '../test/setup'
-import type { PeriodicJobDependencies } from './AbstractPeriodicJob'
 import { HealthcheckRefreshJob } from './HealthcheckRefreshJob.js'
 import { HealthcheckResultsStore } from './HealthcheckResultsStore'
 import {
