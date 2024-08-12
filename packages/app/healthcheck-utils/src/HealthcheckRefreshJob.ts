@@ -8,6 +8,7 @@ import type { Healthcheck } from './healthchecks.js'
 
 export type HealthcheckRefreshJobConfig = {
   intervalInMs?: number
+  shouldLogExecution?: boolean // default is off
 }
 
 export class HealthcheckRefreshJob extends AbstractPeriodicJob {
@@ -22,7 +23,10 @@ export class HealthcheckRefreshJob extends AbstractPeriodicJob {
     super(
       {
         jobId: HealthcheckRefreshJob.JOB_NAME,
-        intervalInMs: config?.intervalInMs ?? 15000,
+        schedule: {
+          intervalInMs: config?.intervalInMs ?? 15000,
+        },
+        shouldLogExecution: config?.shouldLogExecution ?? false,
         singleConsumerMode: {
           enabled: false,
         },

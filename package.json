@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "pino": "^9.0.0",
-    "turbo": "^2.0.8"
+    "turbo": "^2.0.12"
   },
   "packageManager": "npm@10.7.0"
 }
