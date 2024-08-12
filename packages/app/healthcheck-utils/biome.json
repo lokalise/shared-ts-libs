@@ -3,5 +3,12 @@
   "extends": [
     "../../../node_modules/@lokalise/biome-config/configs/biome-base.jsonc",
     "../../../node_modules/@lokalise/biome-config/configs/biome-package.jsonc"
-  ]
+  ],
+  "linter": {
+    "rules": {
+      "performance": {
+        "noBarrelFile": "off"
+      }
+    }
+  }
 }
