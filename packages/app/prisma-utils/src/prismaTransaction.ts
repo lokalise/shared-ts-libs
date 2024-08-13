@@ -23,7 +23,7 @@ import type {
 
 const DEFAULT_OPTIONS = {
   retriesAllowed: 2, // first try + 2 retries = 3 tries
-  DbDriver: 'CockroachDb',
+  dbDriver: 'CockroachDb',
   baseRetryDelayMs: 100,
   maxRetryDelayMs: 30000, // 30s
   timeout: 5000, // 5s

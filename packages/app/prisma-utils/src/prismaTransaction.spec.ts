@@ -117,7 +117,7 @@ describe('prismaTransaction', () => {
       const result = await prismaTransaction(
         prisma,
         (client) => client.item1.create({ data: TEST_ITEM_1 }),
-        { DbDriver: 'CockroachDb' },
+        { dbDriver: 'CockroachDb' },
       )
 
       // Then
