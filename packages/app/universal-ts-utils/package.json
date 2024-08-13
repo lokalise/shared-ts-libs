@@ -1,42 +1,42 @@
 {
-  "name": "@lokalise/universal-ts-utils",
-  "version": "1.0.0",
-  "author": {
-    "name": "Lokalise",
-    "url": "https://lokalise.com/"
-  },
-  "homepage": "https://github.com/lokalise/shared-ts-libs",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/lokalise/shared-ts-libs.git"
-  },
-  "license": "Apache-2.0",
-  "files": ["dist/**", "LICENSE.md", "README.md"],
-  "type": "module",
-  "private": false,
-  "publishConfig": {
-    "access": "public"
-  },
-  "scripts": {
-    "build": "tsc",
-    "test": "vitest",
-    "test:coverage": "vitest --coverage",
-    "test:ci": "npm run lint && npm run test:coverage",
-    "test:update-snapshots": "vitest -u",
-    "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
-    "lint:fix": "biome check --write",
-    "version": "auto-changelog -p && git add CHANGELOG.md",
-    "prepublishOnly": "npm run build",
-    "postversion": "biome check --write package.json"
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "@biomejs/biome": "^1.8.3",
-    "@lokalise/biome-config": "^1.0.0",
-    "@types/node": "^22.0.0",
-    "@vitest/coverage-v8": "^2.0.4",
-    "auto-changelog": "^2.4.0",
-    "typescript": "^5.5.4",
-    "vitest": "^2.0.4"
-  }
+    "name": "@lokalise/universal-ts-utils",
+    "version": "1.0.0",
+    "author": {
+        "name": "Lokalise",
+        "url": "https://lokalise.com/"
+    },
+    "homepage": "https://github.com/lokalise/shared-ts-libs",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/lokalise/shared-ts-libs.git"
+    },
+    "license": "Apache-2.0",
+    "files": ["dist/**", "LICENSE.md", "README.md"],
+    "type": "module",
+    "private": false,
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "build": "tsc",
+        "test": "vitest",
+        "test:coverage": "vitest --coverage",
+        "test:ci": "npm run lint && npm run test:coverage",
+        "test:update-snapshots": "vitest -u",
+        "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
+        "lint:fix": "biome check --write",
+        "version": "auto-changelog -p && git add CHANGELOG.md",
+        "prepublishOnly": "npm run build",
+        "postversion": "biome check --write package.json"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "@biomejs/biome": "^1.8.3",
+        "@lokalise/biome-config": "^1.0.0",
+        "@types/node": "^22.0.0",
+        "@vitest/coverage-v8": "^2.0.4",
+        "auto-changelog": "^2.4.0",
+        "typescript": "^5.5.4",
+        "vitest": "^2.0.4"
+    }
 }
