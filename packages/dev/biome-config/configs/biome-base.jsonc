@@ -25,13 +25,13 @@
     }
   },
   "files": {
-    "include": ["./**/*.ts", "./**/*.tsx", "./**/*.json", "./**/*.jsonc"],
+    "include": ["./**/*.ts", "./**/*.mts", "./**/*.tsx", "./**/*.json", "./**/*.jsonc"],
     "ignore": ["./dist", "./coverage", "./node_modules"]
   },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2
+    "indentWidth": 4
   },
   "linter": {
     "rules": {
