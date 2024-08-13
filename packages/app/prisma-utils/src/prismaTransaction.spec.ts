@@ -5,6 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vitest } from 'v
 
 import { DB_MODEL, cleanTables } from '../test/DbCleaner'
 
+import { getDatasourceUrl } from '../test/getDatasourceUrl'
 import {
   PRISMA_NOT_FOUND_ERROR,
   PRISMA_SERIALIZATION_ERROR,
@@ -12,8 +13,6 @@ import {
   PRISMA_TRANSACTION_ERROR,
 } from './errors'
 import { prismaTransaction } from './prismaTransaction'
-
-const EnvDatabaseUrlKey = 'DATABASE_URL'
 
 type Item1 = {
   value: string
@@ -35,7 +34,7 @@ describe('prismaTransaction', () => {
 
   beforeAll(() => {
     prisma = new PrismaClient({
-      datasourceUrl: process.env[EnvDatabaseUrlKey],
+      datasourceUrl: getDatasourceUrl(),
     })
   })
 
