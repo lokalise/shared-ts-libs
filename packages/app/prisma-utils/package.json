@@ -20,7 +20,7 @@
         }
     },
     "scripts": {
-        "build": "rimraf dist && npm run db:update-client && vite build",
+        "build": "rimraf dist && npm run db:update-client && tsc",
         "dev": "vite watch",
         "clean": "rimraf dist",
         "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
@@ -56,7 +56,6 @@
         "prisma": "^5.14.0",
         "rimraf": "^5.0.7",
         "typescript": "5.5.4",
-        "vite": "5.4.0",
         "vitest": "^2.0.4"
     }
 }
