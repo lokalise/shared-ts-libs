@@ -27,7 +27,8 @@
         "lint:fix": "biome check --write",
         "version": "auto-changelog -p && git add CHANGELOG.md",
         "prepublishOnly": "npm run build",
-        "postversion": "biome check --write package.json"
+        "postversion": "biome check --write package.json",
+        "package-version": "echo $npm_package_version"
     },
     "dependencies": {},
     "devDependencies": {
