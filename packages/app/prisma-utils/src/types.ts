@@ -47,3 +47,16 @@ export type PrismaTransactionReturnType<T> = Either<
   unknown,
   T | runtime.Types.Utils.UnwrapTuple<Prisma.PrismaPromise<unknown>[]>
 >
+
+//----------------------------------------
+// Prisma client builder types
+//----------------------------------------
+/**
+ * this is a temporal solution in the meantime Prisma includes ReadCommitted as a valid isolation level for CockroachDB
+ */
+export type PrismaClientBuilderOptions = Omit<Prisma.PrismaClientOptions, 'transactionOptions'> & {
+  dbDriver?: DbDriver // default: CockroachDb
+  transactionOptions?: Omit<Prisma.PrismaClientOptions['transactionOptions'], 'isolationLevel'> & {
+    isolationLevel?: CockroachDbIsolationLevel
+  }
+}

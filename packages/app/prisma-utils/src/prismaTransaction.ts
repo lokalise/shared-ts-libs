@@ -62,7 +62,7 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
     result = await executeTransactionTry(prisma, arg, optionsWithDefaults)
     if (result.result) break
 
-    const retryAllowed = isRetryAllowed(result, optionsWithDefaults.DbDriver)
+    const retryAllowed = isRetryAllowed(result, optionsWithDefaults.dbDriver)
     if (!retryAllowed) break
 
     if (retryAllowed === 'increase-timeout') {
