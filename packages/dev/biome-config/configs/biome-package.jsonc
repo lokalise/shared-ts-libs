@@ -1,11 +1,11 @@
 {
-  "$schema": "../../../node_modules/@biomejs/biome/configuration_schema.json",
-  "extends": ["./biome-base.jsonc"],
-  "linter": {
-    "rules": {
-      "performance": {
-        "noBarrelFile": "off"
-      }
+    "$schema": "../../../node_modules/@biomejs/biome/configuration_schema.json",
+    "extends": ["./biome-base.jsonc"],
+    "linter": {
+        "rules": {
+            "performance": {
+                "noBarrelFile": "off"
+            }
+        }
     }
-  }
 }

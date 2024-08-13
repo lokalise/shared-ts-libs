@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config'
 
+// biome-ignore lint/style/noDefaultExport: vite expects default export
 export default defineConfig({
   test: {
     globals: true,
@@ -15,11 +16,7 @@ export default defineConfig({
     reporters: ['default'],
     coverage: {
       include: ['src/**/*.ts'],
-      exclude: [
-        'src/**/index.ts',
-        'src/**/types.ts',
-        'src/**/*.spec.ts'
-      ],
+      exclude: ['src/**/index.ts', 'src/**/types.ts', 'src/**/*.spec.ts'],
       reporter: ['text'],
       all: true,
       thresholds: {
