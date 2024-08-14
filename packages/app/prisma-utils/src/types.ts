@@ -53,7 +53,7 @@ export type PrismaTransactionReturnType<T> = Either<
 //----------------------------------------
 
 /**
- * If we try to use `Omit<Prisma.PrismaClientOptions['transactionOptions']`, 'isolationLevel'> to override isolationLevel
+ * If we try to use `Omit<Prisma.PrismaClientOptions['transactionOptions'], 'isolationLevel'>` to override isolationLevel
  * we start to get lint errors about maxWait and timeout not being part of the transactionOptions type.
  *
  * for that reason, and as this is a temporal solution in the meantime Prisma includes ReadCommitted as a valid isolation
