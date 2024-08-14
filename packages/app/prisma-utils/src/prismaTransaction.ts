@@ -23,7 +23,7 @@ import type {
 
 const DEFAULT_OPTIONS = {
   retriesAllowed: 2, // first try + 2 retries = 3 tries
-  DbDriver: 'CockroachDb',
+  dbDriver: 'CockroachDb',
   baseRetryDelayMs: 100,
   maxRetryDelayMs: 30000, // 30s
   timeout: 5000, // 5s
@@ -62,7 +62,7 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
     result = await executeTransactionTry(prisma, arg, optionsWithDefaults)
     if (result.result) break
 
-    const retryAllowed = isRetryAllowed(result, optionsWithDefaults.DbDriver)
+    const retryAllowed = isRetryAllowed(result, optionsWithDefaults.dbDriver)
     if (!retryAllowed) break
 
     if (retryAllowed === 'increase-timeout') {
