@@ -1,33 +1,85 @@
-import type { PrismaClient } from '@prisma/client'
-import { afterEach, describe, expect, it } from 'vitest'
+import { PrismaClient } from '@prisma/client'
+import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDatasourceUrl } from '../test/getDatasourceUrl'
 import { prismaClientFactory } from './prismaClientFactory'
 
 describe('prismaClientFactory', () => {
-  let prisma: PrismaClient
+  describe('real prisma client', () => {
+    let prisma: PrismaClient
 
-  afterEach(async () => {
-    await prisma.$disconnect()
-  })
-
-  it('with default value', async () => {
-    prisma = prismaClientFactory({ datasourceUrl: getDatasourceUrl() })
-
-    expect(prisma).toBeDefined()
-    expect(await prisma.item1.findMany()).toHaveLength(0)
-  })
-
-  it('overriding some options', async () => {
-    prisma = prismaClientFactory({
-      datasourceUrl: getDatasourceUrl(),
-      transactionOptions: {
-        isolationLevel: 'Serializable',
-        timeout: 1000,
-        maxWait: 1000,
-      },
+    afterEach(async () => {
+      await prisma.$disconnect()
     })
 
-    expect(prisma).toBeDefined()
-    expect(await prisma.item1.findMany()).toHaveLength(0)
+    it('with default value', async () => {
+      prisma = prismaClientFactory(PrismaClient, {
+        datasourceUrl: getDatasourceUrl(),
+      })
+
+      expect(prisma).toBeDefined()
+      expect(await prisma.item1.findMany()).toHaveLength(0)
+    })
+
+    it('overriding some options', async () => {
+      prisma = prismaClientFactory(PrismaClient, {
+        datasourceUrl: getDatasourceUrl(),
+        transactionOptions: {
+          isolationLevel: 'Serializable',
+          timeout: 1000,
+          maxWait: 1000,
+        },
+      })
+
+      expect(prisma).toBeDefined()
+      expect(await prisma.item1.findMany()).toHaveLength(0)
+    })
+  })
+
+  describe('mocking PrismaClient', () => {
+    let mockPrismaClient: Mock<any>
+
+    beforeEach(() => {
+      mockPrismaClient = vi.fn<any>()
+    })
+
+    it('default options', () => {
+      prismaClientFactory(mockPrismaClient)
+
+      expect(mockPrismaClient).toHaveBeenCalledWith({
+        transactionOptions: { isolationLevel: 'ReadCommitted' },
+      })
+    })
+
+    it('changing transaction options but not isolation level', () => {
+      prismaClientFactory(mockPrismaClient, {
+        transactionOptions: {
+          maxWait: 1000,
+          timeout: 1000,
+        },
+      })
+
+      expect(mockPrismaClient).toHaveBeenCalledWith({
+        transactionOptions: {
+          isolationLevel: 'ReadCommitted',
+          maxWait: 1000,
+          timeout: 1000,
+        },
+      })
+    })
+
+    it('setting other options', () => {
+      prismaClientFactory(mockPrismaClient, {
+        datasourceUrl: getDatasourceUrl(),
+        errorFormat: 'colorless',
+        log: ['query'],
+      })
+
+      expect(mockPrismaClient).toHaveBeenCalledWith({
+        transactionOptions: { isolationLevel: 'ReadCommitted' },
+        datasourceUrl: getDatasourceUrl(),
+        errorFormat: 'colorless',
+        log: ['query'],
+      })
+    })
   })
 })
