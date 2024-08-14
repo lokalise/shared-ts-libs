@@ -49,12 +49,12 @@ export type PrismaTransactionReturnType<T> = Either<
 >
 
 //----------------------------------------
-// Prisma client builder types
+// Prisma client factory types
 //----------------------------------------
 /**
  * this is a temporal solution in the meantime Prisma includes ReadCommitted as a valid isolation level for CockroachDB
  */
-export type PrismaClientBuilderOptions = Omit<Prisma.PrismaClientOptions, 'transactionOptions'> & {
+export type PrismaClientFactoryOptions = Omit<Prisma.PrismaClientOptions, 'transactionOptions'> & {
   dbDriver?: DbDriver // default: CockroachDb
   transactionOptions?: Omit<Prisma.PrismaClientOptions['transactionOptions'], 'isolationLevel'> & {
     isolationLevel?: CockroachDbIsolationLevel

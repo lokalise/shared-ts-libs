@@ -1,9 +1,9 @@
 import { PrismaClient } from '@prisma/client'
 import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDatasourceUrl } from '../test/getDatasourceUrl'
-import { prismaClientBuilder } from './prismaClientBuilder'
+import { prismaClientFactory } from './prismaClientFactory'
 
-describe('PrismaClientBuilder', () => {
+describe('prismaClientFactory', () => {
   let prisma: PrismaClient
 
   describe('PrismaClient is returned and works', () => {
@@ -12,14 +12,14 @@ describe('PrismaClientBuilder', () => {
     })
 
     it('with default value', async () => {
-      prisma = prismaClientBuilder({ datasourceUrl: getDatasourceUrl() })
+      prisma = prismaClientFactory({ datasourceUrl: getDatasourceUrl() })
 
       expect(prisma).toBeDefined()
       expect(await prisma.item1.findMany()).toHaveLength(0)
     })
 
     it('overriding some options', async () => {
-      prisma = prismaClientBuilder({
+      prisma = prismaClientFactory({
         datasourceUrl: getDatasourceUrl(),
         transactionOptions: {
           isolationLevel: 'Serializable',
@@ -46,7 +46,7 @@ describe('PrismaClientBuilder', () => {
     })
 
     it('default options', () => {
-      prisma = prismaClientBuilder()
+      prisma = prismaClientFactory()
 
       expect(mockPrismaClient).toHaveBeenCalledWith({
         transactionOptions: { isolationLevel: 'ReadCommitted' },
@@ -54,7 +54,7 @@ describe('PrismaClientBuilder', () => {
     })
 
     it('changing transaction options but not isolation level', () => {
-      prisma = prismaClientBuilder({
+      prisma = prismaClientFactory({
         transactionOptions: {
           maxWait: 1000,
           timeout: 1000,
@@ -71,7 +71,7 @@ describe('PrismaClientBuilder', () => {
     })
 
     it('setting other options', () => {
-      prisma = prismaClientBuilder({
+      prisma = prismaClientFactory({
         datasourceUrl: getDatasourceUrl(),
         errorFormat: 'colorless',
         log: ['query'],

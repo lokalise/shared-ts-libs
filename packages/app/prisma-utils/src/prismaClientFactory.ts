@@ -1,11 +1,11 @@
 import { PrismaClient } from '@prisma/client'
-import type { PrismaClientBuilderOptions } from './types'
+import type { PrismaClientFactoryOptions } from './types'
 
-const defaultOptions: PrismaClientBuilderOptions = {
+const defaultOptions: PrismaClientFactoryOptions = {
   transactionOptions: { isolationLevel: 'ReadCommitted' },
 }
 
-export const prismaClientBuilder = (options: PrismaClientBuilderOptions = {}): PrismaClient => {
+export const prismaClientFactory = (options: PrismaClientFactoryOptions = {}): PrismaClient => {
   options.transactionOptions = {
     ...defaultOptions.transactionOptions,
     ...options.transactionOptions,
