@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "outDir": "dist",
-        "module": "ESNext",
+        "module": "CommonJS",
         "target": "ES2022",
         "lib": ["ES2022", "dom"],
         "sourceMap": false,
@@ -23,5 +23,5 @@
         "resolveJsonModule": true
     },
     "include": ["src/**/*"],
-    "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
+    "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts", "test/**/*"]
 }
