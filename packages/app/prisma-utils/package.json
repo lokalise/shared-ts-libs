@@ -1,23 +1,15 @@
 {
     "name": "@lokalise/prisma-utils",
     "version": "2.0.0",
-    "type": "module",
+    "type": "commonjs",
     "license": "Apache-2.0",
     "files": ["dist", "README.md", "LICENSE.md"],
     "main": "./dist/index.cjs",
-    "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
         "url": "git://github.com/lokalise/shared-ts-libs.git"
-    },
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "require": "./dist/index.cjs",
-            "import": "./dist/index.js"
-        }
     },
     "scripts": {
         "build": "rimraf dist && npm run db:update-client && tsc",
