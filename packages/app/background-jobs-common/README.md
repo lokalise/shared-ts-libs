@@ -140,7 +140,7 @@ const processor = new TestChildJobBarrierBackgroundJobProcessor<JobData, JobRetu
           // rest of the config
           barrier: createChildJobThrottlingBarrier({
             maxChildJobsInclusive: 2, // optimistic limit, if exceeded, parent job will be delayed
-            retryPeriodInMsecs: 4000, // parent job will be retried in 4 seconds if there are too many child jobs
+            retryPeriodInMsecs: 30000, // parent job will be retried in 30 seconds if there are too many child jobs
           })
         })
 await processor.start()
