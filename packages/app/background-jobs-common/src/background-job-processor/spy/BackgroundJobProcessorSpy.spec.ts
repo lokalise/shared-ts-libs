@@ -63,7 +63,7 @@ describe('BackgroundJobProcessorSpy', () => {
         expect(result.id).toBe(id)
       })
 
-      it('waits for job to be schedule and it is not removed after completion', async () => {
+      it('waits for job to be scheduled and it is not removed after completion', async () => {
         const id = generateMonotonicUuid()
         const promise1 = spy.waitForJobWithId(id, 'scheduled')
         await expect(isPromiseFinished(promise1)).resolves.toBe(false)
@@ -131,7 +131,7 @@ describe('BackgroundJobProcessorSpy', () => {
         expect(result.id).toBe(job.id)
       })
 
-      it('waits for job to be schedule and it is not removed after completion', async () => {
+      it('waits for job to be scheduled and it is not removed after completion', async () => {
         const value = 'test'
         const promise1 = spy.waitForJob((e) => e.value === value, 'scheduled')
         await expect(isPromiseFinished(promise1)).resolves.toBe(false)

@@ -12,6 +12,10 @@ export let lastErrorSpy: MockInstance
 export class DependencyMocks {
   private client?: Redis
 
+  async clear() {
+    await this.client!.flushall('SYNC')
+  }
+
   create(): BackgroundJobProcessorDependencies<any> {
     return {
       bullmqFactory: new CommonBullmqFactory(),

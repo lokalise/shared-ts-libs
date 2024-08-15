@@ -36,6 +36,7 @@ import type {
 export abstract class AbstractBackgroundJobProcessor<
   JobPayload extends BaseJobPayload,
   JobReturn = void,
+  ExecutionContext = undefined,
   JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
   QueueType extends SafeQueue<JobOptionsType, JobPayload, JobReturn> = Queue<JobPayload, JobReturn>,
   QueueOptionsType extends QueueOptions = QueueOptions,
@@ -47,7 +48,6 @@ export abstract class AbstractBackgroundJobProcessor<
     JobReturn
   >,
   JobOptionsType extends JobsOptions = JobsOptions,
-  ExecutionContext = undefined,
 > {
   private readonly errorReporter: ErrorReporter // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
   private readonly config: BackgroundJobProcessorConfig<
@@ -65,6 +65,7 @@ export abstract class AbstractBackgroundJobProcessor<
   private isStarted = false
   private startPromise?: Promise<void>
 
+  private _executionContext?: ExecutionContext
   private _queue?: QueueType
   private _worker?: WorkerType
   private factory: AbstractBullmqFactory<
@@ -78,7 +79,6 @@ export abstract class AbstractBackgroundJobProcessor<
     JobReturn,
     JobOptionsType
   >
-  protected executionContext: ExecutionContext
 
   protected constructor(
     dependencies: BackgroundJobProcessorDependencies<
@@ -107,12 +107,17 @@ export abstract class AbstractBackgroundJobProcessor<
     this.errorReporter = dependencies.errorReporter
     this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
     this.runningPromises = []
-    this.executionContext = this.resolveExecutionContext()
   }
 
-  protected resolveExecutionContext(): ExecutionContext {
-    // @ts-ignore
-    return undefined
+  public getJobCount(): Promise<number> {
+    return this.queue.getJobCountByTypes(
+      'active',
+      'waiting',
+      'paused',
+      'delayed',
+      'prioritized',
+      'waiting-children',
+    )
   }
 
   protected get queue(): Omit<
@@ -125,6 +130,14 @@ export abstract class AbstractBackgroundJobProcessor<
     }
 
     return this._queue
+  }
+
+  protected get executionContext() {
+    if (!this._executionContext) {
+      this._executionContext = this.resolveExecutionContext()
+    }
+
+    return this._executionContext
   }
 
   protected get worker(): Omit<WorkerType, 'disconnect' | 'close'> {
@@ -155,11 +168,11 @@ export abstract class AbstractBackgroundJobProcessor<
     this.startPromise = undefined
   }
 
-  private async startIfNotStarted() {
+  private async startIfNotStarted(): Promise<void> {
     if (!this.isStarted) await this.start()
   }
 
-  private async internalInit() {
+  private async internalInit(): Promise<void> {
     await this.monitor.registerQueue()
 
     this._queue = this.factory.buildQueue(this.config.queueId, {
@@ -193,7 +206,7 @@ export abstract class AbstractBackgroundJobProcessor<
     this.isStarted = true
   }
 
-  private registerListeners() {
+  private registerListeners(): void {
     // TODO: extract hooks handling to a separate class
     this._worker?.on('failed', (job, error) => {
       if (!job) return // Should not be possible with our current config, check 'failed' for more info
@@ -283,7 +296,7 @@ export abstract class AbstractBackgroundJobProcessor<
     }
   }
 
-  private async processInternal(job: JobType) {
+  private async processInternal(job: JobType): Promise<JobReturn> {
     const requestContext = this.monitor.getRequestContext(job)
 
     try {
@@ -347,7 +360,7 @@ export abstract class AbstractBackgroundJobProcessor<
     job: JobType,
     requestContext: RequestContext,
     onHook: (job: JobType, requestContext: RequestContext) => Promise<void>,
-  ) {
+  ): Promise<void> {
     try {
       await onHook(job, requestContext)
     } catch (error) {
@@ -413,5 +426,9 @@ export abstract class AbstractBackgroundJobProcessor<
    */
   protected onFailed(_job: JobType, _error: Error, _requestContext: RequestContext): Promise<void> {
     return Promise.resolve()
+  }
+
+  protected resolveExecutionContext(): ExecutionContext {
+    return undefined as ExecutionContext
   }
 }

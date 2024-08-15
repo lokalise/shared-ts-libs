@@ -5,6 +5,12 @@ export * from './background-job-processor'
 export type { BarrierCallback, BarrierResult } from './background-job-processor/barrier/barrier'
 export { AbstractPeriodicJob } from './periodic-jobs/AbstractPeriodicJob'
 
+export {
+  createJobQueueSizeThrottlingBarrier,
+  type ChildJobThrottlingBarrierConfig,
+  type JobQueueSizeThrottlingBarrierContext,
+} from './background-job-processor/barrier/JobQueueSizeThrottlingBarrier'
+
 export { createTask } from './periodic-jobs/periodicJobUtils'
 
 export type {
