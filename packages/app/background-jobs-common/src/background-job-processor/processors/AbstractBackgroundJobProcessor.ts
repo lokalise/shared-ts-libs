@@ -1,6 +1,14 @@
 import type { ErrorReporter } from '@lokalise/node-core'
 import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
-import type { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
+import {
+  DelayedError,
+  type Job,
+  type JobsOptions,
+  type Queue,
+  type QueueOptions,
+  type Worker,
+  type WorkerOptions,
+} from 'bullmq'
 import type { JobState } from 'bullmq/dist/esm/types/job-type'
 import pino from 'pino'
 import { merge } from 'ts-deepmerge'
@@ -39,9 +47,17 @@ export abstract class AbstractBackgroundJobProcessor<
     JobReturn
   >,
   JobOptionsType extends JobsOptions = JobsOptions,
+  ExecutionContext = undefined,
 > {
   private readonly errorReporter: ErrorReporter // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
-  private readonly config: BackgroundJobProcessorConfig<QueueOptionsType, WorkerOptionsType>
+  private readonly config: BackgroundJobProcessorConfig<
+    QueueOptionsType,
+    WorkerOptionsType,
+    JobPayload,
+    ExecutionContext,
+    JobReturn,
+    JobType
+  >
   private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
   private readonly monitor: BackgroundJobProcessorMonitor<JobPayload, JobType>
   private readonly runningPromises: Promise<unknown>[]
@@ -62,6 +78,7 @@ export abstract class AbstractBackgroundJobProcessor<
     JobReturn,
     JobOptionsType
   >
+  protected executionContext: ExecutionContext
 
   protected constructor(
     dependencies: BackgroundJobProcessorDependencies<
@@ -75,7 +92,14 @@ export abstract class AbstractBackgroundJobProcessor<
       WorkerOptionsType,
       ProcessorType
     >,
-    config: BackgroundJobProcessorConfig<QueueOptionsType, WorkerOptionsType>,
+    config: BackgroundJobProcessorConfig<
+      QueueOptionsType,
+      WorkerOptionsType,
+      JobPayload,
+      ExecutionContext,
+      JobReturn,
+      JobType
+    >,
   ) {
     this.monitor = new BackgroundJobProcessorMonitor(dependencies, config, this.constructor.name)
     this.config = config
@@ -83,6 +107,12 @@ export abstract class AbstractBackgroundJobProcessor<
     this.errorReporter = dependencies.errorReporter
     this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
     this.runningPromises = []
+    this.executionContext = this.resolveExecutionContext()
+  }
+
+  protected resolveExecutionContext(): ExecutionContext {
+    // @ts-ignore
+    return undefined
   }
 
   protected get queue(): Omit<
@@ -258,6 +288,17 @@ export abstract class AbstractBackgroundJobProcessor<
 
     try {
       this.monitor.jobStart(job, requestContext)
+
+      if (this.config.barrier) {
+        const barrierResult = await this.config.barrier(job, this.executionContext)
+        if (!barrierResult.isPassing) {
+          const nextTryTimestamp = Date.now() + barrierResult.delayAmountInMs * 1000
+          requestContext.logger.debug({ nextTryTimestamp }, 'Did not pass the barrier')
+
+          await job.moveToDelayed(nextTryTimestamp, job.token)
+          throw new DelayedError()
+        }
+      }
 
       const result = await this.process(job, requestContext)
       await job.updateProgress(100)

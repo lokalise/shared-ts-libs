@@ -5,12 +5,17 @@ import type {
   TransactionObservabilityManager,
 } from '@lokalise/node-core'
 import type { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
+import type { BarrierCallback } from '../barrier/barrier'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
-import type { BullmqProcessor, SafeJob, SafeQueue } from '../types'
+import type { BaseJobPayload, BullmqProcessor, SafeJob, SafeQueue } from '../types'
 
 export type BackgroundJobProcessorConfig<
   QueueOptionsType extends QueueOptions = QueueOptions,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
+  JobPayload extends BaseJobPayload = BaseJobPayload,
+  ExecutionContext = void,
+  JobReturn = void,
+  JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
 > = {
   queueId: string
   isTest: boolean
@@ -19,6 +24,7 @@ export type BackgroundJobProcessorConfig<
   queueOptions?: Partial<QueueOptionsType>
   workerOptions: Partial<WorkerOptionsType>
   redisConfig: RedisConfig
+  barrier?: BarrierCallback<JobPayload, ExecutionContext, JobReturn, JobType>
 }
 
 export type BackgroundJobProcessorDependencies<
