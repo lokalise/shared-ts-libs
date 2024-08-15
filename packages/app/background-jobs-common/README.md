@@ -125,3 +125,26 @@ const barrier = async(_job: Job<JobData>, context: ExecutionContext) => {
           }
         }
 ```
+
+### Available prebuilt barriers
+
+`@lokalise/background-jobs-common` provides one barrier out-of-the-box - a ChildJobThrottlingBarrier, which is used to control amount of child jobs that are being spawned by a job processor.
+
+Here is an example usage:
+
+```ts
+import { createChildJobThrottlingBarrier } from '@lokalise/background-jobs-common'    
+
+const processor = new TestChildJobBarrierBackgroundJobProcessor<JobData, JobReturn>(
+        dependencies, {
+          // rest of the config
+          barrier: createChildJobThrottlingBarrier({
+            maxChildJobsInclusive: 2, // optimistic limit, if exceeded, parent job will not be processed.
+            retryPeriodInMsecs: 4000, // parent job will be retried in 4 seconds if there are too many child jobs
+          },
+        },
+)
+await processor.start()
+```
+
+Note that throttling is based on an optimistic check (checking the count and executing the parent job are not an atomic operation), so potentially it is possible to go over the limit in a highly concurrent system. For this reason it is recommended to set the limits with a buffer for the possible overflow.
