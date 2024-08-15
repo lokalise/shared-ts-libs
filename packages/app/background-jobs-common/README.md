@@ -73,3 +73,55 @@ Here, `processor.spy.waitForJobWithId()` returns an instance of a job with a giv
 Note that spies do not rely on being invoked before the job was processed, to account for the unpredictability of asynchronous operations. Even if you call `await processor.spy.waitForJobWithId(scheduledJobIds[0], 'completed')` after the job was already processed, spy will be able to resolve the processing result for you.
 
 Spies are disabled in production. In order to enable them, you need to set the `isTest` option of `BackgroundJobProcessorConfig` of your processor to true.
+
+### Barriers
+
+In case you want to conditionally delay execution of the job (e. g. until some data necessary for processing the job arrives, or until amount of jobs in the subsequent step go below the threshold), you can use the `barrier` parameter, which delays the execution of the job until a specified condition passes.
+
+Barrier looks like this:
+
+```ts
+const barrier = async(_job: Job<JobData>) => {
+          if (barrierConditionIsPassing) {
+            return {
+              isPassing: true,
+            }
+          }
+
+          return {
+            isPassing: false,
+            delayAmountInMs: 30000, // retry in 30 seconds
+          }
+        }
+```
+
+You pass it as a part of AbstractBackgroundJobProcessor `config`.
+
+You can also pass over some dependencies from the processor to the barrier:
+
+```ts
+class myJobProcessor extends AbstractBackgroundJobProcessor<Generics> {
+    override protected resolveExecutionContext(): ExecutionContext {
+        return {
+            userService: this.userService
+        }
+    }
+}
+```
+
+This will be passed to the barrier:
+
+```ts
+const barrier = async(_job: Job<JobData>, context: ExecutionContext) => {
+          if (await context.userService.userExists(job.data.userId)) {
+            return {
+              isPassing: true,
+            }
+          }
+
+          return {
+            isPassing: false,
+            delayAmountInMs: 30000, // retry in 30 seconds
+          }
+        }
+```
