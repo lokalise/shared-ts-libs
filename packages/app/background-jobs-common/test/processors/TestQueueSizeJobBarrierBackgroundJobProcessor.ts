@@ -5,20 +5,20 @@ import {
   type BackgroundJobProcessorDependencies,
   type BarrierCallback,
   type BaseJobPayload,
-  type ChildJobThrottlingBarrierContext,
+  type JobQueueSizeThrottlingBarrierContext,
   type SafeJob,
 } from '../../src'
 import { TestForeverRescheduledBackgroundJobProcessor } from './TestForeverRescheduledBackgroundJobProcessor'
 
-export class TestChildJobBarrierBackgroundJobProcessor<
+export class TestQueueSizeJobBarrierBackgroundJobProcessor<
   JobData extends BaseJobPayload,
   JobReturn,
-> extends AbstractBackgroundJobProcessor<JobData, JobReturn, ChildJobThrottlingBarrierContext> {
-  public childJobProcessor: TestForeverRescheduledBackgroundJobProcessor
+> extends AbstractBackgroundJobProcessor<JobData, JobReturn, JobQueueSizeThrottlingBarrierContext> {
+  public throttledQueueJobProcessor: TestForeverRescheduledBackgroundJobProcessor
   constructor(
     dependencies: BackgroundJobProcessorDependencies<JobData, JobReturn>,
     redisConfig: RedisConfig,
-    barrier: BarrierCallback<JobData, ChildJobThrottlingBarrierContext>,
+    barrier: BarrierCallback<JobData, JobQueueSizeThrottlingBarrierContext>,
   ) {
     super(dependencies, {
       queueId: generateMonotonicUuid(),
@@ -28,7 +28,7 @@ export class TestChildJobBarrierBackgroundJobProcessor<
       redisConfig: redisConfig,
       barrier,
     })
-    this.childJobProcessor = new TestForeverRescheduledBackgroundJobProcessor(
+    this.throttledQueueJobProcessor = new TestForeverRescheduledBackgroundJobProcessor(
       // @ts-ignore
       dependencies,
       redisConfig,
@@ -37,17 +37,17 @@ export class TestChildJobBarrierBackgroundJobProcessor<
 
   async start(): Promise<void> {
     await super.start()
-    await this.childJobProcessor.start()
+    await this.throttledQueueJobProcessor.start()
   }
 
   async dispose(): Promise<void> {
     await super.dispose()
-    await this.childJobProcessor.dispose()
+    await this.throttledQueueJobProcessor.dispose()
   }
 
-  protected override resolveExecutionContext(): ChildJobThrottlingBarrierContext {
+  protected override resolveExecutionContext(): JobQueueSizeThrottlingBarrierContext {
     return {
-      childJobProcessor: this.childJobProcessor,
+      throttledQueueJobProcessor: this.throttledQueueJobProcessor,
     }
   }
 
@@ -56,7 +56,7 @@ export class TestChildJobBarrierBackgroundJobProcessor<
   }
 
   protected override async process(job: SafeJob<JobData>): Promise<JobReturn> {
-    await this.childJobProcessor.schedule({
+    await this.throttledQueueJobProcessor.schedule({
       id: job.id,
       metadata: {
         correlationId: 'dummy',

@@ -133,14 +133,14 @@ const barrier = async(_job: Job<JobData>, context: ExecutionContext) => {
 Here is an example usage:
 
 ```ts
-import { createChildJobThrottlingBarrier } from '@lokalise/background-jobs-common'    
+import { createJobQueueSizeThrottlingBarrier } from '@lokalise/background-jobs-common'    
 
 const processor = new TestChildJobBarrierBackgroundJobProcessor<JobData, JobReturn>(
         dependencies, {
-          // rest of the config
-          barrier: createChildJobThrottlingBarrier({
-            maxChildJobsInclusive: 2, // optimistic limit, if exceeded, parent job will be delayed
-            retryPeriodInMsecs: 30000, // parent job will be retried in 30 seconds if there are too many child jobs
+          // ... the rest of the config
+          barrier: createJobQueueSizeThrottlingBarrier({
+            maxQueueJobsInclusive: 2, // optimistic limit, if exceeded, job with the barrier will be delayed
+            retryPeriodInMsecs: 30000, // job with the barrier will be retried in 30 seconds if there are too many jobs in the throttled queue
           })
         })
 await processor.start()
@@ -151,12 +151,12 @@ Note that throttling is based on an optimistic check (checking the count and exe
 This barrier depends on defining the following ExecutionContext: 
 
 ```ts
-import type { ChildJobThrottlingBarrierContext } from '@lokalise/background-jobs-common'
+import type { JobQueueSizeThrottlingBarrierContext } from '@lokalise/background-jobs-common'
 
 class myJobProcessor extends AbstractBackgroundJobProcessor<Generics> {
-    protected override resolveExecutionContext(): ChildJobThrottlingBarrierContext {
+    protected override resolveExecutionContext(): JobQueueSizeThrottlingBarrierContext {
         return {
-            childJobProcessor: this.childJobProcessor, // AbstractBackgroundJobProcessor
+          throttledQueueJobProcessor: this.throttledQueueJobProcessor, // AbstractBackgroundJobProcessor
         }
     }
 }

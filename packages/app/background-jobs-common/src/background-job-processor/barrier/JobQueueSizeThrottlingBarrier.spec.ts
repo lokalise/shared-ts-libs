@@ -1,17 +1,17 @@
 import { setTimeout } from 'node:timers/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { DependencyMocks } from '../../../test/dependencyMocks'
-import { TestChildJobBarrierBackgroundJobProcessor } from '../../../test/processors/TestChildJobBarrierBackgroundJobProcessor'
+import { TestQueueSizeJobBarrierBackgroundJobProcessor } from '../../../test/processors/TestQueueSizeJobBarrierBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from '../processors/types'
 import type { BaseJobPayload } from '../types'
-import { createChildJobThrottlingBarrier } from './ChildJobThrottlingBarrier'
+import { createJobQueueSizeThrottlingBarrier } from './JobQueueSizeThrottlingBarrier'
 
 type JobData = {
   id: string
   value: string
 } & BaseJobPayload
 
-describe('ChildJobThrottlingBarrier', () => {
+describe('JobQueueSizeThrottlingBarrier', () => {
   let mocks: DependencyMocks
   let deps: BackgroundJobProcessorDependencies<JobData, any>
 
@@ -29,11 +29,11 @@ describe('ChildJobThrottlingBarrier', () => {
   it('processes a job when barrier passes', async () => {
     type JobReturn = { result: string }
 
-    const processor = new TestChildJobBarrierBackgroundJobProcessor<JobData, JobReturn>(
+    const processor = new TestQueueSizeJobBarrierBackgroundJobProcessor<JobData, JobReturn>(
       deps,
       mocks.getRedisConfig(),
-      createChildJobThrottlingBarrier({
-        maxChildJobsInclusive: 5,
+      createJobQueueSizeThrottlingBarrier({
+        maxQueueJobsInclusive: 5,
         retryPeriodInMsecs: 2000,
       }),
     )
@@ -51,7 +51,7 @@ describe('ChildJobThrottlingBarrier', () => {
     })
     await processor.spy.waitForJobWithId(job1, 'completed')
     await processor.spy.waitForJobWithId(job2, 'completed')
-    expect(await processor.childJobProcessor.getJobCount()).toBe(2)
+    expect(await processor.throttledQueueJobProcessor.getJobCount()).toBe(2)
 
     await processor.dispose()
   })
@@ -59,11 +59,11 @@ describe('ChildJobThrottlingBarrier', () => {
   it('delays when barrier does not pass', async () => {
     type JobReturn = { result: string }
 
-    const processor = new TestChildJobBarrierBackgroundJobProcessor<JobData, JobReturn>(
+    const processor = new TestQueueSizeJobBarrierBackgroundJobProcessor<JobData, JobReturn>(
       deps,
       mocks.getRedisConfig(),
-      createChildJobThrottlingBarrier({
-        maxChildJobsInclusive: 2,
+      createJobQueueSizeThrottlingBarrier({
+        maxQueueJobsInclusive: 2,
         retryPeriodInMsecs: 4000,
       }),
     )
@@ -88,7 +88,7 @@ describe('ChildJobThrottlingBarrier', () => {
     await processor.spy.waitForJobWithId(job2, 'completed')
     await processor.spy.waitForJobWithId(job3, 'scheduled')
     await setTimeout(20)
-    expect(await processor.childJobProcessor.getJobCount()).toBe(2)
+    expect(await processor.throttledQueueJobProcessor.getJobCount()).toBe(2)
 
     await processor.dispose()
   })
