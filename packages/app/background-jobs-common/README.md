@@ -128,14 +128,14 @@ const barrier = async(_job: Job<JobData>, context: ExecutionContext) => {
 
 ### Available prebuilt barriers
 
-`@lokalise/background-jobs-common` provides one barrier out-of-the-box - a ChildJobThrottlingBarrier, which is used to control amount of child jobs that are being spawned by a job processor.
+`@lokalise/background-jobs-common` provides one barrier out-of-the-box - a JobQueueSizeThrottlingBarrier, which is used to control amount of jobs that are being spawned by a job processor (in a different queue).
 
 Here is an example usage:
 
 ```ts
 import { createJobQueueSizeThrottlingBarrier } from '@lokalise/background-jobs-common'    
 
-const processor = new TestChildJobBarrierBackgroundJobProcessor<JobData, JobReturn>(
+const processor = new MyJobProcessor(
         dependencies, {
           // ... the rest of the config
           barrier: createJobQueueSizeThrottlingBarrier({
@@ -146,7 +146,7 @@ const processor = new TestChildJobBarrierBackgroundJobProcessor<JobData, JobRetu
 await processor.start()
 ```
 
-Note that throttling is based on an optimistic check (checking the count and executing the parent job are not an atomic operation), so potentially it is possible to go over the limit in a highly concurrent system. For this reason it is recommended to set the limits with a buffer for the possible overflow.
+Note that throttling is based on an optimistic check (checking the count and executing the job that uses the barrier is not an atomic operation), so potentially it is possible to go over the limit in a highly concurrent system. For this reason it is recommended to set the limits with a buffer for the possible overflow.
 
 This barrier depends on defining the following ExecutionContext: 
 
