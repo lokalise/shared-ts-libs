@@ -28,8 +28,8 @@ export class TestChildJobBarrierBackgroundJobProcessor<
       redisConfig: redisConfig,
       barrier,
     })
-    // @ts-ignore
     this.childJobProcessor = new TestForeverRescheduledBackgroundJobProcessor(
+      // @ts-ignore
       dependencies,
       redisConfig,
     )
