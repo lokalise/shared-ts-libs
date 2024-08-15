@@ -1,4 +1,4 @@
-import type { Job } from 'bullmq'
+import { DelayedError, type Job } from 'bullmq'
 
 import type { RedisConfig } from '@lokalise/node-core'
 import {
@@ -16,7 +16,7 @@ type OnFailedError = {
   job: Job<Data>
 }
 
-export class TestLongStalledBackgroundJobProcessor extends AbstractBackgroundJobProcessor<Data> {
+export class TestForeverRescheduledBackgroundJobProcessor extends AbstractBackgroundJobProcessor<Data> {
   private _onFailedErrors: OnFailedError[] = []
 
   constructor(dependencies: BackgroundJobProcessorDependencies<Data>, redisConfig: RedisConfig) {
@@ -41,8 +41,10 @@ export class TestLongStalledBackgroundJobProcessor extends AbstractBackgroundJob
     })
   }
 
-  protected override process(): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, 2000))
+  protected override async process(job: Job<Data>): Promise<void> {
+    const nextTryTimestamp = Date.now() + 6000
+    await job.moveToDelayed(nextTryTimestamp, job.token)
+    throw new DelayedError()
   }
 
   protected override onFailed(job: Job<Data>, error: Error): Promise<void> {

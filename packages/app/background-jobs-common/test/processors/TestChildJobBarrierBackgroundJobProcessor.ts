@@ -8,13 +8,13 @@ import {
   type ChildJobThrottlingBarrierContext,
   type SafeJob,
 } from '../../src'
-import { TestLongStalledBackgroundJobProcessor } from './TestLongStalledBackgroundJobProcessor'
+import { TestForeverRescheduledBackgroundJobProcessor } from './TestForeverRescheduledBackgroundJobProcessor'
 
 export class TestChildJobBarrierBackgroundJobProcessor<
   JobData extends BaseJobPayload,
   JobReturn,
 > extends AbstractBackgroundJobProcessor<JobData, JobReturn, ChildJobThrottlingBarrierContext> {
-  public childJobProcessor: TestLongStalledBackgroundJobProcessor
+  public childJobProcessor: TestForeverRescheduledBackgroundJobProcessor
   constructor(
     dependencies: BackgroundJobProcessorDependencies<JobData, JobReturn>,
     redisConfig: RedisConfig,
@@ -29,7 +29,10 @@ export class TestChildJobBarrierBackgroundJobProcessor<
       barrier,
     })
     // @ts-ignore
-    this.childJobProcessor = new TestLongStalledBackgroundJobProcessor(dependencies, redisConfig)
+    this.childJobProcessor = new TestForeverRescheduledBackgroundJobProcessor(
+      dependencies,
+      redisConfig,
+    )
   }
 
   async start(): Promise<void> {
