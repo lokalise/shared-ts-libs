@@ -139,12 +139,25 @@ const processor = new TestChildJobBarrierBackgroundJobProcessor<JobData, JobRetu
         dependencies, {
           // rest of the config
           barrier: createChildJobThrottlingBarrier({
-            maxChildJobsInclusive: 2, // optimistic limit, if exceeded, parent job will not be processed.
+            maxChildJobsInclusive: 2, // optimistic limit, if exceeded, parent job will be delayed
             retryPeriodInMsecs: 4000, // parent job will be retried in 4 seconds if there are too many child jobs
-          },
-        },
-)
+          })
+        })
 await processor.start()
 ```
 
 Note that throttling is based on an optimistic check (checking the count and executing the parent job are not an atomic operation), so potentially it is possible to go over the limit in a highly concurrent system. For this reason it is recommended to set the limits with a buffer for the possible overflow.
+
+This barrier depends on defining the following ExecutionContext: 
+
+```ts
+import type { ChildJobThrottlingBarrierContext } from '@lokalise/background-jobs-common'
+
+class myJobProcessor extends AbstractBackgroundJobProcessor<Generics> {
+    protected override resolveExecutionContext(): ChildJobThrottlingBarrierContext {
+        return {
+            childJobProcessor: this.childJobProcessor, // AbstractBackgroundJobProcessor
+        }
+    }
+}
+```
