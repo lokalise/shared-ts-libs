@@ -305,7 +305,7 @@ export abstract class AbstractBackgroundJobProcessor<
       if (this.config.barrier) {
         const barrierResult = await this.config.barrier(job, this.executionContext)
         if (!barrierResult.isPassing) {
-          const nextTryTimestamp = Date.now() + barrierResult.delayAmountInMs * 1000
+          const nextTryTimestamp = Date.now() + barrierResult.delayAmountInMs
           requestContext.logger.debug({ nextTryTimestamp }, 'Did not pass the barrier')
 
           await job.moveToDelayed(nextTryTimestamp, job.token)
