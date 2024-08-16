@@ -109,7 +109,8 @@ export abstract class AbstractBackgroundJobProcessor<
     this.runningPromises = []
   }
 
-  public getJobCount(): Promise<number> {
+  public async getJobCount(): Promise<number> {
+    await this.startIfNotStarted()
     return this.queue.getJobCountByTypes(
       'active',
       'waiting',
