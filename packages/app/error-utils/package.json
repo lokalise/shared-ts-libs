@@ -1,43 +1,38 @@
 {
-	"name": "@lokalise/error-utils",
-	"version": "1.4.0",
-	"license": "Apache-2.0",
-	"files": [
-		"dist/**",
-		"LICENSE.md",
-		"README.md"
-	],
-	"type": "commonjs",
-	"main": "./dist/index.js",
-	"types": "./dist/index.d.ts",
-	"homepage": "https://github.com/lokalise/shared-ts-libs",
-	"repository": {
-		"type": "git",
-		"url": "git://github.com/lokalise/shared-ts-libs.git"
-	},
-	"scripts": {
-		"build": "rimraf dist && tsc",
-		"clean": "rimraf dist .eslintcache",
-		"lint": "eslint --cache --max-warnings=0  && prettier --check --log-level warn src \"**/*.{json,md}\" && tsc --noEmit",
-		"lint:fix": "eslint  --fix && prettier --write src \"**/*.{json,md}\"",
-		"test:ci": "vitest run --coverage",
-		"prepublishOnly": "npm run build",
-		"package-version": "echo $npm_package_version"
-	},
-	"dependencies": {
-		"@bugsnag/js": "^7.23.0"
-	},
-	"devDependencies": {
-		"@lokalise/eslint-config": "latest",
-		"@lokalise/node-core": "^11.2.0",
-		"@lokalise/prettier-config": "latest",
-		"@lokalise/package-vite-config": "latest",
-		"@vitest/coverage-v8": "^2.0.4",
-		"prettier": "^3.3.3",
-		"rimraf": "^5.0.7",
-		"typescript": "5.5.4",
-		"vite": "5.4.0",
-		"vitest": "^2.0.4"
-	},
-	"prettier": "@lokalise/prettier-config"
+    "name": "@lokalise/error-utils",
+    "version": "1.4.0",
+    "license": "Apache-2.0",
+    "files": ["dist/**", "LICENSE.md", "README.md"],
+    "type": "commonjs",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "homepage": "https://github.com/lokalise/shared-ts-libs",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/lokalise/shared-ts-libs.git"
+    },
+    "scripts": {
+        "build": "rimraf dist && tsc",
+        "clean": "rimraf dist .eslintcache",
+        "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
+        "lint:fix": "biome check --write",
+        "test:ci": "vitest run --coverage",
+        "prepublishOnly": "npm run build",
+        "package-version": "echo $npm_package_version"
+    },
+    "dependencies": {
+        "@bugsnag/js": "^7.23.0"
+    },
+    "peerDependencies": {
+        "@lokalise/node-core": ">=11.0.0"
+    },
+    "devDependencies": {
+        "@lokalise/node-core": "^11.2.0",
+        "@lokalise/package-vite-config": "latest",
+        "@vitest/coverage-v8": "^2.0.5",
+        "rimraf": "^6.0.1",
+        "typescript": "5.5.4",
+        "vite": "5.4.1",
+        "vitest": "^2.0.5"
+    }
 }
