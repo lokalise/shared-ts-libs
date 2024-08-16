@@ -531,7 +531,7 @@ describe('AbstractBackgroundJobProcessor', () => {
   })
 
   describe('getJobCount', () => {
-    it('works', async () => {
+    it('lazy init + job count works as expected', async () => {
       const processor = new FakeBackgroundJobProcessor<JobData>(
         deps,
         'queue1',
