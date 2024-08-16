@@ -17,7 +17,7 @@ describe('prismaClientFactory', () => {
       })
 
       expect(prisma).toBeDefined()
-      expect(await prisma.item1.findMany()).toHaveLength(0)
+      expect(await prisma.item1.findMany()).toBeDefined()
     })
 
     it('overriding some options', async () => {

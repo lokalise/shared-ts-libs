@@ -529,4 +529,28 @@ describe('AbstractBackgroundJobProcessor', () => {
       })
     })
   })
+
+  describe('getJobCount', () => {
+    it('lazy init + job count works as expected', async () => {
+      const processor = new FakeBackgroundJobProcessor<JobData>(
+        deps,
+        'queue1',
+        mocks.getRedisConfig(),
+      )
+      // lazy init
+      expect(await processor.getJobCount()).toBe(0)
+
+      const jobId = await processor.schedule({
+        id: 'test_id',
+        value: 'test',
+        metadata: { correlationId: 'correlation_id' },
+      })
+
+      expect(await processor.getJobCount()).toBe(1)
+      await processor.spy.waitForJobWithId(jobId, 'completed')
+      expect(await processor.getJobCount()).toBe(0)
+
+      await processor.dispose()
+    })
+  })
 })
