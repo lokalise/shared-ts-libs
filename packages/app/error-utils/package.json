@@ -27,6 +27,8 @@
         "@lokalise/node-core": ">=11.0.0"
     },
     "devDependencies": {
+        "@biomejs/biome": "^1.8.3",
+        "@lokalise/biome-config": "^1.4.0",
         "@lokalise/node-core": "^11.2.0",
         "@lokalise/package-vite-config": "latest",
         "@vitest/coverage-v8": "^2.0.5",
