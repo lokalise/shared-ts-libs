@@ -406,6 +406,8 @@ describe('AbstractBackgroundJobProcessor', () => {
         error: onFailedError,
         context: {
           jobId: job.id,
+          jobName: 'AbstractBackgroundJobProcessor_error',
+          'x-request-id': 'correlation_id',
           error: expect.stringContaining(onFailedError.message),
         },
       })
@@ -446,6 +448,8 @@ describe('AbstractBackgroundJobProcessor', () => {
         error: onFailedCall.error,
         context: {
           jobId,
+          jobName: 'TestStalledBackgroundJobProcessor queue',
+          'x-request-id': jobData.metadata.correlationId,
           errorJson: expect.stringContaining(onFailedCall.error.message),
         },
       })

@@ -342,6 +342,8 @@ export abstract class AbstractBackgroundJobProcessor<
       error,
       context: {
         jobId: resolveJobId(job),
+        jobName: job.name,
+        'x-request-id': job.data.metadata.correlationId,
         errorJson: JSON.stringify(pino.stdSerializers.err(error)),
       },
     })
@@ -375,6 +377,8 @@ export abstract class AbstractBackgroundJobProcessor<
           : new Error(`${this.constructor.name} onFailed non-error exception`),
         context: {
           jobId,
+          jobName: job.name,
+          'x-request-id': job.data.metadata.correlationId,
           error: JSON.stringify(isError(error) ? pino.stdSerializers.err(error) : error),
         },
       })
