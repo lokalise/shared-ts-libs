@@ -109,7 +109,8 @@ export abstract class AbstractBackgroundJobProcessor<
     this.runningPromises = []
   }
 
-  public getJobCount(): Promise<number> {
+  public async getJobCount(): Promise<number> {
+    await this.startIfNotStarted()
     return this.queue.getJobCountByTypes(
       'active',
       'waiting',
@@ -168,8 +169,9 @@ export abstract class AbstractBackgroundJobProcessor<
     this.startPromise = undefined
   }
 
-  private async startIfNotStarted(): Promise<void> {
-    if (!this.isStarted) await this.start()
+  private startIfNotStarted(): Promise<void> {
+    if (!this.isStarted) return this.start()
+    return Promise.resolve()
   }
 
   private async internalInit(): Promise<void> {
