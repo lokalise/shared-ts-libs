@@ -12,7 +12,7 @@ import {
  */
 export const isTextTranslatable = (text: string): boolean =>
   text
-    .split(nonTranslatableTextRegexp) // split the text by non-translatable tags, removing them
+    .split(nonTranslatableTextRegexp) // split the text by non-translatable tags and remove NTC regions
     .map((piece) => piece.replace(htmlRegexpG, '').trim()) // remove html tags and trim the pieces
     .filter((piece) => piece !== '') // remove empty pieces
     .some((piece) => dateRegexp.test(piece) || !symbolsAndNumberRegexpG.test(piece)) // check if at least one piece is translatable
