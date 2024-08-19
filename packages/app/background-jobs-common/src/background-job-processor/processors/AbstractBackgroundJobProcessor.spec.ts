@@ -449,7 +449,7 @@ describe('AbstractBackgroundJobProcessor', () => {
         context: {
           jobId,
           jobName: 'TestStalledBackgroundJobProcessor queue',
-          'x-request-id': '01916c5b-4829-83ab-4f8c-db9990c37a96',
+          'x-request-id': jobData.metadata.correlationId,
           errorJson: expect.stringContaining(onFailedCall.error.message),
         },
       })
