@@ -1,4 +1,4 @@
-import type { JobsOptions, WorkerOptions } from 'bullmq'
+import type { JobsOptions, QueueOptions, WorkerOptions } from 'bullmq'
 
 import { daysToSeconds } from './utils'
 
@@ -25,20 +25,21 @@ export const RETENTION_QUEUE_IDS_IN_DAYS = 14
  */
 export const DEFAULT_JOB_CONFIG: JobsOptions = {
   attempts: 3,
-  backoff: {
-    type: 'exponential',
-    delay: 5000,
-  },
+  backoff: { type: 'exponential', delay: 5000 },
   removeOnComplete: { count: RETENTION_COMPLETED_JOBS_IN_AMOUNT },
-  removeOnFail: {
-    age: daysToSeconds(RETENTION_FAILED_JOBS_IN_DAYS),
-  },
+  removeOnFail: { age: daysToSeconds(RETENTION_FAILED_JOBS_IN_DAYS) },
 }
 
 export const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
+
+export const DEFAULT_QUEUE_OPTIONS = {
+  streams: { events: { maxLen: 0 } },
+} as const satisfies Omit<QueueOptions, 'connection' | 'prefix'>
 
 export const DEFAULT_WORKER_OPTIONS = {
   concurrency: 10,
   maxStalledCount: 3, // same as default attempts by default
   ttl: 60,
-} as const satisfies Omit<WorkerOptions, 'connection'> & { ttl: number }
+} as const satisfies Omit<WorkerOptions, 'connection' | 'prefix'> & {
+  ttl: number
+}

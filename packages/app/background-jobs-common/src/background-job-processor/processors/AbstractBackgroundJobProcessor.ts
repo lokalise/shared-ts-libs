@@ -13,7 +13,7 @@ import type { JobState } from 'bullmq/dist/esm/types/job-type'
 import pino from 'pino'
 import { merge } from 'ts-deepmerge'
 
-import { DEFAULT_WORKER_OPTIONS } from '../constants'
+import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
@@ -178,23 +178,23 @@ export abstract class AbstractBackgroundJobProcessor<
     await this.monitor.registerQueue()
 
     this._queue = this.factory.buildQueue(this.config.queueId, {
-      ...this.config.queueOptions,
+      ...(merge(DEFAULT_QUEUE_OPTIONS, this.config.queueOptions ?? {}) as Omit<
+        QueueOptionsType,
+        'connection' | 'prefix'
+      >),
       connection: sanitizeRedisConfig(this.config.redisConfig),
       prefix: this.config.redisConfig?.keyPrefix ?? undefined,
     } as unknown as QueueOptionsType)
     await this._queue.waitUntilReady()
 
-    const mergedWorkerOptions = merge(
-      DEFAULT_WORKER_OPTIONS,
-      this.config.workerOptions,
-    ) as unknown as Omit<WorkerOptionsType, 'connection'>
     this._worker = this.factory.buildWorker(
       this.config.queueId,
-      (async (job: JobType) => {
-        return await this.processInternal(job)
-      }) as ProcessorType,
+      ((job: JobType) => this.processInternal(job)) as ProcessorType,
       {
-        ...mergedWorkerOptions,
+        ...(merge(DEFAULT_WORKER_OPTIONS, this.config.workerOptions) as Omit<
+          WorkerOptionsType,
+          'connection' | 'prefix'
+        >),
         connection: sanitizeRedisConfig(this.config.redisConfig),
         prefix: this.config.redisConfig?.keyPrefix ?? undefined,
       } as unknown as WorkerOptionsType,
