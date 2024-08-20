@@ -29,8 +29,7 @@ export const nonTranslatableTagsRegexpG = new RegExp(nonTranslatableTagsPattern,
  * For more info see -> https://github.com/mdn/content/blob/main/files/en-us/web/javascript/reference/regular_expressions/unicode_character_class_escape/index.md
  */
 const symbolsAndNumberPattern = /^[\p{N}\p{P}\p{Sm}\p{Sk}\p{So}\p{Emoji}\s]+$/u
-
-export const symbolsAndNumberRegexp = new RegExp(symbolsAndNumberPattern)
+export const symbolsAndNumberRegexpG = new RegExp(symbolsAndNumberPattern)
 
 /**
  * Explanation of the pattern:
@@ -52,3 +51,12 @@ export const symbolsAndNumberRegexp = new RegExp(symbolsAndNumberPattern)
  */
 const datePattern = /(\d{2,4}([-\/.])\d{1,2}\2\d{1,2})|(\d{1,2}([-\/.])\d{1,2}\4\d{2,4})/
 export const dateRegexp = new RegExp(datePattern)
+
+/**
+ * Explanation of the pattern:
+ * `<` -> matches the character '<'
+ * `[^<>]*` -> matches any character except '<' and '>', zero or more times
+ * `>` -> matches the character '>'
+ */
+const tagPattern = /<[^<>]*>/
+export const tagRegexpG = new RegExp(tagPattern, 'g')
