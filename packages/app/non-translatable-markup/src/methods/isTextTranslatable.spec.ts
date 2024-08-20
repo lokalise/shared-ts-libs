@@ -21,6 +21,10 @@ describe('isTextTranslatable', () => {
     'Hello!<> world', // symbols mixed with text
     'Hello\uE101bold\uE102! 123\uE101bold\uE102 world', // numbers mixed with NT regions and symbols
 
+    // html tags with translatable text
+    '<div class="test">hello world</div>',
+    'hello world</tr>',
+
     // translatable symbols (currency symbols atm)
     '€',
     '$',
@@ -60,11 +64,18 @@ describe('isTextTranslatable', () => {
     '123! 4 | 56', // numbers with symbols
     '\uE101hello\uE102 123! \uE1012060\uE102 | 56', // numbers with symbols
 
+    // Testing tags
+    '</tr>',
+    '<tr>',
+    '<p></p>',
+    '<div class="test">\n\t&🚀</div>',
+
     // bad formatted dates
     '2024/01.01',
     '01-01/24',
 
     // Testing single symbols
+    '\n',
     '¡',
     '!',
     '¿',
