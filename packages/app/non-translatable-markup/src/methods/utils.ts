@@ -58,5 +58,5 @@ export const dateRegexp = new RegExp(datePattern)
  * `[^<>]*` -> matches any character except '<' and '>', zero or more times
  * `>` -> matches the character '>'
  */
-const htmlPattern = /<[^<>]*>/
-export const htmlRegexpG = new RegExp(htmlPattern, 'g')
+const tagPattern = /<[^<>]*>/
+export const tagRegexpG = new RegExp(tagPattern, 'g')
