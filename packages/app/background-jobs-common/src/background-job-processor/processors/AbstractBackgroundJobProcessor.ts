@@ -236,11 +236,28 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   public async schedule(jobData: JobPayload, options?: JobOptionsType): Promise<string> {
-    const jobIds = await this.scheduleBulk([jobData], options)
-    return jobIds[0]
+    await this.startIfNotStarted()
+
+    const job = await this._queue?.add(
+      this.config.queueId,
+      jobData,
+      prepareJobOptions(this.config.isTest, options),
+    )
+    if (!job?.id) {
+      throw new Error('Scheduled job ID is undefined')
+    }
+
+    if (this._spy) {
+      this._spy.addJob(job, 'scheduled')
+    }
+
+    return job.id
   }
 
-  public async scheduleBulk(jobData: JobPayload[], options?: JobOptionsType): Promise<string[]> {
+  public async scheduleBulk(
+    jobData: JobPayload[],
+    options?: Omit<JobOptionsType, 'repeat'>,
+  ): Promise<string[]> {
     await this.startIfNotStarted()
 
     const jobs =
@@ -261,9 +278,7 @@ export abstract class AbstractBackgroundJobProcessor<
     }
 
     if (this._spy) {
-      for (const job of jobs) {
-        this._spy.addJob(job, 'scheduled')
-      }
+      this._spy.addJobs(jobs, 'scheduled')
     }
 
     return jobIds as string[]
