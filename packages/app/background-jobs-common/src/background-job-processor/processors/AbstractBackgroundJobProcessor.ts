@@ -255,13 +255,10 @@ export abstract class AbstractBackgroundJobProcessor<
     return job.id
   }
 
-  public async scheduleBulk(jobData: JobPayload[], options?: JobOptionsType): Promise<string[]> {
-    if (options?.repeat) {
-      throw new Error(
-        'scheduleBulk does not support repeatOptions. Please use schedule method instead',
-      )
-    }
-
+  public async scheduleBulk(
+    jobData: JobPayload[],
+    options?: Omit<JobOptionsType, 'repeat'>,
+  ): Promise<string[]> {
     await this.startIfNotStarted()
 
     const jobs =

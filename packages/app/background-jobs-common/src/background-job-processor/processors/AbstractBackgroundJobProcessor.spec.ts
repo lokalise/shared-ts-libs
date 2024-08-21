@@ -563,35 +563,6 @@ describe('AbstractBackgroundJobProcessor', () => {
       await redis?.del(QUEUE_IDS_KEY)
     })
 
-    it('throws an error if attempt to use scheduleBulk with repeatable jobs', async () => {
-      const processor = new FakeBackgroundJobProcessor<JobData>(
-        deps,
-        'queue1',
-        mocks.getRedisConfig(),
-      )
-
-      await expect(
-        processor.scheduleBulk(
-          [
-            {
-              id: 'test_id',
-              value: 'test',
-              metadata: { correlationId: 'correlation_id' },
-            },
-          ],
-          {
-            repeat: {
-              every: 10,
-              limit: 5,
-            },
-          },
-        ),
-      ).rejects.toThrow(
-        /scheduleBulk does not support repeatOptions. Please use schedule method instead/,
-      )
-      await processor.dispose()
-    })
-
     it('schedules repeatable job', async () => {
       const processor = new FakeBackgroundJobProcessor<JobData>(
         deps,
