@@ -557,4 +557,60 @@ describe('AbstractBackgroundJobProcessor', () => {
       await processor.dispose()
     })
   })
+
+  describe('repeatable', () => {
+    beforeEach(async () => {
+      await redis?.del(QUEUE_IDS_KEY)
+    })
+
+    it('throws an error if attempt to use scheduleBulk with repeatable jobs', async () => {
+      const processor = new FakeBackgroundJobProcessor<JobData>(
+        deps,
+        'queue1',
+        mocks.getRedisConfig(),
+      )
+
+      await expect(
+        processor.scheduleBulk([{
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        }], {
+          repeat: {
+            every: 10,
+            limit: 5,
+          }
+        }),
+      ).rejects.toThrow(/scheduleBulk does not support repeatOptions. Please use schedule method instead/)
+      await processor.dispose()
+    })
+
+    it('schedules repeatable job', async () => {
+      const processor = new FakeBackgroundJobProcessor<JobData>(
+        deps,
+        'queue1',
+        mocks.getRedisConfig(),
+      )
+
+      const scheduledJobId = await processor.schedule({
+        id: 'test_id',
+        value: 'test',
+        metadata: { correlationId: 'correlation_id' },
+      }, {
+        repeat: {
+          every: 10,
+          immediately: true,
+          limit: 5,
+        }
+      })
+
+      await processor.spy.waitForJobWithId(scheduledJobId, 'completed')
+      // @ts-expect-error executing protected method for testing
+      const repeatableJobs = await processor.queue.getRepeatableJobs()
+      expect(repeatableJobs).toHaveLength(1)
+      expect(repeatableJobs[0].every).toBe('10')
+
+      await processor.dispose()
+    })
+  })
 })
