@@ -112,4 +112,10 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
       this.promises.splice(index, 1)
     }
   }
+
+  addJobs(jobs: SafeJob<JobData>[], state: JobSpyState): void {
+    for (const job of jobs) {
+      this.addJob(job, state)
+    }
+  }
 }
