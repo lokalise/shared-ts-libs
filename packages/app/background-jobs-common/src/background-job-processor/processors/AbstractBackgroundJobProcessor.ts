@@ -239,7 +239,11 @@ export abstract class AbstractBackgroundJobProcessor<
   public async schedule(jobData: JobPayload, options?: JobOptionsType): Promise<string> {
     await this.startIfNotStarted()
 
-    const job = await this._queue?.add(this.config.queueId, jobData, prepareJobOptions(this.config.isTest, options))
+    const job = await this._queue?.add(
+      this.config.queueId,
+      jobData,
+      prepareJobOptions(this.config.isTest, options),
+    )
     if (!job?.id) {
       throw new Error('Scheduled job ID is undefined')
     }
@@ -253,7 +257,9 @@ export abstract class AbstractBackgroundJobProcessor<
 
   public async scheduleBulk(jobData: JobPayload[], options?: JobOptionsType): Promise<string[]> {
     if (options?.repeat) {
-      throw new Error('scheduleBulk does not support repeatOptions. Please use schedule method instead')
+      throw new Error(
+        'scheduleBulk does not support repeatOptions. Please use schedule method instead',
+      )
     }
 
     await this.startIfNotStarted()

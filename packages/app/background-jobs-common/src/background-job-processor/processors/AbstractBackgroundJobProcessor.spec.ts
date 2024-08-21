@@ -571,17 +571,24 @@ describe('AbstractBackgroundJobProcessor', () => {
       )
 
       await expect(
-        processor.scheduleBulk([{
-          id: 'test_id',
-          value: 'test',
-          metadata: { correlationId: 'correlation_id' },
-        }], {
-          repeat: {
-            every: 10,
-            limit: 5,
-          }
-        }),
-      ).rejects.toThrow(/scheduleBulk does not support repeatOptions. Please use schedule method instead/)
+        processor.scheduleBulk(
+          [
+            {
+              id: 'test_id',
+              value: 'test',
+              metadata: { correlationId: 'correlation_id' },
+            },
+          ],
+          {
+            repeat: {
+              every: 10,
+              limit: 5,
+            },
+          },
+        ),
+      ).rejects.toThrow(
+        /scheduleBulk does not support repeatOptions. Please use schedule method instead/,
+      )
       await processor.dispose()
     })
 
@@ -592,17 +599,20 @@ describe('AbstractBackgroundJobProcessor', () => {
         mocks.getRedisConfig(),
       )
 
-      const scheduledJobId = await processor.schedule({
-        id: 'test_id',
-        value: 'test',
-        metadata: { correlationId: 'correlation_id' },
-      }, {
-        repeat: {
-          every: 10,
-          immediately: true,
-          limit: 5,
-        }
-      })
+      const scheduledJobId = await processor.schedule(
+        {
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        },
+        {
+          repeat: {
+            every: 10,
+            immediately: true,
+            limit: 5,
+          },
+        },
+      )
 
       await processor.spy.waitForJobWithId(scheduledJobId, 'completed')
       // @ts-expect-error executing protected method for testing
