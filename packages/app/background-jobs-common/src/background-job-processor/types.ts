@@ -31,7 +31,7 @@ export type SafeQueue<
     jobs: {
       name: NameType
       data: DataType
-      opts?: JobsOptionsType
+      opts?: Omit<JobsOptionsType, 'repeat'>
     }[],
   ): Promise<SafeJob<DataType, ResultType, NameType>[]>
 }
