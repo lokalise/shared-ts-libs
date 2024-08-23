@@ -8,6 +8,7 @@ export {
   JSON_HEADERS,
   TEST_OPTIONS,
   NO_CONTENT_RESPONSE_SCHEMA,
+  UNKNOWN_RESPONSE_SCHEMA,
 } from './src/client/constants'
 
 export {
