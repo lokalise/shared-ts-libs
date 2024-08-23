@@ -1,7 +1,8 @@
-import type {
-  CommonLogger,
-  RedisConfig,
-  TransactionObservabilityManager,
+import {
+  type CommonLogger,
+  type RedisConfig,
+  type TransactionObservabilityManager,
+  resolveGlobalErrorLogObject,
 } from '@lokalise/node-core'
 import Redis from 'ioredis'
 import { QUEUE_IDS_KEY } from '../constants'
@@ -89,18 +90,32 @@ export class BackgroundJobProcessorMonitor<
   public jobStart(job: JobType, requestContext: RequestContext): void {
     const transactionName = `bg_job:${this.ownerName}:${this.queueId}`
     this.transactionObservabilityManager.start(transactionName, resolveJobId(job))
-    requestContext.logger.info({ origin: this.processorName }, `Started job ${job.name}`)
+    requestContext.logger.info(this.buildLogParams(job), `Started job ${job.name}`)
+  }
+
+  public jobTryError(job: JobType, error: unknown, requestContext: RequestContext): void {
+    requestContext.logger.error(this.buildLogParams(job, error), `${job.name} try failed`)
   }
 
   public jobEnd(job: JobType, requestContext: RequestContext): void {
     requestContext.logger.info(
       {
-        origin: this.processorName,
+        ...this.buildLogParams(job),
         isSuccess: job.progress === 100,
       },
       `Finished job ${job.name}`,
     )
     this.transactionObservabilityManager.stop(resolveJobId(job))
+  }
+
+  private buildLogParams(job: JobType, error?: unknown) {
+    return {
+      origin: this.processorName,
+      jobId: resolveJobId(job),
+      jobName: job.name,
+      jobProgress: job.progress,
+      ...(error ? resolveGlobalErrorLogObject(error) : {}),
+    }
   }
 }
 

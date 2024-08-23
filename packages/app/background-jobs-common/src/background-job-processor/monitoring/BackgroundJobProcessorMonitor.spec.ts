@@ -178,7 +178,7 @@ describe('BackgroundJobProcessorMonitor', () => {
     })
   })
 
-  describe('logJobStarted', () => {
+  describe('jobStarted', () => {
     let monitor: BackgroundJobProcessorMonitor
     let transactionManagerSpy: MockInstance
     let job: SafeJob<BaseJobPayload>
@@ -214,15 +214,59 @@ describe('BackgroundJobProcessorMonitor', () => {
         job.id,
       )
       expect(loggerSpy).toHaveBeenCalledWith(
-        {
+        expect.objectContaining({
           origin: 'BackgroundJobProcessorMonitor tests',
-        },
+          jobId: job.id,
+          jobName: job.name,
+        }),
         'Started job name_test-correlation-id_job',
       )
     })
   })
 
-  describe('logJobCompleted', () => {
+  describe('jobTryError', () => {
+    let monitor: BackgroundJobProcessorMonitor
+
+    beforeAll(() => {
+      monitor = new BackgroundJobProcessorMonitor(
+        deps,
+        {
+          queueId: 'test-queue-logJobTryError',
+          ownerName: 'test-owner',
+          redisConfig: mocks.getRedisConfig(),
+        },
+        'BackgroundJobProcessorMonitor tests',
+      )
+    })
+
+    it('should log error', () => {
+      const job = createFakeJob('test-correlation-id', 30)
+      const requestContext = {
+        reqId: 'test-req-id',
+        logger: { error: (_obj: unknown, _msg: unknown) => undefined },
+      } as RequestContext
+      const loggerSpy = vi.spyOn(requestContext.logger, 'error')
+
+      monitor.jobTryError(job, new Error('my-error'), requestContext)
+
+      expect(loggerSpy).toHaveBeenCalledOnce()
+      expect(loggerSpy.mock.calls[0]).toMatchObject([
+        expect.objectContaining({
+          jobId: job.id,
+          jobName: 'name_test-correlation-id_job',
+          jobProgress: 30,
+          origin: 'BackgroundJobProcessorMonitor tests',
+          error: expect.objectContaining({
+            message: 'my-error',
+            type: 'Error',
+          }),
+        }),
+        'name_test-correlation-id_job try failed',
+      ])
+    })
+  })
+
+  describe('jobEnd', () => {
     let monitor: BackgroundJobProcessorMonitor
     let transactionManagerSpy: MockInstance
 
@@ -260,6 +304,9 @@ describe('BackgroundJobProcessorMonitor', () => {
           {
             origin: 'BackgroundJobProcessorMonitor tests',
             isSuccess: progress === 100,
+            jobId: job.id,
+            jobName: job.name,
+            jobProgress: progress,
           },
           'Finished job name_test-correlation-id_job',
         )
@@ -268,9 +315,9 @@ describe('BackgroundJobProcessorMonitor', () => {
   })
 })
 
-const createFakeJob = (correlationId: string, progress?: number) =>
+const createFakeJob = (correlationId: string, progress?: number, id?: string) =>
   ({
-    id: generateMonotonicUuid(),
+    id: id ?? generateMonotonicUuid(),
     name: `name_${correlationId}_job`,
     data: { metadata: { correlationId } },
     progress,
