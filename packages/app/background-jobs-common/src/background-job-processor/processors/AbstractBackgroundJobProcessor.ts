@@ -31,6 +31,8 @@ import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
   JobsPaginatedResponse,
+  ProtectedQueue,
+  ProtectedWorker,
 } from './types'
 
 export abstract class AbstractBackgroundJobProcessor<
@@ -121,10 +123,7 @@ export abstract class AbstractBackgroundJobProcessor<
     )
   }
 
-  protected get queue(): Omit<
-    QueueType,
-    'close' | 'disconnect' | 'obliterate' | 'clean' | 'drain'
-  > {
+  protected get queue(): ProtectedQueue<JobPayload, JobReturn, QueueType> {
     /* v8 ignore next 3 */
     if (!this._queue) {
       throw new Error(`queue ${this.config.queueId} was not instantiated yet, please run "start()"`)
@@ -141,7 +140,7 @@ export abstract class AbstractBackgroundJobProcessor<
     return this._executionContext
   }
 
-  protected get worker(): Omit<WorkerType, 'disconnect' | 'close'> {
+  protected get worker(): ProtectedWorker<JobPayload, JobReturn, WorkerType> {
     /* v8 ignore next 5 */
     if (!this._worker) {
       throw new Error(
