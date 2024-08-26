@@ -216,15 +216,13 @@ describe('BackgroundJobProcessorMonitor', () => {
       expect(loggerSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           origin: 'BackgroundJobProcessorMonitor tests',
-          jobId: job.id,
-          jobName: job.name,
         }),
         'Started job name_test-correlation-id_job',
       )
     })
   })
 
-  describe('jobTryError', () => {
+  describe('jobAttemptError', () => {
     let monitor: BackgroundJobProcessorMonitor
 
     beforeAll(() => {
@@ -247,13 +245,11 @@ describe('BackgroundJobProcessorMonitor', () => {
       } as RequestContext
       const loggerSpy = vi.spyOn(requestContext.logger, 'error')
 
-      monitor.jobTryError(job, new Error('my-error'), requestContext)
+      monitor.jobAttemptError(job, new Error('my-error'), requestContext)
 
       expect(loggerSpy).toHaveBeenCalledOnce()
       expect(loggerSpy.mock.calls[0]).toMatchObject([
         expect.objectContaining({
-          jobId: job.id,
-          jobName: 'name_test-correlation-id_job',
           jobProgress: 30,
           origin: 'BackgroundJobProcessorMonitor tests',
           error: expect.objectContaining({
@@ -304,8 +300,6 @@ describe('BackgroundJobProcessorMonitor', () => {
           {
             origin: 'BackgroundJobProcessorMonitor tests',
             isSuccess: progress === 100,
-            jobId: job.id,
-            jobName: job.name,
             jobProgress: progress,
           },
           'Finished job name_test-correlation-id_job',

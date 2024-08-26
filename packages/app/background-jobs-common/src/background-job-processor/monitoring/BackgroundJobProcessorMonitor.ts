@@ -93,7 +93,7 @@ export class BackgroundJobProcessorMonitor<
     requestContext.logger.info(this.buildLogParams(job), `Started job ${job.name}`)
   }
 
-  public jobTryError(job: JobType, error: unknown, requestContext: RequestContext): void {
+  public jobAttemptError(job: JobType, error: unknown, requestContext: RequestContext): void {
     requestContext.logger.error(this.buildLogParams(job, error), `${job.name} try failed`)
   }
 
@@ -111,8 +111,6 @@ export class BackgroundJobProcessorMonitor<
   private buildLogParams(job: JobType, error?: unknown) {
     return {
       origin: this.processorName,
-      jobId: resolveJobId(job),
-      jobName: job.name,
       jobProgress: job.progress,
       ...(error ? resolveGlobalErrorLogObject(error) : {}),
     }
