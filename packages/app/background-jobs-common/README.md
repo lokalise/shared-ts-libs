@@ -161,3 +161,27 @@ class myJobProcessor extends AbstractBackgroundJobProcessor<Generics> {
     }
 }
 ```
+
+
+### Queue events.
+The library optimized the default event stream settings to save memory. Specifically, the library sets the default
+maximum length of the BullMQ queue events stream to `0` ([doc](https://docs.bullmq.io/guide/events)). This means the 
+event stream will not store any events by default, greatly reducing memory usage.
+
+If you need to store more events in the stream, you can easily configure the maximum length via the `queueOptions`
+parameter during the processor creation.
+
+```ts
+export class Processor extends AbstractBackgroundJobProcessor<Data> {
+    constructor(dependencies: BackgroundJobProcessorDependencies<Data>) {
+        super(dependencies, {
+            queueId: 'queue',
+            ownerName: 'example owner',
+            queueOptions: {
+                streams: {events:{maxLen: 1000}},
+            }
+        })
+    }
+    // ...
+}
+```
