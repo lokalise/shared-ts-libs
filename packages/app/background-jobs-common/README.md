@@ -161,3 +161,23 @@ class myJobProcessor extends AbstractBackgroundJobProcessor<Generics> {
     }
 }
 ```
+
+
+### Queue events.
+This library is overwriting the default BullMQ queue events stream max length ([doc](https://docs.bullmq.io/guide/events)) 
+to `0` by default in order to save memory. If you want to change this value, you can do it via `queueOptions` on processor creation.
+
+```ts
+export class Processor extends AbstractBackgroundJobProcessor<Data> {
+    constructor(dependencies: BackgroundJobProcessorDependencies<Data>) {
+        super(dependencies, {
+            queueId: 'queue',
+            ownerName: 'example owner',
+            queueOptions: {
+                streams: {events:{maxLen: 1000}},
+            }
+        })
+    }
+    // ...
+}
+```
