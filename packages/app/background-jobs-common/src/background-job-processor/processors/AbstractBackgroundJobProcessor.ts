@@ -332,6 +332,9 @@ export abstract class AbstractBackgroundJobProcessor<
       const result = await this.process(job, requestContext)
       await job.updateProgress(100)
       return result
+    } catch (error) {
+      this.monitor.jobAttemptError(job, error, requestContext)
+      throw error
     } finally {
       this.monitor.jobEnd(job, requestContext)
     }
