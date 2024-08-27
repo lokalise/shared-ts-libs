@@ -10,7 +10,7 @@ export const DEFAULT_OPTIONS = {
   timeout: 30000,
 } satisfies MayOmit<
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  RequestOptions<unknown, any>,
+  RequestOptions<unknown, any, true>,
   'requestLabel' | 'responseSchema' | 'isEmptyResponseExpected'
 >
 
@@ -24,7 +24,7 @@ export const JSON_HEADERS = {
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-export const TEST_OPTIONS: RequestOptions<unknown, any> = {
+export const TEST_OPTIONS: RequestOptions<unknown, any, true> = {
   requestLabel: 'test',
   responseSchema: z.unknown(),
 }

@@ -1,6 +1,5 @@
 import type { Interceptable } from 'undici'
 import { Client, MockAgent, setGlobalDispatcher } from 'undici'
-import { isInternalRequestError } from 'undici-retry'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
@@ -19,7 +18,7 @@ import {
 import mockProduct1 from './mock-data/mockProduct1.json'
 // @ts-ignore
 import mockProductsLimit3 from './mock-data/mockProductsLimit3.json'
-import type { HttpRequestContext } from './types'
+import { type HttpRequestContext, isInternalRequestError } from './types'
 
 const TEXT_HEADERS = {
   'content-type': 'text/plain',
@@ -314,6 +313,30 @@ describe('httpClient', () => {
       })
 
       expect(result.result.body).toEqual(mockProductsLimit3)
+    })
+
+    it('Returns internal error when configured not to throw', async () => {
+      const query = {
+        limit: 3,
+      }
+
+      client
+        .intercept({
+          path: '/products',
+          method: 'GET',
+          query,
+        })
+        .replyWithError(new Error('connection error'))
+
+      const result = await sendGet(client, '/products', {
+        query,
+        responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+        requestLabel: 'dummy',
+        throwOnError: false,
+      })
+
+      expect(result.result).toBeUndefined()
+      expect(isInternalRequestError(result.error)).toBe(true)
     })
 
     it('Throws an error on internal error', async () => {
