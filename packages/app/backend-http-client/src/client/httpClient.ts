@@ -22,6 +22,8 @@ import type {
   RequestResultDefinitiveEither,
 } from './types'
 
+type DEFAULT_THROW_ON_ERROR = typeof DEFAULT_OPTIONS.throwOnError
+
 export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
   return new Client(baseUrl, {
     ...defaultClientOptions,
@@ -29,11 +31,15 @@ export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
   })
 }
 
-export async function sendGet<T, IsEmptyResponseExpected extends boolean = false>(
+export async function sendGet<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
   client: Client,
   path: string,
-  options: RequestOptions<T, IsEmptyResponseExpected>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
+  options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -56,7 +62,7 @@ export async function sendGet<T, IsEmptyResponseExpected extends boolean = false
 
   return resolveResult(
     result,
-    options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
+    options.throwOnError ?? (DEFAULT_OPTIONS.throwOnError as DoThrowOnError),
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
@@ -64,11 +70,15 @@ export async function sendGet<T, IsEmptyResponseExpected extends boolean = false
   )
 }
 
-export async function sendDelete<T, IsEmptyResponseExpected extends boolean = true>(
+export async function sendDelete<
+  T,
+  IsEmptyResponseExpected extends boolean = true,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
   client: Client,
   path: string,
-  options: RequestOptions<T, IsEmptyResponseExpected>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
+  options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -91,7 +101,7 @@ export async function sendDelete<T, IsEmptyResponseExpected extends boolean = tr
 
   return resolveResult(
     result,
-    options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
+    options.throwOnError ?? (DEFAULT_OPTIONS.throwOnError as DoThrowOnError),
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
@@ -99,12 +109,16 @@ export async function sendDelete<T, IsEmptyResponseExpected extends boolean = tr
   )
 }
 
-export async function sendPost<T, IsEmptyResponseExpected extends boolean = false>(
+export async function sendPost<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
-  options: RequestOptions<T, IsEmptyResponseExpected>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
+  options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -128,7 +142,7 @@ export async function sendPost<T, IsEmptyResponseExpected extends boolean = fals
 
   return resolveResult(
     result,
-    options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
+    options.throwOnError ?? (DEFAULT_OPTIONS.throwOnError as DoThrowOnError),
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
@@ -136,12 +150,16 @@ export async function sendPost<T, IsEmptyResponseExpected extends boolean = fals
   )
 }
 
-export async function sendPostBinary<T, IsEmptyResponseExpected extends boolean = false>(
+export async function sendPostBinary<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
   client: Client,
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
-  options: RequestOptions<T, IsEmptyResponseExpected>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
+  options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -165,7 +183,7 @@ export async function sendPostBinary<T, IsEmptyResponseExpected extends boolean 
 
   return resolveResult(
     result,
-    options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
+    options.throwOnError ?? (DEFAULT_OPTIONS.throwOnError as DoThrowOnError),
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
@@ -173,12 +191,16 @@ export async function sendPostBinary<T, IsEmptyResponseExpected extends boolean 
   )
 }
 
-export async function sendPut<T, IsEmptyResponseExpected extends boolean = false>(
+export async function sendPut<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
-  options: RequestOptions<T, IsEmptyResponseExpected>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
+  options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -202,7 +224,7 @@ export async function sendPut<T, IsEmptyResponseExpected extends boolean = false
 
   return resolveResult(
     result,
-    options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
+    options.throwOnError ?? (DEFAULT_OPTIONS.throwOnError as DoThrowOnError),
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
@@ -210,12 +232,16 @@ export async function sendPut<T, IsEmptyResponseExpected extends boolean = false
   )
 }
 
-export async function sendPutBinary<T, IsEmptyResponseExpected extends boolean = false>(
+export async function sendPutBinary<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
   client: Client,
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
-  options: RequestOptions<T, IsEmptyResponseExpected>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
+  options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -239,7 +265,7 @@ export async function sendPutBinary<T, IsEmptyResponseExpected extends boolean =
 
   return resolveResult(
     result,
-    options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
+    options.throwOnError ?? (DEFAULT_OPTIONS.throwOnError as DoThrowOnError),
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
@@ -247,12 +273,16 @@ export async function sendPutBinary<T, IsEmptyResponseExpected extends boolean =
   )
 }
 
-export async function sendPatch<T, IsEmptyResponseExpected extends boolean = false>(
+export async function sendPatch<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
   client: Client,
   path: string,
   body: RecordObject | undefined,
-  options: RequestOptions<T, IsEmptyResponseExpected>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected>> {
+  options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
   const result = await sendWithRetry<T>(
     client,
     {
@@ -276,7 +306,7 @@ export async function sendPatch<T, IsEmptyResponseExpected extends boolean = fal
 
   return resolveResult(
     result,
-    options.throwOnError ?? DEFAULT_OPTIONS.throwOnError,
+    options.throwOnError ?? (DEFAULT_OPTIONS.throwOnError as DoThrowOnError),
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
@@ -297,14 +327,14 @@ function resolveRetryConfig(options: InternalRequestOptions<unknown>): RetryConf
   return options.retryConfig ?? NO_RETRY_CONFIG
 }
 
-function resolveResult<T, IsEmptyResponseExpected extends boolean>(
+function resolveResult<T, IsEmptyResponseExpected extends boolean, DoThrowOnError extends boolean>(
   requestResult: Either<RequestResult<unknown> | InternalRequestError, RequestResult<T>>,
-  throwOnError: boolean,
+  throwOnError: DoThrowOnError,
   validateResponse: boolean,
   validationSchema: ZodSchema<T>,
   requestLabel: string,
-  isEmptyResponseExpected: boolean,
-): RequestResultDefinitiveEither<T, IsEmptyResponseExpected> {
+  isEmptyResponseExpected: IsEmptyResponseExpected,
+): RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError> {
   // Throw response error
   if (requestResult.error && throwOnError) {
     throw isRequestResult(requestResult.error)
@@ -322,7 +352,7 @@ function resolveResult<T, IsEmptyResponseExpected extends boolean>(
     )
   }
 
-  return requestResult as RequestResultDefinitiveEither<T, IsEmptyResponseExpected>
+  return requestResult as RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>
 }
 
 function handleRequestResultSuccess<T>(

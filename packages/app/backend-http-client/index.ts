@@ -4,6 +4,8 @@ export type {
   RequestResultDefinitiveEither,
 } from './src/client/types'
 
+export { isInternalRequestError } from './src/client/types'
+
 export {
   JSON_HEADERS,
   TEST_OPTIONS,
