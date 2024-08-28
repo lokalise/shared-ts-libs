@@ -6,7 +6,7 @@
  * This is useful for preventing operations on empty arrays and for gaining type-level assurances.
  *
  * @template T - The type of elements within the array.
- * @param {readonly T[]} array - The array to be checked, which should be read-only.
+ * @param {T[]} array - The array to be checked, which should be read-only.
  * @returns {array is [T, ...T[]]} - Returns true if the array is non-empty, false otherwise.
  */
-export const isNonEmptyArray = <T>(array: readonly T[]): array is [T, ...T[]] => array.length > 0
+export const isNonEmptyArray = <T>(array: T[]): array is [T, ...T[]] => array.length > 0
