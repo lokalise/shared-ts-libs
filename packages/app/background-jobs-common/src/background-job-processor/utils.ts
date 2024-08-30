@@ -1,7 +1,7 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
 import type { JobsOptions } from 'bullmq'
-import Redis from 'ioredis'
+import type Redis from 'ioredis'
 import { DEFAULT_JOB_CONFIG } from './constants'
 import type { SafeJob } from './types'
 
@@ -26,8 +26,6 @@ export const sanitizeRedisConfig = (config: RedisConfig): RedisConfig => {
 }
 
 export const isRedisClient = (redis: RedisConfig | Redis): redis is Redis => 'options' in redis
-
-export const createSanitizedRedisClient = (redisConfig: RedisConfig): Redis => new Redis(sanitizeRedisConfig(redisConfig))
 
 export const prepareJobOptions = <JobOptionsType extends JobsOptions>(
   isTest: boolean,

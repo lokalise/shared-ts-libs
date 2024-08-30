@@ -1,6 +1,7 @@
 export * from './types'
 export * from './factories/CommonBullmqFactory'
 export * from './factories/AbstractBullmqFactory'
+export * from './factories/sanitizedRedisClientFactory'
 export * from './logger/BackgroundJobProcessorLogger'
 export * from './monitoring/backgroundJobProcessorGetActiveQueueIds'
 export * from './processors/types'
