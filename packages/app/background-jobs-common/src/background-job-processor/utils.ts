@@ -1,7 +1,7 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
 import type { JobsOptions } from 'bullmq'
-import type Redis from 'ioredis'
+import Redis from 'ioredis'
 import { DEFAULT_JOB_CONFIG } from './constants'
 import type { SafeJob } from './types'
 
@@ -18,8 +18,15 @@ export const isStalledJobError = (error: Error): boolean =>
   error.message === 'job stalled more than allowable limit'
 
 export const sanitizeRedisConfig = (config: RedisConfig): RedisConfig => {
-  return { ...config, keyPrefix: undefined }
+  return {
+    ...config,
+    keyPrefix: undefined,
+    maxRetriesPerRequest: null, // Has to be null for compatibility with BullMQ, see: https://docs.bullmq.io/bull/patterns/persistent-connections#workers
+  }
 }
+
+export const createSanitizedRedisClient = (redisConfig: RedisConfig): Redis =>
+  new Redis(sanitizeRedisConfig(redisConfig))
 
 export const isRedisClient = (redis: RedisConfig | Redis): redis is Redis => 'options' in redis
 
