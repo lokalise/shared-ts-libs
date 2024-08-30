@@ -5,17 +5,17 @@ import { daysToSeconds } from './utils'
 /**
  * How many days we retain completed jobs
  */
-export const RETENTION_COMPLETED_JOBS_IN_AMOUNT = 50
+const RETENTION_COMPLETED_JOBS_IN_AMOUNT = 50
+
+/**
+ * How many days we retain completed jobs
+ */
+const RETENTION_COMPLETED_JOBS_IN_DAYS = 3
 
 /**
  * How many days we retain failed jobs
  */
-export const RETENTION_FAILED_JOBS_IN_DAYS = 7
-
-/**
- * How many days we retain queue ids
- */
-export const RETENTION_QUEUE_IDS_IN_DAYS = 14
+const RETENTION_FAILED_JOBS_IN_DAYS = 7
 
 /**
  * Default config
@@ -26,10 +26,17 @@ export const RETENTION_QUEUE_IDS_IN_DAYS = 14
 export const DEFAULT_JOB_CONFIG: JobsOptions = {
   attempts: 3,
   backoff: { type: 'exponential', delay: 5000 },
-  removeOnComplete: { count: RETENTION_COMPLETED_JOBS_IN_AMOUNT },
+  removeOnComplete: {
+    count: RETENTION_COMPLETED_JOBS_IN_AMOUNT,
+    age: daysToSeconds(RETENTION_COMPLETED_JOBS_IN_DAYS),
+  },
   removeOnFail: { age: daysToSeconds(RETENTION_FAILED_JOBS_IN_DAYS) },
 }
 
+/**
+ * How many days we retain queue ids
+ */
+export const RETENTION_QUEUE_IDS_IN_DAYS = 14
 export const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
 
 export const DEFAULT_QUEUE_OPTIONS = {
