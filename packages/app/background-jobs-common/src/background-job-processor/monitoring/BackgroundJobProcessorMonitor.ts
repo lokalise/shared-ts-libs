@@ -5,14 +5,13 @@ import {
   resolveGlobalErrorLogObject,
 } from '@lokalise/node-core'
 import { QUEUE_IDS_KEY } from '../constants'
-import { createSanitizedRedisClient } from '../factories/sanitizedRedisClientFactory'
 import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger'
 import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
 } from '../processors/types'
 import type { BaseJobPayload, RequestContext, SafeJob } from '../types'
-import { resolveJobId } from '../utils'
+import { createSanitizedRedisClient, resolveJobId } from '../utils'
 
 const queueIdsSet = new Set<string>()
 

@@ -1,8 +1,7 @@
 import type { RedisConfig } from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
 import { QUEUE_IDS_KEY, RETENTION_QUEUE_IDS_IN_DAYS } from '../constants'
-import { createSanitizedRedisClient } from '../factories/sanitizedRedisClientFactory'
-import { daysToMilliseconds, isRedisClient } from '../utils'
+import { createSanitizedRedisClient, daysToMilliseconds, isRedisClient } from '../utils'
 
 export const backgroundJobProcessorGetActiveQueueIds = async (
   redis: RedisConfig | Redis,
