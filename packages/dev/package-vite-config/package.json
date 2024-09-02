@@ -32,7 +32,7 @@
     },
     "dependencies": {
         "vite": "5.4.2",
-        "vite-plugin-dts": "4.0.3",
+        "vite-plugin-dts": "4.1.0",
         "vitest": "^2.0.3"
     },
     "devDependencies": {
