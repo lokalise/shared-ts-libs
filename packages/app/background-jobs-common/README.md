@@ -91,7 +91,7 @@ Spies can await jobs in the following states:
 #### Important Notes
 
 - Spies do not need to be invoked before the job is processed, accommodating the unpredictability of asynchronous operations.
-- Even if you call `await processor.spy.waitForJobWithId(scheduledJobId[], {state})` after the job has already been processed/scheduled, the spy can still resolve the processing result for you.
+- Even if you call `await processor.spy.waitForJobWithId(scheduledJobId[], {state})` after the job has already been scheduled or processed, the spy can still resolve the job state for you.
 - Spies are disabled in production.
   - To enable them, set the `isTest` option of `BackgroundJobProcessorConfig` to `true` in your processor configuration.
 
