@@ -125,7 +125,7 @@ You can also pass over some dependencies from the processor to the barrier:
 
 ```ts
 class myJobProcessor extends AbstractBackgroundJobProcessor<Generics> {
-    override protected resolveExecutionContext(): ExecutionContext {
+    protected override resolveExecutionContext(): ExecutionContext {
         return {
             userService: this.userService
         }
