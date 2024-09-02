@@ -39,40 +39,64 @@ you can override by passing `queueConfig.queueOptions` and `workerOptions` param
 
 Use `dispose()` to correctly stop processing any new messages and wait for the current ones to finish.
 
+
 ### Spies
 
-Testing asynchronous code is hard. For that purpose we have implemented built-in spy functionality for jobs.
-Example usage:
+Testing asynchronous code can be challenging. To address this, we've implemented a built-in spy functionality for jobs.
 
-```ts
+#### Example Usage
+
+```typescript
 const scheduledJobIds = await processor.scheduleBulk([
-	{
-		id: randomUUID(),
-		value: 'first',
-		metadata: { correlationId: generateMonotonicUuid() },
-	},
-	{
-		id: randomUUID(),
-		value: 'second',
-		metadata: { correlationId: randomUUID() },
-	},
-])
+  {
+    id: randomUUID(),
+    value: 'first',
+    metadata: { correlationId: generateMonotonicUuid() },
+  },
+  {
+    id: randomUUID(),
+    value: 'second',
+    metadata: { correlationId: randomUUID() },
+  },
+]);
 
-const firstJob = await processor.spy.waitForJobWithId(scheduledJobIds[0], 'completed')
-const secondJob = await await processor.spy.waitForJob(
-	(data) => data.value === 'second',
-	'completed',
-)
+const firstJob = await processor.spy.waitForJobWithId(scheduledJobIds[0], 'completed');
+const secondJob = await processor.spy.waitForJob(
+  (data) => data.value === 'second',
+  'completed'
+);
 
-expect(firstJob.data.value).toBe('first')
-expect(secondJob.data.value).toBe('second')
+expect(firstJob.data.value).toBe('first');
+expect(secondJob.data.value).toBe('second');
 ```
 
-Here, `processor.spy.waitForJobWithId()` returns an instance of a job with a given id, and with the expected status, and `processor.spy.waitForJob()` performs lookup by a custom predicate, accordingly.
+#### Spy Methods
 
-Note that spies do not rely on being invoked before the job was processed, to account for the unpredictability of asynchronous operations. Even if you call `await processor.spy.waitForJobWithId(scheduledJobIds[0], 'completed')` after the job was already processed, spy will be able to resolve the processing result for you.
+- `processor.spy.waitForJobWithId(jobId, status)`:
+  - Waits for a job with a specific ID to reach the specified status.
+  - Returns the job instance when the status is achieved.
 
-Spies are disabled in production. In order to enable them, you need to set the `isTest` option of `BackgroundJobProcessorConfig` of your processor to true.
+- `processor.spy.waitForJob(predicate, status)`:
+  - Waits for any job that matches the custom predicate to reach the specified status.
+  - Returns the matching job instance when the status is achieved.
+
+#### Awaitable Job States
+
+Spies can await jobs in the following states:
+
+- `scheduled`: The job is scheduled but not yet processed.
+- `failed`: The job is processed but failed.
+- `completed`: The job is processed successfully.
+
+#### Important Notes
+
+- Spies do not need to be invoked before the job is processed, accommodating the unpredictability of asynchronous operations.
+- Even if you call `await processor.spy.waitForJobWithId(scheduledJobIds[0], 'completed')` after the job has already been processed, the spy can still resolve the processing result for you.
+- Spies are disabled in production.
+  - To enable them, set the `isTest` option of `BackgroundJobProcessorConfig` to `true` in your processor configuration.
+
+By utilizing these spy functions, you can more effectively manage and test the behavior of asynchronous jobs within your system.
+
 
 ### Barriers
 
