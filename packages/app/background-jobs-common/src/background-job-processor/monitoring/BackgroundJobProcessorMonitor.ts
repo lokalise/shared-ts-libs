@@ -4,7 +4,6 @@ import {
   type TransactionObservabilityManager,
   resolveGlobalErrorLogObject,
 } from '@lokalise/node-core'
-import Redis from 'ioredis'
 import { QUEUE_IDS_KEY } from '../constants'
 import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger'
 import type {
@@ -12,7 +11,7 @@ import type {
   BackgroundJobProcessorDependencies,
 } from '../processors/types'
 import type { BaseJobPayload, RequestContext, SafeJob } from '../types'
-import { resolveJobId, sanitizeRedisConfig } from '../utils'
+import { createSanitizedRedisClient, resolveJobId } from '../utils'
 
 const queueIdsSet = new Set<string>()
 
@@ -54,7 +53,7 @@ export class BackgroundJobProcessorMonitor<
     if (queueIdsSet.has(this.queueId)) throw new Error(`Queue id "${this.queueId}" is not unique.`)
 
     queueIdsSet.add(this.queueId)
-    const redisWithoutPrefix = new Redis(sanitizeRedisConfig(this.redisConfig))
+    const redisWithoutPrefix = createSanitizedRedisClient(this.redisConfig)
     await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now(), this.queueId)
     redisWithoutPrefix.disconnect()
   }

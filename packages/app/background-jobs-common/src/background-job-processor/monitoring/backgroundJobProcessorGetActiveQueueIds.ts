@@ -1,12 +1,12 @@
 import type { RedisConfig } from '@lokalise/node-core'
-import { Redis } from 'ioredis'
+import type { Redis } from 'ioredis'
 import { QUEUE_IDS_KEY, RETENTION_QUEUE_IDS_IN_DAYS } from '../constants'
-import { daysToMilliseconds, isRedisClient, sanitizeRedisConfig } from '../utils'
+import { createSanitizedRedisClient, daysToMilliseconds, isRedisClient } from '../utils'
 
 export const backgroundJobProcessorGetActiveQueueIds = async (
   redis: RedisConfig | Redis,
 ): Promise<string[]> => {
-  const redisWithoutPrefix = isRedisClient(redis) ? redis : new Redis(sanitizeRedisConfig(redis))
+  const redisWithoutPrefix = isRedisClient(redis) ? redis : createSanitizedRedisClient(redis)
 
   await cleanOldQueueIds(redisWithoutPrefix)
 
