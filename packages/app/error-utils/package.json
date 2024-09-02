@@ -22,7 +22,7 @@
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
-        "@bugsnag/js": "^7.23.0"
+        "@bugsnag/js": "^8.0.0"
     },
     "peerDependencies": {
         "@lokalise/node-core": ">=11.0.0"
