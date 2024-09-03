@@ -40,6 +40,7 @@ jobs:
         run: |
           git config --global user.email "auto-release@lokalise.com"
           git config --global user.name "AUTO RELEASE"
+          npm config set git-tag-version=false
 
       - name: Git pull
         run: git pull origin main
