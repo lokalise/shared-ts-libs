@@ -11,43 +11,43 @@ import fp from 'fastify-plugin'
 import { LokaliseBatchSpanProcessor, LokaliseSimpleSpanProcessor } from './spanProcessors'
 
 export interface PrismaOtelTracingPluginConfig {
-	isEnabled: boolean
-	useBatchSpans: boolean
-	samplingRatio: number
-	serviceName: string
+  isEnabled: boolean
+  useBatchSpans: boolean
+  samplingRatio: number
+  serviceName: string
 }
 
-function plugin(app: FastifyInstance, opts: PrismaOtelTracingPluginConfig, done: () => void) {
-	if (opts.isEnabled) {
-		const provider = new NodeTracerProvider({
-			sampler: new TraceIdRatioBasedSampler(opts.samplingRatio),
-			resource: new Resource({
-				[SEMRESATTRS_SERVICE_NAME]: opts.serviceName,
-			}),
-		})
+function plugin(_app: FastifyInstance, opts: PrismaOtelTracingPluginConfig, done: () => void) {
+  if (opts.isEnabled) {
+    const provider = new NodeTracerProvider({
+      sampler: new TraceIdRatioBasedSampler(opts.samplingRatio),
+      resource: new Resource({
+        [SEMRESATTRS_SERVICE_NAME]: opts.serviceName,
+      }),
+    })
 
-		// Is configured by OTEL_EXPORTER_OTLP_* env vars
-		const otlpExporter = new OTLPTraceExporter()
+    // Is configured by OTEL_EXPORTER_OTLP_* env vars
+    const otlpExporter = new OTLPTraceExporter()
 
-		// Production sends spans in batches
-		if (opts.useBatchSpans) {
-			provider.addSpanProcessor(new LokaliseBatchSpanProcessor(otlpExporter))
-		} else {
-			provider.addSpanProcessor(new LokaliseSimpleSpanProcessor(otlpExporter))
-		}
+    // Production sends spans in batches
+    if (opts.useBatchSpans) {
+      provider.addSpanProcessor(new LokaliseBatchSpanProcessor(otlpExporter))
+    } else {
+      provider.addSpanProcessor(new LokaliseSimpleSpanProcessor(otlpExporter))
+    }
 
-		registerInstrumentations({
-			instrumentations: [new PrismaInstrumentation()],
-			tracerProvider: provider,
-		})
+    registerInstrumentations({
+      instrumentations: [new PrismaInstrumentation()],
+      tracerProvider: provider,
+    })
 
-		provider.register()
-	}
+    provider.register()
+  }
 
-	done()
+  done()
 }
 
 export const prismaOtelTracingPlugin = fp(plugin, {
-	fastify: '4.x',
-	name: 'prisma-otel-tracing-plugin',
+  fastify: '4.x',
+  name: 'prisma-otel-tracing-plugin',
 })
