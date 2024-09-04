@@ -63,7 +63,7 @@ describe('unhandledExceptionPlugin', () => {
 
     expect(errors).toHaveLength(1)
     const error = errors[0]
-    expect(error.error.message).toBe('new test unhandled error')
+    expect(error.error).toMatchObject({ message: 'new test unhandled error' })
   })
 
   it('handled unhandled rejection with not error type', async () => {
