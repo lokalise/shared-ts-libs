@@ -11,6 +11,7 @@ export default defineConfig({
   dependencies: Object.keys(packageJson.dependencies),
   test: {
     coverage: {
+      provider: 'v8',
       exclude: ['src/types', 'src/events', 'src/index.ts', 'src/utils/schemaUtils.ts'],
     },
   },
