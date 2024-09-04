@@ -129,7 +129,7 @@ describe('apiSchemas', () => {
     describe('multiCursorOptionalPaginationSchema', () => {
       const schema = multiCursorOptionalPaginationSchema(cursorSchema)
       type schemaType = z.infer<typeof schema>
-      type schemaTypeInput = z.infer<typeof schema>
+      type schemaTypeInput = z.input<typeof schema>
 
       it('limit is optional', () => {
         const object: schemaTypeInput = {
