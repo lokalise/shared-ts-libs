@@ -2,21 +2,21 @@ import type { OptionalPaginationParams, PaginatedResponse, PaginationMeta } from
 import { encodeCursor } from './cursorCodec'
 
 const pick = <T, K extends string | number | symbol>(
-	source: T,
-	propNames: readonly K[],
+  source: T,
+  propNames: readonly K[],
 ): Pick<T, Exclude<keyof T, Exclude<keyof T, K>>> => {
-	const result = {} as T
-	let idx = 0
-	while (idx < propNames.length) {
-		// @ts-ignore
-		if (propNames[idx] in source) {
-			// @ts-ignore
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-			result[propNames[idx]] = source[propNames[idx]]
-		}
-		idx += 1
-	}
-	return result
+  const result = {} as T
+  let idx = 0
+  while (idx < propNames.length) {
+    // @ts-ignore
+    if (propNames[idx] in source) {
+      // @ts-ignore
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      result[propNames[idx]] = source[propNames[idx]]
+    }
+    idx += 1
+  }
+  return result
 }
 
 /**
@@ -44,45 +44,45 @@ const pick = <T, K extends string | number | symbol>(
  * 	count, the cursor and has more flag.
  */
 export function getMetaForNextPage<T extends { id: string }>(
-	currentPageData: T[],
-	cursorKeys?: undefined,
-	pageLimit?: number,
+  currentPageData: T[],
+  cursorKeys?: undefined,
+  pageLimit?: number,
 ): PaginationMeta
 export function getMetaForNextPage<T extends Record<string, unknown>, K extends keyof T>(
-	currentPageData: T[],
-	cursorKeys: K[],
-	pageLimit?: number,
+  currentPageData: T[],
+  cursorKeys: K[],
+  pageLimit?: number,
 ): PaginationMeta
 export function getMetaForNextPage<T extends Record<string, unknown>, K extends keyof T>(
-	currentPageData: T[],
-	cursorKeys?: K[],
-	pageLimit?: number,
+  currentPageData: T[],
+  cursorKeys?: K[],
+  pageLimit?: number,
 ): PaginationMeta {
-	if (cursorKeys !== undefined && cursorKeys.length === 0) {
-		throw new Error('cursorKeys cannot be an empty array')
-	}
-	if (currentPageData.length === 0) {
-		return { count: 0, hasMore: false }
-	}
+  if (cursorKeys !== undefined && cursorKeys.length === 0) {
+    throw new Error('cursorKeys cannot be an empty array')
+  }
+  if (currentPageData.length === 0) {
+    return { count: 0, hasMore: false }
+  }
 
-	const count = pageLimit ? Math.min(currentPageData.length, pageLimit) : currentPageData.length
+  const count = pageLimit ? Math.min(currentPageData.length, pageLimit) : currentPageData.length
 
-	const lastElement = currentPageData[count - 1]
-	let cursor: string
-	if (!cursorKeys) {
-		cursor = lastElement.id as string
-	} else {
-		cursor =
-			cursorKeys.length === 1
-				? (lastElement[cursorKeys[0]] as string)
-				: encodeCursor(pick(lastElement, cursorKeys))
-	}
+  const lastElement = currentPageData[count - 1]
+  let cursor: string
+  if (!cursorKeys) {
+    cursor = lastElement.id as string
+  } else {
+    cursor =
+      cursorKeys.length === 1
+        ? (lastElement[cursorKeys[0]] as string)
+        : encodeCursor(pick(lastElement, cursorKeys))
+  }
 
-	return {
-		count,
-		cursor,
-		hasMore: pageLimit ? currentPageData.length > pageLimit : undefined,
-	}
+  return {
+    count,
+    cursor,
+    hasMore: pageLimit ? currentPageData.length > pageLimit : undefined,
+  }
 }
 
 /**
@@ -107,14 +107,14 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
  * Note: `hasMore` flag will be undefined if `pageLimit` is not provided, please read the param doc for more details.
  */
 export function createPaginatedResponse<T extends { id: string }>(
-	page: T[],
-	pageLimit: number | undefined,
-	cursorKeys?: undefined,
+  page: T[],
+  pageLimit: number | undefined,
+  cursorKeys?: undefined,
 ): PaginatedResponse<T>
 export function createPaginatedResponse<T extends Record<string, unknown>, K extends keyof T>(
-	page: T[],
-	pageLimit: number | undefined,
-	cursorKeys: K[],
+  page: T[],
+  pageLimit: number | undefined,
+  cursorKeys: K[],
 ): PaginatedResponse<T>
 
 /**
@@ -125,15 +125,15 @@ export function createPaginatedResponse<T extends Record<string, unknown>, K ext
  * @param cursorKeys
  */
 export function createPaginatedResponse<T extends Record<string, unknown>, K extends keyof T>(
-	page: T[],
-	pageLimit?: number,
-	cursorKeys?: K[],
+  page: T[],
+  pageLimit?: number,
+  cursorKeys?: K[],
 ): PaginatedResponse<T> {
-	return {
-		data: page.slice(0, pageLimit),
-		// @ts-ignore -> on next major version, we can simplify getMetaForNextPage signature and remove ts-ignore
-		meta: getMetaForNextPage(page, cursorKeys, pageLimit),
-	}
+  return {
+    data: page.slice(0, pageLimit),
+    // @ts-ignore -> on next major version, we can simplify getMetaForNextPage signature and remove ts-ignore
+    meta: getMetaForNextPage(page, cursorKeys, pageLimit),
+  }
 }
 
 /**
@@ -152,18 +152,18 @@ export function createPaginatedResponse<T extends Record<string, unknown>, K ext
  *            }
  */
 export async function getPaginatedEntries<T extends Record<string, unknown>>(
-	pagination: OptionalPaginationParams,
-	apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,
+  pagination: OptionalPaginationParams,
+  apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,
 ): Promise<T[]> {
-	const resultArray: T[] = []
-	let currentCursor: string | undefined = undefined
-	do {
-		const pageResult = await apiCall({ ...pagination, after: currentCursor })
-		resultArray.push(...pageResult.data)
-		currentCursor = pageResult.meta.cursor
-	} while (currentCursor)
+  const resultArray: T[] = []
+  let currentCursor: string | undefined = undefined
+  do {
+    const pageResult = await apiCall({ ...pagination, after: currentCursor })
+    resultArray.push(...pageResult.data)
+    currentCursor = pageResult.meta.cursor
+  } while (currentCursor)
 
-	return resultArray
+  return resultArray
 }
 
 /**
@@ -186,18 +186,18 @@ export async function getPaginatedEntries<T extends Record<string, unknown>>(
  *            }
  */
 export async function getPaginatedEntriesByHasMore<T extends Record<string, unknown>>(
-	pagination: OptionalPaginationParams,
-	apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,
+  pagination: OptionalPaginationParams,
+  apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,
 ): Promise<T[]> {
-	const resultArray: T[] = []
-	let hasMore: boolean | undefined
-	let currentCursor: string | undefined = pagination.after
-	do {
-		const pageResult = await apiCall({ ...pagination, after: currentCursor })
-		resultArray.push(...pageResult.data)
-		hasMore = pageResult.meta.hasMore
-		currentCursor = pageResult.meta.cursor
-	} while (hasMore)
+  const resultArray: T[] = []
+  let hasMore: boolean | undefined
+  let currentCursor: string | undefined = pagination.after
+  do {
+    const pageResult = await apiCall({ ...pagination, after: currentCursor })
+    resultArray.push(...pageResult.data)
+    hasMore = pageResult.meta.hasMore
+    currentCursor = pageResult.meta.cursor
+  } while (hasMore)
 
-	return resultArray
+  return resultArray
 }

@@ -1,11 +1,11 @@
 type Left<T> = {
-	error: T
-	result?: never
+  error: T
+  result?: never
 }
 
 type Right<U> = {
-	error?: never
-	result: U
+  error?: never
+  result: U
 }
 
 /**
@@ -21,6 +21,6 @@ export type Either<T, U> = NonNullable<Left<T> | Right<U>>
  * Variation of Either, which may or may not have Error set, but always has Result
  */
 export type DefiniteEither<T, U> = {
-	error?: T
-	result: U
+  error?: T
+  result: U
 }
