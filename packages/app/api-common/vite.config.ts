@@ -11,6 +11,7 @@ export default defineConfig({
   dependencies: Object.keys(packageJson.peerDependencies),
   test: {
     coverage: {
+      provider: 'v8',
       thresholds: {
         lines: 100,
         functions: 100,
