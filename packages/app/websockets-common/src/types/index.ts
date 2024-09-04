@@ -1,11 +1,11 @@
-import type { z, ZodObject } from 'zod'
+import type { ZodObject, z } from 'zod'
 
 import type { ReservedClientToServerEvents, ReservedServerToClientEvents } from '../events'
 
 export interface WebsocketEvent {
-	// We do not care about specific type
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	schema: ZodObject<any>
+  // We do not care about specific type
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  schema: ZodObject<any>
 }
 
 export type WebsocketEventMap = Record<string, WebsocketEvent>
@@ -14,18 +14,18 @@ export type ReservedServerToClientWebsocketEventMap = typeof ReservedServerToCli
 export type ReservedClientToServerWebsocketEventMap = typeof ReservedClientToServerEvents
 
 export interface ServerToClientWebsocketEventMap
-	extends WebsocketEventMap,
-		ReservedServerToClientWebsocketEventMap {}
+  extends WebsocketEventMap,
+    ReservedServerToClientWebsocketEventMap {}
 
 export interface ClientToServerWebsocketEventMap
-	extends WebsocketEventMap,
-		ReservedClientToServerWebsocketEventMap {}
+  extends WebsocketEventMap,
+    ReservedClientToServerWebsocketEventMap {}
 
 export type WebsocketEventName<WEM extends WebsocketEventMap> = keyof WEM
 
 export type WebsocketEventSchema<
-	WEM extends WebsocketEventMap,
-	WEN extends WebsocketEventName<WEM>,
+  WEM extends WebsocketEventMap,
+  WEN extends WebsocketEventName<WEM>,
 > = z.infer<WEM[WEN]['schema']>
 
 /**
@@ -35,20 +35,20 @@ export type WebsocketEventSchema<
  * This generics converts our Zod schemas to compatible Socket.IO format.
  */
 export type SocketIoEventMap<EventMap extends WebsocketEventMap> = {
-	[EventName in WebsocketEventName<EventMap>]: (
-		args: WebsocketEventSchema<EventMap, EventName>,
-	) => void
+  [EventName in WebsocketEventName<EventMap>]: (
+    args: WebsocketEventSchema<EventMap, EventName>,
+  ) => void
 }
 
 export type SocketIoEventHandler<
-	WEM extends WebsocketEventMap,
-	WEN extends WebsocketEventName<WEM>,
+  WEM extends WebsocketEventMap,
+  WEN extends WebsocketEventName<WEM>,
 > = SocketIoEventMap<WEM>[WEN]
 
 export type WebsocketEventAndRoomConfig<
-	STCEM extends WebsocketEventMap,
-	CTSEM extends WebsocketEventMap,
+  STCEM extends WebsocketEventMap,
+  CTSEM extends WebsocketEventMap,
 > = {
-	serverToClientWebsocketEvents: STCEM
-	clientToServerWebsocketEvents: CTSEM
+  serverToClientWebsocketEvents: STCEM
+  clientToServerWebsocketEvents: CTSEM
 }
