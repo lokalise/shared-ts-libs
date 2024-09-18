@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {extractTranslatableTextPieces} from "./extractTranslatableTextPieces";
+import { extractTranslatableTextPieces } from './extractTranslatableTextPieces'
 
 describe('extractTranslatableTextPieces', () => {
   it.each([
@@ -8,7 +8,10 @@ describe('extractTranslatableTextPieces', () => {
     // NT tags - should be removed
     { text: 'Hello, \uE101World!\uE102', result: ['Hello,'] }, // Single region within NT tags
     { text: 'Hello, \uE101World!\uE102 How are you?', result: ['Hello,', 'How are you?'] }, // Single region within NT tags in the middle
-    { text: 'Hello, \uE101World!\uE102 How are you? \uE101I am fine!\uE102', result: ['Hello,', 'How are you?'] }, // several regions within NT tags
+    {
+      text: 'Hello, \uE101World!\uE102 How are you? \uE101I am fine!\uE102',
+      result: ['Hello,', 'How are you?'],
+    }, // several regions within NT tags
     { text: ' \uE101Hello world!\uE102 ! 123\uE101I am fine!\uE102 ', result: ['! 123'] }, // several regions within NT tags with leading and trailing spaces
 
     // HTML tags - should be removed
