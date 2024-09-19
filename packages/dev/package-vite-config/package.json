@@ -30,9 +30,9 @@
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
     },
-    "dependencies": {
-        "vite": "5.4.2",
-        "vite-plugin-dts": "4.2.1",
+    "peerDependencies": {
+        "vite": "^5.4.2",
+        "vite-plugin-dts": "^4.2.1",
         "vitest": "^2.0.3"
     },
     "devDependencies": {
