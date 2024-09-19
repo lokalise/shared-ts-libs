@@ -20,7 +20,6 @@ describe('areArraysEqual', () => {
   })
 
   it('comparing objects', () => {
-    // Objects are compared by reference, so they should be the same on memory
     const object1 = { hello: 'world' }
     const object2 = { hello: 'world' }
 
