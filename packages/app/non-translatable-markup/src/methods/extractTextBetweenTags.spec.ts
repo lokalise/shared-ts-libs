@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { extractTranslatableTextPieces } from './extractTranslatableTextPieces'
+import { extractTextBetweenTags } from './extractTextBetweenTags'
 
-describe('extractTranslatableTextPieces', () => {
+describe('extractTextBetweenTags', () => {
   it.each([
     { text: 'Hello, World', result: ['Hello, World'] }, // Without NT tags
 
@@ -29,6 +29,6 @@ describe('extractTranslatableTextPieces', () => {
     { text: '\n', result: [] },
     { text: '🔥', result: ['🔥'] },
   ])('should extract text pieces between tags (%#)', (testcase) => {
-    expect(extractTranslatableTextPieces(testcase.text)).toEqual(testcase.result)
+    expect(extractTextBetweenTags(testcase.text)).toEqual(testcase.result)
   })
 })

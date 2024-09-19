@@ -11,8 +11,8 @@ export const isAttemptToEditNonTranslatableContent = (
   // early return if the text is the same
   if (text === updatedText) return false
 
-  const nonTranslatableContentInText = extractTextBetweenTags(text)
-  const nonTranslatableContentInUpdatedText = extractTextBetweenTags(updatedText)
+  const nonTranslatableContentInText = extractNTCTagsWithContent(text)
+  const nonTranslatableContentInUpdatedText = extractNTCTagsWithContent(updatedText)
 
   if (nonTranslatableContentInText.length !== nonTranslatableContentInUpdatedText.length) {
     return true
@@ -30,7 +30,7 @@ export const isAttemptToEditNonTranslatableContent = (
   return false
 }
 
-const extractTextBetweenTags = (text: string): string[] => {
+const extractNTCTagsWithContent = (text: string): string[] => {
   const matches = []
 
   let match = nonTranslatableTextRegexpG.exec(text)
