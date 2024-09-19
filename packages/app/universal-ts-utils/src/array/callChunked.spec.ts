@@ -9,7 +9,7 @@ describe('callChunked', () => {
   })
 
   it('empty array', async () => {
-    const array = []
+    const array: string[] = []
     await callChunked(2, array, mockedMethod)
     expect(mockedMethod).not.toHaveBeenCalled()
   })
