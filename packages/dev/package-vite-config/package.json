@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/package-vite-config",
-    "version": "3.1.0",
+    "version": "3.1.1",
     "type": "module",
     "license": "Apache-2.0",
     "files": ["README.md", "LICENSE.md", "dist"],
@@ -30,9 +30,9 @@
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
     },
-    "dependencies": {
-        "vite": "5.4.2",
-        "vite-plugin-dts": "4.2.1",
+    "peerDependencies": {
+        "vite": "^5.4.2",
+        "vite-plugin-dts": "^4.2.1",
         "vitest": "^2.0.3"
     },
     "devDependencies": {
