@@ -8,6 +8,7 @@ import {
   getPaginatedEntries,
   getPaginatedEntriesByHasMore,
 } from '../src'
+import { traversePaginatedSourceByHasMore } from '../src'
 
 describe('paginationUtils', () => {
   describe('createPaginatedResponse', () => {
@@ -274,6 +275,49 @@ describe('paginationUtils', () => {
       expect(spy).toHaveBeenCalledTimes(1)
       expect(spy).toHaveBeenCalledWith({ limit: 1, after: 'red' })
       expect(result).toEqual([{ id: 'red' }])
+    })
+  })
+  describe('traversePaginatedSourceByHasMore', () => {
+    it.only('should perform callback per each page', async () => {
+      // Given
+      const spy = vi
+        .spyOn(market, 'getApples')
+        .mockResolvedValueOnce({
+          data: [{ id: 'red' }],
+          meta: {
+            count: 1,
+            cursor: 'red',
+            hasMore: true,
+          },
+        })
+        .mockResolvedValueOnce({
+          data: [{ id: 'blue' }],
+          meta: {
+            count: 1,
+            cursor: 'blue',
+            hasMore: false,
+          },
+        })
+
+      const processPage = vi.fn()
+
+      // When
+      await traversePaginatedSourceByHasMore(
+        { limit: 1 },
+        (params) => {
+          return market.getApples(params)
+        },
+        processPage,
+      )
+
+      // Then
+      expect(spy).toHaveBeenCalledTimes(2)
+      expect(spy).toHaveBeenNthCalledWith(1, { limit: 1 })
+      expect(spy).toHaveBeenNthCalledWith(2, { after: 'red', limit: 1 })
+
+      expect(processPage).toHaveBeenCalledTimes(2)
+      expect(processPage).toHaveBeenNthCalledWith(1, [{ id: 'red' }])
+      expect(processPage).toHaveBeenNthCalledWith(2, [{ id: 'blue' }])
     })
   })
 })
