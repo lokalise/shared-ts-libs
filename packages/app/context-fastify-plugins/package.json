@@ -41,7 +41,7 @@
     "peerDependencies": {
         "@fastify/request-context": "^6.0.1",
         "@prisma/instrumentation": "^5.13.0",
-        "fastify": "^4.27.0",
+        "fastify": "^5.0.0",
         "pino": "^9.1.0"
     },
     "devDependencies": {
@@ -52,7 +52,7 @@
         "@prisma/instrumentation": "^5.13.0",
         "@types/node": "^22.0.0",
         "@vitest/coverage-v8": "^2.0.4",
-        "fastify": "^4.27.0",
+        "fastify": "^5.0.0",
         "pino": "^9.1.0",
         "pino-pretty": "^11.1.0",
         "rimraf": "^5.0.1",
