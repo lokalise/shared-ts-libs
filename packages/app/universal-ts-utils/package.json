@@ -40,8 +40,10 @@
     },
     "exports": {
         "./node": {
+            "require": "./dist/node.js",
             "import": "./dist/node.js",
             "types": "./dist/node.d.ts"
-        }
+        },
+        "./package.json": "./package.json"
     }
 }
