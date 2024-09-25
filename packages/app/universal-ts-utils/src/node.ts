@@ -1,8 +1,8 @@
 // We don't want to have a typical index file due to how FE bundlers work. Please see `readme` for more info.
 
-export * from './array/areStringArraysEqual'
-export * from './array/chunk'
-export * from './array/isNonEmptyArray'
-export * from './array/removeFalsy'
-export * from './array/removeNullish'
-export * from './array/unique'
+export * from './array/areStringArraysEqual.js'
+export * from './array/chunk.js'
+export * from './array/isNonEmptyArray.js'
+export * from './array/removeFalsy.js'
+export * from './array/removeNullish.js'
+export * from './array/unique.js'
