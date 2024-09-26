@@ -42,6 +42,12 @@
         "./node": {
             "import": "./dist/node.js",
             "types": "./dist/node.d.ts"
-        }
+        },
+        "./*": {
+            "require": "./dist/*",
+            "import": "./dist/*",
+            "types": "./dist/*.d.ts"
+        },
+        "./package.json": "./package.json"
     }
 }
