@@ -44,7 +44,7 @@
             "types": "./dist/node.d.ts"
         },
         "./*": {
-            "require": "./dist/*.js",
+            "require": "./dist/*",
             "import": "./dist/*",
             "types": "./dist/*.d.ts"
         },
