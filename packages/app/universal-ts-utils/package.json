@@ -45,7 +45,7 @@
         },
         "./*": {
             "require": "./dist/*.js",
-            "import": "./dist/*.js",
+            "import": "./dist/*",
             "types": "./dist/*.d.ts"
         },
         "./package.json": "./package.json"
