@@ -46,6 +46,7 @@
         "./*": {
             "import": "./dist/*",
             "types": "./dist/*.d.ts"
-        }
+        },
+        "./package.json": "./package.json"
     }
 }
