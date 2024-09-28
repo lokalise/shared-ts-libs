@@ -1,5 +1,5 @@
 /**
- * @deprecated Use `areArraysEqual` instead.
+ * @deprecated Use `areEquals` instead.
  *
  * Returns true if the two arrays are equal, false otherwise.
  * The arrays are considered equal if they have the same length, same order and the elements at each index are equal.

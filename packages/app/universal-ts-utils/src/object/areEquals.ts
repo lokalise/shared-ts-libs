@@ -1,5 +1,5 @@
 /**
- * TODO: if we decide to go with this, add tests + doc
+ * TODO: Add doc
  */
 export const areEquals = (a: unknown, b: unknown): boolean => {
   if (a === b) return true
