@@ -8,7 +8,7 @@
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
-        "url": "git://github.com/lokalise/shared-ts-libs.git"
+        "url": "https://github.com/lokalise/shared-ts-libs.git"
     },
     "license": "Apache-2.0",
     "files": ["dist/**", "LICENSE.md", "README.md"],
@@ -40,13 +40,13 @@
     },
     "exports": {
         "./node": {
-            "import": "./dist/node.js",
-            "types": "./dist/node.d.ts"
+            "types": "./dist/node.d.ts",
+            "import": "./dist/node.js"
         },
         "./*": {
-            "require": "./dist/*",
+            "types": "./dist/*.d.ts",
             "import": "./dist/*",
-            "types": "./dist/*.d.ts"
+            "require": "./dist/*"
         },
         "./package.json": "./package.json"
     }
