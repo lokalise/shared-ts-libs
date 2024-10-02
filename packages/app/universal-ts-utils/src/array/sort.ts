@@ -1,8 +1,7 @@
+import type { NonObject } from '../types.js'
+
 // TODO: add doc
-export const sort = <T extends string | number | bigint | null | undefined>(
-  array: T[],
-  order: 'asc' | 'desc' = 'asc',
-): T[] =>
+export const sort = <T extends NonObject>(array: T[], order: 'asc' | 'desc' = 'asc'): T[] =>
   order === 'asc'
     ? // @ts-expect-error
       array.sort((a, b) => a.localeCompare(b))
