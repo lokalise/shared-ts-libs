@@ -1,4 +1,4 @@
-import type { NonObject } from '../types.js'
+type NonObject = string | number | boolean | null | undefined | symbol | bigint
 
 // TODO: add doc
 export const sort = <T extends NonObject>(array: T[], order: 'asc' | 'desc' = 'asc'): T[] =>

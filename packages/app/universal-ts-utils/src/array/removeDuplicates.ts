@@ -1,4 +1,4 @@
-import type { NonObject } from '../types.js'
+type NonObject = string | number | boolean | null | undefined | symbol | bigint
 
 /**
  * Return a copy of the given array without duplicates.
