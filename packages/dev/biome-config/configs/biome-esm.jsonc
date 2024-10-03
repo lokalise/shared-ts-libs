@@ -2,8 +2,23 @@
     "$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
     "linter": {
         "rules": {
-            "nursery": {
-                "useImportExtensions": "error"
+            "correctness": {
+                "useImportExtensions": {
+                    "level": "error",
+                    "fix": "safe",
+                    "options": {
+                        "suggestedExtensions": {
+                            "ts": {
+                                "module": "js",
+                                "component": "js"
+                            },
+                            "mts": {
+                                "module": "mjs",
+                                "component": "mjs"
+                            }
+                        }
+                    }
+                }
             }
         }
     }
