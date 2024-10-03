@@ -1,5 +1,3 @@
-type NonObject = string | number | boolean | null | undefined | symbol | bigint
-
 /**
  * Return a copy of the given array without duplicates.
  *
@@ -7,6 +5,6 @@ type NonObject = string | number | boolean | null | undefined | symbol | bigint
  * @param {T[]} array - The array to be deduplicated.
  * @returns {T[]} - Returns param array without duplicates.
  */
-export const removeDuplicates = <T extends NonObject>(array: readonly T[]): T[] => [
-  ...new Set(array),
-]
+export const removeDuplicates = <T extends string | number | boolean | null | undefined | symbol>(
+  array: readonly T[],
+): T[] => [...new Set(array)]

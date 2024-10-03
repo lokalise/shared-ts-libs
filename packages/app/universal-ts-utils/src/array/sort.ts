@@ -8,13 +8,13 @@
  *
  * @returns {T[]} The sorted array in the specified order.
  */
-export const sort = <T extends string | number | boolean>(
+export const sort = <T extends string | number | boolean | symbol>(
   array: T[],
   order: 'asc' | 'desc' = 'asc',
 ): T[] =>
   order === 'asc' ? array.sort((a, b) => compare(a, b)) : array.sort((a, b) => compare(b, a))
 
-export const compare = <T extends string | number | boolean>(a: T, b: T): number => {
+export const compare = <T extends string | number | boolean | symbol>(a: T, b: T): number => {
   if (a === b) return 0
 
   // same types comparison
