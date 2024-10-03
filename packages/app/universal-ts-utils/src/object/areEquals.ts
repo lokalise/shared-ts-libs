@@ -1,5 +1,21 @@
 /**
- * TODO: Add doc
+ * Determines if two unknown values are deeply equal. This function handles primitive types,
+ * arrays, and objects. For arrays and objects, it performs a recursive equality check.
+ *
+ * @param {unknown} a - The first value to compare. Can be of any type including array and object.
+ * @param {unknown} b - The second value to compare. Should be of the same type or comparable with `a`.
+ * @returns {boolean} Returns `true` if the two values are deeply equal, `false` otherwise.
+ *
+ * @example
+ * ```typescript
+ * areEquals(1, 1) // true
+ * areEquals([1, 2], [1, 2]) // true
+ * areEquals({ name: 'John' }, { name: 'John' }) // true
+ * areEquals(null, null) // true
+ * areEquals(undefined, null) // false
+ * areEquals([1, [2, 3]], [1, [2, 3]]) // true
+ * areEquals([{ id: 1 }], [{ id: 1 }]) // true
+ * ```
  */
 export const areEquals = (a: unknown, b: unknown): boolean => {
   if (a === b) return true
