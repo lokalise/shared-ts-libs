@@ -33,4 +33,10 @@ describe('sort', () => {
     expect(sort(array)).toStrictEqual([false, true, '1', 2])
     expect(sort(array, 'desc')).toStrictEqual([2, '1', true, false])
   })
+
+  it('handles null', () => {
+    const array = [false, 0, null]
+    expect(sort(array)).toStrictEqual([null, false, 0])
+    expect(sort(array, 'desc')).toStrictEqual([0, false, null])
+  })
 })

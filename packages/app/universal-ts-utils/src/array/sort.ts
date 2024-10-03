@@ -8,14 +8,24 @@
  *
  * @returns {T[]} The sorted array in the specified order.
  */
-export const sort = <T extends string | number | boolean | symbol>(
+export const sort = <T extends string | number | boolean | symbol | null | undefined>(
   array: T[],
   order: 'asc' | 'desc' = 'asc',
 ): T[] =>
   order === 'asc' ? array.sort((a, b) => compare(a, b)) : array.sort((a, b) => compare(b, a))
 
-export const compare = <T extends string | number | boolean | symbol>(a: T, b: T): number => {
+export const compare = <T extends string | number | boolean | symbol | null | undefined>(
+  a: T,
+  b: T,
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it's fine for this utility function
+): number => {
   if (a === b) return 0
+
+  // null and undefined handling null < undefined < rest
+  if (a === null && b === undefined) return 1
+  if (a === undefined && b === null) return -1
+  if (b === null || b === undefined) return 1
+  if (a === null || a === undefined) return -1
 
   // same types comparison
   if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b)
