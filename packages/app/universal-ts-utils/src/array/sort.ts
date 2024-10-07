@@ -14,7 +14,7 @@ export const sort = <T extends string | number | boolean>(
 ): T[] =>
   order === 'asc' ? array.sort((a, b) => compare(a, b)) : array.sort((a, b) => compare(b, a))
 
-export const compare = <T extends string | number | boolean>(a: T, b: T): number => {
+const compare = <T extends string | number | boolean>(a: T, b: T): number => {
   if (a === b) return 0
 
   // same types comparison
