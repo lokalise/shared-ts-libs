@@ -54,6 +54,12 @@ describe('areEquals', () => {
   })
 
   describe('comparing arrays', () => {
+    it('different array sizes', () => {
+      const a = [1, 2]
+      const b = [1, 2, 3]
+      expect(areEquals(a, b)).toBe(false)
+    })
+
     it('comparing string arrays', () => {
       const a = ['a', 'b', 'c']
       const b = ['a', 'd', 'c']
