@@ -11,8 +11,12 @@
 export const sort = <T extends string | number | boolean>(
   array: T[],
   order: 'asc' | 'desc' = 'asc',
-): T[] =>
-  order === 'asc' ? array.sort((a, b) => compare(a, b)) : array.sort((a, b) => compare(b, a))
+): T[] => {
+  const arrayCopy = [...array]
+  return order === 'asc'
+    ? arrayCopy.sort((a, b) => compare(a, b))
+    : arrayCopy.sort((a, b) => compare(b, a))
+}
 
 const compare = <T extends string | number | boolean>(a: T, b: T): number => {
   if (a === b) return 0

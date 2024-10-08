@@ -9,6 +9,14 @@ describe('sortByField', () => {
     expect(sortedData).toEqual([])
   })
 
+  it('original array is not mutated', () => {
+    const array = [{ id: '2' }, { id: '1' }, { id: '3' }]
+    const sortedArray = sortByField(array, 'id')
+
+    expect(array).toStrictEqual([{ id: '2' }, { id: '1' }, { id: '3' }])
+    expect(sortedArray).toStrictEqual([{ id: '1' }, { id: '2' }, { id: '3' }])
+  })
+
   it('should sort objects based string field', () => {
     const data = [
       { name: 'Zara', age: 22 },

@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { sort } from './sort'
 
 describe('sort', () => {
+  it('original array is not mutated', () => {
+    const array = [2, 1, 3]
+    const sortedArray = sort(array)
+
+    expect(array).toStrictEqual([2, 1, 3])
+    expect(sortedArray).toStrictEqual([1, 2, 3])
+  })
+
   it('sorts numbers in ascending order by default', () => {
     expect(sort([2, 1, 4, 3, 50, 30])).toStrictEqual([1, 2, 3, 4, 30, 50])
   })

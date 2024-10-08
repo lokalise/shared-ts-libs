@@ -3,7 +3,7 @@ type KeysMatching<T extends object, V> = {
 }[keyof T]
 
 /*
- TODO: Extend this method more types of fields.
+ TODO: Extend this method to be used with more types of fields.
  For now, it only supports fields of type string as it is the most common use case.
  the objective is to use the compare method defined on `sort.ts` but don't want to expose it at this point.
 
@@ -41,9 +41,11 @@ export const sortByField = <T extends object, K extends KeysMatching<T, string>>
   array: T[],
   field: K,
   order: 'asc' | 'desc' = 'asc',
-): T[] =>
-  order === 'asc'
+): T[] => {
+  const arrayCopy = [...array]
+  return order === 'asc'
     ? // @ts-expect-error
-      array.sort((a, b) => a[field].localeCompare(b[field]))
+      arrayCopy.sort((a, b) => a[field].localeCompare(b[field]))
     : // @ts-expect-error
-      array.sort((a, b) => b[field].localeCompare(a[field]))
+      arrayCopy.sort((a, b) => b[field].localeCompare(a[field]))
+}
