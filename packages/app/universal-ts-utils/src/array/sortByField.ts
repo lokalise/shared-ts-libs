@@ -2,15 +2,6 @@ type KeysMatching<T extends object, V> = {
   [K in keyof T]: T[K] extends V ? K : never
 }[keyof T]
 
-/*
- TODO: Extend this method to be used with more types of fields.
- For now, it only supports fields of type string as it is the most common use case.
- the objective is to use the compare method defined on `sort.ts` but don't want to expose it at this point.
-
- So in a follow-up will try to come up with a solution to have "internal" not exposed utilities, and then extends this
- method.
-*/
-
 /**
  * Sorts an array of objects based on a specified string field and order.
  *
@@ -37,15 +28,28 @@ type KeysMatching<T extends object, V> = {
  * console.log(sortedByName)
  * ```
  */
-export const sortByField = <T extends object, K extends KeysMatching<T, string>>(
+export const sortByField = <T extends object, K extends KeysMatching<T, string | number>>(
   array: T[],
   field: K,
   order: 'asc' | 'desc' = 'asc',
 ): T[] => {
-  const arrayCopy = [...array]
+  if (array.length < 2) return array
+
+  const copy = [...array]
   return order === 'asc'
-    ? // @ts-expect-error
-      arrayCopy.sort((a, b) => a[field].localeCompare(b[field]))
-    : // @ts-expect-error
-      arrayCopy.sort((a, b) => b[field].localeCompare(a[field]))
+    ? copy.sort((a, b) => compare(a[field] as string | number, b[field] as string | number))
+    : copy.sort((a, b) => compare(b[field] as string | number, a[field] as string | number))
+}
+
+const compare = <T extends string | number>(a: T, b: T): number => {
+  let result = 0
+  if (typeof a === 'string' && typeof b === 'string') {
+    // Sort strings using localeCompare
+    result = a.localeCompare(b)
+  } else if (typeof a === 'number' && typeof b === 'number') {
+    // Sort numbers using basic comparison
+    result = a - b
+  }
+
+  return result
 }
