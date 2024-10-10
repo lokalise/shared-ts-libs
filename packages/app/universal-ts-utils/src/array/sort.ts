@@ -1,43 +1,33 @@
 /**
- * Sorts an array of primitive types in either ascending or descending order.
+ * Sorts an array of strings or numbers in either ascending or descending order.
  *
  * @template T The type of the elements in the array.
- *
- * @param {T[]} array - The array to be sorted. This should be an array of primitive values.
+ * @param {T[]} array - The array to be sorted. This should be an array of string or numeric values.
  * @param {'asc' | 'desc'} [order='asc'] - The order in which to sort the array. Defaults to 'asc' if not specified.
+ * @returns {T[]} A new array sorted in the specified order. The original array remains unmodified.
  *
- * @returns {T[]} The sorted array in the specified order.
+ * @remarks
+ * This function returns a copy of the original array that is sorted according to the specified order.
+ * It does not modify the input array, making it safe to use without side effects.
  */
-export const sort = <T extends string | number | boolean>(
-  array: T[],
-  order: 'asc' | 'desc' = 'asc',
-): T[] => {
-  const arrayCopy = [...array]
-  return order === 'asc'
-    ? arrayCopy.sort((a, b) => compare(a, b))
-    : arrayCopy.sort((a, b) => compare(b, a))
+export const sort = <T extends string[] | number[]>(array: T, order: 'asc' | 'desc' = 'asc'): T => {
+  if (array.length < 2) return array
+
+  const copy = [...array]
+  return (
+    order === 'asc' ? copy.sort((a, b) => compare(a, b)) : copy.sort((a, b) => compare(b, a))
+  ) as T
 }
 
-const compare = <T extends string | number | boolean>(a: T, b: T): number => {
-  if (a === b) return 0
-
-  // same types comparison
-  if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b)
-  if (typeof a === 'number' && typeof b === 'number') return a - b
-  if (typeof a === 'boolean' && typeof b === 'boolean') return Number(a) - Number(b)
-
-  // number like comparison
-  const [aNumeric, bNumeric] = [a, b].map((e) => Number(e))
-  if (isNumericValue(aNumeric) && isNumericValue(bNumeric)) {
-    // converted booleans has less priority than numbers or numeric strings
-    if (typeof b === 'boolean') return 1
-    if (typeof a === 'boolean') return -1
-
-    return aNumeric - bNumeric
+const compare = <T extends string | number>(a: T, b: T): number => {
+  let result = 0
+  if (typeof a === 'string' && typeof b === 'string') {
+    // Sort strings using localeCompare
+    result = a.localeCompare(b)
+  } else if (typeof a === 'number' && typeof b === 'number') {
+    // Sort numbers using basic comparison
+    result = a - b
   }
 
-  return String(a).localeCompare(String(b))
+  return result
 }
-
-const isNumericValue = (value: unknown): value is number =>
-  typeof value === 'number' && !Number.isNaN(value)
