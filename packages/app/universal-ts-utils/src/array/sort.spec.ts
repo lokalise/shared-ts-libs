@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { sort } from './sort'
 
 describe('sort', () => {
+  it('is able to handle empty arrays', () => {
+    expect(sort([])).toStrictEqual([])
+  })
+
+  it('is able to handle arrays with 1 element', () => {
+    expect(sort([1])).toStrictEqual([1])
+  })
+
   it('original array is not mutated', () => {
     const array = [2, 1, 3]
     const sortedArray = sort(array)
