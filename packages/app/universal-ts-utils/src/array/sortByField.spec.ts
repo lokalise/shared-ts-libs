@@ -8,12 +8,12 @@ describe('sortByField', () => {
     expect(sortedData).toEqual([])
   })
 
-  it('should throw an error if numeric field does not exist', () => {
+  it('should do nothing if field does not exists', () => {
     const data = [
       { name: 'Alice', age: 30 },
       { name: 'Bob', age: 25 },
     ]
-    expect(() => sortByField(data, 'nonExistentField' as any)).toThrow()
+    expect(sortByField(data, 'nonExistentField' as any)).toEqual(data)
   })
 
   it('should handle arrays with a single element', () => {
