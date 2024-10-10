@@ -14,6 +14,9 @@ type KeysMatching<T extends object, V> = {
  *
  * @returns {T[]} The sorted array of objects.
  *
+ * @remarks This function returns a copy of the original array that is sorted according to the specified order.
+ * It does not modify the input array, making it safe to use without side effects.
+ *
  * @example
  * ```typescript
  * const data = [
