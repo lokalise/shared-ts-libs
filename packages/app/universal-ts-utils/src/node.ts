@@ -12,4 +12,4 @@ export * from './array/sort.js'
 export * from './array/sortByField.js'
 
 // object
-export * from './object/areEquals.js'
+export * from './object/areDeepEqual.js'

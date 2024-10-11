@@ -8,16 +8,16 @@
  *
  * @example
  * ```typescript
- * areEquals(1, 1) // true
- * areEquals([1, 2], [1, 2]) // true
- * areEquals({ name: 'John' }, { name: 'John' }) // true
- * areEquals(null, null) // true
- * areEquals(undefined, null) // false
- * areEquals([1, [2, 3]], [1, [2, 3]]) // true
- * areEquals([{ id: 1 }], [{ id: 1 }]) // true
+ * areDeepEqual(1, 1) // true
+ * areDeepEqual([1, 2], [1, 2]) // true
+ * areDeepEqual({ name: 'John' }, { name: 'John' }) // true
+ * areDeepEqual(null, null) // true
+ * areDeepEqual(undefined, null) // false
+ * areDeepEqual([1, [2, 3]], [1, [2, 3]]) // true
+ * areDeepEqual([{ id: 1 }], [{ id: 1 }]) // true
  * ```
  */
-export const areEquals = (a: unknown, b: unknown): boolean => {
+export const areDeepEqual = (a: unknown, b: unknown): boolean => {
   if (a === b) return true
 
   // both should be defined at this point
@@ -32,7 +32,7 @@ export const areEquals = (a: unknown, b: unknown): boolean => {
     return Object.keys(a).every((k) => {
       if (!Object.hasOwn(b, k)) return false
       // @ts-ignore
-      return areEquals(a[k], b[k])
+      return areDeepEqual(a[k], b[k])
     })
   }
 
@@ -42,5 +42,5 @@ export const areEquals = (a: unknown, b: unknown): boolean => {
 const areArraysEqual = (a: unknown[], b: unknown[]): boolean => {
   if (a.length !== b.length) return false
 
-  return a.every((value, index) => areEquals(value, b[index]))
+  return a.every((value, index) => areDeepEqual(value, b[index]))
 }
