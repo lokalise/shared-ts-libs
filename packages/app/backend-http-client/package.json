@@ -42,7 +42,7 @@
         "@lokalise/biome-config": "^1.4.0",
         "@types/node": "^22.5.0",
         "@vitest/coverage-v8": "^2.0.5",
-        "typescript": "^5.6.2",
+        "typescript": "^5.6.3",
         "vitest": "^2.0.5"
     }
 }
