@@ -32,7 +32,7 @@
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
-        "@lokalise/node-core": "^13.0.1",
+        "@lokalise/node-core": "^13.0.0",
         "undici": "^6.19.8",
         "undici-retry": "^5.0.3",
         "zod": "^3.23.8"

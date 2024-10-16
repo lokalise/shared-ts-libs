@@ -37,7 +37,7 @@
     "devDependencies": {
         "@biomejs/biome": "^1.8.3",
         "@lokalise/biome-config": "^1.4.0",
-        "@lokalise/node-core": "^13.0.1",
+        "@lokalise/node-core": "^13.0.0",
         "@rollup/plugin-typescript": "^12.1.0",
         "@vitest/coverage-v8": "^2.0.4",
         "rimraf": "^5.0.7",
