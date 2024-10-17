@@ -63,6 +63,6 @@ function plugin(app: FastifyInstance, opts: UnhandledExceptionPluginOptions, don
 }
 
 export const unhandledExceptionPlugin = fp(plugin, {
-  fastify: '4.x',
+  fastify: '>=4.0.0',
   name: 'unhandled-exception-plugin',
 })
