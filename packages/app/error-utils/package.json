@@ -30,7 +30,7 @@
     "devDependencies": {
         "@biomejs/biome": "^1.8.3",
         "@lokalise/biome-config": "^1.4.0",
-        "@lokalise/node-core": "^13.0.1",
+        "@lokalise/node-core": "^13.0.0",
         "@lokalise/package-vite-config": "latest",
         "@vitest/coverage-v8": "^2.1.1",
         "rimraf": "^6.0.1",

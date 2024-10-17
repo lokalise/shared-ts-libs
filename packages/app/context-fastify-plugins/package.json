@@ -28,7 +28,7 @@
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
-        "@lokalise/node-core": "^13.1.0",
+        "@lokalise/node-core": "^13.0.0",
         "@opentelemetry/api": "1.8.0",
         "@opentelemetry/exporter-trace-otlp-grpc": "0.53.0",
         "@opentelemetry/instrumentation": "0.53.0",
