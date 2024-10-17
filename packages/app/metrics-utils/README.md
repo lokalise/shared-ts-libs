@@ -8,6 +8,7 @@ Table of contents:
 ### AbstractCounterMetric
 
 A base class for single counter-like metrics.
+In comparison to using raw prometheus client directly, it takes care of metric initialization and provides a convenient way to set metric values.
 
 Usage:
 
