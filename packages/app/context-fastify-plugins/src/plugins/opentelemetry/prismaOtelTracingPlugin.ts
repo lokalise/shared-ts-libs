@@ -48,6 +48,6 @@ function plugin(_app: FastifyInstance, opts: PrismaOtelTracingPluginConfig, done
 }
 
 export const prismaOtelTracingPlugin = fp(plugin, {
-  fastify: '4.x',
+  fastify: '>=4.0.0',
   name: 'prisma-otel-tracing-plugin',
 })
