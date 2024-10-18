@@ -9,7 +9,7 @@
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
-        "url": "git://github.com/lokalise/shared-ts-libs.git"
+        "url": "https://github.com/lokalise/shared-ts-libs.git"
     },
     "scripts": {
         "build": "rimraf dist && npm run db:update-client && tsc",
@@ -34,8 +34,8 @@
         "@lokalise/node-core": "^13.0.0"
     },
     "peerDependencies": {
-        "@prisma/client": "^5.16.1",
-        "prisma": "^5.16.1"
+        "@prisma/client": "^5.0.0",
+        "prisma": "^5.0.0"
     },
     "devDependencies": {
         "@biomejs/biome": "^1.8.3",
