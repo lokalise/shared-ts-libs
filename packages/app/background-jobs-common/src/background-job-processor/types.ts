@@ -12,7 +12,13 @@ export type BaseJobPayload = { metadata: { correlationId: string } }
 
 // "scripts" field is incompatible between free and pro versions, and it's not particularly important
 // biome-ignore lint/suspicious/noExplicitAny: it's okay
-export type SafeJob<T = any, R = any, N extends string = string> = Omit<Job<T, R, N>, 'scripts'>
+export type SafeJob<T = any, R = any, N extends string = string> = Omit<
+  Job<T, R, N>,
+  'scripts' | 'waitUntilFinished'
+> & {
+  // biome-ignore lint/suspicious/noExplicitAny: QueueEventsPro and QueueEvents are not compatible, unfortunately
+  waitUntilFinished(queueEvents: any, ttl?: number): Promise<R>
+}
 
 export type SafeQueue<
   JobsOptionsType = JobsOptions,
