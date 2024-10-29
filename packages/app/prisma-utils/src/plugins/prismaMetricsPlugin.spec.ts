@@ -4,6 +4,7 @@ import { buildClient, sendGet } from '@lokalise/backend-http-client'
 import type { FastifyInstance } from 'fastify'
 import fastify from 'fastify'
 
+import { metricsPlugin } from '@lokalise/fastify-extras'
 import { PrismaClient } from '@prisma/client'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
@@ -13,8 +14,25 @@ import { type PrismaMetricsPluginOptions, prismaMetricsPlugin } from './prismaMe
 
 const UNKNOWN_RESPONSE_SCHEMA = z.unknown()
 
-async function initAppWithPrismaMetrics(pluginOptions: PrismaMetricsPluginOptions) {
+type TestOptions = {
+  enableMetricsPlugin: boolean
+}
+
+const DEFAULT_TEST_OPTIONS = { enableMetricsPlugin: true }
+
+async function initAppWithPrismaMetrics(
+  pluginOptions: PrismaMetricsPluginOptions,
+  { enableMetricsPlugin }: TestOptions = DEFAULT_TEST_OPTIONS,
+) {
   const app = fastify()
+
+  if (enableMetricsPlugin) {
+    await app.register(metricsPlugin, {
+      bindAddress: '0.0.0.0',
+      logger: false,
+      errorObjectResolver: (err: unknown) => err,
+    })
+  }
 
   await app.register(prismaMetricsPlugin, {
     collectionOptions: { type: 'manual' },
