@@ -3,14 +3,14 @@ import type { Metrics } from '@prisma/client/runtime/library'
 import type { FastifyBaseLogger } from 'fastify'
 import * as prometheus from 'prom-client'
 
-export type PrometheusMetrics = {
+export type PrometheusMetricsDefinitions = {
   counters: Record<string, prometheus.Counter<'prisma' | 'connection-pool'>>
   gauges: Record<string, prometheus.Gauge<'prisma' | 'connection-pool'>>
   histograms: Record<string, prometheus.Histogram<'prisma' | 'connection-pool'>>
   names: string[]
 }
 
-type PromM = {
+type PrometheusMetrics = {
   counters: Record<string, prometheus.MetricObject>
   gauges: Record<string, prometheus.MetricObject>
   histograms: Record<string, prometheus.MetricObject>
@@ -18,15 +18,10 @@ type PromM = {
 
 export type MetricCollectorOptions = {
   metricsPrefix: string
-  histogramBuckets: number[]
 }
 
-function getMetrics(
-  _prefix: string,
-  histogramBuckets: number[],
-  jsonMetrics: Metrics,
-): PrometheusMetrics {
-  const metrics: PrometheusMetrics = {
+function getMetrics(_prefix: string, jsonMetrics: Metrics): PrometheusMetricsDefinitions {
+  const metrics: PrometheusMetricsDefinitions = {
     counters: {},
     gauges: {},
     histograms: {},
@@ -54,7 +49,7 @@ function getMetrics(
     metrics.histograms[metric.key] = new prometheus.Histogram({
       name: metric.key,
       help: metric.description,
-      buckets: histogramBuckets,
+      buckets: metric.value.buckets.filter((bucket) => bucket[1] === 0).map((bucket) => bucket[0]),
       labelNames: ['prisma', 'connection_pool'] as const,
     })
     metrics.names.push(metric.key)
@@ -64,7 +59,7 @@ function getMetrics(
 }
 
 export class MetricsCollector {
-  private metrics?: PrometheusMetrics
+  private metrics?: PrometheusMetricsDefinitions
 
   constructor(
     private readonly prisma: PrismaClient,
@@ -89,14 +84,14 @@ export class MetricsCollector {
       const jsonMetrics = await this.getJsonMetrics()
       for (const counterMetric of jsonMetrics.counters) {
         // we need to reset counter since prisma returns already the accumulated counter value
-        this.metrics.counters[counterMetric.key]?.reset()
-        this.metrics.counters[counterMetric.key]?.inc(counterMetric.value)
+        this.metrics.counters[counterMetric.key].reset()
+        this.metrics.counters[counterMetric.key].inc(counterMetric.value)
       }
       for (const gaugeMetric of jsonMetrics.gauges) {
-        this.metrics.gauges[gaugeMetric.key]?.set(gaugeMetric.value)
+        this.metrics.gauges[gaugeMetric.key].set(gaugeMetric.value)
       }
       for (const histogramMetric of jsonMetrics.histograms) {
-        this.metrics.histograms[histogramMetric.key]?.observe(histogramMetric.value.sum)
+        this.metrics.histograms[histogramMetric.key].observe(histogramMetric.value.count)
       }
     } catch (err) {
       this.logger.error(err)
@@ -110,10 +105,10 @@ export class MetricsCollector {
 
   private async registerMetrics(
     registry: prometheus.Registry,
-    { metricsPrefix, histogramBuckets }: MetricCollectorOptions,
-  ): Promise<PrometheusMetrics> {
+    { metricsPrefix }: MetricCollectorOptions,
+  ): Promise<PrometheusMetricsDefinitions> {
     const jsonMetrics = await this.getJsonMetrics()
-    const metrics: PrometheusMetrics = getMetrics(metricsPrefix, histogramBuckets, jsonMetrics)
+    const metrics: PrometheusMetricsDefinitions = getMetrics(metricsPrefix, jsonMetrics)
 
     // If metrics are already registered, just return them to avoid triggering a Prometheus error
     const existingMetrics = this.getRegisteredMetrics(registry, metrics.names)
@@ -137,14 +132,14 @@ export class MetricsCollector {
   private getRegisteredMetrics(
     registry: prometheus.Registry,
     metricNames: string[],
-  ): PrometheusMetrics | undefined {
+  ): PrometheusMetricsDefinitions | undefined {
     // If metrics are already registered, just return them to avoid triggering a Prometheus error
     if (!(metricNames.length || !registry.getSingleMetric(metricNames[0]))) {
       return
     }
 
     const retrievedMetrics = registry.getMetricsAsArray()
-    const returnValue: PromM = {
+    const returnValue: PrometheusMetrics = {
       counters: {},
       histograms: {},
       gauges: {},
@@ -166,7 +161,7 @@ export class MetricsCollector {
       }
     }
 
-    return returnValue as unknown as PrometheusMetrics
+    return returnValue as unknown as PrometheusMetricsDefinitions
   }
 
   private getJsonMetrics() {
