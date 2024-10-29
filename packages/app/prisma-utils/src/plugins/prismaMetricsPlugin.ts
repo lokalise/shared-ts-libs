@@ -49,7 +49,6 @@ function plugin(
     },
     ...pluginOptions,
     metricsPrefix: 'prisma',
-    histogramBuckets: [20, 50, 150, 400, 1000, 3000, 8000, 22000, 60000, 150000],
   } satisfies PrismaMetricsPluginOptions
 
   try {
