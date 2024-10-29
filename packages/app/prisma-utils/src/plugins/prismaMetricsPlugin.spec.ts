@@ -89,9 +89,7 @@ describe('prismaMetricsPlugin', () => {
     await app.prismaMetrics.collect()
 
     const responseBefore = await getMetrics()
-    expect(responseBefore.result.body).not.toContain(
-      'prisma_pool_connections_opened_total{status="completed",queue="test_job"} 1',
-    )
+    expect(responseBefore.result.body).not.toContain('prisma_pool_connections_opened_total 1')
 
     // prisma call
     await prisma.item1.create({ data: TEST_ITEM_1 })
@@ -101,8 +99,6 @@ describe('prismaMetricsPlugin', () => {
     await app.prismaMetrics.collect()
 
     const responseAfter = await getMetrics()
-    expect(responseAfter.result.body).toContain(
-      'prisma_pool_connections_opened_total{status="completed",queue="test_job"} 1',
-    )
+    expect(responseAfter.result.body).toContain('prisma_pool_connections_opened_total 1')
   })
 })

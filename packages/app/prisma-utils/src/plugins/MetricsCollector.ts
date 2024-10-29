@@ -10,6 +10,12 @@ export type PrometheusMetrics = {
   names: string[]
 }
 
+type PromM = {
+  counters: Record<string, prometheus.MetricObject>
+  gauges: Record<string, prometheus.MetricObject>
+  histograms: Record<string, prometheus.MetricObject>
+}
+
 export type MetricCollectorOptions = {
   metricsPrefix: string
   histogramBuckets: number[]
@@ -66,8 +72,8 @@ export class MetricsCollector {
     private readonly registry: prometheus.Registry,
     private readonly logger: FastifyBaseLogger,
   ) {
-    this.registerMetrics(this.registry, this.options).then((metrics) => {
-      this.metrics = metrics
+    this.registerMetrics(this.registry, this.options).then((result) => {
+      this.metrics = result
     })
   }
 
@@ -83,14 +89,14 @@ export class MetricsCollector {
       const jsonMetrics = await this.getJsonMetrics()
       for (const counterMetric of jsonMetrics.counters) {
         // we need to reset counter since prisma returns already the accumulated counter value
-        this.metrics.counters[counterMetric.key].reset()
-        this.metrics.counters[counterMetric.key].inc(counterMetric.value)
+        this.metrics.counters[counterMetric.key]?.reset()
+        this.metrics.counters[counterMetric.key]?.inc(counterMetric.value)
       }
       for (const gaugeMetric of jsonMetrics.gauges) {
-        this.metrics.gauges[gaugeMetric.key].set(gaugeMetric.value)
+        this.metrics.gauges[gaugeMetric.key]?.set(gaugeMetric.value)
       }
       for (const histogramMetric of jsonMetrics.histograms) {
-        this.metrics.histograms[histogramMetric.key].observe(histogramMetric.value.sum)
+        this.metrics.histograms[histogramMetric.key]?.observe(histogramMetric.value.sum)
       }
     } catch (err) {
       this.logger.error(err)
@@ -109,20 +115,10 @@ export class MetricsCollector {
     const jsonMetrics = await this.getJsonMetrics()
     const metrics: PrometheusMetrics = getMetrics(metricsPrefix, histogramBuckets, jsonMetrics)
 
-    const metricNames = metrics.names
-
     // If metrics are already registered, just return them to avoid triggering a Prometheus error
-    if (metricNames.length > 0 && registry.getSingleMetric(metricNames[0])) {
-      const retrievedMetrics = registry.getMetricsAsArray()
-      const returnValue: Record<string, prometheus.MetricObject> = {}
-
-      for (const metric of retrievedMetrics) {
-        if (metricNames.includes(metric.name)) {
-          returnValue[metric.name as keyof Metrics] = metric
-        }
-      }
-
-      return returnValue as unknown as PrometheusMetrics
+    const existingMetrics = this.getRegisteredMetrics(registry, metrics.names)
+    if (existingMetrics) {
+      return existingMetrics
     }
 
     for (const counterMetric of Object.values(metrics.counters)) {
@@ -136,6 +132,41 @@ export class MetricsCollector {
     }
 
     return metrics
+  }
+
+  private getRegisteredMetrics(
+    registry: prometheus.Registry,
+    metricNames: string[],
+  ): PrometheusMetrics | undefined {
+    // If metrics are already registered, just return them to avoid triggering a Prometheus error
+    if (!(metricNames.length || !registry.getSingleMetric(metricNames[0]))) {
+      return
+    }
+
+    const retrievedMetrics = registry.getMetricsAsArray()
+    const returnValue: PromM = {
+      counters: {},
+      histograms: {},
+      gauges: {},
+    }
+
+    for (const metric of retrievedMetrics) {
+      if (!metricNames.includes(metric.name)) {
+        continue
+      }
+      // returnValue.counters[metric.name as keyof Metrics] = metric
+      if (metric.type.toString() === 'counter') {
+        returnValue.counters[metric.name as keyof Metrics] = metric
+      }
+      if (metric.type.toString() === 'gauge') {
+        returnValue.gauges[metric.name as keyof Metrics] = metric
+      }
+      if (metric.type.toString() === 'histogram') {
+        returnValue.histograms[metric.name as keyof Metrics] = metric
+      }
+    }
+
+    return returnValue as unknown as PrometheusMetrics
   }
 
   private getJsonMetrics() {
