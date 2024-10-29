@@ -30,7 +30,7 @@ function getMetrics(
     metrics.counters[metric.key] = new prometheus.Counter({
       name: metric.key,
       help: metric.description,
-      labelNames: ['prisma', 'connection-pool'] as const,
+      labelNames: ['prisma', 'connection_pool'] as const,
     })
     metrics.names.push(metric.key)
   }
@@ -39,7 +39,7 @@ function getMetrics(
     metrics.gauges[metric.key] = new prometheus.Gauge({
       name: metric.key,
       help: metric.description,
-      labelNames: ['prisma', 'connection-pool'] as const,
+      labelNames: ['prisma', 'connection_pool'] as const,
     })
     metrics.names.push(metric.key)
   }
@@ -49,7 +49,7 @@ function getMetrics(
       name: metric.key,
       help: metric.description,
       buckets: histogramBuckets,
-      labelNames: ['prisma', 'connection-pool'] as const,
+      labelNames: ['prisma', 'connection_pool'] as const,
     })
     metrics.names.push(metric.key)
   }

@@ -59,6 +59,7 @@ function plugin(
       fastify.metrics.client.register,
       fastify.log,
     )
+    // await collector.init()
     const collectFn = async () => await collector.collect()
     let scheduler: CollectionScheduler
 

@@ -5,7 +5,8 @@ import type { FastifyInstance } from 'fastify'
 import fastify from 'fastify'
 
 import { metricsPlugin } from '@lokalise/fastify-extras'
-import { PrismaClient } from '@prisma/client'
+import { generateMonotonicUuid } from '@lokalise/id-utils'
+import { type Item1, PrismaClient } from '@prisma/client'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { DB_MODEL, cleanTables } from '../../test/DbCleaner'
@@ -16,6 +17,11 @@ const UNKNOWN_RESPONSE_SCHEMA = z.unknown()
 
 type TestOptions = {
   enableMetricsPlugin: boolean
+}
+
+const TEST_ITEM_1: Item1 = {
+  id: generateMonotonicUuid(),
+  value: 'one',
 }
 
 const DEFAULT_TEST_OPTIONS = { enableMetricsPlugin: true }
@@ -70,9 +76,9 @@ describe('prismaMetricsPlugin', () => {
 
   it('throws if fastify-metrics was not initialized', async () => {
     await expect(() => {
-      return initAppWithPrismaMetrics({ prisma })
+      return initAppWithPrismaMetrics({ prisma }, { enableMetricsPlugin: false })
     }).rejects.toThrowError(
-      'No Prometheus Client found, BullMQ metrics plugin requires `fastify-metrics` plugin to be registered',
+      'No Prometheus Client found, Prisma metrics plugin requires `fastify-metrics` plugin to be registered',
     )
   })
 
@@ -84,10 +90,11 @@ describe('prismaMetricsPlugin', () => {
 
     const responseBefore = await getMetrics()
     expect(responseBefore.result.body).not.toContain(
-      'bullmq_jobs_finished_duration_count{status="completed",queue="test_job"} 1',
+      'prisma_pool_connections_opened_total{status="completed",queue="test_job"} 1',
     )
 
     // prisma call
+    await prisma.item1.create({ data: TEST_ITEM_1 })
 
     await setTimeout(100)
 
@@ -95,7 +102,7 @@ describe('prismaMetricsPlugin', () => {
 
     const responseAfter = await getMetrics()
     expect(responseAfter.result.body).toContain(
-      'bullmq_jobs_finished_duration_count{status="completed",queue="test_job"} 1',
+      'prisma_pool_connections_opened_total{status="completed",queue="test_job"} 1',
     )
   })
 })
