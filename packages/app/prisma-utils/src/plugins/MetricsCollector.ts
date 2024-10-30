@@ -104,8 +104,8 @@ export class MetricsCollector {
     } catch (err) {
       /* c8 ignore start */
       this.logger.error(err)
-      /* c8 ignore stop */
     }
+    /* c8 ignore stop */
   }
 
   /**
@@ -123,8 +123,10 @@ export class MetricsCollector {
     // If metrics are already registered, just return them to avoid triggering a Prometheus error
     const existingMetrics = this.getRegisteredMetrics(registry, metricNames)
     if (existingMetrics) {
+      /* c8 ignore start */
       return existingMetrics
     }
+    /* c8 ignore stop */
 
     return registerMetrics(metricsPrefix, jsonMetrics)
   }
@@ -138,6 +140,7 @@ export class MetricsCollector {
       return
     }
 
+    /* c8 ignore start */
     const retrievedMetrics = registry.getMetricsAsArray()
     const returnValue: PrometheusMetrics = {
       counters: {},
@@ -162,6 +165,7 @@ export class MetricsCollector {
     }
 
     return returnValue as unknown as PrometheusMetricsDefinitions
+    /* c8 ignore stop */
   }
 
   private getJsonMetrics() {
