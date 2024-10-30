@@ -20,7 +20,7 @@ export type MetricCollectorOptions = {
   metricsPrefix: string
 }
 
-function getMetrics(_prefix: string, jsonMetrics: Metrics): PrometheusMetricsDefinitions {
+function registerMetrics(_prefix: string, jsonMetrics: Metrics): PrometheusMetricsDefinitions {
   const metrics: PrometheusMetricsDefinitions = {
     counters: {},
     gauges: {},
@@ -56,6 +56,14 @@ function getMetrics(_prefix: string, jsonMetrics: Metrics): PrometheusMetricsDef
   }
 
   return metrics
+}
+
+function getMetricKeys(_prefix: string, jsonMetrics: Metrics): string[] {
+  const metricKeys: string[] = []
+  metricKeys.push(...jsonMetrics.counters.map((metric) => metric.key))
+  metricKeys.push(...jsonMetrics.gauges.map((metric) => metric.key))
+  metricKeys.push(...jsonMetrics.histograms.map((metric) => metric.key))
+  return metricKeys
 }
 
 export class MetricsCollector {
@@ -94,7 +102,9 @@ export class MetricsCollector {
         this.metrics.histograms[histogramMetric.key].observe(histogramMetric.value.count)
       }
     } catch (err) {
+      /* c8 ignore start */
       this.logger.error(err)
+      /* c8 ignore stop */
     }
   }
 
@@ -108,25 +118,15 @@ export class MetricsCollector {
     { metricsPrefix }: MetricCollectorOptions,
   ): Promise<PrometheusMetricsDefinitions> {
     const jsonMetrics = await this.getJsonMetrics()
-    const metrics: PrometheusMetricsDefinitions = getMetrics(metricsPrefix, jsonMetrics)
+    const metricNames: string[] = getMetricKeys(metricsPrefix, jsonMetrics)
 
     // If metrics are already registered, just return them to avoid triggering a Prometheus error
-    const existingMetrics = this.getRegisteredMetrics(registry, metrics.names)
+    const existingMetrics = this.getRegisteredMetrics(registry, metricNames)
     if (existingMetrics) {
       return existingMetrics
     }
 
-    for (const counterMetric of Object.values(metrics.counters)) {
-      registry.registerMetric(counterMetric)
-    }
-    for (const gaugeMetric of Object.values(metrics.gauges)) {
-      registry.registerMetric(gaugeMetric)
-    }
-    for (const histogramMetric of Object.values(metrics.histograms)) {
-      registry.registerMetric(histogramMetric)
-    }
-
-    return metrics
+    return registerMetrics(metricsPrefix, jsonMetrics)
   }
 
   private getRegisteredMetrics(
@@ -134,7 +134,7 @@ export class MetricsCollector {
     metricNames: string[],
   ): PrometheusMetricsDefinitions | undefined {
     // If metrics are already registered, just return them to avoid triggering a Prometheus error
-    if (!(metricNames.length || !registry.getSingleMetric(metricNames[0]))) {
+    if (!metricNames.length || !registry.getSingleMetric(metricNames[0])) {
       return
     }
 
@@ -149,7 +149,7 @@ export class MetricsCollector {
       if (!metricNames.includes(metric.name)) {
         continue
       }
-      // returnValue.counters[metric.name as keyof Metrics] = metric
+
       if (metric.type.toString() === 'counter') {
         returnValue.counters[metric.name as keyof Metrics] = metric
       }

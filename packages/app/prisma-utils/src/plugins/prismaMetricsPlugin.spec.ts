@@ -17,6 +17,14 @@ const UNKNOWN_RESPONSE_SCHEMA = z.unknown()
 
 type TestOptions = {
   enableMetricsPlugin: boolean
+  collectionOptions?:
+    | {
+        type: 'interval'
+        intervalInMs: number
+      }
+    | {
+        type: 'manual'
+      }
 }
 
 const TEST_ITEM_1: Item1 = {
@@ -24,11 +32,14 @@ const TEST_ITEM_1: Item1 = {
   value: 'one',
 }
 
-const DEFAULT_TEST_OPTIONS = { enableMetricsPlugin: true }
+const DEFAULT_TEST_OPTIONS = {
+  enableMetricsPlugin: true,
+  collectionOptions: { type: 'manual' as const },
+}
 
 async function initAppWithPrismaMetrics(
   pluginOptions: PrismaMetricsPluginOptions,
-  { enableMetricsPlugin }: TestOptions = DEFAULT_TEST_OPTIONS,
+  { enableMetricsPlugin, collectionOptions }: TestOptions = DEFAULT_TEST_OPTIONS,
 ) {
   const app = fastify()
 
@@ -41,7 +52,7 @@ async function initAppWithPrismaMetrics(
   }
 
   await app.register(prismaMetricsPlugin, {
-    collectionOptions: { type: 'manual' },
+    collectionOptions,
     ...pluginOptions,
   })
 
@@ -85,9 +96,6 @@ describe('prismaMetricsPlugin', () => {
   it('exposes metrics collect() function', async () => {
     app = await initAppWithPrismaMetrics({ prisma })
 
-    // exec collect to start listening for failed and completed events
-    await app.prismaMetrics.collect()
-
     const responseBefore = await getMetrics()
     expect(responseBefore.result.body).not.toContain('prisma_pool_connections_opened_total 1')
 
@@ -97,6 +105,30 @@ describe('prismaMetricsPlugin', () => {
     await setTimeout(100)
 
     await app.prismaMetrics.collect()
+
+    const responseAfter = await getMetrics()
+    expect(responseAfter.result.body).toContain('prisma_pool_connections_opened_total 1')
+  })
+  it('scheduler collects metrics', async () => {
+    app = await initAppWithPrismaMetrics(
+      { prisma },
+      {
+        enableMetricsPlugin: true,
+        collectionOptions: {
+          type: 'interval',
+          intervalInMs: 100,
+        },
+      },
+    )
+
+    const responseBefore = await getMetrics()
+    expect(responseBefore.result.body).not.toContain('prisma_pool_connections_opened_total 1')
+
+    // prisma call
+    await prisma.item1.create({ data: TEST_ITEM_1 })
+
+    // Wait for collector to collect metrics
+    await setTimeout(100)
 
     const responseAfter = await getMetrics()
     expect(responseAfter.result.body).toContain('prisma_pool_connections_opened_total 1')

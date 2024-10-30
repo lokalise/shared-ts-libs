@@ -84,11 +84,13 @@ function plugin(
 
     next()
   } catch (err: unknown) {
+    /* c8 ignore start */
     return next(
       err instanceof Error
         ? err
         : new Error('Unknown error in prisma-metrics-plugin', { cause: err }),
     )
+    /* c8 ignore stop */
   }
 }
 
