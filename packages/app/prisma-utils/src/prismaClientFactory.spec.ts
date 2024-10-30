@@ -1,11 +1,16 @@
 import { PrismaClient } from '@prisma/client'
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { DB_MODEL, cleanTables } from '../test/DbCleaner'
 import { getDatasourceUrl } from '../test/getDatasourceUrl'
 import { prismaClientFactory } from './prismaClientFactory'
 
 describe('prismaClientFactory', () => {
   describe('real prisma client', () => {
     let prisma: PrismaClient
+
+    beforeEach(async () => {
+      await cleanTables(prisma, [DB_MODEL.item1, DB_MODEL.item2])
+    })
 
     afterEach(async () => {
       await prisma.$disconnect()
