@@ -58,7 +58,7 @@ function plugin(
       fastify.metrics.client.register,
       fastify.log,
     )
-    const collectFn = async () => await collector.collect()
+    const collectFn = async () => await collector.collect(options.metricsPrefix)
     let scheduler: CollectionScheduler
 
     if (options.collectionOptions.type === 'interval') {
