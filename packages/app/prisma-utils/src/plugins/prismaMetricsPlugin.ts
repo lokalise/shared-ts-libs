@@ -58,7 +58,7 @@ function plugin(
       fastify.metrics.client.register,
       fastify.log,
     )
-    const collectFn = async () => await collector.collect()
+    const collectFn = async () => await collector.collect(options.metricsPrefix)
     let scheduler: CollectionScheduler
 
     if (options.collectionOptions.type === 'interval') {
@@ -83,15 +83,15 @@ function plugin(
     })
 
     next()
-  } catch (err: unknown) {
     /* c8 ignore start */
+  } catch (err: unknown) {
     return next(
       err instanceof Error
         ? err
         : new Error('Unknown error in prisma-metrics-plugin', { cause: err }),
     )
-    /* c8 ignore stop */
   }
+  /* c8 ignore stop */
 }
 
 export const prismaMetricsPlugin: FastifyPluginCallback<PrismaMetricsPluginOptions> =

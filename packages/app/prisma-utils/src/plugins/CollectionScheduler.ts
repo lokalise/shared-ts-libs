@@ -17,8 +17,8 @@ export class PromiseBasedCollectionScheduler implements CollectionScheduler {
 
   async start(): Promise<void> {
     while (this.active) {
-      await this.collect()
       await setTimeout(this.collectionIntervalInMs)
+      await this.collect()
     }
   }
 
