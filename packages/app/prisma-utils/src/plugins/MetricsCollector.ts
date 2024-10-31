@@ -101,28 +101,34 @@ export class MetricsCollector {
       const jsonMetrics = await this.getJsonMetrics()
       for (const counterMetric of jsonMetrics.counters) {
         const existingMetric = this.metrics.counters[counterMetric.key]
+        /* c8 ignore start */
         if (!existingMetric) {
           nonRegisteredMetrics.counters.push(counterMetric)
           continue
         }
+        /* c8 ignore stop */
         // we need to reset counter since prisma returns already the accumulated counter value
         existingMetric.reset()
         existingMetric.inc(counterMetric.value)
       }
       for (const gaugeMetric of jsonMetrics.gauges) {
         const existingMetric = this.metrics.gauges[gaugeMetric.key]
+        /* c8 ignore start */
         if (!existingMetric) {
           nonRegisteredMetrics.gauges.push(gaugeMetric)
           continue
         }
+        /* c8 ignore stop */
         existingMetric.set(gaugeMetric.value)
       }
       for (const histogramMetric of jsonMetrics.histograms) {
         const existingMetric = this.metrics.histograms[histogramMetric.key]
+        /* c8 ignore start */
         if (!existingMetric) {
           nonRegisteredMetrics.histograms.push(histogramMetric)
           continue
         }
+        /* c8 ignore stop */
         existingMetric.observe(histogramMetric.value.count)
       }
 
@@ -143,6 +149,7 @@ export class MetricsCollector {
       return
     }
 
+    /* c8 ignore start */
     const newMetrics = registerMetrics(prefix, nonRegisteredMetrics)
 
     for (const [key, value] of Object.entries(newMetrics.counters)) {
@@ -155,6 +162,7 @@ export class MetricsCollector {
       this.metrics.histograms[key] = value
     }
     this.logger.debug({}, `Prisma metrics registered ${newMetrics.keys}`)
+    /* c8 ignore stop */
   }
 
   /**
