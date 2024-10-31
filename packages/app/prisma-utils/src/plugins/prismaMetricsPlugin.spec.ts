@@ -116,7 +116,7 @@ describe('prismaMetricsPlugin', () => {
         enableMetricsPlugin: true,
         collectionOptions: {
           type: 'interval',
-          intervalInMs: 500,
+          intervalInMs: 100,
         },
       },
     )
