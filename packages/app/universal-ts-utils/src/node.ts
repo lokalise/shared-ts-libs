@@ -13,3 +13,5 @@ export * from './public/array/sortByField.js'
 
 // object
 export * from './public/object/areDeepEqual.js'
+export * from './public/object/groupBy.js'
+export * from './public/object/groupByUnique.js'
