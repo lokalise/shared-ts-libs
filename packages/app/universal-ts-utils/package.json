@@ -44,9 +44,9 @@
             "import": "./dist/node.js"
         },
         "./*": {
-            "types": "./dist/external/*.d.ts",
-            "import": "./dist/external/*",
-            "require": "./dist/external/*"
+            "types": "./dist/public/*.d.ts",
+            "import": "./dist/public/*",
+            "require": "./dist/public/*"
         },
         "./package.json": "./package.json"
     }
