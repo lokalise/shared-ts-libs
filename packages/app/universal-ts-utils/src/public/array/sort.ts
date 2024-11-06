@@ -1,3 +1,5 @@
+import { compare } from '../../internal/compare'
+
 /**
  * Sorts an array of strings or numbers in either ascending or descending order.
  *
@@ -17,17 +19,4 @@ export const sort = <T extends string[] | number[]>(array: T, order: 'asc' | 'de
   return (
     order === 'asc' ? copy.sort((a, b) => compare(a, b)) : copy.sort((a, b) => compare(b, a))
   ) as T
-}
-
-const compare = <T extends string | number>(a: T, b: T): number => {
-  let result = 0
-  if (typeof a === 'string' && typeof b === 'string') {
-    // Sort strings using localeCompare
-    result = a.localeCompare(b)
-  } else if (typeof a === 'number' && typeof b === 'number') {
-    // Sort numbers using basic comparison
-    result = a - b
-  }
-
-  return result
 }

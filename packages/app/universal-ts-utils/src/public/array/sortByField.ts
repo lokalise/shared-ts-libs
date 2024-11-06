@@ -1,3 +1,5 @@
+import { compare } from '../../internal/compare'
+
 type KeysMatching<T extends object, V> = {
   [K in keyof T]: T[K] extends V ? K : never
 }[keyof T]
@@ -42,17 +44,4 @@ export const sortByField = <T extends object, K extends KeysMatching<T, string |
   return order === 'asc'
     ? copy.sort((a, b) => compare(a[field] as string | number, b[field] as string | number))
     : copy.sort((a, b) => compare(b[field] as string | number, a[field] as string | number))
-}
-
-const compare = <T extends string | number>(a: T, b: T): number => {
-  let result = 0
-  if (typeof a === 'string' && typeof b === 'string') {
-    // Sort strings using localeCompare
-    result = a.localeCompare(b)
-  } else if (typeof a === 'number' && typeof b === 'number') {
-    // Sort numbers using basic comparison
-    result = a - b
-  }
-
-  return result
 }
