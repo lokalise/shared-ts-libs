@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { removeNullish } from './removeNullish'
+import { removeNullish } from './removeNullish.js'
 
 describe('arrayUtils', () => {
   describe('removeNullish', () => {

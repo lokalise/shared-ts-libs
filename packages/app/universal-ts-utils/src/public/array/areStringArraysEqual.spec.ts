@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { areStringArraysEqual } from './areStringArraysEqual'
+import { areStringArraysEqual } from './areStringArraysEqual.js'
 
 describe('areStringArraysEqual', () => {
   it('returns true for identical arrays', () => {

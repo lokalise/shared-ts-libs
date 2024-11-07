@@ -1,5 +1,5 @@
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest'
-import { callChunked } from './callChunked'
+import { callChunked } from './callChunked.js'
 
 describe('callChunked', () => {
   let mockedMethod: Mock

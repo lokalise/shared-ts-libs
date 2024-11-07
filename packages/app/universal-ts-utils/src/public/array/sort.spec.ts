@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sort } from './sort'
+import { sort } from './sort.js'
 
 describe('sort', () => {
   it('is able to handle empty arrays', () => {
