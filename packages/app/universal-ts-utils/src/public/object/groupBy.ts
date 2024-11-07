@@ -1,4 +1,4 @@
-import type { KeysMatching, RecordKeyType } from '../../internal/types'
+import type { KeysMatching, RecordKeyType } from '../../internal/types.js'
 
 /**
  * @param array The array of objects to be grouped.

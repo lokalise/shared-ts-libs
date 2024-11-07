@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { groupBy } from './groupBy'
+import { groupBy } from './groupBy.js'
 
 describe('groupBy', () => {
   it('Empty array', () => {

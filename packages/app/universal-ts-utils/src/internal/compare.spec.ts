@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { compare } from './compare'
+import { compare } from './compare.js'
 
 describe('compare', () => {
   it('should correctly compare two strings', () => {
