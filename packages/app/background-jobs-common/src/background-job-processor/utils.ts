@@ -51,3 +51,6 @@ export const prepareJobOptions = <JobOptionsType extends JobsOptions>(
 
   return preparedOptions
 }
+
+export const isJobMissingError = (error: unknown): boolean =>
+  error instanceof Error && error.message.startsWith('Missing key for job')
