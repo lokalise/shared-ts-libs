@@ -31,7 +31,7 @@ export class DependencyMocks {
   }
 
   async dispose(): Promise<void> {
-    await this.client?.quit()
+    await this.client?.disconnect(false)
   }
 
   getRedisConfig(): RedisConfig {
