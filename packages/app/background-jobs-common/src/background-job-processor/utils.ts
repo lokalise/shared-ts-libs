@@ -1,5 +1,6 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
+import { isError } from '@lokalise/node-core'
 import type { JobsOptions } from 'bullmq'
 import Redis from 'ioredis'
 import { DEFAULT_JOB_CONFIG } from './constants'
@@ -53,4 +54,4 @@ export const prepareJobOptions = <JobOptionsType extends JobsOptions>(
 }
 
 export const isJobMissingError = (error: unknown): boolean =>
-  error instanceof Error && error.message.startsWith('Missing key for job')
+  isError(error) && error.message.startsWith('Missing key for job')

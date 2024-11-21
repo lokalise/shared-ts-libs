@@ -10,7 +10,7 @@ import {
   type WorkerOptions,
 } from 'bullmq'
 import type { JobState } from 'bullmq/dist/esm/types/job-type'
-import pino from 'pino'
+import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
 
 import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants'
@@ -434,7 +434,10 @@ export abstract class AbstractBackgroundJobProcessor<
       .map((result) => (result as PromiseRejectedResult).reason)
 
     if (purgeErrors.length > 0) {
-      throw new Error(`Job data purge failed: ${JSON.stringify(purgeErrors)}`)
+      const serializedPurgeErrors = purgeErrors.map((error) =>
+        JSON.stringify(isError(error) ? stdSerializers.err(error) : error),
+      )
+      throw new Error(`Job data purge failed: ${serializedPurgeErrors.join(', ')}`)
     }
   }
 
