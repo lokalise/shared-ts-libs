@@ -301,7 +301,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessor(
         deps,
-        'TestSuccessBackgroundJobProcessor',
+        'AbstractBackgroundJobProcessor_purge_missing_job_error',
         mocks.getRedisConfig(),
       )
 
@@ -324,6 +324,41 @@ describe('AbstractBackgroundJobProcessor', () => {
       await expect(purgePromise).resolves.not.toThrow()
       expect(successBackgroundJobProcessor.runningPromisesSet).toHaveLength(0)
     })
+  })
+
+  it('throws an error if job data purge fails', async () => {
+    // Given
+    const jobData = {
+      id: generateMonotonicUuid(),
+      value: 'test',
+      metadata: { correlationId: generateMonotonicUuid() },
+    }
+
+    const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessor(
+      deps,
+      'AbstractBackgroundJobProcessor_purge_unhandled_error',
+      mocks.getRedisConfig(),
+    )
+
+    const purgeExecutionPromise = new Promise<void>((resolve) => {
+      successBackgroundJobProcessor.onSuccessHook = (job) => {
+        // Given
+        const jobClearLogsSpy = vi.spyOn(job, 'clearLogs')
+        jobClearLogsSpy.mockRejectedValueOnce(new Error('Simulated'))
+
+        // When
+        resolve(successBackgroundJobProcessor.purgeJobData(job))
+      }
+    })
+
+    // When
+    await successBackgroundJobProcessor.schedule(jobData)
+
+    // Then
+    await expect(purgeExecutionPromise).rejects.toThrow(
+      /Job data purge failed: {"type":"Error","message":"Simulated"/,
+    )
+    expect(successBackgroundJobProcessor.runningPromisesSet).toHaveLength(0)
   })
 
   describe('error', () => {
