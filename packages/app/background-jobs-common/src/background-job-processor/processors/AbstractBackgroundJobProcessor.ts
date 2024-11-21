@@ -415,7 +415,7 @@ export abstract class AbstractBackgroundJobProcessor<
     if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
 
     const updateDataPromise = job
-      // @ts-ignore
+      // @ts-expect-error
       .updateData({ metadata: job.data.metadata })
       .finally(() => this.runningPromises.delete(updateDataPromise))
 

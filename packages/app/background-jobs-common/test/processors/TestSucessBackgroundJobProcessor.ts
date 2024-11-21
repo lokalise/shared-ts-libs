@@ -59,7 +59,7 @@ export class TestSuccessBackgroundJobProcessor<
   }
 
   get runningPromisesSet(): Set<Promise<unknown>> {
-    // @ts-ignore
+    // @ts-expect-error
     return this.runningPromises
   }
 }
