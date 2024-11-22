@@ -1,5 +1,6 @@
 import { DelayedError, type Job } from 'bullmq'
 
+import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
 import {
   AbstractBackgroundJobProcessor,
@@ -21,13 +22,10 @@ export class TestForeverRescheduledBackgroundJobProcessor extends AbstractBackgr
 
   constructor(dependencies: BackgroundJobProcessorDependencies<Data>, redisConfig: RedisConfig) {
     super(dependencies, {
-      queueId: 'TestStalledBackgroundJobProcessor queue',
+      queueId: generateMonotonicUuid(),
       ownerName: 'test',
-      isTest: false, // We don't want to override job options for this processor
-      workerOptions: {
-        lockDuration: 1,
-        stalledInterval: 1,
-      },
+      isTest: true,
+      workerOptions: { concurrency: 1 },
       redisConfig: redisConfig,
     })
   }

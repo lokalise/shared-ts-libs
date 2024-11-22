@@ -288,7 +288,77 @@ describe('AbstractBackgroundJobProcessor', () => {
         metadata: jobData.metadata,
       })
       expect(job.data).toStrictEqual(jobData)
+      expect(successBackgroundJobProcessor.runningPromisesSet).toHaveLength(0)
     })
+
+    it('ignores missing job error during data purging', async () => {
+      // Given
+      const jobData = {
+        id: generateMonotonicUuid(),
+        value: 'test',
+        metadata: { correlationId: generateMonotonicUuid() },
+      }
+
+      const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessor(
+        deps,
+        'AbstractBackgroundJobProcessor_purge_missing_job_error',
+        mocks.getRedisConfig(),
+      )
+
+      const purgePromise = new Promise<void>((resolve) => {
+        successBackgroundJobProcessor.onSuccessHook = async (job) => {
+          // Dropping the job right before purging will cause a job deleted error during purging.
+          await job.remove()
+          // Run the purging. It should ignore the error and continue.
+          await successBackgroundJobProcessor.purgeJobData(job)
+          resolve()
+        }
+      })
+
+      const jobId = await successBackgroundJobProcessor.schedule(jobData)
+
+      // When
+      await successBackgroundJobProcessor.spy.waitForJobWithId(jobId, 'completed')
+
+      // Then
+      await expect(purgePromise).resolves.not.toThrow()
+      expect(successBackgroundJobProcessor.runningPromisesSet).toHaveLength(0)
+    })
+  })
+
+  it('throws an error if job data purge fails', async () => {
+    // Given
+    const jobData = {
+      id: generateMonotonicUuid(),
+      value: 'test',
+      metadata: { correlationId: generateMonotonicUuid() },
+    }
+
+    const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessor(
+      deps,
+      'AbstractBackgroundJobProcessor_purge_unhandled_error',
+      mocks.getRedisConfig(),
+    )
+
+    const purgeExecutionPromise = new Promise<void>((resolve) => {
+      successBackgroundJobProcessor.onSuccessHook = (job) => {
+        // Given
+        const jobClearLogsSpy = vi.spyOn(job, 'clearLogs')
+        jobClearLogsSpy.mockRejectedValueOnce(new Error('Simulated'))
+
+        // When
+        resolve(successBackgroundJobProcessor.purgeJobData(job))
+      }
+    })
+
+    // When
+    await successBackgroundJobProcessor.schedule(jobData)
+
+    // Then
+    await expect(purgeExecutionPromise).rejects.toThrow(
+      /Job data purge failed: {"type":"Error","message":"Simulated"/,
+    )
+    expect(successBackgroundJobProcessor.runningPromisesSet).toHaveLength(0)
   })
 
   describe('error', () => {

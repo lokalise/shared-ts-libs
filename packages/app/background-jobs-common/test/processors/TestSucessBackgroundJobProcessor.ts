@@ -57,4 +57,9 @@ export class TestSuccessBackgroundJobProcessor<
   get onSuccessCallsCounter(): number {
     return this.onSuccessCounter
   }
+
+  get runningPromisesSet(): Set<Promise<unknown>> {
+    // @ts-expect-error
+    return this.runningPromises
+  }
 }

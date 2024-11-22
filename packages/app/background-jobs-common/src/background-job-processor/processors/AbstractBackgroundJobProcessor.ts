@@ -10,7 +10,7 @@ import {
   type WorkerOptions,
 } from 'bullmq'
 import type { JobState } from 'bullmq/dist/esm/types/job-type'
-import pino from 'pino'
+import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
 
 import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants'
@@ -19,6 +19,7 @@ import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
 import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob, SafeQueue } from '../types'
 import {
+  isJobMissingError,
   isStalledJobError,
   isUnrecoverableJobError,
   prepareJobOptions,
@@ -62,7 +63,7 @@ export abstract class AbstractBackgroundJobProcessor<
   >
   private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
   private readonly monitor: BackgroundJobProcessorMonitor<JobPayload, JobType>
-  private readonly runningPromises: Promise<unknown>[]
+  private readonly runningPromises: Set<Promise<unknown>>
 
   private isStarted = false
   private startPromise?: Promise<void>
@@ -108,7 +109,7 @@ export abstract class AbstractBackgroundJobProcessor<
     this.factory = dependencies.bullmqFactory
     this.errorReporter = dependencies.errorReporter
     this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
-    this.runningPromises = []
+    this.runningPromises = new Set()
   }
 
   public async getJobCount(): Promise<number> {
@@ -413,17 +414,31 @@ export abstract class AbstractBackgroundJobProcessor<
     const jobOptsRemoveOnComplete = job.opts.removeOnComplete
     if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
 
-    // @ts-ignore
-    const updateDataPromise = job.updateData({ metadata: job.data.metadata })
-    const clearLogsPromise = job.clearLogs()
+    const updateDataPromise = job
+      // @ts-expect-error
+      .updateData({ metadata: job.data.metadata })
+      .finally(() => this.runningPromises.delete(updateDataPromise))
 
-    const updateDataPromiseIndex = this.runningPromises.push(updateDataPromise) - 1
-    const clearLogsPromiseIndex = this.runningPromises.push(clearLogsPromise) - 1
+    this.runningPromises.add(updateDataPromise)
 
-    await Promise.all([updateDataPromise, clearLogsPromise]).then(() => {
-      this.runningPromises.splice(updateDataPromiseIndex, 1)
-      this.runningPromises.splice(clearLogsPromiseIndex, 1)
-    })
+    const clearLogsPromise = job
+      .clearLogs()
+      .finally(() => this.runningPromises.delete(clearLogsPromise))
+
+    this.runningPromises.add(clearLogsPromise)
+
+    // Purging will fail if the job is already removed (job can be removed manually, by user, or by BullMQ in certain scenarios),
+    // Since this is expected and should not be considered an error, we will silence down such errors.
+    const purgeErrors = (await Promise.allSettled([updateDataPromise, clearLogsPromise]))
+      .filter((result) => result.status === 'rejected' && !isJobMissingError(result.reason))
+      .map((result) => (result as PromiseRejectedResult).reason)
+
+    if (purgeErrors.length > 0) {
+      const serializedPurgeErrors = purgeErrors.map((error) =>
+        JSON.stringify(isError(error) ? stdSerializers.err(error) : error),
+      )
+      throw new Error(`Job data purge failed: ${serializedPurgeErrors.join(', ')}`)
+    }
   }
 
   protected abstract process(job: JobType, requestContext: RequestContext): Promise<JobReturn>
