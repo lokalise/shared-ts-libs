@@ -21,26 +21,14 @@ export type SafeJob<T = any, R = any, N extends string = string> = Omit<
 }
 
 export type SafeQueue<
+  // biome-ignore lint/correctness/noUnusedVariables: this is kept for backwards compatibility reasons, let's drop it in semver major
   JobsOptionsType = JobsOptions,
   // biome-ignore lint/suspicious/noExplicitAny: it's okay
   DataType = any,
   // biome-ignore lint/suspicious/noExplicitAny: it's okay
   ResultType = any,
   NameType extends string = string,
-> = Omit<Queue<DataType, ResultType, NameType>, 'add' | 'addBulk'> & {
-  add(
-    name: NameType,
-    data: DataType,
-    opts?: JobsOptionsType,
-  ): Promise<SafeJob<DataType, ResultType, NameType>>
-  addBulk(
-    jobs: {
-      name: NameType
-      data: DataType
-      opts?: Omit<JobsOptionsType, 'repeat'>
-    }[],
-  ): Promise<SafeJob<DataType, ResultType, NameType>[]>
-}
+> = Queue<DataType, ResultType, NameType>
 
 export type BullmqProcessor<
   J extends SafeJob<T, R, N>,

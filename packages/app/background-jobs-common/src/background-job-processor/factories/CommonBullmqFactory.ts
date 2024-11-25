@@ -19,7 +19,7 @@ export class CommonBullmqFactory<JobPayload extends object, JobReturn = void>
       JobsOptions
     >
 {
-  buildQueue(queueId: string, options: QueueOptions): Queue {
+  buildQueue(queueId: string, options: QueueOptions): Queue<JobPayload, JobReturn> {
     return new Queue(queueId, options)
   }
 
