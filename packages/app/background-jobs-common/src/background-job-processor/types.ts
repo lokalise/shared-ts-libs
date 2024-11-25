@@ -1,4 +1,4 @@
-import type { FinishedStatus, Job, JobsOptions, Queue } from 'bullmq'
+import type { FinishedStatus, Job } from 'bullmq'
 
 import type { CommonLogger } from '@lokalise/node-core'
 
@@ -18,28 +18,6 @@ export type SafeJob<T = any, R = any, N extends string = string> = Omit<
 > & {
   // biome-ignore lint/suspicious/noExplicitAny: QueueEventsPro and QueueEvents are not compatible, unfortunately
   waitUntilFinished(queueEvents: any, ttl?: number): Promise<R>
-}
-
-export type SafeQueue<
-  JobsOptionsType = JobsOptions,
-  // biome-ignore lint/suspicious/noExplicitAny: it's okay
-  DataType = any,
-  // biome-ignore lint/suspicious/noExplicitAny: it's okay
-  ResultType = any,
-  NameType extends string = string,
-> = Omit<Queue<DataType, ResultType, NameType>, 'add' | 'addBulk'> & {
-  add(
-    name: NameType,
-    data: DataType,
-    opts?: JobsOptionsType,
-  ): Promise<SafeJob<DataType, ResultType, NameType>>
-  addBulk(
-    jobs: {
-      name: NameType
-      data: DataType
-      opts?: Omit<JobsOptionsType, 'repeat'>
-    }[],
-  ): Promise<SafeJob<DataType, ResultType, NameType>[]>
 }
 
 export type BullmqProcessor<

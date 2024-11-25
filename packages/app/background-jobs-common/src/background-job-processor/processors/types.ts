@@ -4,10 +4,10 @@ import type {
   RedisConfig,
   TransactionObservabilityManager,
 } from '@lokalise/node-core'
-import type { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
+import type { Job, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
 import type { BarrierCallback } from '../barrier/barrier'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
-import type { BaseJobPayload, BullmqProcessor, SafeJob, SafeQueue } from '../types'
+import type { BaseJobPayload, BullmqProcessor, SafeJob } from '../types'
 
 export type BackgroundJobProcessorConfig<
   QueueOptionsType extends QueueOptions = QueueOptions,
@@ -31,11 +31,7 @@ export type BackgroundJobProcessorDependencies<
   JobPayload extends object,
   JobReturn = void,
   JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
-  JobsOptionsType extends JobsOptions = JobsOptions,
-  QueueType extends SafeQueue<JobsOptionsType, JobPayload, JobReturn> = Queue<
-    JobPayload,
-    JobReturn
-  >,
+  QueueType extends Queue<JobPayload, JobReturn> = Queue<JobPayload, JobReturn>,
   QueueOptionsType extends QueueOptions = QueueOptions,
   WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
@@ -56,8 +52,7 @@ export type BackgroundJobProcessorDependencies<
     ProcessorType,
     JobType,
     JobPayload,
-    JobReturn,
-    JobsOptionsType
+    JobReturn
   >
 }
 

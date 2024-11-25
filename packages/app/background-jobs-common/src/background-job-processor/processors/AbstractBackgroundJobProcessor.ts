@@ -17,7 +17,7 @@ import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob, SafeQueue } from '../types'
+import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types'
 import {
   isJobMissingError,
   isStalledJobError,
@@ -41,7 +41,7 @@ export abstract class AbstractBackgroundJobProcessor<
   JobReturn = void,
   ExecutionContext = undefined,
   JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
-  QueueType extends SafeQueue<JobOptionsType, JobPayload, JobReturn> = Queue<JobPayload, JobReturn>,
+  QueueType extends Queue<JobPayload, JobReturn> = Queue<JobPayload, JobReturn>,
   QueueOptionsType extends QueueOptions = QueueOptions,
   WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
@@ -79,8 +79,7 @@ export abstract class AbstractBackgroundJobProcessor<
     ProcessorType,
     JobType,
     JobPayload,
-    JobReturn,
-    JobOptionsType
+    JobReturn
   >
 
   protected constructor(
@@ -88,7 +87,6 @@ export abstract class AbstractBackgroundJobProcessor<
       JobPayload,
       JobReturn,
       JobType,
-      JobOptionsType,
       QueueType,
       QueueOptionsType,
       WorkerType,
@@ -240,8 +238,10 @@ export abstract class AbstractBackgroundJobProcessor<
     await this.startIfNotStarted()
 
     const job = await this._queue?.add(
-      this.config.queueId,
-      jobData,
+      // biome-ignore lint/suspicious/noExplicitAny: it's okay
+      this.config.queueId as any,
+      // biome-ignore lint/suspicious/noExplicitAny: it's okay
+      jobData as any,
       prepareJobOptions(this.config.isTest, options),
     )
     if (!job?.id) {
@@ -264,8 +264,10 @@ export abstract class AbstractBackgroundJobProcessor<
     const jobs =
       (await this._queue?.addBulk(
         jobData.map((data) => ({
-          name: this.config.queueId,
-          data,
+          // biome-ignore lint/suspicious/noExplicitAny: bull expects ExtractNameType<JobPayload>, but ExtractNameType is not exposed
+          name: this.config.queueId as any,
+          // biome-ignore lint/suspicious/noExplicitAny: bull expects ExtractDataType<JobPayload, JobPayload>, but ExtractDataType is not exposed
+          data: data as any,
           opts: prepareJobOptions(this.config.isTest, options),
         })),
       )) ?? []
