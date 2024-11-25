@@ -1,5 +1,5 @@
 import { Queue, Worker } from 'bullmq'
-import type { Job, JobsOptions, Processor, QueueOptions, WorkerOptions } from 'bullmq'
+import type { Job, Processor, QueueOptions, WorkerOptions } from 'bullmq'
 
 import type { BullmqProcessor } from '../types'
 
@@ -15,8 +15,7 @@ export class CommonBullmqFactory<JobPayload extends object, JobReturn = void>
       BullmqProcessor<Job, JobPayload, JobReturn>,
       Job<JobPayload, JobReturn>,
       JobPayload,
-      JobReturn,
-      JobsOptions
+      JobReturn
     >
 {
   buildQueue(queueId: string, options: QueueOptions): Queue<JobPayload, JobReturn> {

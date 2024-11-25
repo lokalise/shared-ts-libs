@@ -17,7 +17,7 @@ import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob, SafeQueue } from '../types'
+import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types'
 import {
   isJobMissingError,
   isStalledJobError,
@@ -41,7 +41,7 @@ export abstract class AbstractBackgroundJobProcessor<
   JobReturn = void,
   ExecutionContext = undefined,
   JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
-  QueueType extends SafeQueue<JobOptionsType, JobPayload, JobReturn> = Queue<JobPayload, JobReturn>,
+  QueueType extends Queue<JobPayload, JobReturn> = Queue<JobPayload, JobReturn>,
   QueueOptionsType extends QueueOptions = QueueOptions,
   WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
@@ -79,8 +79,7 @@ export abstract class AbstractBackgroundJobProcessor<
     ProcessorType,
     JobType,
     JobPayload,
-    JobReturn,
-    JobOptionsType
+    JobReturn
   >
 
   protected constructor(
@@ -88,7 +87,6 @@ export abstract class AbstractBackgroundJobProcessor<
       JobPayload,
       JobReturn,
       JobType,
-      JobOptionsType,
       QueueType,
       QueueOptionsType,
       WorkerType,
