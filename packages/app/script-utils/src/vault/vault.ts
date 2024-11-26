@@ -100,7 +100,9 @@ export const vaultGetVars = (service: string): Record<string, string> => {
     return responseJson.data.data
   } catch (e: unknown) {
     if (isExecError(e)) {
-      globalLogger.error(`Vault ${service} error downloading env vars -> ${e.stderr.toString()}`)
+      globalLogger.error(
+        `Vault ${service} error downloading env vars -> ${e.stderr.toString()}. Make sure you're using correct path to secrets. Vault reports 403 if the path is incorrect.`,
+      )
     }
     return {}
   }
