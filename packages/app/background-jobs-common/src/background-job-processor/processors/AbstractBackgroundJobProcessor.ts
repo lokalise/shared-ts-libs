@@ -41,7 +41,14 @@ export abstract class AbstractBackgroundJobProcessor<
   JobReturn = void,
   ExecutionContext = undefined,
   JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
-  QueueType extends Queue<JobPayload, JobReturn> = Queue<JobPayload, JobReturn>,
+  QueueType extends Queue<JobPayload, JobReturn, string, JobPayload, JobReturn, string> = Queue<
+    JobPayload,
+    JobReturn,
+    string,
+    JobPayload,
+    JobReturn,
+    string
+  >,
   QueueOptionsType extends QueueOptions = QueueOptions,
   WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
@@ -238,19 +245,12 @@ export abstract class AbstractBackgroundJobProcessor<
     await this.startIfNotStarted()
 
     const job = await this._queue?.add(
-      // biome-ignore lint/suspicious/noExplicitAny: it's okay
-      this.config.queueId as any,
-      // biome-ignore lint/suspicious/noExplicitAny: it's okay
-      jobData as any,
+      this.config.queueId,
+      jobData,
       prepareJobOptions(this.config.isTest, options),
     )
-    if (!job?.id) {
-      throw new Error('Scheduled job ID is undefined')
-    }
-
-    if (this._spy) {
-      this._spy.addJob(job, 'scheduled')
-    }
+    if (!job?.id) throw new Error('Scheduled job ID is undefined')
+    if (this._spy) this._spy.addJob(job, 'scheduled')
 
     return job.id
   }
@@ -264,10 +264,8 @@ export abstract class AbstractBackgroundJobProcessor<
     const jobs =
       (await this._queue?.addBulk(
         jobData.map((data) => ({
-          // biome-ignore lint/suspicious/noExplicitAny: bull expects ExtractNameType<JobPayload>, but ExtractNameType is not exposed
-          name: this.config.queueId as any,
-          // biome-ignore lint/suspicious/noExplicitAny: bull expects ExtractDataType<JobPayload, JobPayload>, but ExtractDataType is not exposed
-          data: data as any,
+          name: this.config.queueId,
+          data: data,
           opts: prepareJobOptions(this.config.isTest, options),
         })),
       )) ?? []
@@ -279,10 +277,7 @@ export abstract class AbstractBackgroundJobProcessor<
       // stating that it could return undefined.
       throw new Error('Some scheduled job IDs are undefined')
     }
-
-    if (this._spy) {
-      this._spy.addJobs(jobs, 'scheduled')
-    }
+    if (this._spy) this._spy.addJobs(jobs, 'scheduled')
 
     return jobIds as string[]
   }

@@ -8,7 +8,7 @@ import type { AbstractBullmqFactory } from './AbstractBullmqFactory'
 export class CommonBullmqFactory<JobPayload extends object, JobReturn = void>
   implements
     AbstractBullmqFactory<
-      Queue<JobPayload, JobReturn>,
+      Queue<JobPayload, JobReturn, string, JobPayload, JobReturn, string>,
       QueueOptions,
       Worker<JobPayload, JobReturn>,
       WorkerOptions,
@@ -18,7 +18,10 @@ export class CommonBullmqFactory<JobPayload extends object, JobReturn = void>
       JobReturn
     >
 {
-  buildQueue(queueId: string, options: QueueOptions): Queue<JobPayload, JobReturn> {
+  buildQueue(
+    queueId: string,
+    options: QueueOptions,
+  ): Queue<JobPayload, JobReturn, string, JobPayload, JobReturn, string> {
     return new Queue(queueId, options)
   }
 

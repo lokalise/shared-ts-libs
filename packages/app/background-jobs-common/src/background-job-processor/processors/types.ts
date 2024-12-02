@@ -31,7 +31,13 @@ export type BackgroundJobProcessorDependencies<
   JobPayload extends object,
   JobReturn = void,
   JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
-  QueueType extends Queue<JobPayload, JobReturn> = Queue<JobPayload, JobReturn>,
+  QueueType extends Queue<JobPayload, JobReturn, string, JobPayload, JobReturn, string> = Queue<
+    JobPayload,
+    JobReturn,
+    string,
+    JobPayload,
+    JobReturn
+  >,
   QueueOptionsType extends QueueOptions = QueueOptions,
   WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
