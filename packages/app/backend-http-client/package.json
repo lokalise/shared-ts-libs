@@ -33,7 +33,7 @@
     },
     "dependencies": {
         "@lokalise/node-core": "^13.0.0",
-        "undici": "^6.19.8",
+        "undici": "^7.0.0",
         "undici-retry": "^5.0.3",
         "zod": "^3.23.8"
     },
