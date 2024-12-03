@@ -201,3 +201,22 @@ export async function getPaginatedEntriesByHasMore<T extends Record<string, unkn
 
   return resultArray
 }
+
+export async function traversePaginatedSourceByHasMore<
+  T extends Record<string, unknown>,
+>(
+  pagination: OptionalPaginationParams,
+  apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,
+  processPage: (pageData: PaginatedResponse<T>['data']) => Promise<void>,
+): Promise<void> {
+  let hasMore: boolean | undefined
+  let currentCursor: string | undefined = pagination.after
+
+  do {
+    const pageResult = await apiCall({ ...pagination, after: currentCursor })
+    hasMore = pageResult.meta.hasMore
+    currentCursor = pageResult.meta.cursor
+
+    await processPage(pageResult.data)
+  } while (hasMore)
+}
