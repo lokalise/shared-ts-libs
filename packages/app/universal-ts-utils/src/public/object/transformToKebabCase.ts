@@ -2,9 +2,21 @@ type TransformToKebabCaseInputType = Record<string, unknown> | null | undefined
 type TransformToKebabCaseReturnType<Input, Output> = Input extends Record<string, unknown>
   ? Output
   : Input
+
 /**
- * Transforms an object's keys from camelCase or snake_case to kebab-case.
- * @param object
+ * Transforms the keys of an object or array of objects from camelCase or snake_case to kebab-case.
+ * This transformation is applied recursively, ensuring any nested objects are also processed.
+ * Non-object inputs are returned unchanged.
+ *
+ * @param {Record<string, unknown> | Record<string, unknown>[]} object - The object(s) whose keys will be transformed.
+ * @returns {Record<string, unknown> | Record<string, unknown>[]} The object(s) with keys converted to kebab-case.
+ *
+ * @example
+ * ```typescript
+ * const obj = { myId: 1, creationId: 1, metaObj: { updateId: 1 } }
+ * const result = transformToKebabCase(obj)
+ * console.log(result) // { 'my-id': 1, 'creation-date': 1, meta-obj: { 'update-date': 1 } }
+ * ```
  */
 export function transformToKebabCase<
   Output extends Record<string, unknown>,
