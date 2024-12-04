@@ -27,8 +27,7 @@ describe('isEmpty', () => {
   })
 
   it('handle arrays', () => {
-    const emptyArray = []
-    expect(isEmpty(emptyArray)).toBe(true)
+    expect(isEmpty([])).toBe(true)
 
     const array1 = [{ a: 'a' }, { a: 'b' }, { a: null }]
     expect(isEmpty(array1)).toBe(false)
