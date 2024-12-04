@@ -42,6 +42,15 @@ describe('copyWithoutNullish', () => {
       someParam: 12,
     })
 
-    expect(result).toMatchSnapshot()
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "b": "a",
+        "c": "",
+        "e": " ",
+        "g": {
+          "someParam": 12,
+        },
+      }
+    `)
   })
 })

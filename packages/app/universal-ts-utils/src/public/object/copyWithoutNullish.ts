@@ -22,7 +22,11 @@ export const copyWithoutNullish = <T extends Record<RecordKeyType, unknown>>(
 ): Output<T> =>
   Object.keys(originalValue).reduce(
     (acc, key) => {
-      if (originalValue[key] !== undefined) acc[key] = originalValue[key]
+      const value = originalValue[key]
+      if (value === undefined || value === null) return acc
+
+      // TODO: handle nested objects
+      acc[key] = originalValue[key]
       return acc
     },
     {} as Record<RecordKeyType, unknown>,
