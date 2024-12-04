@@ -14,6 +14,7 @@ export * from './public/array/sortByField.js'
 // object
 export * from './public/object/areDeepEqual.js'
 export * from './public/object/convertDateFieldsToIsoString.js'
+export * from './public/object/copyWithoutNullish.js'
 export * from './public/object/deepClone.js'
 export * from './public/object/groupByPath.js'
 export * from './public/object/groupByUnique.js'
