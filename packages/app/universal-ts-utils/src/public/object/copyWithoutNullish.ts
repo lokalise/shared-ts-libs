@@ -13,20 +13,20 @@ type Output<T extends Record<RecordKeyType, unknown>> = Pick<
  * This function iterates over an object's own enumerable properties and creates a new
  * object that excludes properties with `null` or `undefined` values.
  *
- * @param {Record} originalValue - The source object from which to copy properties.
+ * @param {Record} object - The source object from which to copy properties.
  * @returns {Record} A new object containing only the properties from the source object
  *    that do not have `null` or `undefined` values.
  */
 export const copyWithoutNullish = <T extends Record<RecordKeyType, unknown>>(
-  originalValue: T,
+  object: T,
 ): Output<T> =>
-  Object.keys(originalValue).reduce(
+  Object.keys(object).reduce(
     (acc, key) => {
-      const value = originalValue[key]
+      const value = object[key]
       if (value === undefined || value === null) return acc
 
       // TODO: handle nested objects
-      acc[key] = originalValue[key]
+      acc[key] = object[key]
       return acc
     },
     {} as Record<RecordKeyType, unknown>,
