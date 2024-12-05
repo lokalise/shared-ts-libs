@@ -5,6 +5,15 @@ export type PickOptions = {
   keepNull?: boolean
 }
 
+// Type utility to filter out keys based on type `T` and PickOptions `O`
+type FilteredKeys<T, K extends keyof T, O extends PickOptions> = {
+  [P in K]: (O['keepUndefined'] extends false ? (undefined extends T[P] ? never : P) : P) &
+    (O['keepNull'] extends false ? (null extends T[P] ? never : P) : P)
+}[K]
+
+// Main type to conditionally pick properties based on options
+type PickOutput<T, K extends keyof T, O extends PickOptions> = Pick<T, FilteredKeys<T, K, O>>
+
 /**
  * Picks specified properties from an object and returns a new object with those properties.
  *
@@ -24,11 +33,15 @@ export type PickOptions = {
  *
  * @return An object containing the picked properties.
  */
-export const pick = <T extends Record<RecordKeyType, unknown>, K extends keyof T>(
+export const pick = <
+  T extends Record<RecordKeyType, unknown>,
+  K extends keyof T,
+  O extends PickOptions = { keepUndefined: true; keepNull: true },
+>(
   source: T,
   propNames: readonly K[],
-  options?: PickOptions,
-): Pick<T, Exclude<keyof T, Exclude<keyof T, K>>> => {
+  options?: O,
+): PickOutput<T, K, O> => {
   const result = {} as T
 
   for (const prop of propNames) {
