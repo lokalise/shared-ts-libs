@@ -12,6 +12,7 @@ describe('groupByPath', () => {
     id?: number | null
     name: string
     bool: boolean
+    symbol?: symbol
     nested?: {
       code: number
     }
@@ -167,6 +168,58 @@ describe('groupByPath', () => {
   })
 
   it('Correctly groups by number values', () => {
+    const symbolA = Symbol('a')
+    const symbolB = Symbol('b')
+    const input: TestType[] = [
+      {
+        id: 1,
+        name: 'a',
+        bool: true,
+        symbol: symbolA,
+      },
+      {
+        id: 2,
+        name: 'c',
+        bool: false,
+        symbol: symbolB,
+      },
+      {
+        id: 3,
+        name: 'd',
+        bool: false,
+        symbol: symbolA,
+      },
+    ]
+
+    const result: Record<number, TestType[]> = groupByPath(input, 'symbol')
+
+    expect(result).toStrictEqual({
+      [symbolA]: [
+        {
+          id: 1,
+          name: 'a',
+          bool: true,
+          symbol: symbolA,
+        },
+        {
+          id: 3,
+          name: 'd',
+          bool: false,
+          symbol: symbolA,
+        },
+      ],
+      [symbolB]: [
+        {
+          id: 2,
+          name: 'c',
+          bool: false,
+          symbol: symbolB,
+        },
+      ],
+    })
+  })
+
+  it('Correctly groups by symbol values', () => {
     const input: TestType[] = [
       {
         id: 1,
