@@ -25,7 +25,7 @@ describe('pick', () => {
         d: null,
         e: {},
       },
-      ['a', 'f', 'g'],
+      ['a', 'f', 'g'] as any,
     )
 
     expect(result).toStrictEqual({ a: 'a' })
