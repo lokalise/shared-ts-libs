@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { copyWithoutFalsy } from './copyWithoutFalsy.js'
+import { copyWithoutEmpty } from './copyWithoutEmpty.js'
 
-describe('copyWithoutFalsy', () => {
+describe('copyWithoutEmpty', () => {
   it('Does nothing when there are no empty fields', () => {
-    const result = copyWithoutFalsy({
+    const result = copyWithoutEmpty({
       a: 'a',
       b: ' t ',
       c: ' tt',
@@ -27,7 +27,7 @@ describe('copyWithoutFalsy', () => {
   })
 
   it('Removes empty fields', () => {
-    const result = copyWithoutFalsy({
+    const result = copyWithoutEmpty({
       a: undefined,
       b: 'a',
       c: '',

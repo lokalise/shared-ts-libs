@@ -7,13 +7,13 @@ type ExactlyLikeWithDateAsString<T> = T extends object ? { [K in keyof T]: Dates
  * This function retains the structure of the input, ensuring non-Date fields remain unchanged,
  * while Date fields are replaced with their ISO string representations.
  *
- * @param {object | object[]} input - The object or array of objects to convert.
+ * @param {object | object[]} object - The object or array of objects to convert.
  * @returns {object | object[]} A new object or array of objects with Date fields as ISO strings.
  *
  * @example
  *```typescript
  * const obj = { id: 1, created: new Date(), meta: { updated: new Date() } }
- * const result = convertDateFieldsToIsoString(objj)
+ * const result = convertDateFieldsToIsoString(obj)
  * console.log(result) // { id: 1, created: '2024-01-01T00:00:00.000Z', meta: { updated: '2024-01-01T00:00:00.000Z' } }
  * ```
  */
@@ -26,7 +26,9 @@ export function convertDateFieldsToIsoString<Input extends object>(
 export function convertDateFieldsToIsoString<Input extends object>(
   object: Input | Input[],
 ): ExactlyLikeWithDateAsString<Input> | ExactlyLikeWithDateAsString<Input>[] {
-  if (Array.isArray(object)) object.map(internalConvert)
+  if (Array.isArray(object)) {
+    return object.map(internalConvert) as ExactlyLikeWithDateAsString<Input>[]
+  }
 
   return Object.entries(object).reduce(
     (result, [key, value]) => {

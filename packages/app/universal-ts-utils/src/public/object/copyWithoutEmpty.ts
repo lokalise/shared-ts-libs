@@ -8,21 +8,20 @@ type Output<T extends Record<RecordKeyType, unknown>> = Pick<
 >
 
 /**
- * Creates a shallow copy of an object, excluding properties with "falsy" values.
+ * Creates a shallow copy of an object, excluding properties with "empty" values.
  *
- * A "falsy" value includes `null`, `undefined`, empty strings (`''`), and other JavaScript
- * falsy values like `false`, `0`, `NaN`, and `""`. This function specifically removes the
- * explicit `null`, `undefined`, and empty string values.
+ * A "empty" value includes `null`, `undefined`, empty strings (`''`).
  *
  * @param {Record} object - The source object from which to copy properties.
  * @returns {Record} A new object containing only the properties from the source object
  *    that do not have "falsy" values.
  */
-export const copyWithoutFalsy = <T extends Record<RecordKeyType, unknown>>(object: T): Output<T> =>
+export const copyWithoutEmpty = <T extends Record<RecordKeyType, unknown>>(object: T): Output<T> =>
   Object.keys(object).reduce(
     (acc, key) => {
       const value = object[key] as unknown
-      if (!value) return acc
+      if (value === undefined) return acc
+      if (value === null) return acc
       if (typeof value === 'string' && value.trim().length === 0) return acc
 
       // TODO: handle nested objects
