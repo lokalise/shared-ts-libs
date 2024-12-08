@@ -2,7 +2,9 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import {
   type CommonLogger,
   type ErrorReporter,
+  InternalError,
   type TransactionObservabilityManager,
+  globalLogger,
   isError,
 } from '@lokalise/node-core'
 import { resolveGlobalErrorLogObject } from '@lokalise/node-core'
@@ -26,10 +28,10 @@ const DEFAULT_LOCK_TIMEOUT = 120000
 export abstract class AbstractPeriodicJob {
   public readonly jobId: string
   protected readonly options: Required<BackgroundJobConfiguration>
-  protected readonly errorReporter: ErrorReporter
-  protected readonly redis: Redis
+  protected readonly errorReporter?: ErrorReporter
+  protected readonly redis?: Redis
   private readonly logger: CommonLogger
-  private readonly transactionObservabilityManager: TransactionObservabilityManager
+  private readonly transactionObservabilityManager?: TransactionObservabilityManager
   private readonly scheduler: ToadScheduler
   private singleConsumerLock?: Mutex
 
@@ -56,11 +58,18 @@ export abstract class AbstractPeriodicJob {
         ...options.singleConsumerMode,
       },
     }
-    this.logger = logger
+    this.logger = logger ?? globalLogger
     this.redis = redis
     this.transactionObservabilityManager = transactionObservabilityManager
     this.errorReporter = errorReporter
     this.scheduler = scheduler
+
+    if (!redis && options.singleConsumerMode) {
+      throw new InternalError({
+        message: 'Redis instance must be provided in a single consumer mode',
+        errorCode: 'MISSING_SINGLE_CONSUMER_MODE_DEPENDENCY',
+      })
+    }
   }
 
   public register(): void {
@@ -122,7 +131,7 @@ export abstract class AbstractPeriodicJob {
     }
 
     try {
-      this.transactionObservabilityManager.start(this.jobId, executorId)
+      this.transactionObservabilityManager?.start(this.jobId, executorId)
       if (this.options.shouldLogExecution) logger.info('Periodic job started')
 
       await this.processInternal({
@@ -137,7 +146,7 @@ export abstract class AbstractPeriodicJob {
       })
 
       if (isError(err)) {
-        this.errorReporter.report({
+        this.errorReporter?.report({
           error: err,
           context: {
             executorId: executorId,
@@ -148,7 +157,7 @@ export abstract class AbstractPeriodicJob {
       await this.updateLockPostExecution()
 
       if (this.options.shouldLogExecution) logger.info('Periodic job finished')
-      this.transactionObservabilityManager.stop(executorId)
+      this.transactionObservabilityManager?.stop(executorId)
     }
   }
 
@@ -170,7 +179,8 @@ export abstract class AbstractPeriodicJob {
   }
 
   protected getJobMutex(lockSuffix: string, options: LockOptions) {
-    return new Mutex(this.redis, this.getJobLockName(lockSuffix), options)
+    // biome-ignore lint/style/noNonNullAssertion: in single consumer mode we have redis
+    return new Mutex(this.redis!, this.getJobLockName(lockSuffix), options)
   }
 
   protected async tryAcquireExclusiveLock(lockConfiguration?: LockConfiguration) {
@@ -182,7 +192,7 @@ export abstract class AbstractPeriodicJob {
       lockTimeout: lockConfiguration?.lockTimeout ?? this.options.singleConsumerMode.lockTimeout,
       /* v8 ignore next 8 */
       onLockLost: (error) => {
-        this.errorReporter.report({
+        this.errorReporter?.report({
           error,
           context: {
             jobId: this.jobId,
@@ -224,7 +234,8 @@ export abstract class AbstractPeriodicJob {
     refreshInterval?: number,
   ) {
     const newMutex = new Mutex(
-      this.redis,
+      // biome-ignore lint/style/noNonNullAssertion: in single consumer mode we have redis
+      this.redis!,
       this.getJobLockName(lockSuffix ?? DEFAULT_EXCLUSIVE_LOCK_SUFFIX),
       {
         acquiredExternally: true,

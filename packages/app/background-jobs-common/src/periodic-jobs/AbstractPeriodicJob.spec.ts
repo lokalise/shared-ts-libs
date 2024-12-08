@@ -25,6 +25,27 @@ describe('AbstractPeriodicJob', () => {
     await redis.quit()
   })
 
+  it('should throw an error when single producer mode is enabled without redis instance', () => {
+    expect(
+      () =>
+        new FakePeriodicJob(
+          () => Promise.resolve(),
+          {
+            scheduler,
+          },
+          {
+            schedule: {
+              intervalInMs: 1000,
+            },
+            singleConsumerMode: {
+              enabled: true,
+              exclusiveLockSuffix: 'suff',
+            },
+          },
+        ),
+    ).toThrow(/Redis instance must be provided/)
+  })
+
   it('should run processing multiple times', async () => {
     const executionIds: string[] = []
     const processMock = (executionContext: JobExecutionContext) => {
@@ -33,7 +54,6 @@ describe('AbstractPeriodicJob', () => {
     }
     const job = new FakePeriodicJob(processMock, {
       scheduler,
-      redis,
     })
     job.register()
 
@@ -56,7 +76,6 @@ describe('AbstractPeriodicJob', () => {
       processMock,
       {
         scheduler,
-        redis,
       },
       {
         schedule: {

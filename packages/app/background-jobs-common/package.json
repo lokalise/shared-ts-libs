@@ -35,7 +35,7 @@
         "@lokalise/node-core": "^13.1.0",
         "pino": "^9.5.0",
         "redis-semaphore": "^5.6.1",
-        "ts-deepmerge": "^7.0.1"
+        "ts-deepmerge": "^7.0.2"
     },
     "peerDependencies": {
         "bullmq": "^5.28.2",
@@ -45,10 +45,10 @@
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",
         "@lokalise/biome-config": "^1.5.0",
-        "@types/node": "^22.7.6",
+        "@types/node": "^22.10.1",
         "@lokalise/package-vite-config": "latest",
         "@vitest/coverage-v8": "^2.1.5",
-        "bullmq": "^5.28.2",
+        "bullmq": "^5.31.2",
         "ioredis": "^5.4.1",
         "rimraf": "^6.0.1",
         "toad-scheduler": "^3.0.1",
