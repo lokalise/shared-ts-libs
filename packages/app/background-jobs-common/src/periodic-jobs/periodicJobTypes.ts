@@ -72,10 +72,10 @@ export type LockConfiguration = {
 }
 
 export type PeriodicJobDependencies = {
-  redis: Redis
-  logger: CommonLogger
-  transactionObservabilityManager: TransactionObservabilityManager
-  errorReporter: ErrorReporter
+  redis?: Redis
+  logger?: CommonLogger
+  transactionObservabilityManager?: TransactionObservabilityManager
+  errorReporter?: ErrorReporter
   scheduler: ToadScheduler
 }
 
