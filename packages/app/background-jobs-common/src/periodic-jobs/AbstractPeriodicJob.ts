@@ -64,7 +64,7 @@ export abstract class AbstractPeriodicJob {
     this.errorReporter = errorReporter
     this.scheduler = scheduler
 
-    if (!redis && options.singleConsumerMode) {
+    if (!redis && options.singleConsumerMode && options.singleConsumerMode.enabled) {
       throw new InternalError({
         message: 'Redis instance must be provided in a single consumer mode',
         errorCode: 'MISSING_SINGLE_CONSUMER_MODE_DEPENDENCY',
