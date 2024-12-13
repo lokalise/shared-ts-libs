@@ -34,8 +34,8 @@
         "@lokalise/node-core": "^13.1.0"
     },
     "peerDependencies": {
-        "@prisma/client": "^5.0.0",
-        "prisma": "^5.0.0"
+        "@prisma/client": ">=5.0.0 <7.0.0",
+        "prisma": ">=5.0.0 <7.0.0"
     },
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",
