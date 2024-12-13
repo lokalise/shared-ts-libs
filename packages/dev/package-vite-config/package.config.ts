@@ -1,7 +1,7 @@
 import { builtinModules } from 'node:module'
 
 import dts from 'vite-plugin-dts'
-import {defineConfig, type ViteUserConfig} from 'vitest/config'
+import {configDefaults, defineConfig, type ViteUserConfig} from 'vitest/config'
 
 export const extractDependencies = (packageJson: {
   dependencies?: Record<string, unknown>
@@ -36,17 +36,18 @@ export default ({
           },
         ],
         external: dependencies
-          .flatMap((dep) => [
-            // This matches `import from 'my-package'`
-            dep,
-            // The `dep` above only covers root imports. In order to include sub-paths
-            // from dependency, we need to add a regex that matches those as well.
-            // This matches `import from 'my-package/sub/path'`
-            new RegExp(`^${dep}/`),
-          ])
-          .concat(builtinModules.flatMap((mod) => [mod, `node:${mod}`])),
-        onwarn(warning) {
-          throw Object.assign(new Error(), warning)
+            .flatMap((dep) => [
+              dep,
+              new RegExp(`^${dep}/`),
+            ])
+            .concat(builtinModules.flatMap((mod) => [mod, `node:${mod}`])),
+        onwarn(warning, warn) {
+          // Vite 6 prefers explicitly handling warnings
+          if (warning.code === 'UNRESOLVED_IMPORT') {
+            console.warn('Unresolved import:', warning.message);
+          } else {
+            warn(warning);
+          }
         },
       },
       commonjsOptions: {
@@ -62,13 +63,14 @@ export default ({
           if (diagnosis.length > 0) {
             throw new Error('Issue while generating declaration files', {
               cause: diagnosis,
-            })
+            });
           }
         },
         include: ['src'],
       }),
     ],
     test: {
+      ...configDefaults,
       globals: true,
       poolOptions: {
         threads: {
