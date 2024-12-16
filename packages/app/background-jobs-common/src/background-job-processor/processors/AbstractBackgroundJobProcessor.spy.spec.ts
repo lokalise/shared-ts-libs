@@ -42,9 +42,10 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
     })
 
     it('spy contain returnValue', async () => {
+      // Given
       type JobReturn = { result: string }
-
       const returnValue: JobReturn = { result: 'done' }
+
       const processor = new TestReturnValueBackgroundJobProcessor<JobData, JobReturn>(
         deps,
         mocks.getRedisConfig(),
@@ -52,25 +53,30 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
       )
       await processor.start()
 
+      // When
       const jobId = await processor.schedule({
         id: 'test_id',
         value: 'test',
         metadata: { correlationId: 'correlation_id' },
       })
-      const jobSpy = await processor.spy.waitForJobWithId(jobId, 'completed')
 
+      // Then
+      const jobSpy = await processor.spy.waitForJobWithId(jobId, 'completed')
       expect(jobSpy.returnvalue).toMatchObject(returnValue)
 
       await processor.dispose()
     })
 
     it('can await job to be scheduled', async () => {
-      const jobProcessor = new FakeBackgroundJobProcessor<JobData>(
+      // Given
+      const processor = new FakeBackgroundJobProcessor<JobData>(
         deps,
         'queue1',
         mocks.getRedisConfig(),
       )
-      const jobId = await jobProcessor.schedule({
+
+      // When
+      const jobId = await processor.schedule({
         id: '123',
         value: 'val1',
         metadata: {
@@ -78,9 +84,10 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
         },
       })
 
+      // Then
       const [result1, result2] = await Promise.all([
-        jobProcessor.spy.waitForJob((job) => job.value === 'val1', 'scheduled'),
-        jobProcessor.spy.waitForJobWithId(jobId, 'scheduled'),
+        processor.spy.waitForJob((job) => job.value === 'val1', 'scheduled'),
+        processor.spy.waitForJobWithId(jobId, 'scheduled'),
       ])
       expect(result1).toEqual(result2)
       expect(result1.data).toMatchInlineSnapshot(`
@@ -92,6 +99,8 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
 				  "value": "val1",
 				}
 			`)
+
+      await processor.dispose()
     })
   })
 })
