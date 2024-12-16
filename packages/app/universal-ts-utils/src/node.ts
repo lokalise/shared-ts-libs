@@ -22,3 +22,9 @@ export * from './public/object/groupByUnique.js'
 export * from './public/object/isEmpty.js'
 export * from './public/object/pick.js'
 export * from './public/object/transformToKebabCase.js'
+
+// type
+export * from './public/type/hasMessage.js'
+export * from './public/type/isError.js'
+export * from './public/type/isObject.js'
+export * from './public/type/isStandardizedError.js'
