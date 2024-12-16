@@ -178,7 +178,7 @@ export abstract class AbstractBackgroundJobProcessor<
     if (this.isStarted) return Promise.resolve()
 
     if (this.config.lazyInitEnabled === false) {
-      throw new Error('Processor not started, please call `start()` or enable lazy init')
+      throw new Error('Processor not started, please call `start` or enable lazy init')
     }
     return this.start()
   }

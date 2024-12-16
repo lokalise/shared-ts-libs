@@ -51,7 +51,7 @@ describe('AbstractBackgroundJobProcessor', () => {
       await job2.start()
       await expect(
         new FakeBackgroundJobProcessor<JobData>(deps, 'queue1', mocks.getRedisConfig()).start(),
-      ).rejects.toThrow(/Queue id "queue1" is not unique/)
+      ).rejects.toThrowError(/Queue id "queue1" is not unique/)
 
       await job1.dispose()
       await job2.dispose()
@@ -69,6 +69,22 @@ describe('AbstractBackgroundJobProcessor', () => {
       // concurrent start calls
       await expect(Promise.all([processor.start(), processor.start()])).resolves.not.toThrowError()
       await processor.dispose()
+    })
+
+    it('throw error if try to schedule job without starting processor and lazy init disabled', async () => {
+      const processor = new FakeBackgroundJobProcessor<JobData>(
+        deps,
+        'queue1',
+        mocks.getRedisConfig(),
+      )
+
+      await expect(
+        processor.schedule({
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        }),
+      ).rejects.toThrowError(/Processor not started, please call `start` or enable lazy init/)
     })
 
     it('lazy loading on schedule', async () => {
@@ -351,7 +367,7 @@ describe('AbstractBackgroundJobProcessor', () => {
       await successBackgroundJobProcessor.schedule(jobData)
 
       // Then
-      await expect(purgeExecutionPromise).rejects.toThrow(
+      await expect(purgeExecutionPromise).rejects.toThrowError(
         /Job data purge failed: {"type":"Error","message":"Simulated"/,
       )
       expect(successBackgroundJobProcessor.runningPromisesSet).toHaveLength(0)
@@ -544,11 +560,11 @@ describe('AbstractBackgroundJobProcessor', () => {
     })
 
     it('empty states should throw error', async () => {
-      await expect(processor.getJobsInQueue([])).rejects.toThrow('states must not be empty')
+      await expect(processor.getJobsInQueue([])).rejects.toThrowError('states must not be empty')
     })
 
     it('start bigger than end should throw error', async () => {
-      await expect(processor.getJobsInQueue(['active'], 2, 1)).rejects.toThrow(
+      await expect(processor.getJobsInQueue(['active'], 2, 1)).rejects.toThrowError(
         'start must be less than or equal to end',
       )
     })
