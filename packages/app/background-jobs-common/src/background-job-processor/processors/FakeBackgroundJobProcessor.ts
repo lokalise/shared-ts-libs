@@ -21,6 +21,7 @@ export class FakeBackgroundJobProcessor<
     super(
       {
         transactionObservabilityManager: {
+          /* v8 ignore next 4 */
           start: () => {},
           startWithGroup: () => {},
           stop: () => {},

@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/prisma-utils",
-    "version": "3.2.1",
+    "version": "3.2.2",
     "type": "commonjs",
     "license": "Apache-2.0",
     "files": ["dist", "README.md", "LICENSE.md"],
@@ -34,8 +34,8 @@
         "@lokalise/node-core": "^13.1.0"
     },
     "peerDependencies": {
-        "@prisma/client": "^5.0.0",
-        "prisma": "^5.0.0"
+        "@prisma/client": ">=5.0.0 <7.0.0",
+        "prisma": ">=5.0.0 <7.0.0"
     },
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",
