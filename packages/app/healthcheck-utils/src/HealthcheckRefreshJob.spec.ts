@@ -66,6 +66,7 @@ class TestHealthcheck2 extends AbstractHealthcheck<SupportedHealthchecks> implem
 }
 
 const transactionObservabilityManager: TransactionObservabilityManager = {
+  /* v8 ignore next 4 */
   start: () => {},
   startWithGroup: () => {},
   stop: () => {},
