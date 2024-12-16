@@ -24,6 +24,7 @@ export class FakeBackgroundJobProcessor<
           start: () => {},
           startWithGroup: () => {},
           stop: () => {},
+          addCustomAttributes: () => {},
         },
         logger: dependencies.logger,
         errorReporter: dependencies.errorReporter,
