@@ -34,6 +34,7 @@ export class FakeBackgroundJobProcessor<
         ownerName: 'testOwner',
         isTest,
         workerOptions: { concurrency: 1 },
+        lazyInitEnabled: false,
         redisConfig,
       },
     )
