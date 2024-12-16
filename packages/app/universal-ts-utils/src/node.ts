@@ -28,3 +28,5 @@ export * from './public/type/hasMessage.js'
 export * from './public/type/isError.js'
 export * from './public/type/isObject.js'
 export * from './public/type/isStandardizedError.js'
+
+export * from './public/waitAndRetry.js'
