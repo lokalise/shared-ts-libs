@@ -76,6 +76,7 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
       )
 
       // When
+      await processor.start()
       const jobId = await processor.schedule({
         id: '123',
         value: 'val1',
