@@ -39,6 +39,7 @@ export class FakePeriodicJob extends AbstractPeriodicJob {
           start: () => {},
           startWithGroup: () => {},
           stop: () => {},
+          addCustomAttributes: () => {},
         },
         ...dependencies,
       },

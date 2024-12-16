@@ -23,6 +23,7 @@ export class TestBackgroundJobProcessorWithLazyLoading<
           start: () => {},
           startWithGroup: () => {},
           stop: () => {},
+          addCustomAttributes: () => {},
         },
         logger: dependencies.logger,
         errorReporter: dependencies.errorReporter,
