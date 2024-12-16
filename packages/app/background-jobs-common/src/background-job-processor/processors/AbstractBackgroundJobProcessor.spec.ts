@@ -10,6 +10,7 @@ import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/Test
 import type { BaseJobPayload } from '../types'
 
 import type Redis from 'ioredis'
+import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
 
@@ -71,9 +72,8 @@ describe('AbstractBackgroundJobProcessor', () => {
     })
 
     it('lazy loading on schedule', async () => {
-      const processor = new FakeBackgroundJobProcessor<JobData>(
+      const processor = new TestBackgroundJobProcessorWithLazyLoading<JobData>(
         deps,
-        'queue1',
         mocks.getRedisConfig(),
       )
 
@@ -93,9 +93,8 @@ describe('AbstractBackgroundJobProcessor', () => {
     })
 
     it('lazy loading on scheduleBulk', async () => {
-      const processor = new FakeBackgroundJobProcessor<JobData>(
+      const processor = new TestBackgroundJobProcessorWithLazyLoading<JobData>(
         deps,
-        'queue1',
         mocks.getRedisConfig(),
       )
 
@@ -612,7 +611,8 @@ describe('AbstractBackgroundJobProcessor', () => {
   })
 
   describe('getJobCount', () => {
-    it('lazy init + job count works as expected', async () => {
+    it('job count works as expected', async () => {
+      // Given
       const processor = new FakeBackgroundJobProcessor<JobData>(
         deps,
         'queue1',
@@ -621,12 +621,14 @@ describe('AbstractBackgroundJobProcessor', () => {
       await processor.start()
       expect(await processor.getJobCount()).toBe(0)
 
+      // When
       const jobId = await processor.schedule({
         id: 'test_id',
         value: 'test',
         metadata: { correlationId: 'correlation_id' },
       })
 
+      // Then
       expect(await processor.getJobCount()).toBe(1)
       await processor.spy.waitForJobWithId(jobId, 'completed')
       expect(await processor.getJobCount()).toBe(0)
