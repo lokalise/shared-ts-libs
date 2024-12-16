@@ -502,15 +502,15 @@ describe('AbstractBackgroundJobProcessor', () => {
   })
 
   describe('stalled', () => {
-    let processor: TestStalledBackgroundJobProcessor
+    let stalledProcessor: TestStalledBackgroundJobProcessor<JobData>
 
     beforeEach(async () => {
-      processor = new TestStalledBackgroundJobProcessor(deps, mocks.getRedisConfig())
-      await processor.start()
+      stalledProcessor = new TestStalledBackgroundJobProcessor(deps, mocks.getRedisConfig())
+      await stalledProcessor.start()
     })
 
     afterEach(async () => {
-      await processor.dispose()
+      await stalledProcessor.dispose()
     })
 
     it('handling stalled errors', async () => {
@@ -520,15 +520,16 @@ describe('AbstractBackgroundJobProcessor', () => {
       // When
       const jobData = {
         id: generateMonotonicUuid(),
+        value: 'test',
         metadata: { correlationId: generateMonotonicUuid() },
       }
-      const jobId = await processor.schedule(jobData)
+      const jobId = await stalledProcessor.schedule(jobData)
 
       // Then
-      await waitAndRetry(() => processor.onFailedErrors.length > 0, 100, 20)
-      expect(processor?.onFailedErrors).length(1)
+      await waitAndRetry(() => stalledProcessor.onFailedErrors.length > 0, 100, 20)
+      expect(stalledProcessor?.onFailedErrors).length(1)
 
-      const onFailedCall = processor?.onFailedErrors[0]
+      const onFailedCall = stalledProcessor?.onFailedErrors[0]
       expect(onFailedCall.error.message).toBe('job stalled more than allowable limit')
       expect(onFailedCall.job.id).toBe(jobId)
       expect(onFailedCall.job.data.id).toBe(jobData.id)
