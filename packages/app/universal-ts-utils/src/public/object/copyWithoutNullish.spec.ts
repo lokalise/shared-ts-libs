@@ -11,7 +11,14 @@ describe('copyWithoutNullish', () => {
       e: {},
     })
 
-    expect(result).toMatchSnapshot()
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "a": "a",
+        "b": "",
+        "c": " ",
+        "e": {},
+      }
+    `)
   })
 
   it('Removes undefined fields', () => {
