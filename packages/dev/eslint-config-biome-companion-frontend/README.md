@@ -1,15 +1,16 @@
-# eslint-config-biome-companion
+# eslint-config-biome-companion-frontend
 
-This package is an addition to our [biome-config](https://github.com/lokalise/shared-ts-libs/tree/main/packages/dev/biome-config) setup.
+This package is an addition to our [biome-config](https://github.com/lokalise/shared-ts-libs/tree/main/packages/dev/biome-config) setup. It enables enforcement of coding practices not covered by Biome, providing an additional layer of consistency and quality for frontend development.
 
 Currently, the configuration is a copy-paste. In the future, it may become a standalone package.
 
 ### Install dependencies
 
-We are still using ESLint version 8. The packages that we rely on do not yet provide configurations compatible with version 9.
+We are still using ESLint version 8. The packages that we rely on do not yet provide configurations compatible with
+version 9.
 
 ```sh
-npm install --save-dev eslint@8 @typescript-eslint/parser eslint-plugin-testing-library eslint-plugin-i18next @tanstack/eslint-plugin-query
+npm install --save-dev eslint@8 @typescript-eslint/parser eslint-plugin-testing-library eslint-plugin-i18next @tanstack/eslint-plugin-query eslint-plugin-react-compiler
 ```
 
 ### Create eslint config
@@ -45,6 +46,15 @@ Create a new `.eslintrc.json` file within your repository with the following con
       // https://github.com/testing-library/eslint-plugin-testing-library
       "files": ["*.test.tsx"],
       "extends": ["plugin:testing-library/react"]
+    },
+    {
+      // React Compiler setup
+      // https://github.com/facebook/react/tree/main/compiler/packages/eslint-plugin-react-compiler
+      "files": ["*.ts", "*.tsx"],
+      "plugins": ["react-compiler"],
+      "rules": {
+        "react-compiler/react-compiler": "error"
+      }
     }
   ]
 }
