@@ -23,6 +23,9 @@ export * from './public/object/isEmpty.js'
 export * from './public/object/pick.js'
 export * from './public/object/transformToKebabCase.js'
 
+// string
+export * from './public/string/trimText.js'
+
 // type
 export * from './public/type/hasMessage.js'
 export * from './public/type/isError.js'
