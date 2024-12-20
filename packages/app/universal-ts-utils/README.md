@@ -307,3 +307,40 @@ const text = '  Hello, World!  '
 const result = trimText(text) // Returns: { value: 'Hello, World!', prefix: '  ', suffix: '  ' }
 ```
 
+
+### Type Utilities
+This section describes utility functions to work with types efficiently and elegantly.
+
+#### `hasMessage`
+Type guard to determine if a given value is an object with a string property `message`.
+
+```typescript
+const a = hasMessage({ message: 'Hello, world!' }) // true
+const b = hasMessage({ error: 'Hello, world!' }) // true
+```
+
+#### `isError`
+Type guard to determine if a given value is an `Error` object.
+
+```typescript
+const a = new Error('I am an error') // False
+const b = new Error(new Error()) // True
+```
+
+#### `isObject`
+Type guard to determine if a given value is an object.
+
+```typescript
+const a = isObject(obj) // True
+const b = isObject('hello') // False
+```
+
+#### `isStandardizedError`
+Type guard to determine if a given value is a `StandardizedError` object. This function checks whether the provided
+input conforms to the `StandardizedError` structure, which is commonly used in libraries (e.g., Fastify). 
+Specifically, it verifies that the input is an object containing `code` and `message` properties, both of type `string`.
+
+```typescript
+const a = isStandardizedError({ code: 'code', message: 'test' }) // True
+const b = isStandardizedError({ hello: 'world' }) // False
+```
