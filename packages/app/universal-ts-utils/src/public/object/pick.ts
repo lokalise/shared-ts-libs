@@ -32,6 +32,12 @@ type PickOutput<T, K extends keyof T, O extends PickOptions> = Pick<T, FilteredK
  *    - `keepNull`: If false, properties with `null` values are skipped. Defaults to true.
  *
  * @return An object containing the picked properties.
+ *
+ * @example
+ * ```typescript
+ * const source = { a: 1, b: '2' }
+ * const result = pick(source, ['a']) // Returns: { a: 1 }
+ * ```
  */
 export const pick = <
   T extends Record<RecordKeyType, unknown>,

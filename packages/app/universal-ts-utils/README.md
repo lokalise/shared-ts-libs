@@ -199,6 +199,92 @@ const cloned = deepClone(original)
 // cloned will be a deep copy of original, and modifying cloned will not affect original
 ```
 
-#### ``
+#### `groupBy`
+Groups an array of objects based on the value of a specified key. This function iterates over the input array and 
+organizes the objects into groups, where each group is associated with a unique key value obtained from the specified 
+selector.
 
-#### ``
+```typescript
+const users = [
+  { name: 'Alice', age: 30 },
+  { name: 'Bob', age: 25 },
+  { name: 'Charlie', age: 30 }
+]
+const groupedByAge = groupBy(users, 'age')
+// Returns:{
+//   25: [{ name: 'Bob', age: 25 }],
+//   30: [{ name: 'Alice', age: 30 }, { name: 'Charlie', age: 30 }]
+// }
+```
+
+#### `groupByPath`
+Groups an array of objects based on a specified key path. This function supports nested keys, allowing the use of dot 
+notation to group objects by deeply nested properties.
+
+```typescript
+const users = [
+    { name: "A", address: { city: "New York" }, age: 30 },
+    { name: "B", address: { city: "Los Angeles" }, age: 25 },
+    { name: "C", address: { city: "New York" }, age: 35 },
+]
+const usersGroupedByCity = groupByPath(users, 'address.city')
+// Returns:{
+//   "New York": [
+//      { name: "Alice", address: { city: "New York", zipCode: 10001 }, age: 30 },
+//      { name: "Charlie", address: { city: "New York", zipCode: 10001 }, age: 35 }
+//   ],
+//   "Los Angeles": [
+//      { name: "Bob", address: { city: "Los Angeles", zipCode: 90001 }, age: 25 }
+//   ]
+//}
+```
+
+#### `groupByUnique`
+Groups an array of objects based on the unique value of a specified key. This function iterates over the input array 
+and organizes the objects into groups, where each group is associated with a unique key value obtained from the 
+specified selector.
+
+If a duplicate key value is encountered, an error is thrown, ensuring the uniqueness of each key in the output.
+
+```typescript
+const users = [
+  { id: 'a1', name: 'Alice' },
+  { id: 'b2', name: 'Bob' }
+]
+const groupedById = groupByUnique(users, 'id');
+// Returns:{
+//   'a1': { id: 'a1', name: 'Alice' },
+//   'b2': { id: 'b2', name: 'Bob' }
+// }
+```
+
+#### `isEmpty`
+Checks if an object or an array of objects is empty.
+
+- For an object, it is considered empty if it has no own enumerable properties with non-undefined values.
+- For an array, it is considered empty if all objects within it are empty by the same criteria.
+
+```typescript
+const emptyObject = {}
+const isEmptyObj = isEmpty(emptyObject) // true
+```
+
+#### `pick`
+Picks specified properties from an object and returns a new object with those properties. This function allows you to
+create a subset of an object by specifying which properties should be picked. You can also control whether properties
+with `undefined` or `null` values should be included in the result through the options parameter.
+
+```typescript
+const source = { a: 1, b: '2' }
+const result = pick(source, ['a']) // Returns: { a: 1 }
+```
+
+#### `transformToKebabCase`
+Transforms the keys of an object or array of objects from camelCase or snake_case to kebab-case. This transformation
+is applied recursively, ensuring any nested objects are also processed. Non-object inputs are returned unchanged.
+
+```typescript
+const obj = { myId: 1, creationId: 1, metaObj: { updateId: 1 } }
+const result = transformToKebabCase(obj)
+console.log(result) // Returns: { 'my-id': 1, 'creation-date': 1, meta-obj: { 'update-date': 1 } }
+```

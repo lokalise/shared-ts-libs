@@ -8,6 +8,12 @@ import type { RecordKeyType } from '../../internal/types.js'
  *
  * @param {Record| Record[]} obj - The object or array of objects to evaluate.
  * @returns {boolean} Returns `true` if the object or every object within the array is empty, `false` otherwise.
+ *
+ * @example
+ * ```typescript
+ * const emptyObject = {}
+ * const isEmptyObj = isEmpty(emptyObject) // true
+ * ```
  */
 export const isEmpty = (
   obj: Record<RecordKeyType, unknown> | Record<RecordKeyType, unknown>[],
