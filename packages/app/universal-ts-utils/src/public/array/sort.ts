@@ -11,6 +11,12 @@ import { compare } from '../../internal/compare.js'
  *
  * @remarks This function returns a copy of the original array that is sorted according to the specified order.
  * It does not modify the input array, making it safe to use without side effects.
+ *
+ * @example
+ * ```typescript
+ * const a = sort([3, 1, 2]) // Returns: [1, 2, 3]
+ * const b = sort([3, 1, 2], 'desc') // Returns: [3, 2, 1]
+ * ```
  */
 export const sort = <T extends string[] | number[]>(array: T, order: 'asc' | 'desc' = 'asc'): T => {
   if (array.length < 2) return array

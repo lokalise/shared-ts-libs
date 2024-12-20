@@ -9,7 +9,7 @@
  * @example
  * ```typescript
  * const numbers = [1, 2, 3, 4, 5]
- * const result = chunk(numbers, 2) // returns [[1, 2], [3, 4], [5]]
+ * const result = chunk(numbers, 2) // Returns: [[1, 2], [3, 4], [5]]
  * ```
  */
 export const chunk = <T>(array: T[], chunkSize: number): T[][] => {

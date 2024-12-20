@@ -18,16 +18,9 @@ import type { KeysMatching } from '../../internal/types.js'
  *
  * @example
  * ```typescript
- * const data = [
- *   { name: 'Zara', age: 22 },
- *   { name: 'Alex', age: 30 },
- *   { name: 'John', age: 25 }
- * ];
- *
- * // Sort by 'name'
+ * const data = [ { name: 'Zara', age: 22 },  { name: 'Alex', age: 30 }, { name: 'John', age: 25 } ]
  * const sortedByName = sortByField(data, 'name')
- * // Output: [ { name: 'Alex', age: 30 }, { name: 'John', age: 25 }, { name: 'Zara', age: 22 } ]
- * console.log(sortedByName)
+ * // Returns: [ { name: 'Alex', age: 30 }, { name: 'John', age: 25 }, { name: 'Zara', age: 22 } ]
  * ```
  */
 export const sortByField = <T extends object, K extends KeysMatching<T, string | number>>(

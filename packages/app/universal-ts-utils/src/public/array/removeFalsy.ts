@@ -8,7 +8,7 @@
  * @example
  * ```typescript
  * const array = [1, 0, 'hello', '', false, true, null, undefined]
- * const result = removeFalsy(array) // returns [1, 'hello', true]
+ * const result = removeFalsy(array) // Returns: [1, 'hello', true]
  * ``
  */
 export const removeFalsy = <const T>(
