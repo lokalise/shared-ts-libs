@@ -6,6 +6,8 @@ Isomorphic general-purpose TS utils
 
 The `universal-ts-utils` package provides a set of isomorphic, general-purpose TypeScript utilities for various common tasks.
 
+
+
 ## Usage
 
 This package is designed to be used in both client (frontend) and server (backend) environments. For optimization purposes, 
@@ -28,6 +30,8 @@ import { chunk } from '@lokalise/universal-ts-utils/array/chunk.js';
 ```typescript
 import { chunk } from '@lokalise/universal-ts-utils/node';
 ```
+
+
 
 ## Methods
 
@@ -120,6 +124,7 @@ Returns a new array containing only unique elements from the given array while p
 const numbers = [1, 2, 2, 3, 4, 4, 5]
 const result = unique(numbers) // Returns: [1, 2, 3, 4, 5]
 ```
+
 
 ### Object Utilities
 This section describes utility functions to work with objects efficiently and elegantly.
@@ -288,3 +293,17 @@ const obj = { myId: 1, creationId: 1, metaObj: { updateId: 1 } }
 const result = transformToKebabCase(obj)
 console.log(result) // Returns: { 'my-id': 1, 'creation-date': 1, meta-obj: { 'update-date': 1 } }
 ```
+
+
+### String Utilities
+This section describes utility functions to work with strings efficiently and elegantly.
+
+#### `trimText`
+Trims whitespace and `&nbsp;` characters from the beginning and end of a given string. Extracts and provides the 
+removed part as `prefix` and `suffix` properties.
+
+```typescript
+const text = '  Hello, World!  '
+const result = trimText(text) // Returns: { value: 'Hello, World!', prefix: '  ', suffix: '  ' }
+```
+
