@@ -344,3 +344,18 @@ Specifically, it verifies that the input is an object containing `code` and `mes
 const a = isStandardizedError({ code: 'code', message: 'test' }) // True
 const b = isStandardizedError({ hello: 'world' }) // False
 ```
+
+
+### Other Utilities
+This section describes other utility functions included in this package.
+
+#### `waitAndRetry`
+Asynchronously retries a predicate function until it returns a truthy value or the maximum number of retries is
+reached.
+
+```typescript
+const conditionMet = () => Math.random() > 0.9
+waitAndRetry(conditionMet, 50, 10)
+  .then((result) => { console.log('Condition met:', result) })
+  .catch((error) => { console.error('An error occurred:', error) })
+```
