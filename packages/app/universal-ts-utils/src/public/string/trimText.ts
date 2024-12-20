@@ -45,6 +45,12 @@ export type TrimmedText = {
  *   - `value`: the trimmed string with leading and trailing whitespace and `&nbsp;` removed.
  *   - `prefix`: the leading whitespace and `&nbsp;` characters that were removed, if any.
  *   - `suffix`: the trailing whitespace and `&nbsp;` characters that were removed, if any.
+ *
+ * @example
+ * ```typescript
+ * const text = '  Hello, World!  '
+ * const result = trimText(text) // Returns: { value: 'Hello, World!', prefix: '  ', suffix: '  ' }
+ * ```
  */
 export const trimText = (text: string): TrimmedText => ({
   value: text.replace(leadingRegex, '').replace(trailingRegex, ''),

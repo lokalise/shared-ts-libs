@@ -8,14 +8,23 @@ type Output<T extends Record<RecordKeyType, unknown>> = Pick<
 >
 
 /**
- * Creates a shallow copy of an object, excluding properties with `null` or `undefined` values.
+ * Creates a shallow copy of an object, excluding properties with nullish values.
  *
- * This function iterates over an object's own enumerable properties and creates a new
- * object that excludes properties with `null` or `undefined` values.
+ * @template T - The type of the source object.
+ * @param {T} object - The source object from which to copy properties.
+ * @returns {Output<T>} A new object containing only the non-nullish properties from the source object.
  *
- * @param {Record} object - The source object from which to copy properties.
- * @returns {Record} A new object containing only the properties from the source object
- *    that do not have `null` or `undefined` values.
+ * @example
+ * ```typescript
+ * const source = {
+ *   name: 'Alice',
+ *   age: null,
+ *   occupation: 'Explorer',
+ *   location: undefined,
+ *   status: 'Active'
+ * }
+ * const result = copyWithoutNullish(source) // Returns: { name: 'Alice', occupation: 'Explorer', status: 'Active' }
+ * ```
  */
 export const copyWithoutNullish = <T extends Record<RecordKeyType, unknown>>(
   object: T,

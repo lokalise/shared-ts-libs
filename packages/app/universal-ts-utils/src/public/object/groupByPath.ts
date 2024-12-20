@@ -19,18 +19,15 @@ import type { RecordKeyType } from '../../internal/types.js'
  *     { name: "C", address: { city: "New York" }, age: 35 },
  * ]
  * const usersGroupedByCity = groupByPath(users, 'address.city')
- *
- * console.log(usersGroupedByCity)
- * Output:
- * {
- *     "New York": [
- *         { name: "Alice", address: { city: "New York", zipCode: 10001 }, age: 30 },
- *         { name: "Charlie", address: { city: "New York", zipCode: 10001 }, age: 35 }
- *     ],
- *     "Los Angeles": [
- *         { name: "Bob", address: { city: "Los Angeles", zipCode: 90001 }, age: 25 }
- *     ]
- * }
+ * // Returns:{
+ * //   "New York": [
+ * //      { name: "Alice", address: { city: "New York", zipCode: 10001 }, age: 30 },
+ * //      { name: "Charlie", address: { city: "New York", zipCode: 10001 }, age: 35 }
+ * //   ],
+ * //   "Los Angeles": [
+ * //      { name: "Bob", address: { city: "Los Angeles", zipCode: 90001 }, age: 25 }
+ * //   ]
+ * //}
  * ```
  */
 export const groupByPath = <T extends object>(

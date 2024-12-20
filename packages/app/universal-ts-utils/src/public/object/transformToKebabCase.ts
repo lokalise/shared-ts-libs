@@ -15,7 +15,7 @@ type TransformToKebabCaseReturnType<Input, Output> = Input extends Record<string
  * ```typescript
  * const obj = { myId: 1, creationId: 1, metaObj: { updateId: 1 } }
  * const result = transformToKebabCase(obj)
- * console.log(result) // { 'my-id': 1, 'creation-date': 1, meta-obj: { 'update-date': 1 } }
+ * console.log(result) // Returns: { 'my-id': 1, 'creation-date': 1, meta-obj: { 'update-date': 1 } }
  * ```
  */
 export function transformToKebabCase<

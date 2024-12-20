@@ -9,12 +9,23 @@ type Output<T extends Record<RecordKeyType, unknown>> = Pick<
 
 /**
  * Creates a shallow copy of an object, excluding properties with "empty" values.
+ * An "empty" value includes `null`, `undefined`, and empty strings (`''`).
  *
- * A "empty" value includes `null`, `undefined`, empty strings (`''`).
+ * @template T - The type of the source object.
+ * @param {T} object - The source object from which to copy properties.
+ * @returns {Output<T>} A new object containing only the non-empty properties from the source object.
  *
- * @param {Record} object - The source object from which to copy properties.
- * @returns {Record} A new object containing only the properties from the source object
- *    that do not have "falsy" values.
+ * @example
+ * ```typescript
+ * const source = {
+ *   name: 'Alice',
+ *   age: null,
+ *   occupation: '',
+ *   location: 'Wonderland',
+ *   status: undefined
+ * }
+ * const result = copyWithoutEmpty(source); // Returns: { name: 'Alice', location: 'Wonderland' }
+ * ```
  */
 export const copyWithoutEmpty = <T extends Record<RecordKeyType, unknown>>(object: T): Output<T> =>
   Object.keys(object).reduce(
