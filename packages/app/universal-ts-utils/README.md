@@ -32,11 +32,9 @@ import { chunk } from '@lokalise/universal-ts-utils/node';
 ## Methods
 
 ### Array Utilities
-
 This section describes utility functions to work with arrays efficiently and elegantly.
 
 #### `callChunked`
-
 A utility method to process an array in chunks asynchronously.
 
 ```typescript
@@ -52,7 +50,6 @@ callChunked(3, items, processChunk)
 ```
 
 #### `chunk`
-
 Divides the original array into smaller arrays, each of the specified `chunkSize`.
 
 ```typescript
@@ -61,7 +58,6 @@ const result = chunk(numbers, 2) // Returns: [[1, 2], [3, 4], [5]]
 ```
 
 #### `isNonEmptyArray`
-
 Checks if the given array is non-empty. This function acts as a type guard to confirm that the array contains at least 
 one element, and it refines the type to a tuple, indicating that the first element exists. This is useful to ensure 
 operations are not performed on empty arrays, providing type-level assurances.
@@ -75,7 +71,6 @@ if (isNonEmptyArray(array)) {
 ```
 
 #### `removeFalsy`
-
 Removes all falsy values from an array and returns a new array containing only truthy values.
 
 ```typescript
@@ -84,7 +79,6 @@ const result = removeFalsy(array) // Returns: [1, 'hello', true]
 ```
 
 #### `removeNullish`
-
 Removes all nullish values from an array and returns a new array containing only non-nullish elements.
 
 ```typescript
@@ -93,7 +87,6 @@ const result = removeNullish(array) // Returns: [1, 'hello', true]
 ```
 
 #### `sort`
-
 Sorts an array of strings or numbers in either ascending or descending order. This function returns a sorted copy of 
 the original array and does not modify the input, making it safe to use without side effects.
 
@@ -103,7 +96,6 @@ const b = sort([3, 1, 2], 'desc') // Returns: [3, 2, 1]
 ```
 
 #### `sortByField`
-
 Sorts an array of objects based on a specified field and order. This function returns a sorted copy of the original 
 array and does not affect the original, ensuring no side effects.
 
@@ -122,7 +114,6 @@ const sortedByName = sortByField(data, 'name')
 ```
 
 #### `unique`
-
 Returns a new array containing only unique elements from the given array while preserving the order of first occurrence.
 
 ```typescript
