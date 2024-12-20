@@ -1,5 +1,5 @@
 /**
- * Determines if two unknown values are deeply equal. This function handles primitive types,
+ * Determines if two values are deeply equal. This function handles primitive types,
  * arrays, and objects. For arrays and objects, it performs a recursive equality check.
  *
  * @param {unknown} a - The first value to compare. Can be of any type including array and object.

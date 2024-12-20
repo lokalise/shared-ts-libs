@@ -120,3 +120,85 @@ Returns a new array containing only unique elements from the given array while p
 const numbers = [1, 2, 2, 3, 4, 4, 5]
 const result = unique(numbers) // Returns: [1, 2, 3, 4, 5]
 ```
+
+### Object Utilities
+This section describes utility functions to work with objects efficiently and elegantly.
+
+#### `areDeepEqual`
+Determines if two values are deeply equal. This function handles primitive types, arrays, and objects. For arrays and 
+objects, it performs a recursive equality check.
+
+```typescript
+areDeepEqual(1, 1) // true
+areDeepEqual([1, 2], [1, 2]) // true
+areDeepEqual({ name: 'John' }, { name: 'John' }) // true
+areDeepEqual(null, null) // true
+areDeepEqual(undefined, null) // false
+areDeepEqual([1, [2, 3]], [1, [2, 3]]) // true
+areDeepEqual([{ id: 1 }], [{ id: 1 }]) // true
+```
+
+#### `convertDateFieldsToIsoString`
+Recursively converts all Date fields in an object or array of objects to ISO string format. This function retains the
+structure of the input, ensuring non-Date fields remain unchanged, while Date fields are replaced with their ISO string 
+representations.
+
+```typescript
+const obj = { id: 1, created: new Date(), meta: { updated: new Date() } }
+const result = convertDateFieldsToIsoString(obj)
+// Returns: { 
+//   id: 1,
+//   created: '2024-01-01T00:00:00.000Z', 
+//   meta: { updated: '2024-01-01T00:00:00.000Z' }
+// }
+```
+
+#### `copyWithoutEmpty`
+Creates a shallow copy of an object, excluding properties with "empty" values. An "empty" value includes `null`, 
+`undefined`, and empty strings (`''`).
+
+```typescript
+const source = {
+  name: 'Alice',
+  age: null,
+  occupation: '',
+  location: 'Wonderland',
+  status: undefined
+}
+const result = copyWithoutEmpty(source); // Returns: { name: 'Alice', location: 'Wonderland' }
+```
+
+#### `copyWithoutNullish`
+Creates a shallow copy of an object, excluding properties with nullish values.
+
+```typescript
+const source = {
+  name: 'Alice',
+  age: null,
+  occupation: 'Explorer',
+  location: undefined,
+  status: 'Active'
+}
+const result = copyWithoutNullish(source) // Returns: { name: 'Alice', occupation: 'Explorer', status: 'Active' }
+```
+
+#### `deepClone`
+Returns a deep cloned copy of an object.
+
+This function utilizes the `structuredClone` method, which is capable of deep cloning complex objects, including
+nested structures. However, it has limitations and does not support cloning functions, Error objects, WeakMap,
+WeakSet, DOM nodes, and certain other browser-specific objects like Window.
+
+When using this methid be aware of `structuredClone` limitations, be aware of its limitations. It cannot clone 
+functions, Error objects, certain web platform objects, and symbols, among others. For such cases, consider using 
+custom cloning logic.
+
+```typescript
+const original = { name: 'Alice', details: { age: 30 } }
+const cloned = deepClone(original)
+// cloned will be a deep copy of original, and modifying cloned will not affect original
+```
+
+#### ``
+
+#### ``
