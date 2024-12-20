@@ -7,8 +7,8 @@
  *
  * @example
  * ```typescript
- * const array = [1, null, 'hello', undefined, true]
- * const result = removeNullish(mixedArray)  // Returns: [1, 'hello', true]
+ * const array = [1, null, 'hello', undefined, true, false, '']
+ * const result = removeNullish(array) // Returns: [1, 'hello', true, false, '']
  * ```
  */
 export const removeNullish = <const T>(array: readonly (T | null | undefined)[]): T[] =>

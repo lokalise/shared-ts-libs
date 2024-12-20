@@ -1,6 +1,8 @@
 /**
  * Returns a new array containing only unique elements from the given array, preserving the order.
  *
+ * This function uses a `Set` to store unique elements and then converts it back to an array.
+ *
  * @template T - The type of elements in the input array.
  * @param {T[]} arr - The array from which to remove duplicate values.
  * @returns {T[]} - A new array containing only unique elements from the original array.

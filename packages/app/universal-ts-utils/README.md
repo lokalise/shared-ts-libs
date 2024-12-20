@@ -86,8 +86,8 @@ const result = removeFalsy(array) // Returns: [1, 'hello', true]
 Removes all nullish values from an array and returns a new array containing only non-nullish elements.
 
 ```typescript
-const array = [1, null, 'hello', undefined, true]
-const result = removeNullish(array) // Returns: [1, 'hello', true]
+const array = [1, null, 'hello', undefined, true, false, '']
+const result = removeNullish(array) // Returns: [1, 'hello', true, false, '']
 ```
 
 #### `sort`
@@ -119,6 +119,7 @@ const sortedByName = sortByField(data, 'name')
 
 #### `unique`
 Returns a new array containing only unique elements from the given array while preserving the order of first occurrence.
+This function uses a `Set` to store unique elements and then converts it back to an array.
 
 ```typescript
 const numbers = [1, 2, 2, 3, 4, 4, 5]
@@ -328,7 +329,7 @@ const b = new Error(new Error()) // True
 ```
 
 #### `isObject`
-Type guard to determine if a given value is an object.
+Type guard to determine if a given value is a non-null object in TypeScript.
 
 ```typescript
 const a = isObject(obj) // True
