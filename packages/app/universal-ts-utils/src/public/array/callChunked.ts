@@ -27,11 +27,11 @@
  *   });
  * ```
  */
-export async function callChunked<Item>(
+export const callChunked = async <Item>(
   chunkSize: number,
   array: readonly Item[],
   processFn: (arrayChunk: Item[]) => Promise<void> | void,
-): Promise<void> {
+): Promise<void> => {
   for (let i = 0; i < array.length; i += chunkSize) {
     const arrayChunk = array.slice(i, i + chunkSize)
     await processFn(arrayChunk)
