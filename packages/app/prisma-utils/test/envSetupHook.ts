@@ -1,1 +1,1 @@
-process.loadEnvFile('./.env.test')
+process.loadEnvFile('./.env')
