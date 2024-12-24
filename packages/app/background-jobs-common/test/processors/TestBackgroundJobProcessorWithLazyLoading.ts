@@ -1,12 +1,13 @@
-import { CommonBullmqFactory } from '../factories/CommonBullmqFactory'
-import type { BaseJobPayload } from '../types'
-
 import type { RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
-import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor'
-import type { BackgroundJobProcessorDependencies } from './types'
+import {
+  AbstractBackgroundJobProcessor,
+  type BackgroundJobProcessorDependencies,
+  type BaseJobPayload,
+  CommonBullmqFactory,
+} from '../../src'
 
-export class FakeBackgroundJobProcessor<
+export class TestBackgroundJobProcessorWithLazyLoading<
   JobData extends BaseJobPayload,
 > extends AbstractBackgroundJobProcessor<JobData> {
   constructor(
@@ -14,14 +15,11 @@ export class FakeBackgroundJobProcessor<
       BackgroundJobProcessorDependencies<JobData>,
       'bullmqFactory' | 'transactionObservabilityManager'
     >,
-    queueName: string,
     redisConfig: RedisConfig,
-    isTest = true,
   ) {
     super(
       {
         transactionObservabilityManager: {
-          /* v8 ignore next 4 */
           start: () => {},
           startWithGroup: () => {},
           stop: () => {},
@@ -32,11 +30,10 @@ export class FakeBackgroundJobProcessor<
         bullmqFactory: new CommonBullmqFactory(),
       },
       {
-        queueId: queueName,
+        queueId: 'TestBackgroundJobProcessorWithLazyLoading',
         ownerName: 'testOwner',
-        isTest,
+        isTest: true,
         workerOptions: { concurrency: 1 },
-        lazyInitEnabled: false,
         redisConfig,
       },
     )

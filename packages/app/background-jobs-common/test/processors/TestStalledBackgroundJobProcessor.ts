@@ -7,19 +7,17 @@ import {
   type BaseJobPayload,
 } from '../../src'
 
-type Data = {
-  id?: string
-} & BaseJobPayload
-
-type OnFailedError = {
+type OnFailedError<T> = {
   error: Error
-  job: Job<Data>
+  job: Job<T>
 }
 
-export class TestStalledBackgroundJobProcessor extends AbstractBackgroundJobProcessor<Data> {
-  private _onFailedErrors: OnFailedError[] = []
+export class TestStalledBackgroundJobProcessor<
+  T extends BaseJobPayload,
+> extends AbstractBackgroundJobProcessor<T> {
+  private _onFailedErrors: OnFailedError<T>[] = []
 
-  constructor(dependencies: BackgroundJobProcessorDependencies<Data>, redisConfig: RedisConfig) {
+  constructor(dependencies: BackgroundJobProcessorDependencies<T>, redisConfig: RedisConfig) {
     super(dependencies, {
       queueId: 'TestStalledBackgroundJobProcessor queue',
       ownerName: 'test',
@@ -32,7 +30,7 @@ export class TestStalledBackgroundJobProcessor extends AbstractBackgroundJobProc
     })
   }
 
-  schedule(jobData: Data): Promise<string> {
+  schedule(jobData: T): Promise<string> {
     return super.schedule(jobData, {
       attempts: 1,
       backoff: { type: 'fixed', delay: 1 },
@@ -45,12 +43,12 @@ export class TestStalledBackgroundJobProcessor extends AbstractBackgroundJobProc
     return new Promise((resolve) => setTimeout(resolve, 1000))
   }
 
-  protected override onFailed(job: Job<Data>, error: Error): Promise<void> {
+  protected override onFailed(job: Job<T>, error: Error): Promise<void> {
     this._onFailedErrors.push({ job, error })
     return Promise.resolve()
   }
 
-  get onFailedErrors(): OnFailedError[] {
+  get onFailedErrors(): OnFailedError<T>[] {
     return this._onFailedErrors
   }
 
