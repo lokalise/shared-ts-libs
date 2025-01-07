@@ -232,8 +232,11 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   public async dispose(): Promise<void> {
+    if (!this.isStarted) return
+
     try {
-      await this._worker?.close(this.config.isTest) // On test forcing the worker to close to not wait for current job to finish
+      // On test forcing the worker to close to not wait for current job to finish
+      await this._worker?.close(this.config.isTest)
       await this._queue?.close()
       await Promise.allSettled(this.runningPromises)
     } catch {
