@@ -15,23 +15,19 @@
  * const items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
  *
  * async function processChunk(chunk: number[]): Promise<void> {
- *   console.log('Processing chunk', chunk);
+ *   console.log('Processing chunk', chunk)
  * }
  *
  * callChunked(3, items, processChunk)
- *   .then(() => {
- *     console.log('All chunks processed');
- *   })
- *   .catch((error) => {
- *     console.error('Error processing chunks:', error);
- *   });
+ *   .then(() => { console.log('All chunks processed') })
+ *   .catch((error) => { console.error('Error processing chunks:', error) })
  * ```
  */
-export async function callChunked<Item>(
+export const callChunked = async <Item>(
   chunkSize: number,
   array: readonly Item[],
   processFn: (arrayChunk: Item[]) => Promise<void> | void,
-): Promise<void> {
+): Promise<void> => {
   for (let i = 0; i < array.length; i += chunkSize) {
     const arrayChunk = array.slice(i, i + chunkSize)
     await processFn(arrayChunk)
