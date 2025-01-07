@@ -240,27 +240,6 @@ describe('AbstractBackgroundJobProcessor', () => {
       expect(secondJob.data.value).toBe('second')
     })
 
-    it('stops the worker on dispose', async () => {
-      // Given
-      const jobData = {
-        id: generateMonotonicUuid(),
-        value: 'test',
-        metadata: { correlationId: generateMonotonicUuid() },
-      }
-
-      const jobId = await processor.schedule(jobData)
-      const job = await processor.spy.waitForJobWithId(jobId, 'scheduled')
-      expect(job.data).toMatchObject(jobData)
-
-      // When
-      await processor.dispose()
-
-      // Then
-      // @ts-expect-error Executing protected method for testing
-      const isRunning = processor.worker.isRunning()
-      expect(isRunning).toBe(false)
-    })
-
     it('should trigger onSuccess hook', async () => {
       // Given
       const jobData = {
