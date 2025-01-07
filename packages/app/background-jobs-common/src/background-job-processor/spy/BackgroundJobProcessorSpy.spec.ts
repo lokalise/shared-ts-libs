@@ -2,6 +2,7 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { Job } from 'bullmq'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { isPromiseFinished } from '../../../test/isPromiseFinished'
 import { BackgroundJobProcessorSpy } from './BackgroundJobProcessorSpy'
 
 type JobData = { value: string }
@@ -196,13 +197,6 @@ describe('BackgroundJobProcessorSpy', () => {
     })
   })
 })
-
-const isPromiseFinished = <T>(promise: Promise<T>): Promise<boolean> => {
-  return Promise.race<boolean>([
-    new Promise<boolean>((done) => setTimeout(() => done(false), 1000)),
-    promise.then(() => true).catch(() => true),
-  ])
-}
 
 const createFakeJob = <JobData, JobReturn>(
   data: JobData,

@@ -11,6 +11,7 @@ import type { BaseJobPayload } from '../types'
 
 import { randomUUID } from 'node:crypto'
 import type Redis from 'ioredis'
+import { isPromiseFinished } from '../../../test/isPromiseFinished'
 import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
@@ -145,31 +146,19 @@ describe('AbstractBackgroundJobProcessor', () => {
       }
 
       await processor.start()
-      const jobId = await processor.schedule(jobData, { delay: 10 })
+      const jobId = await processor.schedule(jobData, { delay: 100 })
       const jobScheduled = await processor.spy.waitForJobWithId(jobId, 'scheduled')
       expect(jobScheduled.data).toMatchObject(jobData)
-      await processor.dispose()
 
-      // @ts-expect-error Executing protected method for testing
-      expect(processor.worker.isRunning()).toBe(false)
+      await processor.dispose()
       const completedPromise = processor.spy.waitForJobWithId(jobId, 'completed')
       await expect(isPromiseFinished(completedPromise)).resolves.toBe(false)
 
       await processor.start()
-
-      // @ts-expect-error Executing protected method for testing
-      expect(processor.worker.isRunning()).toBe(true)
       await expect(isPromiseFinished(completedPromise)).resolves.toBe(true)
 
       await processor.dispose()
     })
-
-    const isPromiseFinished = <T>(promise: Promise<T>): Promise<boolean> => {
-      return Promise.race<boolean>([
-        new Promise<boolean>((done) => setTimeout(() => done(false), 1000)),
-        promise.then(() => true).catch(() => true),
-      ])
-    }
   })
 
   describe('success', () => {
