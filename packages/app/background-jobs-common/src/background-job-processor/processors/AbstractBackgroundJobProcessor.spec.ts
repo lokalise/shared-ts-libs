@@ -133,8 +133,16 @@ describe('AbstractBackgroundJobProcessor', () => {
     })
 
     it('restart processor after dispose', async () => {
-      const processor = new FakeBackgroundJobProcessor<JobData>(deps, randomUUID(), mocks.getRedisConfig())
-      const jobData = {id: generateMonotonicUuid(), value: 'test', metadata: { correlationId: generateMonotonicUuid() }}
+      const processor = new FakeBackgroundJobProcessor<JobData>(
+        deps,
+        randomUUID(),
+        mocks.getRedisConfig(),
+      )
+      const jobData = {
+        id: generateMonotonicUuid(),
+        value: 'test',
+        metadata: { correlationId: generateMonotonicUuid() },
+      }
 
       await processor.start()
       const jobId = await processor.schedule(jobData, { delay: 10 })
@@ -152,6 +160,8 @@ describe('AbstractBackgroundJobProcessor', () => {
       // @ts-expect-error Executing protected method for testing
       expect(processor.worker.isRunning()).toBe(true)
       await expect(isPromiseFinished(completedPromise)).resolves.toBe(true)
+
+      await processor.dispose()
     })
 
     const isPromiseFinished = <T>(promise: Promise<T>): Promise<boolean> => {
