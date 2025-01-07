@@ -131,6 +131,35 @@ describe('AbstractBackgroundJobProcessor', () => {
       })
       await processor.dispose()
     })
+
+    it('restart processor after dispose', async () => {
+      const processor = new FakeBackgroundJobProcessor<JobData>(deps, randomUUID(), mocks.getRedisConfig())
+      const jobData = {id: generateMonotonicUuid(), value: 'test', metadata: { correlationId: generateMonotonicUuid() }}
+
+      await processor.start()
+      const jobId = await processor.schedule(jobData, { delay: 10 })
+      const jobScheduled = await processor.spy.waitForJobWithId(jobId, 'scheduled')
+      expect(jobScheduled.data).toMatchObject(jobData)
+      await processor.dispose()
+
+      // @ts-expect-error Executing protected method for testing
+      expect(processor.worker.isRunning()).toBe(false)
+      const completedPromise = processor.spy.waitForJobWithId(jobId, 'completed')
+      await expect(isPromiseFinished(completedPromise)).resolves.toBe(false)
+
+      await processor.start()
+
+      // @ts-expect-error Executing protected method for testing
+      expect(processor.worker.isRunning()).toBe(true)
+      await expect(isPromiseFinished(completedPromise)).resolves.toBe(true)
+    })
+
+    const isPromiseFinished = <T>(promise: Promise<T>): Promise<boolean> => {
+      return Promise.race<boolean>([
+        new Promise<boolean>((done) => setTimeout(() => done(false), 1000)),
+        promise.then(() => true).catch(() => true),
+      ])
+    }
   })
 
   describe('success', () => {
