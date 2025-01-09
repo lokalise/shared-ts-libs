@@ -169,17 +169,21 @@ export abstract class AbstractBackgroundJobProcessor<
   public async start(): Promise<void> {
     if (this.isStarted) return // if it is already started -> skip
 
-    if (!this.startPromise) this.startPromise = this.internalInit()
+    if (!this.startPromise) this.startPromise = this.internalStart()
     await this.startPromise
     this.startPromise = undefined
   }
 
   private startIfNotStarted(): Promise<void> {
-    if (!this.isStarted) return this.start()
-    return Promise.resolve()
+    if (this.isStarted) return Promise.resolve()
+
+    if (this.config.lazyInitEnabled === false) {
+      throw new Error('Processor not started, please call `start` or enable lazy init')
+    }
+    return this.start()
   }
 
-  private async internalInit(): Promise<void> {
+  private async internalStart(): Promise<void> {
     await this.monitor.registerQueue()
 
     this._queue = this.factory.buildQueue(this.config.queueId, {
@@ -228,8 +232,11 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   public async dispose(): Promise<void> {
+    if (!this.isStarted) return
+
     try {
-      await this._worker?.close(this.config.isTest) // On test forcing the worker to close to not wait for current job to finish
+      // On test forcing the worker to close to not wait for current job to finish
+      await this._worker?.close(this.config.isTest)
       await this._queue?.close()
       await Promise.allSettled(this.runningPromises)
     } catch {
