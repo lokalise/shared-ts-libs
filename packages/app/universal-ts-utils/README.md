@@ -61,6 +61,28 @@ const numbers = [1, 2, 3, 4, 5]
 const result = chunk(numbers, 2) // Returns: [[1, 2], [3, 4], [5]]
 ```
 
+#### `NonEmptyArray`
+Represents an array that is guaranteed to have at least one element.
+This type ensures that operations requiring at least one element (e.g., accessing the first element)
+are safe at both runtime and compile time, removing the need for additional checks.
+
+```typescript
+const array: NonEmptyArray<number> = [1, 2, 3];
+
+// Accessing the first element is guaranteed to be safe.
+console.log(array[0]); // OK
+```
+
+#### `defineNonEmptyArray`
+Infers the type of the given array as NonEmptyArray<T>.
+Use this function when you want TypeScript to infer the non-empty
+nature of the array instead of manually defining it as NonEmptyArray.
+
+```typescript
+const arr = defineNonEmptyArray([{ some: 'value' }]);
+// arr is typed as NonEmptyArray<{ some: string }>
+```
+
 #### `isNonEmptyArray`
 Checks if the given array is non-empty. This function acts as a type guard to confirm that the array contains at least 
 one element, and it refines the type to a tuple, indicating that the first element exists. This is useful to ensure 
@@ -72,6 +94,20 @@ if (isNonEmptyArray(array)) {
   console.log(array[0]) // OK
   const _: [number, ...number[]] = array // TS type works
 }
+```
+
+#### `mapNonEmptyArray`
+Maps over a NonEmptyArray, applying the given mapper function to each element, and returns a new NonEmptyArray with the mapped values.
+This function ensures that the result retains the NonEmptyArray type, unlike the standard Array.prototype.map,
+which infers the result as a regular array, losing the guarantee of being non-empty.
+
+```typescript
+const array: NonEmptyArray<number> = [1, 2, 3];
+const stringCasted = mapNonEmptyArray(array, (x) => x.toString());
+
+console.log(stringCasted); // ['2', '4', '6']
+// TypeScript ensures the result is a NonEmptyArray
+const _: NonEmptyArray<string> = stringCasted;
 ```
 
 #### `removeFalsy`
@@ -324,8 +360,8 @@ const b = hasMessage({ error: 'Hello, world!' }) // true
 Type guard to determine if a given value is an `Error` object.
 
 ```typescript
-const a = new Error('I am an error') // False
-const b = new Error(new Error()) // True
+const a = isError('I am an error') // False
+const b = isError(new Error()) // True
 ```
 
 #### `isObject`
