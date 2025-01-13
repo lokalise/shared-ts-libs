@@ -1,3 +1,5 @@
+import { NonEmptyArray } from './nonEmptyArray';
+
 /**
  * Checks if the given array is non-empty.
  *
@@ -18,4 +20,4 @@
  * }
  * ```
  */
-export const isNonEmptyArray = <T>(array: T[]): array is [T, ...T[]] => array.length > 0
+export const isNonEmptyArray = <T>(array: T[]): array is NonEmptyArray<T> => array.length > 0
