@@ -1,4 +1,4 @@
-import {NonEmptyArray} from "./nonEmptyArray";
+import type { NonEmptyArray } from './nonEmptyArray.js'
 
 /**
  * Maps over a `NonEmptyArray`, applying the given mapper function to each element,
@@ -23,9 +23,9 @@ import {NonEmptyArray} from "./nonEmptyArray";
  * ```
  */
 export const mapNonEmptyArray = <TArrayElement, TMappedValue>(
-    array: NonEmptyArray<TArrayElement>,
-    mapper: (value: TArrayElement, index: number, array: TArrayElement[]) => TMappedValue
+  array: NonEmptyArray<TArrayElement>,
+  mapper: (value: TArrayElement, index: number, array: TArrayElement[]) => TMappedValue,
 ): NonEmptyArray<TMappedValue> => {
-    // Directly cast the result to NonEmptyArray<TMappedValue>, as we know it's non-empty.
-    return array.map(mapper) as NonEmptyArray<TMappedValue>;
+  // Directly cast the result to NonEmptyArray<TMappedValue>, as we know it's non-empty.
+  return array.map(mapper) as NonEmptyArray<TMappedValue>
 }

@@ -13,4 +13,4 @@
  * console.log(array[0]); // Accessing the first element is safe.
  * ```
  */
-export type NonEmptyArray<T> = [T, ...T[]];
+export type NonEmptyArray<T> = [T, ...T[]]

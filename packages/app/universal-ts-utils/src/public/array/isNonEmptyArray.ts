@@ -1,4 +1,4 @@
-import { NonEmptyArray } from './nonEmptyArray';
+import type { NonEmptyArray } from './nonEmptyArray.js'
 
 /**
  * Checks if the given array is non-empty.
