@@ -12,6 +12,10 @@
                                 "module": "js",
                                 "component": "js"
                             },
+                            "tsx": {
+                                "module": "js",
+                                "component": "js"
+                            },
                             "mts": {
                                 "module": "mjs",
                                 "component": "mjs"
