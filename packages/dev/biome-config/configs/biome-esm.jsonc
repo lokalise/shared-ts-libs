@@ -14,7 +14,7 @@
                             },
                             "tsx": {
                                 "module": "js",
-                                "component": "js"
+                                "component": "jsx"
                             },
                             "mts": {
                                 "module": "mjs",
