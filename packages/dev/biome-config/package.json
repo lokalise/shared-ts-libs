@@ -1,8 +1,10 @@
 {
     "name": "@lokalise/biome-config",
-    "version": "1.6.0",
+    "version": "1.6.1",
     "license": "Apache-2.0",
-    "files": ["configs/*"],
+    "files": [
+        "configs/*"
+    ],
     "type": "module",
     "scripts": {
         "format": "biome check --write . --config-path=./configs/biome-base.jsonc",
@@ -14,7 +16,9 @@
         "url": "git://github.com/lokalise/shared-ts-libs.git"
     },
     "exports": {
-        "./*": ["./configs/*.jsonc"]
+        "./*": [
+            "./configs/*.jsonc"
+        ]
     },
     "private": false,
     "devDependencies": {
