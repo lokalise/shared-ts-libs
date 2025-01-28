@@ -23,7 +23,7 @@ entry point.
 
 **Frontend:**
 ```typescript
-import { chunk } from '@lokalise/universal-ts-utils/array/chunk.js';
+import { chunk } from '@lokalise/universal-ts-utils/array/chunk';
 ```
 
 **Backend:**
