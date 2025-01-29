@@ -391,8 +391,8 @@ This reduces amount of assumptions FE needs to make about the behaviour of BE, r
 Usage examples:
 
 ```ts
-    import {buildGetRoute, buildDeleteRoute, buildDeleteRoute} from '@lokalise/universal-ts-utils'
-    const getContract = buildGetRoute({
+import {buildGetRoute, buildDeleteRoute, buildDeleteRoute} from '@lokalise/universal-ts-utils'
+const getContract = buildGetRoute({
     responseBodySchema: BODY_SCHEMA,
     requestPathParamsSchema: PATH_PARAMS_SCHEMA,
     pathResolver: (pathParams) => `/users/${pathParams.userId}`,
