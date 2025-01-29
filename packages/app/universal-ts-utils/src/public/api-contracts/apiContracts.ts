@@ -26,7 +26,7 @@ export type CommonRouteDefinition<
   pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
 }
 
-export type ChangeRouteDefinition<
+export type PayloadRouteDefinition<
   PathParams,
   RequestBodySchema extends z.Schema | undefined = undefined,
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -88,7 +88,7 @@ export type DeleteRouteDefinition<
   method: 'delete'
 }
 
-export function buildChangeRoute<
+export function buildPayloadRoute<
   PathParams,
   RequestBodySchema extends z.Schema | undefined = undefined,
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -98,7 +98,7 @@ export function buildChangeRoute<
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 >(
-  params: ChangeRouteDefinition<
+  params: PayloadRouteDefinition<
     PathParams,
     RequestBodySchema,
     ResponseBodySchema,
@@ -108,7 +108,7 @@ export function buildChangeRoute<
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected
   >,
-): ChangeRouteDefinition<
+): PayloadRouteDefinition<
   PathParams,
   RequestBodySchema,
   ResponseBodySchema,

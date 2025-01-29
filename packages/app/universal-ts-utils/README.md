@@ -391,23 +391,26 @@ This reduces amount of assumptions FE needs to make about the behaviour of BE, r
 Usage examples:
 
 ```ts
-import {buildGetRoute, buildDeleteRoute, buildDeleteRoute} from '@lokalise/universal-ts-utils'
+import { buildGetRoute, buildDeleteRoute, buildDeleteRoute } from '@lokalise/universal-ts-utils/node'
 const getContract = buildGetRoute({
-    responseBodySchema: BODY_SCHEMA,
-    requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+    responseBodySchema: RESPONSE_BODY_SCHEMA,
+    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
+    requestQuerySchema: REQUEST_QUERY_SCHEMA,
+    requestHeaderSchema: REQUEST_HEADER_SCHEMA,
     pathResolver: (pathParams) => `/users/${pathParams.userId}`,
 })
 
-const postContract = buildChangeRoute({
-    method: 'post',
-    responseBodySchema: BODY_SCHEMA,
-    requestBodySchema: BODY_SCHEMA,
+const postContract = buildPayloadRoute({
+    method: 'post', // can also be 'patch' or 'post'
+    responseBodySchema: RESPONSE_BODY_SCHEMA,
+    requestBodySchema: REQUEST_BODY_SCHEMA,
     pathResolver: () => '/',
 })
 
 const deleteContract = buildDeleteRoute({
-    responseBodySchema: BODY_SCHEMA,
-    pathResolver: () => '/',
+    responseBodySchema: RESPONSE_BODY_SCHEMA,
+    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
+    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
 })
 ```
 

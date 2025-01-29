@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { buildChangeRoute, buildDeleteRoute, buildGetRoute } from './apiContracts.js'
+import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from './apiContracts.js'
 
 const BODY_SCHEMA = z.object({})
 const PATH_PARAMS_SCHEMA = z.object({
@@ -10,7 +10,7 @@ const PATH_PARAMS_SCHEMA = z.object({
 describe('apiContracts', () => {
   describe('buildChangeRoute', () => {
     it('sets default change route values', () => {
-      const contract = buildChangeRoute({
+      const contract = buildPayloadRoute({
         responseBodySchema: BODY_SCHEMA,
         requestBodySchema: BODY_SCHEMA,
         method: 'post',
