@@ -382,6 +382,39 @@ const a = isStandardizedError({ code: 'code', message: 'test' }) // True
 const b = isStandardizedError({ hello: 'world' }) // False
 ```
 
+### API contracts
+
+Key idea behind API contracts: backend owns entire definition for the route, including its path, HTTP method used and response structure expectations, and exposes it as a part of its API schemas. Then frontend consumes that definition instead of forming full request configuration manually on the client side.
+
+This reduces amount of assumptions FE needs to make about the behaviour of BE, reduces amount of code that needs to be written on FE, and makes the code more type-safe (as path parameter setting is handled by logic exposed by BE, in a type-safe way).
+
+Usage examples:
+
+```ts
+import { buildGetRoute, buildDeleteRoute, buildDeleteRoute } from '@lokalise/universal-ts-utils/node'
+const getContract = buildGetRoute({
+    responseBodySchema: RESPONSE_BODY_SCHEMA,
+    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
+    requestQuerySchema: REQUEST_QUERY_SCHEMA,
+    requestHeaderSchema: REQUEST_HEADER_SCHEMA,
+    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+})
+
+const postContract = buildPayloadRoute({
+    method: 'post', // can also be 'patch' or 'post'
+    responseBodySchema: RESPONSE_BODY_SCHEMA,
+    requestBodySchema: REQUEST_BODY_SCHEMA,
+    pathResolver: () => '/',
+})
+
+const deleteContract = buildDeleteRoute({
+    responseBodySchema: RESPONSE_BODY_SCHEMA,
+    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
+    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+})
+```
+
+Note that in order to make contract-based requests, you need to use a compatible HTTP client (`@lokalise/frontend-http-client` or `@lokalise/backend-http-client`)
 
 ### Other Utilities
 This section describes other utility functions included in this package.
