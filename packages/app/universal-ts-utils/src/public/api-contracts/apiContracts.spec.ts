@@ -8,7 +8,7 @@ const PATH_PARAMS_SCHEMA = z.object({
 })
 
 describe('apiContracts', () => {
-  describe('buildChangeRoute', () => {
+  describe('buildPayloadRoute', () => {
     it('sets default change route values', () => {
       const contract = buildPayloadRoute({
         responseBodySchema: BODY_SCHEMA,
