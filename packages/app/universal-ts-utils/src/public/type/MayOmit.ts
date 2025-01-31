@@ -7,11 +7,10 @@
  * @example
  * ```typescript
  * type Config = {
- *   host: string;
- *   port: number;
- *   secure: boolean;
+ *   host: string
+ *   port: number
+ *   secure: boolean
  * }
- *
  * type PartialConfig = MayOmit<Config, 'port' | 'secure'>
  *
  * const config1: PartialConfig = { host: "localhost" }

@@ -7,15 +7,14 @@
  * @example
  * ```typescript
  * type Config = {
- *   host?: string;
- *   port?: number;
- *   secure?: boolean;
- * };
+ *   host?: string
+ *   port?: number
+ *   secure?: boolean
+ * }
+ * type StrictConfig = MakeRequired<Config, 'host'>
  *
- * type StrictConfig = MakeRequired<Config, 'host'>;
- *
- * const config1: StrictConfig = { host: "localhost" };
- * const config2: StrictConfig = { host: "localhost", secure: true };
+ * const config1: StrictConfig = { host: "localhost" }
+ * const config2: StrictConfig = { host: "localhost", secure: true }
  * ```
  */
 export type MakeRequired<T, K extends keyof T> = Required<Pick<T, K>> & Omit<T, K>

@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest'
+import { describe, expectTypeOf, it } from 'vitest'
 import type { FreeformRecord } from './FreeformRecord.js'
 
 describe('FreeformRecord', () => {
@@ -9,8 +9,7 @@ describe('FreeformRecord', () => {
       isActive: true,
     }
 
-    // should compile without errors
-    record as FreeformRecord<string>
+    expectTypeOf(record).toEqualTypeOf<FreeformRecord<string>>()
   })
 
   it('should allow number type for key and allow any as value', () => {
@@ -20,7 +19,6 @@ describe('FreeformRecord', () => {
       3: true,
     }
 
-    // should compile without errors
-    record as FreeformRecord<number>
+    expectTypeOf(record).toEqualTypeOf<FreeformRecord<number>>()
   })
 })

@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest'
+import { describe, expectTypeOf, it } from 'vitest'
 import type { MayOmit } from './MayOmit.js'
 
 describe('MayOmit', () => {
@@ -11,21 +11,19 @@ describe('MayOmit', () => {
 
     type PartialConfig = MayOmit<Config, 'secure'>
 
-    const _config1: PartialConfig = {
+    expectTypeOf({
       host: 'localhost',
-      port: 8080,
-    }
-
-    const _config2: PartialConfig = {
+      port: 123,
+    }).toMatchTypeOf<PartialConfig>()
+    expectTypeOf({
       host: 'localhost',
       port: 8080,
       secure: true,
-    }
+    }).toMatchTypeOf<PartialConfig>()
 
-    // @ts-expect-error -> missing required key 'host'
-    const _invalidConfig1: PartialConfig = { port: 123 }
-
-    // @ts-expect-error -> missing required key 'port'
-    const _invalidConfig2: PartialConfig = { host: 'localhost' }
+    // missing required key 'host'
+    expectTypeOf({ port: 123 }).not.toMatchTypeOf<PartialConfig>()
+    // missing required key 'port'
+    expectTypeOf({ host: 'localhost' }).not.toMatchTypeOf<PartialConfig>()
   })
 })

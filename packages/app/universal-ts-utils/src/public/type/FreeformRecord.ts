@@ -11,10 +11,7 @@ import type { RecordKeyType } from '../../internal/types.js'
  *
  * @example
  * ```typescript
- * // Default string key
  * const stringKeyRecord: FreeformRecord = { name: "Alice", age: 30 }
- *
- * // Custom number key
  * const numberKeyRecord: FreeformRecord<number> = { 1: "one", 2: "two" }
  * ```
  */

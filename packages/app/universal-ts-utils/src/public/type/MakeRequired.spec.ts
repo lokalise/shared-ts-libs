@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest'
+import { describe, expectTypeOf, it } from 'vitest'
 import type { MakeRequired } from './MakeRequired.js' // Adjust the import path as necessary
 
 describe('MakeRequired', () => {
@@ -12,18 +12,19 @@ describe('MakeRequired', () => {
     // Define a type where 'host' is required
     type StrictConfig = MakeRequired<Config, 'port'>
 
-    const _config1: StrictConfig = { host: 'localhost', port: 123 }
-
-    const _config2: StrictConfig = {
+    expectTypeOf({
+      host: 'localhost',
+      port: 123,
+    }).toMatchTypeOf<StrictConfig>()
+    expectTypeOf({
       host: 'localhost',
       port: 123,
       secure: true,
-    }
+    }).toMatchTypeOf<StrictConfig>()
 
-    // @ts-expect-error -> missing the required key 'host'
-    const _invalidConfig1: StrictConfig = { port: 123 }
-
-    // @ts-expect-error -> missing the required key 'port'
-    const _invalidConfig2: StrictConfig = { host: 'localhost' }
+    // missing the required key 'host'
+    expectTypeOf({ port: 123 }).not.toMatchTypeOf<StrictConfig>()
+    // missing the required key 'port
+    expectTypeOf({ host: 'localhost' }).not.toMatchTypeOf<StrictConfig>()
   })
 })
