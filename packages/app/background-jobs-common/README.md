@@ -34,11 +34,12 @@ For that type of jobs, you will need to extend `AbstractBackgroundJobProcessor` 
 It will be called when a job is dequeued. Processing logic is automatically wrapped into NewRelic and basic logger calls,
 so you only need to add your domain logic.
 
-Both queue and worker is automatically started when you instantiate the processor. There is a default configuration which
-you can override by passing `queueConfig.queueOptions` and `workerOptions` params to the constructor.
+By default, both queue and worker are automatically started when you instantiate the processor. There is a default configuration which
+you can override by passing `queueOptions` and `workerOptions` params to the constructor.
+
+If you wish to only enable your processor to interact with the queue, but not process any jobs, you can set the `workerAutoRunEnabled` param to `false` in the constructor, which equals to setting `autorun` to `false` in `workerOptions`. While you'd normally want the worker to always be running, there are particular occasions where it is advisable to not start it automatically. This is the case when, for example, you are starting a separate instance of your application to schedule a job, but do not want for this instance to start processing this or any other job in the queue because they should be instead picked up by the main instance.
 
 Use `dispose()` to correctly stop processing any new messages and wait for the current ones to finish.
-
 
 ### Spies
 

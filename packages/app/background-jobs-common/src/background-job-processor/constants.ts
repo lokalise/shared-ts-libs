@@ -47,6 +47,6 @@ export const DEFAULT_WORKER_OPTIONS = {
   concurrency: 10,
   maxStalledCount: 3, // same as default attempts by default
   ttl: 60,
-} as const satisfies Omit<WorkerOptions, 'connection' | 'prefix'> & {
+} as const satisfies Omit<WorkerOptions, 'connection' | 'prefix' | 'autorun'> & {
   ttl: number
 }

@@ -17,6 +17,7 @@ export class FakeBackgroundJobProcessor<
     queueName: string,
     redisConfig: RedisConfig,
     isTest = true,
+    workerAutoRunEnabled = true,
   ) {
     super(
       {
@@ -38,6 +39,7 @@ export class FakeBackgroundJobProcessor<
         workerOptions: { concurrency: 1 },
         lazyInitEnabled: false,
         redisConfig,
+        workerAutoRunEnabled,
       },
     )
   }
