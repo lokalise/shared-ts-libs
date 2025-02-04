@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DependencyMocks } from '../../../test/dependencyMocks'
 import { TestFailingBackgroundJobProcessor } from '../../../test/processors/TestFailingBackgroundJobProcessor'
 import { TestStalledBackgroundJobProcessor } from '../../../test/processors/TestStalledBackgroundJobProcessor'
-import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/TestSucessBackgroundJobProcessor'
+import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/TestSuccessBackgroundJobProcessor'
 import type { BaseJobPayload } from '../types'
 
 import { randomUUID } from 'node:crypto'
@@ -156,6 +156,34 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       await processor.start()
       await expect(isPromiseFinished(completedPromise)).resolves.toBe(true)
+
+      await processor.dispose()
+    })
+
+    it('processors starts queue but not worker if workerAutoRunEnabled is true', async () => {
+      const processor = new FakeBackgroundJobProcessor<JobData>(
+        deps,
+        randomUUID(),
+        mocks.getRedisConfig(),
+        true,
+        false,
+      )
+      await processor.start()
+
+      // Worker is instantiated but not running
+      // @ts-expect-error executing protected method for testing
+      expect(processor.worker.isRunning()).toBeFalsy()
+
+      const jobData = {
+        id: 'test_id',
+        value: 'test',
+        metadata: { correlationId: 'correlation_id' },
+      }
+      const jobId = await processor.schedule(jobData)
+
+      // Job is added to the queue but not processed by the worker
+      const spyResult = await processor.spy.waitForJobWithId(jobId, 'scheduled')
+      expect(spyResult.data).toMatchObject(jobData)
 
       await processor.dispose()
     })
