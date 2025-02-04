@@ -162,6 +162,17 @@ const numbers = [1, 2, 2, 3, 4, 4, 5]
 const result = unique(numbers) // Returns: [1, 2, 3, 4, 5]
 ```
 
+#### `uniqueByProperty`
+Removes duplicates from an array of objects by a property and returns new array.
+
+```typescript
+const array = [
+    { id: 'a', value: 1 },
+    { id: 'b', value: 2 },
+    { id: 'a', value: 3 },
+]
+const result = uniqueByProperty(array) // Returns: [{ id: 'a', value: 1 }, { id: 'b', value: 2 }]
+```
 
 ### Object Utilities
 This section describes utility functions to work with objects efficiently and elegantly.
