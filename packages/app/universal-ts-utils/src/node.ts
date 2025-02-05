@@ -1,5 +1,8 @@
 // We don't want to have a typical index file due to how FE bundlers work. Please see `readme` for more info.
 
+// api-contracts
+export * from './public/api-contracts/apiContracts.js'
+
 // array
 export * from './public/array/areStringArraysEqual.js'
 export * from './public/array/callChunked.js'
@@ -32,10 +35,12 @@ export * from './public/object/transformToKebabCase.js'
 export * from './public/string/trimText.js'
 
 // type
+export * from './public/type/FreeformRecord.js'
 export * from './public/type/hasMessage.js'
 export * from './public/type/isError.js'
 export * from './public/type/isObject.js'
 export * from './public/type/isStandardizedError.js'
+export * from './public/type/MakeRequired.js'
+export * from './public/type/MayOmit.js'
 
 export * from './public/waitAndRetry.js'
-export * from './public/api-contracts/apiContracts.js'
