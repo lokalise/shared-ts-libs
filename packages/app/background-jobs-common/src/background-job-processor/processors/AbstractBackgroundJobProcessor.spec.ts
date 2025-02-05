@@ -257,6 +257,10 @@ describe('AbstractBackgroundJobProcessor', () => {
       expect(secondJob.data.value).toBe('second')
     })
 
+    it('should not fail if scheduleBulk is called with an empty array', async () => {
+      await expect(processor.scheduleBulk([])).resolves.toHaveLength(0)
+    })
+
     it('should trigger onSuccess hook', async () => {
       // Given
       const jobData = {
