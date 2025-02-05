@@ -5,17 +5,18 @@ export * from './public/api-contracts/apiContracts.js'
 
 // array
 export * from './public/array/areStringArraysEqual.js'
-export * from './public/array/chunk.js'
 export * from './public/array/callChunked.js'
-export * from './public/array/nonEmptyArray.js'
+export * from './public/array/chunk.js'
 export * from './public/array/defineNonEmptyArray.js'
 export * from './public/array/isNonEmptyArray.js'
 export * from './public/array/mapNonEmptyArray.js'
+export * from './public/array/nonEmptyArray.js'
 export * from './public/array/removeFalsy.js'
 export * from './public/array/removeNullish.js'
-export * from './public/array/unique.js'
 export * from './public/array/sort.js'
 export * from './public/array/sortByField.js'
+export * from './public/array/unique.js'
+export * from './public/array/uniqueByProperty.js'
 
 // object
 export * from './public/object/areDeepEqual.js'
