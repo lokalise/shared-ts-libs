@@ -18,7 +18,7 @@ export type QueueManagerConfig = {
   lazyInitEnabled?: boolean
 }
 
-export abstract class AbstractQueueManager<Queues extends QueueConfiguration[]> {
+export class QueueManager<Queues extends QueueConfiguration[]> {
   private queueMap: Record<string, QueueConfiguration> = {}
   private readonly queueIds: Set<string>
   private config: QueueManagerConfig
