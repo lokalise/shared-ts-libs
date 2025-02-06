@@ -86,30 +86,34 @@ export abstract class AbstractQueueManager<Queues extends QueueConfiguration[]>
         return new Queue(queueId, options)
     }
 
-    public async start(): Promise<void> {
-
-        // @todo: Accept list of queue IDs to start
-
+    public async start(queueIdsToStart?: string[]): Promise<void> {
         if (this.isStarted) return // if it is already started -> skip
 
-        if (!this.startPromise) this.startPromise = this.internalStart()
+        if (!this.startPromise) this.startPromise = this.internalStart(queueIdsToStart)
         await this.startPromise
         this.startPromise = undefined
     }
 
-    private startIfNotStarted(): Promise<void> {
-        if (this.isStarted) return Promise.resolve()
-
-        if (this.config.lazyInitEnabled === false) {
-            throw new Error('QueueBroker not started, please call `start` or enable lazy init')
+    private startIfNotStarted(queueId: QueueConfiguration['queueId']): Promise<void> {
+        if (!this.isStarted && this.config.lazyInitEnabled === false) {
+            throw new Error('QueueManager not started, please call `start` or enable lazy init')
         }
-        return this.start()
+
+        if (!this.isStarted || !this._queues[queueId]) {
+            return this.start([queueId])
+        }
+
+        return Promise.resolve()
     }
 
-    private async internalStart(): Promise<void> {
+    private async internalStart(queueIdsToStart?: string[]): Promise<void> {
         const queuePromises = []
+        const queueIdSetToStart = queueIdsToStart ? new Set(queueIdsToStart) : undefined
 
         for (const queueId of this.queueIds) {
+            if (queueIdSetToStart?.has(queueId) === false) {
+                continue
+            }
             const queue = this.queueMap[queueId]
             const queueOptions = {
                 ...(queue.queueOptions ?? {}) as Omit<QueueOptions, 'connection' | 'prefix'>,
@@ -121,13 +125,15 @@ export abstract class AbstractQueueManager<Queues extends QueueConfiguration[]>
             queuePromises.push(queuePromise.waitUntilReady())
         }
 
-        await Promise.allSettled(queuePromises)
+        if (queuePromises.length) {
+            await Promise.allSettled(queuePromises)
+        }
 
         this.isStarted = true
     }
 
     public async getJobCount(queueId: QueueConfiguration['queueId']): Promise<number> {
-        await this.startIfNotStarted()
+        await this.startIfNotStarted(queueId)
         return this.getQueue(queueId)?.getJobCountByTypes(
             'active',
             'waiting',
@@ -140,7 +146,7 @@ export abstract class AbstractQueueManager<Queues extends QueueConfiguration[]>
 
     // @todo: Use payload type from queue configuration based on queueId (resolve by map)
     public async schedule<JobPayload extends BaseJobPayload>(queueId: QueueConfiguration['queueId'], jobData: JobPayload, options?: JobsOptions): Promise<string> {
-        await this.startIfNotStarted()
+        await this.startIfNotStarted(queueId)
 
         const job = await this.getQueue(queueId).add(
             queueId,
@@ -158,7 +164,7 @@ export abstract class AbstractQueueManager<Queues extends QueueConfiguration[]>
         jobData: JobPayload[],
         options?: Omit<JobsOptions, 'repeat'>,
     ): Promise<string[]> {
-        await this.startIfNotStarted()
+        await this.startIfNotStarted(queueId)
 
         const jobs =
             (await this.getQueue(queueId)?.addBulk(
