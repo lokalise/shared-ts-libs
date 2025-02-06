@@ -1,10 +1,15 @@
-import type {ZodSchema} from "zod";
+import {z, ZodObject, ZodRawShape, ZodSchema} from "zod";
 import type {BaseJobPayload} from "../types";
 
-export type JobDefinition<JobPayload extends BaseJobPayload = any> = {
-  queueId: string
-  jobPayloadSchema: ZodSchema<JobPayload>
-}
+export type JobDefinition = {
+  queueId: string;
+  jobPayloadSchema: z.ZodObject<any>;
+};
+
+// Helper type to extract the inferred type from a Zod schema while preserving optionality
+export type InferExact<T extends z.ZodTypeAny> = T extends z.ZodObject<infer Shape>
+    ? { [K in keyof Shape]: Shape[K] extends z.ZodTypeAny ? z.infer<Shape[K]> : never }
+    : never;
 
 export type JobWithPayload<T extends JobDefinition> = {
   queueId: T['queueId'];

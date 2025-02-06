@@ -7,7 +7,7 @@ import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.js'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.js'
 import type { BaseJobPayload } from '../types.js'
 import { prepareJobOptions, sanitizeRedisConfig } from '../utils.js'
-import type {JobDefinition, JobRegistry } from "./JobRegistry";
+import type {InferExact, JobDefinition, JobRegistry} from "./JobRegistry";
 import type {z, ZodSchema} from "zod";
 
 export type QueueConfiguration = {
@@ -20,6 +20,11 @@ export type QueueManagerConfig = {
   isTest: boolean
   lazyInitEnabled?: boolean
 }
+
+export type JobPayloadForQueue<
+    Q extends string,
+    Jobs extends JobDefinition[]
+> = InferExact<Extract<Jobs[number], { queueId: Q }>['jobPayloadSchema']>;
 
 // ✅ Utility to extract exact Zod schema inference while keeping optional/required properties intact
 export type InferSchema<T extends ZodSchema<any>> = z.infer<T>;
@@ -157,11 +162,11 @@ export class QueueManager<SupportedJobs extends JobDefinition[]
     )
   }
 
-
-  public async schedule<T extends SupportedJobs[number]>(
-      scheduleParams: T extends { queueId: infer Q }
-          ? { queueId: Q; jobPayload: z.infer<Extract<SupportedJobs[number], { queueId: Q }>['jobPayloadSchema']> }
-          : never,
+  public async schedule<Q extends SupportedJobs[number]['queueId']>(
+      scheduleParams: {
+        queueId: Q;
+        jobPayload: JobPayloadForQueue<Q, SupportedJobs>;
+      },
       options?: JobsOptions
   ): Promise<string> {
     const { queueId, jobPayload } = scheduleParams
@@ -179,10 +184,11 @@ export class QueueManager<SupportedJobs extends JobDefinition[]
     return job.id
   }
 
-  public async scheduleBulk<T extends SupportedJobs[number]>(
-      scheduleParams: T extends { queueId: infer Q }
-          ? { queueId: Q; jobPayloads: z.infer<Extract<SupportedJobs[number], { queueId: Q }>['jobPayloadSchema']>[] }
-          : never,
+  public async scheduleBulk<Q extends SupportedJobs[number]['queueId']>(
+      scheduleParams: {
+        queueId: Q;
+        jobPayloads: JobPayloadForQueue<Q, SupportedJobs>[];
+      },
       options?: JobsOptions
   ): Promise<string[]> {
     const { queueId, jobPayloads } = scheduleParams

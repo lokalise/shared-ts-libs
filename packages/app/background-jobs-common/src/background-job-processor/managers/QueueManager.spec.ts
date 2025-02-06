@@ -138,13 +138,35 @@ describe('QueueManager', () => {
         queueManager.schedule({
           queueId: 'queue1',
           jobPayload: {
-            id: 'test_id',
             value: 'test',
             // @ts-expect-error Should only expect fields from queue1 schema
             value2: 'test',
             metadata: {correlationId: 'correlation_id'},
           }
         })
+      ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
+
+      await expect(
+          queueManager.schedule({
+            queueId: 'queue1',
+            // @ts-expect-error Should expect mandatory fields from queue1 schema
+            jobPayload: {
+              value: 'test',
+              metadata: {correlationId: 'correlation_id'},
+            }
+          })
+      ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
+
+      await expect(
+          queueManager.schedule({
+            queueId: 'queue2',
+            jobPayload: {
+              id: 'id',
+              value: 'test',
+              value2: 'test',
+              metadata: {correlationId: 'correlation_id'},
+            }
+          })
       ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
     })
 
