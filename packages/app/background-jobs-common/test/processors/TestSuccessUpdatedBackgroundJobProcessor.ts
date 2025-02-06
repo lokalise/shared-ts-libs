@@ -1,12 +1,12 @@
 import type { Job } from 'bullmq'
 
 import type { RedisConfig } from '@lokalise/node-core'
+import { FakeUpdatedBackgroundJobProcessor } from '../../src/background-job-processor/processors/FakeUpdatedBackgroundJobProcessor.js'
 import type {
   BackgroundJobProcessorDependencies,
   BaseJobPayload,
   RequestContext,
 } from '../../src/index.js'
-import { FakeUpdatedBackgroundJobProcessor } from '../../src/background-job-processor/processors/FakeUpdatedBackgroundJobProcessor.js'
 
 type TestSuccessUpdatedBackgroundJobProcessorData = {
   id?: string

@@ -3,8 +3,8 @@ import type { BaseJobPayload } from '../types.js'
 
 import type { RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
-import type { BackgroundJobProcessorDependencies } from './types.js'
 import { AbstractUpdatedBackgroundJobProcessor } from './AbstractUpdatedBackgroundJobProcessor.js'
+import type { BackgroundJobProcessorDependencies } from './types.js'
 
 export class FakeUpdatedBackgroundJobProcessor<
   JobData extends BaseJobPayload,
