@@ -164,6 +164,8 @@ export abstract class AbstractQueueManager<Queues extends QueueConfiguration[]>
         jobData: JobPayload[],
         options?: Omit<JobsOptions, 'repeat'>,
     ): Promise<string[]> {
+        if (jobData.length === 0) return []
+
         await this.startIfNotStarted(queueId)
 
         const jobs =
