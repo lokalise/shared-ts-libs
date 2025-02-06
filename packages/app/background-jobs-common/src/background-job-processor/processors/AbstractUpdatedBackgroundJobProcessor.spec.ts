@@ -560,15 +560,9 @@ describe('AbstractBackgroundJobProcessor', () => {
     })
 
     describe('stalled', () => {
-        const queueId = 'TestStalledBackgroundJobProcessor queue'
+        const queueId = 'stalledQueue'
         let stalledProcessor: TestStalledUpdatedBackgroundJobProcessor<JobData>
         let queueManager: FakeQueueManager<QueueConfiguration[]>
-        const stalledQueueConfiguration = {
-            attempts: 1,
-            backoff: {type: 'fixed', delay: 1},
-            removeOnComplete: true,
-            removeOnFail: 1, // we should keep the job in the queue to test the stalled job behavior
-        }
 
         beforeEach(async () => {
             stalledProcessor = new TestStalledUpdatedBackgroundJobProcessor(deps, queueId, mocks.getRedisConfig())
@@ -579,7 +573,9 @@ describe('AbstractBackgroundJobProcessor', () => {
                     queueId,
                     redisConfig: mocks.getRedisConfig(),
                 },
-            ])
+            ], {
+                isTest: false,
+            })
             await queueManager.start()
         })
 
@@ -598,7 +594,12 @@ describe('AbstractBackgroundJobProcessor', () => {
                 value: 'test',
                 metadata: { correlationId: generateMonotonicUuid() },
             }
-            const jobId = await queueManager.schedule(queueId, jobData, stalledQueueConfiguration)
+            const jobId = await queueManager.schedule(queueId, jobData, {
+                attempts: 1,
+                backoff: {type: 'fixed', delay: 1},
+                removeOnComplete: true,
+                removeOnFail: 1, // we should keep the job in the queue to test the stalled job behavior
+            })
 
             // Then
             await waitAndRetry(() => stalledProcessor.onFailedErrors.length > 0, 100, 20)
