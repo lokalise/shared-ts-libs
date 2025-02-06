@@ -26,7 +26,7 @@ const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
 
 describe('AbstractBackgroundJobProcessor', () => {
   let mocks: DependencyMocks
-  let deps: BackgroundJobProcessorDependencies<JobData, void>
+  let deps: BackgroundJobProcessorDependencies<JobData>
   let redis: Redis
 
   beforeEach(async () => {

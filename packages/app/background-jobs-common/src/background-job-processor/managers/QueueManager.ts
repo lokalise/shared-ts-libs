@@ -1,7 +1,8 @@
 import type { RedisConfig } from '@lokalise/node-core'
 import type { JobsOptions, QueueOptions } from 'bullmq'
 import { Queue } from 'bullmq'
-import type { ProtectedQueue } from '../processors/types.js'
+import type { JobState } from 'bullmq/dist/esm/types/job-type.js'
+import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types.js'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.js'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.js'
 import type { BaseJobPayload } from '../types.js'
@@ -187,6 +188,38 @@ export class QueueManager<Queues extends QueueConfiguration[]> {
     if (this._spy) this._spy.addJobs(jobs, 'scheduled')
 
     return jobIds as string[]
+  }
+
+  /**
+   * Get jobs in the given states.
+   *
+   * @param queueId
+   * @param states
+   * @param start default 0
+   * @param end default 20
+   * @param asc default true (oldest first)
+   */
+  public async getJobsInQueue<JobPayload extends BaseJobPayload, JobReturn = void>(
+    queueId: QueueConfiguration['queueId'],
+    states: JobState[],
+    start = 0,
+    end = 20,
+    asc = true,
+  ): Promise<JobsPaginatedResponse<JobPayload, JobReturn>> {
+    if (states.length === 0) throw new Error('states must not be empty')
+    if (start > end) throw new Error('start must be less than or equal to end')
+
+    await this.startIfNotStarted(queueId)
+
+    const jobs =
+      (await this.getQueue<JobPayload, JobReturn>(queueId)?.getJobs(states, start, end + 1, asc)) ??
+      []
+    const expectedNumberOfJobs = 1 + (end - start)
+
+    return {
+      jobs: jobs.slice(0, expectedNumberOfJobs),
+      hasMore: jobs.length > expectedNumberOfJobs,
+    }
   }
 
   public get spy(): BackgroundJobProcessorSpyInterface<object, unknown> {
