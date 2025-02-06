@@ -1,0 +1,48 @@
+import type {ZodSchema} from "zod";
+import type {BaseJobPayload} from "../types";
+
+export type JobDefinition<JobPayload extends BaseJobPayload = any> = {
+  queueId: string
+  jobPayloadSchema: ZodSchema<JobPayload>
+}
+
+export type JobWithPayload<T extends JobDefinition> = {
+  queueId: T['queueId'];
+  jobPayload: T extends JobDefinition<infer P> ? P : never;
+};
+
+export type JobWithPayloads<T extends JobDefinition> = {
+  queueId: T['queueId'];
+  jobPayload: T extends JobDefinition<infer P> ? P : never;
+}[];
+
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+//export type JobWithPayloads<T extends JobDefinition> = Omit<T, 'jobPayloadSchema'> & {
+//  jobPayloads: T extends JobDefinition<infer P> ? P[] : never;
+//};
+
+export class JobRegistry<SupportedJobs extends JobDefinition[]> {
+  public readonly supportedJobs: SupportedJobs
+  public readonly supportedJobQueues: Set<string>
+  private readonly supportedJobMap: Record<SupportedJobs[number]['queueId'], JobDefinition> = {} as Record<string, JobDefinition>
+
+  constructor(supportedJobs: SupportedJobs) {
+    this.supportedJobs = supportedJobs
+    this.supportedJobQueues = new Set<string>()
+
+    for (const supportedJob of supportedJobs) {
+      this.supportedJobMap[supportedJob.queueId as SupportedJobs[number]['queueId']] = supportedJob
+      this.supportedJobQueues.add(supportedJob.queueId as SupportedJobs[number]['queueId'])
+    }
+  }
+
+  public getJobPayloadSchemaByQueue = <JobPayload extends BaseJobPayload = BaseJobPayload>(
+    queueId: SupportedJobs[number]['queueId'],
+  ): ZodSchema<JobPayload> => {
+    return this.supportedJobMap[queueId].jobPayloadSchema as ZodSchema<JobPayload>
+  }
+
+  public isSupportedQueue(queueId: string) {
+    return this.supportedJobQueues.has(queueId)
+  }
+}

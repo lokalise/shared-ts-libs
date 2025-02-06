@@ -7,6 +7,8 @@ import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.js'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.js'
 import type { BaseJobPayload } from '../types.js'
 import { prepareJobOptions, sanitizeRedisConfig } from '../utils.js'
+import type {JobDefinition, JobRegistry } from "./JobRegistry";
+import type {z, ZodSchema} from "zod";
 
 export type QueueConfiguration = {
   queueId: string
@@ -19,10 +21,21 @@ export type QueueManagerConfig = {
   lazyInitEnabled?: boolean
 }
 
-export class QueueManager<Queues extends QueueConfiguration[]> {
+// ✅ Utility to extract exact Zod schema inference while keeping optional/required properties intact
+export type InferSchema<T extends ZodSchema<any>> = z.infer<T>;
+
+// Utility type to ensure `queueId` and `jobPayload` are correctly paired
+export type JobWithPayload<T extends JobDefinition> = {
+  queueId: T['queueId'];
+  jobPayload: InferSchema<T['jobPayloadSchema']>; // Preserves required/optional fields exactly
+};
+
+export class QueueManager<SupportedJobs extends JobDefinition[]
+> {
   private queueMap: Record<string, QueueConfiguration> = {}
   private readonly queueIds: Set<string>
   private config: QueueManagerConfig
+  private readonly jobRegistry: JobRegistry<SupportedJobs>
 
   private _queues: Record<QueueConfiguration['queueId'], Queue> = {}
 
@@ -31,8 +44,11 @@ export class QueueManager<Queues extends QueueConfiguration[]> {
   private isStarted = false
   private startPromise?: Promise<void>
 
-  protected constructor(queues: Queues, config: QueueManagerConfig) {
+  protected constructor(queues: QueueConfiguration[],
+                        jobRegistry: JobRegistry<SupportedJobs>,
+                        config: QueueManagerConfig) {
     this.queueIds = new Set<string>()
+    this.jobRegistry = jobRegistry
 
     for (const queue of queues) {
       this.queueIds.add(queue.queueId)
@@ -66,7 +82,7 @@ export class QueueManager<Queues extends QueueConfiguration[]> {
       JobReturn,
       string
     >,
-  >(queueId: string): ProtectedQueue<JobPayload, JobReturn, QueueType> {
+  >(queueId: SupportedJobs[number]['queueId']): ProtectedQueue<JobPayload, JobReturn, QueueType> {
     /* v8 ignore next 3 */
     if (!this._queues[queueId]) {
       throw new Error(`queue ${queueId} was not instantiated yet, please run "start()"`)
@@ -141,17 +157,20 @@ export class QueueManager<Queues extends QueueConfiguration[]> {
     )
   }
 
-  // @todo: Use payload type from queue configuration based on queueId (resolve by map)
-  public async schedule<JobPayload extends BaseJobPayload>(
-    queueId: QueueConfiguration['queueId'],
-    jobData: JobPayload,
-    options?: JobsOptions,
+
+  public async schedule<T extends SupportedJobs[number]>(
+      scheduleParams: T extends { queueId: infer Q }
+          ? { queueId: Q; jobPayload: z.infer<Extract<SupportedJobs[number], { queueId: Q }>['jobPayloadSchema']> }
+          : never,
+      options?: JobsOptions
   ): Promise<string> {
+    const { queueId, jobPayload } = scheduleParams
+
     await this.startIfNotStarted(queueId)
 
     const job = await this.getQueue(queueId).add(
       queueId,
-      jobData,
+      jobPayload,
       prepareJobOptions(this.config.isTest, options),
     )
     if (!job?.id) throw new Error('Scheduled job ID is undefined')
@@ -160,18 +179,20 @@ export class QueueManager<Queues extends QueueConfiguration[]> {
     return job.id
   }
 
-  public async scheduleBulk<JobPayload extends BaseJobPayload>(
-    queueId: QueueConfiguration['queueId'],
-    jobData: JobPayload[],
-    options?: Omit<JobsOptions, 'repeat'>,
+  public async scheduleBulk<T extends SupportedJobs[number]>(
+      scheduleParams: T extends { queueId: infer Q }
+          ? { queueId: Q; jobPayloads: z.infer<Extract<SupportedJobs[number], { queueId: Q }>['jobPayloadSchema']>[] }
+          : never,
+      options?: JobsOptions
   ): Promise<string[]> {
-    if (jobData.length === 0) return []
+    const { queueId, jobPayloads } = scheduleParams
+    if (jobPayloads.length === 0) return []
 
     await this.startIfNotStarted(queueId)
 
     const jobs =
       (await this.getQueue(queueId)?.addBulk(
-        jobData.map((data) => ({
+          jobPayloads.map((data) => ({
           name: queueId,
           data: data,
           opts: prepareJobOptions(this.config.isTest, options),
