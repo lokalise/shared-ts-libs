@@ -12,9 +12,9 @@ import {
 import type { JobState } from 'bullmq/dist/esm/types/job-type'
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
-
 import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
+import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
 import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types'
@@ -26,8 +26,6 @@ import {
   resolveJobId,
   sanitizeRedisConfig,
 } from '../utils'
-
-import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor'
 import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
@@ -265,6 +263,8 @@ export abstract class AbstractBackgroundJobProcessor<
     jobData: JobPayload[],
     options?: Omit<JobOptionsType, 'repeat'>,
   ): Promise<string[]> {
+    if (jobData.length === 0) return []
+
     await this.startIfNotStarted()
 
     const jobs =

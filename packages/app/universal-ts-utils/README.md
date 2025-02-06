@@ -162,6 +162,17 @@ const numbers = [1, 2, 2, 3, 4, 4, 5]
 const result = unique(numbers) // Returns: [1, 2, 3, 4, 5]
 ```
 
+#### `uniqueByProperty`
+Removes duplicates from an array of objects by a property and returns new array.
+
+```typescript
+const array = [
+    { id: 'a', value: 1 },
+    { id: 'b', value: 2 },
+    { id: 'a', value: 3 },
+]
+const result = uniqueByProperty(array) // Returns: [{ id: 'a', value: 1 }, { id: 'b', value: 2 }]
+```
 
 ### Object Utilities
 This section describes utility functions to work with objects efficiently and elegantly.
@@ -348,6 +359,14 @@ const result = trimText(text) // Returns: { value: 'Hello, World!', prefix: '  '
 ### Type Utilities
 This section describes utility functions to work with types efficiently and elegantly.
 
+#### `FreeformRecord`
+Utility type to representing a record with keys of a specified type and values of any type.
+
+```typescript
+const stringKeyRecord: FreeformRecord = { name: "Alice", age: 30 }
+const numberKeyRecord: FreeformRecord<number> = { 1: "one", 2: "two" }
+```
+
 #### `hasMessage`
 Type guard to determine if a given value is an object with a string property `message`.
 
@@ -381,6 +400,36 @@ Specifically, it verifies that the input is an object containing `code` and `mes
 const a = isStandardizedError({ code: 'code', message: 'test' }) // True
 const b = isStandardizedError({ hello: 'world' }) // False
 ```
+#### `MakeRequired`
+Utility type to makes specified keys required in a type, while keeping the rest of the keys as they are.
+
+```typescript
+type Config = {
+  host?: string
+  port?: number
+  secure?: boolean
+}
+type StrictConfig = MakeRequired<Config, 'host'>
+
+const config1: StrictConfig = { host: "localhost" }
+const config2: StrictConfig = { host: "localhost", secure: true }
+```
+
+#### `MayOmit`
+Utility type to makes specified keys in a type optional, while keeping the rest of the keys as they are.
+
+```typescript
+type Config = {
+  host: string
+  port: number
+  secure: boolean
+}
+type PartialConfig = MayOmit<Config, 'port' | 'secure'>
+
+const config1: PartialConfig = { host: "localhost" }
+const config2: PartialConfig = { host: "localhost", port: 8080 }
+```
+
 
 ### API contracts
 
