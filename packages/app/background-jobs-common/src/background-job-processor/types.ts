@@ -9,6 +9,7 @@ export interface RequestContext {
 }
 
 export type JobFinalState = FinishedStatus
+
 export const BASE_JOB_PAYLOAD_SCHEMA = z.object({
   metadata: z.object({
     correlationId: z.string(),

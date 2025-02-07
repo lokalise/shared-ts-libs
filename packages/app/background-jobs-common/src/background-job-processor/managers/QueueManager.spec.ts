@@ -290,31 +290,20 @@ describe('QueueManager', () => {
       )
 
       // Then
-      const jobs1 = await queueManager.getJobsInQueue(queue1Configuration.queueId, ['delayed'])
+      const jobs1 = await queueManager.getJobsInQueue('queue1', ['delayed'])
       expect(jobs1).toMatchObject({
         jobs: expect.arrayContaining(jobIds.map((id) => expect.objectContaining({ id }))),
         hasMore: false,
       })
       expect(jobs1.jobs.map((e) => e.id)).toEqual(jobIds) // order is respected - by default asc
 
-      const jobs2 = await queueManager.getJobsInQueue(
-        queue1Configuration.queueId,
-        ['delayed'],
-        0,
-        0,
-      )
+      const jobs2 = await queueManager.getJobsInQueue('queue1', ['delayed'], 0, 0)
       expect(jobs2).toMatchObject({
         jobs: expect.arrayContaining([expect.objectContaining({ id: jobIds[0] })]),
         hasMore: true,
       })
 
-      const jobs3 = await queueManager.getJobsInQueue(
-        queue1Configuration.queueId,
-        ['delayed'],
-        0,
-        1,
-        false,
-      )
+      const jobs3 = await queueManager.getJobsInQueue('queue2', ['delayed'], 0, 1, false)
       expect(jobs3).toMatchObject({
         jobs: expect.arrayContaining([
           expect.objectContaining({ id: jobIds[2] }),
@@ -323,12 +312,7 @@ describe('QueueManager', () => {
         hasMore: true,
       })
 
-      const jobs4 = await queueManager.getJobsInQueue(
-        queue1Configuration.queueId,
-        ['delayed'],
-        1,
-        2,
-      )
+      const jobs4 = await queueManager.getJobsInQueue('queue1', ['delayed'], 1, 2)
       expect(jobs4).toMatchObject({
         jobs: expect.arrayContaining([
           expect.objectContaining({ id: jobIds[1] }),
