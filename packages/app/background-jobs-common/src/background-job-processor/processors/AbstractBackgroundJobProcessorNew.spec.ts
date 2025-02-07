@@ -1,5 +1,5 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import { waitAndRetry } from '@lokalise/node-core'
+import { type RedisConfig, waitAndRetry } from '@lokalise/node-core'
 import { UnrecoverableError } from 'bullmq'
 import type Redis from 'ioredis'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -60,6 +60,7 @@ describe('AbstractBackgroundJobProcessor', () => {
   let redis: Redis
   let queue1Configuration: QueueConfiguration
   let queue2Configuration: QueueConfiguration
+  let redisConfig: RedisConfig
 
   const jobRegistry = new JobRegistry(SUPPORTED_JOBS)
 
@@ -70,12 +71,12 @@ describe('AbstractBackgroundJobProcessor', () => {
 
     queue1Configuration = {
       queueId: queueId1,
-      redisConfig: mocks.getRedisConfig(),
     }
     queue2Configuration = {
       queueId: queueId2,
-      redisConfig: mocks.getRedisConfig(),
     }
+
+    redisConfig = mocks.getRedisConfig()
 
     await redis?.flushall('SYNC')
   })
@@ -139,7 +140,7 @@ describe('AbstractBackgroundJobProcessor', () => {
       )
       await processor.start()
 
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry, { redisConfig })
       await queueManager.start()
 
       const jobId = await queueManager.schedule('queue1', jobData, {
@@ -170,7 +171,7 @@ describe('AbstractBackgroundJobProcessor', () => {
       )
       await processor.start()
 
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry, { redisConfig })
       await queueManager.start()
 
       // Worker is instantiated but not running
@@ -208,7 +209,9 @@ describe('AbstractBackgroundJobProcessor', () => {
       processor = new FakeBackgroundJobProcessorNew<JobData>(deps, 'queue1', mocks.getRedisConfig())
       await processor.start()
 
-      queueManager = new FakeQueueManager([queue1Configuration, queue2Configuration], jobRegistry)
+      queueManager = new FakeQueueManager([queue1Configuration, queue2Configuration], jobRegistry, {
+        redisConfig,
+      })
       await queueManager.start()
     })
 
@@ -450,7 +453,9 @@ describe('AbstractBackgroundJobProcessor', () => {
       )
       await processor.start()
 
-      queueManager = new FakeQueueManager([queue2Configuration], jobRegistry)
+      queueManager = new FakeQueueManager([queue2Configuration], jobRegistry, {
+        redisConfig,
+      })
       await queueManager.start()
     })
 
@@ -654,7 +659,7 @@ describe('AbstractBackgroundJobProcessor', () => {
         mocks.getRedisConfig(),
       )
       await processor.start()
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry, { redisConfig })
       await queueManager.start()
 
       // When

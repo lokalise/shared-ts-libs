@@ -6,10 +6,10 @@ import type { BASE_JOB_PAYLOAD_SCHEMA } from '../types'
 export type QueueConfiguration = {
   queueId: string
   queueOptions?: QueueOptions // TODO: support QueuePro options
-  redisConfig: RedisConfig
 }
 
 export type QueueManagerConfig = {
+  redisConfig: RedisConfig
   isTest: boolean
   lazyInitEnabled?: boolean
 }

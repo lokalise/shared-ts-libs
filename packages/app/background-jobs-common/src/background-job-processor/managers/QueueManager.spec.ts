@@ -6,7 +6,7 @@ import { DependencyMocks } from '../../../test/dependencyMocks'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import { FakeQueueManager } from './FakeQueueManager'
 import { JobRegistry } from './JobRegistry'
-import type { JobDefinition, QueueConfiguration } from './types'
+import type { JobDefinition, QueueConfiguration, QueueManagerConfig } from './types'
 
 const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
 
@@ -46,6 +46,7 @@ describe('QueueManager', () => {
   let redis: Redis
   let queue1Configuration: QueueConfiguration
   let queue2Configuration: QueueConfiguration
+  let queueManagerConfig: Pick<QueueManagerConfig, 'redisConfig'>
 
   const jobRegistry = new JobRegistry(SUPPORTED_JOBS)
 
@@ -55,12 +56,11 @@ describe('QueueManager', () => {
 
     queue1Configuration = {
       queueId: queueId1,
-      redisConfig: mocks.getRedisConfig(),
     }
     queue2Configuration = {
       queueId: queueId2,
-      redisConfig: mocks.getRedisConfig(),
     }
+    queueManagerConfig = { redisConfig: mocks.getRedisConfig() }
 
     await redis?.flushall('SYNC')
   })
@@ -75,7 +75,11 @@ describe('QueueManager', () => {
     })
 
     it('Multiple start calls (sequential or concurrent) not produce errors', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager(
+        [queue1Configuration],
+        jobRegistry,
+        queueManagerConfig,
+      )
 
       // sequential start calls
       await expect(queueManager.start()).resolves.not.toThrowError()
@@ -94,6 +98,7 @@ describe('QueueManager', () => {
       const queueManager = new FakeQueueManager(
         [queue1Configuration, queue2Configuration],
         jobRegistry,
+        queueManagerConfig,
       )
       await queueManager.start()
 
@@ -107,6 +112,7 @@ describe('QueueManager', () => {
       const queueManager = new FakeQueueManager(
         [queue1Configuration, queue2Configuration],
         jobRegistry,
+        queueManagerConfig,
       )
       await queueManager.start([queue1Configuration.queueId])
 
@@ -119,7 +125,11 @@ describe('QueueManager', () => {
     })
 
     it('Throw error if try to schedule job without starting queueManager and lazy init disabled', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager(
+        [queue1Configuration],
+        jobRegistry,
+        queueManagerConfig,
+      )
 
       await expect(
         queueManager.schedule('queue1', {
@@ -226,7 +236,7 @@ describe('QueueManager', () => {
     let queueManager: FakeQueueManager<typeof SUPPORTED_JOBS>
 
     beforeEach(async () => {
-      queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      queueManager = new FakeQueueManager([queue1Configuration], jobRegistry, queueManagerConfig)
       await queueManager.start()
     })
 
@@ -307,7 +317,11 @@ describe('QueueManager', () => {
   describe('getJobCount', () => {
     it('job count works as expected', async () => {
       // Given
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager(
+        [queue1Configuration],
+        jobRegistry,
+        queueManagerConfig,
+      )
       await queueManager.start()
       expect(await queueManager.getJobCount(queue1Configuration.queueId)).toBe(0)
 
@@ -345,7 +359,11 @@ describe('QueueManager', () => {
 
   describe('dispose', () => {
     it('does nothing if not started', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager(
+        [queue1Configuration],
+        jobRegistry,
+        queueManagerConfig,
+      )
       await expect(queueManager.dispose()).resolves.not.toThrowError()
     })
 
@@ -353,6 +371,7 @@ describe('QueueManager', () => {
       const queueManager = new FakeQueueManager(
         [queue1Configuration, queue2Configuration],
         jobRegistry,
+        queueManagerConfig,
       )
       await queueManager.start()
       const isPaused = await queueManager.getQueue(queueId1).isPaused()
@@ -364,7 +383,11 @@ describe('QueueManager', () => {
     })
 
     it('handles errors during queue closing gracefully', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager(
+        [queue1Configuration],
+        jobRegistry,
+        queueManagerConfig,
+      )
       await queueManager.start()
       // @ts-ignore
       vi.spyOn(queueManager.getQueue('queue1'), 'close').mockRejectedValue(new Error('close error'))
