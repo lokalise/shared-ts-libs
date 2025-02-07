@@ -145,14 +145,11 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     )
   }
 
-  public async schedule<Q extends SupportedQueues<SupportedJobs>>(
-    scheduleParams: {
-      queueId: Q
-      jobPayload: JobPayloadForQueue<Q, SupportedJobs>
-    },
+  public async schedule<QueueId extends SupportedQueues<SupportedJobs>>(
+    queueId: QueueId,
+    jobPayload: JobPayloadForQueue<QueueId, SupportedJobs>,
     options?: JobsOptions,
   ): Promise<string> {
-    const { queueId, jobPayload } = scheduleParams
     const defaultJobOptions = this.jobRegistry.getJobOptions(queueId) ?? {}
 
     await this.startIfNotStarted(queueId)
@@ -169,14 +166,11 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     return job.id
   }
 
-  public async scheduleBulk<Q extends SupportedQueues<SupportedJobs>>(
-    scheduleParams: {
-      queueId: Q
-      jobPayloads: JobPayloadForQueue<Q, SupportedJobs>[]
-    },
-    options?: JobsOptions,
+  public async scheduleBulk<QueueId extends SupportedQueues<SupportedJobs>>(
+    queueId: QueueId,
+    jobPayloads: JobPayloadForQueue<QueueId, SupportedJobs>[],
+    options?: Omit<JobsOptions, 'repeat'>,
   ): Promise<string[]> {
-    const { queueId, jobPayloads } = scheduleParams
     const defaultJobOptions = this.jobRegistry.getJobOptions(queueId) ?? {}
 
     if (jobPayloads.length === 0) return []
