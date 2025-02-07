@@ -50,8 +50,10 @@ const jobRegistry = new JobRegistry([
   }
 ])
 
-const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+const queueManager = new QueueManager([{ queueId: 'queue1' }], jobRegistry, {
   redisConfig: config.getRedisConfig(),
+  isTest: false,
+  lazyInitEnabled: false,
 })
 await queueManager.start()
 
@@ -65,7 +67,7 @@ await processor.start()
 const jobId = await queueManager.schedule('queue1', {
     id: randomUUID(),
     value: 'test',
-    metadata: { correlationId: generateMonotonicUuid() },
+    metadata: { correlationId: randomUUID() },
 })
 ```
 
