@@ -6,13 +6,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DependencyMocks } from '../../../test/dependencyMocks.js'
 import type { BaseJobPayload } from '../types.js'
 
-import { randomUUID } from 'node:crypto'
 import type Redis from 'ioredis'
+import { z } from 'zod'
 import { isPromiseFinished } from '../../../test/isPromiseFinished.js'
 import { TestFailingUpdatedBackgroundJobProcessor } from '../../../test/processors/TestFailingUpdatedBackgroundJobProcessor.js'
 import { TestStalledUpdatedBackgroundJobProcessor } from '../../../test/processors/TestStalledUpdatedBackgroundJobProcessor.js'
 import { TestSuccessUpdatedBackgroundJobProcessor } from '../../../test/processors/TestSuccessUpdatedBackgroundJobProcessor.js'
 import { FakeQueueManager } from '../managers/FakeQueueManager.js'
+import { type JobDefinition, JobRegistry } from '../managers/JobRegistry.js'
 import type { QueueConfiguration } from '../managers/QueueManager.js'
 import { FakeUpdatedBackgroundJobProcessor } from './FakeUpdatedBackgroundJobProcessor.js'
 import type { BackgroundJobProcessorDependencies } from './types.js'
@@ -24,15 +25,59 @@ type JobData = {
 
 const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
 
+const queueId1 = 'queue1'
+const queueId2 = 'queue2'
+
+const jobPayloadSchema = z.object({
+  id: z.string(),
+  value: z.string(),
+  metadata: z.object({
+    correlationId: z.string(),
+  }),
+})
+
+const jobPayloadSchema2 = z.object({
+  id: z.string(),
+  value: z.string(),
+  value2: z.string(),
+  metadata: z.object({
+    correlationId: z.string(),
+  }),
+})
+
+const SUPPORTED_JOBS = [
+  {
+    queueId: queueId1,
+    jobPayloadSchema,
+  },
+  {
+    queueId: queueId2,
+    jobPayloadSchema: jobPayloadSchema2,
+  },
+] as const satisfies JobDefinition[]
+
 describe('AbstractBackgroundJobProcessor', () => {
   let mocks: DependencyMocks
   let deps: BackgroundJobProcessorDependencies<JobData>
   let redis: Redis
+  let queue1Configuration: QueueConfiguration
+  let queue2Configuration: QueueConfiguration
+
+  const jobRegistry = new JobRegistry(SUPPORTED_JOBS)
 
   beforeEach(async () => {
     mocks = new DependencyMocks()
     deps = mocks.create()
     redis = mocks.startRedis()
+
+    queue1Configuration = {
+      queueId: queueId1,
+      redisConfig: mocks.getRedisConfig(),
+    }
+    queue2Configuration = {
+      queueId: queueId2,
+      redisConfig: mocks.getRedisConfig(),
+    }
 
     await redis?.flushall('SYNC')
   })
@@ -87,8 +132,6 @@ describe('AbstractBackgroundJobProcessor', () => {
     })
 
     it('restart processor after dispose', async () => {
-      const queueId = randomUUID()
-
       const jobData = {
         id: generateMonotonicUuid(),
         value: 'test',
@@ -97,20 +140,21 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       const processor = new FakeUpdatedBackgroundJobProcessor<JobData>(
         deps,
-        queueId,
+        'queue1',
         mocks.getRedisConfig(),
       )
       await processor.start()
 
-      const queueManager = new FakeQueueManager([
-        {
-          queueId,
-          redisConfig: mocks.getRedisConfig(),
-        },
-      ])
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
       await queueManager.start()
 
-      const jobId = await queueManager.schedule(queueId, jobData, { delay: 100 })
+      const jobId = await queueManager.schedule(
+        {
+          queueId: 'queue1',
+          jobPayload: jobData,
+        },
+        { delay: 100 },
+      )
 
       const jobScheduled = await queueManager.spy.waitForJobWithId(jobId, 'scheduled')
       expect(jobScheduled.data, 'object did not match').toMatchObject(jobData)
@@ -127,22 +171,16 @@ describe('AbstractBackgroundJobProcessor', () => {
     })
 
     it('processors starts queue but not worker if workerAutoRunEnabled is true', async () => {
-      const queueId = randomUUID()
       const processor = new FakeUpdatedBackgroundJobProcessor<JobData>(
         deps,
-        queueId,
+        'queue1',
         mocks.getRedisConfig(),
         true,
         false,
       )
       await processor.start()
 
-      const queueManager = new FakeQueueManager([
-        {
-          queueId,
-          redisConfig: mocks.getRedisConfig(),
-        },
-      ])
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
       await queueManager.start()
 
       // Worker is instantiated but not running
@@ -154,7 +192,10 @@ describe('AbstractBackgroundJobProcessor', () => {
         value: 'test',
         metadata: { correlationId: 'correlation_id' },
       }
-      const jobId = await queueManager.schedule(queueId, jobData)
+      const jobId = await queueManager.schedule({
+        queueId: 'queue1',
+        jobPayload: jobData,
+      })
 
       // Job is added to the queue but not processed by the worker
       const queueManagerSpyResult = await queueManager.spy.waitForJobWithId(jobId, 'scheduled')
@@ -173,32 +214,18 @@ describe('AbstractBackgroundJobProcessor', () => {
   })
 
   describe('success', () => {
-    let queueId: string
-    let unusedQueueId: string
     let processor: FakeUpdatedBackgroundJobProcessor<JobData>
-    let queueManager: FakeQueueManager<QueueConfiguration[]>
+    let queueManager: FakeQueueManager<typeof SUPPORTED_JOBS>
 
     beforeEach(async () => {
-      queueId = randomUUID()
-      unusedQueueId = 'unusedQueueId'
-
       processor = new FakeUpdatedBackgroundJobProcessor<JobData>(
         deps,
-        queueId,
+        'queue1',
         mocks.getRedisConfig(),
       )
       await processor.start()
 
-      queueManager = new FakeQueueManager([
-        {
-          queueId,
-          redisConfig: mocks.getRedisConfig(),
-        },
-        {
-          queueId: unusedQueueId,
-          redisConfig: mocks.getRedisConfig(),
-        },
-      ])
+      queueManager = new FakeQueueManager([queue1Configuration, queue2Configuration], jobRegistry)
       await queueManager.start()
     })
 
@@ -216,7 +243,10 @@ describe('AbstractBackgroundJobProcessor', () => {
       }
 
       // When
-      const jobId = await queueManager.schedule(queueId, jobData)
+      const jobId = await queueManager.schedule({
+        queueId: 'queue1',
+        jobPayload: jobData,
+      })
 
       // Then
       const UUID_REGEX =
@@ -226,8 +256,7 @@ describe('AbstractBackgroundJobProcessor', () => {
       const job = await processor.spy.waitForJobWithId(jobId, 'completed')
       expect(job.data).toMatchObject(jobData)
 
-      // @ts-ignore
-      const resolvedJob = await queueManager.getQueue(queueId).getJob(job.id)
+      const resolvedJob = await queueManager.getQueue('queue1').getJob(job.id)
       expect(resolvedJob!.data).toMatchObject(jobData)
 
       // @ts-expect-error executing protected method for testing
@@ -236,18 +265,21 @@ describe('AbstractBackgroundJobProcessor', () => {
 
     it('schedules and runs multiple jobs', async () => {
       // Given - When
-      const scheduledJobIds = await queueManager.scheduleBulk(queueId, [
-        {
-          id: generateMonotonicUuid(),
-          value: 'first',
-          metadata: { correlationId: generateMonotonicUuid() },
-        },
-        {
-          id: generateMonotonicUuid(),
-          value: 'second',
-          metadata: { correlationId: generateMonotonicUuid() },
-        },
-      ])
+      const scheduledJobIds = await queueManager.scheduleBulk({
+        queueId: 'queue1',
+        jobPayloads: [
+          {
+            id: generateMonotonicUuid(),
+            value: 'first',
+            metadata: { correlationId: generateMonotonicUuid() },
+          },
+          {
+            id: generateMonotonicUuid(),
+            value: 'second',
+            metadata: { correlationId: generateMonotonicUuid() },
+          },
+        ],
+      })
 
       // Then
       expect(scheduledJobIds.length).toBe(2)
@@ -264,17 +296,21 @@ describe('AbstractBackgroundJobProcessor', () => {
       const jobData = {
         id: generateMonotonicUuid(),
         value: 'test',
+        value2: 'jobPayload2 test',
         metadata: { correlationId: generateMonotonicUuid() },
       }
 
       const successBackgroundJobProcessor = new TestSuccessUpdatedBackgroundJobProcessor(
         deps,
-        unusedQueueId,
+        'queue2',
         mocks.getRedisConfig(),
       )
 
       await successBackgroundJobProcessor.start()
-      const jobId = await queueManager.schedule(unusedQueueId, jobData)
+      const jobId = await queueManager.schedule({
+        queueId: 'queue2',
+        jobPayload: jobData,
+      })
 
       const job = await successBackgroundJobProcessor.spy.waitForJobWithId(jobId, 'completed')
       expect(job.data).toMatchObject(jobData)
@@ -291,12 +327,13 @@ describe('AbstractBackgroundJobProcessor', () => {
       const jobData = {
         id: generateMonotonicUuid(),
         value: 'test',
+        value2: 'jobPayload2 test',
         metadata: { correlationId: generateMonotonicUuid() },
       }
 
       const successBackgroundJobProcessor = new TestSuccessUpdatedBackgroundJobProcessor(
         deps,
-        unusedQueueId,
+        'queue2',
         mocks.getRedisConfig(),
       )
       successBackgroundJobProcessor.onSuccessHook = () => {
@@ -304,7 +341,10 @@ describe('AbstractBackgroundJobProcessor', () => {
       }
 
       await successBackgroundJobProcessor.start()
-      const jobId = await queueManager.schedule(unusedQueueId, jobData)
+      const jobId = await queueManager.schedule({
+        queueId: 'queue2',
+        jobPayload: jobData,
+      })
 
       const job = await successBackgroundJobProcessor.spy.waitForJobWithId(jobId, 'completed')
       expect(job.data).toMatchObject(jobData)
@@ -321,12 +361,13 @@ describe('AbstractBackgroundJobProcessor', () => {
       const jobData = {
         id: generateMonotonicUuid(),
         value: 'test',
+        value2: 'jobPayload2 test',
         metadata: { correlationId: generateMonotonicUuid() },
       }
 
       const successBackgroundJobProcessor = new TestSuccessUpdatedBackgroundJobProcessor(
         deps,
-        unusedQueueId,
+        'queue2',
         mocks.getRedisConfig(),
       )
       successBackgroundJobProcessor.onSuccessHook = (job) => {
@@ -334,7 +375,10 @@ describe('AbstractBackgroundJobProcessor', () => {
       }
 
       await successBackgroundJobProcessor.start()
-      const jobId = await queueManager.schedule(unusedQueueId, jobData)
+      const jobId = await queueManager.schedule({
+        queueId: 'queue2',
+        jobPayload: jobData,
+      })
 
       const job = await successBackgroundJobProcessor.spy.waitForJobWithId(jobId, 'completed')
 
@@ -355,12 +399,13 @@ describe('AbstractBackgroundJobProcessor', () => {
       const jobData = {
         id: generateMonotonicUuid(),
         value: 'test',
+        value2: 'jobPayload2 test',
         metadata: { correlationId: generateMonotonicUuid() },
       }
 
       const successBackgroundJobProcessor = new TestSuccessUpdatedBackgroundJobProcessor(
         deps,
-        unusedQueueId,
+        'queue2',
         mocks.getRedisConfig(),
       )
 
@@ -375,7 +420,10 @@ describe('AbstractBackgroundJobProcessor', () => {
       })
 
       await successBackgroundJobProcessor.start()
-      const jobId = await queueManager.schedule(unusedQueueId, jobData)
+      const jobId = await queueManager.schedule({
+        queueId: 'queue2',
+        jobPayload: jobData,
+      })
 
       // When
       await successBackgroundJobProcessor.spy.waitForJobWithId(jobId, 'completed')
@@ -392,12 +440,13 @@ describe('AbstractBackgroundJobProcessor', () => {
       const jobData = {
         id: generateMonotonicUuid(),
         value: 'test',
+        value2: 'jobPayload2 test',
         metadata: { correlationId: generateMonotonicUuid() },
       }
 
       const successBackgroundJobProcessor = new TestSuccessUpdatedBackgroundJobProcessor(
         deps,
-        unusedQueueId,
+        'queue2',
         mocks.getRedisConfig(),
       )
 
@@ -411,7 +460,10 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       // When
       await successBackgroundJobProcessor.start()
-      await queueManager.schedule(unusedQueueId, jobData)
+      await queueManager.schedule({
+        queueId: 'queue2',
+        jobPayload: jobData,
+      })
 
       // Then
       await expect(purgeExecutionPromise).rejects.toThrowError(
@@ -424,24 +476,18 @@ describe('AbstractBackgroundJobProcessor', () => {
   })
 
   describe('error', () => {
-    const queueId = 'AbstractBackgroundJobProcessor_error'
     let processor: TestFailingUpdatedBackgroundJobProcessor<JobData>
-    let queueManager: FakeQueueManager<QueueConfiguration[]>
+    let queueManager: FakeQueueManager<typeof SUPPORTED_JOBS>
 
     beforeEach(async () => {
       processor = new TestFailingUpdatedBackgroundJobProcessor<JobData>(
         deps,
-        queueId,
+        'queue2',
         mocks.getRedisConfig(),
       )
       await processor.start()
 
-      queueManager = new FakeQueueManager([
-        {
-          queueId,
-          redisConfig: mocks.getRedisConfig(),
-        },
-      ])
+      queueManager = new FakeQueueManager([queue2Configuration], jobRegistry)
       await queueManager.start()
     })
 
@@ -461,11 +507,14 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       // When
       const scheduledJobId = await queueManager.schedule(
-        queueId,
         {
-          id: 'test_id',
-          value: 'test',
-          metadata: { correlationId: 'correlation_id' },
+          queueId: 'queue2',
+          jobPayload: {
+            id: 'test_id',
+            value: 'test',
+            value2: 'jobPayload2 test',
+            metadata: { correlationId: 'correlation_id' },
+          },
         },
         { attempts: 3, delay: 0 },
       )
@@ -485,11 +534,14 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       // When
       const jobId = await queueManager.schedule(
-        queueId,
         {
-          id: 'test_id',
-          value: 'test',
-          metadata: { correlationId: 'correlation_id' },
+          queueId: 'queue2',
+          jobPayload: {
+            id: 'test_id',
+            value: 'test',
+            value2: 'jobPayload2 test',
+            metadata: { correlationId: 'correlation_id' },
+          },
         },
         { attempts: 3, delay: 0 },
       )
@@ -512,11 +564,14 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       // When
       const jobId = await queueManager.schedule(
-        queueId,
         {
-          id: 'test_id',
-          value: 'test',
-          metadata: { correlationId: 'correlation_id' },
+          queueId: 'queue2',
+          jobPayload: {
+            id: 'test_id',
+            value: 'test',
+            value2: 'jobPayload2 test',
+            metadata: { correlationId: 'correlation_id' },
+          },
         },
         { attempts: 3, delay: 0 },
       )
@@ -539,11 +594,14 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       // When
       const jobId = await queueManager.schedule(
-        queueId,
         {
-          id: 'test_id',
-          value: 'test',
-          metadata: { correlationId: 'correlation_id' },
+          queueId: 'queue2',
+          jobPayload: {
+            id: 'test_id',
+            value: 'test',
+            value2: 'jobPayload2 test',
+            metadata: { correlationId: 'correlation_id' },
+          },
         },
         { attempts: 3, delay: 0 },
       )
@@ -556,7 +614,7 @@ describe('AbstractBackgroundJobProcessor', () => {
         error: onFailedError,
         context: {
           jobId: job.id,
-          jobName: 'AbstractBackgroundJobProcessor_error',
+          jobName: 'queue2',
           'x-request-id': 'correlation_id',
           error: expect.stringContaining(onFailedError.message),
         },
@@ -565,29 +623,19 @@ describe('AbstractBackgroundJobProcessor', () => {
   })
 
   describe('stalled', () => {
-    const queueId = 'stalledQueue'
+    // const queueId = 'stalledQueue'
     let stalledProcessor: TestStalledUpdatedBackgroundJobProcessor<JobData>
-    let queueManager: FakeQueueManager<QueueConfiguration[]>
+    let queueManager: FakeQueueManager<typeof SUPPORTED_JOBS>
 
     beforeEach(async () => {
       stalledProcessor = new TestStalledUpdatedBackgroundJobProcessor(
         deps,
-        queueId,
+        'queue2',
         mocks.getRedisConfig(),
       )
       await stalledProcessor.start()
 
-      queueManager = new FakeQueueManager(
-        [
-          {
-            queueId,
-            redisConfig: mocks.getRedisConfig(),
-          },
-        ],
-        {
-          isTest: false,
-        },
-      )
+      queueManager = new FakeQueueManager([queue2Configuration], jobRegistry, { isTest: false })
       await queueManager.start()
     })
 
@@ -604,14 +652,21 @@ describe('AbstractBackgroundJobProcessor', () => {
       const jobData = {
         id: generateMonotonicUuid(),
         value: 'test',
+        value2: 'jobPayload2 test',
         metadata: { correlationId: generateMonotonicUuid() },
       }
-      const jobId = await queueManager.schedule(queueId, jobData, {
-        attempts: 1,
-        backoff: { type: 'fixed', delay: 1 },
-        removeOnComplete: true,
-        removeOnFail: 1, // we should keep the job in the queue to test the stalled job behavior
-      })
+      const jobId = await queueManager.schedule(
+        {
+          queueId: 'queue2',
+          jobPayload: jobData,
+        },
+        {
+          attempts: 1,
+          backoff: { type: 'fixed', delay: 1 },
+          removeOnComplete: true,
+          removeOnFail: 1, // we should keep the job in the queue to test the stalled job behavior
+        },
+      )
 
       // Then
       await waitAndRetry(() => stalledProcessor.onFailedErrors.length > 0, 100, 20)
@@ -627,7 +682,7 @@ describe('AbstractBackgroundJobProcessor', () => {
         error: onFailedCall.error,
         context: {
           jobId,
-          jobName: queueId,
+          jobName: 'queue2',
           'x-request-id': jobData.metadata.correlationId,
           errorJson: expect.stringContaining(onFailedCall.error.message),
         },
@@ -642,28 +697,24 @@ describe('AbstractBackgroundJobProcessor', () => {
 
     it('schedules repeatable job', async () => {
       // Given
-      const queueId = randomUUID()
       const processor = new FakeUpdatedBackgroundJobProcessor<JobData>(
         deps,
-        queueId,
+        'queue1',
         mocks.getRedisConfig(),
       )
       await processor.start()
-      const queueManager = new FakeQueueManager([
-        {
-          queueId,
-          redisConfig: mocks.getRedisConfig(),
-        },
-      ])
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
       await queueManager.start()
 
       // When
       const scheduledJobId = await queueManager.schedule(
-        queueId,
         {
-          id: 'test_id',
-          value: 'test',
-          metadata: { correlationId: 'correlation_id' },
+          queueId: 'queue1',
+          jobPayload: {
+            id: 'test_id',
+            value: 'test',
+            metadata: { correlationId: 'correlation_id' },
+          },
         },
         {
           repeat: {
@@ -677,7 +728,7 @@ describe('AbstractBackgroundJobProcessor', () => {
       // Then
       await processor.spy.waitForJobWithId(scheduledJobId, 'completed')
 
-      const schedulers = await queueManager.getQueue(queueId).getJobSchedulers()
+      const schedulers = await queueManager.getQueue('queue1').getJobSchedulers()
       expect(schedulers).toHaveLength(1)
       expect(schedulers[0].every).toBe('10')
 

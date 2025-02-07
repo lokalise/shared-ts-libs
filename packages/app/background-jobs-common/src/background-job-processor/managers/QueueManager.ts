@@ -2,13 +2,13 @@ import type { RedisConfig } from '@lokalise/node-core'
 import type { JobsOptions, QueueOptions } from 'bullmq'
 import { Queue } from 'bullmq'
 import type { JobState } from 'bullmq/dist/esm/types/job-type.js'
+import type { ZodSchema, z } from 'zod'
 import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types.js'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.js'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.js'
 import type { BaseJobPayload } from '../types.js'
 import { prepareJobOptions, sanitizeRedisConfig } from '../utils.js'
-import type {InferExact, JobDefinition, JobRegistry} from "./JobRegistry";
-import type {z, ZodSchema} from "zod";
+import type { InferExact, JobDefinition, JobRegistry } from './JobRegistry.js'
 
 export type QueueConfiguration = {
   queueId: string
@@ -21,22 +21,21 @@ export type QueueManagerConfig = {
   lazyInitEnabled?: boolean
 }
 
-export type JobPayloadForQueue<
-    Q extends string,
-    Jobs extends JobDefinition[]
-> = InferExact<Extract<Jobs[number], { queueId: Q }>['jobPayloadSchema']>;
+export type JobPayloadForQueue<Q extends string, Jobs extends JobDefinition[]> = InferExact<
+  Extract<Jobs[number], { queueId: Q }>['jobPayloadSchema']
+>
 
 // ✅ Utility to extract exact Zod schema inference while keeping optional/required properties intact
-export type InferSchema<T extends ZodSchema<any>> = z.infer<T>;
+// biome-ignore lint/suspicious/noExplicitAny: any is used to allow any Zod schema
+export type InferSchema<T extends ZodSchema<any>> = z.infer<T>
 
 // Utility type to ensure `queueId` and `jobPayload` are correctly paired
 export type JobWithPayload<T extends JobDefinition> = {
-  queueId: T['queueId'];
-  jobPayload: InferSchema<T['jobPayloadSchema']>; // Preserves required/optional fields exactly
-};
+  queueId: T['queueId']
+  jobPayload: InferSchema<T['jobPayloadSchema']> // Preserves required/optional fields exactly
+}
 
-export class QueueManager<SupportedJobs extends JobDefinition[]
-> {
+export class QueueManager<SupportedJobs extends JobDefinition[]> {
   private queueMap: Record<string, QueueConfiguration> = {}
   private readonly queueIds: Set<string>
   private config: QueueManagerConfig
@@ -49,9 +48,11 @@ export class QueueManager<SupportedJobs extends JobDefinition[]
   private isStarted = false
   private startPromise?: Promise<void>
 
-  protected constructor(queues: QueueConfiguration[],
-                        jobRegistry: JobRegistry<SupportedJobs>,
-                        config: QueueManagerConfig) {
+  protected constructor(
+    queues: QueueConfiguration[],
+    jobRegistry: JobRegistry<SupportedJobs>,
+    config: QueueManagerConfig,
+  ) {
     this.queueIds = new Set<string>()
     this.jobRegistry = jobRegistry
 
@@ -164,11 +165,11 @@ export class QueueManager<SupportedJobs extends JobDefinition[]
   }
 
   public async schedule<Q extends SupportedJobs[number]['queueId']>(
-      scheduleParams: {
-        queueId: Q;
-        jobPayload: JobPayloadForQueue<Q, SupportedJobs>;
-      },
-      options?: JobsOptions
+    scheduleParams: {
+      queueId: Q
+      jobPayload: JobPayloadForQueue<Q, SupportedJobs>
+    },
+    options?: JobsOptions,
   ): Promise<string> {
     const { queueId, jobPayload } = scheduleParams
 
@@ -176,6 +177,7 @@ export class QueueManager<SupportedJobs extends JobDefinition[]
 
     const job = await this.getQueue(queueId).add(
       queueId,
+      // @ts-ignore
       jobPayload,
       prepareJobOptions(this.config.isTest, options),
     )
@@ -186,11 +188,11 @@ export class QueueManager<SupportedJobs extends JobDefinition[]
   }
 
   public async scheduleBulk<Q extends SupportedJobs[number]['queueId']>(
-      scheduleParams: {
-        queueId: Q;
-        jobPayloads: JobPayloadForQueue<Q, SupportedJobs>[];
-      },
-      options?: JobsOptions
+    scheduleParams: {
+      queueId: Q
+      jobPayloads: JobPayloadForQueue<Q, SupportedJobs>[]
+    },
+    options?: JobsOptions,
   ): Promise<string[]> {
     const { queueId, jobPayloads } = scheduleParams
     if (jobPayloads.length === 0) return []
@@ -199,7 +201,8 @@ export class QueueManager<SupportedJobs extends JobDefinition[]
 
     const jobs =
       (await this.getQueue(queueId)?.addBulk(
-          jobPayloads.map((data) => ({
+        // @ts-ignore
+        jobPayloads.map((data) => ({
           name: queueId,
           data: data,
           opts: prepareJobOptions(this.config.isTest, options),

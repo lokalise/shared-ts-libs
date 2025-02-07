@@ -1,14 +1,12 @@
-import { randomUUID } from 'node:crypto'
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type Redis from 'ioredis'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { z } from 'zod'
 import { DependencyMocks } from '../../../test/dependencyMocks.js'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.js'
 import { FakeQueueManager } from './FakeQueueManager.js'
+import { type JobDefinition, JobRegistry } from './JobRegistry.js'
 import type { QueueConfiguration } from './QueueManager.js'
-import {JobDefinition, JobRegistry} from "./JobRegistry";
-import {z, ZodSchema} from "zod";
-import {BaseJobPayload} from "../types";
 
 const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
 
@@ -19,8 +17,8 @@ const jobPayloadSchema = z.object({
   id: z.string(),
   value: z.string(),
   metadata: z.object({
-    correlationId: z.string()
-  })
+    correlationId: z.string(),
+  }),
 })
 
 const jobPayloadSchema2 = z.object({
@@ -28,21 +26,20 @@ const jobPayloadSchema2 = z.object({
   value: z.string(),
   value2: z.string(),
   metadata: z.object({
-    correlationId: z.string()
-  })
+    correlationId: z.string(),
+  }),
 })
 
 const SUPPORTED_JOBS = [
-      {
+  {
     queueId: queueId1,
     jobPayloadSchema,
   },
-
   {
     queueId: queueId2,
     jobPayloadSchema: jobPayloadSchema2,
   },
-  ] as const satisfies JobDefinition[]
+] as const satisfies JobDefinition[]
 
 describe('QueueManager', () => {
   let mocks: DependencyMocks
@@ -94,17 +91,23 @@ describe('QueueManager', () => {
     })
 
     it('Starts multiple queues', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration, queue2Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager(
+        [queue1Configuration, queue2Configuration],
+        jobRegistry,
+      )
       await queueManager.start()
 
-      expect(queueManager.getQueue("queue1")).toBeDefined()
-      expect(queueManager.getQueue("queue2")).toBeDefined()
+      expect(queueManager.getQueue('queue1')).toBeDefined()
+      expect(queueManager.getQueue('queue2')).toBeDefined()
 
       await queueManager.dispose()
     })
 
     it('Starts only provided queues', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration, queue2Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager(
+        [queue1Configuration, queue2Configuration],
+        jobRegistry,
+      )
       await queueManager.start([queue1Configuration.queueId])
 
       expect(queueManager.getQueue('queue1')).toBeDefined()
@@ -125,42 +128,47 @@ describe('QueueManager', () => {
             value: 'test',
             // @ts-expect-error Should only expect fields from queue1 schema
             value2: 'test',
-            metadata: {correlationId: 'correlation_id'},
-          }
-        })
+            metadata: { correlationId: 'correlation_id' },
+          },
+        }),
       ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
 
       await expect(
-          queueManager.schedule({
-            queueId: 'queue1',
-            // @ts-expect-error Should expect mandatory fields from queue1 schema
-            jobPayload: {
-              value: 'test',
-              metadata: {correlationId: 'correlation_id'},
-            }
-          })
+        queueManager.schedule({
+          queueId: 'queue1',
+          // @ts-expect-error Should expect mandatory fields from queue1 schema
+          jobPayload: {
+            value: 'test',
+            metadata: { correlationId: 'correlation_id' },
+          },
+        }),
       ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
 
       await expect(
-          queueManager.schedule({
-            queueId: 'queue2',
-            jobPayload: {
-              id: 'id',
-              value: 'test',
-              value2: 'test',
-              metadata: {correlationId: 'correlation_id'},
-            }
-          })
+        queueManager.schedule({
+          queueId: 'queue2',
+          jobPayload: {
+            id: 'id',
+            value: 'test',
+            value2: 'test',
+            metadata: { correlationId: 'correlation_id' },
+          },
+        }),
       ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
     })
 
     it('Lazy loading on schedule', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], { lazyInitEnabled: true })
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry, {
+        lazyInitEnabled: true,
+      })
 
-      const jobId = await queueManager.schedule(queue1Configuration.queueId, {
-        id: 'test_id',
-        value: 'test',
-        metadata: { correlationId: 'correlation_id' },
+      const jobId = await queueManager.schedule({
+        queueId: 'queue1',
+        jobPayload: {
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        },
       })
       const spyResult = await queueManager.spy.waitForJobWithId(jobId, 'scheduled')
 
@@ -173,13 +181,19 @@ describe('QueueManager', () => {
     })
 
     it('Does not lazy loads on undefined queues', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], { lazyInitEnabled: true })
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry, {
+        lazyInitEnabled: true,
+      })
 
       await expect(
-        queueManager.schedule(queue2Configuration.queueId, {
-          id: 'test_id',
-          value: 'test',
-          metadata: { correlationId: 'correlation_id' },
+        queueManager.schedule({
+          queueId: 'queue2',
+          jobPayload: {
+            id: 'test_id',
+            value: 'test',
+            value2: 'test',
+            metadata: { correlationId: 'correlation_id' },
+          },
         }),
       ).rejects.toThrowError(/queue .* was not instantiated yet, please run "start\(\)"/)
 
@@ -187,31 +201,47 @@ describe('QueueManager', () => {
     })
 
     it('Lazy loading on scheduleBulk', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], { lazyInitEnabled: true })
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry, {
+        lazyInitEnabled: true,
+      })
 
-      const jobIds = await queueManager.scheduleBulk(queue1Configuration.queueId, [
-        {
-          id: 'test_id',
-          value: 'test',
-          metadata: { correlationId: 'correlation_id' },
-        },
-      ])
-      const spyResult = await queueManager.spy.waitForJobWithId(jobIds[0], 'scheduled')
+      const jobIds = await queueManager.scheduleBulk({
+        queueId: 'queue1',
+        jobPayloads: [
+          {
+            id: 'test_id',
+            value: 'test',
+            metadata: { correlationId: 'correlation_id' },
+          },
+          {
+            id: 'test_id2',
+            value: 'test2',
+            metadata: { correlationId: 'correlation_id2' },
+          },
+        ],
+      })
+      const spy1stJobResult = await queueManager.spy.waitForJobWithId(jobIds[0], 'scheduled')
+      const spy3rdJobResult = await queueManager.spy.waitForJobWithId(jobIds[1], 'scheduled')
 
-      expect(spyResult.data).toMatchObject({
+      expect(spy1stJobResult.data).toMatchObject({
         id: 'test_id',
         value: 'test',
         metadata: { correlationId: 'correlation_id' },
+      })
+      expect(spy3rdJobResult.data).toMatchObject({
+        id: 'test_id2',
+        value: 'test2',
+        metadata: { correlationId: 'correlation_id2' },
       })
       await queueManager.dispose()
     })
   })
 
   describe('getJobsInStates', () => {
-    let queueManager: FakeQueueManager<QueueConfiguration[]>
+    let queueManager: FakeQueueManager<typeof SUPPORTED_JOBS>
 
     beforeEach(async () => {
-      queueManager = new FakeQueueManager([queue1Configuration])
+      queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
       await queueManager.start()
     })
 
@@ -220,39 +250,43 @@ describe('QueueManager', () => {
     })
 
     it('empty states should throw error', async () => {
-      await expect(
-        queueManager.getJobsInQueue(queue1Configuration.queueId, []),
-      ).rejects.toThrowError('states must not be empty')
+      await expect(queueManager.getJobsInQueue('queue1', [])).rejects.toThrowError(
+        'states must not be empty',
+      )
     })
 
     it('start bigger than end should throw error', async () => {
-      await expect(
-        queueManager.getJobsInQueue(queue1Configuration.queueId, ['active'], 2, 1),
-      ).rejects.toThrowError('start must be less than or equal to end')
+      await expect(queueManager.getJobsInQueue('queue1', ['active'], 2, 1)).rejects.toThrowError(
+        'start must be less than or equal to end',
+      )
     })
 
     it('returns jobs in the given states', async () => {
       // Given - When
       const jobIds = await queueManager.scheduleBulk(
-        queue1Configuration.queueId,
-        [
-          {
-            id: generateMonotonicUuid(),
-            value: 'test1',
-            metadata: { correlationId: generateMonotonicUuid() },
-          },
-          {
-            id: generateMonotonicUuid(),
-            value: 'test2',
-            metadata: { correlationId: generateMonotonicUuid() },
-          },
-          {
-            id: generateMonotonicUuid(),
-            value: 'test3',
-            metadata: { correlationId: generateMonotonicUuid() },
-          },
-        ],
-        { delay: 1000 },
+        {
+          queueId: 'queue1',
+          jobPayloads: [
+            {
+              id: generateMonotonicUuid(),
+              value: 'test1',
+              metadata: { correlationId: generateMonotonicUuid() },
+            },
+            {
+              id: generateMonotonicUuid(),
+              value: 'test2',
+              metadata: { correlationId: generateMonotonicUuid() },
+            },
+            {
+              id: generateMonotonicUuid(),
+              value: 'test3',
+              metadata: { correlationId: generateMonotonicUuid() },
+            },
+          ],
+        },
+        {
+          delay: 1000,
+        },
       )
 
       // Then
@@ -308,15 +342,18 @@ describe('QueueManager', () => {
   describe('getJobCount', () => {
     it('job count works as expected', async () => {
       // Given
-      const queueManager = new FakeQueueManager([queue1Configuration])
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
       await queueManager.start()
       expect(await queueManager.getJobCount(queue1Configuration.queueId)).toBe(0)
 
       // When
-      await queueManager.schedule(queue1Configuration.queueId, {
-        id: 'test_id',
-        value: 'test',
-        metadata: { correlationId: 'correlation_id' },
+      await queueManager.schedule({
+        queueId: 'queue1',
+        jobPayload: {
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        },
       })
 
       // Then
@@ -328,12 +365,16 @@ describe('QueueManager', () => {
 
   describe('spy', () => {
     it('returns the spy instance when in test mode', () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], { isTest: true })
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry, {
+        isTest: true,
+      })
       expect(queueManager.spy).toBeInstanceOf(BackgroundJobProcessorSpy)
     })
 
     it('throws an error when spy is accessed and not in test mode', () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], { isTest: false })
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry, {
+        isTest: false,
+      })
       expect(() => queueManager.spy).toThrowError(
         'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
       )
@@ -342,28 +383,29 @@ describe('QueueManager', () => {
 
   describe('dispose', () => {
     it('does nothing if not started', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration])
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
       await expect(queueManager.dispose()).resolves.not.toThrowError()
     })
 
     it('closes all queues if started', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration, queue2Configuration])
+      const queueManager = new FakeQueueManager(
+        [queue1Configuration, queue2Configuration],
+        jobRegistry,
+      )
       await queueManager.start()
-      const isPaused = await queueManager.getQueue(queue1Configuration.queueId).isPaused()
+      const isPaused = await queueManager.getQueue(queueId1).isPaused()
       expect(isPaused).toBe(false)
       await expect(queueManager.dispose()).resolves.not.toThrowError()
-      await expect(
-        queueManager.getQueue(queue1Configuration.queueId).isPaused(),
-      ).rejects.toThrowError('Connection is closed.')
+      await expect(queueManager.getQueue('queue1').isPaused()).rejects.toThrowError(
+        'Connection is closed.',
+      )
     })
 
     it('handles errors during queue closing gracefully', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration])
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
       await queueManager.start()
       // @ts-ignore
-      vi.spyOn(queueManager.getQueue(queue1Configuration.queueId), 'close').mockRejectedValue(
-        new Error('close error'),
-      )
+      vi.spyOn(queueManager.getQueue('queue1'), 'close').mockRejectedValue(new Error('close error'))
       await expect(queueManager.dispose()).resolves.not.toThrowError()
     })
   })
