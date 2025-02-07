@@ -1,22 +1,20 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import { waitAndRetry } from '@lokalise/node-core'
 import { UnrecoverableError } from 'bullmq'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { DependencyMocks } from '../../../test/dependencyMocks.js'
-import type { BaseJobPayload } from '../types.js'
-
 import type Redis from 'ioredis'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
-import { isPromiseFinished } from '../../../test/isPromiseFinished.js'
-import { TestFailingUpdatedBackgroundJobProcessor } from '../../../test/processors/TestFailingUpdatedBackgroundJobProcessor.js'
-import { TestStalledUpdatedBackgroundJobProcessor } from '../../../test/processors/TestStalledUpdatedBackgroundJobProcessor.js'
-import { TestSuccessUpdatedBackgroundJobProcessor } from '../../../test/processors/TestSuccessUpdatedBackgroundJobProcessor.js'
-import { FakeQueueManager } from '../managers/FakeQueueManager.js'
-import { type JobDefinition, JobRegistry } from '../managers/JobRegistry.js'
-import type { QueueConfiguration } from '../managers/QueueManager.js'
-import { FakeUpdatedBackgroundJobProcessor } from './FakeUpdatedBackgroundJobProcessor.js'
-import type { BackgroundJobProcessorDependencies } from './types.js'
+import { DependencyMocks } from '../../../test/dependencyMocks'
+import { isPromiseFinished } from '../../../test/isPromiseFinished'
+import { TestFailingUpdatedBackgroundJobProcessor } from '../../../test/processors/TestFailingUpdatedBackgroundJobProcessor'
+import { TestStalledUpdatedBackgroundJobProcessor } from '../../../test/processors/TestStalledUpdatedBackgroundJobProcessor'
+import { TestSuccessUpdatedBackgroundJobProcessor } from '../../../test/processors/TestSuccessUpdatedBackgroundJobProcessor'
+import { FakeQueueManager } from '../managers/FakeQueueManager'
+import { JobRegistry } from '../managers/JobRegistry'
+import type { JobDefinition, QueueConfiguration } from '../managers/types'
+import type { BaseJobPayload } from '../types'
+import { FakeUpdatedBackgroundJobProcessor } from './FakeUpdatedBackgroundJobProcessor'
+import type { BackgroundJobProcessorDependencies } from './types'
 
 type JobData = {
   id: string
@@ -636,7 +634,9 @@ describe('AbstractBackgroundJobProcessor', () => {
       )
       await stalledProcessor.start()
 
-      queueManager = new FakeQueueManager([queue2Configuration], jobRegistry, { isTest: false })
+      queueManager = new FakeQueueManager([queue2Configuration], jobRegistry, {
+        isTest: false,
+      })
       await queueManager.start()
     })
 

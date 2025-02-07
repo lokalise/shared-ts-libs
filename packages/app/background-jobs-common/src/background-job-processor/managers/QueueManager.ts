@@ -1,42 +1,23 @@
-import type { RedisConfig } from '@lokalise/node-core'
 import type { JobsOptions, QueueOptions } from 'bullmq'
 import { Queue } from 'bullmq'
-import type { JobState } from 'bullmq/dist/esm/types/job-type.js'
-import type { ZodSchema, z } from 'zod'
-import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types.js'
-import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.js'
-import type { BackgroundJobProcessorSpyInterface } from '../spy/types.js'
-import type { BaseJobPayload } from '../types.js'
-import { prepareJobOptions, sanitizeRedisConfig } from '../utils.js'
-import type { InferExact, JobDefinition, JobRegistry } from './JobRegistry.js'
-
-export type QueueConfiguration = {
-  queueId: string
-  queueOptions?: QueueOptions
-  redisConfig: RedisConfig
-}
-
-export type QueueManagerConfig = {
-  isTest: boolean
-  lazyInitEnabled?: boolean
-}
-
-export type JobPayloadForQueue<Q extends string, Jobs extends JobDefinition[]> = InferExact<
-  Extract<Jobs[number], { queueId: Q }>['jobPayloadSchema']
->
-
-// ✅ Utility to extract exact Zod schema inference while keeping optional/required properties intact
-// biome-ignore lint/suspicious/noExplicitAny: any is used to allow any Zod schema
-export type InferSchema<T extends ZodSchema<any>> = z.infer<T>
-
-// Utility type to ensure `queueId` and `jobPayload` are correctly paired
-export type JobWithPayload<T extends JobDefinition> = {
-  queueId: T['queueId']
-  jobPayload: InferSchema<T['jobPayloadSchema']> // Preserves required/optional fields exactly
-}
+import type { JobState } from 'bullmq/dist/esm/types/job-type'
+import { merge } from 'ts-deepmerge'
+import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types'
+import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
+import type { BaseJobPayload } from '../types'
+import { prepareJobOptions, sanitizeRedisConfig } from '../utils'
+import type { JobRegistry } from './JobRegistry'
+import type {
+  JobDefinition,
+  JobPayloadForQueue,
+  QueueConfiguration,
+  QueueManagerConfig,
+  SupportedQueues,
+} from './types'
 
 export class QueueManager<SupportedJobs extends JobDefinition[]> {
-  private queueMap: Record<string, QueueConfiguration> = {}
+  private readonly queueMap: Record<string, QueueConfiguration> = {}
   private readonly queueIds: Set<string>
   private config: QueueManagerConfig
   private readonly jobRegistry: JobRegistry<SupportedJobs>
@@ -89,7 +70,7 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
       JobReturn,
       string
     >,
-  >(queueId: SupportedJobs[number]['queueId']): ProtectedQueue<JobPayload, JobReturn, QueueType> {
+  >(queueId: SupportedQueues<SupportedJobs>): ProtectedQueue<JobPayload, JobReturn, QueueType> {
     /* v8 ignore next 3 */
     if (!this._queues[queueId]) {
       throw new Error(`queue ${queueId} was not instantiated yet, please run "start()"`)
@@ -164,7 +145,7 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     )
   }
 
-  public async schedule<Q extends SupportedJobs[number]['queueId']>(
+  public async schedule<Q extends SupportedQueues<SupportedJobs>>(
     scheduleParams: {
       queueId: Q
       jobPayload: JobPayloadForQueue<Q, SupportedJobs>
@@ -172,7 +153,7 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     options?: JobsOptions,
   ): Promise<string> {
     const { queueId, jobPayload } = scheduleParams
-    const defaultJobOptions = this.jobRegistry.getJobOptions(queueId)
+    const defaultJobOptions = this.jobRegistry.getJobOptions(queueId) ?? {}
 
     await this.startIfNotStarted(queueId)
 
@@ -180,10 +161,7 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
       queueId,
       // @ts-ignore
       jobPayload,
-      prepareJobOptions(this.config.isTest, {
-        ...defaultJobOptions,
-        ...options,
-      }),
+      prepareJobOptions(this.config.isTest, merge(defaultJobOptions, options ?? {})),
     )
     if (!job?.id) throw new Error('Scheduled job ID is undefined')
     if (this._spy) this._spy.addJob(job, 'scheduled')
@@ -191,7 +169,7 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     return job.id
   }
 
-  public async scheduleBulk<Q extends SupportedJobs[number]['queueId']>(
+  public async scheduleBulk<Q extends SupportedQueues<SupportedJobs>>(
     scheduleParams: {
       queueId: Q
       jobPayloads: JobPayloadForQueue<Q, SupportedJobs>[]
@@ -199,7 +177,7 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     options?: JobsOptions,
   ): Promise<string[]> {
     const { queueId, jobPayloads } = scheduleParams
-    const defaultJobOptions = this.jobRegistry.getJobOptions(queueId)
+    const defaultJobOptions = this.jobRegistry.getJobOptions(queueId) ?? {}
 
     if (jobPayloads.length === 0) return []
 
@@ -207,11 +185,11 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
 
     const jobs =
       (await this.getQueue(queueId)?.addBulk(
-        // @ts-ignore
+        // @ts-expect-error
         jobPayloads.map((data) => ({
           name: queueId,
           data: data,
-          opts: prepareJobOptions(this.config.isTest, { ...defaultJobOptions, ...options }),
+          opts: prepareJobOptions(this.config.isTest, merge(defaultJobOptions, options ?? {})),
         })),
       )) ?? []
 
@@ -237,7 +215,7 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
    * @param asc default true (oldest first)
    */
   public async getJobsInQueue<JobPayload extends BaseJobPayload, JobReturn = void>(
-    queueId: QueueConfiguration['queueId'],
+    queueId: SupportedQueues<SupportedJobs>,
     states: JobState[],
     start = 0,
     end = 20,

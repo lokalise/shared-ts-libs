@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { type JobDefinition, JobRegistry } from './JobRegistry.js'
+import { JobRegistry } from './JobRegistry'
+import type { JobDefinition } from './types'
 
 const queueId1 = 'queue1'
 const queueId2 = 'queue2'
