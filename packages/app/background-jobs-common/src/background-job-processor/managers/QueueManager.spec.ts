@@ -6,8 +6,47 @@ import { DependencyMocks } from '../../../test/dependencyMocks.js'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.js'
 import { FakeQueueManager } from './FakeQueueManager.js'
 import type { QueueConfiguration } from './QueueManager.js'
+import {JobDefinition, JobRegistry} from "./JobRegistry";
+import {z, ZodSchema} from "zod";
+import {BaseJobPayload} from "../types";
 
 const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
+
+const queueId1 = 'queue1'
+const queueId2 = 'queue2'
+
+type SupportedQueues = typeof queueId1 | typeof queueId2
+
+const jobPayloadSchema = z.object({
+  id: z.string(),
+  value: z.string(),
+  metadata: z.object({
+    correlationId: z.string()
+  })
+})
+
+const jobPayloadSchema2 = z.object({
+  id: z.string(),
+  value: z.string(),
+  value2: z.string(),
+  metadata: z.object({
+    correlationId: z.string()
+  })
+})
+
+const SUPPORTED_JOBS = [
+      {
+    queueId: queueId1,
+    jobPayloadSchema,
+  },
+
+  {
+    queueId: queueId2,
+    jobPayloadSchema: jobPayloadSchema2,
+  },
+  ] as const satisfies JobDefinition<any>[]
+
+type SupportedJobs = (typeof SUPPORTED_JOBS)[number];
 
 describe('QueueManager', () => {
   let mocks: DependencyMocks
@@ -15,16 +54,31 @@ describe('QueueManager', () => {
   let queue1Configuration: QueueConfiguration
   let queue2Configuration: QueueConfiguration
 
+  /*
+  let jobRegistry: JobRegistry<typeof queueId1 | typeof queueId2, [{
+    queueId: typeof queueId1
+    jobPayloadSchema: typeof jobPayloadSchema
+  },
+    {
+      queueId: typeof queueId2
+      jobPayloadSchema: typeof jobPayloadSchema
+    }
+  ]>
+
+   */
+
+  const jobRegistry = new JobRegistry(SUPPORTED_JOBS)
+
   beforeEach(async () => {
     mocks = new DependencyMocks()
     redis = mocks.startRedis()
 
     queue1Configuration = {
-      queueId: randomUUID(),
+      queueId: queueId1,
       redisConfig: mocks.getRedisConfig(),
     }
     queue2Configuration = {
-      queueId: randomUUID(),
+      queueId: queueId2,
       redisConfig: mocks.getRedisConfig(),
     }
 
@@ -41,7 +95,7 @@ describe('QueueManager', () => {
     })
 
     it('Multiple start calls (sequential or concurrent) not produce errors', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration])
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
 
       // sequential start calls
       await expect(queueManager.start()).resolves.not.toThrowError()
@@ -57,21 +111,21 @@ describe('QueueManager', () => {
     })
 
     it('Starts multiple queues', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration, queue2Configuration])
+      const queueManager = new FakeQueueManager([queue1Configuration, queue2Configuration], jobRegistry)
       await queueManager.start()
 
-      expect(queueManager.getQueue(queue1Configuration.queueId)).toBeDefined()
-      expect(queueManager.getQueue(queue2Configuration.queueId)).toBeDefined()
+      expect(queueManager.getQueue("queue1")).toBeDefined()
+      expect(queueManager.getQueue("queue2")).toBeDefined()
 
       await queueManager.dispose()
     })
 
     it('Starts only provided queues', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration, queue2Configuration])
+      const queueManager = new FakeQueueManager([queue1Configuration, queue2Configuration], jobRegistry)
       await queueManager.start([queue1Configuration.queueId])
 
-      expect(queueManager.getQueue(queue1Configuration.queueId)).toBeDefined()
-      expect(() => queueManager.getQueue(queue2Configuration.queueId)).toThrowError(
+      expect(queueManager.getQueue('queue1')).toBeDefined()
+      expect(() => queueManager.getQueue('queue2')).toThrowError(
         /queue .* was not instantiated yet, please run "start\(\)"/,
       )
 
@@ -79,14 +133,41 @@ describe('QueueManager', () => {
     })
 
     it('Throw error if try to schedule job without starting queueManager and lazy init disabled', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration])
+      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
 
       await expect(
-        queueManager.schedule(queue1Configuration.queueId, {
-          id: 'test_id',
-          value: 'test',
-          metadata: { correlationId: 'correlation_id' },
-        }),
+        queueManager.schedule({
+          queueId: 'queue1',
+          jobPayload: {
+            value: 'test',
+            // @ts-expect-error Should only expect fields from queue1 schema
+            value2: 'test',
+            metadata: {correlationId: 'correlation_id'},
+          }
+        })
+      ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
+
+      await expect(
+          queueManager.schedule({
+            queueId: 'queue1',
+            // @ts-expect-error Should expect mandatory fields from queue1 schema
+            jobPayload: {
+              value: 'test',
+              metadata: {correlationId: 'correlation_id'},
+            }
+          })
+      ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
+
+      await expect(
+          queueManager.schedule({
+            queueId: 'queue2',
+            jobPayload: {
+              id: 'id',
+              value: 'test',
+              value2: 'test',
+              metadata: {correlationId: 'correlation_id'},
+            }
+          })
       ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
     })
 
