@@ -1,5 +1,5 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import { waitAndRetry } from '@lokalise/node-core'
+import { type RedisConfig, waitAndRetry } from '@lokalise/node-core'
 import { UnrecoverableError } from 'bullmq'
 import type Redis from 'ioredis'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -10,8 +10,7 @@ import { TestFailingBackgroundJobProcessorNew } from '../../../test/processors/T
 import { TestStalledBackgroundJobProcessorNew } from '../../../test/processors/TestStalledBackgroundJobProcessorNew'
 import { TestSuccessBackgroundJobProcessorNew } from '../../../test/processors/TestSuccessBackgroundJobProcessorNew'
 import { FakeQueueManager } from '../managers/FakeQueueManager'
-import { JobRegistry } from '../managers/JobRegistry'
-import type { JobDefinition } from '../managers/types'
+import type { QueueConfiguration } from '../managers/types'
 import type { BaseJobPayload } from '../types'
 import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew'
 import type { BackgroundJobProcessorDependencies } from './types'
@@ -40,7 +39,7 @@ const jobPayloadSchema2 = z.object({
   }),
 })
 
-const SUPPORTED_JOBS = [
+const SupportedQueues = [
   {
     queueId: 'queue1',
     jobPayloadSchema,
@@ -49,19 +48,19 @@ const SUPPORTED_JOBS = [
     queueId: 'queue2',
     jobPayloadSchema: jobPayloadSchema2,
   },
-] as const satisfies JobDefinition[]
+] as const satisfies QueueConfiguration[]
 
 describe('AbstractBackgroundJobProcessorNew', () => {
   let mocks: DependencyMocks
   let deps: BackgroundJobProcessorDependencies<JobData>
   let redis: Redis
-
-  const jobRegistry = new JobRegistry(SUPPORTED_JOBS)
+  let redisConfig: RedisConfig
 
   beforeEach(async () => {
     mocks = new DependencyMocks()
     deps = mocks.create()
     redis = mocks.startRedis()
+    redisConfig = mocks.getRedisConfig()
 
     await redis?.flushall('SYNC')
   })
@@ -76,21 +75,13 @@ describe('AbstractBackgroundJobProcessorNew', () => {
     })
 
     it('throws an error if queue id is not unique', async () => {
-      const job1 = new FakeBackgroundJobProcessorNew<JobData>(
-        deps,
-        'queue1',
-        mocks.getRedisConfig(),
-      )
-      const job2 = new FakeBackgroundJobProcessorNew<JobData>(
-        deps,
-        'queue2',
-        mocks.getRedisConfig(),
-      )
+      const job1 = new FakeBackgroundJobProcessorNew<JobData>(deps, 'queue1', redisConfig)
+      const job2 = new FakeBackgroundJobProcessorNew<JobData>(deps, 'queue2', redisConfig)
 
       await job1.start()
       await job2.start()
       await expect(
-        new FakeBackgroundJobProcessorNew<JobData>(deps, 'queue1', mocks.getRedisConfig()).start(),
+        new FakeBackgroundJobProcessorNew<JobData>(deps, 'queue1', redisConfig).start(),
       ).rejects.toThrowError(/Queue id "queue1" is not unique/)
 
       await job1.dispose()
@@ -98,7 +89,6 @@ describe('AbstractBackgroundJobProcessorNew', () => {
     })
 
     it('Multiple start calls (sequential or concurrent) not produce errors', async () => {
-      const redisConfig = mocks.getRedisConfig()
       const processor = new FakeBackgroundJobProcessorNew<JobData>(deps, 'queue1', redisConfig)
 
       // sequential start calls
@@ -118,15 +108,11 @@ describe('AbstractBackgroundJobProcessorNew', () => {
         metadata: { correlationId: generateMonotonicUuid() },
       }
 
-      const processor = new FakeBackgroundJobProcessorNew<JobData>(
-        deps,
-        'queue1',
-        mocks.getRedisConfig(),
-      )
+      const processor = new FakeBackgroundJobProcessorNew<JobData>(deps, 'queue1', redisConfig)
       await processor.start()
 
-      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
-        redisConfig: mocks.getRedisConfig(),
+      const queueManager = new FakeQueueManager(SupportedQueues, {
+        redisConfig,
       })
       await queueManager.start()
 
@@ -152,14 +138,14 @@ describe('AbstractBackgroundJobProcessorNew', () => {
       const processor = new FakeBackgroundJobProcessorNew<JobData>(
         deps,
         'queue1',
-        mocks.getRedisConfig(),
+        redisConfig,
         true,
         false,
       )
       await processor.start()
 
-      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
-        redisConfig: mocks.getRedisConfig(),
+      const queueManager = new FakeQueueManager(SupportedQueues, {
+        redisConfig,
       })
       await queueManager.start()
 
@@ -192,19 +178,13 @@ describe('AbstractBackgroundJobProcessorNew', () => {
 
   describe('success', () => {
     let processor: FakeBackgroundJobProcessorNew<JobData>
-    let queueManager: FakeQueueManager<typeof SUPPORTED_JOBS>
+    let queueManager: FakeQueueManager<typeof SupportedQueues>
 
     beforeEach(async () => {
-      processor = new FakeBackgroundJobProcessorNew<JobData>(deps, 'queue1', mocks.getRedisConfig())
+      processor = new FakeBackgroundJobProcessorNew<JobData>(deps, 'queue1', redisConfig)
       await processor.start()
 
-      queueManager = new FakeQueueManager(
-        [{ queueId: 'queue1' }, { queueId: 'queue2' }],
-        jobRegistry,
-        {
-          redisConfig: mocks.getRedisConfig(),
-        },
-      )
+      queueManager = new FakeQueueManager(SupportedQueues, { redisConfig })
       await queueManager.start()
     })
 
@@ -277,7 +257,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
       const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessorNew(
         deps,
         'queue2',
-        mocks.getRedisConfig(),
+        redisConfig,
       )
 
       await successBackgroundJobProcessor.start()
@@ -305,7 +285,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
       const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessorNew(
         deps,
         'queue2',
-        mocks.getRedisConfig(),
+        redisConfig,
       )
       successBackgroundJobProcessor.onSuccessHook = () => {
         throw new Error('onSuccessError')
@@ -336,7 +316,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
       const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessorNew(
         deps,
         'queue2',
-        mocks.getRedisConfig(),
+        redisConfig,
       )
       successBackgroundJobProcessor.onSuccessHook = (job) => {
         void successBackgroundJobProcessor.purgeJobData(job)
@@ -371,7 +351,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
       const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessorNew(
         deps,
         'queue2',
-        mocks.getRedisConfig(),
+        redisConfig,
       )
 
       const purgePromise = new Promise<void>((resolve) => {
@@ -409,7 +389,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
       const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessorNew(
         deps,
         'queue2',
-        mocks.getRedisConfig(),
+        redisConfig,
       )
 
       const purgeExecutionPromise = new Promise<void>((resolve) => {
@@ -436,18 +416,14 @@ describe('AbstractBackgroundJobProcessorNew', () => {
 
   describe('error', () => {
     let processor: TestFailingBackgroundJobProcessorNew<JobData>
-    let queueManager: FakeQueueManager<typeof SUPPORTED_JOBS>
+    let queueManager: FakeQueueManager<typeof SupportedQueues>
 
     beforeEach(async () => {
-      processor = new TestFailingBackgroundJobProcessorNew<JobData>(
-        deps,
-        'queue2',
-        mocks.getRedisConfig(),
-      )
+      processor = new TestFailingBackgroundJobProcessorNew<JobData>(deps, 'queue2', redisConfig)
       await processor.start()
 
-      queueManager = new FakeQueueManager([{ queueId: 'queue2' }], jobRegistry, {
-        redisConfig: mocks.getRedisConfig(),
+      queueManager = new FakeQueueManager(SupportedQueues, {
+        redisConfig,
       })
       await queueManager.start()
     })
@@ -578,18 +554,14 @@ describe('AbstractBackgroundJobProcessorNew', () => {
   describe('stalled', () => {
     // const queueId = 'stalledQueue'
     let stalledProcessor: TestStalledBackgroundJobProcessorNew<JobData>
-    let queueManager: FakeQueueManager<typeof SUPPORTED_JOBS>
+    let queueManager: FakeQueueManager<typeof SupportedQueues>
 
     beforeEach(async () => {
-      stalledProcessor = new TestStalledBackgroundJobProcessorNew(
-        deps,
-        'queue2',
-        mocks.getRedisConfig(),
-      )
+      stalledProcessor = new TestStalledBackgroundJobProcessorNew(deps, 'queue2', redisConfig)
       await stalledProcessor.start()
 
-      queueManager = new FakeQueueManager([{ queueId: 'queue2' }], jobRegistry, {
-        redisConfig: mocks.getRedisConfig(),
+      queueManager = new FakeQueueManager(SupportedQueues, {
+        redisConfig,
         isTest: false,
       })
       await queueManager.start()
@@ -647,14 +619,10 @@ describe('AbstractBackgroundJobProcessorNew', () => {
 
     it('schedules repeatable job', async () => {
       // Given
-      const processor = new FakeBackgroundJobProcessorNew<JobData>(
-        deps,
-        'queue1',
-        mocks.getRedisConfig(),
-      )
+      const processor = new FakeBackgroundJobProcessorNew<JobData>(deps, 'queue1', redisConfig)
       await processor.start()
-      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
-        redisConfig: mocks.getRedisConfig(),
+      const queueManager = new FakeQueueManager(SupportedQueues, {
+        redisConfig,
       })
       await queueManager.start()
 

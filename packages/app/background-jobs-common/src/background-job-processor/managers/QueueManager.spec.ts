@@ -46,6 +46,7 @@ describe('QueueManager', () => {
   beforeEach(async () => {
     mocks = new DependencyMocks()
     redis = mocks.startRedis()
+    redisConfig = mocks.getRedisConfig()
 
     await redis?.flushall('SYNC')
   })
@@ -90,7 +91,7 @@ describe('QueueManager', () => {
     })
 
     it('Starts only provided queues', async () => {
-      const queueManager = new FakeQueueManager(SupportedQueues, {
+      const queueManager = new FakeQueueManager([SupportedQueues[0]], {
         redisConfig,
       })
       await queueManager.start(['queue1'])
@@ -257,24 +258,6 @@ describe('QueueManager', () => {
         value: 'test',
         metadata: { correlationId: 'correlation_id' },
       })
-      await queueManager.dispose()
-    })
-
-    it('Does not lazy loads on undefined queues', async () => {
-      const queueManager = new FakeQueueManager(SupportedQueues, {
-        redisConfig,
-        lazyInitEnabled: true,
-      })
-
-      await expect(
-        queueManager.schedule('queue2', {
-          id: 'test_id',
-          value: 'test',
-          value2: 'test',
-          metadata: { correlationId: 'correlation_id' },
-        }),
-      ).rejects.toThrowError(/queue .* was not instantiated yet, please run "start\(\)"/)
-
       await queueManager.dispose()
     })
 
