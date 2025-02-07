@@ -303,7 +303,7 @@ describe('QueueManager', () => {
         hasMore: true,
       })
 
-      const jobs3 = await queueManager.getJobsInQueue('queue2', ['delayed'], 0, 1, false)
+      const jobs3 = await queueManager.getJobsInQueue('queue1', ['delayed'], 0, 1, false)
       expect(jobs3).toMatchObject({
         jobs: expect.arrayContaining([
           expect.objectContaining({ id: jobIds[2] }),
