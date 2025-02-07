@@ -6,14 +6,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import { DependencyMocks } from '../../../test/dependencyMocks'
 import { isPromiseFinished } from '../../../test/isPromiseFinished'
-import { TestFailingUpdatedBackgroundJobProcessor } from '../../../test/processors/TestFailingUpdatedBackgroundJobProcessor'
-import { TestStalledUpdatedBackgroundJobProcessor } from '../../../test/processors/TestStalledUpdatedBackgroundJobProcessor'
-import { TestSuccessUpdatedBackgroundJobProcessor } from '../../../test/processors/TestSuccessUpdatedBackgroundJobProcessor'
+import { TestFailingBackgroundJobProcessorNew } from '../../../test/processors/TestFailingBackgroundJobProcessorNew'
+import { TestStalledBackgroundJobProcessorNew } from '../../../test/processors/TestStalledBackgroundJobProcessorNew'
+import { TestSuccessBackgroundJobProcessorNew } from '../../../test/processors/TestSuccessBackgroundJobProcessorNew'
 import { FakeQueueManager } from '../managers/FakeQueueManager'
 import { JobRegistry } from '../managers/JobRegistry'
 import type { JobDefinition } from '../managers/types'
 import type { BaseJobPayload } from '../types'
-import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew.js'
+import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew'
 import type { BackgroundJobProcessorDependencies } from './types'
 
 type JobData = {
@@ -274,7 +274,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
         metadata: { correlationId: generateMonotonicUuid() },
       }
 
-      const successBackgroundJobProcessor = new TestSuccessUpdatedBackgroundJobProcessor(
+      const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessorNew(
         deps,
         'queue2',
         mocks.getRedisConfig(),
@@ -302,7 +302,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
         metadata: { correlationId: generateMonotonicUuid() },
       }
 
-      const successBackgroundJobProcessor = new TestSuccessUpdatedBackgroundJobProcessor(
+      const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessorNew(
         deps,
         'queue2',
         mocks.getRedisConfig(),
@@ -333,7 +333,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
         metadata: { correlationId: generateMonotonicUuid() },
       }
 
-      const successBackgroundJobProcessor = new TestSuccessUpdatedBackgroundJobProcessor(
+      const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessorNew(
         deps,
         'queue2',
         mocks.getRedisConfig(),
@@ -368,7 +368,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
         metadata: { correlationId: generateMonotonicUuid() },
       }
 
-      const successBackgroundJobProcessor = new TestSuccessUpdatedBackgroundJobProcessor(
+      const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessorNew(
         deps,
         'queue2',
         mocks.getRedisConfig(),
@@ -406,7 +406,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
         metadata: { correlationId: generateMonotonicUuid() },
       }
 
-      const successBackgroundJobProcessor = new TestSuccessUpdatedBackgroundJobProcessor(
+      const successBackgroundJobProcessor = new TestSuccessBackgroundJobProcessorNew(
         deps,
         'queue2',
         mocks.getRedisConfig(),
@@ -435,11 +435,11 @@ describe('AbstractBackgroundJobProcessorNew', () => {
   })
 
   describe('error', () => {
-    let processor: TestFailingUpdatedBackgroundJobProcessor<JobData>
+    let processor: TestFailingBackgroundJobProcessorNew<JobData>
     let queueManager: FakeQueueManager<typeof SUPPORTED_JOBS>
 
     beforeEach(async () => {
-      processor = new TestFailingUpdatedBackgroundJobProcessor<JobData>(
+      processor = new TestFailingBackgroundJobProcessorNew<JobData>(
         deps,
         'queue2',
         mocks.getRedisConfig(),
@@ -577,11 +577,11 @@ describe('AbstractBackgroundJobProcessorNew', () => {
 
   describe('stalled', () => {
     // const queueId = 'stalledQueue'
-    let stalledProcessor: TestStalledUpdatedBackgroundJobProcessor<JobData>
+    let stalledProcessor: TestStalledBackgroundJobProcessorNew<JobData>
     let queueManager: FakeQueueManager<typeof SUPPORTED_JOBS>
 
     beforeEach(async () => {
-      stalledProcessor = new TestStalledUpdatedBackgroundJobProcessor(
+      stalledProcessor = new TestStalledBackgroundJobProcessorNew(
         deps,
         'queue2',
         mocks.getRedisConfig(),
