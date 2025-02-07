@@ -3,10 +3,13 @@ import type { z } from 'zod'
 import type { BaseJobPayload } from '../types'
 import type { JobDefinition, SupportedQueues } from './types'
 
-export class JobRegistry<SupportedJobs extends JobDefinition[]> {
+export class JobRegistry<
+  SupportedJobs extends JobDefinition<JobOptionsType>[],
+  JobOptionsType extends JobsOptions = JobsOptions,
+> {
   public readonly supportedJobs: SupportedJobs
   public readonly supportedJobQueues: Set<string>
-  private readonly supportedJobMap: Record<string, JobDefinition> = {}
+  private readonly supportedJobMap: Record<string, JobDefinition<JobOptionsType>> = {}
 
   constructor(supportedJobs: SupportedJobs) {
     this.supportedJobs = supportedJobs
@@ -24,11 +27,11 @@ export class JobRegistry<SupportedJobs extends JobDefinition[]> {
     return this.supportedJobMap[queueId].jobPayloadSchema
   }
 
-  public getJobOptions = (queueId: SupportedQueues<SupportedJobs>): JobsOptions | undefined => {
+  public getJobOptions = (queueId: SupportedQueues<SupportedJobs>): JobOptionsType | undefined => {
     return this.supportedJobMap[queueId].options
   }
 
-  public isSupportedQueue(queueId: string) {
+  public isSupportedQueue(queueId: string): boolean {
     return this.supportedJobQueues.has(queueId)
   }
 }

@@ -19,22 +19,11 @@ type ExtendsBaseJobPayloadSchema = z.ZodSchema & {
   _input: z.infer<typeof BASE_JOB_PAYLOAD_SCHEMA>
 }
 
-export type JobDefinition = {
+export type JobDefinition<JobOptionsType extends JobsOptions = JobsOptions> = {
   queueId: string
   jobPayloadSchema: ExtendsBaseJobPayloadSchema
-  options?: JobsOptions // TODO: support JobPro options
+  options?: JobOptionsType
 }
 
 export type SupportedQueues<SupportedJobs extends JobDefinition[]> =
   SupportedJobs[number]['queueId']
-
-// Helper type to extract the inferred type from a Zod schema while preserving optionality
-type InferExact<T extends z.ZodSchema> = T extends z.ZodObject<infer Shape>
-  ? {
-      [K in keyof Shape]: Shape[K] extends z.ZodTypeAny ? z.infer<Shape[K]> : never
-    }
-  : never
-
-export type JobPayloadForQueue<Q extends string, Jobs extends JobDefinition[]> = InferExact<
-  Extract<Jobs[number], { queueId: Q }>['jobPayloadSchema']
->

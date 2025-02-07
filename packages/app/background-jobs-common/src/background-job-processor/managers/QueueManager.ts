@@ -2,6 +2,7 @@ import type { JobsOptions, QueueOptions } from 'bullmq'
 import { Queue } from 'bullmq'
 import type { JobState } from 'bullmq/dist/esm/types/job-type'
 import { merge } from 'ts-deepmerge'
+import type { z } from 'zod'
 import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
@@ -10,11 +11,21 @@ import { prepareJobOptions, sanitizeRedisConfig } from '../utils'
 import type { JobRegistry } from './JobRegistry'
 import type {
   JobDefinition,
-  JobPayloadForQueue,
   QueueConfiguration,
   QueueManagerConfig,
   SupportedQueues,
 } from './types'
+
+// Helper type to extract the inferred type from a Zod schema while preserving optionality
+type InferExact<T extends z.ZodSchema> = T extends z.ZodObject<infer Shape>
+  ? {
+      [K in keyof Shape]: Shape[K] extends z.ZodTypeAny ? z.infer<Shape[K]> : never
+    }
+  : never
+
+type JobPayloadForQueue<QueueId extends string, Jobs extends JobDefinition[]> = InferExact<
+  Extract<Jobs[number], { queueId: QueueId }>['jobPayloadSchema']
+>
 
 export class QueueManager<SupportedJobs extends JobDefinition[]> {
   private readonly queueMap: Record<string, QueueConfiguration> = {}
