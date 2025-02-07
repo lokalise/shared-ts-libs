@@ -7,8 +7,6 @@ import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import { FakeQueueManager } from './FakeQueueManager'
 import type { QueueConfiguration } from './types'
 
-const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
-
 const jobPayloadSchema = z.object({
   id: z.string(),
   value: z.string(),
@@ -93,6 +91,22 @@ describe('QueueManager', () => {
 
       expect(queueManager.getQueue('queue1')).toBeDefined()
       expect(() => queueManager.getQueue('queue2')).toThrowError(
+        /queue .* was not instantiated yet, please run "start\(\)"/,
+      )
+
+      await queueManager.dispose()
+    })
+
+    it('should ignore if try to start a non-defined queue', async () => {
+      const queueManager = new FakeQueueManager(SupportedQueues, {
+        redisConfig,
+      })
+
+      expect(() => queueManager.getQueue('queue3')).toThrowError(
+        /queue .* was not instantiated yet, please run "start\(\)"/,
+      )
+      await queueManager.start(['queue3'])
+      expect(() => queueManager.getQueue('queue3')).toThrowError(
         /queue .* was not instantiated yet, please run "start\(\)"/,
       )
 
