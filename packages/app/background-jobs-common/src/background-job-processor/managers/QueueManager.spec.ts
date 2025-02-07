@@ -118,37 +118,31 @@ describe('QueueManager', () => {
       })
 
       await expect(
-        queueManager.schedule({
-          queueId: 'queue1',
-          jobPayload: {
-            value: 'test',
-            // @ts-expect-error Should only expect fields from queue1 schema
-            value2: 'test',
-            metadata: { correlationId: 'correlation_id' },
-          },
+        queueManager.schedule('queue1', {
+          value: 'test',
+          // @ts-expect-error Should only expect fields from queue1 schema
+          value2: 'test',
+          metadata: { correlationId: 'correlation_id' },
         }),
       ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
 
       await expect(
-        queueManager.schedule({
-          queueId: 'queue1',
+        queueManager.schedule(
+          'queue1',
           // @ts-expect-error Should expect mandatory fields from queue1 schema
-          jobPayload: {
+          {
             value: 'test',
             metadata: { correlationId: 'correlation_id' },
           },
-        }),
+        ),
       ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
 
       await expect(
-        queueManager.schedule({
-          queueId: 'queue2',
-          jobPayload: {
-            id: 'id',
-            value: 'test',
-            value2: 'test',
-            metadata: { correlationId: 'correlation_id' },
-          },
+        queueManager.schedule('queue2', {
+          id: 'id',
+          value: 'test',
+          value2: 'test',
+          metadata: { correlationId: 'correlation_id' },
         }),
       ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
     })
@@ -159,13 +153,10 @@ describe('QueueManager', () => {
         lazyInitEnabled: true,
       })
 
-      const jobId = await queueManager.schedule({
-        queueId: 'queue1',
-        jobPayload: {
-          id: 'test_id',
-          value: 'test',
-          metadata: { correlationId: 'correlation_id' },
-        },
+      const jobId = await queueManager.schedule('queue1', {
+        id: 'test_id',
+        value: 'test',
+        metadata: { correlationId: 'correlation_id' },
       })
       const spyResult = await queueManager.spy.waitForJobWithId(jobId, 'scheduled')
 
@@ -184,14 +175,11 @@ describe('QueueManager', () => {
       })
 
       await expect(
-        queueManager.schedule({
-          queueId: 'queue2',
-          jobPayload: {
-            id: 'test_id',
-            value: 'test',
-            value2: 'test',
-            metadata: { correlationId: 'correlation_id' },
-          },
+        queueManager.schedule('queue2', {
+          id: 'test_id',
+          value: 'test',
+          value2: 'test',
+          metadata: { correlationId: 'correlation_id' },
         }),
       ).rejects.toThrowError(/queue .* was not instantiated yet, please run "start\(\)"/)
 
@@ -204,21 +192,18 @@ describe('QueueManager', () => {
         lazyInitEnabled: true,
       })
 
-      const jobIds = await queueManager.scheduleBulk({
-        queueId: 'queue1',
-        jobPayloads: [
-          {
-            id: 'test_id',
-            value: 'test',
-            metadata: { correlationId: 'correlation_id' },
-          },
-          {
-            id: 'test_id2',
-            value: 'test2',
-            metadata: { correlationId: 'correlation_id2' },
-          },
-        ],
-      })
+      const jobIds = await queueManager.scheduleBulk('queue1', [
+        {
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        },
+        {
+          id: 'test_id2',
+          value: 'test2',
+          metadata: { correlationId: 'correlation_id2' },
+        },
+      ])
       const spy1stJobResult = await queueManager.spy.waitForJobWithId(jobIds[0], 'scheduled')
       const spy3rdJobResult = await queueManager.spy.waitForJobWithId(jobIds[1], 'scheduled')
 
@@ -265,29 +250,25 @@ describe('QueueManager', () => {
     it('returns jobs in the given states', async () => {
       // Given - When
       const jobIds = await queueManager.scheduleBulk(
-        {
-          queueId: 'queue1',
-          jobPayloads: [
-            {
-              id: generateMonotonicUuid(),
-              value: 'test1',
-              metadata: { correlationId: generateMonotonicUuid() },
-            },
-            {
-              id: generateMonotonicUuid(),
-              value: 'test2',
-              metadata: { correlationId: generateMonotonicUuid() },
-            },
-            {
-              id: generateMonotonicUuid(),
-              value: 'test3',
-              metadata: { correlationId: generateMonotonicUuid() },
-            },
-          ],
-        },
-        {
-          delay: 1000,
-        },
+        'queue1',
+        [
+          {
+            id: generateMonotonicUuid(),
+            value: 'test1',
+            metadata: { correlationId: generateMonotonicUuid() },
+          },
+          {
+            id: generateMonotonicUuid(),
+            value: 'test2',
+            metadata: { correlationId: generateMonotonicUuid() },
+          },
+          {
+            id: generateMonotonicUuid(),
+            value: 'test3',
+            metadata: { correlationId: generateMonotonicUuid() },
+          },
+        ],
+        { delay: 1000 },
       )
 
       // Then
@@ -334,13 +315,10 @@ describe('QueueManager', () => {
       expect(await queueManager.getJobCount('queue1')).toBe(0)
 
       // When
-      await queueManager.schedule({
-        queueId: 'queue1',
-        jobPayload: {
-          id: 'test_id',
-          value: 'test',
-          metadata: { correlationId: 'correlation_id' },
-        },
+      await queueManager.schedule('queue1', {
+        id: 'test_id',
+        value: 'test',
+        metadata: { correlationId: 'correlation_id' },
       })
 
       // Then

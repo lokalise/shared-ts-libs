@@ -130,13 +130,9 @@ describe('AbstractBackgroundJobProcessorNew', () => {
       })
       await queueManager.start()
 
-      const jobId = await queueManager.schedule(
-        {
-          queueId: 'queue1',
-          jobPayload: jobData,
-        },
-        { delay: 100 },
-      )
+      const jobId = await queueManager.schedule('queue1', jobData, {
+        delay: 100,
+      })
 
       const jobScheduled = await queueManager.spy.waitForJobWithId(jobId, 'scheduled')
       expect(jobScheduled.data, 'object did not match').toMatchObject(jobData)
@@ -176,10 +172,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
         value: 'test',
         metadata: { correlationId: 'correlation_id' },
       }
-      const jobId = await queueManager.schedule({
-        queueId: 'queue1',
-        jobPayload: jobData,
-      })
+      const jobId = await queueManager.schedule('queue1', jobData)
 
       // Job is added to the queue but not processed by the worker
       const queueManagerSpyResult = await queueManager.spy.waitForJobWithId(jobId, 'scheduled')
@@ -229,10 +222,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
       }
 
       // When
-      const jobId = await queueManager.schedule({
-        queueId: 'queue1',
-        jobPayload: jobData,
-      })
+      const jobId = await queueManager.schedule('queue1', jobData)
 
       // Then
       const UUID_REGEX =
@@ -252,21 +242,18 @@ describe('AbstractBackgroundJobProcessorNew', () => {
 
     it('schedules and runs multiple jobs', async () => {
       // Given - When
-      const scheduledJobIds = await queueManager.scheduleBulk({
-        queueId: 'queue1',
-        jobPayloads: [
-          {
-            id: generateMonotonicUuid(),
-            value: 'first',
-            metadata: { correlationId: generateMonotonicUuid() },
-          },
-          {
-            id: generateMonotonicUuid(),
-            value: 'second',
-            metadata: { correlationId: generateMonotonicUuid() },
-          },
-        ],
-      })
+      const scheduledJobIds = await queueManager.scheduleBulk('queue1', [
+        {
+          id: generateMonotonicUuid(),
+          value: 'first',
+          metadata: { correlationId: generateMonotonicUuid() },
+        },
+        {
+          id: generateMonotonicUuid(),
+          value: 'second',
+          metadata: { correlationId: generateMonotonicUuid() },
+        },
+      ])
 
       // Then
       expect(scheduledJobIds.length).toBe(2)
@@ -294,10 +281,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
       )
 
       await successBackgroundJobProcessor.start()
-      const jobId = await queueManager.schedule({
-        queueId: 'queue2',
-        jobPayload: jobData,
-      })
+      const jobId = await queueManager.schedule('queue2', jobData)
 
       const job = await successBackgroundJobProcessor.spy.waitForJobWithId(jobId, 'completed')
       expect(job.data).toMatchObject(jobData)
@@ -328,10 +312,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
       }
 
       await successBackgroundJobProcessor.start()
-      const jobId = await queueManager.schedule({
-        queueId: 'queue2',
-        jobPayload: jobData,
-      })
+      const jobId = await queueManager.schedule('queue2', jobData)
 
       const job = await successBackgroundJobProcessor.spy.waitForJobWithId(jobId, 'completed')
       expect(job.data).toMatchObject(jobData)
@@ -362,10 +343,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
       }
 
       await successBackgroundJobProcessor.start()
-      const jobId = await queueManager.schedule({
-        queueId: 'queue2',
-        jobPayload: jobData,
-      })
+      const jobId = await queueManager.schedule('queue2', jobData)
 
       const job = await successBackgroundJobProcessor.spy.waitForJobWithId(jobId, 'completed')
 
@@ -407,10 +385,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
       })
 
       await successBackgroundJobProcessor.start()
-      const jobId = await queueManager.schedule({
-        queueId: 'queue2',
-        jobPayload: jobData,
-      })
+      const jobId = await queueManager.schedule('queue2', jobData)
 
       // When
       await successBackgroundJobProcessor.spy.waitForJobWithId(jobId, 'completed')
@@ -447,10 +422,7 @@ describe('AbstractBackgroundJobProcessorNew', () => {
 
       // When
       await successBackgroundJobProcessor.start()
-      await queueManager.schedule({
-        queueId: 'queue2',
-        jobPayload: jobData,
-      })
+      await queueManager.schedule('queue2', jobData)
 
       // Then
       await expect(purgeExecutionPromise).rejects.toThrowError(
@@ -496,14 +468,12 @@ describe('AbstractBackgroundJobProcessorNew', () => {
 
       // When
       const scheduledJobId = await queueManager.schedule(
+        'queue2',
         {
-          queueId: 'queue2',
-          jobPayload: {
-            id: 'test_id',
-            value: 'test',
-            value2: 'jobPayload2 test',
-            metadata: { correlationId: 'correlation_id' },
-          },
+          id: 'test_id',
+          value: 'test',
+          value2: 'jobPayload2 test',
+          metadata: { correlationId: 'correlation_id' },
         },
         { attempts: 3, delay: 0 },
       )
@@ -523,14 +493,12 @@ describe('AbstractBackgroundJobProcessorNew', () => {
 
       // When
       const jobId = await queueManager.schedule(
+        'queue2',
         {
-          queueId: 'queue2',
-          jobPayload: {
-            id: 'test_id',
-            value: 'test',
-            value2: 'jobPayload2 test',
-            metadata: { correlationId: 'correlation_id' },
-          },
+          id: 'test_id',
+          value: 'test',
+          value2: 'jobPayload2 test',
+          metadata: { correlationId: 'correlation_id' },
         },
         { attempts: 3, delay: 0 },
       )
@@ -553,14 +521,12 @@ describe('AbstractBackgroundJobProcessorNew', () => {
 
       // When
       const jobId = await queueManager.schedule(
+        'queue2',
         {
-          queueId: 'queue2',
-          jobPayload: {
-            id: 'test_id',
-            value: 'test',
-            value2: 'jobPayload2 test',
-            metadata: { correlationId: 'correlation_id' },
-          },
+          id: 'test_id',
+          value: 'test',
+          value2: 'jobPayload2 test',
+          metadata: { correlationId: 'correlation_id' },
         },
         { attempts: 3, delay: 0 },
       )
@@ -583,14 +549,12 @@ describe('AbstractBackgroundJobProcessorNew', () => {
 
       // When
       const jobId = await queueManager.schedule(
+        'queue2',
         {
-          queueId: 'queue2',
-          jobPayload: {
-            id: 'test_id',
-            value: 'test',
-            value2: 'jobPayload2 test',
-            metadata: { correlationId: 'correlation_id' },
-          },
+          id: 'test_id',
+          value: 'test',
+          value2: 'jobPayload2 test',
+          metadata: { correlationId: 'correlation_id' },
         },
         { attempts: 3, delay: 0 },
       )
@@ -647,18 +611,12 @@ describe('AbstractBackgroundJobProcessorNew', () => {
         value2: 'jobPayload2 test',
         metadata: { correlationId: generateMonotonicUuid() },
       }
-      const jobId = await queueManager.schedule(
-        {
-          queueId: 'queue2',
-          jobPayload: jobData,
-        },
-        {
-          attempts: 1,
-          backoff: { type: 'fixed', delay: 1 },
-          removeOnComplete: true,
-          removeOnFail: 1, // we should keep the job in the queue to test the stalled job behavior
-        },
-      )
+      const jobId = await queueManager.schedule('queue2', jobData, {
+        attempts: 1,
+        backoff: { type: 'fixed', delay: 1 },
+        removeOnComplete: true,
+        removeOnFail: 1, // we should keep the job in the queue to test the stalled job behavior
+      })
 
       // Then
       await waitAndRetry(() => stalledProcessor.onFailedErrors.length > 0, 100, 20)
@@ -702,13 +660,11 @@ describe('AbstractBackgroundJobProcessorNew', () => {
 
       // When
       const scheduledJobId = await queueManager.schedule(
+        'queue1',
         {
-          queueId: 'queue1',
-          jobPayload: {
-            id: 'test_id',
-            value: 'test',
-            metadata: { correlationId: 'correlation_id' },
-          },
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
         },
         {
           repeat: {
