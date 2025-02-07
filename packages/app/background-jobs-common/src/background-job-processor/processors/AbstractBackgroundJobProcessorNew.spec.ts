@@ -552,7 +552,6 @@ describe('AbstractBackgroundJobProcessorNew', () => {
   })
 
   describe('stalled', () => {
-    // const queueId = 'stalledQueue'
     let stalledProcessor: TestStalledBackgroundJobProcessorNew<JobData>
     let queueManager: FakeQueueManager<typeof SupportedQueues>
 
