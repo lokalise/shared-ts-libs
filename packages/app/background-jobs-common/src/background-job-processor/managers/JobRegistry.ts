@@ -1,8 +1,9 @@
-import {z, ZodObject, ZodRawShape, ZodSchema} from "zod";
+import type {z, ZodSchema} from "zod";
 import type {BaseJobPayload} from "../types";
 
 export type JobDefinition = {
   queueId: string;
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   jobPayloadSchema: z.ZodObject<any>;
 };
 
@@ -10,21 +11,6 @@ export type JobDefinition = {
 export type InferExact<T extends z.ZodTypeAny> = T extends z.ZodObject<infer Shape>
     ? { [K in keyof Shape]: Shape[K] extends z.ZodTypeAny ? z.infer<Shape[K]> : never }
     : never;
-
-export type JobWithPayload<T extends JobDefinition> = {
-  queueId: T['queueId'];
-  jobPayload: T extends JobDefinition<infer P> ? P : never;
-};
-
-export type JobWithPayloads<T extends JobDefinition> = {
-  queueId: T['queueId'];
-  jobPayload: T extends JobDefinition<infer P> ? P : never;
-}[];
-
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-//export type JobWithPayloads<T extends JobDefinition> = Omit<T, 'jobPayloadSchema'> & {
-//  jobPayloads: T extends JobDefinition<infer P> ? P[] : never;
-//};
 
 export class JobRegistry<SupportedJobs extends JobDefinition[]> {
   public readonly supportedJobs: SupportedJobs

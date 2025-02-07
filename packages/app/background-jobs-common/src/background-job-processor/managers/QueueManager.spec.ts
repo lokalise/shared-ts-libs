@@ -15,8 +15,6 @@ const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
 const queueId1 = 'queue1'
 const queueId2 = 'queue2'
 
-type SupportedQueues = typeof queueId1 | typeof queueId2
-
 const jobPayloadSchema = z.object({
   id: z.string(),
   value: z.string(),
@@ -44,28 +42,13 @@ const SUPPORTED_JOBS = [
     queueId: queueId2,
     jobPayloadSchema: jobPayloadSchema2,
   },
-  ] as const satisfies JobDefinition<any>[]
-
-type SupportedJobs = (typeof SUPPORTED_JOBS)[number];
+  ] as const satisfies JobDefinition[]
 
 describe('QueueManager', () => {
   let mocks: DependencyMocks
   let redis: Redis
   let queue1Configuration: QueueConfiguration
   let queue2Configuration: QueueConfiguration
-
-  /*
-  let jobRegistry: JobRegistry<typeof queueId1 | typeof queueId2, [{
-    queueId: typeof queueId1
-    jobPayloadSchema: typeof jobPayloadSchema
-  },
-    {
-      queueId: typeof queueId2
-      jobPayloadSchema: typeof jobPayloadSchema
-    }
-  ]>
-
-   */
 
   const jobRegistry = new JobRegistry(SUPPORTED_JOBS)
 
