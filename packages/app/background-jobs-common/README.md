@@ -24,31 +24,81 @@ Run all tests:
 npm run test
 ```
 
+## Deprecation notice
+
+`AbstractBackgroundJobProcessor` is deprecated and will be removed in the future. Please use
+`AbstractBackgroundJobProcessorNew` instead. The major difference between the two is that
+`AbstractBackgroundJobProcessorNew` does no queue management, so you need a separate `QueueManager` instance to manage
+the queue.
+
 ## Usage
 
-See test implementations in `./test/processors` folder. Extend `AbstractBackgroundJobProcessor` and implement required methods.
+See test implementations in `./test/processors` folder. Extend `AbstractBackgroundJobProcessorNew` and `Queuemanager` to
+implement required methods.
+
+```typescript
+const jobRegistry = new JobRegistry([
+  {
+    queueId: 'queue1',
+    jobPayloadSchema: z.object({
+      id: z.string(),
+      value: z.string(),
+      metadata: z.object({
+        correlationId: z.string(),
+      }),
+    }),
+  }
+])
+
+const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+  redisConfig: config.getRedisConfig(),
+})
+await queueManager.start()
+
+const processor = new FakeBackgroundJobProcessorNew<JobPayload>(
+        deps,
+        'queue1',
+        config.getRedisConfig(),
+)
+await processor.start()
+
+const jobId = await queueManager.schedule('queue1', {
+    id: randomUUID(),
+    value: 'test',
+    metadata: { correlationId: generateMonotonicUuid() },
+})
+```
 
 ### Common jobs
 
-For that type of jobs, you will need to extend `AbstractBackgroundJobProcessor` and implement a `processInternal` method.
-It will be called when a job is dequeued. Processing logic is automatically wrapped into NewRelic and basic logger calls,
-so you only need to add your domain logic.
+For that type of jobs, you will need to extend `AbstractBackgroundJobProcessorNew` and implement a `processInternal`
+method. It will be called when a job is dequeued. Processing logic is automatically wrapped into NewRelic and basic
+logger calls, so you only need to add your domain logic.
 
-By default, both queue and worker are automatically started when you instantiate the processor. There is a default configuration which
-you can override by passing `queueOptions` and `workerOptions` params to the constructor.
+By default, worker is automatically started when you instantiate the processor. There is a default configuration which
+you can override by passing `workerOptions` params to the constructor.
 
-If you wish to only enable your processor to interact with the queue, but not process any jobs, you can set the `workerAutoRunEnabled` param to `false` in the constructor, which equals to setting `autorun` to `false` in `workerOptions`. While you'd normally want the worker to always be running, there are particular occasions where it is advisable to not start it automatically. This is the case when, for example, you are starting a separate instance of your application to schedule a job, but do not want for this instance to start processing this or any other job in the queue because they should be instead picked up by the main instance.
+Similarly, queues are automatically started when you instantiate a queue manager providing a list of queues and job
+registry.
+
+If you wish to only enable your processor to interact with the queue, but not process any jobs, you can set the
+`workerAutoRunEnabled` param to `false` in the constructor, which equals to setting `autorun` to `false` in
+`workerOptions`. While you'd normally want the worker to always be running, there are particular occasions where it is
+advisable to not start it automatically. This is the case when, for example, you are starting a separate instance of
+your application to schedule a job, but do not want for this instance to start processing this or any other job
+in the queue because they should be instead picked up by the main instance.
 
 Use `dispose()` to correctly stop processing any new messages and wait for the current ones to finish.
 
 ### Spies
 
-Testing asynchronous code can be challenging. To address this, we've implemented a built-in spy functionality for jobs.
+Testing asynchronous code can be challenging. To address this, we've implemented a built-in spy functionality for
+jobs and queue managers.
 
 #### Example Usage
 
 ```typescript
-const scheduledJobIds = await processor.scheduleBulk([
+const scheduledJobIds = await queueManager.scheduleBulk(queueId, [
   {
     id: randomUUID(),
     value: 'first',
@@ -61,31 +111,37 @@ const scheduledJobIds = await processor.scheduleBulk([
   },
 ]);
 
+const firstScheduledJob = await queueManager.spy.waitForJobWithId(scheduledJobIds[0], 'scheduled');
+
 const firstJob = await processor.spy.waitForJobWithId(scheduledJobIds[0], 'completed');
 const secondJob = await processor.spy.waitForJob(
   (data) => data.value === 'second',
   'completed'
 );
 
+expect(firstScheduledJob.data.value).toBe('first');
 expect(firstJob.data.value).toBe('first');
 expect(secondJob.data.value).toBe('second');
 ```
 
 #### Spy Methods
 
-- `processor.spy.waitForJobWithId(jobId, status)`:
+- `processor.spy.waitForJobWithId(jobId, status)`, `queueManager.spy.waitForJobWithId(jobId, status)`:
   - Waits for a job with a specific ID to reach the specified status.
   - Returns the job instance when the status is achieved.
 
-- `processor.spy.waitForJob(predicate, status)`:
+- `processor.spy.waitForJob(predicate, status)`, `queueManager.spy.waitForJob(predicate, status)`:
   - Waits for any job that matches the custom predicate to reach the specified status.
   - Returns the matching job instance when the status is achieved.
 
 #### Awaitable Job States
 
-Spies can await jobs in the following states:
+Spies can await jobs in the following states for queue managers:
 
 - `scheduled`: The job is scheduled but not yet processed.
+
+Spies can await jobs in the following states for processors:
+
 - `failed`: The job is processed but failed.
 - `completed`: The job is processed successfully.
 
