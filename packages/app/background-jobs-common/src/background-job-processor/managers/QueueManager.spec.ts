@@ -10,9 +10,6 @@ import type { JobDefinition, QueueConfiguration } from './types'
 
 const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
 
-const queueId1 = 'queue1'
-const queueId2 = 'queue2'
-
 const jobPayloadSchema = z.object({
   id: z.string(),
   value: z.string(),
@@ -32,11 +29,11 @@ const jobPayloadSchema2 = z.object({
 
 const SUPPORTED_JOBS = [
   {
-    queueId: queueId1,
+    queueId: 'queue1',
     jobPayloadSchema,
   },
   {
-    queueId: queueId2,
+    queueId: 'queue2',
     jobPayloadSchema: jobPayloadSchema2,
   },
 ] as const satisfies JobDefinition[]
@@ -44,23 +41,12 @@ const SUPPORTED_JOBS = [
 describe('QueueManager', () => {
   let mocks: DependencyMocks
   let redis: Redis
-  let queue1Configuration: QueueConfiguration
-  let queue2Configuration: QueueConfiguration
 
   const jobRegistry = new JobRegistry(SUPPORTED_JOBS)
 
   beforeEach(async () => {
     mocks = new DependencyMocks()
     redis = mocks.startRedis()
-
-    queue1Configuration = {
-      queueId: queueId1,
-      redisConfig: mocks.getRedisConfig(),
-    }
-    queue2Configuration = {
-      queueId: queueId2,
-      redisConfig: mocks.getRedisConfig(),
-    }
 
     await redis?.flushall('SYNC')
   })
@@ -75,7 +61,9 @@ describe('QueueManager', () => {
     })
 
     it('Multiple start calls (sequential or concurrent) not produce errors', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+        redisConfig: mocks.getRedisConfig(),
+      })
 
       // sequential start calls
       await expect(queueManager.start()).resolves.not.toThrowError()
@@ -92,8 +80,11 @@ describe('QueueManager', () => {
 
     it('Starts multiple queues', async () => {
       const queueManager = new FakeQueueManager(
-        [queue1Configuration, queue2Configuration],
+        [{ queueId: 'queue1' }, { queueId: 'queue2' }],
         jobRegistry,
+        {
+          redisConfig: mocks.getRedisConfig(),
+        }
       )
       await queueManager.start()
 
@@ -105,10 +96,13 @@ describe('QueueManager', () => {
 
     it('Starts only provided queues', async () => {
       const queueManager = new FakeQueueManager(
-        [queue1Configuration, queue2Configuration],
+        [{ queueId: 'queue1' }, { queueId: 'queue2' }],
         jobRegistry,
+        {
+          redisConfig: mocks.getRedisConfig(),
+        }
       )
-      await queueManager.start([queue1Configuration.queueId])
+      await queueManager.start(['queue1'])
 
       expect(queueManager.getQueue('queue1')).toBeDefined()
       expect(() => queueManager.getQueue('queue2')).toThrowError(
@@ -119,7 +113,9 @@ describe('QueueManager', () => {
     })
 
     it('Throw error if try to schedule job without starting queueManager and lazy init disabled', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+        redisConfig: mocks.getRedisConfig(),
+      })
 
       await expect(
         queueManager.schedule({
@@ -158,7 +154,8 @@ describe('QueueManager', () => {
     })
 
     it('Lazy loading on schedule', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry, {
+      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+        redisConfig: mocks.getRedisConfig(),
         lazyInitEnabled: true,
       })
 
@@ -181,7 +178,8 @@ describe('QueueManager', () => {
     })
 
     it('Does not lazy loads on undefined queues', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry, {
+      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+        redisConfig: mocks.getRedisConfig(),
         lazyInitEnabled: true,
       })
 
@@ -201,7 +199,8 @@ describe('QueueManager', () => {
     })
 
     it('Lazy loading on scheduleBulk', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry, {
+      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+        redisConfig: mocks.getRedisConfig(),
         lazyInitEnabled: true,
       })
 
@@ -241,7 +240,9 @@ describe('QueueManager', () => {
     let queueManager: FakeQueueManager<typeof SUPPORTED_JOBS>
 
     beforeEach(async () => {
-      queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+        redisConfig: mocks.getRedisConfig(),
+      })
       await queueManager.start()
     })
 
@@ -326,9 +327,11 @@ describe('QueueManager', () => {
   describe('getJobCount', () => {
     it('job count works as expected', async () => {
       // Given
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+        redisConfig: mocks.getRedisConfig(),
+      })
       await queueManager.start()
-      expect(await queueManager.getJobCount(queue1Configuration.queueId)).toBe(0)
+      expect(await queueManager.getJobCount('queue1')).toBe(0)
 
       // When
       await queueManager.schedule({
@@ -341,7 +344,7 @@ describe('QueueManager', () => {
       })
 
       // Then
-      expect(await queueManager.getJobCount(queue1Configuration.queueId)).toBe(1)
+      expect(await queueManager.getJobCount('queue1')).toBe(1)
 
       await queueManager.dispose()
     })
@@ -349,14 +352,16 @@ describe('QueueManager', () => {
 
   describe('spy', () => {
     it('returns the spy instance when in test mode', () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry, {
+      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+        redisConfig: mocks.getRedisConfig(),
         isTest: true,
       })
       expect(queueManager.spy).toBeInstanceOf(BackgroundJobProcessorSpy)
     })
 
     it('throws an error when spy is accessed and not in test mode', () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry, {
+      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+        redisConfig: mocks.getRedisConfig(),
         isTest: false,
       })
       expect(() => queueManager.spy).toThrowError(
@@ -367,17 +372,22 @@ describe('QueueManager', () => {
 
   describe('dispose', () => {
     it('does nothing if not started', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+        redisConfig: mocks.getRedisConfig(),
+      })
       await expect(queueManager.dispose()).resolves.not.toThrowError()
     })
 
     it('closes all queues if started', async () => {
       const queueManager = new FakeQueueManager(
-        [queue1Configuration, queue2Configuration],
+        [{ queueId: 'queue1' }, { queueId: 'queue2' }],
         jobRegistry,
+        {
+          redisConfig: mocks.getRedisConfig(),
+        }
       )
       await queueManager.start()
-      const isPaused = await queueManager.getQueue(queueId1).isPaused()
+      const isPaused = await queueManager.getQueue('queue1').isPaused()
       expect(isPaused).toBe(false)
       await expect(queueManager.dispose()).resolves.not.toThrowError()
       await expect(queueManager.getQueue('queue1').isPaused()).rejects.toThrowError(
@@ -386,7 +396,9 @@ describe('QueueManager', () => {
     })
 
     it('handles errors during queue closing gracefully', async () => {
-      const queueManager = new FakeQueueManager([queue1Configuration], jobRegistry)
+      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+        redisConfig: mocks.getRedisConfig(),
+      })
       await queueManager.start()
       // @ts-ignore
       vi.spyOn(queueManager.getQueue('queue1'), 'close').mockRejectedValue(new Error('close error'))

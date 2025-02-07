@@ -118,8 +118,8 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
       const queue = this.queueMap[queueId]
       const queueOptions = {
         ...((queue.queueOptions ?? {}) as Omit<QueueOptions, 'connection' | 'prefix'>),
-        connection: sanitizeRedisConfig(queue.redisConfig),
-        prefix: queue.redisConfig?.keyPrefix ?? undefined,
+        connection: sanitizeRedisConfig(this.config.redisConfig),
+        prefix: this.config.redisConfig?.keyPrefix ?? undefined,
       }
       const queuePromise = this.buildQueue(queueId, queueOptions)
       this._queues[queueId] = queuePromise

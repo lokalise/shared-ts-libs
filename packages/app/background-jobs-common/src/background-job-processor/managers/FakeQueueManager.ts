@@ -8,11 +8,12 @@ export class FakeQueueManager<
   constructor(
     queues: QueueConfiguration[],
     jobRegistry: JobRegistry<SupportedJobs>,
-    config?: Partial<QueueManagerConfig>,
+    config: Partial<QueueManagerConfig> & Pick<QueueManagerConfig, 'redisConfig'>,
   ) {
     const mergedConfig: QueueManagerConfig = {
       isTest: config?.isTest ?? true,
       lazyInitEnabled: config?.lazyInitEnabled ?? false,
+      redisConfig: config.redisConfig,
     }
     super(queues, jobRegistry, mergedConfig)
   }
