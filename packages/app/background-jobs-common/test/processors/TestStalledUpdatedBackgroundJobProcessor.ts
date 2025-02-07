@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq'
 
 import type { RedisConfig } from '@lokalise/node-core'
-import { AbstractUpdatedBackgroundJobProcessor } from '../../src/background-job-processor/processors/AbstractUpdatedBackgroundJobProcessor.js'
+import { AbstractBackgroundJobProcessorNew } from '../../src/background-job-processor/processors/AbstractBackgroundJobProcessorNew.js'
 import type { BackgroundJobProcessorDependencies, BaseJobPayload } from '../../src/index.js'
 
 type OnFailedError<T> = {
@@ -11,7 +11,7 @@ type OnFailedError<T> = {
 
 export class TestStalledUpdatedBackgroundJobProcessor<
   T extends BaseJobPayload,
-> extends AbstractUpdatedBackgroundJobProcessor<T> {
+> extends AbstractBackgroundJobProcessorNew<T> {
   private _onFailedErrors: OnFailedError<T>[] = []
 
   constructor(

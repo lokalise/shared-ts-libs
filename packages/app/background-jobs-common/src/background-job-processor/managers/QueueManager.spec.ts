@@ -6,7 +6,7 @@ import { DependencyMocks } from '../../../test/dependencyMocks'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import { FakeQueueManager } from './FakeQueueManager'
 import { JobRegistry } from './JobRegistry'
-import type { JobDefinition, QueueConfiguration } from './types'
+import type { JobDefinition } from './types'
 
 const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
 
@@ -84,7 +84,7 @@ describe('QueueManager', () => {
         jobRegistry,
         {
           redisConfig: mocks.getRedisConfig(),
-        }
+        },
       )
       await queueManager.start()
 
@@ -100,7 +100,7 @@ describe('QueueManager', () => {
         jobRegistry,
         {
           redisConfig: mocks.getRedisConfig(),
-        }
+        },
       )
       await queueManager.start(['queue1'])
 
@@ -384,7 +384,7 @@ describe('QueueManager', () => {
         jobRegistry,
         {
           redisConfig: mocks.getRedisConfig(),
-        }
+        },
       )
       await queueManager.start()
       const isPaused = await queueManager.getQueue('queue1').isPaused()

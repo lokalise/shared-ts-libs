@@ -31,7 +31,7 @@ import type {
   ProtectedWorker,
 } from './types'
 
-export abstract class AbstractUpdatedBackgroundJobProcessor<
+export abstract class AbstractBackgroundJobProcessorNew<
   JobPayload extends BaseJobPayload,
   JobReturn = void,
   ExecutionContext = undefined,
