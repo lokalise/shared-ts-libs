@@ -256,6 +256,7 @@ describe('AbstractBackgroundJobProcessor', () => {
       const job = await processor.spy.waitForJobWithId(jobId, 'completed')
       expect(job.data).toMatchObject(jobData)
 
+      // @ts-ignore
       const resolvedJob = await queueManager.getQueue('queue1').getJob(job.id)
       expect(resolvedJob!.data).toMatchObject(jobData)
 
