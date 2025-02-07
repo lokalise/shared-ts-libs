@@ -33,7 +33,7 @@ the queue.
 
 ## Usage
 
-See test implementations in `./test/processors` folder. Extend `AbstractBackgroundJobProcessorNew` and `Queuemanager` to
+See test implementations in `./test/processors` folder. Extend `AbstractBackgroundJobProcessorNew` and `QueueManager` to
 implement required methods.
 
 ```typescript
