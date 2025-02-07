@@ -42,7 +42,7 @@ describe('QueueRegistry', () => {
   })
 
   it('should register queue ids correctly', () => {
-    expect(registry.queueIds).toEqual(new Set(['queueId1', 'queueId2']))
+    expect(registry.queueIds).toEqual(new Set(['queue1', 'queue2']))
   })
 
   it('should return the correct config by queue id', () => {
