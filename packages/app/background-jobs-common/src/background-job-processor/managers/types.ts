@@ -3,9 +3,9 @@ import type { JobsOptions, QueueOptions } from 'bullmq'
 import type { z } from 'zod'
 import type { BASE_JOB_PAYLOAD_SCHEMA } from '../types'
 
-export type QueueConfiguration = {
+export type QueueConfiguration<QueueOptionsType extends QueueOptions = QueueOptions> = {
   queueId: string
-  queueOptions?: Omit<Partial<QueueOptions>, 'connection' | 'prefix'> // TODO: support QueuePro options
+  queueOptions?: Omit<Partial<QueueOptionsType>, 'connection' | 'prefix'>
 }
 
 export type QueueManagerConfig = {
