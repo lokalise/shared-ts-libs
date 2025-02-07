@@ -5,7 +5,7 @@ import { merge } from 'ts-deepmerge'
 import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import type { BaseJobPayload } from '../types.js'
+import type { BaseJobPayload } from '../types'
 import { prepareJobOptions, sanitizeRedisConfig } from '../utils'
 import type { JobRegistry } from './JobRegistry'
 import type {

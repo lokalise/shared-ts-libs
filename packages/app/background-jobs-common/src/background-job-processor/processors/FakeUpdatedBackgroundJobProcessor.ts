@@ -1,10 +1,10 @@
-import { CommonBullmqFactory } from '../factories/CommonBullmqFactory.js'
-import type { BaseJobPayload } from '../types.js'
+import { CommonBullmqFactory } from '../factories/CommonBullmqFactory'
+import type { BaseJobPayload } from '../types'
 
 import type { RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
-import { AbstractUpdatedBackgroundJobProcessor } from './AbstractUpdatedBackgroundJobProcessor.js'
-import type { BackgroundJobProcessorDependencies } from './types.js'
+import { AbstractUpdatedBackgroundJobProcessor } from './AbstractUpdatedBackgroundJobProcessor'
+import type { BackgroundJobProcessorDependencies } from './types'
 
 export class FakeUpdatedBackgroundJobProcessor<
   JobData extends BaseJobPayload,

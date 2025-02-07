@@ -11,25 +11,25 @@ import {
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
 
-import { DEFAULT_WORKER_OPTIONS } from '../constants.js'
-import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory.js'
-import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.js'
-import type { BackgroundJobProcessorSpyInterface } from '../spy/types.js'
-import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types.js'
+import { DEFAULT_WORKER_OPTIONS } from '../constants'
+import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
+import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
+import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types'
 import {
   isJobMissingError,
   isStalledJobError,
   isUnrecoverableJobError,
   resolveJobId,
   sanitizeRedisConfig,
-} from '../utils.js'
+} from '../utils'
 
-import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.js'
+import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor'
 import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
   ProtectedWorker,
-} from './types.js'
+} from './types'
 
 export abstract class AbstractUpdatedBackgroundJobProcessor<
   JobPayload extends BaseJobPayload,
