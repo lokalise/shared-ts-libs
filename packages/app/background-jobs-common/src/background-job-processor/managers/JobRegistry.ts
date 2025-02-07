@@ -1,5 +1,5 @@
 import type { ZodSchema, z } from 'zod'
-import type { BaseJobPayload } from '../types'
+import type { BaseJobPayload } from '../types.js'
 
 export type JobDefinition = {
   queueId: string
@@ -31,6 +31,7 @@ export class JobRegistry<SupportedJobs extends JobDefinition[]> {
   public getJobPayloadSchemaByQueue = <JobPayload extends BaseJobPayload = BaseJobPayload>(
     queueId: SupportedJobs[number]['queueId'],
   ): ZodSchema<JobPayload> => {
+    // @ts-ignore
     return this.supportedJobMap[queueId].jobPayloadSchema as ZodSchema<JobPayload>
   }
 
