@@ -1,6 +1,5 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
-import type Redis from 'ioredis'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import { DependencyMocks } from '../../../test/dependencyMocks'
@@ -40,15 +39,15 @@ const SupportedQueues = [
 
 describe('QueueManager', () => {
   let mocks: DependencyMocks
-  let redis: Redis
   let redisConfig: RedisConfig
 
   beforeEach(async () => {
     mocks = new DependencyMocks()
-    redis = mocks.startRedis()
     redisConfig = mocks.getRedisConfig()
 
+    const redis = mocks.startRedis()
     await redis?.flushall('SYNC')
+    redis.disconnect(false)
   })
 
   afterEach(async () => {
@@ -56,10 +55,6 @@ describe('QueueManager', () => {
   })
 
   describe('start', () => {
-    beforeEach(async () => {
-      await redis?.del(QUEUE_IDS_KEY)
-    })
-
     it('Multiple start calls (sequential or concurrent) not produce errors', async () => {
       const queueManager = new FakeQueueManager([SupportedQueues[0]], {
         redisConfig,

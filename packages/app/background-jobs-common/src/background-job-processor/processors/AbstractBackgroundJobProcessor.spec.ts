@@ -31,9 +31,10 @@ describe('AbstractBackgroundJobProcessor', () => {
   beforeEach(async () => {
     mocks = new DependencyMocks()
     deps = mocks.create()
-    redis = mocks.startRedis()
 
+    const redis = mocks.startRedis()
     await redis?.flushall('SYNC')
+    redis.disconnect(false)
   })
 
   afterEach(async () => {
@@ -702,10 +703,6 @@ describe('AbstractBackgroundJobProcessor', () => {
   })
 
   describe('repeatable', () => {
-    beforeEach(async () => {
-      await redis?.del(QUEUE_IDS_KEY)
-    })
-
     it('schedules repeatable job', async () => {
       // Given
       const processor = new FakeBackgroundJobProcessor<JobData>(
