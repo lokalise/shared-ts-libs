@@ -21,10 +21,10 @@ export class JobRegistry<
     }
   }
 
-  public getJobPayloadSchemaByQueue = <JobPayload extends BaseJobPayload = BaseJobPayload>(
+  public getJobPayloadSchemaByQueue<JobPayload extends BaseJobPayload = BaseJobPayload>(
     queueId: SupportedQueues<SupportedJobs>,
-  ): z.ZodSchema<JobPayload> => {
-    return this.supportedJobMap[queueId].jobPayloadSchema
+  ): z.ZodType<JobPayload> {
+    return this.supportedJobMap[queueId].jobPayloadSchema as z.ZodType<JobPayload>
   }
 
   public getJobOptions = (queueId: SupportedQueues<SupportedJobs>): JobOptionsType | undefined => {
