@@ -1,5 +1,6 @@
-import type { JobDefinition, JobRegistry } from './JobRegistry'
-import { type QueueConfiguration, QueueManager, type QueueManagerConfig } from './QueueManager.js'
+import type { JobRegistry } from './JobRegistry'
+import { QueueManager } from './QueueManager'
+import type { JobDefinition, QueueConfiguration, QueueManagerConfig } from './types'
 
 export class FakeQueueManager<
   SupportedJobs extends JobDefinition[],
