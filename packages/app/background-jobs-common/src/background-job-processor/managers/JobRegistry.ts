@@ -1,3 +1,4 @@
+import type { JobsOptions } from 'bullmq'
 import type { ZodSchema, z } from 'zod'
 import type { BaseJobPayload } from '../types.js'
 
@@ -5,6 +6,7 @@ export type JobDefinition = {
   queueId: string
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   jobPayloadSchema: z.ZodObject<any>
+  options?: JobsOptions
 }
 
 // Helper type to extract the inferred type from a Zod schema while preserving optionality
@@ -33,6 +35,10 @@ export class JobRegistry<SupportedJobs extends JobDefinition[]> {
   ): ZodSchema<JobPayload> => {
     // @ts-ignore
     return this.supportedJobMap[queueId].jobPayloadSchema as ZodSchema<JobPayload>
+  }
+
+  public getJobOptions = (queueId: SupportedJobs[number]['queueId']): JobsOptions | undefined => {
+    return this.supportedJobMap[queueId].options
   }
 
   public isSupportedQueue(queueId: string) {

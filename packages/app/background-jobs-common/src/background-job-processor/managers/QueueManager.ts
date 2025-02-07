@@ -172,6 +172,7 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     options?: JobsOptions,
   ): Promise<string> {
     const { queueId, jobPayload } = scheduleParams
+    const defaultJobOptions = this.jobRegistry.getJobOptions(queueId)
 
     await this.startIfNotStarted(queueId)
 
@@ -179,7 +180,10 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
       queueId,
       // @ts-ignore
       jobPayload,
-      prepareJobOptions(this.config.isTest, options),
+      prepareJobOptions(this.config.isTest, {
+        ...defaultJobOptions,
+        ...options,
+      }),
     )
     if (!job?.id) throw new Error('Scheduled job ID is undefined')
     if (this._spy) this._spy.addJob(job, 'scheduled')
@@ -195,6 +199,8 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     options?: JobsOptions,
   ): Promise<string[]> {
     const { queueId, jobPayloads } = scheduleParams
+    const defaultJobOptions = this.jobRegistry.getJobOptions(queueId)
+
     if (jobPayloads.length === 0) return []
 
     await this.startIfNotStarted(queueId)
@@ -205,7 +211,7 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
         jobPayloads.map((data) => ({
           name: queueId,
           data: data,
-          opts: prepareJobOptions(this.config.isTest, options),
+          opts: prepareJobOptions(this.config.isTest, { ...defaultJobOptions, ...options }),
         })),
       )) ?? []
 
