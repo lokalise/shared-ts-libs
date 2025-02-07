@@ -30,7 +30,7 @@ const jobPayloadSchema2 = z.object({
 const SUPPORTED_JOBS = [
   {
     queueId: 'queue1',
-    jobPayloadSchema,
+    jobPayloadSchema: jobPayloadSchema.strict(),
   },
   {
     queueId: 'queue2',
@@ -118,13 +118,50 @@ describe('QueueManager', () => {
       })
 
       await expect(
+        queueManager.schedule('queue2', {
+          id: 'id',
+          value: 'test',
+          value2: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        }),
+      ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
+    })
+
+    it('Throw error if try to schedule with invalid payload', async () => {
+      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+        redisConfig: mocks.getRedisConfig(),
+      })
+
+      await expect(
         queueManager.schedule('queue1', {
           value: 'test',
           // @ts-expect-error Should only expect fields from queue1 schema
           value2: 'test',
           metadata: { correlationId: 'correlation_id' },
         }),
-      ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
+      ).rejects.toThrowErrorMatchingInlineSnapshot(
+        `
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "string",
+            "received": "undefined",
+            "path": [
+              "id"
+            ],
+            "message": "Required"
+          },
+          {
+            "code": "unrecognized_keys",
+            "keys": [
+              "value2"
+            ],
+            "path": [],
+            "message": "Unrecognized key(s) in object: 'value2'"
+          }
+        ]]
+      `,
+      )
 
       await expect(
         queueManager.schedule(
@@ -135,16 +172,83 @@ describe('QueueManager', () => {
             metadata: { correlationId: 'correlation_id' },
           },
         ),
-      ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
+      ).rejects.toThrowErrorMatchingInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "string",
+            "received": "undefined",
+            "path": [
+              "id"
+            ],
+            "message": "Required"
+          }
+        ]]
+      `)
+    })
+
+    it('Throw error if try to scheduleBulk with invalid payload', async () => {
+      const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
+        redisConfig: mocks.getRedisConfig(),
+      })
 
       await expect(
-        queueManager.schedule('queue2', {
-          id: 'id',
-          value: 'test',
-          value2: 'test',
-          metadata: { correlationId: 'correlation_id' },
-        }),
-      ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
+        queueManager.scheduleBulk('queue1', [
+          {
+            value: 'test',
+            // @ts-expect-error Should only expect fields from queue1 schema
+            value2: 'test',
+            metadata: { correlationId: 'correlation_id' },
+          },
+        ]),
+      ).rejects.toThrowErrorMatchingInlineSnapshot(
+        `
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "string",
+            "received": "undefined",
+            "path": [
+              "id"
+            ],
+            "message": "Required"
+          },
+          {
+            "code": "unrecognized_keys",
+            "keys": [
+              "value2"
+            ],
+            "path": [],
+            "message": "Unrecognized key(s) in object: 'value2'"
+          }
+        ]]
+      `,
+      )
+
+      await expect(
+        queueManager.scheduleBulk(
+          'queue1',
+          // @ts-expect-error Should expect mandatory fields from queue1 schema
+          [
+            {
+              value: 'test',
+              metadata: { correlationId: 'correlation_id' },
+            },
+          ],
+        ),
+      ).rejects.toThrowErrorMatchingInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "string",
+            "received": "undefined",
+            "path": [
+              "id"
+            ],
+            "message": "Required"
+          }
+        ]]
+      `)
     })
 
     it('Lazy loading on schedule', async () => {

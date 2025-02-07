@@ -17,6 +17,7 @@
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "scripts": {
+        "tbuild": "turbo build",
         "build": "rimraf dist && tsc",
         "clean": "rimraf dist",
         "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",

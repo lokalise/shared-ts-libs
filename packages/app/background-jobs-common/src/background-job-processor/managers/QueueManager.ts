@@ -150,14 +150,15 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     jobPayload: JobPayloadForQueue<QueueId, SupportedJobs>,
     options?: JobsOptions,
   ): Promise<string> {
+    const schema = this.jobRegistry.getJobPayloadSchemaByQueue(queueId)
+    const validatedPayload = schema.parse(jobPayload)
     const defaultJobOptions = this.jobRegistry.getJobOptions(queueId) ?? {}
 
     await this.startIfNotStarted(queueId)
 
     const job = await this.getQueue(queueId).add(
       queueId,
-      // @ts-ignore
-      jobPayload,
+      validatedPayload,
       prepareJobOptions(this.config.isTest, merge(defaultJobOptions, options ?? {})),
     )
     if (!job?.id) throw new Error('Scheduled job ID is undefined')
@@ -171,6 +172,9 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     jobPayloads: JobPayloadForQueue<QueueId, SupportedJobs>[],
     options?: JobsOptions,
   ): Promise<string[]> {
+    const schema = this.jobRegistry.getJobPayloadSchemaByQueue(queueId)
+    const validatedPayloads = jobPayloads.map((payload) => schema.parse(payload))
+
     const defaultJobOptions = this.jobRegistry.getJobOptions(queueId) ?? {}
 
     if (jobPayloads.length === 0) return []
@@ -179,8 +183,7 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
 
     const jobs =
       (await this.getQueue(queueId)?.addBulk(
-        // @ts-expect-error
-        jobPayloads.map((data) => ({
+        validatedPayloads.map((data) => ({
           name: queueId,
           data: data,
           opts: prepareJobOptions(this.config.isTest, merge(defaultJobOptions, options ?? {})),
