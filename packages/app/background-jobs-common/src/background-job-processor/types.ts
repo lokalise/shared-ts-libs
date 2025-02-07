@@ -1,6 +1,7 @@
 import type { FinishedStatus, Job } from 'bullmq'
 
 import type { CommonLogger } from '@lokalise/node-core'
+import { z } from 'zod'
 
 export interface RequestContext {
   logger: CommonLogger
@@ -8,7 +9,12 @@ export interface RequestContext {
 }
 
 export type JobFinalState = FinishedStatus
-export type BaseJobPayload = { metadata: { correlationId: string } }
+export const BASE_JOB_PAYLOAD_SCHEMA = z.object({
+  metadata: z.object({
+    correlationId: z.string(),
+  }),
+})
+export type BaseJobPayload = z.infer<typeof BASE_JOB_PAYLOAD_SCHEMA>
 
 // "scripts" field is incompatible between free and pro versions, and it's not particularly important
 // biome-ignore lint/suspicious/noExplicitAny: it's okay
