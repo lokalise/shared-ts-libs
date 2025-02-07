@@ -226,16 +226,13 @@ describe('QueueManager', () => {
       )
 
       await expect(
-        queueManager.scheduleBulk(
-          'queue1',
+        queueManager.scheduleBulk('queue1', [
           // @ts-expect-error Should expect mandatory fields from queue1 schema
-          [
-            {
-              value: 'test',
-              metadata: { correlationId: 'correlation_id' },
-            },
-          ],
-        ),
+          {
+            value: 'test',
+            metadata: { correlationId: 'correlation_id' },
+          },
+        ]),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
         [ZodError: [
           {
