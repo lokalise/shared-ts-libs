@@ -67,7 +67,7 @@ export class QueueManager<
       SupportedJobPayloads<Queues>,
       unknown
     >,
-    queues: QueueConfiguration<QueueOptionsType, JobOptionsType>[],
+    queues: Queues,
     config: QueueManagerConfig,
   ) {
     this.factory = factory

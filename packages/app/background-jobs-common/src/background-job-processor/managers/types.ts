@@ -39,8 +39,8 @@ export type JobPayloadForQueue<
   Config extends QueueConfiguration[],
 > = z.infer<Extract<Config[number], { queueId: QueueId }>['jobPayloadSchema']>
 
-// ------------------ Example for discussion
 /*
+// ------------------ Example for discussion
 const jobPayloadSchema = z.object({
   id: z.string(),
   value: z.string(),
@@ -59,7 +59,7 @@ const jobPayloadSchema2 = z.object({
   }),
 })
 
-const SUPPORTED_JOBS = [
+const _QUEUES = [
   {
     queueId: 'queue1',
     jobPayloadSchema: jobPayloadSchema.strict(),
@@ -68,13 +68,24 @@ const SUPPORTED_JOBS = [
     queueId: 'queue2',
     jobPayloadSchema: jobPayloadSchema2,
   },
-] as const satisfies JobDefinition[]
+] as const satisfies QueueConfiguration[]
 
-const jobRegistry = new JobRegistry(SUPPORTED_JOBS)
-const queueManager = new FakeQueueManager([{ queueId: 'queue1' }], jobRegistry, {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  redisConfig: {} as any,
-})
+const queueManager = new FakeQueueManager(
+  [
+    {
+      queueId: 'queue1',
+      jobPayloadSchema: jobPayloadSchema.strict(),
+    },
+    {
+      queueId: 'queue2',
+      jobPayloadSchema: jobPayloadSchema2,
+    },
+  ] as const,
+  {
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    redisConfig: {} as any,
+  },
+)
 
 queueManager.schedule('queue1', {
   id: '1',

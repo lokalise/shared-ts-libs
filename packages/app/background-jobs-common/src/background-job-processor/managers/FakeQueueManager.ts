@@ -6,7 +6,7 @@ export class FakeQueueManager<
   SupportedJobs extends QueueConfiguration[],
 > extends QueueManager<SupportedJobs> {
   constructor(
-    queues: QueueConfiguration[],
+    queues: SupportedJobs,
     config: Partial<QueueManagerConfig> & Pick<QueueManagerConfig, 'redisConfig'>,
   ) {
     const mergedConfig: QueueManagerConfig = {
