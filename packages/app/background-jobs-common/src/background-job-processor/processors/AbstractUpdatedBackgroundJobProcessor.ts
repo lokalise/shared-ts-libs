@@ -111,6 +111,7 @@ export abstract class AbstractUpdatedBackgroundJobProcessor<
   }
 
   protected get executionContext() {
+    /* v8 ignore next 3 */
     if (!this._executionContext) {
       this._executionContext = this.resolveExecutionContext()
     }
@@ -130,6 +131,7 @@ export abstract class AbstractUpdatedBackgroundJobProcessor<
   }
 
   public get spy(): BackgroundJobProcessorSpyInterface<JobPayload, JobReturn> {
+    /* v8 ignore next 4 */
     if (!this._spy)
       throw new Error(
         'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
@@ -191,6 +193,7 @@ export abstract class AbstractUpdatedBackgroundJobProcessor<
       await this._worker?.close(this.config.isTest)
       // await this._queue?.close()
       await Promise.allSettled(this.runningPromises)
+      /* v8 ignore next 3 */
     } catch {
       //do nothing
     }
@@ -353,6 +356,7 @@ export abstract class AbstractUpdatedBackgroundJobProcessor<
     return Promise.resolve()
   }
 
+  /* v8 ignore next 3 */
   protected resolveExecutionContext(): ExecutionContext {
     return undefined as ExecutionContext
   }

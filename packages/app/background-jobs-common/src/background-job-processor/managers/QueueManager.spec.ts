@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type Redis from 'ioredis'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DependencyMocks } from '../../../test/dependencyMocks.js'
+import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.js'
 import { FakeQueueManager } from './FakeQueueManager.js'
 import type { QueueConfiguration } from './QueueManager.js'
 
@@ -258,6 +259,48 @@ describe('QueueManager', () => {
       expect(await queueManager.getJobCount(queue1Configuration.queueId)).toBe(1)
 
       await queueManager.dispose()
+    })
+  })
+
+  describe('spy', () => {
+    it('returns the spy instance when in test mode', () => {
+      const queueManager = new FakeQueueManager([queue1Configuration], { isTest: true })
+      expect(queueManager.spy).toBeInstanceOf(BackgroundJobProcessorSpy)
+    })
+
+    it('throws an error when spy is accessed and not in test mode', () => {
+      const queueManager = new FakeQueueManager([queue1Configuration], { isTest: false })
+      expect(() => queueManager.spy).toThrowError(
+        'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
+      )
+    })
+  })
+
+  describe('dispose', () => {
+    it('does nothing if not started', async () => {
+      const queueManager = new FakeQueueManager([queue1Configuration])
+      await expect(queueManager.dispose()).resolves.not.toThrowError()
+    })
+
+    it('closes all queues if started', async () => {
+      const queueManager = new FakeQueueManager([queue1Configuration, queue2Configuration])
+      await queueManager.start()
+      const isPaused = await queueManager.getQueue(queue1Configuration.queueId).isPaused()
+      expect(isPaused).toBe(false)
+      await expect(queueManager.dispose()).resolves.not.toThrowError()
+      await expect(
+        queueManager.getQueue(queue1Configuration.queueId).isPaused(),
+      ).rejects.toThrowError('Connection is closed.')
+    })
+
+    it('handles errors during queue closing gracefully', async () => {
+      const queueManager = new FakeQueueManager([queue1Configuration])
+      await queueManager.start()
+      // @ts-ignore
+      vi.spyOn(queueManager.getQueue(queue1Configuration.queueId), 'close').mockRejectedValue(
+        new Error('close error'),
+      )
+      await expect(queueManager.dispose()).resolves.not.toThrowError()
     })
   })
 })

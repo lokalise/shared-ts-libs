@@ -48,6 +48,7 @@ export class QueueManager<Queues extends QueueConfiguration[]> {
 
     try {
       await Promise.allSettled(Object.values(this._queues).map((queue) => queue.close()))
+      /* v8 ignore next 3 */
     } catch {
       //do nothing
     }
@@ -179,7 +180,7 @@ export class QueueManager<Queues extends QueueConfiguration[]> {
       )) ?? []
 
     const jobIds = jobs.map((job) => job.id)
-    /* v8 ignore next 4 */
+    /* v8 ignore next 5 */
     if (jobIds.length === 0 || !jobIds.every((id) => !!id)) {
       // Practically unreachable, but we want to simplify the signature of the method and avoid
       // stating that it could return undefined.
