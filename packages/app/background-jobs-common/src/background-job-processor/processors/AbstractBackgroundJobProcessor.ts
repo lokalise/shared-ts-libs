@@ -34,6 +34,9 @@ import type {
   ProtectedWorker,
 } from './types'
 
+/**
+ * @deprecated This processor is deprecated and will be removed in future versions.
+ */
 export abstract class AbstractBackgroundJobProcessor<
   JobPayload extends BaseJobPayload,
   JobReturn = void,
