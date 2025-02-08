@@ -167,7 +167,8 @@ describe('QueueManager', () => {
       await expect(
         queueManager.schedule(
           'queue1',
-          // @ts-ignore Should expect mandatory fields from queue1 schema
+          // IDE from some reason complains about expect-error, we will look into it independently
+          // @ts-expect-error > Should expect mandatory fields from queue1 schema
           {
             value: 'test',
             metadata: { correlationId: 'correlation_id' },
@@ -228,7 +229,8 @@ describe('QueueManager', () => {
 
       await expect(
         queueManager.scheduleBulk('queue1', [
-          // @ts-ignore Should expect mandatory fields from queue1 schema
+          // IDE from some reason complains about expect-error, we will look into it independently
+          // @ts-expect-error Should expect mandatory fields from queue1 schema
           {
             value: 'test',
             metadata: { correlationId: 'correlation_id' },
