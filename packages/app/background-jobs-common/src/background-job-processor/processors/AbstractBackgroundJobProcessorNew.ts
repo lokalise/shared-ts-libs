@@ -169,9 +169,10 @@ export abstract class AbstractBackgroundJobProcessorNew<
       this.config.queueId,
       ((job: JobType) => this.processInternal(job)) as ProcessorType,
       {
-        ...(merge(DEFAULT_WORKER_OPTIONS, this.config.workerOptions, {
-          autorun: this.config.workerAutoRunEnabled !== false,
-        }) as Omit<WorkerOptionsType, 'connection' | 'prefix'>),
+        ...(merge(DEFAULT_WORKER_OPTIONS, this.config.workerOptions) as Omit<
+          WorkerOptionsType,
+          'connection' | 'prefix'
+        >),
         connection: sanitizeRedisConfig(this.config.redisConfig),
         prefix: this.config.redisConfig?.keyPrefix ?? undefined,
       } as unknown as WorkerOptionsType,

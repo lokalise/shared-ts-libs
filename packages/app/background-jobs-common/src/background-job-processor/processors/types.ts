@@ -27,7 +27,6 @@ export type BackgroundJobProcessorConfigNew<
   redisConfig: RedisConfig
   barrier?: BarrierCallback<JobPayload, ExecutionContext, JobReturn, JobType>
   lazyInitEnabled?: boolean
-  workerAutoRunEnabled?: boolean
 }
 
 /** @deprecated */
