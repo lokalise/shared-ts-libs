@@ -63,6 +63,8 @@ export abstract class AbstractBackgroundJobProcessorNew<
   // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
   private readonly errorReporter: ErrorReporter
   private readonly config: BackgroundJobProcessorConfigNew<
+    Queues,
+    QueueId,
     WorkerOptionsType,
     JobPayload,
     ExecutionContext,
@@ -104,6 +106,8 @@ export abstract class AbstractBackgroundJobProcessorNew<
       ProcessorType
     >,
     config: BackgroundJobProcessorConfigNew<
+      Queues,
+      QueueId,
       WorkerOptionsType,
       JobPayload,
       ExecutionContext,

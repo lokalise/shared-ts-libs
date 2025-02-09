@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq'
 
 import type { RedisConfig } from '@lokalise/node-core'
-import { FakeBackgroundJobProcessorNew } from '../../src'
+import { FakeBackgroundJobProcessorNew, type SupportedQueueIds } from '../../src'
 import type {
   BackgroundJobProcessorDependenciesNew,
   BaseJobPayload,
@@ -15,25 +15,25 @@ type TestSuccessUpdatedBackgroundJobProcessorData = {
 
 export class TestSuccessBackgroundJobProcessorNew<
   Q extends QueueConfiguration[],
-  T extends TestSuccessUpdatedBackgroundJobProcessorData,
+  T extends SupportedQueueIds<Q>,
 > extends FakeBackgroundJobProcessorNew<Q, T> {
   private onSuccessCounter = 0
-  private onSuccessCall!: (job: Job<T>) => void
+  private onSuccessCall!: (job: Job<unknown>) => void
   private _jobDataResult!: TestSuccessUpdatedBackgroundJobProcessorData
 
   constructor(
     dependencies: BackgroundJobProcessorDependenciesNew<Q, T>,
-    queueName: string,
+    queueId: T,
     redisConfig: RedisConfig,
   ) {
-    super(dependencies, queueName, redisConfig, true)
+    super(dependencies, queueId, redisConfig, true)
   }
 
   protected override process(): Promise<void> {
     return Promise.resolve()
   }
 
-  protected override onSuccess(job: Job<T>, requestContext: RequestContext): Promise<void> {
+  protected override onSuccess(job: Job<unknown>, requestContext: RequestContext): Promise<void> {
     this.onSuccessCounter += 1
     this.onSuccessCall(job)
     this._jobDataResult = job.data
@@ -44,7 +44,7 @@ export class TestSuccessBackgroundJobProcessorNew<
     return this._jobDataResult
   }
 
-  override purgeJobData(job: Job<T>): Promise<void> {
+  override purgeJobData(job: Job<unknown>): Promise<void> {
     return super.purgeJobData(job)
   }
 
