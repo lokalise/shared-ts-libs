@@ -9,6 +9,25 @@ import type { BarrierCallback } from '../barrier/barrier'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
 import type { BaseJobPayload, BullmqProcessor, SafeJob } from '../types'
 
+export type BackgroundJobProcessorConfigNew<
+  WorkerOptionsType extends WorkerOptions = WorkerOptions,
+  JobPayload extends BaseJobPayload = BaseJobPayload,
+  ExecutionContext = void,
+  JobReturn = void,
+  JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
+> = {
+  queueId: string
+  isTest: boolean
+  // Name of a webservice or a module running the bg job. Used for logging/observability
+  ownerName: string
+  workerOptions: Omit<Partial<WorkerOptionsType>, 'connection' | 'prefix' | 'autorun'>
+  redisConfig: RedisConfig
+  barrier?: BarrierCallback<JobPayload, ExecutionContext, JobReturn, JobType>
+  lazyInitEnabled?: boolean
+  workerAutoRunEnabled?: boolean
+}
+
+/** @deprecated */
 export type BackgroundJobProcessorConfig<
   QueueOptionsType extends QueueOptions = QueueOptions,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
@@ -29,6 +48,34 @@ export type BackgroundJobProcessorConfig<
   workerAutoRunEnabled?: boolean
 }
 
+export type BackgroundJobProcessorDependenciesNew<
+  JobPayload extends object,
+  JobReturn = void,
+  JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
+  WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
+  WorkerOptionsType extends WorkerOptions = WorkerOptions,
+  ProcessorType extends BullmqProcessor<JobType, JobPayload, JobReturn> = BullmqProcessor<
+    JobType,
+    JobPayload,
+    JobReturn
+  >,
+> = {
+  transactionObservabilityManager: TransactionObservabilityManager
+  logger: CommonLogger
+  errorReporter: ErrorReporter
+  bullmqFactory: AbstractBullmqFactory<
+    Queue,
+    QueueOptions,
+    WorkerType,
+    WorkerOptionsType,
+    ProcessorType,
+    JobType,
+    JobPayload,
+    JobReturn
+  >
+}
+
+/** @deprecated */
 export type BackgroundJobProcessorDependencies<
   JobPayload extends object,
   JobReturn = void,

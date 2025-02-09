@@ -14,9 +14,13 @@ describe('AbstractBackgroundJobProcessor Barrier', () => {
   let mocks: DependencyMocks
   let deps: BackgroundJobProcessorDependencies<JobData, any>
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mocks = new DependencyMocks()
     deps = mocks.create()
+
+    const redis = mocks.startRedis()
+    await redis?.flushall('SYNC')
+    redis.disconnect(false)
   })
 
   afterEach(async () => {

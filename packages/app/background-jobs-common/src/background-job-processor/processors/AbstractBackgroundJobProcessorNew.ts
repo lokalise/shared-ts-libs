@@ -26,8 +26,8 @@ import {
 
 import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor'
 import type {
-  BackgroundJobProcessorConfig,
-  BackgroundJobProcessorDependencies,
+  BackgroundJobProcessorConfigNew,
+  BackgroundJobProcessorDependenciesNew,
   ProtectedWorker,
 } from './types'
 
@@ -36,15 +36,6 @@ export abstract class AbstractBackgroundJobProcessorNew<
   JobReturn = void,
   ExecutionContext = undefined,
   JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
-  QueueType extends Queue<JobPayload, JobReturn, string, JobPayload, JobReturn, string> = Queue<
-    JobPayload,
-    JobReturn,
-    string,
-    JobPayload,
-    JobReturn,
-    string
-  >,
-  QueueOptionsType extends QueueOptions = QueueOptions,
   WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
   ProcessorType extends BullmqProcessor<JobType, JobPayload, JobReturn> = BullmqProcessor<
@@ -54,8 +45,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
   >,
 > {
   private readonly errorReporter: ErrorReporter // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
-  private readonly config: BackgroundJobProcessorConfig<
-    QueueOptionsType,
+  private readonly config: BackgroundJobProcessorConfigNew<
     WorkerOptionsType,
     JobPayload,
     ExecutionContext,
@@ -72,8 +62,8 @@ export abstract class AbstractBackgroundJobProcessorNew<
   private _executionContext?: ExecutionContext
   private _worker?: WorkerType
   private factory: AbstractBullmqFactory<
-    QueueType,
-    QueueOptionsType,
+    Queue,
+    QueueOptions,
     WorkerType,
     WorkerOptionsType,
     ProcessorType,
@@ -83,18 +73,15 @@ export abstract class AbstractBackgroundJobProcessorNew<
   >
 
   protected constructor(
-    dependencies: BackgroundJobProcessorDependencies<
+    dependencies: BackgroundJobProcessorDependenciesNew<
       JobPayload,
       JobReturn,
       JobType,
-      QueueType,
-      QueueOptionsType,
       WorkerType,
       WorkerOptionsType,
       ProcessorType
     >,
-    config: BackgroundJobProcessorConfig<
-      QueueOptionsType,
+    config: BackgroundJobProcessorConfigNew<
       WorkerOptionsType,
       JobPayload,
       ExecutionContext,

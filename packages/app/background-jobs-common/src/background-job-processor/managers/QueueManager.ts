@@ -1,46 +1,77 @@
-import type { JobsOptions, QueueOptions } from 'bullmq'
-import { Queue } from 'bullmq'
+import type { Job, JobsOptions, QueueOptions, Worker, WorkerOptions } from 'bullmq'
+import type { Queue } from 'bullmq'
 import type { JobState } from 'bullmq/dist/esm/types/job-type'
 import { merge } from 'ts-deepmerge'
+import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
 import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import type { BaseJobPayload } from '../types'
+import type { BaseJobPayload, BullmqProcessor } from '../types'
 import { prepareJobOptions, sanitizeRedisConfig } from '../utils'
-import type { JobRegistry } from './JobRegistry'
+import { QueueRegistry } from './QueueRegistry'
 import type {
-  JobDefinition,
   JobPayloadForQueue,
   QueueConfiguration,
   QueueManagerConfig,
-  SupportedQueues,
+  SupportedJobPayloads,
+  SupportedQueueIds,
 } from './types'
 
-export class QueueManager<SupportedJobs extends JobDefinition[]> {
-  private readonly queueMap: Record<string, QueueConfiguration> = {}
-  private readonly queueIds: Set<string>
+export class QueueManager<
+  Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
+  QueueType extends Queue<
+    SupportedJobPayloads<Queues>,
+    unknown,
+    string,
+    SupportedJobPayloads<Queues>,
+    unknown,
+    string
+  > = Queue<
+    SupportedJobPayloads<Queues>,
+    unknown,
+    string,
+    SupportedJobPayloads<Queues>,
+    unknown,
+    string
+  >,
+  JobOptionsType extends JobsOptions = JobsOptions,
+  QueueOptionsType extends QueueOptions = QueueOptions,
+> {
+  private readonly factory: AbstractBullmqFactory<
+    QueueType,
+    QueueOptionsType,
+    Worker,
+    WorkerOptions,
+    BullmqProcessor<Job>,
+    Job<SupportedJobPayloads<Queues>, unknown>,
+    SupportedJobPayloads<Queues>,
+    unknown
+  >
+  private readonly queueRegistry: QueueRegistry<Queues, QueueOptionsType, JobOptionsType>
   private config: QueueManagerConfig
-  private readonly jobRegistry: JobRegistry<SupportedJobs>
 
-  private _queues: Record<QueueConfiguration['queueId'], Queue> = {}
-
+  private readonly _queues: Record<QueueConfiguration<QueueOptionsType>['queueId'], QueueType> = {}
   private readonly _spy?: BackgroundJobProcessorSpy<BaseJobPayload, undefined>
 
   private isStarted = false
   private startPromise?: Promise<void>
 
   protected constructor(
-    queues: QueueConfiguration[],
-    jobRegistry: JobRegistry<SupportedJobs>,
+    factory: AbstractBullmqFactory<
+      QueueType,
+      QueueOptionsType,
+      Worker,
+      WorkerOptions,
+      BullmqProcessor<Job>,
+      Job<SupportedJobPayloads<Queues>, unknown>,
+      SupportedJobPayloads<Queues>,
+      unknown
+    >,
+    queues: Queues,
     config: QueueManagerConfig,
   ) {
-    this.queueIds = new Set<string>()
-    this.jobRegistry = jobRegistry
-
-    for (const queue of queues) {
-      this.queueIds.add(queue.queueId)
-      this.queueMap[queue.queueId] = queue
-    }
+    this.factory = factory
+    this.queueRegistry = new QueueRegistry(queues)
 
     this.config = config
     this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
@@ -59,32 +90,14 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     this.isStarted = false
   }
 
-  public getQueue<
-    JobPayload extends BaseJobPayload,
-    JobReturn = void,
-    QueueType extends Queue<JobPayload, JobReturn, string, JobPayload, JobReturn, string> = Queue<
-      JobPayload,
-      JobReturn,
-      string,
-      JobPayload,
-      JobReturn,
-      string
-    >,
-  >(queueId: SupportedQueues<SupportedJobs>): ProtectedQueue<JobPayload, JobReturn, QueueType> {
-    /* v8 ignore next 3 */
+  public getQueue<QueueId extends string, JobReturn = unknown>(
+    queueId: QueueId,
+  ): ProtectedQueue<JobPayloadForQueue<QueueId, Queues>, JobReturn, QueueType> {
     if (!this._queues[queueId]) {
       throw new Error(`queue ${queueId} was not instantiated yet, please run "start()"`)
     }
 
-    // @ts-ignore
     return this._queues[queueId]
-  }
-
-  private buildQueue<JobPayload, JobReturn>(
-    queueId: QueueConfiguration['queueId'],
-    options?: QueueOptions,
-  ): Queue<JobPayload, JobReturn, string, JobPayload, JobReturn, string> {
-    return new Queue(queueId, options)
   }
 
   public async start(queueIdsToStart?: string[]): Promise<void> {
@@ -95,7 +108,9 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     this.startPromise = undefined
   }
 
-  private startIfNotStarted(queueId: QueueConfiguration['queueId']): Promise<void> {
+  private startIfNotStarted(
+    queueId: QueueConfiguration<QueueOptionsType>['queueId'],
+  ): Promise<void> {
     if (!this.isStarted && this.config.lazyInitEnabled === false) {
       throw new Error('QueueManager not started, please call `start` or enable lazy init')
     }
@@ -111,17 +126,17 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     const queuePromises = []
     const queueIdSetToStart = queueIdsToStart ? new Set(queueIdsToStart) : undefined
 
-    for (const queueId of this.queueIds) {
+    for (const queueId of this.queueRegistry.queueIds) {
       if (queueIdSetToStart?.has(queueId) === false) {
         continue
       }
-      const queue = this.queueMap[queueId]
+      const queue = this.queueRegistry.getQueueConfig(queueId)
       const queueOptions = {
-        ...((queue.queueOptions ?? {}) as Omit<QueueOptions, 'connection' | 'prefix'>),
+        ...((queue.queueOptions ?? {}) as QueueOptionsType),
         connection: sanitizeRedisConfig(this.config.redisConfig),
         prefix: this.config.redisConfig?.keyPrefix ?? undefined,
       }
-      const queuePromise = this.buildQueue(queueId, queueOptions)
+      const queuePromise = this.factory.buildQueue(queueId, queueOptions)
       this._queues[queueId] = queuePromise
       queuePromises.push(queuePromise.waitUntilReady())
     }
@@ -133,7 +148,7 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     this.isStarted = true
   }
 
-  public async getJobCount(queueId: QueueConfiguration['queueId']): Promise<number> {
+  public async getJobCount(queueId: SupportedQueueIds<Queues>): Promise<number> {
     await this.startIfNotStarted(queueId)
     return this.getQueue(queueId)?.getJobCountByTypes(
       'active',
@@ -145,21 +160,22 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     )
   }
 
-  public async schedule<QueueId extends SupportedQueues<SupportedJobs>>(
+  public async schedule<QueueId extends SupportedQueueIds<Queues>>(
     queueId: QueueId,
-    jobPayload: JobPayloadForQueue<QueueId, SupportedJobs>,
+    jobPayload: JobPayloadForQueue<QueueId, Queues>,
     options?: JobsOptions,
   ): Promise<string> {
-    const schema = this.jobRegistry.getJobPayloadSchemaByQueue(queueId)
-    const validatedPayload = schema.parse(jobPayload)
-    const defaultJobOptions = this.jobRegistry.getJobOptions(queueId) ?? {}
+    const { jobOptions: defaultOptions, jobPayloadSchema } =
+      this.queueRegistry.getQueueConfig(queueId)
+
+    const validatedPayload = jobPayloadSchema.parse(jobPayload)
 
     await this.startIfNotStarted(queueId)
 
     const job = await this.getQueue(queueId).add(
       queueId,
       validatedPayload,
-      prepareJobOptions(this.config.isTest, merge(defaultJobOptions, options ?? {})),
+      prepareJobOptions(this.config.isTest, merge(defaultOptions ?? {}, options ?? {})),
     )
     if (!job?.id) throw new Error('Scheduled job ID is undefined')
     if (this._spy) this._spy.addJob(job, 'scheduled')
@@ -167,17 +183,16 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
     return job.id
   }
 
-  public async scheduleBulk<QueueId extends SupportedQueues<SupportedJobs>>(
+  public async scheduleBulk<QueueId extends SupportedQueueIds<Queues>>(
     queueId: QueueId,
-    jobPayloads: JobPayloadForQueue<QueueId, SupportedJobs>[],
+    jobPayloads: JobPayloadForQueue<QueueId, Queues>[],
     options?: JobsOptions,
   ): Promise<string[]> {
-    const schema = this.jobRegistry.getJobPayloadSchemaByQueue(queueId)
-    const validatedPayloads = jobPayloads.map((payload) => schema.parse(payload))
-
-    const defaultJobOptions = this.jobRegistry.getJobOptions(queueId) ?? {}
-
     if (jobPayloads.length === 0) return []
+
+    const { jobOptions: defaultOptions, jobPayloadSchema } =
+      this.queueRegistry.getQueueConfig(queueId)
+    const validatedPayloads = jobPayloads.map((payload) => jobPayloadSchema.parse(payload))
 
     await this.startIfNotStarted(queueId)
 
@@ -186,7 +201,7 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
         validatedPayloads.map((data) => ({
           name: queueId,
           data: data,
-          opts: prepareJobOptions(this.config.isTest, merge(defaultJobOptions, options ?? {})),
+          opts: prepareJobOptions(this.config.isTest, merge(defaultOptions ?? {}, options ?? {})),
         })),
       )) ?? []
 
@@ -211,24 +226,26 @@ export class QueueManager<SupportedJobs extends JobDefinition[]> {
    * @param end default 20
    * @param asc default true (oldest first)
    */
-  public async getJobsInQueue<JobPayload extends BaseJobPayload, JobReturn = void>(
-    queueId: SupportedQueues<SupportedJobs>,
+  public async getJobsInQueue<QueueId extends string, JobReturn = unknown>(
+    queueId: QueueId,
     states: JobState[],
     start = 0,
     end = 20,
     asc = true,
-  ): Promise<JobsPaginatedResponse<JobPayload, JobReturn>> {
+  ): Promise<JobsPaginatedResponse<JobPayloadForQueue<QueueId, Queues>, JobReturn>> {
     if (states.length === 0) throw new Error('states must not be empty')
     if (start > end) throw new Error('start must be less than or equal to end')
 
     await this.startIfNotStarted(queueId)
 
-    const jobs =
-      (await this.getQueue<JobPayload, JobReturn>(queueId)?.getJobs(states, start, end + 1, asc)) ??
-      []
+    const queue = this.getQueue<QueueId, JobReturn>(queueId)
+    if (!queue) return { jobs: [], hasMore: false }
+
+    const jobs = await queue.getJobs(states, start, end + 1, asc)
     const expectedNumberOfJobs = 1 + (end - start)
 
     return {
+      // @ts-expect-error: JobReturn is unknown at this point
       jobs: jobs.slice(0, expectedNumberOfJobs),
       hasMore: jobs.length > expectedNumberOfJobs,
     }
