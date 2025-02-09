@@ -265,7 +265,7 @@ describe('QueueManager', () => {
         value: 'test',
         metadata: { correlationId: 'correlation_id' },
       })
-      const spyResult = await queueManager.spy.waitForJobWithId(jobId, 'scheduled')
+      const spyResult = await queueManager.getSpy('queue1').waitForJobWithId(jobId, 'scheduled')
 
       expect(spyResult.data).toMatchObject({
         id: 'test_id',
@@ -293,8 +293,12 @@ describe('QueueManager', () => {
           metadata: { correlationId: 'correlation_id2' },
         },
       ])
-      const spy1stJobResult = await queueManager.spy.waitForJobWithId(jobIds[0], 'scheduled')
-      const spy3rdJobResult = await queueManager.spy.waitForJobWithId(jobIds[1], 'scheduled')
+      const spy1stJobResult = await queueManager
+        .getSpy('queue1')
+        .waitForJobWithId(jobIds[0], 'scheduled')
+      const spy3rdJobResult = await queueManager
+        .getSpy('queue1')
+        .waitForJob((data) => data.value === 'test2', 'scheduled')
 
       expect(spy1stJobResult.data).toMatchObject({
         id: 'test_id',
@@ -423,7 +427,7 @@ describe('QueueManager', () => {
         redisConfig,
         isTest: true,
       })
-      expect(queueManager.spy).toBeInstanceOf(BackgroundJobProcessorSpy)
+      expect(queueManager.getSpy('queue1')).toBeInstanceOf(BackgroundJobProcessorSpy)
     })
 
     it('throws an error when spy is accessed and not in test mode', () => {
@@ -431,7 +435,7 @@ describe('QueueManager', () => {
         redisConfig,
         isTest: false,
       })
-      expect(() => queueManager.spy).toThrowError(
+      expect(() => queueManager.getSpy('queue1')).toThrowError(
         'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
       )
     })

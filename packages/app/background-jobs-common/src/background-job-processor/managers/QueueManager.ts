@@ -6,7 +6,6 @@ import type { BullmqQueueFactory } from '../factories/BullmqQueueFactory'
 import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import type { BaseJobPayload } from '../types'
 import { prepareJobOptions, sanitizeRedisConfig } from '../utils'
 import { QueueRegistry } from './QueueRegistry'
 import type {
@@ -42,7 +41,13 @@ export class QueueManager<
   private config: QueueManagerConfig
 
   private readonly _queues: Record<QueueConfiguration<QueueOptionsType>['queueId'], QueueType> = {}
-  private readonly _spy?: BackgroundJobProcessorSpy<BaseJobPayload, undefined>
+  private readonly spies: Record<
+    QueueConfiguration<QueueOptionsType>['queueId'],
+    BackgroundJobProcessorSpy<
+      JobPayloadForQueue<Queues, QueueConfiguration<QueueOptionsType>['queueId']>,
+      undefined
+    >
+  > = {}
 
   private isStarted = false
   private startPromise?: Promise<void>
@@ -56,7 +61,11 @@ export class QueueManager<
     this.queueRegistry = new QueueRegistry(queues)
 
     this.config = config
-    this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
+    if (config.isTest) {
+      for (const queue of queues) {
+        this.spies[queue.queueId] = new BackgroundJobProcessorSpy()
+      }
+    }
   }
 
   public async dispose(): Promise<void> {
@@ -160,7 +169,7 @@ export class QueueManager<
       prepareJobOptions(this.config.isTest, merge(defaultOptions ?? {}, options ?? {})),
     )
     if (!job?.id) throw new Error('Scheduled job ID is undefined')
-    if (this._spy) this._spy.addJob(job, 'scheduled')
+    if (this.spies[queueId]) this.spies[queueId].addJob(job, 'scheduled')
 
     return job.id
   }
@@ -194,7 +203,7 @@ export class QueueManager<
       // stating that it could return undefined.
       throw new Error('Some scheduled job IDs are undefined')
     }
-    if (this._spy) this._spy.addJobs(jobs, 'scheduled')
+    if (this.spies[queueId]) this.spies[queueId].addJobs(jobs, 'scheduled')
 
     return jobIds as string[]
   }
@@ -233,12 +242,14 @@ export class QueueManager<
     }
   }
 
-  public get spy(): BackgroundJobProcessorSpyInterface<object, unknown> {
-    if (!this._spy)
+  public getSpy<QueueId extends SupportedQueueIds<Queues>>(
+    queueId: QueueId,
+  ): BackgroundJobProcessorSpyInterface<JobPayloadForQueue<Queues, QueueId>, undefined> {
+    if (!this.spies[queueId])
       throw new Error(
-        'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
+        `${queueId} spy was not instantiated, it is only available on test mode. Please use \`config.isTest\` to enable it.`,
       )
 
-    return this._spy
+    return this.spies[queueId]
   }
 }
