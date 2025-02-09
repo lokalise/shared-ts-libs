@@ -62,7 +62,8 @@ export type BackgroundJobProcessorDependenciesNew<
     JobReturn,
     string,
     JobPayload,
-    JobReturn
+    JobReturn,
+    string
   >,
   QueueOptionsType extends QueueOptions = QueueOptions,
   WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,

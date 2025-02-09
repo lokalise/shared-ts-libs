@@ -3,6 +3,7 @@ import type { Job } from 'bullmq'
 import type { RedisConfig } from '@lokalise/node-core'
 import {
   type BackgroundJobProcessorDependenciesNew,
+  type BaseJobPayload,
   FakeBackgroundJobProcessorNew,
   type QueueConfiguration,
   type SupportedQueueIds,
@@ -46,7 +47,7 @@ export class TestFailingBackgroundJobProcessorNew<
   }
 
   protected override async onFailed(
-    job: Job<unknown>,
+    job: Job<BaseJobPayload>,
     error: Error,
     requestContext: RequestContext,
   ) {

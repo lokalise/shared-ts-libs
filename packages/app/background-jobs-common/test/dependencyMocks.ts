@@ -8,6 +8,7 @@ import {
   CommonBullmqFactory,
   FakeQueueManager,
   type QueueConfiguration,
+  type SupportedQueueIds,
 } from '../src'
 import { createRedisClient, getTestRedisConfig } from './TestRedis'
 
@@ -50,7 +51,9 @@ export class DependencyMocks {
     }
   }
 
-  createNew(queues: QueueConfiguration[]): BackgroundJobProcessorDependenciesNew<any, any> {
+  createNew<Queues extends QueueConfiguration[]>(
+    queues: Queues,
+  ): BackgroundJobProcessorDependenciesNew<Queues, SupportedQueueIds<Queues>> {
     this.queueManager = new FakeQueueManager(queues, {
       isTest: true,
       redisConfig: this.getRedisConfig(),
