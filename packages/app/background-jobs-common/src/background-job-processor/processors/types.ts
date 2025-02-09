@@ -26,7 +26,6 @@ export type BackgroundJobProcessorConfigNew<
   workerOptions: Omit<Partial<WorkerOptionsType>, 'connection' | 'prefix' | 'autorun'>
   redisConfig: RedisConfig
   barrier?: BarrierCallback<JobPayload, ExecutionContext, JobReturn, JobType>
-  lazyInitEnabled?: boolean
 }
 
 /** @deprecated */
