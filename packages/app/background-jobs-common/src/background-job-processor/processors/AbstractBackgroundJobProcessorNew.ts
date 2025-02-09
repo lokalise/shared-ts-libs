@@ -75,8 +75,8 @@ export abstract class AbstractBackgroundJobProcessorNew<
   private readonly monitor: BackgroundJobProcessorMonitor<JobPayload, JobType>
   private readonly runningPromises: Set<Promise<unknown>>
   private readonly factory: AbstractBullmqFactory<
-    Queue,
-    QueueOptions,
+    QueueType,
+    QueueOptionsType,
     WorkerType,
     WorkerOptionsType,
     ProcessorType,
