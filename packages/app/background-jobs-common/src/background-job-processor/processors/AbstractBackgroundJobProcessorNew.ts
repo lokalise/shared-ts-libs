@@ -13,7 +13,6 @@ import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
 
 import { DEFAULT_WORKER_OPTIONS } from '../constants'
-import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
 import type { BullmqProcessor, RequestContext, SafeJob } from '../types'
@@ -25,6 +24,7 @@ import {
   sanitizeRedisConfig,
 } from '../utils'
 
+import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory'
 import type { QueueManager } from '../managers/QueueManager'
 import type { JobPayloadForQueue, QueueConfiguration, SupportedQueueIds } from '../managers/types'
 import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor'
@@ -74,15 +74,11 @@ export abstract class AbstractBackgroundJobProcessorNew<
   private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
   private readonly monitor: BackgroundJobProcessorMonitor<JobPayload, JobType>
   private readonly runningPromises: Set<Promise<unknown>>
-  private readonly factory: AbstractBullmqFactory<
-    QueueType,
-    QueueOptionsType,
+  private readonly factory: BullmqWorkerFactory<
     WorkerType,
     WorkerOptionsType,
-    ProcessorType,
     JobType,
-    JobPayload,
-    JobReturn
+    ProcessorType
   >
   private readonly queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
 
@@ -117,7 +113,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
   ) {
     this.config = config
 
-    this.factory = dependencies.factory
+    this.factory = dependencies.workerFactory
     this.queueManager = dependencies.queueManager
     this.errorReporter = dependencies.errorReporter
 

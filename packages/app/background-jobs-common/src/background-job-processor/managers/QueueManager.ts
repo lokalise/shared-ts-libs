@@ -1,12 +1,12 @@
-import type { Job, JobsOptions, QueueOptions, Worker, WorkerOptions } from 'bullmq'
+import type { JobsOptions, QueueOptions } from 'bullmq'
 import type { Queue } from 'bullmq'
 import type { JobState } from 'bullmq/dist/esm/types/job-type'
 import { merge } from 'ts-deepmerge'
-import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
+import type { BullmqQueueFactory } from '../factories/BullmqQueueFactory'
 import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import type { BaseJobPayload, BullmqProcessor } from '../types'
+import type { BaseJobPayload } from '../types'
 import { prepareJobOptions, sanitizeRedisConfig } from '../utils'
 import { QueueRegistry } from './QueueRegistry'
 import type {
@@ -30,16 +30,7 @@ export class QueueManager<
   QueueOptionsType extends QueueOptions = QueueOptions,
   JobOptionsType extends JobsOptions = JobsOptions,
 > {
-  private readonly factory: AbstractBullmqFactory<
-    QueueType,
-    QueueOptionsType,
-    Worker,
-    WorkerOptions,
-    BullmqProcessor<Job>,
-    Job<SupportedJobPayloads<Queues>, unknown>,
-    SupportedJobPayloads<Queues>,
-    unknown
-  >
+  private readonly factory: BullmqQueueFactory<QueueType, QueueOptionsType>
   private readonly queueRegistry: QueueRegistry<Queues, QueueOptionsType, JobOptionsType>
   private config: QueueManagerConfig
 
@@ -50,20 +41,11 @@ export class QueueManager<
   private startPromise?: Promise<void>
 
   constructor(
-    factory: AbstractBullmqFactory<
-      QueueType,
-      QueueOptionsType,
-      Worker,
-      WorkerOptions,
-      BullmqProcessor<Job>,
-      Job<SupportedJobPayloads<Queues>, unknown>,
-      SupportedJobPayloads<Queues>,
-      unknown
-    >,
+    queueFactory: BullmqQueueFactory<QueueType, QueueOptionsType>,
     queues: Queues,
     config: QueueManagerConfig,
   ) {
-    this.factory = factory
+    this.factory = queueFactory
     this.queueRegistry = new QueueRegistry(queues)
 
     this.config = config

@@ -1,6 +1,6 @@
 import { type RedisConfig, globalLogger } from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
-import { type MockInstance, vi } from 'vitest'
+import { vi } from 'vitest'
 
 import {
   type BackgroundJobProcessorDependencies,
@@ -10,12 +10,10 @@ import {
   type QueueConfiguration,
   type SupportedQueueIds,
 } from '../src'
+import { CommonBullmqWorkerFactory } from '../src/background-job-processor/factories/CommonBullmqWorkerFactory'
 import { createRedisClient, getTestRedisConfig } from './TestRedis'
 
 const testLogger = globalLogger
-export let lastInfoSpy: MockInstance
-export let lastErrorSpy: MockInstance
-
 export class DependencyMocks {
   private queueManager?: FakeQueueManager<any>
   private redis?: Redis
@@ -60,7 +58,7 @@ export class DependencyMocks {
       lazyInitEnabled: true,
     })
     return {
-      factory: new CommonBullmqFactory(),
+      workerFactory: new CommonBullmqWorkerFactory(),
       transactionObservabilityManager: {
         start: vi.fn(),
         stop: vi.fn(),

@@ -7,6 +7,7 @@ import type {
 import type { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
 import type { BarrierCallback } from '../barrier/barrier'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
+import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory'
 import type { QueueManager } from '../managers/QueueManager'
 import type { JobPayloadForQueue, QueueConfiguration, SupportedQueueIds } from '../managers/types'
 import type { BaseJobPayload, BullmqProcessor, SafeJob } from '../types'
@@ -78,16 +79,7 @@ export type BackgroundJobProcessorDependenciesNew<
   logger: CommonLogger
   errorReporter: ErrorReporter
   queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
-  factory: AbstractBullmqFactory<
-    QueueType,
-    QueueOptionsType,
-    WorkerType,
-    WorkerOptionsType,
-    ProcessorType,
-    JobType,
-    JobPayload,
-    JobReturn
-  >
+  workerFactory: BullmqWorkerFactory<WorkerType, WorkerOptionsType, JobType, ProcessorType>
 }
 
 /** @deprecated */

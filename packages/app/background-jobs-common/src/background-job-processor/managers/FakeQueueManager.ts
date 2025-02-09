@@ -1,4 +1,4 @@
-import { CommonBullmqFactory } from '../factories/CommonBullmqFactory'
+import { CommonBullmqQueueFactory } from '../factories/CommonBullmqQueueFactory'
 import { QueueManager } from './QueueManager'
 import type { QueueConfiguration, QueueManagerConfig } from './types'
 
@@ -12,6 +12,6 @@ export class FakeQueueManager<Queues extends QueueConfiguration[]> extends Queue
       lazyInitEnabled: config?.lazyInitEnabled ?? false,
       redisConfig: config.redisConfig,
     }
-    super(new CommonBullmqFactory(), queues, mergedConfig)
+    super(new CommonBullmqQueueFactory(), queues, mergedConfig)
   }
 }
