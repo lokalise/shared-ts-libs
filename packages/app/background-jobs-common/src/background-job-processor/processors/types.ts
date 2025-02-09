@@ -8,18 +8,19 @@ import type { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } fro
 import type { BarrierCallback } from '../barrier/barrier'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
 import type { QueueManager } from '../managers/QueueManager'
-import type { QueueConfiguration } from '../managers/types'
+import type { JobPayloadForQueue, QueueConfiguration, SupportedQueueIds } from '../managers/types'
 import type { BaseJobPayload, BullmqProcessor, SafeJob } from '../types'
 
-// TODO: Review if we can make queueId type safe
 export type BackgroundJobProcessorConfigNew<
+  Queues extends QueueConfiguration[],
+  QueueId extends SupportedQueueIds<Queues>,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
   JobPayload extends BaseJobPayload = BaseJobPayload,
   ExecutionContext = void,
   JobReturn = void,
   JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
 > = {
-  queueId: string
+  queueId: QueueId
   isTest: boolean
   // Name of a webservice or a module running the bg job. Used for logging/observability
   ownerName: string
@@ -51,7 +52,8 @@ export type BackgroundJobProcessorConfig<
 
 export type BackgroundJobProcessorDependenciesNew<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
-  JobPayload extends BaseJobPayload,
+  QueueId extends SupportedQueueIds<Queues>,
+  JobPayload extends BaseJobPayload = JobPayloadForQueue<Queues, QueueId>,
   JobReturn = void,
   JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
   JobOptionsType extends JobsOptions = JobsOptions,
