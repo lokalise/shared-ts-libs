@@ -26,7 +26,12 @@ import {
 
 import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory'
 import type { QueueManager } from '../managers/QueueManager'
-import type { JobPayloadForQueue, QueueConfiguration, SupportedQueueIds } from '../managers/types'
+import type {
+  JobPayloadForQueue,
+  QueueConfiguration,
+  SupportedJobPayloads,
+  SupportedQueueIds,
+} from '../managers/types'
 import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor'
 import type {
   BackgroundJobProcessorConfigNew,
@@ -43,16 +48,26 @@ export abstract class AbstractBackgroundJobProcessorNew<
   ExecutionContext = undefined,
   JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
   JobOptionsType extends JobsOptions = JobsOptions,
-  QueueType extends Queue<JobPayload, JobReturn, string, JobPayload, JobReturn, string> = Queue<
-    JobPayload,
+  QueueType extends Queue<
+    SupportedJobPayloads<Queues>,
     JobReturn,
     string,
-    JobPayload,
+    SupportedJobPayloads<Queues>,
+    JobReturn,
+    string
+  > = Queue<
+    SupportedJobPayloads<Queues>,
+    JobReturn,
+    string,
+    SupportedJobPayloads<Queues>,
     JobReturn,
     string
   >,
   QueueOptionsType extends QueueOptions = QueueOptions,
-  WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
+  WorkerType extends Worker<SupportedJobPayloads<Queues>, JobReturn> = Worker<
+    SupportedJobPayloads<Queues>,
+    JobReturn
+  >,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
   ProcessorType extends BullmqProcessor<JobType, JobPayload, JobReturn> = BullmqProcessor<
     JobType,

@@ -79,7 +79,6 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
   it('restart processor after dispose', async () => {
     const jobData = {
       id: generateMonotonicUuid(),
-      value: 'test',
       metadata: { correlationId: generateMonotonicUuid() },
     }
 
