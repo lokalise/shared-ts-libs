@@ -84,7 +84,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
     JobPayload,
     JobReturn
   >
-  private readonly queueManager: QueueManager<Queues, JobOptionsType, QueueType, QueueOptionsType>
+  private readonly queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
 
   private _executionContext?: ExecutionContext
   private isStarted = false

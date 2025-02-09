@@ -79,8 +79,8 @@ export type BackgroundJobProcessorDependenciesNew<
   errorReporter: ErrorReporter
   queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
   bullmqFactory: AbstractBullmqFactory<
-    Queue,
-    QueueOptions,
+    QueueType,
+    QueueOptionsType,
     WorkerType,
     WorkerOptionsType,
     ProcessorType,
@@ -92,7 +92,7 @@ export type BackgroundJobProcessorDependenciesNew<
 
 /** @deprecated */
 export type BackgroundJobProcessorDependencies<
-  JobPayload extends object,
+  JobPayload extends BaseJobPayload,
   JobReturn = void,
   JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
   QueueType extends Queue<JobPayload, JobReturn, string, JobPayload, JobReturn, string> = Queue<
