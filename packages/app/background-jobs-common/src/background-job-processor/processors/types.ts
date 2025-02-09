@@ -77,7 +77,7 @@ export type BackgroundJobProcessorDependenciesNew<
   transactionObservabilityManager: TransactionObservabilityManager
   logger: CommonLogger
   errorReporter: ErrorReporter
-  queueManager: QueueManager<Queues, JobOptionsType, QueueType, QueueOptionsType>
+  queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
   bullmqFactory: AbstractBullmqFactory<
     Queue,
     QueueOptions,
