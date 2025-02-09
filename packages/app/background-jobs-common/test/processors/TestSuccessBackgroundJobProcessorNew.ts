@@ -4,14 +4,9 @@ import type { RedisConfig } from '@lokalise/node-core'
 import { FakeBackgroundJobProcessorNew, type SupportedQueueIds } from '../../src'
 import type {
   BackgroundJobProcessorDependenciesNew,
-  BaseJobPayload,
   QueueConfiguration,
   RequestContext,
 } from '../../src'
-
-type TestSuccessUpdatedBackgroundJobProcessorData = {
-  id?: string
-} & BaseJobPayload
 
 export class TestSuccessBackgroundJobProcessorNew<
   Q extends QueueConfiguration[],
@@ -19,7 +14,7 @@ export class TestSuccessBackgroundJobProcessorNew<
 > extends FakeBackgroundJobProcessorNew<Q, T> {
   private onSuccessCounter = 0
   private onSuccessCall!: (job: Job<unknown>) => void
-  private _jobDataResult!: TestSuccessUpdatedBackgroundJobProcessorData
+  private _jobDataResult!: unknown
 
   constructor(
     dependencies: BackgroundJobProcessorDependenciesNew<Q, T>,
@@ -40,7 +35,7 @@ export class TestSuccessBackgroundJobProcessorNew<
     return super.onSuccess(job, requestContext)
   }
 
-  get jobDataResult(): TestSuccessUpdatedBackgroundJobProcessorData {
+  get jobDataResult(): unknown {
     return this._jobDataResult
   }
 

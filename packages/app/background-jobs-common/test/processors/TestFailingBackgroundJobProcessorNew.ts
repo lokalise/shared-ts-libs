@@ -5,16 +5,13 @@ import {
   type BackgroundJobProcessorDependenciesNew,
   FakeBackgroundJobProcessorNew,
   type QueueConfiguration,
+  type SupportedQueueIds,
 } from '../../src'
-import type { BaseJobPayload, RequestContext } from '../../src'
-
-type TestFailingUpdatedBackgroundJobProcessorData = {
-  id?: string
-} & BaseJobPayload
+import type { RequestContext } from '../../src'
 
 export class TestFailingBackgroundJobProcessorNew<
   Q extends QueueConfiguration[],
-  T extends TestFailingUpdatedBackgroundJobProcessorData,
+  T extends SupportedQueueIds<Q>,
 > extends FakeBackgroundJobProcessorNew<Q, T> {
   private _errorsOnProcess: Error[] = []
   private _errorsToThrowOnProcess: Error[] = []
@@ -22,13 +19,13 @@ export class TestFailingBackgroundJobProcessorNew<
 
   constructor(
     dependencies: BackgroundJobProcessorDependenciesNew<Q, T>,
-    queueName: string,
+    queueName: T,
     redisConfig: RedisConfig,
   ) {
     super(dependencies, queueName, redisConfig, true)
   }
 
-  protected override async process(job: Job<T>): Promise<void> {
+  protected override async process(job: Job<unknown>): Promise<void> {
     await super.process(job)
     const attempt = job.attemptsMade
     if (this._errorsToThrowOnProcess.length >= attempt) {
@@ -48,7 +45,11 @@ export class TestFailingBackgroundJobProcessorNew<
     return this._errorsOnProcess
   }
 
-  protected override async onFailed(job: Job<T>, error: Error, requestContext: RequestContext) {
+  protected override async onFailed(
+    job: Job<unknown>,
+    error: Error,
+    requestContext: RequestContext,
+  ) {
     await super.onFailed(job, error, requestContext)
     this._errorsOnProcess.push(error)
     if (this._errorToThrowOnFailed) {
