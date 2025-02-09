@@ -83,7 +83,7 @@ export class QueueManager<
     this.isStarted = false
   }
 
-  public getQueue<QueueId extends string, JobReturn = unknown>(
+  public getQueue<QueueId extends SupportedQueueIds<Queues>, JobReturn = unknown>(
     queueId: QueueId,
   ): ProtectedQueue<JobPayloadForQueue<QueueId, Queues>, JobReturn, QueueType> {
     if (!this._queues[queueId]) {
@@ -219,7 +219,7 @@ export class QueueManager<
    * @param end default 20
    * @param asc default true (oldest first)
    */
-  public async getJobsInQueue<QueueId extends string, JobReturn = unknown>(
+  public async getJobsInQueue<QueueId extends SupportedQueueIds<Queues>, JobReturn = unknown>(
     queueId: QueueId,
     states: JobState[],
     start = 0,
