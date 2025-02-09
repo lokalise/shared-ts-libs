@@ -85,7 +85,7 @@ export class QueueManager<
 
   public getQueue<QueueId extends SupportedQueueIds<Queues>, JobReturn = unknown>(
     queueId: QueueId,
-  ): ProtectedQueue<JobPayloadForQueue<QueueId, Queues>, JobReturn, QueueType> {
+  ): ProtectedQueue<JobPayloadForQueue<Queues, QueueId>, JobReturn, QueueType> {
     if (!this._queues[queueId]) {
       throw new Error(`queue ${queueId} was not instantiated yet, please run "start()"`)
     }
@@ -155,7 +155,7 @@ export class QueueManager<
 
   public async schedule<QueueId extends SupportedQueueIds<Queues>>(
     queueId: QueueId,
-    jobPayload: JobPayloadForQueue<QueueId, Queues>,
+    jobPayload: JobPayloadForQueue<Queues, QueueId>,
     options?: JobsOptions,
   ): Promise<string> {
     const { jobOptions: defaultOptions, jobPayloadSchema } =
@@ -178,7 +178,7 @@ export class QueueManager<
 
   public async scheduleBulk<QueueId extends SupportedQueueIds<Queues>>(
     queueId: QueueId,
-    jobPayloads: JobPayloadForQueue<QueueId, Queues>[],
+    jobPayloads: JobPayloadForQueue<Queues, QueueId>[],
     options?: JobsOptions,
   ): Promise<string[]> {
     if (jobPayloads.length === 0) return []
@@ -225,7 +225,7 @@ export class QueueManager<
     start = 0,
     end = 20,
     asc = true,
-  ): Promise<JobsPaginatedResponse<JobPayloadForQueue<QueueId, Queues>, JobReturn>> {
+  ): Promise<JobsPaginatedResponse<JobPayloadForQueue<Queues, QueueId>, JobReturn>> {
     if (states.length === 0) throw new Error('states must not be empty')
     if (start > end) throw new Error('start must be less than or equal to end')
 

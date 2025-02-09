@@ -90,6 +90,7 @@ describe('QueueManager', () => {
       await queueManager.start(['queue1'])
 
       expect(queueManager.getQueue('queue1')).toBeDefined()
+      // @ts-expect-error - queue2 is not a valid queue id
       expect(() => queueManager.getQueue('queue2')).toThrowError(
         /queue .* was not instantiated yet, please run "start\(\)"/,
       )
@@ -102,10 +103,12 @@ describe('QueueManager', () => {
         redisConfig,
       })
 
+      // @ts-expect-error - queue3 is not a valid queue id
       expect(() => queueManager.getQueue('queue3')).toThrowError(
         /queue .* was not instantiated yet, please run "start\(\)"/,
       )
       await queueManager.start(['queue3'])
+      // @ts-expect-error - queue3 is not a valid queue id
       expect(() => queueManager.getQueue('queue3')).toThrowError(
         /queue .* was not instantiated yet, please run "start\(\)"/,
       )
