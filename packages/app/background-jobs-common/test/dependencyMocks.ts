@@ -60,7 +60,7 @@ export class DependencyMocks {
       lazyInitEnabled: true,
     })
     return {
-      bullmqFactory: new CommonBullmqFactory(),
+      factory: new CommonBullmqFactory(),
       transactionObservabilityManager: {
         start: vi.fn(),
         stop: vi.fn(),

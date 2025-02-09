@@ -117,7 +117,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
   ) {
     this.config = config
 
-    this.factory = dependencies.bullmqFactory
+    this.factory = dependencies.factory
     this.queueManager = dependencies.queueManager
     this.errorReporter = dependencies.errorReporter
 

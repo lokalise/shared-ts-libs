@@ -31,7 +31,7 @@ export class FakeBackgroundJobProcessorNew<
         logger: dependencies.logger,
         errorReporter: dependencies.errorReporter,
         queueManager: dependencies.queueManager,
-        bullmqFactory: new CommonBullmqFactory(),
+        factory: new CommonBullmqFactory(),
       },
       {
         queueId,
