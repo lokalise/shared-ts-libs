@@ -3,6 +3,7 @@ import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import {
   DelayedError,
   type Job,
+  type JobsOptions,
   type Queue,
   type QueueOptions,
   type Worker,
@@ -24,18 +25,32 @@ import {
   sanitizeRedisConfig,
 } from '../utils'
 
+import type { QueueManager } from '../managers/QueueManager'
+import type { QueueConfiguration } from '../managers/types'
 import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor'
 import type {
   BackgroundJobProcessorConfigNew,
   BackgroundJobProcessorDependenciesNew,
+  ProtectedQueue,
   ProtectedWorker,
 } from './types'
 
 export abstract class AbstractBackgroundJobProcessorNew<
+  Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
   JobPayload extends BaseJobPayload,
   JobReturn = void,
   ExecutionContext = undefined,
   JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
+  JobOptionsType extends JobsOptions = JobsOptions,
+  QueueType extends Queue<JobPayload, JobReturn, string, JobPayload, JobReturn, string> = Queue<
+    JobPayload,
+    JobReturn,
+    string,
+    JobPayload,
+    JobReturn,
+    string
+  >,
+  QueueOptionsType extends QueueOptions = QueueOptions,
   WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
   ProcessorType extends BullmqProcessor<JobType, JobPayload, JobReturn> = BullmqProcessor<
@@ -44,7 +59,8 @@ export abstract class AbstractBackgroundJobProcessorNew<
     JobReturn
   >,
 > {
-  private readonly errorReporter: ErrorReporter // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
+  // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
+  private readonly errorReporter: ErrorReporter
   private readonly config: BackgroundJobProcessorConfigNew<
     WorkerOptionsType,
     JobPayload,
@@ -55,13 +71,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
   private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
   private readonly monitor: BackgroundJobProcessorMonitor<JobPayload, JobType>
   private readonly runningPromises: Set<Promise<unknown>>
-
-  private isStarted = false
-  private startPromise?: Promise<void>
-
-  private _executionContext?: ExecutionContext
-  private _worker?: WorkerType
-  private factory: AbstractBullmqFactory<
+  private readonly factory: AbstractBullmqFactory<
     Queue,
     QueueOptions,
     WorkerType,
@@ -71,12 +81,22 @@ export abstract class AbstractBackgroundJobProcessorNew<
     JobPayload,
     JobReturn
   >
+  private readonly queueManager: QueueManager<Queues, JobOptionsType, QueueType, QueueOptionsType>
+
+  private _executionContext?: ExecutionContext
+  private isStarted = false
+  private startPromise?: Promise<void>
+  private _worker?: WorkerType
 
   protected constructor(
     dependencies: BackgroundJobProcessorDependenciesNew<
+      Queues,
       JobPayload,
       JobReturn,
       JobType,
+      JobOptionsType,
+      QueueType,
+      QueueOptionsType,
       WorkerType,
       WorkerOptionsType,
       ProcessorType
@@ -89,12 +109,15 @@ export abstract class AbstractBackgroundJobProcessorNew<
       JobType
     >,
   ) {
-    this.monitor = new BackgroundJobProcessorMonitor(dependencies, config, this.constructor.name)
     this.config = config
+
     this.factory = dependencies.bullmqFactory
+    this.queueManager = dependencies.queueManager
     this.errorReporter = dependencies.errorReporter
+
     this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
     this.runningPromises = new Set()
+    this.monitor = new BackgroundJobProcessorMonitor(dependencies, config, this.constructor.name)
   }
 
   protected get executionContext() {
@@ -115,6 +138,10 @@ export abstract class AbstractBackgroundJobProcessorNew<
     }
 
     return this._worker
+  }
+
+  protected get queue(): ProtectedQueue<JobPayload, JobReturn, QueueType> {
+    return this.queueManager.getQueue(this.config.queueId)
   }
 
   public get spy(): BackgroundJobProcessorSpyInterface<JobPayload, JobReturn> {

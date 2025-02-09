@@ -19,6 +19,7 @@ import type {
 
 export class QueueManager<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
+  JobOptionsType extends JobsOptions = JobsOptions,
   QueueType extends Queue<
     SupportedJobPayloads<Queues>,
     unknown,
@@ -34,7 +35,6 @@ export class QueueManager<
     unknown,
     string
   >,
-  JobOptionsType extends JobsOptions = JobsOptions,
   QueueOptionsType extends QueueOptions = QueueOptions,
 > {
   private readonly factory: AbstractBullmqFactory<

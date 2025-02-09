@@ -4,11 +4,14 @@ import type {
   RedisConfig,
   TransactionObservabilityManager,
 } from '@lokalise/node-core'
-import type { Job, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
+import type { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
 import type { BarrierCallback } from '../barrier/barrier'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
+import type { QueueManager } from '../managers/QueueManager'
+import type { QueueConfiguration } from '../managers/types'
 import type { BaseJobPayload, BullmqProcessor, SafeJob } from '../types'
 
+// TODO: Review if we can make queueId type safe
 export type BackgroundJobProcessorConfigNew<
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
   JobPayload extends BaseJobPayload = BaseJobPayload,
@@ -49,9 +52,19 @@ export type BackgroundJobProcessorConfig<
 }
 
 export type BackgroundJobProcessorDependenciesNew<
-  JobPayload extends object,
+  Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
+  JobPayload extends BaseJobPayload,
   JobReturn = void,
   JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
+  JobOptionsType extends JobsOptions = JobsOptions,
+  QueueType extends Queue<JobPayload, JobReturn, string, JobPayload, JobReturn, string> = Queue<
+    JobPayload,
+    JobReturn,
+    string,
+    JobPayload,
+    JobReturn
+  >,
+  QueueOptionsType extends QueueOptions = QueueOptions,
   WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
   ProcessorType extends BullmqProcessor<JobType, JobPayload, JobReturn> = BullmqProcessor<
@@ -63,6 +76,7 @@ export type BackgroundJobProcessorDependenciesNew<
   transactionObservabilityManager: TransactionObservabilityManager
   logger: CommonLogger
   errorReporter: ErrorReporter
+  queueManager: QueueManager<Queues, JobOptionsType, QueueType, QueueOptionsType>
   bullmqFactory: AbstractBullmqFactory<
     Queue,
     QueueOptions,
