@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { DependencyMocks } from '../../../test/dependencyMocks'
 import { TestBarrierBackgroundJobProcessorNew } from '../../../test/processors/TestBarrierBackgroundJobProcessorNew'
 import type { QueueManager } from '../managers/QueueManager'
-import type { JobPayloadForQueue, QueueConfiguration } from '../managers/types'
+import type { QueueConfiguration } from '../managers/types'
 import type { BackgroundJobProcessorDependenciesNew } from './types'
 
 const supportedQueues = [
@@ -23,12 +23,7 @@ type SupportedQueues = typeof supportedQueues
 
 describe('AbstractBackgroundJobProcessor Barrier', () => {
   let mocks: DependencyMocks
-  let deps: BackgroundJobProcessorDependenciesNew<
-    SupportedQueues,
-    'queue',
-    JobPayloadForQueue<SupportedQueues, 'queue'>,
-    any
-  >
+  let deps: BackgroundJobProcessorDependenciesNew<SupportedQueues, 'queue', any>
   let queueManagaer: QueueManager<SupportedQueues>
 
   beforeEach(async () => {
@@ -47,17 +42,17 @@ describe('AbstractBackgroundJobProcessor Barrier', () => {
     type JobReturn = { result: string }
 
     let counter = 0
-    const processor = new TestBarrierBackgroundJobProcessorNew<
-      SupportedQueues,
+    const processor = new TestBarrierBackgroundJobProcessorNew<SupportedQueues, 'queue', JobReturn>(
+      deps,
       'queue',
-      JobPayloadForQueue<SupportedQueues, 'queue'>,
-      JobReturn
-    >(deps, 'queue', mocks.getRedisConfig(), () => {
-      counter++
-      return Promise.resolve({
-        isPassing: true,
-      })
-    })
+      mocks.getRedisConfig(),
+      () => {
+        counter++
+        return Promise.resolve({
+          isPassing: true,
+        })
+      },
+    )
     await processor.start()
 
     const jobId = await queueManagaer.schedule('queue', {
@@ -75,25 +70,25 @@ describe('AbstractBackgroundJobProcessor Barrier', () => {
     type JobReturn = { result: string }
 
     let counter = 0
-    const processor = new TestBarrierBackgroundJobProcessorNew<
-      SupportedQueues,
+    const processor = new TestBarrierBackgroundJobProcessorNew<SupportedQueues, 'queue', JobReturn>(
+      deps,
       'queue',
-      JobPayloadForQueue<SupportedQueues, 'queue'>,
-      JobReturn
-    >(deps, 'queue', mocks.getRedisConfig(), () => {
-      counter++
+      mocks.getRedisConfig(),
+      () => {
+        counter++
 
-      if (counter > 2) {
+        if (counter > 2) {
+          return Promise.resolve({
+            isPassing: true,
+          })
+        }
+
         return Promise.resolve({
-          isPassing: true,
+          isPassing: false,
+          delayAmountInMs: 1,
         })
-      }
-
-      return Promise.resolve({
-        isPassing: false,
-        delayAmountInMs: 1,
-      })
-    })
+      },
+    )
     await processor.start()
 
     const jobId = await queueManagaer.schedule('queue', {

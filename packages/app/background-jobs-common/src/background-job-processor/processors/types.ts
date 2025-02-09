@@ -21,10 +21,12 @@ export type BackgroundJobProcessorConfigNew<
   Queues extends QueueConfiguration[],
   QueueId extends SupportedQueueIds<Queues>,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
-  JobPayload extends BaseJobPayload = BaseJobPayload,
   ExecutionContext = void,
   JobReturn = void,
-  JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
+  JobType extends SafeJob<JobPayloadForQueue<Queues, QueueId>, JobReturn> = Job<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn
+  >,
 > = {
   queueId: QueueId
   isTest: boolean
@@ -32,7 +34,12 @@ export type BackgroundJobProcessorConfigNew<
   ownerName: string
   workerOptions: Omit<Partial<WorkerOptionsType>, 'connection' | 'prefix' | 'autorun'>
   redisConfig: RedisConfig
-  barrier?: BarrierCallback<JobPayload, ExecutionContext, JobReturn, JobType>
+  barrier?: BarrierCallback<
+    JobPayloadForQueue<Queues, QueueId>,
+    ExecutionContext,
+    JobReturn,
+    JobType
+  >
 }
 
 /** @deprecated */
@@ -59,9 +66,11 @@ export type BackgroundJobProcessorConfig<
 export type BackgroundJobProcessorDependenciesNew<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
   QueueId extends SupportedQueueIds<Queues>,
-  JobPayload extends JobPayloadForQueue<Queues, QueueId> = JobPayloadForQueue<Queues, QueueId>,
   JobReturn = void,
-  JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
+  JobType extends SafeJob<JobPayloadForQueue<Queues, QueueId>, JobReturn> = Job<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn
+  >,
   JobOptionsType extends JobsOptions = JobsOptions,
   QueueType extends Queue<
     SupportedJobPayloads<Queues>,
@@ -84,11 +93,11 @@ export type BackgroundJobProcessorDependenciesNew<
     JobReturn
   >,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
-  ProcessorType extends BullmqProcessor<JobType, JobPayload, JobReturn> = BullmqProcessor<
+  ProcessorType extends BullmqProcessor<
     JobType,
-    JobPayload,
+    JobPayloadForQueue<Queues, QueueId>,
     JobReturn
-  >,
+  > = BullmqProcessor<JobType, JobPayloadForQueue<Queues, QueueId>, JobReturn>,
 > = {
   transactionObservabilityManager: TransactionObservabilityManager
   logger: CommonLogger

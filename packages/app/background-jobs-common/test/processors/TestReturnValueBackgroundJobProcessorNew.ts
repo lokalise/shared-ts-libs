@@ -2,7 +2,6 @@ import type { RedisConfig } from '@lokalise/node-core'
 import {
   AbstractBackgroundJobProcessorNew,
   type BackgroundJobProcessorDependenciesNew,
-  type JobPayloadForQueue,
   type QueueConfiguration,
   type SupportedQueueIds,
 } from '../../src'
@@ -10,13 +9,12 @@ import {
 export class TestReturnValueBackgroundJobProcessorNew<
   Q extends QueueConfiguration[],
   T extends SupportedQueueIds<Q>,
-  JobPayload extends JobPayloadForQueue<Q, T>,
   JobReturn = void,
-> extends AbstractBackgroundJobProcessorNew<Q, T, JobPayload, JobReturn> {
+> extends AbstractBackgroundJobProcessorNew<Q, T, JobReturn> {
   private readonly returnValue: JobReturn
 
   constructor(
-    dependencies: BackgroundJobProcessorDependenciesNew<Q, T, JobPayload, JobReturn>,
+    dependencies: BackgroundJobProcessorDependenciesNew<Q, T, JobReturn>,
     queueId: T,
     redisConfig: RedisConfig,
     returnValue: JobReturn,

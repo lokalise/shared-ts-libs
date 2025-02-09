@@ -5,7 +5,7 @@ import { DependencyMocks } from '../../../test/dependencyMocks'
 import { z } from 'zod'
 import { TestReturnValueBackgroundJobProcessorNew } from '../../../test/processors/TestReturnValueBackgroundJobProcessorNew'
 import type { QueueManager } from '../managers/QueueManager'
-import type { QueueConfiguration, SupportedJobPayloads } from '../managers/types'
+import type { QueueConfiguration } from '../managers/types'
 import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew'
 import type { BackgroundJobProcessorDependenciesNew } from './types'
 
@@ -14,7 +14,6 @@ const supportedQueues = [
     queueId: 'queue',
     jobPayloadSchema: z.object({
       id: z.string(),
-      value: z.string(),
       metadata: z.object({
         correlationId: z.string(),
       }),
@@ -26,12 +25,7 @@ type SupportedQueues = typeof supportedQueues
 
 describe('AbstractBackgroundJobProcessorNew -  Spy', () => {
   let mocks: DependencyMocks
-  let deps: BackgroundJobProcessorDependenciesNew<
-    SupportedQueues,
-    'queue',
-    SupportedJobPayloads<SupportedQueues>,
-    any
-  >
+  let deps: BackgroundJobProcessorDependenciesNew<SupportedQueues, 'queue', any>
   let queueManager: QueueManager<SupportedQueues>
 
   beforeEach(async () => {
@@ -68,7 +62,6 @@ describe('AbstractBackgroundJobProcessorNew -  Spy', () => {
     const processor = new TestReturnValueBackgroundJobProcessorNew<
       SupportedQueues,
       'queue',
-      SupportedJobPayloads<SupportedQueues>,
       JobReturn
     >(deps, 'queue', mocks.getRedisConfig(), returnValue)
     await processor.start()
@@ -76,7 +69,6 @@ describe('AbstractBackgroundJobProcessorNew -  Spy', () => {
     // When
     const jobId = await queueManager.schedule('queue', {
       id: 'test_id',
-      value: 'test',
       metadata: { correlationId: 'correlation_id' },
     })
 

@@ -11,11 +11,10 @@ import type { BarrierCallback } from '../../src'
 export class TestBarrierBackgroundJobProcessorNew<
   Q extends QueueConfiguration[],
   T extends SupportedQueueIds<Q>,
-  JobPayload extends JobPayloadForQueue<Q, T>,
   JobReturn = void,
-> extends AbstractBackgroundJobProcessorNew<Q, T, JobPayload, JobReturn> {
+> extends AbstractBackgroundJobProcessorNew<Q, T, JobReturn> {
   constructor(
-    dependencies: BackgroundJobProcessorDependenciesNew<Q, T, JobPayload, JobReturn>,
+    dependencies: BackgroundJobProcessorDependenciesNew<Q, T, JobReturn>,
     queueId: T,
     redisConfig: RedisConfig,
     barrier: BarrierCallback<JobPayloadForQueue<Q, T>>,

@@ -43,10 +43,12 @@ import type {
 export abstract class AbstractBackgroundJobProcessorNew<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
   QueueId extends SupportedQueueIds<Queues>,
-  JobPayload extends JobPayloadForQueue<Queues, QueueId> = JobPayloadForQueue<Queues, QueueId>,
   JobReturn = void,
   ExecutionContext = undefined,
-  JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
+  JobType extends SafeJob<JobPayloadForQueue<Queues, QueueId>, JobReturn> = Job<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn
+  >,
   JobOptionsType extends JobsOptions = JobsOptions,
   QueueType extends Queue<
     SupportedJobPayloads<Queues>,
@@ -69,11 +71,11 @@ export abstract class AbstractBackgroundJobProcessorNew<
     JobReturn
   >,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
-  ProcessorType extends BullmqProcessor<JobType, JobPayload, JobReturn> = BullmqProcessor<
+  ProcessorType extends BullmqProcessor<
     JobType,
-    JobPayload,
+    JobPayloadForQueue<Queues, QueueId>,
     JobReturn
-  >,
+  > = BullmqProcessor<JobType, JobPayloadForQueue<Queues, QueueId>, JobReturn>,
 > {
   // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
   private readonly errorReporter: ErrorReporter
@@ -81,13 +83,15 @@ export abstract class AbstractBackgroundJobProcessorNew<
     Queues,
     QueueId,
     WorkerOptionsType,
-    JobPayload,
     ExecutionContext,
     JobReturn,
     JobType
   >
-  private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
-  private readonly monitor: BackgroundJobProcessorMonitor<JobPayload, JobType>
+  private readonly _spy?: BackgroundJobProcessorSpy<JobPayloadForQueue<Queues, QueueId>, JobReturn>
+  private readonly monitor: BackgroundJobProcessorMonitor<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobType
+  >
   private readonly runningPromises: Set<Promise<unknown>>
   private readonly factory: BullmqWorkerFactory<
     WorkerType,
@@ -106,7 +110,6 @@ export abstract class AbstractBackgroundJobProcessorNew<
     dependencies: BackgroundJobProcessorDependenciesNew<
       Queues,
       QueueId,
-      JobPayload,
       JobReturn,
       JobType,
       JobOptionsType,
@@ -120,7 +123,6 @@ export abstract class AbstractBackgroundJobProcessorNew<
       Queues,
       QueueId,
       WorkerOptionsType,
-      JobPayload,
       ExecutionContext,
       JobReturn,
       JobType
@@ -146,7 +148,11 @@ export abstract class AbstractBackgroundJobProcessorNew<
     return this._executionContext
   }
 
-  protected get worker(): ProtectedWorker<JobPayload, JobReturn, WorkerType> {
+  protected get worker(): ProtectedWorker<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn,
+    WorkerType
+  > {
     /* v8 ignore next 5 */
     if (!this._worker) {
       throw new Error(
@@ -157,11 +163,14 @@ export abstract class AbstractBackgroundJobProcessorNew<
     return this._worker
   }
 
-  protected get queue(): ProtectedQueue<JobPayload, JobReturn, QueueType> {
+  protected get queue(): ProtectedQueue<JobPayloadForQueue<Queues, QueueId>, JobReturn, QueueType> {
     return this.queueManager.getQueue(this.config.queueId)
   }
 
-  public get spy(): BackgroundJobProcessorSpyInterface<JobPayload, JobReturn> {
+  public get spy(): BackgroundJobProcessorSpyInterface<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn
+  > {
     /* v8 ignore next 4 */
     if (!this._spy)
       throw new Error(
@@ -337,7 +346,6 @@ export abstract class AbstractBackgroundJobProcessorNew<
     if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
 
     const updateDataPromise = job
-      // @ts-expect-error
       .updateData({ metadata: job.data.metadata })
       .finally(() => this.runningPromises.delete(updateDataPromise))
 
