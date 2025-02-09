@@ -3,15 +3,17 @@ import type { BaseJobPayload } from '../types'
 
 import type { RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
+import type { QueueConfiguration } from '../managers/types'
 import { AbstractBackgroundJobProcessorNew } from './AbstractBackgroundJobProcessorNew'
-import type { BackgroundJobProcessorDependencies } from './types'
+import type { BackgroundJobProcessorDependenciesNew } from './types'
 
 export class FakeBackgroundJobProcessorNew<
+  Queues extends QueueConfiguration[],
   JobData extends BaseJobPayload,
-> extends AbstractBackgroundJobProcessorNew<JobData> {
+> extends AbstractBackgroundJobProcessorNew<Queues, JobData> {
   constructor(
     dependencies: Omit<
-      BackgroundJobProcessorDependencies<JobData>,
+      BackgroundJobProcessorDependenciesNew<Queues, JobData>,
       'bullmqFactory' | 'transactionObservabilityManager'
     >,
     queueName: string,
@@ -30,6 +32,7 @@ export class FakeBackgroundJobProcessorNew<
         },
         logger: dependencies.logger,
         errorReporter: dependencies.errorReporter,
+        queueManager: dependencies.queueManager,
         bullmqFactory: new CommonBullmqFactory(),
       },
       {
