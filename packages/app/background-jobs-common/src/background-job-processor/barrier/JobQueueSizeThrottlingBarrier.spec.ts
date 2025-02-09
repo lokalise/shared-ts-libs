@@ -18,8 +18,7 @@ describe('JobQueueSizeThrottlingBarrier', () => {
   beforeEach(async () => {
     mocks = new DependencyMocks()
     deps = mocks.create()
-    mocks.startRedis()
-    await mocks.clear()
+    await mocks.clearRedis()
   })
 
   afterEach(async () => {

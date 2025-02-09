@@ -27,14 +27,7 @@ export class QueueManager<
     SupportedJobPayloads<Queues>,
     unknown,
     string
-  > = Queue<
-    SupportedJobPayloads<Queues>,
-    unknown,
-    string,
-    SupportedJobPayloads<Queues>,
-    unknown,
-    string
-  >,
+  > = Queue<SupportedJobPayloads<Queues>, void, string, SupportedJobPayloads<Queues>, void, string>,
   QueueOptionsType extends QueueOptions = QueueOptions,
 > {
   private readonly factory: AbstractBullmqFactory<
@@ -56,7 +49,7 @@ export class QueueManager<
   private isStarted = false
   private startPromise?: Promise<void>
 
-  protected constructor(
+  constructor(
     factory: AbstractBullmqFactory<
       QueueType,
       QueueOptionsType,

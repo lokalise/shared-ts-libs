@@ -1,26 +1,27 @@
 import type { Job } from 'bullmq'
 
 import type { RedisConfig } from '@lokalise/node-core'
-import { FakeBackgroundJobProcessorNew } from '../../src/background-job-processor/processors/FakeBackgroundJobProcessorNew'
-import type {
-  BackgroundJobProcessorDependencies,
-  BaseJobPayload,
-  RequestContext,
-} from '../../src/index'
+import {
+  type BackgroundJobProcessorDependenciesNew,
+  FakeBackgroundJobProcessorNew,
+  type QueueConfiguration,
+} from '../../src'
+import type { BaseJobPayload, RequestContext } from '../../src'
 
 type TestFailingUpdatedBackgroundJobProcessorData = {
   id?: string
 } & BaseJobPayload
 
 export class TestFailingBackgroundJobProcessorNew<
+  Q extends QueueConfiguration[],
   T extends TestFailingUpdatedBackgroundJobProcessorData,
-> extends FakeBackgroundJobProcessorNew<T> {
+> extends FakeBackgroundJobProcessorNew<Q, T> {
   private _errorsOnProcess: Error[] = []
   private _errorsToThrowOnProcess: Error[] = []
   private _errorToThrowOnFailed: Error | undefined
 
   constructor(
-    dependencies: BackgroundJobProcessorDependencies<T>,
+    dependencies: BackgroundJobProcessorDependenciesNew<Q, T>,
     queueName: string,
     redisConfig: RedisConfig,
   ) {

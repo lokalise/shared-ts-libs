@@ -32,11 +32,10 @@ describe('BackgroundJobProcessorMonitor', () => {
   })
 
   beforeEach(async () => {
-    await redis?.flushall('SYNC')
+    await mocks.clearRedis()
   })
 
   afterAll(async () => {
-    redis.disconnect()
     await mocks.dispose()
   })
 
