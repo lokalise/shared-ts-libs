@@ -26,6 +26,6 @@ export type SupportedJobPayloads<Config extends QueueConfiguration[]> = z.infer<
 >
 
 export type JobPayloadForQueue<
-  QueueId extends string,
   Config extends QueueConfiguration[],
+  QueueId extends SupportedQueueIds<Config>,
 > = z.infer<Extract<Config[number], { queueId: QueueId }>['jobPayloadSchema']>

@@ -1,22 +1,27 @@
 import type { Job } from 'bullmq'
 
 import type { RedisConfig } from '@lokalise/node-core'
-import { AbstractBackgroundJobProcessorNew } from '../../src/background-job-processor/processors/AbstractBackgroundJobProcessorNew'
-import type { BackgroundJobProcessorDependencies, BaseJobPayload } from '../../src/index'
+import {
+  AbstractBackgroundJobProcessorNew,
+  type BackgroundJobProcessorDependenciesNew,
+  type SupportedQueueIds,
+} from '../../src'
+import type { QueueConfiguration } from '../../src'
 
-type OnFailedError<T> = {
+type OnFailedError = {
   error: Error
-  job: Job<T>
+  job: Job<unknown>
 }
 
 export class TestStalledBackgroundJobProcessorNew<
-  T extends BaseJobPayload,
-> extends AbstractBackgroundJobProcessorNew<T> {
-  private _onFailedErrors: OnFailedError<T>[] = []
+  Q extends QueueConfiguration[],
+  T extends SupportedQueueIds<Q>,
+> extends AbstractBackgroundJobProcessorNew<Q, T> {
+  private _onFailedErrors: OnFailedError[] = []
 
   constructor(
-    dependencies: BackgroundJobProcessorDependencies<T>,
-    queueId: string,
+    dependencies: BackgroundJobProcessorDependenciesNew<Q, T>,
+    queueId: T,
     redisConfig: RedisConfig,
   ) {
     super(dependencies, {
@@ -36,12 +41,12 @@ export class TestStalledBackgroundJobProcessorNew<
     return new Promise((resolve) => setTimeout(resolve, 1000))
   }
 
-  protected override onFailed(job: Job<T>, error: Error): Promise<void> {
+  protected override onFailed(job: Job<unknown>, error: Error): Promise<void> {
     this._onFailedErrors.push({ job, error })
     return Promise.resolve()
   }
 
-  get onFailedErrors(): OnFailedError<T>[] {
+  get onFailedErrors(): OnFailedError[] {
     return this._onFailedErrors
   }
 

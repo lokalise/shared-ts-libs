@@ -1,12 +1,10 @@
-import { CommonBullmqFactory } from '../factories/CommonBullmqFactory'
+import { CommonBullmqFactoryNew } from '../factories/CommonBullmqFactoryNew'
 import { QueueManager } from './QueueManager'
 import type { QueueConfiguration, QueueManagerConfig } from './types'
 
-export class FakeQueueManager<
-  SupportedJobs extends QueueConfiguration[],
-> extends QueueManager<SupportedJobs> {
+export class FakeQueueManager<Queues extends QueueConfiguration[]> extends QueueManager<Queues> {
   constructor(
-    queues: SupportedJobs,
+    queues: Queues,
     config: Partial<QueueManagerConfig> & Pick<QueueManagerConfig, 'redisConfig'>,
   ) {
     const mergedConfig: QueueManagerConfig = {
@@ -14,6 +12,6 @@ export class FakeQueueManager<
       lazyInitEnabled: config?.lazyInitEnabled ?? false,
       redisConfig: config.redisConfig,
     }
-    super(new CommonBullmqFactory(), queues, mergedConfig)
+    super(new CommonBullmqFactoryNew(), queues, mergedConfig)
   }
 }

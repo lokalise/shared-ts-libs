@@ -28,9 +28,7 @@ describe('AbstractBackgroundJobProcessor', () => {
     mocks = new DependencyMocks()
     deps = mocks.create()
 
-    const redis = mocks.startRedis()
-    await redis?.flushall('SYNC')
-    redis.disconnect(false)
+    await mocks.clearRedis()
   })
 
   afterEach(async () => {

@@ -1,12 +1,11 @@
-import type { Job, JobsOptions, QueueOptions, Worker, WorkerOptions } from 'bullmq'
+import type { JobsOptions, QueueOptions } from 'bullmq'
 import type { Queue } from 'bullmq'
 import type { JobState } from 'bullmq/dist/esm/types/job-type'
 import { merge } from 'ts-deepmerge'
-import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
+import type { BullmqQueueFactory } from '../factories/BullmqQueueFactory'
 import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import type { BaseJobPayload, BullmqProcessor } from '../types'
 import { prepareJobOptions, sanitizeRedisConfig } from '../utils'
 import { QueueRegistry } from './QueueRegistry'
 import type {
@@ -26,55 +25,40 @@ export class QueueManager<
     SupportedJobPayloads<Queues>,
     unknown,
     string
-  > = Queue<
-    SupportedJobPayloads<Queues>,
-    unknown,
-    string,
-    SupportedJobPayloads<Queues>,
-    unknown,
-    string
-  >,
-  JobOptionsType extends JobsOptions = JobsOptions,
+  > = Queue<SupportedJobPayloads<Queues>, void, string, SupportedJobPayloads<Queues>, void, string>,
   QueueOptionsType extends QueueOptions = QueueOptions,
+  JobOptionsType extends JobsOptions = JobsOptions,
 > {
-  private readonly factory: AbstractBullmqFactory<
-    QueueType,
-    QueueOptionsType,
-    Worker,
-    WorkerOptions,
-    BullmqProcessor<Job>,
-    Job<SupportedJobPayloads<Queues>, unknown>,
-    SupportedJobPayloads<Queues>,
-    unknown
-  >
+  private readonly factory: BullmqQueueFactory<QueueType, QueueOptionsType>
   private readonly queueRegistry: QueueRegistry<Queues, QueueOptionsType, JobOptionsType>
   private config: QueueManagerConfig
 
   private readonly _queues: Record<QueueConfiguration<QueueOptionsType>['queueId'], QueueType> = {}
-  private readonly _spy?: BackgroundJobProcessorSpy<BaseJobPayload, undefined>
+  private readonly spies: Record<
+    QueueConfiguration<QueueOptionsType>['queueId'],
+    BackgroundJobProcessorSpy<
+      JobPayloadForQueue<Queues, QueueConfiguration<QueueOptionsType>['queueId']>,
+      undefined
+    >
+  > = {}
 
   private isStarted = false
   private startPromise?: Promise<void>
 
-  protected constructor(
-    factory: AbstractBullmqFactory<
-      QueueType,
-      QueueOptionsType,
-      Worker,
-      WorkerOptions,
-      BullmqProcessor<Job>,
-      Job<SupportedJobPayloads<Queues>, unknown>,
-      SupportedJobPayloads<Queues>,
-      unknown
-    >,
+  constructor(
+    queueFactory: BullmqQueueFactory<QueueType, QueueOptionsType>,
     queues: Queues,
     config: QueueManagerConfig,
   ) {
-    this.factory = factory
+    this.factory = queueFactory
     this.queueRegistry = new QueueRegistry(queues)
 
     this.config = config
-    this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
+    if (config.isTest) {
+      for (const queue of queues) {
+        this.spies[queue.queueId] = new BackgroundJobProcessorSpy()
+      }
+    }
   }
 
   public async dispose(): Promise<void> {
@@ -90,9 +74,9 @@ export class QueueManager<
     this.isStarted = false
   }
 
-  public getQueue<QueueId extends string, JobReturn = unknown>(
+  public getQueue<QueueId extends SupportedQueueIds<Queues>, JobReturn = unknown>(
     queueId: QueueId,
-  ): ProtectedQueue<JobPayloadForQueue<QueueId, Queues>, JobReturn, QueueType> {
+  ): ProtectedQueue<JobPayloadForQueue<Queues, QueueId>, JobReturn, QueueType> {
     if (!this._queues[queueId]) {
       throw new Error(`queue ${queueId} was not instantiated yet, please run "start()"`)
     }
@@ -162,7 +146,7 @@ export class QueueManager<
 
   public async schedule<QueueId extends SupportedQueueIds<Queues>>(
     queueId: QueueId,
-    jobPayload: JobPayloadForQueue<QueueId, Queues>,
+    jobPayload: JobPayloadForQueue<Queues, QueueId>,
     options?: JobsOptions,
   ): Promise<string> {
     const { jobOptions: defaultOptions, jobPayloadSchema } =
@@ -178,14 +162,14 @@ export class QueueManager<
       prepareJobOptions(this.config.isTest, merge(defaultOptions ?? {}, options ?? {})),
     )
     if (!job?.id) throw new Error('Scheduled job ID is undefined')
-    if (this._spy) this._spy.addJob(job, 'scheduled')
+    if (this.spies[queueId]) this.spies[queueId].addJob(job, 'scheduled')
 
     return job.id
   }
 
   public async scheduleBulk<QueueId extends SupportedQueueIds<Queues>>(
     queueId: QueueId,
-    jobPayloads: JobPayloadForQueue<QueueId, Queues>[],
+    jobPayloads: JobPayloadForQueue<Queues, QueueId>[],
     options?: JobsOptions,
   ): Promise<string[]> {
     if (jobPayloads.length === 0) return []
@@ -212,7 +196,7 @@ export class QueueManager<
       // stating that it could return undefined.
       throw new Error('Some scheduled job IDs are undefined')
     }
-    if (this._spy) this._spy.addJobs(jobs, 'scheduled')
+    if (this.spies[queueId]) this.spies[queueId].addJobs(jobs, 'scheduled')
 
     return jobIds as string[]
   }
@@ -226,13 +210,13 @@ export class QueueManager<
    * @param end default 20
    * @param asc default true (oldest first)
    */
-  public async getJobsInQueue<QueueId extends string, JobReturn = unknown>(
+  public async getJobsInQueue<QueueId extends SupportedQueueIds<Queues>, JobReturn = unknown>(
     queueId: QueueId,
     states: JobState[],
     start = 0,
     end = 20,
     asc = true,
-  ): Promise<JobsPaginatedResponse<JobPayloadForQueue<QueueId, Queues>, JobReturn>> {
+  ): Promise<JobsPaginatedResponse<JobPayloadForQueue<Queues, QueueId>, JobReturn>> {
     if (states.length === 0) throw new Error('states must not be empty')
     if (start > end) throw new Error('start must be less than or equal to end')
 
@@ -251,12 +235,14 @@ export class QueueManager<
     }
   }
 
-  public get spy(): BackgroundJobProcessorSpyInterface<object, unknown> {
-    if (!this._spy)
+  public getSpy<QueueId extends SupportedQueueIds<Queues>>(
+    queueId: QueueId,
+  ): BackgroundJobProcessorSpyInterface<JobPayloadForQueue<Queues, QueueId>, undefined> {
+    if (!this.spies[queueId])
       throw new Error(
-        'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
+        `${queueId} spy was not instantiated, it is only available on test mode. Please use \`config.isTest\` to enable it.`,
       )
 
-    return this._spy
+    return this.spies[queueId]
   }
 }

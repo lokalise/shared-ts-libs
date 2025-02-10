@@ -1,23 +1,22 @@
-import { CommonBullmqFactory } from '../factories/CommonBullmqFactory'
-import type { BaseJobPayload } from '../types'
-
 import type { RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
+import { CommonBullmqFactoryNew } from '../factories/CommonBullmqFactoryNew'
+import type { QueueConfiguration, SupportedQueueIds } from '../managers/types'
 import { AbstractBackgroundJobProcessorNew } from './AbstractBackgroundJobProcessorNew'
-import type { BackgroundJobProcessorDependencies } from './types'
+import type { BackgroundJobProcessorDependenciesNew } from './types'
 
 export class FakeBackgroundJobProcessorNew<
-  JobData extends BaseJobPayload,
-> extends AbstractBackgroundJobProcessorNew<JobData> {
+  Queues extends QueueConfiguration[],
+  QueueId extends SupportedQueueIds<Queues>,
+> extends AbstractBackgroundJobProcessorNew<Queues, QueueId> {
   constructor(
     dependencies: Omit<
-      BackgroundJobProcessorDependencies<JobData>,
+      BackgroundJobProcessorDependenciesNew<Queues, QueueId>,
       'bullmqFactory' | 'transactionObservabilityManager'
     >,
-    queueName: string,
+    queueId: QueueId,
     redisConfig: RedisConfig,
     isTest = true,
-    workerAutoRunEnabled = true,
   ) {
     super(
       {
@@ -30,20 +29,19 @@ export class FakeBackgroundJobProcessorNew<
         },
         logger: dependencies.logger,
         errorReporter: dependencies.errorReporter,
-        bullmqFactory: new CommonBullmqFactory(),
+        queueManager: dependencies.queueManager,
+        workerFactory: new CommonBullmqFactoryNew(),
       },
       {
-        queueId: queueName,
+        queueId,
         ownerName: 'testOwner',
         isTest,
         workerOptions: { concurrency: 1 },
-        lazyInitEnabled: false,
         redisConfig,
-        workerAutoRunEnabled,
       },
     )
   }
-  protected override process(_job: Job<JobData>): Promise<void> {
+  protected override process(_job: Job<unknown>): Promise<void> {
     return Promise.resolve()
   }
 }

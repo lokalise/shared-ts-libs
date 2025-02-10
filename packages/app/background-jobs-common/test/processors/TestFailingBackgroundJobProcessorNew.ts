@@ -1,33 +1,32 @@
 import type { Job } from 'bullmq'
 
 import type { RedisConfig } from '@lokalise/node-core'
-import { FakeBackgroundJobProcessorNew } from '../../src/background-job-processor/processors/FakeBackgroundJobProcessorNew'
-import type {
-  BackgroundJobProcessorDependencies,
-  BaseJobPayload,
-  RequestContext,
-} from '../../src/index'
-
-type TestFailingUpdatedBackgroundJobProcessorData = {
-  id?: string
-} & BaseJobPayload
+import {
+  type BackgroundJobProcessorDependenciesNew,
+  type BaseJobPayload,
+  FakeBackgroundJobProcessorNew,
+  type QueueConfiguration,
+  type SupportedQueueIds,
+} from '../../src'
+import type { RequestContext } from '../../src'
 
 export class TestFailingBackgroundJobProcessorNew<
-  T extends TestFailingUpdatedBackgroundJobProcessorData,
-> extends FakeBackgroundJobProcessorNew<T> {
+  Q extends QueueConfiguration[],
+  T extends SupportedQueueIds<Q>,
+> extends FakeBackgroundJobProcessorNew<Q, T> {
   private _errorsOnProcess: Error[] = []
   private _errorsToThrowOnProcess: Error[] = []
   private _errorToThrowOnFailed: Error | undefined
 
   constructor(
-    dependencies: BackgroundJobProcessorDependencies<T>,
-    queueName: string,
+    dependencies: BackgroundJobProcessorDependenciesNew<Q, T>,
+    queueName: T,
     redisConfig: RedisConfig,
   ) {
     super(dependencies, queueName, redisConfig, true)
   }
 
-  protected override async process(job: Job<T>): Promise<void> {
+  protected override async process(job: Job<unknown>): Promise<void> {
     await super.process(job)
     const attempt = job.attemptsMade
     if (this._errorsToThrowOnProcess.length >= attempt) {
@@ -47,7 +46,11 @@ export class TestFailingBackgroundJobProcessorNew<
     return this._errorsOnProcess
   }
 
-  protected override async onFailed(job: Job<T>, error: Error, requestContext: RequestContext) {
+  protected override async onFailed(
+    job: Job<BaseJobPayload>,
+    error: Error,
+    requestContext: RequestContext,
+  ) {
     await super.onFailed(job, error, requestContext)
     this._errorsOnProcess.push(error)
     if (this._errorToThrowOnFailed) {

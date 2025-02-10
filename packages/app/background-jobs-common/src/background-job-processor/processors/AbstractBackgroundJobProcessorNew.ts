@@ -3,6 +3,7 @@ import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import {
   DelayedError,
   type Job,
+  type JobsOptions,
   type Queue,
   type QueueOptions,
   type Worker,
@@ -12,10 +13,9 @@ import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
 
 import { DEFAULT_WORKER_OPTIONS } from '../constants'
-import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types'
+import type { BullmqProcessor, RequestContext, SafeJob } from '../types'
 import {
   isJobMissingError,
   isStalledJobError,
@@ -24,77 +24,119 @@ import {
   sanitizeRedisConfig,
 } from '../utils'
 
+import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory'
+import type { QueueManager } from '../managers/QueueManager'
+import type {
+  JobPayloadForQueue,
+  QueueConfiguration,
+  SupportedJobPayloads,
+  SupportedQueueIds,
+} from '../managers/types'
 import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor'
 import type {
   BackgroundJobProcessorConfigNew,
   BackgroundJobProcessorDependenciesNew,
+  ProtectedQueue,
   ProtectedWorker,
 } from './types'
 
 export abstract class AbstractBackgroundJobProcessorNew<
-  JobPayload extends BaseJobPayload,
+  Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
+  QueueId extends SupportedQueueIds<Queues>,
   JobReturn = void,
   ExecutionContext = undefined,
-  JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
-  WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
-  WorkerOptionsType extends WorkerOptions = WorkerOptions,
-  ProcessorType extends BullmqProcessor<JobType, JobPayload, JobReturn> = BullmqProcessor<
-    JobType,
-    JobPayload,
+  JobType extends SafeJob<JobPayloadForQueue<Queues, QueueId>, JobReturn> = Job<
+    JobPayloadForQueue<Queues, QueueId>,
     JobReturn
   >,
+  JobOptionsType extends JobsOptions = JobsOptions,
+  QueueType extends Queue<
+    SupportedJobPayloads<Queues>,
+    JobReturn,
+    string,
+    SupportedJobPayloads<Queues>,
+    JobReturn,
+    string
+  > = Queue<
+    SupportedJobPayloads<Queues>,
+    JobReturn,
+    string,
+    SupportedJobPayloads<Queues>,
+    JobReturn,
+    string
+  >,
+  QueueOptionsType extends QueueOptions = QueueOptions,
+  WorkerType extends Worker<SupportedJobPayloads<Queues>, JobReturn> = Worker<
+    SupportedJobPayloads<Queues>,
+    JobReturn
+  >,
+  WorkerOptionsType extends WorkerOptions = WorkerOptions,
+  ProcessorType extends BullmqProcessor<
+    JobType,
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn
+  > = BullmqProcessor<JobType, JobPayloadForQueue<Queues, QueueId>, JobReturn>,
 > {
-  private readonly errorReporter: ErrorReporter // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
+  // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
+  private readonly errorReporter: ErrorReporter
   private readonly config: BackgroundJobProcessorConfigNew<
+    Queues,
+    QueueId,
     WorkerOptionsType,
-    JobPayload,
     ExecutionContext,
     JobReturn,
     JobType
   >
-  private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
-  private readonly monitor: BackgroundJobProcessorMonitor<JobPayload, JobType>
+  private readonly _spy?: BackgroundJobProcessorSpy<JobPayloadForQueue<Queues, QueueId>, JobReturn>
+  private readonly monitor: BackgroundJobProcessorMonitor<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobType
+  >
   private readonly runningPromises: Set<Promise<unknown>>
-
-  private isStarted = false
-  private startPromise?: Promise<void>
-
-  private _executionContext?: ExecutionContext
-  private _worker?: WorkerType
-  private factory: AbstractBullmqFactory<
-    Queue,
-    QueueOptions,
+  private readonly factory: BullmqWorkerFactory<
     WorkerType,
     WorkerOptionsType,
-    ProcessorType,
     JobType,
-    JobPayload,
-    JobReturn
+    ProcessorType
   >
+  private readonly queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
+
+  private _executionContext?: ExecutionContext
+  private isStarted = false
+  private startPromise?: Promise<void>
+  private _worker?: WorkerType
 
   protected constructor(
     dependencies: BackgroundJobProcessorDependenciesNew<
-      JobPayload,
+      Queues,
+      QueueId,
       JobReturn,
       JobType,
+      JobOptionsType,
+      QueueType,
+      QueueOptionsType,
       WorkerType,
       WorkerOptionsType,
       ProcessorType
     >,
     config: BackgroundJobProcessorConfigNew<
+      Queues,
+      QueueId,
       WorkerOptionsType,
-      JobPayload,
       ExecutionContext,
       JobReturn,
       JobType
     >,
   ) {
-    this.monitor = new BackgroundJobProcessorMonitor(dependencies, config, this.constructor.name)
     this.config = config
-    this.factory = dependencies.bullmqFactory
+
+    this.factory = dependencies.workerFactory
+    this.queueManager = dependencies.queueManager
     this.errorReporter = dependencies.errorReporter
+
     this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
     this.runningPromises = new Set()
+    this.monitor = new BackgroundJobProcessorMonitor(dependencies, config, this.constructor.name)
   }
 
   protected get executionContext() {
@@ -106,7 +148,11 @@ export abstract class AbstractBackgroundJobProcessorNew<
     return this._executionContext
   }
 
-  protected get worker(): ProtectedWorker<JobPayload, JobReturn, WorkerType> {
+  protected get worker(): ProtectedWorker<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn,
+    WorkerType
+  > {
     /* v8 ignore next 5 */
     if (!this._worker) {
       throw new Error(
@@ -117,7 +163,14 @@ export abstract class AbstractBackgroundJobProcessorNew<
     return this._worker
   }
 
-  public get spy(): BackgroundJobProcessorSpyInterface<JobPayload, JobReturn> {
+  protected get queue(): ProtectedQueue<JobPayloadForQueue<Queues, QueueId>, JobReturn, QueueType> {
+    return this.queueManager.getQueue(this.config.queueId)
+  }
+
+  public get spy(): BackgroundJobProcessorSpyInterface<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn
+  > {
     /* v8 ignore next 4 */
     if (!this._spy)
       throw new Error(
@@ -142,9 +195,10 @@ export abstract class AbstractBackgroundJobProcessorNew<
       this.config.queueId,
       ((job: JobType) => this.processInternal(job)) as ProcessorType,
       {
-        ...(merge(DEFAULT_WORKER_OPTIONS, this.config.workerOptions, {
-          autorun: this.config.workerAutoRunEnabled !== false,
-        }) as Omit<WorkerOptionsType, 'connection' | 'prefix'>),
+        ...(merge(DEFAULT_WORKER_OPTIONS, this.config.workerOptions) as Omit<
+          WorkerOptionsType,
+          'connection' | 'prefix'
+        >),
         connection: sanitizeRedisConfig(this.config.redisConfig),
         prefix: this.config.redisConfig?.keyPrefix ?? undefined,
       } as unknown as WorkerOptionsType,
@@ -292,7 +346,6 @@ export abstract class AbstractBackgroundJobProcessorNew<
     if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
 
     const updateDataPromise = job
-      // @ts-expect-error
       .updateData({ metadata: job.data.metadata })
       .finally(() => this.runningPromises.delete(updateDataPromise))
 

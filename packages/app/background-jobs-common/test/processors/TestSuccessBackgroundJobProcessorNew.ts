@@ -1,52 +1,56 @@
 import type { Job } from 'bullmq'
 
 import type { RedisConfig } from '@lokalise/node-core'
-import { FakeBackgroundJobProcessorNew } from '../../src/background-job-processor/processors/FakeBackgroundJobProcessorNew'
+import {
+  type BaseJobPayload,
+  FakeBackgroundJobProcessorNew,
+  type SupportedQueueIds,
+} from '../../src'
 import type {
-  BackgroundJobProcessorDependencies,
-  BaseJobPayload,
+  BackgroundJobProcessorDependenciesNew,
+  QueueConfiguration,
   RequestContext,
-} from '../../src/index'
-
-type TestSuccessUpdatedBackgroundJobProcessorData = {
-  id?: string
-} & BaseJobPayload
+} from '../../src'
 
 export class TestSuccessBackgroundJobProcessorNew<
-  T extends TestSuccessUpdatedBackgroundJobProcessorData,
-> extends FakeBackgroundJobProcessorNew<T> {
+  Q extends QueueConfiguration[],
+  T extends SupportedQueueIds<Q>,
+> extends FakeBackgroundJobProcessorNew<Q, T> {
   private onSuccessCounter = 0
-  private onSuccessCall!: (job: Job<T>) => void
-  private _jobDataResult!: TestSuccessUpdatedBackgroundJobProcessorData
+  private onSuccessCall!: (job: Job<BaseJobPayload>) => void
+  private _jobDataResult!: unknown
 
   constructor(
-    dependencies: BackgroundJobProcessorDependencies<T>,
-    queueName: string,
+    dependencies: BackgroundJobProcessorDependenciesNew<Q, T>,
+    queueId: T,
     redisConfig: RedisConfig,
   ) {
-    super(dependencies, queueName, redisConfig, true)
+    super(dependencies, queueId, redisConfig, true)
   }
 
   protected override process(): Promise<void> {
     return Promise.resolve()
   }
 
-  protected override onSuccess(job: Job<T>, requestContext: RequestContext): Promise<void> {
+  protected override onSuccess(
+    job: Job<BaseJobPayload>,
+    requestContext: RequestContext,
+  ): Promise<void> {
     this.onSuccessCounter += 1
     this.onSuccessCall(job)
     this._jobDataResult = job.data
     return super.onSuccess(job, requestContext)
   }
 
-  get jobDataResult(): TestSuccessUpdatedBackgroundJobProcessorData {
+  get jobDataResult(): unknown {
     return this._jobDataResult
   }
 
-  override purgeJobData(job: Job<T>): Promise<void> {
+  override purgeJobData(job: Job<BaseJobPayload>): Promise<void> {
     return super.purgeJobData(job)
   }
 
-  set onSuccessHook(hook: (job: Job<T>) => void) {
+  set onSuccessHook(hook: (job: Job<BaseJobPayload>) => void) {
     this.onSuccessCall = hook
   }
 
