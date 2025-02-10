@@ -48,13 +48,13 @@
         "@lokalise/biome-config": "^1.5.0",
         "@types/node": "^22.10.1",
         "@lokalise/package-vite-config": "latest",
-        "@vitest/coverage-v8": "^2.1.5",
+        "@vitest/coverage-v8": "^3.0.5",
         "bullmq": "^5.31.2",
         "ioredis": "^5.4.1",
         "rimraf": "^6.0.1",
         "toad-scheduler": "^3.0.1",
         "typescript": "5.7.3",
-        "vitest": "^2.1.5",
+        "vitest": "^3.0.5",
         "zod": "^3.24.1"
     }
 }
