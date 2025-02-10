@@ -1,6 +1,5 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
-import type { Job } from 'bullmq'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod'
 import { DependencyMocks } from '../../../test/dependencyMocks'
@@ -119,7 +118,7 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
     )
     await processor.start()
 
-    processor.processOverride = (job: Job<JobPayload>) => {
+    processor.processOverride = (job) => {
       expectTypeOf(job.data).toEqualTypeOf<JobPayload>()
     }
 
