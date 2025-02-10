@@ -2,7 +2,7 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod'
-import { DependencyMocks } from '../../../test/dependencyMocks'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
 import { isPromiseFinished } from '../../../test/isPromiseFinished'
 import { TestOverrideProcessBackgroundProcessor } from '../../../test/processors/TestOverrideProcessBackgroundProcessor'
 import type { FakeQueueManager } from '../managers/FakeQueueManager'
@@ -23,22 +23,22 @@ const supportedQueues = [
 type SupportedQueues = typeof supportedQueues
 
 describe('AbstractBackgroundJobProcessorNew - start', () => {
-  let mocks: DependencyMocks
+  let factory: TestDependencyFactory
   let deps: BackgroundJobProcessorDependenciesNew<SupportedQueues, 'queue'>
   let queueManager: FakeQueueManager<SupportedQueues>
   let redisConfig: RedisConfig
 
   beforeEach(async () => {
-    mocks = new DependencyMocks()
-    deps = mocks.createNew(supportedQueues)
-    redisConfig = mocks.getRedisConfig()
+    factory = new TestDependencyFactory()
+    deps = factory.createNew(supportedQueues)
+    redisConfig = factory.getRedisConfig()
     queueManager = deps.queueManager
 
-    await mocks.clearRedis()
+    await factory.clearRedis()
   })
 
   afterEach(async () => {
-    await mocks.dispose()
+    await factory.dispose()
   })
 
   it('throws an error if queue id is not unique', async () => {

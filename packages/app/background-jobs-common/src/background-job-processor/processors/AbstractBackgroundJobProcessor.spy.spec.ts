@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { DependencyMocks } from '../../../test/dependencyMocks'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
 import { TestReturnValueBackgroundJobProcessor } from '../../../test/processors/TestReturnValueBackgroundJobProcessor'
 import type { BaseJobPayload } from '../types'
 
@@ -13,18 +13,18 @@ type JobData = {
 } & BaseJobPayload
 
 describe('AbstractBackgroundJobProcessor Spy', () => {
-  let mocks: DependencyMocks
+  let factory: TestDependencyFactory
   let deps: BackgroundJobProcessorDependencies<JobData, any>
 
   beforeEach(async () => {
-    mocks = new DependencyMocks()
-    deps = mocks.create()
+    factory = new TestDependencyFactory()
+    deps = factory.create()
 
-    await mocks.clearRedis()
+    await factory.clearRedis()
   })
 
   afterEach(async () => {
-    await mocks.dispose()
+    await factory.dispose()
   })
 
   describe('spy', () => {
@@ -32,7 +32,7 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
       const processor = new FakeBackgroundJobProcessor<JobData>(
         deps,
         'myQueue1',
-        mocks.getRedisConfig(),
+        factory.getRedisConfig(),
         false,
       )
 
@@ -50,7 +50,7 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
 
       const processor = new TestReturnValueBackgroundJobProcessor<JobData, JobReturn>(
         deps,
-        mocks.getRedisConfig(),
+        factory.getRedisConfig(),
         returnValue,
       )
       await processor.start()
@@ -74,7 +74,7 @@ describe('AbstractBackgroundJobProcessor Spy', () => {
       const processor = new FakeBackgroundJobProcessor<JobData>(
         deps,
         'queue1',
-        mocks.getRedisConfig(),
+        factory.getRedisConfig(),
       )
 
       // When

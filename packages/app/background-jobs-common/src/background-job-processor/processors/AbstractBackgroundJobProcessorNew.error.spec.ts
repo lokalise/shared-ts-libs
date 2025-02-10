@@ -1,7 +1,7 @@
 import { UnrecoverableError } from 'bullmq'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
-import { DependencyMocks } from '../../../test/dependencyMocks'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
 import { TestFailingBackgroundJobProcessorNew } from '../../../test/processors/TestFailingBackgroundJobProcessorNew'
 import type { FakeQueueManager } from '../managers/FakeQueueManager'
 import type { QueueConfiguration } from '../managers/types'
@@ -23,19 +23,19 @@ const supportedQueues = [
 type SupportedQueues = typeof supportedQueues
 
 describe('AbstractBackgroundJobProcessorNew - error', () => {
-  let mocks: DependencyMocks
+  let factory: TestDependencyFactory
   let deps: BackgroundJobProcessorDependenciesNew<SupportedQueues, 'queue'>
   let queueManager: FakeQueueManager<typeof supportedQueues>
   let processor: TestFailingBackgroundJobProcessorNew<SupportedQueues, 'queue'>
 
   beforeEach(async () => {
-    mocks = new DependencyMocks()
-    deps = mocks.createNew(supportedQueues)
+    factory = new TestDependencyFactory()
+    deps = factory.createNew(supportedQueues)
     queueManager = deps.queueManager
 
-    await mocks.clearRedis()
+    await factory.clearRedis()
 
-    const redisConfig = mocks.getRedisConfig()
+    const redisConfig = factory.getRedisConfig()
     processor = new TestFailingBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
       deps,
       'queue',
@@ -46,7 +46,7 @@ describe('AbstractBackgroundJobProcessorNew - error', () => {
 
   afterEach(async () => {
     await processor.dispose()
-    await mocks.dispose()
+    await factory.dispose()
   })
 
   it('job is throwing normal errors', async () => {

@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { DependencyMocks } from '../../../test/dependencyMocks'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
 import { TestQueueSizeJobBarrierBackgroundJobProcessor } from '../../../test/processors/TestQueueSizeJobBarrierBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from '../processors/types'
 import type { BaseJobPayload } from '../types'
@@ -12,17 +12,17 @@ type JobData = {
 } & BaseJobPayload
 
 describe('JobQueueSizeThrottlingBarrier', () => {
-  let mocks: DependencyMocks
+  let factory: TestDependencyFactory
   let deps: BackgroundJobProcessorDependencies<JobData, any>
 
   beforeEach(async () => {
-    mocks = new DependencyMocks()
-    deps = mocks.create()
-    await mocks.clearRedis()
+    factory = new TestDependencyFactory()
+    deps = factory.create()
+    await factory.clearRedis()
   })
 
   afterEach(async () => {
-    await mocks.dispose()
+    await factory.dispose()
   })
 
   it('processes a job when barrier passes', async () => {
@@ -30,7 +30,7 @@ describe('JobQueueSizeThrottlingBarrier', () => {
 
     const processor = new TestQueueSizeJobBarrierBackgroundJobProcessor<JobData, JobReturn>(
       deps,
-      mocks.getRedisConfig(),
+      factory.getRedisConfig(),
       createJobQueueSizeThrottlingBarrier({
         maxQueueJobsInclusive: 5,
         retryPeriodInMsecs: 2000,
@@ -60,7 +60,7 @@ describe('JobQueueSizeThrottlingBarrier', () => {
 
     const processor = new TestQueueSizeJobBarrierBackgroundJobProcessor<JobData, JobReturn>(
       deps,
-      mocks.getRedisConfig(),
+      factory.getRedisConfig(),
       createJobQueueSizeThrottlingBarrier({
         maxQueueJobsInclusive: 2,
         retryPeriodInMsecs: 4000,

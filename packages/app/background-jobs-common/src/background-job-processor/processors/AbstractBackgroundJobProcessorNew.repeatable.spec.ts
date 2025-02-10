@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { DependencyMocks } from '../../../test/dependencyMocks'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
 import type { FakeQueueManager } from '../managers/FakeQueueManager'
 import type { QueueConfiguration } from '../managers/types'
 import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew'
@@ -22,19 +22,19 @@ const supportedQueues = [
 type SupportedQueues = typeof supportedQueues
 
 describe('AbstractBackgroundJobProcessorNew - repeatable', () => {
-  let mocks: DependencyMocks
+  let factory: TestDependencyFactory
   let deps: BackgroundJobProcessorDependenciesNew<SupportedQueues, 'queue'>
   let queueManager: FakeQueueManager<SupportedQueues>
   let processor: FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>
 
   beforeEach(async () => {
-    mocks = new DependencyMocks()
-    deps = mocks.createNew(supportedQueues)
+    factory = new TestDependencyFactory()
+    deps = factory.createNew(supportedQueues)
     queueManager = deps.queueManager
 
-    await mocks.clearRedis()
+    await factory.clearRedis()
 
-    const redisConfig = mocks.getRedisConfig()
+    const redisConfig = factory.getRedisConfig()
     processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
       deps,
       'queue',
@@ -44,7 +44,7 @@ describe('AbstractBackgroundJobProcessorNew - repeatable', () => {
   })
 
   afterEach(async () => {
-    await mocks.dispose()
+    await factory.dispose()
   })
 
   it('schedules repeatable job', async () => {

@@ -1,26 +1,26 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type Redis from 'ioredis'
-import { DependencyMocks } from '../../../test/dependencyMocks'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
 import { QUEUE_IDS_KEY, RETENTION_QUEUE_IDS_IN_DAYS } from '../constants'
 import { daysToMilliseconds } from '../utils'
 import { backgroundJobProcessorGetActiveQueueIds } from './backgroundJobProcessorGetActiveQueueIds'
 
 describe('backgroundJobProcessorGetActiveQueueIds', () => {
-  let mocks: DependencyMocks
+  let factory: TestDependencyFactory
   let redis: Redis
 
   beforeAll(() => {
-    mocks = new DependencyMocks()
-    redis = mocks.startRedis()
+    factory = new TestDependencyFactory()
+    redis = factory.startRedis()
   })
 
   beforeEach(async () => {
-    await mocks.clearRedis()
+    await factory.clearRedis()
   })
 
   afterAll(async () => {
-    await mocks.dispose()
+    await factory.dispose()
   })
 
   it.each([[true], [false]])(
@@ -33,7 +33,7 @@ describe('backgroundJobProcessorGetActiveQueueIds', () => {
       await redis.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs + 100, 'queue1')
 
       const queues = await backgroundJobProcessorGetActiveQueueIds(
-        useRedisClient ? redis : mocks.getRedisConfig(),
+        useRedisClient ? redis : factory.getRedisConfig(),
       )
       expect(queues).toEqual(['queue1', 'queue2'])
     },

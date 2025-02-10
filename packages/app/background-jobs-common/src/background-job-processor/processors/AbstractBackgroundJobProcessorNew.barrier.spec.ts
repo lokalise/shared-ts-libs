@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { z } from 'zod'
-import { DependencyMocks } from '../../../test/dependencyMocks'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
 import { TestBarrierBackgroundJobProcessorNew } from '../../../test/processors/TestBarrierBackgroundJobProcessorNew'
 import type { QueueManager } from '../managers/QueueManager'
 import type { QueueConfiguration } from '../managers/types'
@@ -22,20 +22,20 @@ const supportedQueues = [
 type SupportedQueues = typeof supportedQueues
 
 describe('AbstractBackgroundJobProcessor Barrier', () => {
-  let mocks: DependencyMocks
+  let factory: TestDependencyFactory
   let deps: BackgroundJobProcessorDependenciesNew<SupportedQueues, 'queue', any>
   let queueManager: QueueManager<SupportedQueues>
 
   beforeEach(async () => {
-    mocks = new DependencyMocks()
-    deps = mocks.createNew(supportedQueues)
+    factory = new TestDependencyFactory()
+    deps = factory.createNew(supportedQueues)
     queueManager = deps.queueManager
 
-    await mocks.clearRedis()
+    await factory.clearRedis()
   })
 
   afterEach(async () => {
-    await mocks.dispose()
+    await factory.dispose()
   })
 
   it('executes as usual when barrier passes', async () => {
@@ -45,7 +45,7 @@ describe('AbstractBackgroundJobProcessor Barrier', () => {
     const processor = new TestBarrierBackgroundJobProcessorNew<SupportedQueues, 'queue', JobReturn>(
       deps,
       'queue',
-      mocks.getRedisConfig(),
+      factory.getRedisConfig(),
       () => {
         counter++
         return Promise.resolve({
@@ -73,7 +73,7 @@ describe('AbstractBackgroundJobProcessor Barrier', () => {
     const processor = new TestBarrierBackgroundJobProcessorNew<SupportedQueues, 'queue', JobReturn>(
       deps,
       'queue',
-      mocks.getRedisConfig(),
+      factory.getRedisConfig(),
       () => {
         counter++
 
