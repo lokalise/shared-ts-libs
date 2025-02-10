@@ -167,7 +167,7 @@ export type JobInQueue<JobData extends object, jobReturn> = Pick<
   | 'getState'
 >
 
-export type JobsPaginatedResponse<JobData extends object, jobReturn> = {
+export type JobsPaginatedResponse<JobData extends BaseJobPayload, jobReturn> = {
   jobs: JobInQueue<JobData, jobReturn>[]
   hasMore: boolean
 }

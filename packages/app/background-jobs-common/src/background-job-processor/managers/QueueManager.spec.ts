@@ -1,51 +1,52 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { z } from 'zod'
 import { DependencyMocks } from '../../../test/dependencyMocks'
+import type { JobsPaginatedResponse } from '../processors/types'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
 import { FakeQueueManager } from './FakeQueueManager'
 import type { QueueConfiguration } from './types'
 
-const jobPayloadSchema = z.object({
-  id: z.string(),
-  value: z.string(),
-  metadata: z.object({
-    correlationId: z.string(),
-  }),
-})
-
-const jobPayloadSchema2 = z.object({
-  id: z.string(),
-  value: z.string(),
-  value2: z.string(),
-  metadata: z.object({
-    correlationId: z.string(),
-  }),
-})
-
-const SupportedQueues = [
+const supportedQueues = [
   {
     queueId: 'queue1',
-    jobPayloadSchema: jobPayloadSchema.strict(),
+    jobPayloadSchema: z.object({
+      id: z.string(),
+      value: z.string(),
+      metadata: z.object({
+        correlationId: z.string(),
+      }),
+    }),
   },
   {
     queueId: 'queue2',
-    jobPayloadSchema: jobPayloadSchema2,
+    jobPayloadSchema: z.object({
+      id: z.string(),
+      value2: z.string(),
+      metadata: z.object({
+        correlationId: z.string(),
+      }),
+    }),
   },
 ] as const satisfies QueueConfiguration[]
+
+type SupportedQueues = typeof supportedQueues
 
 describe('QueueManager', () => {
   let mocks: DependencyMocks
   let redisConfig: RedisConfig
 
+  let queueManager: FakeQueueManager<SupportedQueues>
+
   beforeEach(async () => {
     mocks = new DependencyMocks()
     redisConfig = mocks.getRedisConfig()
+    const deps = mocks.createNew(supportedQueues)
+    queueManager = deps.queueManager
 
-    const redis = mocks.startRedis()
-    await redis?.flushall('SYNC')
-    redis.disconnect(false)
+    await mocks.clearRedis()
   })
 
   afterEach(async () => {
@@ -54,7 +55,7 @@ describe('QueueManager', () => {
 
   describe('start', () => {
     it('Multiple start calls (sequential or concurrent) not produce errors', async () => {
-      const queueManager = new FakeQueueManager([SupportedQueues[0]], {
+      const queueManager = new FakeQueueManager([supportedQueues[0]], {
         redisConfig,
       })
 
@@ -72,7 +73,7 @@ describe('QueueManager', () => {
     })
 
     it('Starts multiple queues', async () => {
-      const queueManager = new FakeQueueManager(SupportedQueues, {
+      const queueManager = new FakeQueueManager(supportedQueues, {
         redisConfig,
       })
       await queueManager.start()
@@ -84,7 +85,7 @@ describe('QueueManager', () => {
     })
 
     it('Starts only provided queues', async () => {
-      const queueManager = new FakeQueueManager([SupportedQueues[0]], {
+      const queueManager = new FakeQueueManager([supportedQueues[0]], {
         redisConfig,
       })
       await queueManager.start(['queue1'])
@@ -99,7 +100,7 @@ describe('QueueManager', () => {
     })
 
     it('should ignore if try to start a non-defined queue', async () => {
-      const queueManager = new FakeQueueManager(SupportedQueues, {
+      const queueManager = new FakeQueueManager(supportedQueues, {
         redisConfig,
       })
 
@@ -116,26 +117,83 @@ describe('QueueManager', () => {
       await queueManager.dispose()
     })
 
-    it('Throw error if try to schedule job without starting queueManager and lazy init disabled', async () => {
-      const queueManager = new FakeQueueManager(SupportedQueues, {
+    it('throw error if try to schedule job without starting queueManager and lazy init disabled', async () => {
+      const queueManager = new FakeQueueManager(supportedQueues, {
         redisConfig,
+        lazyInitEnabled: false,
       })
 
       await expect(
         queueManager.schedule('queue2', {
           id: 'id',
-          value: 'test',
           value2: 'test',
           metadata: { correlationId: 'correlation_id' },
         }),
       ).rejects.toThrowError(/QueueManager not started, please call `start` or enable lazy init/)
     })
 
-    it('Throw error if try to schedule with invalid payload', async () => {
-      const queueManager = new FakeQueueManager([SupportedQueues[0]], {
+    it('lazy init on schedule', async () => {
+      const queueManager = new FakeQueueManager([supportedQueues[0]], {
         redisConfig,
+        lazyInitEnabled: true,
       })
 
+      const jobId = await queueManager.schedule('queue1', {
+        id: 'test_id',
+        value: 'test',
+        metadata: { correlationId: 'correlation_id' },
+      })
+      const spyResult = await queueManager.getSpy('queue1').waitForJobWithId(jobId, 'scheduled')
+
+      expect(spyResult.data).toMatchObject({
+        id: 'test_id',
+        value: 'test',
+        metadata: { correlationId: 'correlation_id' },
+      })
+      await queueManager.dispose()
+    })
+
+    it('lazy init on scheduleBulk', async () => {
+      const queueManager = new FakeQueueManager([supportedQueues[0]], {
+        redisConfig: mocks.getRedisConfig(),
+        lazyInitEnabled: true,
+      })
+
+      const jobIds = await queueManager.scheduleBulk('queue1', [
+        {
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        },
+        {
+          id: 'test_id2',
+          value: 'test2',
+          metadata: { correlationId: 'correlation_id2' },
+        },
+      ])
+      const spy1stJobResult = await queueManager
+        .getSpy('queue1')
+        .waitForJobWithId(jobIds[0], 'scheduled')
+      const spy3rdJobResult = await queueManager
+        .getSpy('queue1')
+        .waitForJob((data) => data.value === 'test2', 'scheduled')
+
+      expect(spy1stJobResult.data).toMatchObject({
+        id: 'test_id',
+        value: 'test',
+        metadata: { correlationId: 'correlation_id' },
+      })
+      expect(spy3rdJobResult.data).toMatchObject({
+        id: 'test_id2',
+        value: 'test2',
+        metadata: { correlationId: 'correlation_id2' },
+      })
+      await queueManager.dispose()
+    })
+  })
+
+  describe('schedule', () => {
+    it('throw error if try to schedule with invalid payload', async () => {
       await expect(
         queueManager.schedule('queue1', {
           value: 'test',
@@ -192,11 +250,7 @@ describe('QueueManager', () => {
       `)
     })
 
-    it('Throw error if try to scheduleBulk with invalid payload', async () => {
-      const queueManager = new FakeQueueManager([SupportedQueues[0]], {
-        redisConfig,
-      })
-
+    it('throw error if try to scheduleBulk with invalid payload', async () => {
       await expect(
         queueManager.scheduleBulk('queue1', [
           {
@@ -253,72 +307,13 @@ describe('QueueManager', () => {
         ]]
       `)
     })
-
-    it('Lazy loading on schedule', async () => {
-      const queueManager = new FakeQueueManager([SupportedQueues[0]], {
-        redisConfig,
-        lazyInitEnabled: true,
-      })
-
-      const jobId = await queueManager.schedule('queue1', {
-        id: 'test_id',
-        value: 'test',
-        metadata: { correlationId: 'correlation_id' },
-      })
-      const spyResult = await queueManager.getSpy('queue1').waitForJobWithId(jobId, 'scheduled')
-
-      expect(spyResult.data).toMatchObject({
-        id: 'test_id',
-        value: 'test',
-        metadata: { correlationId: 'correlation_id' },
-      })
-      await queueManager.dispose()
-    })
-
-    it('Lazy loading on scheduleBulk', async () => {
-      const queueManager = new FakeQueueManager([SupportedQueues[0]], {
-        redisConfig: mocks.getRedisConfig(),
-        lazyInitEnabled: true,
-      })
-
-      const jobIds = await queueManager.scheduleBulk('queue1', [
-        {
-          id: 'test_id',
-          value: 'test',
-          metadata: { correlationId: 'correlation_id' },
-        },
-        {
-          id: 'test_id2',
-          value: 'test2',
-          metadata: { correlationId: 'correlation_id2' },
-        },
-      ])
-      const spy1stJobResult = await queueManager
-        .getSpy('queue1')
-        .waitForJobWithId(jobIds[0], 'scheduled')
-      const spy3rdJobResult = await queueManager
-        .getSpy('queue1')
-        .waitForJob((data) => data.value === 'test2', 'scheduled')
-
-      expect(spy1stJobResult.data).toMatchObject({
-        id: 'test_id',
-        value: 'test',
-        metadata: { correlationId: 'correlation_id' },
-      })
-      expect(spy3rdJobResult.data).toMatchObject({
-        id: 'test_id2',
-        value: 'test2',
-        metadata: { correlationId: 'correlation_id2' },
-      })
-      await queueManager.dispose()
-    })
   })
 
   describe('getJobsInStates', () => {
-    let queueManager: FakeQueueManager<typeof SupportedQueues>
+    let queueManager: FakeQueueManager<typeof supportedQueues>
 
     beforeEach(async () => {
-      queueManager = new FakeQueueManager(SupportedQueues, {
+      queueManager = new FakeQueueManager(supportedQueues, {
         redisConfig,
       })
       await queueManager.start()
@@ -396,12 +391,29 @@ describe('QueueManager', () => {
         hasMore: false,
       })
     })
+
+    it('type inferring works', () => {
+      type returnType1 = ReturnType<typeof queueManager.getJobsInQueue<'queue1'>>
+      type returnType2 = ReturnType<typeof queueManager.getJobsInQueue<'queue2'>>
+
+      const schema1 = supportedQueues[0].jobPayloadSchema
+      type schemaType1 = z.infer<typeof schema1>
+      expectTypeOf<returnType1>().toEqualTypeOf<
+        Promise<JobsPaginatedResponse<schemaType1, unknown>>
+      >()
+
+      const schema2 = supportedQueues[1].jobPayloadSchema
+      type schemaType2 = z.infer<typeof schema2>
+      expectTypeOf<returnType2>().toEqualTypeOf<
+        Promise<JobsPaginatedResponse<schemaType2, unknown>>
+      >()
+    })
   })
 
   describe('getJobCount', () => {
     it('job count works as expected', async () => {
       // Given
-      const queueManager = new FakeQueueManager([SupportedQueues[0]], {
+      const queueManager = new FakeQueueManager([supportedQueues[0]], {
         redisConfig,
       })
       await queueManager.start()
@@ -423,7 +435,7 @@ describe('QueueManager', () => {
 
   describe('spy', () => {
     it('returns the spy instance when in test mode', () => {
-      const queueManager = new FakeQueueManager([SupportedQueues[0]], {
+      const queueManager = new FakeQueueManager([supportedQueues[0]], {
         redisConfig,
         isTest: true,
       })
@@ -431,7 +443,7 @@ describe('QueueManager', () => {
     })
 
     it('throws an error when spy is accessed and not in test mode', () => {
-      const queueManager = new FakeQueueManager([SupportedQueues[0]], {
+      const queueManager = new FakeQueueManager([supportedQueues[0]], {
         redisConfig,
         isTest: false,
       })
@@ -439,18 +451,35 @@ describe('QueueManager', () => {
         'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
       )
     })
+
+    it('should infer type of spy', () => {
+      type returnType1 = ReturnType<typeof queueManager.getSpy<'queue1'>>
+      type returnType2 = ReturnType<typeof queueManager.getSpy<'queue2'>>
+
+      const schema1 = supportedQueues[0].jobPayloadSchema
+      type schemaType1 = z.infer<typeof schema1>
+      expectTypeOf<returnType1>().toEqualTypeOf<
+        BackgroundJobProcessorSpyInterface<schemaType1, undefined>
+      >()
+
+      const schema2 = supportedQueues[1].jobPayloadSchema
+      type schemaType2 = z.infer<typeof schema2>
+      expectTypeOf<returnType2>().toEqualTypeOf<
+        BackgroundJobProcessorSpyInterface<schemaType2, undefined>
+      >()
+    })
   })
 
   describe('dispose', () => {
     it('does nothing if not started', async () => {
-      const queueManager = new FakeQueueManager([SupportedQueues[0]], {
+      const queueManager = new FakeQueueManager([supportedQueues[0]], {
         redisConfig,
       })
       await expect(queueManager.dispose()).resolves.not.toThrowError()
     })
 
     it('closes all queues if started', async () => {
-      const queueManager = new FakeQueueManager(SupportedQueues, {
+      const queueManager = new FakeQueueManager(supportedQueues, {
         redisConfig,
       })
       await queueManager.start()
@@ -463,7 +492,7 @@ describe('QueueManager', () => {
     })
 
     it('handles errors during queue closing gracefully', async () => {
-      const queueManager = new FakeQueueManager([SupportedQueues[0]], {
+      const queueManager = new FakeQueueManager([supportedQueues[0]], {
         redisConfig,
       })
       await queueManager.start()
