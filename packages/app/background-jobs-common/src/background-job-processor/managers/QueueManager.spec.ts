@@ -12,13 +12,15 @@ import type { QueueConfiguration } from './types'
 const supportedQueues = [
   {
     queueId: 'queue1',
-    jobPayloadSchema: z.object({
-      id: z.string(),
-      value: z.string(),
-      metadata: z.object({
-        correlationId: z.string(),
-      }),
-    }),
+    jobPayloadSchema: z
+      .object({
+        id: z.string(),
+        value: z.string(),
+        metadata: z.object({
+          correlationId: z.string(),
+        }),
+      })
+      .strict(),
   },
   {
     queueId: 'queue2',
@@ -198,7 +200,7 @@ describe('QueueManager', () => {
         queueManager.schedule('queue1', {
           value: 'test',
           // @ts-expect-error Should only expect fields from queue1 schema
-          value2: 'test',
+          notPresent: 'test',
           metadata: { correlationId: 'correlation_id' },
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -216,10 +218,10 @@ describe('QueueManager', () => {
           {
             "code": "unrecognized_keys",
             "keys": [
-              "value2"
+              "notPresent"
             ],
             "path": [],
-            "message": "Unrecognized key(s) in object: 'value2'"
+            "message": "Unrecognized key(s) in object: 'notPresent'"
           }
         ]]
       `,
