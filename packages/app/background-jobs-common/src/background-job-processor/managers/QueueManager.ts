@@ -25,14 +25,7 @@ export class QueueManager<
     SupportedJobPayloads<Queues>,
     unknown,
     string
-  > = Queue<
-    SupportedJobPayloads<Queues>,
-    unknown,
-    string,
-    SupportedJobPayloads<Queues>,
-    unknown,
-    string
-  >,
+  > = Queue<SupportedJobPayloads<Queues>, void, string, SupportedJobPayloads<Queues>, void, string>,
   QueueOptionsType extends QueueOptions = QueueOptions,
   JobOptionsType extends JobsOptions = JobsOptions,
 > {
