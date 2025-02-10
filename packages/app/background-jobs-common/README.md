@@ -37,7 +37,7 @@ See test implementations in `./test/processors` folder. Extend `AbstractBackgrou
 implement required methods.
 
 ```typescript
-const jobRegistry = new JobRegistry([
+const supportedQueues = [
   {
     queueId: 'queue1',
     jobPayloadSchema: z.object({
@@ -48,26 +48,26 @@ const jobRegistry = new JobRegistry([
       }),
     }),
   }
-])
+] as const satisfies QueueConfiguration[]
 
-const queueManager = new QueueManager([{ queueId: 'queue1' }], jobRegistry, {
+const queueManager = new QueueManager(supportedQueues, {
   redisConfig: config.getRedisConfig(),
   isTest: false,
   lazyInitEnabled: false,
 })
 await queueManager.start()
 
-const processor = new FakeBackgroundJobProcessorNew<JobPayload>(
-        deps,
-        'queue1',
-        config.getRedisConfig(),
+const processor = new FakeBackgroundJobProcessorNew<typeof supportedQueues, 'queue1'>(
+  deps,
+  'queue1',
+  config.getRedisConfig(),
 )
 await processor.start()
 
 const jobId = await queueManager.schedule('queue1', {
-    id: randomUUID(),
-    value: 'test',
-    metadata: { correlationId: randomUUID() },
+  id: randomUUID(),
+  value: 'test',
+  metadata: { correlationId: randomUUID() },
 })
 ```
 
@@ -80,15 +80,8 @@ logger calls, so you only need to add your domain logic.
 By default, the worker is automatically started when you instantiate the processor. There is a default configuration which
 you can override by passing `workerOptions` params to the constructor.
 
-Similarly, queues are automatically started when you instantiate a queue manager providing a list of queues and a job
+Similarly, queues are automatically started when you instantiate a queue manager providing a list of queues and a queue
 registry.
-
-If you wish to only enable your processor to interact with the queue, but not process any jobs, you can set the
-`workerAutoRunEnabled` param to `false` in the constructor, which equals setting `autorun` to `false` in
-`workerOptions`. While you'd normally want the worker to always be running, there are particular occasions where it is
-advisable to not start it automatically. This is the case when, for example, you are starting a separate instance of
-your application to schedule a job, but do not want this instance to start processing this or any other job
-in the queue because they should be picked up by the main instance.
 
 Use `dispose()` to correctly stop processing any new messages and wait for the current ones to finish.
 
