@@ -24,12 +24,12 @@ type SupportedQueues = typeof supportedQueues
 describe('AbstractBackgroundJobProcessor Barrier', () => {
   let mocks: DependencyMocks
   let deps: BackgroundJobProcessorDependenciesNew<SupportedQueues, 'queue', any>
-  let queueManagaer: QueueManager<SupportedQueues>
+  let queueManager: QueueManager<SupportedQueues>
 
   beforeEach(async () => {
     mocks = new DependencyMocks()
     deps = mocks.createNew(supportedQueues)
-    queueManagaer = deps.queueManager
+    queueManager = deps.queueManager
 
     await mocks.clearRedis()
   })
@@ -55,7 +55,7 @@ describe('AbstractBackgroundJobProcessor Barrier', () => {
     )
     await processor.start()
 
-    const jobId = await queueManagaer.schedule('queue', {
+    const jobId = await queueManager.schedule('queue', {
       id: 'test_id',
       metadata: { correlationId: 'correlation_id' },
     })
@@ -91,7 +91,7 @@ describe('AbstractBackgroundJobProcessor Barrier', () => {
     )
     await processor.start()
 
-    const jobId = await queueManagaer.schedule('queue', {
+    const jobId = await queueManager.schedule('queue', {
       id: 'test_id',
       metadata: { correlationId: 'correlation_id' },
     })
