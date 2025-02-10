@@ -1,6 +1,6 @@
 import type { RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
-import { CommonBullmqWorkerFactory } from '../factories/CommonBullmqWorkerFactory'
+import { CommonBullmqFactoryNew } from '../factories/CommonBullmqFactoryNew'
 import type { QueueConfiguration, SupportedQueueIds } from '../managers/types'
 import { AbstractBackgroundJobProcessorNew } from './AbstractBackgroundJobProcessorNew'
 import type { BackgroundJobProcessorDependenciesNew } from './types'
@@ -30,7 +30,7 @@ export class FakeBackgroundJobProcessorNew<
         logger: dependencies.logger,
         errorReporter: dependencies.errorReporter,
         queueManager: dependencies.queueManager,
-        workerFactory: new CommonBullmqWorkerFactory(),
+        workerFactory: new CommonBullmqFactoryNew(),
       },
       {
         queueId,
