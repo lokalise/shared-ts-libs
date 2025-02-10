@@ -11,7 +11,7 @@ import {
 
 import type Redis from 'ioredis'
 import pino from 'pino'
-import { DependencyMocks } from '../../../test/dependencyMocks'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
 import { QUEUE_IDS_KEY } from '../constants'
 import type { BackgroundJobProcessorDependencies } from '../processors/types'
 import type { BaseJobPayload, RequestContext, SafeJob } from '../types'
@@ -21,22 +21,22 @@ import symbols = pino.symbols
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 
 describe('BackgroundJobProcessorMonitor', () => {
-  let mocks: DependencyMocks
+  let factory: TestDependencyFactory
   let deps: BackgroundJobProcessorDependencies<any>
   let redis: Redis
 
   beforeAll(() => {
-    mocks = new DependencyMocks()
-    deps = mocks.create()
-    redis = mocks.startRedis()
+    factory = new TestDependencyFactory()
+    deps = factory.create()
+    redis = factory.startRedis()
   })
 
   beforeEach(async () => {
-    await mocks.clearRedis()
+    await factory.clearRedis()
   })
 
   afterAll(async () => {
-    await mocks.dispose()
+    await factory.dispose()
   })
 
   describe('registerQueue', () => {
@@ -47,7 +47,7 @@ describe('BackgroundJobProcessorMonitor', () => {
         {
           queueId,
           ownerName: 'test-owner',
-          redisConfig: mocks.getRedisConfig(),
+          redisConfig: factory.getRedisConfig(),
         },
         'registerQueue tests',
       )
@@ -59,7 +59,7 @@ describe('BackgroundJobProcessorMonitor', () => {
           {
             queueId,
             ownerName: 'test-owner',
-            redisConfig: mocks.getRedisConfig(),
+            redisConfig: factory.getRedisConfig(),
           },
           'registerQueue tests',
         ).registerQueue(),
@@ -74,7 +74,7 @@ describe('BackgroundJobProcessorMonitor', () => {
         {
           queueId: 'test-queue',
           ownerName: 'test-owner',
-          redisConfig: mocks.getRedisConfig(),
+          redisConfig: factory.getRedisConfig(),
         },
         'registerQueue tests',
       )
@@ -82,7 +82,7 @@ describe('BackgroundJobProcessorMonitor', () => {
 
       const today = new Date()
       const [, score] = await redis.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
-      const queueIds = await backgroundJobProcessorGetActiveQueueIds(mocks.getRedisConfig())
+      const queueIds = await backgroundJobProcessorGetActiveQueueIds(factory.getRedisConfig())
       expect(queueIds).toStrictEqual(['test-queue'])
 
       // Comparing timestamps in seconds
@@ -97,7 +97,7 @@ describe('BackgroundJobProcessorMonitor', () => {
 
       const [, scoreAfterRestart] = await redis.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
       const queueIdsAfterRestart = await backgroundJobProcessorGetActiveQueueIds(
-        mocks.getRedisConfig(),
+        factory.getRedisConfig(),
       )
       expect(queueIdsAfterRestart).toStrictEqual(['test-queue'])
       expect(new Date(Number.parseInt(score))).not.toEqual(
@@ -115,7 +115,7 @@ describe('BackgroundJobProcessorMonitor', () => {
         {
           queueId: 'test-queue',
           ownerName: 'test-owner',
-          redisConfig: mocks.getRedisConfig(),
+          redisConfig: factory.getRedisConfig(),
         },
         'registerQueue tests',
       )
@@ -126,7 +126,7 @@ describe('BackgroundJobProcessorMonitor', () => {
       monitor.unregisterQueue()
 
       const queueIdsAfterUnregister = await backgroundJobProcessorGetActiveQueueIds(
-        mocks.getRedisConfig(),
+        factory.getRedisConfig(),
       )
       expect(queueIdsAfterUnregister).toStrictEqual(['test-queue'])
     })
@@ -141,7 +141,7 @@ describe('BackgroundJobProcessorMonitor', () => {
         {
           queueId: 'test-queue-getRequestContext',
           ownerName: 'test-owner',
-          redisConfig: mocks.getRedisConfig(),
+          redisConfig: factory.getRedisConfig(),
         },
         'BackgroundJobProcessorMonitor tests',
       )
@@ -188,7 +188,7 @@ describe('BackgroundJobProcessorMonitor', () => {
         {
           queueId: 'test-queue-logJobStarted',
           ownerName: 'test-owner',
-          redisConfig: mocks.getRedisConfig(),
+          redisConfig: factory.getRedisConfig(),
         },
         'BackgroundJobProcessorMonitor tests',
       )
@@ -230,7 +230,7 @@ describe('BackgroundJobProcessorMonitor', () => {
         {
           queueId: 'test-queue-logJobTryError',
           ownerName: 'test-owner',
-          redisConfig: mocks.getRedisConfig(),
+          redisConfig: factory.getRedisConfig(),
         },
         'BackgroundJobProcessorMonitor tests',
       )
@@ -271,7 +271,7 @@ describe('BackgroundJobProcessorMonitor', () => {
         {
           queueId: 'test-queue-logJobStarted',
           ownerName: 'test-owner',
-          redisConfig: mocks.getRedisConfig(),
+          redisConfig: factory.getRedisConfig(),
         },
         'BackgroundJobProcessorMonitor tests',
       )

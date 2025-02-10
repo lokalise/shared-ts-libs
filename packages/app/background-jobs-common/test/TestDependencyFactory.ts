@@ -14,7 +14,7 @@ import { CommonBullmqFactoryNew } from '../src/background-job-processor/factorie
 import { createRedisClient, getTestRedisConfig } from './TestRedis'
 
 const testLogger = globalLogger
-export class DependencyMocks {
+export class TestDependencyFactory {
   private queueManager?: QueueManager<any>
   private redis?: Redis
 

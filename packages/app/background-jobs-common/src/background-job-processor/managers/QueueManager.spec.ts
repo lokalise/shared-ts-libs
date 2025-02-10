@@ -2,7 +2,7 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { z } from 'zod'
-import { DependencyMocks } from '../../../test/dependencyMocks'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
 import type { JobsPaginatedResponse } from '../processors/types'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
@@ -37,22 +37,22 @@ const supportedQueues = [
 type SupportedQueues = typeof supportedQueues
 
 describe('QueueManager', () => {
-  let mocks: DependencyMocks
+  let factory: TestDependencyFactory
   let redisConfig: RedisConfig
 
   let queueManager: FakeQueueManager<SupportedQueues>
 
   beforeEach(async () => {
-    mocks = new DependencyMocks()
-    redisConfig = mocks.getRedisConfig()
-    const deps = mocks.createNew(supportedQueues)
+    factory = new TestDependencyFactory()
+    redisConfig = factory.getRedisConfig()
+    const deps = factory.createNew(supportedQueues)
     queueManager = deps.queueManager
 
-    await mocks.clearRedis()
+    await factory.clearRedis()
   })
 
   afterEach(async () => {
-    await mocks.dispose()
+    await factory.dispose()
   })
 
   describe('start', () => {
@@ -157,7 +157,7 @@ describe('QueueManager', () => {
 
     it('lazy init on scheduleBulk', async () => {
       const queueManager = new FakeQueueManager([supportedQueues[0]], {
-        redisConfig: mocks.getRedisConfig(),
+        redisConfig: factory.getRedisConfig(),
         lazyInitEnabled: true,
       })
 

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 
-import { DependencyMocks } from '../../../test/dependencyMocks'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
 
 import { z } from 'zod'
 import { TestReturnValueBackgroundJobProcessorNew } from '../../../test/processors/TestReturnValueBackgroundJobProcessorNew'
@@ -25,26 +25,26 @@ const supportedQueues = [
 type SupportedQueues = typeof supportedQueues
 
 describe('AbstractBackgroundJobProcessorNew -  Spy', () => {
-  let mocks: DependencyMocks
+  let factory: TestDependencyFactory
   let deps: BackgroundJobProcessorDependenciesNew<SupportedQueues, 'queue', any>
   let queueManager: QueueManager<SupportedQueues>
 
   beforeEach(async () => {
-    mocks = new DependencyMocks()
-    deps = mocks.createNew(supportedQueues)
+    factory = new TestDependencyFactory()
+    deps = factory.createNew(supportedQueues)
     queueManager = deps.queueManager
-    await mocks.clearRedis()
+    await factory.clearRedis()
   })
 
   afterEach(async () => {
-    await mocks.dispose()
+    await factory.dispose()
   })
 
   it('throws error when spy accessed in non-test mode', async () => {
     const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
       deps,
       'queue',
-      mocks.getRedisConfig(),
+      factory.getRedisConfig(),
       false,
     )
 
@@ -64,7 +64,7 @@ describe('AbstractBackgroundJobProcessorNew -  Spy', () => {
       SupportedQueues,
       'queue',
       JobReturn
-    >(deps, 'queue', mocks.getRedisConfig(), returnValue)
+    >(deps, 'queue', factory.getRedisConfig(), returnValue)
     await processor.start()
 
     // When
@@ -88,7 +88,7 @@ describe('AbstractBackgroundJobProcessorNew -  Spy', () => {
     const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
       deps,
       'queue',
-      mocks.getRedisConfig(),
+      factory.getRedisConfig(),
     )
 
     type spyType = typeof processor.spy
@@ -99,7 +99,7 @@ describe('AbstractBackgroundJobProcessorNew -  Spy', () => {
       SupportedQueues,
       'queue',
       JobReturn
-    >(deps, 'queue', mocks.getRedisConfig(), { result: 'done' })
+    >(deps, 'queue', factory.getRedisConfig(), { result: 'done' })
 
     type spyTypeWithReturnValue = typeof processorWithReturnValue.spy
     expectTypeOf<spyTypeWithReturnValue>().toMatchTypeOf<

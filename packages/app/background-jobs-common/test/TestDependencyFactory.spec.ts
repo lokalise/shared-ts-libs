@@ -1,18 +1,18 @@
 import type { Redis } from 'ioredis'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { DependencyMocks } from './dependencyMocks'
+import { TestDependencyFactory } from './TestDependencyFactory'
 
-describe('DependencyMocks', () => {
-  let mocks: DependencyMocks
+describe('TestDependencyFactory', () => {
+  let factory: TestDependencyFactory
   let redis: Redis
+
   beforeAll(() => {
-    mocks = new DependencyMocks()
-    // @ts-ignore redis is not undefined
-    redis = mocks.startRedis()
+    factory = new TestDependencyFactory()
+    redis = factory.startRedis()
   })
   afterAll(async () => {
-    await mocks.dispose()
+    await factory.dispose()
   })
 
   it('should start redis server', async () => {
