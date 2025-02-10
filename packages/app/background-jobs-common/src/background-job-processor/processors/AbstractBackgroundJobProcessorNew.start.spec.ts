@@ -93,7 +93,7 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
       delay: 100,
     })
 
-    const jobScheduled = await queueManager.spy.waitForJobWithId(jobId, 'scheduled')
+    const jobScheduled = await queueManager.getSpy('queue').waitForJobWithId(jobId, 'scheduled')
     expect(jobScheduled.data, 'object did not match').toMatchObject(jobData)
 
     await processor.dispose()
