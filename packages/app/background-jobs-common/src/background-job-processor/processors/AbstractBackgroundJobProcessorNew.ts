@@ -9,137 +9,138 @@ import {
   type Worker,
   type WorkerOptions,
 } from 'bullmq'
-import type { JobState } from 'bullmq/dist/esm/types/job-type'
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
-import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants'
-import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
-import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor'
+
+import { DEFAULT_WORKER_OPTIONS } from '../constants'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types'
+import type { BullmqProcessor, RequestContext, SafeJob } from '../types'
 import {
   isJobMissingError,
   isStalledJobError,
   isUnrecoverableJobError,
-  prepareJobOptions,
   resolveJobId,
   sanitizeRedisConfig,
 } from '../utils'
+
+import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory'
+import type { QueueManager } from '../managers/QueueManager'
 import type {
-  BackgroundJobProcessorConfig,
-  BackgroundJobProcessorDependencies,
-  JobsPaginatedResponse,
+  JobPayloadForQueue,
+  QueueConfiguration,
+  SupportedJobPayloads,
+  SupportedQueueIds,
+} from '../managers/types'
+import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor'
+import type {
+  BackgroundJobProcessorConfigNew,
+  BackgroundJobProcessorDependenciesNew,
   ProtectedQueue,
   ProtectedWorker,
 } from './types'
 
-/**
- * @deprecated This processor is deprecated and will be removed in future versions.
- */
-export abstract class AbstractBackgroundJobProcessor<
-  JobPayload extends BaseJobPayload,
+export abstract class AbstractBackgroundJobProcessorNew<
+  Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
+  QueueId extends SupportedQueueIds<Queues>,
   JobReturn = void,
   ExecutionContext = undefined,
-  JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
-  QueueType extends Queue<JobPayload, JobReturn, string, JobPayload, JobReturn, string> = Queue<
-    JobPayload,
+  JobType extends SafeJob<JobPayloadForQueue<Queues, QueueId>, JobReturn> = Job<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn
+  >,
+  JobOptionsType extends JobsOptions = JobsOptions,
+  QueueType extends Queue<
+    SupportedJobPayloads<Queues>,
     JobReturn,
     string,
-    JobPayload,
+    SupportedJobPayloads<Queues>,
+    JobReturn,
+    string
+  > = Queue<
+    SupportedJobPayloads<Queues>,
+    JobReturn,
+    string,
+    SupportedJobPayloads<Queues>,
     JobReturn,
     string
   >,
   QueueOptionsType extends QueueOptions = QueueOptions,
-  WorkerType extends Worker<JobPayload, JobReturn> = Worker<JobPayload, JobReturn>,
-  WorkerOptionsType extends WorkerOptions = WorkerOptions,
-  ProcessorType extends BullmqProcessor<JobType, JobPayload, JobReturn> = BullmqProcessor<
-    JobType,
-    JobPayload,
+  WorkerType extends Worker<SupportedJobPayloads<Queues>, JobReturn> = Worker<
+    SupportedJobPayloads<Queues>,
     JobReturn
   >,
-  JobOptionsType extends JobsOptions = JobsOptions,
+  WorkerOptionsType extends WorkerOptions = WorkerOptions,
+  ProcessorType extends BullmqProcessor<
+    JobType,
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn
+  > = BullmqProcessor<JobType, JobPayloadForQueue<Queues, QueueId>, JobReturn>,
 > {
-  private readonly errorReporter: ErrorReporter // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
-  private readonly config: BackgroundJobProcessorConfig<
-    QueueOptionsType,
+  // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
+  private readonly errorReporter: ErrorReporter
+  private readonly config: BackgroundJobProcessorConfigNew<
+    Queues,
+    QueueId,
     WorkerOptionsType,
-    JobPayload,
     ExecutionContext,
     JobReturn,
     JobType
   >
-  private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
-  private readonly monitor: BackgroundJobProcessorMonitor<JobPayload, JobType>
+  private readonly _spy?: BackgroundJobProcessorSpy<JobPayloadForQueue<Queues, QueueId>, JobReturn>
+  private readonly monitor: BackgroundJobProcessorMonitor<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobType
+  >
   private readonly runningPromises: Set<Promise<unknown>>
-
-  private isStarted = false
-  private startPromise?: Promise<void>
-
-  private _executionContext?: ExecutionContext
-  private _queue?: QueueType
-  private _worker?: WorkerType
-  private factory: AbstractBullmqFactory<
-    QueueType,
-    QueueOptionsType,
+  private readonly factory: BullmqWorkerFactory<
     WorkerType,
     WorkerOptionsType,
-    ProcessorType,
     JobType,
-    JobPayload,
-    JobReturn
+    ProcessorType
   >
+  private readonly queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
+
+  private _executionContext?: ExecutionContext
+  private isStarted = false
+  private startPromise?: Promise<void>
+  private _worker?: WorkerType
 
   protected constructor(
-    dependencies: BackgroundJobProcessorDependencies<
-      JobPayload,
+    dependencies: BackgroundJobProcessorDependenciesNew<
+      Queues,
+      QueueId,
       JobReturn,
       JobType,
+      JobOptionsType,
       QueueType,
       QueueOptionsType,
       WorkerType,
       WorkerOptionsType,
       ProcessorType
     >,
-    config: BackgroundJobProcessorConfig<
-      QueueOptionsType,
+    config: BackgroundJobProcessorConfigNew<
+      Queues,
+      QueueId,
       WorkerOptionsType,
-      JobPayload,
       ExecutionContext,
       JobReturn,
       JobType
     >,
   ) {
-    this.monitor = new BackgroundJobProcessorMonitor(dependencies, config, this.constructor.name)
     this.config = config
-    this.factory = dependencies.bullmqFactory
+
+    this.factory = dependencies.workerFactory
+    this.queueManager = dependencies.queueManager
     this.errorReporter = dependencies.errorReporter
+
     this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
     this.runningPromises = new Set()
-  }
-
-  public async getJobCount(): Promise<number> {
-    await this.startIfNotStarted()
-    return this.queue.getJobCountByTypes(
-      'active',
-      'waiting',
-      'paused',
-      'delayed',
-      'prioritized',
-      'waiting-children',
-    )
-  }
-
-  protected get queue(): ProtectedQueue<JobPayload, JobReturn, QueueType> {
-    /* v8 ignore next 3 */
-    if (!this._queue) {
-      throw new Error(`queue ${this.config.queueId} was not instantiated yet, please run "start()"`)
-    }
-
-    return this._queue
+    this.monitor = new BackgroundJobProcessorMonitor(dependencies, config, this.constructor.name)
   }
 
   protected get executionContext() {
+    /* v8 ignore next 3 */
     if (!this._executionContext) {
       this._executionContext = this.resolveExecutionContext()
     }
@@ -147,7 +148,11 @@ export abstract class AbstractBackgroundJobProcessor<
     return this._executionContext
   }
 
-  protected get worker(): ProtectedWorker<JobPayload, JobReturn, WorkerType> {
+  protected get worker(): ProtectedWorker<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn,
+    WorkerType
+  > {
     /* v8 ignore next 5 */
     if (!this._worker) {
       throw new Error(
@@ -158,7 +163,15 @@ export abstract class AbstractBackgroundJobProcessor<
     return this._worker
   }
 
-  public get spy(): BackgroundJobProcessorSpyInterface<JobPayload, JobReturn> {
+  protected get queue(): ProtectedQueue<JobPayloadForQueue<Queues, QueueId>, JobReturn, QueueType> {
+    return this.queueManager.getQueue(this.config.queueId)
+  }
+
+  public get spy(): BackgroundJobProcessorSpyInterface<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn
+  > {
+    /* v8 ignore next 4 */
     if (!this._spy)
       throw new Error(
         'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
@@ -175,35 +188,17 @@ export abstract class AbstractBackgroundJobProcessor<
     this.startPromise = undefined
   }
 
-  private startIfNotStarted(): Promise<void> {
-    if (this.isStarted) return Promise.resolve()
-
-    if (this.config.lazyInitEnabled === false) {
-      throw new Error('Processor not started, please call `start` or enable lazy init')
-    }
-    return this.start()
-  }
-
   private async internalStart(): Promise<void> {
     await this.monitor.registerQueue()
-
-    this._queue = this.factory.buildQueue(this.config.queueId, {
-      ...(merge(DEFAULT_QUEUE_OPTIONS, this.config.queueOptions ?? {}) as Omit<
-        QueueOptionsType,
-        'connection' | 'prefix'
-      >),
-      connection: sanitizeRedisConfig(this.config.redisConfig),
-      prefix: this.config.redisConfig?.keyPrefix ?? undefined,
-    } as unknown as QueueOptionsType)
-    await this._queue.waitUntilReady()
 
     this._worker = this.factory.buildWorker(
       this.config.queueId,
       ((job: JobType) => this.processInternal(job)) as ProcessorType,
       {
-        ...(merge(DEFAULT_WORKER_OPTIONS, this.config.workerOptions, {
-          autorun: this.config.workerAutoRunEnabled !== false,
-        }) as Omit<WorkerOptionsType, 'connection' | 'prefix'>),
+        ...(merge(DEFAULT_WORKER_OPTIONS, this.config.workerOptions) as Omit<
+          WorkerOptionsType,
+          'connection' | 'prefix'
+        >),
         connection: sanitizeRedisConfig(this.config.redisConfig),
         prefix: this.config.redisConfig?.keyPrefix ?? undefined,
       } as unknown as WorkerOptionsType,
@@ -237,8 +232,9 @@ export abstract class AbstractBackgroundJobProcessor<
     try {
       // On test forcing the worker to close to not wait for current job to finish
       await this._worker?.close(this.config.isTest)
-      await this._queue?.close()
+      // await this._queue?.close()
       await Promise.allSettled(this.runningPromises)
+      /* v8 ignore next 3 */
     } catch {
       //do nothing
     }
@@ -246,77 +242,6 @@ export abstract class AbstractBackgroundJobProcessor<
     this._spy?.clear()
     this.monitor.unregisterQueue()
     this.isStarted = false
-  }
-
-  public async schedule(jobData: JobPayload, options?: JobOptionsType): Promise<string> {
-    await this.startIfNotStarted()
-
-    const job = await this._queue?.add(
-      this.config.queueId,
-      jobData,
-      prepareJobOptions(this.config.isTest, options),
-    )
-    if (!job?.id) throw new Error('Scheduled job ID is undefined')
-    if (this._spy) this._spy.addJob(job, 'scheduled')
-
-    return job.id
-  }
-
-  public async scheduleBulk(
-    jobData: JobPayload[],
-    options?: Omit<JobOptionsType, 'repeat'>,
-  ): Promise<string[]> {
-    if (jobData.length === 0) return []
-
-    await this.startIfNotStarted()
-
-    const jobs =
-      (await this._queue?.addBulk(
-        jobData.map((data) => ({
-          name: this.config.queueId,
-          data: data,
-          opts: prepareJobOptions(this.config.isTest, options),
-        })),
-      )) ?? []
-
-    const jobIds = jobs.map((job) => job.id)
-    /* v8 ignore next 4 */
-    if (jobIds.length === 0 || !jobIds.every((id) => !!id)) {
-      // Practically unreachable, but we want to simplify the signature of the method and avoid
-      // stating that it could return undefined.
-      throw new Error('Some scheduled job IDs are undefined')
-    }
-    if (this._spy) this._spy.addJobs(jobs, 'scheduled')
-
-    return jobIds as string[]
-  }
-
-  /**
-   * Get jobs in the given states.
-   *
-   * @param states
-   * @param start default 0
-   * @param end default 20
-   * @param asc default true (oldest first)
-   */
-  public async getJobsInQueue(
-    states: JobState[],
-    start = 0,
-    end = 20,
-    asc = true,
-  ): Promise<JobsPaginatedResponse<JobPayload, JobReturn>> {
-    if (states.length === 0) throw new Error('states must not be empty')
-    if (start > end) throw new Error('start must be less than or equal to end')
-
-    await this.startIfNotStarted()
-
-    const jobs = (await this._queue?.getJobs(states, start, end + 1, asc)) ?? []
-    const expectedNumberOfJobs = 1 + (end - start)
-
-    return {
-      jobs: jobs.slice(0, expectedNumberOfJobs),
-      hasMore: jobs.length > expectedNumberOfJobs,
-    }
   }
 
   private async processInternal(job: JobType): Promise<JobReturn> {
@@ -421,7 +346,6 @@ export abstract class AbstractBackgroundJobProcessor<
     if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
 
     const updateDataPromise = job
-      // @ts-expect-error
       .updateData({ metadata: job.data.metadata })
       .finally(() => this.runningPromises.delete(updateDataPromise))
 
@@ -472,6 +396,7 @@ export abstract class AbstractBackgroundJobProcessor<
     return Promise.resolve()
   }
 
+  /* v8 ignore next 3 */
   protected resolveExecutionContext(): ExecutionContext {
     return undefined as ExecutionContext
   }

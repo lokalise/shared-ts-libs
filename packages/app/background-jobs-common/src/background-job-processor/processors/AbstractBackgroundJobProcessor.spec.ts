@@ -10,7 +10,6 @@ import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/Test
 import type { BaseJobPayload } from '../types'
 
 import { randomUUID } from 'node:crypto'
-import type Redis from 'ioredis'
 import { isPromiseFinished } from '../../../test/isPromiseFinished'
 import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
@@ -21,19 +20,15 @@ type JobData = {
   value: string
 } & BaseJobPayload
 
-const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
-
 describe('AbstractBackgroundJobProcessor', () => {
   let mocks: DependencyMocks
   let deps: BackgroundJobProcessorDependencies<JobData, any>
-  let redis: Redis
 
   beforeEach(async () => {
     mocks = new DependencyMocks()
     deps = mocks.create()
-    redis = mocks.startRedis()
 
-    await redis?.flushall('SYNC')
+    await mocks.clearRedis()
   })
 
   afterEach(async () => {
@@ -41,10 +36,6 @@ describe('AbstractBackgroundJobProcessor', () => {
   })
 
   describe('start', () => {
-    beforeEach(async () => {
-      await redis?.del(QUEUE_IDS_KEY)
-    })
-
     it('throws an error if queue id is not unique', async () => {
       const job1 = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1', mocks.getRedisConfig())
       const job2 = new FakeBackgroundJobProcessor<JobData>(deps, 'queue2', mocks.getRedisConfig())
@@ -702,10 +693,6 @@ describe('AbstractBackgroundJobProcessor', () => {
   })
 
   describe('repeatable', () => {
-    beforeEach(async () => {
-      await redis?.del(QUEUE_IDS_KEY)
-    })
-
     it('schedules repeatable job', async () => {
       // Given
       const processor = new FakeBackgroundJobProcessor<JobData>(

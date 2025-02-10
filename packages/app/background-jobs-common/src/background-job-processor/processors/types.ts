@@ -4,11 +4,45 @@ import type {
   RedisConfig,
   TransactionObservabilityManager,
 } from '@lokalise/node-core'
-import type { Job, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
+import type { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
 import type { BarrierCallback } from '../barrier/barrier'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
+import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory'
+import type { QueueManager } from '../managers/QueueManager'
+import type {
+  JobPayloadForQueue,
+  QueueConfiguration,
+  SupportedJobPayloads,
+  SupportedQueueIds,
+} from '../managers/types'
 import type { BaseJobPayload, BullmqProcessor, SafeJob } from '../types'
 
+export type BackgroundJobProcessorConfigNew<
+  Queues extends QueueConfiguration[],
+  QueueId extends SupportedQueueIds<Queues>,
+  WorkerOptionsType extends WorkerOptions = WorkerOptions,
+  ExecutionContext = void,
+  JobReturn = void,
+  JobType extends SafeJob<JobPayloadForQueue<Queues, QueueId>, JobReturn> = Job<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn
+  >,
+> = {
+  queueId: QueueId
+  isTest: boolean
+  // Name of a webservice or a module running the bg job. Used for logging/observability
+  ownerName: string
+  workerOptions: Omit<Partial<WorkerOptionsType>, 'connection' | 'prefix' | 'autorun'>
+  redisConfig: RedisConfig
+  barrier?: BarrierCallback<
+    JobPayloadForQueue<Queues, QueueId>,
+    ExecutionContext,
+    JobReturn,
+    JobType
+  >
+}
+
+/** @deprecated */
 export type BackgroundJobProcessorConfig<
   QueueOptionsType extends QueueOptions = QueueOptions,
   WorkerOptionsType extends WorkerOptions = WorkerOptions,
@@ -29,8 +63,52 @@ export type BackgroundJobProcessorConfig<
   workerAutoRunEnabled?: boolean
 }
 
+export type BackgroundJobProcessorDependenciesNew<
+  Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
+  QueueId extends SupportedQueueIds<Queues>,
+  JobReturn = void,
+  JobType extends SafeJob<JobPayloadForQueue<Queues, QueueId>, JobReturn> = Job<
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn
+  >,
+  JobOptionsType extends JobsOptions = JobsOptions,
+  QueueType extends Queue<
+    SupportedJobPayloads<Queues>,
+    JobReturn,
+    string,
+    SupportedJobPayloads<Queues>,
+    JobReturn,
+    string
+  > = Queue<
+    SupportedJobPayloads<Queues>,
+    JobReturn,
+    string,
+    SupportedJobPayloads<Queues>,
+    JobReturn,
+    string
+  >,
+  QueueOptionsType extends QueueOptions = QueueOptions,
+  WorkerType extends Worker<SupportedJobPayloads<Queues>, JobReturn> = Worker<
+    SupportedJobPayloads<Queues>,
+    JobReturn
+  >,
+  WorkerOptionsType extends WorkerOptions = WorkerOptions,
+  ProcessorType extends BullmqProcessor<
+    JobType,
+    JobPayloadForQueue<Queues, QueueId>,
+    JobReturn
+  > = BullmqProcessor<JobType, JobPayloadForQueue<Queues, QueueId>, JobReturn>,
+> = {
+  transactionObservabilityManager: TransactionObservabilityManager
+  logger: CommonLogger
+  errorReporter: ErrorReporter
+  queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
+  workerFactory: BullmqWorkerFactory<WorkerType, WorkerOptionsType, JobType, ProcessorType>
+}
+
+/** @deprecated */
 export type BackgroundJobProcessorDependencies<
-  JobPayload extends object,
+  JobPayload extends BaseJobPayload,
   JobReturn = void,
   JobType extends SafeJob<JobPayload, JobReturn> = Job<JobPayload, JobReturn>,
   QueueType extends Queue<JobPayload, JobReturn, string, JobPayload, JobReturn, string> = Queue<
@@ -89,7 +167,7 @@ export type JobInQueue<JobData extends object, jobReturn> = Pick<
   | 'getState'
 >
 
-export type JobsPaginatedResponse<JobData extends object, jobReturn> = {
+export type JobsPaginatedResponse<JobData extends BaseJobPayload, jobReturn> = {
   jobs: JobInQueue<JobData, jobReturn>[]
   hasMore: boolean
 }
