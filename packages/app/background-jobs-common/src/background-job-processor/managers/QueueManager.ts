@@ -30,7 +30,7 @@ export class QueueManager<
   JobOptionsType extends JobsOptions = JobsOptions,
 > {
   private readonly factory: BullmqQueueFactory<QueueType, QueueOptionsType>
-  private readonly queueRegistry: QueueRegistry<Queues, QueueOptionsType, JobOptionsType>
+  private readonly _queueRegistry: QueueRegistry<Queues, QueueOptionsType, JobOptionsType>
   private config: QueueManagerConfig
 
   private readonly _queues: Record<QueueConfiguration<QueueOptionsType>['queueId'], QueueType> = {}
@@ -51,7 +51,7 @@ export class QueueManager<
     config: QueueManagerConfig,
   ) {
     this.factory = queueFactory
-    this.queueRegistry = new QueueRegistry(queues)
+    this._queueRegistry = new QueueRegistry(queues)
 
     this.config = config
     if (config.isTest) {
@@ -72,6 +72,10 @@ export class QueueManager<
     }
 
     this.isStarted = false
+  }
+
+  get queueRegistry(): QueueRegistry<Queues, QueueOptionsType, JobOptionsType> {
+    return this._queueRegistry
   }
 
   public getQueue<QueueId extends SupportedQueueIds<Queues>, JobReturn = unknown>(
