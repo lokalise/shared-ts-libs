@@ -1,9 +1,10 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod'
 import { DependencyMocks } from '../../../test/dependencyMocks'
 import { isPromiseFinished } from '../../../test/isPromiseFinished'
+import { TestOverrideProcessBackgroundProcessor } from '../../../test/processors/TestOverrideProcessBackgroundProcessor'
 import type { FakeQueueManager } from '../managers/FakeQueueManager'
 import type { QueueConfiguration } from '../managers/types'
 import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew'
@@ -102,6 +103,30 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
 
     await processor.start()
     await expect(isPromiseFinished(completedPromise)).resolves.toBe(true)
+
+    await processor.dispose()
+  })
+
+  it('should infer job payload type', async () => {
+    const jobDataSchema = supportedQueues[0].jobPayloadSchema
+    type JobPayload = z.infer<typeof jobDataSchema>
+
+    const processor = new TestOverrideProcessBackgroundProcessor<SupportedQueues, 'queue'>(
+      deps,
+      'queue',
+      redisConfig,
+    )
+    await processor.start()
+
+    processor.processOverride = (job) => {
+      expectTypeOf(job.data).toEqualTypeOf<JobPayload>()
+    }
+
+    const jobId = await queueManager.schedule('queue', {
+      id: generateMonotonicUuid(),
+      metadata: { correlationId: generateMonotonicUuid() },
+    })
+    await processor.spy.waitForJobWithId(jobId, 'completed')
 
     await processor.dispose()
   })

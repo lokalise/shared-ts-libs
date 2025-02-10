@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 
 import { DependencyMocks } from '../../../test/dependencyMocks'
 
@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { TestReturnValueBackgroundJobProcessorNew } from '../../../test/processors/TestReturnValueBackgroundJobProcessorNew'
 import type { QueueManager } from '../managers/QueueManager'
 import type { QueueConfiguration } from '../managers/types'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
 import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew'
 import type { BackgroundJobProcessorDependenciesNew } from './types'
 
@@ -77,5 +78,32 @@ describe('AbstractBackgroundJobProcessorNew -  Spy', () => {
     expect(jobSpy.returnvalue).toMatchObject(returnValue)
 
     await processor.dispose()
+  })
+
+  it('should infer payload and return type from processor', () => {
+    // Given
+    const jobPayloadSchema = supportedQueues[0].jobPayloadSchema
+    type JobPayload = z.infer<typeof jobPayloadSchema>
+
+    const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
+      deps,
+      'queue',
+      mocks.getRedisConfig(),
+    )
+
+    type spyType = typeof processor.spy
+    expectTypeOf<spyType>().toMatchTypeOf<BackgroundJobProcessorSpyInterface<JobPayload, void>>()
+
+    type JobReturn = { result: string }
+    const processorWithReturnValue = new TestReturnValueBackgroundJobProcessorNew<
+      SupportedQueues,
+      'queue',
+      JobReturn
+    >(deps, 'queue', mocks.getRedisConfig(), { result: 'done' })
+
+    type spyTypeWithReturnValue = typeof processorWithReturnValue.spy
+    expectTypeOf<spyTypeWithReturnValue>().toMatchTypeOf<
+      BackgroundJobProcessorSpyInterface<JobPayload, JobReturn>
+    >()
   })
 })
