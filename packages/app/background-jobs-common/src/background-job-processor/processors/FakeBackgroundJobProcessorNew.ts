@@ -5,7 +5,7 @@ import type { QueueConfiguration, SupportedQueueIds } from '../managers/types'
 import { AbstractBackgroundJobProcessorNew } from './AbstractBackgroundJobProcessorNew'
 import type { BackgroundJobProcessorDependenciesNew } from './types'
 
-export class bug<
+export class FakeBackgroundJobProcessorNew<
   Queues extends QueueConfiguration[],
   QueueId extends SupportedQueueIds<Queues>,
 > extends AbstractBackgroundJobProcessorNew<Queues, QueueId> {
