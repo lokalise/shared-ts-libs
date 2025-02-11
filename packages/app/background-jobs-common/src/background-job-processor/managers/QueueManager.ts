@@ -148,7 +148,7 @@ export class QueueManager<
   public async schedule<QueueId extends SupportedQueueIds<Queues>>(
     queueId: QueueId,
     jobPayload: JobPayloadForQueue<Queues, QueueId>,
-    options?: JobsOptions,
+    options?: JobOptionsType,
   ): Promise<string> {
     const { jobOptions: defaultOptions, jobPayloadSchema } =
       this.queueRegistry.getQueueConfig(queueId)
@@ -171,7 +171,7 @@ export class QueueManager<
   public async scheduleBulk<QueueId extends SupportedQueueIds<Queues>>(
     queueId: QueueId,
     jobPayloads: JobPayloadForQueue<Queues, QueueId>[],
-    options?: JobsOptions,
+    options?: JobOptionsType,
   ): Promise<string[]> {
     if (jobPayloads.length === 0) return []
 
