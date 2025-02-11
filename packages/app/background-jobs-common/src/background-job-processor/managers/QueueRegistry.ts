@@ -6,10 +6,7 @@ export class QueueRegistry<
   QueueOptionsType extends QueueOptions,
   JobOptionsType extends JobsOptions,
 > {
-  private readonly supportedQueuesMap: Record<
-    string,
-    QueueConfiguration<QueueOptionsType, JobOptionsType>
-  > = {}
+  private readonly supportedQueuesMap: Record<string, Queues[number]> = {}
   public readonly queueIds: Set<string>
 
   constructor(supportedQueues: Queues) {
@@ -21,7 +18,7 @@ export class QueueRegistry<
     }
   }
 
-  public getQueueConfig(queueId: SupportedQueueIds<Queues>): QueueConfiguration {
+  public getQueueConfig(queueId: SupportedQueueIds<Queues>): Queues[number] {
     if (!this.isSupportedQueue(queueId)) {
       throw new Error(`Queue with id ${queueId} is not supported`)
     }
