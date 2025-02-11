@@ -85,7 +85,15 @@ export class QueueManager<
     return this._queues[queueId]
   }
 
-  public async start(queueIdsToStart?: string[]): Promise<void> {
+  public async start(): Promise<void> {
+    if (this.isStarted) return // if it is already started -> skip
+
+    if (!this.startPromise) this.startPromise = this.internalStart()
+    await this.startPromise
+    this.startPromise = undefined
+  }
+
+  public async startSpecifiedQueues(queueIdsToStart?: string[]): Promise<void> {
     if (this.isStarted) return // if it is already started -> skip
 
     if (!this.startPromise) this.startPromise = this.internalStart(queueIdsToStart)
@@ -101,7 +109,7 @@ export class QueueManager<
     }
 
     if (!this.isStarted || !this._queues[queueId]) {
-      return this.start([queueId])
+      return this.startSpecifiedQueues([queueId])
     }
 
     return Promise.resolve()
