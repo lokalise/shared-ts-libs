@@ -5,14 +5,14 @@ import type { QueueConfiguration, SupportedQueueIds } from '../managers/types'
 import { AbstractBackgroundJobProcessorNew } from './AbstractBackgroundJobProcessorNew'
 import type { BackgroundJobProcessorDependenciesNew } from './types'
 
-export class FakeBackgroundJobProcessorNew<
+export class bug<
   Queues extends QueueConfiguration[],
   QueueId extends SupportedQueueIds<Queues>,
 > extends AbstractBackgroundJobProcessorNew<Queues, QueueId> {
   constructor(
     dependencies: Omit<
       BackgroundJobProcessorDependenciesNew<Queues, QueueId>,
-      'bullmqFactory' | 'transactionObservabilityManager'
+      'workerFactory' | 'transactionObservabilityManager'
     >,
     queueId: QueueId,
     redisConfig: RedisConfig,
