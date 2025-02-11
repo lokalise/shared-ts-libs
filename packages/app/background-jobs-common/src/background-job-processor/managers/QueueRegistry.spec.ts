@@ -1,5 +1,5 @@
 import type { JobsOptions, QueueOptions } from 'bullmq'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod'
 import { QueueRegistry } from './QueueRegistry'
 import type { QueueConfiguration } from './types'
@@ -56,5 +56,21 @@ describe('QueueRegistry', () => {
   it('should throw an error if queue id is not supported', () => {
     // @ts-expect-error - TS checks that only valid queue ids are passed
     expect(() => registry.getQueueConfig('invalidQueueId')).toThrowError()
+  })
+
+  it('should work with QueueConfiguration extensions', () => {
+    type ExtendedQueueConfig = QueueConfiguration & { customField: string }
+    const extendedQueues = [
+      {
+        queueId: 'queue',
+        jobPayloadSchema,
+        customField: 'test',
+      },
+    ] as const satisfies ExtendedQueueConfig[]
+
+    const extendedRegistry = new QueueRegistry(extendedQueues)
+    const config = extendedRegistry.getQueueConfig('queue')
+    expect(config).toBe(extendedQueues[0])
+    expectTypeOf(config).toMatchTypeOf<ExtendedQueueConfig>()
   })
 })
