@@ -12,7 +12,7 @@ export class FakeBackgroundJobProcessorNew<
   constructor(
     dependencies: Omit<
       BackgroundJobProcessorDependenciesNew<Queues, QueueId>,
-      'bullmqFactory' | 'transactionObservabilityManager'
+      'workerFactory' | 'transactionObservabilityManager'
     >,
     queueId: QueueId,
     redisConfig: RedisConfig,
