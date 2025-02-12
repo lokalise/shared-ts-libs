@@ -85,10 +85,16 @@ export class QueueManager<
     return this._queues[queueId]
   }
 
-  public async start(queueIdsToStart?: string[]): Promise<void> {
+  /**
+   * Start the queues
+   * @param enabled default true - if true, start all queues, if false, do nothing, if array, start only the queues in the array (array of queue names expected)
+   */
+  public async start(enabled: string[] | boolean = true): Promise<void> {
     if (this.isStarted) return // if it is already started -> skip
 
-    if (!this.startPromise) this.startPromise = this.internalStart(queueIdsToStart)
+    if (enabled === false) return // if it is disabled -> skip
+
+    if (!this.startPromise) this.startPromise = this.internalStart(enabled)
     await this.startPromise
     this.startPromise = undefined
   }
@@ -107,9 +113,9 @@ export class QueueManager<
     return Promise.resolve()
   }
 
-  private async internalStart(queueIdsToStart?: string[]): Promise<void> {
+  private async internalStart(enabled: string[] | true): Promise<void> {
     const queuePromises = []
-    const queueIdSetToStart = queueIdsToStart ? new Set(queueIdsToStart) : undefined
+    const queueIdSetToStart = enabled === true ? undefined : new Set(enabled)
 
     for (const queueId of this.queueRegistry.queueIds) {
       if (queueIdSetToStart?.has(queueId) === false) {

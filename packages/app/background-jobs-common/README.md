@@ -71,6 +71,12 @@ const jobId = await queueManager.schedule('queue1', {
 })
 ```
 
+There's also a way to start only specific queues providing an array of queue names to the `start` method.
+
+```typescript
+await queueManager.start(['queue1'])
+```
+
 ### Common jobs
 
 For that type of job, you will need to extend `AbstractBackgroundJobProcessorNew` and implement a `processInternal`
@@ -80,8 +86,7 @@ logger calls, so you only need to add your domain logic.
 By default, the worker is automatically started when you instantiate the processor. There is a default configuration which
 you can override by passing `workerOptions` params to the constructor.
 
-Similarly, queues are automatically started when you instantiate a queue manager providing a list of queues and a queue
-registry.
+Similarly, queues are automatically started when you instantiate a queue manager providing a list of queues.
 
 Use `dispose()` to correctly stop processing any new messages and wait for the current ones to finish.
 
