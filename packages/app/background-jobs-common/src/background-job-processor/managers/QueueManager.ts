@@ -87,7 +87,7 @@ export class QueueManager<
 
   /**
    * Start the queues
-   * @param enabled default true - if true, start all queues, if false, do nothing, if array, start only the queues in the array (array of queue IDs expected)
+   * @param enabled default true - if true, start all queues, if false, do nothing, if array, start only the queues in the array (array of queue names expected)
    */
   public async start(enabled: string[] | boolean = true): Promise<void> {
     if (this.isStarted) return // if it is already started -> skip
