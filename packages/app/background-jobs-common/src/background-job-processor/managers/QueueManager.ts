@@ -85,6 +85,10 @@ export class QueueManager<
     return this._queues[queueId]
   }
 
+  /**
+   * Start the queues
+   * @param enabled default true - if true, start all queues, if false, do nothing, if array, start only the queues in the array (array of queue IDs expected)
+   */
   public async start(enabled: string[] | boolean = true): Promise<void> {
     if (this.isStarted) return // if it is already started -> skip
 
