@@ -101,6 +101,22 @@ describe('QueueManager', () => {
       await queueManager.dispose()
     })
 
+    it('Skips starting if enabled argument is false', async () => {
+      const queueManager = new FakeQueueManager(supportedQueues, {
+        redisConfig,
+      })
+      await queueManager.start(false)
+
+      expect(() => queueManager.getQueue('queue1')).toThrowError(
+        /queue .* was not instantiated yet, please run "start\(\)"/,
+      )
+      expect(() => queueManager.getQueue('queue2')).toThrowError(
+        /queue .* was not instantiated yet, please run "start\(\)"/,
+      )
+
+      await queueManager.dispose()
+    })
+
     it('should ignore if try to start a non-defined queue', async () => {
       const queueManager = new FakeQueueManager(supportedQueues, {
         redisConfig,
