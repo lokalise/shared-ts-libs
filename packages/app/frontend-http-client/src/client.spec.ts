@@ -291,7 +291,7 @@ describe('frontend-http-client', () => {
           responseBodySchema: z.any(),
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Error: Request to / has returned an unexpected empty response.]`,
+        '[Error: Request to / has returned an unexpected empty response.]',
       )
     })
 
@@ -322,7 +322,7 @@ describe('frontend-http-client', () => {
           responseBodySchema: z.any(),
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Error: Request to / has returned an unexpected non-JSON response.]`,
+        '[Error: Request to / has returned an unexpected non-JSON response.]',
       )
     })
 
@@ -575,7 +575,7 @@ describe('frontend-http-client', () => {
           isEmptyResponseExpected: false,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Error: Request to / has returned an unexpected empty response.]`,
+        '[Error: Request to / has returned an unexpected empty response.]',
       )
     })
 
@@ -606,7 +606,7 @@ describe('frontend-http-client', () => {
           isNonJSONResponseExpected: false,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Error: Request to / has returned an unexpected non-JSON response.]`,
+        '[Error: Request to / has returned an unexpected non-JSON response.]',
       )
     })
 
@@ -809,7 +809,7 @@ describe('frontend-http-client', () => {
           isEmptyResponseExpected: false,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Error: Request to / has returned an unexpected empty response.]`,
+        '[Error: Request to / has returned an unexpected empty response.]',
       )
     })
 
@@ -840,7 +840,7 @@ describe('frontend-http-client', () => {
           isNonJSONResponseExpected: false,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Error: Request to / has returned an unexpected non-JSON response.]`,
+        '[Error: Request to / has returned an unexpected non-JSON response.]',
       )
     })
 
@@ -1030,7 +1030,7 @@ describe('frontend-http-client', () => {
           responseBodySchema: z.any(),
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Error: Request to / has returned an unexpected empty response.]`,
+        '[Error: Request to / has returned an unexpected empty response.]',
       )
     })
 
@@ -1071,7 +1071,7 @@ describe('frontend-http-client', () => {
           responseBodySchema: z.any(),
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Error: Request to / has returned an unexpected non-JSON response.]`,
+        '[Error: Request to / has returned an unexpected non-JSON response.]',
       )
     })
 
@@ -1347,7 +1347,7 @@ describe('frontend-http-client', () => {
           responseBodySchema: z.any(),
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Error: Request to / has returned an unexpected empty response.]`,
+        '[Error: Request to / has returned an unexpected empty response.]',
       )
     })
 
@@ -1376,7 +1376,7 @@ describe('frontend-http-client', () => {
           isNonJSONResponseExpected: false,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Error: Request to / has returned an unexpected non-JSON response.]`,
+        '[Error: Request to / has returned an unexpected non-JSON response.]',
       )
     })
   })
