@@ -37,8 +37,10 @@
         "clean": "rimraf dist",
         "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
         "lint:fix": "biome check --write",
+        "package-version": "echo $npm_package_version",
         "test": "vitest run --coverage",
-        "prepublishOnly": "npm run clean && npm run build:release"
+        "prepublishOnly": "npm run clean && npm run build:release",
+        "postversion": "biome check --write package.json"
     },
     "dependencies": {
         "fast-querystring": "^1.1.2"
