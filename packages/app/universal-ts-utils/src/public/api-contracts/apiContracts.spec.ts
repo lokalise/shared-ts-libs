@@ -62,7 +62,7 @@ describe('apiContracts', () => {
     })
   })
 
-  describe('toPath', () => {
+  describe('mapRouteToPath', () => {
     it('returns path without params', () => {
       const contract = buildGetRoute({
         responseBodySchema: BODY_SCHEMA,
