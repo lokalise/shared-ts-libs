@@ -1,5 +1,7 @@
 import type { ZodSchema, z } from 'zod'
 
+const EMPTY_PARAMS = {}
+
 export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
 
 export type InferSchemaOutput<T extends ZodSchema | undefined> = T extends ZodSchema<infer U>
@@ -216,4 +218,21 @@ export function buildDeleteRoute<
     requestQuerySchema: params.requestQuerySchema,
     responseBodySchema: params.responseBodySchema,
   }
+}
+
+/**
+ * This method maps given route definition to a string of the format '/static-path-part/:path-param-value'
+ */
+// biome-ignore lint/suspicious/noExplicitAny: We don't care about types here, we just need Zod schema
+export function mapRouteToPath(routeDefinition: CommonRouteDefinition<any, any, any, any>): string {
+  if (!routeDefinition.requestPathParamsSchema) {
+    return routeDefinition.pathResolver(EMPTY_PARAMS)
+  }
+  const shape = routeDefinition.requestPathParamsSchema.shape
+  const resolverParams: Record<string, string> = {}
+  for (const key of Object.keys(shape)) {
+    resolverParams[key] = `:${key}`
+  }
+
+  return routeDefinition.pathResolver(resolverParams)
 }
