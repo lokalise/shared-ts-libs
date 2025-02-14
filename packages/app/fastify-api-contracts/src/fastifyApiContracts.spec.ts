@@ -23,5 +23,7 @@ describe('fastifyApiContracts', () => {
       expect(req.params.userId).toEqual('1')
       return Promise.resolve()
     })
+
+    // ToDo instantiate fastify and make a call
   })
 })

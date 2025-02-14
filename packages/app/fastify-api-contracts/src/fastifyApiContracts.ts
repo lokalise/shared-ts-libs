@@ -3,6 +3,10 @@ import { type GetRouteDefinition, mapRouteToPath } from '@lokalise/universal-ts-
 import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
 import type { ZodSchema } from 'zod'
 
+export type RouteMetadata = {
+  description?: string
+}
+
 export type RouteType = RouteOptions<
   http.Server,
   http.IncomingMessage,
@@ -83,6 +87,7 @@ export function buildGetRoute<
     RequestQuerySchema,
     RequestHeaderSchema
   >,
+  metadata: RouteMetadata,
 ): RouteType {
   return {
     method: apiContract.method,
@@ -90,8 +95,7 @@ export function buildGetRoute<
     handler,
     schema: {
       params: apiContract.requestPathParamsSchema,
-      // ToDo add description to apiContract
-      describe: 'Placeholder',
+      describe: metadata.description,
     },
   }
 }

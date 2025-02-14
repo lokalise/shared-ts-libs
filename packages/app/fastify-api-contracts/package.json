@@ -30,8 +30,7 @@
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
     },
-    "dependencies": {
-    },
+    "dependencies": {},
     "peerDependencies": {
         "@lokalise/universal-ts-utils": ">=3.4.0",
         "fastify": ">=5.0.0",
