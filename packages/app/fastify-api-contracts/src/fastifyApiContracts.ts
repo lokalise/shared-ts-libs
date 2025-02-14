@@ -38,7 +38,7 @@ export type FastifyGetControllerFn<ReplyType, ParamsType, QueryType, HeadersType
         Querystring: QueryType,
         Reply: ReplyType
     }>,
-    reply: FastifyReply<ReplyType>,
+    reply: FastifyReply < {Body: ReplyType} >,
 ) => Promise<void>
 
 export function buildGetController<
