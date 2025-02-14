@@ -95,6 +95,8 @@ export function buildGetRoute<
     handler,
     schema: {
       params: apiContract.requestPathParamsSchema,
+      querystring: apiContract.requestQuerySchema,
+      headers: apiContract.requestHeaderSchema,
       describe: metadata.description,
     },
   }
