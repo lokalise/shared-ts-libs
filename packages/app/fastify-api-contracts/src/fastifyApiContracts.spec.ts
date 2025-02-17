@@ -5,9 +5,9 @@ import {
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod'
-import { expect } from 'vitest'
+import { describe, expect } from 'vitest'
 import { z } from 'zod'
-import { buildFastifyGetRoute } from './fastifyApiContracts'
+import { buildFastifyGetRoute, buildFastifyGetRouteHandler } from './fastifyApiContracts'
 import { injectGet } from './fastifyApiRequestInjector'
 
 const BODY_SCHEMA = z.object({})
@@ -34,7 +34,22 @@ async function initApp(route: RouteOptions) {
 }
 
 describe('fastifyApiContracts', () => {
-  describe('buildGetRoute', () => {
+  describe('buildFastifyGetRouteHandler', () => {
+    it('builds a handler', () => {
+      const contract = buildGetRoute({
+        responseBodySchema: BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const handler = buildFastifyGetRouteHandler(contract, (req) => {
+        expect(req.params.userId).toEqual('1')
+        return Promise.resolve()
+      })
+      expect(handler).toBeTypeOf('function')
+    })
+  })
+  describe('buildFastifyGetRoute', () => {
     it('uses API spec to build valid GET route in fastify app', async () => {
       expect.assertions(2)
       const contract = buildGetRoute({

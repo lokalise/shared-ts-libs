@@ -20,7 +20,7 @@ export type RouteType = RouteOptions<
   any
 >
 
-export type FastifyControllerFn<ReplyType, BodyType, ParamsType, QueryType, HeadersType> = (
+export type FastifyPayloadHandlerFn<ReplyType, BodyType, ParamsType, QueryType, HeadersType> = (
   req: FastifyRequest<{
     Body: BodyType
     Headers: HeadersType
@@ -31,7 +31,7 @@ export type FastifyControllerFn<ReplyType, BodyType, ParamsType, QueryType, Head
   reply: FastifyReply,
 ) => Promise<void>
 
-export type FastifyGetControllerFn<ReplyType, ParamsType, QueryType, HeadersType> = (
+export type FastifyGetHandlerFn<ReplyType, ParamsType, QueryType, HeadersType> = (
   req: FastifyRequest<{
     Body: never
     Headers: HeadersType
@@ -42,7 +42,10 @@ export type FastifyGetControllerFn<ReplyType, ParamsType, QueryType, HeadersType
   reply: FastifyReply<{ Body: ReplyType }>,
 ) => Promise<void>
 
-export function buildGetController<
+/**
+ * Infers handler request type automatically from the contract
+ */
+export function buildFastifyGetRouteHandler<
   ResponseBodySchema,
   PathParams,
   RequestQuerySchema,
@@ -55,13 +58,13 @@ export function buildGetController<
     ZodSchema<RequestQuerySchema>,
     ZodSchema<RequestHeaderSchema>
   >,
-  handler: FastifyGetControllerFn<
+  handler: FastifyGetHandlerFn<
     ResponseBodySchema,
     PathParams,
     RequestQuerySchema,
     RequestHeaderSchema
   >,
-): FastifyGetControllerFn<ResponseBodySchema, PathParams, RequestQuerySchema, RequestHeaderSchema> {
+): FastifyGetHandlerFn<ResponseBodySchema, PathParams, RequestQuerySchema, RequestHeaderSchema> {
   return handler
 }
 
@@ -78,7 +81,7 @@ export function buildFastifyGetRoute<
     ZodSchema<RequestQuerySchema>,
     ZodSchema<RequestHeaderSchema>
   >,
-  handler: FastifyGetControllerFn<
+  handler: FastifyGetHandlerFn<
     ResponseBodySchema,
     PathParams,
     RequestQuerySchema,
