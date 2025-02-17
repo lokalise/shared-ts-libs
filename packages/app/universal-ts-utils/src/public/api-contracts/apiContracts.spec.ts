@@ -23,6 +23,7 @@ describe('apiContracts', () => {
         responseBodySchema: BODY_SCHEMA,
         requestBodySchema: BODY_SCHEMA,
         method: 'post',
+        description: 'some description',
         pathResolver: () => '/',
       })
 
@@ -35,6 +36,7 @@ describe('apiContracts', () => {
       const contract = buildGetRoute({
         responseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
+        description: 'some description',
       })
 
       expect(contract).toMatchSnapshot()
@@ -56,6 +58,7 @@ describe('apiContracts', () => {
       const contract = buildDeleteRoute({
         responseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
+        description: 'some description',
       })
 
       expect(contract).toMatchSnapshot()
