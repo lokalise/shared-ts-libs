@@ -26,6 +26,7 @@ export type CommonRouteDefinition<
   requestQuerySchema?: RequestQuerySchema
   requestHeaderSchema?: RequestHeaderSchema
   pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
+  description?: string
 }
 
 export type PayloadRouteDefinition<
@@ -91,14 +92,14 @@ export type DeleteRouteDefinition<
 }
 
 export function buildPayloadRoute<
-  PathParams,
   RequestBodySchema extends z.Schema | undefined = undefined,
   ResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema<PathParams> | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  PathParams = PathParamsSchema extends z.Schema<infer T> ? T : never,
 >(
   params: PayloadRouteDefinition<
     PathParams,
@@ -131,6 +132,7 @@ export function buildPayloadRoute<
     requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
     responseBodySchema: params.responseBodySchema,
+    description: params.description,
   }
 }
 
@@ -174,17 +176,18 @@ export function buildGetRoute<
     requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
     responseBodySchema: params.responseBodySchema,
+    description: params.description,
   }
 }
 
 export function buildDeleteRoute<
-  PathParams,
   ResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema<PathParams> | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  PathParams = PathParamsSchema extends z.Schema<infer T> ? T : never,
 >(
   params: Omit<
     DeleteRouteDefinition<
@@ -217,6 +220,7 @@ export function buildDeleteRoute<
     requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
     responseBodySchema: params.responseBodySchema,
+    description: params.description,
   }
 }
 
