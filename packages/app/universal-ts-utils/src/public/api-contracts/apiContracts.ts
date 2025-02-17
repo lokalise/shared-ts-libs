@@ -227,8 +227,10 @@ export function buildDeleteRoute<
 /**
  * This method maps given route definition to a string of the format '/static-path-part/:path-param-value'
  */
-// biome-ignore lint/suspicious/noExplicitAny: We don't care about types here, we just need Zod schema
-export function mapRouteToPath(routeDefinition: CommonRouteDefinition<any, any, any, any>): string {
+export function mapRouteToPath(
+  // biome-ignore lint/suspicious/noExplicitAny: We don't care about types here, we just need Zod schema
+  routeDefinition: CommonRouteDefinition<any, any, any, any, any>,
+): string {
   if (!routeDefinition.requestPathParamsSchema) {
     return routeDefinition.pathResolver(EMPTY_PARAMS)
   }
