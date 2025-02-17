@@ -1,4 +1,5 @@
 import type http from 'node:http'
+import { copyWithoutUndefined } from '@lokalise/node-core'
 import { type GetRouteDefinition, mapRouteToPath } from '@lokalise/universal-ts-utils/node'
 import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
 import type { ZodSchema } from 'zod'
@@ -64,7 +65,7 @@ export function buildGetController<
   return handler
 }
 
-export function buildGetRoute<
+export function buildFastifyGetRoute<
   ResponseBodySchema,
   PathParams,
   RequestQuerySchema,
@@ -88,11 +89,11 @@ export function buildGetRoute<
     method: apiContract.method,
     url: mapRouteToPath(apiContract),
     handler,
-    schema: {
+    schema: copyWithoutUndefined({
       params: apiContract.requestPathParamsSchema,
       querystring: apiContract.requestQuerySchema,
       headers: apiContract.requestHeaderSchema,
       describe: apiContract.description,
-    },
+    }),
   }
 }

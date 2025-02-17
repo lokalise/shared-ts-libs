@@ -1,6 +1,14 @@
 import { buildGetRoute } from '@lokalise/universal-ts-utils/node'
+import { type RouteOptions, fastify } from 'fastify'
+import {
+  type ZodTypeProvider,
+  serializerCompiler,
+  validatorCompiler,
+} from 'fastify-type-provider-zod'
+import { expect } from 'vitest'
 import { z } from 'zod'
-import { buildGetController } from './fastifyApiContracts'
+import { buildFastifyGetRoute } from './fastifyApiContracts'
+import { injectGet } from './fastifyApiRequestInjector'
 
 const BODY_SCHEMA = z.object({})
 const PATH_PARAMS_SCHEMA = z.object({
@@ -11,19 +19,41 @@ const _PATH_PARAMS_MULTI_SCHEMA = z.object({
   orgId: z.string(),
 })
 
+async function initApp(route: RouteOptions) {
+  const app = fastify({
+    logger: false,
+    disableRequestLogging: true,
+  })
+
+  app.setValidatorCompiler(validatorCompiler)
+  app.setSerializerCompiler(serializerCompiler)
+
+  app.withTypeProvider<ZodTypeProvider>().route(route)
+  await app.ready()
+  return app
+}
+
 describe('fastifyApiContracts', () => {
   describe('buildGetRoute', () => {
-    const contract = buildGetRoute({
-      responseBodySchema: BODY_SCHEMA,
-      requestPathParamsSchema: PATH_PARAMS_SCHEMA,
-      pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-    })
+    it('uses API spec to build valid GET route in fastify app', async () => {
+      expect.assertions(2)
+      const contract = buildGetRoute({
+        responseBodySchema: BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
 
-    const _controller = buildGetController(contract, (req) => {
-      expect(req.params.userId).toEqual('1')
-      return Promise.resolve()
-    })
+      const route = buildFastifyGetRoute(contract, (req) => {
+        expect(req.params.userId).toEqual('1')
+        return Promise.resolve()
+      })
 
-    // ToDo instantiate fastify and make a call
+      const app = await initApp(route)
+      const response = await injectGet(app, contract, {
+        pathParams: { userId: '1' },
+      })
+
+      expect(response.statusCode).toBe(200)
+    })
   })
 })
