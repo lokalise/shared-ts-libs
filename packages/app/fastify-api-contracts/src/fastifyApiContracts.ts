@@ -113,14 +113,18 @@ export function buildFastifyNoPayloadRoute<
         ZodSchema<ResponseBodySchema>,
         ZodSchema<PathParams>,
         ZodSchema<RequestQuerySchema>,
-        ZodSchema<RequestHeaderSchema>
+        ZodSchema<RequestHeaderSchema>,
+        boolean,
+        boolean
       >
     | DeleteRouteDefinition<
         PathParams,
         ZodSchema<ResponseBodySchema>,
         ZodSchema<PathParams>,
         ZodSchema<RequestQuerySchema>,
-        ZodSchema<RequestHeaderSchema>
+        ZodSchema<RequestHeaderSchema>,
+        boolean,
+        boolean
       >,
   handler: FastifyNoPayloadHandlerFn<
     ResponseBodySchema,

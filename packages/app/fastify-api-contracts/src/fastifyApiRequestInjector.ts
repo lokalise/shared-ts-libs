@@ -49,7 +49,9 @@ export function injectGet<
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
-    RequestHeaderSchema
+    RequestHeaderSchema,
+    boolean,
+    boolean
   >,
   params: RouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
@@ -82,7 +84,9 @@ export function injectDelete<
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
-    RequestHeaderSchema
+    RequestHeaderSchema,
+    boolean,
+    boolean
   >,
   params: RouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
