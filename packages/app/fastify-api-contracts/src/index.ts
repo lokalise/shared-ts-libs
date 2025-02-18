@@ -1,3 +1,14 @@
 /* c8 ignore next 2 */
-export { buildFastifyGetRoute, buildFastifyGetRouteHandler } from './fastifyApiContracts'
-export { injectGet } from './fastifyApiRequestInjector'
+export {
+  buildFastifyNoPayloadRoute,
+  buildFastifyNoPayloadRouteHandler,
+  buildFastifyPayloadRoute,
+  buildFastifyPayloadRouteHandler,
+} from './fastifyApiContracts'
+export {
+  injectGet,
+  injectDelete,
+  injectPatch,
+  injectPost,
+  injectPut,
+} from './fastifyApiRequestInjector'
