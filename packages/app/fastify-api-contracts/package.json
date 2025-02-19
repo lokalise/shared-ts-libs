@@ -12,13 +12,6 @@
         "type": "git",
         "url": "git://github.com/lokalise/shared-ts-libs.git"
     },
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "require": "./dist/index.cjs",
-            "import": "./dist/index.js"
-        }
-    },
     "publishConfig": {
         "access": "public"
     },
