@@ -142,6 +142,7 @@ export function buildFastifyNoPayloadRoute<
       querystring: apiContract.requestQuerySchema,
       headers: apiContract.requestHeaderSchema,
       describe: apiContract.description,
+      response: apiContract.responseSchemasByStatusCode,
     } satisfies ExtendedFastifySchema),
   }
 }
@@ -217,6 +218,7 @@ export function buildFastifyPayloadRoute<
       querystring: apiContract.requestQuerySchema,
       headers: apiContract.requestHeaderSchema,
       describe: apiContract.description,
+      response: apiContract.responseSchemasByStatusCode,
     } satisfies ExtendedFastifySchema),
   }
 }
