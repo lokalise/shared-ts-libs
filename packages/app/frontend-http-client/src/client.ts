@@ -444,7 +444,7 @@ export function sendByDeleteRoute<
   return sendDelete(wretch, {
     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
-    responseBodySchema: routeDefinition.responseBodySchema,
+    responseBodySchema: routeDefinition.successResponseBodySchema,
     // @ts-expect-error magic type inferring happening
     queryParams: params.queryParams,
     queryParamsSchema: routeDefinition.requestQuerySchema,
