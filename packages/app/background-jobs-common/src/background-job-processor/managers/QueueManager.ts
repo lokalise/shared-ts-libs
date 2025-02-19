@@ -10,6 +10,7 @@ import { prepareJobOptions, sanitizeRedisConfig } from '../utils'
 import { QueueRegistry } from './QueueRegistry'
 import type {
   JobPayloadForQueue,
+  JobPayloadInputForQueue,
   QueueConfiguration,
   QueueManagerConfig,
   SupportedJobPayloads,
@@ -153,7 +154,7 @@ export class QueueManager<
 
   public async schedule<QueueId extends SupportedQueueIds<Queues>>(
     queueId: QueueId,
-    jobPayload: JobPayloadForQueue<Queues, QueueId>,
+    jobPayload: JobPayloadInputForQueue<Queues, QueueId>,
     options?: JobOptionsType,
   ): Promise<string> {
     const { jobOptions: defaultOptions, jobPayloadSchema } =
@@ -176,7 +177,7 @@ export class QueueManager<
 
   public async scheduleBulk<QueueId extends SupportedQueueIds<Queues>>(
     queueId: QueueId,
-    jobPayloads: JobPayloadForQueue<Queues, QueueId>[],
+    jobPayloads: JobPayloadInputForQueue<Queues, QueueId>[],
     options?: JobOptionsType,
   ): Promise<string[]> {
     if (jobPayloads.length === 0) return []
