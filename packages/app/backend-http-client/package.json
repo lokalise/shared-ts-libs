@@ -5,10 +5,10 @@
         "name": "Lokalise",
         "url": "https://lokalise.com/"
     },
-    "homepage": "https://github.com/lokalise/backend-http-client",
+    "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
-        "url": "https://github.com/lokalise/backend-http-client.git"
+        "url": "https://github.com/lokalise/shared-ts-libs.git"
     },
     "license": "Apache-2.0",
     "files": ["dist/**", "LICENSE.md", "README.md"],

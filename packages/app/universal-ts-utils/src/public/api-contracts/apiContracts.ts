@@ -1,5 +1,7 @@
 import type { ZodSchema, z } from 'zod'
 
+const EMPTY_PARAMS = {}
+
 export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
 
 export type InferSchemaOutput<T extends ZodSchema | undefined> = T extends ZodSchema<infer U>
@@ -24,6 +26,7 @@ export type CommonRouteDefinition<
   requestQuerySchema?: RequestQuerySchema
   requestHeaderSchema?: RequestHeaderSchema
   pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
+  description?: string
 }
 
 export type PayloadRouteDefinition<
@@ -89,14 +92,14 @@ export type DeleteRouteDefinition<
 }
 
 export function buildPayloadRoute<
-  PathParams,
   RequestBodySchema extends z.Schema | undefined = undefined,
   ResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema<PathParams> | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  PathParams = PathParamsSchema extends z.Schema<infer T> ? T : never,
 >(
   params: PayloadRouteDefinition<
     PathParams,
@@ -129,17 +132,18 @@ export function buildPayloadRoute<
     requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
     responseBodySchema: params.responseBodySchema,
+    description: params.description,
   }
 }
 
 export function buildGetRoute<
-  PathParams,
   ResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema<PathParams> | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  PathParams = PathParamsSchema extends z.Schema<infer T> ? T : never,
 >(
   params: Omit<
     GetRouteDefinition<
@@ -172,17 +176,18 @@ export function buildGetRoute<
     requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
     responseBodySchema: params.responseBodySchema,
+    description: params.description,
   }
 }
 
 export function buildDeleteRoute<
-  PathParams,
   ResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema<PathParams> | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  PathParams = PathParamsSchema extends z.Schema<infer T> ? T : never,
 >(
   params: Omit<
     DeleteRouteDefinition<
@@ -215,5 +220,25 @@ export function buildDeleteRoute<
     requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
     responseBodySchema: params.responseBodySchema,
+    description: params.description,
   }
+}
+
+/**
+ * This method maps given route definition to a string of the format '/static-path-part/:path-param-value'
+ */
+export function mapRouteToPath(
+  // biome-ignore lint/suspicious/noExplicitAny: We don't care about types here, we just need Zod schema
+  routeDefinition: CommonRouteDefinition<any, any, any, any, any, any, any>,
+): string {
+  if (!routeDefinition.requestPathParamsSchema) {
+    return routeDefinition.pathResolver(EMPTY_PARAMS)
+  }
+  const shape = routeDefinition.requestPathParamsSchema.shape
+  const resolverParams: Record<string, string> = {}
+  for (const key of Object.keys(shape)) {
+    resolverParams[key] = `:${key}`
+  }
+
+  return routeDefinition.pathResolver(resolverParams)
 }

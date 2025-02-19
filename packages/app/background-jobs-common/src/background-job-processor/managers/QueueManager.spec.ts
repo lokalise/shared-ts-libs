@@ -32,6 +32,16 @@ const supportedQueues = [
       }),
     }),
   },
+  {
+    queueId: 'queue3',
+    jobPayloadSchema: z.object({
+      id: z.string(),
+      _execution: z.string().default('execution in progress'),
+      metadata: z.object({
+        correlationId: z.string(),
+      }),
+    }),
+  },
 ] as const satisfies QueueConfiguration[]
 
 type SupportedQueues = typeof supportedQueues
@@ -101,18 +111,35 @@ describe('QueueManager', () => {
       await queueManager.dispose()
     })
 
+    it('Skips starting if enabled argument is false', async () => {
+      const queueManager = new FakeQueueManager(supportedQueues, {
+        redisConfig,
+      })
+      await queueManager.start(false)
+
+      expect(() => queueManager.getQueue('queue1')).toThrowError(
+        /queue .* was not instantiated yet, please run "start\(\)"/,
+      )
+      expect(() => queueManager.getQueue('queue2')).toThrowError(
+        /queue .* was not instantiated yet, please run "start\(\)"/,
+      )
+
+      await queueManager.dispose()
+    })
+
     it('should ignore if try to start a non-defined queue', async () => {
+      const invalidQueueId = 'invalidQueueId'
       const queueManager = new FakeQueueManager(supportedQueues, {
         redisConfig,
       })
 
       // @ts-expect-error - queue3 is not a valid queue id
-      expect(() => queueManager.getQueue('queue3')).toThrowError(
+      expect(() => queueManager.getQueue(invalidQueueId)).toThrowError(
         /queue .* was not instantiated yet, please run "start\(\)"/,
       )
-      await queueManager.start(['queue3'])
+      await queueManager.start([invalidQueueId])
       // @ts-expect-error - queue3 is not a valid queue id
-      expect(() => queueManager.getQueue('queue3')).toThrowError(
+      expect(() => queueManager.getQueue(invalidQueueId)).toThrowError(
         /queue .* was not instantiated yet, please run "start\(\)"/,
       )
 
@@ -308,6 +335,65 @@ describe('QueueManager', () => {
           }
         ]]
       `)
+    })
+
+    it('should work zod defaults on schedule', async () => {
+      const jobId = await queueManager.schedule('queue3', {
+        id: 'test_1',
+        metadata: { correlationId: 'correlation_id' },
+      })
+
+      const spyResult1 = await queueManager.getSpy('queue3').waitForJobWithId(jobId, 'scheduled')
+      expect(spyResult1.data).toMatchObject({
+        id: 'test_1',
+        _execution: 'execution in progress',
+        metadata: { correlationId: 'correlation_id' },
+      })
+
+      const jobId2 = await queueManager.schedule('queue3', {
+        id: 'test_2',
+        _execution: 'default not applied',
+        metadata: { correlationId: 'correlation_id' },
+      })
+      const spyResult2 = await queueManager.getSpy('queue3').waitForJobWithId(jobId2, 'scheduled')
+      expect(spyResult2.data).toMatchObject({
+        id: 'test_2',
+        _execution: 'default not applied',
+        metadata: { correlationId: 'correlation_id' },
+      })
+    })
+
+    it('should work zod defaults on schedule bulk', async () => {
+      const jobIds = await queueManager.scheduleBulk('queue3', [
+        {
+          id: 'test_1',
+          metadata: { correlationId: 'correlation_id' },
+        },
+        {
+          id: 'test_2',
+          _execution: 'default not applied',
+          metadata: { correlationId: 'correlation_id' },
+        },
+      ])
+      expect(jobIds).toHaveLength(2)
+
+      const spyResult1 = await queueManager
+        .getSpy('queue3')
+        .waitForJobWithId(jobIds[0], 'scheduled')
+      expect(spyResult1.data).toMatchObject({
+        id: 'test_1',
+        _execution: 'execution in progress',
+        metadata: { correlationId: 'correlation_id' },
+      })
+
+      const spyResult2 = await queueManager
+        .getSpy('queue3')
+        .waitForJobWithId(jobIds[1], 'scheduled')
+      expect(spyResult2.data).toMatchObject({
+        id: 'test_2',
+        _execution: 'default not applied',
+        metadata: { correlationId: 'correlation_id' },
+      })
     })
   })
 

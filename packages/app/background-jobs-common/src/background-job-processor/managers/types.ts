@@ -35,7 +35,17 @@ export type SupportedJobPayloads<Config extends QueueConfiguration[]> = z.infer<
   Config[number]['jobPayloadSchema']
 >
 
+type JobPayloadSchemaFoQueue<
+  Config extends QueueConfiguration[],
+  QueueId extends SupportedQueueIds<Config>,
+> = Extract<Config[number], { queueId: QueueId }>['jobPayloadSchema']
+
+export type JobPayloadInputForQueue<
+  Config extends QueueConfiguration[],
+  QueueId extends SupportedQueueIds<Config>,
+> = z.input<JobPayloadSchemaFoQueue<Config, QueueId>>
+
 export type JobPayloadForQueue<
   Config extends QueueConfiguration[],
   QueueId extends SupportedQueueIds<Config>,
-> = z.infer<Extract<Config[number], { queueId: QueueId }>['jobPayloadSchema']>
+> = z.infer<JobPayloadSchemaFoQueue<Config, QueueId>>
