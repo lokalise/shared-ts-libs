@@ -16,14 +16,14 @@ import {
   buildFastifyNoPayloadRouteHandler,
   buildFastifyPayloadRoute,
   buildFastifyPayloadRouteHandler,
-} from './fastifyApiContracts'
+} from './fastifyApiContracts.js'
 import {
   injectDelete,
   injectGet,
   injectPatch,
   injectPost,
   injectPut,
-} from './fastifyApiRequestInjector'
+} from './fastifyApiRequestInjector.js'
 
 const REQUEST_BODY_SCHEMA = z.object({
   id: z.string(),
