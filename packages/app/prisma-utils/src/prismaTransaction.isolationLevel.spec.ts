@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vitest } from 'vitest'
-import { DB_MODEL, cleanTables } from '../test/DbCleaner'
+import { afterAll, beforeAll, describe, expect, it, vitest } from 'vitest'
 import { getDatasourceUrl } from '../test/getDatasourceUrl'
 import { prismaTransaction } from './prismaTransaction'
 
@@ -13,10 +12,6 @@ describe('prismaTransaction - isolation level', () => {
     prisma = new PrismaClient({
       datasourceUrl: getDatasourceUrl(),
     })
-  })
-
-  beforeEach(async () => {
-    await cleanTables(prisma, [DB_MODEL.item1, DB_MODEL.item2])
   })
 
   afterAll(async () => {
