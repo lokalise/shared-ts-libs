@@ -26,6 +26,7 @@ describe('apiContracts', () => {
         description: 'some description',
         responseSchemasByStatusCode: {
           200: BODY_SCHEMA,
+          400: z.object({ message: z.string() }),
         },
         pathResolver: () => '/',
       })
@@ -41,6 +42,7 @@ describe('apiContracts', () => {
         pathResolver: () => '/',
         responseSchemasByStatusCode: {
           '200': BODY_SCHEMA,
+          '400': z.object({ message: z.string() }),
         },
         description: 'some description',
       })
