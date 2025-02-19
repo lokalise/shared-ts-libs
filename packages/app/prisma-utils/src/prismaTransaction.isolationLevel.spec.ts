@@ -25,7 +25,7 @@ describe('prismaTransaction - isolation level', () => {
     return result[transactionIsolationKey] ?? null
   }
 
-  it('default isolation level is serializable', async () => {
+  it('should have serializable as default', async () => {
     const res1 = await prismaTransaction(
       prisma,
       async (client) => client.$queryRaw`SHOW transaction_isolation`,
@@ -36,7 +36,7 @@ describe('prismaTransaction - isolation level', () => {
     expect(result).toEqual(['serializable', 'serializable'])
   })
 
-  it('serializable isolation level', async () => {
+  it('should use serializable if specified', async () => {
     const res1 = await prismaTransaction(
       prisma,
       async (client) => client.$queryRaw`SHOW transaction_isolation`,
@@ -50,7 +50,7 @@ describe('prismaTransaction - isolation level', () => {
     expect(result).toEqual(['serializable', 'serializable'])
   })
 
-  it('read committed isolation level', async () => {
+  it('should use read committed if specified', async () => {
     /**
      * Read committed isolation level is not supported by CockroachDB without enterprise license
      * So checking that proper isolation level is passed to the transaction method
