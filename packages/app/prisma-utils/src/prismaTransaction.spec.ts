@@ -208,9 +208,12 @@ describe('prismaTransaction', () => {
       expect(diffs).toEqual([maxRetryDelayMs, maxRetryDelayMs])
     })
 
-    it.skip('should auto increase timeout', async () => {
+    it('should auto increase timeout', async () => {
       // Given
-      const spy = vi.spyOn(prisma, '$transaction').mockRejectedValue(
+      const fakePrismaClient = {
+        $transaction: () => undefined,
+      } as unknown as PrismaClient
+      const spy = vi.spyOn(fakePrismaClient, '$transaction').mockRejectedValue(
         new PrismaClientKnownRequestError(
           'Transaction already closed: Could not perform operation.',
           {
@@ -221,14 +224,11 @@ describe('prismaTransaction', () => {
       )
 
       // When
-      const resultWithDefaults = await prismaTransaction(prisma, (client) =>
-        client.item1.create({ data: TEST_ITEM_1 }),
-      )
-      const resultWithCustomTimeout = await prismaTransaction(
-        prisma,
-        (client) => client.item1.create({ data: TEST_ITEM_1 }),
-        { timeout: 1000, maxTimeout: 2000 },
-      )
+      const resultWithDefaults = await prismaTransaction(fakePrismaClient, () => null)
+      const resultWithCustomTimeout = await prismaTransaction(fakePrismaClient, () => null, {
+        timeout: 1000,
+        maxTimeout: 2000,
+      })
 
       // Then
       expect(resultWithDefaults.error).toBeInstanceOf(PrismaClientKnownRequestError)
