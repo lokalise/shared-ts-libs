@@ -4,7 +4,10 @@
     "type": "module",
     "files": ["dist", "README.md", "LICENSE.md"],
     "license": "Apache-2.0",
-    "main": "./dist/index.cjs",
+    "exports": {
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+    },
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "homepage": "https://github.com/lokalise/shared-ts-libs",
