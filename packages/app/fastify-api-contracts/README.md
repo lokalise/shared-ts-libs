@@ -2,7 +2,7 @@
 
 This package adds support for generating fastify routes using universal API contracts, created with `@lokalise/universal-ts-utils/`
 
-This module requires `fastify-type-provider-zod` type provider to work.
+This module requires `fastify-type-provider-zod` type provider to work and is ESM-only.
 
 # Usage
 
