@@ -53,7 +53,7 @@ describe('frontend-http-client', () => {
 
       const routeDefinition = buildPayloadRoute({
         method: 'post',
-        responseBodySchema,
+        successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         requestBodySchema: requestBodySchema,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
