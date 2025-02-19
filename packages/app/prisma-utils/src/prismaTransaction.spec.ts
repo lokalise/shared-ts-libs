@@ -47,7 +47,7 @@ describe('prismaTransaction', () => {
   })
 
   describe('with function callback', () => {
-    it('first try works', async () => {
+    it('works in the first try', async () => {
       // When
       const result: Either<unknown, Item1> = await prismaTransaction(prisma, (client) =>
         client.item1.create({ data: TEST_ITEM_1 }),
@@ -57,7 +57,7 @@ describe('prismaTransaction', () => {
       expect(result.result).toMatchObject(TEST_ITEM_1)
     })
 
-    it('interactive transaction returns correct types', async () => {
+    it('returns correct types for interactive transaction ', async () => {
       // When
       const result = await prismaTransaction(prisma, async (client) => {
         return await client.item1.create({ data: TEST_ITEM_1 })
@@ -72,7 +72,7 @@ describe('prismaTransaction', () => {
       PRISMA_SERIALIZATION_ERROR,
       PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
       PRISMA_TRANSACTION_ERROR,
-    ])('prisma %s error is retried', async (prismaErrorCode) => {
+    ])('should retry prisma %s error', async (prismaErrorCode) => {
       // Given
       const callsTimestamps: number[] = []
       const retrySpy = vitest.spyOn(prisma, '$transaction').mockImplementation(() => {
@@ -102,7 +102,7 @@ describe('prismaTransaction', () => {
       expect(diffs[1]).toBe(200)
     })
 
-    it('CockroachDB retry transaction error is retried', async () => {
+    it('should retry CockroachDB retry transaction error', async () => {
       // Given
       const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
         new PrismaClientKnownRequestError('test', {
@@ -127,7 +127,7 @@ describe('prismaTransaction', () => {
       expect(retrySpy).toHaveBeenCalledTimes(3)
     })
 
-    it('not all prisma code are retried', async () => {
+    it('should not retry all prisma codes', async () => {
       // Given
       const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
         new PrismaClientKnownRequestError('test', {
@@ -147,7 +147,7 @@ describe('prismaTransaction', () => {
       expect(retrySpy).toHaveBeenCalledTimes(1)
     })
 
-    it('modifying max number of retries and base delay', async () => {
+    it('should be possible to modify max number of retries and base delay', async () => {
       // Given
       const retriesAllowed = 5
       const baseRetryDelayMs = 50
@@ -181,7 +181,7 @@ describe('prismaTransaction', () => {
       expect(diffs).toEqual([50, 100, 200, 400, 800])
     })
 
-    it('max delay is respected', async () => {
+    it('should respect max delay', async () => {
       // Given
       const baseRetryDelayMs = 1000
       const maxRetryDelayMs = 10
@@ -217,7 +217,7 @@ describe('prismaTransaction', () => {
       expect(diffs[1]).toBe(10)
     })
 
-    it('timeout auto increase', async () => {
+    it('should auto increase timeout', async () => {
       // Given
       const spy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
         new PrismaClientKnownRequestError(
@@ -270,7 +270,7 @@ describe('prismaTransaction', () => {
       expect(result.result).toMatchObject([TEST_ITEM_1, TEST_ITEM_2])
     })
 
-    it('returns proper types', async () => {
+    it('should return proper types', async () => {
       // When
       const result = await prismaTransaction(prisma, [
         prisma.item1.create({ data: TEST_ITEM_1 }),
