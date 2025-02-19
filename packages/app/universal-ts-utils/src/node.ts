@@ -2,6 +2,7 @@
 
 // api-contracts
 export * from './public/api-contracts/apiContracts.js'
+export * from './public/api-contracts/HttpStatusCodes.js'
 
 // array
 export * from './public/array/areStringArraysEqual.js'

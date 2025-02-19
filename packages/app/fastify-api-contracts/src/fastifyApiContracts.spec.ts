@@ -55,7 +55,7 @@ describe('fastifyApiContracts', () => {
   describe('buildFastifyNoPayloadRouteHandler', () => {
     it('builds a GET handler', () => {
       const contract = buildGetRoute({
-        responseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
@@ -68,7 +68,7 @@ describe('fastifyApiContracts', () => {
     it('uses API spec to build valid GET route in fastify app', async () => {
       expect.assertions(2)
       const contract = buildGetRoute({
-        responseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
@@ -89,7 +89,7 @@ describe('fastifyApiContracts', () => {
     it('uses API spec to build valid DELETE route in fastify app', async () => {
       expect.assertions(2)
       const contract = buildDeleteRoute({
-        responseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
@@ -113,7 +113,7 @@ describe('fastifyApiContracts', () => {
       const contract = buildPayloadRoute({
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
-        responseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
@@ -128,7 +128,7 @@ describe('fastifyApiContracts', () => {
       const contract = buildPayloadRoute({
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
-        responseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
@@ -153,7 +153,7 @@ describe('fastifyApiContracts', () => {
       const contract = buildPayloadRoute({
         method: 'patch',
         requestBodySchema: REQUEST_BODY_SCHEMA,
-        responseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
@@ -178,7 +178,7 @@ describe('fastifyApiContracts', () => {
       const contract = buildPayloadRoute({
         method: 'put',
         requestBodySchema: REQUEST_BODY_SCHEMA,
-        responseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })

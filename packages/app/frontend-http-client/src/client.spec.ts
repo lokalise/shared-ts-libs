@@ -53,7 +53,7 @@ describe('frontend-http-client', () => {
 
       const routeDefinition = buildPayloadRoute({
         method: 'post',
-        responseBodySchema,
+        successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         requestBodySchema: requestBodySchema,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -92,7 +92,7 @@ describe('frontend-http-client', () => {
 
       const routeDefinition = buildPayloadRoute({
         method: 'post',
-        responseBodySchema,
+        successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         requestBodySchema: undefined,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -131,7 +131,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildGetRoute({
-        responseBodySchema,
+        successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         requestQuerySchema: querySchema,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -169,7 +169,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildGetRoute({
-        responseBodySchema,
+        successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         requestQuerySchema: undefined,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -199,7 +199,7 @@ describe('frontend-http-client', () => {
 
       const routeDefinition = buildDeleteRoute({
         isEmptyResponseExpected: true,
-        responseBodySchema: undefined,
+        successResponseBodySchema: undefined,
         requestPathParamsSchema: pathSchema,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
@@ -228,7 +228,7 @@ describe('frontend-http-client', () => {
         method: 'post',
         isEmptyResponseExpected: false,
         isNonJSONResponseExpected: false,
-        responseBodySchema,
+        successResponseBodySchema: responseBodySchema,
         requestBodySchema: undefined,
         pathResolver: () => '/users',
       })
