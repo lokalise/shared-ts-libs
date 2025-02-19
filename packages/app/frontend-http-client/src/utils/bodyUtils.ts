@@ -8,6 +8,7 @@ export function tryToResolveJsonBody<RequestBodySchema extends z.ZodSchema>(
   response: WretchResponse,
   path: string,
   schema: RequestBodySchema,
+  isEmptyResponseExpected = false,
 ): Promise<
   Either<'NOT_JSON' | 'EMPTY_RESPONSE' | ZodError<RequestBodySchema>, z.output<RequestBodySchema>>
 > {
@@ -18,6 +19,13 @@ export function tryToResolveJsonBody<RequestBodySchema extends z.ZodSchema>(
   }
 
   if (!response.headers.get('content-type')?.includes('application/json')) {
+    // 202 often returns empty body as well, and if we explicitly say empty response is expected, we assume that's why it's not json
+    if (response.status === 202 && isEmptyResponseExpected) {
+      return Promise.resolve({
+        error: 'EMPTY_RESPONSE',
+      })
+    }
+
     return Promise.resolve({
       error: 'NOT_JSON',
     })

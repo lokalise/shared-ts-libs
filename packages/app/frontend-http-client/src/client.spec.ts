@@ -267,7 +267,7 @@ describe('frontend-http-client', () => {
       })
     })
 
-    it('returns no content response', async () => {
+    it('returns no content response for 204', async () => {
       const client = wretch(mockServer.url)
 
       await mockServer.forPost('/').thenReply(204)
@@ -275,6 +275,19 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPost(client, {
         path: '/',
         responseBodySchema: z.any(),
+      })
+      expect(responseBody).toBe(null)
+    })
+
+    it('returns no content response for 202', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPost('/').thenReply(202)
+
+      const responseBody = await sendPost(client, {
+        path: '/',
+        responseBodySchema: z.any(),
+        isEmptyResponseExpected: true,
       })
       expect(responseBody).toBe(null)
     })
@@ -551,7 +564,7 @@ describe('frontend-http-client', () => {
       })
     })
 
-    it('returns no content response', async () => {
+    it('returns no content response for 204', async () => {
       const client = wretch(mockServer.url)
 
       await mockServer.forPut('/').thenReply(204)
@@ -559,6 +572,19 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPut(client, {
         path: '/',
         responseBodySchema: z.any(),
+      })
+      expect(responseBody).toBe(null)
+    })
+
+    it('returns no content response for 202', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPut('/').thenReply(202)
+
+      const responseBody = await sendPut(client, {
+        path: '/',
+        responseBodySchema: z.any(),
+        isEmptyResponseExpected: true,
       })
       expect(responseBody).toBe(null)
     })
@@ -785,7 +811,7 @@ describe('frontend-http-client', () => {
       })
     })
 
-    it('returns no content response', async () => {
+    it('returns no content response for 204', async () => {
       const client = wretch(mockServer.url)
 
       await mockServer.forPatch('/').thenReply(204)
@@ -793,6 +819,19 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPatch(client, {
         path: '/',
         responseBodySchema: z.any(),
+      })
+      expect(responseBody).toBe(null)
+    })
+
+    it('returns no content response for 202', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPatch('/').thenReply(202)
+
+      const responseBody = await sendPatch(client, {
+        path: '/',
+        responseBodySchema: z.any(),
+        isEmptyResponseExpected: true,
       })
       expect(responseBody).toBe(null)
     })
@@ -1019,7 +1058,7 @@ describe('frontend-http-client', () => {
       })
     })
 
-    it('returns no content response', async () => {
+    it('returns no content response for 204', async () => {
       const client = wretch(mockServer.url)
 
       await mockServer.forGet('/').thenReply(204)
@@ -1031,6 +1070,22 @@ describe('frontend-http-client', () => {
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
         '[Error: Request to / has returned an unexpected empty response.]',
+      )
+    })
+
+    it('returns unexpected no content response for 202', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/').thenReply(202)
+
+      await expect(
+        sendGet(client, {
+          path: '/',
+          responseBodySchema: z.any(),
+          isEmptyResponseExpected: false,
+        }),
+      ).rejects.toThrowErrorMatchingInlineSnapshot(
+        '[Error: Request to / has returned an unexpected non-JSON response.]',
       )
     })
 
