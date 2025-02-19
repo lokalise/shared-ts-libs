@@ -68,6 +68,7 @@ function sendResourceChange<
         response,
         params.path,
         params.responseBodySchema,
+        params.isEmptyResponseExpected,
       )
 
       if (bodyParseResult.error === 'NOT_JSON') {
@@ -138,6 +139,7 @@ export function sendGet<
       response,
       params.path,
       params.responseBodySchema,
+      params.isEmptyResponseExpected,
     )
 
     if (bodyParseResult.error === 'NOT_JSON') {
@@ -272,6 +274,7 @@ export function sendDelete<
       response,
       params.path,
       params.responseBodySchema ?? UNKNOWN_SCHEMA,
+      params.isEmptyResponseExpected,
     )
 
     if (bodyParseResult.error === 'NOT_JSON') {
