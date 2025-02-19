@@ -224,11 +224,17 @@ describe('prismaTransaction', () => {
       )
 
       // When
-      const resultWithDefaults = await prismaTransaction(fakePrismaClient, () => null)
-      const resultWithCustomTimeout = await prismaTransaction(fakePrismaClient, () => null, {
-        timeout: 1000,
-        maxTimeout: 2000,
-      })
+      const resultWithDefaults = await prismaTransaction(fakePrismaClient, () =>
+        Promise.resolve(null),
+      )
+      const resultWithCustomTimeout = await prismaTransaction(
+        fakePrismaClient,
+        () => Promise.resolve(null),
+        {
+          timeout: 1000,
+          maxTimeout: 2000,
+        },
+      )
 
       // Then
       expect(resultWithDefaults.error).toBeInstanceOf(PrismaClientKnownRequestError)
