@@ -13,7 +13,7 @@ type JobOptionsWithDeduplicationIdBuilder<JobOptionsType extends JobsOptions> = 
   JobOptionsType,
   'deduplication'
 > & {
-  deduplication: Omit<JobOptionsType['deduplication'], 'id'> & {
+  deduplication?: Omit<JobOptionsType['deduplication'], 'id'> & {
     // biome-ignore lint/suspicious/noExplicitAny: We cannot infer type of JobData and we have run time validation so any is the most flexible option
     idBuilder: (JobData: any) => string
   }
