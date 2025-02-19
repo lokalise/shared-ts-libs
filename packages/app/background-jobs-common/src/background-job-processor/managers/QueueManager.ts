@@ -217,9 +217,9 @@ export class QueueManager<
       options ?? {},
     ) as JobOptionsType
 
-    if (defaultOptions?.deduplication && !resolvedOptions.deduplication?.id) {
+    if (defaultOptions?.deduplication && !options?.deduplication) {
       const deduplicationId = defaultOptions.deduplication.idBuilder(jobPayload)
-      if (!deduplicationId || deduplicationId.length === 0) {
+      if (!deduplicationId || deduplicationId.trim().length === 0) {
         throw new Error('Invalid deduplication id')
       }
 
