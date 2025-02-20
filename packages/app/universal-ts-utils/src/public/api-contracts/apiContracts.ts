@@ -3,13 +3,16 @@ import type { HttpStatusCode } from './HttpStatusCodes.js'
 
 const EMPTY_PARAMS = {}
 
-export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
-
-export type InferSchemaOutput<T extends ZodSchema | undefined> = T extends ZodSchema<infer U>
+type InferSchemaOutput<T extends ZodSchema | undefined> = T extends ZodSchema<infer U>
   ? U
   : T extends undefined
     ? undefined
     : never
+
+export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
+
+// biome-ignore lint/suspicious/noEmptyInterface: Empty and open to be extended with TS module augmentation mechanism
+export interface CommonRouteDefinitionMetadata {}
 
 export type CommonRouteDefinition<
   PathParams,
@@ -29,6 +32,7 @@ export type CommonRouteDefinition<
   pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
   responseSchemasByStatusCode?: Partial<Record<HttpStatusCode, z.Schema>>
   description?: string
+  metadata?: CommonRouteDefinitionMetadata
 }
 
 export type PayloadRouteDefinition<

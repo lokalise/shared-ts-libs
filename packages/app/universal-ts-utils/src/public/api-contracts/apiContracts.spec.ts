@@ -45,6 +45,7 @@ describe('apiContracts', () => {
           '400': z.object({ message: z.string() }),
         },
         description: 'some description',
+        metadata: { hello: 'world' },
       })
 
       expect(contract).toMatchSnapshot()
