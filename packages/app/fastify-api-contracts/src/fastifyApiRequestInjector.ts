@@ -63,8 +63,8 @@ export async function injectGet<
     InferSchemaOutput<RequestHeaderSchema>
   >,
 ) {
-  // @ts-expect-error fixme
   const resolvedHeaders =
+    // @ts-expect-error fixme
     typeof params.headers === 'function' ? await params.headers() : params.headers
 
   return (
@@ -101,8 +101,8 @@ export async function injectDelete<
     InferSchemaOutput<RequestHeaderSchema>
   >,
 ) {
-  // @ts-expect-error fixme
   const resolvedHeaders =
+    // @ts-expect-error fixme
     typeof params.headers === 'function' ? await params.headers() : params.headers
 
   return (
@@ -140,8 +140,8 @@ export async function injectPost<
     InferSchemaOutput<RequestHeaderSchema>
   >,
 ) {
-  // @ts-expect-error fixme
   const resolvedHeaders =
+    // @ts-expect-error fixme
     typeof params.headers === 'function' ? await params.headers() : params.headers
 
   return (
@@ -181,8 +181,8 @@ export async function injectPut<
     InferSchemaOutput<RequestHeaderSchema>
   >,
 ) {
-  // @ts-expect-error fixme
   const resolvedHeaders =
+    // @ts-expect-error fixme
     typeof params.headers === 'function' ? await params.headers() : params.headers
 
   return (
@@ -222,8 +222,8 @@ export async function injectPatch<
     InferSchemaOutput<RequestHeaderSchema>
   >,
 ) {
-  // @ts-expect-error fixme
   const resolvedHeaders =
+    // @ts-expect-error fixme
     typeof params.headers === 'function' ? await params.headers() : params.headers
 
   return (
