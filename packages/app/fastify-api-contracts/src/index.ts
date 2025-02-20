@@ -4,11 +4,11 @@ export {
   buildFastifyNoPayloadRouteHandler,
   buildFastifyPayloadRoute,
   buildFastifyPayloadRouteHandler,
-} from './fastifyApiContracts'
+} from './fastifyApiContracts.js'
 export {
   injectGet,
   injectDelete,
   injectPatch,
   injectPost,
   injectPut,
-} from './fastifyApiRequestInjector'
+} from './fastifyApiRequestInjector.js'

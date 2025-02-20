@@ -1,10 +1,10 @@
 {
     "name": "@lokalise/fastify-api-contracts",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "type": "module",
     "files": ["dist", "README.md", "LICENSE.md"],
     "license": "Apache-2.0",
-    "main": "./dist/index.cjs",
+    "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "homepage": "https://github.com/lokalise/shared-ts-libs",
@@ -16,9 +16,8 @@
         "access": "public"
     },
     "scripts": {
-        "build": "rimraf dist && vite build",
+        "build": "rimraf dist && tsc --project tsconfig.build.json",
         "dev": "vite watch",
-        "clean": "rimraf dist .eslintcache",
         "lint": "biome check . && tsc --project tsconfig.json --noEmit",
         "lint:fix": "biome check --write",
         "test:ci": "vitest run --coverage",
@@ -42,7 +41,6 @@
         "fastify-type-provider-zod": "^4.0.2",
         "rimraf": "^6.0.1",
         "typescript": "5.7.3",
-        "vite": "5.4.11",
         "vitest": "^2.1.3"
     }
 }
