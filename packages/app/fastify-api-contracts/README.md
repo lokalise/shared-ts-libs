@@ -2,7 +2,7 @@
 
 This package adds support for generating fastify routes using universal API contracts, created with `@lokalise/universal-ts-utils/`
 
-This module requires `fastify-type-provider-zod` type provider to work.
+This module requires `fastify-type-provider-zod` type provider to work and is ESM-only.
 
 # Usage
 
@@ -53,13 +53,14 @@ await app.ready()
 
 // used in tests, you can use '@lokalise/universal-ts-utils/frontend-http-client' in production code
 const postResponse = await injectPost(app, contract, {
-    pathParams: {userId: '1'},
-    body: {id: '2'},
+    pathParams: { userId: '1'},
+    body: { id: '2' },
+    headers: { authorization: 'some-value'} // can be passed directly
 })
 
 // used in tests, you can use '@lokalise/universal-ts-utils/frontend-http-client' in production code
 const getResponse = await injectGet(app, contract, {
-        pathParams: { userId: '1' },
+    pathParams: { userId: '1' },
+    headers: async () => { authorization: 'some-value'} // headers producing function (sync or async) can be passed as well
 })
-
 ```

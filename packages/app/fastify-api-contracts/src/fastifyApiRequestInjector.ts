@@ -13,7 +13,9 @@ export type RouteRequestParams<
   RequestHeader = never,
 > = {
   queryParams: RequestQuery extends never | undefined ? never : RequestQuery
-  headers: RequestHeader extends never | undefined ? never : RequestHeader
+  headers: RequestHeader extends never | undefined
+    ? never
+    : RequestHeader | (() => RequestHeader) | (() => Promise<RequestHeader>)
   pathParams: PathParams extends undefined ? never : PathParams
 } extends infer Mandatory
   ? {
@@ -29,7 +31,9 @@ export type PayloadRouteRequestParams<
 > = {
   body: RequestBody extends undefined ? never : RequestBody
   queryParams: RequestQuery extends never | undefined ? never : RequestQuery
-  headers: RequestHeader extends never | undefined ? never : RequestHeader
+  headers: RequestHeader extends never | undefined
+    ? never
+    : RequestHeader | (() => RequestHeader) | (() => Promise<RequestHeader>)
   pathParams: PathParams extends undefined ? never : PathParams
 } extends infer Mandatory
   ? {
@@ -37,7 +41,7 @@ export type PayloadRouteRequestParams<
     }
   : never
 
-export function injectGet<
+export async function injectGet<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
@@ -59,20 +63,23 @@ export function injectGet<
     InferSchemaOutput<RequestHeaderSchema>
   >,
 ) {
+  const resolvedHeaders =
+    // @ts-expect-error fixme
+    typeof params.headers === 'function' ? await params.headers() : params.headers
+
   return (
     app
       .inject()
       // @ts-expect-error fixme
       .get(apiContract.pathResolver(params.pathParams))
-      // @ts-expect-error fixme
-      .headers(params.headers)
+      .headers(resolvedHeaders)
       // @ts-expect-error fixme
       .query(params.queryParams)
       .end()
   )
 }
 
-export function injectDelete<
+export async function injectDelete<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
@@ -94,20 +101,23 @@ export function injectDelete<
     InferSchemaOutput<RequestHeaderSchema>
   >,
 ) {
+  const resolvedHeaders =
+    // @ts-expect-error fixme
+    typeof params.headers === 'function' ? await params.headers() : params.headers
+
   return (
     app
       .inject()
       // @ts-expect-error fixme
       .delete(apiContract.pathResolver(params.pathParams))
-      // @ts-expect-error fixme
-      .headers(params.headers)
+      .headers(resolvedHeaders)
       // @ts-expect-error fixme
       .query(params.queryParams)
       .end()
   )
 }
 
-export function injectPost<
+export async function injectPost<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   RequestBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
@@ -130,6 +140,10 @@ export function injectPost<
     InferSchemaOutput<RequestHeaderSchema>
   >,
 ) {
+  const resolvedHeaders =
+    // @ts-expect-error fixme
+    typeof params.headers === 'function' ? await params.headers() : params.headers
+
   return (
     app
       .inject()
@@ -137,15 +151,14 @@ export function injectPost<
       .post(apiContract.pathResolver(params.pathParams))
       // @ts-expect-error fixme
       .body(params.body)
-      // @ts-expect-error fixme
-      .headers(params.headers)
+      .headers(resolvedHeaders)
       // @ts-expect-error fixme
       .query(params.queryParams)
       .end()
   )
 }
 
-export function injectPut<
+export async function injectPut<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   RequestBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
@@ -168,6 +181,10 @@ export function injectPut<
     InferSchemaOutput<RequestHeaderSchema>
   >,
 ) {
+  const resolvedHeaders =
+    // @ts-expect-error fixme
+    typeof params.headers === 'function' ? await params.headers() : params.headers
+
   return (
     app
       .inject()
@@ -175,15 +192,14 @@ export function injectPut<
       .put(apiContract.pathResolver(params.pathParams))
       // @ts-expect-error fixme
       .body(params.body)
-      // @ts-expect-error fixme
-      .headers(params.headers)
+      .headers(resolvedHeaders)
       // @ts-expect-error fixme
       .query(params.queryParams)
       .end()
   )
 }
 
-export function injectPatch<
+export async function injectPatch<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   RequestBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
@@ -206,6 +222,10 @@ export function injectPatch<
     InferSchemaOutput<RequestHeaderSchema>
   >,
 ) {
+  const resolvedHeaders =
+    // @ts-expect-error fixme
+    typeof params.headers === 'function' ? await params.headers() : params.headers
+
   return (
     app
       .inject()
@@ -213,8 +233,7 @@ export function injectPatch<
       .patch(apiContract.pathResolver(params.pathParams))
       // @ts-expect-error fixme
       .body(params.body)
-      // @ts-expect-error fixme
-      .headers(params.headers)
+      .headers(resolvedHeaders)
       // @ts-expect-error fixme
       .query(params.queryParams)
       .end()
