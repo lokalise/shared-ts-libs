@@ -12,7 +12,7 @@ export type InferSchemaOutput<T extends ZodSchema | undefined> = T extends ZodSc
 export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
 
 // biome-ignore lint/suspicious/noEmptyInterface: Empty and open to be extended with TS module augmentation mechanism
-export interface CommonRouteDefinitionMetadata {}
+export interface CommonRouteDefinitionMetadata extends Record<string, unknown> {}
 
 export type CommonRouteDefinition<
   PathParams,

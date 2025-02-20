@@ -24,12 +24,11 @@ describe('apiContracts metadata augmentation', () => {
         metadata: {
           myTestProp: ['test'],
           mySecondTestProp: 1,
-          // @ts-expect-error - Error is not defined in the schema
           error: 'should not be here',
         },
       })
 
-      expectTypeOf(contract.metadata).toEqualTypeOf<Metadata | undefined>()
+      expectTypeOf(contract.metadata).toMatchTypeOf<Metadata | undefined>()
     })
   })
 
@@ -41,12 +40,11 @@ describe('apiContracts metadata augmentation', () => {
         metadata: {
           myTestProp: ['test'],
           mySecondTestProp: 1,
-          // @ts-expect-error - Error is not defined in the schema
           error: 'should not be here',
         },
       })
 
-      expectTypeOf(contract.metadata).toEqualTypeOf<Metadata | undefined>()
+      expectTypeOf(contract.metadata).toMatchTypeOf<Metadata | undefined>()
     })
   })
 
@@ -58,12 +56,11 @@ describe('apiContracts metadata augmentation', () => {
         metadata: {
           myTestProp: ['test'],
           mySecondTestProp: 1,
-          // @ts-expect-error - Error is not defined in the schema
           error: 'should not be here',
         },
       })
 
-      expectTypeOf(contract.metadata).toEqualTypeOf<Metadata | undefined>()
+      expectTypeOf(contract.metadata).toMatchTypeOf<Metadata | undefined>()
     })
   })
 })

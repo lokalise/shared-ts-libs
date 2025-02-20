@@ -45,7 +45,7 @@ describe('apiContracts', () => {
           '400': z.object({ message: z.string() }),
         },
         description: 'some description',
-        metadata: { hello: 'world' },
+        metadata: { hello: 'world' }, // it is a free form record
       })
 
       expect(contract).toMatchSnapshot()
