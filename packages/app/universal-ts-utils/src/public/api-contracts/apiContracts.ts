@@ -139,6 +139,7 @@ export function buildPayloadRoute<
     successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
+    metadata: params.metadata,
   }
 }
 
@@ -184,6 +185,7 @@ export function buildGetRoute<
     successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
+    metadata: params.metadata,
   }
 }
 
@@ -229,6 +231,7 @@ export function buildDeleteRoute<
     successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
+    metadata: params.metadata,
   }
 }
 

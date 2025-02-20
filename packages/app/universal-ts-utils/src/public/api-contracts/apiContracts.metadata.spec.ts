@@ -1,4 +1,4 @@
-import { describe, expectTypeOf, it } from 'vitest'
+import { describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod'
 import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from './apiContracts.js'
 
@@ -15,7 +15,7 @@ declare module './apiContracts.js' {
 
 describe('apiContracts metadata augmentation', () => {
   describe('buildPayloadRoute', () => {
-    it('should respect metadata type', () => {
+    it('should respect metadata type and reflect it on contract', () => {
       const contract = buildPayloadRoute({
         successResponseBodySchema: SCHEMA,
         requestBodySchema: SCHEMA,
@@ -29,22 +29,33 @@ describe('apiContracts metadata augmentation', () => {
       })
 
       expectTypeOf(contract.metadata).toMatchTypeOf<Metadata | undefined>()
+
+      expect(contract.metadata).toEqual({
+        myTestProp: ['test'],
+        mySecondTestProp: 1,
+        extra: 'extra field',
+      })
     })
   })
 
   describe('buildGetRoute', () => {
-    it('should respect metadata type', () => {
+    it('should respect metadata type and reflect it on contract', () => {
       const contract = buildGetRoute({
         successResponseBodySchema: SCHEMA,
         pathResolver: () => '/',
         metadata: {
-          myTestProp: ['test'],
-          mySecondTestProp: 1,
-          extra: 'extra field',
+          myTestProp: ['test2'],
+          mySecondTestProp: 2,
+          extra: 'extra field2',
         },
       })
 
       expectTypeOf(contract.metadata).toMatchTypeOf<Metadata | undefined>()
+      expect(contract.metadata).toEqual({
+        myTestProp: ['test2'],
+        mySecondTestProp: 2,
+        extra: 'extra field2',
+      })
     })
   })
 
@@ -54,13 +65,18 @@ describe('apiContracts metadata augmentation', () => {
         successResponseBodySchema: SCHEMA,
         pathResolver: () => '/',
         metadata: {
-          myTestProp: ['test'],
-          mySecondTestProp: 1,
-          extra: 'extra field',
+          myTestProp: ['test3'],
+          mySecondTestProp: 3,
+          extra: 'extra field3',
         },
       })
 
       expectTypeOf(contract.metadata).toMatchTypeOf<Metadata | undefined>()
+      expect(contract.metadata).toEqual({
+        myTestProp: ['test3'],
+        mySecondTestProp: 3,
+        extra: 'extra field3',
+      })
     })
   })
 })
