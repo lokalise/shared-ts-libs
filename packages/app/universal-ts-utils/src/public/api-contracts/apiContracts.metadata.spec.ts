@@ -24,7 +24,7 @@ describe('apiContracts metadata augmentation', () => {
         metadata: {
           myTestProp: ['test'],
           mySecondTestProp: 1,
-          error: 'should not be here',
+          extra: 'extra field',
         },
       })
 
@@ -40,7 +40,7 @@ describe('apiContracts metadata augmentation', () => {
         metadata: {
           myTestProp: ['test'],
           mySecondTestProp: 1,
-          error: 'should not be here',
+          extra: 'extra field',
         },
       })
 
@@ -56,7 +56,7 @@ describe('apiContracts metadata augmentation', () => {
         metadata: {
           myTestProp: ['test'],
           mySecondTestProp: 1,
-          error: 'should not be here',
+          extra: 'extra field',
         },
       })
 
