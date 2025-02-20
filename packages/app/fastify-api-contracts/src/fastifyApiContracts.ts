@@ -1,4 +1,3 @@
-import type http from 'node:http'
 import { copyWithoutUndefined } from '@lokalise/node-core'
 import {
   type DeleteRouteDefinition,
@@ -88,8 +87,10 @@ export function buildFastifyNoPayloadRoute<
     RequestQuerySchema,
     RequestHeaderSchema
   >,
+  apiContractToRouteMapper: ApiContractMetadataToRouteMapper = () => ({}),
 ): RouteType {
   return {
+    ...apiContractToRouteMapper(apiContract.metadata),
     method: apiContract.method,
     url: mapRouteToPath(apiContract),
     handler,
@@ -163,8 +164,10 @@ export function buildFastifyPayloadRoute<
     RequestQuerySchema,
     RequestHeaderSchema
   >,
+  apiContractToRouteMapper: ApiContractMetadataToRouteMapper = () => ({}),
 ): RouteType {
   return {
+    ...apiContractToRouteMapper(apiContract.metadata),
     method: apiContract.method,
     url: mapRouteToPath(apiContract),
     handler,
