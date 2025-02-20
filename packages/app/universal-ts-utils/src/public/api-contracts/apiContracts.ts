@@ -3,7 +3,7 @@ import type { HttpStatusCode } from './HttpStatusCodes.js'
 
 const EMPTY_PARAMS = {}
 
-type InferSchemaOutput<T extends ZodSchema | undefined> = T extends ZodSchema<infer U>
+export type InferSchemaOutput<T extends ZodSchema | undefined> = T extends ZodSchema<infer U>
   ? U
   : T extends undefined
     ? undefined
