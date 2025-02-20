@@ -29,7 +29,7 @@ describe('apiContracts metadata augmentation', () => {
         },
       })
 
-      expectTypeOf(contract.metadata).toEqualTypeOf<Metadata>()
+      expectTypeOf(contract.metadata).toEqualTypeOf<Metadata | undefined>()
     })
   })
 
@@ -46,7 +46,7 @@ describe('apiContracts metadata augmentation', () => {
         },
       })
 
-      expectTypeOf(contract.metadata).toEqualTypeOf<Metadata>()
+      expectTypeOf(contract.metadata).toEqualTypeOf<Metadata | undefined>()
     })
   })
 
@@ -63,7 +63,7 @@ describe('apiContracts metadata augmentation', () => {
         },
       })
 
-      expectTypeOf(contract.metadata).toEqualTypeOf<Metadata>()
+      expectTypeOf(contract.metadata).toEqualTypeOf<Metadata | undefined>()
     })
   })
 })
