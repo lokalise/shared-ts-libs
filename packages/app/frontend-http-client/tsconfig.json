@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "outDir": "dist",
-        "module": "node16",
+        "module": "ESNext",
         "target": "ES2022",
         "lib": ["ES2022", "dom"],
         "sourceMap": false,
@@ -9,7 +9,7 @@
         "declarationMap": false,
         "types": ["node", "vitest/globals"],
         "strict": true,
-        "moduleResolution": "node16",
+        "moduleResolution": "Bundler",
         "noUnusedLocals": false,
         "noUnusedParameters": false,
         "noFallthroughCasesInSwitch": true,
@@ -21,6 +21,6 @@
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true
     },
-    "include": ["src/**/*", "index.ts"],
-    "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
+    "include": ["./src/**/*", "index.ts", "vitest.config.ts", "tsup.config.ts"],
+    "exclude": []
 }

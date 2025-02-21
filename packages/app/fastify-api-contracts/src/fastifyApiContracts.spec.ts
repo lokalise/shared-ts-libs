@@ -66,8 +66,13 @@ describe('fastifyApiContracts', () => {
   describe('buildFastifyNoPayloadRoute', () => {
     it('uses API spec to build valid GET route in fastify app', async () => {
       expect.assertions(2)
+      const arrayPreprocessor = (value: unknown) => (Array.isArray(value) ? value : [value])
+
       const contract = buildGetRoute({
-        successResponseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: z.object({
+          id: z.string(),
+          values: z.preprocess(arrayPreprocessor, z.array(z.string()))
+        }),
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })

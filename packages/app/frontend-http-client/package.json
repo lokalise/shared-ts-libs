@@ -35,7 +35,7 @@
         "build:dev": "tsc",
         "build:release": "tsup",
         "clean": "rimraf dist",
-        "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
+        "lint": "biome check . && tsc --noEmit",
         "lint:fix": "biome check --write",
         "package-version": "echo $npm_package_version",
         "test": "vitest run --coverage",
@@ -46,7 +46,7 @@
         "fast-querystring": "^1.1.2"
     },
     "peerDependencies": {
-        "@lokalise/universal-ts-utils": "^4.0.0",
+        "@lokalise/universal-ts-utils": "^4.0.2",
         "wretch": "^2.8.0",
         "zod": "^3.22.0"
     },
