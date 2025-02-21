@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "outDir": "dist",
-        "module": "ESNext",
+        "module": "node16",
         "target": "ES2022",
         "lib": ["ES2022", "dom"],
         "sourceMap": false,
@@ -9,7 +9,7 @@
         "declarationMap": false,
         "types": ["node", "vitest/globals"],
         "strict": true,
-        "moduleResolution": "Bundler",
+        "moduleResolution": "node16",
         "noUnusedLocals": false,
         "noUnusedParameters": false,
         "noFallthroughCasesInSwitch": true,
