@@ -5,6 +5,7 @@ exports[`apiContracts > buildDeleteRoute > sets default delete route values 1`] 
   "description": "some description",
   "isEmptyResponseExpected": true,
   "isNonJSONResponseExpected": false,
+  "metadata": undefined,
   "method": "delete",
   "pathResolver": [Function],
   "requestHeaderSchema": undefined,
@@ -92,6 +93,7 @@ exports[`apiContracts > buildGetRoute > resolves path params 1`] = `
   "description": undefined,
   "isEmptyResponseExpected": false,
   "isNonJSONResponseExpected": false,
+  "metadata": undefined,
   "method": "get",
   "pathResolver": [Function],
   "requestHeaderSchema": undefined,
@@ -251,6 +253,9 @@ exports[`apiContracts > buildGetRoute > sets default get route values 1`] = `
   "description": "some description",
   "isEmptyResponseExpected": false,
   "isNonJSONResponseExpected": false,
+  "metadata": {
+    "hello": "world",
+  },
   "method": "get",
   "pathResolver": [Function],
   "requestHeaderSchema": undefined,
@@ -485,6 +490,7 @@ exports[`apiContracts > buildPayloadRoute > sets default change route values 1`]
   "description": "some description",
   "isEmptyResponseExpected": false,
   "isNonJSONResponseExpected": false,
+  "metadata": undefined,
   "method": "post",
   "pathResolver": [Function],
   "requestBodySchema": ZodObject {

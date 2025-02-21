@@ -3,13 +3,15 @@ import type { HttpStatusCode } from './HttpStatusCodes.js'
 
 const EMPTY_PARAMS = {}
 
-export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
-
 export type InferSchemaOutput<T extends ZodSchema | undefined> = T extends ZodSchema<infer U>
   ? U
   : T extends undefined
     ? undefined
     : never
+
+export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
+
+export interface CommonRouteDefinitionMetadata extends Record<string, unknown> {}
 
 export type CommonRouteDefinition<
   PathParams,
@@ -29,6 +31,7 @@ export type CommonRouteDefinition<
   pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
   responseSchemasByStatusCode?: Partial<Record<HttpStatusCode, z.Schema>>
   description?: string
+  metadata?: CommonRouteDefinitionMetadata
 }
 
 export type PayloadRouteDefinition<
@@ -136,6 +139,7 @@ export function buildPayloadRoute<
     successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
+    metadata: params.metadata,
   }
 }
 
@@ -181,6 +185,7 @@ export function buildGetRoute<
     successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
+    metadata: params.metadata,
   }
 }
 
@@ -226,6 +231,7 @@ export function buildDeleteRoute<
     successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
+    metadata: params.metadata,
   }
 }
 
