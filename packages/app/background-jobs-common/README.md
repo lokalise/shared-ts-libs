@@ -77,6 +77,39 @@ There's also a way to start only specific queues providing an array of queue nam
 await queueManager.start(['queue1'])
 ```
 
+### Queue Configuration
+
+To set up a queue configuration, you need to define a list of objects containing the following properties:
+
+- **`queueId`**: The unique identifier for the queue.
+- **`queueOptions`**: Options for the queue. Refer to the [BullMQ documentation](https://docs.bullmq.io/guide/queues) for more details.
+- **`jobPayloadSchema`**: A Zod schema that defines the structure of the jobs payload for this queue.
+- **`jobOptions`**: Default options for jobs in this queue. See [BullMQ documentation](https://docs.bullmq.io/guide/job-options).
+
+#### Job Deduplication
+
+To enable job deduplication, following BullMQ doc you should define a `deduplication.id` for the job within `jobOptions`.
+However, this approach can be inflexible. Therefore, `QueueConfiguration` allows you to specify a `deduplication.idBuilder`,
+it is callback that accepts the job payload and returns a unique string used as the deduplication ID.
+
+```typescript
+const supportedQueues = [
+  {
+    queueId: 'queue_valid',
+    jobPayloadSchema: z.object({
+      id: z.string(),
+      value: z.string(),
+      metadata: z.object({ correlationId: z.string() }),
+    }),
+    jobOptions: {
+      deduplication: {
+        idBuilder: (jobData: any) => `${jobData.id}:${jobData.value}`,
+      },
+    },
+  },
+] as const satisfies QueueConfiguration[]
+```
+
 ### Common jobs
 
 For that type of job, you will need to extend `AbstractBackgroundJobProcessorNew` and implement a `processInternal`
