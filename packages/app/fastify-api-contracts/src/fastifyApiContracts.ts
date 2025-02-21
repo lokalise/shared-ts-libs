@@ -5,7 +5,7 @@ import {
   type PayloadRouteDefinition,
   mapRouteToPath,
 } from '@lokalise/universal-ts-utils/node'
-import { z } from 'zod'
+import type { z } from 'zod'
 import type {
   ApiContractMetadataToRouteMapper,
   ExtendedFastifySchema,
