@@ -21,6 +21,6 @@
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true
     },
-    "include": ["src/**/*", "index.ts"],
-    "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
+    "include": ["./src/**/*", "index.ts", "vitest.config.ts", "tsup.config.ts"],
+    "exclude": []
 }

@@ -1,4 +1,7 @@
-import type { InferSchemaOutput } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
+import type {
+  InferSchemaInput,
+  InferSchemaOutput,
+} from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
 import type {
   DeleteRouteDefinition,
   GetRouteDefinition,
@@ -59,8 +62,8 @@ export async function injectGet<
   >,
   params: RouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
-    InferSchemaOutput<RequestQuerySchema>,
-    InferSchemaOutput<RequestHeaderSchema>
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
   >,
 ) {
   const resolvedHeaders =
@@ -97,8 +100,8 @@ export async function injectDelete<
   >,
   params: RouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
-    InferSchemaOutput<RequestQuerySchema>,
-    InferSchemaOutput<RequestHeaderSchema>
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
   >,
 ) {
   const resolvedHeaders =
@@ -135,9 +138,9 @@ export async function injectPost<
   >,
   params: PayloadRouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
-    InferSchemaOutput<RequestBodySchema>,
-    InferSchemaOutput<RequestQuerySchema>,
-    InferSchemaOutput<RequestHeaderSchema>
+    InferSchemaInput<RequestBodySchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
   >,
 ) {
   const resolvedHeaders =
@@ -176,9 +179,9 @@ export async function injectPut<
   >,
   params: PayloadRouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
-    InferSchemaOutput<RequestBodySchema>,
-    InferSchemaOutput<RequestQuerySchema>,
-    InferSchemaOutput<RequestHeaderSchema>
+    InferSchemaInput<RequestBodySchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
   >,
 ) {
   const resolvedHeaders =
@@ -217,9 +220,9 @@ export async function injectPatch<
   >,
   params: PayloadRouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
-    InferSchemaOutput<RequestBodySchema>,
-    InferSchemaOutput<RequestQuerySchema>,
-    InferSchemaOutput<RequestHeaderSchema>
+    InferSchemaInput<RequestBodySchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
   >,
 ) {
   const resolvedHeaders =

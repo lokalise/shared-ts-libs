@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type {
   DeleteRouteDefinition,
   GetRouteDefinition,
+  InferSchemaInput,
   InferSchemaOutput,
   PayloadRouteDefinition,
 } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
@@ -333,10 +334,10 @@ export function sendByPayloadRoute<
     IsEmptyResponseExpected
   >,
   params: PayloadRouteRequestParams<
-    InferSchemaOutput<PathParamsSchema>,
-    InferSchemaOutput<RequestBodySchema>,
-    InferSchemaOutput<RequestQuerySchema>,
-    InferSchemaOutput<RequestHeaderSchema>
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestBodySchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
   >,
 ): Promise<
   RequestResultType<
@@ -382,9 +383,9 @@ export function sendByGetRoute<
     IsEmptyResponseExpected
   >,
   params: RouteRequestParams<
-    InferSchemaOutput<PathParamsSchema>,
-    InferSchemaOutput<RequestQuerySchema>,
-    InferSchemaOutput<RequestHeaderSchema>
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
   >,
 ): Promise<
   RequestResultType<
@@ -430,9 +431,9 @@ export function sendByDeleteRoute<
     IsEmptyResponseExpected
   >,
   params: RouteRequestParams<
-    InferSchemaOutput<PathParamsSchema>,
-    InferSchemaOutput<RequestQuerySchema>,
-    InferSchemaOutput<RequestHeaderSchema>
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
   >,
 ): Promise<
   RequestResultType<
