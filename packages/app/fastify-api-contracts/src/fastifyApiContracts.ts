@@ -1,4 +1,3 @@
-import type http from 'node:http'
 import { copyWithoutUndefined } from '@lokalise/node-core'
 import {
   type DeleteRouteDefinition,
@@ -6,58 +5,14 @@ import {
   type PayloadRouteDefinition,
   mapRouteToPath,
 } from '@lokalise/universal-ts-utils/node'
-import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
-import type { FastifySchema } from 'fastify/types/schema'
-import type { z } from 'zod'
-
-/**
- * Default fastify fields + fastify-swagger fields
- */
-export type ExtendedFastifySchema = FastifySchema & { describe?: string }
-
-export type RouteType = RouteOptions<
-  http.Server,
-  http.IncomingMessage,
-  http.ServerResponse,
-  // biome-ignore lint/suspicious/noExplicitAny: it's ok
-  any,
-  // biome-ignore lint/suspicious/noExplicitAny: it's ok
-  any,
-  // biome-ignore lint/suspicious/noExplicitAny: it's ok
-  any,
-  // biome-ignore lint/suspicious/noExplicitAny: it's ok
-  any,
-  // biome-ignore lint/suspicious/noExplicitAny: it's ok
-  any
->
-
-/**
- * Handler for POST, PUT and PATCH methods
- */
-export type FastifyPayloadHandlerFn<ReplyType, BodyType, ParamsType, QueryType, HeadersType> = (
-  req: FastifyRequest<{
-    Body: BodyType
-    Headers: HeadersType
-    Params: ParamsType
-    Querystring: QueryType
-    Reply: ReplyType
-  }>,
-  reply: FastifyReply,
-) => Promise<void>
-
-/**
- * Handler for GET and DELETE methods
- */
-export type FastifyNoPayloadHandlerFn<ReplyType, ParamsType, QueryType, HeadersType> = (
-  req: FastifyRequest<{
-    Body: never
-    Headers: HeadersType
-    Params: ParamsType
-    Querystring: QueryType
-    Reply: ReplyType
-  }>,
-  reply: FastifyReply<{ Body: ReplyType }>,
-) => Promise<void>
+import { z } from 'zod'
+import type {
+  ApiContractMetadataToRouteMapper,
+  ExtendedFastifySchema,
+  FastifyNoPayloadHandlerFn,
+  FastifyPayloadHandlerFn,
+  RouteType,
+} from './types.js'
 
 type OptionalZodSchema = z.Schema | undefined
 type InferredOptionalSchema<Schema> = Schema extends z.Schema ? z.infer<Schema> : never
@@ -135,8 +90,10 @@ export function buildFastifyNoPayloadRoute<
     InferredOptionalSchema<RequestQuerySchema>,
     InferredOptionalSchema<RequestHeaderSchema>
   >,
+  contractMetadataToRouteMapper: ApiContractMetadataToRouteMapper = () => ({}),
 ): RouteType {
   return {
+    ...contractMetadataToRouteMapper(apiContract.metadata),
     method: apiContract.method,
     url: mapRouteToPath(apiContract),
     handler,
@@ -210,8 +167,10 @@ export function buildFastifyPayloadRoute<
     InferredOptionalSchema<RequestQuerySchema>,
     InferredOptionalSchema<RequestHeaderSchema>
   >,
+  contractMetadataToRouteMapper: ApiContractMetadataToRouteMapper = () => ({}),
 ): RouteType {
   return {
+    ...contractMetadataToRouteMapper(apiContract.metadata),
     method: apiContract.method,
     url: mapRouteToPath(apiContract),
     handler,

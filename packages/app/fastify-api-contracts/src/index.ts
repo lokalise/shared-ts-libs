@@ -12,3 +12,4 @@ export {
   injectPost,
   injectPut,
 } from './fastifyApiRequestInjector.js'
+export * from './types.js'
