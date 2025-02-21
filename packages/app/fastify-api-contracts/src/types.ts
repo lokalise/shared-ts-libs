@@ -68,4 +68,18 @@ export type ApiContractMetadataToRouteMapper = <
   >,
 >(
   metadata: ApiContract['metadata'],
-) => Omit<RouteType, 'handler' | 'method' | 'schema' | 'url'>
+) => Pick<
+  RouteType,
+  | 'config'
+  | 'bodyLimit'
+  | 'preParsing'
+  | 'preSerialization'
+  | 'preHandler'
+  | 'preValidation'
+  | 'onRequest'
+  | 'onSend'
+  | 'onError'
+  | 'onResponse'
+  | 'onTimeout'
+  | 'onRequestAbort'
+>
