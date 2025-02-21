@@ -33,10 +33,14 @@ const postContract = buildPayloadRoute({
 
 const getRoute = buildFastifyNoPayloadRoute(getContract, (req) => {
     // req.query, req.params and req.headers represent fields from the contract
+}, (contractMetadata) => {
+    // Optionally, use this callback to dynamically add extra Fastify route options (like config, preHandler, etc.) using contract metadata.
 })
 
 const postRoute = buildFastifyPayloadRoute(postContract, (req) => {
     // req.body, req.query, req.params and req.headers represent fields from the contract
+}, (contractMetadata) => {
+    // Optionally, use this callback to dynamically add extra Fastify route options (like config, preHandler, etc.) using contract metadata.
 })
 
 const app = fastify({
