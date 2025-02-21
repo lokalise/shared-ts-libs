@@ -5,7 +5,7 @@ import { isCockroachDBRetryTransaction } from './cockroachdbError'
 import { PRISMA_SERIALIZATION_ERROR } from './prismaError'
 
 describe('cockroachdbError', () => {
-  it('without meta should return false', () => {
+  it('should return false without meta', () => {
     // Given
     const error = new PrismaClientKnownRequestError('test', {
       code: PRISMA_SERIALIZATION_ERROR,
@@ -16,7 +16,7 @@ describe('cockroachdbError', () => {
     expect(isCockroachDBRetryTransaction(error)).toBe(false)
   })
 
-  it('wrong meta field', () => {
+  it('should return false for a wrong meta field', () => {
     // Given
     const error = new PrismaClientKnownRequestError('test', {
       code: 'P100',
@@ -28,7 +28,7 @@ describe('cockroachdbError', () => {
     expect(isCockroachDBRetryTransaction(error)).toBe(false)
   })
 
-  it('wrong meta.code', () => {
+  it('should return false for wrong meta.code', () => {
     // Given
     const error = new PrismaClientKnownRequestError('test', {
       code: 'P100',
@@ -40,7 +40,7 @@ describe('cockroachdbError', () => {
     expect(isCockroachDBRetryTransaction(error)).toBe(false)
   })
 
-  it('is CockroachDb retry transaction error', () => {
+  it('should return try for a CRDB retry transaction error', () => {
     // Given
     const error = new PrismaClientKnownRequestError('test', {
       code: 'P100',

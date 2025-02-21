@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/universal-ts-utils",
-    "version": "3.5.2",
+    "version": "4.2.0",
     "author": {
         "name": "Lokalise",
         "url": "https://lokalise.com/"
@@ -18,12 +18,12 @@
         "access": "public"
     },
     "scripts": {
-        "build": "tsc",
+        "build": "tsc --project tsconfig.build.json",
         "test": "vitest",
         "test:coverage": "vitest --coverage",
         "test:ci": "npm run lint && npm run test:coverage",
         "test:update-snapshots": "vitest -u",
-        "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
+        "lint": "biome check . && tsc --noEmit",
         "lint:fix": "biome check --write",
         "prepublishOnly": "npm run build",
         "postversion": "biome check --write package.json",

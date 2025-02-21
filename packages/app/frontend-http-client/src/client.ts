@@ -353,7 +353,7 @@ export function sendByPayloadRoute<
     // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
     requestBodySchema: routeDefinition.requestBodySchema as any,
     // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
-    responseBodySchema: routeDefinition.responseBodySchema as any,
+    responseBodySchema: routeDefinition.successResponseBodySchema as any,
     // @ts-expect-error magic type inferring happening
     queryParams: params.queryParams,
     queryParamsSchema: routeDefinition.requestQuerySchema,
@@ -396,7 +396,7 @@ export function sendByGetRoute<
   return sendGet(wretch, {
     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
-    responseBodySchema: routeDefinition.responseBodySchema,
+    responseBodySchema: routeDefinition.successResponseBodySchema,
     // @ts-expect-error magic type inferring happening
     queryParams: params.queryParams,
     queryParamsSchema: routeDefinition.requestQuerySchema,
@@ -444,7 +444,7 @@ export function sendByDeleteRoute<
   return sendDelete(wretch, {
     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
-    responseBodySchema: routeDefinition.responseBodySchema,
+    responseBodySchema: routeDefinition.successResponseBodySchema,
     // @ts-expect-error magic type inferring happening
     queryParams: params.queryParams,
     queryParamsSchema: routeDefinition.requestQuerySchema,

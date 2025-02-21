@@ -20,10 +20,14 @@ describe('apiContracts', () => {
   describe('buildPayloadRoute', () => {
     it('sets default change route values', () => {
       const contract = buildPayloadRoute({
-        responseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
         requestBodySchema: BODY_SCHEMA,
         method: 'post',
         description: 'some description',
+        responseSchemasByStatusCode: {
+          200: BODY_SCHEMA,
+          400: z.object({ message: z.string() }),
+        },
         pathResolver: () => '/',
       })
 
@@ -34,9 +38,14 @@ describe('apiContracts', () => {
   describe('buildGetRoute', () => {
     it('sets default get route values', () => {
       const contract = buildGetRoute({
-        responseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
+        responseSchemasByStatusCode: {
+          '200': BODY_SCHEMA,
+          '400': z.object({ message: z.string() }),
+        },
         description: 'some description',
+        metadata: { hello: 'world' }, // it is a free form record
       })
 
       expect(contract).toMatchSnapshot()
@@ -44,7 +53,7 @@ describe('apiContracts', () => {
 
     it('resolves path params', () => {
       const contract = buildGetRoute({
-        responseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
@@ -56,7 +65,7 @@ describe('apiContracts', () => {
   describe('buildDeleteRoute', () => {
     it('sets default delete route values', () => {
       const contract = buildDeleteRoute({
-        responseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
         description: 'some description',
       })
@@ -68,7 +77,7 @@ describe('apiContracts', () => {
   describe('mapRouteToPath', () => {
     it('returns path without params', () => {
       const contract = buildGetRoute({
-        responseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
       })
 
@@ -78,7 +87,7 @@ describe('apiContracts', () => {
 
     it('returns path with one param', () => {
       const contract = buildGetRoute({
-        responseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
@@ -89,7 +98,7 @@ describe('apiContracts', () => {
 
     it('returns path with multiple params', () => {
       const contract = buildGetRoute({
-        responseBodySchema: BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_MULTI_SCHEMA,
         pathResolver: (pathParams) => `/orgs/${pathParams.orgId}/users/${pathParams.userId}`,
       })

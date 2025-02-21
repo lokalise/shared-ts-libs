@@ -1,14 +1,17 @@
 import type { ZodSchema, z } from 'zod'
+import type { HttpStatusCode } from './HttpStatusCodes.js'
 
 const EMPTY_PARAMS = {}
-
-export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
 
 export type InferSchemaOutput<T extends ZodSchema | undefined> = T extends ZodSchema<infer U>
   ? U
   : T extends undefined
     ? undefined
     : never
+
+export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
+
+export interface CommonRouteDefinitionMetadata extends Record<string, unknown> {}
 
 export type CommonRouteDefinition<
   PathParams,
@@ -21,18 +24,20 @@ export type CommonRouteDefinition<
 > = {
   isNonJSONResponseExpected?: IsNonJSONResponseExpected
   isEmptyResponseExpected?: IsEmptyResponseExpected
-  responseBodySchema: ResponseBodySchema
+  successResponseBodySchema: ResponseBodySchema
   requestPathParamsSchema?: PathParamsSchema
   requestQuerySchema?: RequestQuerySchema
   requestHeaderSchema?: RequestHeaderSchema
   pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
+  responseSchemasByStatusCode?: Partial<Record<HttpStatusCode, z.Schema>>
   description?: string
+  metadata?: CommonRouteDefinitionMetadata
 }
 
 export type PayloadRouteDefinition<
   PathParams,
   RequestBodySchema extends z.Schema | undefined = undefined,
-  ResponseBodySchema extends z.Schema | undefined = undefined,
+  SuccessResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema<PathParams> | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
@@ -40,7 +45,7 @@ export type PayloadRouteDefinition<
   IsEmptyResponseExpected extends boolean = false,
 > = CommonRouteDefinition<
   PathParams,
-  ResponseBodySchema,
+  SuccessResponseBodySchema,
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
@@ -53,7 +58,7 @@ export type PayloadRouteDefinition<
 
 export type GetRouteDefinition<
   PathParams,
-  ResponseBodySchema extends z.Schema | undefined = undefined,
+  SuccessResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema<PathParams> | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
@@ -61,7 +66,7 @@ export type GetRouteDefinition<
   IsEmptyResponseExpected extends boolean = false,
 > = CommonRouteDefinition<
   PathParams,
-  ResponseBodySchema,
+  SuccessResponseBodySchema,
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
@@ -73,7 +78,7 @@ export type GetRouteDefinition<
 
 export type DeleteRouteDefinition<
   PathParams,
-  ResponseBodySchema extends z.Schema | undefined = undefined,
+  SuccessResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema<PathParams> | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
@@ -81,7 +86,7 @@ export type DeleteRouteDefinition<
   IsEmptyResponseExpected extends boolean = true,
 > = CommonRouteDefinition<
   PathParams,
-  ResponseBodySchema,
+  SuccessResponseBodySchema,
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
@@ -93,7 +98,7 @@ export type DeleteRouteDefinition<
 
 export function buildPayloadRoute<
   RequestBodySchema extends z.Schema | undefined = undefined,
-  ResponseBodySchema extends z.Schema | undefined = undefined,
+  SuccessResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
@@ -104,7 +109,7 @@ export function buildPayloadRoute<
   params: PayloadRouteDefinition<
     PathParams,
     RequestBodySchema,
-    ResponseBodySchema,
+    SuccessResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
     RequestHeaderSchema,
@@ -114,7 +119,7 @@ export function buildPayloadRoute<
 ): PayloadRouteDefinition<
   PathParams,
   RequestBodySchema,
-  ResponseBodySchema,
+  SuccessResponseBodySchema,
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
@@ -131,13 +136,15 @@ export function buildPayloadRoute<
     requestHeaderSchema: params.requestHeaderSchema,
     requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
-    responseBodySchema: params.responseBodySchema,
+    successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
+    responseSchemasByStatusCode: params.responseSchemasByStatusCode,
+    metadata: params.metadata,
   }
 }
 
 export function buildGetRoute<
-  ResponseBodySchema extends z.Schema | undefined = undefined,
+  SuccessResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
@@ -148,7 +155,7 @@ export function buildGetRoute<
   params: Omit<
     GetRouteDefinition<
       PathParams,
-      ResponseBodySchema,
+      SuccessResponseBodySchema,
       PathParamsSchema,
       RequestQuerySchema,
       RequestHeaderSchema,
@@ -159,7 +166,7 @@ export function buildGetRoute<
   >,
 ): GetRouteDefinition<
   PathParams,
-  ResponseBodySchema,
+  SuccessResponseBodySchema,
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
@@ -175,13 +182,15 @@ export function buildGetRoute<
     requestHeaderSchema: params.requestHeaderSchema,
     requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
-    responseBodySchema: params.responseBodySchema,
+    successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
+    responseSchemasByStatusCode: params.responseSchemasByStatusCode,
+    metadata: params.metadata,
   }
 }
 
 export function buildDeleteRoute<
-  ResponseBodySchema extends z.Schema | undefined = undefined,
+  SuccessResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
@@ -192,7 +201,7 @@ export function buildDeleteRoute<
   params: Omit<
     DeleteRouteDefinition<
       PathParams,
-      ResponseBodySchema,
+      SuccessResponseBodySchema,
       PathParamsSchema,
       RequestQuerySchema,
       RequestHeaderSchema,
@@ -203,7 +212,7 @@ export function buildDeleteRoute<
   >,
 ): DeleteRouteDefinition<
   PathParams,
-  ResponseBodySchema,
+  SuccessResponseBodySchema,
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
@@ -219,8 +228,10 @@ export function buildDeleteRoute<
     requestHeaderSchema: params.requestHeaderSchema,
     requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
-    responseBodySchema: params.responseBodySchema,
+    successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
+    responseSchemasByStatusCode: params.responseSchemasByStatusCode,
+    metadata: params.metadata,
   }
 }
 

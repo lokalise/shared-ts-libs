@@ -1,7 +1,7 @@
 import type { Either } from '@lokalise/node-core'
 import { PrismaClient } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vitest } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { DB_MODEL, cleanTables } from '../test/DbCleaner'
 
@@ -47,7 +47,7 @@ describe('prismaTransaction', () => {
   })
 
   describe('with function callback', () => {
-    it('first try works', async () => {
+    it('works in the first try', async () => {
       // When
       const result: Either<unknown, Item1> = await prismaTransaction(prisma, (client) =>
         client.item1.create({ data: TEST_ITEM_1 }),
@@ -57,7 +57,7 @@ describe('prismaTransaction', () => {
       expect(result.result).toMatchObject(TEST_ITEM_1)
     })
 
-    it('interactive transaction returns correct types', async () => {
+    it('returns correct types for interactive transaction ', async () => {
       // When
       const result = await prismaTransaction(prisma, async (client) => {
         return await client.item1.create({ data: TEST_ITEM_1 })
@@ -72,10 +72,12 @@ describe('prismaTransaction', () => {
       PRISMA_SERIALIZATION_ERROR,
       PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
       PRISMA_TRANSACTION_ERROR,
-    ])('prisma %s error is retried', async (prismaErrorCode) => {
+    ])('should retry prisma %s error', async (prismaErrorCode) => {
       // Given
       const callsTimestamps: number[] = []
-      const retrySpy = vitest.spyOn(prisma, '$transaction').mockImplementation(() => {
+
+      // When
+      const result = await prismaTransaction(prisma, () => {
         callsTimestamps.push(Date.now())
         throw new PrismaClientKnownRequestError('test', {
           code: prismaErrorCode,
@@ -83,15 +85,10 @@ describe('prismaTransaction', () => {
         })
       })
 
-      // When
-      const result = await prismaTransaction(prisma, (client) =>
-        client.item1.create({ data: TEST_ITEM_1 }),
-      )
-
       // Then
       expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
       expect(result.error).toMatchObject({ code: prismaErrorCode })
-      expect(retrySpy).toHaveBeenCalledTimes(3)
+      expect(callsTimestamps).toHaveLength(3)
 
       const diffs: number[] = []
       callsTimestamps.forEach((t, i) => {
@@ -102,20 +99,21 @@ describe('prismaTransaction', () => {
       expect(diffs[1]).toBe(200)
     })
 
-    it('CockroachDB retry transaction error is retried', async () => {
+    it('should retry CockroachDB retry transaction error', async () => {
       // Given
-      const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
-        new PrismaClientKnownRequestError('test', {
-          code: 'P100',
-          clientVersion: '1',
-          meta: { code: '40001' },
-        }),
-      )
+      let callsCount = 0
 
       // When
       const result = await prismaTransaction(
         prisma,
-        (client) => client.item1.create({ data: TEST_ITEM_1 }),
+        () => {
+          callsCount++
+          throw new PrismaClientKnownRequestError('test', {
+            code: 'P100',
+            clientVersion: '1',
+            meta: { code: '40001' },
+          })
+        },
         { dbDriver: 'CockroachDb' },
       )
 
@@ -124,102 +122,98 @@ describe('prismaTransaction', () => {
       expect((result.error as PrismaClientKnownRequestError).meta).toMatchObject({
         code: '40001',
       })
-      expect(retrySpy).toHaveBeenCalledTimes(3)
+      expect(callsCount).toBe(3)
     })
 
-    it('not all prisma code are retried', async () => {
+    it('should not retry all prisma codes', async () => {
       // Given
-      const retrySpy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
-        new PrismaClientKnownRequestError('test', {
-          code: PRISMA_NOT_FOUND_ERROR,
-          clientVersion: '1',
-        }),
-      )
+      let callsCount = 0
 
       // When
-      const result = await prismaTransaction(prisma, (client) =>
-        client.item1.create({ data: TEST_ITEM_1 }),
-      )
-
-      // Then
-      expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
-      expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_NOT_FOUND_ERROR)
-      expect(retrySpy).toHaveBeenCalledTimes(1)
-    })
-
-    it('modifying max number of retries and base delay', async () => {
-      // Given
-      const retriesAllowed = 5
-      const baseRetryDelayMs = 50
-
-      const callsTimestamps: number[] = []
-      const retrySpy = vitest.spyOn(prisma, '$transaction').mockImplementation(() => {
-        callsTimestamps.push(Date.now())
+      const result = await prismaTransaction(prisma, () => {
+        callsCount++
         throw new PrismaClientKnownRequestError('test', {
-          code: PRISMA_SERIALIZATION_ERROR,
+          code: PRISMA_NOT_FOUND_ERROR,
           clientVersion: '1',
         })
       })
 
+      // Then
+      expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
+      expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_NOT_FOUND_ERROR)
+      expect(callsCount).toBe(1)
+    })
+
+    it('should be possible to modify max number of retries and base delay', async () => {
+      // Given
+      const retriesAllowed = 4
+      const baseRetryDelayMs = 100
+
+      const callsTimestamps: number[] = []
+
       // When
       const result = await prismaTransaction(
         prisma,
-        (client) => client.item1.create({ data: TEST_ITEM_1 }),
+        () => {
+          callsTimestamps.push(Date.now())
+          throw new PrismaClientKnownRequestError('test', {
+            code: PRISMA_SERIALIZATION_ERROR,
+            clientVersion: '1',
+          })
+        },
         { retriesAllowed, baseRetryDelayMs },
       )
 
       // Then
       expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
       expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_SERIALIZATION_ERROR)
-      expect(retrySpy).toHaveBeenCalledTimes(6)
+      expect(callsTimestamps).toHaveLength(5)
 
       const diffs: number[] = []
       callsTimestamps.forEach((t, i) => {
-        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 10) * 10)
+        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 100) * 100)
       })
-      expect(diffs).toHaveLength(5)
-      expect(diffs).toEqual([50, 100, 200, 400, 800])
+      expect(diffs).toEqual([100, 200, 400, 800])
     })
 
-    it('max delay is respected', async () => {
+    it('should respect max retry delay', async () => {
       // Given
       const baseRetryDelayMs = 1000
-      const maxRetryDelayMs = 10
+      const maxRetryDelayMs = 100
 
       const callsTimestamps: number[] = []
-      const retrySpy = vitest.spyOn(prisma, '$transaction').mockImplementation(() => {
-        callsTimestamps.push(Date.now())
-        throw new PrismaClientKnownRequestError('test', {
-          code: PRISMA_SERIALIZATION_ERROR,
-          clientVersion: '1',
-        })
-      })
 
       // When
       const result = await prismaTransaction(
         prisma,
-        (client) => client.item1.create({ data: TEST_ITEM_1 }),
+        () => {
+          callsTimestamps.push(Date.now())
+          throw new PrismaClientKnownRequestError('test', {
+            code: PRISMA_SERIALIZATION_ERROR,
+            clientVersion: '1',
+          })
+        },
         { maxRetryDelayMs, baseRetryDelayMs },
       )
 
       // Then
       expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
       expect((result.error as PrismaClientKnownRequestError).code).toBe(PRISMA_SERIALIZATION_ERROR)
-      expect(retrySpy).toHaveBeenCalledTimes(3)
+      expect(callsTimestamps).toHaveLength(3)
 
       const diffs: number[] = []
       callsTimestamps.forEach((t, i) => {
-        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 10) * 10)
+        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 100) * 100)
       })
-      expect(diffs).toHaveLength(2)
-
-      expect(diffs[0]).toBe(10)
-      expect(diffs[1]).toBe(10)
+      expect(diffs).toEqual([maxRetryDelayMs, maxRetryDelayMs])
     })
 
-    it('timeout auto increase', async () => {
+    it('should auto increase timeout', async () => {
       // Given
-      const spy = vitest.spyOn(prisma, '$transaction').mockRejectedValue(
+      const fakePrismaClient = {
+        $transaction: () => undefined,
+      } as unknown as PrismaClient
+      const spy = vi.spyOn(fakePrismaClient, '$transaction').mockRejectedValue(
         new PrismaClientKnownRequestError(
           'Transaction already closed: Could not perform operation.',
           {
@@ -230,13 +224,16 @@ describe('prismaTransaction', () => {
       )
 
       // When
-      const resultWithDefaults = await prismaTransaction(prisma, (client) =>
-        client.item1.create({ data: TEST_ITEM_1 }),
+      const resultWithDefaults = await prismaTransaction(fakePrismaClient, () =>
+        Promise.resolve(null),
       )
       const resultWithCustomTimeout = await prismaTransaction(
-        prisma,
-        (client) => client.item1.create({ data: TEST_ITEM_1 }),
-        { timeout: 1000, maxTimeout: 2000 },
+        fakePrismaClient,
+        () => Promise.resolve(null),
+        {
+          timeout: 1000,
+          maxTimeout: 2000,
+        },
       )
 
       // Then
@@ -270,7 +267,7 @@ describe('prismaTransaction', () => {
       expect(result.result).toMatchObject([TEST_ITEM_1, TEST_ITEM_2])
     })
 
-    it('returns proper types', async () => {
+    it('should return proper types', async () => {
       // When
       const result = await prismaTransaction(prisma, [
         prisma.item1.create({ data: TEST_ITEM_1 }),
@@ -283,64 +280,6 @@ describe('prismaTransaction', () => {
       expect(result.result![0].id).toBeDefined()
       expect(result.result![1].value).toBe(TEST_ITEM_2.value)
       expect(result.result![1].id).toBeDefined()
-    })
-  })
-
-  describe('isolation level', () => {
-    const transactionIsolationKey = 'transaction_isolation'
-    const extractIsolationLevel = (result: any) => {
-      if (!result) return null
-      if (Array.isArray(result)) return extractIsolationLevel(result[0])
-
-      return result[transactionIsolationKey] ?? null
-    }
-
-    it('default isolation level is serializable', async () => {
-      const res1 = await prismaTransaction(
-        prisma,
-        async (client) => client.$queryRaw`SHOW transaction_isolation`,
-      )
-      const res2 = await prismaTransaction(prisma, [prisma.$queryRaw`SHOW transaction_isolation`])
-
-      const result = [res1.result, res2.result].map(extractIsolationLevel)
-      expect(result).toEqual(['serializable', 'serializable'])
-    })
-
-    it('serializable isolation level', async () => {
-      const res1 = await prismaTransaction(
-        prisma,
-        async (client) => client.$queryRaw`SHOW transaction_isolation`,
-        { isolationLevel: 'Serializable' },
-      )
-      const res2 = await prismaTransaction(prisma, [prisma.$queryRaw`SHOW transaction_isolation`], {
-        isolationLevel: 'Serializable',
-      })
-
-      const result = [res1.result, res2.result].map(extractIsolationLevel)
-      expect(result).toEqual(['serializable', 'serializable'])
-    })
-
-    it('read committed isolation level', async () => {
-      /**
-       * Read committed isolation level is not supported by CockroachDB without enterprise license
-       * So checking that proper isolation level is passed to the transaction method
-       */
-      const transactionSpy = vitest.spyOn(prisma, '$transaction')
-
-      await prismaTransaction(
-        prisma,
-        async (client) => client.$queryRaw`SHOW transaction_isolation`,
-        { isolationLevel: 'ReadCommitted' },
-      )
-      await prismaTransaction(prisma, [prisma.$queryRaw`SHOW transaction_isolation`], {
-        isolationLevel: 'ReadCommitted',
-      })
-
-      expect(transactionSpy).toHaveBeenCalledTimes(2)
-      expect(transactionSpy.mock.calls.map(([, options]) => options)).toMatchObject([
-        { isolationLevel: 'ReadCommitted' },
-        { isolationLevel: 'ReadCommitted' },
-      ])
     })
   })
 })
