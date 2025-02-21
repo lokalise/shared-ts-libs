@@ -35,6 +35,12 @@ const PATH_PARAMS_SCHEMA = z.object({
 const HEADERS_SCHEMA = z.object({
   authorization: z.string(),
 })
+const arrayPreprocessor = (value: unknown) => (Array.isArray(value) ? value : [value])
+
+const REQUEST_QUERY_SCHEMA = z.object({
+  testIds: z.preprocess(arrayPreprocessor, z.array(z.string())).optional(),
+  limit: z.coerce.number().gt(0).default(10),
+})
 
 async function initApp(route: RouteOptions) {
   const app = fastify({
@@ -56,6 +62,7 @@ describe('fastifyApiContracts', () => {
       const contract = buildGetRoute({
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        requestQuerySchema: REQUEST_QUERY_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
@@ -65,49 +72,54 @@ describe('fastifyApiContracts', () => {
   })
   describe('buildFastifyNoPayloadRoute', () => {
     it('uses API spec to build valid GET route in fastify app', async () => {
-      expect.assertions(2)
-      const arrayPreprocessor = (value: unknown) => (Array.isArray(value) ? value : [value])
-
+      expect.assertions(3)
       const contract = buildGetRoute({
-        successResponseBodySchema: z.object({
-          id: z.string(),
-          values: z.preprocess(arrayPreprocessor, z.array(z.string()))
-        }),
+        successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        requestQuerySchema: REQUEST_QUERY_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
       const route = buildFastifyNoPayloadRoute(contract, (req) => {
         expect(req.params.userId).toEqual('1')
+        // satisfies checks if type is inferred properly in route
+        expect(req.query.testIds satisfies string[] | undefined).toBeUndefined()
         return Promise.resolve()
       })
 
       const app = await initApp(route)
       const response = await injectGet(app, contract, {
         pathParams: { userId: '1' },
+        queryParams: { limit: 10 },
       })
 
       expect(response.statusCode).toBe(200)
     })
 
     it('uses API spec to build valid GET route with header factory in fastify app', async () => {
-      expect.assertions(2)
+      expect.assertions(3)
       const contract = buildGetRoute({
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         requestHeaderSchema: HEADERS_SCHEMA,
+        requestQuerySchema: REQUEST_QUERY_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
-      const route = buildFastifyNoPayloadRoute(contract, (req) => {
+      const handler = buildFastifyNoPayloadRouteHandler(contract, (req) => {
         expect(req.params.userId).toEqual('1')
+        // satisfies checks if type is inferred properly in handler
+        expect(req.query.testIds satisfies string[] | undefined).toEqual(['test-id'])
         return Promise.resolve()
       })
+
+      const route = buildFastifyNoPayloadRoute(contract, handler)
 
       const app = await initApp(route)
       const response = await injectGet(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
         pathParams: { userId: '1' },
+        queryParams: { testIds: ['test-id'] },
       })
 
       expect(response.statusCode).toBe(200)
@@ -209,12 +221,14 @@ describe('fastifyApiContracts', () => {
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
-      const route = buildFastifyPayloadRoute(contract, (req) => {
+      const handler = buildFastifyPayloadRouteHandler(contract, (req) => {
         expect(req.params.userId).toEqual('1')
         expect(req.body.id).toEqual('2')
         expect(req.headers.authorization).toEqual('dummy')
         return Promise.resolve()
       })
+
+      const route = buildFastifyPayloadRoute(contract, handler)
 
       const app = await initApp(route)
       const response = await injectPost(app, contract, {
