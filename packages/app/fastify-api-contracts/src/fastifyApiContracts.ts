@@ -8,7 +8,7 @@ import {
 } from '@lokalise/universal-ts-utils/node'
 import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
 import type { FastifySchema } from 'fastify/types/schema'
-import type { ZodSchema } from 'zod'
+import type { z } from 'zod'
 
 /**
  * Default fastify fields + fastify-swagger fields
@@ -59,41 +59,44 @@ export type FastifyNoPayloadHandlerFn<ReplyType, ParamsType, QueryType, HeadersT
   reply: FastifyReply<{ Body: ReplyType }>,
 ) => Promise<void>
 
+type OptionalZodSchema = z.Schema | undefined
+type InferredOptionalSchema<Schema> = Schema extends z.Schema ? z.infer<Schema> : never
+
 /**
  * Infers handler request type automatically from the contract for GET or DELETE methods
  */
 export function buildFastifyNoPayloadRouteHandler<
-  ResponseBodySchema,
-  PathParams,
-  RequestQuerySchema,
-  RequestHeaderSchema,
+  ResponseBodySchema extends OptionalZodSchema = undefined,
+  PathParams extends OptionalZodSchema = undefined,
+  RequestQuerySchema extends OptionalZodSchema = undefined,
+  RequestHeaderSchema extends OptionalZodSchema = undefined,
 >(
   _apiContract:
     | GetRouteDefinition<
+        InferredOptionalSchema<PathParams>,
+        ResponseBodySchema,
         PathParams,
-        ZodSchema<ResponseBodySchema>,
-        ZodSchema<PathParams>,
-        ZodSchema<RequestQuerySchema>,
-        ZodSchema<RequestHeaderSchema>
+        RequestQuerySchema,
+        RequestHeaderSchema
       >
     | DeleteRouteDefinition<
+        InferredOptionalSchema<PathParams>,
+        ResponseBodySchema,
         PathParams,
-        ZodSchema<ResponseBodySchema>,
-        ZodSchema<PathParams>,
-        ZodSchema<RequestQuerySchema>,
-        ZodSchema<RequestHeaderSchema>
+        RequestQuerySchema,
+        RequestHeaderSchema
       >,
   handler: FastifyNoPayloadHandlerFn<
-    ResponseBodySchema,
-    PathParams,
-    RequestQuerySchema,
-    RequestHeaderSchema
+    InferredOptionalSchema<ResponseBodySchema>,
+    InferredOptionalSchema<PathParams>,
+    InferredOptionalSchema<RequestQuerySchema>,
+    InferredOptionalSchema<RequestHeaderSchema>
   >,
 ): FastifyNoPayloadHandlerFn<
-  ResponseBodySchema,
-  PathParams,
-  RequestQuerySchema,
-  RequestHeaderSchema
+  InferredOptionalSchema<ResponseBodySchema>,
+  InferredOptionalSchema<PathParams>,
+  InferredOptionalSchema<RequestQuerySchema>,
+  InferredOptionalSchema<RequestHeaderSchema>
 > {
   return handler
 }
@@ -102,35 +105,35 @@ export function buildFastifyNoPayloadRouteHandler<
  * Build full fastify route definition for GET or DELETE methods
  */
 export function buildFastifyNoPayloadRoute<
-  ResponseBodySchema,
-  PathParams,
-  RequestQuerySchema,
-  RequestHeaderSchema,
+  ResponseBodySchema extends OptionalZodSchema = undefined,
+  PathParams extends OptionalZodSchema = undefined,
+  RequestQuerySchema extends OptionalZodSchema = undefined,
+  RequestHeaderSchema extends OptionalZodSchema = undefined,
 >(
   apiContract:
     | GetRouteDefinition<
+        InferredOptionalSchema<PathParams>,
+        ResponseBodySchema,
         PathParams,
-        ZodSchema<ResponseBodySchema>,
-        ZodSchema<PathParams>,
-        ZodSchema<RequestQuerySchema>,
-        ZodSchema<RequestHeaderSchema>,
+        RequestQuerySchema,
+        RequestHeaderSchema,
         boolean,
         boolean
       >
     | DeleteRouteDefinition<
+        InferredOptionalSchema<PathParams>,
+        ResponseBodySchema,
         PathParams,
-        ZodSchema<ResponseBodySchema>,
-        ZodSchema<PathParams>,
-        ZodSchema<RequestQuerySchema>,
-        ZodSchema<RequestHeaderSchema>,
+        RequestQuerySchema,
+        RequestHeaderSchema,
         boolean,
         boolean
       >,
   handler: FastifyNoPayloadHandlerFn<
-    ResponseBodySchema,
-    PathParams,
-    RequestQuerySchema,
-    RequestHeaderSchema
+    InferredOptionalSchema<ResponseBodySchema>,
+    InferredOptionalSchema<PathParams>,
+    InferredOptionalSchema<RequestQuerySchema>,
+    InferredOptionalSchema<RequestHeaderSchema>
   >,
 ): RouteType {
   return {
@@ -151,33 +154,33 @@ export function buildFastifyNoPayloadRoute<
  * Infers handler request type automatically from the contract for POST, PUT and PATCH methods
  */
 export function buildFastifyPayloadRouteHandler<
-  RequestBodySchema,
-  ResponseBodySchema,
-  PathParams,
-  RequestQuerySchema,
-  RequestHeaderSchema,
+  RequestBodySchema extends OptionalZodSchema = undefined,
+  ResponseBodySchema extends OptionalZodSchema = undefined,
+  PathParams extends OptionalZodSchema = undefined,
+  RequestQuerySchema extends OptionalZodSchema = undefined,
+  RequestHeaderSchema extends OptionalZodSchema = undefined,
 >(
   _apiContract: PayloadRouteDefinition<
-    PathParams,
-    ZodSchema<RequestBodySchema>,
-    ZodSchema<ResponseBodySchema>,
-    ZodSchema<PathParams>,
-    ZodSchema<RequestQuerySchema>,
-    ZodSchema<RequestHeaderSchema>
-  >,
-  handler: FastifyPayloadHandlerFn<
-    ResponseBodySchema,
+    InferredOptionalSchema<PathParams>,
     RequestBodySchema,
+    ResponseBodySchema,
     PathParams,
     RequestQuerySchema,
     RequestHeaderSchema
   >,
+  handler: FastifyPayloadHandlerFn<
+    InferredOptionalSchema<ResponseBodySchema>,
+    InferredOptionalSchema<RequestBodySchema>,
+    InferredOptionalSchema<PathParams>,
+    InferredOptionalSchema<RequestQuerySchema>,
+    InferredOptionalSchema<RequestHeaderSchema>
+  >,
 ): FastifyPayloadHandlerFn<
-  ResponseBodySchema,
-  RequestBodySchema,
-  PathParams,
-  RequestQuerySchema,
-  RequestHeaderSchema
+  InferredOptionalSchema<ResponseBodySchema>,
+  InferredOptionalSchema<RequestBodySchema>,
+  InferredOptionalSchema<PathParams>,
+  InferredOptionalSchema<RequestQuerySchema>,
+  InferredOptionalSchema<RequestHeaderSchema>
 > {
   return handler
 }
@@ -186,26 +189,26 @@ export function buildFastifyPayloadRouteHandler<
  * Build full fastify route definition for POST, PUT and PATCH methods
  */
 export function buildFastifyPayloadRoute<
-  RequestBodySchema,
-  ResponseBodySchema,
-  PathParams,
-  RequestQuerySchema,
-  RequestHeaderSchema,
+  RequestBodySchema extends OptionalZodSchema = undefined,
+  ResponseBodySchema extends OptionalZodSchema = undefined,
+  PathParams extends OptionalZodSchema = undefined,
+  RequestQuerySchema extends OptionalZodSchema = undefined,
+  RequestHeaderSchema extends OptionalZodSchema = undefined,
 >(
   apiContract: PayloadRouteDefinition<
-    PathParams,
-    ZodSchema<RequestBodySchema>,
-    ZodSchema<ResponseBodySchema>,
-    ZodSchema<PathParams>,
-    ZodSchema<RequestQuerySchema>,
-    ZodSchema<RequestHeaderSchema>
-  >,
-  handler: FastifyPayloadHandlerFn<
-    ResponseBodySchema,
+    InferredOptionalSchema<PathParams>,
     RequestBodySchema,
+    ResponseBodySchema,
     PathParams,
     RequestQuerySchema,
     RequestHeaderSchema
+  >,
+  handler: FastifyPayloadHandlerFn<
+    InferredOptionalSchema<ResponseBodySchema>,
+    InferredOptionalSchema<RequestBodySchema>,
+    InferredOptionalSchema<PathParams>,
+    InferredOptionalSchema<RequestQuerySchema>,
+    InferredOptionalSchema<RequestHeaderSchema>
   >,
 ): RouteType {
   return {
