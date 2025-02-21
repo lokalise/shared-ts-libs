@@ -114,16 +114,22 @@ describe('frontend-http-client', () => {
     it('returns deserialized response for GET with query params', async () => {
       const client = wretch(mockServer.url)
 
-      await mockServer.forGet('/users/1').thenJson(200, { data: { code: 99 } })
+      await mockServer
+        .forGet('/users/1')
+        .thenJson(200, { data: { code: 99, values: ['test1', 'test2'] } })
+
+      const arrayPreprocessor = (value: unknown) => (Array.isArray(value) ? value : [value])
 
       const responseBodySchema = z.object({
         data: z.object({
           code: z.number(),
+          values: z.preprocess(arrayPreprocessor, z.array(z.string())),
         }),
       })
 
       const pathSchema = z.object({
         userId: z.number(),
+        test: z.number().default(10),
       })
 
       const querySchema = z.object({
@@ -146,9 +152,11 @@ describe('frontend-http-client', () => {
         },
       })
 
-      expect(responseBody).toEqual({
+      // satisfies verifies that responseBody type is inferred properly
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toEqual({
         data: {
           code: 99,
+          values: ['test1', 'test2'],
         },
       })
     })
