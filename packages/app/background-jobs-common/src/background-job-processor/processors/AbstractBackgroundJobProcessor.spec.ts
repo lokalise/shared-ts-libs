@@ -590,7 +590,12 @@ describe('AbstractBackgroundJobProcessor', () => {
     let processor: FakeBackgroundJobProcessor<JobData>
 
     beforeEach(async () => {
-      processor = new FakeBackgroundJobProcessor<JobData>(deps, QueueName, factory.getRedisConfig())
+      processor = new FakeBackgroundJobProcessor<JobData>(
+        deps,
+        QueueName,
+        factory.getRedisConfig(),
+        false,
+      )
       await processor.start()
     })
 

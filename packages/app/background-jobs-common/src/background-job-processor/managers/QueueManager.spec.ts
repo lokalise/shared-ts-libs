@@ -408,8 +408,6 @@ describe('QueueManager', () => {
       const opts = {
         delay: 1000,
         backoff: { delay: 1000, type: 'exponential' },
-        removeOnFail: false,
-        removeOnComplete: false,
       }
       const jobId = await manager.schedule(
         'queue1',
@@ -425,10 +423,8 @@ describe('QueueManager', () => {
       const job = await manager.getQueue('queue1').getJob(jobId)
       if (isTest) {
         expect(job!.opts).toMatchObject({
-          delay: 1,
-          backoff: { delay: 1, type: 'fixed' }, // zero delay is handled weirdly in BullMQ for concurrent job.
-          removeOnFail: true,
-          removeOnComplete: true,
+          delay: 0,
+          backoff: { delay: 0, type: 'fixed' }, // zero delay is handled weirdly in BullMQ for concurrent job.
         })
       } else {
         expect(job!.opts).toMatchObject(opts)
