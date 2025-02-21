@@ -34,7 +34,7 @@ export type CommonRouteDefinition<
   requestPathParamsSchema?: PathParamsSchema
   requestQuerySchema?: RequestQuerySchema
   requestHeaderSchema?: RequestHeaderSchema
-  pathResolver: RoutePathResolver<InferSchemaInput<PathParamsSchema>>
+  pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
   responseSchemasByStatusCode?: Partial<Record<HttpStatusCode, z.Schema>>
   description?: string
   metadata?: CommonRouteDefinitionMetadata
