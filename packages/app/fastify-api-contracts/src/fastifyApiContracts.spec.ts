@@ -345,5 +345,37 @@ describe('fastifyApiContracts', () => {
 
       expect(response.statusCode).toBe(200)
     })
+
+    it('supports isNonJSONResponseExpected and isEmptyResponseExpected parameters', async () => {
+      expect.assertions(4)
+      const contract = buildPayloadRoute({
+        method: 'post',
+        requestBodySchema: REQUEST_BODY_SCHEMA,
+        successResponseBodySchema: z.undefined(),
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        requestHeaderSchema: HEADERS_SCHEMA,
+        isEmptyResponseExpected: true,
+        isNonJSONResponseExpected: true,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const handler = buildFastifyPayloadRouteHandler(contract, (req) => {
+        expect(req.params.userId).toEqual('1')
+        expect(req.body.id).toEqual('2')
+        expect(req.headers.authorization).toEqual('dummy')
+        return Promise.resolve()
+      })
+
+      const route = buildFastifyPayloadRoute(contract, handler)
+
+      const app = await initApp(route)
+      const response = await injectPost(app, contract, {
+        headers: () => Promise.resolve({ authorization: 'dummy' }),
+        pathParams: { userId: '1' },
+        body: { id: '2' },
+      })
+
+      expect(response.statusCode).toBe(200)
+    })
   })
 })

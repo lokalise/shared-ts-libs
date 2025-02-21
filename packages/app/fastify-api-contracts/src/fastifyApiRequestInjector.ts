@@ -49,6 +49,8 @@ export async function injectGet<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
 >(
   app: FastifyInstance,
   apiContract: GetRouteDefinition<
@@ -57,8 +59,8 @@ export async function injectGet<
     PathParamsSchema,
     RequestQuerySchema,
     RequestHeaderSchema,
-    boolean,
-    boolean
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
   >,
   params: RouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
@@ -87,6 +89,8 @@ export async function injectDelete<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
 >(
   app: FastifyInstance,
   apiContract: DeleteRouteDefinition<
@@ -95,8 +99,8 @@ export async function injectDelete<
     PathParamsSchema,
     RequestQuerySchema,
     RequestHeaderSchema,
-    boolean,
-    boolean
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
   >,
   params: RouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
@@ -126,6 +130,8 @@ export async function injectPost<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
 >(
   app: FastifyInstance,
   apiContract: PayloadRouteDefinition<
@@ -134,7 +140,9 @@ export async function injectPost<
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
-    RequestHeaderSchema
+    RequestHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
   >,
   params: PayloadRouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
@@ -167,6 +175,8 @@ export async function injectPut<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
 >(
   app: FastifyInstance,
   apiContract: PayloadRouteDefinition<
@@ -175,7 +185,9 @@ export async function injectPut<
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
-    RequestHeaderSchema
+    RequestHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
   >,
   params: PayloadRouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
@@ -208,6 +220,8 @@ export async function injectPatch<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
 >(
   app: FastifyInstance,
   apiContract: PayloadRouteDefinition<
@@ -216,7 +230,9 @@ export async function injectPatch<
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
-    RequestHeaderSchema
+    RequestHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
   >,
   params: PayloadRouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
