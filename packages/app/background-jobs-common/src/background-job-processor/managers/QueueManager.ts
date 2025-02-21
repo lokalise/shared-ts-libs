@@ -157,17 +157,15 @@ export class QueueManager<
     jobPayload: JobPayloadInputForQueue<Queues, QueueId>,
     options?: JobOptionsType,
   ): Promise<string> {
-    const { jobOptions: defaultOptions, jobPayloadSchema } =
-      this.queueRegistry.getQueueConfig(queueId)
-
-    const validatedPayload = jobPayloadSchema.parse(jobPayload)
+    const parsedPayload = this.queueRegistry
+      .getQueueConfig(queueId)
+      .jobPayloadSchema.parse(jobPayload)
 
     await this.startIfNotStarted(queueId)
-
     const job = await this.getQueue(queueId).add(
       queueId,
-      validatedPayload,
-      prepareJobOptions(this.config.isTest, merge(defaultOptions ?? {}, options ?? {})),
+      parsedPayload,
+      this.resolveJobOptions(queueId, parsedPayload, options),
     )
     if (!job?.id) throw new Error('Scheduled job ID is undefined')
     if (this.spies[queueId]) this.spies[queueId].addJob(job, 'scheduled')
@@ -178,35 +176,60 @@ export class QueueManager<
   public async scheduleBulk<QueueId extends SupportedQueueIds<Queues>>(
     queueId: QueueId,
     jobPayloads: JobPayloadInputForQueue<Queues, QueueId>[],
-    options?: JobOptionsType,
+    options?: Omit<JobOptionsType, 'repeat'>,
   ): Promise<string[]> {
     if (jobPayloads.length === 0) return []
 
-    const { jobOptions: defaultOptions, jobPayloadSchema } =
-      this.queueRegistry.getQueueConfig(queueId)
-    const validatedPayloads = jobPayloads.map((payload) => jobPayloadSchema.parse(payload))
+    const { jobPayloadSchema } = this.queueRegistry.getQueueConfig(queueId)
+    const parsedPayload = jobPayloads.map((payload) => jobPayloadSchema.parse(payload))
 
     await this.startIfNotStarted(queueId)
-
     const jobs =
       (await this.getQueue(queueId)?.addBulk(
-        validatedPayloads.map((data) => ({
+        parsedPayload.map((data) => ({
           name: queueId,
           data: data,
-          opts: prepareJobOptions(this.config.isTest, merge(defaultOptions ?? {}, options ?? {})),
+          opts: this.resolveJobOptions(queueId, data, options as JobOptionsType),
         })),
       )) ?? []
 
     const jobIds = jobs.map((job) => job.id)
-    /* v8 ignore next 5 */
+    /* v8 ignore start */
     if (jobIds.length === 0 || !jobIds.every((id) => !!id)) {
       // Practically unreachable, but we want to simplify the signature of the method and avoid
       // stating that it could return undefined.
       throw new Error('Some scheduled job IDs are undefined')
     }
+    /* v8 ignore stop */
     if (this.spies[queueId]) this.spies[queueId].addJobs(jobs, 'scheduled')
 
     return jobIds as string[]
+  }
+
+  private resolveJobOptions<QueueId extends SupportedQueueIds<Queues>>(
+    queueId: QueueId,
+    jobPayload: JobPayloadForQueue<Queues, QueueId>,
+    options?: JobOptionsType,
+  ): JobOptionsType {
+    const defaultOptions = this.queueRegistry.getQueueConfig(queueId).jobOptions
+    const resolvedOptions: JobOptionsType = merge(
+      defaultOptions ?? {},
+      options ?? {},
+    ) as JobOptionsType
+
+    if (defaultOptions?.deduplication && !options?.deduplication) {
+      const deduplicationId = defaultOptions.deduplication.idBuilder(jobPayload)
+      if (!deduplicationId || deduplicationId.trim().length === 0) {
+        throw new Error('Invalid deduplication id')
+      }
+
+      resolvedOptions.deduplication = {
+        ...resolvedOptions.deduplication,
+        id: deduplicationId,
+      }
+    }
+
+    return prepareJobOptions(this.config.isTest, resolvedOptions)
   }
 
   /**

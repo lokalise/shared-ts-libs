@@ -55,8 +55,8 @@ export type BackgroundJobProcessorConfig<
   isTest: boolean
   // Name of a webservice or a module running the bg job. Used for logging/observability
   ownerName: string
-  queueOptions?: Omit<Partial<QueueOptionsType>, 'connection' | 'prefix'>
-  workerOptions: Omit<Partial<WorkerOptionsType>, 'connection' | 'prefix' | 'autorun'>
+  queueOptions?: Omit<QueueOptionsType, 'connection' | 'prefix'>
+  workerOptions: Omit<WorkerOptionsType, 'connection' | 'prefix' | 'autorun'>
   redisConfig: RedisConfig
   barrier?: BarrierCallback<JobPayload, ExecutionContext, JobReturn, JobType>
   lazyInitEnabled?: boolean

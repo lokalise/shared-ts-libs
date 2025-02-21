@@ -9,14 +9,25 @@ export type QueueManagerConfig = {
   redisConfig: RedisConfig
 }
 
+type JobOptionsWithDeduplicationIdBuilder<JobOptionsType extends JobsOptions> = Omit<
+  JobOptionsType,
+  'deduplication'
+> & {
+  deduplication?: Omit<JobOptionsType['deduplication'], 'id'> & {
+    /** Callback to allow building deduplication id base on job data*/
+    // biome-ignore lint/suspicious/noExplicitAny: We cannot infer type of JobData, but we have run time validation
+    idBuilder: (JobData: any) => string
+  }
+}
+
 export type QueueConfiguration<
   QueueOptionsType extends QueueOptions = QueueOptions,
   JobOptionsType extends JobsOptions = JobsOptions,
 > = {
   queueId: string
-  queueOptions?: Omit<Partial<QueueOptionsType>, 'connection' | 'prefix'>
-  jobPayloadSchema: z.ZodType<BaseJobPayload> // should extend BASE_JOB_PAYLOAD_SCHEMA
-  jobOptions?: JobOptionsType
+  queueOptions?: Omit<QueueOptionsType, 'connection' | 'prefix'>
+  jobPayloadSchema: z.ZodType<BaseJobPayload> // should extend JobPayload
+  jobOptions?: JobOptionsWithDeduplicationIdBuilder<JobOptionsType>
 }
 
 export type SupportedQueueIds<Config extends QueueConfiguration[]> = Config[number]['queueId']
