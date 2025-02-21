@@ -42,15 +42,10 @@ export const prepareJobOptions = <JobOptionsType extends JobsOptions>(
   }
 
   if (isTest) {
-    preparedOptions.delay = 1 // zero delay is handled weirdly in BullMQ for concurrent job.
-
-    if (typeof preparedOptions.backoff === 'object') {
-      preparedOptions.backoff.delay = 1 // zero delay is handled weirdly in BullMQ for concurrent job.
-      preparedOptions.backoff.type = 'fixed'
-      preparedOptions.removeOnFail = true
-      /* v8 ignore next */
-      if (preparedOptions.removeOnComplete === undefined) preparedOptions.removeOnComplete = true
-    }
+    preparedOptions.delay = 0
+    preparedOptions.backoff = { delay: 0, type: 'fixed' }
+    preparedOptions.removeOnFail = true
+    preparedOptions.removeOnComplete = true
   }
 
   return preparedOptions
