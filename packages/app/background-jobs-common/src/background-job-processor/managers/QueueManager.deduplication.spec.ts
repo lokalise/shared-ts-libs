@@ -20,6 +20,7 @@ const supportedQueues = [
     jobOptions: {
       deduplication: {
         idBuilder: (jobData: any) => `${jobData.id}:${jobData.value}`,
+        ttl: 500,
       },
     },
   },
@@ -109,7 +110,10 @@ describe('QueueManager - deduplication', () => {
 
       const job = await queueManager.getQueue('queue_valid').getJob(jobId)
       expect(job).toBeDefined()
-      expect(job!.opts.deduplication!.id).toBe('myId:myValue')
+      expect(job!.opts.deduplication).toMatchObject({
+        id: 'myId:myValue',
+        ttl: 500,
+      })
     })
 
     it('should schedule job respecting options deduplication id', async () => {
@@ -175,7 +179,10 @@ describe('QueueManager - deduplication', () => {
 
       const job = await queueManager.getQueue('queue_valid').getJob(jobIds[0])
       expect(job).toBeDefined()
-      expect(job!.opts.deduplication!.id).toBe('myId:myValue')
+      expect(job!.opts.deduplication).toMatchObject({
+        id: 'myId:myValue',
+        ttl: 500,
+      })
     })
 
     it('should schedule job respecting options deduplication id', async () => {
