@@ -55,7 +55,7 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
         'queue',
         redisConfig,
       ).start(),
-    ).rejects.toThrowError(/Queue id "queue" is not unique/)
+    ).rejects.toMatchInlineSnapshot('[Error: Processor for queue id "queue" is not unique.]')
 
     await job1.dispose()
   })

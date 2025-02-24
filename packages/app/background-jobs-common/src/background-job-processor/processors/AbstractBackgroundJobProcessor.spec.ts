@@ -44,7 +44,7 @@ describe('AbstractBackgroundJobProcessor', () => {
       await job2.start()
       await expect(
         new FakeBackgroundJobProcessor<JobData>(deps, 'queue1', factory.getRedisConfig()).start(),
-      ).rejects.toThrowError(/Queue id "queue1" is not unique/)
+      ).rejects.toMatchInlineSnapshot('[Error: Processor for queue id "queue1" is not unique.]')
 
       await job1.dispose()
       await job2.dispose()
