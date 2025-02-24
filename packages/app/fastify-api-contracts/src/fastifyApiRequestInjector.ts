@@ -90,7 +90,7 @@ export async function injectDelete<
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
-  IsEmptyResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = true,
 >(
   app: FastifyInstance,
   apiContract: DeleteRouteDefinition<
