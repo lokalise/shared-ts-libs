@@ -2,6 +2,7 @@ import type { JobsOptions, QueueOptions } from 'bullmq'
 import type { Queue } from 'bullmq'
 import type { JobState } from 'bullmq/dist/esm/types/job-type'
 import { merge } from 'ts-deepmerge'
+import { DEFAULT_QUEUE_OPTIONS } from '../constants'
 import type { BullmqQueueFactory } from '../factories/BullmqQueueFactory'
 import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
@@ -115,27 +116,24 @@ export class QueueManager<
   }
 
   private async internalStart(enabled: string[] | true): Promise<void> {
-    const queuePromises = []
+    const queueReadyPromises = []
     const queueIdSetToStart = enabled === true ? undefined : new Set(enabled)
 
     for (const queueId of this.queueRegistry.queueIds) {
       if (queueIdSetToStart?.has(queueId) === false) {
         continue
       }
-      const queue = this.queueRegistry.getQueueConfig(queueId)
-      const queueOptions = {
-        ...((queue.queueOptions ?? {}) as QueueOptionsType),
+      const queueConfig = this.queueRegistry.getQueueConfig(queueId)
+      const queue = this.factory.buildQueue(queueId, {
+        ...(merge(DEFAULT_QUEUE_OPTIONS, queueConfig.queueOptions ?? {}) as QueueOptionsType),
         connection: sanitizeRedisConfig(this.config.redisConfig),
         prefix: this.config.redisConfig?.keyPrefix ?? undefined,
-      }
-      const queuePromise = this.factory.buildQueue(queueId, queueOptions)
-      this._queues[queueId] = queuePromise
-      queuePromises.push(queuePromise.waitUntilReady())
+      })
+      this._queues[queueId] = queue
+      queueReadyPromises.push(queue.waitUntilReady())
     }
 
-    if (queuePromises.length) {
-      await Promise.allSettled(queuePromises)
-    }
+    if (queueReadyPromises.length) await Promise.all(queueReadyPromises)
 
     this.isStarted = true
   }

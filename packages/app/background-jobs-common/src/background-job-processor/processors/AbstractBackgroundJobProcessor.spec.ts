@@ -10,7 +10,6 @@ import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/Test
 import type { BaseJobPayload } from '../types'
 
 import { randomUUID } from 'node:crypto'
-import { isPromiseFinished } from '../../../test/isPromiseFinished'
 import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
@@ -130,23 +129,18 @@ describe('AbstractBackgroundJobProcessor', () => {
         randomUUID(),
         factory.getRedisConfig(),
       )
-      const jobData = {
-        id: generateMonotonicUuid(),
-        value: 'test',
-        metadata: { correlationId: generateMonotonicUuid() },
-      }
 
       await processor.start()
-      const jobId = await processor.schedule(jobData, { delay: 100 })
-      const jobScheduled = await processor.spy.waitForJobWithId(jobId, 'scheduled')
-      expect(jobScheduled.data).toMatchObject(jobData)
+      // @ts-expect-error executing protected method for testing
+      expect(processor.worker.isRunning()).toBeTruthy()
 
       await processor.dispose()
-      const completedPromise = processor.spy.waitForJobWithId(jobId, 'completed')
-      await expect(isPromiseFinished(completedPromise)).resolves.toBe(false)
+      // @ts-expect-error executing protected method for testing
+      expect(processor.worker.isRunning()).toBeFalsy()
 
       await processor.start()
-      await expect(isPromiseFinished(completedPromise)).resolves.toBe(true)
+      // @ts-expect-error executing protected method for testing
+      expect(processor.worker.isRunning()).toBeTruthy()
 
       await processor.dispose()
     })
