@@ -116,6 +116,8 @@ export function buildFastifyPayloadRouteHandler<
   PathParams extends OptionalZodSchema = undefined,
   RequestQuerySchema extends OptionalZodSchema = undefined,
   RequestHeaderSchema extends OptionalZodSchema = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
 >(
   _apiContract: PayloadRouteDefinition<
     InferredOptionalSchema<PathParams>,
@@ -123,7 +125,9 @@ export function buildFastifyPayloadRouteHandler<
     ResponseBodySchema,
     PathParams,
     RequestQuerySchema,
-    RequestHeaderSchema
+    RequestHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
   >,
   handler: FastifyPayloadHandlerFn<
     InferredOptionalSchema<ResponseBodySchema>,
@@ -151,6 +155,8 @@ export function buildFastifyPayloadRoute<
   PathParams extends OptionalZodSchema = undefined,
   RequestQuerySchema extends OptionalZodSchema = undefined,
   RequestHeaderSchema extends OptionalZodSchema = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
 >(
   apiContract: PayloadRouteDefinition<
     InferredOptionalSchema<PathParams>,
@@ -158,7 +164,9 @@ export function buildFastifyPayloadRoute<
     ResponseBodySchema,
     PathParams,
     RequestQuerySchema,
-    RequestHeaderSchema
+    RequestHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
   >,
   handler: FastifyPayloadHandlerFn<
     InferredOptionalSchema<ResponseBodySchema>,
