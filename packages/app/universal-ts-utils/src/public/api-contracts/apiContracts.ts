@@ -201,7 +201,7 @@ export function buildDeleteRoute<
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
-  IsEmptyResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = true,
   PathParams = PathParamsSchema extends z.Schema<infer T> ? T : never,
 >(
   params: Omit<
