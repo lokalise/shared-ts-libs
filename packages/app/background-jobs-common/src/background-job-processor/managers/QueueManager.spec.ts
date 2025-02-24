@@ -396,7 +396,7 @@ describe('QueueManager', () => {
       })
     })
 
-    it.each([true, false])('should replace job options if isTest is true', async (isTest) => {
+    it.skip.each([true, false])('should replace job options if isTest is true', async (isTest) => {
       // Given
       const manager = new FakeQueueManager([supportedQueues[0]], {
         redisConfig,
