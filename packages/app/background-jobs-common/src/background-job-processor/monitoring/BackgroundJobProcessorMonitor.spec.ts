@@ -63,7 +63,7 @@ describe('BackgroundJobProcessorMonitor', () => {
           },
           'registerQueue tests',
         ).registerQueue(),
-      ).rejects.toThrow(/Queue id "test-queue" is not unique/)
+      ).rejects.toMatchInlineSnapshot(`[Error: Processor for queue id "test-queue" is not unique.]`)
 
       await monitor1.unregisterQueue()
     })
