@@ -131,7 +131,7 @@ export async function sendGet<
   T extends WretchInstance,
   ResponseBody,
   RequestQuerySchema extends z.Schema | undefined = undefined,
-  HeadersSchema extends z.Schema | undefined = undefined,
+  RequestHeadersSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 >(
@@ -141,7 +141,7 @@ export async function sendGet<
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     RequestQuerySchema,
-    HeadersSchema
+    RequestHeadersSchema
   >,
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   const queryParams = parseQueryParams({
@@ -208,7 +208,7 @@ export function sendPost<
   ResponseBody,
   RequestBodySchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
-  HeadersSchema extends z.Schema | undefined = undefined,
+  RequestHeadersSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 >(
@@ -219,7 +219,7 @@ export function sendPost<
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     RequestQuerySchema,
-    HeadersSchema
+    RequestHeadersSchema
   >,
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   return sendResourceChange(wretch, 'post', params)
@@ -232,7 +232,7 @@ export function sendPut<
   ResponseBody,
   RequestBodySchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
-  HeadersSchema extends z.Schema | undefined = undefined,
+  RequestHeadersSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 >(
@@ -243,7 +243,7 @@ export function sendPut<
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     RequestQuerySchema,
-    HeadersSchema
+    RequestHeadersSchema
   >,
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   return sendResourceChange(wretch, 'put', params)
@@ -256,7 +256,7 @@ export function sendPatch<
   ResponseBody,
   RequestBodySchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
-  HeadersSchema extends z.Schema | undefined = undefined,
+  RequestHeadersSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 >(
@@ -267,7 +267,7 @@ export function sendPatch<
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     RequestQuerySchema,
-    HeadersSchema
+    RequestHeadersSchema
   >,
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   return sendResourceChange(wretch, 'patch', params)
@@ -279,7 +279,7 @@ export async function sendDelete<
   T extends WretchInstance,
   ResponseBody,
   RequestQuerySchema extends z.Schema | undefined = undefined,
-  HeadersSchema extends z.Schema | undefined = undefined,
+  RequestHeadersSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
 >(
@@ -292,9 +292,9 @@ export async function sendDelete<
         IsEmptyResponseExpected
       >
     : FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>) &
-    (HeadersSchema extends z.Schema
-      ? Omit<HeadersParams<HeadersSchema>, 'responseBodySchema'>
-      : Omit<FreeHeadersParams<HeadersSchema>, 'responseBodySchema'>),
+    (RequestHeadersSchema extends z.Schema
+      ? Omit<HeadersParams<RequestHeadersSchema>, 'responseBodySchema'>
+      : Omit<FreeHeadersParams<RequestHeadersSchema>, 'responseBodySchema'>),
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   const queryParams = parseQueryParams({
     queryParams: params.queryParams,
