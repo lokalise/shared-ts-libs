@@ -440,6 +440,7 @@ describe('QueueManager', () => {
     beforeEach(async () => {
       queueManager = new FakeQueueManager(supportedQueues, {
         redisConfig,
+        isTest: false,
       })
       await queueManager.start()
     })
