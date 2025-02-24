@@ -19,14 +19,15 @@ import {
   sendPost,
   sendPut,
 } from './client.js'
-import {constants as httpConstants} from "http2";
 
-export const JSON_HEADERS = {
+const JSON_HEADERS = {
   'Content-Type': 'application/json',
 }
-const HEADERS_SCHEMA = z.object({
-  authorization: z.string(),
-}).strip()
+const HEADERS_SCHEMA = z
+  .object({
+    authorization: z.string(),
+  })
+  .strip()
 
 describe('frontend-http-client', () => {
   const mockServer = getLocal()
@@ -207,15 +208,15 @@ describe('frontend-http-client', () => {
     it('returns deserialized response for GET with headers', async () => {
       const client = wretch(mockServer.url)
 
-      await mockServer
-          .forGet('/users/1')
-          .thenCallback((req) => {
-            return { statusCode: 200,
-              headers: JSON_HEADERS,
-              body: JSON.stringify({
-                headers: req.headers.authorization,
-              }), }
-          })
+      await mockServer.forGet('/users/1').thenCallback((req) => {
+        return {
+          statusCode: 200,
+          headers: JSON_HEADERS,
+          body: JSON.stringify({
+            headers: req.headers.authorization,
+          }),
+        }
+      })
 
       const responseBodySchema = z.any()
 
@@ -235,7 +236,7 @@ describe('frontend-http-client', () => {
         pathParams: {
           userId: 1,
         },
-        headers: { authorization: 'dummy' }
+        headers: { authorization: 'dummy' },
       })
 
       // satisfies verifies that responseBody type is inferred properly
@@ -249,19 +250,17 @@ describe('frontend-http-client', () => {
     it('returns deserialized response for GET with header factory', async () => {
       const client = wretch(mockServer.url)
 
-      await mockServer
-          .forGet('/users/1')
-          .thenCallback((req) => {
-            return { statusCode: httpConstants.HTTP_STATUS_SERVICE_UNAVAILABLE,
-              headers: JSON_HEADERS,
-              body: JSON.stringify({
-                headers: req.headers,
-              }), }
-          })
-
-      const responseBodySchema = z.object({
-        headers: z.string()
+      await mockServer.forGet('/users/1').thenCallback((req) => {
+        return {
+          statusCode: 200,
+          headers: JSON_HEADERS,
+          body: JSON.stringify({
+            headers: req.headers.authorization,
+          }),
+        }
       })
+
+      const responseBodySchema = z.any()
 
       const pathSchema = z.object({
         userId: z.number(),
@@ -279,11 +278,15 @@ describe('frontend-http-client', () => {
         pathParams: {
           userId: 1,
         },
-        headers: () => Promise.resolve({ authorization: 'dummy' })
+        headers: () => Promise.resolve({ authorization: 'dummy' }),
       })
 
       // satisfies verifies that responseBody type is inferred properly
-      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toMatchInlineSnapshot()
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toMatchInlineSnapshot(`
+        {
+          "headers": "dummy",
+        }
+      `)
     })
 
     it('returns response for DELETE', async () => {
@@ -309,6 +312,99 @@ describe('frontend-http-client', () => {
       })
 
       expect(responseBody).toBeNull()
+    })
+
+    it('returns deserialized response for DELETE with header factory', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forDelete('/users/1').thenCallback((req) => {
+        return {
+          statusCode: 200,
+          headers: JSON_HEADERS,
+          body: JSON.stringify({
+            headers: req.headers.authorization,
+          }),
+        }
+      })
+
+      const responseBodySchema = z.any()
+
+      const pathSchema = z.object({
+        userId: z.number(),
+        test: z.number().default(10),
+      })
+
+      const routeDefinition = buildDeleteRoute({
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestHeaderSchema: HEADERS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByDeleteRoute(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        headers: () => Promise.resolve({ authorization: 'dummy' }),
+      })
+
+      // satisfies verifies that responseBody type is inferred properly
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toMatchInlineSnapshot(`
+        {
+          "headers": "dummy",
+        }
+      `)
+    })
+
+    it('returns deserialized response for POST with header factory', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPost('/users/1').thenCallback((req) => {
+        return {
+          statusCode: 200,
+          headers: JSON_HEADERS,
+          body: JSON.stringify({
+            headers: req.headers.authorization,
+          }),
+        }
+      })
+
+      const responseBodySchema = z.any()
+
+      const pathSchema = z.object({
+        userId: z.number(),
+        test: z.number().default(10),
+      })
+
+      const requestBodySchema = z.object({
+        isActive: z.boolean(),
+      })
+
+      const routeDefinition = buildPayloadRoute({
+        method: 'post',
+        requestBodySchema,
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestHeaderSchema: HEADERS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByPayloadRoute(client, routeDefinition, {
+        body: {
+          isActive: true,
+        },
+        pathParams: {
+          userId: 1,
+        },
+        headers: () => Promise.resolve({ authorization: 'dummy' }),
+      })
+
+      // satisfies verifies that responseBody type is inferred properly
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toMatchInlineSnapshot(`
+        {
+          "headers": "dummy",
+        }
+      `)
     })
 
     it('returns deserialized response without body or path params', async () => {

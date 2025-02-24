@@ -7,11 +7,12 @@ import type {
   InferSchemaOutput,
   PayloadRouteDefinition,
 } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
-import {
+import type {
   DeleteParams,
-  DeleteParamsWrapper,
-  FreeDeleteParams, FreeHeadersParams,
-  GetParamsWrapper, HeadersParams,
+  FreeDeleteParams,
+  FreeHeadersParams,
+  GetParamsWrapper,
+  HeadersParams,
   PayloadRequestParamsWrapper,
   PayloadRouteRequestParams,
   RequestResultType,
@@ -25,9 +26,13 @@ import { parseQueryParams } from './utils/queryUtils.js'
 
 export const UNKNOWN_SCHEMA = z.unknown()
 
-function resolveHeaders(): Record<string, string> | Promise<Record<string, string>> {
-  // @ts-expect-error fixme
-  return typeof params.headers === 'function' ? params.headers() : params.headers
+function resolveHeaders(
+  headers:
+    | Record<string, string>
+    | (() => Record<string, string>)
+    | (() => Promise<Record<string, string>>),
+): Record<string, string> | Promise<Record<string, string>> {
+  return (typeof headers === 'function' ? headers() : headers) ?? {}
 }
 
 async function sendResourceChange<
@@ -73,11 +78,9 @@ async function sendResourceChange<
   const resolvedHeaders = await resolveHeaders(params.headers)
 
   return wretch
-      .headers(resolvedHeaders)
-      [method]
-  (body.result, `${params.path}${queryParams.result}`)
-      .res(
-    async (response) => {
+    .headers(resolvedHeaders)
+    [method](body.result, `${params.path}${queryParams.result}`)
+    .res(async (response) => {
       const bodyParseResult = await tryToResolveJsonBody(
         response,
         params.path,
@@ -115,8 +118,9 @@ async function sendResourceChange<
       }
 
       return bodyParseResult.result
-    },
-  ) as Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>>
+    }) as Promise<
+    RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
+  >
 }
 
 /* METHODS */
@@ -152,44 +156,49 @@ export async function sendGet<
 
   const resolvedHeaders = await resolveHeaders(params.headers)
 
-  return wretch.headers(resolvedHeaders).get(`${params.path}${queryParams.result}`).res(async (response) => {
-    const bodyParseResult = await tryToResolveJsonBody(
-      response,
-      params.path,
-      params.responseBodySchema,
-      params.isEmptyResponseExpected,
-    )
-
-    if (bodyParseResult.error === 'NOT_JSON') {
-      if (params.isNonJSONResponseExpected) {
-        return response
-      }
-      return Promise.reject(
-        buildWretchError(
-          `Request to ${params.path} has returned an unexpected non-JSON response.`,
-          response,
-        ),
+  return wretch
+    .headers(resolvedHeaders)
+    .get(`${params.path}${queryParams.result}`)
+    .res(async (response) => {
+      const bodyParseResult = await tryToResolveJsonBody(
+        response,
+        params.path,
+        params.responseBodySchema,
+        params.isEmptyResponseExpected,
       )
-    }
 
-    if (bodyParseResult.error === 'EMPTY_RESPONSE') {
-      if (params.isEmptyResponseExpected) {
-        return null
+      if (bodyParseResult.error === 'NOT_JSON') {
+        if (params.isNonJSONResponseExpected) {
+          return response
+        }
+        return Promise.reject(
+          buildWretchError(
+            `Request to ${params.path} has returned an unexpected non-JSON response.`,
+            response,
+          ),
+        )
       }
-      return Promise.reject(
-        buildWretchError(
-          `Request to ${params.path} has returned an unexpected empty response.`,
-          response,
-        ),
-      )
-    }
 
-    if (bodyParseResult.error) {
-      return Promise.reject(bodyParseResult.error)
-    }
+      if (bodyParseResult.error === 'EMPTY_RESPONSE') {
+        if (params.isEmptyResponseExpected) {
+          return null
+        }
+        return Promise.reject(
+          buildWretchError(
+            `Request to ${params.path} has returned an unexpected empty response.`,
+            response,
+          ),
+        )
+      }
 
-    return bodyParseResult.result
-  }) as Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>>
+      if (bodyParseResult.error) {
+        return Promise.reject(bodyParseResult.error)
+      }
+
+      return bodyParseResult.result
+    }) as Promise<
+    RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
+  >
 }
 
 /* POST */
@@ -275,25 +284,17 @@ export async function sendDelete<
   IsEmptyResponseExpected extends boolean = true,
 >(
   wretch: T,
-  params: RequestQuerySchema extends z.Schema
+  params: (RequestQuerySchema extends z.Schema
     ? DeleteParams<
         RequestQuerySchema,
         ResponseBody,
         IsNonJSONResponseExpected,
         IsEmptyResponseExpected
       >
-    : FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
-
-      &
-      (HeadersSchema extends z.Schema
-          ? HeadersParams<
-              HeadersSchema,
-              ResponseBody,
-              IsNonJSONResponseExpected,
-              IsEmptyResponseExpected
-          >
-          : FreeHeadersParams<HeadersSchema, ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>)
-    ,
+    : FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>) &
+    (HeadersSchema extends z.Schema
+      ? Omit<HeadersParams<HeadersSchema>, 'responseBodySchema'>
+      : Omit<FreeHeadersParams<HeadersSchema>, 'responseBodySchema'>),
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   const queryParams = parseQueryParams({
     queryParams: params.queryParams,
@@ -307,46 +308,51 @@ export async function sendDelete<
 
   const resolvedHeaders = await resolveHeaders(params.headers)
 
-  return wretch.headers(resolvedHeaders).delete(`${params.path}${queryParams.result}`).res(async (response) => {
-    const bodyParseResult = await tryToResolveJsonBody(
-      response,
-      params.path,
-      params.responseBodySchema ?? UNKNOWN_SCHEMA,
-      params.isEmptyResponseExpected,
-    )
+  return wretch
+    .headers(resolvedHeaders)
+    .delete(`${params.path}${queryParams.result}`)
+    .res(async (response) => {
+      const bodyParseResult = await tryToResolveJsonBody(
+        response,
+        params.path,
+        params.responseBodySchema ?? UNKNOWN_SCHEMA,
+        params.isEmptyResponseExpected,
+      )
 
-    if (bodyParseResult.error === 'NOT_JSON') {
-      if (params.isNonJSONResponseExpected === false) {
-        return Promise.reject(
-          buildWretchError(
-            `Request to ${params.path} has returned an unexpected non-JSON response.`,
-            response,
-          ),
-        )
+      if (bodyParseResult.error === 'NOT_JSON') {
+        if (params.isNonJSONResponseExpected === false) {
+          return Promise.reject(
+            buildWretchError(
+              `Request to ${params.path} has returned an unexpected non-JSON response.`,
+              response,
+            ),
+          )
+        }
+
+        return response
       }
 
-      return response
-    }
+      if (bodyParseResult.error === 'EMPTY_RESPONSE') {
+        if (params.isEmptyResponseExpected === false) {
+          return Promise.reject(
+            buildWretchError(
+              `Request to ${params.path} has returned an unexpected empty response.`,
+              response,
+            ),
+          )
+        }
 
-    if (bodyParseResult.error === 'EMPTY_RESPONSE') {
-      if (params.isEmptyResponseExpected === false) {
-        return Promise.reject(
-          buildWretchError(
-            `Request to ${params.path} has returned an unexpected empty response.`,
-            response,
-          ),
-        )
+        return null
       }
 
-      return null
-    }
+      if (bodyParseResult.error) {
+        return Promise.reject(bodyParseResult.error)
+      }
 
-    if (bodyParseResult.error) {
-      return Promise.reject(bodyParseResult.error)
-    }
-
-    return bodyParseResult.result
-  }) as Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>>
+      return bodyParseResult.result
+    }) as Promise<
+    RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
+  >
 }
 
 export function sendByPayloadRoute<
@@ -397,6 +403,10 @@ export function sendByPayloadRoute<
     queryParamsSchema: routeDefinition.requestQuerySchema,
     // @ts-expect-error magic type inferring happening
     path: routeDefinition.pathResolver(params.pathParams),
+    // @ts-expect-error FixMe
+    headers: params.headers,
+    // @ts-expect-error magic type inferring happening
+    headersSchema: params.headersSchema,
   })
 }
 
@@ -444,12 +454,7 @@ export function sendByGetRoute<
     headers: params.headers,
     // @ts-expect-error magic type inferring happening
     headersSchema: params.headersSchema,
-  } as GetParamsWrapper<
-    InferSchemaOutput<ResponseBodySchema>,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    RequestQuerySchema
-  >)
+  })
 }
 
 export function sendByDeleteRoute<
@@ -492,10 +497,9 @@ export function sendByDeleteRoute<
     queryParamsSchema: routeDefinition.requestQuerySchema,
     // @ts-expect-error magic type inferring happening
     path: routeDefinition.pathResolver(params.pathParams),
-  } as DeleteParamsWrapper<
-    InferSchemaOutput<ResponseBodySchema>,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    RequestQuerySchema
-  >)
+    // @ts-expect-error FIXME
+    headers: params.headers,
+    // @ts-expect-error FIXME
+    headersSchema: params.headersSchema,
+  })
 }

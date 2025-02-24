@@ -22,7 +22,7 @@ export type BodyRequestParams<
 > = {
   body: z.input<RequestBodySchema> | undefined
   requestBodySchema: RequestBodySchema | undefined
-} & CommonRequestParams<ResponseBody,  IsNonJSONResponseExpected, IsEmptyResponseExpected>
+} & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
 
 export type FreeBodyRequestParams<
   ResponseBody,
@@ -31,7 +31,7 @@ export type FreeBodyRequestParams<
 > = {
   body?: FreeformRecord
   requestBodySchema?: never
-} & CommonRequestParams<ResponseBody,  IsNonJSONResponseExpected, IsEmptyResponseExpected>
+} & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
 
 export type QueryParams<
   RequestQuerySchema extends z.ZodSchema,
@@ -52,25 +52,15 @@ export type FreeQueryParams<
   queryParamsSchema?: never
 } & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
 
-export type HeadersParams<
-    HeadersSchema extends z.ZodSchema,
-    ResponseBody,
-    IsNonJSONResponseExpected extends boolean,
-    IsEmptyResponseExpected extends boolean,
-> = {
-    headers: z.input<HeadersSchema> | undefined
-    headersSchema: HeadersSchema | undefined
-} & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
+export type HeadersParams<HeadersSchema extends z.ZodSchema> = {
+  headers: z.input<HeadersSchema> | undefined
+  headersSchema: HeadersSchema | undefined
+}
 
-export type FreeHeadersParams<
-    _HeadersSchema,
-    ResponseBody,
-    IsNonJSONResponseExpected extends boolean,
-    IsEmptyResponseExpected extends boolean,
-> = {
-    headers?: FreeformRecord
-    headersSchema?: never
-} & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
+export type FreeHeadersParams<_HeadersSchema> = {
+  headers?: FreeformRecord
+  headersSchema?: never
+}
 
 export type DeleteParams<
   RequestQuerySchema extends z.ZodSchema,
@@ -135,14 +125,7 @@ export type PayloadRequestParamsWrapper<
         IsEmptyResponseExpected
       >
     : FreeQueryParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>) &
-    (HeadersSchema extends z.Schema
-        ? HeadersParams<
-            HeadersSchema,
-            ResponseBody,
-            IsNonJSONResponseExpected,
-            IsEmptyResponseExpected
-        >
-        : FreeHeadersParams<HeadersSchema, ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>)
+  (HeadersSchema extends z.Schema ? HeadersParams<HeadersSchema> : FreeHeadersParams<HeadersSchema>)
 
 export type GetParamsWrapper<
   ResponseBody,
@@ -157,30 +140,24 @@ export type GetParamsWrapper<
       IsNonJSONResponseExpected,
       IsEmptyResponseExpected
     >
-  : FreeQueryParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>)
-  &
-    (HeadersSchema extends z.Schema
-        ? HeadersParams<
-        HeadersSchema,
-        ResponseBody,
-        IsNonJSONResponseExpected,
-        IsEmptyResponseExpected
-    > : FreeHeadersParams<HeadersSchema, ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>)
+  : FreeQueryParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>) &
+  (HeadersSchema extends z.Schema ? HeadersParams<HeadersSchema> : FreeHeadersParams<HeadersSchema>)
 
 export type DeleteParamsWrapper<
   ResponseBody,
-  HeadersSchema,
   IsNonJSONResponseExpected extends boolean,
   IsEmptyResponseExpected extends boolean,
   RequestQuerySchema extends z.Schema | undefined = undefined,
-> = RequestQuerySchema extends z.Schema
+  HeadersSchema extends z.Schema | undefined = undefined,
+> = (RequestQuerySchema extends z.Schema
   ? DeleteParams<
       RequestQuerySchema,
       ResponseBody,
       IsNonJSONResponseExpected,
       IsEmptyResponseExpected
     >
-  : FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
+  : FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>) &
+  (HeadersSchema extends z.Schema ? HeadersParams<HeadersSchema> : FreeHeadersParams<HeadersSchema>)
 
 export type PayloadRouteRequestParams<
   PathParams = undefined,
@@ -191,8 +168,8 @@ export type PayloadRouteRequestParams<
   body: RequestBody extends undefined ? never : RequestBody
   queryParams: RequestQuery extends never | undefined ? never : RequestQuery
   headers: RequestHeader extends never | undefined
-      ? never
-      : RequestHeader | (() => RequestHeader) | (() => Promise<RequestHeader>)
+    ? never
+    : RequestHeader | (() => RequestHeader) | (() => Promise<RequestHeader>)
   pathParams: PathParams extends undefined ? never : PathParams
 } extends infer Mandatory
   ? {
@@ -207,8 +184,8 @@ export type RouteRequestParams<
 > = {
   queryParams: RequestQuery extends never | undefined ? never : RequestQuery
   headers: RequestHeader extends never | undefined
-      ? never
-      : RequestHeader | (() => RequestHeader) | (() => Promise<RequestHeader>)
+    ? never
+    : RequestHeader | (() => RequestHeader) | (() => Promise<RequestHeader>)
   pathParams: PathParams extends undefined ? never : PathParams
 } extends infer Mandatory
   ? {
