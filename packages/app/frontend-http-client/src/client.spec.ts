@@ -19,6 +19,14 @@ import {
   sendPost,
   sendPut,
 } from './client.js'
+import {constants as httpConstants} from "http2";
+
+export const JSON_HEADERS = {
+  'Content-Type': 'application/json',
+}
+const HEADERS_SCHEMA = z.object({
+  authorization: z.string(),
+}).strip()
 
 describe('frontend-http-client', () => {
   const mockServer = getLocal()
@@ -194,6 +202,88 @@ describe('frontend-http-client', () => {
           code: 99,
         },
       })
+    })
+
+    it('returns deserialized response for GET with headers', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer
+          .forGet('/users/1')
+          .thenCallback((req) => {
+            return { statusCode: 200,
+              headers: JSON_HEADERS,
+              body: JSON.stringify({
+                headers: req.headers.authorization,
+              }), }
+          })
+
+      const responseBodySchema = z.any()
+
+      const pathSchema = z.object({
+        userId: z.number(),
+        test: z.number().default(10),
+      })
+
+      const routeDefinition = buildGetRoute({
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestHeaderSchema: HEADERS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByGetRoute(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        headers: { authorization: 'dummy' }
+      })
+
+      // satisfies verifies that responseBody type is inferred properly
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toMatchInlineSnapshot(`
+        {
+          "headers": "dummy",
+        }
+      `)
+    })
+
+    it('returns deserialized response for GET with header factory', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer
+          .forGet('/users/1')
+          .thenCallback((req) => {
+            return { statusCode: httpConstants.HTTP_STATUS_SERVICE_UNAVAILABLE,
+              headers: JSON_HEADERS,
+              body: JSON.stringify({
+                headers: req.headers,
+              }), }
+          })
+
+      const responseBodySchema = z.object({
+        headers: z.string()
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+        test: z.number().default(10),
+      })
+
+      const routeDefinition = buildGetRoute({
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestHeaderSchema: HEADERS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByGetRoute(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        headers: () => Promise.resolve({ authorization: 'dummy' })
+      })
+
+      // satisfies verifies that responseBody type is inferred properly
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toMatchInlineSnapshot()
     })
 
     it('returns response for DELETE', async () => {

@@ -7,11 +7,11 @@ import type {
   InferSchemaOutput,
   PayloadRouteDefinition,
 } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
-import type {
+import {
   DeleteParams,
   DeleteParamsWrapper,
-  FreeDeleteParams,
-  GetParamsWrapper,
+  FreeDeleteParams, FreeHeadersParams,
+  GetParamsWrapper, HeadersParams,
   PayloadRequestParamsWrapper,
   PayloadRouteRequestParams,
   RequestResultType,
@@ -25,13 +25,19 @@ import { parseQueryParams } from './utils/queryUtils.js'
 
 export const UNKNOWN_SCHEMA = z.unknown()
 
-function sendResourceChange<
+function resolveHeaders(): Record<string, string> | Promise<Record<string, string>> {
+  // @ts-expect-error fixme
+  return typeof params.headers === 'function' ? params.headers() : params.headers
+}
+
+async function sendResourceChange<
   T extends WretchInstance,
   ResponseBody,
   IsNonJSONResponseExpected extends boolean,
   IsEmptyResponseExpected extends boolean,
   RequestBodySchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
 >(
   wretch: T,
   method: 'post' | 'put' | 'patch',
@@ -40,7 +46,8 @@ function sendResourceChange<
     ResponseBody,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
-    RequestQuerySchema
+    RequestQuerySchema,
+    RequestHeaderSchema
   >,
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   const body = parseRequestBody({
@@ -63,7 +70,13 @@ function sendResourceChange<
     return Promise.reject(queryParams.error)
   }
 
-  return wretch[method](body.result, `${params.path}${queryParams.result}`).res(
+  const resolvedHeaders = await resolveHeaders(params.headers)
+
+  return wretch
+      .headers(resolvedHeaders)
+      [method]
+  (body.result, `${params.path}${queryParams.result}`)
+      .res(
     async (response) => {
       const bodyParseResult = await tryToResolveJsonBody(
         response,
@@ -110,10 +123,11 @@ function sendResourceChange<
 
 /* GET */
 
-export function sendGet<
+export async function sendGet<
   T extends WretchInstance,
   ResponseBody,
   RequestQuerySchema extends z.Schema | undefined = undefined,
+  HeadersSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 >(
@@ -122,7 +136,8 @@ export function sendGet<
     ResponseBody,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
-    RequestQuerySchema
+    RequestQuerySchema,
+    HeadersSchema
   >,
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   const queryParams = parseQueryParams({
@@ -135,7 +150,9 @@ export function sendGet<
     return Promise.reject(queryParams.error)
   }
 
-  return wretch.get(`${params.path}${queryParams.result}`).res(async (response) => {
+  const resolvedHeaders = await resolveHeaders(params.headers)
+
+  return wretch.headers(resolvedHeaders).get(`${params.path}${queryParams.result}`).res(async (response) => {
     const bodyParseResult = await tryToResolveJsonBody(
       response,
       params.path,
@@ -182,6 +199,7 @@ export function sendPost<
   ResponseBody,
   RequestBodySchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
+  HeadersSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 >(
@@ -191,7 +209,8 @@ export function sendPost<
     ResponseBody,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
-    RequestQuerySchema
+    RequestQuerySchema,
+    HeadersSchema
   >,
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   return sendResourceChange(wretch, 'post', params)
@@ -204,6 +223,7 @@ export function sendPut<
   ResponseBody,
   RequestBodySchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
+  HeadersSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 >(
@@ -213,7 +233,8 @@ export function sendPut<
     ResponseBody,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
-    RequestQuerySchema
+    RequestQuerySchema,
+    HeadersSchema
   >,
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   return sendResourceChange(wretch, 'put', params)
@@ -226,6 +247,7 @@ export function sendPatch<
   ResponseBody,
   RequestBodySchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
+  HeadersSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 >(
@@ -235,7 +257,8 @@ export function sendPatch<
     ResponseBody,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
-    RequestQuerySchema
+    RequestQuerySchema,
+    HeadersSchema
   >,
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   return sendResourceChange(wretch, 'patch', params)
@@ -243,10 +266,11 @@ export function sendPatch<
 
 /* DELETE */
 
-export function sendDelete<
+export async function sendDelete<
   T extends WretchInstance,
   ResponseBody,
   RequestQuerySchema extends z.Schema | undefined = undefined,
+  HeadersSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
 >(
@@ -258,7 +282,18 @@ export function sendDelete<
         IsNonJSONResponseExpected,
         IsEmptyResponseExpected
       >
-    : FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>,
+    : FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
+
+      &
+      (HeadersSchema extends z.Schema
+          ? HeadersParams<
+              HeadersSchema,
+              ResponseBody,
+              IsNonJSONResponseExpected,
+              IsEmptyResponseExpected
+          >
+          : FreeHeadersParams<HeadersSchema, ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>)
+    ,
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   const queryParams = parseQueryParams({
     queryParams: params.queryParams,
@@ -270,7 +305,9 @@ export function sendDelete<
     return Promise.reject(queryParams.error)
   }
 
-  return wretch.delete(`${params.path}${queryParams.result}`).res(async (response) => {
+  const resolvedHeaders = await resolveHeaders(params.headers)
+
+  return wretch.headers(resolvedHeaders).delete(`${params.path}${queryParams.result}`).res(async (response) => {
     const bodyParseResult = await tryToResolveJsonBody(
       response,
       params.path,
@@ -403,6 +440,10 @@ export function sendByGetRoute<
     queryParamsSchema: routeDefinition.requestQuerySchema,
     // @ts-expect-error magic type inferring happening
     path: routeDefinition.pathResolver(params.pathParams),
+    // @ts-expect-error FixMe
+    headers: params.headers,
+    // @ts-expect-error magic type inferring happening
+    headersSchema: params.headersSchema,
   } as GetParamsWrapper<
     InferSchemaOutput<ResponseBodySchema>,
     IsNonJSONResponseExpected,
