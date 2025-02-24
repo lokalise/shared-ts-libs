@@ -29,9 +29,8 @@ export class TestDependencyFactory {
   }
 
   async clearRedis() {
-    if (!this.redis) {
-      this.redis = this.startRedis()
-    }
+    if (!this.redis) this.redis = this.startRedis()
+
     await this.redis!.flushall('SYNC')
   }
 
