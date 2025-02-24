@@ -395,6 +395,43 @@ describe('QueueManager', () => {
         metadata: { correlationId: 'correlation_id' },
       })
     })
+
+    it.each([true, false])('should replace job options if isTest is true', async (isTest) => {
+      // Given
+      const manager = new FakeQueueManager([supportedQueues[0]], {
+        redisConfig,
+        isTest,
+      })
+      await manager.start()
+
+      // When
+      const opts = {
+        delay: 1000,
+        backoff: { delay: 1000, type: 'exponential' },
+      }
+      const jobId = await manager.schedule(
+        'queue1',
+        {
+          id: 'test_1',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        },
+        opts,
+      )
+
+      // Then
+      const job = await manager.getQueue('queue1').getJob(jobId)
+      if (isTest) {
+        expect(job!.opts).toMatchObject({
+          delay: 0,
+          backoff: { delay: 0, type: 'fixed' },
+        })
+      } else {
+        expect(job!.opts).toMatchObject(opts)
+      }
+
+      await manager.dispose()
+    })
   })
 
   describe('getJobsInStates', () => {
@@ -403,6 +440,7 @@ describe('QueueManager', () => {
     beforeEach(async () => {
       queueManager = new FakeQueueManager(supportedQueues, {
         redisConfig,
+        isTest: false,
       })
       await queueManager.start()
     })

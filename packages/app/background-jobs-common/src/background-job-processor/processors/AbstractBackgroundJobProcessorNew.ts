@@ -232,11 +232,9 @@ export abstract class AbstractBackgroundJobProcessorNew<
     try {
       // On test forcing the worker to close to not wait for current job to finish
       await this._worker?.close(this.config.isTest)
-      // await this._queue?.close()
       await Promise.allSettled(this.runningPromises)
-      /* v8 ignore next 3 */
     } catch {
-      //do nothing
+      // do nothing
     }
 
     this._spy?.clear()

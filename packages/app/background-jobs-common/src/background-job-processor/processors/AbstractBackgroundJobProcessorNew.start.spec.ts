@@ -55,7 +55,7 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
         'queue',
         redisConfig,
       ).start(),
-    ).rejects.toThrowError(/Queue id "queue" is not unique/)
+    ).rejects.toMatchInlineSnapshot('[Error: Processor for queue id "queue" is not unique.]')
 
     await job1.dispose()
   })
@@ -78,26 +78,19 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
   })
 
   it('restart processor after dispose', async () => {
-    const jobData = {
-      id: generateMonotonicUuid(),
-      metadata: { correlationId: generateMonotonicUuid() },
-    }
-
+    await queueManager.start()
     const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
       deps,
       'queue',
       redisConfig,
     )
     await processor.start()
-
-    const jobId = await queueManager.schedule('queue', jobData, {
-      delay: 100,
-    })
-
-    const jobScheduled = await queueManager.getSpy('queue').waitForJobWithId(jobId, 'scheduled')
-    expect(jobScheduled.data, 'object did not match').toMatchObject(jobData)
-
     await processor.dispose()
+
+    const jobId = await queueManager.schedule('queue', {
+      id: generateMonotonicUuid(),
+      metadata: { correlationId: generateMonotonicUuid() },
+    })
     const completedPromise = processor.spy.waitForJobWithId(jobId, 'completed')
     await expect(isPromiseFinished(completedPromise)).resolves.toBe(false)
 

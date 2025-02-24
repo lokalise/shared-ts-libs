@@ -50,7 +50,8 @@ export class BackgroundJobProcessorMonitor<
   }
 
   public async registerQueue(): Promise<void> {
-    if (queueIdsSet.has(this.queueId)) throw new Error(`Queue id "${this.queueId}" is not unique.`)
+    if (queueIdsSet.has(this.queueId))
+      throw new Error(`Processor for queue id "${this.queueId}" is not unique.`)
 
     queueIdsSet.add(this.queueId)
     const redisWithoutPrefix = createSanitizedRedisClient(this.redisConfig)

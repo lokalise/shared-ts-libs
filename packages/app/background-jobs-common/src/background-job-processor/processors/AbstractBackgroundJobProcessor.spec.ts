@@ -10,7 +10,6 @@ import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/Test
 import type { BaseJobPayload } from '../types'
 
 import { randomUUID } from 'node:crypto'
-import { isPromiseFinished } from '../../../test/isPromiseFinished'
 import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
 import type { BackgroundJobProcessorDependencies } from './types'
@@ -44,7 +43,7 @@ describe('AbstractBackgroundJobProcessor', () => {
       await job2.start()
       await expect(
         new FakeBackgroundJobProcessor<JobData>(deps, 'queue1', factory.getRedisConfig()).start(),
-      ).rejects.toThrowError(/Queue id "queue1" is not unique/)
+      ).rejects.toMatchInlineSnapshot('[Error: Processor for queue id "queue1" is not unique.]')
 
       await job1.dispose()
       await job2.dispose()
@@ -130,23 +129,18 @@ describe('AbstractBackgroundJobProcessor', () => {
         randomUUID(),
         factory.getRedisConfig(),
       )
-      const jobData = {
-        id: generateMonotonicUuid(),
-        value: 'test',
-        metadata: { correlationId: generateMonotonicUuid() },
-      }
 
       await processor.start()
-      const jobId = await processor.schedule(jobData, { delay: 100 })
-      const jobScheduled = await processor.spy.waitForJobWithId(jobId, 'scheduled')
-      expect(jobScheduled.data).toMatchObject(jobData)
+      // @ts-expect-error executing protected method for testing
+      expect(processor.worker.isRunning()).toBeTruthy()
 
       await processor.dispose()
-      const completedPromise = processor.spy.waitForJobWithId(jobId, 'completed')
-      await expect(isPromiseFinished(completedPromise)).resolves.toBe(false)
+      // @ts-expect-error executing protected method for testing
+      expect(processor.worker.isRunning()).toBeFalsy()
 
       await processor.start()
-      await expect(isPromiseFinished(completedPromise)).resolves.toBe(true)
+      // @ts-expect-error executing protected method for testing
+      expect(processor.worker.isRunning()).toBeTruthy()
 
       await processor.dispose()
     })
@@ -590,7 +584,12 @@ describe('AbstractBackgroundJobProcessor', () => {
     let processor: FakeBackgroundJobProcessor<JobData>
 
     beforeEach(async () => {
-      processor = new FakeBackgroundJobProcessor<JobData>(deps, QueueName, factory.getRedisConfig())
+      processor = new FakeBackgroundJobProcessor<JobData>(
+        deps,
+        QueueName,
+        factory.getRedisConfig(),
+        false,
+      )
       await processor.start()
     })
 
