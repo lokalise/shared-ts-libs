@@ -423,8 +423,8 @@ describe('QueueManager', () => {
       const job = await manager.getQueue('queue1').getJob(jobId)
       if (isTest) {
         expect(job!.opts).toMatchObject({
-          delay: 1,
-          backoff: { delay: 1, type: 'fixed' },
+          delay: 0,
+          backoff: { delay: 0, type: 'fixed' },
         })
       } else {
         expect(job!.opts).toMatchObject(opts)
