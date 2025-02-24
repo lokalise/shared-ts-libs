@@ -42,8 +42,8 @@ export const prepareJobOptions = <JobOptionsType extends JobsOptions>(
   }
 
   if (isTest) {
-    preparedOptions.delay = 0
-    preparedOptions.backoff = { delay: 0, type: 'fixed' }
+    preparedOptions.delay = 1
+    preparedOptions.backoff = { delay: 1, type: 'fixed' }
   }
 
   return preparedOptions
