@@ -424,7 +424,7 @@ describe('QueueManager', () => {
       if (isTest) {
         expect(job!.opts).toMatchObject({
           delay: 0,
-          backoff: { delay: 0, type: 'fixed' },
+          backoff: { delay: 1, type: 'fixed' },
         })
       } else {
         expect(job!.opts).toMatchObject(opts)

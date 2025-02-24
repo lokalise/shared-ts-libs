@@ -43,7 +43,7 @@ export const prepareJobOptions = <JobOptionsType extends JobsOptions>(
 
   if (isTest) {
     preparedOptions.delay = 0
-    preparedOptions.backoff = { delay: 0, type: 'fixed' }
+    preparedOptions.backoff = { delay: 1, type: 'fixed' } // Bullmq behaves weirdly with backoff 0
   }
 
   return preparedOptions
