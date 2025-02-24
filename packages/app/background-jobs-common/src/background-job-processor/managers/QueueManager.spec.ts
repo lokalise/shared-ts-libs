@@ -396,7 +396,7 @@ describe('QueueManager', () => {
       })
     })
 
-    it.skip.each([true, false])('should replace job options if isTest is true', async (isTest) => {
+    it.each([true, false])('should replace job options if isTest is true', async (isTest) => {
       // Given
       const manager = new FakeQueueManager([supportedQueues[0]], {
         redisConfig,
@@ -423,8 +423,8 @@ describe('QueueManager', () => {
       const job = await manager.getQueue('queue1').getJob(jobId)
       if (isTest) {
         expect(job!.opts).toMatchObject({
-          delay: 1,
-          backoff: { delay: 1, type: 'fixed' }, // zero delay is handled weirdly in BullMQ for concurrent job.
+          delay: 0,
+          backoff: { delay: 0, type: 'fixed' }, // zero delay is handled weirdly in BullMQ for concurrent job.
         })
       } else {
         expect(job!.opts).toMatchObject(opts)
