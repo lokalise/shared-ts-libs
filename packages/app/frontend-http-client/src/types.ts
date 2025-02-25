@@ -1,6 +1,8 @@
 import type { Wretch, WretchResponse } from 'wretch'
 import type { ZodSchema, z } from 'zod'
 
+export type HeadersObject = Record<string, string>
+export type HeadersSource = HeadersObject | (() => HeadersObject) | (() => Promise<HeadersObject>)
 type FreeformRecord = Record<string, unknown>
 
 export type CommonRequestParams<

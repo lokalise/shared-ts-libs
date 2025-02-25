@@ -470,6 +470,7 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPost(client, {
         path: '/',
         responseBodySchema: z.any(),
+        isEmptyResponseExpected: true,
       })
       expect(responseBody).toBe(null)
     })
@@ -511,6 +512,7 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPost(client, {
         path: '/',
         responseBodySchema: z.any(),
+        isNonJSONResponseExpected: true,
       })
       expect(responseBody).containSubset({
         status: 200,
@@ -767,6 +769,7 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPut(client, {
         path: '/',
         responseBodySchema: z.any(),
+        isEmptyResponseExpected: true,
       })
       expect(responseBody).toBe(null)
     })
@@ -808,6 +811,7 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPut(client, {
         path: '/',
         responseBodySchema: z.any(),
+        isNonJSONResponseExpected: true,
       })
       expect(responseBody).containSubset({
         status: 200,
@@ -1014,6 +1018,7 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPatch(client, {
         path: '/',
         responseBodySchema: z.any(),
+        isEmptyResponseExpected: true,
       })
       expect(responseBody).toBe(null)
     })
@@ -1055,6 +1060,7 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPatch(client, {
         path: '/',
         responseBodySchema: z.any(),
+        isNonJSONResponseExpected: true,
       })
       expect(responseBody).containSubset({
         status: 200,
@@ -1258,14 +1264,13 @@ describe('frontend-http-client', () => {
 
       await mockServer.forGet('/').thenReply(204)
 
-      await expect(
-        sendGet(client, {
-          path: '/',
-          responseBodySchema: z.any(),
-        }),
-      ).rejects.toThrowErrorMatchingInlineSnapshot(
-        '[Error: Request to / has returned an unexpected empty response.]',
-      )
+      const response = await sendGet(client, {
+        path: '/',
+        responseBodySchema: z.any(),
+        isEmptyResponseExpected: true,
+      })
+
+      expect(response).toBeNull()
     })
 
     it('returns unexpected no content response for 202', async () => {
@@ -1608,6 +1613,7 @@ describe('frontend-http-client', () => {
 
       const responseBody = await sendDelete(client, {
         path: '/',
+        isNonJSONResponseExpected: true,
       })
       expect(responseBody).containSubset({
         status: 200,

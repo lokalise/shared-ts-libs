@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { type ZodError, z } from 'zod'
 
 import type {
   DeleteRouteDefinition,
@@ -7,12 +7,15 @@ import type {
   InferSchemaOutput,
   PayloadRouteDefinition,
 } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
+import type { WretchResponse } from 'wretch'
 import type {
   DeleteParams,
   FreeDeleteParams,
   FreeHeadersParams,
   GetParamsWrapper,
+  HeadersObject,
   HeadersParams,
+  HeadersSource,
   PayloadRequestParamsWrapper,
   PayloadRouteRequestParams,
   RequestResultType,
@@ -20,19 +23,57 @@ import type {
   WretchInstance,
 } from './types.js'
 import { parseRequestBody, tryToResolveJsonBody } from './utils/bodyUtils.js'
-import { isFailure } from './utils/either.js'
+import { type Either, isFailure } from './utils/either.js'
 import { buildWretchError } from './utils/errorUtils.js'
 import { parseQueryParams } from './utils/queryUtils.js'
 
 export const UNKNOWN_SCHEMA = z.unknown()
 
-function resolveHeaders(
-  headers:
-    | Record<string, string>
-    | (() => Record<string, string>)
-    | (() => Promise<Record<string, string>>),
-): Record<string, string> | Promise<Record<string, string>> {
+function resolveHeaders(headers: HeadersSource): HeadersObject | Promise<HeadersObject> {
   return (typeof headers === 'function' ? headers() : headers) ?? {}
+}
+
+function handleBodyParseResult<RequestBodySchema extends z.ZodSchema>(
+  bodyParseResult: Either<
+    'NOT_JSON' | 'EMPTY_RESPONSE' | ZodError<RequestBodySchema>,
+    z.output<RequestBodySchema>
+  >,
+  params: {
+    isNonJSONResponseExpected?: boolean
+    isEmptyResponseExpected?: boolean
+
+    path: string
+  },
+  response: WretchResponse,
+) {
+  if (bodyParseResult.error === 'NOT_JSON') {
+    if (!params.isNonJSONResponseExpected) {
+      return Promise.reject(
+        buildWretchError(
+          `Request to ${params.path} has returned an unexpected non-JSON response.`,
+          response,
+        ),
+      )
+    }
+    return response
+  }
+
+  if (bodyParseResult.error === 'EMPTY_RESPONSE') {
+    if (!params.isEmptyResponseExpected) {
+      return Promise.reject(
+        buildWretchError(
+          `Request to ${params.path} has returned an unexpected empty response.`,
+          response,
+        ),
+      )
+    }
+
+    return null
+  }
+
+  if (bodyParseResult.error) {
+    return Promise.reject(bodyParseResult.error)
+  }
 }
 
 async function sendResourceChange<
@@ -88,33 +129,8 @@ async function sendResourceChange<
         params.isEmptyResponseExpected,
       )
 
-      if (bodyParseResult.error === 'NOT_JSON') {
-        if (params.isNonJSONResponseExpected === false) {
-          return Promise.reject(
-            buildWretchError(
-              `Request to ${params.path} has returned an unexpected non-JSON response.`,
-              response,
-            ),
-          )
-        }
-        return response
-      }
-
-      if (bodyParseResult.error === 'EMPTY_RESPONSE') {
-        if (params.isEmptyResponseExpected === false) {
-          return Promise.reject(
-            buildWretchError(
-              `Request to ${params.path} has returned an unexpected empty response.`,
-              response,
-            ),
-          )
-        }
-
-        return null
-      }
-
       if (bodyParseResult.error) {
-        return Promise.reject(bodyParseResult.error)
+        return handleBodyParseResult(bodyParseResult, params, response)
       }
 
       return bodyParseResult.result
@@ -167,32 +183,8 @@ export async function sendGet<
         params.isEmptyResponseExpected,
       )
 
-      if (bodyParseResult.error === 'NOT_JSON') {
-        if (params.isNonJSONResponseExpected) {
-          return response
-        }
-        return Promise.reject(
-          buildWretchError(
-            `Request to ${params.path} has returned an unexpected non-JSON response.`,
-            response,
-          ),
-        )
-      }
-
-      if (bodyParseResult.error === 'EMPTY_RESPONSE') {
-        if (params.isEmptyResponseExpected) {
-          return null
-        }
-        return Promise.reject(
-          buildWretchError(
-            `Request to ${params.path} has returned an unexpected empty response.`,
-            response,
-          ),
-        )
-      }
-
       if (bodyParseResult.error) {
-        return Promise.reject(bodyParseResult.error)
+        return handleBodyParseResult(bodyParseResult, params, response)
       }
 
       return bodyParseResult.result
@@ -316,37 +308,19 @@ export async function sendDelete<
         response,
         params.path,
         params.responseBodySchema ?? UNKNOWN_SCHEMA,
-        params.isEmptyResponseExpected,
+        params.isEmptyResponseExpected ?? true,
       )
 
-      if (bodyParseResult.error === 'NOT_JSON') {
-        if (params.isNonJSONResponseExpected === false) {
-          return Promise.reject(
-            buildWretchError(
-              `Request to ${params.path} has returned an unexpected non-JSON response.`,
-              response,
-            ),
-          )
-        }
-
-        return response
-      }
-
-      if (bodyParseResult.error === 'EMPTY_RESPONSE') {
-        if (params.isEmptyResponseExpected === false) {
-          return Promise.reject(
-            buildWretchError(
-              `Request to ${params.path} has returned an unexpected empty response.`,
-              response,
-            ),
-          )
-        }
-
-        return null
-      }
-
       if (bodyParseResult.error) {
-        return Promise.reject(bodyParseResult.error)
+        return handleBodyParseResult(
+          bodyParseResult,
+          {
+            isNonJSONResponseExpected: params.isNonJSONResponseExpected,
+            path: params.path,
+            isEmptyResponseExpected: params.isEmptyResponseExpected ?? true,
+          },
+          response,
+        )
       }
 
       return bodyParseResult.result
