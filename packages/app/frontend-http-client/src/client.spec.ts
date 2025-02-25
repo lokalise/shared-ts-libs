@@ -20,6 +20,16 @@ import {
   sendPut,
 } from './client.js'
 
+const JSON_HEADERS = {
+  'Content-Type': 'application/json',
+}
+
+const HEADERS_SCHEMA = z
+  .object({
+    authorization: z.string(),
+  })
+  .strip()
+
 describe('frontend-http-client', () => {
   const mockServer = getLocal()
 
@@ -196,6 +206,90 @@ describe('frontend-http-client', () => {
       })
     })
 
+    it('supports passing headers for a GET request', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/users/1').thenCallback((req) => {
+        return {
+          statusCode: 200,
+          headers: JSON_HEADERS,
+          body: JSON.stringify({
+            headers: req.headers.authorization,
+          }),
+        }
+      })
+
+      const responseBodySchema = z.any()
+
+      const pathSchema = z.object({
+        userId: z.number(),
+        test: z.number().default(10),
+      })
+
+      const routeDefinition = buildGetRoute({
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestHeaderSchema: HEADERS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByGetRoute(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        headers: { authorization: 'dummy' },
+      })
+
+      // satisfies verifies that responseBody type is inferred properly
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toMatchInlineSnapshot(`
+        {
+          "headers": "dummy",
+        }
+      `)
+    })
+
+    it('supports passing headers factory for a GET request', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/users/1').thenCallback((req) => {
+        return {
+          statusCode: 200,
+          headers: JSON_HEADERS,
+          body: JSON.stringify({
+            headers: req.headers.authorization,
+          }),
+        }
+      })
+
+      const responseBodySchema = z.any()
+
+      const pathSchema = z.object({
+        userId: z.number(),
+        test: z.number().default(10),
+      })
+
+      const routeDefinition = buildGetRoute({
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestHeaderSchema: HEADERS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByGetRoute(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        headers: () => Promise.resolve({ authorization: 'dummy' }),
+      })
+
+      // satisfies verifies that responseBody type is inferred properly
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toMatchInlineSnapshot(`
+        {
+          "headers": "dummy",
+        }
+      `)
+    })
+
     it('returns response for DELETE', async () => {
       const client = wretch(mockServer.url)
 
@@ -219,6 +313,99 @@ describe('frontend-http-client', () => {
       })
 
       expect(responseBody).toBeNull()
+    })
+
+    it('supports passing header factory for a DELETE request', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forDelete('/users/1').thenCallback((req) => {
+        return {
+          statusCode: 200,
+          headers: JSON_HEADERS,
+          body: JSON.stringify({
+            headers: req.headers.authorization,
+          }),
+        }
+      })
+
+      const responseBodySchema = z.any()
+
+      const pathSchema = z.object({
+        userId: z.number(),
+        test: z.number().default(10),
+      })
+
+      const routeDefinition = buildDeleteRoute({
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestHeaderSchema: HEADERS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByDeleteRoute(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        headers: () => Promise.resolve({ authorization: 'dummy' }),
+      })
+
+      // satisfies verifies that responseBody type is inferred properly
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toMatchInlineSnapshot(`
+        {
+          "headers": "dummy",
+        }
+      `)
+    })
+
+    it('supports passing header factory for a POST request', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPost('/users/1').thenCallback((req) => {
+        return {
+          statusCode: 200,
+          headers: JSON_HEADERS,
+          body: JSON.stringify({
+            headers: req.headers.authorization,
+          }),
+        }
+      })
+
+      const responseBodySchema = z.any()
+
+      const pathSchema = z.object({
+        userId: z.number(),
+        test: z.number().default(10),
+      })
+
+      const requestBodySchema = z.object({
+        isActive: z.boolean(),
+      })
+
+      const routeDefinition = buildPayloadRoute({
+        method: 'post',
+        requestBodySchema,
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestHeaderSchema: HEADERS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByPayloadRoute(client, routeDefinition, {
+        body: {
+          isActive: true,
+        },
+        pathParams: {
+          userId: 1,
+        },
+        headers: () => Promise.resolve({ authorization: 'dummy' }),
+      })
+
+      // satisfies verifies that responseBody type is inferred properly
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toMatchInlineSnapshot(`
+        {
+          "headers": "dummy",
+        }
+      `)
     })
 
     it('returns deserialized response without body or path params', async () => {
@@ -283,6 +470,7 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPost(client, {
         path: '/',
         responseBodySchema: z.any(),
+        isEmptyResponseExpected: true,
       })
       expect(responseBody).toBe(null)
     })
@@ -324,6 +512,7 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPost(client, {
         path: '/',
         responseBodySchema: z.any(),
+        isNonJSONResponseExpected: true,
       })
       expect(responseBody).containSubset({
         status: 200,
@@ -580,6 +769,7 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPut(client, {
         path: '/',
         responseBodySchema: z.any(),
+        isEmptyResponseExpected: true,
       })
       expect(responseBody).toBe(null)
     })
@@ -621,6 +811,7 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPut(client, {
         path: '/',
         responseBodySchema: z.any(),
+        isNonJSONResponseExpected: true,
       })
       expect(responseBody).containSubset({
         status: 200,
@@ -827,6 +1018,7 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPatch(client, {
         path: '/',
         responseBodySchema: z.any(),
+        isEmptyResponseExpected: true,
       })
       expect(responseBody).toBe(null)
     })
@@ -868,6 +1060,7 @@ describe('frontend-http-client', () => {
       const responseBody = await sendPatch(client, {
         path: '/',
         responseBodySchema: z.any(),
+        isNonJSONResponseExpected: true,
       })
       expect(responseBody).containSubset({
         status: 200,
@@ -1071,14 +1264,13 @@ describe('frontend-http-client', () => {
 
       await mockServer.forGet('/').thenReply(204)
 
-      await expect(
-        sendGet(client, {
-          path: '/',
-          responseBodySchema: z.any(),
-        }),
-      ).rejects.toThrowErrorMatchingInlineSnapshot(
-        '[Error: Request to / has returned an unexpected empty response.]',
-      )
+      const response = await sendGet(client, {
+        path: '/',
+        responseBodySchema: z.any(),
+        isEmptyResponseExpected: true,
+      })
+
+      expect(response).toBeNull()
     })
 
     it('returns unexpected no content response for 202', async () => {
@@ -1421,6 +1613,7 @@ describe('frontend-http-client', () => {
 
       const responseBody = await sendDelete(client, {
         path: '/',
+        isNonJSONResponseExpected: true,
       })
       expect(responseBody).containSubset({
         status: 200,

@@ -4,14 +4,17 @@ import type { ZodError, z } from 'zod'
 import type { Either } from './either.js'
 import { failure, success } from './either.js'
 
+export type BodyParseResult<RequestBodySchema extends z.ZodSchema> = Either<
+  'NOT_JSON' | 'EMPTY_RESPONSE' | ZodError<RequestBodySchema>,
+  z.output<RequestBodySchema>
+>
+
 export function tryToResolveJsonBody<RequestBodySchema extends z.ZodSchema>(
   response: WretchResponse,
   path: string,
   schema: RequestBodySchema,
   isEmptyResponseExpected = false,
-): Promise<
-  Either<'NOT_JSON' | 'EMPTY_RESPONSE' | ZodError<RequestBodySchema>, z.output<RequestBodySchema>>
-> {
+): Promise<BodyParseResult<RequestBodySchema>> {
   if (response.status === 204) {
     return Promise.resolve({
       error: 'EMPTY_RESPONSE',

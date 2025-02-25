@@ -1,6 +1,8 @@
 import type { Wretch, WretchResponse } from 'wretch'
 import type { ZodSchema, z } from 'zod'
 
+export type HeadersObject = Record<string, string>
+export type HeadersSource = HeadersObject | (() => HeadersObject) | (() => Promise<HeadersObject>)
 type FreeformRecord = Record<string, unknown>
 
 export type CommonRequestParams<
@@ -51,6 +53,16 @@ export type FreeQueryParams<
   queryParams?: FreeformRecord
   queryParamsSchema?: never
 } & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
+
+export type HeadersParams<HeadersSchema extends z.ZodSchema> = {
+  headers: z.input<HeadersSchema> | undefined
+  headersSchema: HeadersSchema | undefined
+}
+
+export type FreeHeadersParams<_HeadersSchema> = {
+  headers?: FreeformRecord
+  headersSchema?: never
+}
 
 export type DeleteParams<
   RequestQuerySchema extends z.ZodSchema,
@@ -103,6 +115,7 @@ export type PayloadRequestParamsWrapper<
   IsNonJSONResponseExpected extends boolean,
   IsEmptyResponseExpected extends boolean,
   RequestQuerySchema extends z.Schema | undefined = undefined,
+  HeadersSchema extends z.Schema | undefined = undefined,
 > = (RequestBody extends z.Schema
   ? BodyRequestParams<RequestBody, ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
   : FreeBodyRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>) &
@@ -113,35 +126,40 @@ export type PayloadRequestParamsWrapper<
         IsNonJSONResponseExpected,
         IsEmptyResponseExpected
       >
-    : FreeQueryParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>)
+    : FreeQueryParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>) &
+  (HeadersSchema extends z.Schema ? HeadersParams<HeadersSchema> : FreeHeadersParams<HeadersSchema>)
 
 export type GetParamsWrapper<
   ResponseBody,
   IsNonJSONResponseExpected extends boolean,
   IsEmptyResponseExpected extends boolean,
   RequestQuerySchema extends z.Schema | undefined = undefined,
-> = RequestQuerySchema extends z.Schema
+  HeadersSchema extends z.Schema | undefined = undefined,
+> = (RequestQuerySchema extends z.Schema
   ? QueryParams<
       RequestQuerySchema,
       ResponseBody,
       IsNonJSONResponseExpected,
       IsEmptyResponseExpected
     >
-  : FreeQueryParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
+  : FreeQueryParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>) &
+  (HeadersSchema extends z.Schema ? HeadersParams<HeadersSchema> : FreeHeadersParams<HeadersSchema>)
 
 export type DeleteParamsWrapper<
   ResponseBody,
   IsNonJSONResponseExpected extends boolean,
   IsEmptyResponseExpected extends boolean,
   RequestQuerySchema extends z.Schema | undefined = undefined,
-> = RequestQuerySchema extends z.Schema
+  HeadersSchema extends z.Schema | undefined = undefined,
+> = (RequestQuerySchema extends z.Schema
   ? DeleteParams<
       RequestQuerySchema,
       ResponseBody,
       IsNonJSONResponseExpected,
       IsEmptyResponseExpected
     >
-  : FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
+  : FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>) &
+  (HeadersSchema extends z.Schema ? HeadersParams<HeadersSchema> : FreeHeadersParams<HeadersSchema>)
 
 export type PayloadRouteRequestParams<
   PathParams = undefined,
@@ -151,7 +169,9 @@ export type PayloadRouteRequestParams<
 > = {
   body: RequestBody extends undefined ? never : RequestBody
   queryParams: RequestQuery extends never | undefined ? never : RequestQuery
-  headers: RequestHeader extends never | undefined ? never : RequestHeader
+  headers: RequestHeader extends never | undefined
+    ? never
+    : RequestHeader | (() => RequestHeader) | (() => Promise<RequestHeader>)
   pathParams: PathParams extends undefined ? never : PathParams
 } extends infer Mandatory
   ? {
@@ -165,7 +185,9 @@ export type RouteRequestParams<
   RequestHeader = never,
 > = {
   queryParams: RequestQuery extends never | undefined ? never : RequestQuery
-  headers: RequestHeader extends never | undefined ? never : RequestHeader
+  headers: RequestHeader extends never | undefined
+    ? never
+    : RequestHeader | (() => RequestHeader) | (() => Promise<RequestHeader>)
   pathParams: PathParams extends undefined ? never : PathParams
 } extends infer Mandatory
   ? {
