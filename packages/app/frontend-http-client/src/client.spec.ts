@@ -23,6 +23,7 @@ import {
 const JSON_HEADERS = {
   'Content-Type': 'application/json',
 }
+
 const HEADERS_SCHEMA = z
   .object({
     authorization: z.string(),
