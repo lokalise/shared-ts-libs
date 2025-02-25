@@ -1,5 +1,3 @@
-import { type ZodError, z } from 'zod'
-
 import type {
   DeleteRouteDefinition,
   GetRouteDefinition,
@@ -8,6 +6,7 @@ import type {
   PayloadRouteDefinition,
 } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
 import type { WretchResponse } from 'wretch'
+import { z } from 'zod'
 import type {
   DeleteParams,
   FreeDeleteParams,
@@ -22,8 +21,8 @@ import type {
   RouteRequestParams,
   WretchInstance,
 } from './types.js'
-import { parseRequestBody, tryToResolveJsonBody } from './utils/bodyUtils.js'
-import { type Either, isFailure } from './utils/either.js'
+import { type BodyParseResult, parseRequestBody, tryToResolveJsonBody } from './utils/bodyUtils.js'
+import { isFailure } from './utils/either.js'
 import { buildWretchError } from './utils/errorUtils.js'
 import { parseQueryParams } from './utils/queryUtils.js'
 
@@ -33,11 +32,8 @@ function resolveHeaders(headers: HeadersSource): HeadersObject | Promise<Headers
   return (typeof headers === 'function' ? headers() : headers) ?? {}
 }
 
-function handleBodyParseResult<RequestBodySchema extends z.ZodSchema>(
-  bodyParseResult: Either<
-    'NOT_JSON' | 'EMPTY_RESPONSE' | ZodError<RequestBodySchema>,
-    z.output<RequestBodySchema>
-  >,
+function handleBodyParseError<RequestBodySchema extends z.ZodSchema>(
+  bodyParseResult: BodyParseResult<RequestBodySchema>,
   params: {
     isNonJSONResponseExpected?: boolean
     isEmptyResponseExpected?: boolean
@@ -71,9 +67,7 @@ function handleBodyParseResult<RequestBodySchema extends z.ZodSchema>(
     return null
   }
 
-  if (bodyParseResult.error) {
-    return Promise.reject(bodyParseResult.error)
-  }
+  return Promise.reject(bodyParseResult.error)
 }
 
 async function sendResourceChange<
@@ -130,7 +124,7 @@ async function sendResourceChange<
       )
 
       if (bodyParseResult.error) {
-        return handleBodyParseResult(bodyParseResult, params, response)
+        return handleBodyParseError(bodyParseResult, params, response)
       }
 
       return bodyParseResult.result
@@ -184,7 +178,7 @@ export async function sendGet<
       )
 
       if (bodyParseResult.error) {
-        return handleBodyParseResult(bodyParseResult, params, response)
+        return handleBodyParseError(bodyParseResult, params, response)
       }
 
       return bodyParseResult.result
@@ -312,7 +306,7 @@ export async function sendDelete<
       )
 
       if (bodyParseResult.error) {
-        return handleBodyParseResult(
+        return handleBodyParseError(
           bodyParseResult,
           {
             isNonJSONResponseExpected: params.isNonJSONResponseExpected,
