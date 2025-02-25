@@ -206,7 +206,7 @@ describe('frontend-http-client', () => {
       })
     })
 
-    it('returns deserialized response for GET with headers', async () => {
+    it('supports passing headers for a GET request', async () => {
       const client = wretch(mockServer.url)
 
       await mockServer.forGet('/users/1').thenCallback((req) => {
@@ -248,7 +248,7 @@ describe('frontend-http-client', () => {
       `)
     })
 
-    it('returns deserialized response for GET with header factory', async () => {
+    it('supports passing headers factory for a GET request', async () => {
       const client = wretch(mockServer.url)
 
       await mockServer.forGet('/users/1').thenCallback((req) => {
@@ -315,7 +315,7 @@ describe('frontend-http-client', () => {
       expect(responseBody).toBeNull()
     })
 
-    it('returns deserialized response for DELETE with header factory', async () => {
+    it('supports passing header factory for a DELETE request', async () => {
       const client = wretch(mockServer.url)
 
       await mockServer.forDelete('/users/1').thenCallback((req) => {
@@ -357,7 +357,7 @@ describe('frontend-http-client', () => {
       `)
     })
 
-    it('returns deserialized response for POST with header factory', async () => {
+    it('supports passing header factory for a POST request', async () => {
       const client = wretch(mockServer.url)
 
       await mockServer.forPost('/users/1').thenCallback((req) => {
