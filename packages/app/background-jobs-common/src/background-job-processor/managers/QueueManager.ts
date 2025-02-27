@@ -270,7 +270,7 @@ export class QueueManager<
   ): BackgroundJobProcessorSpyInterface<JobPayloadForQueue<Queues, QueueId>, JobReturn> {
     if (!this.spies[queueId])
       throw new Error(
-        `${queueId} spy was not instantiated, it is only available on test mode. Please use \`config.isTest\` to enable it on QueueManager instantiation`,
+        `${queueId} spy was not instantiated, it is only available on test mode. Please use \`config.isTest\` to enable it on QueueManager`,
       )
 
     return this.spies[queueId]
