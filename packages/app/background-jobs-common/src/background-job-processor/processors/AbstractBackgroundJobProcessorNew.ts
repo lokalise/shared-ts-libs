@@ -140,7 +140,11 @@ export abstract class AbstractBackgroundJobProcessorNew<
         ) as BackgroundJobProcessorSpy<JobPayloadForQueue<Queues, QueueId>, JobReturn>)
       : undefined
     this.runningPromises = new Set()
-    this.monitor = new BackgroundJobProcessorMonitor(dependencies, config, this.constructor.name)
+    this.monitor = new BackgroundJobProcessorMonitor(
+      dependencies,
+      { ...config, redisConfig: this.queueManager.config.redisConfig },
+      this.constructor.name,
+    )
   }
 
   protected get executionContext() {
@@ -188,6 +192,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
 
   private async internalStart(): Promise<void> {
     await this.monitor.registerQueue()
+    const redisConfig = this.queueManager.config.redisConfig
 
     this._worker = this.factory.buildWorker(
       this.config.queueId,
@@ -197,11 +202,11 @@ export abstract class AbstractBackgroundJobProcessorNew<
           WorkerOptionsType,
           'connection' | 'prefix'
         >),
-        connection: sanitizeRedisConfig(this.config.redisConfig),
-        prefix: this.config.redisConfig?.keyPrefix ?? undefined,
+        connection: sanitizeRedisConfig(redisConfig),
+        prefix: redisConfig.keyPrefix ?? undefined,
       } as unknown as WorkerOptionsType,
     )
-    if (this.config.isTest) {
+    if (this.queueManager.config.isTest) {
       // unlike queue, the docs for worker state that this is only useful in tests
       await this._worker.waitUntilReady()
     }
@@ -229,7 +234,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
 
     try {
       // On test forcing the worker to close to not wait for current job to finish
-      await this._worker?.close(this.config.isTest)
+      await this._worker?.close(this.queueManager.config.isTest)
       await Promise.allSettled(this.runningPromises)
     } catch {
       // do nothing

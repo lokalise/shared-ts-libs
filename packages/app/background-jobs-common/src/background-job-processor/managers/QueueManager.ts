@@ -31,11 +31,11 @@ export class QueueManager<
   QueueOptionsType extends QueueOptions = QueueOptions,
   JobOptionsType extends JobsOptions = JobsOptions,
 > {
+  public readonly config: QueueManagerConfig
+
   protected readonly queueRegistry: QueueRegistry<Queues, QueueOptionsType, JobOptionsType>
 
   private readonly factory: BullmqQueueFactory<QueueType, QueueOptionsType>
-  private config: QueueManagerConfig
-
   private readonly _queues: Record<QueueConfiguration<QueueOptionsType>['queueId'], QueueType> = {}
   private readonly spies: Record<
     QueueConfiguration<QueueOptionsType>['queueId'],
