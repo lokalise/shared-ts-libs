@@ -13,7 +13,7 @@ import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
 
 import { DEFAULT_WORKER_OPTIONS } from '../constants'
-import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
+import type { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
 import type { BullmqProcessor, RequestContext, SafeJob } from '../types'
 import {
@@ -134,7 +134,11 @@ export abstract class AbstractBackgroundJobProcessorNew<
     this.queueManager = dependencies.queueManager
     this.errorReporter = dependencies.errorReporter
 
-    this._spy = config.isTest ? new BackgroundJobProcessorSpy() : undefined
+    this._spy = this.queueManager.config.isTest
+      ? (this.queueManager.getSpy<QueueId, JobReturn>(
+          this.config.queueId,
+        ) as BackgroundJobProcessorSpy<JobPayloadForQueue<Queues, QueueId>, JobReturn>)
+      : undefined
     this.runningPromises = new Set()
     this.monitor = new BackgroundJobProcessorMonitor(dependencies, config, this.constructor.name)
   }
@@ -171,13 +175,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
     JobPayloadForQueue<Queues, QueueId>,
     JobReturn
   > {
-    /* v8 ignore next 4 */
-    if (!this._spy)
-      throw new Error(
-        'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
-      )
-
-    return this._spy
+    return this.queueManager.getSpy<QueueId, JobReturn>(this.config.queueId)
   }
 
   public async start(): Promise<void> {
