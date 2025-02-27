@@ -10,6 +10,7 @@ describe('removeNonTranslatableTags', () => {
     ],
     ['\uE101{% if MyVariable %}', '\uE101{% if MyVariable %}'],
     ['{% if MyVariable %}\uE102', '{% if MyVariable %}\uE102'],
+    ['{% if MyVariable %}\uE101\uE102', '{% if MyVariable %}\uE101\uE102'],
     ['\uE101\uE101\uE110\uE102 text \uE101\uE102\uE111\uE102', '\uE101\uE110 text \uE102\uE111'],
   ])('removes non-translatable tags', (originalValue, updatedValue) => {
     expect(removeNonTranslatableTags(originalValue)).toBe(updatedValue)
