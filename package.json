@@ -10,12 +10,12 @@
     "clean": "turbo run clean",
     "build": "turbo run build",
     "test:ci": "turbo run test:ci",
-    "lint": "turbo run lint --continue",
-    "lint:fix": "turbo run lint:fix --continue"
+    "lint": "turbo run lint --continue=always",
+    "lint:fix": "turbo run lint:fix --continue=always"
   },
   "devDependencies": {
     "pino": "^9.0.0",
-    "turbo": "^2.0.12"
+    "turbo": "^2.4.4"
   },
   "packageManager": "npm@10.7.0"
 }
