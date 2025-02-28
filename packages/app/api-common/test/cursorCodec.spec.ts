@@ -17,6 +17,6 @@ describe('cursorCodec', () => {
   it('trying to decode not encoded text', () => {
     const result = decodeCursor('should fail')
     expect(result.error).toBeDefined()
-    expect((result.error as Error).message).toContain('is not valid JSON')
+    expect((result.error as Error).message).toContain('Invalid character')
   })
 })
