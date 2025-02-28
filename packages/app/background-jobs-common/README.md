@@ -60,7 +60,6 @@ await queueManager.start()
 const processor = new FakeBackgroundJobProcessorNew<typeof supportedQueues, 'queue1'>(
   deps,
   'queue1',
-  config.getRedisConfig(),
 )
 await processor.start()
 
@@ -125,8 +124,11 @@ Use `dispose()` to correctly stop processing any new messages and wait for the c
 
 ### Spies
 
-Testing asynchronous code can be challenging. To address this, we've implemented a built-in spy functionality for
-jobs and queue managers.
+Testing asynchronous code can be challenging. To tackle this, we've developed an integrated spy feature for both jobs 
+and queue managers. This functionality enables you to monitor a job as it transitions to a specific state. 
+
+Additionally, the spy instance is shared between the processor and the queue manager, allowing you to use either
+component to verify the status of a job.
 
 #### Example Usage
 
@@ -144,9 +146,14 @@ const scheduledJobIds = await queueManager.scheduleBulk(queueId, [
   },
 ]);
 
-const firstScheduledJob = await queueManager.spy.waitForJobWithId(scheduledJobIds[0], 'scheduled');
+const firstScheduledJob = await queueManager.getSpy(queueId).waitForJobWithId(scheduledJobIds[0], 'scheduled');
+// or using processor spy
+// const firstScheduledJob = await processor.spy.waitForJobWithId(scheduledJobIds[0], 'scheduled');
+
 
 const firstJob = await processor.spy.waitForJobWithId(scheduledJobIds[0], 'completed');
+// or using queue manager spy
+// const firstJob = await queueManager.getSpy(queueId).waitForJobWithId(scheduledJobIds[0], 'completed');
 const secondJob = await processor.spy.waitForJob(
   (data) => data.value === 'second',
   'completed'
@@ -159,22 +166,19 @@ expect(secondJob.data.value).toBe('second');
 
 #### Spy Methods
 
-- `processor.spy.waitForJobWithId(jobId, status)`, `queueManager.spy.waitForJobWithId(jobId, status)`:
+- `processor.spy.waitForJobWithId(jobId, status)`, `queueManager.getSpy(queueId).waitForJobWithId(jobId, status)`:
   - Waits for a job with a specific ID to reach the specified status.
   - Returns the job instance when the status is achieved.
 
-- `processor.spy.waitForJob(predicate, status)`, `queueManager.spy.waitForJob(predicate, status)`:
+- `processor.spy.waitForJob(predicate, status)`, `queueManager.getSpy(queueId).waitForJob(predicate, status)`:
   - Waits for any job that matches the custom predicate to reach the specified status.
   - Returns the matching job instance when the status is achieved.
 
 #### Awaitable Job States
 
-Spies can await jobs in the following states for queue managers:
+Spies can await jobs in the following states:
 
 - `scheduled`: The job is scheduled but not yet processed.
-
-Spies can await jobs in the following states for processors:
-
 - `failed`: The job is processed but failed.
 - `completed`: The job is processed successfully.
 

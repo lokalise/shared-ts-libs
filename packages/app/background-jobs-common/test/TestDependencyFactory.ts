@@ -50,11 +50,13 @@ export class TestDependencyFactory {
 
   createNew<Queues extends QueueConfiguration[]>(
     queues: Queues,
+    isTest = true,
+    lazyInitEnabled = true,
   ): BackgroundJobProcessorDependenciesNew<Queues, SupportedQueueIds<Queues>> {
     this.queueManager = new FakeQueueManager(queues, {
-      isTest: true,
+      isTest,
       redisConfig: this.getRedisConfig(),
-      lazyInitEnabled: true,
+      lazyInitEnabled,
     })
     return {
       workerFactory: new CommonBullmqFactoryNew(),

@@ -1,6 +1,4 @@
 import type { Job } from 'bullmq'
-
-import type { RedisConfig } from '@lokalise/node-core'
 import {
   AbstractBackgroundJobProcessorNew,
   type BackgroundJobProcessorDependenciesNew,
@@ -19,20 +17,14 @@ export class TestStalledBackgroundJobProcessorNew<
 > extends AbstractBackgroundJobProcessorNew<Q, T> {
   private _onFailedErrors: OnFailedError[] = []
 
-  constructor(
-    dependencies: BackgroundJobProcessorDependenciesNew<Q, T>,
-    queueId: T,
-    redisConfig: RedisConfig,
-  ) {
+  constructor(dependencies: BackgroundJobProcessorDependenciesNew<Q, T>, queueId: T) {
     super(dependencies, {
       queueId,
       ownerName: 'test',
-      isTest: false, // We don't want to override job options for this processor
       workerOptions: {
         lockDuration: 1,
         stalledInterval: 1,
       },
-      redisConfig: redisConfig,
     })
   }
 

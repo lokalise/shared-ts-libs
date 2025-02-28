@@ -35,12 +35,7 @@ describe('AbstractBackgroundJobProcessorNew - error', () => {
 
     await factory.clearRedis()
 
-    const redisConfig = factory.getRedisConfig()
-    processor = new TestFailingBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
-      deps,
-      'queue',
-      redisConfig,
-    )
+    processor = new TestFailingBackgroundJobProcessorNew<SupportedQueues, 'queue'>(deps, 'queue')
     await processor.start()
   })
 

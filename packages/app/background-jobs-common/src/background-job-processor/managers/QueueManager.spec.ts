@@ -573,8 +573,8 @@ describe('QueueManager', () => {
         redisConfig,
         isTest: false,
       })
-      expect(() => queueManager.getSpy('queue1')).toThrowError(
-        'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
+      expect(() => queueManager.getSpy('queue1')).toThrowErrorMatchingInlineSnapshot(
+        '[Error: queue1 spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it on QueueManager]',
       )
     })
 
@@ -585,13 +585,13 @@ describe('QueueManager', () => {
       const schema1 = supportedQueues[0].jobPayloadSchema
       type schemaType1 = z.infer<typeof schema1>
       expectTypeOf<returnType1>().toEqualTypeOf<
-        BackgroundJobProcessorSpyInterface<schemaType1, undefined>
+        BackgroundJobProcessorSpyInterface<schemaType1, unknown>
       >()
 
       const schema2 = supportedQueues[1].jobPayloadSchema
       type schemaType2 = z.infer<typeof schema2>
       expectTypeOf<returnType2>().toEqualTypeOf<
-        BackgroundJobProcessorSpyInterface<schemaType2, undefined>
+        BackgroundJobProcessorSpyInterface<schemaType2, unknown>
       >()
     })
   })

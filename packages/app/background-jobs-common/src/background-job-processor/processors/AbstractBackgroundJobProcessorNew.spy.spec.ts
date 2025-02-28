@@ -4,6 +4,7 @@ import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
 
 import { z } from 'zod'
 import { TestReturnValueBackgroundJobProcessorNew } from '../../../test/processors/TestReturnValueBackgroundJobProcessorNew'
+import { FakeQueueManager } from '../managers/FakeQueueManager'
 import type { QueueManager } from '../managers/QueueManager'
 import type { QueueConfiguration } from '../managers/types'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
@@ -41,16 +42,49 @@ describe('AbstractBackgroundJobProcessorNew -  Spy', () => {
   })
 
   it('throws error when spy accessed in non-test mode', async () => {
+    const nonTesQueueManager = new FakeQueueManager(supportedQueues, {
+      isTest: false,
+      redisConfig: factory.getRedisConfig(),
+    })
+    await nonTesQueueManager.start()
     const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
-      deps,
+      { ...deps, queueManager: nonTesQueueManager },
       'queue',
-      factory.getRedisConfig(),
-      false,
     )
 
-    expect(() => processor.spy).throws(
-      'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
+    expect(() => nonTesQueueManager.getSpy('queue')).toThrowErrorMatchingInlineSnapshot(
+      '[Error: queue spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it on QueueManager]',
     )
+    expect(() => processor.spy).toThrowErrorMatchingInlineSnapshot(
+      '[Error: queue spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it on QueueManager]',
+    )
+
+    await processor.dispose()
+    await nonTesQueueManager.dispose()
+  })
+
+  it('should share spy instance with queue manager', async () => {
+    // Given
+    const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(deps, 'queue')
+    await processor.start()
+
+    // When
+    const jobId = await queueManager.schedule('queue', {
+      id: 'test_id',
+      metadata: { correlationId: 'correlation_id' },
+    })
+    const managerScheduleSpy = await queueManager
+      .getSpy('queue')
+      .waitForJobWithId(jobId, 'scheduled')
+    const processorScheduleSpy = await processor.spy.waitForJobWithId(jobId, 'scheduled')
+    expect(managerScheduleSpy).toEqual(processorScheduleSpy)
+
+    // Then
+    const completedSpyFromProcessor = await processor.spy.waitForJobWithId(jobId, 'completed')
+    const completedSpyFromManager = await queueManager
+      .getSpy('queue')
+      .waitForJobWithId(jobId, 'completed')
+    expect(completedSpyFromProcessor).toEqual(completedSpyFromManager)
 
     await processor.dispose()
   })
@@ -64,7 +98,7 @@ describe('AbstractBackgroundJobProcessorNew -  Spy', () => {
       SupportedQueues,
       'queue',
       JobReturn
-    >(deps, 'queue', factory.getRedisConfig(), returnValue)
+    >(deps, 'queue', returnValue)
     await processor.start()
 
     // When
@@ -85,11 +119,7 @@ describe('AbstractBackgroundJobProcessorNew -  Spy', () => {
     const jobPayloadSchema = supportedQueues[0].jobPayloadSchema
     type JobPayload = z.infer<typeof jobPayloadSchema>
 
-    const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
-      deps,
-      'queue',
-      factory.getRedisConfig(),
-    )
+    const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(deps, 'queue')
 
     type spyType = typeof processor.spy
     expectTypeOf<spyType>().toMatchTypeOf<BackgroundJobProcessorSpyInterface<JobPayload, void>>()
@@ -99,7 +129,7 @@ describe('AbstractBackgroundJobProcessorNew -  Spy', () => {
       SupportedQueues,
       'queue',
       JobReturn
-    >(deps, 'queue', factory.getRedisConfig(), { result: 'done' })
+    >(deps, 'queue', { result: 'done' })
 
     type spyTypeWithReturnValue = typeof processorWithReturnValue.spy
     expectTypeOf<spyTypeWithReturnValue>().toMatchTypeOf<

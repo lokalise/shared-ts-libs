@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
 import { TestStalledBackgroundJobProcessorNew } from '../../../test/processors/TestStalledBackgroundJobProcessorNew'
-import { FakeQueueManager } from '../managers/FakeQueueManager'
+import type { FakeQueueManager } from '../managers/FakeQueueManager'
 import type { QueueConfiguration } from '../managers/types'
 import type { BackgroundJobProcessorDependenciesNew } from './types'
 
@@ -31,23 +31,19 @@ describe('AbstractBackgroundJobProcessorNew - stalled', () => {
 
   beforeEach(async () => {
     factory = new TestDependencyFactory()
-    deps = factory.createNew(supportedQueues)
+    deps = factory.createNew(supportedQueues, true)
 
     await factory.clearRedis()
 
-    const redisConfig = factory.getRedisConfig()
-    stalledProcessor = new TestStalledBackgroundJobProcessorNew(deps, 'queue', redisConfig)
+    queueManager = deps.queueManager
+
+    stalledProcessor = new TestStalledBackgroundJobProcessorNew(deps, 'queue')
     await stalledProcessor.start()
-    queueManager = new FakeQueueManager(supportedQueues, {
-      redisConfig,
-      isTest: false,
-    })
     await queueManager.start()
   })
 
   afterEach(async () => {
     await stalledProcessor.dispose()
-    await queueManager.dispose()
     await factory.dispose()
   })
 

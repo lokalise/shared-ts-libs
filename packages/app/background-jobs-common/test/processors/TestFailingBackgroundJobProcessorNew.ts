@@ -1,8 +1,5 @@
 import type { Job } from 'bullmq'
-
-import type { RedisConfig } from '@lokalise/node-core'
 import {
-  type BackgroundJobProcessorDependenciesNew,
   type BaseJobPayload,
   FakeBackgroundJobProcessorNew,
   type QueueConfiguration,
@@ -17,14 +14,6 @@ export class TestFailingBackgroundJobProcessorNew<
   private _errorsOnProcess: Error[] = []
   private _errorsToThrowOnProcess: Error[] = []
   private _errorToThrowOnFailed: Error | undefined
-
-  constructor(
-    dependencies: BackgroundJobProcessorDependenciesNew<Q, T>,
-    queueName: T,
-    redisConfig: RedisConfig,
-  ) {
-    super(dependencies, queueName, redisConfig, true)
-  }
 
   protected override async process(job: Job<unknown>): Promise<void> {
     await super.process(job)

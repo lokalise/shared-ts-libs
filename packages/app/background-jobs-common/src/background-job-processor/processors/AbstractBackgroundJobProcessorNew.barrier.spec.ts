@@ -45,7 +45,6 @@ describe('AbstractBackgroundJobProcessor Barrier', () => {
     const processor = new TestBarrierBackgroundJobProcessorNew<SupportedQueues, 'queue', JobReturn>(
       deps,
       'queue',
-      factory.getRedisConfig(),
       () => {
         counter++
         return Promise.resolve({
@@ -73,7 +72,6 @@ describe('AbstractBackgroundJobProcessor Barrier', () => {
     const processor = new TestBarrierBackgroundJobProcessorNew<SupportedQueues, 'queue', JobReturn>(
       deps,
       'queue',
-      factory.getRedisConfig(),
       () => {
         counter++
 

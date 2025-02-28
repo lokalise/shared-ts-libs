@@ -1,16 +1,10 @@
 import type { Job } from 'bullmq'
-
-import type { RedisConfig } from '@lokalise/node-core'
 import {
   type BaseJobPayload,
   FakeBackgroundJobProcessorNew,
   type SupportedQueueIds,
 } from '../../src'
-import type {
-  BackgroundJobProcessorDependenciesNew,
-  QueueConfiguration,
-  RequestContext,
-} from '../../src'
+import type { QueueConfiguration, RequestContext } from '../../src'
 
 export class TestSuccessBackgroundJobProcessorNew<
   Q extends QueueConfiguration[],
@@ -19,14 +13,6 @@ export class TestSuccessBackgroundJobProcessorNew<
   private onSuccessCounter = 0
   private onSuccessCall!: (job: Job<BaseJobPayload>) => void
   private _jobDataResult!: unknown
-
-  constructor(
-    dependencies: BackgroundJobProcessorDependenciesNew<Q, T>,
-    queueId: T,
-    redisConfig: RedisConfig,
-  ) {
-    super(dependencies, queueId, redisConfig, true)
-  }
 
   protected override process(): Promise<void> {
     return Promise.resolve()
