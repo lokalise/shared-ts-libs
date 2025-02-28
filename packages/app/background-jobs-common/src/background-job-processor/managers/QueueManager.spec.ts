@@ -574,7 +574,7 @@ describe('QueueManager', () => {
         isTest: false,
       })
       expect(() => queueManager.getSpy('queue1')).toThrowErrorMatchingInlineSnapshot(
-        "[Error: queue1 spy was not instantiated, it is only available on test mode. Please use 'config.isTest` to enable it on QueueManager]",
+        '[Error: queue1 spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it on QueueManager]',
       )
     })
 
