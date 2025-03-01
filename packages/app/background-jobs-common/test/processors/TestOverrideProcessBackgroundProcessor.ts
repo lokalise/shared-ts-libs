@@ -1,4 +1,3 @@
-import type { RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 import {
   AbstractBackgroundJobProcessorNew,
@@ -18,17 +17,11 @@ export class TestOverrideProcessBackgroundProcessor<
 > extends AbstractBackgroundJobProcessorNew<Q, T> {
   private _processOverride?: ProcessOverride<Q, T>
 
-  constructor(
-    dependencies: BackgroundJobProcessorDependenciesNew<Q, T>,
-    queueId: T,
-    redisConfig: RedisConfig,
-  ) {
+  constructor(dependencies: BackgroundJobProcessorDependenciesNew<Q, T>, queueId: T) {
     super(dependencies, {
       queueId,
       ownerName: 'test',
-      isTest: true,
       workerOptions: { concurrency: 1 },
-      redisConfig: redisConfig,
     })
   }
 

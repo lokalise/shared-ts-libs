@@ -48,17 +48,11 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
 
     await factory.clearRedis()
 
-    const redisConfig = factory.getRedisConfig()
-    simpleProcessor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue1'>(
-      deps,
-      'queue1',
-      redisConfig,
-    )
+    simpleProcessor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue1'>(deps, 'queue1')
     await simpleProcessor.start()
     processorWithSuccessHook = new TestSuccessBackgroundJobProcessorNew<SupportedQueues, 'queue2'>(
       deps,
       'queue2',
-      redisConfig,
     )
     await processorWithSuccessHook.start()
   })
