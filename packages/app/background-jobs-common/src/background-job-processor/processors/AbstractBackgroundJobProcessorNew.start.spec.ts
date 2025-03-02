@@ -1,5 +1,4 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import type { RedisConfig } from '@lokalise/node-core'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
@@ -26,12 +25,10 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
   let factory: TestDependencyFactory
   let deps: BackgroundJobProcessorDependenciesNew<SupportedQueues, 'queue'>
   let queueManager: FakeQueueManager<SupportedQueues>
-  let redisConfig: RedisConfig
 
   beforeEach(async () => {
     factory = new TestDependencyFactory()
     deps = factory.createNew(supportedQueues)
-    redisConfig = factory.getRedisConfig()
     queueManager = deps.queueManager
 
     await factory.clearRedis()
@@ -42,30 +39,18 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
   })
 
   it('throws an error if queue id is not unique', async () => {
-    const job1 = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
-      deps,
-      'queue',
-      redisConfig,
-    )
+    const job1 = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(deps, 'queue')
 
     await job1.start()
     await expect(
-      new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
-        deps,
-        'queue',
-        redisConfig,
-      ).start(),
+      new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(deps, 'queue').start(),
     ).rejects.toMatchInlineSnapshot('[Error: Processor for queue id "queue" is not unique.]')
 
     await job1.dispose()
   })
 
   it('Multiple start calls (sequential or concurrent) not produce errors', async () => {
-    const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
-      deps,
-      'queue',
-      redisConfig,
-    )
+    const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(deps, 'queue')
 
     // sequential start calls
     await expect(processor.start()).resolves.not.toThrowError()
@@ -79,11 +64,7 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
 
   it('restart processor after dispose', async () => {
     await queueManager.start()
-    const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
-      deps,
-      'queue',
-      redisConfig,
-    )
+    const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(deps, 'queue')
     await processor.start()
     await processor.dispose()
 
@@ -107,7 +88,6 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
     const processor = new TestOverrideProcessBackgroundProcessor<SupportedQueues, 'queue'>(
       deps,
       'queue',
-      redisConfig,
     )
     await processor.start()
 

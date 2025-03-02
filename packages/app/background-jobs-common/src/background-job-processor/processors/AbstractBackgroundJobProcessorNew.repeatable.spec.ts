@@ -34,12 +34,7 @@ describe('AbstractBackgroundJobProcessorNew - repeatable', () => {
 
     await factory.clearRedis()
 
-    const redisConfig = factory.getRedisConfig()
-    processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
-      deps,
-      'queue',
-      redisConfig,
-    )
+    processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(deps, 'queue')
     await processor.start()
   })
 

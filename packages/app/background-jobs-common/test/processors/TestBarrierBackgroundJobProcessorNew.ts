@@ -1,4 +1,3 @@
-import type { RedisConfig } from '@lokalise/node-core'
 import {
   AbstractBackgroundJobProcessorNew,
   type BackgroundJobProcessorDependenciesNew,
@@ -16,15 +15,12 @@ export class TestBarrierBackgroundJobProcessorNew<
   constructor(
     dependencies: BackgroundJobProcessorDependenciesNew<Q, T, JobReturn>,
     queueId: T,
-    redisConfig: RedisConfig,
     barrier: BarrierCallback<JobPayloadForQueue<Q, T>>,
   ) {
     super(dependencies, {
       queueId,
       ownerName: 'test',
-      isTest: true,
       workerOptions: { concurrency: 1 },
-      redisConfig: redisConfig,
       barrier,
     })
   }

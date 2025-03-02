@@ -29,11 +29,9 @@ export type BackgroundJobProcessorConfigNew<
   >,
 > = {
   queueId: QueueId
-  isTest: boolean
   // Name of a webservice or a module running the bg job. Used for logging/observability
   ownerName: string
   workerOptions: Omit<Partial<WorkerOptionsType>, 'connection' | 'prefix' | 'autorun'>
-  redisConfig: RedisConfig
   barrier?: BarrierCallback<
     JobPayloadForQueue<Queues, QueueId>,
     ExecutionContext,

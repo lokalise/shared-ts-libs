@@ -31,17 +31,18 @@ export class QueueManager<
   QueueOptionsType extends QueueOptions = QueueOptions,
   JobOptionsType extends JobsOptions = JobsOptions,
 > {
+  public readonly config: QueueManagerConfig
+
   protected readonly queueRegistry: QueueRegistry<Queues, QueueOptionsType, JobOptionsType>
 
   private readonly factory: BullmqQueueFactory<QueueType, QueueOptionsType>
-  private config: QueueManagerConfig
-
   private readonly _queues: Record<QueueConfiguration<QueueOptionsType>['queueId'], QueueType> = {}
   private readonly spies: Record<
     QueueConfiguration<QueueOptionsType>['queueId'],
     BackgroundJobProcessorSpy<
       JobPayloadForQueue<Queues, QueueConfiguration<QueueOptionsType>['queueId']>,
-      undefined
+      // biome-ignore lint/suspicious/noExplicitAny: At this point we don't know the return type of the spy
+      any
     >
   > = {}
 
@@ -264,12 +265,12 @@ export class QueueManager<
     }
   }
 
-  public getSpy<QueueId extends SupportedQueueIds<Queues>>(
+  public getSpy<QueueId extends SupportedQueueIds<Queues>, JobReturn = unknown>(
     queueId: QueueId,
-  ): BackgroundJobProcessorSpyInterface<JobPayloadForQueue<Queues, QueueId>, undefined> {
+  ): BackgroundJobProcessorSpyInterface<JobPayloadForQueue<Queues, QueueId>, JobReturn> {
     if (!this.spies[queueId])
       throw new Error(
-        `${queueId} spy was not instantiated, it is only available on test mode. Please use \`config.isTest\` to enable it.`,
+        `${queueId} spy was not instantiated, it is only available on test mode. Please use \`config.isTest\` to enable it on QueueManager`,
       )
 
     return this.spies[queueId]
