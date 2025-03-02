@@ -1,22 +1,57 @@
 import { describe, expect, it } from 'vitest'
 
-import { decodeCursor, encodeCursor } from '../src'
+import {
+  type ConversionMode,
+  base64urlToString,
+  decodeCursor,
+  encodeCursor,
+  stringToBase64url,
+} from '../src/cursorCodec'
 
 describe('cursorCodec', () => {
-  it('encode and decode works', () => {
-    const value = {
+  describe('encode and decode', () => {
+    it('encode and decode works', () => {
+      const testValue = {
+        id: '1',
+        name: 'apple',
+        sub: { id: 1 },
+        array1: ['1', '2'],
+        array2: [{ name: 'hello' }, { name: 'world' }],
+      }
+      expect(decodeCursor(encodeCursor(testValue))).toEqual({ result: testValue })
+    })
+
+    it('trying to decode not encoded text', () => {
+      const result = decodeCursor('should fail')
+      expect(result.error).toBeDefined()
+      expect((result.error as Error).message).toContain('is not valid JSON')
+    })
+  })
+
+  describe('base64url conversion', () => {
+    const testValue = {
       id: '1',
       name: 'apple',
       sub: { id: 1 },
       array1: ['1', '2'],
       array2: [{ name: 'hello' }, { name: 'world' }],
     }
-    expect(decodeCursor(encodeCursor(value))).toEqual({ result: value })
-  })
+    const stringifiedValue = JSON.stringify(testValue)
 
-  it('trying to decode not encoded text', () => {
-    const result = decodeCursor('should fail')
-    expect(result.error).toBeDefined()
-    expect((result.error as Error).message).toContain('Invalid character')
+    it.each([
+      ['buffer', 'buffer'],
+      ['buffer', 'atob-btoa'],
+      ['atob-btoa', 'buffer'],
+      ['atob-btoa', 'atob-btoa'],
+    ] satisfies [ConversionMode, ConversionMode][])(
+      'works properly for modes (encoding: %s, decoding: %s)',
+      (encodingMode, decodingMode) => {
+        const encoded = stringToBase64url(stringifiedValue, encodingMode)
+        const decoded = base64urlToString(encoded, decodingMode)
+
+        expect(decoded).toStrictEqual(stringifiedValue)
+        expect(JSON.parse(decoded)).toStrictEqual(testValue)
+      },
+    )
   })
 })
