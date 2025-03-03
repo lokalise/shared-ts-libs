@@ -38,6 +38,7 @@
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",
         "@lokalise/biome-config": "^1.5.0",
+        "@types/node": "^22.7.6",
         "rimraf": "^6.0.1",
         "typescript": "^5.8.2"
     }
