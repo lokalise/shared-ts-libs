@@ -41,6 +41,7 @@ export const stringToBase64url = (value: string, mode: ConversionMode = 'buffer'
 
 /**
  * Encodes JSON object to base64url
+ * Compatible with both browser and node envs
  */
 export const encodeCursor = (object: Record<string, unknown>): string => {
   return stringToBase64url(JSON.stringify(object), resolveConversionMode())
@@ -48,6 +49,7 @@ export const encodeCursor = (object: Record<string, unknown>): string => {
 
 /**
  * Decodes base64url to JSON object
+ * Compatible with both browser and node envs
  */
 export const decodeCursor = (value: string): Either<Error, Record<string, unknown>> => {
   let error: unknown
