@@ -36,6 +36,7 @@ function plugin(_app: FastifyInstance, opts: PrismaOtelTracingPluginConfig, done
       provider.addSpanProcessor(new LokaliseSimpleSpanProcessor(otlpExporter))
     }
 
+    // Triggering build
     registerInstrumentations({
       instrumentations: [new PrismaInstrumentation()],
       tracerProvider: provider,
