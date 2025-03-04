@@ -1,7 +1,7 @@
 import { builtinModules } from 'node:module'
 
 import dts from 'vite-plugin-dts'
-import { type UserConfig, defineConfig } from 'vitest/config'
+import { type ViteUserConfig, defineConfig } from 'vitest/config'
 
 export const extractDependencies = (packageJson: {
   dependencies?: Record<string, unknown>
@@ -11,13 +11,13 @@ export const extractDependencies = (packageJson: {
     packageJson.peerDependencies ? Object.keys(packageJson.peerDependencies) : [],
   )
 
-// biome-ignore lint/style/noDefaultExport: <explanation>
+// biome-ignore lint/style/noDefaultExport: vite expects a default export
 export default ({
   entry,
   dependencies = [],
   test,
   ...config
-}: UserConfig & { dependencies?: readonly string[]; entry: string }) =>
+}: ViteUserConfig & { dependencies?: readonly string[]; entry: string }) =>
   defineConfig({
     appType: 'custom',
     build: {
