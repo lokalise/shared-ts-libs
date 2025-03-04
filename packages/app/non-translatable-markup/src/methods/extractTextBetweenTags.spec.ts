@@ -19,6 +19,14 @@ describe('extractTextBetweenTags', () => {
       text: ' \uE101Hello world!\uE102 ! 123\uE101I am fine!\uE102 ',
       result: ['! 123'],
     }, // several regions within NT tags with leading and trailing spaces
+    {
+      text: '\uE101\uE102\uE111\uE101\uE112\uE102',
+      result: [],
+    }, // duplicated NT tags inside of NT region
+    {
+      text: '\uE101\uE102\uE111\uE102\uE101\uE101\uE112\uE102',
+      result: [],
+    }, // consecutive NT regions with special inline codes inside
 
     // HTML tags - should be removed
     { text: 'Hello!<> world', result: ['Hello!', 'world'] },
