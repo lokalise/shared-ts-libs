@@ -10,6 +10,11 @@ describe('isTextTranslatable', () => {
     expect(isTextTranslatable('    ')).toBe(false)
   })
 
+  it('should return false on duplicated NT tags inside of NT region', () => {
+    expect(isTextTranslatable('\uE101\uE102\uE111\uE101\uE112\uE102')).toBe(false)
+    expect(isTextTranslatable('\uE101\uE102\uE111\uE102\uE101\uE101\uE112\uE102')).toBe(false)
+  })
+
   it.each([
     'Hello, World', // Without NT tags
     'Hello, \uE101World!\uE102', // Single region within NT tags
