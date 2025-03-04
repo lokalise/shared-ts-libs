@@ -32,3 +32,6 @@ updates:
         patterns:
           - "@types/*"
           - "typescript"
+      opentelemetry:
+        patterns:
+          - "@opentelemetry/*"
