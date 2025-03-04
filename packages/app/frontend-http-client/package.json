@@ -60,7 +60,7 @@
         "rimraf": "^6.0.0",
         "tsup": "8.4.0",
         "typescript": "~5.8.2",
-        "vitest": "^3.0.5"
+        "vitest": "^3.0.7"
     },
     "keywords": ["frontend", "web", "browser", "http", "client", "zod", "validation", "typesafe"]
 }
