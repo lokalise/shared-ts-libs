@@ -1,9 +1,9 @@
 {
     "compilerOptions": {
         "outDir": "dist",
-        "module": "ESNext",
-        "target": "ESNext",
-        "lib": ["ESNext"],
+        "module": "preserve",
+        "target": "ES2022",
+        "lib": ["ES2022"],
         "sourceMap": true,
         "declaration": true,
         "declarationMap": true,
