@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { removeNonTranslatableTags } from './removeNonTranslatableTags'
+import { removeNonTranslatableTags } from './removeNonTranslatableTags.js'
 
 describe('removeNonTranslatableTags', () => {
   it.each([
