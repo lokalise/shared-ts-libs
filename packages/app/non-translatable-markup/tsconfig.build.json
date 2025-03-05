@@ -3,7 +3,7 @@
         "noEmit": false,
         "outDir": "dist",
         "sourceMap": true,
-        "declaration": true,
+        "declaration": true
     },
     "extends": ["./tsconfig.json"],
     "include": ["src/**/*"],
