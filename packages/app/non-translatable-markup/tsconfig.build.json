@@ -2,8 +2,8 @@
     "compilerOptions": {
         "noEmit": false,
         "outDir": "dist",
+        "sourceMap": true,
         "declaration": true,
-        "sourceMap": true
     },
     "extends": ["./tsconfig.json"],
     "include": ["src/**/*"],
