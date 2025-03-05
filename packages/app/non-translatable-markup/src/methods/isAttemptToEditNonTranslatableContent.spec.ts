@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isAttemptToEditNonTranslatableContent } from './isAttemptToEditNonTranslatableContent'
+import { isAttemptToEditNonTranslatableContent } from './isAttemptToEditNonTranslatableContent.js'
 
 describe('isAttemptToEditNonTranslatableContent', () => {
   it.each([
