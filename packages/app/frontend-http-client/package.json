@@ -32,27 +32,27 @@
         "access": "public"
     },
     "scripts": {
-        "build:dev": "tsc",
-        "build:release": "tsup",
+        "build": "tsup",
         "clean": "rimraf dist",
         "lint": "biome check . && tsc --noEmit",
         "lint:fix": "biome check --write",
         "package-version": "echo $npm_package_version",
         "test": "vitest run --coverage",
-        "prepublishOnly": "npm run clean && npm run build:release",
+        "prepublishOnly": "npm run clean && npm run build",
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
         "fast-querystring": "^1.1.2"
     },
     "peerDependencies": {
-        "@lokalise/universal-ts-utils": ">=4.2.2",
+        "@lokalise/universal-ts-utils": "^4.2.2",
         "wretch": "^2.8.0",
         "zod": "^3.22.0"
     },
     "devDependencies": {
         "@biomejs/biome": "^1.8.3",
         "@lokalise/biome-config": "^1.0.0",
+        "@lokalise/universal-ts-utils": "^4.2.2",
         "@types/node": "^22.0.0",
         "@vitest/coverage-v8": "^3.0.5",
         "jest-fail-on-console": "^3.1.2",
