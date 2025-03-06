@@ -133,8 +133,6 @@ async function sendResourceChange<
   >
 }
 
-/* METHODS */
-
 /* GET */
 
 export async function sendGet<
