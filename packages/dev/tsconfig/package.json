@@ -1,0 +1,24 @@
+{
+    "name": "@lokalise/tsconfig",
+    "version": "1.0.0",
+    "license": "Apache-2.0",
+    "type": "module",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/lokalise/shared-ts-libs.git"
+    },
+    "homepage": "https://github.com/lokalise/shared-ts-libs",
+    "files": ["configs"],
+    "exports": {
+        "./bundler": "./configs/bundler.json",
+        "./bundler-dom": "./configs/bundler-dom.json",
+        "./tsc": "./configs/tsc.json",
+        "./tsc-dom": "./configs/tsc-dom.json",
+        "./build-app": "./configs/build-app.json",
+        "./build-public-lib": "./configs/build-public-lib.json",
+        "./build-private-lib": "./configs/build-private-lib.json"
+    },
+    "scripts": {
+        "package-version": "echo $npm_package_version"
+    }
+}
