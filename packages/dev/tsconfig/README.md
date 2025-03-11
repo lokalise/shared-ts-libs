@@ -13,55 +13,81 @@ Shared TypeScript configuration for Lokalise projects.
 npm install --save-dev @lokalise/tsconfig
 ```
 
-TypeScript configuration depends on whether you're using `tsc` to build your code or a `bundler` (Vite, esbuild, SWC, etc.).
+TypeScript configuration depends on whether you're using a `bundler` (Vite, esbuild, SWC, etc.) or `tsc` to build your code:
+- `Bundlers` are commonly used for frontend applications, where they also bundle and optimize code for faster loading.
+- `tsc` is typically used for backend applications and libraries, where you directly compile TypeScript into JavaScript.
 
 ## **Using a Bundler**
 
-Create a `tsconfig.json` for type-checking:
-
-```jsonc
+Create a `tsconfig.json` that whitelists the files for type-checking:
+```json
 {
   "extends": "@lokalise/tsconfig/bundler",
-  "extends": "@lokalise/tsconfig/bundler-dom", // When your code runs in the DOM
-  // Whitelist files that should be used for type-checking:
   "include": ["src/**/*", "test/**/*", "vitest.config.ts"]
 }
 ```
-**Note:** Choose only one `"extends"` option for `tsconfig.json`.
+
+For frontend applications running in the DOM:
+```json
+{
+  "extends": "@lokalise/tsconfig/bundler-dom",
+  "include": ["src/**/*", "test/**/*", "vitest.config.ts"]
+}
+```
 
 ## **Using `tsc` (TypeScript Compiler)**
 
-Create a `tsconfig.json` for type-checking:
-
-```jsonc
+Create a `tsconfig.json` that whitelists the files for type-checking:
+```json
 {
   "extends": "@lokalise/tsconfig/tsc",
-  "extends": "@lokalise/tsconfig/tsc-dom", // When your code runs in the DOM
-  // Whitelist files that should be used for type-checking:
   "include": ["src/**/*", "test/**/*", "vitest.config.ts"]
 }
 ```
-**Note:** Choose only one `"extends"` option for `tsconfig.json`.
 
-Create a `tsconfig.build.json` for building the code:
-
-```jsonc
+For frontend applications running in the DOM:
+```json
 {
-  "extends": ["./tsconfig.json", "@lokalise/tsconfig/build-app"], // For an app
-  "extends": ["./tsconfig.json", "@lokalise/tsconfig/build-public-lib"], // For a publishable library
-  "extends": ["./tsconfig.json", "@lokalise/tsconfig/build-private-lib"], // For a private monorepo library
-  "include": ["src/**/*"], // Include only necessary files
-  "exclude": ["src/**/*.test.ts"] // Exclude unneeded files from the build output
+  "extends": "@lokalise/tsconfig/tsc-dom",
+  "include": ["src/**/*", "test/**/*", "vitest.config.ts"]
 }
 ```
 
-**Note:** Choose only one `"extends"` option for `tsconfig.build.json`.
+Create a `tsconfig.build.json` for building the code, ensuring that only
+the necessary files are included, and unnecessary ones are excluded.
+
+For building an application or a service:
+```json
+{
+  "extends": ["./tsconfig.json", "@lokalise/tsconfig/build-app"],
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts"]
+}
+```
+
+For building a publishable library:
+```json
+{
+  "extends": ["./tsconfig.json", "@lokalise/tsconfig/build-public-lib"],
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts"]
+}
+```
+
+For building a private monorepo library:
+```json
+{
+  "extends": ["./tsconfig.json", "@lokalise/tsconfig/build-private-lib"],
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts"]
+}
+```
 
 ## **Additional Configuration Options**
 
 ### **JSX Support**
-If your app uses JSX, specify it in `tsconfig.json`:
 
+If your app uses JSX, add `jsx` option in `tsconfig.json`:
 ```json
 {
   "extends": "@lokalise/tsconfig/bundler-dom",
@@ -72,8 +98,8 @@ If your app uses JSX, specify it in `tsconfig.json`:
 ```
 
 ### **Adding Global Types**
-To include additional type definitions:
 
+To include additional type definitions, add `types` option in `tsconfig.json`:
 ```json
 {
   "extends": "@lokalise/tsconfig/tsc",
@@ -83,12 +109,11 @@ To include additional type definitions:
 }
 ```
 
-## **Options That Can Be Disabled for Migration**
+## **Options That Can Be Disabled To Ease Adoption**
 
-### **`erasableSyntaxOnly`**
+### [erasableSyntaxOnly](https://www.typescriptlang.org/tsconfig/#erasableSyntaxOnly)
 
-[erasableSyntaxOnly](https://www.typescriptlang.org/tsconfig/#erasableSyntaxOnly)
-marks the following syntax as errors:
+It marks the following syntax as errors:
 - `enum` declarations
 - `namespace` and `module` with runtime code
 - Parameter properties in classes
@@ -104,29 +129,30 @@ To disable:
 }
 ```
 
-### **`noUncheckedIndexedAccess`**
-[noUncheckedIndexedAccess](https://www.typescriptlang.org/tsconfig/#noUncheckedIndexedAccess)
-ensures that accessing arrays or objects without checking if a value exists first results in a TypeScript error, preventing potential runtime crashes.
+### [noUncheckedIndexedAccess](https://www.typescriptlang.org/tsconfig/#noUncheckedIndexedAccess)
+
+It ensures that accessing arrays or objects without checking if a value exists
+results in a TypeScript error, preventing potential runtime crashes.
 
 **Example for accessing the array:**
 ```typescript
 const arr: string[] = [];
 
 console.log(arr[0].trim());
-// With `"noUncheckedIndexedAccess": true` → TypeScript error: "Object is possibly `undefined`"
-// With `"noUncheckedIndexedAccess": false` → No error, but at runtime, this will throw:
-// "TypeError: Cannot read properties of undefined (reading 'trim')"
 ```
+- With `"noUncheckedIndexedAccess": true` → TypeScript error: "Object is possibly `undefined`"
+- With `"noUncheckedIndexedAccess": false` → No error, but at runtime, this will throw:
+`"TypeError: Cannot read properties of undefined (reading 'trim')"`
 
 **Example for accessing the object:**
 ```typescript
 const obj: Record<string, string> = {};
 
 console.log(obj.some.trim());
-// With `"noUncheckedIndexedAccess": true` → TypeScript error: "`obj.some` is possibly `undefined`"
-// With `"noUncheckedIndexedAccess": false` → No error, but at runtime, this will throw:
-// "TypeError: Cannot read properties of undefined (reading 'trim')"
 ```
+- With `"noUncheckedIndexedAccess": true` → TypeScript error: "`obj.some` is possibly `undefined`"
+- With `"noUncheckedIndexedAccess": false` → No error, but at runtime, this will throw:
+`"TypeError: Cannot read properties of undefined (reading 'trim')"`
 
 To disable:
 ```json
