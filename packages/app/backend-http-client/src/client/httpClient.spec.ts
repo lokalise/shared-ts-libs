@@ -3,9 +3,11 @@ import { Client, MockAgent, setGlobalDispatcher } from 'undici'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
+import { buildPayloadRoute } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
 import { JSON_HEADERS } from './constants'
 import {
   buildClient,
+  sendByPayloadRoute,
   sendDelete,
   sendGet,
   sendPatch,
@@ -591,6 +593,51 @@ describe('httpClient', () => {
 
       expect(result.result.statusCode).toBe(204)
       expect(result.result.body).toBeNull()
+    })
+  })
+
+  describe('sendByPayloadRoute', () => {
+    it('validates response structure with provided schema, throws an error', async () => {
+      const schema = z.object({
+        id: z.string(),
+      })
+      const apiContract = buildPayloadRoute({
+        method: 'post',
+        requestBodySchema: schema,
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'POST',
+        })
+        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+      await expect(
+        sendByPayloadRoute(
+          client,
+          apiContract,
+          // @ts-expect-error We intentionally send missing body
+          {},
+          {
+            responseSchema: schema,
+            validateResponse: true,
+            requestLabel: 'Test request',
+          },
+        ),
+      ).rejects.toThrow(`[
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "id"
+    ],
+    "message": "Expected string, received number",
+    "requestLabel": "Test request"
+  }
+]`)
     })
   })
 

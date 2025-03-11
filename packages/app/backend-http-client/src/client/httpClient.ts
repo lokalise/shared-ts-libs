@@ -11,9 +11,15 @@ import type {
   RequestResult,
   RetryConfig,
 } from 'undici-retry'
-import type { ZodError, ZodSchema } from 'zod'
+import type { ZodError, ZodSchema, z } from 'zod'
 
+import type {
+  InferSchemaInput,
+  InferSchemaOutput,
+  PayloadRouteDefinition,
+} from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
 import { ResponseStatusError } from '../errors/ResponseStatusError'
+import type { PayloadRouteRequestParams } from './apiContractTypes'
 import { DEFAULT_OPTIONS, defaultClientOptions } from './constants'
 import type {
   InternalRequestOptions,
@@ -22,6 +28,7 @@ import type {
   RequestResultDefinitiveEither,
 } from './types'
 
+type PayloadMethods = 'POST' | 'PUT' | 'PATCH'
 type DEFAULT_THROW_ON_ERROR = typeof DEFAULT_OPTIONS.throwOnError
 
 export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
@@ -109,22 +116,23 @@ export async function sendDelete<
   )
 }
 
-export async function sendPost<
+async function sendResourceChange<
   T,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
   client: Client,
+  method: PayloadMethods,
   path: string,
   body: RecordObject | undefined,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
+) {
   const result = await sendWithRetry<T>(
     client,
     {
       ...DEFAULT_OPTIONS,
       path: path,
-      method: 'POST',
+      method,
       body: body ? JSON.stringify(body) : undefined,
       query: options.query,
       headers: copyWithoutUndefined({
@@ -148,6 +156,19 @@ export async function sendPost<
     options.requestLabel,
     options.isEmptyResponseExpected ?? false,
   )
+}
+
+export function sendPost<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
+  client: Client,
+  path: string,
+  body: RecordObject | undefined,
+  options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
+): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
+  return sendResourceChange(client, 'POST', path, body, options)
 }
 
 export async function sendPostBinary<
@@ -191,7 +212,7 @@ export async function sendPostBinary<
   )
 }
 
-export async function sendPut<
+export function sendPut<
   T,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
@@ -201,35 +222,7 @@ export async function sendPut<
   body: RecordObject | undefined,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
 ): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
-  const result = await sendWithRetry<T>(
-    client,
-    {
-      ...DEFAULT_OPTIONS,
-      path: path,
-      method: 'PUT',
-      body: body ? JSON.stringify(body) : undefined,
-      query: options.query,
-      headers: copyWithoutUndefined({
-        'x-request-id': options.reqContext?.reqId,
-        ...options.headers,
-      }),
-      reset: options.disableKeepAlive ?? false,
-      bodyTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
-      headersTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
-      throwOnError: undefined,
-    },
-    resolveRetryConfig(options),
-    resolveRequestConfig(options),
-  )
-
-  return resolveResult(
-    result,
-    options.throwOnError ?? (DEFAULT_OPTIONS.throwOnError as DoThrowOnError),
-    options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
-    options.responseSchema,
-    options.requestLabel,
-    options.isEmptyResponseExpected ?? false,
-  )
+  return sendResourceChange(client, 'PUT', path, body, options)
 }
 
 export async function sendPutBinary<
@@ -273,7 +266,7 @@ export async function sendPutBinary<
   )
 }
 
-export async function sendPatch<
+export function sendPatch<
   T,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
@@ -283,35 +276,7 @@ export async function sendPatch<
   body: RecordObject | undefined,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
 ): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
-  const result = await sendWithRetry<T>(
-    client,
-    {
-      ...DEFAULT_OPTIONS,
-      path: path,
-      method: 'PATCH',
-      body: body ? JSON.stringify(body) : undefined,
-      query: options.query,
-      headers: copyWithoutUndefined({
-        'x-request-id': options.reqContext?.reqId,
-        ...options.headers,
-      }),
-      reset: options.disableKeepAlive ?? false,
-      bodyTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
-      headersTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
-      throwOnError: undefined,
-    },
-    resolveRetryConfig(options),
-    resolveRequestConfig(options),
-  )
-
-  return resolveResult(
-    result,
-    options.throwOnError ?? (DEFAULT_OPTIONS.throwOnError as DoThrowOnError),
-    options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
-    options.responseSchema,
-    options.requestLabel,
-    options.isEmptyResponseExpected ?? false,
-  )
+  return sendResourceChange(client, 'PATCH', path, body, options)
 }
 
 function resolveRequestConfig(options: InternalRequestOptions<unknown>): RequestParams {
@@ -383,6 +348,79 @@ function handleRequestResultSuccess<T>(
   }
 
   return result
+}
+
+export function sendByPayloadRoute<
+  RequestBodySchema extends z.Schema | undefined,
+  ResponseBodySchema extends z.Schema | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
+>(
+  client: Client,
+  routeDefinition: PayloadRouteDefinition<
+    InferSchemaOutput<PathParamsSchema>,
+    RequestBodySchema,
+    ResponseBodySchema,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
+  >,
+  params: PayloadRouteRequestParams<
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestBodySchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
+  >,
+  options: Omit<
+    RequestOptions<InferSchemaOutput<ResponseBodySchema>, IsEmptyResponseExpected, boolean>,
+    'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
+  >,
+) {
+  return sendResourceChange(
+    client,
+    // @ts-expect-error TS loses exact string type during uppercasing
+    routeDefinition.method.toUpperCase(),
+    // @ts-expect-error magic type inferring happening
+    routeDefinition.pathResolver(params.pathParams),
+    // @ts-expect-error magic type inferring happening
+    params.body,
+    {
+      isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
+      // @ts-expect-error FixMe
+      headers: params.headers,
+      // @ts-expect-error magic type inferring happening
+      query: params.queryParams,
+      responseSchema: routeDefinition.successResponseBodySchema,
+      ...options,
+    },
+  )
+
+  /**
+   * {
+   *     // @ts-expect-error magic type inferring happening
+   *     body: params.body,
+   *     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
+   *     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
+   *     // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
+   *     requestBodySchema: routeDefinition.requestBodySchema as any,
+   *     // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
+   *     responseBodySchema: routeDefinition.successResponseBodySchema as any,
+   *     // @ts-expect-error magic type inferring happening
+   *     queryParams: params.queryParams,
+   *     queryParamsSchema: routeDefinition.requestQuerySchema,
+   *     // @ts-expect-error magic type inferring happening
+   *     path: routeDefinition.pathResolver(params.pathParams),
+   *     // @ts-expect-error FixMe
+   *     headers: params.headers,
+   *     // @ts-expect-error magic type inferring happening
+   *     headersSchema: params.headersSchema,
+   *   }
+   */
 }
 
 export const httpClient = {
