@@ -6,6 +6,8 @@ This module requires `fastify-type-provider-zod` type provider to work and is ES
 
 # Usage
 
+Basic usage pattern:
+
 ```ts
 import { buildFastifyNoPayloadRoute, buildFastifyPayloadRoute, injectPost, injectGet } from '@lokalise/fastify-api-contracts'
 
@@ -67,4 +69,31 @@ const getResponse = await injectGet(app, contract, {
     pathParams: { userId: '1' },
     headers: async () => { authorization: 'some-value'} // headers producing function (sync or async) can be passed as well
 })
+```
+
+In case you prefer to separate handler definition from route definition, you can use functions `buildFastifyNoPayloadRouteHandler` (for GET and DELETE handlers) and `buildFastifyPayloadRouteHandler` (for PUT, POST and PATCH handlers):
+
+```ts
+import { 
+    buildFastifyPayloadRoute, 
+    buildFastifyPayloadRouteHandler 
+} from '@lokalise/fastify-api-contracts'
+
+const contract = buildPayloadRoute({
+    method: 'post',
+    requestBodySchema: REQUEST_BODY_SCHEMA,
+    successResponseBodySchema: BODY_SCHEMA,
+    requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+})
+
+const handler = buildFastifyPayloadRouteHandler(contract,
+    async (req, reply) => {
+        // handler definition here, req and reply will be correctly typed based on the contract
+    }
+)
+
+const routes = [
+    buildFastifyPayloadRoute(contract, handler),
+]
 ```
