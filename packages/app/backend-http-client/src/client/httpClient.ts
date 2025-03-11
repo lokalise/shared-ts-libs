@@ -378,7 +378,7 @@ export function sendByPayloadRoute<
   >,
   options: Omit<
     RequestOptions<InferSchemaOutput<ResponseBodySchema>, IsEmptyResponseExpected, boolean>,
-    'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
+    'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
   >,
 ) {
   return sendResourceChange(

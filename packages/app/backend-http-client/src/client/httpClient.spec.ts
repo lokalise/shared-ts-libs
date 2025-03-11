@@ -602,8 +602,10 @@ describe('httpClient', () => {
         id: z.string(),
       })
       const apiContract = buildPayloadRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
         method: 'post',
-        requestBodySchema: schema,
+        requestBodySchema: z.undefined(),
         pathResolver: () => '/products/1',
       })
 
@@ -618,10 +620,8 @@ describe('httpClient', () => {
         sendByPayloadRoute(
           client,
           apiContract,
-          // @ts-expect-error We intentionally send missing body
           {},
           {
-            responseSchema: schema,
             validateResponse: true,
             requestLabel: 'Test request',
           },
