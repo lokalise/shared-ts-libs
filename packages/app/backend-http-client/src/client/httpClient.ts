@@ -358,6 +358,7 @@ export function sendByPayloadRoute<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
   client: Client,
   routeDefinition: PayloadRouteDefinition<
@@ -377,10 +378,16 @@ export function sendByPayloadRoute<
     InferSchemaInput<RequestHeaderSchema>
   >,
   options: Omit<
-    RequestOptions<InferSchemaOutput<ResponseBodySchema>, IsEmptyResponseExpected, boolean>,
+    RequestOptions<InferSchemaOutput<ResponseBodySchema>, IsEmptyResponseExpected, DoThrowOnError>,
     'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
   >,
-) {
+): Promise<
+  RequestResultDefinitiveEither<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsEmptyResponseExpected,
+    DoThrowOnError
+  >
+> {
   return sendResourceChange(
     client,
     // @ts-expect-error TS loses exact string type during uppercasing
@@ -399,28 +406,6 @@ export function sendByPayloadRoute<
       ...options,
     },
   )
-
-  /**
-   * {
-   *     // @ts-expect-error magic type inferring happening
-   *     body: params.body,
-   *     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
-   *     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
-   *     // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
-   *     requestBodySchema: routeDefinition.requestBodySchema as any,
-   *     // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
-   *     responseBodySchema: routeDefinition.successResponseBodySchema as any,
-   *     // @ts-expect-error magic type inferring happening
-   *     queryParams: params.queryParams,
-   *     queryParamsSchema: routeDefinition.requestQuerySchema,
-   *     // @ts-expect-error magic type inferring happening
-   *     path: routeDefinition.pathResolver(params.pathParams),
-   *     // @ts-expect-error FixMe
-   *     headers: params.headers,
-   *     // @ts-expect-error magic type inferring happening
-   *     headersSchema: params.headersSchema,
-   *   }
-   */
 }
 
 export const httpClient = {

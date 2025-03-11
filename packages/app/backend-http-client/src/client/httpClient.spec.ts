@@ -639,6 +639,50 @@ describe('httpClient', () => {
   }
 ]`)
     })
+
+    it('validates response structure with provided schema, passes validation', async () => {
+      const schema = z.object({
+        category: z.string(),
+        description: z.string(),
+        id: z.number(),
+        image: z.string(),
+        price: z.number(),
+        rating: z.object({
+          count: z.number(),
+          rate: z.number(),
+        }),
+        title: z.string(),
+      })
+
+      const apiContract = buildPayloadRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        method: 'post',
+        requestBodySchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'POST',
+        })
+        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+      const result = await sendByPayloadRoute(
+        client,
+        apiContract,
+        {},
+        {
+          validateResponse: true,
+          throwOnError: true,
+          requestLabel: 'dummy',
+          reqContext,
+        },
+      )
+
+      expect(result.result.body).toEqual(mockProduct1)
+    })
   })
 
   describe('POST', () => {
