@@ -8,7 +8,7 @@ import { PrismaInstrumentation } from '@prisma/instrumentation'
 import type { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
 
-import { LokaliseBatchSpanProcessor, LokaliseSimpleSpanProcessor } from './spanProcessors'
+import { LokaliseBatchSpanProcessor, LokaliseSimpleSpanProcessor } from './spanProcessors.js'
 
 export interface PrismaOtelTracingPluginConfig {
   isEnabled: boolean
