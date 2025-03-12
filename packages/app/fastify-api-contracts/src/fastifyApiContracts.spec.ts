@@ -147,7 +147,7 @@ describe('fastifyApiContracts', () => {
     })
 
     it('uses API spec to build valid DELETE route with header in fastify app', async () => {
-      expect.assertions(2)
+      expect.assertions(4)
       const contract = buildDeleteRoute({
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -161,12 +161,21 @@ describe('fastifyApiContracts', () => {
       })
 
       const app = await initApp(route)
+      // using headers directly
       const response = await injectDelete(app, contract, {
         headers: { authorization: 'dummy' },
         pathParams: { userId: '1' },
       })
 
       expect(response.statusCode).toBe(200)
+
+      // using headers factory
+      const response2 = await injectDelete(app, contract, {
+        headers: () => Promise.resolve({ authorization: 'dummy' }),
+        pathParams: { userId: '1' },
+      })
+
+      expect(response2.statusCode).toBe(200)
     })
   })
 
@@ -319,7 +328,7 @@ describe('fastifyApiContracts', () => {
     })
 
     it('uses API spec to build valid PUT route with header in fastify app', async () => {
-      expect.assertions(4)
+      expect.assertions(8)
       const contract = buildPayloadRoute({
         method: 'put',
         requestBodySchema: REQUEST_BODY_SCHEMA,
@@ -337,6 +346,7 @@ describe('fastifyApiContracts', () => {
       })
 
       const app = await initApp(route)
+      // using headers directly
       const response = await injectPut(app, contract, {
         headers: { authorization: 'dummy' },
         pathParams: { userId: '1' },
@@ -344,6 +354,15 @@ describe('fastifyApiContracts', () => {
       })
 
       expect(response.statusCode).toBe(200)
+
+      // using headers factory
+      const response2 = await injectPut(app, contract, {
+        headers: () => Promise.resolve({ authorization: 'dummy' }),
+        pathParams: { userId: '1' },
+        body: { id: '2' },
+      })
+
+      expect(response2.statusCode).toBe(200)
     })
 
     it('supports isNonJSONResponseExpected and isEmptyResponseExpected parameters', async () => {
