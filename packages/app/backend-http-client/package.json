@@ -25,7 +25,7 @@
         "test:coverage": "vitest --coverage",
         "test:ci": "npm run lint && npm run test:coverage",
         "test:update-snapshots": "vitest -u",
-        "lint": "biome check . && tsc --noEmit",
+        "lint": "biome check . && tsc",
         "lint:fix": "biome check --write",
         "package-version": "echo $npm_package_version",
         "prepublishOnly": "npm run build",
