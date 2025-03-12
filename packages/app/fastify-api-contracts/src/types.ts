@@ -1,7 +1,6 @@
 import type http from 'node:http'
 import type { CommonRouteDefinition } from '@lokalise/universal-ts-utils/node'
-import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
-import type { FastifySchema } from 'fastify/types/schema'
+import type { FastifyReply, FastifyRequest, RouteOptions, FastifySchema } from 'fastify'
 import type { z } from 'zod'
 
 /**
