@@ -1,5 +1,4 @@
-export * from './apiSchemas'
+export * from './apiSchemas.js'
 
-export * from './paginationUtils'
-export * from './typeUtils'
-export { encodeCursor, decodeCursor } from './cursorCodec'
+export * from './paginationUtils.js'
+export { encodeCursor, decodeCursor } from './cursorCodec.js'
