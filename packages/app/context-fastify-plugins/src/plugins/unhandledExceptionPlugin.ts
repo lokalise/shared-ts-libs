@@ -5,7 +5,7 @@ import type { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
 import { stdSerializers } from 'pino'
 
-import { REQUEST_ID_STORE_KEY } from './requestContextProviderPlugin'
+import { REQUEST_ID_STORE_KEY } from './requestContextProviderPlugin.js'
 
 export const commonErrorObjectResolver: ErrorObjectResolver = (
   err: unknown,

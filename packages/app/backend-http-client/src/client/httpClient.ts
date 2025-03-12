@@ -20,15 +20,15 @@ import type {
   InferSchemaOutput,
   PayloadRouteDefinition,
 } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
-import { ResponseStatusError } from '../errors/ResponseStatusError'
-import type { PayloadRouteRequestParams, RouteRequestParams } from './apiContractTypes'
-import { DEFAULT_OPTIONS, defaultClientOptions } from './constants'
+import { ResponseStatusError } from '../errors/ResponseStatusError.js'
+import type { PayloadRouteRequestParams } from './apiContractTypes.js'
+import { DEFAULT_OPTIONS, defaultClientOptions } from './constants.js'
 import type {
   InternalRequestOptions,
   RecordObject,
   RequestOptions,
   RequestResultDefinitiveEither,
-} from './types'
+} from './types.js'
 
 type PayloadMethods = 'POST' | 'PUT' | 'PATCH'
 type NonPayloadMethods = 'DELETE' | 'GET'

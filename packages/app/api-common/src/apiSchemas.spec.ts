@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-
 import {
-  encodeCursor,
   multiCursorMandatoryPaginationSchema,
   multiCursorOptionalPaginationSchema,
   paginatedResponseSchema,
-} from '../src'
+} from './apiSchemas.js'
+import { encodeCursor } from './cursorCodec.js'
 
 describe('apiSchemas', () => {
   describe('multi cursor pagination schemas', () => {

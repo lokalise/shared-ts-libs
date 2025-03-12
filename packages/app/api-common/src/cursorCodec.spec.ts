@@ -6,7 +6,7 @@ import {
   decodeCursor,
   encodeCursor,
   stringToBase64url,
-} from '../src/cursorCodec'
+} from './cursorCodec.js'
 
 describe('cursorCodec', () => {
   describe('encode and decode', () => {

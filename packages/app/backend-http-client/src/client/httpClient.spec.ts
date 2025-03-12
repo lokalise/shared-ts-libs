@@ -3,12 +3,8 @@ import { Client, MockAgent, setGlobalDispatcher } from 'undici'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import {
-  buildDeleteRoute,
-  buildGetRoute,
-  buildPayloadRoute,
-} from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
-import { JSON_HEADERS } from './constants'
+import { buildPayloadRoute } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
+import { JSON_HEADERS } from './constants.js'
 import {
   buildClient,
   sendByDeleteRoute,
@@ -21,12 +17,12 @@ import {
   sendPostBinary,
   sendPut,
   sendPutBinary,
-} from './httpClient'
+} from './httpClient.js'
 // @ts-ignore
 import mockProduct1 from './mock-data/mockProduct1.json'
 // @ts-ignore
 import mockProductsLimit3 from './mock-data/mockProductsLimit3.json'
-import { type HttpRequestContext, isInternalRequestError } from './types'
+import { type HttpRequestContext, isInternalRequestError } from './types.js'
 
 const TEXT_HEADERS = {
   'content-type': 'text/plain',

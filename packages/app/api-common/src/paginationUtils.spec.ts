@@ -1,13 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
-
+import type { OptionalPaginationParams } from './apiSchemas.js'
+import { encodeCursor } from './cursorCodec.js'
 import {
-  type OptionalPaginationParams,
   createPaginatedResponse,
-  encodeCursor,
   getMetaForNextPage,
   getPaginatedEntries,
   getPaginatedEntriesByHasMore,
-} from '../src'
+} from './paginationUtils.js'
 
 describe('paginationUtils', () => {
   describe('createPaginatedResponse', () => {

@@ -1,4 +1,4 @@
-import { isObject } from './typeUtils'
+import { isObject } from '@lokalise/universal-ts-utils/type/isObject'
 
 type Left<T> = {
   error: T
