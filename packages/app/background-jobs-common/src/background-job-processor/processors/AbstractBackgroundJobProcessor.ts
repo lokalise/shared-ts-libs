@@ -3,13 +3,13 @@ import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import {
   DelayedError,
   type Job,
+  type JobState,
   type JobsOptions,
   type Queue,
   type QueueOptions,
   type Worker,
   type WorkerOptions,
 } from 'bullmq'
-import type { JobState } from 'bullmq/dist/esm/types/job-type'
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
 import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants.js'

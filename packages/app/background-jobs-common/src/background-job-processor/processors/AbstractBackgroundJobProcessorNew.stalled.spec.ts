@@ -69,18 +69,18 @@ describe('AbstractBackgroundJobProcessorNew - stalled', () => {
     expect(stalledProcessor?.onFailedErrors).length(1)
 
     const onFailedCall = stalledProcessor?.onFailedErrors[0]
-    expect(onFailedCall.error.message).toBe('job stalled more than allowable limit')
-    expect(onFailedCall.job.id).toBe(jobId)
-    expect(onFailedCall.job.data).toMatchObject(jobData)
-    expect(onFailedCall.job.attemptsMade).toBe(0)
+    expect(onFailedCall!.error.message).toBe('job stalled more than allowable limit')
+    expect(onFailedCall!.job.id).toBe(jobId)
+    expect(onFailedCall!.job.data).toMatchObject(jobData)
+    expect(onFailedCall!.job.attemptsMade).toBe(0)
 
     expect(errorReporterSpy).toHaveBeenCalledWith({
-      error: onFailedCall.error,
+      error: onFailedCall!.error,
       context: {
         jobId,
         jobName: 'queue',
         'x-request-id': jobData.metadata.correlationId,
-        errorJson: expect.stringContaining(onFailedCall.error.message),
+        errorJson: expect.stringContaining(onFailedCall!.error.message),
       },
     })
   })

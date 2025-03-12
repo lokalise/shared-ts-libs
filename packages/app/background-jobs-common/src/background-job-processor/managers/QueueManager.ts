@@ -1,6 +1,4 @@
-import type { JobsOptions, QueueOptions } from 'bullmq'
-import type { Queue } from 'bullmq'
-import type { JobState } from 'bullmq/dist/esm/types/job-type'
+import type { JobState, JobsOptions, Queue, QueueOptions } from 'bullmq'
 import { merge } from 'ts-deepmerge'
 import { DEFAULT_QUEUE_OPTIONS } from '../constants.js'
 import type { BullmqQueueFactory } from '../factories/BullmqQueueFactory.js'

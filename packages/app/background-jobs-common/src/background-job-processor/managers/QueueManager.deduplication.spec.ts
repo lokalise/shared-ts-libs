@@ -177,7 +177,7 @@ describe('QueueManager - deduplication', () => {
       ])
       expect(jobIds).toHaveLength(1)
 
-      const job = await queueManager.getQueue('queue_valid').getJob(jobIds[0])
+      const job = await queueManager.getQueue('queue_valid').getJob(jobIds[0]!)
       expect(job).toBeDefined()
       expect(job!.opts.deduplication).toMatchObject({
         id: 'myId:myValue',
@@ -199,7 +199,7 @@ describe('QueueManager - deduplication', () => {
       )
       expect(jobIds).toHaveLength(1)
 
-      const job = await queueManager.getQueue('queue_valid').getJob(jobIds[0])
+      const job = await queueManager.getQueue('queue_valid').getJob(jobIds[0]!)
       expect(job).toBeDefined()
       expect(job!.opts.deduplication).toEqual({ id: 'newId', ttl: 10 })
     })
@@ -219,11 +219,11 @@ describe('QueueManager - deduplication', () => {
       ])
       expect(jobIds).toHaveLength(2)
 
-      const job1 = await queueManager.getQueue('queue_valid').getJob(jobIds[0])
+      const job1 = await queueManager.getQueue('queue_valid').getJob(jobIds[0]!)
       expect(job1).toBeDefined()
       expect(job1!.opts.deduplication!.id).toBe('myId1:myValue1')
 
-      const job2 = await queueManager.getQueue('queue_valid').getJob(jobIds[1])
+      const job2 = await queueManager.getQueue('queue_valid').getJob(jobIds[1]!)
       expect(job2).toBeDefined()
       expect(job2!.opts.deduplication!.id).toBe('myId2:myValue2')
     })

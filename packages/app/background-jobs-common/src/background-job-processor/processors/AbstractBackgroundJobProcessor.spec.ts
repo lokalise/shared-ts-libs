@@ -447,7 +447,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       expect(processor.errorsOnProcess).length(1)
       expect(job.attemptsMade).toBe(3)
-      expect(processor.errorsOnProcess[0]).toMatchObject(errors[2])
+      expect(processor.errorsOnProcess[0]).toMatchObject(errors[2]!)
     })
 
     it('job throws unrecoverable error at the beginning', async () => {
@@ -470,7 +470,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       expect(processor.errorsOnProcess).length(1)
       expect(job.attemptsMade).toBe(1)
-      expect(processor.errorsOnProcess[0]).toMatchObject(errors[0])
+      expect(processor.errorsOnProcess[0]).toMatchObject(errors[0]!)
     })
 
     it('job throws unrecoverable error in the middle', async () => {
@@ -496,7 +496,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       expect(processor.errorsOnProcess).length(1)
       expect(job.attemptsMade).toBe(2)
-      expect(processor.errorsOnProcess[0]).toMatchObject(errors[1])
+      expect(processor.errorsOnProcess[0]).toMatchObject(errors[1]!)
     })
 
     it('error is triggered on failed hook', async () => {
@@ -562,18 +562,18 @@ describe('AbstractBackgroundJobProcessor', () => {
       expect(stalledProcessor?.onFailedErrors).length(1)
 
       const onFailedCall = stalledProcessor?.onFailedErrors[0]
-      expect(onFailedCall.error.message).toBe('job stalled more than allowable limit')
-      expect(onFailedCall.job.id).toBe(jobId)
-      expect(onFailedCall.job.data.id).toBe(jobData.id)
-      expect(onFailedCall.job.attemptsMade).toBe(0)
+      expect(onFailedCall!.error.message).toBe('job stalled more than allowable limit')
+      expect(onFailedCall!.job.id).toBe(jobId)
+      expect(onFailedCall!.job.data.id).toBe(jobData.id)
+      expect(onFailedCall!.job.attemptsMade).toBe(0)
 
       expect(errorReporterSpy).toHaveBeenCalledWith({
-        error: onFailedCall.error,
+        error: onFailedCall!.error,
         context: {
           jobId,
           jobName: 'TestStalledBackgroundJobProcessor queue',
           'x-request-id': jobData.metadata.correlationId,
-          errorJson: expect.stringContaining(onFailedCall.error.message),
+          errorJson: expect.stringContaining(onFailedCall!.error.message),
         },
       })
     })
@@ -723,7 +723,7 @@ describe('AbstractBackgroundJobProcessor', () => {
       // @ts-expect-error executing protected method for testing
       const repeatableJobs = await processor.queue.getRepeatableJobs()
       expect(repeatableJobs).toHaveLength(1)
-      expect(repeatableJobs[0].every).toBe('10')
+      expect(repeatableJobs[0]!.every).toBe('10')
 
       await processor.dispose()
     })

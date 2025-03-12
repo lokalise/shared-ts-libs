@@ -8,7 +8,7 @@ import {
   isError,
 } from '@lokalise/node-core'
 import { resolveGlobalErrorLogObject } from '@lokalise/node-core'
-import type Redis from 'ioredis'
+import type { Redis } from 'ioredis'
 import type { LockOptions } from 'redis-semaphore'
 import { Mutex } from 'redis-semaphore'
 import type { LockLostCallback } from 'redis-semaphore'

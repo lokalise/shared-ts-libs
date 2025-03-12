@@ -2,7 +2,7 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
 import { isError } from '@lokalise/node-core'
 import type { JobsOptions } from 'bullmq'
-import Redis from 'ioredis'
+import { Redis } from 'ioredis'
 import { DEFAULT_JOB_CONFIG } from './constants.js'
 import type { SafeJob } from './types.js'
 

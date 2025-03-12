@@ -1,3 +1,6 @@
+import { generateMonotonicUuid } from '@lokalise/id-utils'
+import type { Redis } from 'ioredis'
+import pino from 'pino'
 import {
   type MockInstance,
   afterAll,
@@ -8,17 +11,15 @@ import {
   it,
   vi,
 } from 'vitest'
-
-import type Redis from 'ioredis'
-import pino from 'pino'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
 import { QUEUE_IDS_KEY } from '../constants.js'
 import type { BackgroundJobProcessorDependencies } from '../processors/types.js'
 import type { BaseJobPayload, RequestContext, SafeJob } from '../types.js'
 import { BackgroundJobProcessorMonitor } from './BackgroundJobProcessorMonitor.js'
 import { backgroundJobProcessorGetActiveQueueIds } from './backgroundJobProcessorGetActiveQueueIds.js'
+
+// @ts-ignore
 import symbols = pino.symbols
-import { generateMonotonicUuid } from '@lokalise/id-utils'
 
 describe('BackgroundJobProcessorMonitor', () => {
   let factory: TestDependencyFactory
@@ -87,7 +88,7 @@ describe('BackgroundJobProcessorMonitor', () => {
 
       // Comparing timestamps in seconds
       const todaySeconds = Math.floor(today.getTime() / 1000)
-      const scoreSeconds = Math.floor(new Date(Number.parseInt(score)).getTime() / 1000)
+      const scoreSeconds = Math.floor(new Date(Number.parseInt(score!)).getTime() / 1000)
       // max difference 1 to handle edge case of 0.1 - 1.0
       expect(scoreSeconds - todaySeconds).lessThanOrEqual(1)
 
@@ -100,8 +101,8 @@ describe('BackgroundJobProcessorMonitor', () => {
         factory.getRedisConfig(),
       )
       expect(queueIdsAfterRestart).toStrictEqual(['test-queue'])
-      expect(new Date(Number.parseInt(score))).not.toEqual(
-        new Date(Number.parseInt(scoreAfterRestart)),
+      expect(new Date(Number.parseInt(score!))).not.toEqual(
+        new Date(Number.parseInt(scoreAfterRestart!)),
       )
 
       monitor.unregisterQueue()
