@@ -5,7 +5,7 @@ import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
-} from '../../src.js'
+} from '../../src/index.js'
 
 type OnFailedError<T> = {
   error: Error
@@ -30,7 +30,7 @@ export class TestStalledBackgroundJobProcessor<
     })
   }
 
-  schedule(jobData: T): Promise<string> {
+  override schedule(jobData: T): Promise<string> {
     return super.schedule(jobData, {
       attempts: 1,
       backoff: { type: 'fixed', delay: 1 },

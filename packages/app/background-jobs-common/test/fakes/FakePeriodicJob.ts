@@ -4,7 +4,7 @@ import {
   type BackgroundJobConfiguration,
   type JobExecutionContext,
   type PeriodicJobDependencies,
-} from '../../src.js'
+} from '../../src/index.js'
 
 export type FakePeriodicJobDependencies = Omit<
   PeriodicJobDependencies,

@@ -6,7 +6,7 @@ import {
   type BaseJobPayload,
   FakeBackgroundJobProcessor,
   type RequestContext,
-} from '../../src.js'
+} from '../../src/index.js'
 
 type TestFailingBackgroundJobProcessorData = {
   id?: string

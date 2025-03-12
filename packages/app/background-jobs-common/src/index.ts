@@ -1,7 +1,7 @@
 import type { TransactionObservabilityManager } from '@lokalise/node-core'
 
 export type { TransactionObservabilityManager }
-export * from './background-job-processor.js'
+export * from './background-job-processor/index.js'
 export type { BarrierCallback, BarrierResult } from './background-job-processor/barrier/barrier.js'
 export { AbstractPeriodicJob } from './periodic-jobs/AbstractPeriodicJob.js'
 
