@@ -20,12 +20,12 @@
         "access": "public"
     },
     "scripts": {
-        "build": "tsc",
+        "build": "tsc --project tsconfig.build.json",
         "test": "vitest",
         "test:coverage": "vitest --coverage",
         "test:ci": "npm run lint && npm run test:coverage",
         "test:update-snapshots": "vitest -u",
-        "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
+        "lint": "biome check . && tsc --noEmit",
         "lint:fix": "biome check --write",
         "package-version": "echo $npm_package_version",
         "prepublishOnly": "npm run build",
@@ -41,6 +41,7 @@
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",
         "@lokalise/biome-config": "^1.5.0",
+        "@lokalise/tsconfig": "^1.0.2",
         "@types/node": "^22.10.1",
         "@vitest/coverage-v8": "^3.0.7",
         "typescript": "^5.8.2",
