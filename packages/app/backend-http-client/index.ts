@@ -24,6 +24,8 @@ export {
   httpClient,
   buildClient,
   sendByPayloadRoute,
+  sendByGetRoute,
+  sendByDeleteRoute,
 } from './src/client/httpClient'
 
 export {

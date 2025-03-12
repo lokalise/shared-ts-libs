@@ -14,12 +14,14 @@ import type {
 import type { ZodError, ZodSchema, z } from 'zod'
 
 import type {
+  DeleteRouteDefinition,
+  GetRouteDefinition,
   InferSchemaInput,
   InferSchemaOutput,
   PayloadRouteDefinition,
 } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
 import { ResponseStatusError } from '../errors/ResponseStatusError'
-import type { PayloadRouteRequestParams } from './apiContractTypes'
+import type { PayloadRouteRequestParams, RouteRequestParams } from './apiContractTypes'
 import { DEFAULT_OPTIONS, defaultClientOptions } from './constants'
 import type {
   InternalRequestOptions,
@@ -29,6 +31,7 @@ import type {
 } from './types'
 
 type PayloadMethods = 'POST' | 'PUT' | 'PATCH'
+type NonPayloadMethods = 'DELETE' | 'GET'
 type DEFAULT_THROW_ON_ERROR = typeof DEFAULT_OPTIONS.throwOnError
 
 export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
@@ -155,6 +158,49 @@ async function sendResourceChange<
     options.responseSchema,
     options.requestLabel,
     options.isEmptyResponseExpected ?? false,
+  )
+}
+
+async function sendNonPayload<
+  T,
+  IsEmptyResponseExpected extends boolean = false,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
+  client: Client,
+  method: NonPayloadMethods,
+  path: string,
+  options: Omit<
+    RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
+    'isEmptyResponseExpected'
+  > & { isEmptyResponseExpected: boolean },
+) {
+  const result = await sendWithRetry<T>(
+    client,
+    {
+      ...DEFAULT_OPTIONS,
+      path: path,
+      method,
+      query: options.query,
+      headers: copyWithoutUndefined({
+        'x-request-id': options.reqContext?.reqId,
+        ...options.headers,
+      }),
+      reset: options.disableKeepAlive ?? false,
+      bodyTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
+      headersTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
+      throwOnError: undefined,
+    },
+    resolveRetryConfig(options),
+    resolveRequestConfig(options),
+  )
+
+  return resolveResult(
+    result,
+    options.throwOnError ?? (DEFAULT_OPTIONS.throwOnError as DoThrowOnError),
+    options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
+    options.responseSchema,
+    options.requestLabel,
+    options.isEmptyResponseExpected,
   )
 }
 
@@ -334,6 +380,9 @@ function handleRequestResultSuccess<T>(
   }
 
   if (validateResponse) {
+    if (!validationSchema) {
+      throw new Error(`Response validation schema not set for request ${requestLabel}`)
+    }
     try {
       result.body = validationSchema.parse(result.body)
     } catch (err: unknown) {
@@ -398,6 +447,112 @@ export function sendByPayloadRoute<
     params.body,
     {
       isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
+      // @ts-expect-error FixMe
+      headers: params.headers,
+      // @ts-expect-error magic type inferring happening
+      query: params.queryParams,
+      responseSchema: routeDefinition.successResponseBodySchema,
+      ...options,
+    },
+  )
+}
+
+export function sendByGetRoute<
+  ResponseBodySchema extends z.Schema | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
+  client: Client,
+  routeDefinition: GetRouteDefinition<
+    InferSchemaOutput<PathParamsSchema>,
+    ResponseBodySchema,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
+  >,
+  params: RouteRequestParams<
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
+  >,
+  options: Omit<
+    RequestOptions<InferSchemaOutput<ResponseBodySchema>, IsEmptyResponseExpected, DoThrowOnError>,
+    'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
+  >,
+): Promise<
+  RequestResultDefinitiveEither<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsEmptyResponseExpected,
+    DoThrowOnError
+  >
+> {
+  return sendNonPayload(
+    client,
+    // @ts-expect-error TS loses exact string type during uppercasing
+    routeDefinition.method.toUpperCase(),
+    // @ts-expect-error magic type inferring happening
+    routeDefinition.pathResolver(params.pathParams),
+    {
+      isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected ?? false,
+      // @ts-expect-error FixMe
+      headers: params.headers,
+      // @ts-expect-error magic type inferring happening
+      query: params.queryParams,
+      responseSchema: routeDefinition.successResponseBodySchema,
+      ...options,
+    },
+  )
+}
+
+export function sendByDeleteRoute<
+  ResponseBodySchema extends z.Schema | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = true,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
+  client: Client,
+  routeDefinition: DeleteRouteDefinition<
+    InferSchemaOutput<PathParamsSchema>,
+    ResponseBodySchema,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
+  >,
+  params: RouteRequestParams<
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
+  >,
+  options: Omit<
+    RequestOptions<InferSchemaOutput<ResponseBodySchema>, IsEmptyResponseExpected, DoThrowOnError>,
+    'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
+  >,
+): Promise<
+  RequestResultDefinitiveEither<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsEmptyResponseExpected,
+    DoThrowOnError
+  >
+> {
+  return sendNonPayload(
+    client,
+    // @ts-expect-error TS loses exact string type during uppercasing
+    routeDefinition.method.toUpperCase(),
+    // @ts-expect-error magic type inferring happening
+    routeDefinition.pathResolver(params.pathParams),
+    {
+      isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected ?? true,
       // @ts-expect-error FixMe
       headers: params.headers,
       // @ts-expect-error magic type inferring happening
