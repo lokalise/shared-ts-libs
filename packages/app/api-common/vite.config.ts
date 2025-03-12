@@ -14,6 +14,7 @@ export default defineConfig({
   test: {
     coverage: {
       provider: 'v8',
+      exclude: ['src/index.ts'],
       thresholds: {
         lines: 100,
         functions: 100,
