@@ -67,14 +67,14 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
 
   const count = pageLimit ? Math.min(currentPageData.length, pageLimit) : currentPageData.length
 
-  const lastElement = currentPageData[count - 1]
+  const lastElement = currentPageData[count - 1] as T
   let cursor: string
   if (!cursorKeys) {
     cursor = lastElement.id as string
   } else {
     cursor =
       cursorKeys.length === 1
-        ? (lastElement[cursorKeys[0]] as string)
+        ? (lastElement[cursorKeys[0] as K] as string)
         : encodeCursor(pick(lastElement, cursorKeys))
   }
 
