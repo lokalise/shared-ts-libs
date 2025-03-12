@@ -21,7 +21,7 @@ import type {
   PayloadRouteDefinition,
 } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
 import { ResponseStatusError } from '../errors/ResponseStatusError.js'
-import type { PayloadRouteRequestParams } from './apiContractTypes.js'
+import type { PayloadRouteRequestParams, RouteRequestParams } from './apiContractTypes.js'
 import { DEFAULT_OPTIONS, defaultClientOptions } from './constants.js'
 import type {
   InternalRequestOptions,
