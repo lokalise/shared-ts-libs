@@ -22,7 +22,7 @@
     "scripts": {
         "build": "rimraf dist && vite build",
         "clean": "rimraf dist .eslintcache",
-        "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
+        "lint": "biome check . && tsc --noEmit",
         "lint:fix": "biome check --write",
         "test:ci": "vitest run --coverage",
         "prepublishOnly": "npm run build",
