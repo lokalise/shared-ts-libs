@@ -1,13 +1,11 @@
-import type { ErrorReport } from '@lokalise/error-utils'
-import { isInternalError } from '@lokalise/node-core'
-import fastify from 'fastify'
-import type { RouteHandlerMethod } from 'fastify/types/route'
+import { type ErrorReport, isInternalError } from '@lokalise/node-core'
+import { type RouteHandlerMethod, fastify } from 'fastify'
 
 import {
   getRequestIdFastifyAppConfig,
   requestContextProviderPlugin,
-} from './requestContextProviderPlugin'
-import { unhandledExceptionPlugin } from './unhandledExceptionPlugin'
+} from './requestContextProviderPlugin.js'
+import { unhandledExceptionPlugin } from './unhandledExceptionPlugin.js'
 
 process.on('unhandledRejection', (error) => {
   console.error('Unhandled Rejection:', error)
@@ -63,7 +61,7 @@ describe('unhandledExceptionPlugin', () => {
 
     expect(errors).toHaveLength(1)
     const error = errors[0]
-    expect(error.error).toMatchObject({ message: 'new test unhandled error' })
+    expect(error!.error).toMatchObject({ message: 'new test unhandled error' })
   })
 
   it('handled unhandled rejection with not error type', async () => {
@@ -89,8 +87,8 @@ describe('unhandledExceptionPlugin', () => {
 
     expect(errors).toHaveLength(1)
     const error = errors[0]
-    expect(isInternalError(error.error)).toBe(true)
-    expect(error.error).toMatchObject({
+    expect(isInternalError(error!.error)).toBe(true)
+    expect(error!.error).toMatchObject({
       errorCode: 'UNHANDLED_REJECTION',
       message: 'Unhandled rejection',
       details: { errorObject: '"this is my test unhandled error"' },
