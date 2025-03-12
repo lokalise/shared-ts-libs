@@ -1,4 +1,4 @@
-import { isObject } from './typeUtils'
+import { isObject } from './typeUtils.js'
 
 type Left<T> = {
   error: T

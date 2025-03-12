@@ -7,7 +7,7 @@ import {
   getMetaForNextPage,
   getPaginatedEntries,
   getPaginatedEntriesByHasMore,
-} from '../src'
+} from '../src.js'
 
 describe('paginationUtils', () => {
   describe('createPaginatedResponse', () => {

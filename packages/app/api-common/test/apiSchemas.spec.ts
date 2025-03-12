@@ -6,7 +6,7 @@ import {
   multiCursorMandatoryPaginationSchema,
   multiCursorOptionalPaginationSchema,
   paginatedResponseSchema,
-} from '../src'
+} from '../src.js'
 
 describe('apiSchemas', () => {
   describe('multi cursor pagination schemas', () => {
