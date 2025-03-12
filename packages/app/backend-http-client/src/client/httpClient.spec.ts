@@ -3,9 +3,11 @@ import { Client, MockAgent, setGlobalDispatcher } from 'undici'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
+import { buildPayloadRoute } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
 import { JSON_HEADERS } from './constants'
 import {
   buildClient,
+  sendByPayloadRoute,
   sendDelete,
   sendGet,
   sendPatch,
@@ -591,6 +593,95 @@ describe('httpClient', () => {
 
       expect(result.result.statusCode).toBe(204)
       expect(result.result.body).toBeNull()
+    })
+  })
+
+  describe('sendByPayloadRoute', () => {
+    it('validates response structure with provided schema, throws an error', async () => {
+      const schema = z.object({
+        id: z.string(),
+      })
+      const apiContract = buildPayloadRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        method: 'post',
+        requestBodySchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'POST',
+        })
+        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+      await expect(
+        sendByPayloadRoute(
+          client,
+          apiContract,
+          {},
+          {
+            validateResponse: true,
+            requestLabel: 'Test request',
+          },
+        ),
+      ).rejects.toThrow(`[
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "id"
+    ],
+    "message": "Expected string, received number",
+    "requestLabel": "Test request"
+  }
+]`)
+    })
+
+    it('validates response structure with provided schema, passes validation', async () => {
+      const schema = z.object({
+        category: z.string(),
+        description: z.string(),
+        id: z.number(),
+        image: z.string(),
+        price: z.number(),
+        rating: z.object({
+          count: z.number(),
+          rate: z.number(),
+        }),
+        title: z.string(),
+      })
+
+      const apiContract = buildPayloadRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        method: 'post',
+        requestBodySchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'POST',
+        })
+        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+      const result = await sendByPayloadRoute(
+        client,
+        apiContract,
+        {},
+        {
+          validateResponse: true,
+          throwOnError: true,
+          requestLabel: 'dummy',
+          reqContext,
+        },
+      )
+
+      expect(result.result.body).toEqual(mockProduct1)
     })
   })
 

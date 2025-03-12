@@ -76,3 +76,34 @@ It's up to the caller of the function to handle the received error or throw an e
 Read [this article](https://antman-does-software.com/stop-catching-errors-in-typescript-use-the-either-type-to-make-your-code-predictable) for more information on how `Either` works and its benefits.
 
 Additionally, `DefiniteEither` is also provided. It is a variation of the aforementioned `Either`, which may or may not have `error` set, but always has `result`.
+
+### API contract-based requests
+
+`backend-http-client` supports using API contracts, created with `@lokalise/universal-ts-utils/api-contracts/apiContracts` in order to make fully type-safe HTTP requests.
+
+Usage example:
+
+```ts
+import { somePostRouteDefinition, someGetRouteDefinition } from 'some-service-api-contracts'
+import { sendByPayloadRoute, buildClient } from '@lokalise/backend-http-client'
+
+const MY_BASE_URL = 'http://localhost:8080'
+const client = buildClient(MY_BASE_URL)
+
+const responseBody1 = await sendByPayloadRoute(client, somePostRouteDefinition, 
+// pass contract-defined request params, such as body, query and headers here
+    {
+        pathParams: {
+            userId: 1,
+        },
+        body: {
+            isActive: true,
+        },
+    }, 
+// pass backend-http-client options here        
+    {
+        validateResponse: false,
+        requestLabel: 'Test request',
+    }
+)
+```

@@ -23,6 +23,7 @@ export {
   sendPostBinary,
   httpClient,
   buildClient,
+  sendByPayloadRoute,
 } from './src/client/httpClient'
 
 export {
