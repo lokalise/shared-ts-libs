@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 
 import defineConfig from '@lokalise/package-vite-config/package'
-import dtsPlugin from "vite-plugin-dts";
+import dtsPlugin from 'vite-plugin-dts'
 
 // @ts-ignore
 import packageJson from './package.json'
