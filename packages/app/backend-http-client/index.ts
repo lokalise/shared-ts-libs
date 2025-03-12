@@ -2,16 +2,16 @@ export type {
   RequestOptions,
   HttpRequestContext,
   RequestResultDefinitiveEither,
-} from './src/client/types'
+} from './src/client/types.js'
 
-export { isInternalRequestError } from './src/client/types'
+export { isInternalRequestError } from './src/client/types.js'
 
 export {
   JSON_HEADERS,
   TEST_OPTIONS,
   NO_CONTENT_RESPONSE_SCHEMA,
   UNKNOWN_RESPONSE_SCHEMA,
-} from './src/client/constants'
+} from './src/client/constants.js'
 
 export {
   sendPut,
@@ -24,9 +24,9 @@ export {
   httpClient,
   buildClient,
   sendByPayloadRoute,
-} from './src/client/httpClient'
+} from './src/client/httpClient.js'
 
 export {
   isResponseStatusError,
   ResponseStatusError,
-} from './src/errors/ResponseStatusError'
+} from './src/errors/ResponseStatusError.js'
