@@ -1,23 +1,18 @@
 {
     "name": "@lokalise/id-utils",
-    "version": "2.2.1",
+    "version": "3.0.0",
     "type": "module",
     "files": ["dist", "README.md", "LICENSE.md"],
     "license": "Apache-2.0",
-    "main": "./dist/index.cjs",
-    "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./dist/index.js",
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
         "url": "git://github.com/lokalise/shared-ts-libs.git"
     },
     "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "require": "./dist/index.cjs",
-            "import": "./dist/index.js"
-        }
+        ".": "./dist/index.js",
+        "./package.json": "./package.json"
     },
     "scripts": {
         "build": "rimraf dist && vite build",
