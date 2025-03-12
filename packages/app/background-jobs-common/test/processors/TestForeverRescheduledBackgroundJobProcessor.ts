@@ -6,7 +6,7 @@ import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
-} from '../../src'
+} from '../../src.js'
 
 type Data = {
   id?: string

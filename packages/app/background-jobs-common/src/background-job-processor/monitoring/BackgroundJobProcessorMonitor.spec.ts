@@ -11,12 +11,12 @@ import {
 
 import type Redis from 'ioredis'
 import pino from 'pino'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import { QUEUE_IDS_KEY } from '../constants'
-import type { BackgroundJobProcessorDependencies } from '../processors/types'
-import type { BaseJobPayload, RequestContext, SafeJob } from '../types'
-import { BackgroundJobProcessorMonitor } from './BackgroundJobProcessorMonitor'
-import { backgroundJobProcessorGetActiveQueueIds } from './backgroundJobProcessorGetActiveQueueIds'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
+import { QUEUE_IDS_KEY } from '../constants.js'
+import type { BackgroundJobProcessorDependencies } from '../processors/types.js'
+import type { BaseJobPayload, RequestContext, SafeJob } from '../types.js'
+import { BackgroundJobProcessorMonitor } from './BackgroundJobProcessorMonitor.js'
+import { backgroundJobProcessorGetActiveQueueIds } from './backgroundJobProcessorGetActiveQueueIds.js'
 import symbols = pino.symbols
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 

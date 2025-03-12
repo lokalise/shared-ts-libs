@@ -1,7 +1,7 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod'
-import type { JobPayloadForQueue, QueueConfiguration, SupportedJobPayloads } from './types'
-import type { SupportedQueueIds } from './types'
+import type { JobPayloadForQueue, QueueConfiguration, SupportedJobPayloads } from './types.js'
+import type { SupportedQueueIds } from './types.js'
 
 const SCHEMA_1 = z.object({
   id1: z.string(),

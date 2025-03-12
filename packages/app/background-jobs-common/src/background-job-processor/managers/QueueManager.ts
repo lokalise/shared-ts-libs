@@ -2,13 +2,13 @@ import type { JobsOptions, QueueOptions } from 'bullmq'
 import type { Queue } from 'bullmq'
 import type { JobState } from 'bullmq/dist/esm/types/job-type'
 import { merge } from 'ts-deepmerge'
-import { DEFAULT_QUEUE_OPTIONS } from '../constants'
-import type { BullmqQueueFactory } from '../factories/BullmqQueueFactory'
-import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types'
-import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
-import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import { prepareJobOptions, sanitizeRedisConfig } from '../utils'
-import { QueueRegistry } from './QueueRegistry'
+import { DEFAULT_QUEUE_OPTIONS } from '../constants.js'
+import type { BullmqQueueFactory } from '../factories/BullmqQueueFactory.js'
+import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types.js'
+import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.js'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types.js'
+import { prepareJobOptions, sanitizeRedisConfig } from '../utils.js'
+import { QueueRegistry } from './QueueRegistry.js'
 import type {
   JobPayloadForQueue,
   JobPayloadInputForQueue,
@@ -16,7 +16,7 @@ import type {
   QueueManagerConfig,
   SupportedJobPayloads,
   SupportedQueueIds,
-} from './types'
+} from './types.js'
 
 export class QueueManager<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],

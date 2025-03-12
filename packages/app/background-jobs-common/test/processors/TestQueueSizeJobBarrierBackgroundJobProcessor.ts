@@ -7,8 +7,8 @@ import {
   type BaseJobPayload,
   type JobQueueSizeThrottlingBarrierContext,
   type SafeJob,
-} from '../../src'
-import { TestForeverRescheduledBackgroundJobProcessor } from './TestForeverRescheduledBackgroundJobProcessor'
+} from '../../src/index.js'
+import { TestForeverRescheduledBackgroundJobProcessor } from './TestForeverRescheduledBackgroundJobProcessor.js'
 
 export class TestQueueSizeJobBarrierBackgroundJobProcessor<
   JobData extends BaseJobPayload,

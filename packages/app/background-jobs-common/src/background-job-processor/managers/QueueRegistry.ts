@@ -1,5 +1,5 @@
 import type { JobsOptions, QueueOptions } from 'bullmq'
-import type { QueueConfiguration, SupportedQueueIds } from './types'
+import type { QueueConfiguration, SupportedQueueIds } from './types.js'
 
 export class QueueRegistry<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],

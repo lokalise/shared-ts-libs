@@ -2,9 +2,9 @@ import type { ErrorReport, ErrorReporter } from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
 import { ToadScheduler } from 'toad-scheduler'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createRedisClient, getTestRedisConfig } from '../../test/TestRedis'
-import { FakePeriodicJob } from '../../test/fakes/FakePeriodicJob'
-import type { JobExecutionContext } from './periodicJobTypes'
+import { createRedisClient, getTestRedisConfig } from '../../test/TestRedis.js'
+import { FakePeriodicJob } from '../../test/fakes/FakePeriodicJob.js'
+import type { JobExecutionContext } from './periodicJobTypes.js'
 
 describe('AbstractPeriodicJob', () => {
   let redis: Redis

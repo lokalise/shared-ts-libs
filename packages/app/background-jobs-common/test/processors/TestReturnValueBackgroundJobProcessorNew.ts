@@ -3,7 +3,7 @@ import {
   type BackgroundJobProcessorDependenciesNew,
   type QueueConfiguration,
   type SupportedQueueIds,
-} from '../../src'
+} from '../../src.js'
 
 export class TestReturnValueBackgroundJobProcessorNew<
   Q extends QueueConfiguration[],

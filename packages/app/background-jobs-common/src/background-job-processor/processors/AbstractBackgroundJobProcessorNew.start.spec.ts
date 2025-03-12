@@ -1,13 +1,13 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import { isPromiseFinished } from '../../../test/isPromiseFinished'
-import { TestOverrideProcessBackgroundProcessor } from '../../../test/processors/TestOverrideProcessBackgroundProcessor'
-import type { FakeQueueManager } from '../managers/FakeQueueManager'
-import type { QueueConfiguration } from '../managers/types'
-import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew'
-import type { BackgroundJobProcessorDependenciesNew } from './types'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
+import { isPromiseFinished } from '../../../test/isPromiseFinished.js'
+import { TestOverrideProcessBackgroundProcessor } from '../../../test/processors/TestOverrideProcessBackgroundProcessor.js'
+import type { FakeQueueManager } from '../managers/FakeQueueManager.js'
+import type { QueueConfiguration } from '../managers/types.js'
+import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew.js'
+import type { BackgroundJobProcessorDependenciesNew } from './types.js'
 
 const supportedQueues = [
   {

@@ -3,16 +3,16 @@ import { waitAndRetry } from '@lokalise/node-core'
 import { UnrecoverableError } from 'bullmq'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import { TestFailingBackgroundJobProcessor } from '../../../test/processors/TestFailingBackgroundJobProcessor'
-import { TestStalledBackgroundJobProcessor } from '../../../test/processors/TestStalledBackgroundJobProcessor'
-import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/TestSuccessBackgroundJobProcessor'
-import type { BaseJobPayload } from '../types'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
+import { TestFailingBackgroundJobProcessor } from '../../../test/processors/TestFailingBackgroundJobProcessor.js'
+import { TestStalledBackgroundJobProcessor } from '../../../test/processors/TestStalledBackgroundJobProcessor.js'
+import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/TestSuccessBackgroundJobProcessor.js'
+import type { BaseJobPayload } from '../types.js'
 
 import { randomUUID } from 'node:crypto'
-import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading'
-import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
-import type { BackgroundJobProcessorDependencies } from './types'
+import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading.js'
+import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor.js'
+import type { BackgroundJobProcessorDependencies } from './types.js'
 
 type JobData = {
   id: string

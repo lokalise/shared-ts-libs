@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect } from 'vitest'
 import { z } from 'zod'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import type { FakeQueueManager } from './FakeQueueManager'
-import type { QueueConfiguration } from './types'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
+import type { FakeQueueManager } from './FakeQueueManager.js'
+import type { QueueConfiguration } from './types.js'
 
 const DEFAULT_PAYLOAD_SCHEMA = z.object({
   test: z.string(),

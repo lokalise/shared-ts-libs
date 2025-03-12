@@ -2,12 +2,12 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { z } from 'zod'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import type { JobsPaginatedResponse } from '../processors/types'
-import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
-import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import { FakeQueueManager } from './FakeQueueManager'
-import type { QueueConfiguration } from './types'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
+import type { JobsPaginatedResponse } from '../processors/types.js'
+import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.js'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types.js'
+import { FakeQueueManager } from './FakeQueueManager.js'
+import type { QueueConfiguration } from './types.js'
 
 const supportedQueues = [
   {

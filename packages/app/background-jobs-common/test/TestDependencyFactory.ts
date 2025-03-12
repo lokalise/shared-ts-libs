@@ -9,9 +9,9 @@ import {
   type QueueConfiguration,
   type QueueManager,
   type SupportedQueueIds,
-} from '../src'
-import { CommonBullmqFactoryNew } from '../src/background-job-processor/factories/CommonBullmqFactoryNew'
-import { createRedisClient, getTestRedisConfig } from './TestRedis'
+} from '../src.js'
+import { CommonBullmqFactoryNew } from '../src/background-job-processor/factories/CommonBullmqFactoryNew.js'
+import { createRedisClient, getTestRedisConfig } from './TestRedis.js'
 
 const testLogger = globalLogger
 export class TestDependencyFactory {

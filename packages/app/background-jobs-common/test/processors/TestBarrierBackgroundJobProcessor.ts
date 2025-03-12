@@ -5,8 +5,8 @@ import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
-} from '../../src'
-import type { BarrierCallback } from '../../src/background-job-processor/barrier/barrier'
+} from '../../src.js'
+import type { BarrierCallback } from '../../src/background-job-processor/barrier/barrier.js'
 
 export class TestBarrierBackgroundJobProcessor<
   JobData extends BaseJobPayload,

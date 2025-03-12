@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import { TestBarrierBackgroundJobProcessor } from '../../../test/processors/TestBarrierBackgroundJobProcessor'
-import type { BaseJobPayload } from '../types'
-import type { BackgroundJobProcessorDependencies } from './types'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
+import { TestBarrierBackgroundJobProcessor } from '../../../test/processors/TestBarrierBackgroundJobProcessor.js'
+import type { BaseJobPayload } from '../types.js'
+import type { BackgroundJobProcessorDependencies } from './types.js'
 
 type JobData = {
   id: string

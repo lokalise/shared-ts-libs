@@ -3,8 +3,8 @@ import type { RedisConfig } from '@lokalise/node-core'
 import { isError } from '@lokalise/node-core'
 import type { JobsOptions } from 'bullmq'
 import Redis from 'ioredis'
-import { DEFAULT_JOB_CONFIG } from './constants'
-import type { SafeJob } from './types'
+import { DEFAULT_JOB_CONFIG } from './constants.js'
+import type { SafeJob } from './types.js'
 
 export const daysToSeconds = (days: number): number => days * 24 * 60 * 60
 

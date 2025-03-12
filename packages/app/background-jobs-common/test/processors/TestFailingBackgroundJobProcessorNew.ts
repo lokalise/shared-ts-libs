@@ -4,8 +4,8 @@ import {
   FakeBackgroundJobProcessorNew,
   type QueueConfiguration,
   type SupportedQueueIds,
-} from '../../src'
-import type { RequestContext } from '../../src'
+} from '../../src.js'
+import type { RequestContext } from '../../src.js'
 
 export class TestFailingBackgroundJobProcessorNew<
   Q extends QueueConfiguration[],
