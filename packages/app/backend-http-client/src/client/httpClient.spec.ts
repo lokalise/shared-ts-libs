@@ -3,10 +3,16 @@ import { Client, MockAgent, setGlobalDispatcher } from 'undici'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import { buildPayloadRoute } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
+import {
+  buildDeleteRoute,
+  buildGetRoute,
+  buildPayloadRoute,
+} from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
 import { JSON_HEADERS } from './constants.js'
 import {
   buildClient,
+  sendByDeleteRoute,
+  sendByGetRoute,
   sendByPayloadRoute,
   sendDelete,
   sendGet,
@@ -461,6 +467,219 @@ describe('httpClient', () => {
     })
   })
 
+  describe('sendByGetRoute', () => {
+    it('validates response structure with provided schema, throws an error', async () => {
+      const schema = z.object({
+        id: z.string(),
+      })
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+      await expect(
+        sendByGetRoute(
+          client,
+          apiContract,
+          {},
+          {
+            validateResponse: true,
+            requestLabel: 'Test request',
+          },
+        ),
+      ).rejects.toThrow(`[
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "id"
+    ],
+    "message": "Expected string, received number",
+    "requestLabel": "Test request"
+  }
+]`)
+    })
+
+    it('validates response structure with provided schema, passes validation', async () => {
+      const schema = z.object({
+        category: z.string(),
+        description: z.string(),
+        id: z.number(),
+        image: z.string(),
+        price: z.number(),
+        rating: z.object({
+          count: z.number(),
+          rate: z.number(),
+        }),
+        title: z.string(),
+      })
+
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+      const result = await sendByGetRoute(
+        client,
+        apiContract,
+        {},
+        {
+          validateResponse: true,
+          throwOnError: true,
+          requestLabel: 'dummy',
+          reqContext,
+        },
+      )
+
+      expect(result.result.body).toEqual(mockProduct1)
+    })
+
+    it('validates response structure with provided schema, skips validation', async () => {
+      const schema = z.object({
+        id: z.string(),
+      })
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+      const result = await sendByGetRoute(
+        client,
+        apiContract,
+        {},
+        {
+          validateResponse: false,
+          throwOnError: true,
+          requestLabel: 'dummy',
+          reqContext,
+        },
+      )
+
+      expect(result.result.body).toEqual(mockProduct1)
+    })
+
+    it('unexpected 204, with validation', async () => {
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: z.number(),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(204)
+
+      await expect(
+        sendByGetRoute(
+          client,
+          apiContract,
+          {},
+          {
+            requestLabel: 'dummy',
+            validateResponse: true,
+          },
+        ),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `)
+    })
+
+    it('unexpected 204, with validation, without schema', async () => {
+      //@ts-expect-error - testing missing param
+      const apiContract = buildGetRoute({
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(204)
+
+      await expect(
+        sendByGetRoute(
+          client,
+          apiContract,
+          {},
+          {
+            requestLabel: 'dummy',
+            validateResponse: true,
+          },
+        ),
+      ).rejects.toMatchInlineSnapshot(
+        '[Error: Response validation schema not set for request dummy]',
+      )
+    })
+
+    it('expected 204', async () => {
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: z.undefined(),
+        requestPathParamsSchema: z.undefined(),
+        isEmptyResponseExpected: true,
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(204)
+
+      const result = await sendByGetRoute(
+        client,
+        apiContract,
+        {},
+        {
+          requestLabel: 'dummy',
+          validateResponse: true,
+        },
+      )
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBeNull()
+    })
+  })
+
   describe('DELETE', () => {
     it('DELETE without queryParams', async () => {
       client
@@ -596,6 +815,190 @@ describe('httpClient', () => {
     })
   })
 
+  describe('sendByDeleteRoute', () => {
+    it('validates response structure with provided schema, throws an error', async () => {
+      const schema = z.object({
+        id: z.string(),
+      })
+      const apiContract = buildDeleteRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'DELETE',
+        })
+        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+      await expect(
+        sendByDeleteRoute(
+          client,
+          apiContract,
+          {},
+          {
+            validateResponse: true,
+            requestLabel: 'Test request',
+          },
+        ),
+      ).rejects.toThrow(`[
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "id"
+    ],
+    "message": "Expected string, received number",
+    "requestLabel": "Test request"
+  }
+]`)
+    })
+
+    it('validates response structure with provided schema, passes validation', async () => {
+      const schema = z.object({
+        category: z.string(),
+        description: z.string(),
+        id: z.number(),
+        image: z.string(),
+        price: z.number(),
+        rating: z.object({
+          count: z.number(),
+          rate: z.number(),
+        }),
+        title: z.string(),
+      })
+
+      const apiContract = buildDeleteRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'DELETE',
+        })
+        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+      const result = await sendByDeleteRoute(
+        client,
+        apiContract,
+        {},
+        {
+          validateResponse: true,
+          throwOnError: true,
+          requestLabel: 'dummy',
+          reqContext,
+        },
+      )
+
+      expect(result.result.body).toEqual(mockProduct1)
+    })
+
+    it('validates response structure with provided schema, skips validation', async () => {
+      const schema = z.object({
+        id: z.string(),
+      })
+      const apiContract = buildDeleteRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'DELETE',
+        })
+        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+      const result = await sendByDeleteRoute(
+        client,
+        apiContract,
+        {},
+        {
+          validateResponse: false,
+          throwOnError: true,
+          requestLabel: 'dummy',
+          reqContext,
+        },
+      )
+
+      expect(result.result.body).toEqual(mockProduct1)
+    })
+
+    it('expected 204', async () => {
+      const apiContract = buildDeleteRoute({
+        successResponseBodySchema: z.undefined(),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'DELETE',
+        })
+        .reply(204)
+
+      const result = await sendByDeleteRoute(
+        client,
+        apiContract,
+        {},
+        {
+          requestLabel: 'dummy',
+          validateResponse: true,
+        },
+      )
+
+      expect(result.result.statusCode).toBe(204)
+      expect(result.result.body).toBeNull()
+    })
+
+    it('unexpected 204, with validation', async () => {
+      const apiContract = buildDeleteRoute({
+        isEmptyResponseExpected: false,
+        successResponseBodySchema: z.number(),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'DELETE',
+        })
+        .reply(204)
+
+      await expect(
+        sendByDeleteRoute(
+          client,
+          apiContract,
+          {},
+          {
+            requestLabel: 'dummy',
+            validateResponse: true,
+          },
+        ),
+      ).rejects.toMatchInlineSnapshot(`
+        [ZodError: [
+          {
+            "code": "invalid_type",
+            "expected": "number",
+            "received": "string",
+            "path": [],
+            "message": "Expected number, received string",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `)
+    })
+  })
+
   describe('sendByPayloadRoute', () => {
     it('validates response structure with provided schema, throws an error', async () => {
       const schema = z.object({
@@ -675,6 +1078,40 @@ describe('httpClient', () => {
         {},
         {
           validateResponse: true,
+          throwOnError: true,
+          requestLabel: 'dummy',
+          reqContext,
+        },
+      )
+
+      expect(result.result.body).toEqual(mockProduct1)
+    })
+
+    it('validates response structure with provided schema, skips validation', async () => {
+      const schema = z.object({
+        id: z.string(),
+      })
+      const apiContract = buildPayloadRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        method: 'post',
+        requestBodySchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'POST',
+        })
+        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+      const result = await sendByPayloadRoute(
+        client,
+        apiContract,
+        {},
+        {
+          validateResponse: false,
           throwOnError: true,
           requestLabel: 'dummy',
           reqContext,

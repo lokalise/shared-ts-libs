@@ -24,6 +24,8 @@ export {
   httpClient,
   buildClient,
   sendByPayloadRoute,
+  sendByDeleteRoute,
+  sendByGetRoute,
 } from './src/client/httpClient.js'
 
 export {
