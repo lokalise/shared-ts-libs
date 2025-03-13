@@ -1,1 +1,1 @@
-export * from './bugsnag'
+export * from './bugsnag.js'
