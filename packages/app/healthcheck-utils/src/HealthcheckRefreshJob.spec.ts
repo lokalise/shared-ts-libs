@@ -5,7 +5,7 @@ import {
   type TransactionObservabilityManager,
   globalLogger,
 } from '@lokalise/node-core'
-import Redis from 'ioredis'
+import { Redis } from 'ioredis'
 import { ToadScheduler } from 'toad-scheduler'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { getTestRedisConfig } from '../test/setup.js'
