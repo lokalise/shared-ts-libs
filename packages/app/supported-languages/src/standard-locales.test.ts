@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { languages } from './languages'
-import { regions } from './regions'
-import { scripts } from './scripts'
-import { standardLocales } from './standard-locales'
+import { languages } from './languages.js'
+import { regions } from './regions.js'
+import { scripts } from './scripts.js'
+import { standardLocales } from './standard-locales.js'
 
 describe('standard-locales', () => {
   it('all languages are part of our central list', () => {

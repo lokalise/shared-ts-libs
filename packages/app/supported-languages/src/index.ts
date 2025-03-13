@@ -1,13 +1,13 @@
 import type { Either } from '@lokalise/node-core'
 
-import type { Language } from './languages'
-import { languages, languagesSet } from './languages'
-import type { Region } from './regions'
-import { regions, regionsSet } from './regions'
-import type { Script } from './scripts'
-import { scripts, scriptsSet } from './scripts'
-import type { StandardLocale } from './standard-locales'
-import { standardLocales, standardLocalesSet } from './standard-locales'
+import type { Language } from './languages.js'
+import { languages, languagesSet } from './languages.js'
+import type { Region } from './regions.js'
+import { regions, regionsSet } from './regions.js'
+import type { Script } from './scripts.js'
+import { scripts, scriptsSet } from './scripts.js'
+import type { StandardLocale } from './standard-locales.js'
+import { standardLocales, standardLocalesSet } from './standard-locales.js'
 
 /**
  * String representation of a locale.
