@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { setTimeout } from 'node:timers/promises'
 import { buildClient, sendGet } from '@lokalise/backend-http-client'
 import { metricsPlugin } from '@lokalise/fastify-extras'
+import { waitAndRetry } from '@lokalise/node-core'
 import { type Item1, PrismaClient } from '@prisma/client'
 import type { FastifyInstance } from 'fastify'
 import fastify from 'fastify'
@@ -10,7 +11,6 @@ import { z } from 'zod'
 import { DB_MODEL, cleanTables } from '../../test/DbCleaner.js'
 import { getDatasourceUrl } from '../../test/getDatasourceUrl.js'
 import { type PrismaMetricsPluginOptions, prismaMetricsPlugin } from './prismaMetricsPlugin.js'
-import { waitAndRetry } from '@lokalise/node-core'
 
 const UNKNOWN_RESPONSE_SCHEMA = z.unknown()
 
