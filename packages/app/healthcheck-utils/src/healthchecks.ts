@@ -1,6 +1,6 @@
 import type { Either } from '@lokalise/node-core'
 import { Gauge } from 'prom-client'
-import type { HealthcheckResultsStore } from './HealthcheckResultsStore'
+import type { HealthcheckResultsStore } from './HealthcheckResultsStore.js'
 
 export type Healthcheck = {
   areMetricsEnabled: boolean

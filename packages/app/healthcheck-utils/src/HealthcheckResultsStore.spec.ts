@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
   HealthcheckResultsStore,
   type HealthcheckResultsStoreParams,
-} from './HealthcheckResultsStore'
+} from './HealthcheckResultsStore.js'
 
 const testParams: HealthcheckResultsStoreParams = {
   maxHealthcheckNumber: 2,
