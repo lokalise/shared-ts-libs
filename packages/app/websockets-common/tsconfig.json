@@ -1,4 +1,4 @@
 {
-    "extends": "@lokalise/tsconfig/tsc",
-    "include": ["src/**/*", "test/**/*", "vitest.config.ts"]
+    "extends": "@lokalise/tsconfig/bundler",
+    "include": ["src/**/*", "test/**/*", "vite.config.ts"]
 }
