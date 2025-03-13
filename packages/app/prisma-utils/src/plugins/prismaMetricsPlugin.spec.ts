@@ -1,17 +1,15 @@
+import { randomUUID } from 'node:crypto'
 import { setTimeout } from 'node:timers/promises'
-
 import { buildClient, sendGet } from '@lokalise/backend-http-client'
+import { metricsPlugin } from '@lokalise/fastify-extras'
+import { type Item1, PrismaClient } from '@prisma/client'
 import type { FastifyInstance } from 'fastify'
 import fastify from 'fastify'
-
-import { metricsPlugin } from '@lokalise/fastify-extras'
-import { generateMonotonicUuid } from '@lokalise/id-utils'
-import { type Item1, PrismaClient } from '@prisma/client'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { DB_MODEL, cleanTables } from '../../test/DbCleaner'
-import { getDatasourceUrl } from '../../test/getDatasourceUrl'
-import { type PrismaMetricsPluginOptions, prismaMetricsPlugin } from './prismaMetricsPlugin'
+import { DB_MODEL, cleanTables } from '../../test/DbCleaner.js'
+import { getDatasourceUrl } from '../../test/getDatasourceUrl.js'
+import { type PrismaMetricsPluginOptions, prismaMetricsPlugin } from './prismaMetricsPlugin.js'
 
 const UNKNOWN_RESPONSE_SCHEMA = z.unknown()
 
@@ -28,7 +26,7 @@ type TestOptions = {
 }
 
 const TEST_ITEM_1: Item1 = {
-  id: generateMonotonicUuid(),
+  id: randomUUID(),
   value: 'one',
 }
 

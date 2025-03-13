@@ -1,11 +1,14 @@
 {
     "name": "@lokalise/prisma-utils",
     "version": "3.2.3",
-    "type": "commonjs",
+    "type": "module",
     "license": "Apache-2.0",
     "files": ["dist", "README.md", "LICENSE.md"],
     "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": "./dist/index.js",
+        "./package.json": "./package.json"
+    },
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
