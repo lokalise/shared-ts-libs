@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getDatasourceUrl } from '../test/getDatasourceUrl'
-import { prismaClientFactory } from './prismaClientFactory'
+import { getDatasourceUrl } from '../test/getDatasourceUrl.js'
+import { prismaClientFactory } from './prismaClientFactory.js'
 
 describe('prismaClientFactory', () => {
   describe('real prisma client', () => {
