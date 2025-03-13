@@ -1,6 +1,7 @@
 import { type RedisConfig, globalLogger } from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
 import { vi } from 'vitest'
+import { CommonBullmqFactoryNew } from '../src/background-job-processor/factories/CommonBullmqFactoryNew.js'
 import {
   type BackgroundJobProcessorDependencies,
   type BackgroundJobProcessorDependenciesNew,
@@ -9,9 +10,8 @@ import {
   type QueueConfiguration,
   type QueueManager,
   type SupportedQueueIds,
-} from '../src'
-import { CommonBullmqFactoryNew } from '../src/background-job-processor/factories/CommonBullmqFactoryNew'
-import { createRedisClient, getTestRedisConfig } from './TestRedis'
+} from '../src/index.js'
+import { createRedisClient, getTestRedisConfig } from './TestRedis.js'
 
 const testLogger = globalLogger
 export class TestDependencyFactory {

@@ -1,8 +1,8 @@
 import type { Job } from 'bullmq'
-import { CommonBullmqFactoryNew } from '../factories/CommonBullmqFactoryNew'
-import type { QueueConfiguration, SupportedQueueIds } from '../managers/types'
-import { AbstractBackgroundJobProcessorNew } from './AbstractBackgroundJobProcessorNew'
-import type { BackgroundJobProcessorDependenciesNew } from './types'
+import { CommonBullmqFactoryNew } from '../factories/CommonBullmqFactoryNew.js'
+import type { QueueConfiguration, SupportedQueueIds } from '../managers/types.js'
+import { AbstractBackgroundJobProcessorNew } from './AbstractBackgroundJobProcessorNew.js'
+import type { BackgroundJobProcessorDependenciesNew } from './types.js'
 
 export class FakeBackgroundJobProcessorNew<
   Queues extends QueueConfiguration[],

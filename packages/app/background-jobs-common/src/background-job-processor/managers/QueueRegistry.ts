@@ -1,5 +1,5 @@
 import type { JobsOptions, QueueOptions } from 'bullmq'
-import type { QueueConfiguration, SupportedQueueIds } from './types'
+import type { QueueConfiguration, SupportedQueueIds } from './types.js'
 
 export class QueueRegistry<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
@@ -19,7 +19,7 @@ export class QueueRegistry<
   }
 
   public getQueueConfig(queueId: SupportedQueueIds<Queues>): Queues[number] {
-    if (!this.isSupportedQueue(queueId)) {
+    if (!this.isSupportedQueue(queueId) || !this.supportedQueuesMap[queueId]) {
       throw new Error(`Queue with id ${queueId} is not supported`)
     }
 

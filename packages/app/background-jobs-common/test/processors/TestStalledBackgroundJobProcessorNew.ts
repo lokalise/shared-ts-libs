@@ -3,8 +3,8 @@ import {
   AbstractBackgroundJobProcessorNew,
   type BackgroundJobProcessorDependenciesNew,
   type SupportedQueueIds,
-} from '../../src'
-import type { QueueConfiguration } from '../../src'
+} from '../../src/index.js'
+import type { QueueConfiguration } from '../../src/index.js'
 
 type OnFailedError = {
   error: Error

@@ -4,14 +4,14 @@ import {
   type TransactionObservabilityManager,
   resolveGlobalErrorLogObject,
 } from '@lokalise/node-core'
-import { QUEUE_IDS_KEY } from '../constants'
-import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger'
+import { QUEUE_IDS_KEY } from '../constants.js'
+import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger.js'
 import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
-} from '../processors/types'
-import type { BaseJobPayload, RequestContext, SafeJob } from '../types'
-import { createSanitizedRedisClient, resolveJobId } from '../utils'
+} from '../processors/types.js'
+import type { BaseJobPayload, RequestContext, SafeJob } from '../types.js'
+import { createSanitizedRedisClient, resolveJobId } from '../utils.js'
 
 const queueIdsSet = new Set<string>()
 

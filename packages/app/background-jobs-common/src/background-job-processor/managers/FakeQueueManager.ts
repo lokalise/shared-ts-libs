@@ -1,6 +1,6 @@
-import { CommonBullmqFactoryNew } from '../factories/CommonBullmqFactoryNew'
-import { QueueManager } from './QueueManager'
-import type { QueueConfiguration, QueueManagerConfig } from './types'
+import { CommonBullmqFactoryNew } from '../factories/CommonBullmqFactoryNew.js'
+import { QueueManager } from './QueueManager.js'
+import type { QueueConfiguration, QueueManagerConfig } from './types.js'
 
 export class FakeQueueManager<Queues extends QueueConfiguration[]> extends QueueManager<Queues> {
   constructor(

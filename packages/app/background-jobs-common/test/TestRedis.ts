@@ -1,5 +1,5 @@
 import type { RedisConfig } from '@lokalise/node-core'
-import Redis from 'ioredis'
+import { Redis } from 'ioredis'
 
 export function getTestRedisConfig(): RedisConfig {
   return {
