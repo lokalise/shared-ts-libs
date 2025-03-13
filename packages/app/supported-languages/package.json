@@ -3,9 +3,7 @@
     "version": "2.1.0",
     "type": "module",
     "license": "Apache-2.0",
-    "main": "./dist/cjs/index.cjs",
-    "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./dist/cjs/index.js",
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
