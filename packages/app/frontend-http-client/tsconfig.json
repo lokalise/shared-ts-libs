@@ -1,26 +1,4 @@
 {
-    "compilerOptions": {
-        "outDir": "dist",
-        "module": "node16",
-        "target": "ES2022",
-        "lib": ["ES2022", "dom"],
-        "sourceMap": false,
-        "declaration": true,
-        "declarationMap": false,
-        "types": ["node", "vitest/globals"],
-        "strict": true,
-        "moduleResolution": "node16",
-        "noUnusedLocals": false,
-        "noUnusedParameters": false,
-        "noFallthroughCasesInSwitch": true,
-        "strictNullChecks": true,
-        "importHelpers": true,
-        "baseUrl": ".",
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
-        "resolveJsonModule": true
-    },
-    "include": ["./src/**/*", "index.ts", "vitest.config.ts", "tsup.config.ts"],
-    "exclude": []
+    "extends": "@lokalise/tsconfig/bundler",
+    "include": ["src/**/*", "vitest.config.ts", "tsup.config.ts"]
 }
