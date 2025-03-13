@@ -5,17 +5,17 @@ import type {
   TransactionObservabilityManager,
 } from '@lokalise/node-core'
 import type { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
-import type { BarrierCallback } from '../barrier/barrier'
-import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
-import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory'
-import type { QueueManager } from '../managers/QueueManager'
+import type { BarrierCallback } from '../barrier/barrier.js'
+import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory.js'
+import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory.js'
+import type { QueueManager } from '../managers/QueueManager.js'
 import type {
   JobPayloadForQueue,
   QueueConfiguration,
   SupportedJobPayloads,
   SupportedQueueIds,
-} from '../managers/types'
-import type { BaseJobPayload, BullmqProcessor, SafeJob } from '../types'
+} from '../managers/types.js'
+import type { BaseJobPayload, BullmqProcessor, SafeJob } from '../types.js'
 
 export type BackgroundJobProcessorConfigNew<
   Queues extends QueueConfiguration[],

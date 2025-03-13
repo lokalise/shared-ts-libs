@@ -1,11 +1,11 @@
 import { UnrecoverableError } from 'bullmq'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import { TestFailingBackgroundJobProcessorNew } from '../../../test/processors/TestFailingBackgroundJobProcessorNew'
-import type { FakeQueueManager } from '../managers/FakeQueueManager'
-import type { QueueConfiguration } from '../managers/types'
-import type { BackgroundJobProcessorDependenciesNew } from './types'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
+import { TestFailingBackgroundJobProcessorNew } from '../../../test/processors/TestFailingBackgroundJobProcessorNew.js'
+import type { FakeQueueManager } from '../managers/FakeQueueManager.js'
+import type { QueueConfiguration } from '../managers/types.js'
+import type { BackgroundJobProcessorDependenciesNew } from './types.js'
 
 const supportedQueues = [
   {
@@ -69,7 +69,7 @@ describe('AbstractBackgroundJobProcessorNew - error', () => {
 
     expect(processor.errorsOnProcess).length(1)
     expect(job.attemptsMade).toBe(3)
-    expect(processor.errorsOnProcess[0]).toMatchObject(errors[2])
+    expect(processor.errorsOnProcess[0]).toMatchObject(errors[2]!)
   })
 
   it('job throws unrecoverable error at the beginning', async () => {
@@ -93,7 +93,7 @@ describe('AbstractBackgroundJobProcessorNew - error', () => {
 
     expect(processor.errorsOnProcess).length(1)
     expect(job.attemptsMade).toBe(1)
-    expect(processor.errorsOnProcess[0]).toMatchObject(errors[0])
+    expect(processor.errorsOnProcess[0]).toMatchObject(errors[0]!)
   })
 
   it('job throws unrecoverable error in the middle', async () => {
@@ -120,7 +120,7 @@ describe('AbstractBackgroundJobProcessorNew - error', () => {
 
     expect(processor.errorsOnProcess).length(1)
     expect(job.attemptsMade).toBe(2)
-    expect(processor.errorsOnProcess[0]).toMatchObject(errors[1])
+    expect(processor.errorsOnProcess[0]).toMatchObject(errors[1]!)
   })
 
   it('error is triggered on failed hook', async () => {

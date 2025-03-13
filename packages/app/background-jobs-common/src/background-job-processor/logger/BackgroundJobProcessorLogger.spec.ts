@@ -1,7 +1,7 @@
 import { type CommonLogger, globalLogger } from '@lokalise/node-core'
 import { type MockInstance, beforeEach, describe, expect, it, vitest } from 'vitest'
 
-import { BackgroundJobProcessorLogger } from './BackgroundJobProcessorLogger'
+import { BackgroundJobProcessorLogger } from './BackgroundJobProcessorLogger.js'
 
 const logger = globalLogger
 

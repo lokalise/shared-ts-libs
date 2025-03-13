@@ -1,9 +1,9 @@
 import { Queue, Worker } from 'bullmq'
 import type { Job, Processor, QueueOptions, WorkerOptions } from 'bullmq'
 
-import type { BullmqProcessor } from '../types'
+import type { BullmqProcessor } from '../types.js'
 
-import type { AbstractBullmqFactory } from './AbstractBullmqFactory'
+import type { AbstractBullmqFactory } from './AbstractBullmqFactory.js'
 
 export class CommonBullmqFactory<JobPayload extends object, JobReturn = void>
   implements

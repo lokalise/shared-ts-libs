@@ -1,8 +1,8 @@
 import type { JobsOptions, QueueOptions } from 'bullmq'
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod'
-import { QueueRegistry } from './QueueRegistry'
-import type { QueueConfiguration } from './types'
+import { QueueRegistry } from './QueueRegistry.js'
+import type { QueueConfiguration } from './types.js'
 
 const jobPayloadSchema = z.object({
   id: z.string(),

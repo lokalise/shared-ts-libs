@@ -3,21 +3,21 @@ import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import {
   DelayedError,
   type Job,
+  type JobState,
   type JobsOptions,
   type Queue,
   type QueueOptions,
   type Worker,
   type WorkerOptions,
 } from 'bullmq'
-import type { JobState } from 'bullmq/dist/esm/types/job-type'
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
-import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants'
-import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
-import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor'
-import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
-import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types'
+import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants.js'
+import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory.js'
+import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.js'
+import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.js'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types.js'
+import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types.js'
 import {
   isJobMissingError,
   isStalledJobError,
@@ -25,14 +25,14 @@ import {
   prepareJobOptions,
   resolveJobId,
   sanitizeRedisConfig,
-} from '../utils'
+} from '../utils.js'
 import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
   JobsPaginatedResponse,
   ProtectedQueue,
   ProtectedWorker,
-} from './types'
+} from './types.js'
 
 /**
  * @deprecated This processor is deprecated and will be removed in future versions.

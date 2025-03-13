@@ -5,7 +5,7 @@ import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
-} from '../../src'
+} from '../../src/index.js'
 
 export class TestReturnValueBackgroundJobProcessor<
   JobData extends BaseJobPayload,
@@ -28,7 +28,7 @@ export class TestReturnValueBackgroundJobProcessor<
     this.returnValue = returnValue
   }
 
-  schedule(jobData: JobData): Promise<string> {
+  override schedule(jobData: JobData): Promise<string> {
     return super.schedule(jobData, { attempts: 1 })
   }
 

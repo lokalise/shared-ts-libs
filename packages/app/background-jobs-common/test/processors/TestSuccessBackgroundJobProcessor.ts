@@ -6,7 +6,7 @@ import {
   type BaseJobPayload,
   FakeBackgroundJobProcessor,
   type RequestContext,
-} from '../../src'
+} from '../../src/index.js'
 
 type TestSuccessBackgroundJobProcessorData = {
   id?: string
@@ -27,7 +27,7 @@ export class TestSuccessBackgroundJobProcessor<
     super(dependencies, queueName, redisConfig, true)
   }
 
-  schedule(jobData: T): Promise<string> {
+  override schedule(jobData: T): Promise<string> {
     return super.schedule(jobData, { attempts: 1, removeOnComplete: false })
   }
 

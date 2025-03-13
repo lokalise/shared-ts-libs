@@ -1,6 +1,6 @@
 import type { Job } from 'bullmq'
 
-import type { JobFinalState } from '../types'
+import type { JobFinalState } from '../types.js'
 
 export type JobSpyState = JobFinalState | 'scheduled'
 export type JobDataSelector<JobData extends object> = (jobData: JobData) => boolean

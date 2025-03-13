@@ -2,11 +2,11 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import { waitAndRetry } from '@lokalise/node-core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import { TestStalledBackgroundJobProcessorNew } from '../../../test/processors/TestStalledBackgroundJobProcessorNew'
-import type { FakeQueueManager } from '../managers/FakeQueueManager'
-import type { QueueConfiguration } from '../managers/types'
-import type { BackgroundJobProcessorDependenciesNew } from './types'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
+import { TestStalledBackgroundJobProcessorNew } from '../../../test/processors/TestStalledBackgroundJobProcessorNew.js'
+import type { FakeQueueManager } from '../managers/FakeQueueManager.js'
+import type { QueueConfiguration } from '../managers/types.js'
+import type { BackgroundJobProcessorDependenciesNew } from './types.js'
 
 const supportedQueues = [
   {
@@ -69,18 +69,18 @@ describe('AbstractBackgroundJobProcessorNew - stalled', () => {
     expect(stalledProcessor?.onFailedErrors).length(1)
 
     const onFailedCall = stalledProcessor?.onFailedErrors[0]
-    expect(onFailedCall.error.message).toBe('job stalled more than allowable limit')
-    expect(onFailedCall.job.id).toBe(jobId)
-    expect(onFailedCall.job.data).toMatchObject(jobData)
-    expect(onFailedCall.job.attemptsMade).toBe(0)
+    expect(onFailedCall!.error.message).toBe('job stalled more than allowable limit')
+    expect(onFailedCall!.job.id).toBe(jobId)
+    expect(onFailedCall!.job.data).toMatchObject(jobData)
+    expect(onFailedCall!.job.attemptsMade).toBe(0)
 
     expect(errorReporterSpy).toHaveBeenCalledWith({
-      error: onFailedCall.error,
+      error: onFailedCall!.error,
       context: {
         jobId,
         jobName: 'queue',
         'x-request-id': jobData.metadata.correlationId,
-        errorJson: expect.stringContaining(onFailedCall.error.message),
+        errorJson: expect.stringContaining(onFailedCall!.error.message),
       },
     })
   })

@@ -1,10 +1,9 @@
+import type { Redis } from 'ioredis'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-
-import type Redis from 'ioredis'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import { QUEUE_IDS_KEY, RETENTION_QUEUE_IDS_IN_DAYS } from '../constants'
-import { daysToMilliseconds } from '../utils'
-import { backgroundJobProcessorGetActiveQueueIds } from './backgroundJobProcessorGetActiveQueueIds'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
+import { QUEUE_IDS_KEY, RETENTION_QUEUE_IDS_IN_DAYS } from '../constants.js'
+import { daysToMilliseconds } from '../utils.js'
+import { backgroundJobProcessorGetActiveQueueIds } from './backgroundJobProcessorGetActiveQueueIds.js'
 
 describe('backgroundJobProcessorGetActiveQueueIds', () => {
   let factory: TestDependencyFactory

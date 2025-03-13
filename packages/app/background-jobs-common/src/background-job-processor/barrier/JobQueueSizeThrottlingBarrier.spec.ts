@@ -1,10 +1,10 @@
 import { setTimeout } from 'node:timers/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import { TestQueueSizeJobBarrierBackgroundJobProcessor } from '../../../test/processors/TestQueueSizeJobBarrierBackgroundJobProcessor'
-import type { BackgroundJobProcessorDependencies } from '../processors/types'
-import type { BaseJobPayload } from '../types'
-import { createJobQueueSizeThrottlingBarrier } from './JobQueueSizeThrottlingBarrier'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
+import { TestQueueSizeJobBarrierBackgroundJobProcessor } from '../../../test/processors/TestQueueSizeJobBarrierBackgroundJobProcessor.js'
+import type { BackgroundJobProcessorDependencies } from '../processors/types.js'
+import type { BaseJobPayload } from '../types.js'
+import { createJobQueueSizeThrottlingBarrier } from './JobQueueSizeThrottlingBarrier.js'
 
 type JobData = {
   id: string

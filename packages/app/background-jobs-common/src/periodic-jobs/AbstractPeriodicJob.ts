@@ -8,7 +8,7 @@ import {
   isError,
 } from '@lokalise/node-core'
 import { resolveGlobalErrorLogObject } from '@lokalise/node-core'
-import type Redis from 'ioredis'
+import type { Redis } from 'ioredis'
 import type { LockOptions } from 'redis-semaphore'
 import { Mutex } from 'redis-semaphore'
 import type { LockLostCallback } from 'redis-semaphore'
@@ -19,8 +19,8 @@ import type {
   JobExecutionContext,
   LockConfiguration,
   PeriodicJobDependencies,
-} from './periodicJobTypes'
-import { createTask } from './periodicJobUtils'
+} from './periodicJobTypes.js'
+import { createTask } from './periodicJobUtils.js'
 
 const DEFAULT_EXCLUSIVE_LOCK_SUFFIX = 'EXCLUSIVE'
 const DEFAULT_LOCK_TIMEOUT = 120000
