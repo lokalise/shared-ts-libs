@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { parseEnv } from 'node:util'
 import { globalLogger } from '@lokalise/node-core'
-import { vaultGetVars, vaultLogin } from './vault'
+import { vaultGetVars, vaultLogin } from './vault.js'
 
 /**
  * This function updates the contents of an .env file so the passed `key` has
@@ -34,7 +34,8 @@ const upsertEnvValue = (
   }
 
   // Else replace the value itself with adding quotes
-  return envContents.replace(parsedEnv[key], value.trim())
+  // biome-ignore lint/style/noNonNullAssertion: Checked before
+  return envContents.replace(parsedEnv[key]!, value.trim())
 }
 
 /**
