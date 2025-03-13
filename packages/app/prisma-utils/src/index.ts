@@ -1,6 +1,6 @@
 export type * from './types.js'
 
-export * from './errors.js'
+export * from './errors/index.js'
 
 export { prismaTransaction } from './prismaTransaction.js'
 export { prismaClientFactory } from './prismaClientFactory.js'

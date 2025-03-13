@@ -67,14 +67,24 @@ function getMetricKeys(_prefix: string, jsonMetrics: Metrics): string[] {
 }
 
 export class MetricsCollector {
+  private readonly prisma: PrismaClient
+  private readonly options: MetricCollectorOptions
+  private readonly registry: prometheus.Registry
+  private readonly logger: FastifyBaseLogger
+
   private metrics: PrometheusMetricsDefinitions
 
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly options: MetricCollectorOptions,
-    private readonly registry: prometheus.Registry,
-    private readonly logger: FastifyBaseLogger,
+    prisma: PrismaClient,
+    options: MetricCollectorOptions,
+    registry: prometheus.Registry,
+    logger: FastifyBaseLogger,
   ) {
+    this.prisma = prisma
+    this.options = options
+    this.registry = registry
+    this.logger = logger
+
     this.metrics = {
       counters: {},
       gauges: {},
@@ -194,12 +204,12 @@ export class MetricsCollector {
     registry: prometheus.Registry,
     metricNames: string[],
   ): PrometheusMetricsDefinitions | undefined {
-    if (!metricNames.length || !registry.getSingleMetric(metricNames[0])) {
-      return
-    }
+    if (!metricNames.length) return
 
     /* c8 ignore start */
     const retrievedMetrics = registry.getMetricsAsArray()
+    if (!retrievedMetrics.length) return
+
     const returnValue: PrometheusMetrics = {
       counters: {},
       histograms: {},

@@ -11,7 +11,7 @@ import {
   PRISMA_SERIALIZATION_ERROR,
   PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
   PRISMA_TRANSACTION_ERROR,
-} from './errors.js'
+} from './errors/index.js'
 import { prismaTransaction } from './prismaTransaction.js'
 
 type Item1 = {
@@ -92,7 +92,7 @@ describe('prismaTransaction', () => {
 
       const diffs: number[] = []
       callsTimestamps.forEach((t, i) => {
-        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 100) * 100)
+        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]!) / 100) * 100)
       })
       expect(diffs).toHaveLength(2)
       expect(diffs[0]).toBe(100)
@@ -171,7 +171,7 @@ describe('prismaTransaction', () => {
 
       const diffs: number[] = []
       callsTimestamps.forEach((t, i) => {
-        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 100) * 100)
+        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]!) / 100) * 100)
       })
       expect(diffs).toEqual([100, 200, 400, 800])
     })
@@ -203,7 +203,7 @@ describe('prismaTransaction', () => {
 
       const diffs: number[] = []
       callsTimestamps.forEach((t, i) => {
-        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 100) * 100)
+        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]!) / 100) * 100)
       })
       expect(diffs).toEqual([maxRetryDelayMs, maxRetryDelayMs])
     })
