@@ -90,7 +90,7 @@ import { sendByPayloadRoute, buildClient } from '@lokalise/backend-http-client'
 const MY_BASE_URL = 'http://localhost:8080'
 const client = buildClient(MY_BASE_URL)
 
-const responseBody1 = await sendByPayloadRoute(client, somePostRouteDefinition, 
+const responseBodyPost = await sendByPayloadRoute(client, somePostRouteDefinition, 
 // pass contract-defined request params, such as body, query and headers here
     {
         pathParams: {
@@ -103,7 +103,24 @@ const responseBody1 = await sendByPayloadRoute(client, somePostRouteDefinition,
 // pass backend-http-client options here        
     {
         validateResponse: false,
-        requestLabel: 'Test request',
+        requestLabel: 'Create user',
     }
+)
+
+const responseBodyGet = await sendByGetRoute(client, someGetRouteDefinition,
+// pass contract-defined request params, such as query and headers here
+        {
+          pathParams: {
+            userId: 1,
+          },
+          queryParams: {
+            withMetadata: true,
+          },
+        },
+// pass backend-http-client options here        
+        {
+          validateResponse: false,
+          requestLabel: 'Retrieve user',
+        }
 )
 ```
