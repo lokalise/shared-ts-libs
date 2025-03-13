@@ -1,27 +1,4 @@
 {
-    "compilerOptions": {
-        "outDir": "dist",
-        "module": "ESNext",
-        "target": "ESNext",
-        "lib": ["ESNext"],
-        "sourceMap": true,
-        "declaration": true,
-        "declarationMap": true,
-        "types": ["vitest/globals"],
-        "strict": true,
-        "moduleResolution": "node",
-        "noUnusedLocals": false,
-        "noUnusedParameters": false,
-        "noFallthroughCasesInSwitch": true,
-        "strictNullChecks": true,
-        "importHelpers": true,
-        "baseUrl": ".",
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true,
-        "resolveJsonModule": true
-    },
-    "include": ["src/**/*"],
-    "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
+    "extends": "@lokalise/tsconfig/bundler",
+    "include": ["src/**/*", "vite.config.ts"]
 }
