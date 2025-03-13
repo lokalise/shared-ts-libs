@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import { setTimeout } from 'node:timers/promises'
 import { buildClient, sendGet } from '@lokalise/backend-http-client'
 import { metricsPlugin } from '@lokalise/fastify-extras'
 import { waitAndRetry } from '@lokalise/node-core'
@@ -134,10 +133,18 @@ describe('prismaMetricsPlugin', () => {
     // prisma call
     await prisma.item1.create({ data: TEST_ITEM_1 })
 
-    // Wait for collector to collect metrics
-    await setTimeout(100)
+    const found = await waitAndRetry(
+      async () => {
+        await app.prismaMetrics.collect()
+        const metrics = await getMetrics()
+        return (
+          (metrics.result.body as string).indexOf('prisma_pool_connections_opened_total 1') !== -1
+        )
+      },
+      10,
+      100,
+    )
 
-    const responseAfter = await getMetrics()
-    expect(responseAfter.result.body).toContain('prisma_pool_connections_opened_total 1')
+    expect(found).toBe(true)
   })
 })
