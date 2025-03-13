@@ -19,7 +19,6 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       all: false,
-      exclude: ['src/AbstractPeriodicJob.ts'],
       thresholds: {
         lines: 85,
         functions: 85,
