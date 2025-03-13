@@ -1,1 +1,1 @@
-export * from './prismaError'
+export * from './prismaError.js'

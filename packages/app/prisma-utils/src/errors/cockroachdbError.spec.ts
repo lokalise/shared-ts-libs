@@ -1,8 +1,8 @@
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { describe, expect, it } from 'vitest'
 
-import { isCockroachDBRetryTransaction } from './cockroachdbError'
-import { PRISMA_SERIALIZATION_ERROR } from './prismaError'
+import { isCockroachDBRetryTransaction } from './cockroachdbError.js'
+import { PRISMA_SERIALIZATION_ERROR } from './prismaError.js'
 
 describe('cockroachdbError', () => {
   it('should return false without meta', () => {
