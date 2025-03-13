@@ -1,5 +1,5 @@
 {
-    "extends": "@lokalise/tsconfig/bundler",
+    "extends": "@lokalise/tsconfig/tsc",
     "include": ["src/**/*", "test/**/*", "vite.config.ts"],
     "compilerOptions": {
         "types": ["vitest/globals"]
