@@ -10,6 +10,7 @@ import { z } from 'zod'
 import { DB_MODEL, cleanTables } from '../../test/DbCleaner.js'
 import { getDatasourceUrl } from '../../test/getDatasourceUrl.js'
 import { type PrismaMetricsPluginOptions, prismaMetricsPlugin } from './prismaMetricsPlugin.js'
+import { waitAndRetry } from '@lokalise/node-core'
 
 const UNKNOWN_RESPONSE_SCHEMA = z.unknown()
 
@@ -100,13 +101,21 @@ describe('prismaMetricsPlugin', () => {
     // prisma call
     await prisma.item1.create({ data: TEST_ITEM_1 })
 
-    await setTimeout(100)
+    const found = await waitAndRetry(
+      async () => {
+        await app.prismaMetrics.collect()
+        const metrics = await getMetrics()
+        return (
+          (metrics.result.body as string).indexOf('prisma_pool_connections_opened_total 1') !== -1
+        )
+      },
+      10,
+      100,
+    )
 
-    await app.prismaMetrics.collect()
-
-    const responseAfter = await getMetrics()
-    expect(responseAfter.result.body).toContain('prisma_pool_connections_opened_total 1')
+    expect(found).toBe(true)
   })
+
   it('scheduler collects metrics', async () => {
     app = await initAppWithPrismaMetrics(
       { prisma },
@@ -114,7 +123,7 @@ describe('prismaMetricsPlugin', () => {
         enableMetricsPlugin: true,
         collectionOptions: {
           type: 'interval',
-          intervalInMs: 100,
+          intervalInMs: 50,
         },
       },
     )
