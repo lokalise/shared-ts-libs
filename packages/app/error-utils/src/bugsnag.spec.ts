@@ -73,9 +73,9 @@ describe('bugsnag', () => {
       expect(notifySpy).toHaveBeenCalled()
 
       const callback = notifySpy.mock.calls[0]![1]
-      let context = {}
+      let context: unknown = {}
       const event = {
-        addMetadata: (key: any, obj: any) => {
+        addMetadata: (key: unknown, obj: unknown) => {
           if (key === 'Context') context = obj
           else throw new Error('wrong key')
         },
@@ -108,9 +108,9 @@ describe('bugsnag', () => {
       expect(notifySpy).toHaveBeenCalled()
 
       const callback = notifySpy.mock.calls[0]![1]!
-      let context = {}
+      let context: unknown = {}
       const event = {
-        addMetadata: (key: any, obj: any) => {
+        addMetadata: (key: unknown, obj: unknown) => {
           if (key === 'Context') context = obj
           else throw new Error('wrong key')
         },
@@ -139,9 +139,9 @@ describe('bugsnag', () => {
       expect(notifySpy).toHaveBeenCalled()
 
       const callback = notifySpy.mock.calls[0]![1]
-      let context = {}
+      let context: unknown = {}
       const event = {
-        addMetadata: (key: any, obj: any) => {
+        addMetadata: (key: unknown, obj: unknown) => {
           if (key === 'Context') context = obj
           else throw new Error('wrong key')
         },
