@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/healthcheck-utils",
-    "version": "1.4.0",
+    "version": "2.0.0",
     "license": "Apache-2.0",
     "files": ["dist/**", "LICENSE.md", "README.md"],
     "type": "module",
