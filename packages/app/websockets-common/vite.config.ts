@@ -1,10 +1,9 @@
 import { resolve } from 'node:path'
-
 import defineConfig from '@lokalise/package-vite-config/package'
+import dtsPlugin from 'vite-plugin-dts'
 
 // @ts-ignore
 import packageJson from './package.json'
-import dtsPlugin from 'vite-plugin-dts'
 
 // biome-ignore lint/style/noDefaultExport: <explanation>
 export default defineConfig({
