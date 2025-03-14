@@ -11,7 +11,7 @@ export default defineConfig({
   }),
   cjsInterop: true,
   entry: {
-    index: './index.ts',
+    index: './src/index.ts',
   },
   sourcemap: true,
   skipNodeModulesBundle: true,

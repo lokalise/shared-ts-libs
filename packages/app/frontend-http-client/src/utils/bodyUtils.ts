@@ -34,7 +34,7 @@ export function tryToResolveJsonBody<RequestBodySchema extends z.ZodSchema>(
     })
   }
 
-  return response.json().then((responseBody: object) => {
+  return response.json().then((responseBody) => {
     return parseResponseBody({
       response: responseBody,
       responseBodySchema: schema,

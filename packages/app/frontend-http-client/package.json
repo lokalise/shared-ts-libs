@@ -53,6 +53,7 @@
         "@biomejs/biome": "^1.8.3",
         "@lokalise/biome-config": "^1.0.0",
         "@lokalise/universal-ts-utils": "^4.2.2",
+        "@lokalise/tsconfig": "^1.0.2",
         "@types/node": "^22.0.0",
         "@vitest/coverage-v8": "^3.0.5",
         "jest-fail-on-console": "^3.1.2",
