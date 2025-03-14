@@ -1,5 +1,5 @@
-import { ReservedRoomEvents } from './reservedRoomEvents'
-import { ReservedSocketEvents } from './reservedSocketEvents'
+import { ReservedRoomEvents } from './reservedRoomEvents.js'
+import { ReservedSocketEvents } from './reservedSocketEvents.js'
 
 export const ServerToClientEvents = {
   ...ReservedRoomEvents,

@@ -3,26 +3,20 @@
     "version": "2.6.0",
     "type": "module",
     "license": "Apache-2.0",
-    "main": "./dist/index.cjs",
-    "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./dist/index.js",
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
         "url": "git://github.com/lokalise/shared-ts-libs.git"
     },
     "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "require": "./dist/index.cjs",
-            "import": "./dist/index.js"
-        }
+        ".": "./dist/index.js",
+        "./package.json": "./package.json"
     },
     "scripts": {
-        "build": "rimraf dist && vite build && tsc --emitDeclarationOnly",
-        "dev": "vite watch",
-        "clean": "rimraf dist .eslintcache",
-        "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
+        "build": "rimraf dist && vite build",
+        "clean": "rimraf dist",
+        "lint": "biome check . && tsc",
         "lint:fix": "biome check --write",
         "test": "vitest run --coverage",
         "prepublishOnly": "npm run build",
@@ -38,9 +32,11 @@
         "@biomejs/biome": "^1.9.4",
         "@lokalise/biome-config": "^1.5.0",
         "@lokalise/package-vite-config": "latest",
+        "@lokalise/tsconfig": "^1.0.2",
         "rimraf": "^6.0.1",
         "typescript": "~5.8.2",
         "vite": "6.2.1",
+        "vite-plugin-dts": "^4.5.3",
         "vitest": "^3.0.7"
     }
 }
