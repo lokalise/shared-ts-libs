@@ -1,6 +1,6 @@
 import type { ZodObject, z } from 'zod'
 
-import type { ReservedClientToServerEvents, ReservedServerToClientEvents } from '../events'
+import type { ReservedClientToServerEvents, ReservedServerToClientEvents } from '../events/index.js'
 
 export interface WebsocketEvent {
   // We do not care about specific type

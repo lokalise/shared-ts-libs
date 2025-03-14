@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { ROOM_ID_SCHEMA } from '../../rooms'
+import { ROOM_ID_SCHEMA } from '../../rooms.js'
 
 const ROOM_EVENT_SCHEMA = z.object({ roomId: ROOM_ID_SCHEMA })
 
