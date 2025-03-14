@@ -1,5 +1,5 @@
-import { ClientToServerEvents } from './client-to-server'
-import { ServerToClientEvents } from './server-to-client'
+import { ClientToServerEvents } from './client-to-server/index.js'
+import { ServerToClientEvents } from './server-to-client/index.js'
 
 export const ReservedClientToServerEvents = {
   ...ClientToServerEvents,

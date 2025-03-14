@@ -1,3 +1,3 @@
-export * from './rooms'
-export * from './events'
-export * from './types'
+export * from './rooms.js'
+export * from './events/index.js'
+export * from './types/index.js'
