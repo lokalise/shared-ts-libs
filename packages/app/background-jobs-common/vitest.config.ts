@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config'
 // biome-ignore lint/style/noDefaultExport: vite expects default export
 export default defineConfig({
   test: {
+    globals: true,
     setupFiles: ['./test/setup.ts'],
     hookTimeout: 60000,
     restoreMocks: true,
