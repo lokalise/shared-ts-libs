@@ -1,1 +1,1 @@
-export * from './baseEventSchemas'
+export * from './baseEventSchemas.js'

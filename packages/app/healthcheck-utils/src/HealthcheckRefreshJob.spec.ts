@@ -5,12 +5,12 @@ import {
   type TransactionObservabilityManager,
   globalLogger,
 } from '@lokalise/node-core'
-import Redis from 'ioredis'
+import { Redis } from 'ioredis'
 import { ToadScheduler } from 'toad-scheduler'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { getTestRedisConfig } from '../test/setup'
+import { getTestRedisConfig } from '../test/setup.js'
 import { HealthcheckRefreshJob } from './HealthcheckRefreshJob.js'
-import { HealthcheckResultsStore } from './HealthcheckResultsStore'
+import { HealthcheckResultsStore } from './HealthcheckResultsStore.js'
 import {
   AbstractHealthcheck,
   type Healthcheck,
