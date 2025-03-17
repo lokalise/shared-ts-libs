@@ -24,7 +24,7 @@
     "scripts": {
         "build": "rimraf dist && tsc --project tsconfig.build.json",
         "clean": "rimraf dist",
-        "lint": "biome check . && tsc --noEmit",
+        "lint": "biome check . && tsc",
         "lint:fix": "biome check --write",
         "package-version": "echo $npm_package_version",
         "test:ci": "vitest run --coverage",
@@ -50,8 +50,7 @@
         "mockttp": "^3.13.0",
         "rimraf": "^6.0.0",
         "typescript": "~5.8.2",
-        "vite": "6.2.1",
-        "vite-plugin-dts": "^4.5.3",
+        "vitest": "^3.0.7"
     },
     "keywords": ["frontend", "web", "browser", "http", "client", "zod", "validation", "typesafe"]
 }
