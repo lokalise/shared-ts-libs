@@ -6,6 +6,7 @@ export default defineConfig({
     globals: true,
     coverage: {
       provider: 'v8',
+      include: ['src/**/*.ts'],
       exclude: ['src/index.ts', 'src/utils/either.ts'],
       reporter: ['lcov', 'text'],
       all: true,
