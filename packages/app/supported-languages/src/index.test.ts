@@ -11,7 +11,7 @@ import {
   normalizeLocale,
   parseLocale,
   stringifyLocale,
-} from './index'
+} from './index.js'
 
 describe('supported-languages package', () => {
   describe('getStandardLocales', () => {
