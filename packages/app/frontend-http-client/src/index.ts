@@ -8,4 +8,4 @@ export {
   sendByPayloadRoute,
   sendByDeleteRoute,
   UNKNOWN_SCHEMA,
-} from './src/client.js'
+} from './client.js'
