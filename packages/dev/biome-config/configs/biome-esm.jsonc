@@ -9,8 +9,8 @@
                     "options": {
                         "suggestedExtensions": {
                             "ts": {
-                                "module": "js",
-                                "component": "js"
+                                "module": "ts",
+                                "component": "ts"
                             },
                             "tsx": {
                                 "module": "js",
