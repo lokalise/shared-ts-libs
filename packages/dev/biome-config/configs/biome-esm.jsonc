@@ -13,12 +13,12 @@
                                 "component": "ts"
                             },
                             "tsx": {
-                                "module": "js",
-                                "component": "jsx"
+                                "module": "ts",
+                                "component": "tsx"
                             },
                             "mts": {
-                                "module": "mjs",
-                                "component": "mjs"
+                                "module": "mts",
+                                "component": "mts"
                             }
                         }
                     }
