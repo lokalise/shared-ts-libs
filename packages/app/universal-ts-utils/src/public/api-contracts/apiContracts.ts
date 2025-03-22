@@ -37,6 +37,7 @@ export type CommonRouteDefinition<
   pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
   responseSchemasByStatusCode?: Partial<Record<HttpStatusCode, z.Schema>>
   description?: string
+  summary?: string
   metadata?: CommonRouteDefinitionMetadata
 }
 
@@ -144,6 +145,7 @@ export function buildPayloadRoute<
     requestQuerySchema: params.requestQuerySchema,
     successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
+    summary: params.summary,
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
     metadata: params.metadata,
   }
@@ -190,6 +192,7 @@ export function buildGetRoute<
     requestQuerySchema: params.requestQuerySchema,
     successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
+    summary: params.summary,
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
     metadata: params.metadata,
   }
@@ -236,6 +239,7 @@ export function buildDeleteRoute<
     requestQuerySchema: params.requestQuerySchema,
     successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
+    summary: params.summary,
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
     metadata: params.metadata,
   }
