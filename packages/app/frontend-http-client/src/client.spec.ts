@@ -1,6 +1,6 @@
 import failOnConsole from 'jest-fail-on-console'
 import { getLocal } from 'mockttp'
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import wretch from 'wretch'
 import { z } from 'zod'
 
@@ -9,6 +9,7 @@ import {
   buildGetRoute,
   buildPayloadRoute,
 } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
+import { newServer } from 'mock-xmlhttprequest'
 import {
   sendByDeleteRoute,
   sendByGetRoute,
@@ -17,6 +18,7 @@ import {
   sendGet,
   sendPatch,
   sendPost,
+  sendPostWithProgress,
   sendPut,
 } from './client.js'
 
@@ -38,8 +40,14 @@ describe('frontend-http-client', () => {
       silenceMessage: (message: string) => message.includes('ZodError'),
     })
   })
-  beforeEach(() => mockServer.start())
-  afterEach(() => mockServer.stop())
+
+  beforeEach(async () => {
+    await mockServer.start()
+  })
+
+  afterEach(async () => {
+    await mockServer.stop()
+  })
 
   describe('sendByRoute', () => {
     it('returns deserialized response for POST', async () => {
@@ -734,6 +742,235 @@ describe('frontend-http-client', () => {
       })
 
       expect(response).toEqual({ success: true })
+    })
+  })
+
+  describe('sendPostWithProgress', () => {
+    const successResponseSchema = z.object({
+      data: z.object({
+        code: z.number(),
+      }),
+    })
+
+    const TEST_CASES: Array<{ type: string; getData: () => XMLHttpRequestBodyInit }> = [
+      {
+        type: 'FormData',
+        getData: () => {
+          const data = new FormData()
+
+          data.append('file', 'Some data ...')
+
+          return data
+        },
+      },
+      {
+        type: 'stringified JSON',
+        getData: () => JSON.stringify({ someKey: 'some value' }),
+      },
+      {
+        type: 'Blob',
+        getData: () => new Blob(['test'], { type: 'text/plain' }),
+      },
+      {
+        type: 'ArrayBuffer',
+        getData: () => new ArrayBuffer(8),
+      },
+      {
+        type: 'Uint8Array',
+        getData: () => new Uint8Array([1, 2, 3, 4]),
+      },
+      {
+        type: 'URLSearchParams',
+        getData: () => new URLSearchParams({ someKey: 'some value' }),
+      },
+      {
+        type: 'DataView',
+        getData: () => new DataView(new ArrayBuffer(8)),
+      },
+    ]
+
+    it.each(TEST_CASES)(
+      'allows sending $type and returns deserialized response',
+      async ({ getData }) => {
+        const handlePostRequestMock = vi.fn().mockReturnValue({ data: { code: 99 } })
+
+        const mockXhrServer = newServer().post('/', (request) =>
+          request.respond(
+            201,
+            { 'Content-Type': 'application/json' },
+            JSON.stringify(handlePostRequestMock(request.body)),
+          ),
+        )
+
+        mockXhrServer.install()
+
+        const data = getData()
+
+        const response = await sendPostWithProgress({
+          path: '/',
+          data,
+          responseBodySchema: successResponseSchema,
+          onProgress: vi.fn(),
+        })
+
+        expect(response).toEqual({ data: { code: 99 } })
+        expect(handlePostRequestMock).toHaveBeenCalledWith(data)
+
+        mockXhrServer.remove()
+      },
+    )
+
+    it('sets headers properly', async () => {
+      const headersMock = vi.fn()
+
+      const mockXhrServer = newServer().post('/', (request) => {
+        headersMock(request.requestHeaders.getAll())
+
+        return request.respond(
+          201,
+          { 'Content-Type': 'application/json' },
+          JSON.stringify({ data: { code: 99 } }),
+        )
+      })
+
+      mockXhrServer.install()
+
+      await sendPostWithProgress({
+        path: '/',
+        data: new FormData(),
+        headers: {
+          Authorization: 'Bearer token',
+        },
+        responseBodySchema: successResponseSchema,
+        onProgress: vi.fn(),
+      })
+
+      expect(headersMock).toHaveBeenCalledWith(
+        'authorization: Bearer token\r\ncontent-type: multipart/form-data; boundary=-----MochXhr1234\r\n',
+      )
+
+      mockXhrServer.remove()
+    })
+
+    it('calls `onProgress` while request is being sent', async () => {
+      const onProgressMock = vi.fn()
+      const mockXhrServer = newServer().post(
+        '/',
+        (request) =>
+          new Promise<void>((resolve) => {
+            request.uploadProgress(7)
+
+            setTimeout(() => {
+              request.respond(
+                201,
+                { 'Content-Type': 'application/json' },
+                JSON.stringify({ data: { code: 99 } }),
+              )
+              resolve()
+            }, 2_000)
+          }),
+      )
+
+      mockXhrServer.install()
+
+      const data = new FormData()
+
+      data.append('file', 'Some data ...')
+
+      await sendPostWithProgress({
+        path: '/',
+        data,
+        responseBodySchema: successResponseSchema,
+        onProgress: onProgressMock,
+      })
+
+      expect(onProgressMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          loaded: 7,
+          total: 13,
+        }),
+      )
+
+      mockXhrServer.remove()
+    })
+
+    it('throws an error if response does not pass validation', async () => {
+      const mockXhrServer = newServer().post('/', (request) =>
+        request.respond(
+          201,
+          { 'Content-Type': 'application/json' },
+          JSON.stringify({ data: { code: 99 } }),
+        ),
+      )
+      mockXhrServer.install()
+
+      const responseSchema = z.object({
+        code: z.number(),
+      })
+
+      await expect(
+        sendPostWithProgress({
+          path: '/',
+          responseBodySchema: responseSchema,
+          data: new FormData(),
+          onProgress: vi.fn(),
+        }),
+      ).rejects.toThrowErrorMatchingInlineSnapshot(`
+				[ZodError: [
+				  {
+				    "code": "invalid_type",
+				    "expected": "number",
+				    "received": "undefined",
+				    "path": [
+				      "code"
+				    ],
+				    "message": "Required"
+				  }
+				]]
+			`)
+
+      mockXhrServer.remove()
+    })
+
+    it('throws an error when API returns an error', async () => {
+      const mockXhrServer = newServer().post('/', (request) => request.respond(500))
+      mockXhrServer.install()
+
+      const responseSchema = z.object({
+        code: z.number(),
+      })
+
+      await expect(
+        sendPostWithProgress({
+          path: '/',
+          responseBodySchema: responseSchema,
+          data: new FormData(),
+          onProgress: vi.fn(),
+        }),
+      ).rejects.toThrowErrorMatchingInlineSnapshot('[Error: File upload failed]')
+
+      mockXhrServer.remove()
+    })
+
+    it('throws an error when could not connect', async () => {
+      const mockXhrServer = newServer().post('/', (request) => request.setNetworkError())
+
+      mockXhrServer.install()
+
+      const responseSchema = z.object({
+        code: z.number(),
+      })
+
+      await expect(
+        sendPostWithProgress({
+          path: '/',
+          responseBodySchema: responseSchema,
+          data: new FormData(),
+          onProgress: vi.fn(),
+        }),
+      ).rejects.toThrowErrorMatchingInlineSnapshot('[Error: File upload failed: ]')
+
+      mockXhrServer.remove()
     })
   })
 

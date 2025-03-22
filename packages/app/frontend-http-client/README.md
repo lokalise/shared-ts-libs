@@ -95,6 +95,25 @@ const responseBody2 = await sendByGetRoute(client, someGetRouteDefinition, {
 })
 ```
 
+### Tracking request progress
+Tracking requests progress is especially useful while uploading files. 
+
+> **Important note**: `wretch` does not support request progress tracking, so we rely on XMLHttpRequest. That's why the interface of the method below is slightly different from the others 
+
+Usage example:
+
+```ts
+ const response = await sendPostWithProgress({
+    path: '/',
+    data: new FormData(), 
+    headers: { Authorization: 'Bearer ...' }, 
+    responseBodySchema: z.object(),
+    onProgress: (progress) => {
+        console.log(`Loaded ${progress.loaded} of ${progress.total}`)
+    }
+})
+```
+
 ## Credits
 
 This library is brought to you by a joint effort of Lokalise engineers:

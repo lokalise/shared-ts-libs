@@ -9,3 +9,13 @@ export function buildWretchError(message: string, response: WretchResponse): Wre
 
   return error
 }
+
+export class XmlHttpRequestError extends Error {
+  readonly details?: Record<string, unknown>
+
+  constructor(message: string, details?: Record<string, unknown>) {
+    super(message)
+
+    this.details = details
+  }
+}
