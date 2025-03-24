@@ -43,12 +43,12 @@ export function tryToResolveJsonBody<RequestBodySchema extends z.ZodSchema>(
   })
 }
 
-function parseResponseBody<ResponseBody>({
+export function parseResponseBody<ResponseBody>({
   response,
   responseBodySchema,
   path,
 }: {
-  response: ResponseBody
+  response: unknown
   responseBodySchema: z.ZodSchema<ResponseBody>
   path: string
 }): Either<z.ZodError, ResponseBody> {
@@ -64,7 +64,7 @@ function parseResponseBody<ResponseBody>({
     return failure(result.error)
   }
 
-  return success(response)
+  return success(result.data)
 }
 
 export function parseRequestBody<RequestBodySchema extends z.Schema>({

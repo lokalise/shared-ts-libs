@@ -6,7 +6,7 @@ import type {
   PayloadRouteDefinition,
 } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
 import type { WretchResponse } from 'wretch'
-import { z } from 'zod'
+import { type ZodSchema, z } from 'zod'
 import type {
   DeleteParams,
   FreeDeleteParams,
@@ -21,9 +21,14 @@ import type {
   RouteRequestParams,
   WretchInstance,
 } from './types.js'
-import { type BodyParseResult, parseRequestBody, tryToResolveJsonBody } from './utils/bodyUtils.js'
+import {
+  type BodyParseResult,
+  parseRequestBody,
+  parseResponseBody,
+  tryToResolveJsonBody,
+} from './utils/bodyUtils.js'
 import { isFailure } from './utils/either.js'
-import { buildWretchError } from './utils/errorUtils.js'
+import { XmlHttpRequestError, buildWretchError } from './utils/errorUtils.js'
 import { parseQueryParams } from './utils/queryUtils.js'
 
 export const UNKNOWN_SCHEMA = z.unknown()
@@ -207,6 +212,55 @@ export function sendPost<
   >,
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   return sendResourceChange(wretch, 'post', params)
+}
+
+export async function sendPostWithProgress<ResponseBody>({
+  path,
+  responseBodySchema,
+  headers = {},
+  data,
+  onProgress,
+}: {
+  path: string
+  headers?: Record<string, string>
+  data: XMLHttpRequestBodyInit
+  responseBodySchema: ZodSchema<ResponseBody>
+  onProgress: (progressEvent: ProgressEvent) => void
+}): Promise<ResponseBody> {
+  const response = await new Promise<ResponseBody>((resolve, reject) => {
+    /**
+     * Usually we recommend Wretch for Network requests.
+     * However, sometimes ( especially during files upload ) we require access to `progress` events
+     * emitted by the request. Wretch does not expose this event to consumers, so we use XHR here instead.
+     */
+    const xhr = new XMLHttpRequest()
+
+    xhr.upload.onprogress = (progress) => onProgress(progress)
+    xhr.responseType = 'json'
+
+    xhr.open('POST', path, true)
+
+    for (const [headerName, headerValue] of Object.entries(headers)) {
+      xhr.setRequestHeader(headerName, headerValue)
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.response)
+      else reject(new XmlHttpRequestError('File upload failed', xhr.response))
+    }
+
+    xhr.onerror = () => {
+      reject(new XmlHttpRequestError(`File upload failed: ${xhr.statusText}`))
+    }
+
+    xhr.send(data)
+  })
+
+  const bodyParseResult = parseResponseBody<ResponseBody>({ response, responseBodySchema, path })
+
+  if (bodyParseResult.error) return Promise.reject(bodyParseResult.error)
+
+  return bodyParseResult.result
 }
 
 /* PUT */

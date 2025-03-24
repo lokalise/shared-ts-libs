@@ -1,5 +1,6 @@
 export {
   sendPost,
+  sendPostWithProgress,
   sendGet,
   sendPut,
   sendDelete,
