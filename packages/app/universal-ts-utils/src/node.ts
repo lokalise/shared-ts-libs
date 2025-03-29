@@ -43,5 +43,6 @@ export * from './public/type/isObject.js'
 export * from './public/type/isStandardizedError.js'
 export * from './public/type/MakeRequired.js'
 export * from './public/type/MayOmit.js'
+export * from './public/type/ObjectValues.js'
 
 export * from './public/waitAndRetry.js'
