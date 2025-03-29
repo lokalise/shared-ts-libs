@@ -1,5 +1,5 @@
-import type { ObjectValues } from './ObjectValues.js'
 import { describe, expectTypeOf, it } from 'vitest'
+import type { ObjectValues } from './ObjectValues.js'
 
 const MyTypeEnum = { OPTION_A: 'optionA', OPTION_B: 1, OPTION_C: false } as const
 type MyType = ObjectValues<typeof MyTypeEnum>
