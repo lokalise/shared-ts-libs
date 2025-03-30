@@ -19,7 +19,7 @@ import type {
   InferSchemaInput,
   InferSchemaOutput,
   PayloadRouteDefinition,
-} from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
+} from '@lokalise/api-contracts'
 import { ResponseStatusError } from '../errors/ResponseStatusError.js'
 import type { PayloadRouteRequestParams, RouteRequestParams } from './apiContractTypes.js'
 import { DEFAULT_OPTIONS, defaultClientOptions } from './constants.js'
