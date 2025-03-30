@@ -1,4 +1,4 @@
-import { buildGetRoute, buildPayloadRoute } from '@lokalise/universal-ts-utils/node'
+import { buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { buildFastifyNoPayloadRoute, buildFastifyPayloadRoute } from './fastifyApiContracts.js'
