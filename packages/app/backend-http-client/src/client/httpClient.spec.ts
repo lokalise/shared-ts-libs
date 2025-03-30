@@ -3,11 +3,7 @@ import { Client, MockAgent, setGlobalDispatcher } from 'undici'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import {
-  buildDeleteRoute,
-  buildGetRoute,
-  buildPayloadRoute,
-} from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
+import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import { JSON_HEADERS } from './constants.js'
 import {
   buildClient,
