@@ -8,7 +8,7 @@ import {
   buildDeleteRoute,
   buildGetRoute,
   buildPayloadRoute,
-} from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
+} from '@lokalise/api-contracts'
 import { newServer } from 'mock-xmlhttprequest'
 import {
   sendByDeleteRoute,
