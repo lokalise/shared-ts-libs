@@ -46,10 +46,10 @@ Here is how you can apply strict typing to the `metadata` property using TypeScr
 ```typescript 
 // file -> apiContracts.d.ts
 // Import the existing module to ensure TypeScript recognizes the original definitions
-import '@lokalise/api-contracts/apiContracts';
+import '@lokalise/api-contracts';
 
 // Augment the module to extend the interface with specific properties
-declare module '@lokalise/api-contracts/apiContracts' {
+declare module '@lokalise/api-contracts' {
     interface CommonRouteDefinitionMetadata {
         myTestProp?: string[];
         mySecondTestProp?: number;
