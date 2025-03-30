@@ -1,6 +1,6 @@
 # API contract support for fastify
 
-This package adds support for generating fastify routes using universal API contracts, created with `@lokalise/universal-ts-utils/`
+This package adds support for generating fastify routes using universal API contracts, created with `@lokalise/api-contracts`
 
 This module requires `fastify-type-provider-zod` type provider to work and is ESM-only.
 
@@ -11,7 +11,7 @@ Basic usage pattern:
 ```ts
 import { buildFastifyNoPayloadRoute, buildFastifyPayloadRoute, injectPost, injectGet } from '@lokalise/fastify-api-contracts'
 
-import { buildGetRoute, buildPayloadRoute } from '@lokalise/universal-ts-utils/node'
+import { buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import {
     type ZodTypeProvider,
     serializerCompiler,
