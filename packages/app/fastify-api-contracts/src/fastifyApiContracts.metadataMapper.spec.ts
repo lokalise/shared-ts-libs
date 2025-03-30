@@ -9,7 +9,7 @@ type Metadata = {
   myProp?: string[]
 }
 
-declare module '@lokalise/universal-ts-utils/api-contracts/apiContracts' {
+declare module '@lokalise/api-contracts' {
   interface CommonRouteDefinitionMetadata extends Metadata {}
 }
 
