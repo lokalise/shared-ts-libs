@@ -4,11 +4,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import wretch from 'wretch'
 import { z } from 'zod'
 
-import {
-  buildDeleteRoute,
-  buildGetRoute,
-  buildPayloadRoute,
-} from '@lokalise/api-contracts'
+import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import { newServer } from 'mock-xmlhttprequest'
 import {
   sendByDeleteRoute,
