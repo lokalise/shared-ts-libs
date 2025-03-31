@@ -4,7 +4,7 @@ import type {
   InferSchemaInput,
   InferSchemaOutput,
   PayloadRouteDefinition,
-} from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
+} from '@lokalise/api-contracts'
 import type { WretchResponse } from 'wretch'
 import { type ZodSchema, z } from 'zod'
 import type {

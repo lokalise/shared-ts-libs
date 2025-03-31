@@ -1,10 +1,10 @@
-import { copyWithoutUndefined } from '@lokalise/node-core'
 import {
   type DeleteRouteDefinition,
   type GetRouteDefinition,
   type PayloadRouteDefinition,
   mapRouteToPath,
-} from '@lokalise/universal-ts-utils/node'
+} from '@lokalise/api-contracts'
+import { copyWithoutUndefined } from '@lokalise/node-core'
 import type { z } from 'zod'
 import type {
   ApiContractMetadataToRouteMapper,

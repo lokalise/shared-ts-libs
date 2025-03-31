@@ -65,7 +65,7 @@ if non-JSON responses are expected, the library will return null, if not, it wil
 
 ### API contract-based requests
 
-`frontend-http-client` supports using API contracts, created with `@lokalise/universal-ts-utils/api-contracts/apiContracts` in order to make fully type-safe HTTP requests.
+`frontend-http-client` supports using API contracts, created with `@lokalise/api-contracts` in order to make fully type-safe HTTP requests.
 
 Usage example:
 
@@ -123,4 +123,5 @@ This library is brought to you by a joint effort of Lokalise engineers:
 - [Nivedita Bhat](https://github.com/NiveditaBhat)
 - [Arthur Suermondt](https://github.com/arthuracs)
 - [Lauris Mikāls](https://github.com/laurismikals)
+- [Oskar Kupski](https://github.com/oskarski)
 - [Igor Savin](https://github.com/kibertoad)

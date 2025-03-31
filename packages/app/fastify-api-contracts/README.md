@@ -1,6 +1,6 @@
 # API contract support for fastify
 
-This package adds support for generating fastify routes using universal API contracts, created with `@lokalise/universal-ts-utils/`
+This package adds support for generating fastify routes using universal API contracts, created with `@lokalise/api-contracts`
 
 This module requires `fastify-type-provider-zod` type provider to work and is ESM-only.
 
@@ -11,7 +11,7 @@ Basic usage pattern:
 ```ts
 import { buildFastifyNoPayloadRoute, buildFastifyPayloadRoute, injectPost, injectGet } from '@lokalise/fastify-api-contracts'
 
-import { buildGetRoute, buildPayloadRoute } from '@lokalise/universal-ts-utils/node'
+import { buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import {
     type ZodTypeProvider,
     serializerCompiler,
@@ -57,14 +57,14 @@ app.withTypeProvider<ZodTypeProvider>().route(postRoute)
 
 await app.ready()
 
-// used in tests, you can use '@lokalise/universal-ts-utils/frontend-http-client' in production code
+// used in tests, you can use '@lokalise/frontend-http-client' in production code
 const postResponse = await injectPost(app, contract, {
     pathParams: { userId: '1'},
     body: { id: '2' },
     headers: { authorization: 'some-value'} // can be passed directly
 })
 
-// used in tests, you can use '@lokalise/universal-ts-utils/frontend-http-client' in production code
+// used in tests, you can use '@lokalise/frontend-http-client' in production code
 const getResponse = await injectGet(app, contract, {
     pathParams: { userId: '1' },
     headers: async () => { authorization: 'some-value'} // headers producing function (sync or async) can be passed as well
@@ -78,6 +78,7 @@ import {
     buildFastifyPayloadRoute, 
     buildFastifyPayloadRouteHandler 
 } from '@lokalise/fastify-api-contracts'
+import { buildPayloadRoute } from '@lokalise/api-contracts'
 
 const contract = buildPayloadRoute({
     method: 'post',
