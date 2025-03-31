@@ -135,9 +135,10 @@ export abstract class AbstractBackgroundJobProcessorNew<
     this.errorReporter = dependencies.errorReporter
 
     this._spy = this.queueManager.config.isTest
-      ? (this.queueManager.getSpy<QueueId, JobReturn>(
-          this.config.queueId,
-        ) as BackgroundJobProcessorSpy<JobPayloadForQueue<Queues, QueueId>, JobReturn>)
+      ? (this.queueManager.getSpy<QueueId, JobReturn>(this.queueId) as BackgroundJobProcessorSpy<
+          JobPayloadForQueue<Queues, QueueId>,
+          JobReturn
+        >)
       : undefined
     this.runningPromises = new Set()
     this.monitor = new BackgroundJobProcessorMonitor(
@@ -145,6 +146,10 @@ export abstract class AbstractBackgroundJobProcessorNew<
       { ...config, redisConfig: this.queueManager.config.redisConfig },
       this.constructor.name,
     )
+  }
+
+  public get queueId(): QueueId {
+    return this.config.queueId
   }
 
   protected get executionContext() {
@@ -164,7 +169,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
     /* v8 ignore next 5 */
     if (!this._worker) {
       throw new Error(
-        `worker for queue ${this.config.queueId} was not instantiated yet, please run "start()"`,
+        `worker for queue ${this.queueId} was not instantiated yet, please run "start()"`,
       )
     }
 
@@ -172,14 +177,14 @@ export abstract class AbstractBackgroundJobProcessorNew<
   }
 
   protected get queue(): ProtectedQueue<JobPayloadForQueue<Queues, QueueId>, JobReturn, QueueType> {
-    return this.queueManager.getQueue(this.config.queueId)
+    return this.queueManager.getQueue(this.queueId)
   }
 
   public get spy(): BackgroundJobProcessorSpyInterface<
     JobPayloadForQueue<Queues, QueueId>,
     JobReturn
   > {
-    return this.queueManager.getSpy<QueueId, JobReturn>(this.config.queueId)
+    return this.queueManager.getSpy<QueueId, JobReturn>(this.queueId)
   }
 
   public async start(): Promise<void> {
@@ -195,7 +200,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
     const redisConfig = this.queueManager.config.redisConfig
 
     this._worker = this.factory.buildWorker(
-      this.config.queueId,
+      this.queueId,
       ((job: JobType) => this.processInternal(job)) as ProcessorType,
       {
         ...(merge(DEFAULT_WORKER_OPTIONS, this.config.workerOptions) as Omit<
