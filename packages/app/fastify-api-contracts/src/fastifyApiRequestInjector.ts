@@ -1,12 +1,9 @@
-import type {
-  InferSchemaInput,
-  InferSchemaOutput,
-} from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
+import type { InferSchemaInput, InferSchemaOutput } from '@lokalise/api-contracts'
 import type {
   DeleteRouteDefinition,
   GetRouteDefinition,
   PayloadRouteDefinition,
-} from '@lokalise/universal-ts-utils/node'
+} from '@lokalise/api-contracts'
 import type { FastifyInstance } from 'fastify'
 import type { z } from 'zod'
 

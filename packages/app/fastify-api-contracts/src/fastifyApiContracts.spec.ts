@@ -1,8 +1,4 @@
-import {
-  buildDeleteRoute,
-  buildGetRoute,
-  buildPayloadRoute,
-} from '@lokalise/universal-ts-utils/node'
+import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import { type RouteOptions, fastify } from 'fastify'
 import {
   type ZodTypeProvider,

@@ -1,5 +1,5 @@
 import type http from 'node:http'
-import type { CommonRouteDefinition } from '@lokalise/universal-ts-utils/node'
+import type { CommonRouteDefinition } from '@lokalise/api-contracts'
 import type { FastifyReply, FastifyRequest, FastifySchema, RouteOptions } from 'fastify'
 import type { z } from 'zod'
 
