@@ -1,4 +1,3 @@
-/* c8 ignore next 2 */
 export {
   buildFastifyNoPayloadRoute,
   buildFastifyNoPayloadRouteHandler,

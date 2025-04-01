@@ -1,14 +1,14 @@
-import type {
-  InferSchemaInput,
-  InferSchemaOutput,
-} from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
+import type { InferSchemaInput, InferSchemaOutput } from '@lokalise/api-contracts'
 import type {
   DeleteRouteDefinition,
   GetRouteDefinition,
   PayloadRouteDefinition,
-} from '@lokalise/universal-ts-utils/node'
+} from '@lokalise/api-contracts'
 import type { FastifyInstance } from 'fastify'
 import type { z } from 'zod'
+
+// biome-ignore lint/suspicious/noExplicitAny: we don't care about what kind of app instance we get here
+type AnyFastifyInstance = FastifyInstance<any, any, any, any>
 
 export type RouteRequestParams<
   PathParams = undefined,
@@ -52,7 +52,7 @@ export async function injectGet<
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 >(
-  app: FastifyInstance,
+  app: AnyFastifyInstance,
   apiContract: GetRouteDefinition<
     InferSchemaOutput<PathParamsSchema>,
     ResponseBodySchema,
@@ -92,7 +92,7 @@ export async function injectDelete<
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
 >(
-  app: FastifyInstance,
+  app: AnyFastifyInstance,
   apiContract: DeleteRouteDefinition<
     InferSchemaOutput<PathParamsSchema>,
     ResponseBodySchema,
@@ -133,7 +133,7 @@ export async function injectPost<
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 >(
-  app: FastifyInstance,
+  app: AnyFastifyInstance,
   apiContract: PayloadRouteDefinition<
     InferSchemaOutput<PathParamsSchema>,
     RequestBodySchema,
@@ -178,7 +178,7 @@ export async function injectPut<
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 >(
-  app: FastifyInstance,
+  app: AnyFastifyInstance,
   apiContract: PayloadRouteDefinition<
     InferSchemaOutput<PathParamsSchema>,
     RequestBodySchema,
@@ -223,7 +223,7 @@ export async function injectPatch<
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 >(
-  app: FastifyInstance,
+  app: AnyFastifyInstance,
   apiContract: PayloadRouteDefinition<
     InferSchemaOutput<PathParamsSchema>,
     RequestBodySchema,

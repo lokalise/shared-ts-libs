@@ -430,6 +430,18 @@ const config1: PartialConfig = { host: "localhost" }
 const config2: PartialConfig = { host: "localhost", port: 8080 }
 ```
 
+#### `ObjectValues`
+Utility type to extract all possible value types from a given object, allowing for type-safe usage when accessing 
+the values.
+
+```typescript
+export const MyTypeEnum = { OPTION_A: 'optionA', OPTION_B: 'optionB' } as const
+export type MyType = ObjectValues<typeof MyTypeEnum>
+
+const myValue: MyType = 'optionA' // valid
+const invalidValue: MyType = 'invalid' // TypeScript error
+```
+
 
 ### API contracts
 

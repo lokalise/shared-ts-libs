@@ -60,7 +60,7 @@ export abstract class AbstractBackgroundJobProcessor<
   >,
   JobOptionsType extends JobsOptions = JobsOptions,
 > {
-  private readonly errorReporter: ErrorReporter // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
+  private readonly errorReporter: ErrorReporter
   private readonly config: BackgroundJobProcessorConfig<
     QueueOptionsType,
     WorkerOptionsType,

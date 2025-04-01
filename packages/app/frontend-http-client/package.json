@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/frontend-http-client",
-    "version": "4.0.0",
+    "version": "5.0.0",
     "description": "Opinionated HTTP client for the frontend",
     "files": ["dist/**", "LICENSE", "README.md"],
     "main": "./dist/index.js",
@@ -35,22 +35,23 @@
         "fast-querystring": "^1.1.2"
     },
     "peerDependencies": {
-        "@lokalise/universal-ts-utils": "^4.2.2",
+        "@lokalise/api-contracts": ">=4.1.0",
         "wretch": "^2.8.0",
         "zod": "^3.22.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "^1.8.3",
-        "@lokalise/biome-config": "^1.0.0",
-        "@lokalise/universal-ts-utils": "^4.2.2",
-        "@lokalise/tsconfig": "^1.0.2",
-        "@types/node": "^22.0.0",
-        "@vitest/coverage-v8": "^3.0.5",
-        "jest-fail-on-console": "^3.1.2",
-        "mockttp": "^3.13.0",
-        "rimraf": "^6.0.0",
+        "@biomejs/biome": "^1.9.4",
+        "@lokalise/api-contracts": "^4.1.0",
+        "@lokalise/biome-config": "^1.6.1",
+        "@lokalise/tsconfig": "~1.0.2",
+        "@types/node": "^22.13.14",
+        "@vitest/coverage-v8": "^3.0.9",
+        "jest-fail-on-console": "^3.3.1",
+        "mock-xmlhttprequest": "^8.4.1",
+        "mockttp": "^3.17.0",
+        "rimraf": "^6.0.1",
         "typescript": "~5.8.2",
-        "vitest": "^3.0.7"
+        "vitest": "^3.0.9"
     },
     "keywords": ["frontend", "web", "browser", "http", "client", "zod", "validation", "typesafe"]
 }

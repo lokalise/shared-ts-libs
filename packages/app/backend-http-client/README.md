@@ -79,7 +79,7 @@ Additionally, `DefiniteEither` is also provided. It is a variation of the aforem
 
 ### API contract-based requests
 
-`backend-http-client` supports using API contracts, created with `@lokalise/universal-ts-utils/api-contracts/apiContracts` in order to make fully type-safe HTTP requests.
+`backend-http-client` supports using API contracts, created with `@lokalise/api-contracts` in order to make fully type-safe HTTP requests.
 
 Usage example:
 
