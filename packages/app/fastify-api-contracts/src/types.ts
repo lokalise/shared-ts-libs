@@ -9,6 +9,7 @@ import type { z } from 'zod'
 export type ExtendedFastifySchema = FastifySchema & {
   describe?: string
   description?: string
+  summary?: string
 }
 
 export type RouteType = RouteOptions<
