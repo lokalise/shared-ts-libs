@@ -6,11 +6,7 @@ import type { z } from 'zod'
 /**
  * Default fastify fields + fastify-swagger fields
  */
-export type ExtendedFastifySchema = FastifySchema & {
-  describe?: string
-  description?: string
-  summary?: string
-}
+export type ExtendedFastifySchema = FastifySchema & { describe?: string }
 
 export type RouteType = RouteOptions<
   http.Server,
