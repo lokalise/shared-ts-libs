@@ -19,6 +19,7 @@ const getContract = buildGetRoute({
     requestQuerySchema: REQUEST_QUERY_SCHEMA,
     requestHeaderSchema: REQUEST_HEADER_SCHEMA,
     pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+    summary: 'Route summary',
     metadata: { allowedRoles: ['admin'] },
 })
 
@@ -27,6 +28,7 @@ const postContract = buildPayloadRoute({
     successResponseBodySchema: RESPONSE_BODY_SCHEMA,
     requestBodySchema: REQUEST_BODY_SCHEMA,
     pathResolver: () => '/',
+    summary: 'Route summary',
     metadata: { allowedPermission: ['edit'] },
 })
 
