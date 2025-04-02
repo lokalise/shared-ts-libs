@@ -16,3 +16,4 @@ jobs:
       package_name: '@lokalise/api-common'
     secrets:
       npm_token: ${{ secrets.NPM_TOKEN }}
+      bot_access_token: ${{ secrets.BOT_ACCESS_TOKEN }}
