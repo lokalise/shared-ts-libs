@@ -11,6 +11,8 @@ on:
     secrets:
       npm_token:
         required: true
+      bot_access_token:
+        required: true
 
 jobs:
   release:
