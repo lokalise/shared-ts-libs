@@ -11,8 +11,6 @@ on:
     secrets:
       npm_token:
         required: true
-      bot_access_token:
-        required: true
 
 jobs:
   release:
@@ -23,8 +21,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.bot_access_token }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
