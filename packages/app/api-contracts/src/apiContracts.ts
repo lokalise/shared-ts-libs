@@ -36,7 +36,9 @@ export type CommonRouteDefinition<
   requestHeaderSchema?: RequestHeaderSchema
   pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
   responseSchemasByStatusCode?: Partial<Record<HttpStatusCode, z.Schema>>
+  // Adds route description for OpenAPI documentation
   description?: string
+  // Adds route name for OpenAPI documentation
   summary?: string
   metadata?: CommonRouteDefinitionMetadata
 }
