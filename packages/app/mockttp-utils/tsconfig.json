@@ -1,4 +1,0 @@
-{
-    "extends": "@lokalise/tsconfig/tsc",
-    "include": ["src/**/*", "vitest.config.ts"]
-}
