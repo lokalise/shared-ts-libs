@@ -1,4 +1,4 @@
-name: Package release to NPM -> mockttp-utils
+name: Package release to NPM -> universal-testing-utils
 on:
   pull_request:
     types:
@@ -6,13 +6,13 @@ on:
     branches:
       - main
     paths:
-      - 'packages/app/mockttp-utils/**'
+      - 'packages/app/universal-testing-utils/**'
 
 jobs:
   call-build-flow:
     uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
     with:
-      working_directory: 'packages/app/mockttp-utils'
-      package_name: '@lokalise/mockttp-utils'
+      working_directory: 'packages/app/universal-testing-utils'
+      package_name: '@lokalise/universal-testing-utils'
     secrets:
       npm_token: ${{ secrets.NPM_TOKEN }}
