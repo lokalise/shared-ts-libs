@@ -12,7 +12,7 @@ import { MockttpHelper } from './MockttpHelper.js'
 
 describe('MockttpHelper', () => {
   const mockServer = getLocal()
-  const mockttpHelper = new MockttpHelper()
+  const mockttpHelper = new MockttpHelper(mockServer)
   let wretchClient: Wretch
 
   beforeEach(async () => {
@@ -23,7 +23,7 @@ describe('MockttpHelper', () => {
 
   describe('mockValidPayloadResponse', () => {
     it('mocks POST request without path params', async () => {
-      await mockttpHelper.mockValidResponse(postContract, mockServer, {
+      await mockttpHelper.mockValidResponse(postContract, {
         responseBody: { id: '1' },
       })
 
@@ -39,7 +39,7 @@ describe('MockttpHelper', () => {
     })
 
     it('mocks POST request with path params', async () => {
-      await mockttpHelper.mockValidResponse(postContractWithPathParams, mockServer, {
+      await mockttpHelper.mockValidResponse(postContractWithPathParams, {
         pathParams: { userId: '3' },
         responseBody: { id: '2' },
       })
@@ -59,7 +59,7 @@ describe('MockttpHelper', () => {
     })
 
     it('mocks GET request without path params', async () => {
-      await mockttpHelper.mockValidResponse(getContract, mockServer, {
+      await mockttpHelper.mockValidResponse(getContract, {
         responseBody: { id: '1' },
       })
 
@@ -73,7 +73,7 @@ describe('MockttpHelper', () => {
     })
 
     it('mocks GET request with path params', async () => {
-      await mockttpHelper.mockValidResponse(getContractWithPathParams, mockServer, {
+      await mockttpHelper.mockValidResponse(getContractWithPathParams, {
         pathParams: { userId: '3' },
         responseBody: { id: '2' },
       })
