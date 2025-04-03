@@ -10,7 +10,7 @@ import {
 } from '../test/testContracts.js'
 import { MockttpHelper } from './MockttpHelper.js'
 
-describe('mockttpUtils', () => {
+describe('MockttpHelper', () => {
   const mockServer = getLocal()
   const mockttpHelper = new MockttpHelper()
   let wretchClient: Wretch
