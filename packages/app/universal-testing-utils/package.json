@@ -25,6 +25,7 @@
         "contract",
         "testing",
         "mocking",
+        "msw",
         "mock",
         "server",
         "frontend",

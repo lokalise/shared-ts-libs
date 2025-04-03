@@ -1,6 +1,6 @@
 import {
+  type CommonRouteDefinition,
   type InferSchemaOutput,
-  type PayloadRouteDefinition,
   mapRouteToPath,
 } from '@lokalise/api-contracts'
 import type { InferSchemaInput } from '@lokalise/api-contracts'
@@ -13,12 +13,12 @@ export type CommonMockParams = {
   responseCode?: number
 }
 
-export type PayloadMockParams<PathParams, ResponseBody> = {
+export type MockParams<PathParams, ResponseBody> = {
   pathParams: PathParams
   responseBody: ResponseBody
 } & CommonMockParams
 
-export type PayloadMockParamsNoPath<ResponseBody> = {
+export type MockParamsNoPath<ResponseBody> = {
   responseBody: ResponseBody
 } & CommonMockParams
 
@@ -26,21 +26,19 @@ function joinURL(base: string, path: string): string {
   return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
 }
 
-export function mockValidPayloadResponse<
-  RequestBodySchema extends z.Schema,
+export function mockValidResponse<
   ResponseBodySchema extends z.Schema,
   PathParamsSchema extends z.Schema | undefined,
 >(
-  contract: PayloadRouteDefinition<
+  contract: CommonRouteDefinition<
     InferSchemaOutput<PathParamsSchema>,
-    RequestBodySchema,
     ResponseBodySchema,
     PathParamsSchema
   >,
   server: SetupServerApi,
   params: PathParamsSchema extends undefined
-    ? PayloadMockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
-    : PayloadMockParams<InferSchemaInput<PathParamsSchema>, InferSchemaInput<ResponseBodySchema>>,
+    ? MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
+    : MockParams<InferSchemaInput<PathParamsSchema>, InferSchemaInput<ResponseBodySchema>>,
 ): void {
   const path = contract.requestPathParamsSchema
     ? // @ts-expect-error this is safe
@@ -48,8 +46,10 @@ export function mockValidPayloadResponse<
     : mapRouteToPath(contract)
 
   const resolvedPath = joinURL(params.baseUrl, path)
+  // @ts-expect-error
+  const method: 'get' | 'delete' | 'post' | 'patch' | 'put' = contract.method
   server.use(
-    http[contract.method](resolvedPath, () =>
+    http[method](resolvedPath, () =>
       HttpResponse.json(params.responseBody, {
         status: params.responseCode,
       }),

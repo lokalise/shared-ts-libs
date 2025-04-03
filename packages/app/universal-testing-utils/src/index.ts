@@ -1,6 +1,6 @@
 export {
-  mockValidPayloadResponse,
-  type PayloadMockParams,
+  mockValidResponse,
+  type MockParams,
   type CommonMockParams,
-  type PayloadMockParamsNoPath,
+  type MockParamsNoPath,
 } from './mswUtils.js'
