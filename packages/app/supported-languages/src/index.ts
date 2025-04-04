@@ -2,6 +2,7 @@ import type { Either } from '@lokalise/node-core'
 
 import type { Language } from './languages.js'
 import { languages, languagesSet } from './languages.js'
+import { lokaliseSupportedLanguagesAndLocales } from './lokaliseLanguages.js'
 import type { Region } from './regions.js'
 import { regions, regionsSet } from './regions.js'
 import type { Script } from './scripts.js'
@@ -50,6 +51,10 @@ export const getAllScripts = () => {
  */
 export const getAllRegions = () => {
   return regions
+}
+
+export const getLokaliseSupportedLanguagesAndLocales = () => {
+  return lokaliseSupportedLanguagesAndLocales
 }
 
 /**
