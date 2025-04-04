@@ -8,6 +8,7 @@ import type { Script } from './scripts.js'
 import { scripts, scriptsSet } from './scripts.js'
 import type { StandardLocale } from './standard-locales.js'
 import { standardLocales, standardLocalesSet } from './standard-locales.js'
+import {lokaliseSupportedLanguagesAndLocales} from './lokaliseLanguages.js';
 
 /**
  * String representation of a locale.
@@ -50,6 +51,10 @@ export const getAllScripts = () => {
  */
 export const getAllRegions = () => {
   return regions
+}
+
+export const getLokaliseSupportedLanguagesAndLocales = () => {
+  return lokaliseSupportedLanguagesAndLocales
 }
 
 /**
