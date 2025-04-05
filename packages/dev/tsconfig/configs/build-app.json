@@ -1,9 +1,9 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
-  "compilerOptions": {
-    "noEmit": false,
-    "rewriteRelativeImportExtensions": true,
-    "outDir": "${configDir}/dist",
-    "sourceMap": true
-  }
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "compilerOptions": {
+        "noEmit": false,
+        "rewriteRelativeImportExtensions": true,
+        "outDir": "${configDir}/dist",
+        "sourceMap": true
+    }
 }

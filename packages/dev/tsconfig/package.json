@@ -11,9 +11,7 @@
     "publishConfig": {
         "access": "public"
     },
-    "files": [
-        "configs"
-    ],
+    "files": ["configs"],
     "exports": {
         "./bundler": "./configs/bundler.json",
         "./bundler-dom": "./configs/bundler-dom.json",
@@ -24,6 +22,12 @@
         "./build-private-lib": "./configs/build-private-lib.json"
     },
     "scripts": {
+        "lint": "biome check .",
+        "lint:fix": "biome check --write",
         "package-version": "echo $npm_package_version"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^1.9.4",
+        "@lokalise/biome-config": "^1.5.0"
     }
 }
