@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/tsconfig",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "license": "Apache-2.0",
     "type": "module",
     "repository": {
@@ -11,7 +11,9 @@
     "publishConfig": {
         "access": "public"
     },
-    "files": ["configs"],
+    "files": [
+        "configs"
+    ],
     "exports": {
         "./bundler": "./configs/bundler.json",
         "./bundler-dom": "./configs/bundler-dom.json",
