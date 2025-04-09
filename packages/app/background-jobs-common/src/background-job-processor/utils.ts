@@ -15,6 +15,12 @@ export const resolveJobId = (job?: SafeJob<unknown>): string => job?.id ?? 'unkn
 export const isUnrecoverableJobError = (error: Error): boolean =>
   error.name === 'UnrecoverableError'
 
+export const MUTED_UNRECOVERABLE_ERROR_SYMBOL = Symbol.for('MUTED_UNRECOVERABLE_ERROR_KEY')
+
+export const isMutedUnrecoverableJobError = (error: Error): boolean =>
+    // biome-ignore lint/suspicious/noExplicitAny: checking for existence of prop outside or Error interface
+    isUnrecoverableJobError(error) && (error as any)[MUTED_UNRECOVERABLE_ERROR_SYMBOL] === true
+
 export const isStalledJobError = (error: Error): boolean =>
   error.message === 'job stalled more than allowable limit'
 
