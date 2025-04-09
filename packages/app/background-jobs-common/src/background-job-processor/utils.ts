@@ -5,6 +5,7 @@ import type { JobsOptions } from 'bullmq'
 import { Redis } from 'ioredis'
 import { DEFAULT_JOB_CONFIG } from './constants.js'
 import type { SafeJob } from './types.js'
+import { MUTED_UNRECOVERABLE_ERROR_SYMBOL } from '../errors/MutedUnrecoverableError.js'
 
 export const daysToSeconds = (days: number): number => days * 24 * 60 * 60
 
@@ -14,6 +15,10 @@ export const resolveJobId = (job?: SafeJob<unknown>): string => job?.id ?? 'unkn
 
 export const isUnrecoverableJobError = (error: Error): boolean =>
   error.name === 'UnrecoverableError'
+
+export const isMutedUnrecoverableJobError = (error: Error): boolean =>
+    // biome-ignore lint/suspicious/noExplicitAny: checking for existence of prop outside or Error interface
+    isUnrecoverableJobError(error) && (error as any)[MUTED_UNRECOVERABLE_ERROR_SYMBOL] === true
 
 export const isStalledJobError = (error: Error): boolean =>
   error.message === 'job stalled more than allowable limit'

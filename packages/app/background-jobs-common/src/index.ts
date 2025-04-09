@@ -1,5 +1,7 @@
 import type { TransactionObservabilityManager } from '@lokalise/node-core'
 
+export * from './errors/MutedUnrecoverableError.js'
+
 export type { TransactionObservabilityManager }
 export * from './background-job-processor/index.js'
 export type { BarrierCallback, BarrierResult } from './background-job-processor/barrier/barrier.js'
