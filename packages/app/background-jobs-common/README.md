@@ -327,5 +327,3 @@ export class Processor extends AbstractBackgroundJobProcessor<Data> {
     // ...
 }
 ```
-
-### Use
