@@ -15,6 +15,7 @@ export const resolveJobId = (job?: SafeJob<unknown>): string => job?.id ?? 'unkn
 export const isUnrecoverableJobError = (error: Error): boolean =>
   error.name === 'UnrecoverableError'
 
+// Use this symbol to mark unrecoverable errors that should not be passed to the error reporter
 export const MUTED_UNRECOVERABLE_ERROR_SYMBOL = Symbol.for('MUTED_UNRECOVERABLE_ERROR_KEY')
 
 export const isMutedUnrecoverableJobError = (error: Error): boolean =>
