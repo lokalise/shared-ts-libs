@@ -17,7 +17,8 @@ import type { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.js'
 import type { BullmqProcessor, RequestContext, SafeJob } from '../types.js'
 import {
-  isJobMissingError, isMutedUnrecoverableJobError,
+  isJobMissingError,
+  isMutedUnrecoverableJobError,
   isStalledJobError,
   isUnrecoverableJobError,
   resolveJobId,
