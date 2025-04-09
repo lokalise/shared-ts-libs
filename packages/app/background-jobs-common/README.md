@@ -112,24 +112,25 @@ const supportedQueues = [
 ### Do not report UnrecoverableError
 
 By default, unrecoverable errors (BullMQ) are passed to the error reporting system. If you want to disable this behavior,
-throw an extended `UnrecoverableError` error with `MUTED_UNRECOVERABLE_ERROR_KEY` property. This will prevent the error from being reported and job will not be retried.
+throw `MutedUnrecoverableError` error instead. This will prevent the error from being reported and job will not be retried.
 
-```typescript
-import { UnrecoverableError } from 'bullmq'
-import { MUTED_UNRECOVERABLE_ERROR_SYMBOL } from '@lokalise/background-jobs-common'
+```ts
+import { MutedUnrecoverableError } from '@lokalise/background-jobs-common'
 
-const UNRECOVERABLE_ERROR_NAME = 'UnrecoverableError'
+export class Processor extends AbstractBackgroundJobProcessorNew<Data> {
+  constructor(dependencies: BackgroundJobProcessorNewDependencies<Data>) {
+    super(dependencies)
+  }
 
-export class MutedUnrecoverableError extends UnrecoverableError {
-  constructor(message?: string) {
-    super(message)
-    this.name = UNRECOVERABLE_ERROR_NAME
+  protected async process(
+    _job: Job<JobPayloadForQueue<QueueConfiguration, QueueId>>,
+    _requestContext: RequestContext,
+  ): Promise < void > {
+    doSomeProcessing();
+
+    throw new MuteUnrecoverableError('Do not retry the job, and do not report the error')
   }
 }
-
-Object.defineProperty(MutedUnrecoverableError.prototype, MUTED_UNRECOVERABLE_ERROR_SYMBOL, {
-  value: true,
-})
 ```
 
 ### Common jobs
