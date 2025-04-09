@@ -128,7 +128,7 @@ export class Processor extends AbstractBackgroundJobProcessorNew<Data> {
   ): Promise < void > {
     doSomeProcessing();
 
-    throw new MuteUnrecoverableError('Do not retry the job, and do not report the error')
+    throw new MutedUnrecoverableError('Do not retry the job, and do not report the error')
   }
 }
 ```
