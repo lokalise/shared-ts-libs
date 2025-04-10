@@ -11,9 +11,7 @@
     "publishConfig": {
         "access": "public"
     },
-    "files": [
-        "configs"
-    ],
+    "files": ["configs"],
     "exports": {
         "./bundler": "./configs/bundler.json",
         "./bundler-dom": "./configs/bundler-dom.json",
@@ -26,7 +24,8 @@
     "scripts": {
         "lint": "biome check .",
         "lint:fix": "biome check --write",
-        "package-version": "echo $npm_package_version"
+        "package-version": "echo $npm_package_version",
+        "postversion": "biome check --write package.json"
     },
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",

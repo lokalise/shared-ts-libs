@@ -74,6 +74,7 @@ export class TestDependencyFactory {
 
   async dispose(): Promise<void> {
     await this.queueManager?.dispose()
+    await this.clearRedis() // cleaning before disconnecting
     await this.redis?.disconnect(false)
     this.redis = undefined
   }

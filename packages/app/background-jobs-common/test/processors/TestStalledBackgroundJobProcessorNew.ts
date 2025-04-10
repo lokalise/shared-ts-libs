@@ -1,3 +1,4 @@
+import { setTimeout } from 'node:timers/promises'
 import type { Job } from 'bullmq'
 import {
   AbstractBackgroundJobProcessorNew,
@@ -22,15 +23,16 @@ export class TestStalledBackgroundJobProcessorNew<
       queueId,
       ownerName: 'test',
       workerOptions: {
-        lockDuration: 1,
+        lockDuration: 10,
         stalledInterval: 1,
+        skipLockRenewal: true,
+        maxStalledCount: 0,
       },
     })
   }
 
-  protected override process(): Promise<void> {
-    console.info('Processing')
-    return new Promise((resolve) => setTimeout(resolve, 1000))
+  protected override async process(): Promise<void> {
+    await setTimeout(1000)
   }
 
   protected override onFailed(job: Job<unknown>, error: Error): Promise<void> {
