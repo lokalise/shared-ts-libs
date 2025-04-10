@@ -16,6 +16,7 @@ export default defineConfig({
     pool: 'threads',
     coverage: {
       provider: 'v8',
+      include: ['src/**/*.ts'],
       exclude: ['src/**/types.ts', 'test', '**/*.spec.ts', 'vitest.config.ts'],
       thresholds: {
         lines: 98,
