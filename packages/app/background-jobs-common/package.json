@@ -52,7 +52,7 @@
         "@lokalise/tsconfig": "^1.0.2",
         "@types/node": "^22.10.1",
         "@vitest/coverage-v8": "^3.0.7",
-        "bullmq": "5.31.2",
+        "bullmq": "^5.31.2",
         "ioredis": "^5.4.1",
         "rimraf": "^6.0.1",
         "toad-scheduler": "^3.0.1",
