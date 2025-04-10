@@ -11,6 +11,7 @@ import type { BaseJobPayload } from '../types.js'
 
 import { randomUUID } from 'node:crypto'
 import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading.js'
+import { MutedUnrecoverableError } from '../../errors/MutedUnrecoverableError.js'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor.js'
 import type { BackgroundJobProcessorDependencies } from './types.js'
 
@@ -530,6 +531,32 @@ describe('AbstractBackgroundJobProcessor', () => {
           error: expect.stringContaining(onFailedError.message),
         },
       })
+    })
+
+    it('job throws muted unrecoverable error and it is not reported', async () => {
+      // Given
+      const errorReporterSpy = vi.spyOn(deps.errorReporter, 'report')
+
+      const errors = [new MutedUnrecoverableError('muted unrecoverable test error')]
+      processor.errorsToThrowOnProcess = errors
+
+      // When
+      const jobId = await processor.schedule(
+        {
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        },
+        { attempts: 3, delay: 0 },
+      )
+
+      // Then
+      const job = await processor.spy.waitForJobWithId(jobId, 'failed')
+
+      expect(processor.errorsOnProcess).length(1)
+      expect(job.attemptsMade).toBe(1)
+      expect(processor.errorsOnProcess[0]).toMatchObject(errors[0]!)
+      expect(errorReporterSpy).toHaveBeenCalledTimes(0)
     })
   })
 

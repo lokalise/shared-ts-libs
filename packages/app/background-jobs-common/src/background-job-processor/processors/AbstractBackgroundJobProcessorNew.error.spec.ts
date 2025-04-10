@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
 import { TestFailingBackgroundJobProcessorNew } from '../../../test/processors/TestFailingBackgroundJobProcessorNew.js'
+import { MutedUnrecoverableError } from '../../errors/MutedUnrecoverableError.js'
 import type { FakeQueueManager } from '../managers/FakeQueueManager.js'
 import type { QueueConfiguration } from '../managers/types.js'
 import type { BackgroundJobProcessorDependenciesNew } from './types.js'
@@ -155,5 +156,32 @@ describe('AbstractBackgroundJobProcessorNew - error', () => {
         error: expect.stringContaining(onFailedError.message),
       },
     })
+  })
+
+  it('job throws muted unrecoverable error and it is not reported', async () => {
+    // Given
+    const errorReporterSpy = vi.spyOn(deps.errorReporter, 'report')
+
+    const errors = [new MutedUnrecoverableError('muted unrecoverable test error')]
+    processor.errorsToThrowOnProcess = errors
+
+    // When
+    const jobId = await queueManager.schedule(
+      'queue',
+      {
+        id: 'test_id',
+        value: 'test',
+        metadata: { correlationId: 'correlation_id' },
+      },
+      { attempts: 3, delay: 0 },
+    )
+
+    // Then
+    const job = await processor.spy.waitForJobWithId(jobId, 'failed')
+
+    expect(processor.errorsOnProcess).length(1)
+    expect(job.attemptsMade).toBe(1)
+    expect(processor.errorsOnProcess[0]).toMatchObject(errors[0]!)
+    expect(errorReporterSpy).toHaveBeenCalledTimes(0)
   })
 })
