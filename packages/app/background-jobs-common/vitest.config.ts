@@ -4,8 +4,8 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     globals: true,
+    watch: false,
     setupFiles: ['./test/setup.ts'],
-    hookTimeout: 60000,
     restoreMocks: true,
     poolOptions: {
       threads: {
@@ -16,8 +16,7 @@ export default defineConfig({
     pool: 'threads',
     coverage: {
       provider: 'v8',
-      all: false,
-      exclude: ['src/**/types.ts', 'test', '**/*.spec.ts'],
+      exclude: ['src/**/types.ts', 'test', '**/*.spec.ts', 'vitest.config.ts'],
       thresholds: {
         lines: 98,
         functions: 98,
