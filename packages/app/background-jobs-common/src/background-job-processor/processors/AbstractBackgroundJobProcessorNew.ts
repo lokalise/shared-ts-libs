@@ -18,6 +18,7 @@ import type { BackgroundJobProcessorSpyInterface } from '../spy/types.js'
 import type { BullmqProcessor, RequestContext, SafeJob } from '../types.js'
 import {
   isJobMissingError,
+  isMutedUnrecoverableJobError,
   isStalledJobError,
   isUnrecoverableJobError,
   resolveJobId,
@@ -293,15 +294,18 @@ export abstract class AbstractBackgroundJobProcessorNew<
     const requestContext = this.monitor.getRequestContext(job)
 
     requestContext.logger.error(resolveGlobalErrorLogObject(error))
-    this.errorReporter.report({
-      error,
-      context: {
-        jobId: resolveJobId(job),
-        jobName: job.name,
-        'x-request-id': job.data.metadata.correlationId,
-        errorJson: JSON.stringify(pino.stdSerializers.err(error)),
-      },
-    })
+    // Report errors unless they are muted UnrecoverableError from BullMQ
+    if (!isMutedUnrecoverableJobError(error)) {
+      this.errorReporter.report({
+        error,
+        context: {
+          jobId: resolveJobId(job),
+          jobName: job.name,
+          'x-request-id': job.data.metadata.correlationId,
+          errorJson: JSON.stringify(pino.stdSerializers.err(error)),
+        },
+      })
+    }
 
     if (
       isUnrecoverableJobError(error) ||

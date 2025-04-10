@@ -5,6 +5,8 @@ export * from './background-job-processor/index.js'
 export type { BarrierCallback, BarrierResult } from './background-job-processor/barrier/barrier.js'
 export { AbstractPeriodicJob } from './periodic-jobs/AbstractPeriodicJob.js'
 
+export { MutedUnrecoverableError } from './errors/MutedUnrecoverableError.js'
+
 export {
   createJobQueueSizeThrottlingBarrier,
   type ChildJobThrottlingBarrierConfig,
