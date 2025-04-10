@@ -533,7 +533,7 @@ describe('AbstractBackgroundJobProcessor', () => {
     })
   })
 
-  describe.skip('stalled', () => {
+  describe('stalled', () => {
     let stalledProcessor: TestStalledBackgroundJobProcessor<JobData>
 
     beforeEach(async () => {
