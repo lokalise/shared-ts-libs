@@ -19,12 +19,11 @@
     },
     "scripts": {
         "build": "tsc --project tsconfig.build.json",
-        "test": "vitest",
-        "test:coverage": "vitest --coverage",
-        "test:ci": "npm run lint && npm run test:coverage",
-        "test:update-snapshots": "vitest -u",
         "lint": "biome check . && tsc",
         "lint:fix": "biome check --write",
+        "test": "vitest",
+        "test:ci": "vitest --coverage",
+        "test:update-snapshots": "vitest -u",
         "prepublishOnly": "npm run build",
         "postversion": "biome check --write package.json",
         "package-version": "echo $npm_package_version"

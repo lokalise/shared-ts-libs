@@ -5,15 +5,15 @@ export default defineConfig({
   test: {
     globals: true,
     watch: false,
-    setupFiles: ['./test/setup.ts'],
     restoreMocks: true,
+    pool: 'threads',
+    setupFiles: ['./test/setup.ts'], // TODO: check if this is needed
     poolOptions: {
       threads: {
         singleThread: true,
         isolate: false,
       },
     },
-    pool: 'threads',
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
