@@ -7,7 +7,7 @@ export default defineConfig({
     watch: false,
     restoreMocks: true,
     pool: 'threads',
-    setupFiles: ['./test/setup.ts'], // TODO: check if this is needed
+    setupFiles: ['./test/setup.ts'],
     poolOptions: {
       threads: {
         singleThread: true,
