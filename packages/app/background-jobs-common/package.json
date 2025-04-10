@@ -28,7 +28,7 @@
         "test": "vitest run",
         "pretest:ci": "npm run docker:start:ci",
         "test:ci": "npm run test -- --coverage",
-        "test:ci:teardown": "docker compose down",
+        "test:ci:teardown": "docker compose stop",
         "prepublishOnly": "npm run build",
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
