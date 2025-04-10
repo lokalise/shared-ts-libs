@@ -11,9 +11,7 @@
     "publishConfig": {
         "access": "public"
     },
-    "files": [
-        "configs"
-    ],
+    "files": ["configs"],
     "exports": {
         "./bundler": "./configs/bundler.json",
         "./bundler-dom": "./configs/bundler-dom.json",

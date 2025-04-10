@@ -18,6 +18,6 @@ export const prismaClientFactory = <P extends PrismaClient>(
     ...options.transactionOptions,
   }
 
-  //@ts-expect-error - ReadCommitted is not accepted by Prisma atm
+  //@ts-ignore - ReadCommitted is not accepted by Prisma atm
   return new PrismaClient(options)
 }
