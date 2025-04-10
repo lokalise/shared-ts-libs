@@ -1,3 +1,4 @@
+import { setTimeout } from 'node:timers/promises'
 import type { Job } from 'bullmq'
 import {
   AbstractBackgroundJobProcessorNew,
@@ -5,7 +6,6 @@ import {
   type SupportedQueueIds,
 } from '../../src/index.js'
 import type { QueueConfiguration } from '../../src/index.js'
-import { setTimeout } from 'node:timers/promises'
 
 type OnFailedError = {
   error: Error

@@ -1,6 +1,6 @@
-import type { Job } from 'bullmq'
 import { setTimeout } from 'node:timers/promises'
 import type { RedisConfig } from '@lokalise/node-core'
+import type { Job } from 'bullmq'
 import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
