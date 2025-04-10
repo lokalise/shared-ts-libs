@@ -22,7 +22,7 @@
         "docker:start:ci": "docker compose up -d cockroachdb",
         "db:migration:dev": "prisma migrate dev",
         "db:update-client": "prisma generate",
-        "db:wait": "while ! echo \"SELECT 1;\" | prisma db execute --stdin; do sleep 1; done",
+        "db:wait": "while ! echo \"SELECT 1;\" | prisma db execute --stdin --schema prisma/schema.prisma; do sleep 1; done",
         "test": "vitest run",
         "test:migrate": "cross-env NODE_ENV=test prisma migrate reset --force",
         "pretest:ci": "npm run docker:start:ci && npm run db:wait && npm run test:migrate",
