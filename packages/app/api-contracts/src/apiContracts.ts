@@ -36,12 +36,21 @@ export type CommonRouteDefinition<
   requestHeaderSchema?: RequestHeaderSchema
   pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
   responseSchemasByStatusCode?: Partial<Record<HttpStatusCode, z.Schema>>
-  // Adds route description for OpenAPI documentation
-  description?: string
-  // Adds route name for OpenAPI documentation
-  summary?: string
-  tags?: readonly string[]
   metadata?: CommonRouteDefinitionMetadata
+
+  /*
+  The following fields are primarily consumed by OpenAPI generators,
+  but can be utilized for other purposes as well
+   */
+  // Human-readable route description
+  description?: string
+  // Route name (used as a title)
+  summary?: string
+  // Used for organizing endpoints into groups
+  tags?: readonly string[]
+  /*
+  The end of primarily OpenAPI fields
+   */
 }
 
 export type PayloadRouteDefinition<
