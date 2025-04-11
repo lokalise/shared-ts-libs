@@ -40,6 +40,7 @@ export type CommonRouteDefinition<
   description?: string
   // Adds route name for OpenAPI documentation
   summary?: string
+  tags?: readonly string[]
   metadata?: CommonRouteDefinitionMetadata
 }
 
@@ -150,6 +151,7 @@ export function buildPayloadRoute<
     summary: params.summary,
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
     metadata: params.metadata,
+    tags: params.tags,
   }
 }
 
@@ -197,6 +199,7 @@ export function buildGetRoute<
     summary: params.summary,
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
     metadata: params.metadata,
+    tags: params.tags,
   }
 }
 
@@ -244,6 +247,7 @@ export function buildDeleteRoute<
     summary: params.summary,
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
     metadata: params.metadata,
+    tags: params.tags,
   }
 }
 

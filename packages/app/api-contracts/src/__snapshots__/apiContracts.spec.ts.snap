@@ -86,6 +86,7 @@ exports[`apiContracts > buildDeleteRoute > sets default delete route values 1`] 
     },
   },
   "summary": undefined,
+  "tags": undefined,
 }
 `;
 
@@ -247,6 +248,7 @@ exports[`apiContracts > buildGetRoute > resolves path params 1`] = `
     },
   },
   "summary": undefined,
+  "tags": undefined,
 }
 `;
 
@@ -485,6 +487,7 @@ exports[`apiContracts > buildGetRoute > sets default get route values 1`] = `
     },
   },
   "summary": undefined,
+  "tags": undefined,
 }
 `;
 
@@ -794,5 +797,6 @@ exports[`apiContracts > buildPayloadRoute > sets default change route values 1`]
     },
   },
   "summary": undefined,
+  "tags": undefined,
 }
 `;
