@@ -51,7 +51,7 @@
         "mock-xmlhttprequest": "^8.4.1",
         "mockttp": "^3.17.0",
         "rimraf": "^6.0.1",
-        "typescript": "~5.8.2",
+        "typescript": "~5.8.3",
         "vitest": "^3.0.9"
     },
     "keywords": ["frontend", "web", "browser", "http", "client", "zod", "validation", "typesafe"]
