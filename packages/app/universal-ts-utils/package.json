@@ -35,7 +35,7 @@
         "@lokalise/tsconfig": "^1.0.2",
         "@types/node": "^22.7.6",
         "@vitest/coverage-v8": "^3.0.7",
-        "typescript": "^5.8.2",
+        "typescript": "^5.8.3",
         "vitest": "^3.0.7"
     },
     "peerDependencies": {
