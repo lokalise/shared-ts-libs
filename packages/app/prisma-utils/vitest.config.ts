@@ -4,22 +4,14 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     globals: true,
-    poolOptions: {
-      threads: {
-        singleThread: true,
-      },
-    },
     watch: false,
-    environment: 'node',
     restoreMocks: true,
+    pool: 'threads',
     setupFiles: ['test/envSetupHook.ts'],
-    reporters: ['default'],
     coverage: {
-      include: ['src/**/*.ts'],
-      exclude: ['src/**/index.ts', 'src/**/types.ts', 'src/**/*.spec.ts'],
       provider: 'v8',
-      reporter: ['text'],
-      all: true,
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/index.ts'],
       thresholds: {
         lines: 95,
         functions: 75,

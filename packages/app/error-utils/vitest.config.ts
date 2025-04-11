@@ -3,19 +3,17 @@ import { defineConfig } from 'vitest/config'
 // biome-ignore lint/style/noDefaultExport: vite expects default export
 export default defineConfig({
   test: {
+    globals: true,
+    watch: false,
     restoreMocks: true,
-    poolOptions: {
-      threads: {
-        singleThread: true,
-        isolate: false,
-      },
-    },
+    pool: 'threads',
     coverage: {
       provider: 'v8',
-      all: false,
+      include: ['src/**/*.ts'],
+      exclude: ['src/index.ts'],
       thresholds: {
         lines: 85,
-        functions: 25,
+        functions: 40,
         branches: 100,
         statements: 85,
       },

@@ -4,16 +4,13 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     globals: true,
+    watch: false,
     restoreMocks: true,
-    poolOptions: {
-      threads: {
-        singleThread: true,
-        isolate: false,
-      },
-    },
+    pool: 'threads',
     coverage: {
       provider: 'v8',
-      all: false,
+      include: ['src/**/*.ts'],
+      exclude: ['src/index.ts'],
       thresholds: {
         lines: 85,
         functions: 85,
