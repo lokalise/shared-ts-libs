@@ -91,7 +91,13 @@ export function buildFastifyNoPayloadRoute<
     InferredOptionalSchema<RequestHeaderSchema>
   >,
   contractMetadataToRouteMapper: ApiContractMetadataToRouteMapper = () => ({}),
-): RouteType {
+): RouteType<
+  InferredOptionalSchema<ResponseBodySchema>,
+  undefined,
+  InferredOptionalSchema<PathParams>,
+  InferredOptionalSchema<RequestQuerySchema>,
+  InferredOptionalSchema<RequestHeaderSchema>
+> {
   return {
     ...contractMetadataToRouteMapper(apiContract.metadata),
     method: apiContract.method,
@@ -178,7 +184,13 @@ export function buildFastifyPayloadRoute<
     InferredOptionalSchema<RequestHeaderSchema>
   >,
   contractMetadataToRouteMapper: ApiContractMetadataToRouteMapper = () => ({}),
-): RouteType {
+): RouteType<
+  InferredOptionalSchema<ResponseBodySchema>,
+  InferredOptionalSchema<RequestBodySchema>,
+  InferredOptionalSchema<PathParams>,
+  InferredOptionalSchema<RequestQuerySchema>,
+  InferredOptionalSchema<RequestHeaderSchema>
+> {
   return {
     ...contractMetadataToRouteMapper(apiContract.metadata),
     method: apiContract.method,
