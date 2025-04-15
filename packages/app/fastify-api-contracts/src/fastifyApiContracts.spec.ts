@@ -1,5 +1,5 @@
 import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
-import { type RouteOptions, fastify } from 'fastify'
+import { fastify } from 'fastify'
 import {
   type ZodTypeProvider,
   serializerCompiler,
@@ -20,6 +20,7 @@ import {
   injectPost,
   injectPut,
 } from './fastifyApiRequestInjector.js'
+import type { RouteType } from './types.js'
 
 const REQUEST_BODY_SCHEMA = z.object({
   id: z.string(),
@@ -38,7 +39,7 @@ const REQUEST_QUERY_SCHEMA = z.object({
   limit: z.coerce.number().gt(0).default(10),
 })
 
-async function initApp(route: RouteOptions) {
+async function initApp<Route extends RouteType>(route: Route) {
   const app = fastify({
     logger: false,
     disableRequestLogging: true,

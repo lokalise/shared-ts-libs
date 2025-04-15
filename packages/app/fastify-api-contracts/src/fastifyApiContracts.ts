@@ -15,7 +15,7 @@ import type {
 } from './types.js'
 
 type OptionalZodSchema = z.Schema | undefined
-type InferredOptionalSchema<Schema> = Schema extends z.Schema ? z.infer<Schema> : never
+type InferredOptionalSchema<Schema> = Schema extends z.Schema ? z.infer<Schema> : undefined
 
 /**
  * Infers handler request type automatically from the contract for GET or DELETE methods

@@ -1,12 +1,12 @@
 import type { CommonRouteDefinition } from '@lokalise/api-contracts'
 import type {
   FastifySchema,
-  RouteOptions,
-  RouteGenericInterface,
-  RouteHandlerMethod,
   RawReplyDefaultExpression,
   RawRequestDefaultExpression,
   RawServerDefault,
+  RouteGenericInterface,
+  RouteHandlerMethod,
+  RouteOptions,
 } from 'fastify'
 import type { z } from 'zod'
 
@@ -29,11 +29,16 @@ export type ExtendedFastifySchema = FastifySchema & {
 }
 
 export type RouteType<
-  ReplyType = unknown,
-  BodyType = unknown,
-  ParamsType = unknown,
-  QueryType = unknown,
-  HeadersType = unknown,
+  // biome-ignore lint/suspicious/noExplicitAny: It's ok
+  ReplyType = any,
+  // biome-ignore lint/suspicious/noExplicitAny: It's ok
+  BodyType = any,
+  // biome-ignore lint/suspicious/noExplicitAny: It's ok
+  ParamsType = any,
+  // biome-ignore lint/suspicious/noExplicitAny: It's ok
+  QueryType = any,
+  // biome-ignore lint/suspicious/noExplicitAny: It's ok
+  HeadersType = any,
 > = RouteOptions<
   RawServerDefault,
   RawRequestDefaultExpression,
