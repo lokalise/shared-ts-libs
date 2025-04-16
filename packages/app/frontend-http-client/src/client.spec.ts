@@ -175,6 +175,68 @@ describe('frontend-http-client', () => {
       })
     })
 
+    it('handles separation between input and output values for query params correctly', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/users/1').thenCallback((req) => {
+        return {
+          statusCode: 200,
+          headers: JSON_HEADERS,
+          body: JSON.stringify({ data: { code: 99, url: req.url } }),
+        }
+      })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+          url: z.string(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+        test: z.number().default(10),
+      })
+
+      const querySchema = z.object({
+        sort: z
+          .string()
+          .transform((value) => {
+            return value.split(',')
+          })
+          .pipe(
+            z.array(
+              z.enum(['startDate', '-startDate', 'endDate', '-endDate', 'status', '-status']),
+            ),
+          )
+          .optional(),
+      })
+
+      const routeDefinition = buildGetRoute({
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestQuerySchema: querySchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByGetRoute(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        queryParams: {
+          sort: '-startDate,endDate',
+        },
+      })
+
+      // satisfies verifies that responseBody type is inferred properly
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toEqual({
+        data: {
+          code: 99,
+          url: 'http://localhost:8000/users/1?sort=-startDate%2CendDate',
+        },
+      })
+    })
+
     it('returns deserialized response for GET without query params', async () => {
       const client = wretch(mockServer.url)
 
