@@ -15,7 +15,7 @@ import type {
 } from './types.js'
 
 type OptionalZodSchema = z.Schema | undefined
-type InferredOptionalSchema<Schema> = Schema extends z.Schema ? z.infer<Schema> : never
+type InferredOptionalSchema<Schema> = Schema extends z.Schema ? z.infer<Schema> : undefined
 
 /**
  * Infers handler request type automatically from the contract for GET or DELETE methods
@@ -91,7 +91,13 @@ export function buildFastifyNoPayloadRoute<
     InferredOptionalSchema<RequestHeaderSchema>
   >,
   contractMetadataToRouteMapper: ApiContractMetadataToRouteMapper = () => ({}),
-): RouteType {
+): RouteType<
+  InferredOptionalSchema<ResponseBodySchema>,
+  undefined,
+  InferredOptionalSchema<PathParams>,
+  InferredOptionalSchema<RequestQuerySchema>,
+  InferredOptionalSchema<RequestHeaderSchema>
+> {
   return {
     ...contractMetadataToRouteMapper(apiContract.metadata),
     method: apiContract.method,
@@ -178,7 +184,13 @@ export function buildFastifyPayloadRoute<
     InferredOptionalSchema<RequestHeaderSchema>
   >,
   contractMetadataToRouteMapper: ApiContractMetadataToRouteMapper = () => ({}),
-): RouteType {
+): RouteType<
+  InferredOptionalSchema<ResponseBodySchema>,
+  InferredOptionalSchema<RequestBodySchema>,
+  InferredOptionalSchema<PathParams>,
+  InferredOptionalSchema<RequestQuerySchema>,
+  InferredOptionalSchema<RequestHeaderSchema>
+> {
   return {
     ...contractMetadataToRouteMapper(apiContract.metadata),
     method: apiContract.method,
