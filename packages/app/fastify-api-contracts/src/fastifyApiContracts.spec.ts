@@ -5,7 +5,7 @@ import {
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod'
 import {
   buildFastifyNoPayloadRoute,
@@ -84,6 +84,16 @@ describe('fastifyApiContracts', () => {
         return Promise.resolve()
       })
 
+      expectTypeOf(route).toEqualTypeOf<
+        RouteType<
+          z.infer<typeof BODY_SCHEMA>,
+          undefined,
+          z.infer<typeof PATH_PARAMS_SCHEMA>,
+          z.infer<typeof REQUEST_QUERY_SCHEMA>,
+          undefined
+        >
+      >()
+
       const app = await initApp(route)
       const response = await injectGet(app, contract, {
         pathParams: { userId: '1' },
@@ -112,6 +122,16 @@ describe('fastifyApiContracts', () => {
 
       const route = buildFastifyNoPayloadRoute(contract, handler)
 
+      expectTypeOf(route).toEqualTypeOf<
+        RouteType<
+          z.infer<typeof BODY_SCHEMA>,
+          undefined,
+          z.infer<typeof PATH_PARAMS_SCHEMA>,
+          z.infer<typeof REQUEST_QUERY_SCHEMA>,
+          z.infer<typeof HEADERS_SCHEMA>
+        >
+      >()
+
       const app = await initApp(route)
       const response = await injectGet(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
@@ -135,6 +155,16 @@ describe('fastifyApiContracts', () => {
         return Promise.resolve()
       })
 
+      expectTypeOf(route).toEqualTypeOf<
+        RouteType<
+          z.infer<typeof BODY_SCHEMA>,
+          undefined,
+          z.infer<typeof PATH_PARAMS_SCHEMA>,
+          undefined,
+          undefined
+        >
+      >()
+
       const app = await initApp(route)
       const response = await injectDelete(app, contract, {
         pathParams: { userId: '1' },
@@ -156,6 +186,16 @@ describe('fastifyApiContracts', () => {
         expect(req.params.userId).toEqual('1')
         return Promise.resolve()
       })
+
+      expectTypeOf(route).toEqualTypeOf<
+        RouteType<
+          z.infer<typeof BODY_SCHEMA>,
+          undefined,
+          z.infer<typeof PATH_PARAMS_SCHEMA>,
+          undefined,
+          z.infer<typeof HEADERS_SCHEMA>
+        >
+      >()
 
       const app = await initApp(route)
       // using headers directly
@@ -207,6 +247,16 @@ describe('fastifyApiContracts', () => {
         return Promise.resolve()
       })
 
+      expectTypeOf(route).toEqualTypeOf<
+        RouteType<
+          z.infer<typeof BODY_SCHEMA>,
+          z.infer<typeof REQUEST_BODY_SCHEMA>,
+          z.infer<typeof PATH_PARAMS_SCHEMA>,
+          undefined,
+          undefined
+        >
+      >()
+
       const app = await initApp(route)
       const response = await injectPost(app, contract, {
         pathParams: { userId: '1' },
@@ -235,6 +285,16 @@ describe('fastifyApiContracts', () => {
       })
 
       const route = buildFastifyPayloadRoute(contract, handler)
+
+      expectTypeOf(route).toEqualTypeOf<
+        RouteType<
+          z.infer<typeof BODY_SCHEMA>,
+          z.infer<typeof REQUEST_BODY_SCHEMA>,
+          z.infer<typeof PATH_PARAMS_SCHEMA>,
+          undefined,
+          z.infer<typeof HEADERS_SCHEMA>
+        >
+      >()
 
       const app = await initApp(route)
       const response = await injectPost(app, contract, {
