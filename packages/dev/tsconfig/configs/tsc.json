@@ -2,6 +2,6 @@
     "$schema": "https://json.schemastore.org/tsconfig",
     "extends": "./base.json",
     "compilerOptions": {
-        "module": "Node16"
+        "module": "Node18"
     }
 }
