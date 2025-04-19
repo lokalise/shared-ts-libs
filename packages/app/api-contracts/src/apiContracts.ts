@@ -81,8 +81,8 @@ export type GetRouteDefinition<
   PathParamsSchema extends z.Schema<PathParams> | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
-  IsNonJSONResponseExpected extends boolean = false,
-  IsEmptyResponseExpected extends boolean = false,
+  IsNonJSONResponseExpected extends boolean = boolean,
+  IsEmptyResponseExpected extends boolean = boolean,
 > = CommonRouteDefinition<
   PathParams,
   SuccessResponseBodySchema,
