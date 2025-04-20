@@ -66,10 +66,23 @@ describe('fastifyApiContracts', () => {
       const handler = buildFastifyNoPayloadRouteHandler(contract, () => Promise.resolve())
       expect(handler).toBeTypeOf('function')
     })
+
+    it('builds a GET handler with empty response', () => {
+      const contract = buildGetRoute({
+        successResponseBodySchema: BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        requestQuerySchema: REQUEST_QUERY_SCHEMA,
+        isEmptyResponseExpected: true,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const handler = buildFastifyNoPayloadRouteHandler(contract, () => Promise.resolve())
+      expect(handler).toBeTypeOf('function')
+    })
   })
   describe('buildFastifyNoPayloadRoute', () => {
     it('uses API spec to build valid GET route in fastify app', async () => {
-      expect.assertions(3)
+      expect.assertions(4)
       const contract = buildGetRoute({
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -81,7 +94,7 @@ describe('fastifyApiContracts', () => {
         expect(req.params.userId).toEqual('1')
         // satisfies checks if type is inferred properly in route
         expect(req.query.testIds satisfies string[] | undefined).toBeUndefined()
-        return Promise.resolve()
+        return Promise.resolve(JSON.stringify({}))
       })
 
       expectTypeOf(route).toEqualTypeOf<
@@ -101,6 +114,7 @@ describe('fastifyApiContracts', () => {
       })
 
       expect(response.statusCode).toBe(200)
+      expect(response.body).toMatchInlineSnapshot(`"{}"`)
     })
 
     it('uses API spec to build valid GET route with header factory in fastify app', async () => {
@@ -140,6 +154,43 @@ describe('fastifyApiContracts', () => {
       })
 
       expect(response.statusCode).toBe(200)
+    })
+
+    it('uses API spec to build valid GET route with potentially empty response in fastify app', async () => {
+      expect.assertions(4)
+      const contract = buildGetRoute({
+        successResponseBodySchema: BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        requestQuerySchema: REQUEST_QUERY_SCHEMA,
+        isEmptyResponseExpected: true,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const route = buildFastifyNoPayloadRoute(contract, (req) => {
+        expect(req.params.userId).toEqual('1')
+        // satisfies checks if type is inferred properly in route
+        expect(req.query.testIds satisfies string[] | undefined).toBeUndefined()
+        return Promise.resolve()
+      })
+
+      expectTypeOf(route).toEqualTypeOf<
+        RouteType<
+          z.infer<typeof BODY_SCHEMA>,
+          undefined,
+          z.infer<typeof PATH_PARAMS_SCHEMA>,
+          z.infer<typeof REQUEST_QUERY_SCHEMA>,
+          undefined
+        >
+      >()
+
+      const app = await initApp(route)
+      const response = await injectGet(app, contract, {
+        pathParams: { userId: '1' },
+        queryParams: { limit: 10 },
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.body).toBe('')
     })
 
     it('uses API spec to build valid DELETE route in fastify app', async () => {
