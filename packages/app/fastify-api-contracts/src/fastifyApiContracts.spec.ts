@@ -66,6 +66,19 @@ describe('fastifyApiContracts', () => {
       const handler = buildFastifyNoPayloadRouteHandler(contract, () => Promise.resolve())
       expect(handler).toBeTypeOf('function')
     })
+
+    it('builds a GET handler with empty response', () => {
+      const contract = buildGetRoute({
+        successResponseBodySchema: BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        requestQuerySchema: REQUEST_QUERY_SCHEMA,
+        isEmptyResponseExpected: true,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const handler = buildFastifyNoPayloadRouteHandler(contract, () => Promise.resolve())
+      expect(handler).toBeTypeOf('function')
+    })
   })
   describe('buildFastifyNoPayloadRoute', () => {
     it('uses API spec to build valid GET route in fastify app', async () => {

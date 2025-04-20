@@ -32,14 +32,18 @@ export function buildFastifyNoPayloadRouteHandler<
         ResponseBodySchema,
         PathParams,
         RequestQuerySchema,
-        RequestHeaderSchema
+        RequestHeaderSchema,
+        boolean,
+        boolean
       >
     | DeleteRouteDefinition<
         InferredOptionalSchema<PathParams>,
         ResponseBodySchema,
         PathParams,
         RequestQuerySchema,
-        RequestHeaderSchema
+        RequestHeaderSchema,
+        boolean,
+        boolean
       >,
   handler: FastifyNoPayloadHandlerFn<
     InferredOptionalSchema<ResponseBodySchema>,
