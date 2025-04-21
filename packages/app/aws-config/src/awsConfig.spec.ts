@@ -1,4 +1,4 @@
-import { applyAwsResourcePrefix, getAwsConfig } from './awsConfig.js'
+import { applyAwsResourcePrefix, getAwsConfig } from './awsConfig.ts'
 
 const AWS_ALLOWED_SOURCE_OWNER_LITERAL = 'allowed-source-owner'
 const AWS_RESOURCE_PREFIX_LITERAL = 'resource-prefix'

@@ -1,5 +1,5 @@
-import type { QueueConfig, TopicConfig } from './eventRoutingConfig.ts'
 import { expectTypeOf } from 'vitest'
+import type { QueueConfig, TopicConfig } from './eventRoutingConfig.ts'
 
 describe('eventRoutingConfig', () => {
   describe('QueueConfig', () => {
