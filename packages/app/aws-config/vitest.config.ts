@@ -7,11 +7,10 @@ export default defineConfig({
     watch: false,
     restoreMocks: true,
     pool: 'threads',
-    setupFiles: ['./test/setup.ts'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/**/types.ts', 'test', '**/*.spec.ts', 'vitest.config.ts'],
+      exclude: ['vitest.config.ts', 'src/**/index.ts'],
       thresholds: {
         lines: 100,
         functions: 100,
