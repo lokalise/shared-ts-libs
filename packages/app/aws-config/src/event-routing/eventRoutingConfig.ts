@@ -56,9 +56,9 @@ export type TopicConfig<
       /** Marks this as an external topic. */
       isExternal: true
       /** Should not be present in external topics */
-      ownerTeam?: never
+      owner?: never
       /** Should not be present in external topics */
-      serviceName?: never
+      service?: never
       /** Should not be present in external topics */
       externalAppsWithSubscribePermissions?: never
     }
