@@ -43,7 +43,15 @@ export type RouteType<
   RawServerDefault,
   RawRequestDefaultExpression,
   RawReplyDefaultExpression,
-  FastifyContractRouteInterface<ReplyType, BodyType, ParamsType, QueryType, HeadersType>
+  FastifyContractRouteInterface<ReplyType, BodyType, ParamsType, QueryType, HeadersType>,
+  // biome-ignore lint/suspicious/noExplicitAny: it's ok
+  any,
+  // biome-ignore lint/suspicious/noExplicitAny: it's ok
+  any,
+  // biome-ignore lint/suspicious/noExplicitAny: it's ok
+  any,
+  // biome-ignore lint/suspicious/noExplicitAny: it's ok
+  any
 >
 
 /**
