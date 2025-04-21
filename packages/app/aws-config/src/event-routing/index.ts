@@ -1,1 +1,1 @@
-export type { QueueConfig, TopicConfig, EventRoutingConfig } from './types.ts'
+export type { QueueConfig, TopicConfig, EventRoutingConfig } from './eventRoutingConfig.ts'
