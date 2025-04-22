@@ -31,15 +31,16 @@
         "postversion": "biome check --write package.json"
     },
     "peerDependencies": {
-        "@aws-sdk/client-sns": "^3.614.0",
-        "@aws-sdk/client-sqs": "^3.614.0",
+        "@aws-sdk/client-sns": "^3.750.0",
+        "@aws-sdk/client-sqs": "^3.750.0",
         "@aws-sdk/credential-providers": "^3.750.0",
         "@lokalise/node-core": "=>13.0.0",
         "@lokalise/universal-ts-utils": ">=4.0.0"
     },
     "devDependencies": {
-        "@aws-sdk/client-sns": "^3.614.0",
-        "@aws-sdk/client-sqs": "^3.614.0",
+        "@aws-sdk/client-sns": "^3.750.0",
+        "@aws-sdk/client-sqs": "^3.750.0",
+        "@aws-sdk/credential-providers": "^3.750.0",
         "@biomejs/biome": "^1.9.4",
         "@lokalise/biome-config": "^2.0.0",
         "@lokalise/node-core": "^13.6.0",
