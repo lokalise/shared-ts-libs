@@ -5,12 +5,26 @@ import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRout
 import { snsPrefixTransformer, sqsPrefixTransformer } from './prefixTransformer.ts'
 import { QUEUE_NAME_REGEX, TOPIC_NAME_REGEX } from './regex.ts'
 import type {
-  MessageQueueToolkitSnsConsumerConnectionConfig,
-  MessageQueueToolkitSnsResolveConsumerParams,
   MessageQueueToolkitSnsResolverOptions,
+  ResolveConsumerBuildOptionsParams,
+  ResolvedSnsConsumerBuildOptions,
+  ResolvedSnsPublisherBuildOptions,
+  ResolvePublisherBuildOptionsParams,
 } from './types.ts'
 import type { CreateQueueRequest } from '@aws-sdk/client-sqs'
-import { getSqsTags } from '../tags/index.ts'
+import { getSnsTags, getSqsTags } from '../tags/index.ts'
+import type { SNSTopicLocatorType } from '@message-queue-toolkit/sns'
+import type { CreateTopicCommandInput } from '@aws-sdk/client-sns'
+
+type ResolveTopicResult =
+  | {
+      locatorConfig: SNSTopicLocatorType
+      createCommand?: never
+    }
+  | {
+      locatorConfig?: never
+      createCommand: CreateTopicCommandInput
+    }
 
 export class MessageQueueToolkitSnsResolver {
   private readonly routingConfig: EventRoutingConfig
@@ -40,23 +54,85 @@ export class MessageQueueToolkitSnsResolver {
     }
   }
 
-  getConsumerConnectionConfig(
-    params: MessageQueueToolkitSnsResolveConsumerParams,
-  ): MessageQueueToolkitSnsConsumerConnectionConfig {
+  private getTopicConfig(topicName: string): TopicConfig {
+    const topicConfig = this.routingConfig[topicName]
+    if (!topicConfig) throw new Error(`Topic ${topicName} not found`)
+    return topicConfig
+  }
+
+  resolveConsumerBuildOptions(
+    params: ResolveConsumerBuildOptionsParams,
+  ): ResolvedSnsConsumerBuildOptions {
+    const topicConfig = this.getTopicConfig(params.topicName)
+    const resolvedTopic = this.resolveTopic(topicConfig, params)
+
     return {
+      locatorConfig: resolvedTopic.locatorConfig,
       creationConfig: {
-        queue: this.resolveQueueCreateRequest(params),
+        topic: resolvedTopic.createCommand,
+        queue: this.resolveQueue(topicConfig, params),
+        topicArnsWithPublishPermissionsPrefix: this.buildTopicArnsWithPublishPermissionsPrefix(
+          topicConfig,
+          params.awsConfig,
+        ),
+        queueUrlsWithSubscribePermissionsPrefix: this.buildQueueUrlsWithSubscribePermissionsPrefix(
+          topicConfig,
+          params.awsConfig,
+        ),
+        allowedSourceOwner: params.awsConfig.allowedSourceOwner,
+        updateAttributesIfExists: params.updateAttributesIfExists ?? false,
       },
     }
   }
 
-  private resolveQueueCreateRequest = (
-    params: MessageQueueToolkitSnsResolveConsumerParams,
-  ): CreateQueueRequest => {
-    const { topicName, queueName, awsConfig, queueAttributes } = params
+  resolvePublisherBuildOptions(
+    params: ResolvePublisherBuildOptionsParams,
+  ): ResolvedSnsPublisherBuildOptions {
+    const topicConfig = this.getTopicConfig(params.topicName)
+    const resolvedTopic = this.resolveTopic(this.getTopicConfig(params.topicName), params)
 
-    const topicConfig = this.routingConfig[topicName]
-    const queueConfig = topicConfig?.queues[queueName]
+    return {
+      locatorConfig: resolvedTopic.locatorConfig,
+      creationConfig: resolvedTopic.createCommand
+        ? {
+            topic: resolvedTopic.createCommand,
+            queueUrlsWithSubscribePermissionsPrefix:
+              this.buildQueueUrlsWithSubscribePermissionsPrefix(topicConfig, params.awsConfig),
+            allowedSourceOwner: params.awsConfig.allowedSourceOwner,
+            updateAttributesIfExists: params.updateAttributesIfExists,
+          }
+        : undefined,
+    }
+  }
+
+  private resolveTopic(
+    topicConfig: TopicConfig,
+    params: ResolvePublisherBuildOptionsParams,
+  ): ResolveTopicResult {
+    if (topicConfig.isExternal) {
+      return {
+        locatorConfig: {
+          topicName: applyAwsResourcePrefix(topicConfig.topicName, params.awsConfig),
+        },
+      }
+    }
+
+    return {
+      createCommand: {
+        Name: applyAwsResourcePrefix(topicConfig.topicName, params.awsConfig),
+        Tags: getSnsTags({ ...topicConfig, ...params }),
+        Attributes: { KmsMasterKeyId: params.awsConfig.kmsKeyId },
+      },
+    }
+  }
+
+  private resolveQueue = (
+    topicConfig: TopicConfig,
+    params: ResolveConsumerBuildOptionsParams,
+  ): CreateQueueRequest => {
+    const { queueName, awsConfig, queueAttributes } = params
+
+    const queueConfig = topicConfig.queues[queueName]
     if (!queueConfig) throw new Error(`Queue ${queueName} not found`)
 
     return {
