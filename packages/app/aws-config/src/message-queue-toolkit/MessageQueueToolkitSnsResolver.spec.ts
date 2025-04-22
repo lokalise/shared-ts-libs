@@ -143,6 +143,17 @@ describe('MessageQueueToolkitSnsResolver', () => {
   })
 
   describe('resolvePublisherBuildOptions', () => {
+    it('should throw an error if topic name is not found', () => {
+      expect(() =>
+        resolver.resolvePublisherBuildOptions({
+          topicName: 'invalid-topic',
+          awsConfig: buildAwsConfig(),
+          messageTypeField: 'myMessageType',
+          messageSchemas: [],
+        }),
+      ).toThrowErrorMatchingInlineSnapshot('[Error: Topic invalid-topic not found]')
+    })
+
     describe('internal topics', () => {
       const topicName = EventRouting.topic1.topicName
 
@@ -315,6 +326,282 @@ describe('MessageQueueToolkitSnsResolver', () => {
             },
             "logMessages": undefined,
             "messageSchemas": [],
+            "messageTypeField": "myMessageType",
+          }
+        `)
+      })
+    })
+  })
+
+  describe('resolveConsumerBuildOptions', () => {
+    it('should throw an error if topic name is not found', () => {
+      expect(() =>
+        resolver.resolveConsumerBuildOptions({
+          topicName: 'invalid-topic',
+          queueName: 'test-first_entity-first_service',
+          awsConfig: buildAwsConfig(),
+          messageTypeField: 'myMessageType',
+        }),
+      ).toThrowErrorMatchingInlineSnapshot('[Error: Topic invalid-topic not found]')
+    })
+
+    it('should throw an error if queue is not defined for given topic', () => {
+      expect(() =>
+        resolver.resolveConsumerBuildOptions({
+          topicName: EventRouting.topic1.topicName,
+          queueName: EventRouting.topic2.queues.topic2Queue1.name,
+          awsConfig: buildAwsConfig(),
+          messageTypeField: 'myMessageType',
+        }),
+      ).toThrowErrorMatchingInlineSnapshot('[Error: Queue test-second_entity-service not found]')
+    })
+
+    describe('internal topics', () => {
+      const topicName = EventRouting.topic1.topicName
+      const queueName = EventRouting.topic1.queues.topic1Queue1.name
+
+      it('should work using all properties', () => {
+        const result = resolver.resolveConsumerBuildOptions({
+          topicName,
+          queueName,
+          queueAttributes: { VisibilityTimeout: '1' },
+          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
+          updateAttributesIfExists: true,
+          messageTypeField: 'myMessageType',
+          forceTagUpdate: true,
+          logMessages: true,
+          isTest: true,
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "creationConfig": {
+              "allowedSourceOwner": "test allowedSourceOwner",
+              "forceTagUpdate": true,
+              "queue": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                  "VisibilityTimeout": "1",
+                },
+                "QueueName": "preffix_test-first_entity-first_service",
+                "tags": {
+                  "env": "dev",
+                  "lok-cost-service": "service 1",
+                  "lok-cost-system": "my-system",
+                  "lok-owner": "team 1",
+                  "project": "my-project",
+                  "service": "sqs",
+                },
+              },
+              "queueUrlsWithSubscribePermissionsPrefix": [
+                "arn:aws:sqs:*:*:preffix_test-*",
+              ],
+              "topic": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                },
+                "Name": "preffix_test-first_entity",
+                "Tags": [
+                  {
+                    "Key": "env",
+                    "Value": "dev",
+                  },
+                  {
+                    "Key": "project",
+                    "Value": "my-project",
+                  },
+                  {
+                    "Key": "service",
+                    "Value": "sns",
+                  },
+                  {
+                    "Key": "lok-owner",
+                    "Value": "team 1",
+                  },
+                  {
+                    "Key": "lok-cost-system",
+                    "Value": "my-system",
+                  },
+                  {
+                    "Key": "lok-cost-service",
+                    "Value": "service 1",
+                  },
+                ],
+              },
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:preffix_test-*",
+              "updateAttributesIfExists": true,
+            },
+            "handlerSpy": true,
+            "locatorConfig": undefined,
+            "logMessages": true,
+            "messageTypeField": "myMessageType",
+          }
+        `)
+      })
+
+      it('should work using only required props', () => {
+        const result = resolver.resolveConsumerBuildOptions({
+          topicName,
+          queueName,
+          awsConfig: buildAwsConfig(),
+          messageTypeField: 'myMessageType',
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "creationConfig": {
+              "allowedSourceOwner": "test allowedSourceOwner",
+              "forceTagUpdate": undefined,
+              "queue": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                },
+                "QueueName": "test-first_entity-first_service",
+                "tags": {
+                  "env": "dev",
+                  "lok-cost-service": "service 1",
+                  "lok-cost-system": "my-system",
+                  "lok-owner": "team 1",
+                  "project": "my-project",
+                  "service": "sqs",
+                },
+              },
+              "queueUrlsWithSubscribePermissionsPrefix": [
+                "arn:aws:sqs:*:*:test-*",
+              ],
+              "topic": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                },
+                "Name": "test-first_entity",
+                "Tags": [
+                  {
+                    "Key": "env",
+                    "Value": "dev",
+                  },
+                  {
+                    "Key": "project",
+                    "Value": "my-project",
+                  },
+                  {
+                    "Key": "service",
+                    "Value": "sns",
+                  },
+                  {
+                    "Key": "lok-owner",
+                    "Value": "team 1",
+                  },
+                  {
+                    "Key": "lok-cost-system",
+                    "Value": "my-system",
+                  },
+                  {
+                    "Key": "lok-cost-service",
+                    "Value": "service 1",
+                  },
+                ],
+              },
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:test-*",
+              "updateAttributesIfExists": undefined,
+            },
+            "handlerSpy": undefined,
+            "locatorConfig": undefined,
+            "logMessages": undefined,
+            "messageTypeField": "myMessageType",
+          }
+        `)
+      })
+    })
+
+    describe('external topics', () => {
+      const topicName = EventRouting.topic2.topicName
+      const queueName = EventRouting.topic2.queues.topic2Queue1.name
+
+      it('should work using all props', () => {
+        const result = resolver.resolveConsumerBuildOptions({
+          topicName,
+          queueName,
+          queueAttributes: { VisibilityTimeout: '1' },
+          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
+          updateAttributesIfExists: true,
+          messageTypeField: 'myMessageType',
+          forceTagUpdate: true,
+          logMessages: true,
+          isTest: true,
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "creationConfig": {
+              "allowedSourceOwner": "test allowedSourceOwner",
+              "forceTagUpdate": true,
+              "queue": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                  "VisibilityTimeout": "1",
+                },
+                "QueueName": "preffix_test-second_entity-service",
+                "tags": {
+                  "env": "dev",
+                  "lok-cost-service": "service 2",
+                  "lok-cost-system": "my-system",
+                  "lok-owner": "team 1",
+                  "project": "my-project",
+                  "service": "sqs",
+                },
+              },
+              "queueUrlsWithSubscribePermissionsPrefix": undefined,
+              "topic": undefined,
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:preffix_test-*",
+              "updateAttributesIfExists": true,
+            },
+            "handlerSpy": true,
+            "locatorConfig": {
+              "topicName": "preffix_test-second_entity",
+            },
+            "logMessages": true,
+            "messageTypeField": "myMessageType",
+          }
+        `)
+      })
+
+      it('should work using only required props', () => {
+        const result = resolver.resolveConsumerBuildOptions({
+          topicName,
+          queueName,
+          awsConfig: buildAwsConfig(),
+          messageTypeField: 'myMessageType',
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "creationConfig": {
+              "allowedSourceOwner": "test allowedSourceOwner",
+              "forceTagUpdate": undefined,
+              "queue": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                },
+                "QueueName": "test-second_entity-service",
+                "tags": {
+                  "env": "dev",
+                  "lok-cost-service": "service 2",
+                  "lok-cost-system": "my-system",
+                  "lok-owner": "team 1",
+                  "project": "my-project",
+                  "service": "sqs",
+                },
+              },
+              "queueUrlsWithSubscribePermissionsPrefix": undefined,
+              "topic": undefined,
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:test-*",
+              "updateAttributesIfExists": undefined,
+            },
+            "handlerSpy": undefined,
+            "locatorConfig": {
+              "topicName": "test-second_entity",
+            },
+            "logMessages": undefined,
             "messageTypeField": "myMessageType",
           }
         `)
