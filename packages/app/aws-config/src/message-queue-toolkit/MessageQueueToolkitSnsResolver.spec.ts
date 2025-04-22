@@ -1,7 +1,7 @@
-import type { EventRoutingConfig } from './../event-routing/eventRoutingConfig.ts'
-import { MessageQueueToolkitSnsResolver } from './MessageQueueToolkitSnsResolver.ts'
 import { beforeAll } from 'vitest'
 import type { AwsConfig } from '../awsConfig.ts'
+import type { EventRoutingConfig } from './../event-routing/eventRoutingConfig.ts'
+import { MessageQueueToolkitSnsResolver } from './MessageQueueToolkitSnsResolver.ts'
 
 const EventRouting = {
   topic1: {

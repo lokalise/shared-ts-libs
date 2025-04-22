@@ -38,6 +38,7 @@
         "@aws-sdk/credential-providers": "^3.750.0",
         "@lokalise/node-core": "=>13.0.0",
         "@lokalise/universal-ts-utils": ">=4.0.0",
+        "@message-queue-toolkit/core": ">=20.0.0",
         "@message-queue-toolkit/sns": ">=21.1.1",
         "@message-queue-toolkit/sqs": ">=20.1.0"
     },
@@ -50,6 +51,7 @@
         "@lokalise/node-core": "^13.6.0",
         "@lokalise/tsconfig": "^1.0.2",
         "@lokalise/universal-ts-utils": "^4.4.1",
+        "@message-queue-toolkit/core": "^20.0.0",
         "@message-queue-toolkit/sns": "^21.1.1",
         "@message-queue-toolkit/sqs": "^20.1.0",
         "@types/node": "^22.10.1",

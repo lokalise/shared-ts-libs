@@ -1,6 +1,7 @@
+import type { QueueAttributeName } from '@aws-sdk/client-sqs'
+import type { CommonQueueOptions } from '@message-queue-toolkit/core'
 import type { SNSPublisherOptions, SNSSQSConsumerOptions } from '@message-queue-toolkit/sns'
 import type { AwsConfig } from '../awsConfig.ts'
-import type { QueueAttributeName } from '@aws-sdk/client-sqs'
 import type { AwsTagsParams } from '../tags/index.ts'
 
 export type MessageQueueToolkitSnsResolverOptions = Pick<
@@ -16,7 +17,7 @@ type BaseResolveOptionsParams = {
   isTest?: boolean
   updateAttributesIfExists?: boolean
   forceTagUpdate?: boolean
-} & Pick<SNSPublisherOptions<object>, 'messageTypeField' | 'logMessages'> // TODO: use a different type to pick props
+} & Pick<CommonQueueOptions, 'messageTypeField' | 'logMessages'>
 
 type ValidQueueAttributeNames = Exclude<QueueAttributeName, 'KmsMasterKeyId'>
 export type ResolveConsumerBuildOptionsParams = BaseResolveOptionsParams & {

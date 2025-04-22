@@ -1,11 +1,11 @@
+import type { AwsConfig } from '../awsConfig.ts'
+import type { TopicConfig } from '../event-routing/eventRoutingConfig.ts'
 import {
-  buildQueueUrlsWithSubscribePermissionsPrefix,
-  buildTopicArnsWithPublishPermissionsPrefix,
   QUEUE_NAME_REGEX,
   TOPIC_NAME_REGEX,
+  buildQueueUrlsWithSubscribePermissionsPrefix,
+  buildTopicArnsWithPublishPermissionsPrefix,
 } from './utils.ts'
-import type { TopicConfig } from '../event-routing/eventRoutingConfig.ts'
-import type { AwsConfig } from '../awsConfig.ts'
 
 const buildTopicConfig = (
   config: Pick<TopicConfig, 'topicName' | 'isExternal' | 'externalAppsWithSubscribePermissions'>,

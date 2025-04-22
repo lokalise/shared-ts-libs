@@ -1,7 +1,7 @@
 import { generateWildcardSnsArn, generateWildcardSqsArn } from '@message-queue-toolkit/sqs'
-import type { TopicConfig } from '../event-routing/eventRoutingConfig.ts'
 import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
 import type { AwsConfig } from '../awsConfig.ts'
+import type { TopicConfig } from '../event-routing/eventRoutingConfig.ts'
 
 /**
  * Regex to validate that topics names are following Lokalise convention.
