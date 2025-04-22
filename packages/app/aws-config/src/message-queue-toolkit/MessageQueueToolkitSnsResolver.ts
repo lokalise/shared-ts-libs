@@ -1,10 +1,16 @@
-import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRoutingConfig.ts'
 import { groupByUnique } from '@lokalise/universal-ts-utils/node'
-import type { MessageQueueToolkitSnsResolverOptions } from './types.ts'
-import { QUEUE_NAME_REGEX, TOPIC_NAME_REGEX } from './regex.ts'
-import { snsPrefixTransformer, sqsPrefixTransformer } from './prefixTransformer.ts'
-import type { AwsConfig } from '../awsConfig.ts'
 import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
+import type { AwsConfig } from '../awsConfig.ts'
+import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRoutingConfig.ts'
+import { snsPrefixTransformer, sqsPrefixTransformer } from './prefixTransformer.ts'
+import { QUEUE_NAME_REGEX, TOPIC_NAME_REGEX } from './regex.ts'
+import type {
+  MessageQueueToolkitSnsConsumerConnectionConfig,
+  MessageQueueToolkitSnsResolveConsumerParams,
+  MessageQueueToolkitSnsResolverOptions,
+} from './types.ts'
+import type { CreateQueueRequest } from '@aws-sdk/client-sqs'
+import { getSqsTags } from '../tags/index.ts'
 
 export class MessageQueueToolkitSnsResolver {
   private readonly routingConfig: EventRoutingConfig
@@ -31,6 +37,32 @@ export class MessageQueueToolkitSnsResolver {
     )
     for (const queueName of queueNames) {
       if (!QUEUE_NAME_REGEX.test(queueName)) throw new Error(`Invalid queue name: ${queueName}`)
+    }
+  }
+
+  getConsumerConnectionConfig(
+    params: MessageQueueToolkitSnsResolveConsumerParams,
+  ): MessageQueueToolkitSnsConsumerConnectionConfig {
+    return {
+      creationConfig: {
+        queue: this.resolveQueueCreateRequest(params),
+      },
+    }
+  }
+
+  private resolveQueueCreateRequest = (
+    params: MessageQueueToolkitSnsResolveConsumerParams,
+  ): CreateQueueRequest => {
+    const { topicName, queueName, awsConfig, queueAttributes } = params
+
+    const topicConfig = this.routingConfig[topicName]
+    const queueConfig = topicConfig?.queues[queueName]
+    if (!queueConfig) throw new Error(`Queue ${queueName} not found`)
+
+    return {
+      QueueName: applyAwsResourcePrefix(queueConfig.name, awsConfig),
+      tags: getSqsTags({ ...queueConfig, ...params }),
+      Attributes: { ...queueAttributes, KmsMasterKeyId: awsConfig.kmsKeyId },
     }
   }
 
