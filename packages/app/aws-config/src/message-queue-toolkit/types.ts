@@ -38,7 +38,7 @@ export type ResolvePublisherBuildOptionsParams = BaseResolveOptionsParams &
 
 export type ResolvedSnsConsumerBuildOptions = Pick<
   SNSSQSConsumerOptions<object, unknown, unknown>,
-  'locatorConfig' | 'creationConfig'
+  'locatorConfig' | 'creationConfig' | 'logMessages' | 'messageTypeField' | 'handlerSpy'
 >
 export type ResolvedSnsPublisherBuildOptions = Pick<
   SNSPublisherOptions<object>,

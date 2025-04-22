@@ -62,33 +62,7 @@ export class MessageQueueToolkitSnsResolver {
     }
   }
 
-  resolveConsumerBuildOptions(
-    params: ResolveConsumerBuildOptionsParams,
-  ): ResolvedSnsConsumerBuildOptions {
-    const topicConfig = this.getTopicConfig(params.topicName)
-    const resolvedTopic = this.resolveTopic(topicConfig, params)
-
-    return {
-      locatorConfig: resolvedTopic.locatorConfig,
-      creationConfig: {
-        topic: resolvedTopic.createCommand,
-        queue: this.resolveQueue(topicConfig, params),
-        topicArnsWithPublishPermissionsPrefix: buildTopicArnsWithPublishPermissionsPrefix(
-          topicConfig,
-          params.awsConfig,
-        ),
-        queueUrlsWithSubscribePermissionsPrefix: buildQueueUrlsWithSubscribePermissionsPrefix(
-          topicConfig,
-          params.awsConfig,
-        ),
-        allowedSourceOwner: params.awsConfig.allowedSourceOwner,
-        updateAttributesIfExists: params.updateAttributesIfExists,
-        forceTagUpdate: params.forceTagUpdate,
-      },
-    }
-  }
-
-  resolvePublisherBuildOptions(
+  public resolvePublisherBuildOptions(
     params: ResolvePublisherBuildOptionsParams,
   ): ResolvedSnsPublisherBuildOptions {
     const topicConfig = this.getTopicConfig(params.topicName)
@@ -112,6 +86,35 @@ export class MessageQueueToolkitSnsResolver {
       messageTypeField: params.messageTypeField,
       logMessages: params.logMessages,
       messageSchemas: params.messageSchemas,
+    }
+  }
+
+  resolveConsumerBuildOptions(
+    params: ResolveConsumerBuildOptionsParams,
+  ): ResolvedSnsConsumerBuildOptions {
+    const topicConfig = this.getTopicConfig(params.topicName)
+    const resolvedTopic = this.resolveTopic(topicConfig, params)
+
+    return {
+      locatorConfig: resolvedTopic.locatorConfig,
+      creationConfig: {
+        topic: resolvedTopic.createCommand,
+        queue: this.resolveQueue(topicConfig, params),
+        topicArnsWithPublishPermissionsPrefix: buildTopicArnsWithPublishPermissionsPrefix(
+          topicConfig,
+          params.awsConfig,
+        ),
+        queueUrlsWithSubscribePermissionsPrefix: buildQueueUrlsWithSubscribePermissionsPrefix(
+          topicConfig,
+          params.awsConfig,
+        ),
+        allowedSourceOwner: params.awsConfig.allowedSourceOwner,
+        updateAttributesIfExists: params.updateAttributesIfExists,
+        forceTagUpdate: params.forceTagUpdate,
+      },
+      logMessages: params.logMessages,
+      messageTypeField: params.messageTypeField,
+      handlerSpy: params.isTest,
     }
   }
 
