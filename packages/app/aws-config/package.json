@@ -26,7 +26,7 @@
         "clean": "rimraf dist",
         "lint": "biome check . && tsc",
         "lint:fix": "biome check --write",
-        "test": "vitest run",
+        "test": "vitest run --typecheck",
         "test:ci": "npm run test -- --coverage",
         "prepublishOnly": "npm run build",
         "package-version": "echo $npm_package_version",
