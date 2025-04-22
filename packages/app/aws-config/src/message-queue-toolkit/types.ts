@@ -20,6 +20,7 @@ export type ResolveConsumerBuildOptionsParams = BaseResolveOptionsParams & {
   queueName: string
   queueAttributes?: Partial<Record<ValidQueueAttributeNames, string>>
   /**
+   * // TODO: complete the following list
    * handlers + request context prehandler
    * subscription + message type
    * maxRetryDuration

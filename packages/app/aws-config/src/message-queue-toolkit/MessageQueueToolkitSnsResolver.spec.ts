@@ -1,5 +1,7 @@
 import type { EventRoutingConfig } from './../event-routing/eventRoutingConfig.ts'
 import { MessageQueueToolkitSnsResolver } from './MessageQueueToolkitSnsResolver.ts'
+import { beforeAll } from 'vitest'
+import type { AwsConfig } from '../awsConfig.ts'
 
 const EventRouting = {
   topic1: {
@@ -32,7 +34,20 @@ const EventRouting = {
   },
 } satisfies EventRoutingConfig
 
+const buildAwsConfig = (awsConfig?: Partial<AwsConfig>): AwsConfig => ({
+  kmsKeyId: 'test kmsKeyId',
+  allowedSourceOwner: 'test allowedSourceOwner',
+  region: 'test region',
+  ...awsConfig,
+})
+
 describe('MessageQueueToolkitSnsResolver', () => {
+  let resolver: MessageQueueToolkitSnsResolver
+
+  beforeAll(() => {
+    resolver = new MessageQueueToolkitSnsResolver(EventRouting)
+  })
+
   describe('constructor', () => {
     it('should create an instance of MessageQueueToolkitSnsResolver for empty event routing', () => {
       const resolver = new MessageQueueToolkitSnsResolver({}, { validateNamePatterns: true })
@@ -83,6 +98,194 @@ describe('MessageQueueToolkitSnsResolver', () => {
             validateNamePatterns: true,
           }),
       ).not.toThrowError()
+    })
+  })
+
+  describe('resolvePublisherBuildOptions', () => {
+    describe('internal topics', () => {
+      const topicName = EventRouting.topic1.topicName
+
+      it('should work using all properties', () => {
+        const result = resolver.resolvePublisherBuildOptions({
+          topicName,
+          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
+          updateAttributesIfExists: true,
+          messageTypeField: 'myMessageType',
+          forceTagUpdate: true,
+          logMessages: true,
+          system: 'my-system',
+          project: 'my-project',
+          appEnv: 'development',
+          isTest: true,
+          messageSchemas: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+        {
+          "creationConfig": {
+            "allowedSourceOwner": "test allowedSourceOwner",
+            "forceTagUpdate": true,
+            "queueUrlsWithSubscribePermissionsPrefix": [
+              "arn:aws:sqs:*:*:preffix_test-*",
+            ],
+            "topic": {
+              "Attributes": {
+                "KmsMasterKeyId": "test kmsKeyId",
+              },
+              "Name": "preffix_test-first_entity",
+              "Tags": [
+                {
+                  "Key": "env",
+                  "Value": "dev",
+                },
+                {
+                  "Key": "project",
+                  "Value": "my-project",
+                },
+                {
+                  "Key": "service",
+                  "Value": "sns",
+                },
+                {
+                  "Key": "lok-owner",
+                  "Value": "team 1",
+                },
+                {
+                  "Key": "lok-cost-system",
+                  "Value": "my-system",
+                },
+                {
+                  "Key": "lok-cost-service",
+                  "Value": "service 1",
+                },
+              ],
+            },
+            "updateAttributesIfExists": true,
+          },
+          "handlerSpy": true,
+          "locatorConfig": undefined,
+          "logMessages": true,
+          "messageSchemas": [],
+          "messageTypeField": "myMessageType",
+        }
+      `)
+      })
+
+      it('should work using only required props', () => {
+        const result = resolver.resolvePublisherBuildOptions({
+          topicName,
+          awsConfig: buildAwsConfig(),
+          messageTypeField: 'myMessageType',
+          system: 'my-system',
+          project: 'my-project',
+          appEnv: 'development',
+          messageSchemas: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+        {
+          "creationConfig": {
+            "allowedSourceOwner": "test allowedSourceOwner",
+            "forceTagUpdate": undefined,
+            "queueUrlsWithSubscribePermissionsPrefix": [
+              "arn:aws:sqs:*:*:test-*",
+            ],
+            "topic": {
+              "Attributes": {
+                "KmsMasterKeyId": "test kmsKeyId",
+              },
+              "Name": "test-first_entity",
+              "Tags": [
+                {
+                  "Key": "env",
+                  "Value": "dev",
+                },
+                {
+                  "Key": "project",
+                  "Value": "my-project",
+                },
+                {
+                  "Key": "service",
+                  "Value": "sns",
+                },
+                {
+                  "Key": "lok-owner",
+                  "Value": "team 1",
+                },
+                {
+                  "Key": "lok-cost-system",
+                  "Value": "my-system",
+                },
+                {
+                  "Key": "lok-cost-service",
+                  "Value": "service 1",
+                },
+              ],
+            },
+            "updateAttributesIfExists": undefined,
+          },
+          "handlerSpy": undefined,
+          "locatorConfig": undefined,
+          "logMessages": undefined,
+          "messageSchemas": [],
+          "messageTypeField": "myMessageType",
+        }
+      `)
+      })
+    })
+
+    describe('external topics', () => {
+      const topicName = EventRouting.topic2.topicName
+
+      it('should work using only required props', () => {
+        const result = resolver.resolvePublisherBuildOptions({
+          topicName,
+          awsConfig: buildAwsConfig(),
+          messageTypeField: 'myMessageType',
+          system: 'my-system',
+          project: 'my-project',
+          appEnv: 'development',
+          messageSchemas: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "creationConfig": undefined,
+            "handlerSpy": undefined,
+            "locatorConfig": {
+              "topicName": "test-second_entity",
+            },
+            "logMessages": undefined,
+            "messageSchemas": [],
+            "messageTypeField": "myMessageType",
+          }
+        `)
+      })
+
+      it('should topics using only required props', () => {
+        const result = resolver.resolvePublisherBuildOptions({
+          topicName,
+          awsConfig: buildAwsConfig(),
+          messageTypeField: 'myMessageType',
+          system: 'my-system',
+          project: 'my-project',
+          appEnv: 'development',
+          messageSchemas: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "creationConfig": undefined,
+            "handlerSpy": undefined,
+            "locatorConfig": {
+              "topicName": "test-second_entity",
+            },
+            "logMessages": undefined,
+            "messageSchemas": [],
+            "messageTypeField": "myMessageType",
+          }
+        `)
+      })
     })
   })
 })
