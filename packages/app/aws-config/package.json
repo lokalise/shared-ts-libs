@@ -1,7 +1,11 @@
 {
     "name": "@lokalise/aws-config",
     "version": "0.0.0",
-    "files": ["dist", "LICENSE.md", "README.md"],
+    "files": [
+        "dist",
+        "LICENSE.md",
+        "README.md"
+    ],
     "author": {
         "name": "Lokalise",
         "url": "https://lokalise.com/"
@@ -37,7 +41,8 @@
         "@aws-sdk/client-sqs": "^3.750.0",
         "@aws-sdk/credential-providers": "^3.750.0",
         "@lokalise/node-core": "=>13.0.0",
-        "@lokalise/universal-ts-utils": ">=4.0.0"
+        "@lokalise/universal-ts-utils": ">=4.0.0",
+        "@message-queue-toolkit/sqs": ">=20.1.0"
     },
     "devDependencies": {
         "@aws-sdk/client-sns": "^3.750.0",
@@ -48,6 +53,7 @@
         "@lokalise/node-core": "^13.6.0",
         "@lokalise/tsconfig": "^1.0.2",
         "@lokalise/universal-ts-utils": "^4.4.1",
+        "@message-queue-toolkit/sqs": "^20.1.0",
         "@types/node": "^22.10.1",
         "@vitest/coverage-v8": "^3.0.7",
         "rimraf": "^6.0.1",
