@@ -1,9 +1,6 @@
 import { groupByUnique } from '@lokalise/universal-ts-utils/node'
 import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
-import type { AwsConfig } from '../awsConfig.ts'
 import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRoutingConfig.ts'
-import { snsPrefixTransformer, sqsPrefixTransformer } from './prefixTransformer.ts'
-import { QUEUE_NAME_REGEX, TOPIC_NAME_REGEX } from './regex.ts'
 import type {
   MessageQueueToolkitSnsResolverOptions,
   ResolveConsumerBuildOptionsParams,
@@ -15,6 +12,12 @@ import type { CreateQueueRequest } from '@aws-sdk/client-sqs'
 import { getSnsTags, getSqsTags } from '../tags/index.ts'
 import type { SNSTopicLocatorType } from '@message-queue-toolkit/sns'
 import type { CreateTopicCommandInput } from '@aws-sdk/client-sns'
+import {
+  buildQueueUrlsWithSubscribePermissionsPrefix,
+  buildTopicArnsWithPublishPermissionsPrefix,
+  QUEUE_NAME_REGEX,
+  TOPIC_NAME_REGEX,
+} from './utils.ts'
 
 type ResolveTopicResult =
   | {
@@ -71,11 +74,11 @@ export class MessageQueueToolkitSnsResolver {
       creationConfig: {
         topic: resolvedTopic.createCommand,
         queue: this.resolveQueue(topicConfig, params),
-        topicArnsWithPublishPermissionsPrefix: this.buildTopicArnsWithPublishPermissionsPrefix(
+        topicArnsWithPublishPermissionsPrefix: buildTopicArnsWithPublishPermissionsPrefix(
           topicConfig,
           params.awsConfig,
         ),
-        queueUrlsWithSubscribePermissionsPrefix: this.buildQueueUrlsWithSubscribePermissionsPrefix(
+        queueUrlsWithSubscribePermissionsPrefix: buildQueueUrlsWithSubscribePermissionsPrefix(
           topicConfig,
           params.awsConfig,
         ),
@@ -96,8 +99,10 @@ export class MessageQueueToolkitSnsResolver {
       creationConfig: resolvedTopic.createCommand
         ? {
             topic: resolvedTopic.createCommand,
-            queueUrlsWithSubscribePermissionsPrefix:
-              this.buildQueueUrlsWithSubscribePermissionsPrefix(topicConfig, params.awsConfig),
+            queueUrlsWithSubscribePermissionsPrefix: buildQueueUrlsWithSubscribePermissionsPrefix(
+              topicConfig,
+              params.awsConfig,
+            ),
             allowedSourceOwner: params.awsConfig.allowedSourceOwner,
             updateAttributesIfExists: params.updateAttributesIfExists,
           }
@@ -140,36 +145,5 @@ export class MessageQueueToolkitSnsResolver {
       tags: getSqsTags({ ...queueConfig, ...params }),
       Attributes: { ...queueAttributes, KmsMasterKeyId: awsConfig.kmsKeyId },
     }
-  }
-
-  private buildTopicArnsWithPublishPermissionsPrefix(
-    topicConfig: TopicConfig,
-    awsConfig: AwsConfig,
-  ) {
-    return snsPrefixTransformer(
-      applyAwsResourcePrefix(`${this.extractAppNameFromTopic(topicConfig)}-`, awsConfig),
-    )
-  }
-
-  private buildQueueUrlsWithSubscribePermissionsPrefix(
-    topicConfig: TopicConfig,
-    awsConfig: AwsConfig,
-  ): string[] | undefined {
-    if (topicConfig.isExternal) return undefined
-
-    const internalPermissions = `${this.extractAppNameFromTopic(topicConfig)}-*`
-    const externalPermissions = topicConfig.externalAppsWithSubscribePermissions ?? []
-
-    return sqsPrefixTransformer(
-      [internalPermissions, ...externalPermissions].map((value) =>
-        applyAwsResourcePrefix(value, awsConfig),
-      ),
-    )
-  }
-
-  private extractAppNameFromTopic(topicConfig: TopicConfig): string {
-    const topicNameParts = topicConfig.topicName.split('-')
-    if (!topicNameParts[0]) throw new Error(`Invalid topic name ${topicConfig.topicName}`)
-    return topicNameParts[0]
   }
 }
