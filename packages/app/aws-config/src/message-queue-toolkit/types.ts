@@ -7,18 +7,29 @@ export type MessageQueueToolkitSnsResolverOptions = {
   validateNamePatterns?: boolean
 }
 
-type BaseResolveParams = Pick<AwsTagsParams, 'appEnv' | 'system' | 'project'> & {
+type BaseResolveOptionsParams = Pick<AwsTagsParams, 'appEnv' | 'system' | 'project'> & {
   topicName: string
   awsConfig: AwsConfig
+  isTest?: boolean
   updateAttributesIfExists?: boolean
-}
+  forceTagUpdate?: boolean
+} & Pick<SNSPublisherOptions<object>, 'messageTypeField' | 'logMessages'> // TODO: use a different type to pick props
 
 type ValidQueueAttributeNames = Exclude<QueueAttributeName, 'KmsMasterKeyId'>
-export type ResolveConsumerBuildOptionsParams = BaseResolveParams & {
+export type ResolveConsumerBuildOptionsParams = BaseResolveOptionsParams & {
   queueName: string
   queueAttributes?: Partial<Record<ValidQueueAttributeNames, string>>
+  /**
+   * handlers + request context prehandler
+   * subscription + message type
+   * maxRetryDuration
+   * logMessages optional
+   * isTest
+   * DLQ
+   */
 }
-export type ResolvePublisherBuildOptionsParams = BaseResolveParams
+export type ResolvePublisherBuildOptionsParams = BaseResolveOptionsParams &
+  Pick<SNSPublisherOptions<object>, 'messageSchemas'>
 
 export type ResolvedSnsConsumerBuildOptions = Pick<
   SNSSQSConsumerOptions<object, unknown, unknown>,
@@ -26,5 +37,10 @@ export type ResolvedSnsConsumerBuildOptions = Pick<
 >
 export type ResolvedSnsPublisherBuildOptions = Pick<
   SNSPublisherOptions<object>,
-  'locatorConfig' | 'creationConfig'
+  | 'locatorConfig'
+  | 'creationConfig'
+  | 'logMessages'
+  | 'messageTypeField'
+  | 'handlerSpy'
+  | 'messageSchemas'
 >

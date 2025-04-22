@@ -1,4 +1,4 @@
-import { groupByUnique } from '@lokalise/universal-ts-utils/node'
+import { groupByUnique, type MayOmit } from '@lokalise/universal-ts-utils/node'
 import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
 import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRoutingConfig.ts'
 import type {
@@ -57,12 +57,6 @@ export class MessageQueueToolkitSnsResolver {
     }
   }
 
-  private getTopicConfig(topicName: string): TopicConfig {
-    const topicConfig = this.routingConfig[topicName]
-    if (!topicConfig) throw new Error(`Topic ${topicName} not found`)
-    return topicConfig
-  }
-
   resolveConsumerBuildOptions(
     params: ResolveConsumerBuildOptionsParams,
   ): ResolvedSnsConsumerBuildOptions {
@@ -83,7 +77,8 @@ export class MessageQueueToolkitSnsResolver {
           params.awsConfig,
         ),
         allowedSourceOwner: params.awsConfig.allowedSourceOwner,
-        updateAttributesIfExists: params.updateAttributesIfExists ?? false,
+        updateAttributesIfExists: params.updateAttributesIfExists,
+        forceTagUpdate: params.forceTagUpdate,
       },
     }
   }
@@ -105,14 +100,19 @@ export class MessageQueueToolkitSnsResolver {
             ),
             allowedSourceOwner: params.awsConfig.allowedSourceOwner,
             updateAttributesIfExists: params.updateAttributesIfExists,
+            forceTagUpdate: params.forceTagUpdate,
           }
         : undefined,
+      handlerSpy: params.isTest,
+      messageTypeField: params.messageTypeField,
+      logMessages: params.logMessages,
+      messageSchemas: params.messageSchemas,
     }
   }
 
   private resolveTopic(
     topicConfig: TopicConfig,
-    params: ResolvePublisherBuildOptionsParams,
+    params: MayOmit<ResolvePublisherBuildOptionsParams, 'messageSchemas'>,
   ): ResolveTopicResult {
     if (topicConfig.isExternal) {
       return {
@@ -145,5 +145,11 @@ export class MessageQueueToolkitSnsResolver {
       tags: getSqsTags({ ...queueConfig, ...params }),
       Attributes: { ...queueAttributes, KmsMasterKeyId: awsConfig.kmsKeyId },
     }
+  }
+
+  private getTopicConfig(topicName: string): TopicConfig {
+    const topicConfig = this.routingConfig[topicName]
+    if (!topicConfig) throw new Error(`Topic ${topicName} not found`)
+    return topicConfig
   }
 }
