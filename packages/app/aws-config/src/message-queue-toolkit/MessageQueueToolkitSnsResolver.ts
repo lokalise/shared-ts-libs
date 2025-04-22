@@ -31,8 +31,9 @@ type ResolveTopicResult =
 
 export class MessageQueueToolkitSnsResolver {
   private readonly routingConfig: EventRoutingConfig
+  private readonly options: MessageQueueToolkitSnsResolverOptions
 
-  constructor(routingConfig: EventRoutingConfig, options?: MessageQueueToolkitSnsResolverOptions) {
+  constructor(routingConfig: EventRoutingConfig, options: MessageQueueToolkitSnsResolverOptions) {
     this.routingConfig = groupByUnique(
       Object.values(routingConfig).map((topic) => ({
         ...topic,
@@ -40,10 +41,14 @@ export class MessageQueueToolkitSnsResolver {
       })),
       'topicName',
     )
-    if (options?.validateNamePatterns) this.validateNamePatterns()
+    this.options = options
+
+    this.validateNamePatterns()
   }
 
   private validateNamePatterns(): void {
+    if (!this.options.validateNamePatterns) return
+
     const topicNames = Object.keys(this.routingConfig)
     for (const topicName of topicNames) {
       if (!TOPIC_NAME_REGEX.test(topicName)) throw new Error(`Invalid topic name: ${topicName}`)
@@ -125,7 +130,7 @@ export class MessageQueueToolkitSnsResolver {
     return {
       createCommand: {
         Name: applyAwsResourcePrefix(topicConfig.topicName, params.awsConfig),
-        Tags: getSnsTags({ ...topicConfig, ...params }),
+        Tags: getSnsTags({ ...topicConfig, ...this.options }),
         Attributes: { KmsMasterKeyId: params.awsConfig.kmsKeyId },
       },
     }
@@ -142,7 +147,7 @@ export class MessageQueueToolkitSnsResolver {
 
     return {
       QueueName: applyAwsResourcePrefix(queueConfig.name, awsConfig),
-      tags: getSqsTags({ ...queueConfig, ...params }),
+      tags: getSqsTags({ ...queueConfig, ...this.options }),
       Attributes: { ...queueAttributes, KmsMasterKeyId: awsConfig.kmsKeyId },
     }
   }

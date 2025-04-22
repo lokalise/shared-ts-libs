@@ -3,11 +3,14 @@ import type { AwsConfig } from '../awsConfig.ts'
 import type { QueueAttributeName } from '@aws-sdk/client-sqs'
 import type { AwsTagsParams } from '../tags/index.ts'
 
-export type MessageQueueToolkitSnsResolverOptions = {
+export type MessageQueueToolkitSnsResolverOptions = Pick<
+  AwsTagsParams,
+  'appEnv' | 'system' | 'project'
+> & {
   validateNamePatterns?: boolean
 }
 
-type BaseResolveOptionsParams = Pick<AwsTagsParams, 'appEnv' | 'system' | 'project'> & {
+type BaseResolveOptionsParams = {
   topicName: string
   awsConfig: AwsConfig
   isTest?: boolean

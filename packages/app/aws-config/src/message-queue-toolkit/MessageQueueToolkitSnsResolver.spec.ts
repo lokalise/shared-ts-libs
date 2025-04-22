@@ -45,12 +45,24 @@ describe('MessageQueueToolkitSnsResolver', () => {
   let resolver: MessageQueueToolkitSnsResolver
 
   beforeAll(() => {
-    resolver = new MessageQueueToolkitSnsResolver(EventRouting)
+    resolver = new MessageQueueToolkitSnsResolver(EventRouting, {
+      system: 'my-system',
+      project: 'my-project',
+      appEnv: 'development',
+    })
   })
 
   describe('constructor', () => {
     it('should create an instance of MessageQueueToolkitSnsResolver for empty event routing', () => {
-      const resolver = new MessageQueueToolkitSnsResolver({}, { validateNamePatterns: true })
+      const resolver = new MessageQueueToolkitSnsResolver(
+        {},
+        {
+          validateNamePatterns: true,
+          appEnv: 'development',
+          system: 'test system',
+          project: 'test project',
+        },
+      )
       expect(resolver).toBeInstanceOf(MessageQueueToolkitSnsResolver)
     })
 
@@ -64,10 +76,23 @@ describe('MessageQueueToolkitSnsResolver', () => {
       } satisfies EventRoutingConfig
 
       expect(
-        () => new MessageQueueToolkitSnsResolver(config, { validateNamePatterns: true }),
+        () =>
+          new MessageQueueToolkitSnsResolver(config, {
+            validateNamePatterns: true,
+            appEnv: 'development',
+            system: 'test system',
+            project: 'test project',
+          }),
       ).toThrowErrorMatchingInlineSnapshot('[Error: Invalid topic name: invalid]')
 
-      expect(() => new MessageQueueToolkitSnsResolver(config)).not.toThrowError()
+      expect(
+        () =>
+          new MessageQueueToolkitSnsResolver(config, {
+            appEnv: 'development',
+            system: 'test system',
+            project: 'test project',
+          }),
+      ).not.toThrowError()
     })
 
     it('should throw an error if queue name pattern is invalid', () => {
@@ -86,9 +111,22 @@ describe('MessageQueueToolkitSnsResolver', () => {
       } satisfies EventRoutingConfig
 
       expect(
-        () => new MessageQueueToolkitSnsResolver(config, { validateNamePatterns: true }),
+        () =>
+          new MessageQueueToolkitSnsResolver(config, {
+            validateNamePatterns: true,
+            appEnv: 'development',
+            system: 'test system',
+            project: 'test project',
+          }),
       ).toThrowErrorMatchingInlineSnapshot('[Error: Invalid queue name: invalid]')
-      expect(() => new MessageQueueToolkitSnsResolver(config)).not.toThrowError()
+      expect(
+        () =>
+          new MessageQueueToolkitSnsResolver(config, {
+            appEnv: 'development',
+            system: 'test system',
+            project: 'test project',
+          }),
+      ).not.toThrowError()
     })
 
     it('should work with a valid event routing config', () => {
@@ -96,6 +134,9 @@ describe('MessageQueueToolkitSnsResolver', () => {
         () =>
           new MessageQueueToolkitSnsResolver(EventRouting, {
             validateNamePatterns: true,
+            appEnv: 'development',
+            system: 'test system',
+            project: 'test project',
           }),
       ).not.toThrowError()
     })
@@ -113,9 +154,6 @@ describe('MessageQueueToolkitSnsResolver', () => {
           messageTypeField: 'myMessageType',
           forceTagUpdate: true,
           logMessages: true,
-          system: 'my-system',
-          project: 'my-project',
-          appEnv: 'development',
           isTest: true,
           messageSchemas: [],
         })
@@ -176,9 +214,6 @@ describe('MessageQueueToolkitSnsResolver', () => {
           topicName,
           awsConfig: buildAwsConfig(),
           messageTypeField: 'myMessageType',
-          system: 'my-system',
-          project: 'my-project',
-          appEnv: 'development',
           messageSchemas: [],
         })
 
@@ -237,39 +272,37 @@ describe('MessageQueueToolkitSnsResolver', () => {
     describe('external topics', () => {
       const topicName = EventRouting.topic2.topicName
 
-      it('should work using only required props', () => {
+      it('should work using all props', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
-          awsConfig: buildAwsConfig(),
+          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
+          updateAttributesIfExists: true,
           messageTypeField: 'myMessageType',
-          system: 'my-system',
-          project: 'my-project',
-          appEnv: 'development',
+          forceTagUpdate: true,
+          logMessages: true,
+          isTest: true,
           messageSchemas: [],
         })
 
         expect(result).toMatchInlineSnapshot(`
           {
             "creationConfig": undefined,
-            "handlerSpy": undefined,
+            "handlerSpy": true,
             "locatorConfig": {
-              "topicName": "test-second_entity",
+              "topicName": "preffix_test-second_entity",
             },
-            "logMessages": undefined,
+            "logMessages": true,
             "messageSchemas": [],
             "messageTypeField": "myMessageType",
           }
         `)
       })
 
-      it('should topics using only required props', () => {
+      it('should work using only required props', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
           awsConfig: buildAwsConfig(),
           messageTypeField: 'myMessageType',
-          system: 'my-system',
-          project: 'my-project',
-          appEnv: 'development',
           messageSchemas: [],
         })
 
