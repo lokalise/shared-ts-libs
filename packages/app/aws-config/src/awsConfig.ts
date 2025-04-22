@@ -42,11 +42,6 @@ export const getAwsConfig = (): AwsConfig => {
   }
 }
 
-export const applyAwsResourcePrefix = (resourceName: string, awsConfig: AwsConfig): string => {
-  if (!awsConfig.resourcePrefix) return resourceName
-  return `${awsConfig.resourcePrefix}_${resourceName}`
-}
-
 const resolveCredentials = (
   configScope: ConfigScope,
 ): AwsCredentialIdentity | Provider<AwsCredentialIdentity> => {

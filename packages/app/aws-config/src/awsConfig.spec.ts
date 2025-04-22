@@ -1,4 +1,4 @@
-import { applyAwsResourcePrefix, getAwsConfig } from './awsConfig.ts'
+import { getAwsConfig } from './awsConfig.ts'
 
 const AWS_ALLOWED_SOURCE_OWNER_LITERAL = 'allowed-source-owner'
 const AWS_RESOURCE_PREFIX_LITERAL = 'resource-prefix'
@@ -102,29 +102,6 @@ describe('awsConfig', () => {
       }
 
       expect(() => getAwsConfig()).toThrow('Missing mandatory configuration parameter: AWS_REGION')
-    })
-  })
-
-  describe('applyAwsResourcePrefix', () => {
-    it('should return the resource name without prefix if no prefix is set', () => {
-      expect(
-        applyAwsResourcePrefix('my-queue', {
-          region: 'us-east-1',
-          kmsKeyId: 'my-kms-key-id',
-          allowedSourceOwner: 'my-owner',
-        }),
-      ).toEqual('my-queue')
-    })
-
-    it('should use the prefix if it is set', () => {
-      expect(
-        applyAwsResourcePrefix('my-queue', {
-          region: 'us-east-1',
-          kmsKeyId: 'my-kms-key-id',
-          allowedSourceOwner: 'my-owner',
-          resourcePrefix: 'prefix',
-        }),
-      ).toEqual('prefix_my-queue')
     })
   })
 })
