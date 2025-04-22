@@ -26,10 +26,17 @@ export type AwsConfig = {
   credentials?: AwsCredentialIdentity | Provider<AwsCredentialIdentity>
 }
 
+export let awsConfig: AwsConfig | undefined
+
 /**
  * Retrieves the AWS configuration settings from the environment variables.
  */
 export const getAwsConfig = (): AwsConfig => {
+  if (!awsConfig) awsConfig = generateAwsConfig()
+  return awsConfig
+}
+
+const generateAwsConfig = (): AwsConfig => {
   const configScope = new ConfigScope()
 
   return {
@@ -51,4 +58,19 @@ const resolveCredentials = (
   if (accessKeyId && secretAccessKey) return { accessKeyId, secretAccessKey }
 
   return createCredentialChain(fromTokenFile(), fromInstanceMetadata(), fromEnv(), fromIni())
+}
+
+/**
+ * Resets the cached AWS configuration.
+ *
+ * This method is intended **only for testing purposes.**
+ * It allows tests to reset the singleton state between runs
+ * to ensure test isolation and prevent cross-test contamination.
+ *
+ * WARNING:
+ * Do NOT export or expose this method from your package's public API
+ * This method is not part of the package's contract and should be used internally for testing ONLY.
+ */
+export const testResetAwsConfig = () => {
+  awsConfig = undefined
 }

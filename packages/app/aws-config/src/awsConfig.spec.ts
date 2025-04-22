@@ -1,4 +1,4 @@
-import { getAwsConfig } from './awsConfig.ts'
+import { getAwsConfig, testResetAwsConfig } from './awsConfig.ts'
 
 const AWS_ALLOWED_SOURCE_OWNER_LITERAL = 'allowed-source-owner'
 const AWS_RESOURCE_PREFIX_LITERAL = 'resource-prefix'
@@ -10,6 +10,7 @@ describe('awsConfig', () => {
   describe('getAwsConfig', () => {
     beforeEach(() => {
       process.env = {}
+      testResetAwsConfig()
     })
 
     it('provides aws config', () => {
