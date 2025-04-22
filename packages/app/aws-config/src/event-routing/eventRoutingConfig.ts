@@ -28,8 +28,10 @@ export type QueueConfig<
  * Supports both internal (managed within your application) and external (managed outside your control) topics.
  *
  * There are two modes for this config:
- * 1. Internal Topic (default): Includes full config and the set of external apps with subscribe permissions.
- * 2. External Topic: Minimal config indicating only the topic name and that it is external.
+ * 1. Internal Topic (default): Includes full config and the set of external apps with subscribe permissions,
+ *  these topics are supposed to be managed and created by your application.
+ * 2. External Topic: Minimal config indicating only the topic name and that it is external,
+ *  these topics are supposed to be created and managed by other application, our app should only locate them.
  *
  * @template Owner - The type representing the owner/team name.
  * @template Service - The type representing the service name.
