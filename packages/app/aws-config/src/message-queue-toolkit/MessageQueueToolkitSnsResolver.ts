@@ -1,7 +1,7 @@
 import type { CreateTopicCommandInput } from '@aws-sdk/client-sns'
 import type { CreateQueueRequest } from '@aws-sdk/client-sqs'
 import { type MayOmit, groupByUnique } from '@lokalise/universal-ts-utils/node'
-import type { SNSTopicLocatorType } from '@message-queue-toolkit/sns'
+import { generateFilterAttributes, type SNSTopicLocatorType } from '@message-queue-toolkit/sns'
 import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
 import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRoutingConfig.ts'
 import { getSnsTags, getSqsTags } from '../tags/index.ts'
@@ -28,6 +28,14 @@ type ResolveTopicResult =
       locatorConfig?: never
       createCommand: CreateTopicCommandInput
     }
+
+const MESSAGE_TYPE_FIELD = 'type'
+const DLQ_SUFFIX = '-dlq'
+const DLQ_MAX_RECEIVE_COUNT = 5
+const DLQ_MESSAGE_RETENTION_PERIOD = 7 * 24 * 60 * 60 // 7 days in seconds
+const VISIBILITY_TIMEOUT = 60 // 1 minutes
+const HEARTBEAT_INTERVAL = 20 // 20 seconds
+const MAX_RETRY_DURATION = 2 * 24 * 60 * 60 // 2 days in seconds
 
 export class MessageQueueToolkitSnsResolver {
   private readonly routingConfig: EventRoutingConfig
@@ -83,7 +91,7 @@ export class MessageQueueToolkitSnsResolver {
           }
         : undefined,
       handlerSpy: params.isTest,
-      messageTypeField: params.messageTypeField,
+      messageTypeField: params.messageTypeField ?? MESSAGE_TYPE_FIELD,
       logMessages: params.logMessages,
       messageSchemas: params.messageSchemas,
     }
@@ -95,11 +103,13 @@ export class MessageQueueToolkitSnsResolver {
     const topicConfig = this.getTopicConfig(params.topicName)
     const resolvedTopic = this.resolveTopic(topicConfig, params)
 
+    const queueCreateRequest = this.resolveQueue(topicConfig, params)
+
     return {
       locatorConfig: resolvedTopic.locatorConfig,
       creationConfig: {
         topic: resolvedTopic.createCommand,
-        queue: this.resolveQueue(topicConfig, params),
+        queue: queueCreateRequest,
         topicArnsWithPublishPermissionsPrefix: buildTopicArnsWithPublishPermissionsPrefix(
           topicConfig,
           params.awsConfig,
@@ -109,12 +119,53 @@ export class MessageQueueToolkitSnsResolver {
           params.awsConfig,
         ),
         allowedSourceOwner: params.awsConfig.allowedSourceOwner,
-        updateAttributesIfExists: params.updateAttributesIfExists,
+        updateAttributesIfExists: params.updateAttributesIfExists ?? true,
         forceTagUpdate: params.forceTagUpdate,
       },
+      subscriptionConfig: {
+        updateAttributesIfExists: params.updateAttributesIfExists ?? true,
+        Attributes: generateFilterAttributes(
+          params.handlers.map((entry) => entry.schema),
+          params.messageTypeField ?? MESSAGE_TYPE_FIELD,
+        ),
+      },
+      deletionConfig: { deleteIfExists: params.isTest },
+      handlers: params.handlers, // TODO: pre request handler
       logMessages: params.logMessages,
-      messageTypeField: params.messageTypeField,
+      messageTypeField: params.messageTypeField ?? MESSAGE_TYPE_FIELD,
       handlerSpy: params.isTest,
+      concurrentConsumersAmount: params.concurrentConsumersAmount,
+      maxRetryDuration: params.maxRetryDuration ?? MAX_RETRY_DURATION,
+      consumerOverrides: params.isTest
+        ? {
+            // allows to retry failed messages immediately
+            terminateVisibilityTimeout: true,
+            batchSize: params.batchSize,
+          }
+        : {
+            heartbeatInterval: params.heartbeatInterval ?? HEARTBEAT_INTERVAL,
+            batchSize: params.batchSize,
+          },
+      deadLetterQueue: params.isTest
+        ? undefined // no DLQ in test mode
+        : {
+            redrivePolicy: {
+              maxReceiveCount: params.dlqRedrivePolicyMaxReceiveCount ?? DLQ_MAX_RECEIVE_COUNT,
+            },
+            creationConfig: {
+              queue: {
+                QueueName: `${queueCreateRequest.QueueName}${DLQ_SUFFIX}`,
+                tags: queueCreateRequest.tags,
+                Attributes: {
+                  KmsMasterKeyId: params.awsConfig.kmsKeyId,
+                  MessageRetentionPeriod: (
+                    params.dlqMessageRetentionPeriod ?? DLQ_MESSAGE_RETENTION_PERIOD
+                  ).toString(),
+                },
+              },
+              updateAttributesIfExists: params.updateAttributesIfExists ?? true,
+            },
+          },
     }
   }
 
@@ -151,7 +202,11 @@ export class MessageQueueToolkitSnsResolver {
     return {
       QueueName: applyAwsResourcePrefix(queueConfig.name, awsConfig),
       tags: getSqsTags({ ...queueConfig, ...this.options }),
-      Attributes: { ...queueAttributes, KmsMasterKeyId: awsConfig.kmsKeyId },
+      Attributes: {
+        KmsMasterKeyId: awsConfig.kmsKeyId,
+        VisibilityTimeout: VISIBILITY_TIMEOUT.toString(),
+        ...queueAttributes,
+      },
     }
   }
 

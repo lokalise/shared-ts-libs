@@ -224,59 +224,58 @@ describe('MessageQueueToolkitSnsResolver', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
           awsConfig: buildAwsConfig(),
-          messageTypeField: 'myMessageType',
           messageSchemas: [],
         })
 
         expect(result).toMatchInlineSnapshot(`
-        {
-          "creationConfig": {
-            "allowedSourceOwner": "test allowedSourceOwner",
-            "forceTagUpdate": undefined,
-            "queueUrlsWithSubscribePermissionsPrefix": [
-              "arn:aws:sqs:*:*:test-*",
-            ],
-            "topic": {
-              "Attributes": {
-                "KmsMasterKeyId": "test kmsKeyId",
-              },
-              "Name": "test-first_entity",
-              "Tags": [
-                {
-                  "Key": "env",
-                  "Value": "dev",
-                },
-                {
-                  "Key": "project",
-                  "Value": "my-project",
-                },
-                {
-                  "Key": "service",
-                  "Value": "sns",
-                },
-                {
-                  "Key": "lok-owner",
-                  "Value": "team 1",
-                },
-                {
-                  "Key": "lok-cost-system",
-                  "Value": "my-system",
-                },
-                {
-                  "Key": "lok-cost-service",
-                  "Value": "service 1",
-                },
+          {
+            "creationConfig": {
+              "allowedSourceOwner": "test allowedSourceOwner",
+              "forceTagUpdate": undefined,
+              "queueUrlsWithSubscribePermissionsPrefix": [
+                "arn:aws:sqs:*:*:test-*",
               ],
+              "topic": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                },
+                "Name": "test-first_entity",
+                "Tags": [
+                  {
+                    "Key": "env",
+                    "Value": "dev",
+                  },
+                  {
+                    "Key": "project",
+                    "Value": "my-project",
+                  },
+                  {
+                    "Key": "service",
+                    "Value": "sns",
+                  },
+                  {
+                    "Key": "lok-owner",
+                    "Value": "team 1",
+                  },
+                  {
+                    "Key": "lok-cost-system",
+                    "Value": "my-system",
+                  },
+                  {
+                    "Key": "lok-cost-service",
+                    "Value": "service 1",
+                  },
+                ],
+              },
+              "updateAttributesIfExists": undefined,
             },
-            "updateAttributesIfExists": undefined,
-          },
-          "handlerSpy": undefined,
-          "locatorConfig": undefined,
-          "logMessages": undefined,
-          "messageSchemas": [],
-          "messageTypeField": "myMessageType",
-        }
-      `)
+            "handlerSpy": undefined,
+            "locatorConfig": undefined,
+            "logMessages": undefined,
+            "messageSchemas": [],
+            "messageTypeField": "type",
+          }
+        `)
       })
     })
 
@@ -313,7 +312,6 @@ describe('MessageQueueToolkitSnsResolver', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
           awsConfig: buildAwsConfig(),
-          messageTypeField: 'myMessageType',
           messageSchemas: [],
         })
 
@@ -326,7 +324,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
             },
             "logMessages": undefined,
             "messageSchemas": [],
-            "messageTypeField": "myMessageType",
+            "messageTypeField": "type",
           }
         `)
       })
@@ -340,7 +338,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
           topicName: 'invalid-topic',
           queueName: 'test-first_entity-first_service',
           awsConfig: buildAwsConfig(),
-          messageTypeField: 'myMessageType',
+          handlers: [],
         }),
       ).toThrowErrorMatchingInlineSnapshot('[Error: Topic invalid-topic not found]')
     })
@@ -351,7 +349,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
           topicName: EventRouting.topic1.topicName,
           queueName: EventRouting.topic2.queues.topic2Queue1.name,
           awsConfig: buildAwsConfig(),
-          messageTypeField: 'myMessageType',
+          handlers: [],
         }),
       ).toThrowErrorMatchingInlineSnapshot('[Error: Queue test-second_entity-service not found]')
     })
@@ -364,6 +362,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
         const result = resolver.resolveConsumerBuildOptions({
           topicName,
           queueName,
+          handlers: [],
           queueAttributes: { VisibilityTimeout: '1' },
           awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
           updateAttributesIfExists: true,
@@ -371,10 +370,21 @@ describe('MessageQueueToolkitSnsResolver', () => {
           forceTagUpdate: true,
           logMessages: true,
           isTest: true,
+          maxRetryDuration: 1,
+          heartbeatInterval: 1,
+          batchSize: 1,
+          concurrentConsumersAmount: 1,
+          dlqRedrivePolicyMaxReceiveCount: 1,
+          dlqMessageRetentionPeriod: 1,
         })
 
         expect(result).toMatchInlineSnapshot(`
           {
+            "concurrentConsumersAmount": 1,
+            "consumerOverrides": {
+              "batchSize": 1,
+              "terminateVisibilityTimeout": true,
+            },
             "creationConfig": {
               "allowedSourceOwner": "test allowedSourceOwner",
               "forceTagUpdate": true,
@@ -431,10 +441,23 @@ describe('MessageQueueToolkitSnsResolver', () => {
               "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:preffix_test-*",
               "updateAttributesIfExists": true,
             },
+            "deadLetterQueue": undefined,
+            "deletionConfig": {
+              "deleteIfExists": true,
+            },
             "handlerSpy": true,
+            "handlers": [],
             "locatorConfig": undefined,
             "logMessages": true,
+            "maxRetryDuration": 1,
             "messageTypeField": "myMessageType",
+            "subscriptionConfig": {
+              "Attributes": {
+                "FilterPolicy": "{"type":[]}",
+                "FilterPolicyScope": "MessageBody",
+              },
+              "updateAttributesIfExists": true,
+            },
           }
         `)
       })
@@ -444,17 +467,23 @@ describe('MessageQueueToolkitSnsResolver', () => {
           topicName,
           queueName,
           awsConfig: buildAwsConfig(),
-          messageTypeField: 'myMessageType',
+          handlers: [],
         })
 
         expect(result).toMatchInlineSnapshot(`
           {
+            "concurrentConsumersAmount": undefined,
+            "consumerOverrides": {
+              "batchSize": undefined,
+              "heartbeatInterval": 20,
+            },
             "creationConfig": {
               "allowedSourceOwner": "test allowedSourceOwner",
               "forceTagUpdate": undefined,
               "queue": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
+                  "VisibilityTimeout": "60",
                 },
                 "QueueName": "test-first_entity-first_service",
                 "tags": {
@@ -502,12 +531,47 @@ describe('MessageQueueToolkitSnsResolver', () => {
                 ],
               },
               "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:test-*",
-              "updateAttributesIfExists": undefined,
+              "updateAttributesIfExists": true,
+            },
+            "deadLetterQueue": {
+              "creationConfig": {
+                "queue": {
+                  "Attributes": {
+                    "KmsMasterKeyId": "test kmsKeyId",
+                    "MessageRetentionPeriod": "604800",
+                  },
+                  "QueueName": "test-first_entity-first_service-dlq",
+                  "tags": {
+                    "env": "dev",
+                    "lok-cost-service": "service 1",
+                    "lok-cost-system": "my-system",
+                    "lok-owner": "team 1",
+                    "project": "my-project",
+                    "service": "sqs",
+                  },
+                },
+                "updateAttributesIfExists": true,
+              },
+              "redrivePolicy": {
+                "maxReceiveCount": 5,
+              },
+            },
+            "deletionConfig": {
+              "deleteIfExists": undefined,
             },
             "handlerSpy": undefined,
+            "handlers": [],
             "locatorConfig": undefined,
             "logMessages": undefined,
-            "messageTypeField": "myMessageType",
+            "maxRetryDuration": 172800,
+            "messageTypeField": "type",
+            "subscriptionConfig": {
+              "Attributes": {
+                "FilterPolicy": "{"type":[]}",
+                "FilterPolicyScope": "MessageBody",
+              },
+              "updateAttributesIfExists": true,
+            },
           }
         `)
       })
@@ -521,6 +585,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
         const result = resolver.resolveConsumerBuildOptions({
           topicName,
           queueName,
+          handlers: [],
           queueAttributes: { VisibilityTimeout: '1' },
           awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
           updateAttributesIfExists: true,
@@ -528,10 +593,21 @@ describe('MessageQueueToolkitSnsResolver', () => {
           forceTagUpdate: true,
           logMessages: true,
           isTest: true,
+          maxRetryDuration: 1,
+          heartbeatInterval: 1,
+          batchSize: 1,
+          concurrentConsumersAmount: 1,
+          dlqRedrivePolicyMaxReceiveCount: 1,
+          dlqMessageRetentionPeriod: 1,
         })
 
         expect(result).toMatchInlineSnapshot(`
           {
+            "concurrentConsumersAmount": 1,
+            "consumerOverrides": {
+              "batchSize": 1,
+              "terminateVisibilityTimeout": true,
+            },
             "creationConfig": {
               "allowedSourceOwner": "test allowedSourceOwner",
               "forceTagUpdate": true,
@@ -555,12 +631,25 @@ describe('MessageQueueToolkitSnsResolver', () => {
               "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:preffix_test-*",
               "updateAttributesIfExists": true,
             },
+            "deadLetterQueue": undefined,
+            "deletionConfig": {
+              "deleteIfExists": true,
+            },
             "handlerSpy": true,
+            "handlers": [],
             "locatorConfig": {
               "topicName": "preffix_test-second_entity",
             },
             "logMessages": true,
+            "maxRetryDuration": 1,
             "messageTypeField": "myMessageType",
+            "subscriptionConfig": {
+              "Attributes": {
+                "FilterPolicy": "{"type":[]}",
+                "FilterPolicyScope": "MessageBody",
+              },
+              "updateAttributesIfExists": true,
+            },
           }
         `)
       })
@@ -569,18 +658,24 @@ describe('MessageQueueToolkitSnsResolver', () => {
         const result = resolver.resolveConsumerBuildOptions({
           topicName,
           queueName,
+          handlers: [],
           awsConfig: buildAwsConfig(),
-          messageTypeField: 'myMessageType',
         })
 
         expect(result).toMatchInlineSnapshot(`
           {
+            "concurrentConsumersAmount": undefined,
+            "consumerOverrides": {
+              "batchSize": undefined,
+              "heartbeatInterval": 20,
+            },
             "creationConfig": {
               "allowedSourceOwner": "test allowedSourceOwner",
               "forceTagUpdate": undefined,
               "queue": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
+                  "VisibilityTimeout": "60",
                 },
                 "QueueName": "test-second_entity-service",
                 "tags": {
@@ -595,14 +690,49 @@ describe('MessageQueueToolkitSnsResolver', () => {
               "queueUrlsWithSubscribePermissionsPrefix": undefined,
               "topic": undefined,
               "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:test-*",
-              "updateAttributesIfExists": undefined,
+              "updateAttributesIfExists": true,
+            },
+            "deadLetterQueue": {
+              "creationConfig": {
+                "queue": {
+                  "Attributes": {
+                    "KmsMasterKeyId": "test kmsKeyId",
+                    "MessageRetentionPeriod": "604800",
+                  },
+                  "QueueName": "test-second_entity-service-dlq",
+                  "tags": {
+                    "env": "dev",
+                    "lok-cost-service": "service 2",
+                    "lok-cost-system": "my-system",
+                    "lok-owner": "team 1",
+                    "project": "my-project",
+                    "service": "sqs",
+                  },
+                },
+                "updateAttributesIfExists": true,
+              },
+              "redrivePolicy": {
+                "maxReceiveCount": 5,
+              },
+            },
+            "deletionConfig": {
+              "deleteIfExists": undefined,
             },
             "handlerSpy": undefined,
+            "handlers": [],
             "locatorConfig": {
               "topicName": "test-second_entity",
             },
             "logMessages": undefined,
-            "messageTypeField": "myMessageType",
+            "maxRetryDuration": 172800,
+            "messageTypeField": "type",
+            "subscriptionConfig": {
+              "Attributes": {
+                "FilterPolicy": "{"type":[]}",
+                "FilterPolicyScope": "MessageBody",
+              },
+              "updateAttributesIfExists": true,
+            },
           }
         `)
       })
