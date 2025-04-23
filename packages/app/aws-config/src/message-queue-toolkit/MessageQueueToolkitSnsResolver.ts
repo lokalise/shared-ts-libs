@@ -135,7 +135,7 @@ export class MessageQueueToolkitSnsResolver {
       messageTypeField: params.messageTypeField ?? MESSAGE_TYPE_FIELD,
       handlerSpy: params.isTest,
       concurrentConsumersAmount: params.concurrentConsumersAmount,
-      maxRetryDuration: params.maxRetryDuration ?? MAX_RETRY_DURATION,
+      maxRetryDuration: MAX_RETRY_DURATION,
       consumerOverrides: params.isTest
         ? {
             // allows to retry failed messages immediately
@@ -143,14 +143,14 @@ export class MessageQueueToolkitSnsResolver {
             batchSize: params.batchSize,
           }
         : {
-            heartbeatInterval: params.heartbeatInterval ?? HEARTBEAT_INTERVAL,
+            heartbeatInterval: HEARTBEAT_INTERVAL,
             batchSize: params.batchSize,
           },
       deadLetterQueue: params.isTest
         ? undefined // no DLQ in test mode
         : {
             redrivePolicy: {
-              maxReceiveCount: params.dlqRedrivePolicyMaxReceiveCount ?? DLQ_MAX_RECEIVE_COUNT,
+              maxReceiveCount: DLQ_MAX_RECEIVE_COUNT,
             },
             creationConfig: {
               queue: {
@@ -158,9 +158,7 @@ export class MessageQueueToolkitSnsResolver {
                 tags: queueCreateRequest.tags,
                 Attributes: {
                   KmsMasterKeyId: params.awsConfig.kmsKeyId,
-                  MessageRetentionPeriod: (
-                    params.dlqMessageRetentionPeriod ?? DLQ_MESSAGE_RETENTION_PERIOD
-                  ).toString(),
+                  MessageRetentionPeriod: DLQ_MESSAGE_RETENTION_PERIOD.toString(),
                 },
               },
               updateAttributesIfExists: params.updateAttributesIfExists ?? true,
@@ -194,7 +192,7 @@ export class MessageQueueToolkitSnsResolver {
     topicConfig: TopicConfig,
     params: ResolveConsumerBuildOptionsParams,
   ): CreateQueueRequest => {
-    const { queueName, awsConfig, queueAttributes } = params
+    const { queueName, awsConfig } = params
 
     const queueConfig = topicConfig.queues[queueName]
     if (!queueConfig) throw new Error(`Queue ${queueName} not found`)
@@ -205,7 +203,6 @@ export class MessageQueueToolkitSnsResolver {
       Attributes: {
         KmsMasterKeyId: awsConfig.kmsKeyId,
         VisibilityTimeout: VISIBILITY_TIMEOUT.toString(),
-        ...queueAttributes,
       },
     }
   }

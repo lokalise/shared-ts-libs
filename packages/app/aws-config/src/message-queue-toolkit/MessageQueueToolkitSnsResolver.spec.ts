@@ -363,19 +363,14 @@ describe('MessageQueueToolkitSnsResolver', () => {
           topicName,
           queueName,
           handlers: [],
-          queueAttributes: { VisibilityTimeout: '1' },
           awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
           updateAttributesIfExists: true,
           messageTypeField: 'myMessageType',
           forceTagUpdate: true,
           logMessages: true,
           isTest: true,
-          maxRetryDuration: 1,
-          heartbeatInterval: 1,
           batchSize: 1,
           concurrentConsumersAmount: 1,
-          dlqRedrivePolicyMaxReceiveCount: 1,
-          dlqMessageRetentionPeriod: 1,
         })
 
         expect(result).toMatchInlineSnapshot(`
@@ -391,7 +386,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
               "queue": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
-                  "VisibilityTimeout": "1",
+                  "VisibilityTimeout": "60",
                 },
                 "QueueName": "preffix_test-first_entity-first_service",
                 "tags": {
@@ -449,7 +444,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
             "handlers": [],
             "locatorConfig": undefined,
             "logMessages": true,
-            "maxRetryDuration": 1,
+            "maxRetryDuration": 172800,
             "messageTypeField": "myMessageType",
             "subscriptionConfig": {
               "Attributes": {
@@ -586,19 +581,14 @@ describe('MessageQueueToolkitSnsResolver', () => {
           topicName,
           queueName,
           handlers: [],
-          queueAttributes: { VisibilityTimeout: '1' },
           awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
           updateAttributesIfExists: true,
           messageTypeField: 'myMessageType',
           forceTagUpdate: true,
           logMessages: true,
           isTest: true,
-          maxRetryDuration: 1,
-          heartbeatInterval: 1,
           batchSize: 1,
           concurrentConsumersAmount: 1,
-          dlqRedrivePolicyMaxReceiveCount: 1,
-          dlqMessageRetentionPeriod: 1,
         })
 
         expect(result).toMatchInlineSnapshot(`
@@ -614,7 +604,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
               "queue": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
-                  "VisibilityTimeout": "1",
+                  "VisibilityTimeout": "60",
                 },
                 "QueueName": "preffix_test-second_entity-service",
                 "tags": {
@@ -641,7 +631,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
               "topicName": "preffix_test-second_entity",
             },
             "logMessages": true,
-            "maxRetryDuration": 1,
+            "maxRetryDuration": 172800,
             "messageTypeField": "myMessageType",
             "subscriptionConfig": {
               "Attributes": {
