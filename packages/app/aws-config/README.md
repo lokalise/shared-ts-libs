@@ -86,7 +86,7 @@ const routingConfig: EventRoutingConfig = {
 - **Internal Topics** (default)
   - You own and manage the SNS topic.
   - `TopicConfig` must include `owner`, `service`, and optionally `externalAppsWithSubscribePermissions`.
-  - At runtime, the `MessageQueueToolkitSnsResolver` will issue a **CreateTopic** command (with name prefixing, tags, 
+  - At runtime, the `MessageQueueToolkitSnsOptionsResolver` will issue a **CreateTopic** command (with name prefixing, tags, 
    KMS settings) and set up subscriptions for your queues and any external apps.
 
 - **External Topics** (`isExternal: true`)
@@ -103,12 +103,12 @@ Under the hood, the TypeScript union enforces this shape.
 Automatically build publisher and consumer options with `@message-queue-toolkit/sns`:
 
 ```ts
-import { MessageQueueToolkitSnsResolver } from '@lokalise/aws-config';
+import { MessageQueueToolkitSnsOptionsResolver } from '@lokalise/aws-config';
 import { getAwsConfig } from '@lokalise/aws-config';
 import { logger } from '@lokalise/node-core';
 
 const awsConfig = getAwsConfig();
-const resolver = new MessageQueueToolkitSnsResolver(routingConfig, {
+const resolver = new MessageQueueToolkitSnsOptionsResolver(routingConfig, {
   appEnv: 'production',
   system: 'backend',
   project: 'order-project',
