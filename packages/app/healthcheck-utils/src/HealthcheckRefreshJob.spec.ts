@@ -143,7 +143,7 @@ describe('HealthcheckRefreshJob', () => {
     expect(healthcheckSuccess).toBe(false)
   })
 
-  it('updates successful for multiple healthchecks', async () => {
+  it('updates successfully for multiple healthchecks', async () => {
     store = new HealthcheckResultsStore({ maxHealthcheckNumber: 2 })
     const healthchecks = [
       new TestHealthcheck(
