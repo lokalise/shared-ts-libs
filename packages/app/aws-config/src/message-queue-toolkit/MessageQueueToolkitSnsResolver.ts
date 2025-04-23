@@ -18,6 +18,7 @@ import {
   buildQueueUrlsWithSubscribePermissionsPrefix,
   buildTopicArnsWithPublishPermissionsPrefix,
 } from './utils.ts'
+import { createRequestContextPreHandler } from './prehandlers/createRequestContextPreHandler.ts'
 
 type ResolveTopicResult =
   | {
@@ -105,6 +106,12 @@ export class MessageQueueToolkitSnsResolver {
 
     const queueCreateRequest = this.resolveQueue(topicConfig, params)
 
+    const handlerConfigs = params.handlers
+    for (const handlerConfig of handlerConfigs) {
+      const requestContextPreHandler = createRequestContextPreHandler(params.logger)
+      handlerConfig.preHandlers.push(requestContextPreHandler)
+    }
+
     return {
       locatorConfig: resolvedTopic.locatorConfig,
       creationConfig: {
@@ -125,12 +132,12 @@ export class MessageQueueToolkitSnsResolver {
       subscriptionConfig: {
         updateAttributesIfExists: params.updateAttributesIfExists ?? true,
         Attributes: generateFilterAttributes(
-          params.handlers.map((entry) => entry.schema),
+          handlerConfigs.map((entry) => entry.schema),
           params.messageTypeField ?? MESSAGE_TYPE_FIELD,
         ),
       },
       deletionConfig: { deleteIfExists: params.isTest },
-      handlers: params.handlers, // TODO: pre request handler
+      handlers: handlerConfigs,
       logMessages: params.logMessages,
       messageTypeField: params.messageTypeField ?? MESSAGE_TYPE_FIELD,
       handlerSpy: params.isTest,

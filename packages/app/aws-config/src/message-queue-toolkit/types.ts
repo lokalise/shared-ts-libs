@@ -1,8 +1,9 @@
-import type { CommonQueueOptions } from '@message-queue-toolkit/core'
+import type { CommonQueueOptions, ConsumerBaseMessageType } from '@message-queue-toolkit/core'
 import type { SNSPublisherOptions, SNSSQSConsumerOptions } from '@message-queue-toolkit/sns'
 import type { AwsConfig } from '../awsConfig.ts'
 import type { AwsTagsParams } from '../tags/index.ts'
 import type { MayOmit } from '@lokalise/universal-ts-utils/node'
+import type { CommonLogger } from '@lokalise/node-core'
 
 export type MessageQueueToolkitSnsResolverOptions = Pick<
   AwsTagsParams,
@@ -17,6 +18,8 @@ type BaseResolveOptionsParams = {
   topicName: string
   /** AWS config object */
   awsConfig: AwsConfig
+  /** logger */
+  logger: CommonLogger
   /** Enable test mode */
   isTest?: boolean
   /** Update resources attributes if they exists (default: true)*/
@@ -28,7 +31,7 @@ type BaseResolveOptionsParams = {
 
 export type ResolveConsumerBuildOptionsParams = BaseResolveOptionsParams &
   Pick<
-    SNSSQSConsumerOptions<object, unknown, unknown>,
+    SNSSQSConsumerOptions<ConsumerBaseMessageType, unknown, unknown>,
     'handlers' | 'concurrentConsumersAmount'
   > & {
     /** SQS queue name */
@@ -40,7 +43,7 @@ export type ResolvePublisherBuildOptionsParams = BaseResolveOptionsParams &
   Pick<SNSPublisherOptions<object>, 'messageSchemas'>
 
 export type ResolvedSnsConsumerBuildOptions = Pick<
-  SNSSQSConsumerOptions<object, unknown, unknown>,
+  SNSSQSConsumerOptions<ConsumerBaseMessageType, unknown, unknown>,
   | 'locatorConfig'
   | 'creationConfig'
   | 'subscriptionConfig'
