@@ -26,7 +26,7 @@ export type AwsConfig = {
   credentials?: AwsCredentialIdentity | Provider<AwsCredentialIdentity>
 }
 
-export let awsConfig: AwsConfig | undefined
+let awsConfig: AwsConfig | undefined
 
 /**
  * Retrieves the AWS configuration settings from the environment variables.
