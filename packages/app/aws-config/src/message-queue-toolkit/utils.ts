@@ -47,8 +47,11 @@ export const buildQueueUrlsWithSubscribePermissionsPrefix = (
 
   return sqsPrefixTransformer(
     [internalPermissions, ...externalPermissions]
-      .map((value) => (value.endsWith('-') ? value : `${value}-`))
-      .map((value) => applyAwsResourcePrefix(value, awsConfig)),
+      .map((value) => applyAwsResourcePrefix(value, awsConfig))
+      .map((value) => {
+        if (value.endsWith('*')) return value
+        return ensureWildcard(value.endsWith('-') ? value : `${value}-`)
+      }),
   )
 }
 
