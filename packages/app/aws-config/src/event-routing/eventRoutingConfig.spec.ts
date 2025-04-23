@@ -1,5 +1,5 @@
 import { expectTypeOf } from 'vitest'
-import type { QueueConfig, TopicConfig } from './eventRoutingConfig.ts'
+import type { EventRoutingConfig, QueueConfig, TopicConfig } from './eventRoutingConfig.ts'
 
 describe('eventRoutingConfig', () => {
   describe('QueueConfig', () => {
@@ -84,6 +84,47 @@ describe('eventRoutingConfig', () => {
         externalAppsWithSubscribePermissions: ['my app'],
       }
       expectTypeOf(configWithExternalApps).not.toExtend<TopicConfig>()
+    })
+  })
+
+  describe('EventRoutingConfig', () => {
+    it('should use default generic types', () => {
+      const config = {
+        myTopic: {
+          topicName: 'my-topic',
+          owner: 'my-team',
+          service: 'my-service',
+          queues: {
+            myQueue: {
+              name: 'my-queue',
+              owner: 'my-team',
+              service: 'my-service',
+            },
+          },
+        },
+      } satisfies EventRoutingConfig
+
+      expectTypeOf(config).toExtend<EventRoutingConfig<string, string, string>>()
+    })
+
+    it('should respect generic types', () => {
+      const config = {
+        myTopic: {
+          topicName: 'my-topic',
+          owner: 'owner',
+          service: 'service',
+          externalAppsWithSubscribePermissions: ['another-app'],
+          queues: {
+            myQueue: {
+              name: 'my-queue',
+              owner: 'owner',
+              service: 'service',
+            },
+          },
+        },
+      } satisfies EventRoutingConfig<'owner', 'service', 'another-app'>
+
+      expectTypeOf(config).toExtend<EventRoutingConfig<'owner', 'service', 'another-app'>>()
     })
   })
 })
