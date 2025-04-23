@@ -90,10 +90,9 @@ describe('HealthcheckRefreshJob', () => {
   let job: HealthcheckRefreshJob
   beforeAll(() => {
     redis = new Redis(getTestRedisConfig())
-    store = new HealthcheckResultsStore({ maxHealthcheckNumber: 1 })
   })
   beforeEach(() => {
-    store.resetHealthcheckStores()
+    store = new HealthcheckResultsStore({ maxHealthcheckNumber: 1 })
   })
   afterAll(() => {
     redis.disconnect()
@@ -102,14 +101,6 @@ describe('HealthcheckRefreshJob', () => {
   it('updates successful redis healthcheck', async () => {
     const healthchecks = [
       new TestHealthcheck(
-        {
-          healthcheckStore: store,
-        },
-        true,
-        false,
-      ),
-
-      new TestHealthcheck2(
         {
           healthcheckStore: store,
         },
@@ -141,5 +132,42 @@ describe('HealthcheckRefreshJob', () => {
 
     const healthcheckSuccess = store.getHealthcheckResult('test')
     expect(healthcheckSuccess).toBe(false)
+  })
+
+  it('returns failed for unregistered healthchecks', async () => {
+    job = new HealthcheckRefreshJob(getTestDependencies(), [])
+
+    await job.process(randomUUID())
+
+    const healthcheckSuccess = store.getHealthcheckResult('test')
+    expect(healthcheckSuccess).toBe(false)
+  })
+
+  it('updates successful for multiple healthchecks', async () => {
+    store = new HealthcheckResultsStore({ maxHealthcheckNumber: 2 })
+    const healthchecks = [
+      new TestHealthcheck(
+        {
+          healthcheckStore: store,
+        },
+        true,
+        false,
+      ),
+      new TestHealthcheck2(
+        {
+          healthcheckStore: store,
+        },
+        true,
+        false,
+      ),
+    ]
+    job = new HealthcheckRefreshJob(getTestDependencies(), healthchecks)
+
+    await job.process(randomUUID())
+
+    const healthcheckSuccess1 = store.getHealthcheckResult('test')
+    const healthcheckSuccess2 = store.getHealthcheckResult('test2')
+    expect(healthcheckSuccess1).toBe(true)
+    expect(healthcheckSuccess2).toBe(true)
   })
 })
