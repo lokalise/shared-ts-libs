@@ -1,10 +1,11 @@
 import type { CreateTopicCommandInput } from '@aws-sdk/client-sns'
 import type { CreateQueueRequest } from '@aws-sdk/client-sqs'
 import { type MayOmit, groupByUnique } from '@lokalise/universal-ts-utils/node'
-import { generateFilterAttributes, type SNSTopicLocatorType } from '@message-queue-toolkit/sns'
+import { type SNSTopicLocatorType, generateFilterAttributes } from '@message-queue-toolkit/sns'
 import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
 import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRoutingConfig.ts'
 import { getSnsTags, getSqsTags } from '../tags/index.ts'
+import { createRequestContextPreHandler } from './prehandlers/createRequestContextPreHandler.ts'
 import type {
   MessageQueueToolkitSnsResolverOptions,
   ResolveConsumerBuildOptionsParams,
@@ -18,7 +19,6 @@ import {
   buildQueueUrlsWithSubscribePermissionsPrefix,
   buildTopicArnsWithPublishPermissionsPrefix,
 } from './utils.ts'
-import { createRequestContextPreHandler } from './prehandlers/createRequestContextPreHandler.ts'
 
 type ResolveTopicResult =
   | {

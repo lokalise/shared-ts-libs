@@ -1,5 +1,5 @@
-import { createRequestContextPreHandler } from './createRequestContextPreHandler.ts'
 import { FakeLogger } from '../../../tests/FakeLogger.ts'
+import { createRequestContextPreHandler } from './createRequestContextPreHandler.ts'
 
 describe('createRequestContextPreHandler', () => {
   it('should create prehandler and it should return metadata correlation id', () => {

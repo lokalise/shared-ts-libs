@@ -1,9 +1,9 @@
+import type { CommonLogger } from '@lokalise/node-core'
+import type { MayOmit } from '@lokalise/universal-ts-utils/node'
 import type { CommonQueueOptions, ConsumerBaseMessageType } from '@message-queue-toolkit/core'
 import type { SNSPublisherOptions, SNSSQSConsumerOptions } from '@message-queue-toolkit/sns'
 import type { AwsConfig } from '../awsConfig.ts'
 import type { AwsTagsParams } from '../tags/index.ts'
-import type { MayOmit } from '@lokalise/universal-ts-utils/node'
-import type { CommonLogger } from '@lokalise/node-core'
 
 export type MessageQueueToolkitSnsResolverOptions = Pick<
   AwsTagsParams,
