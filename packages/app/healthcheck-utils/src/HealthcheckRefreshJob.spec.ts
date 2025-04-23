@@ -90,9 +90,10 @@ describe('HealthcheckRefreshJob', () => {
   let job: HealthcheckRefreshJob
   beforeAll(() => {
     redis = new Redis(getTestRedisConfig())
+    store = new HealthcheckResultsStore({ maxHealthcheckNumber: 1 })
   })
   beforeEach(() => {
-    store = new HealthcheckResultsStore({ maxHealthcheckNumber: 1 })
+    store.resetHealthcheckStores()
   })
   afterAll(() => {
     redis.disconnect()
