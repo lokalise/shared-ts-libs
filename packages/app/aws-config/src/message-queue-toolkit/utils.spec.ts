@@ -237,7 +237,7 @@ describe('utils', () => {
       expect(result1).toMatchInlineSnapshot(`
         [
           "arn:aws:sqs:*:*:dev_my_app-*",
-          "arn:aws:sqs:*:*:dev_my_test*",
+          "arn:aws:sqs:*:*:dev_my_test-*",
         ]
       `)
 
@@ -248,7 +248,7 @@ describe('utils', () => {
       expect(result2).toMatchInlineSnapshot(`
         [
           "arn:aws:sqs:*:*:dev_my_app-*",
-          "arn:aws:sqs:*:*:dev_my_test*",
+          "arn:aws:sqs:*:*:dev_my_test-*",
         ]
       `)
     })
