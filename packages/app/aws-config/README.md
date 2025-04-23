@@ -156,12 +156,31 @@ const consumeOpts = resolver.resolveConsumerBuildOptions({
 });
 ```
 
-#### Request Context pre-handler
+#### Request Context Pre-handler
 
-When processing messages, the resolver automatically injects a **request context pre-handler** to each handler. This 
-prehandler populates a `requestContext` object with:
+When processing messages, the resolver automatically injects a **request context pre-handler** to each handler. This pre-handler populates a `requestContext` object with:
 - `reqId`: the SNS message metadata correlation ID
 - `logger`: a child logger instance scoped with the correlation ID (under `x-request-id`)
 
-Please refer to `@message-queue-toolkit` documentation for more details on how to use the prehandler output in your
+Please refer to `@message-queue-toolkit` documentation for more details on how to use the pre-handler output in your
 event handlers.
+
+#### Opinionated Defaults
+
+`MessageQueueToolkitSnsOptionsResolver` applies opinionated defaults to reduce boilerplate:
+- **Default message type field**: `'type'`, used for filtering and routing messages.
+- **Publisher**:
+  - `updateAttributesIfExists`: `true` (updates tags and config on existing topics).
+  - `forceTagUpdate`: `false`.
+  - Applies standardized tags, see tags section above.
+- **Consumer**:
+  - Dead-letter queue automatically created with suffix `-dlq`, `redrivePolicy.maxReceiveCount = 5`, retention = 7 days.
+  - `maxRetryDuration`: 2 days for in-flight message retries.
+  - `heartbeatInterval`: 20 seconds for visibility timeout heartbeats.
+  - `updateAttributesIfExists`: `true` (updates tags/config if queue exists).
+  - Subscription filters generated based on the message type field.
+  - Resource prefixing and tagging applied uniformly to topics and queues.
+  - In test mode (`isTest = true`):
+    - Skips DLQ creation.
+    - Sets `deleteIfExists: true` to remove resources after tests.
+    - `terminateVisibilityTimeout`: `true` for immediate retries.
