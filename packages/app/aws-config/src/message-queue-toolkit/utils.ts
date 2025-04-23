@@ -54,7 +54,10 @@ export const buildQueueUrlsWithSubscribePermissionsPrefix = (
 
 const extractAppNameFromTopic = (topicConfig: TopicConfig): string => {
   const topicNameParts = topicConfig.topicName.split('-')
-  if (!topicNameParts[0]) throw new Error(`Invalid topic name ${topicConfig.topicName}`)
+  if (!topicNameParts[0]?.trim().length) {
+    throw new Error(`Invalid topic name ${topicConfig.topicName}`)
+  }
+
   return topicNameParts[0]
 }
 

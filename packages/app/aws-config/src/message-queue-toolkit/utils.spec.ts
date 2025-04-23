@@ -121,6 +121,15 @@ describe('utils', () => {
   })
 
   describe('buildTopicArnsWithPublishPermissionsPrefix', () => {
+    it('should throw an error if app name cannot be extracted', () => {
+      expect(() =>
+        buildTopicArnsWithPublishPermissionsPrefix(
+          buildTopicConfig({ topicName: '   ' }),
+          buildAwsConfig(),
+        ),
+      ).toThrowErrorMatchingInlineSnapshot('[Error: Invalid topic name    ]')
+    })
+
     it('correctly composes ARN for typical valid topic', () => {
       const result = buildTopicArnsWithPublishPermissionsPrefix(
         buildTopicConfig({ topicName: 'my_app-' }),
@@ -154,6 +163,15 @@ describe('utils', () => {
   })
 
   describe('buildQueueUrlsWithSubscribePermissionsPrefix', () => {
+    it('should throw an error if app name cannot be extracted', () => {
+      expect(() =>
+        buildQueueUrlsWithSubscribePermissionsPrefix(
+          buildTopicConfig({ topicName: '   ' }),
+          buildAwsConfig(),
+        ),
+      ).toThrowErrorMatchingInlineSnapshot('[Error: Invalid topic name    ]')
+    })
+
     it('correctly composes ARN for typical valid topic', () => {
       const result = buildQueueUrlsWithSubscribePermissionsPrefix(
         buildTopicConfig({ topicName: 'my_app-' }),

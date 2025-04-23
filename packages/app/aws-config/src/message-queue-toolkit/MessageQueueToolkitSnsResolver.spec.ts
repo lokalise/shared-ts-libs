@@ -1,8 +1,9 @@
-import { beforeAll } from 'vitest'
+import { beforeAll, expect } from 'vitest'
 import { FakeLogger } from '../../tests/FakeLogger.ts'
 import type { AwsConfig } from '../awsConfig.ts'
 import type { EventRoutingConfig } from './../event-routing/eventRoutingConfig.ts'
 import { MessageQueueToolkitSnsOptionsResolver } from './MessageQueueToolkitSnsOptionsResolver.ts'
+import { CONSUMER_BASE_MESSAGE_SCHEMA } from '@message-queue-toolkit/core'
 
 const EventRouting = {
   topic1: {
@@ -362,6 +363,35 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           handlers: [],
         }),
       ).toThrowErrorMatchingInlineSnapshot('[Error: Queue test-second_entity-service not found]')
+    })
+
+    it('should properly use handlers', () => {
+      const options = resolver.resolveConsumerBuildOptions({
+        logger,
+        topicName: EventRouting.topic1.topicName,
+        queueName: EventRouting.topic1.queues.topic1Queue1.name,
+        awsConfig: buildAwsConfig(),
+        handlers: [
+          {
+            schema: CONSUMER_BASE_MESSAGE_SCHEMA,
+            handler: () => Promise.resolve({ result: 'success' }),
+            preHandlers: [],
+            messageLogFormatter: () => undefined,
+          },
+        ],
+      })
+
+      expect(options.handlers).toHaveLength(1)
+      expect(options.handlers[0]!.preHandlers).toHaveLength(1)
+      expect(options.subscriptionConfig).toMatchInlineSnapshot(`
+        {
+          "Attributes": {
+            "FilterPolicy": "{"type":["<replace.me>"]}",
+            "FilterPolicyScope": "MessageBody",
+          },
+          "updateAttributesIfExists": true,
+        }
+      `)
     })
 
     describe('internal topics', () => {

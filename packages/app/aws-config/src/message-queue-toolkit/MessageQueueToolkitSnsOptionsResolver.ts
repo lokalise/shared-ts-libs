@@ -132,6 +132,7 @@ export class MessageQueueToolkitSnsOptionsResolver {
         updateAttributesIfExists: params.updateAttributesIfExists ?? true,
         forceTagUpdate: params.forceTagUpdate,
       },
+      messageTypeField: params.messageTypeField ?? MESSAGE_TYPE_FIELD,
       subscriptionConfig: {
         updateAttributesIfExists: params.updateAttributesIfExists ?? true,
         Attributes: generateFilterAttributes(
@@ -142,7 +143,6 @@ export class MessageQueueToolkitSnsOptionsResolver {
       deletionConfig: { deleteIfExists: params.isTest },
       handlers: handlerConfigs,
       logMessages: params.logMessages,
-      messageTypeField: params.messageTypeField ?? MESSAGE_TYPE_FIELD,
       handlerSpy: params.isTest,
       concurrentConsumersAmount: params.concurrentConsumersAmount,
       maxRetryDuration: MAX_RETRY_DURATION,
