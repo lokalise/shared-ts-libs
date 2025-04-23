@@ -16,12 +16,19 @@ const awsConfig = getAwsConfig();
 ```
 
 Set the following environment variables:
-- `AWS_REGION` (required)
-- `AWS_KMS_KEY_ID` (optional)
-- `AWS_ALLOWED_SOURCE_OWNER` (optional)
-- `AWS_ENDPOINT` (optional)
-- `AWS_RESOURCE_PREFIX` (optional)
-- `AWS_ACCESS_KEY_ID` & `AWS_SECRET_ACCESS_KEY` (optional; or use default providers)
+
+- `AWS_REGION` (required): AWS region where resources will be created and requests are sent (e.g., `us-east-1`).
+- `AWS_KMS_KEY_ID` (optional): ID or ARN of the AWS KMS key used to encrypt SNS topics and SQS queues. If omitted,
+ the default AWS-managed key is used.
+- `AWS_ALLOWED_SOURCE_OWNER` (optional): AWS account ID permitted as the source owner for cross-account SNS 
+ subscriptions, helping restrict unauthorized message publishers.
+- `AWS_ENDPOINT` (optional): Custom endpoint URL for AWS services, commonly used for local testing with tools like 
+ LocalStack (e.g., `http://localhost:4566`).
+- `AWS_RESOURCE_PREFIX` (optional): Prefix applied to all AWS resource names to avoid naming collisions or support 
+ multi-tenancy. See **Resource Prefix** below for details.
+- `AWS_ACCESS_KEY_ID` & `AWS_SECRET_ACCESS_KEY` (optional): AWS credentials for programmatic access. If unset, the AWS 
+ SDK's default credential provider chain (environment variables, shared credentials file, EC2 instance metadata, etc.)
+ is used.
 
 ### Resource Prefix
 
@@ -32,6 +39,20 @@ import { applyAwsResourcePrefix } from '@lokalise/aws-config';
 
 const fullName = applyAwsResourcePrefix('my-resource', awsConfig);
 ```
+
+**How it works:**  
+The resource prefix is defined by the `AWS_RESOURCE_PREFIX` environment variable. When set, it is prepended to resource 
+names using an underscore. For example:
+
+```ts
+applyAwsResourcePrefix('orders', awsConfig) // returns 'tenant123_orders' when AWS_RESOURCE_PREFIX='tenant123'
+```
+
+This helps:
+- Prevent naming collisions across environments, accounts, or tenants  
+- Support multi-tenancy by isolating each tenant’s resources  
+
+If no prefix is provided, the original resource name is returned unchanged. Note that the prefix contributes to the total resource name length, which must comply with AWS service limits.
 
 ### Tagging AWS Resources
 
@@ -134,3 +155,13 @@ const consumeOpts = resolver.resolveConsumerBuildOptions({
   logMessages: false,
 });
 ```
+
+#### Request Context pre-handler
+
+When processing messages, the resolver automatically injects a **request context pre-handler** to each handler. This 
+prehandler populates a `requestContext` object with:
+- `reqId`: the SNS message metadata correlation ID
+- `logger`: a child logger instance scoped with the correlation ID (under `x-request-id`)
+
+Please refer to `@message-queue-toolkit` documentation for more details on how to use the prehandler output in your
+event handlers.
