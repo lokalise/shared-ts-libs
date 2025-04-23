@@ -86,15 +86,15 @@ const routingConfig: EventRoutingConfig = {
 - **Internal Topics** (default)
   - You own and manage the SNS topic.
   - `TopicConfig` must include `owner`, `service`, and optionally `externalAppsWithSubscribePermissions`.
-  - At runtime, the `MessageQueueToolkitSnsOptionsResolver` will issue a **CreateTopic** command (with name prefixing, tags, 
-   KMS settings) and set up subscriptions for your queues and any external apps.
+  - At runtime, the `MessageQueueToolkitSnsOptionsResolver` will resolve consumer/publisher options with a **CreateTopic** command 
+   (with name prefixing, tags, KMS settings) and set up subscriptions for your queues and any external apps.
 
 - **External Topics** (`isExternal: true`)
   - The SNS topic is pre‑existing and managed outside your application.
   - `TopicConfig` includes `topicName`, `isExternal: true`, and your `queues`, but **must omit** `owner`, `service`, 
    and `externalAppsWithSubscribePermissions`.
-  - At runtime, the resolver will only locate (prefix) the existing topic by name and subscribe your 
-   queues—**no topic creation or tagging** is attempted.
+  - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing topic by name 
+  - and subscribe your queues. **No topic creation or tagging** is attempted.
 
 Under the hood, the TypeScript union enforces this shape.
 

@@ -1,9 +1,9 @@
+import { CONSUMER_BASE_MESSAGE_SCHEMA } from '@message-queue-toolkit/core'
 import { beforeAll, expect } from 'vitest'
 import { FakeLogger } from '../../tests/FakeLogger.ts'
 import type { AwsConfig } from '../awsConfig.ts'
 import type { EventRoutingConfig } from './../event-routing/eventRoutingConfig.ts'
 import { MessageQueueToolkitSnsOptionsResolver } from './MessageQueueToolkitSnsOptionsResolver.ts'
-import { CONSUMER_BASE_MESSAGE_SCHEMA } from '@message-queue-toolkit/core'
 
 const EventRouting = {
   topic1: {
