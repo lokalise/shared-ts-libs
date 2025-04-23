@@ -174,54 +174,54 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
         })
 
         expect(result).toMatchInlineSnapshot(`
-        {
-          "creationConfig": {
-            "allowedSourceOwner": "test allowedSourceOwner",
-            "forceTagUpdate": true,
-            "queueUrlsWithSubscribePermissionsPrefix": [
-              "arn:aws:sqs:*:*:preffix_test-*",
-            ],
-            "topic": {
-              "Attributes": {
-                "KmsMasterKeyId": "test kmsKeyId",
-              },
-              "Name": "preffix_test-first_entity",
-              "Tags": [
-                {
-                  "Key": "env",
-                  "Value": "dev",
-                },
-                {
-                  "Key": "project",
-                  "Value": "my-project",
-                },
-                {
-                  "Key": "service",
-                  "Value": "sns",
-                },
-                {
-                  "Key": "lok-owner",
-                  "Value": "team 1",
-                },
-                {
-                  "Key": "lok-cost-system",
-                  "Value": "my-system",
-                },
-                {
-                  "Key": "lok-cost-service",
-                  "Value": "service 1",
-                },
+          {
+            "creationConfig": {
+              "allowedSourceOwner": "test allowedSourceOwner",
+              "forceTagUpdate": true,
+              "queueUrlsWithSubscribePermissionsPrefix": [
+                "arn:aws:sqs:*:*:preffix_test-*",
               ],
+              "topic": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                },
+                "Name": "preffix_test-first_entity",
+                "Tags": [
+                  {
+                    "Key": "env",
+                    "Value": "dev",
+                  },
+                  {
+                    "Key": "project",
+                    "Value": "my-project",
+                  },
+                  {
+                    "Key": "service",
+                    "Value": "sns",
+                  },
+                  {
+                    "Key": "lok-owner",
+                    "Value": "team 1",
+                  },
+                  {
+                    "Key": "lok-cost-system",
+                    "Value": "my-system",
+                  },
+                  {
+                    "Key": "lok-cost-service",
+                    "Value": "service 1",
+                  },
+                ],
+              },
+              "updateAttributesIfExists": true,
             },
-            "updateAttributesIfExists": true,
-          },
-          "handlerSpy": true,
-          "locatorConfig": undefined,
-          "logMessages": true,
-          "messageSchemas": [],
-          "messageTypeField": "myMessageType",
-        }
-      `)
+            "handlerSpy": true,
+            "locatorConfig": undefined,
+            "logMessages": true,
+            "messageSchemas": [],
+            "messageTypeField": "type",
+          }
+        `)
       })
 
       it('should work using only required props', () => {
@@ -272,7 +272,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   },
                 ],
               },
-              "updateAttributesIfExists": undefined,
+              "updateAttributesIfExists": true,
             },
             "handlerSpy": undefined,
             "locatorConfig": undefined,
@@ -308,7 +308,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             },
             "logMessages": true,
             "messageSchemas": [],
-            "messageTypeField": "myMessageType",
+            "messageTypeField": "type",
           }
         `)
       })
@@ -482,7 +482,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "locatorConfig": undefined,
             "logMessages": true,
             "maxRetryDuration": 172800,
-            "messageTypeField": "myMessageType",
+            "messageTypeField": "type",
             "subscriptionConfig": {
               "Attributes": {
                 "FilterPolicy": "{"type":[]}",
@@ -670,7 +670,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             },
             "logMessages": true,
             "maxRetryDuration": 172800,
-            "messageTypeField": "myMessageType",
+            "messageTypeField": "type",
             "subscriptionConfig": {
               "Attributes": {
                 "FilterPolicy": "{"type":[]}",
