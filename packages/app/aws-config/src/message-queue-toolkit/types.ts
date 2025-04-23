@@ -1,5 +1,4 @@
 import type { CommonLogger } from '@lokalise/node-core'
-import type { MayOmit } from '@lokalise/universal-ts-utils/node'
 import type { CommonQueueOptions, ConsumerBaseMessageType } from '@message-queue-toolkit/core'
 import type { SNSPublisherOptions, SNSSQSConsumerOptions } from '@message-queue-toolkit/sns'
 import type { AwsConfig } from '../awsConfig.ts'
@@ -26,8 +25,7 @@ type BaseParams = {
   updateAttributesIfExists?: boolean
   /** In case of existing resources with different tags, update them*/
   forceTagUpdate?: boolean
-} & Pick<CommonQueueOptions, 'logMessages'> &
-  MayOmit<CommonQueueOptions, 'messageTypeField'>
+} & Pick<CommonQueueOptions, 'logMessages'>
 
 export type ResolveConsumerBuildOptionsParams = BaseParams &
   Pick<

@@ -90,12 +90,12 @@ export class MessageQueueToolkitSnsOptionsResolver {
               params.awsConfig,
             ),
             allowedSourceOwner: params.awsConfig.allowedSourceOwner,
-            updateAttributesIfExists: params.updateAttributesIfExists,
+            updateAttributesIfExists: params.updateAttributesIfExists ?? true,
             forceTagUpdate: params.forceTagUpdate,
           }
         : undefined,
       handlerSpy: params.isTest,
-      messageTypeField: params.messageTypeField ?? MESSAGE_TYPE_FIELD,
+      messageTypeField: MESSAGE_TYPE_FIELD,
       logMessages: params.logMessages,
       messageSchemas: params.messageSchemas,
     }
@@ -132,12 +132,12 @@ export class MessageQueueToolkitSnsOptionsResolver {
         updateAttributesIfExists: params.updateAttributesIfExists ?? true,
         forceTagUpdate: params.forceTagUpdate,
       },
-      messageTypeField: params.messageTypeField ?? MESSAGE_TYPE_FIELD,
+      messageTypeField: MESSAGE_TYPE_FIELD,
       subscriptionConfig: {
         updateAttributesIfExists: params.updateAttributesIfExists ?? true,
         Attributes: generateFilterAttributes(
           handlerConfigs.map((entry) => entry.schema),
-          params.messageTypeField ?? MESSAGE_TYPE_FIELD,
+          MESSAGE_TYPE_FIELD,
         ),
       },
       deletionConfig: { deleteIfExists: params.isTest },
