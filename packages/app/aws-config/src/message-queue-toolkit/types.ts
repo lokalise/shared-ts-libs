@@ -12,13 +12,19 @@ export type MessageQueueToolkitSnsOptionsResolverConfig = Pick<
   validateNamePatterns?: boolean
 }
 
+type ConsumerOptions<MessagePayloadType extends ConsumerBaseMessageType> = SNSSQSConsumerOptions<
+  MessagePayloadType,
+  // biome-ignore lint/suspicious/noExplicitAny: it's ok
+  any,
+  // biome-ignore lint/suspicious/noExplicitAny: it's ok
+  any
+>
+
 type BaseParams = {
   /** SNS topic name */
   topicName: string
   /** AWS config object */
   awsConfig: AwsConfig
-  /** logger */
-  logger: CommonLogger
   /** Enable test mode */
   isTest?: boolean
   /** Update resources attributes if they exists (default: true)*/
@@ -27,40 +33,42 @@ type BaseParams = {
   forceTagUpdate?: boolean
 } & Pick<CommonQueueOptions, 'logMessages'>
 
-export type ResolveConsumerBuildOptionsParams = BaseParams &
-  Pick<
-    SNSSQSConsumerOptions<ConsumerBaseMessageType, unknown, unknown>,
-    'handlers' | 'concurrentConsumersAmount'
-  > & {
-    /** SQS queue name */
-    queueName: string
-    /** The number of messages to request from SQS when polling */
-    batchSize?: number
-  }
-export type ResolvePublisherBuildOptionsParams = BaseParams &
-  Pick<SNSPublisherOptions<object>, 'messageSchemas'>
+export type ResolveConsumerBuildOptionsParams<MessagePayloadType extends ConsumerBaseMessageType> =
+  BaseParams &
+    Pick<ConsumerOptions<MessagePayloadType>, 'handlers' | 'concurrentConsumersAmount'> & {
+      /** SQS queue name */
+      queueName: string
+      /** logger */
+      logger: CommonLogger
+      /** The number of messages to request from SQS when polling */
+      batchSize?: number
+    }
+export type ResolvePublisherBuildOptionsParams<MessagePayloadType extends ConsumerBaseMessageType> =
+  BaseParams & Pick<SNSPublisherOptions<MessagePayloadType>, 'messageSchemas'>
 
-export type ResolvedSnsConsumerBuildOptions = Pick<
-  SNSSQSConsumerOptions<ConsumerBaseMessageType, unknown, unknown>,
-  | 'locatorConfig'
-  | 'creationConfig'
-  | 'subscriptionConfig'
-  | 'deletionConfig'
-  | 'handlers'
-  | 'consumerOverrides'
-  | 'deadLetterQueue'
-  | 'maxRetryDuration'
-  | 'concurrentConsumersAmount'
-  | 'logMessages'
-  | 'messageTypeField'
-  | 'handlerSpy'
->
-export type ResolvedSnsPublisherBuildOptions = Pick<
-  SNSPublisherOptions<object>,
-  | 'locatorConfig'
-  | 'creationConfig'
-  | 'logMessages'
-  | 'messageTypeField'
-  | 'handlerSpy'
-  | 'messageSchemas'
->
+export type ResolvedSnsConsumerBuildOptions<MessagePayloadType extends ConsumerBaseMessageType> =
+  Pick<
+    ConsumerOptions<MessagePayloadType>,
+    | 'locatorConfig'
+    | 'creationConfig'
+    | 'subscriptionConfig'
+    | 'deletionConfig'
+    | 'handlers'
+    | 'consumerOverrides'
+    | 'deadLetterQueue'
+    | 'maxRetryDuration'
+    | 'concurrentConsumersAmount'
+    | 'logMessages'
+    | 'messageTypeField'
+    | 'handlerSpy'
+  >
+export type ResolvedSnsPublisherBuildOptions<MessagePayloadType extends ConsumerBaseMessageType> =
+  Pick<
+    SNSPublisherOptions<MessagePayloadType>,
+    | 'locatorConfig'
+    | 'creationConfig'
+    | 'logMessages'
+    | 'messageTypeField'
+    | 'handlerSpy'
+    | 'messageSchemas'
+  >
