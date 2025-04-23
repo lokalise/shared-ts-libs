@@ -229,7 +229,7 @@ describe('utils', () => {
 
     it('should use externalAppsWithSubscribePermissions', () => {
       const resourcePrefix = 'dev'
-      const externalAppsWithSubscribePermissions = ['my_test']
+      const externalAppsWithSubscribePermissions = ['my_test1', 'my_test2-', 'my_test3-*']
       const result1 = buildQueueUrlsWithSubscribePermissionsPrefix(
         buildTopicConfig({ topicName: 'my_app-', externalAppsWithSubscribePermissions }),
         buildAwsConfig(resourcePrefix),
@@ -237,7 +237,9 @@ describe('utils', () => {
       expect(result1).toMatchInlineSnapshot(`
         [
           "arn:aws:sqs:*:*:dev_my_app-*",
-          "arn:aws:sqs:*:*:dev_my_test*",
+          "arn:aws:sqs:*:*:dev_my_test1-*",
+          "arn:aws:sqs:*:*:dev_my_test2-*",
+          "arn:aws:sqs:*:*:dev_my_test3-*",
         ]
       `)
 
@@ -248,7 +250,9 @@ describe('utils', () => {
       expect(result2).toMatchInlineSnapshot(`
         [
           "arn:aws:sqs:*:*:dev_my_app-*",
-          "arn:aws:sqs:*:*:dev_my_test*",
+          "arn:aws:sqs:*:*:dev_my_test1-*",
+          "arn:aws:sqs:*:*:dev_my_test2-*",
+          "arn:aws:sqs:*:*:dev_my_test3-*",
         ]
       `)
     })

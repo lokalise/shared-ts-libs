@@ -42,13 +42,16 @@ export const buildQueueUrlsWithSubscribePermissionsPrefix = (
 ): string[] | undefined => {
   if (topicConfig.isExternal) return undefined
 
-  const internalPermissions = `${extractAppNameFromTopic(topicConfig)}-*`
+  const internalPermissions = extractAppNameFromTopic(topicConfig)
   const externalPermissions = topicConfig.externalAppsWithSubscribePermissions ?? []
 
   return sqsPrefixTransformer(
-    [internalPermissions, ...externalPermissions].map((value) =>
-      applyAwsResourcePrefix(value, awsConfig),
-    ),
+    [internalPermissions, ...externalPermissions]
+      .map((value) => applyAwsResourcePrefix(value, awsConfig))
+      .map((value) => {
+        if (value.endsWith('*')) return value
+        return ensureWildcard(value.endsWith('-') ? value : `${value}-`)
+      }),
   )
 }
 

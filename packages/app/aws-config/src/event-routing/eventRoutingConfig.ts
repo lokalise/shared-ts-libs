@@ -66,4 +66,8 @@ export type TopicConfig<
     }
 )
 
-export type EventRoutingConfig = Record<string, TopicConfig>
+export type EventRoutingConfig<
+  Owner extends string = string,
+  Service extends string = string,
+  ExternalApp extends string = string,
+> = Record<string, TopicConfig<Owner, Service, ExternalApp>>
