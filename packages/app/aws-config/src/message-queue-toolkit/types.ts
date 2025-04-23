@@ -5,7 +5,7 @@ import type { SNSPublisherOptions, SNSSQSConsumerOptions } from '@message-queue-
 import type { AwsConfig } from '../awsConfig.ts'
 import type { AwsTagsParams } from '../tags/index.ts'
 
-export type MessageQueueToolkitSnsResolverOptions = Pick<
+export type MessageQueueToolkitSnsOptionsResolverConfig = Pick<
   AwsTagsParams,
   'appEnv' | 'system' | 'project'
 > & {
@@ -13,7 +13,7 @@ export type MessageQueueToolkitSnsResolverOptions = Pick<
   validateNamePatterns?: boolean
 }
 
-type BaseResolveOptionsParams = {
+type BaseParams = {
   /** SNS topic name */
   topicName: string
   /** AWS config object */
@@ -29,7 +29,7 @@ type BaseResolveOptionsParams = {
 } & Pick<CommonQueueOptions, 'logMessages'> &
   MayOmit<CommonQueueOptions, 'messageTypeField'>
 
-export type ResolveConsumerBuildOptionsParams = BaseResolveOptionsParams &
+export type ResolveConsumerBuildOptionsParams = BaseParams &
   Pick<
     SNSSQSConsumerOptions<ConsumerBaseMessageType, unknown, unknown>,
     'handlers' | 'concurrentConsumersAmount'
@@ -39,7 +39,7 @@ export type ResolveConsumerBuildOptionsParams = BaseResolveOptionsParams &
     /** The number of messages to request from SQS when polling */
     batchSize?: number
   }
-export type ResolvePublisherBuildOptionsParams = BaseResolveOptionsParams &
+export type ResolvePublisherBuildOptionsParams = BaseParams &
   Pick<SNSPublisherOptions<object>, 'messageSchemas'>
 
 export type ResolvedSnsConsumerBuildOptions = Pick<

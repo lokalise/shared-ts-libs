@@ -1,7 +1,8 @@
 import { beforeAll } from 'vitest'
 import type { AwsConfig } from '../awsConfig.ts'
 import type { EventRoutingConfig } from './../event-routing/eventRoutingConfig.ts'
-import { MessageQueueToolkitSnsResolver } from './MessageQueueToolkitSnsResolver.ts'
+import { MessageQueueToolkitSnsOptionsResolver } from './MessageQueueToolkitSnsOptionsResolver.ts'
+import { FakeLogger } from '../../tests/FakeLogger.ts'
 
 const EventRouting = {
   topic1: {
@@ -41,11 +42,13 @@ const buildAwsConfig = (awsConfig?: Partial<AwsConfig>): AwsConfig => ({
   ...awsConfig,
 })
 
-describe('MessageQueueToolkitSnsResolver', () => {
-  let resolver: MessageQueueToolkitSnsResolver
+const logger = new FakeLogger()
+
+describe('MessageQueueToolkitSnsOptionsResolver', () => {
+  let resolver: MessageQueueToolkitSnsOptionsResolver
 
   beforeAll(() => {
-    resolver = new MessageQueueToolkitSnsResolver(EventRouting, {
+    resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
       system: 'my-system',
       project: 'my-project',
       appEnv: 'development',
@@ -53,8 +56,8 @@ describe('MessageQueueToolkitSnsResolver', () => {
   })
 
   describe('constructor', () => {
-    it('should create an instance of MessageQueueToolkitSnsResolver for empty event routing', () => {
-      const resolver = new MessageQueueToolkitSnsResolver(
+    it('should create an instance of MessageQueueToolkitSnsOptionsResolver for empty event routing', () => {
+      const resolver = new MessageQueueToolkitSnsOptionsResolver(
         {},
         {
           validateNamePatterns: true,
@@ -63,7 +66,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
           project: 'test project',
         },
       )
-      expect(resolver).toBeInstanceOf(MessageQueueToolkitSnsResolver)
+      expect(resolver).toBeInstanceOf(MessageQueueToolkitSnsOptionsResolver)
     })
 
     it('should throw an error if topic name pattern is invalid and validateNamePatterns is enabled', () => {
@@ -77,7 +80,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
 
       expect(
         () =>
-          new MessageQueueToolkitSnsResolver(config, {
+          new MessageQueueToolkitSnsOptionsResolver(config, {
             validateNamePatterns: true,
             appEnv: 'development',
             system: 'test system',
@@ -87,7 +90,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
 
       expect(
         () =>
-          new MessageQueueToolkitSnsResolver(config, {
+          new MessageQueueToolkitSnsOptionsResolver(config, {
             appEnv: 'development',
             system: 'test system',
             project: 'test project',
@@ -112,7 +115,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
 
       expect(
         () =>
-          new MessageQueueToolkitSnsResolver(config, {
+          new MessageQueueToolkitSnsOptionsResolver(config, {
             validateNamePatterns: true,
             appEnv: 'development',
             system: 'test system',
@@ -121,7 +124,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
       ).toThrowErrorMatchingInlineSnapshot('[Error: Invalid queue name: invalid]')
       expect(
         () =>
-          new MessageQueueToolkitSnsResolver(config, {
+          new MessageQueueToolkitSnsOptionsResolver(config, {
             appEnv: 'development',
             system: 'test system',
             project: 'test project',
@@ -132,7 +135,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
     it('should work with a valid event routing config', () => {
       expect(
         () =>
-          new MessageQueueToolkitSnsResolver(EventRouting, {
+          new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
             validateNamePatterns: true,
             appEnv: 'development',
             system: 'test system',
@@ -147,6 +150,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
       expect(() =>
         resolver.resolvePublisherBuildOptions({
           topicName: 'invalid-topic',
+          logger,
           awsConfig: buildAwsConfig(),
           messageTypeField: 'myMessageType',
           messageSchemas: [],
@@ -160,6 +164,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
       it('should work using all properties', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
+          logger,
           awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
           updateAttributesIfExists: true,
           messageTypeField: 'myMessageType',
@@ -223,6 +228,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
       it('should work using only required props', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
+          logger,
           awsConfig: buildAwsConfig(),
           messageSchemas: [],
         })
@@ -285,6 +291,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
       it('should work using all props', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
+          logger,
           awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
           updateAttributesIfExists: true,
           messageTypeField: 'myMessageType',
@@ -311,6 +318,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
       it('should work using only required props', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
+          logger,
           awsConfig: buildAwsConfig(),
           messageSchemas: [],
         })
@@ -335,6 +343,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
     it('should throw an error if topic name is not found', () => {
       expect(() =>
         resolver.resolveConsumerBuildOptions({
+          logger,
           topicName: 'invalid-topic',
           queueName: 'test-first_entity-first_service',
           awsConfig: buildAwsConfig(),
@@ -346,6 +355,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
     it('should throw an error if queue is not defined for given topic', () => {
       expect(() =>
         resolver.resolveConsumerBuildOptions({
+          logger,
           topicName: EventRouting.topic1.topicName,
           queueName: EventRouting.topic2.queues.topic2Queue1.name,
           awsConfig: buildAwsConfig(),
@@ -362,6 +372,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
         const result = resolver.resolveConsumerBuildOptions({
           topicName,
           queueName,
+          logger,
           handlers: [],
           awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
           updateAttributesIfExists: true,
@@ -459,6 +470,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
 
       it('should work using only required props', () => {
         const result = resolver.resolveConsumerBuildOptions({
+          logger,
           topicName,
           queueName,
           awsConfig: buildAwsConfig(),
@@ -578,6 +590,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
 
       it('should work using all props', () => {
         const result = resolver.resolveConsumerBuildOptions({
+          logger,
           topicName,
           queueName,
           handlers: [],
@@ -648,6 +661,7 @@ describe('MessageQueueToolkitSnsResolver', () => {
         const result = resolver.resolveConsumerBuildOptions({
           topicName,
           queueName,
+          logger,
           handlers: [],
           awsConfig: buildAwsConfig(),
         })

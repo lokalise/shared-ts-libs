@@ -7,7 +7,7 @@ import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRout
 import { getSnsTags, getSqsTags } from '../tags/index.ts'
 import { createRequestContextPreHandler } from './prehandlers/createRequestContextPreHandler.ts'
 import type {
-  MessageQueueToolkitSnsResolverOptions,
+  MessageQueueToolkitSnsOptionsResolverConfig,
   ResolveConsumerBuildOptionsParams,
   ResolvePublisherBuildOptionsParams,
   ResolvedSnsConsumerBuildOptions,
@@ -38,11 +38,14 @@ const VISIBILITY_TIMEOUT = 60 // 1 minutes
 const HEARTBEAT_INTERVAL = 20 // 20 seconds
 const MAX_RETRY_DURATION = 2 * 24 * 60 * 60 // 2 days in seconds
 
-export class MessageQueueToolkitSnsResolver {
+export class MessageQueueToolkitSnsOptionsResolver {
   private readonly routingConfig: EventRoutingConfig
-  private readonly options: MessageQueueToolkitSnsResolverOptions
+  private readonly config: MessageQueueToolkitSnsOptionsResolverConfig
 
-  constructor(routingConfig: EventRoutingConfig, options: MessageQueueToolkitSnsResolverOptions) {
+  constructor(
+    routingConfig: EventRoutingConfig,
+    config: MessageQueueToolkitSnsOptionsResolverConfig,
+  ) {
     this.routingConfig = groupByUnique(
       Object.values(routingConfig).map((topic) => ({
         ...topic,
@@ -50,13 +53,13 @@ export class MessageQueueToolkitSnsResolver {
       })),
       'topicName',
     )
-    this.options = options
+    this.config = config
 
     this.validateNamePatterns()
   }
 
   private validateNamePatterns(): void {
-    if (!this.options.validateNamePatterns) return
+    if (!this.config.validateNamePatterns) return
 
     const topicNames = Object.keys(this.routingConfig)
     for (const topicName of topicNames) {
@@ -189,7 +192,7 @@ export class MessageQueueToolkitSnsResolver {
     return {
       createCommand: {
         Name: applyAwsResourcePrefix(topicConfig.topicName, params.awsConfig),
-        Tags: getSnsTags({ ...topicConfig, ...this.options }),
+        Tags: getSnsTags({ ...topicConfig, ...this.config }),
         Attributes: { KmsMasterKeyId: params.awsConfig.kmsKeyId },
       },
     }
@@ -206,7 +209,7 @@ export class MessageQueueToolkitSnsResolver {
 
     return {
       QueueName: applyAwsResourcePrefix(queueConfig.name, awsConfig),
-      tags: getSqsTags({ ...queueConfig, ...this.options }),
+      tags: getSqsTags({ ...queueConfig, ...this.config }),
       Attributes: {
         KmsMasterKeyId: awsConfig.kmsKeyId,
         VisibilityTimeout: VISIBILITY_TIMEOUT.toString(),
