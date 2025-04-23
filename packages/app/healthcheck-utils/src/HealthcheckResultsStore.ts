@@ -38,13 +38,9 @@ export class HealthcheckResultsStore<SupportedHealthchecks extends string> {
    */
   getHealthcheckResult(healthcheck: SupportedHealthchecks): boolean {
     const healthcheckEntry = this.store.get(healthcheck)
-    // If we don't have any results yet, we assume service is healthy
+    // If we don't have any results yet, we assume service is not healthy
     if (!healthcheckEntry) {
-      const emptyEntry: HealthcheckEntry = {
-        checkTimestamp: new Date(),
-      }
-      this.store.set(healthcheck, emptyEntry)
-      return true
+      return false
     }
 
     if (healthcheckEntry.isSuccessful) {

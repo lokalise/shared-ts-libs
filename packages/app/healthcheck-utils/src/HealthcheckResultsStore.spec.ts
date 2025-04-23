@@ -19,10 +19,10 @@ describe('HealthcheckResultsStore', () => {
   })
 
   describe('getHealthcheckResult', () => {
-    it('returns true for fresh undefined values', () => {
+    it('returns false for fresh undefined values', () => {
       const value = store.getHealthcheckResult('db')
 
-      expect(value).toBe(true)
+      expect(value).toBe(false)
     })
 
     it('returns true for defined values', () => {
