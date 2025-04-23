@@ -1,8 +1,8 @@
 import { beforeAll } from 'vitest'
+import { FakeLogger } from '../../tests/FakeLogger.ts'
 import type { AwsConfig } from '../awsConfig.ts'
 import type { EventRoutingConfig } from './../event-routing/eventRoutingConfig.ts'
 import { MessageQueueToolkitSnsOptionsResolver } from './MessageQueueToolkitSnsOptionsResolver.ts'
-import { FakeLogger } from '../../tests/FakeLogger.ts'
 
 const EventRouting = {
   topic1: {
