@@ -76,8 +76,8 @@ export class MswHelper {
     params: MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>,
   ): void {
     const pathParams = contract.requestPathParamsSchema
-      ? // @ts-expect-error this is fine
-        Object.keys(
+      ? Object.keys(
+          // @ts-expect-error this is fine
           (contract.requestPathParamsSchema as unknown as ZodObject<unknown>).shape,
         ).reduce(
           (acc, value) => {
