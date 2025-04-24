@@ -151,7 +151,6 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       expect(() =>
         resolver.resolvePublisherBuildOptions({
           topicName: 'invalid-topic',
-          logger,
           awsConfig: buildAwsConfig(),
           messageSchemas: [],
         }),
@@ -164,7 +163,6 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       it('should work using all properties', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
-          logger,
           awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
@@ -227,7 +225,6 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       it('should work using only required props', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
-          logger,
           awsConfig: buildAwsConfig(),
           messageSchemas: [],
         })
@@ -290,7 +287,6 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       it('should work using all props', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
-          logger,
           awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
@@ -316,7 +312,6 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       it('should work using only required props', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
-          logger,
           awsConfig: buildAwsConfig(),
           messageSchemas: [],
         })
