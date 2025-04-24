@@ -13,7 +13,7 @@ import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch, { type Wretch } from 'wretch'
 import { z } from 'zod'
-import { mockValidResponse } from '@lokalise/universal-testing-utils'
+import { MswHelper } from '@lokalise/universal-testing-utils'
 
 const REQUEST_BODY_SCHEMA = z.object({
     name: z.string(),
@@ -39,13 +39,13 @@ const postContractWithPathParams = buildPayloadRoute({
 
 const BASE_URL = 'http://localhost:8080'
 
-describe('mswUtils', () => {
+describe('MswHelper', () => {
     const server = setupServer()
-    let wretchClient: Wretch
+    const mswHelper = new MswHelper(BASE_URL)
+    const wretchClient = wretch(BASE_URL)
 
     beforeEach(() => {
-        server.listen({onUnhandledRequest: 'error'})
-        wretchClient = wretch(BASE_URL)
+        server.listen({ onUnhandledRequest: 'error' })
     })
     afterEach(() => {
         server.resetHandlers()
@@ -56,22 +56,60 @@ describe('mswUtils', () => {
 
     describe('mockValidPayloadResponse', () => {
         it('mocks POST request with path params', async () => {
-            mockValidResponse(postContractWithPathParams, server, {
-                baseUrl: BASE_URL,
-                pathParams: {userId: '3'},
-                responseBody: {id: '2'},
+            mswHelper.mockValidResponse(postContractWithPathParams, server, {
+                pathParams: { userId: '3' },
+                responseBody: { id: '2' },
             })
 
             const response = await sendByPayloadRoute(wretchClient, postContractWithPathParams, {
                 pathParams: {
                     userId: '3',
                 },
-                body: {name: 'frf'},
+                body: { name: 'frf' },
             })
 
             expect(response).toMatchInlineSnapshot(`
               {
                 "id": "2",
+              }
+            `)
+        })
+    })
+
+    describe('mockValidResponseWithAnyPath', () => {
+        it('mocks POST request with path params', async () => {
+            // you don't need specify any path params, they automatically are set to * 
+            mswHelper.mockValidResponseWithAnyPath(postContractWithPathParams, server, {
+                responseBody: { id: '2' },
+            })
+
+            const response = await sendByPayloadRoute(wretchClient, postContractWithPathParams, {
+                pathParams: {
+                    userId: '9',
+                },
+                body: { name: 'frf' },
+            })
+
+            expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "2",
+              }
+            `)
+        })
+    })
+
+    describe('mockAnyResponse', () => {
+        it('mocks POST request without path params', async () => {
+            mswHelper.mockAnyResponse(postContract, server, {
+                // you can specify any response, regardless of what contract expects
+                responseBody: { wrongId: '1' },
+            })
+
+            const response = await wretchClient.post({ name: 'frf' }, mapRouteToPath(postContract))
+
+            expect(await response.json()).toMatchInlineSnapshot(`
+              {
+                "wrongId": "1",
               }
             `)
         })
