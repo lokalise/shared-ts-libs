@@ -13,5 +13,5 @@ export type {
 export { MessageQueueToolkitSnsOptionsResolver } from './message-queue-toolkit/MessageQueueToolkitSnsOptionsResolver.ts'
 export type { RequestContextPreHandlerOutput } from './message-queue-toolkit/prehandlers/createRequestContextPreHandler.ts'
 export * from './tags/index.ts'
-export * from './awsConfig.ts'
+export { getAwsConfig, type AwsConfig } from './awsConfig.ts'
 export * from './applyAwsResourcePrefix.ts'

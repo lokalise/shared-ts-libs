@@ -74,11 +74,17 @@ describe('utils', () => {
 
   describe('QUEUE_NAME_REGEX', () => {
     it.each([
+      // 3 sections (valid)
       'system-flow-service',
       'my_system-main_flow-main_service',
       'a-b-c',
       'sys_name-flow_name-service_name',
       'one_two-three_four-five_six',
+      // 4 sections
+      'system-flow-service-module',
+      'my_system-main_flow-main_service-module_name',
+      'a-b-c-d',
+      'one_two-three_four-five_six-seven_eight',
     ])('should match regex (%s)', (name) => {
       expect(QUEUE_NAME_REGEX.test(name)).toBe(true)
     })
@@ -87,34 +93,31 @@ describe('utils', () => {
       // too few sections
       'system-flow',
       'queue',
-
-      // too many sections
-      'a-b-c-d',
-      'foo-bar-baz-qux',
-
+      // too many sections (> 4)
+      'a-b-c-d-e',
+      'foo-bar-baz-qux-fifth',
       // invalid characters
       'system1-flow-service', // number in first section
       'system-flow1-service', // number in second section
       'system-flow-service1', // number in third section
+      'system-flow-service-module1', // number in fourth section
       'System-flow-service', // uppercase
       'system-Flow-service', // uppercase
       'system-flow-Queue', // uppercase
-
       // invalid underscores
-      '_system-flow-service', // leading underscore
+      '_system-flow-service', // leading underscore in first
       'system_-flow-service', // trailing underscore in first
-      'system-flow-_service', // leading underscore in last
-      'system-flow-service_', // trailing underscore in last
+      'system-flow-_service', // leading underscore in third
+      'system-flow-service_', // trailing underscore in third
       'system__name-flow-service', // double underscore in first part
       'system-flow__name-service', // double underscore in second part
       'system-flow-service__name', // double underscore in third part
-
-      // spaces
-      'system flow-service-name',
-
-      // misplaced hyphen/underscore
+      'system-flow-service__name-module_name', // double underscore in third when 4 sections
+      // spaces and invalid hyphens
+      'system flow-service-name', // space
       'system--flow-service', // double hyphen
       'system-flow--service', // double hyphen
+      'system-flow-service--module', // double hyphen in 4th part
     ])('should not match regex (%s)', (name) => {
       expect(QUEUE_NAME_REGEX.test(name)).toBe(false)
     })

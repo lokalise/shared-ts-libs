@@ -16,16 +16,19 @@ export const TOPIC_NAME_REGEX = /^[a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*$/
 
 /**
  * Regex to validate that queue names are following Lokalise convention.
- * pattern: <system_name>-<(flow|model)_name>-<(service|module)_name>
+ * pattern: <system_name>-<flow|model>_name-<service|module>_name(-<module_name>)?
  *
  * Regex explanation:
- * System name: [a-z]+(_[a-z]+)* -> One or more lowercase letters, optionally separated by underscores
- * - -> Hyphen
- * Flow or model name: [a-z]+(_[a-z]+)* -> One or more lowercase letters, optionally separated by underscores
- * - -> Hyphen
- * service or module name: [a-z]+(_[a-z]+)* -> One or more lowercase letters, optionally separated by underscores
+ * system_name:         [a-z]+(_[a-z]+)*        -> One or more lowercase letters, optionally separated by underscores
+ * -                    -                       -> Hyphen
+ * flow or model name:  [a-z]+(_[a-z]+)*        -> One or more lowercase letters, optionally separated by underscores
+ * -                    -                       -> Hyphen
+ * service or module:   [a-z]+(_[a-z]+)*        -> One or more lowercase letters, optionally separated by underscores
+ * (-                   -                       -> Optional hyphen
+ * module_name:         [a-z]+(_[a-z]+)*)?      -> Optional: One or more lowercase letters, optionally separated by underscores
  */
-export const QUEUE_NAME_REGEX = /^[a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*$/
+export const QUEUE_NAME_REGEX =
+  /^[a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*(?:-[a-z]+(_[a-z]+)*)?$/
 
 export const buildTopicArnsWithPublishPermissionsPrefix = (
   topicConfig: TopicConfig,
