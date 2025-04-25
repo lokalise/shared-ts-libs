@@ -1,4 +1,5 @@
 import { getAwsConfig, testResetAwsConfig } from './awsConfig.ts'
+import { ConfigScope } from '@lokalise/node-core'
 
 const AWS_ALLOWED_SOURCE_OWNER_LITERAL = 'allowed-source-owner'
 const AWS_RESOURCE_PREFIX_LITERAL = 'resource-prefix'
@@ -7,14 +8,25 @@ const KMS_KEY_ID_LITERAL = 'kms-key-id'
 const DEFAULT_REGION = 'eu-west-1'
 
 describe('awsConfig', () => {
-  describe('getAwsConfig', () => {
+  describe.each([true, false])('getAwsConfig - using configScope %s', (isConfigScopeUsed) => {
     beforeEach(() => {
       process.env = {}
       testResetAwsConfig()
     })
 
+    const buildAwsConfig = (env: Record<string, string>) => {
+      let configScope: ConfigScope | undefined
+      if (isConfigScopeUsed) {
+        configScope = new ConfigScope(env)
+      } else {
+        process.env = env
+      }
+
+      return getAwsConfig(configScope)
+    }
+
     it('provides aws config', () => {
-      process.env = {
+      const config = buildAwsConfig({
         AWS_REGION: DEFAULT_REGION,
         AWS_KMS_KEY_ID: KMS_KEY_ID_LITERAL,
         AWS_ENDPOINT: AWS_ENDPOINT_LITERAL,
@@ -22,9 +34,7 @@ describe('awsConfig', () => {
         AWS_RESOURCE_PREFIX: AWS_RESOURCE_PREFIX_LITERAL,
         AWS_ACCESS_KEY_ID: 'access-key-id',
         AWS_SECRET_ACCESS_KEY: 'secret-access-key',
-      }
-
-      const config = getAwsConfig()
+      })
 
       expect(config).toEqual({
         region: DEFAULT_REGION,
@@ -40,12 +50,10 @@ describe('awsConfig', () => {
     })
 
     it('provides aws config with default credentials resolver when not explicitly provided', () => {
-      process.env = {
+      const config = buildAwsConfig({
         AWS_REGION: DEFAULT_REGION,
         AWS_KMS_KEY_ID: KMS_KEY_ID_LITERAL,
-      }
-
-      const config = getAwsConfig()
+      })
 
       expect(config).toEqual({
         region: DEFAULT_REGION,
@@ -58,14 +66,12 @@ describe('awsConfig', () => {
     })
 
     it('provides aws config with default credentials resolver when one of the values is blank', () => {
-      process.env = {
+      const config = buildAwsConfig({
         AWS_REGION: DEFAULT_REGION,
         AWS_KMS_KEY_ID: KMS_KEY_ID_LITERAL,
         AWS_ACCESS_KEY_ID: '',
         AWS_SECRET_ACCESS_KEY: 'test',
-      }
-
-      const config = getAwsConfig()
+      })
 
       expect(config).toEqual({
         region: DEFAULT_REGION,
@@ -78,14 +84,12 @@ describe('awsConfig', () => {
     })
 
     it('provides aws config with default credentials resolver when both values are blank', () => {
-      process.env = {
+      const config = buildAwsConfig({
         AWS_REGION: DEFAULT_REGION,
         AWS_KMS_KEY_ID: KMS_KEY_ID_LITERAL,
         AWS_ACCESS_KEY_ID: '',
         AWS_SECRET_ACCESS_KEY: '',
-      }
-
-      const config = getAwsConfig()
+      })
 
       expect(config).toEqual({
         region: DEFAULT_REGION,
@@ -98,11 +102,11 @@ describe('awsConfig', () => {
     })
 
     it('checks for mandatory fields', () => {
-      process.env = {
-        AWS_KMS_KEY_ID: KMS_KEY_ID_LITERAL,
-      }
-
-      expect(() => getAwsConfig()).toThrow('Missing mandatory configuration parameter: AWS_REGION')
+      expect(() =>
+        buildAwsConfig({
+          AWS_KMS_KEY_ID: KMS_KEY_ID_LITERAL,
+        }),
+      ).toThrow('Missing mandatory configuration parameter: AWS_REGION')
     })
   })
 })

@@ -31,14 +31,16 @@ let awsConfig: AwsConfig | undefined
 /**
  * Retrieves the AWS configuration settings from the environment variables.
  */
-export const getAwsConfig = (): AwsConfig => {
-  if (!awsConfig) awsConfig = generateAwsConfig()
+export const getAwsConfig = (configScope?: ConfigScope): AwsConfig => {
+  if (awsConfig) return awsConfig
+
+  const resolvedConfigScope = configScope ?? new ConfigScope()
+  awsConfig = generateAwsConfig(resolvedConfigScope)
+
   return awsConfig
 }
 
-const generateAwsConfig = (): AwsConfig => {
-  const configScope = new ConfigScope()
-
+const generateAwsConfig = (configScope: ConfigScope): AwsConfig => {
   return {
     region: configScope.getMandatory('AWS_REGION'),
     kmsKeyId: configScope.getOptionalNullable('AWS_KMS_KEY_ID', ''),
