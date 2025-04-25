@@ -1,5 +1,5 @@
-import { getAwsConfig, testResetAwsConfig } from './awsConfig.ts'
 import { ConfigScope } from '@lokalise/node-core'
+import { getAwsConfig, testResetAwsConfig } from './awsConfig.ts'
 
 const AWS_ALLOWED_SOURCE_OWNER_LITERAL = 'allowed-source-owner'
 const AWS_RESOURCE_PREFIX_LITERAL = 'resource-prefix'
