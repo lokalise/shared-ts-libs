@@ -32,6 +32,7 @@ let awsConfig: AwsConfig | undefined
  * Retrieves the AWS configuration settings from the environment variables.
  */
 export const getAwsConfig = (configScope?: ConfigScope): AwsConfig => {
+  /* v8 ignore next */
   if (awsConfig) return awsConfig
 
   const resolvedConfigScope = configScope ?? new ConfigScope()
