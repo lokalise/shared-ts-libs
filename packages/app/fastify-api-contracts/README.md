@@ -4,7 +4,7 @@ This package adds support for generating fastify routes using universal API cont
 
 This module requires `fastify-type-provider-zod` type provider to work and is ESM-only.
 
-# Usage
+## Usage
 
 Basic usage pattern:
 
@@ -97,4 +97,14 @@ const handler = buildFastifyPayloadRouteHandler(contract,
 const routes = [
     buildFastifyPayloadRoute(contract, handler),
 ]
+```
+
+## Accessing the contract
+
+In case you need some of the contract data within your lifecycle hook or a handler, it is exposed as a part of a route config, and can be accessed like this:
+
+```ts
+const route = buildFastifyNoPayloadRoute(contract, (req) => {
+    const { apiContract } = req.routeOptions.config
+})
 ```

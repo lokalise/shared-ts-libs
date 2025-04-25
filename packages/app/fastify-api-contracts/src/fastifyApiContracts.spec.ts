@@ -82,7 +82,7 @@ describe('fastifyApiContracts', () => {
   })
   describe('buildFastifyNoPayloadRoute', () => {
     it('uses API spec to build valid GET route in fastify app', async () => {
-      expect.assertions(4)
+      expect.assertions(6)
       const contract = buildGetRoute({
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -91,11 +91,13 @@ describe('fastifyApiContracts', () => {
       })
 
       const route = buildFastifyNoPayloadRoute(contract, (req) => {
+        expect(req.routeOptions.config.apiContract).toBe(contract)
         expect(req.params.userId).toEqual('1')
         // satisfies checks if type is inferred properly in route
         expect(req.query.testIds satisfies string[] | undefined).toBeUndefined()
         return Promise.resolve(JSON.stringify({}))
       })
+      expect(route.config.apiContract).toBe(contract)
 
       expectTypeOf(route).toEqualTypeOf<
         RouteType<
@@ -283,7 +285,7 @@ describe('fastifyApiContracts', () => {
   })
   describe('buildFastifyPayloadRoute', () => {
     it('uses API spec to build valid POST route in fastify app', async () => {
-      expect.assertions(3)
+      expect.assertions(5)
       const contract = buildPayloadRoute({
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
@@ -293,10 +295,12 @@ describe('fastifyApiContracts', () => {
       })
 
       const route = buildFastifyPayloadRoute(contract, (req) => {
+        expect(req.routeOptions.config.apiContract).toBe(contract)
         expect(req.params.userId).toEqual('1')
         expect(req.body.id).toEqual('2')
         return Promise.resolve()
       })
+      expect(route.config.apiContract).toBe(contract)
 
       expectTypeOf(route).toEqualTypeOf<
         RouteType<
