@@ -4,6 +4,7 @@ import {
   type PayloadRouteDefinition,
   mapRouteToPath,
 } from '@lokalise/api-contracts'
+import type { CommonRouteDefinition } from '@lokalise/api-contracts'
 import { copyWithoutUndefined } from '@lokalise/node-core'
 import type { z } from 'zod'
 import type {
@@ -16,6 +17,12 @@ import type {
 
 type OptionalZodSchema = z.Schema | undefined
 type InferredOptionalSchema<Schema> = Schema extends z.Schema ? z.infer<Schema> : undefined
+
+declare module 'fastify' {
+  interface FastifyContextConfig {
+    apiContract: CommonRouteDefinition<unknown>
+  }
+}
 
 /**
  * Infers handler request type automatically from the contract for GET or DELETE methods
@@ -102,8 +109,22 @@ export function buildFastifyNoPayloadRoute<
   InferredOptionalSchema<RequestQuerySchema>,
   InferredOptionalSchema<RequestHeaderSchema>
 > {
+  const routeMetadata = contractMetadataToRouteMapper(apiContract.metadata)
+  const mergedConfig = routeMetadata.config
+    ? {
+        ...routeMetadata.config,
+        apiContract,
+      }
+    : {
+        apiContract,
+      }
+  const mergedMetadata = {
+    ...routeMetadata,
+    config: mergedConfig,
+  }
+
   return {
-    ...contractMetadataToRouteMapper(apiContract.metadata),
+    ...mergedMetadata,
     method: apiContract.method,
     url: mapRouteToPath(apiContract),
     handler,
@@ -195,8 +216,22 @@ export function buildFastifyPayloadRoute<
   InferredOptionalSchema<RequestQuerySchema>,
   InferredOptionalSchema<RequestHeaderSchema>
 > {
+  const routeMetadata = contractMetadataToRouteMapper(apiContract.metadata)
+  const mergedConfig = routeMetadata.config
+    ? {
+        ...routeMetadata.config,
+        apiContract,
+      }
+    : {
+        apiContract,
+      }
+  const mergedMetadata = {
+    ...routeMetadata,
+    config: mergedConfig,
+  }
+
   return {
-    ...contractMetadataToRouteMapper(apiContract.metadata),
+    ...mergedMetadata,
     method: apiContract.method,
     url: mapRouteToPath(apiContract),
     handler,

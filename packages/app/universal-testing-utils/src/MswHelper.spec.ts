@@ -1,3 +1,4 @@
+import { mapRouteToPath } from '@lokalise/api-contracts'
 import { sendByGetRoute, sendByPayloadRoute } from '@lokalise/frontend-http-client'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -93,6 +94,105 @@ describe('MswHelper', () => {
       expect(response).toMatchInlineSnapshot(`
               {
                 "id": "2",
+              }
+            `)
+    })
+  })
+
+  describe('mockValidResponseWithAnyPath', () => {
+    it('mocks POST request without path params', async () => {
+      mswHelper.mockValidResponseWithAnyPath(postContract, server, {
+        responseBody: { id: '1' },
+      })
+
+      const response = await sendByPayloadRoute(wretchClient, postContract, {
+        body: { name: 'frf' },
+      })
+
+      expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "1",
+              }
+            `)
+    })
+
+    it('mocks POST request with path params', async () => {
+      mswHelper.mockValidResponseWithAnyPath(postContractWithPathParams, server, {
+        responseBody: { id: '2' },
+      })
+
+      const response = await sendByPayloadRoute(wretchClient, postContractWithPathParams, {
+        pathParams: {
+          userId: '9',
+        },
+        body: { name: 'frf' },
+      })
+
+      expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "2",
+              }
+            `)
+    })
+
+    it('mocks GET request without path params', async () => {
+      mswHelper.mockValidResponseWithAnyPath(getContract, server, {
+        responseBody: { id: '1' },
+      })
+
+      const response = await sendByGetRoute(wretchClient, getContract, {})
+
+      expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "1",
+              }
+            `)
+    })
+
+    it('mocks GET request with path params', async () => {
+      mswHelper.mockValidResponseWithAnyPath(getContractWithPathParams, server, {
+        responseBody: { id: '2' },
+      })
+
+      const response = await sendByGetRoute(wretchClient, getContractWithPathParams, {
+        pathParams: {
+          userId: '11',
+        },
+      })
+
+      expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "2",
+              }
+            `)
+    })
+  })
+
+  describe('mockAnyResponse', () => {
+    it('mocks POST request without path params', async () => {
+      mswHelper.mockAnyResponse(postContract, server, {
+        responseBody: { wrongId: '1' },
+      })
+
+      const response = await wretchClient.post({ name: 'frf' }, mapRouteToPath(postContract))
+
+      expect(await response.json()).toMatchInlineSnapshot(`
+              {
+                "wrongId": "1",
+              }
+            `)
+    })
+
+    it('mocks GET request without path params', async () => {
+      mswHelper.mockAnyResponse(getContract, server, {
+        responseBody: { wrongId: '1' },
+      })
+
+      const response = await wretchClient.get(mapRouteToPath(postContract))
+
+      expect(await response.json()).toMatchInlineSnapshot(`
+              {
+                "wrongId": "1",
               }
             `)
     })

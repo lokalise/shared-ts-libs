@@ -28,10 +28,20 @@ describe('fastifyApiContracts - api contract metadata mapper', () => {
       const route = buildFastifyNoPayloadRoute(
         contract,
         () => Promise.resolve(),
-        (metadata) => (metadata?.myProp ? { config: metadata.myProp.join('-') } : {}),
+        (metadata) =>
+          metadata?.myProp
+            ? {
+                config: {
+                  myProp: metadata.myProp.join('-'),
+                },
+              }
+            : {},
       )
 
-      expect(route.config).toEqual('test1-test2')
+      expect(route.config).toEqual({
+        myProp: 'test1-test2',
+        apiContract: expect.any(Object),
+      })
     })
   })
 
@@ -51,10 +61,13 @@ describe('fastifyApiContracts - api contract metadata mapper', () => {
       const route = buildFastifyPayloadRoute(
         contract,
         () => Promise.resolve(),
-        (metadata) => (metadata?.myProp ? { config: metadata.myProp.join('-') } : {}),
+        (metadata) => (metadata?.myProp ? { config: { myProp: metadata.myProp.join('-') } } : {}),
       )
 
-      expect(route.config).toBe('test3-test4')
+      expect(route.config).toEqual({
+        myProp: 'test3-test4',
+        apiContract: expect.any(Object),
+      })
     })
   })
 })
