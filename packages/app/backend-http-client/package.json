@@ -45,7 +45,7 @@
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",
         "@lokalise/api-contracts": "^4.1.1",
-        "@lokalise/biome-config": "^1.6.1",
+        "@lokalise/biome-config": "^2.0.0",
         "@lokalise/node-core": "^13.6.0",
         "@lokalise/tsconfig": "~1.0.2",
         "@types/node": "^22.13.14",

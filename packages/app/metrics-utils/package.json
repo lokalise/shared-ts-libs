@@ -35,7 +35,7 @@
     },
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",
-        "@lokalise/biome-config": "^1.5.0",
+        "@lokalise/biome-config": "^2.0.0",
         "@lokalise/fastify-extras": "^27.0.0",
         "@lokalise/tsconfig": "^1.0.2",
         "@vitest/coverage-v8": "^3.0.7",
