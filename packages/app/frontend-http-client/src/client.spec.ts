@@ -1030,6 +1030,66 @@ describe('frontend-http-client', () => {
 
       mockXhrServer.remove()
     })
+
+    it('allows to abort an ongoing request', async () => {
+      // Given
+      const abortController = new AbortController()
+      const onProgressMock = vi.fn()
+      const responseMock = vi.fn().mockReturnValue({ data: { code: 99 } })
+
+      const mockXhrServer = newServer().post(
+        '/',
+        (request) =>
+          new Promise<void>((resolve) => {
+            request.uploadProgress(0)
+
+            setTimeout(() => {
+              request.uploadProgress(13)
+
+              request.respond(
+                201,
+                { 'Content-Type': 'application/json' },
+                JSON.stringify(responseMock()),
+              )
+              resolve()
+              // Time doesn't matter, cause the request promise is aborted
+            }, 500)
+          }),
+      )
+
+      mockXhrServer.install()
+
+      const data = new FormData()
+
+      data.append('file', 'Some data ...')
+
+      const requestPromise = sendPostWithProgress({
+        path: '/',
+        data,
+        responseBodySchema: successResponseSchema,
+        onProgress: onProgressMock,
+        abortController,
+      })
+
+      // When
+      setTimeout(() => abortController.abort(), 100)
+
+      await expect(requestPromise).rejects.toThrowErrorMatchingInlineSnapshot(
+        '[Error: Request aborted]',
+      )
+
+      // Then
+      expect(onProgressMock).toHaveBeenCalledOnce()
+      expect(onProgressMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          loaded: 0,
+          total: 13,
+        }),
+      )
+      expect(responseMock).not.toHaveBeenCalled()
+
+      mockXhrServer.remove()
+    })
   })
 
   describe('sendPut', () => {

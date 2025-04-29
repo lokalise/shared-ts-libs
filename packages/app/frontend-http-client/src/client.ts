@@ -220,12 +220,14 @@ export async function sendPostWithProgress<ResponseBody>({
   headers = {},
   data,
   onProgress,
+  abortController,
 }: {
   path: string
   headers?: Record<string, string>
   data: XMLHttpRequestBodyInit
   responseBodySchema: ZodSchema<ResponseBody>
   onProgress: (progressEvent: ProgressEvent) => void
+  abortController?: AbortController
 }): Promise<ResponseBody> {
   const response = await new Promise<ResponseBody>((resolve, reject) => {
     /**
@@ -234,6 +236,11 @@ export async function sendPostWithProgress<ResponseBody>({
      * emitted by the request. Wretch does not expose this event to consumers, so we use XHR here instead.
      */
     const xhr = new XMLHttpRequest()
+
+    if (abortController)
+      abortController.signal.addEventListener('abort', () => {
+        xhr.abort()
+      })
 
     xhr.upload.onprogress = (progress) => onProgress(progress)
     xhr.responseType = 'json'
@@ -253,10 +260,18 @@ export async function sendPostWithProgress<ResponseBody>({
       reject(new XmlHttpRequestError(`File upload failed: ${xhr.statusText}`))
     }
 
+    xhr.onabort = () => {
+      reject(new XmlHttpRequestError('Request aborted'))
+    }
+
     xhr.send(data)
   })
 
-  const bodyParseResult = parseResponseBody<ResponseBody>({ response, responseBodySchema, path })
+  const bodyParseResult = parseResponseBody<ResponseBody>({
+    response,
+    responseBodySchema,
+    path,
+  })
 
   if (bodyParseResult.error) return Promise.reject(bodyParseResult.error)
 
