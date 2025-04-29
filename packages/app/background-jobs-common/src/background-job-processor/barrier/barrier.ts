@@ -1,5 +1,5 @@
 import type { Job } from 'bullmq'
-import type { BaseJobPayload, SafeJob } from '../types.js'
+import type { BaseJobPayload, SafeJob } from '../types.ts'
 
 export type BarrierResult = BarrierResultPositive | BarrierResultNegative
 

@@ -5,7 +5,7 @@ import type {
 } from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
 import type { ToadScheduler } from 'toad-scheduler'
-import type { RequestContext } from '../index.js'
+import type { RequestContext } from '../index.ts'
 
 export type Schedule =
   | {

@@ -1,1 +1,1 @@
-export { AbstractCounterMetric } from './AbstractCounterMetric.js'
+export { AbstractCounterMetric } from './AbstractCounterMetric.ts'

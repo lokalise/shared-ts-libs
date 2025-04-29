@@ -16,7 +16,7 @@ import {
   sendPost,
   sendPostWithProgress,
   sendPut,
-} from './client.js'
+} from './client.ts'
 
 const JSON_HEADERS = {
   'Content-Type': 'application/json',

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { uniqueByProperty } from './uniqueByProperty.js'
+import { uniqueByProperty } from './uniqueByProperty.ts'
 
 describe('uniqueByProperty', () => {
   it('should remove duplicates by string property', () => {

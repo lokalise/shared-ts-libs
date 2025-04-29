@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
-import type { FakeQueueManager } from '../managers/FakeQueueManager.js'
-import type { QueueConfiguration } from '../managers/types.js'
-import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew.js'
-import type { BackgroundJobProcessorDependenciesNew } from './types.js'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import type { FakeQueueManager } from '../managers/FakeQueueManager.ts'
+import type { QueueConfiguration } from '../managers/types.ts'
+import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew.ts'
+import type { BackgroundJobProcessorDependenciesNew } from './types.ts'
 
 const supportedQueues = [
   {

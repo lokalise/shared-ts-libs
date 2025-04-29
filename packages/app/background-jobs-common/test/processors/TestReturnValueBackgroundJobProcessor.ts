@@ -5,7 +5,7 @@ import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
-} from '../../src/index.js'
+} from '../../src/index.ts'
 
 export class TestReturnValueBackgroundJobProcessor<
   JobData extends BaseJobPayload,

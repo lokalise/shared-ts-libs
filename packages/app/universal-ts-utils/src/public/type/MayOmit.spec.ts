@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, it } from 'vitest'
-import type { MayOmit } from './MayOmit.js'
+import type { MayOmit } from './MayOmit.ts'
 
 describe('MayOmit', () => {
   it('should make specified keys optional', () => {

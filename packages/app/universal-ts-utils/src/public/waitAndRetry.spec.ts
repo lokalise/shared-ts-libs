@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { waitAndRetry } from './waitAndRetry.js'
+import { waitAndRetry } from './waitAndRetry.ts'
 
 class Counter {
   private readonly timeOfSucces: number

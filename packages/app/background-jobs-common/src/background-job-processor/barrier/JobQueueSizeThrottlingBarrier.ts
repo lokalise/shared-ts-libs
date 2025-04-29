@@ -1,6 +1,6 @@
-import type { AbstractBackgroundJobProcessor } from '../processors/AbstractBackgroundJobProcessor.js'
-import type { BaseJobPayload } from '../types.js'
-import type { BarrierCallback } from './barrier.js'
+import type { AbstractBackgroundJobProcessor } from '../processors/AbstractBackgroundJobProcessor.ts'
+import type { BaseJobPayload } from '../types.ts'
+import type { BarrierCallback } from './barrier.ts'
 
 export type ChildJobThrottlingBarrierConfig = {
   retryPeriodInMsecs: number

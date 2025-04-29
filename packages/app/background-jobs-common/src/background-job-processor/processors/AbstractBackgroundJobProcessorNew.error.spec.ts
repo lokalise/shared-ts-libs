@@ -1,12 +1,12 @@
 import { UnrecoverableError } from 'bullmq'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
-import { TestFailingBackgroundJobProcessorNew } from '../../../test/processors/TestFailingBackgroundJobProcessorNew.js'
-import { MutedUnrecoverableError } from '../../errors/MutedUnrecoverableError.js'
-import type { FakeQueueManager } from '../managers/FakeQueueManager.js'
-import type { QueueConfiguration } from '../managers/types.js'
-import type { BackgroundJobProcessorDependenciesNew } from './types.js'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import { TestFailingBackgroundJobProcessorNew } from '../../../test/processors/TestFailingBackgroundJobProcessorNew.ts'
+import { MutedUnrecoverableError } from '../../errors/MutedUnrecoverableError.ts'
+import type { FakeQueueManager } from '../managers/FakeQueueManager.ts'
+import type { QueueConfiguration } from '../managers/types.ts'
+import type { BackgroundJobProcessorDependenciesNew } from './types.ts'
 
 const supportedQueues = [
   {

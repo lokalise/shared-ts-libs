@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { trimText } from './trimText.js'
+import { trimText } from './trimText.ts'
 
 describe('trimText', () => {
   it('handles empty string', () => {

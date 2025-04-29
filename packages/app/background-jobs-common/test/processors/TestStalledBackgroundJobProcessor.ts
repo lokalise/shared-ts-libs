@@ -5,7 +5,7 @@ import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
-} from '../../src/index.js'
+} from '../../src/index.ts'
 
 type OnFailedError<T> = {
   error: Error

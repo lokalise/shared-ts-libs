@@ -9,4 +9,4 @@ export {
   sendByPayloadRoute,
   sendByDeleteRoute,
   UNKNOWN_SCHEMA,
-} from './client.js'
+} from './client.ts'

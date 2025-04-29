@@ -1,5 +1,5 @@
-import { compare } from '../../internal/compare.js'
-import type { KeysMatching } from '../../internal/types.js'
+import { compare } from '../../internal/compare.ts'
+import type { KeysMatching } from '../../internal/types.ts'
 
 /**
  * Sorts an array of objects based on a specified string field and order.

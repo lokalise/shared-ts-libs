@@ -5,7 +5,7 @@ import {
   buildGetRoute,
   buildPayloadRoute,
   mapRouteToPath,
-} from './apiContracts.js'
+} from './apiContracts.ts'
 
 const BODY_SCHEMA = z.object({})
 const PATH_PARAMS_SCHEMA = z.object({

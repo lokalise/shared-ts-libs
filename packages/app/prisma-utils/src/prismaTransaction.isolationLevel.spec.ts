@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { afterAll, beforeAll, describe, expect, it, vitest } from 'vitest'
-import { getDatasourceUrl } from '../test/getDatasourceUrl.js'
-import { prismaTransaction } from './prismaTransaction.js'
+import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
+import { prismaTransaction } from './prismaTransaction.ts'
 
 const transactionIsolationKey = 'transaction_isolation'
 

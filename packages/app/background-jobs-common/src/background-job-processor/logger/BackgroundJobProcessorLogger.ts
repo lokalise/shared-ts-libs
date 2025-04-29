@@ -2,7 +2,7 @@ import type { CommonLogger } from '@lokalise/node-core'
 import type { Bindings, ChildLoggerOptions } from 'pino'
 import type pino from 'pino'
 
-import type { SafeJob } from '../types.js'
+import type { SafeJob } from '../types.ts'
 
 const hasMsgProperty = (obj: unknown): obj is { msg: string } => {
   return typeof obj === 'object' && obj !== null && 'msg' in obj && typeof obj.msg === 'string'

@@ -1,12 +1,12 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
-import { TestSuccessBackgroundJobProcessorNew } from '../../../test/processors/TestSuccessBackgroundJobProcessorNew.js'
-import type { FakeQueueManager } from '../managers/FakeQueueManager.js'
-import type { QueueConfiguration } from '../managers/types.js'
-import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew.js'
-import type { BackgroundJobProcessorDependenciesNew } from './types.js'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import { TestSuccessBackgroundJobProcessorNew } from '../../../test/processors/TestSuccessBackgroundJobProcessorNew.ts'
+import type { FakeQueueManager } from '../managers/FakeQueueManager.ts'
+import type { QueueConfiguration } from '../managers/types.ts'
+import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew.ts'
+import type { BackgroundJobProcessorDependenciesNew } from './types.ts'
 
 const supportedQueues = [
   {

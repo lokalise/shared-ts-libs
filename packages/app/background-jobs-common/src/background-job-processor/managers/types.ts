@@ -1,7 +1,7 @@
 import type { RedisConfig } from '@lokalise/node-core'
 import type { JobsOptions, QueueOptions } from 'bullmq'
 import type { z } from 'zod'
-import type { BaseJobPayload } from '../types.js'
+import type { BaseJobPayload } from '../types.ts'
 
 export type QueueManagerConfig = {
   isTest: boolean

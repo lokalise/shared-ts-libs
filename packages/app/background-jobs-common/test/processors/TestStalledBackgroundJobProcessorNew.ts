@@ -4,8 +4,8 @@ import {
   AbstractBackgroundJobProcessorNew,
   type BackgroundJobProcessorDependenciesNew,
   type SupportedQueueIds,
-} from '../../src/index.js'
-import type { QueueConfiguration } from '../../src/index.js'
+} from '../../src/index.ts'
+import type { QueueConfiguration } from '../../src/index.ts'
 
 type OnFailedError = {
   error: Error

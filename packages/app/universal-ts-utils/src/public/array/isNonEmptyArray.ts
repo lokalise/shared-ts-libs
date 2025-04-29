@@ -1,4 +1,4 @@
-import type { NonEmptyArray } from './nonEmptyArray.js'
+import type { NonEmptyArray } from './nonEmptyArray.ts'
 
 /**
  * Checks if the given array is non-empty.

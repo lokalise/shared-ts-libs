@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { removeFalsy } from './removeFalsy.js'
+import { removeFalsy } from './removeFalsy.ts'
 
 describe('arrayUtils', () => {
   describe('removeFalsy', () => {

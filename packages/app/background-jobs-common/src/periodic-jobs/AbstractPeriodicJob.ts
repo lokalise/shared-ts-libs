@@ -19,8 +19,8 @@ import type {
   JobExecutionContext,
   LockConfiguration,
   PeriodicJobDependencies,
-} from './periodicJobTypes.js'
-import { createTask } from './periodicJobUtils.js'
+} from './periodicJobTypes.ts'
+import { createTask } from './periodicJobUtils.ts'
 
 const DEFAULT_EXCLUSIVE_LOCK_SUFFIX = 'EXCLUSIVE'
 const DEFAULT_LOCK_TIMEOUT = 120000

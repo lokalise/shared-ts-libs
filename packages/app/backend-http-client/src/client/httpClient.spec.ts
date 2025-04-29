@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
 import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
-import { JSON_HEADERS } from './constants.js'
+import { JSON_HEADERS } from './constants.ts'
 import {
   buildClient,
   sendByDeleteRoute,
@@ -17,12 +17,12 @@ import {
   sendPostBinary,
   sendPut,
   sendPutBinary,
-} from './httpClient.js'
+} from './httpClient.ts'
 // @ts-ignore
 import mockProduct1 from './mock-data/mockProduct1.json'
 // @ts-ignore
 import mockProductsLimit3 from './mock-data/mockProductsLimit3.json'
-import { type HttpRequestContext, isInternalRequestError } from './types.js'
+import { type HttpRequestContext, isInternalRequestError } from './types.ts'
 
 const TEXT_HEADERS = {
   'content-type': 'text/plain',

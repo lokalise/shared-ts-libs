@@ -4,7 +4,7 @@ import {
   type PeriodicJobDependencies,
 } from '@lokalise/background-jobs-common'
 import { PromisePool } from '@supercharge/promise-pool'
-import type { Healthcheck } from './healthchecks.js'
+import type { Healthcheck } from './healthchecks.ts'
 
 export type HealthcheckRefreshJobConfig = {
   intervalInMs?: number

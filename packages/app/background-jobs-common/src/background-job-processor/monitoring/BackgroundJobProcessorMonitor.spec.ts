@@ -11,12 +11,12 @@ import {
   it,
   vi,
 } from 'vitest'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
-import { QUEUE_IDS_KEY } from '../constants.js'
-import type { BackgroundJobProcessorDependencies } from '../processors/types.js'
-import type { BaseJobPayload, RequestContext, SafeJob } from '../types.js'
-import { BackgroundJobProcessorMonitor } from './BackgroundJobProcessorMonitor.js'
-import { backgroundJobProcessorGetActiveQueueIds } from './backgroundJobProcessorGetActiveQueueIds.js'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import { QUEUE_IDS_KEY } from '../constants.ts'
+import type { BackgroundJobProcessorDependencies } from '../processors/types.ts'
+import type { BaseJobPayload, RequestContext, SafeJob } from '../types.ts'
+import { BackgroundJobProcessorMonitor } from './BackgroundJobProcessorMonitor.ts'
+import { backgroundJobProcessorGetActiveQueueIds } from './backgroundJobProcessorGetActiveQueueIds.ts'
 
 // @ts-ignore
 import symbols = pino.symbols

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { CommonLogger } from '@lokalise/node-core'
 import { stdSerializers } from 'pino'
 import { AsyncTask } from 'toad-scheduler'
-import type { AbstractPeriodicJob } from './AbstractPeriodicJob.js'
+import type { AbstractPeriodicJob } from './AbstractPeriodicJob.ts'
 
 export function createTask(logger: CommonLogger, job: AbstractPeriodicJob): AsyncTask {
   const executorId = randomUUID()

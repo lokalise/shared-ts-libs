@@ -4,8 +4,8 @@ import {
   type JobPayloadForQueue,
   type QueueConfiguration,
   type SupportedQueueIds,
-} from '../../src/index.js'
-import type { BarrierCallback } from '../../src/index.js'
+} from '../../src/index.ts'
+import type { BarrierCallback } from '../../src/index.ts'
 
 export class TestBarrierBackgroundJobProcessorNew<
   Q extends QueueConfiguration[],

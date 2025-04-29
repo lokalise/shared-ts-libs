@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isEmpty } from './isEmpty.js'
+import { isEmpty } from './isEmpty.ts'
 
 describe('isEmpty', () => {
   it('Returns true for completely empty object', () => {

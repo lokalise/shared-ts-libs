@@ -2,11 +2,11 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import { waitAndRetry } from '@lokalise/node-core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
-import { TestStalledBackgroundJobProcessorNew } from '../../../test/processors/TestStalledBackgroundJobProcessorNew.js'
-import type { FakeQueueManager } from '../managers/FakeQueueManager.js'
-import type { QueueConfiguration } from '../managers/types.js'
-import type { BackgroundJobProcessorDependenciesNew } from './types.js'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import { TestStalledBackgroundJobProcessorNew } from '../../../test/processors/TestStalledBackgroundJobProcessorNew.ts'
+import type { FakeQueueManager } from '../managers/FakeQueueManager.ts'
+import type { QueueConfiguration } from '../managers/types.ts'
+import type { BackgroundJobProcessorDependenciesNew } from './types.ts'
 
 const supportedQueues = [
   {

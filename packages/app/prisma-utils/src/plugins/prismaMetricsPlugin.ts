@@ -3,10 +3,10 @@ import 'fastify-metrics'
 import fp from 'fastify-plugin'
 
 import type { PrismaClient } from '@prisma/client'
-import type { CollectionScheduler } from './CollectionScheduler.js'
-import { PromiseBasedCollectionScheduler } from './CollectionScheduler.js'
-import type { MetricCollectorOptions } from './MetricsCollector.js'
-import { MetricsCollector } from './MetricsCollector.js'
+import type { CollectionScheduler } from './CollectionScheduler.ts'
+import { PromiseBasedCollectionScheduler } from './CollectionScheduler.ts'
+import type { MetricCollectorOptions } from './MetricsCollector.ts'
+import { MetricsCollector } from './MetricsCollector.ts'
 
 // Augment existing FastifyRequest interface with new fields
 declare module 'fastify' {

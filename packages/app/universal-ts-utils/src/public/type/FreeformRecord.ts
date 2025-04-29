@@ -1,4 +1,4 @@
-import type { RecordKeyType } from '../../internal/types.js'
+import type { RecordKeyType } from '../../internal/types.ts'
 
 /**
  * A type representing a record with keys of a specified type and values of any type.

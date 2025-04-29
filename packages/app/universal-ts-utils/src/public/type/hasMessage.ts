@@ -1,4 +1,4 @@
-import { isObject } from './isObject.js'
+import { isObject } from './isObject.ts'
 
 /**
  * Type guard to determine if a given value is an object with a string property `message`.

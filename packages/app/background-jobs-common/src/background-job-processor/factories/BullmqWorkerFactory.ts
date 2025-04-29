@@ -1,6 +1,6 @@
 import type { Worker, WorkerOptions } from 'bullmq'
 
-import type { BullmqProcessor, SafeJob } from '../types.js'
+import type { BullmqProcessor, SafeJob } from '../types.ts'
 
 export interface BullmqWorkerFactory<
   WorkerType extends Worker,

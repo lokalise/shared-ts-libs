@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isError } from './isError.js'
+import { isError } from './isError.ts'
 
 describe('isError', () => {
   it('true for Error', () => {

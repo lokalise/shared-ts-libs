@@ -1,19 +1,19 @@
 import type { TransactionObservabilityManager } from '@lokalise/node-core'
 
 export type { TransactionObservabilityManager }
-export * from './background-job-processor/index.js'
-export type { BarrierCallback, BarrierResult } from './background-job-processor/barrier/barrier.js'
-export { AbstractPeriodicJob } from './periodic-jobs/AbstractPeriodicJob.js'
+export * from './background-job-processor/index.ts'
+export type { BarrierCallback, BarrierResult } from './background-job-processor/barrier/barrier.ts'
+export { AbstractPeriodicJob } from './periodic-jobs/AbstractPeriodicJob.ts'
 
-export { MutedUnrecoverableError } from './errors/MutedUnrecoverableError.js'
+export { MutedUnrecoverableError } from './errors/MutedUnrecoverableError.ts'
 
 export {
   createJobQueueSizeThrottlingBarrier,
   type ChildJobThrottlingBarrierConfig,
   type JobQueueSizeThrottlingBarrierContext,
-} from './background-job-processor/barrier/JobQueueSizeThrottlingBarrier.js'
+} from './background-job-processor/barrier/JobQueueSizeThrottlingBarrier.ts'
 
-export { createTask } from './periodic-jobs/periodicJobUtils.js'
+export { createTask } from './periodic-jobs/periodicJobUtils.ts'
 
 export type {
   PeriodicJobDependencies,
@@ -21,4 +21,4 @@ export type {
   LockConfiguration,
   JobExecutionContext,
   Schedule,
-} from './periodic-jobs/periodicJobTypes.js'
+} from './periodic-jobs/periodicJobTypes.ts'

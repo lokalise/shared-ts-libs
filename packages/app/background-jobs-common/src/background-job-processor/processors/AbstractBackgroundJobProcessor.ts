@@ -12,12 +12,12 @@ import {
 } from 'bullmq'
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
-import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants.js'
-import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory.js'
-import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.js'
-import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.js'
-import type { BackgroundJobProcessorSpyInterface } from '../spy/types.js'
-import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types.js'
+import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants.ts'
+import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory.ts'
+import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
+import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
+import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
 import {
   isJobMissingError,
   isMutedUnrecoverableJobError,
@@ -26,14 +26,14 @@ import {
   prepareJobOptions,
   resolveJobId,
   sanitizeRedisConfig,
-} from '../utils.js'
+} from '../utils.ts'
 import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
   JobsPaginatedResponse,
   ProtectedQueue,
   ProtectedWorker,
-} from './types.js'
+} from './types.ts'
 
 /**
  * @deprecated This processor is deprecated and will be removed in future versions.

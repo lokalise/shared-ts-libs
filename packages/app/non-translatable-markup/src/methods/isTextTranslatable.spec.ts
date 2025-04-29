@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isTextTranslatable } from './isTextTranslatable.js'
+import { isTextTranslatable } from './isTextTranslatable.ts'
 
 describe('isTextTranslatable', () => {
   it('should return false on empty text', () => {

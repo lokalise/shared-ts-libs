@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from '@prisma/client'
-import type { PrismaClientFactoryOptions } from './types.js'
+import type { PrismaClientFactoryOptions } from './types.ts'
 
 const defaultOptions: PrismaClientFactoryOptions = {
   transactionOptions: { isolationLevel: 'ReadCommitted' },

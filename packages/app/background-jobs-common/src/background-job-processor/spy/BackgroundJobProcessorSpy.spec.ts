@@ -2,8 +2,8 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { Job } from 'bullmq'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { isPromiseFinished } from '../../../test/isPromiseFinished.js'
-import { BackgroundJobProcessorSpy } from './BackgroundJobProcessorSpy.js'
+import { isPromiseFinished } from '../../../test/isPromiseFinished.ts'
+import { BackgroundJobProcessorSpy } from './BackgroundJobProcessorSpy.ts'
 
 type JobData = { value: string }
 

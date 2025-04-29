@@ -7,9 +7,9 @@ import type { FastifyInstance } from 'fastify'
 import fastify from 'fastify'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { DB_MODEL, cleanTables } from '../../test/DbCleaner.js'
-import { getDatasourceUrl } from '../../test/getDatasourceUrl.js'
-import { type PrismaMetricsPluginOptions, prismaMetricsPlugin } from './prismaMetricsPlugin.js'
+import { DB_MODEL, cleanTables } from '../../test/DbCleaner.ts'
+import { getDatasourceUrl } from '../../test/getDatasourceUrl.ts'
+import { type PrismaMetricsPluginOptions, prismaMetricsPlugin } from './prismaMetricsPlugin.ts'
 
 const UNKNOWN_RESPONSE_SCHEMA = z.unknown()
 

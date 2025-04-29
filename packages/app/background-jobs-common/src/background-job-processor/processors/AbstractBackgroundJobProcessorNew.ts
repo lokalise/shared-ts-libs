@@ -12,10 +12,10 @@ import {
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
 
-import { DEFAULT_WORKER_OPTIONS } from '../constants.js'
-import type { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.js'
-import type { BackgroundJobProcessorSpyInterface } from '../spy/types.js'
-import type { BullmqProcessor, RequestContext, SafeJob } from '../types.js'
+import { DEFAULT_WORKER_OPTIONS } from '../constants.ts'
+import type { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
+import type { BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
 import {
   isJobMissingError,
   isMutedUnrecoverableJobError,
@@ -23,23 +23,23 @@ import {
   isUnrecoverableJobError,
   resolveJobId,
   sanitizeRedisConfig,
-} from '../utils.js'
+} from '../utils.ts'
 
-import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory.js'
-import type { QueueManager } from '../managers/QueueManager.js'
+import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory.ts'
+import type { QueueManager } from '../managers/QueueManager.ts'
 import type {
   JobPayloadForQueue,
   QueueConfiguration,
   SupportedJobPayloads,
   SupportedQueueIds,
-} from '../managers/types.js'
-import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.js'
+} from '../managers/types.ts'
+import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
 import type {
   BackgroundJobProcessorConfigNew,
   BackgroundJobProcessorDependenciesNew,
   ProtectedQueue,
   ProtectedWorker,
-} from './types.js'
+} from './types.ts'
 
 export abstract class AbstractBackgroundJobProcessorNew<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],

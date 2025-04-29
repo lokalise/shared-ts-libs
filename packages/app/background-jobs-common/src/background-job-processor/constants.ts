@@ -1,6 +1,6 @@
 import type { JobsOptions, QueueOptions, WorkerOptions } from 'bullmq'
 
-import { daysToSeconds } from './utils.js'
+import { daysToSeconds } from './utils.ts'
 
 /**
  * How many days we retain completed jobs

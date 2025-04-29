@@ -2,14 +2,14 @@ export {
   requestContextProviderPlugin,
   getRequestIdFastifyAppConfig,
   REQUEST_ID_STORE_KEY,
-} from './plugins/requestContextProviderPlugin.js'
-export type { BaseRequestContext as RequestContext } from './plugins/requestContextProviderPlugin.js'
+} from './plugins/requestContextProviderPlugin.ts'
+export type { BaseRequestContext as RequestContext } from './plugins/requestContextProviderPlugin.ts'
 
-export { prismaOtelTracingPlugin } from './plugins/opentelemetry/prismaOtelTracingPlugin.js'
-export type { PrismaOtelTracingPluginConfig } from './plugins/opentelemetry/prismaOtelTracingPlugin.js'
+export { prismaOtelTracingPlugin } from './plugins/opentelemetry/prismaOtelTracingPlugin.ts'
+export type { PrismaOtelTracingPluginConfig } from './plugins/opentelemetry/prismaOtelTracingPlugin.ts'
 
 export {
   unhandledExceptionPlugin,
   commonErrorObjectResolver,
-} from './plugins/unhandledExceptionPlugin.js'
-export type { UnhandledExceptionPluginOptions } from './plugins/unhandledExceptionPlugin.js'
+} from './plugins/unhandledExceptionPlugin.ts'
+export type { UnhandledExceptionPluginOptions } from './plugins/unhandledExceptionPlugin.ts'

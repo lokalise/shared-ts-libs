@@ -1,4 +1,4 @@
-import type { KeysMatching, RecordKeyType } from '../../internal/types.js'
+import type { KeysMatching, RecordKeyType } from '../../internal/types.ts'
 
 /**
  * Groups an array of objects based on the unique value of a specified key.

@@ -1,4 +1,4 @@
-import type { RecordKeyType } from '../../internal/types.js'
+import type { RecordKeyType } from '../../internal/types.ts'
 
 /**
  * Groups an array of objects based on a specified key path.

@@ -7,8 +7,8 @@ import {
   getContractWithPathParams,
   postContract,
   postContractWithPathParams,
-} from '../test/testContracts.js'
-import { MockttpHelper } from './MockttpHelper.js'
+} from '../test/testContracts.ts'
+import { MockttpHelper } from './MockttpHelper.ts'
 
 describe('MockttpHelper', () => {
   const mockServer = getLocal()

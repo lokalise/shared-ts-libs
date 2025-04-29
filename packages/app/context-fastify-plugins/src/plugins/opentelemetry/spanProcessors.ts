@@ -2,7 +2,7 @@ import { requestContext } from '@fastify/request-context'
 import type { Span } from '@opentelemetry/sdk-trace-base'
 import { BatchSpanProcessor, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
 
-import { REQUEST_ID_STORE_KEY } from '../requestContextProviderPlugin.js'
+import { REQUEST_ID_STORE_KEY } from '../requestContextProviderPlugin.ts'
 
 /**
  * Extends span processor to be able to attach custom attributes request id to spans.

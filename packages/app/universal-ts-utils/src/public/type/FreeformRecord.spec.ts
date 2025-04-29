@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, it } from 'vitest'
-import type { FreeformRecord } from './FreeformRecord.js'
+import type { FreeformRecord } from './FreeformRecord.ts'
 
 describe('FreeformRecord', () => {
   it('should infer string type key and allow any as value', () => {

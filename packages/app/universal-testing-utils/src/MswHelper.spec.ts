@@ -8,8 +8,8 @@ import {
   getContractWithPathParams,
   postContract,
   postContractWithPathParams,
-} from '../test/testContracts.js'
-import { MswHelper } from './MswHelper.js'
+} from '../test/testContracts.ts'
+import { MswHelper } from './MswHelper.ts'
 
 const BASE_URL = 'http://localhost:8080'
 

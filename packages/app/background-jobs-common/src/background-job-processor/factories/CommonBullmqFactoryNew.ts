@@ -1,8 +1,8 @@
 import { type Job, Queue, Worker } from 'bullmq'
 import type { Processor, QueueOptions, WorkerOptions } from 'bullmq'
-import type { BullmqProcessor } from '../types.js'
-import type { BullmqQueueFactory } from './BullmqQueueFactory.js'
-import type { BullmqWorkerFactory } from './BullmqWorkerFactory.js'
+import type { BullmqProcessor } from '../types.ts'
+import type { BullmqQueueFactory } from './BullmqQueueFactory.ts'
+import type { BullmqWorkerFactory } from './BullmqWorkerFactory.ts'
 
 export class CommonBullmqFactoryNew
   implements
