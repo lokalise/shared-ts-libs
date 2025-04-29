@@ -114,6 +114,30 @@ Usage example:
 })
 ```
 
+### Aborting pending requests
+Aborting requests is especially useful while uploading files. 
+
+> **Important note**: Currently it is only possible with `sendWithProgress()` function 
+
+Usage example:
+
+```ts
+const abortController = new AbortController()
+
+sendPostWithProgress({
+    path: '/',
+    data: new FormData(), 
+    headers: { Authorization: 'Bearer ...' },
+    responseBodySchema: z.object(),
+    onProgress: (progress) => {
+        console.log(`Loaded ${progress.loaded} of ${progress.total}`)
+    },
+    abortController
+})
+
+abortController.abort()
+```
+
 ## Credits
 
 This library is brought to you by a joint effort of Lokalise engineers:
