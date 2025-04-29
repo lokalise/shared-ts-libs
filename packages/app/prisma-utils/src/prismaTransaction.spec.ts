@@ -3,16 +3,16 @@ import { PrismaClient } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { DB_MODEL, cleanTables } from '../test/DbCleaner.js'
+import { DB_MODEL, cleanTables } from '../test/DbCleaner.ts'
 
-import { getDatasourceUrl } from '../test/getDatasourceUrl.js'
+import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
 import {
   PRISMA_NOT_FOUND_ERROR,
   PRISMA_SERIALIZATION_ERROR,
   PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
   PRISMA_TRANSACTION_ERROR,
-} from './errors/index.js'
-import { prismaTransaction } from './prismaTransaction.js'
+} from './errors/index.ts'
+import { prismaTransaction } from './prismaTransaction.ts'
 
 type Item1 = {
   value: string

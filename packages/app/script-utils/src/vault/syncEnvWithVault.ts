@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { parseEnv } from 'node:util'
 import { globalLogger } from '@lokalise/node-core'
-import { vaultGetVars, vaultLogin } from './vault.js'
+import { vaultGetVars, vaultLogin } from './vault.ts'
 
 /**
  * This function updates the contents of an .env file so the passed `key` has

@@ -5,21 +5,21 @@ import { deepClone } from '@lokalise/node-core'
 import type { Prisma, PrismaClient } from '@prisma/client'
 import type * as runtime from '@prisma/client/runtime/library'
 
-import { isCockroachDBRetryTransaction } from './errors/cockroachdbError.js'
+import { isCockroachDBRetryTransaction } from './errors/cockroachdbError.ts'
 import {
   PRISMA_SERIALIZATION_ERROR,
   PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
   PRISMA_TRANSACTION_ERROR,
   isPrismaClientKnownRequestError,
   isPrismaTransactionClosedError,
-} from './errors/prismaError.js'
+} from './errors/prismaError.ts'
 import type {
   DbDriver,
   PrismaTransactionBasicOptions,
   PrismaTransactionFn,
   PrismaTransactionOptions,
   PrismaTransactionReturnType,
-} from './types.js'
+} from './types.ts'
 
 const DEFAULT_OPTIONS = {
   retriesAllowed: 2, // first try + 2 retries = 3 tries

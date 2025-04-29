@@ -1,4 +1,4 @@
-import type { RecordKeyType } from '../../internal/types.js'
+import type { RecordKeyType } from '../../internal/types.ts'
 
 type Output<T extends Record<RecordKeyType, unknown>> = Pick<
   T,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { copyWithoutEmpty } from './copyWithoutEmpty.js'
+import { copyWithoutEmpty } from './copyWithoutEmpty.ts'
 
 describe('copyWithoutEmpty', () => {
   it('Does nothing when there are no empty fields', () => {

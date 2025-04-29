@@ -3,10 +3,10 @@ export {
   type MockParams,
   type CommonMockParams,
   type MockParamsNoPath,
-} from './MswHelper.js'
+} from './MswHelper.ts'
 
 export {
   MockttpHelper,
   type PayloadMockParamsNoPath,
   type PayloadMockParams,
-} from './MockttpHelper.js'
+} from './MockttpHelper.ts'

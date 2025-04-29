@@ -20,16 +20,16 @@ import type {
   RequestResultType,
   RouteRequestParams,
   WretchInstance,
-} from './types.js'
+} from './types.ts'
 import {
   type BodyParseResult,
   parseRequestBody,
   parseResponseBody,
   tryToResolveJsonBody,
-} from './utils/bodyUtils.js'
-import { isFailure } from './utils/either.js'
-import { XmlHttpRequestError, buildWretchError } from './utils/errorUtils.js'
-import { parseQueryParams } from './utils/queryUtils.js'
+} from './utils/bodyUtils.ts'
+import { isFailure } from './utils/either.ts'
+import { XmlHttpRequestError, buildWretchError } from './utils/errorUtils.ts'
+import { parseQueryParams } from './utils/queryUtils.ts'
 
 export const UNKNOWN_SCHEMA = z.unknown()
 

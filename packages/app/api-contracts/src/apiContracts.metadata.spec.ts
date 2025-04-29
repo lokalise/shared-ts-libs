@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod'
-import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from './apiContracts.js'
+import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from './apiContracts.ts'
 
 const SCHEMA = z.object({})
 
@@ -9,7 +9,7 @@ type Metadata = {
   mySecondTestProp?: number
 }
 
-declare module './apiContracts.js' {
+declare module './apiContracts.ts' {
   interface CommonRouteDefinitionMetadata extends Metadata {}
 }
 

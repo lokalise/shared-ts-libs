@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isObject } from './isObject.js'
+import { isObject } from './isObject.ts'
 
 describe('isObject', () => {
   it('true for object', () => {

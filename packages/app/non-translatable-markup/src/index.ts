@@ -1,6 +1,6 @@
-export * from './nonTranslatableTags.js'
+export * from './nonTranslatableTags.ts'
 
-export { extractTextBetweenTags } from './methods/extractTextBetweenTags.js'
-export { isAttemptToEditNonTranslatableContent } from './methods/isAttemptToEditNonTranslatableContent.js'
-export { isTextTranslatable } from './methods/isTextTranslatable.js'
-export { removeNonTranslatableTags } from './methods/removeNonTranslatableTags.js'
+export { extractTextBetweenTags } from './methods/extractTextBetweenTags.ts'
+export { isAttemptToEditNonTranslatableContent } from './methods/isAttemptToEditNonTranslatableContent.ts'
+export { isTextTranslatable } from './methods/isTextTranslatable.ts'
+export { removeNonTranslatableTags } from './methods/removeNonTranslatableTags.ts'

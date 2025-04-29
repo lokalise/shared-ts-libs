@@ -4,8 +4,8 @@ import {
   multiCursorMandatoryPaginationSchema,
   multiCursorOptionalPaginationSchema,
   paginatedResponseSchema,
-} from './apiSchemas.js'
-import { encodeCursor } from './cursorCodec.js'
+} from './apiSchemas.ts'
+import { encodeCursor } from './cursorCodec.ts'
 
 describe('apiSchemas', () => {
   describe('multi cursor pagination schemas', () => {

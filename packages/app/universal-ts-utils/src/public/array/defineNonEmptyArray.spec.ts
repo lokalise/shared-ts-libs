@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { defineNonEmptyArray } from './defineNonEmptyArray.js'
-import type { NonEmptyArray } from './nonEmptyArray.js'
+import { defineNonEmptyArray } from './defineNonEmptyArray.ts'
+import type { NonEmptyArray } from './nonEmptyArray.ts'
 
 describe('defineNonEmptyArray', () => {
   it('should infer the type as NonEmptyArray', () => {

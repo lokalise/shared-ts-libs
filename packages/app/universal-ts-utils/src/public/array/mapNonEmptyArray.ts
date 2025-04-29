@@ -1,4 +1,4 @@
-import type { NonEmptyArray } from './nonEmptyArray.js'
+import type { NonEmptyArray } from './nonEmptyArray.ts'
 
 /**
  * Maps over a `NonEmptyArray`, applying the given mapper function to each element,

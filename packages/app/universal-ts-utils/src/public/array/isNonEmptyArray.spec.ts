@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isNonEmptyArray } from './isNonEmptyArray.js'
+import { isNonEmptyArray } from './isNonEmptyArray.ts'
 
 describe('arrayUtils', () => {
   describe('isNonEmptyArray', () => {

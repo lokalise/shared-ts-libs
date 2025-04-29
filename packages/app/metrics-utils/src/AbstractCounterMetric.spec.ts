@@ -1,6 +1,6 @@
 import type { IFastifyMetrics } from 'fastify-metrics'
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { AbstractCounterMetric } from './AbstractCounterMetric.js'
+import { AbstractCounterMetric } from './AbstractCounterMetric.ts'
 
 class ConcreteCounterMetric extends AbstractCounterMetric<'status', ['successful', 'failed']> {
   constructor(appMetrics?: IFastifyMetrics) {

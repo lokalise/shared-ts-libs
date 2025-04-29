@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory.js'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 
 import { z } from 'zod'
-import { TestReturnValueBackgroundJobProcessorNew } from '../../../test/processors/TestReturnValueBackgroundJobProcessorNew.js'
-import { FakeQueueManager } from '../managers/FakeQueueManager.js'
-import type { QueueManager } from '../managers/QueueManager.js'
-import type { QueueConfiguration } from '../managers/types.js'
-import type { BackgroundJobProcessorSpyInterface } from '../spy/types.js'
-import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew.js'
-import type { BackgroundJobProcessorDependenciesNew } from './types.js'
+import { TestReturnValueBackgroundJobProcessorNew } from '../../../test/processors/TestReturnValueBackgroundJobProcessorNew.ts'
+import { FakeQueueManager } from '../managers/FakeQueueManager.ts'
+import type { QueueManager } from '../managers/QueueManager.ts'
+import type { QueueConfiguration } from '../managers/types.ts'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
+import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew.ts'
+import type { BackgroundJobProcessorDependenciesNew } from './types.ts'
 
 const supportedQueues = [
   {

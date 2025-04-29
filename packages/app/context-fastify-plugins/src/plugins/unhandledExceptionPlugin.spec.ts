@@ -4,8 +4,8 @@ import { type RouteHandlerMethod, fastify } from 'fastify'
 import {
   getRequestIdFastifyAppConfig,
   requestContextProviderPlugin,
-} from './requestContextProviderPlugin.js'
-import { unhandledExceptionPlugin } from './unhandledExceptionPlugin.js'
+} from './requestContextProviderPlugin.ts'
+import { unhandledExceptionPlugin } from './unhandledExceptionPlugin.ts'
 
 process.on('unhandledRejection', (error) => {
   console.error('Unhandled Rejection:', error)

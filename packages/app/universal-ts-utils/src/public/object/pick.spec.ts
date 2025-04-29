@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pick } from './pick.js'
+import { pick } from './pick.ts'
 
 describe('pick', () => {
   it('Picks specified fields', () => {

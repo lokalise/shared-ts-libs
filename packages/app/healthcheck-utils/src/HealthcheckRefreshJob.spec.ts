@@ -8,14 +8,14 @@ import {
 import { Redis } from 'ioredis'
 import { ToadScheduler } from 'toad-scheduler'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { getTestRedisConfig } from '../test/setup.js'
-import { HealthcheckRefreshJob } from './HealthcheckRefreshJob.js'
-import { HealthcheckResultsStore } from './HealthcheckResultsStore.js'
+import { getTestRedisConfig } from '../test/setup.ts'
+import { HealthcheckRefreshJob } from './HealthcheckRefreshJob.ts'
+import { HealthcheckResultsStore } from './HealthcheckResultsStore.ts'
 import {
   AbstractHealthcheck,
   type Healthcheck,
   type HealthcheckDependencies,
-} from './healthchecks.js'
+} from './healthchecks.ts'
 
 type SupportedHealthchecks = 'test' | 'test2'
 

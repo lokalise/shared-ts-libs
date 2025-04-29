@@ -1,5 +1,5 @@
-import type { OptionalPaginationParams, PaginatedResponse, PaginationMeta } from './apiSchemas.js'
-import { encodeCursor } from './cursorCodec.js'
+import type { OptionalPaginationParams, PaginatedResponse, PaginationMeta } from './apiSchemas.ts'
+import { encodeCursor } from './cursorCodec.ts'
 
 const pick = <T, K extends string | number | symbol>(
   source: T,

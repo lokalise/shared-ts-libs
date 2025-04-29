@@ -5,7 +5,7 @@ import {
   type JobPayloadForQueue,
   type QueueConfiguration,
   type SupportedQueueIds,
-} from '../../src/index.js'
+} from '../../src/index.ts'
 
 type ProcessOverride<Q extends QueueConfiguration[], T extends SupportedQueueIds<Q>> = (
   job: Job<JobPayloadForQueue<Q, T>>,

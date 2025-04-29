@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extractTextBetweenTags } from './extractTextBetweenTags.js'
+import { extractTextBetweenTags } from './extractTextBetweenTags.ts'
 
 describe('extractTextBetweenTags', () => {
   it.each([

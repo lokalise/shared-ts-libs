@@ -2,7 +2,7 @@ import type { MayOmit } from '@lokalise/node-core'
 import type { Client } from 'undici'
 
 import { z } from 'zod'
-import type { RequestOptions } from './types.js'
+import type { RequestOptions } from './types.ts'
 
 export const DEFAULT_OPTIONS = {
   validateResponse: true,

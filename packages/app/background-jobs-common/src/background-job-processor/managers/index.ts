@@ -1,3 +1,3 @@
-export * from './types.js'
-export * from './FakeQueueManager.js'
-export * from './QueueManager.js'
+export * from './types.ts'
+export * from './FakeQueueManager.ts'
+export * from './QueueManager.ts'

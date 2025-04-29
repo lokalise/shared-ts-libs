@@ -1,4 +1,4 @@
-import type { NonEmptyArray } from './nonEmptyArray.js'
+import type { NonEmptyArray } from './nonEmptyArray.ts'
 
 /**
  * Ensures that the given array is treated as a `NonEmptyArray` type.

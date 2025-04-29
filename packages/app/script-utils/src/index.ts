@@ -1,2 +1,2 @@
 /* c8 ignore next */
-export { synchronizeEnvFileWithVault } from './vault/syncEnvWithVault.js'
+export { synchronizeEnvFileWithVault } from './vault/syncEnvWithVault.ts'

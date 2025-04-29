@@ -1,7 +1,7 @@
 import type { Either } from '@lokalise/node-core'
 import type { Prisma } from '@prisma/client'
 import type * as runtime from '@prisma/client/runtime/library'
-import type { CockroachDbIsolationLevel } from './isolation_level/isolationLevel.js'
+import type { CockroachDbIsolationLevel } from './isolation_level/isolationLevel.ts'
 
 type ObjectValues<T> = T[keyof T]
 

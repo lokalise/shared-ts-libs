@@ -1,14 +1,14 @@
 import { deepClone, removeNullish } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 
-import type { SafeJob } from '../types.js'
+import type { SafeJob } from '../types.ts'
 
 import type {
   BackgroundJobProcessorSpyInterface,
   JobDataSelector,
   JobSpyResult,
   JobSpyState,
-} from './types.js'
+} from './types.ts'
 
 type JobProcessingResult<JobData extends object, jobReturn> = {
   job: JobSpyResult<JobData, jobReturn>

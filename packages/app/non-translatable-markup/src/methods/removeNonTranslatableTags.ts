@@ -1,4 +1,4 @@
-import { nonTranslatableTagsRegexpG } from './utils.js'
+import { nonTranslatableTagsRegexpG } from './utils.ts'
 
 /**
  * Removes any non-translatable tag.

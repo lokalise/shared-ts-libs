@@ -13,7 +13,7 @@ import type {
   FastifyNoPayloadHandlerFn,
   FastifyPayloadHandlerFn,
   RouteType,
-} from './types.js'
+} from './types.ts'
 
 type OptionalZodSchema = z.Schema | undefined
 type InferredOptionalSchema<Schema> = Schema extends z.Schema ? z.infer<Schema> : undefined

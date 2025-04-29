@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chunk } from './chunk.js'
+import { chunk } from './chunk.ts'
 
 describe('arrayUtils', () => {
   describe('chunk', () => {

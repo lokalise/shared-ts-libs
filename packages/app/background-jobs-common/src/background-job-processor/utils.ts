@@ -3,9 +3,9 @@ import type { RedisConfig } from '@lokalise/node-core'
 import { isError } from '@lokalise/node-core'
 import type { JobsOptions } from 'bullmq'
 import { Redis } from 'ioredis'
-import { MUTED_UNRECOVERABLE_ERROR_SYMBOL } from '../errors/MutedUnrecoverableError.js'
-import { DEFAULT_JOB_CONFIG } from './constants.js'
-import type { SafeJob } from './types.js'
+import { MUTED_UNRECOVERABLE_ERROR_SYMBOL } from '../errors/MutedUnrecoverableError.ts'
+import { DEFAULT_JOB_CONFIG } from './constants.ts'
+import type { SafeJob } from './types.ts'
 
 export const daysToSeconds = (days: number): number => days * 24 * 60 * 60
 

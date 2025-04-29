@@ -1,5 +1,5 @@
 import type { ZodSchema, z } from 'zod'
-import type { HttpStatusCode } from './HttpStatusCodes.js'
+import type { HttpStatusCode } from './HttpStatusCodes.ts'
 
 const EMPTY_PARAMS = {}
 

@@ -1,7 +1,7 @@
 import Bugsnag from '@bugsnag/js'
 import { type FreeformRecord, InternalError, PublicNonRecoverableError } from '@lokalise/node-core'
 import { describe, expect, it, vi } from 'vitest'
-import { reportErrorToBugsnag } from './bugsnag.js'
+import { reportErrorToBugsnag } from './bugsnag.ts'
 
 const BugsnagClient = Bugsnag.default
 

@@ -1,8 +1,8 @@
 import type { WretchResponse } from 'wretch'
 import type { ZodError, z } from 'zod'
 
-import type { Either } from './either.js'
-import { failure, success } from './either.js'
+import type { Either } from './either.ts'
+import { failure, success } from './either.ts'
 
 export type BodyParseResult<RequestBodySchema extends z.ZodSchema> = Either<
   'NOT_JSON' | 'EMPTY_RESPONSE' | ZodError<RequestBodySchema>,

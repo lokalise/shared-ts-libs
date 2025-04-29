@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { transformToKebabCase } from './transformToKebabCase.js'
+import { transformToKebabCase } from './transformToKebabCase.ts'
 
 describe('transformToKebabCase', () => {
   it('handle simple null and undefined', () => {

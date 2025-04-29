@@ -12,15 +12,15 @@ import {
   buildFastifyNoPayloadRouteHandler,
   buildFastifyPayloadRoute,
   buildFastifyPayloadRouteHandler,
-} from './fastifyApiContracts.js'
+} from './fastifyApiContracts.ts'
 import {
   injectDelete,
   injectGet,
   injectPatch,
   injectPost,
   injectPut,
-} from './fastifyApiRequestInjector.js'
-import type { RouteType } from './types.js'
+} from './fastifyApiRequestInjector.ts'
+import type { RouteType } from './types.ts'
 
 const REQUEST_BODY_SCHEMA = z.object({
   id: z.string(),

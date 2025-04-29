@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { convertDateFieldsToIsoString } from './convertDateFieldsToIsoString.js'
+import { convertDateFieldsToIsoString } from './convertDateFieldsToIsoString.ts'
 
 type TestInputType = {
   id: number
