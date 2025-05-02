@@ -1,0 +1,18 @@
+language css;
+
+// Match any CSS property that is a z-index value
+`z-index: $zIndexValue;` where {
+
+    // Make sure that we are using the design library for z-index values
+    // This is a regex that matches the assignment of a z-index value with the prefix --lok-z-index-
+    // followed by any non-whitespace characters (so that we can change/add/remove variable in the future)
+    not $zIndexValue <: r"^var\(--lok-z-index-\S+\)$",
+
+    // This is generating the helpful error report that points out any violation
+    // it's a built in function that adds the code with arrows and a description of what's wrong
+    register_diagnostic(
+        span = $zIndexValue,
+        message = "lokalise/plugin/noManualZIndex :: z-index values should be set using the design library. Please use refer to https://lokalise.github.io/louis/?path=/docs/foundations-z-index--docs",
+        severity = "error",
+    ),
+}
