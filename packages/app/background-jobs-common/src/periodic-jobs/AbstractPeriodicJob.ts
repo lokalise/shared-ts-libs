@@ -83,7 +83,7 @@ export abstract class AbstractPeriodicJob {
       const job = new SimpleIntervalJob(
         {
           milliseconds: this.options.schedule.intervalInMs,
-          runImmediately: false,
+          runImmediately: this.options.runImmediately,
         },
         task,
         {
