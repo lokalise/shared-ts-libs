@@ -1,3 +1,4 @@
+import { setTimeout } from 'node:timers/promises'
 import type { ErrorReport, ErrorReporter } from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
 import { ToadScheduler } from 'toad-scheduler'
@@ -60,6 +61,21 @@ describe('AbstractPeriodicJob', () => {
     await vi.waitUntil(() => executionIds.length === 3)
     expect(executionIds).toMatchObject([expect.any(String), expect.any(String), expect.any(String)])
 
+    await job.dispose()
+  })
+
+  it('should await first processing when using asyncRegister', async () => {
+    let counter = 0
+    const processMock = async () => {
+      await setTimeout(100)
+      counter++
+      return Promise.resolve()
+    }
+    const job = new FakePeriodicJob(processMock, {
+      scheduler,
+    })
+    await job.asyncRegister()
+    expect(counter).toBe(1)
     await job.dispose()
   })
 

@@ -43,7 +43,7 @@
     "peerDependencies": {
         "bullmq": "^5.28.2",
         "ioredis": "^5.4.1",
-        "toad-scheduler": "^3.0.1",
+        "toad-scheduler": "^3.1.0",
         "zod": "^3.24.1"
     },
     "devDependencies": {
@@ -55,7 +55,7 @@
         "bullmq": "^5.31.2",
         "ioredis": "^5.4.1",
         "rimraf": "^6.0.1",
-        "toad-scheduler": "^3.0.1",
+        "toad-scheduler": "^3.1.0",
         "typescript": "5.8.3",
         "vitest": "^3.0.7",
         "zod": "^3.24.1"
