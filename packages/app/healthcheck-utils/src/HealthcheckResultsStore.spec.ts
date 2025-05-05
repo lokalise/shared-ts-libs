@@ -7,7 +7,6 @@ import {
 const testParams: HealthcheckResultsStoreParams = {
   maxHealthcheckNumber: 2,
   healthCheckResultTtlInMsecs: 5000,
-  stalenessThresholdInMsecs: 1000,
 }
 
 type TestHealthchecks = 'db' | 'redis'

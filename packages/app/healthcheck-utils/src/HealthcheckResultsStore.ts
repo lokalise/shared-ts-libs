@@ -9,20 +9,15 @@ export type HealthcheckEntry = {
 
 export type HealthcheckResultsStoreParams = {
   maxHealthcheckNumber: number // maximum amount of healthchecks that the system can have
-  stalenessThresholdInMsecs?: number
   healthCheckResultTtlInMsecs?: number
 }
 
-const DEFAULT_STALENESS_THRESHOLD_IN_MSECS = 30000
-const DEFAULT_HEALTHCHECK_TTL_IN_MSECS = 15000
+const DEFAULT_HEALTHCHECK_TTL_IN_MSECS = 40000
 
 export class HealthcheckResultsStore<SupportedHealthchecks extends string> {
-  private readonly stalenessThresholdInMsecs: number
   private readonly store: FifoMap<HealthcheckEntry>
 
   constructor(params: HealthcheckResultsStoreParams) {
-    this.stalenessThresholdInMsecs =
-      params.stalenessThresholdInMsecs ?? DEFAULT_STALENESS_THRESHOLD_IN_MSECS
     this.store = new FifoMap<HealthcheckEntry>(
       params.maxHealthcheckNumber,
       params.healthCheckResultTtlInMsecs ?? DEFAULT_HEALTHCHECK_TTL_IN_MSECS,
@@ -47,13 +42,7 @@ export class HealthcheckResultsStore<SupportedHealthchecks extends string> {
       return true
     }
 
-    if (healthcheckEntry.isSuccessful === false) {
-      return false
-    }
-
-    // If we still don't have healthcheck results, check how old the undefined state is
-    // If it is very stale, assume check is broken and report unhealthy service
-    return isLessThanMSecsAgo(healthcheckEntry.checkTimestamp, this.stalenessThresholdInMsecs)
+    return false
   }
 
   getHealthcheckLatency(healthcheck: SupportedHealthchecks): number | undefined {
@@ -68,8 +57,4 @@ export class HealthcheckResultsStore<SupportedHealthchecks extends string> {
   resetHealthcheckStores() {
     this.store.clear()
   }
-}
-
-function isLessThanMSecsAgo(givenDate: Date, deltaInMsecs: number) {
-  return Date.now() - givenDate.getTime() < deltaInMsecs
 }
