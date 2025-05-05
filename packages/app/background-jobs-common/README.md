@@ -31,7 +31,9 @@ npm run test
 `AbstractBackgroundJobProcessorNew` does no queue management, so you need a separate `QueueManager` instance to manage
 the queue.
 
-## Usage
+## Persisted background jobs
+
+### Usage
 
 See test implementations in `./test/processors` folder. Extend `AbstractBackgroundJobProcessorNew` and `QueueManager` to
 implement required methods.
@@ -326,4 +328,40 @@ export class Processor extends AbstractBackgroundJobProcessor<Data> {
     }
     // ...
 }
+```
+
+## In-memory periodic jobs
+
+### Usage
+
+```ts
+export class MyJob extends AbstractPeriodicJob {
+  public static JOB_NAME = 'MyJob'
+
+  constructor(
+          dependencies: PeriodicJobDependencies,
+  ) {
+    super(
+            {
+              jobId: MyJob.JOB_NAME,
+              schedule: {
+                intervalInMs: config?.intervalInMs ?? 15000,
+              },
+              shouldLogExecution: config?.shouldLogExecution ?? false,
+              singleConsumerMode: {
+                enabled: false, // if true, only one job instance across all cluster nodes can be running at the same time
+              },
+              runImmediately: true, // if true, job will be triggered immediately after registration
+            },
+            dependencies,
+    )
+  }
+
+  protected processInternal(executionUuid: JobExecutionContext): Promise<unknown> {
+    // implement job execution logic 
+  }
+}
+
+const job = new MyJob(dependencies)
+await job.asyncRegister() // if runImmediately is true, this will both register the job to a scheduler and also immediately trigger execution and await its completion
 ```

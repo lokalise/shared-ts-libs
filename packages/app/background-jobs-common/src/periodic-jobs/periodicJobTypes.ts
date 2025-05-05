@@ -61,6 +61,10 @@ export type BackgroundJobConfiguration = {
    * If true, the job will log when it starts and finishes. Default is false
    */
   shouldLogExecution?: boolean
+  /**
+   * If true, job will be triggered immediately when registered. Default is true
+   */
+  runImmediately?: boolean
 }
 
 export type LockConfiguration = {

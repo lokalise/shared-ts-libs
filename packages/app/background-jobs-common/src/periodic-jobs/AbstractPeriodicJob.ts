@@ -57,6 +57,7 @@ export abstract class AbstractPeriodicJob {
           : DEFAULT_LOCK_TIMEOUT,
         ...options.singleConsumerMode,
       },
+      runImmediately: options.runImmediately ?? true,
     }
     this.logger = logger ?? globalLogger
     this.redis = redis
@@ -72,6 +73,38 @@ export abstract class AbstractPeriodicJob {
     }
   }
 
+  /**
+   * Awaits first job execution if runImmediately is set
+   */
+  public async asyncRegister(): Promise<void> {
+    const task = createTask(this.logger, this)
+
+    if (this.options.schedule.intervalInMs) {
+      const job = new SimpleIntervalJob(
+        {
+          milliseconds: this.options.schedule.intervalInMs,
+          runImmediately: this.options.runImmediately,
+        },
+        task,
+        {
+          id: this.jobId,
+          preventOverrun: true,
+        },
+      )
+
+      if (this.options.runImmediately) {
+        await job.executeAsync()
+      }
+      this.scheduler.addSimpleIntervalJob(job)
+      return
+    }
+
+    return this.register()
+  }
+
+  /**
+   * Fire-and-forgets first job execution if runImmediately is set
+   */
   public register(): void {
     const task = createTask(this.logger, this)
 
@@ -80,7 +113,7 @@ export abstract class AbstractPeriodicJob {
         new SimpleIntervalJob(
           {
             milliseconds: this.options.schedule.intervalInMs,
-            runImmediately: true,
+            runImmediately: this.options.runImmediately,
           },
           task,
           {
