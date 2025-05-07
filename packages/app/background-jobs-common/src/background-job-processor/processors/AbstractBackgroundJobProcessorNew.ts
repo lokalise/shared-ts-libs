@@ -13,17 +13,16 @@ import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
 
 import { DEFAULT_WORKER_OPTIONS } from '../constants.ts'
-import type { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
-import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
-import type { BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
 import {
   isJobMissingError,
   isMutedUnrecoverableJobError,
   isStalledJobError,
   isUnrecoverableJobError,
-  resolveJobId,
-  sanitizeRedisConfig,
-} from '../utils.ts'
+} from '../errors/utils.ts'
+import type { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
+import type { BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
+import { resolveJobId, sanitizeRedisConfig } from '../utils.ts'
 
 import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory.ts'
 import type { QueueManager } from '../managers/QueueManager.ts'

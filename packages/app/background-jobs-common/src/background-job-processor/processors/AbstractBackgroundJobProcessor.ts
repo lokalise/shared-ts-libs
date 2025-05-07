@@ -13,20 +13,18 @@ import {
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
 import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants.ts'
-import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory.ts'
-import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
-import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
-import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
-import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
 import {
   isJobMissingError,
   isMutedUnrecoverableJobError,
   isStalledJobError,
   isUnrecoverableJobError,
-  prepareJobOptions,
-  resolveJobId,
-  sanitizeRedisConfig,
-} from '../utils.ts'
+} from '../errors/utils.ts'
+import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory.ts'
+import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
+import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
+import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
+import { prepareJobOptions, resolveJobId, sanitizeRedisConfig } from '../utils.ts'
 import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
