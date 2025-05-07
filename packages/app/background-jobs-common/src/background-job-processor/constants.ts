@@ -3,6 +3,11 @@ import type { JobsOptions, QueueOptions, WorkerOptions } from 'bullmq'
 import { daysToSeconds } from './utils.ts'
 
 /**
+ * Delimiter used to group queues in BullMQ dashboard
+ */
+export const QUEUE_GROUP_DELIMITER = '.'
+
+/**
  * How many days we retain completed jobs
  */
 const RETENTION_COMPLETED_JOBS_IN_AMOUNT = 50
@@ -37,6 +42,7 @@ export const DEFAULT_JOB_CONFIG: JobsOptions = {
  * How many days we retain queue ids
  */
 export const RETENTION_QUEUE_IDS_IN_DAYS = 14
+
 export const QUEUE_IDS_KEY = 'background-jobs-common:background-job:queues'
 
 export const DEFAULT_QUEUE_OPTIONS = {

@@ -2,7 +2,7 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
 import type { JobsOptions } from 'bullmq'
 import { Redis } from 'ioredis'
-import { DEFAULT_JOB_CONFIG } from './constants.ts'
+import { DEFAULT_JOB_CONFIG, QUEUE_GROUP_DELIMITER } from './constants.ts'
 import type { BackgroundJobProcessorConfig } from './processors/types.ts'
 import type { SafeJob } from './types.ts'
 
@@ -42,9 +42,6 @@ export const prepareJobOptions = <JobOptionsType extends JobsOptions>(
 
   return preparedOptions
 }
-
-// TODO: move this to a proper place + expose
-export const QUEUE_GROUP_DELIMITER = '.'
 
 export const resolveQueueId = (
   queueConfig: Pick<
