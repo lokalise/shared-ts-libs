@@ -92,10 +92,9 @@ export class QueueManager<
    */
   public async start(enabled: string[] | boolean = true): Promise<void> {
     if (this.isStarted) return // if it is already started -> skip
-
     if (enabled === false) return // if it is disabled -> skip
+    if (!this.startPromise) this.startPromise = this.internalStart(enabled)
 
-    this.startPromise ??= this.internalStart(enabled)
     await this.startPromise
     this.startPromise = undefined
   }
