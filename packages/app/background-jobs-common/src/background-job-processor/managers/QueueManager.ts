@@ -95,7 +95,7 @@ export class QueueManager<
 
     if (enabled === false) return // if it is disabled -> skip
 
-    if (!this.startPromise) this.startPromise = this.internalStart(enabled)
+    this.startPromise ??= this.internalStart(enabled)
     await this.startPromise
     this.startPromise = undefined
   }

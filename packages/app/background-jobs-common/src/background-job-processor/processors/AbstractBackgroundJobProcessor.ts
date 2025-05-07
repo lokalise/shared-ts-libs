@@ -80,7 +80,7 @@ export abstract class AbstractBackgroundJobProcessor<
   private _executionContext?: ExecutionContext
   private _queue?: QueueType
   private _worker?: WorkerType
-  private factory: AbstractBullmqFactory<
+  private readonly factory: AbstractBullmqFactory<
     QueueType,
     QueueOptionsType,
     WorkerType,
@@ -141,10 +141,7 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   protected get executionContext() {
-    if (!this._executionContext) {
-      this._executionContext = this.resolveExecutionContext()
-    }
-
+    this._executionContext ??= this.resolveExecutionContext()
     return this._executionContext
   }
 
@@ -171,7 +168,7 @@ export abstract class AbstractBackgroundJobProcessor<
   public async start(): Promise<void> {
     if (this.isStarted) return // if it is already started -> skip
 
-    if (!this.startPromise) this.startPromise = this.internalStart()
+    this.startPromise ??= this.internalStart()
     await this.startPromise
     this.startPromise = undefined
   }
@@ -219,7 +216,6 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   private registerListeners(): void {
-    // TODO: extract hooks handling to a separate class
     this._worker?.on('failed', (job, error) => {
       if (!job) return // Should not be possible with our current config, check 'failed' for more info
       // @ts-expect-error

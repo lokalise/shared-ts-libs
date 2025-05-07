@@ -154,10 +154,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
   }
 
   protected get executionContext() {
-    /* v8 ignore next 3 */
-    if (!this._executionContext) {
-      this._executionContext = this.resolveExecutionContext()
-    }
+    this._executionContext ??= this.resolveExecutionContext()
 
     return this._executionContext
   }
@@ -191,7 +188,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
   public async start(): Promise<void> {
     if (this.isStarted) return // if it is already started -> skip
 
-    if (!this.startPromise) this.startPromise = this.internalStart()
+    this.startPromise ??= this.internalStart()
     await this.startPromise
     this.startPromise = undefined
   }
