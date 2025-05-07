@@ -3,13 +3,12 @@ import type { RedisConfig } from '@lokalise/node-core'
 import type { JobsOptions } from 'bullmq'
 import { Redis } from 'ioredis'
 import { DEFAULT_JOB_CONFIG } from './constants.ts'
+import type { BackgroundJobProcessorConfig } from './processors/types.ts'
 import type { SafeJob } from './types.ts'
 
 export const daysToSeconds = (days: number): number => days * 24 * 60 * 60
 
 export const daysToMilliseconds = (days: number): number => daysToSeconds(days) * 1000
-
-export const resolveJobId = (job?: SafeJob<unknown>): string => job?.id ?? 'unknown'
 
 export const sanitizeRedisConfig = (config: RedisConfig): RedisConfig => {
   return {
@@ -23,6 +22,8 @@ export const createSanitizedRedisClient = (redisConfig: RedisConfig): Redis =>
   new Redis(sanitizeRedisConfig(redisConfig))
 
 export const isRedisClient = (redis: RedisConfig | Redis): redis is Redis => 'options' in redis
+
+export const resolveJobId = (job?: SafeJob<unknown>): string => job?.id ?? 'unknown'
 
 export const prepareJobOptions = <JobOptionsType extends JobsOptions>(
   isTest: boolean,
@@ -41,3 +42,14 @@ export const prepareJobOptions = <JobOptionsType extends JobsOptions>(
 
   return preparedOptions
 }
+
+// TODO: move this to a proper place + expose
+export const QUEUE_GROUP_DELIMITER = '.'
+
+export const resolveQueueId = (
+  queueConfig: Pick<
+    BackgroundJobProcessorConfig,
+    'queueId' | 'bullDashboardGrouping'
+  > /*| QueueConfiguration<any, any>*/,
+): string =>
+  [...(queueConfig.bullDashboardGrouping ?? []), queueConfig.queueId].join(QUEUE_GROUP_DELIMITER)

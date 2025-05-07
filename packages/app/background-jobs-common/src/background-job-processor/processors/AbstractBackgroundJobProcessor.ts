@@ -24,7 +24,7 @@ import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProces
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
 import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
-import { prepareJobOptions, resolveJobId, sanitizeRedisConfig } from '../utils.ts'
+import { prepareJobOptions, resolveJobId, resolveQueueId, sanitizeRedisConfig } from '../utils.ts'
 import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
@@ -132,7 +132,9 @@ export abstract class AbstractBackgroundJobProcessor<
   protected get queue(): ProtectedQueue<JobPayload, JobReturn, QueueType> {
     /* v8 ignore next 3 */
     if (!this._queue) {
-      throw new Error(`queue ${this.config.queueId} was not instantiated yet, please run "start()"`)
+      throw new Error(
+        `queue ${resolveQueueId(this.config)} was not instantiated yet, please run "start()"`,
+      )
     }
 
     return this._queue
@@ -148,7 +150,7 @@ export abstract class AbstractBackgroundJobProcessor<
     /* v8 ignore next 5 */
     if (!this._worker) {
       throw new Error(
-        `worker for queue ${this.config.queueId} was not instantiated yet, please run "start()"`,
+        `worker for queue ${resolveQueueId(this.config)} was not instantiated yet, please run "start()"`,
       )
     }
 
@@ -184,7 +186,7 @@ export abstract class AbstractBackgroundJobProcessor<
   private async internalStart(): Promise<void> {
     await this.monitor.registerQueue()
 
-    this._queue = this.factory.buildQueue(this.config.queueId, {
+    this._queue = this.factory.buildQueue(resolveQueueId(this.config), {
       ...(merge(DEFAULT_QUEUE_OPTIONS, this.config.queueOptions ?? {}) as Omit<
         QueueOptionsType,
         'connection' | 'prefix'
@@ -195,7 +197,7 @@ export abstract class AbstractBackgroundJobProcessor<
     await this._queue.waitUntilReady()
 
     this._worker = this.factory.buildWorker(
-      this.config.queueId,
+      resolveQueueId(this.config),
       ((job: JobType) => this.processInternal(job)) as ProcessorType,
       {
         ...(merge(DEFAULT_WORKER_OPTIONS, this.config.workerOptions, {
