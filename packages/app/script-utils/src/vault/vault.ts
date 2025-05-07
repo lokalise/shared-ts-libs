@@ -43,7 +43,7 @@ const installVaultCli = () => {
     }
   } else if (osType === 'darwin') {
     // macOS
-    execSync('brew list vault || brew install vault') // installing only if not installed
+    execSync('which vault || brew install vault') // installing only if not installed
   } else {
     globalLogger.warn(
       `You are running ${osType}, which doesn't support autoinstall, please ensure that Vault is installed and is accessible globally via "vault" command.`,
