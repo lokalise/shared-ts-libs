@@ -25,6 +25,8 @@ export type QueueConfiguration<
   JobOptionsType extends JobsOptions = JobsOptions,
 > = {
   queueId: string
+  /** Used to compose the queue name and allow bull dashboard grouping feature */
+  bullDashboardGrouping?: string[]
   queueOptions?: Omit<QueueOptionsType, 'connection' | 'prefix'>
   jobPayloadSchema: z.ZodType<BaseJobPayload> // should extend JobPayload
   jobOptions?: JobOptionsWithDeduplicationIdBuilder<JobOptionsType>

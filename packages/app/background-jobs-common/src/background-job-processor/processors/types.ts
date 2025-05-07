@@ -31,8 +31,6 @@ export type BackgroundJobProcessorConfigNew<
   queueId: QueueId
   /** Name of a webservice or a module running the bg job. Used for logging/observability */
   ownerName: string
-  /** Used to compose the queue name and allow bull dashboard grouping feature */
-  bullDashboardGrouping?: string[]
   workerOptions: Omit<Partial<WorkerOptionsType>, 'connection' | 'prefix' | 'autorun'>
   barrier?: BarrierCallback<
     JobPayloadForQueue<Queues, QueueId>,
