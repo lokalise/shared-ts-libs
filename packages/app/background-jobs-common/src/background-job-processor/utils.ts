@@ -3,7 +3,7 @@ import type { RedisConfig } from '@lokalise/node-core'
 import { isError } from '@lokalise/node-core'
 import type { JobsOptions } from 'bullmq'
 import { Redis } from 'ioredis'
-import { MUTED_UNRECOVERABLE_ERROR_SYMBOL } from '../errors/MutedUnrecoverableError.ts'
+import { MUTED_UNRECOVERABLE_ERROR_SYMBOL } from './errors/MutedUnrecoverableError.ts'
 import { DEFAULT_JOB_CONFIG } from './constants.ts'
 import type { SafeJob } from './types.ts'
 
