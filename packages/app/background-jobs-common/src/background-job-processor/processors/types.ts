@@ -29,8 +29,10 @@ export type BackgroundJobProcessorConfigNew<
   >,
 > = {
   queueId: QueueId
-  // Name of a webservice or a module running the bg job. Used for logging/observability
+  /** Name of a webservice or a module running the bg job. Used for logging/observability */
   ownerName: string
+  /** Used to compose the queue name and allow bull dashboard grouping feature */
+  bullDashboardGrouping?: string[]
   workerOptions: Omit<Partial<WorkerOptionsType>, 'connection' | 'prefix' | 'autorun'>
   barrier?: BarrierCallback<
     JobPayloadForQueue<Queues, QueueId>,
@@ -51,8 +53,10 @@ export type BackgroundJobProcessorConfig<
 > = {
   queueId: string
   isTest: boolean
-  // Name of a webservice or a module running the bg job. Used for logging/observability
+  /** Name of a webservice or a module running the bg job. Used for logging/observability */
   ownerName: string
+  /** Used to compose the queue name and allow bull dashboard grouping feature */
+  bullDashboardGrouping?: string[]
   queueOptions?: Omit<QueueOptionsType, 'connection' | 'prefix'>
   workerOptions: Omit<WorkerOptionsType, 'connection' | 'prefix' | 'autorun'>
   redisConfig: RedisConfig
