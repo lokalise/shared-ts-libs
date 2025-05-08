@@ -598,8 +598,8 @@ describe('QueueManager', () => {
       const isPaused = await queueManager.getQueue('queue1').isPaused()
       expect(isPaused).toBe(false)
       await expect(queueManager.dispose()).resolves.not.toThrowError()
-      await expect(queueManager.getQueue('queue1').isPaused()).rejects.toThrowError(
-        'Connection is closed.',
+      expect(() => queueManager.getQueue('queue1')).toThrowErrorMatchingInlineSnapshot(
+        '[Error: queue queue1 was not instantiated yet, please run "start()"]',
       )
     })
 
