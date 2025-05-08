@@ -3,9 +3,9 @@ import type { RedisConfig } from '@lokalise/node-core'
 import type { JobsOptions } from 'bullmq'
 import { Redis } from 'ioredis'
 import { DEFAULT_JOB_CONFIG, QUEUE_GROUP_DELIMITER } from './constants.ts'
+import type { QueueConfiguration } from './managers/index.ts'
 import type { BackgroundJobProcessorConfig } from './processors/types.ts'
 import type { SafeJob } from './types.ts'
-import type {QueueConfiguration} from "./managers/index.ts";
 
 export const daysToSeconds = (days: number): number => days * 24 * 60 * 60
 
@@ -48,6 +48,6 @@ export const resolveQueueId = (
   queueConfig: Pick<
     BackgroundJobProcessorConfig | QueueConfiguration,
     'queueId' | 'bullDashboardGrouping'
-  >
+  >,
 ): string =>
   [...(queueConfig.bullDashboardGrouping ?? []), queueConfig.queueId].join(QUEUE_GROUP_DELIMITER)

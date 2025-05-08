@@ -11,10 +11,10 @@ import type { BaseJobPayload } from '../types.ts'
 
 import { randomUUID } from 'node:crypto'
 import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading.ts'
+import { TestBasicBackgroundJobProcessor } from '../../../test/processors/TestBasicBackgroundJobProcessor.ts'
 import { MutedUnrecoverableError } from '../errors/MutedUnrecoverableError.ts'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor.ts'
 import type { BackgroundJobProcessorDependencies } from './types.ts'
-import { TestBasicBackgroundJobProcessor } from '../../../test/processors/TestBasicBackgroundJobProcessor.ts'
 
 type JobData = {
   id: string
