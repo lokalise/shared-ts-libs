@@ -41,7 +41,7 @@ export class QueueRegistry<
     const queueIdSetToStart = enabled === true ? this.queueIds : new Set(enabled)
 
     for (const queueId of queueIdSetToStart) {
-      if (!this.queueIds.has(queueId)) throw new Error(`queueId ${queueId} not supported`)
+      if (!this.queueIds.has(queueId)) continue
 
       const queueConfig = this.getQueueConfig(queueId)
       const queue = this.factory.buildQueue(resolveQueueId(queueConfig), {

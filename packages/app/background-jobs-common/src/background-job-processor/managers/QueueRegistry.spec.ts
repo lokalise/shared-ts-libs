@@ -88,10 +88,10 @@ describe('QueueRegistry', () => {
   })
 
   describe('start - dispose', () => {
-    it('should throw an error if queue id is not supported', async () => {
-      await expect(() => registry.start(['invalidQueueId'])).rejects.toMatchInlineSnapshot(
-        '[Error: queueId invalidQueueId not supported]',
-      )
+    it('should ignore if queue id is not supported', async () => {
+      expect(registry.isStarted).toBe(false)
+      await registry.start(['invalid'])
+      expect(registry.isStarted).toBe(false)
     })
 
     it('should be ignored if empty array is specified', async () => {

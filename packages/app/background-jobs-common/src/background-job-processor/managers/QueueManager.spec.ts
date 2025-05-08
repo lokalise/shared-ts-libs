@@ -52,16 +52,22 @@ describe('QueueManager', () => {
 
   let queueManager: FakeQueueManager<SupportedQueues>
 
-  beforeEach(async () => {
+  beforeAll(() => {
     factory = new TestDependencyFactory()
     redisConfig = factory.getRedisConfig()
+  })
+
+  beforeEach(async () => {
     const deps = factory.createNew(supportedQueues)
     queueManager = deps.queueManager
-
     await factory.clearRedis()
   })
 
   afterEach(async () => {
+    await factory.clearRedis()
+  })
+
+  afterAll(async () => {
     await factory.dispose()
   })
 
@@ -121,25 +127,6 @@ describe('QueueManager', () => {
         /queue .* was not instantiated yet, please run "start\(\)"/,
       )
       expect(() => queueManager.getQueue('queue2')).toThrowError(
-        /queue .* was not instantiated yet, please run "start\(\)"/,
-      )
-
-      await queueManager.dispose()
-    })
-
-    it('should ignore if try to start a non-defined queue', async () => {
-      const invalidQueueId = 'invalidQueueId'
-      const queueManager = new FakeQueueManager(supportedQueues, {
-        redisConfig,
-      })
-
-      // @ts-expect-error - queue3 is not a valid queue id
-      expect(() => queueManager.getQueue(invalidQueueId)).toThrowError(
-        /queue .* was not instantiated yet, please run "start\(\)"/,
-      )
-      await queueManager.start([invalidQueueId])
-      // @ts-expect-error - queue3 is not a valid queue id
-      expect(() => queueManager.getQueue(invalidQueueId)).toThrowError(
         /queue .* was not instantiated yet, please run "start\(\)"/,
       )
 
