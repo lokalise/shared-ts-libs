@@ -2,15 +2,15 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
 import type { JobsOptions } from 'bullmq'
 import type { Redis } from 'ioredis'
-import type { QueueConfiguration } from './managers/index.ts'
-import type { BackgroundJobProcessorConfig } from './processors/types.ts'
-import { QUEUE_GROUP_DELIMITER } from './public-utils/index.ts'
-import type { SafeJob } from './types.ts'
 import {
   RETENTION_COMPLETED_JOBS_IN_AMOUNT,
   RETENTION_COMPLETED_JOBS_IN_DAYS,
   RETENTION_FAILED_JOBS_IN_DAYS,
 } from './constants.ts'
+import type { QueueConfiguration } from './managers/index.ts'
+import type { BackgroundJobProcessorConfig } from './processors/types.ts'
+import { QUEUE_GROUP_DELIMITER } from './public-utils/index.ts'
+import type { SafeJob } from './types.ts'
 
 const daysToSeconds = (days: number): number => days * 24 * 60 * 60
 
