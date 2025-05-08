@@ -1,5 +1,5 @@
 import type { RedisConfig } from '@lokalise/node-core'
-import type { JobsOptions, QueueOptions } from 'bullmq'
+import type { Job, JobsOptions, Queue, QueueOptions } from 'bullmq'
 import type { z } from 'zod'
 import type { BaseJobPayload } from '../types.ts'
 
@@ -52,3 +52,27 @@ export type JobPayloadForQueue<
   Config extends QueueConfiguration[],
   QueueId extends SupportedQueueIds<Config>,
 > = z.infer<JobPayloadSchemaFoQueue<Config, QueueId>>
+
+export type ProtectedQueue<
+  JobPayload extends BaseJobPayload,
+  JobReturn = void,
+  QueueType = Queue<JobPayload, JobReturn>,
+> = Omit<QueueType, 'close' | 'disconnect' | 'obliterate' | 'clean' | 'drain'>
+
+export type JobInQueue<JobData extends object, jobReturn> = Pick<
+  Job<JobData, jobReturn>,
+  | 'id'
+  | 'data'
+  | 'attemptsMade'
+  | 'attemptsStarted'
+  | 'progress'
+  | 'returnvalue'
+  | 'failedReason'
+  | 'finishedOn'
+  | 'getState'
+>
+
+export type JobsPaginatedResponse<JobData extends BaseJobPayload, jobReturn> = {
+  jobs: JobInQueue<JobData, jobReturn>[]
+  hasMore: boolean
+}

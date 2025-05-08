@@ -1,11 +1,11 @@
 import type { JobsOptions, Queue, QueueOptions } from 'bullmq'
+import { afterEach, expectTypeOf } from 'vitest'
 import { z } from 'zod'
-import { QueueRegistry } from './QueueRegistry.ts'
-import type { QueueConfiguration } from './types.ts'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import { getTestRedisConfig } from '../../../test/TestRedis.ts'
 import { CommonBullmqFactory } from '../factories/index.ts'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
-import { afterEach, expectTypeOf } from 'vitest'
+import { QueueRegistry } from './QueueRegistry.ts'
+import type { QueueConfiguration } from './types.ts'
 
 const jobPayloadSchema = z.object({
   id: z.string(),

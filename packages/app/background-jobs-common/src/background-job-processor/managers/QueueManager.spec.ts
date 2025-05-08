@@ -3,11 +3,10 @@ import type { RedisConfig } from '@lokalise/node-core'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { z } from 'zod'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
-import type { JobsPaginatedResponse } from '../processors/types.ts'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
 import { FakeQueueManager } from './FakeQueueManager.ts'
-import type { QueueConfiguration } from './types.ts'
+import type { JobsPaginatedResponse, QueueConfiguration } from './types.ts'
 
 const supportedQueues = [
   {

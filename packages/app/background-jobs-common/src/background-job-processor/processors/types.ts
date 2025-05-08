@@ -142,32 +142,8 @@ export type BackgroundJobProcessorDependencies<
   >
 }
 
-export type ProtectedQueue<
-  JobPayload extends BaseJobPayload,
-  JobReturn = void,
-  QueueType = Queue<JobPayload, JobReturn>,
-> = Omit<QueueType, 'close' | 'disconnect' | 'obliterate' | 'clean' | 'drain'>
-
 export type ProtectedWorker<
   JobPayload extends BaseJobPayload,
   JobReturn = void,
   WorkerType = Worker<JobPayload, JobReturn>,
 > = Omit<WorkerType, 'disconnect' | 'close'>
-
-export type JobInQueue<JobData extends object, jobReturn> = Pick<
-  Job<JobData, jobReturn>,
-  | 'id'
-  | 'data'
-  | 'attemptsMade'
-  | 'attemptsStarted'
-  | 'progress'
-  | 'returnvalue'
-  | 'failedReason'
-  | 'finishedOn'
-  | 'getState'
->
-
-export type JobsPaginatedResponse<JobData extends BaseJobPayload, jobReturn> = {
-  jobs: JobInQueue<JobData, jobReturn>[]
-  hasMore: boolean
-}

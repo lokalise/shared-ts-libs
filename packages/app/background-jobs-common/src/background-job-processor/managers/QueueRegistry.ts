@@ -3,9 +3,8 @@ import type { JobsOptions, Queue, QueueOptions } from 'bullmq'
 import { merge } from 'ts-deepmerge'
 import { DEFAULT_QUEUE_OPTIONS } from '../constants.ts'
 import type { BullmqQueueFactory } from '../factories/index.ts'
-import type { ProtectedQueue } from '../processors/index.ts'
 import { resolveQueueId, sanitizeRedisConfig } from '../utils.ts'
-import type { JobPayloadForQueue, QueueConfiguration, SupportedQueueIds } from './types.ts'
+import type { QueueConfiguration, SupportedQueueIds } from './types.ts'
 
 export class QueueRegistry<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
@@ -81,9 +80,7 @@ export class QueueRegistry<
     return this.queuesConfig[queueId]
   }
 
-  public getQueue<QueueId extends SupportedQueueIds<Queues>, JobReturn = unknown>(
-    queueId: QueueId,
-  ): ProtectedQueue<JobPayloadForQueue<Queues, QueueId>, JobReturn, QueueType> {
+  public getQueue<QueueId extends SupportedQueueIds<Queues>>(queueId: QueueId): QueueType {
     if (!this.queues[queueId]) {
       throw new Error(`queue ${queueId} was not instantiated yet, please run "start()"`)
     }

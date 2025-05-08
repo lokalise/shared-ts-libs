@@ -1,19 +1,20 @@
 import type { JobState, JobsOptions, Queue, QueueOptions } from 'bullmq'
+import { merge } from 'ts-deepmerge'
 import type { BullmqQueueFactory } from '../factories/BullmqQueueFactory.ts'
-import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types.ts'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
+import { prepareJobOptions } from '../utils.ts'
 import { QueueRegistry } from './QueueRegistry.ts'
 import type {
   JobPayloadForQueue,
   JobPayloadInputForQueue,
+  JobsPaginatedResponse,
+  ProtectedQueue,
   QueueConfiguration,
   QueueManagerConfig,
   SupportedJobPayloads,
   SupportedQueueIds,
 } from './types.ts'
-import { prepareJobOptions } from '../utils.ts'
-import { merge } from 'ts-deepmerge'
 
 export class QueueManager<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],

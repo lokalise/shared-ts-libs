@@ -20,6 +20,7 @@ import {
   isUnrecoverableJobError,
 } from '../errors/utils.ts'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory.ts'
+import type { JobsPaginatedResponse, ProtectedQueue } from '../managers/index.ts'
 import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
@@ -28,8 +29,6 @@ import { prepareJobOptions, resolveJobId, resolveQueueId, sanitizeRedisConfig } 
 import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
-  JobsPaginatedResponse,
-  ProtectedQueue,
   ProtectedWorker,
 } from './types.ts'
 
