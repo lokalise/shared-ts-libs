@@ -13,7 +13,7 @@ import { vaultGetVars, vaultLogin } from './vault.ts'
  * @param envContents String contents of the .env file
  * @param parsedEnv Record of .env file key-values (parsed using `dotenv.parse`)
  */
-const upsertEnvValue = (
+export const upsertEnvValue = (
   key: string,
   value: string,
   envContents: string,
@@ -43,9 +43,14 @@ const upsertEnvValue = (
  *
  * @param envVars Record of variable key-values
  * @param file Path to the .env file
+ * @param createEmpty Whether to create empty file even if no variables are passed
  */
-export const updateEnvFile = (envVars: Record<string, string>, file: string) => {
-  if (Object.entries(envVars).length === 0) {
+export const updateEnvFile = (
+  envVars: Record<string, string>,
+  file: string,
+  createEmpty = false,
+) => {
+  if (Object.entries(envVars).length === 0 && !createEmpty) {
     globalLogger.info(`Skipping env file ${file}`)
     return
   }
