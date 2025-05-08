@@ -5,6 +5,7 @@ import { Redis } from 'ioredis'
 import { DEFAULT_JOB_CONFIG, QUEUE_GROUP_DELIMITER } from './constants.ts'
 import type { BackgroundJobProcessorConfig } from './processors/types.ts'
 import type { SafeJob } from './types.ts'
+import type {QueueConfiguration} from "./managers/index.ts";
 
 export const daysToSeconds = (days: number): number => days * 24 * 60 * 60
 
@@ -45,8 +46,8 @@ export const prepareJobOptions = <JobOptionsType extends JobsOptions>(
 
 export const resolveQueueId = (
   queueConfig: Pick<
-    BackgroundJobProcessorConfig,
+    BackgroundJobProcessorConfig | QueueConfiguration,
     'queueId' | 'bullDashboardGrouping'
-  > /*| QueueConfiguration<any, any>*/,
+  >
 ): string =>
   [...(queueConfig.bullDashboardGrouping ?? []), queueConfig.queueId].join(QUEUE_GROUP_DELIMITER)
