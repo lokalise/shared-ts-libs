@@ -11,7 +11,6 @@ import {
 } from 'bullmq'
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
-
 import { DEFAULT_WORKER_OPTIONS } from '../constants.ts'
 import {
   isJobMissingError,
@@ -22,8 +21,7 @@ import {
 import type { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
 import type { BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
-import { resolveJobId, sanitizeRedisConfig } from '../utils.ts'
-
+import { resolveJobId, resolveQueueId, sanitizeRedisConfig } from '../utils.ts'
 import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory.ts'
 import type { QueueManager } from '../managers/QueueManager.ts'
 import type {
@@ -102,7 +100,6 @@ export abstract class AbstractBackgroundJobProcessorNew<
   private readonly queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
 
   private _executionContext?: ExecutionContext
-  private isStarted = false
   private startPromise?: Promise<void>
   private _worker?: WorkerType
 
@@ -192,12 +189,18 @@ export abstract class AbstractBackgroundJobProcessorNew<
     this.startPromise = undefined
   }
 
+  private get isStarted(): boolean {
+    return !!this._worker
+  }
+
   private async internalStart(): Promise<void> {
     await this.monitor.registerQueue()
+
     const redisConfig = this.queueManager.config.redisConfig
+    const queueConfig = this.queueManager.getQueueConfig(this.queueId)
 
     this._worker = this.factory.buildWorker(
-      this.queueId,
+      resolveQueueId(queueConfig),
       ((job: JobType) => this.processInternal(job)) as ProcessorType,
       {
         ...(merge(DEFAULT_WORKER_OPTIONS, this.config.workerOptions) as Omit<
@@ -214,7 +217,6 @@ export abstract class AbstractBackgroundJobProcessorNew<
     }
 
     this.registerListeners()
-    this.isStarted = true
   }
 
   private registerListeners(): void {
@@ -244,7 +246,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
 
     this._spy?.clear()
     this.monitor.unregisterQueue()
-    this.isStarted = false
+    this._worker = undefined
   }
 
   private async processInternal(job: JobType): Promise<JobReturn> {

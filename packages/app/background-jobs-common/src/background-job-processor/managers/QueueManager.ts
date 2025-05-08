@@ -81,6 +81,12 @@ export class QueueManager<
     return this.queueRegistry.dispose()
   }
 
+  public getQueueConfig<QueueId extends SupportedQueueIds<Queues>>(
+    queueId: QueueId,
+  ): QueueConfiguration<QueueOptionsType> {
+    return this.queueRegistry.getQueueConfig(queueId)
+  }
+
   public getQueue<QueueId extends SupportedQueueIds<Queues>, JobReturn = unknown>(
     queueId: QueueId,
   ): ProtectedQueue<JobPayloadForQueue<Queues, QueueId>, JobReturn, QueueType> {

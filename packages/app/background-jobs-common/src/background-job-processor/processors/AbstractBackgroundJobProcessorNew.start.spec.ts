@@ -11,9 +11,16 @@ import type { BackgroundJobProcessorDependenciesNew } from './types.ts'
 
 const supportedQueues = [
   {
-    queueId: 'queue',
+    queueId: 'queue1',
     jobPayloadSchema: z.object({
       id: z.string(),
+      metadata: z.object({ correlationId: z.string() }),
+    }),
+  },
+  {
+    queueId: 'queue2',
+    bullDashboardGrouping: ['group'],
+    jobPayloadSchema: z.object({
       metadata: z.object({ correlationId: z.string() }),
     }),
   },
@@ -23,7 +30,7 @@ type SupportedQueues = typeof supportedQueues
 
 describe('AbstractBackgroundJobProcessorNew - start', () => {
   let factory: TestDependencyFactory
-  let deps: BackgroundJobProcessorDependenciesNew<SupportedQueues, 'queue'>
+  let deps: BackgroundJobProcessorDependenciesNew<SupportedQueues, 'queue1' | 'queue2'>
   let queueManager: FakeQueueManager<SupportedQueues>
 
   beforeEach(async () => {
@@ -39,18 +46,18 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
   })
 
   it('throws an error if queue id is not unique', async () => {
-    const job1 = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(deps, 'queue')
+    const job1 = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue1'>(deps, 'queue1')
 
     await job1.start()
     await expect(
-      new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(deps, 'queue').start(),
-    ).rejects.toMatchInlineSnapshot('[Error: Processor for queue id "queue" is not unique.]')
+      new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue1'>(deps, 'queue1').start(),
+    ).rejects.toMatchInlineSnapshot('[Error: Processor for queue id "queue1" is not unique.]')
 
     await job1.dispose()
   })
 
   it('Multiple start calls (sequential or concurrent) not produce errors', async () => {
-    const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(deps, 'queue')
+    const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue1'>(deps, 'queue1')
 
     // sequential start calls
     await expect(processor.start()).resolves.not.toThrowError()
@@ -64,11 +71,11 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
 
   it('restart processor after dispose', async () => {
     await queueManager.start()
-    const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(deps, 'queue')
+    const processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue1'>(deps, 'queue1')
     await processor.start()
     await processor.dispose()
 
-    const jobId = await queueManager.schedule('queue', {
+    const jobId = await queueManager.schedule('queue1', {
       id: generateMonotonicUuid(),
       metadata: { correlationId: generateMonotonicUuid() },
     })
@@ -81,13 +88,28 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
     await processor.dispose()
   })
 
+  it('should resolve queue id properly', async () => {
+    const processor1 = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue1'>(deps, 'queue1')
+    const processor2 = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue2'>(deps, 'queue2')
+    await processor1.start()
+    await processor2.start()
+
+    // @ts-expect-error accessing protected property for testing
+    expect(processor1.worker.name).toEqual('queue1')
+    // @ts-expect-error accessing protected property for testing
+    expect(processor2.worker.name).toEqual('group.queue2')
+
+    await processor1.dispose()
+    await processor2.dispose()
+  })
+
   it('should infer job payload type', async () => {
     const jobDataSchema = supportedQueues[0].jobPayloadSchema
     type JobPayload = z.infer<typeof jobDataSchema>
 
-    const processor = new TestOverrideProcessBackgroundProcessor<SupportedQueues, 'queue'>(
+    const processor = new TestOverrideProcessBackgroundProcessor<SupportedQueues, 'queue1'>(
       deps,
-      'queue',
+      'queue1',
     )
     await processor.start()
 
@@ -95,7 +117,7 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
       expectTypeOf(job.data).toEqualTypeOf<JobPayload>()
     }
 
-    const jobId = await queueManager.schedule('queue', {
+    const jobId = await queueManager.schedule('queue1', {
       id: generateMonotonicUuid(),
       metadata: { correlationId: generateMonotonicUuid() },
     })
