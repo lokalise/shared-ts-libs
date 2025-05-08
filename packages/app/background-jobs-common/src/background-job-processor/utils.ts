@@ -1,26 +1,16 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
 import type { JobsOptions } from 'bullmq'
-import { Redis } from 'ioredis'
-import { DEFAULT_JOB_CONFIG, QUEUE_GROUP_DELIMITER } from './constants.ts'
+import type { Redis } from 'ioredis'
+import { DEFAULT_JOB_CONFIG } from './constants.ts'
 import type { QueueConfiguration } from './managers/index.ts'
 import type { BackgroundJobProcessorConfig } from './processors/types.ts'
+import { QUEUE_GROUP_DELIMITER } from './public-utils/index.ts'
 import type { SafeJob } from './types.ts'
 
 export const daysToSeconds = (days: number): number => days * 24 * 60 * 60
 
 export const daysToMilliseconds = (days: number): number => daysToSeconds(days) * 1000
-
-export const sanitizeRedisConfig = (config: RedisConfig): RedisConfig => {
-  return {
-    ...config,
-    keyPrefix: undefined,
-    maxRetriesPerRequest: null, // Has to be null for compatibility with BullMQ, see: https://docs.bullmq.io/bull/patterns/persistent-connections#workers
-  }
-}
-
-export const createSanitizedRedisClient = (redisConfig: RedisConfig): Redis =>
-  new Redis(sanitizeRedisConfig(redisConfig))
 
 export const isRedisClient = (redis: RedisConfig | Redis): redis is Redis => 'options' in redis
 

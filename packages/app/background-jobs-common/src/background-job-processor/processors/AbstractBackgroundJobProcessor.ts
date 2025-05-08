@@ -22,10 +22,11 @@ import {
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory.ts'
 import type { JobsPaginatedResponse, ProtectedQueue } from '../managers/index.ts'
 import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
+import { sanitizeRedisConfig } from '../public-utils/index.ts'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
 import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
-import { prepareJobOptions, resolveJobId, resolveQueueId, sanitizeRedisConfig } from '../utils.ts'
+import { prepareJobOptions, resolveJobId, resolveQueueId } from '../utils.ts'
 import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
