@@ -4,14 +4,13 @@ import {
   resolveGlobalErrorLogObject,
   type RedisConfig,
 } from '@lokalise/node-core'
-import { QUEUE_IDS_KEY } from '../constants.ts'
 import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger.ts'
 import type { BackgroundJobProcessorDependencies } from '../processors/types.ts'
-import { createSanitizedRedisClient } from '../public-utils/index.ts'
 import type { BaseJobPayload, RequestContext, SafeJob } from '../types.ts'
-import { resolveJobId, resolveQueueId } from '../utils.ts'
+import { resolveJobId } from '../utils.ts'
+import { registerActiveQueueIds } from './registerActiveQueueIds.ts'
 
-const queueIdsSet = new Set<string>()
+const queueIdsWithActiveProcessorsSet = new Set<string>()
 
 type BackgroundJobProcessorMonitorConfig = {
   queueId: string
@@ -54,10 +53,10 @@ export class BackgroundJobProcessorMonitor<
   }
 
   public async registerQueueProcessor(): Promise<void> {
-    if (queueIdsSet.has(this.config.queueId)) {
+    if (queueIdsWithActiveProcessorsSet.has(this.config.queueId)) {
       throw new Error(`Processor for queue id "${this.config.queueId}" is not unique.`)
     }
-    queueIdsSet.add(this.config.queueId)
+    queueIdsWithActiveProcessorsSet.add(this.config.queueId)
 
     if (this.config.isNewProcessor) return Promise.resolve()
     // For new processors, queue registration in redis is handled by queue manager
