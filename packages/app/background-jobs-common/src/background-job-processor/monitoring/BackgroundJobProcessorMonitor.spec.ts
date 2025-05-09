@@ -179,8 +179,8 @@ describe('BackgroundJobProcessorMonitor', () => {
     beforeAll(() => {
       monitor = new BackgroundJobProcessorMonitor(deps, {
         isNewProcessor: false,
-        queueId: 'test-queue',
-        processorName: 'registerQueue tests',
+        queueId: 'test-queue-logJobStarted',
+        processorName: 'BackgroundJobProcessorMonitor tests',
         ownerName: 'test-owner',
         redisConfig: factory.getRedisConfig(),
       })
@@ -220,7 +220,7 @@ describe('BackgroundJobProcessorMonitor', () => {
       monitor = new BackgroundJobProcessorMonitor(deps, {
         isNewProcessor: false,
         queueId: 'test-queue',
-        processorName: 'registerQueue tests',
+        processorName: 'BackgroundJobProcessorMonitor tests',
         ownerName: 'test-owner',
         redisConfig: factory.getRedisConfig(),
       })
@@ -259,7 +259,7 @@ describe('BackgroundJobProcessorMonitor', () => {
       monitor = new BackgroundJobProcessorMonitor(deps, {
         isNewProcessor: false,
         queueId: 'test-queue',
-        processorName: 'registerQueue tests',
+        processorName: 'BackgroundJobProcessorMonitor tests',
         ownerName: 'test-owner',
         redisConfig: factory.getRedisConfig(),
       })
