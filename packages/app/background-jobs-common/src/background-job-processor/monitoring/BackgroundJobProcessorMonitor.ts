@@ -61,13 +61,11 @@ export class BackgroundJobProcessorMonitor<
     if (this.config.isNewProcessor) return Promise.resolve()
     // For new processors, queue registration in redis is handled by queue manager
     // (once we get rid of the old one, we can remove this code)
-    const redisWithoutPrefix = createSanitizedRedisClient(this.config.redisConfig)
-    await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now(), resolveQueueId(this.config))
-    redisWithoutPrefix.disconnect()
+    await registerActiveQueueIds(this.config.redisConfig, [this.config])
   }
 
   public unregisterQueueProcessor(): void {
-    queueIdsSet.delete(this.config.queueId)
+    queueIdsWithActiveProcessorsSet.delete(this.config.queueId)
   }
 
   public getRequestContext(job: JobType): RequestContext {

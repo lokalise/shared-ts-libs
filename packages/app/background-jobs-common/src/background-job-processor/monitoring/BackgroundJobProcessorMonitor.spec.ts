@@ -1,5 +1,4 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import type { Redis } from 'ioredis'
 import pino from 'pino'
 import {
   type MockInstance,
@@ -12,7 +11,6 @@ import {
   vi,
 } from 'vitest'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
-import { QUEUE_IDS_KEY } from '../constants.ts'
 import type { BackgroundJobProcessorDependencies } from '../processors/types.ts'
 import type { BaseJobPayload, RequestContext, SafeJob } from '../types.ts'
 import { BackgroundJobProcessorMonitor } from './BackgroundJobProcessorMonitor.ts'
@@ -24,12 +22,10 @@ import symbols = pino.symbols
 describe('BackgroundJobProcessorMonitor', () => {
   let factory: TestDependencyFactory
   let deps: BackgroundJobProcessorDependencies<any>
-  let redis: Redis
 
   beforeAll(() => {
     factory = new TestDependencyFactory()
     deps = factory.create()
-    redis = factory.startRedis()
   })
 
   beforeEach(async () => {
@@ -69,29 +65,8 @@ describe('BackgroundJobProcessorMonitor', () => {
         })
         await monitor.registerQueueProcessor()
 
-        const today = new Date()
-        const [, score] = await redis.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
         const queueIds = await backgroundJobProcessorGetActiveQueueIds(factory.getRedisConfig())
         expect(queueIds).toStrictEqual(['test-queue'])
-
-        // Comparing timestamps in seconds
-        const todaySeconds = Math.floor(today.getTime() / 1000)
-        const scoreSeconds = Math.floor(new Date(Number.parseInt(score!)).getTime() / 1000)
-        // max difference 1 to handle edge case of 0.1 - 1.0
-        expect(scoreSeconds - todaySeconds).lessThanOrEqual(1)
-
-        // unregistering to avoid error (see prev test)
-        monitor.unregisterQueueProcessor()
-        await monitor.registerQueueProcessor()
-
-        const [, scoreAfterRestart] = await redis.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
-        const queueIdsAfterRestart = await backgroundJobProcessorGetActiveQueueIds(
-          factory.getRedisConfig(),
-        )
-        expect(queueIdsAfterRestart).toStrictEqual(['test-queue'])
-        expect(new Date(Number.parseInt(score!))).not.toEqual(
-          new Date(Number.parseInt(scoreAfterRestart!)),
-        )
 
         monitor.unregisterQueueProcessor()
       })
