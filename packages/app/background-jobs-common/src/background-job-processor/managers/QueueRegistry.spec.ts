@@ -4,9 +4,9 @@ import { z } from 'zod'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import { getTestRedisConfig } from '../../../test/TestRedis.ts'
 import { CommonBullmqFactory } from '../factories/index.ts'
+import { backgroundJobProcessorGetActiveQueueIds } from '../monitoring/backgroundJobProcessorGetActiveQueueIds.ts'
 import { QueueRegistry } from './QueueRegistry.ts'
 import type { QueueConfiguration } from './types.ts'
-import { backgroundJobProcessorGetActiveQueueIds } from '../monitoring/backgroundJobProcessorGetActiveQueueIds.ts'
 
 const jobPayloadSchema = z.object({
   id: z.string(),

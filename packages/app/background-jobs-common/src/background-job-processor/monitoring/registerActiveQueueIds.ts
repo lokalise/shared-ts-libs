@@ -1,7 +1,7 @@
 import type { RedisConfig } from '@lokalise/node-core'
+import { QUEUE_IDS_KEY } from '../constants.ts'
 import type { QueueConfiguration } from '../managers/index.ts'
 import { createSanitizedRedisClient } from '../public-utils/index.ts'
-import { QUEUE_IDS_KEY } from '../constants.ts'
 import { resolveQueueId } from '../utils.ts'
 
 export const registerActiveQueueIds = async (

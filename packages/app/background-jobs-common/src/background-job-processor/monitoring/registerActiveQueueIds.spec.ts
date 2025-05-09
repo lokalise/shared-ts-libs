@@ -1,9 +1,9 @@
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
-import { afterAll, beforeAll, beforeEach, expect } from 'vitest'
-import { registerActiveQueueIds } from './registerActiveQueueIds.ts'
-import type { Redis } from 'ioredis'
-import { QUEUE_IDS_KEY } from '../constants.ts'
 import { setTimeout } from 'node:timers/promises'
+import type { Redis } from 'ioredis'
+import { afterAll, beforeAll, beforeEach, expect } from 'vitest'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import { QUEUE_IDS_KEY } from '../constants.ts'
+import { registerActiveQueueIds } from './registerActiveQueueIds.ts'
 
 describe('registerActiveQueueIds', () => {
   let factory: TestDependencyFactory

@@ -13,9 +13,9 @@ import { randomUUID } from 'node:crypto'
 import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading.ts'
 import { TestBasicBackgroundJobProcessor } from '../../../test/processors/TestBasicBackgroundJobProcessor.ts'
 import { MutedUnrecoverableError } from '../errors/MutedUnrecoverableError.ts'
+import { backgroundJobProcessorGetActiveQueueIds } from '../monitoring/backgroundJobProcessorGetActiveQueueIds.ts'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor.ts'
 import type { BackgroundJobProcessorDependencies } from './types.ts'
-import { backgroundJobProcessorGetActiveQueueIds } from '../monitoring/backgroundJobProcessorGetActiveQueueIds.ts'
 
 type JobData = {
   id: string

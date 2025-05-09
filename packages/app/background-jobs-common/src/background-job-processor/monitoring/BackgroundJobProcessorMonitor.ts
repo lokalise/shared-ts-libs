@@ -1,8 +1,8 @@
 import {
   type CommonLogger,
+  type RedisConfig,
   type TransactionObservabilityManager,
   resolveGlobalErrorLogObject,
-  type RedisConfig,
 } from '@lokalise/node-core'
 import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger.ts'
 import type { BackgroundJobProcessorDependencies } from '../processors/types.ts'
