@@ -84,6 +84,11 @@ To set up a queue configuration, you need to define a list of objects containing
 
 - **`queueId`**: The unique identifier for the queue.
 - **`queueOptions`**: Options for the queue. Refer to the [BullMQ documentation](https://docs.bullmq.io/guide/queues) for more details.
+ - **`bullDashboardGrouping`**: Optional array of strings to control how queues are grouped in the 
+   [bull-dashboard](https://github.com/felixmosh/bull-board), using the [queues grouping feature](https://github.com/felixmosh/bull-board/pull/867). 
+   Array elements are applied left to right: the first string is the top-level group, and each subsequent string defines a nested subgroup.
+   The delimiter is `QUEUE_GROUP_DELIMITER`.
+   You can use the helper `commonBullDashboardGroupingBuilder(serviceId, moduleId)` to generate a grouping like `['serviceId', 'moduleId']`.
 - **`jobPayloadSchema`**: A Zod schema that defines the structure of the jobs payload for this queue.
 - **`jobOptions`**: Default options for jobs in this queue. See [BullMQ documentation](https://docs.bullmq.io/guide/job-options).
 

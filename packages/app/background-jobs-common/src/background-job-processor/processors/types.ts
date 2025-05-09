@@ -29,7 +29,7 @@ export type BackgroundJobProcessorConfigNew<
   >,
 > = {
   queueId: QueueId
-  // Name of a webservice or a module running the bg job. Used for logging/observability
+  /** Name of a webservice or a module running the bg job. Used for logging/observability */
   ownerName: string
   workerOptions: Omit<Partial<WorkerOptionsType>, 'connection' | 'prefix' | 'autorun'>
   barrier?: BarrierCallback<
@@ -51,8 +51,10 @@ export type BackgroundJobProcessorConfig<
 > = {
   queueId: string
   isTest: boolean
-  // Name of a webservice or a module running the bg job. Used for logging/observability
+  /** Name of a webservice or a module running the bg job. Used for logging/observability */
   ownerName: string
+  /** Used to compose the queue name and allow bull dashboard grouping feature */
+  bullDashboardGrouping?: string[]
   queueOptions?: Omit<QueueOptionsType, 'connection' | 'prefix'>
   workerOptions: Omit<WorkerOptionsType, 'connection' | 'prefix' | 'autorun'>
   redisConfig: RedisConfig
@@ -140,32 +142,8 @@ export type BackgroundJobProcessorDependencies<
   >
 }
 
-export type ProtectedQueue<
-  JobPayload extends BaseJobPayload,
-  JobReturn = void,
-  QueueType = Queue<JobPayload, JobReturn>,
-> = Omit<QueueType, 'close' | 'disconnect' | 'obliterate' | 'clean' | 'drain'>
-
 export type ProtectedWorker<
   JobPayload extends BaseJobPayload,
   JobReturn = void,
   WorkerType = Worker<JobPayload, JobReturn>,
 > = Omit<WorkerType, 'disconnect' | 'close'>
-
-export type JobInQueue<JobData extends object, jobReturn> = Pick<
-  Job<JobData, jobReturn>,
-  | 'id'
-  | 'data'
-  | 'attemptsMade'
-  | 'attemptsStarted'
-  | 'progress'
-  | 'returnvalue'
-  | 'failedReason'
-  | 'finishedOn'
-  | 'getState'
->
-
-export type JobsPaginatedResponse<JobData extends BaseJobPayload, jobReturn> = {
-  jobs: JobInQueue<JobData, jobReturn>[]
-  hasMore: boolean
-}

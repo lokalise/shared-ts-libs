@@ -11,22 +11,16 @@ import {
 } from 'bullmq'
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
-
 import { DEFAULT_WORKER_OPTIONS } from '../constants.ts'
-import type { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
-import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
-import type { BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
 import {
   isJobMissingError,
   isMutedUnrecoverableJobError,
   isStalledJobError,
   isUnrecoverableJobError,
-  resolveJobId,
-  sanitizeRedisConfig,
-} from '../utils.ts'
-
+} from '../errors/utils.ts'
 import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory.ts'
 import type { QueueManager } from '../managers/QueueManager.ts'
+import type { ProtectedQueue } from '../managers/index.ts'
 import type {
   JobPayloadForQueue,
   QueueConfiguration,
@@ -34,10 +28,14 @@ import type {
   SupportedQueueIds,
 } from '../managers/types.ts'
 import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
+import { sanitizeRedisConfig } from '../public-utils/index.ts'
+import type { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
+import type { BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
+import { resolveJobId, resolveQueueId } from '../utils.ts'
 import type {
   BackgroundJobProcessorConfigNew,
   BackgroundJobProcessorDependenciesNew,
-  ProtectedQueue,
   ProtectedWorker,
 } from './types.ts'
 
@@ -103,7 +101,6 @@ export abstract class AbstractBackgroundJobProcessorNew<
   private readonly queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
 
   private _executionContext?: ExecutionContext
-  private isStarted = false
   private startPromise?: Promise<void>
   private _worker?: WorkerType
 
@@ -154,10 +151,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
   }
 
   protected get executionContext() {
-    /* v8 ignore next 3 */
-    if (!this._executionContext) {
-      this._executionContext = this.resolveExecutionContext()
-    }
+    if (!this._executionContext) this._executionContext = this.resolveExecutionContext()
 
     return this._executionContext
   }
@@ -190,18 +184,24 @@ export abstract class AbstractBackgroundJobProcessorNew<
 
   public async start(): Promise<void> {
     if (this.isStarted) return // if it is already started -> skip
-
     if (!this.startPromise) this.startPromise = this.internalStart()
+
     await this.startPromise
     this.startPromise = undefined
   }
 
+  private get isStarted(): boolean {
+    return !!this._worker
+  }
+
   private async internalStart(): Promise<void> {
     await this.monitor.registerQueue()
+
     const redisConfig = this.queueManager.config.redisConfig
+    const queueConfig = this.queueManager.getQueueConfig(this.queueId)
 
     this._worker = this.factory.buildWorker(
-      this.queueId,
+      resolveQueueId(queueConfig),
       ((job: JobType) => this.processInternal(job)) as ProcessorType,
       {
         ...(merge(DEFAULT_WORKER_OPTIONS, this.config.workerOptions) as Omit<
@@ -218,7 +218,6 @@ export abstract class AbstractBackgroundJobProcessorNew<
     }
 
     this.registerListeners()
-    this.isStarted = true
   }
 
   private registerListeners(): void {
@@ -248,7 +247,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
 
     this._spy?.clear()
     this.monitor.unregisterQueue()
-    this.isStarted = false
+    this._worker = undefined
   }
 
   private async processInternal(job: JobType): Promise<JobReturn> {

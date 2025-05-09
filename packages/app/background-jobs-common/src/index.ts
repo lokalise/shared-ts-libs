@@ -5,8 +5,6 @@ export * from './background-job-processor/index.ts'
 export type { BarrierCallback, BarrierResult } from './background-job-processor/barrier/barrier.ts'
 export { AbstractPeriodicJob } from './periodic-jobs/AbstractPeriodicJob.ts'
 
-export { MutedUnrecoverableError } from './errors/MutedUnrecoverableError.ts'
-
 export {
   createJobQueueSizeThrottlingBarrier,
   type ChildJobThrottlingBarrierConfig,

@@ -3,11 +3,10 @@ import type { RedisConfig } from '@lokalise/node-core'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { z } from 'zod'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
-import type { JobsPaginatedResponse } from '../processors/types.ts'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
 import { FakeQueueManager } from './FakeQueueManager.ts'
-import type { QueueConfiguration } from './types.ts'
+import type { JobsPaginatedResponse, QueueConfiguration } from './types.ts'
 
 const supportedQueues = [
   {
@@ -52,16 +51,22 @@ describe('QueueManager', () => {
 
   let queueManager: FakeQueueManager<SupportedQueues>
 
-  beforeEach(async () => {
+  beforeAll(() => {
     factory = new TestDependencyFactory()
     redisConfig = factory.getRedisConfig()
+  })
+
+  beforeEach(async () => {
     const deps = factory.createNew(supportedQueues)
     queueManager = deps.queueManager
-
     await factory.clearRedis()
   })
 
   afterEach(async () => {
+    await factory.clearRedis()
+  })
+
+  afterAll(async () => {
     await factory.dispose()
   })
 
@@ -121,25 +126,6 @@ describe('QueueManager', () => {
         /queue .* was not instantiated yet, please run "start\(\)"/,
       )
       expect(() => queueManager.getQueue('queue2')).toThrowError(
-        /queue .* was not instantiated yet, please run "start\(\)"/,
-      )
-
-      await queueManager.dispose()
-    })
-
-    it('should ignore if try to start a non-defined queue', async () => {
-      const invalidQueueId = 'invalidQueueId'
-      const queueManager = new FakeQueueManager(supportedQueues, {
-        redisConfig,
-      })
-
-      // @ts-expect-error - queue3 is not a valid queue id
-      expect(() => queueManager.getQueue(invalidQueueId)).toThrowError(
-        /queue .* was not instantiated yet, please run "start\(\)"/,
-      )
-      await queueManager.start([invalidQueueId])
-      // @ts-expect-error - queue3 is not a valid queue id
-      expect(() => queueManager.getQueue(invalidQueueId)).toThrowError(
         /queue .* was not instantiated yet, please run "start\(\)"/,
       )
 
@@ -612,8 +598,8 @@ describe('QueueManager', () => {
       const isPaused = await queueManager.getQueue('queue1').isPaused()
       expect(isPaused).toBe(false)
       await expect(queueManager.dispose()).resolves.not.toThrowError()
-      await expect(queueManager.getQueue('queue1').isPaused()).rejects.toThrowError(
-        'Connection is closed.',
+      expect(() => queueManager.getQueue('queue1')).toThrowErrorMatchingInlineSnapshot(
+        '[Error: queue queue1 was not instantiated yet, please run "start()"]',
       )
     })
 

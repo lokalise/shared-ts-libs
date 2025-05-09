@@ -10,8 +10,9 @@ import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
 } from '../processors/types.ts'
+import { createSanitizedRedisClient } from '../public-utils/index.ts'
 import type { BaseJobPayload, RequestContext, SafeJob } from '../types.ts'
-import { createSanitizedRedisClient, resolveJobId } from '../utils.ts'
+import { resolveJobId } from '../utils.ts'
 
 const queueIdsSet = new Set<string>()
 

@@ -11,7 +11,8 @@ import type { BaseJobPayload } from '../types.ts'
 
 import { randomUUID } from 'node:crypto'
 import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading.ts'
-import { MutedUnrecoverableError } from '../../errors/MutedUnrecoverableError.ts'
+import { TestBasicBackgroundJobProcessor } from '../../../test/processors/TestBasicBackgroundJobProcessor.ts'
+import { MutedUnrecoverableError } from '../errors/MutedUnrecoverableError.ts'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor.ts'
 import type { BackgroundJobProcessorDependencies } from './types.ts'
 
@@ -173,17 +174,32 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       await processor.dispose()
     })
+
+    it('should use bull queue name with prefixes for grouping', async () => {
+      const processor = new TestBasicBackgroundJobProcessor<JobData>(deps, {
+        queueId: 'my-queue',
+        redisConfig: factory.getRedisConfig(),
+        bullDashboardGrouping: ['prefix1', 'prefix2'],
+      })
+      await processor.start()
+
+      // @ts-expect-error executing protected method for testing
+      expect(processor.queue.name).toBe('prefix1.prefix2.my-queue')
+      // @ts-expect-error executing protected method for testing
+      expect(processor.worker.name).toBe('prefix1.prefix2.my-queue')
+
+      await processor.dispose()
+    })
   })
 
   describe('success', () => {
-    let processor: FakeBackgroundJobProcessor<JobData>
+    let processor: TestBasicBackgroundJobProcessor<JobData>
 
     beforeEach(async () => {
-      processor = new FakeBackgroundJobProcessor<JobData>(
-        deps,
-        randomUUID(),
-        factory.getRedisConfig(),
-      )
+      processor = new TestBasicBackgroundJobProcessor<JobData>(deps, {
+        queueId: randomUUID(),
+        redisConfig: factory.getRedisConfig(),
+      })
       await processor.start()
     })
 
@@ -404,6 +420,64 @@ describe('AbstractBackgroundJobProcessor', () => {
         /Job data purge failed: {"type":"Error","message":"Simulated"/,
       )
       expect(successBackgroundJobProcessor.runningPromisesSet).toHaveLength(0)
+    })
+  })
+
+  describe('using grouping', () => {
+    let processor: TestBasicBackgroundJobProcessor<JobData>
+
+    beforeEach(async () => {
+      processor = new TestBasicBackgroundJobProcessor<JobData>(deps, {
+        queueId: randomUUID(),
+        redisConfig: factory.getRedisConfig(),
+        bullDashboardGrouping: ['my-prefix'],
+      })
+      await processor.start()
+    })
+
+    afterEach(async () => {
+      await processor.dispose()
+    })
+
+    it('should work with single schedule', async () => {
+      // Given
+      const jobData = {
+        id: generateMonotonicUuid(),
+        value: 'test',
+        metadata: { correlationId: generateMonotonicUuid() },
+      }
+
+      // When
+      const jobId = await processor.schedule(jobData)
+
+      // Then
+      const job = await processor.spy.waitForJobWithId(jobId, 'completed')
+      expect(job.data).toMatchObject(jobData)
+    })
+
+    it('should work with scheduleBulk', async () => {
+      // Given - When
+      const scheduledJobIds = await processor.scheduleBulk([
+        {
+          id: generateMonotonicUuid(),
+          value: 'first',
+          metadata: { correlationId: generateMonotonicUuid() },
+        },
+        {
+          id: generateMonotonicUuid(),
+          value: 'second',
+          metadata: { correlationId: generateMonotonicUuid() },
+        },
+      ])
+
+      // Then
+      expect(scheduledJobIds.length).toBe(2)
+
+      const firstJob = await processor.spy.waitForJobWithId(scheduledJobIds[0], 'completed')
+      const secondJob = await processor.spy.waitForJobWithId(scheduledJobIds[1], 'completed')
+
+      expect(firstJob.data.value).toBe('first')
+      expect(secondJob.data.value).toBe('second')
     })
   })
 
