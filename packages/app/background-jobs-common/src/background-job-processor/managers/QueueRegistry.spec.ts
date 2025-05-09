@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import { getTestRedisConfig } from '../../../test/TestRedis.ts'
 import { CommonBullmqFactory } from '../factories/index.ts'
+import { backgroundJobProcessorGetActiveQueueIds } from '../monitoring/backgroundJobProcessorGetActiveQueueIds.ts'
 import { QueueRegistry } from './QueueRegistry.ts'
 import type { QueueConfiguration } from './types.ts'
 
@@ -88,6 +89,12 @@ describe('QueueRegistry', () => {
   })
 
   describe('start - dispose', () => {
+    const checkActivatedQueues = (expectedQueues: string[]) => {
+      return expect(backgroundJobProcessorGetActiveQueueIds(getTestRedisConfig())).resolves.toEqual(
+        expectedQueues,
+      )
+    }
+
     it('should ignore if queue id is not supported', async () => {
       expect(registry.isStarted).toBe(false)
       await registry.start(['invalid'])
@@ -115,6 +122,8 @@ describe('QueueRegistry', () => {
       expect(() => registry.getQueue('queue1')).toThrowErrorMatchingInlineSnapshot(
         '[Error: queue queue1 was not instantiated yet, please run "start()"]',
       )
+
+      await checkActivatedQueues(['queue1'])
     })
 
     it('should start all queues', async () => {
@@ -127,6 +136,8 @@ describe('QueueRegistry', () => {
 
       await registry.dispose()
       expect(registry.isStarted).toBe(false)
+
+      await checkActivatedQueues(['group1.group2.queue3', 'queue1', 'queue2'])
     })
 
     it('should resolve queue id for grouping', async () => {
@@ -137,6 +148,8 @@ describe('QueueRegistry', () => {
 
       await registry.dispose()
       expect(registry.isStarted).toBe(false)
+
+      await checkActivatedQueues(['group1.group2.queue3'])
     })
   })
 

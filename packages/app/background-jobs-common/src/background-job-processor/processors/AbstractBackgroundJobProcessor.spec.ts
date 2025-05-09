@@ -13,6 +13,7 @@ import { randomUUID } from 'node:crypto'
 import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading.ts'
 import { TestBasicBackgroundJobProcessor } from '../../../test/processors/TestBasicBackgroundJobProcessor.ts'
 import { MutedUnrecoverableError } from '../errors/MutedUnrecoverableError.ts'
+import { backgroundJobProcessorGetActiveQueueIds } from '../monitoring/backgroundJobProcessorGetActiveQueueIds.ts'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor.ts'
 import type { BackgroundJobProcessorDependencies } from './types.ts'
 
@@ -187,6 +188,10 @@ describe('AbstractBackgroundJobProcessor', () => {
       expect(processor.queue.name).toBe('prefix1.prefix2.my-queue')
       // @ts-expect-error executing protected method for testing
       expect(processor.worker.name).toBe('prefix1.prefix2.my-queue')
+
+      expect(backgroundJobProcessorGetActiveQueueIds(factory.getRedisConfig())).resolves.toEqual([
+        'prefix1.prefix2.my-queue',
+      ])
 
       await processor.dispose()
     })

@@ -69,7 +69,7 @@ export abstract class AbstractBackgroundJobProcessor<
     JobType
   >
   private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
-  private readonly monitor: BackgroundJobProcessorMonitor<JobPayload, JobType>
+  private readonly monitor: BackgroundJobProcessorMonitor<JobType>
   private readonly runningPromises: Set<Promise<unknown>>
 
   private isStarted = false
@@ -109,7 +109,11 @@ export abstract class AbstractBackgroundJobProcessor<
       JobType
     >,
   ) {
-    this.monitor = new BackgroundJobProcessorMonitor(dependencies, config, this.constructor.name)
+    this.monitor = new BackgroundJobProcessorMonitor(dependencies, {
+      isNewProcessor: false,
+      processorName: this.constructor.name,
+      ...config,
+    })
     this.config = config
     this.factory = dependencies.bullmqFactory
     this.errorReporter = dependencies.errorReporter
@@ -184,7 +188,7 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   private async internalStart(): Promise<void> {
-    await this.monitor.registerQueue()
+    await this.monitor.registerQueueProcessor()
 
     this._queue = this.factory.buildQueue(resolveQueueId(this.config), {
       ...(merge(DEFAULT_QUEUE_OPTIONS, this.config.queueOptions ?? {}) as Omit<
@@ -242,7 +246,7 @@ export abstract class AbstractBackgroundJobProcessor<
     }
 
     this._spy?.clear()
-    this.monitor.unregisterQueue()
+    this.monitor.unregisterQueueProcessor()
     this.isStarted = false
   }
 

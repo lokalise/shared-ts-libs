@@ -3,6 +3,7 @@ import type { JobsOptions, Queue, QueueOptions } from 'bullmq'
 import { merge } from 'ts-deepmerge'
 import { DEFAULT_QUEUE_OPTIONS } from '../constants.ts'
 import type { BullmqQueueFactory } from '../factories/index.ts'
+import { registerActiveQueueIds } from '../monitoring/registerActiveQueueIds.ts'
 import { sanitizeRedisConfig } from '../public-utils/index.ts'
 import { resolveQueueId } from '../utils.ts'
 import type { QueueConfiguration, SupportedQueueIds } from './types.ts'
@@ -38,6 +39,7 @@ export class QueueRegistry<
 
   public async start(enabled: string[] | true): Promise<void> {
     const queuePromises = []
+    const queueConfigs = []
     const queueIdSetToStart = enabled === true ? this.queueIds : new Set(enabled)
 
     for (const queueId of queueIdSetToStart) {
@@ -51,9 +53,12 @@ export class QueueRegistry<
       })
       this.queues[queueId] = queue
       queuePromises.push(queue.waitUntilReady())
+      queueConfigs.push(queueConfig)
     }
 
     if (queuePromises.length) await Promise.all(queuePromises)
+
+    await registerActiveQueueIds(this.redisConfig, queueConfigs)
   }
 
   public async dispose(): Promise<void> {

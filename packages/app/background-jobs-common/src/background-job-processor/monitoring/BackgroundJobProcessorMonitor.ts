@@ -4,17 +4,27 @@ import {
   type TransactionObservabilityManager,
   resolveGlobalErrorLogObject,
 } from '@lokalise/node-core'
-import { QUEUE_IDS_KEY } from '../constants.ts'
 import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger.ts'
-import type {
-  BackgroundJobProcessorConfig,
-  BackgroundJobProcessorDependencies,
-} from '../processors/types.ts'
-import { createSanitizedRedisClient } from '../public-utils/index.ts'
+import type { BackgroundJobProcessorDependencies } from '../processors/types.ts'
 import type { BaseJobPayload, RequestContext, SafeJob } from '../types.ts'
 import { resolveJobId } from '../utils.ts'
+import { registerActiveQueueIds } from './registerActiveQueueIds.ts'
 
-const queueIdsSet = new Set<string>()
+const queueIdsWithActiveProcessorsSet = new Set<string>()
+
+type BackgroundJobProcessorMonitorConfig = {
+  queueId: string
+  ownerName: string
+  processorName: string
+} & (
+  | {
+      isNewProcessor: true
+    }
+  | {
+      isNewProcessor: false
+      redisConfig: RedisConfig
+    }
+)
 
 /**
  * Internal class to group and manage job processing monitoring tools.
@@ -24,44 +34,38 @@ const queueIdsSet = new Set<string>()
  * It utilizes observability tools and a logger to provide detailed insights.
  */
 export class BackgroundJobProcessorMonitor<
-  JobPayload extends BaseJobPayload = BaseJobPayload,
-  JobType extends SafeJob<JobPayload> = SafeJob<JobPayload>,
+  JobType extends SafeJob<BaseJobPayload> = SafeJob<BaseJobPayload>,
 > {
   private readonly logger: CommonLogger
   private readonly transactionObservabilityManager: TransactionObservabilityManager
-  private readonly redisConfig: RedisConfig
-  private readonly queueId: string
-  private readonly ownerName: string
-  private readonly processorName: string
+  private readonly config: BackgroundJobProcessorMonitorConfig
 
   constructor(
     deps: Pick<
-      BackgroundJobProcessorDependencies<JobPayload>,
+      BackgroundJobProcessorDependencies<BaseJobPayload>,
       'logger' | 'transactionObservabilityManager'
     >,
-    config: Pick<BackgroundJobProcessorConfig, 'redisConfig' | 'ownerName' | 'queueId'>,
-    processorName: string,
+    config: BackgroundJobProcessorMonitorConfig,
   ) {
     this.transactionObservabilityManager = deps.transactionObservabilityManager
     this.logger = deps.logger
-    this.queueId = config.queueId
-    this.ownerName = config.ownerName
-    this.redisConfig = config.redisConfig
-    this.processorName = processorName
+    this.config = config
   }
 
-  public async registerQueue(): Promise<void> {
-    if (queueIdsSet.has(this.queueId))
-      throw new Error(`Processor for queue id "${this.queueId}" is not unique.`)
+  public async registerQueueProcessor(): Promise<void> {
+    if (queueIdsWithActiveProcessorsSet.has(this.config.queueId)) {
+      throw new Error(`Processor for queue id "${this.config.queueId}" is not unique.`)
+    }
+    queueIdsWithActiveProcessorsSet.add(this.config.queueId)
 
-    queueIdsSet.add(this.queueId)
-    const redisWithoutPrefix = createSanitizedRedisClient(this.redisConfig)
-    await redisWithoutPrefix.zadd(QUEUE_IDS_KEY, Date.now(), this.queueId)
-    redisWithoutPrefix.disconnect()
+    if (this.config.isNewProcessor) return Promise.resolve()
+    // For new processors, queue registration in redis is handled by queue manager
+    // (once we get rid of the old one, we can remove this code)
+    await registerActiveQueueIds(this.config.redisConfig, [this.config])
   }
 
-  public unregisterQueue(): void {
-    queueIdsSet.delete(this.queueId)
+  public unregisterQueueProcessor(): void {
+    queueIdsWithActiveProcessorsSet.delete(this.config.queueId)
   }
 
   public getRequestContext(job: JobType): RequestContext {
@@ -89,7 +93,7 @@ export class BackgroundJobProcessorMonitor<
   }
 
   public jobStart(job: JobType, requestContext: RequestContext): void {
-    const transactionName = `bg_job:${this.ownerName}:${this.queueId}`
+    const transactionName = `bg_job:${this.config.ownerName}:${this.config.queueId}`
     this.transactionObservabilityManager.start(transactionName, resolveJobId(job))
     requestContext.logger.info(this.buildLogParams(job), `Started job ${job.name}`)
   }
@@ -111,7 +115,7 @@ export class BackgroundJobProcessorMonitor<
 
   private buildLogParams(job: JobType, error?: unknown) {
     return {
-      origin: this.processorName,
+      origin: this.config.processorName,
       jobProgress: job.progress,
       ...(error ? resolveGlobalErrorLogObject(error) : {}),
     }

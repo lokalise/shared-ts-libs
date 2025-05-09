@@ -87,10 +87,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
     JobType
   >
   private readonly _spy?: BackgroundJobProcessorSpy<JobPayloadForQueue<Queues, QueueId>, JobReturn>
-  private readonly monitor: BackgroundJobProcessorMonitor<
-    JobPayloadForQueue<Queues, QueueId>,
-    JobType
-  >
+  private readonly monitor: BackgroundJobProcessorMonitor<JobType>
   private readonly runningPromises: Set<Promise<unknown>>
   private readonly factory: BullmqWorkerFactory<
     WorkerType,
@@ -139,11 +136,11 @@ export abstract class AbstractBackgroundJobProcessorNew<
         >)
       : undefined
     this.runningPromises = new Set()
-    this.monitor = new BackgroundJobProcessorMonitor(
-      dependencies,
-      { ...config, redisConfig: this.queueManager.config.redisConfig },
-      this.constructor.name,
-    )
+    this.monitor = new BackgroundJobProcessorMonitor(dependencies, {
+      isNewProcessor: true,
+      processorName: this.constructor.name,
+      ...config,
+    })
   }
 
   public get queueId(): QueueId {
@@ -195,7 +192,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
   }
 
   private async internalStart(): Promise<void> {
-    await this.monitor.registerQueue()
+    await this.monitor.registerQueueProcessor()
 
     const redisConfig = this.queueManager.config.redisConfig
     const queueConfig = this.queueManager.getQueueConfig(this.queueId)
@@ -246,7 +243,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
     }
 
     this._spy?.clear()
-    this.monitor.unregisterQueue()
+    this.monitor.unregisterQueueProcessor()
     this._worker = undefined
   }
 
