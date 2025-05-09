@@ -84,7 +84,7 @@ export class QueueManager<
 
   public getQueueConfig<QueueId extends SupportedQueueIds<Queues>>(
     queueId: QueueId,
-  ): QueueConfiguration<QueueOptionsType> {
+  ): Queues[number] {
     return this.queueRegistry.getQueueConfig(queueId)
   }
 
