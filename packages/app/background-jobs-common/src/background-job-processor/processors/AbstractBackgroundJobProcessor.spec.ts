@@ -15,6 +15,7 @@ import { TestBasicBackgroundJobProcessor } from '../../../test/processors/TestBa
 import { MutedUnrecoverableError } from '../errors/MutedUnrecoverableError.ts'
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor.ts'
 import type { BackgroundJobProcessorDependencies } from './types.ts'
+import { backgroundJobProcessorGetActiveQueueIds } from '../monitoring/backgroundJobProcessorGetActiveQueueIds.ts'
 
 type JobData = {
   id: string
@@ -187,6 +188,10 @@ describe('AbstractBackgroundJobProcessor', () => {
       expect(processor.queue.name).toBe('prefix1.prefix2.my-queue')
       // @ts-expect-error executing protected method for testing
       expect(processor.worker.name).toBe('prefix1.prefix2.my-queue')
+
+      expect(backgroundJobProcessorGetActiveQueueIds(factory.getRedisConfig())).resolves.toEqual([
+        'prefix1.prefix2.my-queue',
+      ])
 
       await processor.dispose()
     })
