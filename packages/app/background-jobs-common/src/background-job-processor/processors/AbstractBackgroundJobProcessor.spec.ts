@@ -189,6 +189,8 @@ describe('AbstractBackgroundJobProcessor', () => {
       // @ts-expect-error executing protected method for testing
       expect(processor.worker.name).toBe('prefix1.prefix2.my-queue')
 
+      expect(processor.resolvedQueueId).toBe('prefix1.prefix2.my-queue')
+
       expect(backgroundJobProcessorGetActiveQueueIds(factory.getRedisConfig())).resolves.toEqual([
         'prefix1.prefix2.my-queue',
       ])

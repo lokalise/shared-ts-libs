@@ -170,6 +170,10 @@ export abstract class AbstractBackgroundJobProcessor<
     return this._spy
   }
 
+  public get resolvedQueueId(): string {
+    return resolveQueueId(this.config)
+  }
+
   public async start(): Promise<void> {
     if (this.isStarted) return // if it is already started -> skip
     if (!this.startPromise) this.startPromise = this.internalStart()
