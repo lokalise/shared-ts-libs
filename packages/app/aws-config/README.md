@@ -25,7 +25,7 @@ Set the following environment variables:
 - `AWS_ENDPOINT` (optional): Custom endpoint URL for AWS services, commonly used for local testing with tools like 
  LocalStack (e.g., `http://localhost:4566`).
 - `AWS_RESOURCE_PREFIX` (optional): Prefix applied to all AWS resource names to avoid naming collisions or support 
- multi-tenancy. See **Resource Prefix** below for details. Maximum allowed prefix length is 12 characters.
+ multi-tenancy. See **Resource Prefix** below for details. Maximum allowed prefix length is 10 characters.
 - `AWS_ACCESS_KEY_ID` & `AWS_SECRET_ACCESS_KEY` (optional): AWS credentials for programmatic access. If unset, the AWS 
  SDK's default credential provider chain (environment variables, shared credentials file, EC2 instance metadata, etc.)
  is used.
