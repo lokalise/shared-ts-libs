@@ -200,7 +200,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       it('should work using all properties', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
-          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix_' }),
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix_' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
@@ -214,13 +214,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               "allowedSourceOwner": "test allowedSourceOwner",
               "forceTagUpdate": true,
               "queueUrlsWithSubscribePermissionsPrefix": [
-                "arn:aws:sqs:*:*:preffix_test-*",
+                "arn:aws:sqs:*:*:prefix_test-*",
               ],
               "topic": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
                 },
-                "Name": "preffix_test-first_entity",
+                "Name": "prefix_test-first_entity",
                 "Tags": [
                   {
                     "Key": "env",
@@ -324,7 +324,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       it('should work using all props', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
-          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix_' }),
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix_' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
@@ -337,7 +337,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "creationConfig": undefined,
             "handlerSpy": true,
             "locatorConfig": {
-              "topicName": "preffix_test-second_entity",
+              "topicName": "prefix_test-second_entity",
             },
             "logMessages": true,
             "messageSchemas": [],
@@ -433,7 +433,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           queueName,
           logger,
           handlers: [],
-          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix_' }),
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix_' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
@@ -457,7 +457,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "preffix_test-first_entity-first_service",
+                "QueueName": "prefix_test-first_entity-first_service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
@@ -468,13 +468,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                 },
               },
               "queueUrlsWithSubscribePermissionsPrefix": [
-                "arn:aws:sqs:*:*:preffix_test-*",
+                "arn:aws:sqs:*:*:prefix_test-*",
               ],
               "topic": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
                 },
-                "Name": "preffix_test-first_entity",
+                "Name": "prefix_test-first_entity",
                 "Tags": [
                   {
                     "Key": "env",
@@ -502,7 +502,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   },
                 ],
               },
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:preffix_test-*",
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-*",
               "updateAttributesIfExists": true,
             },
             "deadLetterQueue": undefined,
@@ -652,7 +652,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           topicName,
           queueName,
           handlers: [],
-          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix_' }),
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix_' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
@@ -676,7 +676,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "preffix_test-second_entity-service",
+                "QueueName": "prefix_test-second_entity-service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 2",
@@ -688,7 +688,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               },
               "queueUrlsWithSubscribePermissionsPrefix": undefined,
               "topic": undefined,
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:preffix_test-*",
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-*",
               "updateAttributesIfExists": true,
             },
             "deadLetterQueue": undefined,
@@ -698,7 +698,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "handlerSpy": true,
             "handlers": [],
             "locatorConfig": {
-              "topicName": "preffix_test-second_entity",
+              "topicName": "prefix_test-second_entity",
             },
             "logMessages": true,
             "maxRetryDuration": 172800,
