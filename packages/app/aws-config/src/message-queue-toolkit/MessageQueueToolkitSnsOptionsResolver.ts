@@ -39,6 +39,8 @@ const VISIBILITY_TIMEOUT = 60 // 1 minutes
 const HEARTBEAT_INTERVAL = 20 // 20 seconds
 const MAX_RETRY_DURATION = 2 * 24 * 60 * 60 // 2 days in seconds
 
+const MAX_QUEUE_NAME_LENGTH = 64
+
 export class MessageQueueToolkitSnsOptionsResolver {
   private readonly routingConfig: EventRoutingConfig
   private readonly config: MessageQueueToolkitSnsOptionsResolverConfig
@@ -71,6 +73,11 @@ export class MessageQueueToolkitSnsOptionsResolver {
       Object.keys(topic.queues),
     )
     for (const queueName of queueNames) {
+      if (queueName.length > MAX_QUEUE_NAME_LENGTH) {
+        throw new Error(
+          `Queue name too long: ${queueName}. Max allowed length is ${MAX_QUEUE_NAME_LENGTH}, received ${queueName.length}`,
+        )
+      }
       if (!QUEUE_NAME_REGEX.test(queueName)) throw new Error(`Invalid queue name: ${queueName}`)
     }
   }

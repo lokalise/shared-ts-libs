@@ -7,5 +7,5 @@ import type { AwsConfig } from './awsConfig.ts'
  */
 export const applyAwsResourcePrefix = (resourceName: string, awsConfig: AwsConfig): string => {
   if (!awsConfig.resourcePrefix) return resourceName
-  return `${awsConfig.resourcePrefix}_${resourceName}`
+  return `${awsConfig.resourcePrefix}${resourceName}`
 }

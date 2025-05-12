@@ -133,6 +133,43 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       ).not.toThrowError()
     })
 
+    it('should throw an error if queue name is too long', () => {
+      const longQueueName = `long-queue_name-${'a'.repeat(49)}` // 65 characters long
+      const config = {
+        valid: {
+          topicName: 'valid-topic',
+          isExternal: true,
+          queues: {
+            invalid: {
+              name: longQueueName,
+              owner: 'test',
+              service: 'test',
+            },
+          },
+        },
+      } satisfies EventRoutingConfig
+
+      expect(
+        () =>
+          new MessageQueueToolkitSnsOptionsResolver(config, {
+            validateNamePatterns: true,
+            appEnv: 'development',
+            system: 'test system',
+            project: 'test project',
+          }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Error: Queue name too long: ${longQueueName}. Max allowed length is 64, received ${longQueueName.length}]`,
+      )
+      expect(
+        () =>
+          new MessageQueueToolkitSnsOptionsResolver(config, {
+            appEnv: 'development',
+            system: 'test system',
+            project: 'test project',
+          }),
+      ).not.toThrowError()
+    })
+
     it('should work with a valid event routing config', () => {
       expect(
         () =>
@@ -163,7 +200,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       it('should work using all properties', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
-          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
+          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix_' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
@@ -287,7 +324,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       it('should work using all props', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
-          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
+          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix_' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
@@ -396,7 +433,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           queueName,
           logger,
           handlers: [],
-          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
+          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix_' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
@@ -615,7 +652,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           topicName,
           queueName,
           handlers: [],
-          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
+          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix_' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
