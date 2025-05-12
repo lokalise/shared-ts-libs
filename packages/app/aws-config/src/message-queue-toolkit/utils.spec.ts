@@ -150,7 +150,7 @@ describe('utils', () => {
     })
 
     it('should use prefix from awsConfig', () => {
-      const resourcePrefix = 'dev_'
+      const resourcePrefix = 'dev'
       const result1 = buildTopicArnsWithPublishPermissionsPrefix(
         buildTopicConfig({ topicName: 'my_app-' }),
         buildAwsConfig(resourcePrefix),
@@ -208,7 +208,7 @@ describe('utils', () => {
     })
 
     it('should use prefix awsConfig', () => {
-      const resourcePrefix = 'dev_'
+      const resourcePrefix = 'dev'
       const result1 = buildQueueUrlsWithSubscribePermissionsPrefix(
         buildTopicConfig({ topicName: 'my_app-' }),
         buildAwsConfig(resourcePrefix),
@@ -231,7 +231,7 @@ describe('utils', () => {
     })
 
     it('should use externalAppsWithSubscribePermissions', () => {
-      const resourcePrefix = 'dev_'
+      const resourcePrefix = 'dev'
       const externalAppsWithSubscribePermissions = ['my_test1', 'my_test2-', 'my_test3-*']
       const result1 = buildQueueUrlsWithSubscribePermissionsPrefix(
         buildTopicConfig({ topicName: 'my_app-', externalAppsWithSubscribePermissions }),

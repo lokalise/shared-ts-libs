@@ -116,7 +116,7 @@ describe('awsConfig', () => {
           AWS_KMS_KEY_ID: KMS_KEY_ID_LITERAL,
           AWS_RESOURCE_PREFIX: 'aws-resource-prefix',
         }),
-      ).toThrow('AWS resource prefix exceeds maximum length of 12 characters: aws-resource-prefix')
+      ).toThrow('AWS resource prefix exceeds maximum length of 10 characters: aws-resource-prefix')
     })
   })
 })

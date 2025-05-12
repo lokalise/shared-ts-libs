@@ -8,7 +8,8 @@ import {
 import { ConfigScope } from '@lokalise/node-core'
 import type { AwsCredentialIdentity, Provider } from '@smithy/types'
 
-const MAX_AWS_RESOURCE_PREFIX_LENGTH = 12
+/** Maximum allowed length for AWS resource prefix, to ensure it doesn't exceed AWS limits when concatenated with resource names. */
+const MAX_AWS_RESOURCE_PREFIX_LENGTH = 10
 
 /**
  * Configuration settings for AWS integration.

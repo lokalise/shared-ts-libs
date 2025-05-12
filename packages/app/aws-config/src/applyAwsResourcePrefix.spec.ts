@@ -17,7 +17,7 @@ describe('applyAwsResourcePrefix', () => {
         region: 'us-east-1',
         kmsKeyId: 'my-kms-key-id',
         allowedSourceOwner: 'my-owner',
-        resourcePrefix: 'prefix_',
+        resourcePrefix: 'prefix',
       }),
     ).toEqual('prefix_my-queue')
   })

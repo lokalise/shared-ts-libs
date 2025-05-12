@@ -39,7 +39,9 @@ const VISIBILITY_TIMEOUT = 60 // 1 minutes
 const HEARTBEAT_INTERVAL = 20 // 20 seconds
 const MAX_RETRY_DURATION = 2 * 24 * 60 * 60 // 2 days in seconds
 
-const MAX_QUEUE_NAME_LENGTH = 64
+/** Maximum lengths for queue and topic names allowed, to ensure that AWS limits are not exceeded after applying prefixes. */
+const MAX_QUEUE_NAME_LENGTH = 64 // AWS limit is 80, but we need to leave space for the prefix and -dlq suffix
+const MAX_TOPIC_NAME_LENGTH = 246 // AWS limit is 256, but we need to leave space for the prefix
 
 export class MessageQueueToolkitSnsOptionsResolver {
   private readonly routingConfig: EventRoutingConfig
@@ -66,6 +68,11 @@ export class MessageQueueToolkitSnsOptionsResolver {
 
     const topicNames = Object.keys(this.routingConfig)
     for (const topicName of topicNames) {
+      if (topicName.length > MAX_TOPIC_NAME_LENGTH) {
+        throw new Error(
+          `Topic name too long: ${topicName}. Max allowed length is ${MAX_TOPIC_NAME_LENGTH}, received ${topicName.length}`,
+        )
+      }
       if (!TOPIC_NAME_REGEX.test(topicName)) throw new Error(`Invalid topic name: ${topicName}`)
     }
 
