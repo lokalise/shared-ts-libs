@@ -195,7 +195,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             project: 'test project',
           }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Error: Topic name too long: ${longTopicName}. Max allowed length is 256, received ${longTopicName.length}]`,
+        `[Error: Topic name too long: ${longTopicName}. Max allowed length is 246, received ${longTopicName.length}]`,
       )
       expect(
         () =>
