@@ -8,6 +8,9 @@ import {
 import { ConfigScope } from '@lokalise/node-core'
 import type { AwsCredentialIdentity, Provider } from '@smithy/types'
 
+/** Maximum allowed length for AWS resource prefix, to ensure it doesn't exceed AWS limits when concatenated with resource names. */
+const MAX_AWS_RESOURCE_PREFIX_LENGTH = 10
+
 /**
  * Configuration settings for AWS integration.
  */
@@ -37,6 +40,7 @@ export const getAwsConfig = (configScope?: ConfigScope): AwsConfig => {
 
   const resolvedConfigScope = configScope ?? new ConfigScope()
   awsConfig = generateAwsConfig(resolvedConfigScope)
+  validateAwsConfig(awsConfig)
 
   return awsConfig
 }
@@ -49,6 +53,14 @@ const generateAwsConfig = (configScope: ConfigScope): AwsConfig => {
     endpoint: configScope.getOptionalNullable('AWS_ENDPOINT', undefined),
     resourcePrefix: configScope.getOptionalNullable('AWS_RESOURCE_PREFIX', undefined),
     credentials: resolveCredentials(configScope),
+  }
+}
+
+const validateAwsConfig = (config: AwsConfig): void => {
+  if (config.resourcePrefix && config.resourcePrefix.length > MAX_AWS_RESOURCE_PREFIX_LENGTH) {
+    throw new Error(
+      `AWS resource prefix exceeds maximum length of ${MAX_AWS_RESOURCE_PREFIX_LENGTH} characters: ${config.resourcePrefix}`,
+    )
   }
 }
 

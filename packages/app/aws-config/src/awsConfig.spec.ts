@@ -2,7 +2,7 @@ import { ConfigScope } from '@lokalise/node-core'
 import { getAwsConfig, testResetAwsConfig } from './awsConfig.ts'
 
 const AWS_ALLOWED_SOURCE_OWNER_LITERAL = 'allowed-source-owner'
-const AWS_RESOURCE_PREFIX_LITERAL = 'resource-prefix'
+const AWS_RESOURCE_PREFIX_LITERAL = 'aws-prefix'
 const AWS_ENDPOINT_LITERAL = 'aws-endpoint'
 const KMS_KEY_ID_LITERAL = 'kms-key-id'
 const DEFAULT_REGION = 'eu-west-1'
@@ -107,6 +107,16 @@ describe('awsConfig', () => {
           AWS_KMS_KEY_ID: KMS_KEY_ID_LITERAL,
         }),
       ).toThrow('Missing mandatory configuration parameter: AWS_REGION')
+    })
+
+    it('throws error if prefix is too long', () => {
+      expect(() =>
+        buildAwsConfig({
+          AWS_REGION: DEFAULT_REGION,
+          AWS_KMS_KEY_ID: KMS_KEY_ID_LITERAL,
+          AWS_RESOURCE_PREFIX: 'aws-resource-prefix',
+        }),
+      ).toThrow('AWS resource prefix exceeds maximum length of 10 characters: aws-resource-prefix')
     })
   })
 })

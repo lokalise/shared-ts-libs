@@ -133,6 +133,80 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       ).not.toThrowError()
     })
 
+    it('should throw an error if queue name is too long', () => {
+      const longQueueName = `long-queue_name-${'a'.repeat(49)}` // 65 characters long
+      const config = {
+        valid: {
+          topicName: 'valid-topic',
+          isExternal: true,
+          queues: {
+            invalid: {
+              name: longQueueName,
+              owner: 'test',
+              service: 'test',
+            },
+          },
+        },
+      } satisfies EventRoutingConfig
+
+      expect(
+        () =>
+          new MessageQueueToolkitSnsOptionsResolver(config, {
+            validateNamePatterns: true,
+            appEnv: 'development',
+            system: 'test system',
+            project: 'test project',
+          }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Error: Queue name too long: ${longQueueName}. Max allowed length is 64, received ${longQueueName.length}]`,
+      )
+      expect(
+        () =>
+          new MessageQueueToolkitSnsOptionsResolver(config, {
+            appEnv: 'development',
+            system: 'test system',
+            project: 'test project',
+          }),
+      ).not.toThrowError()
+    })
+
+    it('should throw an error if topic name is too long', () => {
+      const longTopicName = `long-topic_name-${'a'.repeat(250)}` // 65 characters long
+      const config = {
+        valid: {
+          topicName: longTopicName,
+          isExternal: true,
+          queues: {
+            invalid: {
+              name: 'test-queue_name',
+              owner: 'test',
+              service: 'test',
+            },
+          },
+        },
+      } satisfies EventRoutingConfig
+
+      expect(
+        () =>
+          new MessageQueueToolkitSnsOptionsResolver(config, {
+            validateNamePatterns: true,
+            appEnv: 'development',
+            system: 'test system',
+            project: 'test project',
+          }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Error: Topic name too long: ${longTopicName}. Max allowed length is 246, received ${longTopicName.length}]`,
+      )
+      expect(
+        () =>
+          new MessageQueueToolkitSnsOptionsResolver(config, {
+            appEnv: 'development',
+            system: 'test system',
+            project: 'test project',
+          }),
+      ).not.toThrowError()
+    })
+
     it('should work with a valid event routing config', () => {
       expect(
         () =>
@@ -163,7 +237,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       it('should work using all properties', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
-          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
@@ -177,13 +251,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               "allowedSourceOwner": "test allowedSourceOwner",
               "forceTagUpdate": true,
               "queueUrlsWithSubscribePermissionsPrefix": [
-                "arn:aws:sqs:*:*:preffix_test-*",
+                "arn:aws:sqs:*:*:prefix_test-*",
               ],
               "topic": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
                 },
-                "Name": "preffix_test-first_entity",
+                "Name": "prefix_test-first_entity",
                 "Tags": [
                   {
                     "Key": "env",
@@ -287,7 +361,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       it('should work using all props', () => {
         const result = resolver.resolvePublisherBuildOptions({
           topicName,
-          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
@@ -300,7 +374,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "creationConfig": undefined,
             "handlerSpy": true,
             "locatorConfig": {
-              "topicName": "preffix_test-second_entity",
+              "topicName": "prefix_test-second_entity",
             },
             "logMessages": true,
             "messageSchemas": [],
@@ -396,7 +470,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           queueName,
           logger,
           handlers: [],
-          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
@@ -420,7 +494,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "preffix_test-first_entity-first_service",
+                "QueueName": "prefix_test-first_entity-first_service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
@@ -431,13 +505,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                 },
               },
               "queueUrlsWithSubscribePermissionsPrefix": [
-                "arn:aws:sqs:*:*:preffix_test-*",
+                "arn:aws:sqs:*:*:prefix_test-*",
               ],
               "topic": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
                 },
-                "Name": "preffix_test-first_entity",
+                "Name": "prefix_test-first_entity",
                 "Tags": [
                   {
                     "Key": "env",
@@ -465,7 +539,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   },
                 ],
               },
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:preffix_test-*",
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-*",
               "updateAttributesIfExists": true,
             },
             "deadLetterQueue": undefined,
@@ -615,7 +689,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           topicName,
           queueName,
           handlers: [],
-          awsConfig: buildAwsConfig({ resourcePrefix: 'preffix' }),
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
@@ -639,7 +713,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "preffix_test-second_entity-service",
+                "QueueName": "prefix_test-second_entity-service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 2",
@@ -651,7 +725,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               },
               "queueUrlsWithSubscribePermissionsPrefix": undefined,
               "topic": undefined,
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:preffix_test-*",
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-*",
               "updateAttributesIfExists": true,
             },
             "deadLetterQueue": undefined,
@@ -661,7 +735,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "handlerSpy": true,
             "handlers": [],
             "locatorConfig": {
-              "topicName": "preffix_test-second_entity",
+              "topicName": "prefix_test-second_entity",
             },
             "logMessages": true,
             "maxRetryDuration": 172800,
