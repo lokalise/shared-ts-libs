@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/script-utils",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "type": "module",
     "files": ["dist", "README.md", "LICENSE.md"],
     "license": "Apache-2.0",
@@ -27,7 +27,7 @@
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
-        "@lokalise/node-core": "^13.0.0"
+        "@lokalise/node-core": "^14.0.0"
     },
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",
