@@ -1,7 +1,11 @@
 {
     "$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
-    "organizeImports": {
-        "enabled": true
+    "assist": {
+        "actions": {
+            "source": {
+                "organizeImports": "on"
+            }
+        }
     },
     "json": {
         "formatter": {
@@ -25,8 +29,7 @@
         }
     },
     "files": {
-        "include": ["./**/*.ts", "./**/*.mts", "./**/*.tsx", "./**/*.json", "./**/*.jsonc"],
-        "ignore": ["./dist", "./coverage", "./node_modules"]
+        "includes": ["**/*.ts", "**/*.mts", "**/*.tsx", "**/*.json", "**/*.jsonc", "!dist", "!coverage", "!node_modules"]
     },
     "formatter": {
         "enabled": true,
@@ -51,7 +54,7 @@
                 "noUndeclaredVariables": "error"
             },
             "suspicious": {
-                "noConsoleLog": "error",
+                "noConsole": "error",
                 "useAwait": "error"
             },
             "complexity": {
@@ -67,7 +70,7 @@
     },
     "overrides": [
         {
-            "include": ["./**/*.spec.ts", "./**/*.test.ts", "./**/*.test.tsx", "**/test/**/*"],
+            "includes": ["./**/*.spec.ts", "./**/*.test.ts", "./**/*.test.tsx", "**/test/**/*"],
             "javascript": {
                 // Allow Vitest globals in test files
                 "globals": [
