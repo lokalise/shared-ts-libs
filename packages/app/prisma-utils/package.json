@@ -33,7 +33,7 @@
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
-        "@lokalise/node-core": "^13.1.0"
+        "@lokalise/node-core": "^14.0.0"
     },
     "peerDependencies": {
         "@prisma/client": ">=5.0.0 <7.0.0",
