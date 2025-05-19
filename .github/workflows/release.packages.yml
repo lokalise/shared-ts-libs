@@ -1,0 +1,472 @@
+name: release.packages.yml
+run-name: Release NPM packages
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+
+jobs:
+
+  ### This job is used to get all changed files in the PR
+
+  changed-files-job:
+    name: Get files changed in PR
+    runs-on: ubuntu-latest
+    outputs:
+      all_changed_files: ${{ steps.changed-files.outputs.all_changed_files }}
+    steps:
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46
+        with:
+          # Limit the scope of the changed files to only those in the packages directory
+          files: packages/**
+      - name: List all changed files
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          for file in ${ALL_CHANGED_FILES}; do
+            echo "$file was changed"
+          done
+
+
+  ### Dev packages
+
+  biome-config:
+    name: Release biome-config
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/dev/biome-config/')
+    needs:
+      - changed-files-job
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/dev/biome-config'
+      package_name: '@lokalise/biome-config'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  prettier-config:
+    name: Release prettier-config
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/dev/prettier-config/')
+    needs:
+      - changed-files-job
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/dev/prettier-config'
+      package_name: '@lokalise/prettier-config'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  eslint-config:
+    name: Release eslint-config
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/dev/eslint-config/')
+    needs:
+      - changed-files-job
+      - prettier-config
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/dev/eslint-config'
+      package_name: '@lokalise/eslint-config'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  package-vite-config:
+    name: Release package-vite-config
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/dev/package-vite-config/')
+    needs:
+      - changed-files-job
+      - biome-config
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/dev/package-vite-config'
+      package_name: '@lokalise/package-vite-config'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  tsconfig:
+    name: Release tsconfig
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/dev/tsconfig/')
+    needs:
+      - changed-files-job
+      - biome-config
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/dev/tsconfig'
+      package_name: '@lokalise/tsconfig'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  ### APP packages
+
+  api-common:
+    name: Release api-common
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/api-common/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/api-common'
+      package_name: '@lokalise/api-common'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  api-contracts:
+    name: Release api-contracts
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/api-contracts/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/api-contracts'
+      package_name: '@lokalise/api-contracts'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  aws-config:
+    name: Release aws-config
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/aws-config/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+      - universal-ts-utils
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/aws-config'
+      package_name: '@lokalise/aws-config'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  backend-http-client:
+    name: Release backend-http-client
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/backend-http-client/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+      - api-contracts
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/backend-http-client'
+      package_name: '@lokalise/backend-http-client'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  background-jobs-common:
+    name: Release background-jobs-common
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/background-jobs-common/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+      - id-utils
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/background-jobs-common'
+      package_name: '@lokalise/background-jobs-common'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  context-fastify-plugins:
+    name: Release context-fastify-plugins
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/context-fastify-plugins/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/context-fastify-plugins'
+      package_name: '@lokalise/context-fastify-plugins'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  error-utils:
+    name: Release error-utils
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/error-utils/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/error-utils'
+      package_name: '@lokalise/error-utils'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  fastify-api-contracts:
+    name: Release fastify-api-contracts
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/fastify-api-contracts/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+      - api-contracts
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/fastify-api-contracts'
+      package_name: '@lokalise/fastify-api-contracts'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  frontend-http-client:
+    name: Release frontend-http-client
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/frontend-http-client/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+      - api-contracts
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/frontend-http-client'
+      package_name: '@lokalise/frontend-http-client'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  healthcheck-utils:
+    name: Release healthcheck-utils
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/healthcheck-utils/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+      - background-jobs-common
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/healthcheck-utils'
+      package_name: '@lokalise/healthcheck-utils'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  id-utils:
+    name: Release id-utils
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/id-utils/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/id-utils'
+      package_name: '@lokalise/id-utils'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  metrics-utils:
+    name: Release metrics-utils
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/metrics-utils/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/metrics-utils'
+      package_name: '@lokalise/metrics-utils'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  non-translatable-markup:
+    name: Release non-translatable-markup
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/non-translatable-markup/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/non-translatable-markup'
+      package_name: '@lokalise/non-translatable-markup'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  prisma-utils:
+    name: Release prisma-utils
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/prisma-utils/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+      - backend-http-client
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/prisma-utils'
+      package_name: '@lokalise/prisma-utils'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  script-utils:
+    name: Release script-utils
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/script-utils/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/script-utils'
+      package_name: '@lokalise/script-utils'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  supported-languages:
+    name: Release supported-languages
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/supported-languages/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/supported-languages'
+      package_name: '@lokalise/supported-languages'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  universal-testing-utils:
+    name: Release universal-testing-utils
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/universal-testing-utils/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+      - api-contracts
+      - frontend-http-client
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/universal-testing-utils'
+      package_name: '@lokalise/universal-testing-utils'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  universal-ts-utils:
+    name: Release universal-ts-utils
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/universal-ts-utils/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/universal-ts-utils'
+      package_name: '@lokalise/universal-ts-utils'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  websockets-common:
+    name: Release websockets-common
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/websockets-common/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/websockets-common'
+      package_name: '@lokalise/websockets-common'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
