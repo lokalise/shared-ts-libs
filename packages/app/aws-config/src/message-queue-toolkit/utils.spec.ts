@@ -74,6 +74,8 @@ describe('utils', () => {
 
   describe('QUEUE_NAME_REGEX', () => {
     it.each([
+      // 2 section (valid)
+      'system-flow',
       // 3 sections (valid)
       'system-flow-service',
       'my_system-main_flow-main_service',
