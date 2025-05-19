@@ -203,8 +203,8 @@ describe('MswHelper', () => {
       const mock = vi.fn()
 
       mswHelper.mockValidResponseWithImplementation(postContract, server, {
-        handleRequest: (dto) => {
-          mock(dto)
+        handleRequest: async (requestInfo) => {
+          mock(await requestInfo.request.json())
 
           return {
             id: 'test-id',
@@ -229,11 +229,11 @@ describe('MswHelper', () => {
 
       mswHelper.mockValidResponseWithImplementation(postContractWithPathParams, server, {
         pathParams: { userId: '3' },
-        handleRequest: (dto) => {
-          mock(dto)
+        handleRequest: async (requestInfo) => {
+          mock(await requestInfo.request.json())
 
           return {
-            id: 'test-id',
+            id: `id-${requestInfo.params.userId}`,
           }
         },
       })
@@ -248,7 +248,7 @@ describe('MswHelper', () => {
       expect(mock).toHaveBeenCalledWith({ name: 'test-name' })
       expect(response).toMatchInlineSnapshot(`
               {
-                "id": "test-id",
+                "id": "id-3",
               }
             `)
     })

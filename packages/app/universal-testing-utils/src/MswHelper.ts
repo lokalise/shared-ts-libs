@@ -1,10 +1,17 @@
 import {
   type CommonRouteDefinition,
+  type InferSchemaInput,
   type InferSchemaOutput,
+  type PayloadRouteDefinition,
   mapRouteToPath,
 } from '@lokalise/api-contracts'
-import type { InferSchemaInput } from '@lokalise/api-contracts'
-import { http, HttpResponse } from 'msw'
+import {
+  http,
+  type DefaultBodyType,
+  HttpResponse,
+  type HttpResponseResolver,
+  type PathParams,
+} from 'msw'
 import type { SetupServerApi } from 'msw/node'
 import type { ZodObject, z } from 'zod'
 
@@ -21,17 +28,23 @@ export type MockParamsNoPath<ResponseBody> = {
   responseBody: ResponseBody
 } & CommonMockParams
 
-// We do not control what data is used to call the endpoint, so it is safe to assume its unknown
-type HandleRequest<ResponseBody> = (dto: unknown) => ResponseBody
-
-export type MockWithImplementationParams<PathParams, ResponseBody> = {
-  pathParams: PathParams
-  handleRequest: HandleRequest<ResponseBody>
+export type MockWithImplementationParamsNoPath<
+  Params extends PathParams<keyof Params>,
+  RequestBody extends DefaultBodyType,
+  ResponseBody extends DefaultBodyType,
+> = {
+  handleRequest: (
+    dto: Parameters<HttpResponseResolver<Params, RequestBody, ResponseBody>>[0],
+  ) => ResponseBody | Promise<ResponseBody>
 } & CommonMockParams
 
-export type MockWithImplementationParamsNoPath<ResponseBody> = {
-  handleRequest: HandleRequest<ResponseBody>
-} & CommonMockParams
+export type MockWithImplementationParams<
+  Params extends PathParams<keyof Params>,
+  RequestBody extends DefaultBodyType,
+  ResponseBody extends DefaultBodyType,
+> = {
+  pathParams: Params
+} & MockWithImplementationParamsNoPath<Params, RequestBody, ResponseBody>
 
 type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
 
@@ -122,25 +135,33 @@ export class MswHelper {
   mockValidResponseWithImplementation<
     ResponseBodySchema extends z.Schema,
     PathParamsSchema extends z.Schema | undefined,
+    RequestBodySchema extends z.Schema | undefined = undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
     RequestHeaderSchema extends z.Schema | undefined = undefined,
     IsNonJSONResponseExpected extends boolean = false,
     IsEmptyResponseExpected extends boolean = false,
   >(
-    contract: CommonRouteDefinition<
-      InferSchemaOutput<PathParamsSchema>,
-      ResponseBodySchema,
-      PathParamsSchema,
-      RequestQuerySchema,
-      RequestHeaderSchema,
-      IsNonJSONResponseExpected,
-      IsEmptyResponseExpected
-    >,
+    contract:
+      | CommonRouteDefinition<
+          InferSchemaOutput<PathParamsSchema>,
+          ResponseBodySchema,
+          PathParamsSchema,
+          RequestQuerySchema,
+          RequestHeaderSchema,
+          IsNonJSONResponseExpected,
+          IsEmptyResponseExpected
+        >
+      | PayloadRouteDefinition<InferSchemaOutput<PathParamsSchema>, RequestBodySchema>,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
-      ? MockWithImplementationParamsNoPath<InferSchemaInput<ResponseBodySchema>>
+      ? MockWithImplementationParamsNoPath<
+          PathParams,
+          InferSchemaInput<RequestBodySchema>,
+          InferSchemaInput<ResponseBodySchema>
+        >
       : MockWithImplementationParams<
           InferSchemaInput<PathParamsSchema>,
+          InferSchemaInput<RequestBodySchema>,
           InferSchemaInput<ResponseBodySchema>
         >,
   ): void {
@@ -155,11 +176,13 @@ export class MswHelper {
     const method: HttpMethod = contract.method
 
     server.use(
-      http[method](resolvedPath, async ({ request }) =>
-        HttpResponse.json(params.handleRequest(await request.json()), {
+      http[method](resolvedPath, async (requestInfo) => {
+        // biome-ignore  lint/suspicious/noConsoleLog:
+        console.log(requestInfo)
+        return HttpResponse.json(await params.handleRequest(requestInfo), {
           status: params.responseCode,
-        }),
-      ),
+        })
+      }),
     )
   }
 

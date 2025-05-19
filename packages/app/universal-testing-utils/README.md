@@ -98,6 +98,45 @@ describe('MswHelper', () => {
         })
     })
 
+    describe("mockValidResponseWithImplementation", () => {
+        it("mocks POST request with custom implementation", async () => {
+            const apiMock = vi.fn();
+
+            // you don't need specify any path params, they automatically are set to *
+            mswHelper.mockValidResponseWithImplementation(
+                postContractWithPathParams,
+                server,
+                {
+                    handleRequest: async (requestInfo) => {
+                        apiMock(await requestInfo.request.json());
+
+                        return { id: `id-${requestInfo.params.userId}` };
+                    },
+                },
+            );
+
+            const response = await sendByPayloadRoute(
+                wretchClient,
+                postContractWithPathParams,
+                {
+                    pathParams: {
+                        userId: "9",
+                    },
+                    body: { name: "test-name" },
+                },
+            );
+
+            expect(apiMock).toHaveBeenCalledWith({
+                name: "test-name",
+            });
+            expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "9",
+              }
+            `);
+        });
+    })
+
     describe('mockAnyResponse', () => {
         it('mocks POST request without path params', async () => {
             mswHelper.mockAnyResponse(postContract, server, {
