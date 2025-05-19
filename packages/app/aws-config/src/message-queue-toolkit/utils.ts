@@ -22,13 +22,13 @@ export const TOPIC_NAME_REGEX = /^[a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*$/
  * system_name:         [a-z]+(_[a-z]+)*        -> One or more lowercase letters, optionally separated by underscores
  * -                    -                       -> Hyphen
  * flow or model name:  [a-z]+(_[a-z]+)*        -> One or more lowercase letters, optionally separated by underscores
- * -                    -                       -> Hyphen
- * service or module:   [a-z]+(_[a-z]+)*        -> One or more lowercase letters, optionally separated by underscores
+ * -                    -                       -> Optional Hyphen
+ * service or module:   [a-z]+(_[a-z]+)*)?  -> One or more lowercase letters, optionally separated by underscores
  * (-                   -                       -> Optional hyphen
  * module_name:         [a-z]+(_[a-z]+)*)?      -> Optional: One or more lowercase letters, optionally separated by underscores
  */
 export const QUEUE_NAME_REGEX =
-  /^[a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*(?:-[a-z]+(_[a-z]+)*)?$/
+  /^[a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*(?:-[a-z]+(_[a-z]+)*)?(?:-[a-z]+(_[a-z]+)*)?$/
 
 export const buildTopicArnsWithPublishPermissionsPrefix = (
   topicConfig: TopicConfig,
