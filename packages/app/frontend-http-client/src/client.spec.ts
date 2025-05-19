@@ -232,7 +232,7 @@ describe('frontend-http-client', () => {
       expect(responseBody satisfies z.infer<typeof responseBodySchema>).toEqual({
         data: {
           code: 99,
-          url: 'http://localhost:8000/users/1?sort=-startDate%2CendDate',
+          url: `${mockServer.url}/users/1?sort=-startDate%2CendDate`,
         },
       })
     })
