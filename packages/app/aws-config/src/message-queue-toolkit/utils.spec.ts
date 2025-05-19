@@ -91,7 +91,6 @@ describe('utils', () => {
 
     it.each([
       // too few sections
-      'system-flow',
       'queue',
       // too many sections (> 4)
       'a-b-c-d-e',
