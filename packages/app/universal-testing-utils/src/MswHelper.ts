@@ -21,6 +21,20 @@ export type MockParamsNoPath<ResponseBody> = {
   responseBody: ResponseBody
 } & CommonMockParams
 
+// We do not control what data is used to call the endpoint, so it is safe to assume its unknown
+type HandleRequest<ResponseBody> = (dto: unknown) => ResponseBody
+
+export type MockWithImplementationParams<PathParams, ResponseBody> = {
+  pathParams: PathParams
+  handleRequest: HandleRequest<ResponseBody>
+} & CommonMockParams
+
+export type MockWithImplementationParamsNoPath<ResponseBody> = {
+  handleRequest: HandleRequest<ResponseBody>
+} & CommonMockParams
+
+type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
+
 function joinURL(base: string, path: string): string {
   return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
 }
@@ -53,7 +67,7 @@ export class MswHelper {
 
     const resolvedPath = joinURL(this.baseUrl, path)
     // @ts-expect-error
-    const method: 'get' | 'delete' | 'post' | 'patch' | 'put' = contract.method
+    const method: HttpMethod = contract.method
     server.use(
       http[method](resolvedPath, () =>
         HttpResponse.json(params.responseBody, {
@@ -95,10 +109,54 @@ export class MswHelper {
 
     const resolvedPath = joinURL(this.baseUrl, path)
     // @ts-expect-error
-    const method: 'get' | 'delete' | 'post' | 'patch' | 'put' = contract.method
+    const method: HttpMethod = contract.method
     server.use(
       http[method](resolvedPath, () =>
         HttpResponse.json(params.responseBody, {
+          status: params.responseCode,
+        }),
+      ),
+    )
+  }
+
+  mockValidResponseWithImplementation<
+    ResponseBodySchema extends z.Schema,
+    PathParamsSchema extends z.Schema | undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
+    RequestHeaderSchema extends z.Schema | undefined = undefined,
+    IsNonJSONResponseExpected extends boolean = false,
+    IsEmptyResponseExpected extends boolean = false,
+  >(
+    contract: CommonRouteDefinition<
+      InferSchemaOutput<PathParamsSchema>,
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected
+    >,
+    server: SetupServerApi,
+    params: PathParamsSchema extends undefined
+      ? MockWithImplementationParamsNoPath<InferSchemaInput<ResponseBodySchema>>
+      : MockWithImplementationParams<
+          InferSchemaInput<PathParamsSchema>,
+          InferSchemaInput<ResponseBodySchema>
+        >,
+  ): void {
+    const path = contract.requestPathParamsSchema
+      ? // @ts-expect-error this is safe
+        contract.pathResolver(params.pathParams)
+      : mapRouteToPath(contract)
+
+    const resolvedPath = joinURL(this.baseUrl, path)
+
+    // @ts-expect-error
+    const method: HttpMethod = contract.method
+
+    server.use(
+      http[method](resolvedPath, async ({ request }) =>
+        HttpResponse.json(params.handleRequest(await request.json()), {
           status: params.responseCode,
         }),
       ),

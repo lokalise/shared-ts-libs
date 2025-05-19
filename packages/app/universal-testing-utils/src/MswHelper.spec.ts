@@ -197,4 +197,60 @@ describe('MswHelper', () => {
             `)
     })
   })
+
+  describe('mockValidResponseWithImplementation', () => {
+    it('mocks POST request without path params with custom implementation', async () => {
+      const mock = vi.fn()
+
+      mswHelper.mockValidResponseWithImplementation(postContract, server, {
+        handleRequest: (dto) => {
+          mock(dto)
+
+          return {
+            id: 'test-id',
+          }
+        },
+      })
+
+      const response = await sendByPayloadRoute(wretchClient, postContract, {
+        body: { name: 'test-name' },
+      })
+
+      expect(mock).toHaveBeenCalledWith({ name: 'test-name' })
+      expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "test-id",
+              }
+            `)
+    })
+
+    it('mocks POST request with path params with custom implementation', async () => {
+      const mock = vi.fn()
+
+      mswHelper.mockValidResponseWithImplementation(postContractWithPathParams, server, {
+        pathParams: { userId: '3' },
+        handleRequest: (dto) => {
+          mock(dto)
+
+          return {
+            id: 'test-id',
+          }
+        },
+      })
+
+      const response = await sendByPayloadRoute(wretchClient, postContractWithPathParams, {
+        pathParams: {
+          userId: '3',
+        },
+        body: { name: 'test-name' },
+      })
+
+      expect(mock).toHaveBeenCalledWith({ name: 'test-name' })
+      expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "test-id",
+              }
+            `)
+    })
+  })
 })
