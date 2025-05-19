@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/aws-config",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "files": ["dist", "LICENSE.md", "README.md"],
     "author": {
         "name": "Lokalise",
