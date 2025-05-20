@@ -1,7 +1,7 @@
 import type { DefiniteEither } from '@lokalise/node-core'
 import type { Client } from 'undici'
 import type { Either, InternalRequestError, RequestResult, RetryConfig } from 'undici-retry'
-import type { ZodSchema } from 'zod'
+import type { ZodSchema } from 'zod/v3'
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
 export type RecordObject = Record<string, any>

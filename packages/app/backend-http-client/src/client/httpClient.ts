@@ -11,7 +11,7 @@ import type {
   RequestResult,
   RetryConfig,
 } from 'undici-retry'
-import type { ZodError, ZodSchema, z } from 'zod'
+import type { ZodError, ZodSchema, z } from 'zod/v3'
 
 import type {
   DeleteRouteDefinition,
