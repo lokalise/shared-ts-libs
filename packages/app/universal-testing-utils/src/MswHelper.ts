@@ -34,7 +34,7 @@ export type MockWithImplementationParamsNoPath<
   ResponseBody extends DefaultBodyType,
 > = {
   handleRequest: (
-    dto: Parameters<HttpResponseResolver<Params, RequestBody, ResponseBody>>[0],
+    requestInfo: Parameters<HttpResponseResolver<Params, RequestBody, ResponseBody>>[0],
   ) => ResponseBody | Promise<ResponseBody>
 } & CommonMockParams
 
@@ -177,11 +177,20 @@ export class MswHelper {
 
     server.use(
       http[method](resolvedPath, async (requestInfo) => {
-        // biome-ignore  lint/suspicious/noConsoleLog:
-        console.log(requestInfo)
-        return HttpResponse.json(await params.handleRequest(requestInfo), {
-          status: params.responseCode,
-        })
+        return HttpResponse.json(
+          await params.handleRequest(
+            requestInfo as Parameters<
+              HttpResponseResolver<
+                InferSchemaInput<PathParamsSchema>,
+                InferSchemaInput<RequestBodySchema>,
+                InferSchemaInput<ResponseBodySchema>
+              >
+            >[0],
+          ),
+          {
+            status: params.responseCode,
+          },
+        )
       }),
     )
   }

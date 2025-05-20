@@ -6,6 +6,7 @@ import wretch from 'wretch'
 import {
   getContract,
   getContractWithPathParams,
+  getContractWithQueryParams,
   postContract,
   postContractWithPathParams,
 } from '../test/testContracts.ts'
@@ -199,15 +200,38 @@ describe('MswHelper', () => {
   })
 
   describe('mockValidResponseWithImplementation', () => {
+    it('mocks GET request without path params with query params with custom implementation', async () => {
+      mswHelper.mockValidResponseWithImplementation(getContractWithQueryParams, server, {
+        handleRequest: (requestInfo) => {
+          // msw doesn't parse query params on its own
+          const url = new URL(requestInfo.request.url)
+          return {
+            id: url.searchParams.get('yearFrom')!,
+          }
+        },
+      })
+
+      const response = await sendByGetRoute(wretchClient, getContractWithQueryParams, {
+        queryParams: { yearFrom: 2000 },
+      })
+
+      expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "2000",
+              }
+            `)
+    })
+
     it('mocks POST request without path params with custom implementation', async () => {
       const mock = vi.fn()
 
       mswHelper.mockValidResponseWithImplementation(postContract, server, {
         handleRequest: async (requestInfo) => {
-          mock(await requestInfo.request.json())
+          const requestBody = await requestInfo.request.json()
+          mock(requestBody)
 
           return {
-            id: 'test-id',
+            id: requestBody.name,
           }
         },
       })
@@ -219,7 +243,7 @@ describe('MswHelper', () => {
       expect(mock).toHaveBeenCalledWith({ name: 'test-name' })
       expect(response).toMatchInlineSnapshot(`
               {
-                "id": "test-id",
+                "id": "test-name",
               }
             `)
     })
@@ -228,7 +252,7 @@ describe('MswHelper', () => {
       const mock = vi.fn()
 
       mswHelper.mockValidResponseWithImplementation(postContractWithPathParams, server, {
-        pathParams: { userId: '3' },
+        pathParams: { userId: ':userId' },
         handleRequest: async (requestInfo) => {
           mock(await requestInfo.request.json())
 

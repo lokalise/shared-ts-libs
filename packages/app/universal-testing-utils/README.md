@@ -98,22 +98,23 @@ describe('MswHelper', () => {
         })
     })
 
+    // use this approach when you need to implement custom logic within mocked endpoint,
+    // e. g. call your own mock
     describe("mockValidResponseWithImplementation", () => {
         it("mocks POST request with custom implementation", async () => {
             const apiMock = vi.fn();
 
-            // you don't need specify any path params, they automatically are set to *
-            mswHelper.mockValidResponseWithImplementation(
-                postContractWithPathParams,
-                server,
-                {
-                    handleRequest: async (requestInfo) => {
-                        apiMock(await requestInfo.request.json());
+            mswHelper.mockValidResponseWithImplementation(postContractWithPathParams, server, {
+                // setting this to :userId makes the params accessible by name within the callback
+                pathParams: { userId: ':userId' },
+                handleRequest: async (requestInfo) => {
+                    apiMock(await requestInfo.request.json())
 
-                        return { id: `id-${requestInfo.params.userId}` };
-                    },
+                    return {
+                        id: `id-${requestInfo.params.userId}`,
+                    }
                 },
-            );
+            })
 
             const response = await sendByPayloadRoute(
                 wretchClient,
