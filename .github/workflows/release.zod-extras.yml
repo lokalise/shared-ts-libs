@@ -1,0 +1,18 @@
+name: Package release to NPM -> zod-extras
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+    paths:
+      - 'packages/app/zod-extras/**'
+
+jobs:
+  call-build-flow:
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/zod-extras'
+      package_name: '@lokalise/zod-extras'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}

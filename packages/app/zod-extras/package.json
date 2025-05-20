@@ -1,0 +1,60 @@
+{
+  "name": "@lokalise/zod-extras",
+  "version": "2.1.0",
+  "author": {
+    "name": "Lokalise",
+    "url": "https://lokalise.com/"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/lokalise/shared-ts-libs.git"
+  },
+  "homepage": "https://github.com/lokalise/shared-ts-libs",
+  "files": [
+    "dist/**",
+    "LICENSE",
+    "README.md"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "rimraf dist && vite build",
+    "build:ts": "rimraf dist && tsc",
+    "test": "vitest run",
+    "test:ci": "npm run lint && npm run test -- --coverage",
+    "lint": "eslint --cache --max-warnings=0 . && prettier --check --log-level warn src \"**/*.{json,md,ts,tsx}\" && tsc --noEmit",
+    "lint:fix": "prettier --write src \"**/*.{json,md,ts,tsx}\" vitest.config.mts --log-level=warn && eslint . --fix",
+    "version": "auto-changelog -p && git add CHANGELOG.md"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@lokalise/package-vite-config": "^2.0.0",
+    "@types/node": "^20.12.7",
+    "@typescript-eslint/eslint-plugin": "^7.8.0",
+    "@typescript-eslint/parser": "^7.8.0",
+    "@vitest/coverage-v8": "^1.5.3",
+    "auto-changelog": "^2.4.0",
+    "eslint": "^8.55.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-vitest": "0.4.1",
+    "prettier": "^3.1.1",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.10",
+    "vitest": "^1.5.3",
+    "zod": "^3.22.4"
+  }
+}
