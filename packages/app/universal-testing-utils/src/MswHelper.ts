@@ -1,5 +1,6 @@
 import {
   type CommonRouteDefinition,
+  type DeleteRouteDefinition,
   type InferSchemaInput,
   type InferSchemaOutput,
   type PayloadRouteDefinition,
@@ -151,7 +152,8 @@ export class MswHelper {
           IsNonJSONResponseExpected,
           IsEmptyResponseExpected
         >
-      | PayloadRouteDefinition<InferSchemaOutput<PathParamsSchema>, RequestBodySchema>,
+      | PayloadRouteDefinition<InferSchemaOutput<PathParamsSchema>, RequestBodySchema>
+      | DeleteRouteDefinition<InferSchemaOutput<PathParamsSchema>, RequestBodySchema>,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
       ? MockWithImplementationParamsNoPath<
@@ -177,20 +179,21 @@ export class MswHelper {
 
     server.use(
       http[method](resolvedPath, async (requestInfo) => {
-        return HttpResponse.json(
-          await params.handleRequest(
-            requestInfo as Parameters<
-              HttpResponseResolver<
-                InferSchemaInput<PathParamsSchema>,
-                InferSchemaInput<RequestBodySchema>,
-                InferSchemaInput<ResponseBodySchema>
-              >
-            >[0],
-          ),
-          {
-            status: params.responseCode,
-          },
+        const response = await params.handleRequest(
+          requestInfo as Parameters<
+            HttpResponseResolver<
+              InferSchemaInput<PathParamsSchema>,
+              InferSchemaInput<RequestBodySchema>,
+              InferSchemaInput<ResponseBodySchema>
+            >
+          >[0],
         )
+
+        if (!response) return new HttpResponse(null, { status: params.responseCode })
+
+        return HttpResponse.json(response, {
+          status: params.responseCode,
+        })
       }),
     )
   }
