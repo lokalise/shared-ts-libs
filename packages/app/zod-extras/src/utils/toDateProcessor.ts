@@ -1,4 +1,4 @@
-const toDatePreprocessor = (value: unknown) => {
+export const toDatePreprocessor = (value: unknown) => {
   switch (typeof value) {
     case 'string':
     case 'number':
@@ -8,5 +8,3 @@ const toDatePreprocessor = (value: unknown) => {
       return value // could not coerce, return the original and face the consequences during validation
   }
 }
-
-export default toDatePreprocessor

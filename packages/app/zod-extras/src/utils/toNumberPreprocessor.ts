@@ -2,8 +2,8 @@
  * Will try to convert any value to number,
  * using the rules found here https://ajv.js.org/coercion.html
  */
-const toNumberPreprocessor = (value: unknown) => {
-  if (typeof value === 'string' && value !== '' && !isNaN(+value)) {
+export const toNumberPreprocessor = (value: unknown) => {
+  if (typeof value === 'string' && value !== '' && !Number.isNaN(+value)) {
     return +value
   }
 
@@ -23,5 +23,3 @@ const toNumberPreprocessor = (value: unknown) => {
       return value // could not coerce, return the original and face the consequences during validation
   }
 }
-
-export default toNumberPreprocessor

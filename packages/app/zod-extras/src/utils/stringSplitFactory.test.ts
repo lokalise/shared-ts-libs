@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import stringSplitFactory from './stringSplitFactory'
+import { stringSplitFactory } from './stringSplitFactory.ts'
 
 describe('stringSplitFactory', () => {
   it('splits data into substrings', () => {

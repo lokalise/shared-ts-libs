@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import toNumberPreprocessor from './toNumberPreprocessor'
+import { toNumberPreprocessor } from './toNumberPreprocessor.ts'
 
 describe('toNumberPreprocessor', () => {
   it('converts strings to number', () => {

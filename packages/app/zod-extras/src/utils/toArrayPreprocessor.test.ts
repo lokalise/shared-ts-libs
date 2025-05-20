@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import toArrayPreprocessor from './toArrayPreprocessor'
+import { toArrayPreprocessor } from './toArrayPreprocessor.ts'
 
 describe('toArrayPreprocessor', () => {
   it('wraps strings in array', () => {

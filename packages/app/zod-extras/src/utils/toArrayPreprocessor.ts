@@ -1,4 +1,4 @@
-const toArrayPreprocessor = (value: unknown) => {
+export const toArrayPreprocessor = (value: unknown) => {
   if (Array.isArray(value)) {
     return value
   }
@@ -14,5 +14,3 @@ const toArrayPreprocessor = (value: unknown) => {
       return value // could not coerce, return the original and face the consequences during validation
   }
 }
-
-export default toArrayPreprocessor

@@ -3,7 +3,7 @@ type StringSplitFactoryOpts = Partial<{
   trim: boolean
 }>
 
-const stringSplitFactory = (opts: StringSplitFactoryOpts = {}) => {
+export const stringSplitFactory = (opts: StringSplitFactoryOpts = {}) => {
   const { delimiter = ',', trim = false } = opts
 
   return (input: unknown): unknown => {
@@ -20,5 +20,3 @@ const stringSplitFactory = (opts: StringSplitFactoryOpts = {}) => {
     return values
   }
 }
-
-export default stringSplitFactory

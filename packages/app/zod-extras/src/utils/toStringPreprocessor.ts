@@ -2,7 +2,7 @@
  * Will try to convert any value to string,
  * using the rules found here https://ajv.js.org/coercion.html
  */
-const toStringPreprocessor = (value: unknown) => {
+export const toStringPreprocessor = (value: unknown) => {
   switch (typeof value) {
     case 'bigint':
     case 'boolean':
@@ -26,5 +26,3 @@ const toStringPreprocessor = (value: unknown) => {
       return value // could not coerce, return the original and face the consequences during validation
   }
 }
-
-export default toStringPreprocessor

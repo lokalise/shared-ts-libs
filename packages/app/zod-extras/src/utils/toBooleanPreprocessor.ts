@@ -2,7 +2,7 @@
  * Will try to convert any value to boolean,
  * using the rules found here https://ajv.js.org/coercion.html
  */
-const toBooleanPreprocessor = (value: unknown): boolean | unknown => {
+export const toBooleanPreprocessor = (value: unknown): boolean | unknown => {
   if (typeof value === 'string') {
     const lowered = value.toLowerCase()
 
@@ -27,5 +27,3 @@ const toBooleanPreprocessor = (value: unknown): boolean | unknown => {
 
   return value // could not coerce, return the original and face the consequences during validation
 }
-
-export default toBooleanPreprocessor

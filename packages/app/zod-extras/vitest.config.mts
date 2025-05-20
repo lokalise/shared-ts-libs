@@ -1,6 +1,7 @@
 // eslint-disable-next-line import/no-unresolved
 import { defineConfig } from 'vitest/config'
 
+// biome-ignore lint/style/noDefaultExport: This is expected by vitest
 export default defineConfig({
   test: {
     globals: true,

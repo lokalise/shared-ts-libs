@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import toBooleanPreprocessor from './toBooleanPreprocessor'
+import { toBooleanPreprocessor } from './toBooleanPreprocessor.ts'
 
 describe('toBooleanPreprocessor', () => {
   it('converts valid strings to boolean', () => {
