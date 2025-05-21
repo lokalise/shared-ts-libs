@@ -23,13 +23,17 @@ type JobOptionsWithDeduplicationIdBuilder<JobOptionsType extends JobsOptions> = 
 export type QueueConfiguration<
   QueueOptionsType extends QueueOptions = QueueOptions,
   JobOptionsType extends JobsOptions = JobsOptions,
+  QueueIdType extends string = string,
+  PayloadSchema extends z.ZodType<BaseJobPayload> = z.ZodType<BaseJobPayload>,
 > = {
-  queueId: string
+  queueId: QueueIdType
   /** Used to compose the queue name and allow bull dashboard grouping feature */
   bullDashboardGrouping?: string[]
   queueOptions?: Omit<QueueOptionsType, 'connection' | 'prefix'>
-  jobPayloadSchema: z.ZodType<BaseJobPayload> // should extend JobPayload
-  jobOptions?: JobOptionsWithDeduplicationIdBuilder<JobOptionsType>
+  jobPayloadSchema: PayloadSchema
+  jobOptions?:
+      | JobOptionsWithDeduplicationIdBuilder<JobOptionsType>
+      | ((payload: z.infer<PayloadSchema>) => JobOptionsWithDeduplicationIdBuilder<JobOptionsType>)
 }
 
 export type SupportedQueueIds<Config extends QueueConfiguration[]> = Config[number]['queueId']

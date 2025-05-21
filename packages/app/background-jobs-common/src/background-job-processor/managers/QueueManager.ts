@@ -210,7 +210,10 @@ export class QueueManager<
     jobPayload: JobPayloadForQueue<Queues, QueueId>,
     options?: JobOptionsType,
   ): JobOptionsType {
-    const defaultOptions = this.queueRegistry.getQueueConfig(queueId).jobOptions
+    const queueConfig = this.queueRegistry.getQueueConfig(queueId)
+
+    const defaultOptions = typeof queueConfig.jobOptions === 'function' ? queueConfig.jobOptions(jobPayload) : queueConfig.jobOptions
+
     const resolvedOptions: JobOptionsType = merge(
       defaultOptions ?? {},
       options ?? {},
