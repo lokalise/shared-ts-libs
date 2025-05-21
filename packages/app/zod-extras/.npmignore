@@ -1,0 +1,11 @@
+.idea/
+.npmignore
+node_modules/
+README.md
+test/
+.nyc_output/
+coverage/
+lib/
+package-lock.json
+tsconfig.json
+.eslintrc.json

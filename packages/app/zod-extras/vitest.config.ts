@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-unresolved
 import { defineConfig } from 'vitest/config'
 
 // biome-ignore lint/style/noDefaultExport: This is expected by vitest
@@ -5,17 +6,19 @@ export default defineConfig({
   test: {
     globals: true,
     watch: false,
+    environment: 'node',
     restoreMocks: true,
-    pool: 'threads',
+    reporters: ['default'],
     coverage: {
-      provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/**/node.ts'],
+      exclude: ['src/**/*.test.ts', 'src/index.ts'],
+      reporter: ['text'],
+      all: true,
       thresholds: {
-        lines: 42,
-        functions: 33,
-        branches: 52,
-        statements: 42,
+        lines: 100,
+        functions: 100,
+        branches: 100,
+        statements: 100,
       },
     },
   },
