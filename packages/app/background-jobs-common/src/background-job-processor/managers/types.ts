@@ -32,8 +32,8 @@ export type QueueConfiguration<
   queueOptions?: Omit<QueueOptionsType, 'connection' | 'prefix'>
   jobPayloadSchema: PayloadSchema
   jobOptions?:
-      | JobOptionsWithDeduplicationIdBuilder<JobOptionsType>
-      | ((payload: z.infer<PayloadSchema>) => JobOptionsWithDeduplicationIdBuilder<JobOptionsType>)
+    | JobOptionsWithDeduplicationIdBuilder<JobOptionsType>
+    | ((payload: z.infer<PayloadSchema>) => JobOptionsWithDeduplicationIdBuilder<JobOptionsType>)
 }
 
 export type SupportedQueueIds<Config extends QueueConfiguration[]> = Config[number]['queueId']
