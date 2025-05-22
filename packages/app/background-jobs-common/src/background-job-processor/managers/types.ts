@@ -23,17 +23,16 @@ type JobOptionsWithDeduplicationIdBuilder<JobOptionsType extends JobsOptions> = 
 export type QueueConfiguration<
   QueueOptionsType extends QueueOptions = QueueOptions,
   JobOptionsType extends JobsOptions = JobsOptions,
-  QueueIdType extends string = string,
-  PayloadSchema extends z.ZodType<BaseJobPayload> = z.ZodType<BaseJobPayload>,
 > = {
-  queueId: QueueIdType
+  queueId: string
   /** Used to compose the queue name and allow bull dashboard grouping feature */
   bullDashboardGrouping?: string[]
   queueOptions?: Omit<QueueOptionsType, 'connection' | 'prefix'>
-  jobPayloadSchema: PayloadSchema
+  jobPayloadSchema: z.ZodType<BaseJobPayload>
   jobOptions?:
     | JobOptionsWithDeduplicationIdBuilder<JobOptionsType>
-    | ((payload: z.infer<PayloadSchema>) => JobOptionsWithDeduplicationIdBuilder<JobOptionsType>)
+    // biome-ignore lint/suspicious/noExplicitAny: We cannot infer type of payload, but we have run time validation
+    | ((payload: any) => JobOptionsWithDeduplicationIdBuilder<JobOptionsType>)
 }
 
 export type SupportedQueueIds<Config extends QueueConfiguration[]> = Config[number]['queueId']
@@ -42,7 +41,7 @@ export type SupportedJobPayloads<Config extends QueueConfiguration[]> = z.infer<
   Config[number]['jobPayloadSchema']
 >
 
-type JobPayloadSchemaFoQueue<
+type JobPayloadSchemaForQueue<
   Config extends QueueConfiguration[],
   QueueId extends SupportedQueueIds<Config>,
 > = Extract<Config[number], { queueId: QueueId }>['jobPayloadSchema']
@@ -50,12 +49,12 @@ type JobPayloadSchemaFoQueue<
 export type JobPayloadInputForQueue<
   Config extends QueueConfiguration[],
   QueueId extends SupportedQueueIds<Config>,
-> = z.input<JobPayloadSchemaFoQueue<Config, QueueId>>
+> = z.input<JobPayloadSchemaForQueue<Config, QueueId>>
 
 export type JobPayloadForQueue<
   Config extends QueueConfiguration[],
   QueueId extends SupportedQueueIds<Config>,
-> = z.infer<JobPayloadSchemaFoQueue<Config, QueueId>>
+> = z.infer<JobPayloadSchemaForQueue<Config, QueueId>>
 
 export type ProtectedQueue<
   JobPayload extends BaseJobPayload,
