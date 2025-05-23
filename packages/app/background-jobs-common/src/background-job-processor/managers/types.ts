@@ -14,7 +14,7 @@ type JobOptionsWithDeduplicationIdBuilder<JobOptionsType extends JobsOptions> = 
   'deduplication'
 > & {
   deduplication?: Omit<NonNullable<JobOptionsType['deduplication']>, 'id'> & {
-    /** Callback to allow building deduplication id base on job data*/
+    /** @deprecated Use `jobOptions` as a function with payload as an argument instead. */
     // biome-ignore lint/suspicious/noExplicitAny: We cannot infer type of JobData, but we have run time validation
     idBuilder: (JobData: any) => string
   }
@@ -28,8 +28,11 @@ export type QueueConfiguration<
   /** Used to compose the queue name and allow bull dashboard grouping feature */
   bullDashboardGrouping?: string[]
   queueOptions?: Omit<QueueOptionsType, 'connection' | 'prefix'>
-  jobPayloadSchema: z.ZodType<BaseJobPayload> // should extend JobPayload
-  jobOptions?: JobOptionsWithDeduplicationIdBuilder<JobOptionsType>
+  jobPayloadSchema: z.ZodType<BaseJobPayload>
+  jobOptions?:
+    | JobOptionsWithDeduplicationIdBuilder<JobOptionsType>
+    // biome-ignore lint/suspicious/noExplicitAny: We cannot infer type of payload, but we have run time validation
+    | ((payload: any) => JobOptionsWithDeduplicationIdBuilder<JobOptionsType>)
 }
 
 export type SupportedQueueIds<Config extends QueueConfiguration[]> = Config[number]['queueId']
@@ -38,7 +41,7 @@ export type SupportedJobPayloads<Config extends QueueConfiguration[]> = z.infer<
   Config[number]['jobPayloadSchema']
 >
 
-type JobPayloadSchemaFoQueue<
+type JobPayloadSchemaForQueue<
   Config extends QueueConfiguration[],
   QueueId extends SupportedQueueIds<Config>,
 > = Extract<Config[number], { queueId: QueueId }>['jobPayloadSchema']
@@ -46,12 +49,12 @@ type JobPayloadSchemaFoQueue<
 export type JobPayloadInputForQueue<
   Config extends QueueConfiguration[],
   QueueId extends SupportedQueueIds<Config>,
-> = z.input<JobPayloadSchemaFoQueue<Config, QueueId>>
+> = z.input<JobPayloadSchemaForQueue<Config, QueueId>>
 
 export type JobPayloadForQueue<
   Config extends QueueConfiguration[],
   QueueId extends SupportedQueueIds<Config>,
-> = z.infer<JobPayloadSchemaFoQueue<Config, QueueId>>
+> = z.infer<JobPayloadSchemaForQueue<Config, QueueId>>
 
 export type ProtectedQueue<
   JobPayload extends BaseJobPayload,
