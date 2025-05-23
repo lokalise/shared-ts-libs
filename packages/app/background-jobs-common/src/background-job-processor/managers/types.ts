@@ -1,7 +1,7 @@
 import type { RedisConfig } from '@lokalise/node-core'
 import type { Job, JobsOptions, Queue, QueueOptions } from 'bullmq'
 import type { z } from 'zod'
-import type { BaseJobPayload } from '../types.ts'
+import { type BaseJobPayload } from '../types.ts'
 
 export type QueueManagerConfig = {
   isTest: boolean
@@ -32,7 +32,7 @@ export type QueueConfiguration<
   jobOptions?:
     | JobOptionsWithDeduplicationIdBuilder<JobOptionsType>
     // biome-ignore lint/suspicious/noExplicitAny: We cannot infer type of payload, but we have run time validation
-    | ((payload: any) => JobOptionsWithDeduplicationIdBuilder<JobOptionsType>)
+    | ((payload: any) => JobOptionsType)
 }
 
 export type SupportedQueueIds<Config extends QueueConfiguration[]> = Config[number]['queueId']
