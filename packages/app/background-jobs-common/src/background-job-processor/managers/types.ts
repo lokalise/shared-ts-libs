@@ -32,7 +32,7 @@ export type QueueConfiguration<
   jobOptions?:
     | JobOptionsWithDeduplicationIdBuilder<JobOptionsType>
     // biome-ignore lint/suspicious/noExplicitAny: We cannot infer type of payload, but we have run time validation
-    | ((payload: any) => JobOptionsWithDeduplicationIdBuilder<JobOptionsType>)
+    | ((payload: any) => JobOptionsType)
 }
 
 export type SupportedQueueIds<Config extends QueueConfiguration[]> = Config[number]['queueId']
