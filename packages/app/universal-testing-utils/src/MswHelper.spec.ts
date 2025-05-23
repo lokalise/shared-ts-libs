@@ -1,9 +1,14 @@
 import { mapRouteToPath } from '@lokalise/api-contracts'
-import { sendByGetRoute, sendByPayloadRoute } from '@lokalise/frontend-http-client'
+import {
+  sendByDeleteRoute,
+  sendByGetRoute,
+  sendByPayloadRoute,
+} from '@lokalise/frontend-http-client'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch from 'wretch'
 import {
+  deleteContract,
   getContract,
   getContractWithPathParams,
   getContractWithQueryParams,
@@ -246,6 +251,23 @@ describe('MswHelper', () => {
                 "id": "test-name",
               }
             `)
+    })
+
+    it('mocks POST request custom void implementation', async () => {
+      const mock = vi.fn()
+
+      mswHelper.mockValidResponseWithImplementation(deleteContract, server, {
+        handleRequest: () => {
+          mock()
+        },
+      })
+
+      const response = await sendByDeleteRoute(wretchClient, deleteContract, {
+        pathParams: { userId: ':userId' },
+      })
+
+      expect(mock).toHaveBeenCalledOnce()
+      expect(response).toMatchInlineSnapshot('null')
     })
 
     it('mocks POST request with path params with custom implementation', async () => {
