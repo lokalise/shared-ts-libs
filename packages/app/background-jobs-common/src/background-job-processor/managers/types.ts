@@ -14,7 +14,7 @@ type JobOptionsWithDeduplicationIdBuilder<JobOptionsType extends JobsOptions> = 
   'deduplication'
 > & {
   deduplication?: Omit<NonNullable<JobOptionsType['deduplication']>, 'id'> & {
-    /** Callback to allow building deduplication id base on job data*/
+    /** @deprecated Use `jobOptions` as a function with payload as an argument instead. */
     // biome-ignore lint/suspicious/noExplicitAny: We cannot infer type of JobData, but we have run time validation
     idBuilder: (JobData: any) => string
   }
