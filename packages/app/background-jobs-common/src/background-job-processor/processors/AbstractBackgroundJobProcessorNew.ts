@@ -38,6 +38,7 @@ import type {
   BackgroundJobProcessorDependenciesNew,
   ProtectedWorker,
 } from './types.ts'
+import { ZodUnrecoverableError } from '../errors/ZodUnrecoverableError.js'
 
 export abstract class AbstractBackgroundJobProcessorNew<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
@@ -252,6 +253,11 @@ export abstract class AbstractBackgroundJobProcessorNew<
 
     try {
       this.monitor.jobStart(job, requestContext)
+
+      const parsedData = this.queueManager
+        .getQueueConfig(this.queueId)
+        .jobPayloadSchema.safeParse(job.data)
+      if (!parsedData.success) throw new ZodUnrecoverableError(parsedData.error)
 
       if (this.config.barrier) {
         const barrierResult = await this.config.barrier(job, this.executionContext)
