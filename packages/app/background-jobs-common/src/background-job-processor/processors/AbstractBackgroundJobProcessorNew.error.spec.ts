@@ -184,4 +184,42 @@ describe('AbstractBackgroundJobProcessorNew - error', () => {
     expect(processor.errorsOnProcess[0]).toMatchObject(errors[0]!)
     expect(errorReporterSpy).toHaveBeenCalledTimes(0)
   })
+
+  it('job throws validation unrecoverable error', async () => {
+    // Given
+    const errorReporterSpy = vi.spyOn(deps.errorReporter, 'report')
+
+    // When
+    // Starting queue manually as we are bypassing the queue manager's job scheduling
+    await queueManager.start(['queue'])
+    // We need to add job directly to bypass queue manager's validation
+    const job = await queueManager.getQueue('queue').add('queue', {
+      id: 'test_id',
+      value: 1 as any, // Invalid type
+      metadata: { correlationId: 'correlation_id' },
+    })
+
+    // Then
+    const jobSpy = await processor.spy.waitForJobWithId(job!.id, 'failed')
+
+    expect(processor.errorsOnProcess).length(1)
+    expect(jobSpy.attemptsMade).toBe(1)
+    expect(jobSpy.failedReason).toMatchInlineSnapshot(`
+      "[
+        {
+          "code": "invalid_type",
+          "expected": "string",
+          "received": "number",
+          "path": [
+            "value"
+          ],
+          "message": "Expected string, received number"
+        }
+      ]"
+    `)
+    expect(errorReporterSpy).toHaveBeenCalledTimes(1)
+    expect(errorReporterSpy.mock.calls[0]?.[0].error.message).toContain(
+      'Expected string, received number',
+    )
+  })
 })
