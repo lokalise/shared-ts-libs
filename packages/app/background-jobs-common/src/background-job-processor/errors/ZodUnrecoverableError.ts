@@ -1,5 +1,5 @@
-import { ZodError } from 'zod'
 import { UnrecoverableError } from 'bullmq'
+import { ZodError } from 'zod'
 
 export class ZodUnrecoverableError extends ZodError implements UnrecoverableError {
   constructor(error: ZodError) {

@@ -12,6 +12,7 @@ import {
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
 import { DEFAULT_WORKER_OPTIONS } from '../constants.ts'
+import { ZodUnrecoverableError } from '../errors/ZodUnrecoverableError.js'
 import {
   isJobMissingError,
   isMutedUnrecoverableJobError,
@@ -38,7 +39,6 @@ import type {
   BackgroundJobProcessorDependenciesNew,
   ProtectedWorker,
 } from './types.ts'
-import { ZodUnrecoverableError } from '../errors/ZodUnrecoverableError.js'
 
 export abstract class AbstractBackgroundJobProcessorNew<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
