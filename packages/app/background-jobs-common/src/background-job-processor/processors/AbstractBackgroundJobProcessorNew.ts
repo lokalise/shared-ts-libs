@@ -257,7 +257,6 @@ export abstract class AbstractBackgroundJobProcessorNew<
       const parsedData = this.queueManager
         .getQueueConfig(this.queueId)
         .jobPayloadSchema.safeParse(job.data)
-      // TODO: add tests
       if (!parsedData.success) throw new ZodUnrecoverableError(parsedData.error)
 
       if (this.config.barrier) {
