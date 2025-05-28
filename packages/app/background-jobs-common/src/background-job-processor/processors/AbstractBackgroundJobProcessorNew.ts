@@ -12,6 +12,7 @@ import {
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
 import { DEFAULT_WORKER_OPTIONS } from '../constants.ts'
+import { ZodUnrecoverableError } from '../errors/ZodUnrecoverableError.js'
 import {
   isJobMissingError,
   isMutedUnrecoverableJobError,
@@ -252,6 +253,11 @@ export abstract class AbstractBackgroundJobProcessorNew<
 
     try {
       this.monitor.jobStart(job, requestContext)
+
+      const parsedData = this.queueManager
+        .getQueueConfig(this.queueId)
+        .jobPayloadSchema.safeParse(job.data)
+      if (!parsedData.success) throw new ZodUnrecoverableError(parsedData.error)
 
       if (this.config.barrier) {
         const barrierResult = await this.config.barrier(job, this.executionContext)
