@@ -6,6 +6,7 @@ import wretch from 'wretch'
 import {
   getContract,
   getContractWithPathParams,
+  getContractWithQueryParams,
   postContract,
   postContractWithPathParams,
 } from '../test/testContracts.ts'
@@ -193,6 +194,85 @@ describe('MswHelper', () => {
       expect(await response.json()).toMatchInlineSnapshot(`
               {
                 "wrongId": "1",
+              }
+            `)
+    })
+  })
+
+  describe('mockValidResponseWithImplementation', () => {
+    it('mocks GET request without path params with query params with custom implementation', async () => {
+      mswHelper.mockValidResponseWithImplementation(getContractWithQueryParams, server, {
+        handleRequest: (requestInfo) => {
+          // msw doesn't parse query params on its own
+          const url = new URL(requestInfo.request.url)
+          return {
+            id: url.searchParams.get('yearFrom')!,
+          }
+        },
+      })
+
+      const response = await sendByGetRoute(wretchClient, getContractWithQueryParams, {
+        queryParams: { yearFrom: 2000 },
+      })
+
+      expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "2000",
+              }
+            `)
+    })
+
+    it('mocks POST request without path params with custom implementation', async () => {
+      const mock = vi.fn()
+
+      mswHelper.mockValidResponseWithImplementation(postContract, server, {
+        handleRequest: async (requestInfo) => {
+          const requestBody = await requestInfo.request.json()
+          mock(requestBody)
+
+          return {
+            id: requestBody.name,
+          }
+        },
+      })
+
+      const response = await sendByPayloadRoute(wretchClient, postContract, {
+        body: { name: 'test-name' },
+      })
+
+      expect(mock).toHaveBeenCalledWith({ name: 'test-name' })
+      expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "test-name",
+              }
+            `)
+    })
+
+    it('mocks POST request with path params with custom implementation', async () => {
+      const mock = vi.fn()
+
+      mswHelper.mockValidResponseWithImplementation(postContractWithPathParams, server, {
+        pathParams: { userId: ':userId' },
+        handleRequest: async (requestInfo) => {
+          mock(await requestInfo.request.json())
+
+          return {
+            id: `id-${requestInfo.params.userId}`,
+          }
+        },
+      })
+
+      const response = await sendByPayloadRoute(wretchClient, postContractWithPathParams, {
+        pathParams: {
+          userId: '3',
+        },
+        body: { name: 'test-name' },
+      })
+
+      expect(mock).toHaveBeenCalledWith({ name: 'test-name' })
+      expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "id-3",
               }
             `)
     })

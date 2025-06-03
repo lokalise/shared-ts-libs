@@ -1,12 +1,12 @@
 import { isError } from '@lokalise/node-core'
-import type { UnrecoverableError } from 'bullmq'
+import { UnrecoverableError } from 'bullmq'
 import {
   MUTED_UNRECOVERABLE_ERROR_SYMBOL,
   type MutedUnrecoverableError,
 } from './MutedUnrecoverableError.ts'
 
 export const isUnrecoverableJobError = (error: Error): error is UnrecoverableError =>
-  error.name === 'UnrecoverableError'
+  error.name === UnrecoverableError.name
 
 export const isMutedUnrecoverableJobError = (error: Error): error is MutedUnrecoverableError =>
   // biome-ignore lint/suspicious/noExplicitAny: checking for existence of prop outside or Error interface

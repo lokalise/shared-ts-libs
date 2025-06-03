@@ -10,6 +10,9 @@ const RESPONSE_BODY_SCHEMA = z.object({
 const PATH_PARAMS_SCHEMA = z.object({
   userId: z.string(),
 })
+const QUERY_PARAMS_SCHEMA = z.object({
+  yearFrom: z.coerce.number(),
+})
 
 export const postContract = buildPayloadRoute({
   successResponseBodySchema: RESPONSE_BODY_SCHEMA,
@@ -25,6 +28,16 @@ export const postContract = buildPayloadRoute({
 export const getContract = buildGetRoute({
   successResponseBodySchema: RESPONSE_BODY_SCHEMA,
   description: 'some description',
+  responseSchemasByStatusCode: {
+    200: RESPONSE_BODY_SCHEMA,
+  },
+  pathResolver: () => '/',
+})
+
+export const getContractWithQueryParams = buildGetRoute({
+  successResponseBodySchema: RESPONSE_BODY_SCHEMA,
+  description: 'some description',
+  requestQuerySchema: QUERY_PARAMS_SCHEMA,
   responseSchemasByStatusCode: {
     200: RESPONSE_BODY_SCHEMA,
   },

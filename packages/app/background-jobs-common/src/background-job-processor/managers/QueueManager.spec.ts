@@ -40,6 +40,11 @@ const supportedQueues = [
         correlationId: z.string(),
       }),
     }),
+    jobOptions() {
+      return {
+        attempts: 5,
+      }
+    },
   },
 ] as const satisfies QueueConfiguration[]
 
@@ -334,6 +339,11 @@ describe('QueueManager', () => {
         id: 'test_1',
         _execution: 'execution in progress',
         metadata: { correlationId: 'correlation_id' },
+      })
+      expect(spyResult1).toMatchObject({
+        opts: {
+          attempts: 5,
+        },
       })
 
       const jobId2 = await queueManager.schedule('queue3', {

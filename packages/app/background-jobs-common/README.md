@@ -90,7 +90,7 @@ To set up a queue configuration, you need to define a list of objects containing
    The delimiter is `QUEUE_GROUP_DELIMITER`.
    You can use the helper `commonBullDashboardGroupingBuilder(serviceId, moduleId)` to generate a grouping like `['serviceId', 'moduleId']`.
 - **`jobPayloadSchema`**: A Zod schema that defines the structure of the jobs payload for this queue.
-- **`jobOptions`**: Default options for jobs in this queue. See [BullMQ documentation](https://docs.bullmq.io/guide/job-options).
+- **`jobOptions`**: Default options for jobs in this queue. Can be a function that will be resolved when a job is scheduled. See [BullMQ documentation](https://docs.bullmq.io/guide/job-options).
 
 #### Job Deduplication
 

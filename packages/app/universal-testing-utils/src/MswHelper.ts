@@ -1,10 +1,17 @@
 import {
   type CommonRouteDefinition,
+  type InferSchemaInput,
   type InferSchemaOutput,
+  type PayloadRouteDefinition,
   mapRouteToPath,
 } from '@lokalise/api-contracts'
-import type { InferSchemaInput } from '@lokalise/api-contracts'
-import { http, HttpResponse } from 'msw'
+import {
+  http,
+  type DefaultBodyType,
+  HttpResponse,
+  type HttpResponseResolver,
+  type PathParams,
+} from 'msw'
 import type { SetupServerApi } from 'msw/node'
 import type { ZodObject, z } from 'zod'
 
@@ -20,6 +27,26 @@ export type MockParams<PathParams, ResponseBody> = {
 export type MockParamsNoPath<ResponseBody> = {
   responseBody: ResponseBody
 } & CommonMockParams
+
+export type MockWithImplementationParamsNoPath<
+  Params extends PathParams<keyof Params>,
+  RequestBody extends DefaultBodyType,
+  ResponseBody extends DefaultBodyType,
+> = {
+  handleRequest: (
+    requestInfo: Parameters<HttpResponseResolver<Params, RequestBody, ResponseBody>>[0],
+  ) => ResponseBody | Promise<ResponseBody>
+} & CommonMockParams
+
+export type MockWithImplementationParams<
+  Params extends PathParams<keyof Params>,
+  RequestBody extends DefaultBodyType,
+  ResponseBody extends DefaultBodyType,
+> = {
+  pathParams: Params
+} & MockWithImplementationParamsNoPath<Params, RequestBody, ResponseBody>
+
+type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
 
 function joinURL(base: string, path: string): string {
   return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
@@ -53,7 +80,7 @@ export class MswHelper {
 
     const resolvedPath = joinURL(this.baseUrl, path)
     // @ts-expect-error
-    const method: 'get' | 'delete' | 'post' | 'patch' | 'put' = contract.method
+    const method: HttpMethod = contract.method
     server.use(
       http[method](resolvedPath, () =>
         HttpResponse.json(params.responseBody, {
@@ -95,13 +122,76 @@ export class MswHelper {
 
     const resolvedPath = joinURL(this.baseUrl, path)
     // @ts-expect-error
-    const method: 'get' | 'delete' | 'post' | 'patch' | 'put' = contract.method
+    const method: HttpMethod = contract.method
     server.use(
       http[method](resolvedPath, () =>
         HttpResponse.json(params.responseBody, {
           status: params.responseCode,
         }),
       ),
+    )
+  }
+
+  mockValidResponseWithImplementation<
+    ResponseBodySchema extends z.Schema,
+    PathParamsSchema extends z.Schema | undefined,
+    RequestBodySchema extends z.Schema | undefined = undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
+    RequestHeaderSchema extends z.Schema | undefined = undefined,
+    IsNonJSONResponseExpected extends boolean = false,
+    IsEmptyResponseExpected extends boolean = false,
+  >(
+    contract:
+      | CommonRouteDefinition<
+          InferSchemaOutput<PathParamsSchema>,
+          ResponseBodySchema,
+          PathParamsSchema,
+          RequestQuerySchema,
+          RequestHeaderSchema,
+          IsNonJSONResponseExpected,
+          IsEmptyResponseExpected
+        >
+      | PayloadRouteDefinition<InferSchemaOutput<PathParamsSchema>, RequestBodySchema>,
+    server: SetupServerApi,
+    params: PathParamsSchema extends undefined
+      ? MockWithImplementationParamsNoPath<
+          PathParams,
+          InferSchemaInput<RequestBodySchema>,
+          InferSchemaInput<ResponseBodySchema>
+        >
+      : MockWithImplementationParams<
+          InferSchemaInput<PathParamsSchema>,
+          InferSchemaInput<RequestBodySchema>,
+          InferSchemaInput<ResponseBodySchema>
+        >,
+  ): void {
+    const path = contract.requestPathParamsSchema
+      ? // @ts-expect-error this is safe
+        contract.pathResolver(params.pathParams)
+      : mapRouteToPath(contract)
+
+    const resolvedPath = joinURL(this.baseUrl, path)
+
+    // @ts-expect-error
+    const method: HttpMethod = contract.method
+
+    server.use(
+      http[method](resolvedPath, async (requestInfo) => {
+        return HttpResponse.json(
+          await params.handleRequest(
+            requestInfo as Parameters<
+              HttpResponseResolver<
+                InferSchemaInput<PathParamsSchema>,
+                InferSchemaInput<RequestBodySchema>,
+                InferSchemaInput<ResponseBodySchema>
+              >
+            >[0],
+          ),
+          {
+            status: params.responseCode,
+          },
+        )
+      }),
     )
   }
 

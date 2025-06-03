@@ -210,14 +210,23 @@ export class QueueManager<
     jobPayload: JobPayloadForQueue<Queues, QueueId>,
     options?: JobOptionsType,
   ): JobOptionsType {
-    const defaultOptions = this.queueRegistry.getQueueConfig(queueId).jobOptions
+    const queueConfig = this.queueRegistry.getQueueConfig(queueId)
+
+    const defaultOptions =
+      typeof queueConfig.jobOptions === 'function'
+        ? queueConfig.jobOptions(jobPayload)
+        : queueConfig.jobOptions
+
     const resolvedOptions: JobOptionsType = merge(
       defaultOptions ?? {},
       options ?? {},
     ) as JobOptionsType
 
     if (defaultOptions?.deduplication && !options?.deduplication) {
-      const deduplicationId = defaultOptions.deduplication.idBuilder(jobPayload)
+      const deduplicationId =
+        'id' in defaultOptions.deduplication
+          ? defaultOptions.deduplication.id
+          : defaultOptions.deduplication.idBuilder(jobPayload)
       if (!deduplicationId || deduplicationId.trim().length === 0) {
         throw new Error('Invalid deduplication id')
       }
