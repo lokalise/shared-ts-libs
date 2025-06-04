@@ -42,7 +42,7 @@ export class TestStalledBackgroundJobProcessor<
   }
 
   protected override async process(): Promise<void> {
-    await setTimeout(500)
+    await setTimeout(3000) // Simulate a long-running job
   }
 
   protected override onFailed(job: Job<T>, error: Error): Promise<void> {
