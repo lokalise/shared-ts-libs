@@ -1,0 +1,19 @@
+language css;
+
+// Match the values assigned to z-index properties
+`z-index: $zIndexValue;` where {
+
+    // Check that the value is using the design library for z-index values
+    // we negate the result as failure to comply with the design library should result in the warning
+    not $zIndexValue <: r"^var\(--lok-z-index-\S+\)$",
+
+    // This is generating the helpful error report that points out any violation
+    // it's a built in function that adds the code with arrows and a description of what's wrong
+    register_diagnostic(
+        span = $zIndexValue,
+        message = "lokalise/plugin/noManualZIndex :: z-index values should be set using the design library. Please use refer to https://lokalise.github.io/louis/?path=/docs/foundations-z-index--docs",
+
+        // This is only a warning for now because I can't find a way to biome-ignore the error produced by plugins
+        severity = "warn",
+    ),
+}
