@@ -37,7 +37,7 @@ export class TestStalledBackgroundJobProcessor<
       attempts: 1,
       backoff: { type: 'fixed', delay: 1 },
       removeOnComplete: true,
-      removeOnFail: false,
+      removeOnFail: 1, // we should keep the job in the queue to test the stalled job behavior
     })
   }
 
@@ -46,7 +46,7 @@ export class TestStalledBackgroundJobProcessor<
   }
 
   protected override onFailed(job: Job<T>, error: Error): Promise<void> {
-    console.info(job, error)
+    console.info("Attempts Made:", job.attemptsMade)
     this._onFailedErrors.push({ job, error })
     return Promise.resolve()
   }
