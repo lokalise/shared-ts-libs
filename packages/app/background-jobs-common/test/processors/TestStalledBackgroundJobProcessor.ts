@@ -46,7 +46,7 @@ export class TestStalledBackgroundJobProcessor<
   }
 
   protected override onFailed(job: Job<T>, error: Error): Promise<void> {
-    console.info("Attempts Made:", job.attemptsMade)
+    console.info('Attempts Made:', job.attemptsMade)
     this._onFailedErrors.push({ job, error })
     return Promise.resolve()
   }
