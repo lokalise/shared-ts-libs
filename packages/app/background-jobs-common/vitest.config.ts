@@ -11,7 +11,7 @@ export default defineConfig({
     poolOptions: {
       threads: {
         singleThread: true,
-        isolate: true,
+        isolate: false,
       },
     },
     coverage: {

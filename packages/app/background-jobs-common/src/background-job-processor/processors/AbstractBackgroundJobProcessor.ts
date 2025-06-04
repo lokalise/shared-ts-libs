@@ -328,6 +328,8 @@ export abstract class AbstractBackgroundJobProcessor<
   private async processInternal(job: JobType): Promise<JobReturn> {
     const requestContext = this.monitor.getRequestContext(job)
 
+    console.info('Internal process: ', job.attemptsMade)
+
     try {
       this.monitor.jobStart(job, requestContext)
 
@@ -346,10 +348,14 @@ export abstract class AbstractBackgroundJobProcessor<
       await job.updateProgress(100)
       return result
     } catch (error) {
+      console.info('Internal process catch 1: ', job.attemptsMade)
       this.monitor.jobAttemptError(job, error, requestContext)
+      console.info('Internal process catch 2: ', job.attemptsMade)
       throw error
     } finally {
+      console.info('Internal process finally 1: ', job.attemptsMade)
       this.monitor.jobEnd(job, requestContext)
+      console.info('Internal process finally 2: ', job.attemptsMade)
     }
   }
 
@@ -386,6 +392,7 @@ export abstract class AbstractBackgroundJobProcessor<
       isStalledJobError(error) ||
       job.opts.attempts === job.attemptsMade
     ) {
+      console.info('Attempts made: ', job.attemptsMade)
       await this.internalOnHook(job, requestContext, async (job, requestContext) =>
         this.onFailed(job, error, requestContext),
       )
