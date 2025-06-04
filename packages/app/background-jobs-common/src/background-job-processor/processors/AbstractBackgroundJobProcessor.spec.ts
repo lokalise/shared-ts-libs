@@ -37,6 +37,53 @@ describe('AbstractBackgroundJobProcessor', () => {
     await factory.dispose()
   })
 
+
+  describe('stalled before', () => {
+    let stalledProcessor: TestStalledBackgroundJobProcessor<JobData>
+
+    beforeEach(async () => {
+      stalledProcessor = new TestStalledBackgroundJobProcessor(deps, factory.getRedisConfig())
+      await stalledProcessor.start()
+    })
+
+    afterEach(async () => {
+      await stalledProcessor.dispose()
+    })
+
+    it('handling stalled errors', async () => {
+      // Given
+      const errorReporterSpy = vi.spyOn(deps.errorReporter, 'report')
+
+      // When
+      const jobData = {
+        id: generateMonotonicUuid(),
+        value: 'test',
+        metadata: { correlationId: generateMonotonicUuid() },
+      }
+      const jobId = await stalledProcessor.schedule(jobData)
+
+      // Then
+      await waitAndRetry(() => stalledProcessor.onFailedErrors.length > 0, 100, 20)
+      expect(stalledProcessor?.onFailedErrors).length(1)
+
+      const onFailedCall = stalledProcessor?.onFailedErrors[0]
+      expect(onFailedCall!.error.message).toBe('job stalled more than allowable limit')
+      expect(onFailedCall!.job.id).toBe(jobId)
+      expect(onFailedCall!.job.data.id).toBe(jobData.id)
+      expect(onFailedCall!.job.attemptsMade).toBe(0)
+
+      expect(errorReporterSpy).toHaveBeenCalledWith({
+        error: onFailedCall!.error,
+        context: {
+          jobId,
+          jobName: 'TestStalledBackgroundJobProcessor queue',
+          'x-request-id': jobData.metadata.correlationId,
+          errorJson: expect.stringContaining(onFailedCall!.error.message),
+        },
+      })
+    })
+  })
+
   describe('start', () => {
     it('throws an error if queue id is not unique', async () => {
       const job1 = new FakeBackgroundJobProcessor<JobData>(deps, 'queue1', factory.getRedisConfig())

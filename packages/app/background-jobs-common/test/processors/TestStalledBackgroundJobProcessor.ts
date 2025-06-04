@@ -21,7 +21,7 @@ export class TestStalledBackgroundJobProcessor<
     super(dependencies, {
       queueId: 'TestStalledBackgroundJobProcessor queue',
       ownerName: 'test',
-      isTest: false, // We don't want to override job options for this processor
+      isTest: true, // We don't want to override job options for this processor
       workerOptions: {
         lockDuration: 10,
         stalledInterval: 1,
