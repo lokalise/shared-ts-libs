@@ -645,6 +645,7 @@ describe('AbstractBackgroundJobProcessor', () => {
     let stalledProcessor: TestStalledBackgroundJobProcessor<JobData>
 
     beforeEach(async () => {
+      await factory.clearRedis()
       stalledProcessor = new TestStalledBackgroundJobProcessor(deps, factory.getRedisConfig())
       await stalledProcessor.start()
     })
