@@ -37,7 +37,6 @@ describe('AbstractBackgroundJobProcessor', () => {
     await factory.dispose()
   })
 
-
   describe('stalled before', () => {
     let stalledProcessor: TestStalledBackgroundJobProcessor<JobData>
 
