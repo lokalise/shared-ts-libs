@@ -673,7 +673,7 @@ describe('AbstractBackgroundJobProcessor', () => {
       expect(onFailedCall!.error.message).toBe('job stalled more than allowable limit')
       expect(onFailedCall!.job.id).toBe(jobId)
       expect(onFailedCall!.job.data.id).toBe(jobData.id)
-      expect(onFailedCall!.job.attemptsMade).toBe(0)
+      expect(onFailedCall!.job.attemptsMade).toBe(1)
 
       expect(errorReporterSpy).toHaveBeenCalledWith({
         error: onFailedCall!.error,
