@@ -1,4 +1,4 @@
-import { buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
+import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import { z } from 'zod'
 
 const REQUEST_BODY_SCHEMA = z.object({
@@ -30,6 +30,15 @@ export const getContract = buildGetRoute({
   description: 'some description',
   responseSchemasByStatusCode: {
     200: RESPONSE_BODY_SCHEMA,
+  },
+  pathResolver: () => '/',
+})
+
+export const deleteContract = buildDeleteRoute({
+  successResponseBodySchema: z.void(),
+  description: 'some description',
+  responseSchemasByStatusCode: {
+    201: z.void(),
   },
   pathResolver: () => '/',
 })
