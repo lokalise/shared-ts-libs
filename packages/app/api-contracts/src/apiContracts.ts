@@ -1,5 +1,7 @@
-import type { ZodSchema, z } from 'zod'
+import type { ZodSchema, z } from 'zod/v4'
 import type { HttpStatusCode } from './HttpStatusCodes.ts'
+
+export type { HttpStatusCode }
 
 const EMPTY_PARAMS = {}
 
@@ -20,9 +22,8 @@ export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
 export interface CommonRouteDefinitionMetadata extends Record<string, unknown> {}
 
 export type CommonRouteDefinition<
-  PathParams,
   ResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema<PathParams> | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
@@ -54,16 +55,14 @@ export type CommonRouteDefinition<
 }
 
 export type PayloadRouteDefinition<
-  PathParams,
   RequestBodySchema extends z.Schema | undefined = undefined,
   SuccessResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema<PathParams> | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 > = CommonRouteDefinition<
-  PathParams,
   SuccessResponseBodySchema,
   PathParamsSchema,
   RequestQuerySchema,
@@ -76,15 +75,13 @@ export type PayloadRouteDefinition<
 }
 
 export type GetRouteDefinition<
-  PathParams,
   SuccessResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema<PathParams> | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
 > = CommonRouteDefinition<
-  PathParams,
   SuccessResponseBodySchema,
   PathParamsSchema,
   RequestQuerySchema,
@@ -96,15 +93,13 @@ export type GetRouteDefinition<
 }
 
 export type DeleteRouteDefinition<
-  PathParams,
   SuccessResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema<PathParams> | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
 > = CommonRouteDefinition<
-  PathParams,
   SuccessResponseBodySchema,
   PathParamsSchema,
   RequestQuerySchema,
@@ -123,10 +118,8 @@ export function buildPayloadRoute<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
-  PathParams = PathParamsSchema extends z.Schema<infer T> ? T : never,
 >(
   params: PayloadRouteDefinition<
-    PathParams,
     RequestBodySchema,
     SuccessResponseBodySchema,
     PathParamsSchema,
@@ -136,7 +129,6 @@ export function buildPayloadRoute<
     IsEmptyResponseExpected
   >,
 ): PayloadRouteDefinition<
-  PathParams,
   RequestBodySchema,
   SuccessResponseBodySchema,
   PathParamsSchema,
@@ -171,11 +163,9 @@ export function buildGetRoute<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
-  PathParams = PathParamsSchema extends z.Schema<infer T> ? T : never,
 >(
   params: Omit<
     GetRouteDefinition<
-      PathParams,
       SuccessResponseBodySchema,
       PathParamsSchema,
       RequestQuerySchema,
@@ -186,7 +176,6 @@ export function buildGetRoute<
     'method'
   >,
 ): GetRouteDefinition<
-  PathParams,
   SuccessResponseBodySchema,
   PathParamsSchema,
   RequestQuerySchema,
@@ -219,11 +208,9 @@ export function buildDeleteRoute<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
-  PathParams = PathParamsSchema extends z.Schema<infer T> ? T : never,
 >(
   params: Omit<
     DeleteRouteDefinition<
-      PathParams,
       SuccessResponseBodySchema,
       PathParamsSchema,
       RequestQuerySchema,
@@ -234,7 +221,6 @@ export function buildDeleteRoute<
     'method'
   >,
 ): DeleteRouteDefinition<
-  PathParams,
   SuccessResponseBodySchema,
   PathParamsSchema,
   RequestQuerySchema,
@@ -265,7 +251,7 @@ export function buildDeleteRoute<
  */
 export function mapRouteToPath(
   // biome-ignore lint/suspicious/noExplicitAny: We don't care about types here, we just need Zod schema
-  routeDefinition: CommonRouteDefinition<any, any, any, any, any, any, any>,
+  routeDefinition: CommonRouteDefinition<any, any, any, any, any, any>,
 ): string {
   if (!routeDefinition.requestPathParamsSchema) {
     return routeDefinition.pathResolver(EMPTY_PARAMS)
