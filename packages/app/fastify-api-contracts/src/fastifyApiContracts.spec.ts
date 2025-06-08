@@ -6,7 +6,7 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod'
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import {
   buildFastifyNoPayloadRoute,
   buildFastifyNoPayloadRouteHandler,
@@ -95,7 +95,7 @@ describe('fastifyApiContracts', () => {
         expect(req.params.userId).toEqual('1')
         // satisfies checks if type is inferred properly in route
         expect(req.query.testIds satisfies string[] | undefined).toBeUndefined()
-        return Promise.resolve(JSON.stringify({}))
+        return Promise.resolve()
       })
       expect(route.config.apiContract).toBe(contract)
 

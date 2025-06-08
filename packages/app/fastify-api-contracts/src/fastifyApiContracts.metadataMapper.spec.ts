@@ -1,6 +1,6 @@
 import { buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import { describe, expect, it } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { buildFastifyNoPayloadRoute, buildFastifyPayloadRoute } from './fastifyApiContracts.ts'
 
 const SCHEMA = z.object({ id: z.string() })

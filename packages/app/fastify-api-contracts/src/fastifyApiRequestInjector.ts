@@ -5,7 +5,7 @@ import type {
   PayloadRouteDefinition,
 } from '@lokalise/api-contracts'
 import type { FastifyInstance } from 'fastify'
-import type { z } from 'zod'
+import type { z } from 'zod/v4'
 
 // biome-ignore lint/suspicious/noExplicitAny: we don't care about what kind of app instance we get here
 type AnyFastifyInstance = FastifyInstance<any, any, any, any>
@@ -54,7 +54,6 @@ export async function injectGet<
 >(
   app: AnyFastifyInstance,
   apiContract: GetRouteDefinition<
-    InferSchemaOutput<PathParamsSchema>,
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
@@ -94,7 +93,6 @@ export async function injectDelete<
 >(
   app: AnyFastifyInstance,
   apiContract: DeleteRouteDefinition<
-    InferSchemaOutput<PathParamsSchema>,
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
@@ -135,7 +133,6 @@ export async function injectPost<
 >(
   app: AnyFastifyInstance,
   apiContract: PayloadRouteDefinition<
-    InferSchemaOutput<PathParamsSchema>,
     RequestBodySchema,
     ResponseBodySchema,
     PathParamsSchema,
@@ -180,7 +177,6 @@ export async function injectPut<
 >(
   app: AnyFastifyInstance,
   apiContract: PayloadRouteDefinition<
-    InferSchemaOutput<PathParamsSchema>,
     RequestBodySchema,
     ResponseBodySchema,
     PathParamsSchema,
@@ -225,7 +221,6 @@ export async function injectPatch<
 >(
   app: AnyFastifyInstance,
   apiContract: PayloadRouteDefinition<
-    InferSchemaOutput<PathParamsSchema>,
     RequestBodySchema,
     ResponseBodySchema,
     PathParamsSchema,
