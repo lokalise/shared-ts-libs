@@ -11,7 +11,8 @@ import type {
   RequestResult,
   RetryConfig,
 } from 'undici-retry'
-import type { ZodError, ZodSchema, z } from 'zod/v3'
+import type { ZodError, ZodSchema } from 'zod/v4'
+import { z } from 'zod/v4'
 
 import type {
   DeleteRouteDefinition,
@@ -34,6 +35,8 @@ type PayloadMethods = 'POST' | 'PUT' | 'PATCH'
 type NonPayloadMethods = 'DELETE' | 'GET'
 type DEFAULT_THROW_ON_ERROR = typeof DEFAULT_OPTIONS.throwOnError
 
+const _EMPTY_SCHEMA = z.null()
+
 export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
   return new Client(baseUrl, {
     ...defaultClientOptions,
@@ -42,15 +45,17 @@ export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
 }
 
 export async function sendGet<
-  T,
+  T extends ZodSchema,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
   client: Client,
   path: string,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
-  const result = await sendWithRetry<T>(
+): Promise<
+  RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError>
+> {
+  const result = await sendWithRetry<InferSchemaOutput<T>>(
     client,
     {
       ...DEFAULT_OPTIONS,
@@ -81,15 +86,17 @@ export async function sendGet<
 }
 
 export async function sendDelete<
-  T,
+  T extends ZodSchema,
   IsEmptyResponseExpected extends boolean = true,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
   client: Client,
   path: string,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
-  const result = await sendWithRetry<T>(
+): Promise<
+  RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError>
+> {
+  const result = await sendWithRetry<InferSchemaOutput<T>>(
     client,
     {
       ...DEFAULT_OPTIONS,
@@ -120,7 +127,7 @@ export async function sendDelete<
 }
 
 async function sendResourceChange<
-  T,
+  ResponseBodySchema extends ZodSchema,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
@@ -128,9 +135,15 @@ async function sendResourceChange<
   method: PayloadMethods,
   path: string,
   body: RecordObject | undefined,
-  options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
-) {
-  const result = await sendWithRetry<T>(
+  options: RequestOptions<ResponseBodySchema, IsEmptyResponseExpected, DoThrowOnError>,
+): Promise<
+  RequestResultDefinitiveEither<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsEmptyResponseExpected,
+    DoThrowOnError
+  >
+> {
+  const result = await sendWithRetry<InferSchemaOutput<ResponseBodySchema>>(
     client,
     {
       ...DEFAULT_OPTIONS,
@@ -162,7 +175,7 @@ async function sendResourceChange<
 }
 
 async function sendNonPayload<
-  T,
+  T extends ZodSchema,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
@@ -174,7 +187,7 @@ async function sendNonPayload<
     'isEmptyResponseExpected'
   > & { isEmptyResponseExpected: boolean },
 ) {
-  const result = await sendWithRetry<T>(
+  const result = await sendWithRetry<InferSchemaOutput<T>>(
     client,
     {
       ...DEFAULT_OPTIONS,
@@ -205,7 +218,7 @@ async function sendNonPayload<
 }
 
 export function sendPost<
-  T,
+  T extends ZodSchema,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
@@ -213,12 +226,14 @@ export function sendPost<
   path: string,
   body: RecordObject | undefined,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
+): Promise<
+  RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError>
+> {
   return sendResourceChange(client, 'POST', path, body, options)
 }
 
 export async function sendPostBinary<
-  T,
+  T extends ZodSchema,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
@@ -226,8 +241,10 @@ export async function sendPostBinary<
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
-  const result = await sendWithRetry<T>(
+): Promise<
+  RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError>
+> {
+  const result = await sendWithRetry<InferSchemaOutput<T>>(
     client,
     {
       ...DEFAULT_OPTIONS,
@@ -259,7 +276,7 @@ export async function sendPostBinary<
 }
 
 export function sendPut<
-  T,
+  T extends ZodSchema,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
@@ -267,12 +284,14 @@ export function sendPut<
   path: string,
   body: RecordObject | undefined,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
+): Promise<
+  RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError>
+> {
   return sendResourceChange(client, 'PUT', path, body, options)
 }
 
 export async function sendPutBinary<
-  T,
+  T extends ZodSchema,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
@@ -280,8 +299,10 @@ export async function sendPutBinary<
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
-  const result = await sendWithRetry<T>(
+): Promise<
+  RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError>
+> {
+  const result = await sendWithRetry<InferSchemaOutput<T>>(
     client,
     {
       ...DEFAULT_OPTIONS,
@@ -313,7 +334,7 @@ export async function sendPutBinary<
 }
 
 export function sendPatch<
-  T,
+  T extends ZodSchema,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
@@ -321,11 +342,14 @@ export function sendPatch<
   path: string,
   body: RecordObject | undefined,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
-): Promise<RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>> {
+): Promise<
+  RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError>
+> {
   return sendResourceChange(client, 'PATCH', path, body, options)
 }
 
-function resolveRequestConfig(options: InternalRequestOptions<unknown>): RequestParams {
+// biome-ignore lint/suspicious/noExplicitAny: we don't care here
+function resolveRequestConfig(options: InternalRequestOptions<any>): RequestParams {
   return {
     safeParseJson: options.safeParseJson ?? false,
     blobBody: options.blobResponseBody ?? false,
@@ -334,18 +358,26 @@ function resolveRequestConfig(options: InternalRequestOptions<unknown>): Request
   }
 }
 
-function resolveRetryConfig(options: InternalRequestOptions<unknown>): RetryConfig {
+// biome-ignore lint/suspicious/noExplicitAny: we don't care here
+function resolveRetryConfig(options: InternalRequestOptions<any>): RetryConfig {
   return options.retryConfig ?? NO_RETRY_CONFIG
 }
 
-function resolveResult<T, IsEmptyResponseExpected extends boolean, DoThrowOnError extends boolean>(
-  requestResult: Either<RequestResult<unknown> | InternalRequestError, RequestResult<T>>,
+function resolveResult<
+  T extends ZodSchema,
+  IsEmptyResponseExpected extends boolean,
+  DoThrowOnError extends boolean,
+>(
+  requestResult: Either<
+    RequestResult<unknown> | InternalRequestError,
+    RequestResult<InferSchemaOutput<T>>
+  >,
   throwOnError: DoThrowOnError,
   validateResponse: boolean,
-  validationSchema: ZodSchema<T>,
+  validationSchema: T,
   requestLabel: string,
   isEmptyResponseExpected: IsEmptyResponseExpected,
-): RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError> {
+): RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError> {
   // Throw response error
   if (requestResult.error && throwOnError) {
     throw isRequestResult(requestResult.error)
@@ -363,13 +395,17 @@ function resolveResult<T, IsEmptyResponseExpected extends boolean, DoThrowOnErro
     )
   }
 
-  return requestResult as RequestResultDefinitiveEither<T, IsEmptyResponseExpected, DoThrowOnError>
+  return requestResult as RequestResultDefinitiveEither<
+    InferSchemaOutput<T>,
+    IsEmptyResponseExpected,
+    DoThrowOnError
+  >
 }
 
-function handleRequestResultSuccess<T>(
-  result: RequestResult<T>,
+function handleRequestResultSuccess<T extends ZodSchema>(
+  result: RequestResult<InferSchemaOutput<T>>,
   validateResponse: boolean,
-  validationSchema: ZodSchema<T>,
+  validationSchema: T,
   requestLabel: string,
   isEmptyResponseExpected: boolean,
 ) {
@@ -384,6 +420,7 @@ function handleRequestResultSuccess<T>(
       throw new Error(`Response validation schema not set for request ${requestLabel}`)
     }
     try {
+      // @ts-expect-error no longer infers correctly after v4
       result.body = validationSchema.parse(result.body)
     } catch (err: unknown) {
       for (const issue of (err as ZodError).issues) {
@@ -411,7 +448,6 @@ export function sendByPayloadRoute<
 >(
   client: Client,
   routeDefinition: PayloadRouteDefinition<
-    InferSchemaOutput<PathParamsSchema>,
     RequestBodySchema,
     ResponseBodySchema,
     PathParamsSchema,
@@ -427,7 +463,7 @@ export function sendByPayloadRoute<
     InferSchemaInput<RequestHeaderSchema>
   >,
   options: Omit<
-    RequestOptions<InferSchemaOutput<ResponseBodySchema>, IsEmptyResponseExpected, DoThrowOnError>,
+    RequestOptions<ResponseBodySchema, IsEmptyResponseExpected, DoThrowOnError>,
     'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
   >,
 ): Promise<
@@ -437,7 +473,7 @@ export function sendByPayloadRoute<
     DoThrowOnError
   >
 > {
-  return sendResourceChange(
+  return sendResourceChange<ResponseBodySchema, IsEmptyResponseExpected, DoThrowOnError>(
     client,
     // @ts-expect-error TS loses exact string type during uppercasing
     routeDefinition.method.toUpperCase(),
@@ -468,7 +504,6 @@ export function sendByGetRoute<
 >(
   client: Client,
   routeDefinition: GetRouteDefinition<
-    InferSchemaOutput<PathParamsSchema>,
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
@@ -482,7 +517,7 @@ export function sendByGetRoute<
     InferSchemaInput<RequestHeaderSchema>
   >,
   options: Omit<
-    RequestOptions<InferSchemaOutput<ResponseBodySchema>, IsEmptyResponseExpected, DoThrowOnError>,
+    RequestOptions<ResponseBodySchema, IsEmptyResponseExpected, DoThrowOnError>,
     'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
   >,
 ): Promise<
@@ -521,7 +556,6 @@ export function sendByDeleteRoute<
 >(
   client: Client,
   routeDefinition: DeleteRouteDefinition<
-    InferSchemaOutput<PathParamsSchema>,
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
@@ -535,7 +569,7 @@ export function sendByDeleteRoute<
     InferSchemaInput<RequestHeaderSchema>
   >,
   options: Omit<
-    RequestOptions<InferSchemaOutput<ResponseBodySchema>, IsEmptyResponseExpected, DoThrowOnError>,
+    RequestOptions<ResponseBodySchema, IsEmptyResponseExpected, DoThrowOnError>,
     'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
   >,
 ): Promise<

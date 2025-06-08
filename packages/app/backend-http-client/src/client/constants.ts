@@ -1,7 +1,7 @@
 import type { MayOmit } from '@lokalise/node-core'
 import type { Client } from 'undici'
 
-import { z } from 'zod/v3'
+import { z } from 'zod/v4'
 import type { RequestOptions } from './types.ts'
 
 export const DEFAULT_OPTIONS = {
