@@ -127,7 +127,7 @@ export async function sendDelete<
 }
 
 async function sendResourceChange<
-  ResponseBodySchema extends ZodSchema,
+  ResponseBodySchema extends ZodSchema | undefined,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
@@ -175,7 +175,7 @@ async function sendResourceChange<
 }
 
 async function sendNonPayload<
-  T extends ZodSchema,
+  T extends ZodSchema | undefined,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
@@ -364,7 +364,7 @@ function resolveRetryConfig(options: InternalRequestOptions<any>): RetryConfig {
 }
 
 function resolveResult<
-  T extends ZodSchema,
+  T extends ZodSchema | undefined,
   IsEmptyResponseExpected extends boolean,
   DoThrowOnError extends boolean,
 >(
@@ -402,7 +402,7 @@ function resolveResult<
   >
 }
 
-function handleRequestResultSuccess<T extends ZodSchema>(
+function handleRequestResultSuccess<T extends ZodSchema | undefined>(
   result: RequestResult<InferSchemaOutput<T>>,
   validateResponse: boolean,
   validationSchema: T,

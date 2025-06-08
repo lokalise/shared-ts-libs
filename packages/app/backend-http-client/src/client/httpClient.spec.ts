@@ -72,7 +72,19 @@ describe('httpClient', () => {
           requestLabel: 'dummy',
           validateResponse: true,
         }),
-      ).rejects.toThrow(/Expected string, received number/)
+      ).rejects.toThrowErrorMatchingInlineSnapshot(`
+        [ZodError: [
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": [
+              "id"
+            ],
+            "message": "Invalid input: expected string, received number",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `)
     })
 
     it('validates response structure with provided schema, passes validation', async () => {
@@ -143,11 +155,10 @@ describe('httpClient', () => {
       ).rejects.toMatchInlineSnapshot(`
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "number",
-            "received": "string",
+            "code": "invalid_type",
             "path": [],
-            "message": "Expected number, received string",
+            "message": "Invalid input: expected number, received string",
             "requestLabel": "dummy"
           }
         ]]
@@ -491,18 +502,19 @@ describe('httpClient', () => {
             requestLabel: 'Test request',
           },
         ),
-      ).rejects.toThrow(`[
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "number",
-    "path": [
-      "id"
-    ],
-    "message": "Expected string, received number",
-    "requestLabel": "Test request"
-  }
-]`)
+      ).rejects.toThrowErrorMatchingInlineSnapshot(`
+        [ZodError: [
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": [
+              "id"
+            ],
+            "message": "Invalid input: expected string, received number",
+            "requestLabel": "Test request"
+          }
+        ]]
+      `)
     })
 
     it('validates response structure with provided schema, passes validation', async () => {
@@ -606,11 +618,10 @@ describe('httpClient', () => {
       ).rejects.toMatchInlineSnapshot(`
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "number",
-            "received": "string",
+            "code": "invalid_type",
             "path": [],
-            "message": "Expected number, received string",
+            "message": "Invalid input: expected number, received string",
             "requestLabel": "dummy"
           }
         ]]
@@ -762,11 +773,10 @@ describe('httpClient', () => {
       ).rejects.toMatchInlineSnapshot(`
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "number",
-            "received": "string",
+            "code": "invalid_type",
             "path": [],
-            "message": "Expected number, received string",
+            "message": "Invalid input: expected number, received string",
             "requestLabel": "dummy"
           }
         ]]
@@ -839,18 +849,19 @@ describe('httpClient', () => {
             requestLabel: 'Test request',
           },
         ),
-      ).rejects.toThrow(`[
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "number",
-    "path": [
-      "id"
-    ],
-    "message": "Expected string, received number",
-    "requestLabel": "Test request"
-  }
-]`)
+      ).rejects.toThrowErrorMatchingInlineSnapshot(`
+        [ZodError: [
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": [
+              "id"
+            ],
+            "message": "Invalid input: expected string, received number",
+            "requestLabel": "Test request"
+          }
+        ]]
+      `)
     })
 
     it('validates response structure with provided schema, passes validation', async () => {
@@ -983,11 +994,10 @@ describe('httpClient', () => {
       ).rejects.toMatchInlineSnapshot(`
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "number",
-            "received": "string",
+            "code": "invalid_type",
             "path": [],
-            "message": "Expected number, received string",
+            "message": "Invalid input: expected number, received string",
             "requestLabel": "dummy"
           }
         ]]
@@ -1025,18 +1035,19 @@ describe('httpClient', () => {
             requestLabel: 'Test request',
           },
         ),
-      ).rejects.toThrow(`[
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "number",
-    "path": [
-      "id"
-    ],
-    "message": "Expected string, received number",
-    "requestLabel": "Test request"
-  }
-]`)
+      ).rejects.toThrowErrorMatchingInlineSnapshot(`
+        [ZodError: [
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": [
+              "id"
+            ],
+            "message": "Invalid input: expected string, received number",
+            "requestLabel": "Test request"
+          }
+        ]]
+      `)
     })
 
     it('validates response structure with provided schema, passes validation', async () => {
@@ -1142,18 +1153,19 @@ describe('httpClient', () => {
             requestLabel: 'Test request',
           },
         ),
-      ).rejects.toThrow(`[
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "number",
-    "path": [
-      "id"
-    ],
-    "message": "Expected string, received number",
-    "requestLabel": "Test request"
-  }
-]`)
+      ).rejects.toThrowErrorMatchingInlineSnapshot(`
+        [ZodError: [
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": [
+              "id"
+            ],
+            "message": "Invalid input: expected string, received number",
+            "requestLabel": "Test request"
+          }
+        ]]
+      `)
     })
 
     it('validates response structure with provided schema, passes validation', async () => {
@@ -1240,11 +1252,10 @@ describe('httpClient', () => {
       ).rejects.toMatchInlineSnapshot(`
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "number",
-            "received": "string",
+            "code": "invalid_type",
             "path": [],
-            "message": "Expected number, received string",
+            "message": "Invalid input: expected number, received string",
             "requestLabel": "dummy"
           }
         ]]
@@ -1413,7 +1424,19 @@ describe('httpClient', () => {
           validateResponse: true,
           requestLabel: 'dummy',
         }),
-      ).rejects.toThrow(/Expected string, received number/)
+      ).rejects.toThrowErrorMatchingInlineSnapshot(`
+        [ZodError: [
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": [
+              "id"
+            ],
+            "message": "Invalid input: expected string, received number",
+            "requestLabel": "dummy"
+          }
+        ]]
+      `)
     })
 
     it('validates response structure with provided schema, passes validation', async () => {
@@ -1485,11 +1508,10 @@ describe('httpClient', () => {
       ).rejects.toMatchInlineSnapshot(`
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "number",
-            "received": "string",
+            "code": "invalid_type",
             "path": [],
-            "message": "Expected number, received string",
+            "message": "Invalid input: expected number, received string",
             "requestLabel": "dummy"
           }
         ]]
@@ -1742,11 +1764,10 @@ describe('httpClient', () => {
       ).rejects.toMatchInlineSnapshot(`
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "number",
-            "received": "string",
+            "code": "invalid_type",
             "path": [],
-            "message": "Expected number, received string",
+            "message": "Invalid input: expected number, received string",
             "requestLabel": "dummy"
           }
         ]]
@@ -1899,11 +1920,10 @@ describe('httpClient', () => {
       ).rejects.toMatchInlineSnapshot(`
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "number",
-            "received": "string",
+            "code": "invalid_type",
             "path": [],
-            "message": "Expected number, received string",
+            "message": "Invalid input: expected number, received string",
             "requestLabel": "dummy"
           }
         ]]
@@ -2067,11 +2087,10 @@ describe('httpClient', () => {
       ).rejects.toMatchInlineSnapshot(`
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "number",
-            "received": "string",
+            "code": "invalid_type",
             "path": [],
-            "message": "Expected number, received string",
+            "message": "Invalid input: expected number, received string",
             "requestLabel": "dummy"
           }
         ]]
