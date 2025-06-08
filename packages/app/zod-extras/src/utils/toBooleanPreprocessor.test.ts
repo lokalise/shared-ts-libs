@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { toBooleanPreprocessor } from './toBooleanPreprocessor.ts'
 
@@ -61,7 +61,18 @@ describe('toBooleanPreprocessor', () => {
       SCHEMA.parse({
         foo: 'bar',
       }),
-    ).toThrow(/Expected boolean, received string/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "foo"
+          ],
+          "message": "Invalid input: expected boolean, received string"
+        }
+      ]]
+    `)
   })
 
   it('does not convert invalid numbers to boolean', () => {
@@ -73,7 +84,18 @@ describe('toBooleanPreprocessor', () => {
       SCHEMA.parse({
         isActive: 123,
       }),
-    ).toThrow(/Expected boolean, received number/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "isActive"
+          ],
+          "message": "Invalid input: expected boolean, received number"
+        }
+      ]]
+    `)
   })
 
   it('does not convert boolean input', () => {
@@ -102,7 +124,18 @@ describe('toBooleanPreprocessor', () => {
       SCHEMA.parse({
         payload: { foo: 'bar' },
       }),
-    ).toThrow(/Expected boolean, received object/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "payload"
+          ],
+          "message": "Invalid input: expected boolean, received object"
+        }
+      ]]
+    `)
   })
 
   it('does not convert date input', () => {
@@ -114,7 +147,18 @@ describe('toBooleanPreprocessor', () => {
       SCHEMA.parse({
         createdAt: new Date(),
       }),
-    ).toThrow(/Expected boolean, received date/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "createdAt"
+          ],
+          "message": "Invalid input: expected boolean, received Date"
+        }
+      ]]
+    `)
   })
 
   it('does not convert undefined input', () => {
@@ -140,6 +184,17 @@ describe('toBooleanPreprocessor', () => {
       SCHEMA.parse({
         name: (x: string) => x,
       }),
-    ).toThrow(/Expected boolean, received function/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "name"
+          ],
+          "message": "Invalid input: expected boolean, received function"
+        }
+      ]]
+    `)
   })
 })

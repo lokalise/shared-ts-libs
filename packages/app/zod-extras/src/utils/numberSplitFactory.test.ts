@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { numberSplitFactory } from './numberSplitFactory.ts'
 
@@ -32,6 +32,15 @@ describe('numberSplitFactory', () => {
     const splitter = numberSplitFactory()
     const schema = z.preprocess(splitter, z.array(z.number()))
 
-    expect(() => schema.parse(123)).toThrow(/Expected array, received number/)
+    expect(() => schema.parse(123)).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "array",
+          "code": "invalid_type",
+          "path": [],
+          "message": "Invalid input: expected array, received number"
+        }
+      ]]
+    `)
   })
 })

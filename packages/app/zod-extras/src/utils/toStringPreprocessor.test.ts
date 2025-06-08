@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { toStringPreprocessor } from './toStringPreprocessor.ts'
 
@@ -106,7 +106,18 @@ describe('toStringPreprocessor', () => {
       SCHEMA.parse({
         name: (x: string) => x,
       }),
-    ).toThrow(/Expected string, received function/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "name"
+          ],
+          "message": "Invalid input: expected string, received function"
+        }
+      ]]
+    `)
   })
 
   it('fails when parsing objects', () => {
@@ -118,6 +129,17 @@ describe('toStringPreprocessor', () => {
       SCHEMA.parse({
         payload: { foo: 'bar' },
       }),
-    ).toThrow(/Expected string, received object/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "payload"
+          ],
+          "message": "Invalid input: expected string, received object"
+        }
+      ]]
+    `)
   })
 })

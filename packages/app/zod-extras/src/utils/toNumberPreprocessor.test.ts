@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { toNumberPreprocessor } from './toNumberPreprocessor.ts'
 
@@ -64,7 +64,18 @@ describe('toNumberPreprocessor', () => {
       SCHEMA.parse({
         createdAt: '',
       }),
-    ).toThrow(/Expected number, received string/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "number",
+          "code": "invalid_type",
+          "path": [
+            "createdAt"
+          ],
+          "message": "Invalid input: expected number, received string"
+        }
+      ]]
+    `)
   })
 
   it('does not convert numbers input', () => {
@@ -96,7 +107,18 @@ describe('toNumberPreprocessor', () => {
       SCHEMA.parse({
         age: 44n,
       }),
-    ).toThrow(/Expected number, received bigint/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "number",
+          "code": "invalid_type",
+          "path": [
+            "age"
+          ],
+          "message": "Invalid input: expected number, received bigint"
+        }
+      ]]
+    `)
   })
 
   it('does not convert object input', () => {
@@ -108,7 +130,18 @@ describe('toNumberPreprocessor', () => {
       SCHEMA.parse({
         payload: { foo: 'bar' },
       }),
-    ).toThrow(/Expected number, received object/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "number",
+          "code": "invalid_type",
+          "path": [
+            "payload"
+          ],
+          "message": "Invalid input: expected number, received object"
+        }
+      ]]
+    `)
   })
 
   it('does not convert date input', () => {
@@ -120,7 +153,18 @@ describe('toNumberPreprocessor', () => {
       SCHEMA.parse({
         createdAt: new Date(),
       }),
-    ).toThrow(/Expected number, received date/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "number",
+          "code": "invalid_type",
+          "path": [
+            "createdAt"
+          ],
+          "message": "Invalid input: expected number, received Date"
+        }
+      ]]
+    `)
   })
 
   it('does not convert undefined input', () => {
@@ -146,7 +190,18 @@ describe('toNumberPreprocessor', () => {
       SCHEMA.parse({
         name: (x: string) => x,
       }),
-    ).toThrow(/Expected number, received function/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "number",
+          "code": "invalid_type",
+          "path": [
+            "name"
+          ],
+          "message": "Invalid input: expected number, received function"
+        }
+      ]]
+    `)
   })
 
   it('does not convert string which are not valid numbers', () => {
@@ -158,6 +213,17 @@ describe('toNumberPreprocessor', () => {
       SCHEMA.parse({
         age: '123abc',
       }),
-    ).toThrow(/Expected number, received string/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "number",
+          "code": "invalid_type",
+          "path": [
+            "age"
+          ],
+          "message": "Invalid input: expected number, received string"
+        }
+      ]]
+    `)
   })
 })
