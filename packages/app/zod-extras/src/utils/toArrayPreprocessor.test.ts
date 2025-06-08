@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { toArrayPreprocessor } from './toArrayPreprocessor.ts'
 
@@ -92,7 +92,18 @@ describe('toArrayPreprocessor', () => {
       SCHEMA.parse({
         payload: { foo: 'bar' },
       }),
-    ).toThrow(/Expected array, received object/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "array",
+          "code": "invalid_type",
+          "path": [
+            "payload"
+          ],
+          "message": "Invalid input: expected array, received object"
+        }
+      ]]
+    `)
   })
 
   it('does not convert date input', () => {
@@ -104,7 +115,18 @@ describe('toArrayPreprocessor', () => {
       SCHEMA.parse({
         createdAt: new Date(),
       }),
-    ).toThrow(/Expected array, received date/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "array",
+          "code": "invalid_type",
+          "path": [
+            "createdAt"
+          ],
+          "message": "Invalid input: expected array, received Date"
+        }
+      ]]
+    `)
   })
 
   it('does not convert undefined input', () => {
@@ -130,7 +152,18 @@ describe('toArrayPreprocessor', () => {
       SCHEMA.parse({
         createdAt: null,
       }),
-    ).toThrow(/Expected array, received null/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "array",
+          "code": "invalid_type",
+          "path": [
+            "createdAt"
+          ],
+          "message": "Invalid input: expected array, received null"
+        }
+      ]]
+    `)
   })
 
   it('does not convert function input', () => {
@@ -142,6 +175,17 @@ describe('toArrayPreprocessor', () => {
       SCHEMA.parse({
         name: (x: string) => x,
       }),
-    ).toThrow(/Expected array, received function/)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [ZodError: [
+        {
+          "expected": "array",
+          "code": "invalid_type",
+          "path": [
+            "name"
+          ],
+          "message": "Invalid input: expected array, received function"
+        }
+      ]]
+    `)
   })
 })
