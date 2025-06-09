@@ -6,7 +6,7 @@ import type {
   PayloadRouteDefinition,
 } from '@lokalise/api-contracts'
 import type { WretchResponse } from 'wretch'
-import { type ZodSchema, z } from 'zod'
+import { type ZodSchema, z } from 'zod/v4'
 import type {
   DeleteParams,
   FreeDeleteParams,
@@ -115,7 +115,7 @@ async function sendResourceChange<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = await resolveHeaders(params.headers)
+  const resolvedHeaders = await resolveHeaders(params.headers as Record<string, string>)
 
   return wretch
     .headers(resolvedHeaders)
@@ -167,7 +167,7 @@ export async function sendGet<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = await resolveHeaders(params.headers)
+  const resolvedHeaders = await resolveHeaders(params.headers as Record<string, string>)
 
   return wretch
     .headers(resolvedHeaders)
@@ -359,7 +359,7 @@ export async function sendDelete<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = await resolveHeaders(params.headers)
+  const resolvedHeaders = await resolveHeaders(params.headers as Record<string, string>)
 
   return wretch
     .headers(resolvedHeaders)
@@ -402,7 +402,6 @@ export function sendByPayloadRoute<
 >(
   wretch: T,
   routeDefinition: PayloadRouteDefinition<
-    InferSchemaOutput<PathParamsSchema>,
     RequestBodySchema,
     ResponseBodySchema,
     PathParamsSchema,
@@ -456,7 +455,6 @@ export function sendByGetRoute<
 >(
   wretch: T,
   routeDefinition: GetRouteDefinition<
-    InferSchemaOutput<PathParamsSchema>,
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
@@ -476,6 +474,7 @@ export function sendByGetRoute<
     IsEmptyResponseExpected
   >
 > {
+  // @ts-expect-error fixme
   return sendGet(wretch, {
     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
@@ -503,7 +502,6 @@ export function sendByDeleteRoute<
 >(
   wretch: T,
   routeDefinition: DeleteRouteDefinition<
-    InferSchemaOutput<PathParamsSchema>,
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
@@ -523,6 +521,7 @@ export function sendByDeleteRoute<
     IsEmptyResponseExpected
   >
 > {
+  // @ts-expect-error fixme
   return sendDelete(wretch, {
     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,

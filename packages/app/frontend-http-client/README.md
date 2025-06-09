@@ -8,7 +8,7 @@ Note that it is a ESM-only package.
 
 ```ts
 import wretch from 'wretch'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 const client = wretch('http://localhost:8000')
 

@@ -1,5 +1,5 @@
 import { stringify } from 'fast-querystring'
-import type { z } from 'zod'
+import type { z } from 'zod/v4'
 
 import type { Either } from './either.ts'
 import { failure, success } from './either.ts'
