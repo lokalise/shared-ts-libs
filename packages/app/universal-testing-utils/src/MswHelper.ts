@@ -14,7 +14,6 @@ import {
 } from 'msw'
 import type { SetupServerApi } from 'msw/node'
 import type { ZodObject, z } from 'zod/v4'
-import type { InferSchemaOutput } from '@lokalise/api-contracts/src/apiContracts.js'
 
 export type CommonMockParams = {
   responseCode?: number
@@ -67,8 +66,8 @@ export class MswHelper {
     contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
-      ? MockParamsNoPath<InferSchemaOutput<ResponseBodySchema>>
-      : MockParams<InferSchemaOutput<PathParamsSchema>, InferSchemaOutput<ResponseBodySchema>>,
+      ? MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
+      : MockParams<InferSchemaInput<PathParamsSchema>, InferSchemaInput<ResponseBodySchema>>,
   ): void {
     const path = contract.requestPathParamsSchema
       ? // @ts-expect-error this is safe
