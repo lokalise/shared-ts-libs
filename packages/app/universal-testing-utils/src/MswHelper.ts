@@ -9,8 +9,8 @@ import {
   type DefaultBodyType,
   HttpResponse,
   type HttpResponseResolver,
-  type PathParams,
   type JsonBodyType,
+  type PathParams,
 } from 'msw'
 import type { SetupServerApi } from 'msw/node'
 import type { ZodObject, z } from 'zod/v4'
@@ -147,10 +147,12 @@ export class MswHelper {
     params: PathParamsSchema extends undefined
       ? MockWithImplementationParamsNoPath<
           PathParams,
+          // @ts-expect-error fixme, after v4 migration
           InferSchemaInput<RequestBodySchema>,
           InferSchemaInput<ResponseBodySchema>
         >
       : MockWithImplementationParams<
+          // @ts-expect-error fixme, after v4 migration
           InferSchemaInput<PathParamsSchema>,
           InferSchemaInput<RequestBodySchema>,
           InferSchemaInput<ResponseBodySchema>
@@ -169,9 +171,12 @@ export class MswHelper {
     server.use(
       http[method](resolvedPath, async (requestInfo) => {
         return HttpResponse.json(
+          // @ts-expect-error fixme, after v4 migration
           await params.handleRequest(
+            // @ts-expect-error fixme, after v4 migration
             requestInfo as Parameters<
               HttpResponseResolver<
+                // @ts-expect-error fixme, after v4 migration
                 InferSchemaInput<PathParamsSchema>,
                 InferSchemaInput<RequestBodySchema>,
                 InferSchemaInput<ResponseBodySchema>
