@@ -1,6 +1,7 @@
 import {
   type CommonRouteDefinition,
   type InferSchemaInput,
+  type InferSchemaOutput,
   type PayloadRouteDefinition,
   mapRouteToPath,
 } from '@lokalise/api-contracts'
@@ -52,11 +53,59 @@ function joinURL(base: string, path: string): string {
   return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
 }
 
+export type MockEndpointParams<
+  ResponseBodySchema extends z.Schema<JsonBodyType>,
+  PathParamsSchema extends z.Schema | undefined,
+> = {
+  server: SetupServerApi
+  contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>
+  pathParams: InferSchemaOutput<PathParamsSchema>
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  responseBody: any
+  responseCode: number
+  validateResponse: boolean
+}
+
 export class MswHelper {
   private readonly baseUrl: string
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl
+  }
+
+  private resolveParams<
+    ResponseBodySchema extends z.Schema<JsonBodyType>,
+    PathParamsSchema extends z.Schema | undefined,
+  >(
+    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>,
+    pathParams: InferSchemaOutput<PathParamsSchema>,
+  ) {
+    const path = contract.requestPathParamsSchema
+      ? contract.pathResolver(pathParams)
+      : mapRouteToPath(contract)
+
+    const resolvedPath = joinURL(this.baseUrl, path)
+    // @ts-expect-error
+    const method: HttpMethod = contract.method
+
+    return { method, resolvedPath }
+  }
+
+  private registerEndpointMock<
+    ResponseBodySchema extends z.Schema<JsonBodyType>,
+    PathParamsSchema extends z.Schema | undefined,
+  >(params: MockEndpointParams<ResponseBodySchema, PathParamsSchema>) {
+    const { method, resolvedPath } = this.resolveParams(params.contract, params.pathParams)
+    params.server.use(
+      http[method](resolvedPath, () => {
+        const resolvedResponse = params.validateResponse
+          ? params.contract.successResponseBodySchema.parse(params.responseBody)
+          : params.responseBody
+        return HttpResponse.json(resolvedResponse, {
+          status: params.responseCode,
+        })
+      }),
+    )
   }
 
   mockValidResponse<
@@ -69,21 +118,15 @@ export class MswHelper {
       ? MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
       : MockParams<InferSchemaInput<PathParamsSchema>, InferSchemaInput<ResponseBodySchema>>,
   ): void {
-    const path = contract.requestPathParamsSchema
-      ? // @ts-expect-error this is safe
-        contract.pathResolver(params.pathParams)
-      : mapRouteToPath(contract)
-
-    const resolvedPath = joinURL(this.baseUrl, path)
-    // @ts-expect-error
-    const method: HttpMethod = contract.method
-    server.use(
-      http[method](resolvedPath, () =>
-        HttpResponse.json(contract.successResponseBodySchema.parse(params.responseBody), {
-          status: params.responseCode,
-        }),
-      ),
-    )
+    this.registerEndpointMock({
+      responseBody: params.responseBody,
+      contract,
+      server,
+      // @ts-expect-error this is safe
+      pathParams: params.pathParams,
+      responseCode: params.responseCode ?? 200,
+      validateResponse: true,
+    })
   }
 
   mockValidResponseWithAnyPath<
@@ -107,21 +150,15 @@ export class MswHelper {
         )
       : {}
 
-    const path = contract.requestPathParamsSchema
-      ? // @ts-expect-error this is safe
-        contract.pathResolver(pathParams)
-      : mapRouteToPath(contract)
-
-    const resolvedPath = joinURL(this.baseUrl, path)
-    // @ts-expect-error
-    const method: HttpMethod = contract.method
-    server.use(
-      http[method](resolvedPath, () =>
-        HttpResponse.json(contract.successResponseBodySchema.parse(params.responseBody), {
-          status: params.responseCode,
-        }),
-      ),
-    )
+    this.registerEndpointMock({
+      responseBody: params.responseBody,
+      contract,
+      server,
+      // @ts-expect-error this is safe
+      pathParams,
+      responseCode: params.responseCode ?? 200,
+      validateResponse: true,
+    })
   }
 
   mockValidResponseWithImplementation<
@@ -158,15 +195,9 @@ export class MswHelper {
           InferSchemaInput<ResponseBodySchema>
         >,
   ): void {
-    const path = contract.requestPathParamsSchema
-      ? // @ts-expect-error this is safe
-        contract.pathResolver(params.pathParams)
-      : mapRouteToPath(contract)
+    // @ts-expect-error this is safe
 
-    const resolvedPath = joinURL(this.baseUrl, path)
-
-    // @ts-expect-error
-    const method: HttpMethod = contract.method
+    const { method, resolvedPath } = this.resolveParams(contract, params.pathParams)
 
     server.use(
       http[method](resolvedPath, async (requestInfo) => {
@@ -209,7 +240,14 @@ export class MswHelper {
           InferSchemaInput<any>
         >,
   ): void {
-    // biome-ignore lint/suspicious/noExplicitAny: we accept any input
-    this.mockValidResponse<any, PathParamsSchema>(contract, server, params)
+    this.registerEndpointMock({
+      responseBody: params.responseBody,
+      contract,
+      server,
+      // @ts-expect-error this is safe
+      pathParams: params.pathParams,
+      responseCode: params.responseCode ?? 200,
+      validateResponse: false,
+    })
   }
 }
