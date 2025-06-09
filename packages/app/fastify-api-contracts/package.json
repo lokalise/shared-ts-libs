@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/fastify-api-contracts",
-    "version": "2.2.0",
+    "version": "3.0.0",
     "type": "module",
     "files": ["dist", "README.md", "LICENSE.md"],
     "license": "Apache-2.0",
