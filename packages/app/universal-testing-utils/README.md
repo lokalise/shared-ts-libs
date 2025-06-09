@@ -12,7 +12,7 @@ import { sendByGetRoute, sendByPayloadRoute } from '@lokalise/frontend-http-clie
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch, { type Wretch } from 'wretch'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { MswHelper } from '@lokalise/universal-testing-utils'
 
 const REQUEST_BODY_SCHEMA = z.object({

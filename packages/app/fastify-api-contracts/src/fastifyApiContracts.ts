@@ -6,7 +6,7 @@ import {
 } from '@lokalise/api-contracts'
 import type { CommonRouteDefinition } from '@lokalise/api-contracts'
 import { copyWithoutUndefined } from '@lokalise/node-core'
-import type { z } from 'zod'
+import type { z } from 'zod/v4'
 import type {
   ApiContractMetadataToRouteMapper,
   ExtendedFastifySchema,
@@ -20,7 +20,7 @@ type InferredOptionalSchema<Schema> = Schema extends z.Schema ? z.infer<Schema> 
 
 declare module 'fastify' {
   interface FastifyContextConfig {
-    apiContract: CommonRouteDefinition<unknown>
+    apiContract: CommonRouteDefinition
   }
 }
 
@@ -35,7 +35,6 @@ export function buildFastifyNoPayloadRouteHandler<
 >(
   _apiContract:
     | GetRouteDefinition<
-        InferredOptionalSchema<PathParams>,
         ResponseBodySchema,
         PathParams,
         RequestQuerySchema,
@@ -44,7 +43,6 @@ export function buildFastifyNoPayloadRouteHandler<
         boolean
       >
     | DeleteRouteDefinition<
-        InferredOptionalSchema<PathParams>,
         ResponseBodySchema,
         PathParams,
         RequestQuerySchema,
@@ -78,7 +76,6 @@ export function buildFastifyNoPayloadRoute<
 >(
   apiContract:
     | GetRouteDefinition<
-        InferredOptionalSchema<PathParams>,
         ResponseBodySchema,
         PathParams,
         RequestQuerySchema,
@@ -87,7 +84,6 @@ export function buildFastifyNoPayloadRoute<
         boolean
       >
     | DeleteRouteDefinition<
-        InferredOptionalSchema<PathParams>,
         ResponseBodySchema,
         PathParams,
         RequestQuerySchema,
@@ -153,7 +149,6 @@ export function buildFastifyPayloadRouteHandler<
   IsEmptyResponseExpected extends boolean = false,
 >(
   _apiContract: PayloadRouteDefinition<
-    InferredOptionalSchema<PathParams>,
     RequestBodySchema,
     ResponseBodySchema,
     PathParams,
@@ -192,7 +187,6 @@ export function buildFastifyPayloadRoute<
   IsEmptyResponseExpected extends boolean = false,
 >(
   apiContract: PayloadRouteDefinition<
-    InferredOptionalSchema<PathParams>,
     RequestBodySchema,
     ResponseBodySchema,
     PathParams,

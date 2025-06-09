@@ -8,7 +8,7 @@ import type {
   RouteHandlerMethod,
   RouteOptions,
 } from 'fastify'
-import type { z } from 'zod'
+import type { z } from 'zod/v4'
 
 interface FastifyContractRouteInterface<ReplyType, BodyType, ParamsType, QueryType, HeadersType>
   extends RouteGenericInterface {
@@ -81,7 +81,6 @@ export type FastifyNoPayloadHandlerFn<ReplyType, ParamsType, QueryType, HeadersT
  */
 export type ApiContractMetadataToRouteMapper = <
   ApiContract extends CommonRouteDefinition<
-    unknown,
     z.Schema | undefined,
     z.Schema | undefined,
     z.Schema | undefined,

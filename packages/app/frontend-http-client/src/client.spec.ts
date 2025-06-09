@@ -2,7 +2,7 @@ import failOnConsole from 'jest-fail-on-console'
 import { getLocal } from 'mockttp'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import wretch from 'wretch'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import { newServer } from 'mock-xmlhttprequest'
@@ -617,18 +617,17 @@ describe('frontend-http-client', () => {
           responseBodySchema: responseSchema,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
-				[ZodError: [
-				  {
-				    "code": "invalid_type",
-				    "expected": "number",
-				    "received": "undefined",
-				    "path": [
-				      "code"
-				    ],
-				    "message": "Required"
-				  }
-				]]
-			`)
+        [ZodError: [
+          {
+            "expected": "number",
+            "code": "invalid_type",
+            "path": [
+              "code"
+            ],
+            "message": "Invalid input: expected number, received undefined"
+          }
+        ]]
+      `)
     })
 
     it('throws an error if request does not pass validation', async () => {
@@ -651,18 +650,17 @@ describe('frontend-http-client', () => {
           responseBodySchema: responseSchema,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
-				[ZodError: [
-				  {
-				    "code": "invalid_type",
-				    "expected": "number",
-				    "received": "undefined",
-				    "path": [
-				      "requestCode"
-				    ],
-				    "message": "Required"
-				  }
-				]]
-			`)
+        [ZodError: [
+          {
+            "expected": "number",
+            "code": "invalid_type",
+            "path": [
+              "requestCode"
+            ],
+            "message": "Invalid input: expected number, received undefined"
+          }
+        ]]
+      `)
     })
 
     it('throws an error if query params does not pass validation', async () => {
@@ -689,18 +687,17 @@ describe('frontend-http-client', () => {
           responseBodySchema: responseSchema,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
-				[ZodError: [
-				  {
-				    "code": "invalid_type",
-				    "expected": "number",
-				    "received": "string",
-				    "path": [
-				      "param2"
-				    ],
-				    "message": "Expected number, received string"
-				  }
-				]]
-			`)
+        [ZodError: [
+          {
+            "expected": "number",
+            "code": "invalid_type",
+            "path": [
+              "param2"
+            ],
+            "message": "Invalid input: expected number, received string"
+          }
+        ]]
+      `)
     })
 
     it('allows posting request with correct params even if schemas are not provided', async () => {
@@ -974,18 +971,17 @@ describe('frontend-http-client', () => {
           onProgress: vi.fn(),
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
-				[ZodError: [
-				  {
-				    "code": "invalid_type",
-				    "expected": "number",
-				    "received": "undefined",
-				    "path": [
-				      "code"
-				    ],
-				    "message": "Required"
-				  }
-				]]
-			`)
+        [ZodError: [
+          {
+            "expected": "number",
+            "code": "invalid_type",
+            "path": [
+              "code"
+            ],
+            "message": "Invalid input: expected number, received undefined"
+          }
+        ]]
+      `)
 
       mockXhrServer.remove()
     })
@@ -1205,18 +1201,17 @@ describe('frontend-http-client', () => {
           responseBodySchema: responseSchema,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
-				[ZodError: [
-				  {
-				    "code": "invalid_type",
-				    "expected": "number",
-				    "received": "undefined",
-				    "path": [
-				      "code"
-				    ],
-				    "message": "Required"
-				  }
-				]]
-			`)
+        [ZodError: [
+          {
+            "expected": "number",
+            "code": "invalid_type",
+            "path": [
+              "code"
+            ],
+            "message": "Invalid input: expected number, received undefined"
+          }
+        ]]
+      `)
     })
 
     it('throws an error if request does not pass validation', async () => {
@@ -1239,18 +1234,17 @@ describe('frontend-http-client', () => {
           responseBodySchema: responseSchema,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
-				[ZodError: [
-				  {
-				    "code": "invalid_type",
-				    "expected": "number",
-				    "received": "undefined",
-				    "path": [
-				      "requestCode"
-				    ],
-				    "message": "Required"
-				  }
-				]]
-			`)
+        [ZodError: [
+          {
+            "expected": "number",
+            "code": "invalid_type",
+            "path": [
+              "requestCode"
+            ],
+            "message": "Invalid input: expected number, received undefined"
+          }
+        ]]
+      `)
     })
 
     it('throws an error if query params does not pass validation', async () => {
@@ -1277,18 +1271,17 @@ describe('frontend-http-client', () => {
           responseBodySchema: responseSchema,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
-				[ZodError: [
-				  {
-				    "code": "invalid_type",
-				    "expected": "number",
-				    "received": "string",
-				    "path": [
-				      "param2"
-				    ],
-				    "message": "Expected number, received string"
-				  }
-				]]
-			`)
+        [ZodError: [
+          {
+            "expected": "number",
+            "code": "invalid_type",
+            "path": [
+              "param2"
+            ],
+            "message": "Invalid input: expected number, received string"
+          }
+        ]]
+      `)
     })
 
     it('correctly serializes and sends query parameters', async () => {
@@ -1454,18 +1447,17 @@ describe('frontend-http-client', () => {
           responseBodySchema: responseSchema,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
-				[ZodError: [
-				  {
-				    "code": "invalid_type",
-				    "expected": "number",
-				    "received": "undefined",
-				    "path": [
-				      "code"
-				    ],
-				    "message": "Required"
-				  }
-				]]
-			`)
+        [ZodError: [
+          {
+            "expected": "number",
+            "code": "invalid_type",
+            "path": [
+              "code"
+            ],
+            "message": "Invalid input: expected number, received undefined"
+          }
+        ]]
+      `)
     })
 
     it('throws an error if request does not pass validation', async () => {
@@ -1488,18 +1480,17 @@ describe('frontend-http-client', () => {
           responseBodySchema: responseSchema,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
-				[ZodError: [
-				  {
-				    "code": "invalid_type",
-				    "expected": "number",
-				    "received": "undefined",
-				    "path": [
-				      "requestCode"
-				    ],
-				    "message": "Required"
-				  }
-				]]
-			`)
+        [ZodError: [
+          {
+            "expected": "number",
+            "code": "invalid_type",
+            "path": [
+              "requestCode"
+            ],
+            "message": "Invalid input: expected number, received undefined"
+          }
+        ]]
+      `)
     })
 
     it('throws an error if query params does not pass validation', async () => {
@@ -1526,18 +1517,17 @@ describe('frontend-http-client', () => {
           responseBodySchema: responseSchema,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
-				[ZodError: [
-				  {
-				    "code": "invalid_type",
-				    "expected": "number",
-				    "received": "string",
-				    "path": [
-				      "param2"
-				    ],
-				    "message": "Expected number, received string"
-				  }
-				]]
-			`)
+        [ZodError: [
+          {
+            "expected": "number",
+            "code": "invalid_type",
+            "path": [
+              "param2"
+            ],
+            "message": "Invalid input: expected number, received string"
+          }
+        ]]
+      `)
     })
 
     it('correctly serializes and sends query parameters', async () => {
@@ -1720,18 +1710,17 @@ describe('frontend-http-client', () => {
           responseBodySchema: responseSchema,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
-				[ZodError: [
-				  {
-				    "code": "invalid_type",
-				    "expected": "number",
-				    "received": "undefined",
-				    "path": [
-				      "code"
-				    ],
-				    "message": "Required"
-				  }
-				]]
-			`)
+        [ZodError: [
+          {
+            "expected": "number",
+            "code": "invalid_type",
+            "path": [
+              "code"
+            ],
+            "message": "Invalid input: expected number, received undefined"
+          }
+        ]]
+      `)
     })
 
     it('throws an error if request does not pass validation', async () => {
@@ -1754,18 +1743,17 @@ describe('frontend-http-client', () => {
           responseBodySchema: responseSchema,
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
-				[ZodError: [
-				  {
-				    "code": "invalid_type",
-				    "expected": "number",
-				    "received": "undefined",
-				    "path": [
-				      "requestCode"
-				    ],
-				    "message": "Required"
-				  }
-				]]
-			`)
+        [ZodError: [
+          {
+            "expected": "number",
+            "code": "invalid_type",
+            "path": [
+              "requestCode"
+            ],
+            "message": "Invalid input: expected number, received undefined"
+          }
+        ]]
+      `)
     })
 
     it('returns correct data if everything is ok', async () => {
@@ -1874,18 +1862,17 @@ describe('frontend-http-client', () => {
           }),
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
-				[ZodError: [
-				  {
-				    "code": "invalid_type",
-				    "expected": "string",
-				    "received": "number",
-				    "path": [
-				      "string"
-				    ],
-				    "message": "Expected string, received number"
-				  }
-				]]
-			`)
+        [ZodError: [
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": [
+              "string"
+            ],
+            "message": "Invalid input: expected string, received number"
+          }
+        ]]
+      `)
     })
 
     it('returns validated response if schema is provided and response is correct', async () => {
@@ -1933,16 +1920,15 @@ describe('frontend-http-client', () => {
           queryParamsSchema: z.string(),
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
-				[ZodError: [
-				  {
-				    "code": "invalid_type",
-				    "expected": "string",
-				    "received": "object",
-				    "path": [],
-				    "message": "Expected string, received object"
-				  }
-				]]
-			`)
+        [ZodError: [
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": [],
+            "message": "Invalid input: expected string, received object"
+          }
+        ]]
+      `)
     })
 
     it('throws if content is expected, but response is empty', async () => {

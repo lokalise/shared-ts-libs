@@ -1,5 +1,5 @@
 import { buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 const REQUEST_BODY_SCHEMA = z.object({
   name: z.string(),

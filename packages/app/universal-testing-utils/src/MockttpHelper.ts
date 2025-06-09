@@ -1,11 +1,10 @@
 import {
   type CommonRouteDefinition,
   type InferSchemaInput,
-  type InferSchemaOutput,
   mapRouteToPath,
 } from '@lokalise/api-contracts'
 import type { Mockttp, RequestRuleBuilder } from 'mockttp'
-import type { z } from 'zod'
+import type { z } from 'zod/v4'
 
 export type PayloadMockParams<PathParams, ResponseBody> = {
   pathParams: PathParams
@@ -29,11 +28,7 @@ export class MockttpHelper {
     ResponseBodySchema extends z.Schema,
     PathParamsSchema extends z.Schema | undefined,
   >(
-    contract: CommonRouteDefinition<
-      InferSchemaOutput<PathParamsSchema>,
-      ResponseBodySchema,
-      PathParamsSchema
-    >,
+    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>,
     params: PathParamsSchema extends undefined
       ? PayloadMockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
       : PayloadMockParams<InferSchemaInput<PathParamsSchema>, InferSchemaInput<ResponseBodySchema>>,
@@ -66,6 +61,6 @@ export class MockttpHelper {
         throw new Error(`Unsupported method ${method}`)
     }
 
-    await mockttp.thenJson(params.responseCode ?? 200, params.responseBody)
+    await mockttp.thenJson(params.responseCode ?? 200, params.responseBody as object)
   }
 }

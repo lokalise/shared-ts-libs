@@ -1,6 +1,6 @@
 import type { FreeformRecord } from '@lokalise/node-core'
 import type { RequestResult } from 'undici-retry'
-import type { ZodSchema, z } from 'zod/v3'
+import type { ZodSchema, z } from 'zod/v4'
 
 export type HeadersObject = Record<string, string>
 export type HeadersSource = HeadersObject | (() => HeadersObject) | (() => Promise<HeadersObject>)

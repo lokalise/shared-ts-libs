@@ -1,5 +1,5 @@
 import type { Wretch, WretchResponse } from 'wretch'
-import type { ZodSchema, z } from 'zod'
+import type { ZodSchema, z } from 'zod/v4'
 
 export type HeadersObject = Record<string, string>
 export type HeadersSource = HeadersObject | (() => HeadersObject) | (() => Promise<HeadersObject>)
@@ -55,12 +55,12 @@ export type FreeQueryParams<
 } & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
 
 export type HeadersParams<HeadersSchema extends z.ZodSchema> = {
-  headers: z.input<HeadersSchema> | undefined
-  headersSchema: HeadersSchema | undefined
+  headers: z.input<HeadersSchema>
+  headersSchema: HeadersSchema
 }
 
 export type FreeHeadersParams<_HeadersSchema> = {
-  headers?: FreeformRecord
+  headers?: Record<string, string>
   headersSchema?: never
 }
 

@@ -1,5 +1,5 @@
 import type { WretchResponse } from 'wretch'
-import type { ZodError, z } from 'zod'
+import type { ZodError, z } from 'zod/v4'
 
 import type { Either } from './either.ts'
 import { failure, success } from './either.ts'
@@ -40,7 +40,7 @@ export function tryToResolveJsonBody<RequestBodySchema extends z.ZodSchema>(
       responseBodySchema: schema,
       path,
     })
-  })
+  }) as Promise<BodyParseResult<RequestBodySchema>>
 }
 
 export function parseResponseBody<ResponseBody>({
@@ -77,11 +77,11 @@ export function parseRequestBody<RequestBodySchema extends z.Schema>({
   path: string
 }): Either<z.ZodError, z.input<RequestBodySchema>> {
   if (!body) {
-    return success(body)
+    return success(body as z.input<RequestBodySchema>)
   }
 
   if (!requestBodySchema) {
-    return success(body)
+    return success(body as z.input<RequestBodySchema>)
   }
 
   const result = requestBodySchema.safeParse(body)
@@ -95,5 +95,5 @@ export function parseRequestBody<RequestBodySchema extends z.Schema>({
     return failure(result.error)
   }
 
-  return success(body)
+  return success(body as z.input<RequestBodySchema>)
 }
