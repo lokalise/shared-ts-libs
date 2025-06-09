@@ -1,7 +1,6 @@
 import {
   type CommonRouteDefinition,
   type InferSchemaInput,
-  type InferSchemaOutput,
   type PayloadRouteDefinition,
   mapRouteToPath,
 } from '@lokalise/api-contracts'
@@ -13,7 +12,7 @@ import {
   type PathParams,
 } from 'msw'
 import type { SetupServerApi } from 'msw/node'
-import type { ZodObject, z } from 'zod'
+import type { ZodObject, z } from 'zod/v4'
 
 export type CommonMockParams = {
   responseCode?: number
@@ -63,11 +62,7 @@ export class MswHelper {
     ResponseBodySchema extends z.Schema,
     PathParamsSchema extends z.Schema | undefined,
   >(
-    contract: CommonRouteDefinition<
-      InferSchemaOutput<PathParamsSchema>,
-      ResponseBodySchema,
-      PathParamsSchema
-    >,
+    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
       ? MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
@@ -94,11 +89,7 @@ export class MswHelper {
     ResponseBodySchema extends z.Schema,
     PathParamsSchema extends z.Schema | undefined,
   >(
-    contract: CommonRouteDefinition<
-      InferSchemaOutput<PathParamsSchema>,
-      ResponseBodySchema,
-      PathParamsSchema
-    >,
+    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>,
     server: SetupServerApi,
     params: MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>,
   ): void {
@@ -143,7 +134,6 @@ export class MswHelper {
   >(
     contract:
       | CommonRouteDefinition<
-          InferSchemaOutput<PathParamsSchema>,
           ResponseBodySchema,
           PathParamsSchema,
           RequestQuerySchema,
@@ -151,7 +141,7 @@ export class MswHelper {
           IsNonJSONResponseExpected,
           IsEmptyResponseExpected
         >
-      | PayloadRouteDefinition<InferSchemaOutput<PathParamsSchema>, RequestBodySchema>,
+      | PayloadRouteDefinition<RequestBodySchema>,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
       ? MockWithImplementationParamsNoPath<
@@ -197,7 +187,6 @@ export class MswHelper {
 
   mockAnyResponse<PathParamsSchema extends z.Schema | undefined>(
     contract: CommonRouteDefinition<
-      InferSchemaOutput<PathParamsSchema>,
       // biome-ignore lint/suspicious/noExplicitAny: we accept any input
       any,
       PathParamsSchema
