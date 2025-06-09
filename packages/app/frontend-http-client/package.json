@@ -36,9 +36,9 @@
         "fast-querystring": "^1.1.2"
     },
     "peerDependencies": {
-        "@lokalise/api-contracts": ">=4.1.0",
+        "@lokalise/api-contracts": ">=5.0.0",
         "wretch": "^2.8.0",
-        "zod": "^3.25.56"
+        "zod": ">=3.25.56"
     },
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",
