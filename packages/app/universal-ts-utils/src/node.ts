@@ -1,9 +1,5 @@
 // We don't want to have a typical index file due to how FE bundlers work. Please see `readme` for more info.
 
-// api-contracts
-export * from './public/api-contracts/apiContracts.ts'
-export * from './public/api-contracts/HttpStatusCodes.ts'
-
 // array
 export * from './public/array/areStringArraysEqual.ts'
 export * from './public/array/callChunked.ts'
