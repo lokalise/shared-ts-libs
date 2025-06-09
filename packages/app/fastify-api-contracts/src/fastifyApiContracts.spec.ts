@@ -95,7 +95,7 @@ describe('fastifyApiContracts', () => {
         expect(req.params.userId).toEqual('1')
         // satisfies checks if type is inferred properly in route
         expect(req.query.testIds satisfies string[] | undefined).toBeUndefined()
-        return Promise.resolve()
+        return Promise.resolve({})
       })
       expect(route.config.apiContract).toBe(contract)
 
