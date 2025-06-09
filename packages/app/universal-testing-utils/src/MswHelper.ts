@@ -10,9 +10,11 @@ import {
   HttpResponse,
   type HttpResponseResolver,
   type PathParams,
+  type JsonBodyType,
 } from 'msw'
 import type { SetupServerApi } from 'msw/node'
 import type { ZodObject, z } from 'zod/v4'
+import type { InferSchemaOutput } from '@lokalise/api-contracts/src/apiContracts.js'
 
 export type CommonMockParams = {
   responseCode?: number
@@ -59,14 +61,14 @@ export class MswHelper {
   }
 
   mockValidResponse<
-    ResponseBodySchema extends z.Schema,
+    ResponseBodySchema extends z.Schema<JsonBodyType>,
     PathParamsSchema extends z.Schema | undefined,
   >(
     contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
-      ? MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
-      : MockParams<InferSchemaInput<PathParamsSchema>, InferSchemaInput<ResponseBodySchema>>,
+      ? MockParamsNoPath<InferSchemaOutput<ResponseBodySchema>>
+      : MockParams<InferSchemaOutput<PathParamsSchema>, InferSchemaOutput<ResponseBodySchema>>,
   ): void {
     const path = contract.requestPathParamsSchema
       ? // @ts-expect-error this is safe
@@ -78,7 +80,7 @@ export class MswHelper {
     const method: HttpMethod = contract.method
     server.use(
       http[method](resolvedPath, () =>
-        HttpResponse.json(params.responseBody, {
+        HttpResponse.json(contract.successResponseBodySchema.parse(params.responseBody), {
           status: params.responseCode,
         }),
       ),
@@ -86,7 +88,7 @@ export class MswHelper {
   }
 
   mockValidResponseWithAnyPath<
-    ResponseBodySchema extends z.Schema,
+    ResponseBodySchema extends z.Schema<JsonBodyType>,
     PathParamsSchema extends z.Schema | undefined,
   >(
     contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>,
@@ -116,7 +118,7 @@ export class MswHelper {
     const method: HttpMethod = contract.method
     server.use(
       http[method](resolvedPath, () =>
-        HttpResponse.json(params.responseBody, {
+        HttpResponse.json(contract.successResponseBodySchema.parse(params.responseBody), {
           status: params.responseCode,
         }),
       ),
