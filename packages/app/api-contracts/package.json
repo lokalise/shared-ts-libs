@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/api-contracts",
-    "version": "4.3.0",
+    "version": "5.0.0",
     "files": ["dist"],
     "license": "Apache-2.0",
     "type": "module",
