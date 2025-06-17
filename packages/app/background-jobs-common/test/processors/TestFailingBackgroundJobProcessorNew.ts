@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq'
 import {
-  type BaseJobPayload,
   FakeBackgroundJobProcessorNew,
+  type JobPayloadForQueue,
   type QueueConfiguration,
   type SupportedJobPayloads,
   type SupportedQueueIds,
@@ -37,7 +37,7 @@ export class TestFailingBackgroundJobProcessorNew<
   }
 
   protected override async onFailed(
-    job: Job<BaseJobPayload>,
+    job: Job<JobPayloadForQueue<Q, T>>,
     error: Error,
     requestContext: RequestContext,
   ) {
