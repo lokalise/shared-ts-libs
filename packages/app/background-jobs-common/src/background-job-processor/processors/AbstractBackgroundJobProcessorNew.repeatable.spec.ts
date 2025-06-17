@@ -65,7 +65,7 @@ describe('AbstractBackgroundJobProcessorNew - repeatable', () => {
 
     const schedulers = await queueManager.getQueue('queue').getJobSchedulers()
     expect(schedulers).toHaveLength(1)
-    expect(schedulers[0]!.every).toBe('10')
+    expect(schedulers[0]!.every).toBe(10)
 
     await processor.dispose()
   })
