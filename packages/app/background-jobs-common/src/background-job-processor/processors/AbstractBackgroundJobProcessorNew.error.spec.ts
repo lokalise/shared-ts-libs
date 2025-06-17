@@ -207,19 +207,27 @@ describe('AbstractBackgroundJobProcessorNew - error', () => {
     expect(jobSpy.failedReason).toMatchInlineSnapshot(`
       "[
         {
-          "code": "invalid_type",
           "expected": "string",
-          "received": "number",
+          "code": "invalid_type",
           "path": [
             "value"
           ],
-          "message": "Expected string, received number"
+          "message": "Invalid input: expected string, received number"
         }
       ]"
     `)
     expect(errorReporterSpy).toHaveBeenCalledTimes(1)
-    expect(errorReporterSpy.mock.calls[0]?.[0].error.message).toContain(
-      'Expected string, received number',
-    )
+    expect(errorReporterSpy.mock.calls[0]?.[0].error.message).toMatchInlineSnapshot(`
+      "[
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "value"
+          ],
+          "message": "Invalid input: expected string, received number"
+        }
+      ]"
+    `)
   })
 })
