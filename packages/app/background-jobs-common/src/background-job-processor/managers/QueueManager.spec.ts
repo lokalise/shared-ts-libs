@@ -1,7 +1,7 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
@@ -225,13 +225,12 @@ describe('QueueManager', () => {
         `
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "string",
-            "received": "undefined",
+            "code": "invalid_type",
             "path": [
               "id"
             ],
-            "message": "Required"
+            "message": "Invalid input: expected string, received undefined"
           },
           {
             "code": "unrecognized_keys",
@@ -239,7 +238,7 @@ describe('QueueManager', () => {
               "notPresent"
             ],
             "path": [],
-            "message": "Unrecognized key(s) in object: 'notPresent'"
+            "message": "Unrecognized key: \\"notPresent\\""
           }
         ]]
       `,
@@ -258,13 +257,12 @@ describe('QueueManager', () => {
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "string",
-            "received": "undefined",
+            "code": "invalid_type",
             "path": [
               "id"
             ],
-            "message": "Required"
+            "message": "Invalid input: expected string, received undefined"
           }
         ]]
       `)
@@ -284,13 +282,12 @@ describe('QueueManager', () => {
         `
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "string",
-            "received": "undefined",
+            "code": "invalid_type",
             "path": [
               "id"
             ],
-            "message": "Required"
+            "message": "Invalid input: expected string, received undefined"
           },
           {
             "code": "unrecognized_keys",
@@ -298,7 +295,7 @@ describe('QueueManager', () => {
               "value2"
             ],
             "path": [],
-            "message": "Unrecognized key(s) in object: 'value2'"
+            "message": "Unrecognized key: \\"value2\\""
           }
         ]]
       `,
@@ -316,13 +313,12 @@ describe('QueueManager', () => {
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "string",
-            "received": "undefined",
+            "code": "invalid_type",
             "path": [
               "id"
             ],
-            "message": "Required"
+            "message": "Invalid input: expected string, received undefined"
           }
         ]]
       `)

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import type { FakeQueueManager } from './FakeQueueManager.ts'
 import type { QueueConfiguration } from './types.ts'

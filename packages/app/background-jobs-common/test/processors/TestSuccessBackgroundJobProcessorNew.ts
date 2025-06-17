@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq'
 import {
-  type BaseJobPayload,
   FakeBackgroundJobProcessorNew,
+  type JobPayloadForQueue,
   type SupportedQueueIds,
 } from '../../src/index.ts'
 import type { QueueConfiguration, RequestContext } from '../../src/index.ts'
@@ -11,7 +11,7 @@ export class TestSuccessBackgroundJobProcessorNew<
   T extends SupportedQueueIds<Q>,
 > extends FakeBackgroundJobProcessorNew<Q, T> {
   private onSuccessCounter = 0
-  private onSuccessCall!: (job: Job<BaseJobPayload>) => void
+  private onSuccessCall!: (job: Job<JobPayloadForQueue<Q, T>>) => void
   private _jobDataResult!: unknown
 
   protected override process(): Promise<void> {
@@ -19,7 +19,7 @@ export class TestSuccessBackgroundJobProcessorNew<
   }
 
   protected override onSuccess(
-    job: Job<BaseJobPayload>,
+    job: Job<JobPayloadForQueue<Q, T>>,
     requestContext: RequestContext,
   ): Promise<void> {
     this.onSuccessCounter += 1
@@ -32,11 +32,11 @@ export class TestSuccessBackgroundJobProcessorNew<
     return this._jobDataResult
   }
 
-  override purgeJobData(job: Job<BaseJobPayload>): Promise<void> {
+  override purgeJobData(job: Job<JobPayloadForQueue<Q, T>>): Promise<void> {
     return super.purgeJobData(job)
   }
 
-  set onSuccessHook(hook: (job: Job<BaseJobPayload>) => void) {
+  set onSuccessHook(hook: (job: Job<JobPayloadForQueue<Q, T>>) => void) {
     this.onSuccessCall = hook
   }
 

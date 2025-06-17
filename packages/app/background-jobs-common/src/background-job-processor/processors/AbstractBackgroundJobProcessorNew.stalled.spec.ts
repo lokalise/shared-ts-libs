@@ -1,7 +1,7 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import { waitAndRetry } from '@lokalise/node-core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import { TestStalledBackgroundJobProcessorNew } from '../../../test/processors/TestStalledBackgroundJobProcessorNew.ts'
 import type { FakeQueueManager } from '../managers/FakeQueueManager.ts'

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import { TestBarrierBackgroundJobProcessorNew } from '../../../test/processors/TestBarrierBackgroundJobProcessorNew.ts'
 import type { QueueManager } from '../managers/QueueManager.ts'
