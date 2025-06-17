@@ -1,6 +1,6 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import { TestSuccessBackgroundJobProcessorNew } from '../../../test/processors/TestSuccessBackgroundJobProcessorNew.ts'
 import type { FakeQueueManager } from '../managers/FakeQueueManager.ts'

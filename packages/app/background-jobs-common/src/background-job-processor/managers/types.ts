@@ -1,6 +1,6 @@
 import type { RedisConfig } from '@lokalise/node-core'
 import type { Job, JobsOptions, Queue, QueueOptions } from 'bullmq'
-import type { z } from 'zod'
+import type { z } from 'zod/v4'
 import type { BaseJobPayload } from '../types.ts'
 
 export type QueueManagerConfig = {

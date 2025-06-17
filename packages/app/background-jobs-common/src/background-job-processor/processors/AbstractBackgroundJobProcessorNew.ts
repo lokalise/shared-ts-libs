@@ -358,7 +358,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
     if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
 
     const updateDataPromise = job
-      .updateData({ metadata: job.data.metadata })
+      .updateData({ metadata: job.data.metadata } as SupportedJobPayloads<Queues>)
       .finally(() => this.runningPromises.delete(updateDataPromise))
 
     this.runningPromises.add(updateDataPromise)

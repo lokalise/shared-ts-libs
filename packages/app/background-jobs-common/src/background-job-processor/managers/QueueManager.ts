@@ -158,7 +158,7 @@ export class QueueManager<
   ): Promise<string> {
     const parsedPayload = this.queueRegistry
       .getQueueConfig(queueId)
-      .jobPayloadSchema.parse(jobPayload)
+      .jobPayloadSchema.parse(jobPayload) as SupportedJobPayloads<Queues>
 
     await this.startIfNotStarted(queueId)
     const job = await this.getQueue(queueId).add(
@@ -180,7 +180,9 @@ export class QueueManager<
     if (jobPayloads.length === 0) return []
 
     const { jobPayloadSchema } = this.queueRegistry.getQueueConfig(queueId)
-    const parsedPayload = jobPayloads.map((payload) => jobPayloadSchema.parse(payload))
+    const parsedPayload = jobPayloads.map((payload) =>
+      jobPayloadSchema.parse(payload),
+    ) as SupportedJobPayloads<Queues>[]
 
     await this.startIfNotStarted(queueId)
     const jobs =

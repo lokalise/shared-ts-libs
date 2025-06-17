@@ -1,7 +1,7 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'

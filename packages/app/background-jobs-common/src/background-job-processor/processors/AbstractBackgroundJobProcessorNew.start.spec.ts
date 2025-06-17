@@ -1,6 +1,6 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import { isPromiseFinished } from '../../../test/isPromiseFinished.ts'
 import { TestOverrideProcessBackgroundProcessor } from '../../../test/processors/TestOverrideProcessBackgroundProcessor.ts'

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vites
 
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { TestReturnValueBackgroundJobProcessorNew } from '../../../test/processors/TestReturnValueBackgroundJobProcessorNew.ts'
 import { FakeQueueManager } from '../managers/FakeQueueManager.ts'
 import type { QueueManager } from '../managers/QueueManager.ts'

@@ -1,6 +1,6 @@
 import type { JobsOptions, Queue, QueueOptions } from 'bullmq'
 import { afterEach, expectTypeOf } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import { getTestRedisConfig } from '../../../test/TestRedis.ts'
 import { CommonBullmqFactory } from '../factories/index.ts'
