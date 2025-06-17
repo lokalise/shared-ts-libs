@@ -2,7 +2,6 @@ import type { Job } from 'bullmq'
 import {
   FakeBackgroundJobProcessorNew,
   type JobPayloadForQueue,
-  type SupportedJobPayloads,
   type SupportedQueueIds,
 } from '../../src/index.ts'
 import type { QueueConfiguration, RequestContext } from '../../src/index.ts'
@@ -26,7 +25,7 @@ export class TestSuccessBackgroundJobProcessorNew<
     this.onSuccessCounter += 1
     this.onSuccessCall(job)
     this._jobDataResult = job.data
-    return super.onSuccess(job as Job<SupportedJobPayloads<Q>>, requestContext)
+    return super.onSuccess(job, requestContext)
   }
 
   get jobDataResult(): unknown {

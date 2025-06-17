@@ -3,7 +3,6 @@ import {
   FakeBackgroundJobProcessorNew,
   type JobPayloadForQueue,
   type QueueConfiguration,
-  type SupportedJobPayloads,
   type SupportedQueueIds,
 } from '../../src/index.ts'
 import type { RequestContext } from '../../src/index.ts'
@@ -41,7 +40,7 @@ export class TestFailingBackgroundJobProcessorNew<
     error: Error,
     requestContext: RequestContext,
   ) {
-    await super.onFailed(job as Job<SupportedJobPayloads<Q>>, error, requestContext)
+    await super.onFailed(job, error, requestContext)
     this._errorsOnProcess.push(error)
     if (this._errorToThrowOnFailed) {
       throw this._errorToThrowOnFailed
