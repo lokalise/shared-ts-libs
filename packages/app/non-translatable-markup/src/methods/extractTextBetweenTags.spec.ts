@@ -69,6 +69,10 @@ describe('extractTextBetweenTags', () => {
       result: ['Hello,', 'How are you?'],
     },
     {
+      text: 'Hello, \uE101\uE101 World!\uE102 How are you? \uE101I am fine!\uE102',
+      result: ['Hello,', 'How are you?'],
+    },
+    {
       text: '<div>hello world</div>',
       result: ['<div>hello world</div>'],
     },

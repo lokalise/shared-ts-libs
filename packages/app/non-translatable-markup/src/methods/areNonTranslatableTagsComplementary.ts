@@ -7,17 +7,14 @@ const nonTranslatableOpenOrCloseTagRegexp = new RegExp(
 
 /**
  * Checks if non-translatable tags in the given text are correct:
- * - each start tag has a corresponding end tag.
- * - each end tag has a corresponding start tag.
+ * - each start tag has a corresponding end tag
+ * - there are no orphan end tags
  */
 export const areNonTranslatableTagsComplementary = (text: string): boolean => {
   let tagOpen = false
   for (const match of text.matchAll(nonTranslatableOpenOrCloseTagRegexp)) {
     const tag = match[0]
     if (tag === NON_TRANSLATABLE_START_TAG) {
-      if (tagOpen) {
-        return false // found a start tag while another one is already open
-      }
       tagOpen = true
     } else if (tag === NON_TRANSLATABLE_END_TAG) {
       if (!tagOpen) {
