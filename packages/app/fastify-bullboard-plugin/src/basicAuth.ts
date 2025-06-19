@@ -1,11 +1,15 @@
 import type { FastifyAuthFunction } from '@fastify/auth'
 import fastifyAuth from '@fastify/auth'
 import fastifyBasicAuth from '@fastify/basic-auth'
+import { AuthFailedError } from '@lokalise/node-core'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import fp from 'fastify-plugin'
 
-import type { AuthConfig } from '../infrastructure/config.js'
-import { AuthFailedError } from '../infrastructure/errors/AuthFailedError.js'
+export type AuthConfig = {
+	isEnabled: boolean
+	username: string
+	password: string
+}
 
 type BasicAuthOptions = {
 	config: AuthConfig
