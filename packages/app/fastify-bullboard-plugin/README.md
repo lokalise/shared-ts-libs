@@ -24,11 +24,11 @@ Namely, it was initiated by @CarlosGamero.
 2. Launch all the infrastructural dependencies locally:
 
    ```shell
-   docker compose up -d
+   npm run docker:start:ci
    ```
 
-3. To run application:
-
+3. To run tests:
+   
    ```shell
-   npm run start:dev
+   npm run test
    ```
