@@ -3,8 +3,7 @@ import fastify, { type FastifyInstance, type RouteHandlerMethod } from 'fastify'
 import { pino } from 'pino'
 import { type MockInstance, afterAll, describe, expect, it, vi } from 'vitest'
 
-import { FakeErrorReporter } from '../../test/fake/FakeErrorReporter/FakeErrorReporter.js'
-
+import { FakeErrorReporter } from '../test/FakeErrorReporter.js'
 import { errorReporterPlugin } from './errorReporterPlugin.js'
 
 async function initApp(routeHandler: RouteHandlerMethod, errorReporter: ErrorReporter) {

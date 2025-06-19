@@ -1,56 +1,67 @@
 import { constants as httpConstants } from 'node:http2'
-
 import { createBullBoard } from '@bull-board/api'
+// @ts-ignore
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter.js'
-import type { ControllerHandlerReturnType } from '@bull-board/api/dist/typings/app'
 import { FastifyAdapter } from '@bull-board/fastify'
 import fastifySchedule from '@fastify/schedule'
-import { backgroundJobProcessorGetActiveQueueIds } from '@lokalise/background-jobs-common'
-import { QueuePro } from '@lokalise/bullmq-pro'
+import {
+	QUEUE_GROUP_DELIMITER,
+	backgroundJobProcessorGetActiveQueueIds,
+} from '@lokalise/background-jobs-common'
 import { resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type { Queue } from 'bullmq'
 import type { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
-import type Redis from 'ioredis'
+import type { Redis } from 'ioredis'
 import { AsyncTask, SimpleIntervalJob } from 'toad-scheduler'
 
 export type BullBoardOptions = {
+	queueProConstructor: QueueProConstructor
 	redisInstances: Redis[]
 	basePath: string
 	refreshIntervalInSeconds?: number
 }
 
-const containStatusCode = (error: Error): error is Error & { statusCode: number } =>
-	Object.hasOwn(error, 'statusCode')
+function containStatusCode(error: Error): error is Error & { statusCode: number } {
+	return Object.hasOwn(error, 'statusCode')
+}
 
-const bullBoardErrorHandler = (error: Error): ControllerHandlerReturnType => {
+const bullBoardErrorHandler = (error: Error) => {
 	const status = containStatusCode(error)
 		? error.statusCode
 		: httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR
 	return {
-		status: status as ControllerHandlerReturnType['status'],
+		status: status,
 		body: { message: error.message, details: error.stack },
 	}
 }
 
-const getCurrentQueues = async (redisInstances: Redis[]): Promise<BullMQAdapter[]> => {
+export interface QueueProConstructor {
+	new (name: string, opts?: Record<string, unknown>): Queue
+}
+
+async function getCurrentQueues(
+	redisInstances: Redis[],
+	QueuePro: QueueProConstructor,
+): Promise<BullMQAdapter[]> {
 	const queueIds = await Promise.all(
 		redisInstances.map((redis) => backgroundJobProcessorGetActiveQueueIds(redis)),
 	)
 
 	return queueIds
 		.flatMap((ids, index) =>
-			ids.map((id) => new QueuePro(id, { connection: redisInstances[index] })),
+			// biome-ignore lint/style/noNonNullAssertion: Should exist
+			ids.map((id) => new QueuePro(id, { connection: redisInstances[index]! })),
 		)
-		.map((queue) => new BullMQAdapter(queue as unknown as Queue))
+		.map((queue) => new BullMQAdapter(queue, { delimiter: QUEUE_GROUP_DELIMITER }))
 }
 
-const schedulesUpdates = async (
+async function scheduleUpdates(
 	fastify: FastifyInstance,
 	bullBoard: ReturnType<typeof createBullBoard>,
 	pluginOptions: BullBoardOptions,
-) => {
-	const { refreshIntervalInSeconds, redisInstances } = pluginOptions
+) {
+	const { refreshIntervalInSeconds, redisInstances, queueProConstructor } = pluginOptions
 
 	if (!refreshIntervalInSeconds || refreshIntervalInSeconds <= 0) return
 
@@ -58,7 +69,7 @@ const schedulesUpdates = async (
 		'Bull-board - update queues',
 		async () => {
 			fastify.log.debug({ refreshIntervalInSeconds }, 'Bull-dashboard -> updating queues')
-			bullBoard.replaceQueues(await getCurrentQueues(redisInstances))
+			bullBoard.replaceQueues(await getCurrentQueues(redisInstances, queueProConstructor))
 		},
 		(e) => fastify.log.error(resolveGlobalErrorLogObject(e)),
 	)
@@ -73,22 +84,22 @@ const schedulesUpdates = async (
 }
 
 const plugin = async (fastify: FastifyInstance, pluginOptions: BullBoardOptions) => {
-	const { basePath, redisInstances } = pluginOptions
+	const { basePath, redisInstances, queueProConstructor } = pluginOptions
 
 	const serverAdapter = new FastifyAdapter()
 	const bullBoard = createBullBoard({
-		queues: await getCurrentQueues(redisInstances),
+		queues: await getCurrentQueues(redisInstances, queueProConstructor),
 		serverAdapter,
 	})
-	serverAdapter.setErrorHandler(bullBoardErrorHandler)
+	// biome-ignore lint/suspicious/noExplicitAny: bull-board is not exporting this type
+	serverAdapter.setErrorHandler(bullBoardErrorHandler as any)
 	serverAdapter.setBasePath(basePath)
 
 	await fastify.register(serverAdapter.registerPlugin(), {
-		basePath,
 		prefix: basePath,
 	})
 
-	await schedulesUpdates(fastify, bullBoard, pluginOptions)
+	await scheduleUpdates(fastify, bullBoard, pluginOptions)
 }
 
 export const bullBoard = fp<BullBoardOptions>(plugin, {

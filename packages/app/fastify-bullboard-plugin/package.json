@@ -22,8 +22,8 @@
 		"prepublishOnly": "npm run build"
 	},
 	"dependencies": {
-		"@bull-board/api": "^6.7.9",
-		"@bull-board/fastify": "^6.7.9",
+		"@bull-board/api": "^6.10.1",
+		"@bull-board/fastify": "^6.10.1",
 		"@fastify/auth": "^5.0.2",
 		"@fastify/basic-auth": "^6.0.3",
 		"@lokalise/backend-http-client": "^5.0.0",
@@ -53,5 +53,14 @@
 		"pino-pretty": "^13.0.0",
 		"typescript": "5.8.3",
 		"vitest": "^3.2.4"
+	},
+	"keywords": ["fastify", "bullboard", "bull", "dashboard", "plugin"],
+	"homepage": "https://github.com/lokalise/shared-ts-libs",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/lokalise/shared-ts-libs.git"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }

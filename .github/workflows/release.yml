@@ -488,3 +488,21 @@ jobs:
       package_name: '@lokalise/zod-extras'
     secrets:
       npm_token: ${{ secrets.NPM_TOKEN }}
+
+  fastify-bullboard-plugin:
+    name: Release fastify-bullboard-plugin
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/fastify-bullboard-plugin/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    with:
+      working_directory: 'packages/app/fastify-bullboard-plugin'
+      package_name: '@lokalise/fastify-bullboard-plugin'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
