@@ -1,8 +1,8 @@
 import type { MayOmit } from '@lokalise/node-core'
 import type { Client } from 'undici'
 
-import { z } from 'zod'
-import type { RequestOptions } from './types'
+import { z } from 'zod/v4'
+import type { RequestOptions } from './types.ts'
 
 export const DEFAULT_OPTIONS = {
   validateResponse: true,
@@ -10,7 +10,7 @@ export const DEFAULT_OPTIONS = {
   timeout: 30000,
 } satisfies MayOmit<
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  RequestOptions<unknown, any, true>,
+  RequestOptions<any, any, true>,
   'requestLabel' | 'responseSchema' | 'isEmptyResponseExpected'
 >
 
@@ -24,7 +24,7 @@ export const JSON_HEADERS = {
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-export const TEST_OPTIONS: RequestOptions<unknown, any, true> = {
+export const TEST_OPTIONS: RequestOptions<any, any, true> = {
   requestLabel: 'test',
   responseSchema: z.unknown(),
 }

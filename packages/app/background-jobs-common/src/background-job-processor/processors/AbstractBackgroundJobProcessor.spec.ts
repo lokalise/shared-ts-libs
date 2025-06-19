@@ -3,16 +3,19 @@ import { waitAndRetry } from '@lokalise/node-core'
 import { UnrecoverableError } from 'bullmq'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import { TestFailingBackgroundJobProcessor } from '../../../test/processors/TestFailingBackgroundJobProcessor'
-import { TestStalledBackgroundJobProcessor } from '../../../test/processors/TestStalledBackgroundJobProcessor'
-import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/TestSuccessBackgroundJobProcessor'
-import type { BaseJobPayload } from '../types'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import { TestFailingBackgroundJobProcessor } from '../../../test/processors/TestFailingBackgroundJobProcessor.ts'
+import { TestStalledBackgroundJobProcessor } from '../../../test/processors/TestStalledBackgroundJobProcessor.ts'
+import { TestSuccessBackgroundJobProcessor } from '../../../test/processors/TestSuccessBackgroundJobProcessor.ts'
+import type { BaseJobPayload } from '../types.ts'
 
 import { randomUUID } from 'node:crypto'
-import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading'
-import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
-import type { BackgroundJobProcessorDependencies } from './types'
+import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading.ts'
+import { TestBasicBackgroundJobProcessor } from '../../../test/processors/TestBasicBackgroundJobProcessor.ts'
+import { MutedUnrecoverableError } from '../errors/MutedUnrecoverableError.ts'
+import { backgroundJobProcessorGetActiveQueueIds } from '../monitoring/backgroundJobProcessorGetActiveQueueIds.ts'
+import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor.ts'
+import type { BackgroundJobProcessorDependencies } from './types.ts'
 
 type JobData = {
   id: string
@@ -172,17 +175,38 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       await processor.dispose()
     })
+
+    it('should use bull queue name with prefixes for grouping', async () => {
+      const processor = new TestBasicBackgroundJobProcessor<JobData>(deps, {
+        queueId: 'my-queue',
+        redisConfig: factory.getRedisConfig(),
+        bullDashboardGrouping: ['prefix1', 'prefix2'],
+      })
+      await processor.start()
+
+      // @ts-expect-error executing protected method for testing
+      expect(processor.queue.name).toBe('prefix1.prefix2.my-queue')
+      // @ts-expect-error executing protected method for testing
+      expect(processor.worker.name).toBe('prefix1.prefix2.my-queue')
+
+      expect(processor.resolvedQueueId).toBe('prefix1.prefix2.my-queue')
+
+      expect(backgroundJobProcessorGetActiveQueueIds(factory.getRedisConfig())).resolves.toEqual([
+        'prefix1.prefix2.my-queue',
+      ])
+
+      await processor.dispose()
+    })
   })
 
   describe('success', () => {
-    let processor: FakeBackgroundJobProcessor<JobData>
+    let processor: TestBasicBackgroundJobProcessor<JobData>
 
     beforeEach(async () => {
-      processor = new FakeBackgroundJobProcessor<JobData>(
-        deps,
-        randomUUID(),
-        factory.getRedisConfig(),
-      )
+      processor = new TestBasicBackgroundJobProcessor<JobData>(deps, {
+        queueId: randomUUID(),
+        redisConfig: factory.getRedisConfig(),
+      })
       await processor.start()
     })
 
@@ -406,6 +430,64 @@ describe('AbstractBackgroundJobProcessor', () => {
     })
   })
 
+  describe('using grouping', () => {
+    let processor: TestBasicBackgroundJobProcessor<JobData>
+
+    beforeEach(async () => {
+      processor = new TestBasicBackgroundJobProcessor<JobData>(deps, {
+        queueId: randomUUID(),
+        redisConfig: factory.getRedisConfig(),
+        bullDashboardGrouping: ['my-prefix'],
+      })
+      await processor.start()
+    })
+
+    afterEach(async () => {
+      await processor.dispose()
+    })
+
+    it('should work with single schedule', async () => {
+      // Given
+      const jobData = {
+        id: generateMonotonicUuid(),
+        value: 'test',
+        metadata: { correlationId: generateMonotonicUuid() },
+      }
+
+      // When
+      const jobId = await processor.schedule(jobData)
+
+      // Then
+      const job = await processor.spy.waitForJobWithId(jobId, 'completed')
+      expect(job.data).toMatchObject(jobData)
+    })
+
+    it('should work with scheduleBulk', async () => {
+      // Given - When
+      const scheduledJobIds = await processor.scheduleBulk([
+        {
+          id: generateMonotonicUuid(),
+          value: 'first',
+          metadata: { correlationId: generateMonotonicUuid() },
+        },
+        {
+          id: generateMonotonicUuid(),
+          value: 'second',
+          metadata: { correlationId: generateMonotonicUuid() },
+        },
+      ])
+
+      // Then
+      expect(scheduledJobIds.length).toBe(2)
+
+      const firstJob = await processor.spy.waitForJobWithId(scheduledJobIds[0], 'completed')
+      const secondJob = await processor.spy.waitForJobWithId(scheduledJobIds[1], 'completed')
+
+      expect(firstJob.data.value).toBe('first')
+      expect(secondJob.data.value).toBe('second')
+    })
+  })
+
   describe('error', () => {
     const QueueName = 'AbstractBackgroundJobProcessor_error'
     let processor: TestFailingBackgroundJobProcessor<JobData>
@@ -447,7 +529,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       expect(processor.errorsOnProcess).length(1)
       expect(job.attemptsMade).toBe(3)
-      expect(processor.errorsOnProcess[0]).toMatchObject(errors[2])
+      expect(processor.errorsOnProcess[0]).toMatchObject(errors[2]!)
     })
 
     it('job throws unrecoverable error at the beginning', async () => {
@@ -470,7 +552,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       expect(processor.errorsOnProcess).length(1)
       expect(job.attemptsMade).toBe(1)
-      expect(processor.errorsOnProcess[0]).toMatchObject(errors[0])
+      expect(processor.errorsOnProcess[0]).toMatchObject(errors[0]!)
     })
 
     it('job throws unrecoverable error in the middle', async () => {
@@ -496,7 +578,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       expect(processor.errorsOnProcess).length(1)
       expect(job.attemptsMade).toBe(2)
-      expect(processor.errorsOnProcess[0]).toMatchObject(errors[1])
+      expect(processor.errorsOnProcess[0]).toMatchObject(errors[1]!)
     })
 
     it('error is triggered on failed hook', async () => {
@@ -531,6 +613,32 @@ describe('AbstractBackgroundJobProcessor', () => {
         },
       })
     })
+
+    it('job throws muted unrecoverable error and it is not reported', async () => {
+      // Given
+      const errorReporterSpy = vi.spyOn(deps.errorReporter, 'report')
+
+      const errors = [new MutedUnrecoverableError('muted unrecoverable test error')]
+      processor.errorsToThrowOnProcess = errors
+
+      // When
+      const jobId = await processor.schedule(
+        {
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
+        },
+        { attempts: 3, delay: 0 },
+      )
+
+      // Then
+      const job = await processor.spy.waitForJobWithId(jobId, 'failed')
+
+      expect(processor.errorsOnProcess).length(1)
+      expect(job.attemptsMade).toBe(1)
+      expect(processor.errorsOnProcess[0]).toMatchObject(errors[0]!)
+      expect(errorReporterSpy).toHaveBeenCalledTimes(0)
+    })
   })
 
   describe('stalled', () => {
@@ -562,18 +670,18 @@ describe('AbstractBackgroundJobProcessor', () => {
       expect(stalledProcessor?.onFailedErrors).length(1)
 
       const onFailedCall = stalledProcessor?.onFailedErrors[0]
-      expect(onFailedCall.error.message).toBe('job stalled more than allowable limit')
-      expect(onFailedCall.job.id).toBe(jobId)
-      expect(onFailedCall.job.data.id).toBe(jobData.id)
-      expect(onFailedCall.job.attemptsMade).toBe(0)
+      expect(onFailedCall!.error.message).toBe('job stalled more than allowable limit')
+      expect(onFailedCall!.job.id).toBe(jobId)
+      expect(onFailedCall!.job.data.id).toBe(jobData.id)
+      expect(onFailedCall!.job.attemptsMade).toBe(1)
 
       expect(errorReporterSpy).toHaveBeenCalledWith({
-        error: onFailedCall.error,
+        error: onFailedCall!.error,
         context: {
           jobId,
           jobName: 'TestStalledBackgroundJobProcessor queue',
           'x-request-id': jobData.metadata.correlationId,
-          errorJson: expect.stringContaining(onFailedCall.error.message),
+          errorJson: expect.stringContaining(onFailedCall!.error.message),
         },
       })
     })
@@ -723,7 +831,7 @@ describe('AbstractBackgroundJobProcessor', () => {
       // @ts-expect-error executing protected method for testing
       const repeatableJobs = await processor.queue.getRepeatableJobs()
       expect(repeatableJobs).toHaveLength(1)
-      expect(repeatableJobs[0].every).toBe('10')
+      expect(repeatableJobs[0]!.every).toBe('10')
 
       await processor.dispose()
     })

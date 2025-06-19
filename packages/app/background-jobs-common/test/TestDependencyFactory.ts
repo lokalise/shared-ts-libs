@@ -1,6 +1,7 @@
 import { type RedisConfig, globalLogger } from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
 import { vi } from 'vitest'
+import { CommonBullmqFactoryNew } from '../src/background-job-processor/factories/CommonBullmqFactoryNew.ts'
 import {
   type BackgroundJobProcessorDependencies,
   type BackgroundJobProcessorDependenciesNew,
@@ -9,9 +10,8 @@ import {
   type QueueConfiguration,
   type QueueManager,
   type SupportedQueueIds,
-} from '../src'
-import { CommonBullmqFactoryNew } from '../src/background-job-processor/factories/CommonBullmqFactoryNew'
-import { createRedisClient, getTestRedisConfig } from './TestRedis'
+} from '../src/index.ts'
+import { createRedisClient, getTestRedisConfig } from './TestRedis.ts'
 
 const testLogger = globalLogger
 export class TestDependencyFactory {
@@ -50,11 +50,13 @@ export class TestDependencyFactory {
 
   createNew<Queues extends QueueConfiguration[]>(
     queues: Queues,
+    isTest = true,
+    lazyInitEnabled = true,
   ): BackgroundJobProcessorDependenciesNew<Queues, SupportedQueueIds<Queues>> {
     this.queueManager = new FakeQueueManager(queues, {
-      isTest: true,
+      isTest,
       redisConfig: this.getRedisConfig(),
-      lazyInitEnabled: true,
+      lazyInitEnabled,
     })
     return {
       workerFactory: new CommonBullmqFactoryNew(),
@@ -72,6 +74,7 @@ export class TestDependencyFactory {
 
   async dispose(): Promise<void> {
     await this.queueManager?.dispose()
+    await this.clearRedis() // cleaning before disconnecting
     await this.redis?.disconnect(false)
     this.redis = undefined
   }

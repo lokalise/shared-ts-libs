@@ -1,8 +1,8 @@
 import { stringify } from 'fast-querystring'
-import type { z } from 'zod'
+import type { z } from 'zod/v4'
 
-import type { Either } from './either.js'
-import { failure, success } from './either.js'
+import type { Either } from './either.ts'
+import { failure, success } from './either.ts'
 
 export function parseQueryParams<RequestQuerySchema extends z.Schema>({
   queryParams,

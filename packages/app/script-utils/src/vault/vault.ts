@@ -1,8 +1,11 @@
 /* c8 ignore start */
 import type { SpawnSyncReturns } from 'node:child_process'
-import { execSync } from 'node:child_process'
+import { exec, execSync } from 'node:child_process'
+import { promisify } from 'node:util'
 
 import { globalLogger } from '@lokalise/node-core'
+
+const execAsync = promisify(exec)
 
 type VaultGetTokenResponse = {
   request_id: string
@@ -43,7 +46,7 @@ const installVaultCli = () => {
     }
   } else if (osType === 'darwin') {
     // macOS
-    execSync('brew list vault || brew install vault') // installing only if not installed
+    execSync('which vault || brew install vault') // installing only if not installed
   } else {
     globalLogger.warn(
       `You are running ${osType}, which doesn't support autoinstall, please ensure that Vault is installed and is accessible globally via "vault" command.`,
@@ -102,6 +105,25 @@ export const vaultGetVars = (service: string): Record<string, string> => {
     if (isExecError(e)) {
       globalLogger.error(
         `Vault ${service} error downloading env vars -> ${e.stderr.toString()}. Make sure you're using correct path to secrets. Vault reports 403 if the path is incorrect.`,
+      )
+    }
+    return {}
+  }
+}
+
+export const vaultGetVarsAsync = async (service: string): Promise<Record<string, string>> => {
+  if (!process.env.VAULT_TOKEN) return {}
+
+  try {
+    const { stdout } = await execAsync(`vault kv get -format=json "kv/${service}/dev"`)
+    const responseJson = JSON.parse(stdout) as VaultGetVarsResponse
+
+    globalLogger.info(`Vault ${service} version: ${responseJson.data.metadata.version}`)
+    return responseJson.data.data
+  } catch (e: unknown) {
+    if (isExecError(e)) {
+      globalLogger.error(
+        `Vault ${service} error downloading env vars -> ${e.stderr?.toString()}. Make sure you're using correct path to secrets. Vault reports 403 if the path is incorrect.`,
       )
     }
     return {}

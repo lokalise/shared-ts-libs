@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extractTextBetweenTags } from './extractTextBetweenTags'
+import { extractTextBetweenTags } from './extractTextBetweenTags.ts'
 
 describe('extractTextBetweenTags', () => {
   it.each([
@@ -19,6 +19,14 @@ describe('extractTextBetweenTags', () => {
       text: ' \uE101Hello world!\uE102 ! 123\uE101I am fine!\uE102 ',
       result: ['! 123'],
     }, // several regions within NT tags with leading and trailing spaces
+    {
+      text: '\uE101\uE102\uE111\uE101\uE112\uE102',
+      result: [],
+    }, // duplicated NT tags inside of NT region
+    {
+      text: '\uE101\uE102\uE111\uE102\uE101\uE101\uE112\uE102',
+      result: [],
+    }, // consecutive NT regions with special inline codes inside
 
     // HTML tags - should be removed
     { text: 'Hello!<> world', result: ['Hello!', 'world'] },
@@ -58,6 +66,10 @@ describe('extractTextBetweenTags', () => {
   it.each([
     {
       text: 'Hello, \uE101World!\uE102 How are you? \uE101I am fine!\uE102',
+      result: ['Hello,', 'How are you?'],
+    },
+    {
+      text: 'Hello, \uE101\uE101 World!\uE102 How are you? \uE101I am fine!\uE102',
       result: ['Hello,', 'How are you?'],
     },
     {

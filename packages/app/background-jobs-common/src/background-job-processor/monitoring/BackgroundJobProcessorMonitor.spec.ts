@@ -1,3 +1,5 @@
+import { generateMonotonicUuid } from '@lokalise/id-utils'
+import pino from 'pino'
 import {
   type MockInstance,
   afterAll,
@@ -8,27 +10,22 @@ import {
   it,
   vi,
 } from 'vitest'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import type { BackgroundJobProcessorDependencies } from '../processors/types.ts'
+import type { BaseJobPayload, RequestContext, SafeJob } from '../types.ts'
+import { BackgroundJobProcessorMonitor } from './BackgroundJobProcessorMonitor.ts'
+import { backgroundJobProcessorGetActiveQueueIds } from './backgroundJobProcessorGetActiveQueueIds.ts'
 
-import type Redis from 'ioredis'
-import pino from 'pino'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import { QUEUE_IDS_KEY } from '../constants'
-import type { BackgroundJobProcessorDependencies } from '../processors/types'
-import type { BaseJobPayload, RequestContext, SafeJob } from '../types'
-import { BackgroundJobProcessorMonitor } from './BackgroundJobProcessorMonitor'
-import { backgroundJobProcessorGetActiveQueueIds } from './backgroundJobProcessorGetActiveQueueIds'
+// @ts-ignore
 import symbols = pino.symbols
-import { generateMonotonicUuid } from '@lokalise/id-utils'
 
 describe('BackgroundJobProcessorMonitor', () => {
   let factory: TestDependencyFactory
   let deps: BackgroundJobProcessorDependencies<any>
-  let redis: Redis
 
   beforeAll(() => {
     factory = new TestDependencyFactory()
     deps = factory.create()
-    redis = factory.startRedis()
   })
 
   beforeEach(async () => {
@@ -40,90 +37,89 @@ describe('BackgroundJobProcessorMonitor', () => {
   })
 
   describe('registerQueue', () => {
-    it('throws an error if we try to register same queue twice', async () => {
-      const queueId = 'test-queue'
-      const monitor1 = new BackgroundJobProcessorMonitor(
-        deps,
-        {
-          queueId,
+    describe('old processor', () => {
+      it('throws an error if we try to register same queue twice', async () => {
+        const monitor = new BackgroundJobProcessorMonitor(deps, {
+          isNewProcessor: false,
+          queueId: 'test-queue',
+          processorName: 'registerQueue tests',
           ownerName: 'test-owner',
           redisConfig: factory.getRedisConfig(),
-        },
-        'registerQueue tests',
-      )
+        })
 
-      await monitor1.registerQueue()
-      await expect(
-        new BackgroundJobProcessorMonitor(
-          deps,
-          {
-            queueId,
-            ownerName: 'test-owner',
-            redisConfig: factory.getRedisConfig(),
-          },
-          'registerQueue tests',
-        ).registerQueue(),
-      ).rejects.toMatchInlineSnapshot(`[Error: Processor for queue id "test-queue" is not unique.]`)
+        await monitor.registerQueueProcessor()
+        await expect(monitor.registerQueueProcessor()).rejects.toMatchInlineSnapshot(
+          `[Error: Processor for queue id "test-queue" is not unique.]`,
+        )
 
-      await monitor1.unregisterQueue()
+        await monitor.unregisterQueueProcessor()
+      })
+
+      it('queue id is stored/updated on redis with current timestamp', async () => {
+        const monitor = new BackgroundJobProcessorMonitor(deps, {
+          isNewProcessor: false,
+          queueId: 'test-queue',
+          processorName: 'registerQueue tests',
+          ownerName: 'test-owner',
+          redisConfig: factory.getRedisConfig(),
+        })
+        await monitor.registerQueueProcessor()
+
+        const queueIds = await backgroundJobProcessorGetActiveQueueIds(factory.getRedisConfig())
+        expect(queueIds).toStrictEqual(['test-queue'])
+
+        monitor.unregisterQueueProcessor()
+      })
     })
 
-    it('queue id is stored/updated on redis with current timestamp', async () => {
-      const monitor = new BackgroundJobProcessorMonitor(
-        deps,
-        {
+    describe('new processor', () => {
+      it('throws an error if we try to register same queue twice', async () => {
+        const monitor = new BackgroundJobProcessorMonitor(deps, {
+          isNewProcessor: true,
           queueId: 'test-queue',
+          processorName: 'registerQueue tests',
           ownerName: 'test-owner',
-          redisConfig: factory.getRedisConfig(),
-        },
-        'registerQueue tests',
-      )
-      await monitor.registerQueue()
+        })
 
-      const today = new Date()
-      const [, score] = await redis.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
-      const queueIds = await backgroundJobProcessorGetActiveQueueIds(factory.getRedisConfig())
-      expect(queueIds).toStrictEqual(['test-queue'])
+        await monitor.registerQueueProcessor()
+        await expect(monitor.registerQueueProcessor()).rejects.toMatchInlineSnapshot(
+          `[Error: Processor for queue id "test-queue" is not unique.]`,
+        )
 
-      // Comparing timestamps in seconds
-      const todaySeconds = Math.floor(today.getTime() / 1000)
-      const scoreSeconds = Math.floor(new Date(Number.parseInt(score)).getTime() / 1000)
-      // max difference 1 to handle edge case of 0.1 - 1.0
-      expect(scoreSeconds - todaySeconds).lessThanOrEqual(1)
+        await monitor.unregisterQueueProcessor()
+      })
 
-      // unregistering to avoid error (see prev test)
-      monitor.unregisterQueue()
-      await monitor.registerQueue()
+      it('queue id should not be registered in redis', async () => {
+        const monitor = new BackgroundJobProcessorMonitor(deps, {
+          isNewProcessor: true,
+          queueId: 'test-queue',
+          processorName: 'registerQueue tests',
+          ownerName: 'test-owner',
+        })
+        await monitor.registerQueueProcessor()
 
-      const [, scoreAfterRestart] = await redis.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
-      const queueIdsAfterRestart = await backgroundJobProcessorGetActiveQueueIds(
-        factory.getRedisConfig(),
-      )
-      expect(queueIdsAfterRestart).toStrictEqual(['test-queue'])
-      expect(new Date(Number.parseInt(score))).not.toEqual(
-        new Date(Number.parseInt(scoreAfterRestart)),
-      )
+        const queueIds = await backgroundJobProcessorGetActiveQueueIds(factory.getRedisConfig())
+        expect(queueIds).toStrictEqual([])
 
-      monitor.unregisterQueue()
+        monitor.unregisterQueueProcessor()
+      })
     })
   })
 
   describe('unregisterQueue', () => {
     it('unregister remove in memory queue id but no on redis', async () => {
-      const monitor = new BackgroundJobProcessorMonitor(
-        deps,
-        {
-          queueId: 'test-queue',
-          ownerName: 'test-owner',
-          redisConfig: factory.getRedisConfig(),
-        },
-        'registerQueue tests',
-      )
+      const monitor = new BackgroundJobProcessorMonitor(deps, {
+        isNewProcessor: false,
+        queueId: 'test-queue',
+        processorName: 'registerQueue tests',
+        ownerName: 'test-owner',
+        redisConfig: factory.getRedisConfig(),
+      })
 
-      await monitor.registerQueue()
-      monitor.unregisterQueue()
-      await monitor.registerQueue() // no error on register after unregister
-      monitor.unregisterQueue()
+      await monitor.registerQueueProcessor()
+      monitor.unregisterQueueProcessor()
+      await monitor.registerQueueProcessor() // no error on register after unregister
+      monitor.unregisterQueueProcessor()
 
       const queueIdsAfterUnregister = await backgroundJobProcessorGetActiveQueueIds(
         factory.getRedisConfig(),
@@ -136,15 +132,13 @@ describe('BackgroundJobProcessorMonitor', () => {
     let monitor: BackgroundJobProcessorMonitor
 
     beforeAll(() => {
-      monitor = new BackgroundJobProcessorMonitor(
-        deps,
-        {
-          queueId: 'test-queue-getRequestContext',
-          ownerName: 'test-owner',
-          redisConfig: factory.getRedisConfig(),
-        },
-        'BackgroundJobProcessorMonitor tests',
-      )
+      monitor = new BackgroundJobProcessorMonitor(deps, {
+        isNewProcessor: false,
+        queueId: 'test-queue',
+        processorName: 'registerQueue tests',
+        ownerName: 'test-owner',
+        redisConfig: factory.getRedisConfig(),
+      })
     })
 
     it('request context not in job so a new one is generated', () => {
@@ -183,15 +177,13 @@ describe('BackgroundJobProcessorMonitor', () => {
     let job: SafeJob<BaseJobPayload>
 
     beforeAll(() => {
-      monitor = new BackgroundJobProcessorMonitor(
-        deps,
-        {
-          queueId: 'test-queue-logJobStarted',
-          ownerName: 'test-owner',
-          redisConfig: factory.getRedisConfig(),
-        },
-        'BackgroundJobProcessorMonitor tests',
-      )
+      monitor = new BackgroundJobProcessorMonitor(deps, {
+        isNewProcessor: false,
+        queueId: 'test-queue-logJobStarted',
+        processorName: 'BackgroundJobProcessorMonitor tests',
+        ownerName: 'test-owner',
+        redisConfig: factory.getRedisConfig(),
+      })
       job = createFakeJob('test-correlation-id')
     })
 
@@ -225,15 +217,13 @@ describe('BackgroundJobProcessorMonitor', () => {
     let monitor: BackgroundJobProcessorMonitor
 
     beforeAll(() => {
-      monitor = new BackgroundJobProcessorMonitor(
-        deps,
-        {
-          queueId: 'test-queue-logJobTryError',
-          ownerName: 'test-owner',
-          redisConfig: factory.getRedisConfig(),
-        },
-        'BackgroundJobProcessorMonitor tests',
-      )
+      monitor = new BackgroundJobProcessorMonitor(deps, {
+        isNewProcessor: false,
+        queueId: 'test-queue',
+        processorName: 'BackgroundJobProcessorMonitor tests',
+        ownerName: 'test-owner',
+        redisConfig: factory.getRedisConfig(),
+      })
     })
 
     it('should log error', () => {
@@ -266,15 +256,13 @@ describe('BackgroundJobProcessorMonitor', () => {
     let transactionManagerSpy: MockInstance
 
     beforeAll(() => {
-      monitor = new BackgroundJobProcessorMonitor(
-        deps,
-        {
-          queueId: 'test-queue-logJobStarted',
-          ownerName: 'test-owner',
-          redisConfig: factory.getRedisConfig(),
-        },
-        'BackgroundJobProcessorMonitor tests',
-      )
+      monitor = new BackgroundJobProcessorMonitor(deps, {
+        isNewProcessor: false,
+        queueId: 'test-queue',
+        processorName: 'BackgroundJobProcessorMonitor tests',
+        ownerName: 'test-owner',
+        redisConfig: factory.getRedisConfig(),
+      })
     })
 
     beforeEach(() => {

@@ -1,4 +1,4 @@
-import type { RecordKeyType } from '../../internal/types.js'
+import type { RecordKeyType } from '../../internal/types.ts'
 
 export type PickOptions = {
   keepUndefined?: boolean

@@ -5,7 +5,7 @@ import {
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
   CommonBullmqFactory,
-} from '../../src'
+} from '../../src/index.ts'
 
 export class TestBackgroundJobProcessorWithLazyLoading<
   JobData extends BaseJobPayload,

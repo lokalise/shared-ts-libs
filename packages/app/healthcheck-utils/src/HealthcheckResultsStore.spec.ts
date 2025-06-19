@@ -2,12 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
   HealthcheckResultsStore,
   type HealthcheckResultsStoreParams,
-} from './HealthcheckResultsStore'
+} from './HealthcheckResultsStore.ts'
 
 const testParams: HealthcheckResultsStoreParams = {
   maxHealthcheckNumber: 2,
   healthCheckResultTtlInMsecs: 5000,
-  stalenessThresholdInMsecs: 1000,
 }
 
 type TestHealthchecks = 'db' | 'redis'
@@ -19,10 +18,10 @@ describe('HealthcheckResultsStore', () => {
   })
 
   describe('getHealthcheckResult', () => {
-    it('returns true for fresh undefined values', () => {
+    it('returns false for fresh undefined values', () => {
       const value = store.getHealthcheckResult('db')
 
-      expect(value).toBe(true)
+      expect(value).toBe(false)
     })
 
     it('returns true for defined values', () => {

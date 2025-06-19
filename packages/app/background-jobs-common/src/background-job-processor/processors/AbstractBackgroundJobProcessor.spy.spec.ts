@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import { TestReturnValueBackgroundJobProcessor } from '../../../test/processors/TestReturnValueBackgroundJobProcessor'
-import type { BaseJobPayload } from '../types'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import { TestReturnValueBackgroundJobProcessor } from '../../../test/processors/TestReturnValueBackgroundJobProcessor.ts'
+import type { BaseJobPayload } from '../types.ts'
 
-import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor'
-import type { BackgroundJobProcessorDependencies } from './types'
+import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor.ts'
+import type { BackgroundJobProcessorDependencies } from './types.ts'
 
 type JobData = {
   id: string

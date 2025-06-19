@@ -7,6 +7,7 @@ import { isError, isInternalError, isPublicNonRecoverableError } from '@lokalise
 const hasDetails = (
   error: NotifiableError,
 ): error is NotifiableError & { details: FreeformRecord } => isError(error) && 'details' in error
+const BugsnagClient = Bugsnag.default
 
 export type Severity = Event['severity']
 
@@ -23,8 +24,8 @@ export const reportErrorToBugsnag = ({
   unhandled = true,
   context,
 }: ErrorReport) =>
-  Bugsnag.isStarted() &&
-  Bugsnag.notify(error, (event) => {
+  BugsnagClient.isStarted() &&
+  BugsnagClient.notify(error, (event) => {
     let computedContext = { ...(context ?? {}) }
     if (isPublicNonRecoverableError(error) || isInternalError(error)) {
       computedContext = {
@@ -49,13 +50,13 @@ export const reportErrorToBugsnag = ({
   })
 
 export const startBugsnag = (config: NodeConfig) => {
-  if (!Bugsnag.isStarted()) {
-    Bugsnag.start(config)
+  if (!BugsnagClient.isStarted()) {
+    BugsnagClient.start(config)
   }
 }
 
 export const addFeatureFlag = (name: string, variant: string | null) => {
-  Bugsnag.addFeatureFlag(name, variant)
+  BugsnagClient.addFeatureFlag(name, variant)
 }
 
 export const bugsnagErrorReporter: ErrorReporter = {

@@ -3,9 +3,9 @@ import type {
   ErrorReporter,
   TransactionObservabilityManager,
 } from '@lokalise/node-core'
-import type Redis from 'ioredis'
+import type { Redis } from 'ioredis'
 import type { ToadScheduler } from 'toad-scheduler'
-import type { RequestContext } from '../background-job-processor'
+import type { RequestContext } from '../index.ts'
 
 export type Schedule =
   | {
@@ -61,6 +61,10 @@ export type BackgroundJobConfiguration = {
    * If true, the job will log when it starts and finishes. Default is false
    */
   shouldLogExecution?: boolean
+  /**
+   * If true, job will be triggered immediately when registered. Default is true
+   */
+  runImmediately?: boolean
 }
 
 export type LockConfiguration = {

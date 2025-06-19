@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { z } from 'zod'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import { TestBarrierBackgroundJobProcessorNew } from '../../../test/processors/TestBarrierBackgroundJobProcessorNew'
-import type { QueueManager } from '../managers/QueueManager'
-import type { QueueConfiguration } from '../managers/types'
-import type { BackgroundJobProcessorDependenciesNew } from './types'
+import { z } from 'zod/v4'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import { TestBarrierBackgroundJobProcessorNew } from '../../../test/processors/TestBarrierBackgroundJobProcessorNew.ts'
+import type { QueueManager } from '../managers/QueueManager.ts'
+import type { QueueConfiguration } from '../managers/types.ts'
+import type { BackgroundJobProcessorDependenciesNew } from './types.ts'
 
 const supportedQueues = [
   {
@@ -45,7 +45,6 @@ describe('AbstractBackgroundJobProcessor Barrier', () => {
     const processor = new TestBarrierBackgroundJobProcessorNew<SupportedQueues, 'queue', JobReturn>(
       deps,
       'queue',
-      factory.getRedisConfig(),
       () => {
         counter++
         return Promise.resolve({
@@ -73,7 +72,6 @@ describe('AbstractBackgroundJobProcessor Barrier', () => {
     const processor = new TestBarrierBackgroundJobProcessorNew<SupportedQueues, 'queue', JobReturn>(
       deps,
       'queue',
-      factory.getRedisConfig(),
       () => {
         counter++
 

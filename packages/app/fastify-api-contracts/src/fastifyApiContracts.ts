@@ -1,21 +1,28 @@
-import { copyWithoutUndefined } from '@lokalise/node-core'
 import {
   type DeleteRouteDefinition,
   type GetRouteDefinition,
   type PayloadRouteDefinition,
   mapRouteToPath,
-} from '@lokalise/universal-ts-utils/node'
-import type { z } from 'zod'
+} from '@lokalise/api-contracts'
+import type { CommonRouteDefinition } from '@lokalise/api-contracts'
+import { copyWithoutUndefined } from '@lokalise/node-core'
+import type { z } from 'zod/v4'
 import type {
   ApiContractMetadataToRouteMapper,
   ExtendedFastifySchema,
   FastifyNoPayloadHandlerFn,
   FastifyPayloadHandlerFn,
   RouteType,
-} from './types.js'
+} from './types.ts'
 
 type OptionalZodSchema = z.Schema | undefined
-type InferredOptionalSchema<Schema> = Schema extends z.Schema ? z.infer<Schema> : never
+type InferredOptionalSchema<Schema> = Schema extends z.Schema ? z.infer<Schema> : undefined
+
+declare module 'fastify' {
+  interface FastifyContextConfig {
+    apiContract: CommonRouteDefinition
+  }
+}
 
 /**
  * Infers handler request type automatically from the contract for GET or DELETE methods
@@ -28,18 +35,20 @@ export function buildFastifyNoPayloadRouteHandler<
 >(
   _apiContract:
     | GetRouteDefinition<
-        InferredOptionalSchema<PathParams>,
         ResponseBodySchema,
         PathParams,
         RequestQuerySchema,
-        RequestHeaderSchema
+        RequestHeaderSchema,
+        boolean,
+        boolean
       >
     | DeleteRouteDefinition<
-        InferredOptionalSchema<PathParams>,
         ResponseBodySchema,
         PathParams,
         RequestQuerySchema,
-        RequestHeaderSchema
+        RequestHeaderSchema,
+        boolean,
+        boolean
       >,
   handler: FastifyNoPayloadHandlerFn<
     InferredOptionalSchema<ResponseBodySchema>,
@@ -67,7 +76,6 @@ export function buildFastifyNoPayloadRoute<
 >(
   apiContract:
     | GetRouteDefinition<
-        InferredOptionalSchema<PathParams>,
         ResponseBodySchema,
         PathParams,
         RequestQuerySchema,
@@ -76,7 +84,6 @@ export function buildFastifyNoPayloadRoute<
         boolean
       >
     | DeleteRouteDefinition<
-        InferredOptionalSchema<PathParams>,
         ResponseBodySchema,
         PathParams,
         RequestQuerySchema,
@@ -91,9 +98,29 @@ export function buildFastifyNoPayloadRoute<
     InferredOptionalSchema<RequestHeaderSchema>
   >,
   contractMetadataToRouteMapper: ApiContractMetadataToRouteMapper = () => ({}),
-): RouteType {
+): RouteType<
+  InferredOptionalSchema<ResponseBodySchema>,
+  undefined,
+  InferredOptionalSchema<PathParams>,
+  InferredOptionalSchema<RequestQuerySchema>,
+  InferredOptionalSchema<RequestHeaderSchema>
+> {
+  const routeMetadata = contractMetadataToRouteMapper(apiContract.metadata)
+  const mergedConfig = routeMetadata.config
+    ? {
+        ...routeMetadata.config,
+        apiContract,
+      }
+    : {
+        apiContract,
+      }
+  const mergedMetadata = {
+    ...routeMetadata,
+    config: mergedConfig,
+  }
+
   return {
-    ...contractMetadataToRouteMapper(apiContract.metadata),
+    ...mergedMetadata,
     method: apiContract.method,
     url: mapRouteToPath(apiContract),
     handler,
@@ -102,6 +129,8 @@ export function buildFastifyNoPayloadRoute<
       querystring: apiContract.requestQuerySchema,
       headers: apiContract.requestHeaderSchema,
       describe: apiContract.description,
+      description: apiContract.description,
+      summary: apiContract.summary,
       response: apiContract.responseSchemasByStatusCode,
     } satisfies ExtendedFastifySchema),
   }
@@ -120,7 +149,6 @@ export function buildFastifyPayloadRouteHandler<
   IsEmptyResponseExpected extends boolean = false,
 >(
   _apiContract: PayloadRouteDefinition<
-    InferredOptionalSchema<PathParams>,
     RequestBodySchema,
     ResponseBodySchema,
     PathParams,
@@ -159,7 +187,6 @@ export function buildFastifyPayloadRoute<
   IsEmptyResponseExpected extends boolean = false,
 >(
   apiContract: PayloadRouteDefinition<
-    InferredOptionalSchema<PathParams>,
     RequestBodySchema,
     ResponseBodySchema,
     PathParams,
@@ -176,9 +203,29 @@ export function buildFastifyPayloadRoute<
     InferredOptionalSchema<RequestHeaderSchema>
   >,
   contractMetadataToRouteMapper: ApiContractMetadataToRouteMapper = () => ({}),
-): RouteType {
+): RouteType<
+  InferredOptionalSchema<ResponseBodySchema>,
+  InferredOptionalSchema<RequestBodySchema>,
+  InferredOptionalSchema<PathParams>,
+  InferredOptionalSchema<RequestQuerySchema>,
+  InferredOptionalSchema<RequestHeaderSchema>
+> {
+  const routeMetadata = contractMetadataToRouteMapper(apiContract.metadata)
+  const mergedConfig = routeMetadata.config
+    ? {
+        ...routeMetadata.config,
+        apiContract,
+      }
+    : {
+        apiContract,
+      }
+  const mergedMetadata = {
+    ...routeMetadata,
+    config: mergedConfig,
+  }
+
   return {
-    ...contractMetadataToRouteMapper(apiContract.metadata),
+    ...mergedMetadata,
     method: apiContract.method,
     url: mapRouteToPath(apiContract),
     handler,
@@ -188,6 +235,8 @@ export function buildFastifyPayloadRoute<
       querystring: apiContract.requestQuerySchema,
       headers: apiContract.requestHeaderSchema,
       describe: apiContract.description,
+      description: apiContract.description,
+      summary: apiContract.summary,
       response: apiContract.responseSchemasByStatusCode,
     } satisfies ExtendedFastifySchema),
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isAttemptToEditNonTranslatableContent } from './isAttemptToEditNonTranslatableContent'
+import { isAttemptToEditNonTranslatableContent } from './isAttemptToEditNonTranslatableContent.ts'
 
 describe('isAttemptToEditNonTranslatableContent', () => {
   it.each([
@@ -22,13 +22,28 @@ describe('isAttemptToEditNonTranslatableContent', () => {
   })
 
   it.each([
-    '\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Goodbye \uE101{% endif %} my\uE102 world', // edited non translatable content
-    '\uE101{% if MyVariable %}\uE102 Hello \uE101{% endif %}\uE102 world', // removed non translatable content
-    '\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Goodbye \uE101{% endif %} world', // unbalanced tags
-    '\uE101{% if MyVariable %} Hello {% endif %} Goodbye {% else %}\uE102', // whole content is non-translatable
-  ])('returns true if non translatable content is edited', (updatedValue) => {
-    const originalValue =
-      '\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Goodbye \uE101{% endif %}\uE102 world'
+    [
+      '\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Goodbye \uE101{% endif %}\uE102 world',
+      '\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Goodbye \uE101{% endif %} my\uE102 world',
+    ], // edited non translatable content
+    [
+      '\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Goodbye \uE101{% endif %}\uE102 world',
+      '\uE101{% if MyVariable %}\uE102 Hello \uE101{% endif %}\uE102 world',
+    ], // removed non translatable content
+    [
+      '\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Goodbye \uE101{% endif %}\uE102 world',
+      '\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Goodbye \uE101{% endif %} world',
+    ], // unbalanced tags
+    [
+      '\uE101{% if MyVariable %}\uE102 Hello \uE101{% else %}\uE102 Goodbye \uE101{% endif %}\uE102 world',
+      '\uE101{% if MyVariable %} Hello {% endif %} Goodbye {% else %}\uE102',
+    ], // whole content is non-translatable,
+    ['\uE101\uE102\uE111\uE101\uE112\uE102', '\uE101\uE102abc\uE101\uE112\uE102'], // whole content is non-translatable and contains only NT inline codes,
+    [
+      '\uE101\uE102\uE111\uE102\uE101\uE101\uE112\uE102',
+      '\uE101abc\uE111\uE102\uE101\uE101\uE112\uE102',
+    ], // whole content is non-translatable and contains only NT inline codes second case
+  ])('returns true if non translatable content is edited', (originalValue, updatedValue) => {
     expect(isAttemptToEditNonTranslatableContent(originalValue, updatedValue)).toBeTruthy()
   })
 })

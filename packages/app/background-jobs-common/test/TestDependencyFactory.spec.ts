@@ -1,7 +1,7 @@
 import type { Redis } from 'ioredis'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { TestDependencyFactory } from './TestDependencyFactory'
+import { TestDependencyFactory } from './TestDependencyFactory.ts'
 
 describe('TestDependencyFactory', () => {
   let factory: TestDependencyFactory

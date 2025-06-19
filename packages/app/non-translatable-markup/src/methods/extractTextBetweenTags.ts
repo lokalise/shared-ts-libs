@@ -1,4 +1,4 @@
-import { nonTranslatableTextRegexp, tagRegexpG } from './utils'
+import { nonTranslatableTextRegexp, tagRegexpG } from './utils.ts'
 
 /**
  * Extract text parts between NTC tags and HTML like tags and returns them as array.

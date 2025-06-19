@@ -1,12 +1,12 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 
 import type { RedisConfig } from '@lokalise/node-core'
+import type { BarrierCallback } from '../../src/background-job-processor/barrier/barrier.ts'
 import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
-} from '../../src'
-import type { BarrierCallback } from '../../src/background-job-processor/barrier/barrier'
+} from '../../src/index.ts'
 
 export class TestBarrierBackgroundJobProcessor<
   JobData extends BaseJobPayload,
@@ -27,7 +27,7 @@ export class TestBarrierBackgroundJobProcessor<
     })
   }
 
-  schedule(jobData: JobData): Promise<string> {
+  override schedule(jobData: JobData): Promise<string> {
     return super.schedule(jobData, { attempts: 1 })
   }
 

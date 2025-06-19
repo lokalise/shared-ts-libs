@@ -1,3 +1,3 @@
-export * from './rooms'
-export * from './events'
-export * from './types'
+export * from './rooms.ts'
+export * from './events/index.ts'
+export * from './types/index.ts'

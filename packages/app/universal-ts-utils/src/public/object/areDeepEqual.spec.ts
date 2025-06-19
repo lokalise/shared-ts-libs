@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { areDeepEqual } from './areDeepEqual.js'
+import { areDeepEqual } from './areDeepEqual.ts'
 
 describe('areDeepEqual', () => {
   describe('comparing primitives', () => {

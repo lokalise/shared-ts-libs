@@ -1,4 +1,9 @@
-import { dateRegexp, nonTranslatableTextRegexp, symbolsAndNumberRegexpG, tagRegexpG } from './utils'
+import {
+  dateRegexp,
+  nonTranslatableTextRegexp,
+  symbolsAndNumberRegexpG,
+  tagRegexpG,
+} from './utils.ts'
 
 /**
  * Returns true if the text contain at least one translatable piece of text.

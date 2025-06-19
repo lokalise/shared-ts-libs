@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from '@prisma/client'
-import type { PrismaClientFactoryOptions } from './types'
+import type { PrismaClientFactoryOptions } from './types.ts'
 
 const defaultOptions: PrismaClientFactoryOptions = {
   transactionOptions: { isolationLevel: 'ReadCommitted' },
@@ -18,6 +18,5 @@ export const prismaClientFactory = <P extends PrismaClient>(
     ...options.transactionOptions,
   }
 
-  //@ts-expect-error - ReadCommitted is not accepted by Prisma atm
   return new PrismaClient(options)
 }

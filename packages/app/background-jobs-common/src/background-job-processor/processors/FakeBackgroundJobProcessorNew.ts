@@ -1,9 +1,8 @@
-import type { RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
-import { CommonBullmqFactoryNew } from '../factories/CommonBullmqFactoryNew'
-import type { QueueConfiguration, SupportedQueueIds } from '../managers/types'
-import { AbstractBackgroundJobProcessorNew } from './AbstractBackgroundJobProcessorNew'
-import type { BackgroundJobProcessorDependenciesNew } from './types'
+import { CommonBullmqFactoryNew } from '../factories/CommonBullmqFactoryNew.ts'
+import type { QueueConfiguration, SupportedQueueIds } from '../managers/types.ts'
+import { AbstractBackgroundJobProcessorNew } from './AbstractBackgroundJobProcessorNew.ts'
+import type { BackgroundJobProcessorDependenciesNew } from './types.ts'
 
 export class FakeBackgroundJobProcessorNew<
   Queues extends QueueConfiguration[],
@@ -15,8 +14,6 @@ export class FakeBackgroundJobProcessorNew<
       'workerFactory' | 'transactionObservabilityManager'
     >,
     queueId: QueueId,
-    redisConfig: RedisConfig,
-    isTest = true,
   ) {
     super(
       {
@@ -35,9 +32,7 @@ export class FakeBackgroundJobProcessorNew<
       {
         queueId,
         ownerName: 'testOwner',
-        isTest,
         workerOptions: { concurrency: 1 },
-        redisConfig,
       },
     )
   }

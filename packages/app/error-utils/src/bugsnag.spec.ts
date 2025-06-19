@@ -1,15 +1,16 @@
 import Bugsnag from '@bugsnag/js'
 import { type FreeformRecord, InternalError, PublicNonRecoverableError } from '@lokalise/node-core'
 import { describe, expect, it, vi } from 'vitest'
+import { reportErrorToBugsnag } from './bugsnag.ts'
 
-import { reportErrorToBugsnag } from './bugsnag'
+const BugsnagClient = Bugsnag.default
 
 describe('bugsnag', () => {
   describe('reportErrorToBugsnag', () => {
     it('not started', () => {
       // Given
-      const startSpy = vi.spyOn(Bugsnag, 'isStarted').mockReturnValue(false)
-      const notifySpy = vi.spyOn(Bugsnag, 'notify')
+      const startSpy = vi.spyOn(BugsnagClient, 'isStarted').mockReturnValue(false)
+      const notifySpy = vi.spyOn(BugsnagClient, 'notify')
 
       // When
       reportErrorToBugsnag({ error: new Error('test') })
@@ -21,8 +22,8 @@ describe('bugsnag', () => {
 
     it('using Error', async () => {
       // Given
-      vi.spyOn(Bugsnag, 'isStarted').mockReturnValue(true)
-      const notifySpy = vi.spyOn(Bugsnag, 'notify').mockReturnValue(undefined)
+      vi.spyOn(BugsnagClient, 'isStarted').mockReturnValue(true)
+      const notifySpy = vi.spyOn(BugsnagClient, 'notify').mockReturnValue(undefined)
 
       // When
       reportErrorToBugsnag({ error: new Error('test') })
@@ -30,16 +31,16 @@ describe('bugsnag', () => {
       // Then
       expect(notifySpy).toHaveBeenCalled()
 
-      const callback = notifySpy.mock.calls[0][1]
-      const event = { addMetadata: (_, __) => undefined } as any
-      await callback(event, () => {})
+      const callback = notifySpy.mock.calls[0]![1]
+      const event = { addMetadata: () => undefined } as any
+      await callback!(event, () => {})
       expect(event).toMatchObject({ severity: 'error', unhandled: true })
     })
 
     it('custom severity and unhandled', async () => {
       // Given
-      vi.spyOn(Bugsnag, 'isStarted').mockReturnValue(true)
-      const notifySpy = vi.spyOn(Bugsnag, 'notify').mockReturnValue(undefined)
+      vi.spyOn(BugsnagClient, 'isStarted').mockReturnValue(true)
+      const notifySpy = vi.spyOn(BugsnagClient, 'notify').mockReturnValue(undefined)
 
       // When
       reportErrorToBugsnag({ error: new Error('test'), severity: 'info', unhandled: false })
@@ -47,16 +48,16 @@ describe('bugsnag', () => {
       // Then
       expect(notifySpy).toHaveBeenCalled()
 
-      const callback = notifySpy.mock.calls[0][1]
-      const event = { addMetadata: (_, __) => undefined } as any
-      await callback(event, () => {})
+      const callback = notifySpy.mock.calls[0]![1]
+      const event = { addMetadata: () => undefined } as any
+      await callback!(event, () => {})
       expect(event).toMatchObject({ severity: 'info', unhandled: false })
     })
 
     it('internal error', async () => {
       // Given
-      vi.spyOn(Bugsnag, 'isStarted').mockReturnValue(true)
-      const notifySpy = vi.spyOn(Bugsnag, 'notify').mockReturnValue(undefined)
+      vi.spyOn(BugsnagClient, 'isStarted').mockReturnValue(true)
+      const notifySpy = vi.spyOn(BugsnagClient, 'notify').mockReturnValue(undefined)
 
       // When
       reportErrorToBugsnag({
@@ -71,15 +72,15 @@ describe('bugsnag', () => {
       // Then
       expect(notifySpy).toHaveBeenCalled()
 
-      const callback = notifySpy.mock.calls[0][1]
-      let context = {}
+      const callback = notifySpy.mock.calls[0]![1]
+      let context: unknown = {}
       const event = {
-        addMetadata: (key, obj) => {
+        addMetadata: (key: unknown, obj: unknown) => {
           if (key === 'Context') context = obj
           else throw new Error('wrong key')
         },
       } as any
-      await callback(event, () => {})
+      await callback!(event, () => {})
       expect(event).toMatchObject({ severity: 'error', unhandled: true })
       expect(context).toMatchObject({
         good: 'bye',
@@ -90,8 +91,8 @@ describe('bugsnag', () => {
 
     it('public non recoverable error', async () => {
       // Given
-      vi.spyOn(Bugsnag, 'isStarted').mockReturnValue(true)
-      const notifySpy = vi.spyOn(Bugsnag, 'notify').mockReturnValue(undefined)
+      vi.spyOn(BugsnagClient, 'isStarted').mockReturnValue(true)
+      const notifySpy = vi.spyOn(BugsnagClient, 'notify').mockReturnValue(undefined)
 
       // When
       reportErrorToBugsnag({
@@ -106,10 +107,10 @@ describe('bugsnag', () => {
       // Then
       expect(notifySpy).toHaveBeenCalled()
 
-      const callback = notifySpy.mock.calls[0][1]
-      let context = {}
+      const callback = notifySpy.mock.calls[0]![1]!
+      let context: unknown = {}
       const event = {
-        addMetadata: (key, obj) => {
+        addMetadata: (key: unknown, obj: unknown) => {
           if (key === 'Context') context = obj
           else throw new Error('wrong key')
         },
@@ -125,8 +126,8 @@ describe('bugsnag', () => {
 
     it('unknown error with details field', async () => {
       // Given
-      vi.spyOn(Bugsnag, 'isStarted').mockReturnValue(true)
-      const notifySpy = vi.spyOn(Bugsnag, 'notify').mockReturnValue(undefined)
+      vi.spyOn(BugsnagClient, 'isStarted').mockReturnValue(true)
+      const notifySpy = vi.spyOn(BugsnagClient, 'notify').mockReturnValue(undefined)
 
       // When
       reportErrorToBugsnag({
@@ -137,15 +138,15 @@ describe('bugsnag', () => {
       // Then
       expect(notifySpy).toHaveBeenCalled()
 
-      const callback = notifySpy.mock.calls[0][1]
-      let context = {}
+      const callback = notifySpy.mock.calls[0]![1]
+      let context: unknown = {}
       const event = {
-        addMetadata: (key, obj) => {
+        addMetadata: (key: unknown, obj: unknown) => {
           if (key === 'Context') context = obj
           else throw new Error('wrong key')
         },
       } as any
-      await callback(event, () => {})
+      await callback!(event, () => {})
       expect(event).toMatchObject({ severity: 'error', unhandled: true })
       expect(context).toMatchObject({
         good: 'bye',

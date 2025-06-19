@@ -1,6 +1,6 @@
 import type { Either } from '@lokalise/node-core'
 import { Gauge } from 'prom-client'
-import type { HealthcheckResultsStore } from './HealthcheckResultsStore'
+import type { HealthcheckResultsStore } from './HealthcheckResultsStore.ts'
 
 export type Healthcheck = {
   areMetricsEnabled: boolean
@@ -29,7 +29,7 @@ export abstract class AbstractHealthcheck<SupportedHealthchecks extends string>
 
   abstract getId(): SupportedHealthchecks
 
-  constructor(
+  protected constructor(
     dependencies: HealthcheckDependencies<SupportedHealthchecks>,
     areMetricsEnabled: boolean,
   ) {
@@ -52,7 +52,7 @@ export abstract class AbstractHealthcheck<SupportedHealthchecks extends string>
       help: `Whether ${id} was available at the time`,
       collect() {
         const checkResult = store.getHealthcheckResult(id)
-        this.set(checkResult !== false ? 1 : 0)
+        this.set(checkResult ? 1 : 0)
       },
     })
     new Gauge({

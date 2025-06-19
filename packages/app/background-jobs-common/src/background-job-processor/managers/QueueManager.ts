@@ -1,22 +1,20 @@
-import type { JobsOptions, QueueOptions } from 'bullmq'
-import type { Queue } from 'bullmq'
-import type { JobState } from 'bullmq/dist/esm/types/job-type'
+import type { JobState, JobsOptions, Queue, QueueOptions } from 'bullmq'
 import { merge } from 'ts-deepmerge'
-import { DEFAULT_QUEUE_OPTIONS } from '../constants'
-import type { BullmqQueueFactory } from '../factories/BullmqQueueFactory'
-import type { JobsPaginatedResponse, ProtectedQueue } from '../processors/types'
-import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
-import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import { prepareJobOptions, sanitizeRedisConfig } from '../utils'
-import { QueueRegistry } from './QueueRegistry'
+import type { BullmqQueueFactory } from '../factories/BullmqQueueFactory.ts'
+import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
+import { prepareJobOptions } from '../utils.ts'
+import { QueueRegistry } from './QueueRegistry.ts'
 import type {
   JobPayloadForQueue,
   JobPayloadInputForQueue,
+  JobsPaginatedResponse,
+  ProtectedQueue,
   QueueConfiguration,
   QueueManagerConfig,
   SupportedJobPayloads,
   SupportedQueueIds,
-} from './types'
+} from './types.ts'
 
 export class QueueManager<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
@@ -31,21 +29,24 @@ export class QueueManager<
   QueueOptionsType extends QueueOptions = QueueOptions,
   JobOptionsType extends JobsOptions = JobsOptions,
 > {
-  protected readonly queueRegistry: QueueRegistry<Queues, QueueOptionsType, JobOptionsType>
+  public readonly config: QueueManagerConfig
 
-  private readonly factory: BullmqQueueFactory<QueueType, QueueOptionsType>
-  private config: QueueManagerConfig
+  protected readonly queueRegistry: QueueRegistry<
+    Queues,
+    QueueType,
+    QueueOptionsType,
+    JobOptionsType
+  >
 
-  private readonly _queues: Record<QueueConfiguration<QueueOptionsType>['queueId'], QueueType> = {}
   private readonly spies: Record<
     QueueConfiguration<QueueOptionsType>['queueId'],
     BackgroundJobProcessorSpy<
       JobPayloadForQueue<Queues, QueueConfiguration<QueueOptionsType>['queueId']>,
-      undefined
+      // biome-ignore lint/suspicious/noExplicitAny: At this point we don't know the return type of the spy
+      any
     >
   > = {}
 
-  private isStarted = false
   private startPromise?: Promise<void>
 
   constructor(
@@ -53,10 +54,9 @@ export class QueueManager<
     queues: Queues,
     config: QueueManagerConfig,
   ) {
-    this.factory = queueFactory
-    this.queueRegistry = new QueueRegistry(queues)
-
+    this.queueRegistry = new QueueRegistry(queues, queueFactory, config.redisConfig)
     this.config = config
+
     if (config.isTest) {
       for (const queue of queues) {
         this.spies[queue.queueId] = new BackgroundJobProcessorSpy()
@@ -64,78 +64,45 @@ export class QueueManager<
     }
   }
 
-  public async dispose(): Promise<void> {
-    if (!this.isStarted) return
-
-    try {
-      await Promise.allSettled(Object.values(this._queues).map((queue) => queue.close()))
-      /* v8 ignore next 3 */
-    } catch {
-      //do nothing
-    }
-
-    this.isStarted = false
-  }
-
-  public getQueue<QueueId extends SupportedQueueIds<Queues>, JobReturn = unknown>(
-    queueId: QueueId,
-  ): ProtectedQueue<JobPayloadForQueue<Queues, QueueId>, JobReturn, QueueType> {
-    if (!this._queues[queueId]) {
-      throw new Error(`queue ${queueId} was not instantiated yet, please run "start()"`)
-    }
-
-    return this._queues[queueId]
-  }
-
   /**
    * Start the queues
    * @param enabled default true - if true, start all queues, if false, do nothing, if array, start only the queues in the array (array of queue names expected)
    */
   public async start(enabled: string[] | boolean = true): Promise<void> {
-    if (this.isStarted) return // if it is already started -> skip
-
+    if (this.queueRegistry.isStarted) return // if it is already started -> skip
     if (enabled === false) return // if it is disabled -> skip
 
-    if (!this.startPromise) this.startPromise = this.internalStart(enabled)
+    if (!this.startPromise) this.startPromise = this.queueRegistry.start(enabled)
+
     await this.startPromise
     this.startPromise = undefined
   }
 
-  private startIfNotStarted(
-    queueId: QueueConfiguration<QueueOptionsType>['queueId'],
-  ): Promise<void> {
-    if (!this.isStarted && this.config.lazyInitEnabled === false) {
-      throw new Error('QueueManager not started, please call `start` or enable lazy init')
-    }
-
-    if (!this.isStarted || !this._queues[queueId]) {
-      return this.start([queueId])
-    }
-
-    return Promise.resolve()
+  public dispose(): Promise<void> {
+    return this.queueRegistry.dispose()
   }
 
-  private async internalStart(enabled: string[] | true): Promise<void> {
-    const queueReadyPromises = []
-    const queueIdSetToStart = enabled === true ? undefined : new Set(enabled)
+  public getQueueConfig<QueueId extends SupportedQueueIds<Queues>>(
+    queueId: QueueId,
+  ): Queues[number] {
+    return this.queueRegistry.getQueueConfig(queueId)
+  }
 
-    for (const queueId of this.queueRegistry.queueIds) {
-      if (queueIdSetToStart?.has(queueId) === false) {
-        continue
-      }
-      const queueConfig = this.queueRegistry.getQueueConfig(queueId)
-      const queue = this.factory.buildQueue(queueId, {
-        ...(merge(DEFAULT_QUEUE_OPTIONS, queueConfig.queueOptions ?? {}) as QueueOptionsType),
-        connection: sanitizeRedisConfig(this.config.redisConfig),
-        prefix: this.config.redisConfig?.keyPrefix ?? undefined,
-      })
-      this._queues[queueId] = queue
-      queueReadyPromises.push(queue.waitUntilReady())
-    }
+  public getQueue<QueueId extends SupportedQueueIds<Queues>, JobReturn = unknown>(
+    queueId: QueueId,
+  ): ProtectedQueue<JobPayloadForQueue<Queues, QueueId>, JobReturn, QueueType> {
+    return this.queueRegistry.getQueue(queueId)
+  }
 
-    if (queueReadyPromises.length) await Promise.all(queueReadyPromises)
+  public getSpy<QueueId extends SupportedQueueIds<Queues>, JobReturn = unknown>(
+    queueId: QueueId,
+  ): BackgroundJobProcessorSpyInterface<JobPayloadForQueue<Queues, QueueId>, JobReturn> {
+    if (!this.spies[queueId])
+      throw new Error(
+        `${queueId} spy was not instantiated, it is only available on test mode. Please use \`config.isTest\` to enable it on QueueManager`,
+      )
 
-    this.isStarted = true
+    return this.spies[queueId]
   }
 
   public async getJobCount(queueId: SupportedQueueIds<Queues>): Promise<number> {
@@ -148,86 +115,6 @@ export class QueueManager<
       'prioritized',
       'waiting-children',
     )
-  }
-
-  public async schedule<QueueId extends SupportedQueueIds<Queues>>(
-    queueId: QueueId,
-    jobPayload: JobPayloadInputForQueue<Queues, QueueId>,
-    options?: JobOptionsType,
-  ): Promise<string> {
-    const parsedPayload = this.queueRegistry
-      .getQueueConfig(queueId)
-      .jobPayloadSchema.parse(jobPayload)
-
-    await this.startIfNotStarted(queueId)
-    const job = await this.getQueue(queueId).add(
-      queueId,
-      parsedPayload,
-      this.resolveJobOptions(queueId, parsedPayload, options),
-    )
-    if (!job?.id) throw new Error('Scheduled job ID is undefined')
-    if (this.spies[queueId]) this.spies[queueId].addJob(job, 'scheduled')
-
-    return job.id
-  }
-
-  public async scheduleBulk<QueueId extends SupportedQueueIds<Queues>>(
-    queueId: QueueId,
-    jobPayloads: JobPayloadInputForQueue<Queues, QueueId>[],
-    options?: Omit<JobOptionsType, 'repeat'>,
-  ): Promise<string[]> {
-    if (jobPayloads.length === 0) return []
-
-    const { jobPayloadSchema } = this.queueRegistry.getQueueConfig(queueId)
-    const parsedPayload = jobPayloads.map((payload) => jobPayloadSchema.parse(payload))
-
-    await this.startIfNotStarted(queueId)
-    const jobs =
-      (await this.getQueue(queueId)?.addBulk(
-        parsedPayload.map((data) => ({
-          name: queueId,
-          data: data,
-          opts: this.resolveJobOptions(queueId, data, options as JobOptionsType),
-        })),
-      )) ?? []
-
-    const jobIds = jobs.map((job) => job.id)
-    /* v8 ignore start */
-    if (jobIds.length === 0 || !jobIds.every((id) => !!id)) {
-      // Practically unreachable, but we want to simplify the signature of the method and avoid
-      // stating that it could return undefined.
-      throw new Error('Some scheduled job IDs are undefined')
-    }
-    /* v8 ignore stop */
-    if (this.spies[queueId]) this.spies[queueId].addJobs(jobs, 'scheduled')
-
-    return jobIds as string[]
-  }
-
-  private resolveJobOptions<QueueId extends SupportedQueueIds<Queues>>(
-    queueId: QueueId,
-    jobPayload: JobPayloadForQueue<Queues, QueueId>,
-    options?: JobOptionsType,
-  ): JobOptionsType {
-    const defaultOptions = this.queueRegistry.getQueueConfig(queueId).jobOptions
-    const resolvedOptions: JobOptionsType = merge(
-      defaultOptions ?? {},
-      options ?? {},
-    ) as JobOptionsType
-
-    if (defaultOptions?.deduplication && !options?.deduplication) {
-      const deduplicationId = defaultOptions.deduplication.idBuilder(jobPayload)
-      if (!deduplicationId || deduplicationId.trim().length === 0) {
-        throw new Error('Invalid deduplication id')
-      }
-
-      resolvedOptions.deduplication = {
-        ...resolvedOptions.deduplication,
-        id: deduplicationId,
-      }
-    }
-
-    return prepareJobOptions(this.config.isTest, resolvedOptions)
   }
 
   /**
@@ -264,14 +151,104 @@ export class QueueManager<
     }
   }
 
-  public getSpy<QueueId extends SupportedQueueIds<Queues>>(
+  public async schedule<QueueId extends SupportedQueueIds<Queues>>(
     queueId: QueueId,
-  ): BackgroundJobProcessorSpyInterface<JobPayloadForQueue<Queues, QueueId>, undefined> {
-    if (!this.spies[queueId])
-      throw new Error(
-        `${queueId} spy was not instantiated, it is only available on test mode. Please use \`config.isTest\` to enable it.`,
-      )
+    jobPayload: JobPayloadInputForQueue<Queues, QueueId>,
+    options?: JobOptionsType,
+  ): Promise<string> {
+    const parsedPayload = this.queueRegistry
+      .getQueueConfig(queueId)
+      .jobPayloadSchema.parse(jobPayload) as SupportedJobPayloads<Queues>
 
-    return this.spies[queueId]
+    await this.startIfNotStarted(queueId)
+    const job = await this.getQueue(queueId).add(
+      queueId,
+      parsedPayload,
+      this.resolveJobOptions(queueId, parsedPayload, options),
+    )
+    if (!job?.id) throw new Error('Scheduled job ID is undefined')
+    if (this.spies[queueId]) this.spies[queueId].addJob(job, 'scheduled')
+
+    return job.id
+  }
+
+  public async scheduleBulk<QueueId extends SupportedQueueIds<Queues>>(
+    queueId: QueueId,
+    jobPayloads: JobPayloadInputForQueue<Queues, QueueId>[],
+    options?: Omit<JobOptionsType, 'repeat'>,
+  ): Promise<string[]> {
+    if (jobPayloads.length === 0) return []
+
+    const { jobPayloadSchema } = this.queueRegistry.getQueueConfig(queueId)
+    const parsedPayload = jobPayloads.map((payload) =>
+      jobPayloadSchema.parse(payload),
+    ) as SupportedJobPayloads<Queues>[]
+
+    await this.startIfNotStarted(queueId)
+    const jobs =
+      (await this.getQueue(queueId)?.addBulk(
+        parsedPayload.map((data) => ({
+          name: queueId,
+          data: data,
+          opts: this.resolveJobOptions(queueId, data, options as JobOptionsType),
+        })),
+      )) ?? []
+
+    const jobIds = jobs.map((job) => job.id)
+    /* v8 ignore start */
+    if (jobIds.length === 0 || !jobIds.every((id) => !!id)) {
+      // Practically unreachable, but we want to simplify the signature of the method and avoid
+      // stating that it could return undefined.
+      throw new Error('Some scheduled job IDs are undefined')
+    }
+    /* v8 ignore stop */
+    if (this.spies[queueId]) this.spies[queueId].addJobs(jobs, 'scheduled')
+
+    return jobIds as string[]
+  }
+
+  private resolveJobOptions<QueueId extends SupportedQueueIds<Queues>>(
+    queueId: QueueId,
+    jobPayload: JobPayloadForQueue<Queues, QueueId>,
+    options?: JobOptionsType,
+  ): JobOptionsType {
+    const queueConfig = this.queueRegistry.getQueueConfig(queueId)
+
+    const defaultOptions =
+      typeof queueConfig.jobOptions === 'function'
+        ? queueConfig.jobOptions(jobPayload)
+        : queueConfig.jobOptions
+
+    const resolvedOptions: JobOptionsType = merge(
+      defaultOptions ?? {},
+      options ?? {},
+    ) as JobOptionsType
+
+    if (defaultOptions?.deduplication && !options?.deduplication) {
+      const deduplicationId =
+        'id' in defaultOptions.deduplication
+          ? defaultOptions.deduplication.id
+          : defaultOptions.deduplication.idBuilder(jobPayload)
+      if (!deduplicationId || deduplicationId.trim().length === 0) {
+        throw new Error('Invalid deduplication id')
+      }
+
+      resolvedOptions.deduplication = {
+        ...resolvedOptions.deduplication,
+        id: deduplicationId,
+      }
+    }
+
+    return prepareJobOptions(this.config.isTest, resolvedOptions)
+  }
+
+  private startIfNotStarted(
+    queueId: QueueConfiguration<QueueOptionsType>['queueId'],
+  ): Promise<void> {
+    if (!this.queueRegistry.isStarted && this.config.lazyInitEnabled === false) {
+      throw new Error('QueueManager not started, please call `start` or enable lazy init')
+    }
+
+    return this.start([queueId])
   }
 }

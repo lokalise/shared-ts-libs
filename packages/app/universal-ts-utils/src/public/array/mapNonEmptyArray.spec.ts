@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { mapNonEmptyArray } from './mapNonEmptyArray.js'
-import type { NonEmptyArray } from './nonEmptyArray.js'
+import { mapNonEmptyArray } from './mapNonEmptyArray.ts'
+import type { NonEmptyArray } from './nonEmptyArray.ts'
 
 describe('mapNonEmptyArray', () => {
   it('maps over a non-empty array and applies the mapper function', () => {

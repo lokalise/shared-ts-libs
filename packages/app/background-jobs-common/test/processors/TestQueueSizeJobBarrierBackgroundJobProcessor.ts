@@ -7,8 +7,8 @@ import {
   type BaseJobPayload,
   type JobQueueSizeThrottlingBarrierContext,
   type SafeJob,
-} from '../../src'
-import { TestForeverRescheduledBackgroundJobProcessor } from './TestForeverRescheduledBackgroundJobProcessor'
+} from '../../src/index.ts'
+import { TestForeverRescheduledBackgroundJobProcessor } from './TestForeverRescheduledBackgroundJobProcessor.ts'
 
 export class TestQueueSizeJobBarrierBackgroundJobProcessor<
   JobData extends BaseJobPayload,
@@ -35,12 +35,12 @@ export class TestQueueSizeJobBarrierBackgroundJobProcessor<
     )
   }
 
-  async start(): Promise<void> {
+  override async start(): Promise<void> {
     await super.start()
     await this.throttledQueueJobProcessor.start()
   }
 
-  async dispose(): Promise<void> {
+  override async dispose(): Promise<void> {
     await super.dispose()
     await this.throttledQueueJobProcessor.dispose()
   }
@@ -51,7 +51,7 @@ export class TestQueueSizeJobBarrierBackgroundJobProcessor<
     }
   }
 
-  schedule(jobData: JobData): Promise<string> {
+  override schedule(jobData: JobData): Promise<string> {
     return super.schedule(jobData, { attempts: 1 })
   }
 

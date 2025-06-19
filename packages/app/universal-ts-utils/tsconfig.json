@@ -1,25 +1,7 @@
 {
+    "extends": "@lokalise/tsconfig/tsc",
+    "include": ["src/**/*", "vitest.config.ts"],
     "compilerOptions": {
-        "outDir": "dist",
-        "module": "ES2022",
-        "target": "ES2022",
-        "lib": ["ES2022"],
-        "sourceMap": true,
-        "declaration": true,
-        "declarationMap": false,
-        "types": ["node"],
-        "strict": true,
-        "skipLibCheck": true,
-        "moduleResolution": "Bundler",
-        "noUnusedLocals": false,
-        "noUnusedParameters": false,
-        "noFallthroughCasesInSwitch": true,
-        "strictNullChecks": true,
-        "importHelpers": true,
-        "baseUrl": ".",
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
-        "resolveJsonModule": true
+        "types": ["vitest/globals"]
     }
 }

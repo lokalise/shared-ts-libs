@@ -1,4 +1,4 @@
-import type { RecordKeyType } from '../../internal/types.js'
+import type { RecordKeyType } from '../../internal/types.ts'
 
 /**
  * Checks if an object or an array of objects is empty.

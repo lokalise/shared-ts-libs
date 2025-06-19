@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isTextTranslatable } from './isTextTranslatable'
+import { isTextTranslatable } from './isTextTranslatable.ts'
 
 describe('isTextTranslatable', () => {
   it('should return false on empty text', () => {
@@ -8,6 +8,11 @@ describe('isTextTranslatable', () => {
 
   it('should return false on trimmed empty text', () => {
     expect(isTextTranslatable('    ')).toBe(false)
+  })
+
+  it('should return false on duplicated NT tags inside of NT region', () => {
+    expect(isTextTranslatable('\uE101\uE102\uE111\uE101\uE112\uE102')).toBe(false)
+    expect(isTextTranslatable('\uE101\uE102\uE111\uE102\uE101\uE101\uE112\uE102')).toBe(false)
   })
 
   it.each([

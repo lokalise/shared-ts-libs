@@ -5,17 +5,17 @@ import {
   type TransactionObservabilityManager,
   globalLogger,
 } from '@lokalise/node-core'
-import Redis from 'ioredis'
+import { Redis } from 'ioredis'
 import { ToadScheduler } from 'toad-scheduler'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { getTestRedisConfig } from '../test/setup'
-import { HealthcheckRefreshJob } from './HealthcheckRefreshJob.js'
-import { HealthcheckResultsStore } from './HealthcheckResultsStore'
+import { getTestRedisConfig } from '../test/setup.ts'
+import { HealthcheckRefreshJob } from './HealthcheckRefreshJob.ts'
+import { HealthcheckResultsStore } from './HealthcheckResultsStore.ts'
 import {
   AbstractHealthcheck,
   type Healthcheck,
   type HealthcheckDependencies,
-} from './healthchecks.js'
+} from './healthchecks.ts'
 
 type SupportedHealthchecks = 'test' | 'test2'
 
@@ -108,14 +108,6 @@ describe('HealthcheckRefreshJob', () => {
         true,
         false,
       ),
-
-      new TestHealthcheck2(
-        {
-          healthcheckStore: store,
-        },
-        true,
-        false,
-      ),
     ]
     job = new HealthcheckRefreshJob(getTestDependencies(), healthchecks)
 
@@ -141,5 +133,42 @@ describe('HealthcheckRefreshJob', () => {
 
     const healthcheckSuccess = store.getHealthcheckResult('test')
     expect(healthcheckSuccess).toBe(false)
+  })
+
+  it('returns failed for unregistered healthchecks', async () => {
+    job = new HealthcheckRefreshJob(getTestDependencies(), [])
+
+    await job.process(randomUUID())
+
+    const healthcheckSuccess = store.getHealthcheckResult('test')
+    expect(healthcheckSuccess).toBe(false)
+  })
+
+  it('updates successfully for multiple healthchecks', async () => {
+    store = new HealthcheckResultsStore({ maxHealthcheckNumber: 2 })
+    const healthchecks = [
+      new TestHealthcheck(
+        {
+          healthcheckStore: store,
+        },
+        true,
+        false,
+      ),
+      new TestHealthcheck2(
+        {
+          healthcheckStore: store,
+        },
+        true,
+        false,
+      ),
+    ]
+    job = new HealthcheckRefreshJob(getTestDependencies(), healthchecks)
+
+    await job.process(randomUUID())
+
+    const healthcheckSuccess1 = store.getHealthcheckResult('test')
+    const healthcheckSuccess2 = store.getHealthcheckResult('test2')
+    expect(healthcheckSuccess1).toBe(true)
+    expect(healthcheckSuccess2).toBe(true)
   })
 })

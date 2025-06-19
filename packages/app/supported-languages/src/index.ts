@@ -1,13 +1,14 @@
 import type { Either } from '@lokalise/node-core'
 
-import type { Language } from './languages'
-import { languages, languagesSet } from './languages'
-import type { Region } from './regions'
-import { regions, regionsSet } from './regions'
-import type { Script } from './scripts'
-import { scripts, scriptsSet } from './scripts'
-import type { StandardLocale } from './standard-locales'
-import { standardLocales, standardLocalesSet } from './standard-locales'
+import type { Language } from './languages.ts'
+import { languages, languagesSet } from './languages.ts'
+import { lokaliseSupportedLanguagesAndLocales } from './lokaliseLanguages.ts'
+import type { Region } from './regions.ts'
+import { regions, regionsSet } from './regions.ts'
+import type { Script } from './scripts.ts'
+import { scripts, scriptsSet } from './scripts.ts'
+import type { StandardLocale } from './standard-locales.ts'
+import { standardLocales, standardLocalesSet } from './standard-locales.ts'
 
 /**
  * String representation of a locale.
@@ -50,6 +51,10 @@ export const getAllScripts = () => {
  */
 export const getAllRegions = () => {
   return regions
+}
+
+export const getLokaliseSupportedLanguagesAndLocales = () => {
+  return lokaliseSupportedLanguagesAndLocales
 }
 
 /**

@@ -8,7 +8,7 @@ Note that it is a ESM-only package.
 
 ```ts
 import wretch from 'wretch'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 const client = wretch('http://localhost:8000')
 
@@ -65,7 +65,7 @@ if non-JSON responses are expected, the library will return null, if not, it wil
 
 ### API contract-based requests
 
-`frontend-http-client` supports using API contracts, created with `@lokalise/universal-ts-utils/api-contracts/apiContracts` in order to make fully type-safe HTTP requests.
+`frontend-http-client` supports using API contracts, created with `@lokalise/api-contracts` in order to make fully type-safe HTTP requests.
 
 Usage example:
 
@@ -95,6 +95,49 @@ const responseBody2 = await sendByGetRoute(client, someGetRouteDefinition, {
 })
 ```
 
+### Tracking request progress
+Tracking requests progress is especially useful while uploading files. 
+
+> **Important note**: `wretch` does not support request progress tracking, so we rely on XMLHttpRequest. That's why the interface of the method below is slightly different from the others 
+
+Usage example:
+
+```ts
+ const response = await sendPostWithProgress({
+    path: '/',
+    data: new FormData(), 
+    headers: { Authorization: 'Bearer ...' }, 
+    responseBodySchema: z.object(),
+    onProgress: (progress) => {
+        console.log(`Loaded ${progress.loaded} of ${progress.total}`)
+    }
+})
+```
+
+### Aborting pending requests
+Aborting requests is especially useful while uploading files. 
+
+> **Important note**: Currently it is only possible with `sendWithProgress()` function 
+
+Usage example:
+
+```ts
+const abortController = new AbortController()
+
+sendPostWithProgress({
+    path: '/',
+    data: new FormData(), 
+    headers: { Authorization: 'Bearer ...' },
+    responseBodySchema: z.object(),
+    onProgress: (progress) => {
+        console.log(`Loaded ${progress.loaded} of ${progress.total}`)
+    },
+    abortController
+})
+
+abortController.abort()
+```
+
 ## Credits
 
 This library is brought to you by a joint effort of Lokalise engineers:
@@ -104,4 +147,5 @@ This library is brought to you by a joint effort of Lokalise engineers:
 - [Nivedita Bhat](https://github.com/NiveditaBhat)
 - [Arthur Suermondt](https://github.com/arthuracs)
 - [Lauris Mikāls](https://github.com/laurismikals)
+- [Oskar Kupski](https://github.com/oskarski)
 - [Igor Savin](https://github.com/kibertoad)

@@ -1,4 +1,4 @@
-import { compare } from '../../internal/compare.js'
+import { compare } from '../../internal/compare.ts'
 
 /**
  * Sorts an array of strings or numbers in either ascending or descending order.

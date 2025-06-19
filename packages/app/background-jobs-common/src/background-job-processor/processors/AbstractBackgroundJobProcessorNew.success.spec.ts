@@ -1,12 +1,12 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { z } from 'zod'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import { TestSuccessBackgroundJobProcessorNew } from '../../../test/processors/TestSuccessBackgroundJobProcessorNew'
-import type { FakeQueueManager } from '../managers/FakeQueueManager'
-import type { QueueConfiguration } from '../managers/types'
-import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew'
-import type { BackgroundJobProcessorDependenciesNew } from './types'
+import { z } from 'zod/v4'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import { TestSuccessBackgroundJobProcessorNew } from '../../../test/processors/TestSuccessBackgroundJobProcessorNew.ts'
+import type { FakeQueueManager } from '../managers/FakeQueueManager.ts'
+import type { QueueConfiguration } from '../managers/types.ts'
+import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew.ts'
+import type { BackgroundJobProcessorDependenciesNew } from './types.ts'
 
 const supportedQueues = [
   {
@@ -48,17 +48,11 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
 
     await factory.clearRedis()
 
-    const redisConfig = factory.getRedisConfig()
-    simpleProcessor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue1'>(
-      deps,
-      'queue1',
-      redisConfig,
-    )
+    simpleProcessor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue1'>(deps, 'queue1')
     await simpleProcessor.start()
     processorWithSuccessHook = new TestSuccessBackgroundJobProcessorNew<SupportedQueues, 'queue2'>(
       deps,
       'queue2',
-      redisConfig,
     )
     await processorWithSuccessHook.start()
   })

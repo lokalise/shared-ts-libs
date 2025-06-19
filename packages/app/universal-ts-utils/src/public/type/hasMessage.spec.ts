@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hasMessage } from './hasMessage.js'
+import { hasMessage } from './hasMessage.ts'
 
 describe('hasMessage', () => {
   it('true for something with message', () => {

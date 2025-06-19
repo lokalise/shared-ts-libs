@@ -3,16 +3,16 @@ import { PrismaClient } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { DB_MODEL, cleanTables } from '../test/DbCleaner'
+import { DB_MODEL, cleanTables } from '../test/DbCleaner.ts'
 
-import { getDatasourceUrl } from '../test/getDatasourceUrl'
+import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
 import {
   PRISMA_NOT_FOUND_ERROR,
   PRISMA_SERIALIZATION_ERROR,
   PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
   PRISMA_TRANSACTION_ERROR,
-} from './errors'
-import { prismaTransaction } from './prismaTransaction'
+} from './errors/index.ts'
+import { prismaTransaction } from './prismaTransaction.ts'
 
 type Item1 = {
   value: string
@@ -92,7 +92,7 @@ describe('prismaTransaction', () => {
 
       const diffs: number[] = []
       callsTimestamps.forEach((t, i) => {
-        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 100) * 100)
+        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]!) / 100) * 100)
       })
       expect(diffs).toHaveLength(2)
       expect(diffs[0]).toBe(100)
@@ -171,7 +171,7 @@ describe('prismaTransaction', () => {
 
       const diffs: number[] = []
       callsTimestamps.forEach((t, i) => {
-        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 100) * 100)
+        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]!) / 100) * 100)
       })
       expect(diffs).toEqual([100, 200, 400, 800])
     })
@@ -203,7 +203,7 @@ describe('prismaTransaction', () => {
 
       const diffs: number[] = []
       callsTimestamps.forEach((t, i) => {
-        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]) / 100) * 100)
+        if (i > 0) diffs.push(Math.round((t - callsTimestamps[i - 1]!) / 100) * 100)
       })
       expect(diffs).toEqual([maxRetryDelayMs, maxRetryDelayMs])
     })

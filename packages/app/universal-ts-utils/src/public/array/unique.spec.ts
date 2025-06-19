@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { unique } from './unique.js'
+import { unique } from './unique.ts'
 
 describe('unique', () => {
   it('returns a new array of mixed primitive value without duplicates', () => {

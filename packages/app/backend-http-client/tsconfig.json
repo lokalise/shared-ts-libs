@@ -1,26 +1,7 @@
 {
+    "extends": "@lokalise/tsconfig/tsc",
+    "include": ["src/**/*", "vitest.config.ts"],
     "compilerOptions": {
-        "outDir": "dist",
-        "module": "commonjs",
-        "target": "ES2022",
-        "lib": ["ES2022"],
-        "sourceMap": true,
-        "declaration": true,
-        "declarationMap": false,
-        "types": ["node"],
-        "strict": true,
-        "skipLibCheck": true,
-        "moduleResolution": "node",
-        "noUnusedLocals": false,
-        "noUnusedParameters": false,
-        "noFallthroughCasesInSwitch": true,
-        "strictNullChecks": true,
-        "importHelpers": true,
-        "baseUrl": ".",
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
-        "resolveJsonModule": true
-    },
-    "exclude": ["node_modules", "dist", "src/**/*.spec.ts", "vitest.config.mts"]
+        "types": ["vitest/globals"]
+    }
 }

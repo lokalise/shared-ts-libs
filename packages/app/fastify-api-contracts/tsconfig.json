@@ -1,5 +1,7 @@
 {
-    "extends": ["./tsconfig.build.json"],
-    "include": ["src/**/*", "vite.config.ts"],
-    "exclude": []
+    "extends": "@lokalise/tsconfig/tsc",
+    "include": ["src/**/*", "vitest.config.ts"],
+    "compilerOptions": {
+        "types": ["vitest/globals"]
+    }
 }

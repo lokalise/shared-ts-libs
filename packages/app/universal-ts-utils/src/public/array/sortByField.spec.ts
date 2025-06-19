@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sortByField } from './sortByField.js'
+import { sortByField } from './sortByField.ts'
 
 describe('sortByField', () => {
   it('should handle an empty array without throwing errors', () => {

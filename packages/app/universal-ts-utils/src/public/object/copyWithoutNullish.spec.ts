@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { copyWithoutNullish } from './copyWithoutNullish.js'
+import { copyWithoutNullish } from './copyWithoutNullish.ts'
 
 describe('copyWithoutNullish', () => {
   it('Does nothing when there are no undefined fields', () => {

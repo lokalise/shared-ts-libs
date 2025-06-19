@@ -1,12 +1,12 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import { waitAndRetry } from '@lokalise/node-core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { z } from 'zod'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import { TestStalledBackgroundJobProcessorNew } from '../../../test/processors/TestStalledBackgroundJobProcessorNew'
-import { FakeQueueManager } from '../managers/FakeQueueManager'
-import type { QueueConfiguration } from '../managers/types'
-import type { BackgroundJobProcessorDependenciesNew } from './types'
+import { z } from 'zod/v4'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import { TestStalledBackgroundJobProcessorNew } from '../../../test/processors/TestStalledBackgroundJobProcessorNew.ts'
+import type { FakeQueueManager } from '../managers/FakeQueueManager.ts'
+import type { QueueConfiguration } from '../managers/types.ts'
+import type { BackgroundJobProcessorDependenciesNew } from './types.ts'
 
 const supportedQueues = [
   {
@@ -31,23 +31,19 @@ describe('AbstractBackgroundJobProcessorNew - stalled', () => {
 
   beforeEach(async () => {
     factory = new TestDependencyFactory()
-    deps = factory.createNew(supportedQueues)
+    deps = factory.createNew(supportedQueues, true)
 
     await factory.clearRedis()
 
-    const redisConfig = factory.getRedisConfig()
-    stalledProcessor = new TestStalledBackgroundJobProcessorNew(deps, 'queue', redisConfig)
+    queueManager = deps.queueManager
+
+    stalledProcessor = new TestStalledBackgroundJobProcessorNew(deps, 'queue')
     await stalledProcessor.start()
-    queueManager = new FakeQueueManager(supportedQueues, {
-      redisConfig,
-      isTest: false,
-    })
     await queueManager.start()
   })
 
   afterEach(async () => {
     await stalledProcessor.dispose()
-    await queueManager.dispose()
     await factory.dispose()
   })
 
@@ -73,18 +69,18 @@ describe('AbstractBackgroundJobProcessorNew - stalled', () => {
     expect(stalledProcessor?.onFailedErrors).length(1)
 
     const onFailedCall = stalledProcessor?.onFailedErrors[0]
-    expect(onFailedCall.error.message).toBe('job stalled more than allowable limit')
-    expect(onFailedCall.job.id).toBe(jobId)
-    expect(onFailedCall.job.data).toMatchObject(jobData)
-    expect(onFailedCall.job.attemptsMade).toBe(0)
+    expect(onFailedCall!.error.message).toBe('job stalled more than allowable limit')
+    expect(onFailedCall!.job.id).toBe(jobId)
+    expect(onFailedCall!.job.data).toMatchObject(jobData)
+    expect(onFailedCall!.job.attemptsMade).toBe(1)
 
     expect(errorReporterSpy).toHaveBeenCalledWith({
-      error: onFailedCall.error,
+      error: onFailedCall!.error,
       context: {
         jobId,
         jobName: 'queue',
         'x-request-id': jobData.metadata.correlationId,
-        errorJson: expect.stringContaining(onFailedCall.error.message),
+        errorJson: expect.stringContaining(onFailedCall!.error.message),
       },
     })
   })

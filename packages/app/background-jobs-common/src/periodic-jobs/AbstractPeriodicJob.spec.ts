@@ -1,10 +1,11 @@
+import { setTimeout } from 'node:timers/promises'
 import type { ErrorReport, ErrorReporter } from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
 import { ToadScheduler } from 'toad-scheduler'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createRedisClient, getTestRedisConfig } from '../../test/TestRedis'
-import { FakePeriodicJob } from '../../test/fakes/FakePeriodicJob'
-import type { JobExecutionContext } from './periodicJobTypes'
+import { createRedisClient, getTestRedisConfig } from '../../test/TestRedis.ts'
+import { FakePeriodicJob } from '../../test/fakes/FakePeriodicJob.ts'
+import type { JobExecutionContext } from './periodicJobTypes.ts'
 
 describe('AbstractPeriodicJob', () => {
   let redis: Redis
@@ -60,6 +61,21 @@ describe('AbstractPeriodicJob', () => {
     await vi.waitUntil(() => executionIds.length === 3)
     expect(executionIds).toMatchObject([expect.any(String), expect.any(String), expect.any(String)])
 
+    await job.dispose()
+  })
+
+  it('should await first processing when using asyncRegister', async () => {
+    let counter = 0
+    const processMock = async () => {
+      await setTimeout(100)
+      counter++
+      return Promise.resolve()
+    }
+    const job = new FakePeriodicJob(processMock, {
+      scheduler,
+    })
+    await job.asyncRegister()
+    expect(counter).toBe(1)
     await job.dispose()
   })
 
@@ -139,7 +155,7 @@ describe('AbstractPeriodicJob', () => {
     job1.register()
 
     await vi.waitUntil(() => errors.length > 0)
-    expect(errors[0].error.message).toBe('I broke')
+    expect(errors[0]!.error.message).toBe('I broke')
   })
 
   it('should run exclusively if executionLock = enabled', async () => {
@@ -149,7 +165,7 @@ describe('AbstractPeriodicJob', () => {
     }
 
     const createProcessFn = (id: 'job1' | 'job2') => () => {
-      executedCounts[id]++
+      executedCounts[id]!++
       return Promise.resolve()
     }
 
@@ -194,19 +210,19 @@ describe('AbstractPeriodicJob', () => {
 
     // Run job1
     job1.register()
-    await vi.waitUntil(() => executedCounts.job1 > 0)
+    await vi.waitUntil(() => executedCounts.job1! > 0)
     expect(executedCounts.job1 === 1)
 
     // Register job2, but it should skip executions due to a lock
     job2.register()
-    await vi.waitUntil(() => executedCounts.job1 > 2)
+    await vi.waitUntil(() => executedCounts.job1! > 2)
     expect(executedCounts.job1 === 3)
 
     expect(executedCounts.job2).toBe(0)
 
     // Stop job1 and let job2 run
     await job1.dispose()
-    await vi.waitUntil(() => executedCounts.job2 > 0, {
+    await vi.waitUntil(() => executedCounts.job2! > 0, {
       interval: 5,
       timeout: 500,
     })

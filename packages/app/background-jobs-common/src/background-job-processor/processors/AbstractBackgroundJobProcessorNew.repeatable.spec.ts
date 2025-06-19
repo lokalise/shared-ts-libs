@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { z } from 'zod'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import type { FakeQueueManager } from '../managers/FakeQueueManager'
-import type { QueueConfiguration } from '../managers/types'
-import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew'
-import type { BackgroundJobProcessorDependenciesNew } from './types'
+import { z } from 'zod/v4'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import type { FakeQueueManager } from '../managers/FakeQueueManager.ts'
+import type { QueueConfiguration } from '../managers/types.ts'
+import { FakeBackgroundJobProcessorNew } from './FakeBackgroundJobProcessorNew.ts'
+import type { BackgroundJobProcessorDependenciesNew } from './types.ts'
 
 const supportedQueues = [
   {
@@ -34,12 +34,7 @@ describe('AbstractBackgroundJobProcessorNew - repeatable', () => {
 
     await factory.clearRedis()
 
-    const redisConfig = factory.getRedisConfig()
-    processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(
-      deps,
-      'queue',
-      redisConfig,
-    )
+    processor = new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue'>(deps, 'queue')
     await processor.start()
   })
 
@@ -70,7 +65,7 @@ describe('AbstractBackgroundJobProcessorNew - repeatable', () => {
 
     const schedulers = await queueManager.getQueue('queue').getJobSchedulers()
     expect(schedulers).toHaveLength(1)
-    expect(schedulers[0].every).toBe('10')
+    expect(schedulers[0]!.every).toBe(10)
 
     await processor.dispose()
   })

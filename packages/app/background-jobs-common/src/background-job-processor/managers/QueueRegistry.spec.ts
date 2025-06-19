@@ -1,8 +1,12 @@
-import type { JobsOptions, QueueOptions } from 'bullmq'
-import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
-import { z } from 'zod'
-import { QueueRegistry } from './QueueRegistry'
-import type { QueueConfiguration } from './types'
+import type { JobsOptions, Queue, QueueOptions } from 'bullmq'
+import { afterEach, expectTypeOf } from 'vitest'
+import { z } from 'zod/v4'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import { getTestRedisConfig } from '../../../test/TestRedis.ts'
+import { CommonBullmqFactory } from '../factories/index.ts'
+import { backgroundJobProcessorGetActiveQueueIds } from '../monitoring/backgroundJobProcessorGetActiveQueueIds.ts'
+import { QueueRegistry } from './QueueRegistry.ts'
+import type { QueueConfiguration } from './types.ts'
 
 const jobPayloadSchema = z.object({
   id: z.string(),
@@ -32,30 +36,36 @@ const QUEUES = [
     jobPayloadSchema: jobPayloadSchema2,
     jobOptions: { attempts: 10 },
   },
+  {
+    queueId: 'queue3',
+    jobPayloadSchema,
+    bullDashboardGrouping: ['group1', 'group2'],
+  },
 ] as const satisfies QueueConfiguration[]
 
 describe('QueueRegistry', () => {
-  let registry: QueueRegistry<typeof QUEUES, QueueOptions, JobsOptions>
+  let testFactory: TestDependencyFactory
+  let registry: QueueRegistry<typeof QUEUES, Queue, QueueOptions, JobsOptions>
 
-  beforeEach(() => {
-    registry = new QueueRegistry(QUEUES)
+  beforeAll(() => {
+    testFactory = new TestDependencyFactory()
+  })
+
+  beforeEach(async () => {
+    await testFactory.clearRedis()
+    registry = new QueueRegistry(QUEUES, new CommonBullmqFactory(), getTestRedisConfig())
+  })
+
+  afterEach(async () => {
+    await registry.dispose()
+  })
+
+  afterAll(async () => {
+    await testFactory.dispose()
   })
 
   it('should register queue ids correctly', () => {
-    expect(registry.queueIds).toEqual(new Set(['queue1', 'queue2']))
-  })
-
-  it('should return the correct config by queue id', () => {
-    const config1 = registry.getQueueConfig('queue1')
-    expect(config1).toBe(QUEUES[0])
-
-    const config2 = registry.getQueueConfig('queue2')
-    expect(config2).toBe(QUEUES[1])
-  })
-
-  it('should throw an error if queue id is not supported', () => {
-    // @ts-expect-error - TS checks that only valid queue ids are passed
-    expect(() => registry.getQueueConfig('invalidQueueId')).toThrowError()
+    expect(registry.queueIds).toEqual(new Set(['queue1', 'queue2', 'queue3']))
   })
 
   it('should work with QueueConfiguration extensions', () => {
@@ -68,9 +78,93 @@ describe('QueueRegistry', () => {
       },
     ] as const satisfies ExtendedQueueConfig[]
 
-    const extendedRegistry = new QueueRegistry(extendedQueues)
+    const extendedRegistry = new QueueRegistry(
+      extendedQueues,
+      new CommonBullmqFactory(),
+      getTestRedisConfig(),
+    )
     const config = extendedRegistry.getQueueConfig('queue')
     expect(config).toBe(extendedQueues[0])
     expectTypeOf(config).toMatchTypeOf<ExtendedQueueConfig>()
+  })
+
+  describe('start - dispose', () => {
+    const checkActivatedQueues = (expectedQueues: string[]) => {
+      return expect(backgroundJobProcessorGetActiveQueueIds(getTestRedisConfig())).resolves.toEqual(
+        expectedQueues,
+      )
+    }
+
+    it('should ignore if queue id is not supported', async () => {
+      expect(registry.isStarted).toBe(false)
+      await registry.start(['invalid'])
+      expect(registry.isStarted).toBe(false)
+    })
+
+    it('should be ignored if empty array is specified', async () => {
+      expect(registry.isStarted).toBe(false)
+      await registry.start([])
+      expect(registry.isStarted).toBe(false)
+    })
+
+    it('should start and dispose given queues correctly', async () => {
+      await registry.start(['queue1'])
+
+      expect(registry.isStarted).toBe(true)
+      expect(() => registry.getQueue('queue1')).toBeDefined()
+      expect(() => registry.getQueue('queue2')).toThrowErrorMatchingInlineSnapshot(
+        '[Error: queue queue2 was not instantiated yet, please run "start()"]',
+      )
+
+      await registry.dispose()
+
+      expect(registry.isStarted).toBe(false)
+      expect(() => registry.getQueue('queue1')).toThrowErrorMatchingInlineSnapshot(
+        '[Error: queue queue1 was not instantiated yet, please run "start()"]',
+      )
+
+      await checkActivatedQueues(['queue1'])
+    })
+
+    it('should start all queues', async () => {
+      await registry.start(true)
+
+      expect(registry.isStarted).toBe(true)
+      expect(QUEUES.map(({ queueId }) => registry.getQueue(queueId)).every((queue) => queue)).toBe(
+        true,
+      )
+
+      await registry.dispose()
+      expect(registry.isStarted).toBe(false)
+
+      await checkActivatedQueues(['group1.group2.queue3', 'queue1', 'queue2'])
+    })
+
+    it('should resolve queue id for grouping', async () => {
+      await registry.start(['queue3'])
+
+      expect(registry.isStarted).toBe(true)
+      expect(registry.getQueue('queue3').name).toEqual('group1.group2.queue3')
+
+      await registry.dispose()
+      expect(registry.isStarted).toBe(false)
+
+      await checkActivatedQueues(['group1.group2.queue3'])
+    })
+  })
+
+  describe('getQueueConfig', () => {
+    it('should return the correct config by queue id', () => {
+      const config1 = registry.getQueueConfig('queue1')
+      expect(config1).toBe(QUEUES[0])
+
+      const config2 = registry.getQueueConfig('queue2')
+      expect(config2).toBe(QUEUES[1])
+    })
+
+    it('should throw an error if queue id is not supported', () => {
+      // @ts-expect-error - TS checks that only valid queue ids are passed
+      expect(() => registry.getQueueConfig('invalidQueueId')).toThrowError()
+    })
   })
 })

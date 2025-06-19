@@ -1,7 +1,7 @@
 import { InternalError } from '@lokalise/node-core'
 import { describe, expect, it } from 'vitest'
 
-import { ResponseStatusError, isResponseStatusError } from './ResponseStatusError'
+import { ResponseStatusError, isResponseStatusError } from './ResponseStatusError.ts'
 
 describe('ResponseStatusError', () => {
   describe('isResponseStatusError', () => {

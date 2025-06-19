@@ -1,11 +1,11 @@
-import type { Job } from 'bullmq'
-
+import { setTimeout } from 'node:timers/promises'
 import type { RedisConfig } from '@lokalise/node-core'
+import type { Job } from 'bullmq'
 import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
-} from '../../src'
+} from '../../src/index.ts'
 
 type OnFailedError<T> = {
   error: Error
@@ -23,24 +23,26 @@ export class TestStalledBackgroundJobProcessor<
       ownerName: 'test',
       isTest: false, // We don't want to override job options for this processor
       workerOptions: {
-        lockDuration: 1,
+        lockDuration: 10,
         stalledInterval: 1,
+        skipLockRenewal: true,
+        maxStalledCount: 0,
       },
       redisConfig: redisConfig,
     })
   }
 
-  schedule(jobData: T): Promise<string> {
+  override schedule(jobData: T): Promise<string> {
     return super.schedule(jobData, {
       attempts: 1,
       backoff: { type: 'fixed', delay: 1 },
       removeOnComplete: true,
-      removeOnFail: 1, // we should keep the job in the queue to test the stalled job behavior
+      removeOnFail: false,
     })
   }
 
-  protected override process(): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, 1000))
+  protected override async process(): Promise<void> {
+    await setTimeout(500)
   }
 
   protected override onFailed(job: Job<T>, error: Error): Promise<void> {

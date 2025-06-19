@@ -1,7 +1,7 @@
-import { nonTranslatableTagsRegexpG } from './utils'
+import { nonTranslatableTagsRegexpG } from './utils.ts'
 
 /**
  * Removes any non-translatable tag.
  */
 export const removeNonTranslatableTags = (text: string): string =>
-  text.replace(nonTranslatableTagsRegexpG, '')
+  text.replace(nonTranslatableTagsRegexpG, '$1')

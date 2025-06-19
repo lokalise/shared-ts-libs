@@ -1,8 +1,8 @@
 import type { WretchResponse } from 'wretch'
-import type { ZodError, z } from 'zod'
+import type { ZodError, z } from 'zod/v4'
 
-import type { Either } from './either.js'
-import { failure, success } from './either.js'
+import type { Either } from './either.ts'
+import { failure, success } from './either.ts'
 
 export type BodyParseResult<RequestBodySchema extends z.ZodSchema> = Either<
   'NOT_JSON' | 'EMPTY_RESPONSE' | ZodError<RequestBodySchema>,
@@ -34,21 +34,21 @@ export function tryToResolveJsonBody<RequestBodySchema extends z.ZodSchema>(
     })
   }
 
-  return response.json().then((responseBody: object) => {
+  return response.json().then((responseBody) => {
     return parseResponseBody({
       response: responseBody,
       responseBodySchema: schema,
       path,
     })
-  })
+  }) as Promise<BodyParseResult<RequestBodySchema>>
 }
 
-function parseResponseBody<ResponseBody>({
+export function parseResponseBody<ResponseBody>({
   response,
   responseBodySchema,
   path,
 }: {
-  response: ResponseBody
+  response: unknown
   responseBodySchema: z.ZodSchema<ResponseBody>
   path: string
 }): Either<z.ZodError, ResponseBody> {
@@ -64,7 +64,7 @@ function parseResponseBody<ResponseBody>({
     return failure(result.error)
   }
 
-  return success(response)
+  return success(result.data)
 }
 
 export function parseRequestBody<RequestBodySchema extends z.Schema>({
@@ -77,11 +77,11 @@ export function parseRequestBody<RequestBodySchema extends z.Schema>({
   path: string
 }): Either<z.ZodError, z.input<RequestBodySchema>> {
   if (!body) {
-    return success(body)
+    return success(body as z.input<RequestBodySchema>)
   }
 
   if (!requestBodySchema) {
-    return success(body)
+    return success(body as z.input<RequestBodySchema>)
   }
 
   const result = requestBodySchema.safeParse(body)
@@ -95,5 +95,5 @@ export function parseRequestBody<RequestBodySchema extends z.Schema>({
     return failure(result.error)
   }
 
-  return success(body)
+  return success(body as z.input<RequestBodySchema>)
 }

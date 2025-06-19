@@ -1,15 +1,14 @@
-/* c8 ignore next 2 */
 export {
   buildFastifyNoPayloadRoute,
   buildFastifyNoPayloadRouteHandler,
   buildFastifyPayloadRoute,
   buildFastifyPayloadRouteHandler,
-} from './fastifyApiContracts.js'
+} from './fastifyApiContracts.ts'
 export {
   injectGet,
   injectDelete,
   injectPatch,
   injectPost,
   injectPut,
-} from './fastifyApiRequestInjector.js'
-export * from './types.js'
+} from './fastifyApiRequestInjector.ts'
+export * from './types.ts'

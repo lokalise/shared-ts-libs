@@ -1,13 +1,12 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
-import { z } from 'zod'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory'
-import type { JobsPaginatedResponse } from '../processors/types'
-import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
-import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import { FakeQueueManager } from './FakeQueueManager'
-import type { QueueConfiguration } from './types'
+import { z } from 'zod/v4'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
+import { FakeQueueManager } from './FakeQueueManager.ts'
+import type { JobsPaginatedResponse, QueueConfiguration } from './types.ts'
 
 const supportedQueues = [
   {
@@ -41,6 +40,11 @@ const supportedQueues = [
         correlationId: z.string(),
       }),
     }),
+    jobOptions() {
+      return {
+        attempts: 5,
+      }
+    },
   },
 ] as const satisfies QueueConfiguration[]
 
@@ -52,16 +56,22 @@ describe('QueueManager', () => {
 
   let queueManager: FakeQueueManager<SupportedQueues>
 
-  beforeEach(async () => {
+  beforeAll(() => {
     factory = new TestDependencyFactory()
     redisConfig = factory.getRedisConfig()
+  })
+
+  beforeEach(async () => {
     const deps = factory.createNew(supportedQueues)
     queueManager = deps.queueManager
-
     await factory.clearRedis()
   })
 
   afterEach(async () => {
+    await factory.clearRedis()
+  })
+
+  afterAll(async () => {
     await factory.dispose()
   })
 
@@ -121,25 +131,6 @@ describe('QueueManager', () => {
         /queue .* was not instantiated yet, please run "start\(\)"/,
       )
       expect(() => queueManager.getQueue('queue2')).toThrowError(
-        /queue .* was not instantiated yet, please run "start\(\)"/,
-      )
-
-      await queueManager.dispose()
-    })
-
-    it('should ignore if try to start a non-defined queue', async () => {
-      const invalidQueueId = 'invalidQueueId'
-      const queueManager = new FakeQueueManager(supportedQueues, {
-        redisConfig,
-      })
-
-      // @ts-expect-error - queue3 is not a valid queue id
-      expect(() => queueManager.getQueue(invalidQueueId)).toThrowError(
-        /queue .* was not instantiated yet, please run "start\(\)"/,
-      )
-      await queueManager.start([invalidQueueId])
-      // @ts-expect-error - queue3 is not a valid queue id
-      expect(() => queueManager.getQueue(invalidQueueId)).toThrowError(
         /queue .* was not instantiated yet, please run "start\(\)"/,
       )
 
@@ -234,13 +225,12 @@ describe('QueueManager', () => {
         `
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "string",
-            "received": "undefined",
+            "code": "invalid_type",
             "path": [
               "id"
             ],
-            "message": "Required"
+            "message": "Invalid input: expected string, received undefined"
           },
           {
             "code": "unrecognized_keys",
@@ -248,7 +238,7 @@ describe('QueueManager', () => {
               "notPresent"
             ],
             "path": [],
-            "message": "Unrecognized key(s) in object: 'notPresent'"
+            "message": "Unrecognized key: \\"notPresent\\""
           }
         ]]
       `,
@@ -267,13 +257,12 @@ describe('QueueManager', () => {
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "string",
-            "received": "undefined",
+            "code": "invalid_type",
             "path": [
               "id"
             ],
-            "message": "Required"
+            "message": "Invalid input: expected string, received undefined"
           }
         ]]
       `)
@@ -293,13 +282,12 @@ describe('QueueManager', () => {
         `
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "string",
-            "received": "undefined",
+            "code": "invalid_type",
             "path": [
               "id"
             ],
-            "message": "Required"
+            "message": "Invalid input: expected string, received undefined"
           },
           {
             "code": "unrecognized_keys",
@@ -307,7 +295,7 @@ describe('QueueManager', () => {
               "value2"
             ],
             "path": [],
-            "message": "Unrecognized key(s) in object: 'value2'"
+            "message": "Unrecognized key: \\"value2\\""
           }
         ]]
       `,
@@ -325,13 +313,12 @@ describe('QueueManager', () => {
       ).rejects.toThrowErrorMatchingInlineSnapshot(`
         [ZodError: [
           {
-            "code": "invalid_type",
             "expected": "string",
-            "received": "undefined",
+            "code": "invalid_type",
             "path": [
               "id"
             ],
-            "message": "Required"
+            "message": "Invalid input: expected string, received undefined"
           }
         ]]
       `)
@@ -348,6 +335,11 @@ describe('QueueManager', () => {
         id: 'test_1',
         _execution: 'execution in progress',
         metadata: { correlationId: 'correlation_id' },
+      })
+      expect(spyResult1).toMatchObject({
+        opts: {
+          attempts: 5,
+        },
       })
 
       const jobId2 = await queueManager.schedule('queue3', {
@@ -573,8 +565,8 @@ describe('QueueManager', () => {
         redisConfig,
         isTest: false,
       })
-      expect(() => queueManager.getSpy('queue1')).toThrowError(
-        'spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it.',
+      expect(() => queueManager.getSpy('queue1')).toThrowErrorMatchingInlineSnapshot(
+        '[Error: queue1 spy was not instantiated, it is only available on test mode. Please use `config.isTest` to enable it on QueueManager]',
       )
     })
 
@@ -585,13 +577,13 @@ describe('QueueManager', () => {
       const schema1 = supportedQueues[0].jobPayloadSchema
       type schemaType1 = z.infer<typeof schema1>
       expectTypeOf<returnType1>().toEqualTypeOf<
-        BackgroundJobProcessorSpyInterface<schemaType1, undefined>
+        BackgroundJobProcessorSpyInterface<schemaType1, unknown>
       >()
 
       const schema2 = supportedQueues[1].jobPayloadSchema
       type schemaType2 = z.infer<typeof schema2>
       expectTypeOf<returnType2>().toEqualTypeOf<
-        BackgroundJobProcessorSpyInterface<schemaType2, undefined>
+        BackgroundJobProcessorSpyInterface<schemaType2, unknown>
       >()
     })
   })
@@ -612,8 +604,8 @@ describe('QueueManager', () => {
       const isPaused = await queueManager.getQueue('queue1').isPaused()
       expect(isPaused).toBe(false)
       await expect(queueManager.dispose()).resolves.not.toThrowError()
-      await expect(queueManager.getQueue('queue1').isPaused()).rejects.toThrowError(
-        'Connection is closed.',
+      expect(() => queueManager.getQueue('queue1')).toThrowErrorMatchingInlineSnapshot(
+        '[Error: queue queue1 was not instantiated yet, please run "start()"]',
       )
     })
 

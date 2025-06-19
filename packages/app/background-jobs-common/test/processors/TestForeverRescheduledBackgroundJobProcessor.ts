@@ -6,7 +6,7 @@ import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
-} from '../../src'
+} from '../../src/index.ts'
 
 type Data = {
   id?: string
@@ -30,7 +30,7 @@ export class TestForeverRescheduledBackgroundJobProcessor extends AbstractBackgr
     })
   }
 
-  schedule(jobData: Data): Promise<string> {
+  override schedule(jobData: Data): Promise<string> {
     return super.schedule(jobData, {
       attempts: 1,
       backoff: { type: 'fixed', delay: 1 },

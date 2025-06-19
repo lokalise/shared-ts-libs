@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'vitest'
-import { updateEnvFile } from './syncEnvWithVault'
+import { updateEnvFile } from './syncEnvWithVault.ts'
 
 // biome-ignore lint/style/useTemplate: <explanation>
 const DOT_ENV_PATH = __dirname + '/test_env'

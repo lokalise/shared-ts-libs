@@ -1,4 +1,4 @@
-import { nonTranslatableTextRegexpG } from './utils'
+import { nonTranslatableTextRegexpG } from './utils.ts'
 
 /**
  * Compares two strings and returns true if the new string tries to edit the non-translatable content within

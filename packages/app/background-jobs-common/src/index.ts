@@ -1,17 +1,17 @@
 import type { TransactionObservabilityManager } from '@lokalise/node-core'
 
 export type { TransactionObservabilityManager }
-export * from './background-job-processor'
-export type { BarrierCallback, BarrierResult } from './background-job-processor/barrier/barrier'
-export { AbstractPeriodicJob } from './periodic-jobs/AbstractPeriodicJob'
+export * from './background-job-processor/index.ts'
+export type { BarrierCallback, BarrierResult } from './background-job-processor/barrier/barrier.ts'
+export { AbstractPeriodicJob } from './periodic-jobs/AbstractPeriodicJob.ts'
 
 export {
   createJobQueueSizeThrottlingBarrier,
   type ChildJobThrottlingBarrierConfig,
   type JobQueueSizeThrottlingBarrierContext,
-} from './background-job-processor/barrier/JobQueueSizeThrottlingBarrier'
+} from './background-job-processor/barrier/JobQueueSizeThrottlingBarrier.ts'
 
-export { createTask } from './periodic-jobs/periodicJobUtils'
+export { createTask } from './periodic-jobs/periodicJobUtils.ts'
 
 export type {
   PeriodicJobDependencies,
@@ -19,4 +19,4 @@ export type {
   LockConfiguration,
   JobExecutionContext,
   Schedule,
-} from './periodic-jobs/periodicJobTypes'
+} from './periodic-jobs/periodicJobTypes.ts'

@@ -4,9 +4,9 @@ import type {
   InferSchemaInput,
   InferSchemaOutput,
   PayloadRouteDefinition,
-} from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
+} from '@lokalise/api-contracts'
 import type { WretchResponse } from 'wretch'
-import { z } from 'zod'
+import { type ZodSchema, z } from 'zod/v4'
 import type {
   DeleteParams,
   FreeDeleteParams,
@@ -20,11 +20,16 @@ import type {
   RequestResultType,
   RouteRequestParams,
   WretchInstance,
-} from './types.js'
-import { type BodyParseResult, parseRequestBody, tryToResolveJsonBody } from './utils/bodyUtils.js'
-import { isFailure } from './utils/either.js'
-import { buildWretchError } from './utils/errorUtils.js'
-import { parseQueryParams } from './utils/queryUtils.js'
+} from './types.ts'
+import {
+  type BodyParseResult,
+  parseRequestBody,
+  parseResponseBody,
+  tryToResolveJsonBody,
+} from './utils/bodyUtils.ts'
+import { isFailure } from './utils/either.ts'
+import { XmlHttpRequestError, buildWretchError } from './utils/errorUtils.ts'
+import { parseQueryParams } from './utils/queryUtils.ts'
 
 export const UNKNOWN_SCHEMA = z.unknown()
 
@@ -110,7 +115,7 @@ async function sendResourceChange<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = await resolveHeaders(params.headers)
+  const resolvedHeaders = await resolveHeaders(params.headers as Record<string, string>)
 
   return wretch
     .headers(resolvedHeaders)
@@ -132,8 +137,6 @@ async function sendResourceChange<
     RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
   >
 }
-
-/* METHODS */
 
 /* GET */
 
@@ -164,7 +167,7 @@ export async function sendGet<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = await resolveHeaders(params.headers)
+  const resolvedHeaders = await resolveHeaders(params.headers as Record<string, string>)
 
   return wretch
     .headers(resolvedHeaders)
@@ -209,6 +212,70 @@ export function sendPost<
   >,
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   return sendResourceChange(wretch, 'post', params)
+}
+
+export async function sendPostWithProgress<ResponseBody>({
+  path,
+  responseBodySchema,
+  headers = {},
+  data,
+  onProgress,
+  abortController,
+}: {
+  path: string
+  headers?: Record<string, string>
+  data: XMLHttpRequestBodyInit
+  responseBodySchema: ZodSchema<ResponseBody>
+  onProgress: (progressEvent: ProgressEvent) => void
+  abortController?: AbortController
+}): Promise<ResponseBody> {
+  const response = await new Promise<ResponseBody>((resolve, reject) => {
+    /**
+     * Usually we recommend Wretch for Network requests.
+     * However, sometimes ( especially during files upload ) we require access to `progress` events
+     * emitted by the request. Wretch does not expose this event to consumers, so we use XHR here instead.
+     */
+    const xhr = new XMLHttpRequest()
+
+    if (abortController)
+      abortController.signal.addEventListener('abort', () => {
+        xhr.abort()
+      })
+
+    xhr.upload.onprogress = (progress) => onProgress(progress)
+    xhr.responseType = 'json'
+
+    xhr.open('POST', path, true)
+
+    for (const [headerName, headerValue] of Object.entries(headers)) {
+      xhr.setRequestHeader(headerName, headerValue)
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.response)
+      else reject(new XmlHttpRequestError('File upload failed', xhr.response))
+    }
+
+    xhr.onerror = () => {
+      reject(new XmlHttpRequestError(`File upload failed: ${xhr.statusText}`))
+    }
+
+    xhr.onabort = () => {
+      reject(new XmlHttpRequestError('Request aborted'))
+    }
+
+    xhr.send(data)
+  })
+
+  const bodyParseResult = parseResponseBody<ResponseBody>({
+    response,
+    responseBodySchema,
+    path,
+  })
+
+  if (bodyParseResult.error) return Promise.reject(bodyParseResult.error)
+
+  return bodyParseResult.result
 }
 
 /* PUT */
@@ -292,7 +359,7 @@ export async function sendDelete<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = await resolveHeaders(params.headers)
+  const resolvedHeaders = await resolveHeaders(params.headers as Record<string, string>)
 
   return wretch
     .headers(resolvedHeaders)
@@ -335,7 +402,6 @@ export function sendByPayloadRoute<
 >(
   wretch: T,
   routeDefinition: PayloadRouteDefinition<
-    InferSchemaOutput<PathParamsSchema>,
     RequestBodySchema,
     ResponseBodySchema,
     PathParamsSchema,
@@ -389,7 +455,6 @@ export function sendByGetRoute<
 >(
   wretch: T,
   routeDefinition: GetRouteDefinition<
-    InferSchemaOutput<PathParamsSchema>,
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
@@ -409,6 +474,7 @@ export function sendByGetRoute<
     IsEmptyResponseExpected
   >
 > {
+  // @ts-expect-error fixme
   return sendGet(wretch, {
     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
@@ -436,7 +502,6 @@ export function sendByDeleteRoute<
 >(
   wretch: T,
   routeDefinition: DeleteRouteDefinition<
-    InferSchemaOutput<PathParamsSchema>,
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
@@ -456,6 +521,7 @@ export function sendByDeleteRoute<
     IsEmptyResponseExpected
   >
 > {
+  // @ts-expect-error fixme
   return sendDelete(wretch, {
     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,

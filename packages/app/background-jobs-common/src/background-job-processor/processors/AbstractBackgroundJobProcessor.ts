@@ -3,36 +3,35 @@ import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import {
   DelayedError,
   type Job,
+  type JobState,
   type JobsOptions,
   type Queue,
   type QueueOptions,
   type Worker,
   type WorkerOptions,
 } from 'bullmq'
-import type { JobState } from 'bullmq/dist/esm/types/job-type'
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
-import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants'
-import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory'
-import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor'
-import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy'
-import type { BackgroundJobProcessorSpyInterface } from '../spy/types'
-import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types'
+import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants.ts'
 import {
   isJobMissingError,
+  isMutedUnrecoverableJobError,
   isStalledJobError,
   isUnrecoverableJobError,
-  prepareJobOptions,
-  resolveJobId,
-  sanitizeRedisConfig,
-} from '../utils'
+} from '../errors/utils.ts'
+import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory.ts'
+import type { JobsPaginatedResponse, ProtectedQueue } from '../managers/index.ts'
+import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
+import { sanitizeRedisConfig } from '../public-utils/index.ts'
+import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
+import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
+import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
+import { prepareJobOptions, resolveJobId, resolveQueueId } from '../utils.ts'
 import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
-  JobsPaginatedResponse,
-  ProtectedQueue,
   ProtectedWorker,
-} from './types'
+} from './types.ts'
 
 /**
  * @deprecated This processor is deprecated and will be removed in future versions.
@@ -60,7 +59,7 @@ export abstract class AbstractBackgroundJobProcessor<
   >,
   JobOptionsType extends JobsOptions = JobsOptions,
 > {
-  private readonly errorReporter: ErrorReporter // TODO: once hook handling is extracted, errorReporter should be moved to BackgroundJobProcessorMonitor
+  private readonly errorReporter: ErrorReporter
   private readonly config: BackgroundJobProcessorConfig<
     QueueOptionsType,
     WorkerOptionsType,
@@ -70,7 +69,7 @@ export abstract class AbstractBackgroundJobProcessor<
     JobType
   >
   private readonly _spy?: BackgroundJobProcessorSpy<JobPayload, JobReturn>
-  private readonly monitor: BackgroundJobProcessorMonitor<JobPayload, JobType>
+  private readonly monitor: BackgroundJobProcessorMonitor<JobType>
   private readonly runningPromises: Set<Promise<unknown>>
 
   private isStarted = false
@@ -79,7 +78,7 @@ export abstract class AbstractBackgroundJobProcessor<
   private _executionContext?: ExecutionContext
   private _queue?: QueueType
   private _worker?: WorkerType
-  private factory: AbstractBullmqFactory<
+  private readonly factory: AbstractBullmqFactory<
     QueueType,
     QueueOptionsType,
     WorkerType,
@@ -110,7 +109,11 @@ export abstract class AbstractBackgroundJobProcessor<
       JobType
     >,
   ) {
-    this.monitor = new BackgroundJobProcessorMonitor(dependencies, config, this.constructor.name)
+    this.monitor = new BackgroundJobProcessorMonitor(dependencies, {
+      isNewProcessor: false,
+      processorName: this.constructor.name,
+      ...config,
+    })
     this.config = config
     this.factory = dependencies.bullmqFactory
     this.errorReporter = dependencies.errorReporter
@@ -133,16 +136,16 @@ export abstract class AbstractBackgroundJobProcessor<
   protected get queue(): ProtectedQueue<JobPayload, JobReturn, QueueType> {
     /* v8 ignore next 3 */
     if (!this._queue) {
-      throw new Error(`queue ${this.config.queueId} was not instantiated yet, please run "start()"`)
+      throw new Error(
+        `queue ${resolveQueueId(this.config)} was not instantiated yet, please run "start()"`,
+      )
     }
 
     return this._queue
   }
 
   protected get executionContext() {
-    if (!this._executionContext) {
-      this._executionContext = this.resolveExecutionContext()
-    }
+    if (!this._executionContext) this._executionContext = this.resolveExecutionContext()
 
     return this._executionContext
   }
@@ -151,7 +154,7 @@ export abstract class AbstractBackgroundJobProcessor<
     /* v8 ignore next 5 */
     if (!this._worker) {
       throw new Error(
-        `worker for queue ${this.config.queueId} was not instantiated yet, please run "start()"`,
+        `worker for queue ${resolveQueueId(this.config)} was not instantiated yet, please run "start()"`,
       )
     }
 
@@ -167,10 +170,14 @@ export abstract class AbstractBackgroundJobProcessor<
     return this._spy
   }
 
+  public get resolvedQueueId(): string {
+    return resolveQueueId(this.config)
+  }
+
   public async start(): Promise<void> {
     if (this.isStarted) return // if it is already started -> skip
-
     if (!this.startPromise) this.startPromise = this.internalStart()
+
     await this.startPromise
     this.startPromise = undefined
   }
@@ -185,9 +192,9 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   private async internalStart(): Promise<void> {
-    await this.monitor.registerQueue()
+    await this.monitor.registerQueueProcessor()
 
-    this._queue = this.factory.buildQueue(this.config.queueId, {
+    this._queue = this.factory.buildQueue(resolveQueueId(this.config), {
       ...(merge(DEFAULT_QUEUE_OPTIONS, this.config.queueOptions ?? {}) as Omit<
         QueueOptionsType,
         'connection' | 'prefix'
@@ -198,7 +205,7 @@ export abstract class AbstractBackgroundJobProcessor<
     await this._queue.waitUntilReady()
 
     this._worker = this.factory.buildWorker(
-      this.config.queueId,
+      resolveQueueId(this.config),
       ((job: JobType) => this.processInternal(job)) as ProcessorType,
       {
         ...(merge(DEFAULT_WORKER_OPTIONS, this.config.workerOptions, {
@@ -218,7 +225,6 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   private registerListeners(): void {
-    // TODO: extract hooks handling to a separate class
     this._worker?.on('failed', (job, error) => {
       if (!job) return // Should not be possible with our current config, check 'failed' for more info
       // @ts-expect-error
@@ -244,7 +250,7 @@ export abstract class AbstractBackgroundJobProcessor<
     }
 
     this._spy?.clear()
-    this.monitor.unregisterQueue()
+    this.monitor.unregisterQueueProcessor()
     this.isStarted = false
   }
 
@@ -362,15 +368,18 @@ export abstract class AbstractBackgroundJobProcessor<
     const requestContext = this.monitor.getRequestContext(job)
 
     requestContext.logger.error(resolveGlobalErrorLogObject(error))
-    this.errorReporter.report({
-      error,
-      context: {
-        jobId: resolveJobId(job),
-        jobName: job.name,
-        'x-request-id': job.data.metadata.correlationId,
-        errorJson: JSON.stringify(pino.stdSerializers.err(error)),
-      },
-    })
+    // Report errors unless they are muted UnrecoverableError from BullMQ
+    if (!isMutedUnrecoverableJobError(error)) {
+      this.errorReporter.report({
+        error,
+        context: {
+          jobId: resolveJobId(job),
+          jobName: job.name,
+          'x-request-id': job.data.metadata.correlationId,
+          errorJson: JSON.stringify(pino.stdSerializers.err(error)),
+        },
+      })
+    }
 
     if (
       isUnrecoverableJobError(error) ||

@@ -31,7 +31,9 @@ npm run test
 `AbstractBackgroundJobProcessorNew` does no queue management, so you need a separate `QueueManager` instance to manage
 the queue.
 
-## Usage
+## Persisted background jobs
+
+### Usage
 
 See test implementations in `./test/processors` folder. Extend `AbstractBackgroundJobProcessorNew` and `QueueManager` to
 implement required methods.
@@ -60,7 +62,6 @@ await queueManager.start()
 const processor = new FakeBackgroundJobProcessorNew<typeof supportedQueues, 'queue1'>(
   deps,
   'queue1',
-  config.getRedisConfig(),
 )
 await processor.start()
 
@@ -83,8 +84,13 @@ To set up a queue configuration, you need to define a list of objects containing
 
 - **`queueId`**: The unique identifier for the queue.
 - **`queueOptions`**: Options for the queue. Refer to the [BullMQ documentation](https://docs.bullmq.io/guide/queues) for more details.
+ - **`bullDashboardGrouping`**: Optional array of strings to control how queues are grouped in the 
+   [bull-dashboard](https://github.com/felixmosh/bull-board), using the [queues grouping feature](https://github.com/felixmosh/bull-board/pull/867). 
+   Array elements are applied left to right: the first string is the top-level group, and each subsequent string defines a nested subgroup.
+   The delimiter is `QUEUE_GROUP_DELIMITER`.
+   You can use the helper `commonBullDashboardGroupingBuilder(serviceId, moduleId)` to generate a grouping like `['serviceId', 'moduleId']`.
 - **`jobPayloadSchema`**: A Zod schema that defines the structure of the jobs payload for this queue.
-- **`jobOptions`**: Default options for jobs in this queue. See [BullMQ documentation](https://docs.bullmq.io/guide/job-options).
+- **`jobOptions`**: Default options for jobs in this queue. Can be a function that will be resolved when a job is scheduled. See [BullMQ documentation](https://docs.bullmq.io/guide/job-options).
 
 #### Job Deduplication
 
@@ -110,6 +116,30 @@ const supportedQueues = [
 ] as const satisfies QueueConfiguration[]
 ```
 
+### Do not report UnrecoverableError
+
+By default, unrecoverable errors (BullMQ) are passed to the error reporting system. If you want to disable this behavior,
+throw `MutedUnrecoverableError` error instead. This will prevent the error from being reported and job will not be retried.
+
+```ts
+import { MutedUnrecoverableError } from '@lokalise/background-jobs-common'
+
+export class Processor extends AbstractBackgroundJobProcessorNew<Data> {
+  constructor(dependencies: BackgroundJobProcessorNewDependencies<Data>) {
+    super(dependencies)
+  }
+
+  protected async process(
+    _job: Job<JobPayloadForQueue<QueueConfiguration, QueueId>>,
+    _requestContext: RequestContext,
+  ): Promise < void > {
+    doSomeProcessing();
+
+    throw new MutedUnrecoverableError('Do not retry the job, and do not report the error')
+  }
+}
+```
+
 ### Common jobs
 
 For that type of job, you will need to extend `AbstractBackgroundJobProcessorNew` and implement a `processInternal`
@@ -125,8 +155,11 @@ Use `dispose()` to correctly stop processing any new messages and wait for the c
 
 ### Spies
 
-Testing asynchronous code can be challenging. To address this, we've implemented a built-in spy functionality for
-jobs and queue managers.
+Testing asynchronous code can be challenging. To tackle this, we've developed an integrated spy feature for both jobs 
+and queue managers. This functionality enables you to monitor a job as it transitions to a specific state. 
+
+Additionally, the spy instance is shared between the processor and the queue manager, allowing you to use either
+component to verify the status of a job.
 
 #### Example Usage
 
@@ -144,9 +177,14 @@ const scheduledJobIds = await queueManager.scheduleBulk(queueId, [
   },
 ]);
 
-const firstScheduledJob = await queueManager.spy.waitForJobWithId(scheduledJobIds[0], 'scheduled');
+const firstScheduledJob = await queueManager.getSpy(queueId).waitForJobWithId(scheduledJobIds[0], 'scheduled');
+// or using processor spy
+// const firstScheduledJob = await processor.spy.waitForJobWithId(scheduledJobIds[0], 'scheduled');
+
 
 const firstJob = await processor.spy.waitForJobWithId(scheduledJobIds[0], 'completed');
+// or using queue manager spy
+// const firstJob = await queueManager.getSpy(queueId).waitForJobWithId(scheduledJobIds[0], 'completed');
 const secondJob = await processor.spy.waitForJob(
   (data) => data.value === 'second',
   'completed'
@@ -159,22 +197,19 @@ expect(secondJob.data.value).toBe('second');
 
 #### Spy Methods
 
-- `processor.spy.waitForJobWithId(jobId, status)`, `queueManager.spy.waitForJobWithId(jobId, status)`:
+- `processor.spy.waitForJobWithId(jobId, status)`, `queueManager.getSpy(queueId).waitForJobWithId(jobId, status)`:
   - Waits for a job with a specific ID to reach the specified status.
   - Returns the job instance when the status is achieved.
 
-- `processor.spy.waitForJob(predicate, status)`, `queueManager.spy.waitForJob(predicate, status)`:
+- `processor.spy.waitForJob(predicate, status)`, `queueManager.getSpy(queueId).waitForJob(predicate, status)`:
   - Waits for any job that matches the custom predicate to reach the specified status.
   - Returns the matching job instance when the status is achieved.
 
 #### Awaitable Job States
 
-Spies can await jobs in the following states for queue managers:
+Spies can await jobs in the following states:
 
 - `scheduled`: The job is scheduled but not yet processed.
-
-Spies can await jobs in the following states for processors:
-
 - `failed`: The job is processed but failed.
 - `completed`: The job is processed successfully.
 
@@ -298,4 +333,40 @@ export class Processor extends AbstractBackgroundJobProcessor<Data> {
     }
     // ...
 }
+```
+
+## In-memory periodic jobs
+
+### Usage
+
+```ts
+export class MyJob extends AbstractPeriodicJob {
+  public static JOB_NAME = 'MyJob'
+
+  constructor(
+          dependencies: PeriodicJobDependencies,
+  ) {
+    super(
+            {
+              jobId: MyJob.JOB_NAME,
+              schedule: {
+                intervalInMs: config?.intervalInMs ?? 15000,
+              },
+              shouldLogExecution: config?.shouldLogExecution ?? false,
+              singleConsumerMode: {
+                enabled: false, // if true, only one job instance across all cluster nodes can be running at the same time
+              },
+              runImmediately: true, // if true, job will be triggered immediately after registration
+            },
+            dependencies,
+    )
+  }
+
+  protected processInternal(executionUuid: JobExecutionContext): Promise<unknown> {
+    // implement job execution logic 
+  }
+}
+
+const job = new MyJob(dependencies)
+await job.asyncRegister() // if runImmediately is true, this will both register the job to a scheduler and also immediately trigger execution and await its completion
 ```
