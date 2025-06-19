@@ -15,11 +15,8 @@
     },
     "scripts": {
         "build": "rimraf dist && tsc --project tsconfig.build.json",
-        "docker:start:ci": "docker compose up -d --quiet-pull redis",
         "test": "vitest run",
-        "pretest:ci": "npm run docker:start:ci",
         "test:ci": "npm run test -- --coverage",
-        "test:ci:teardown": "docker compose down",
         "lint": "biome check . && tsc --noEmit",
         "lint:fix": "biome check --write",
         "prepublishOnly": "npm run build"
