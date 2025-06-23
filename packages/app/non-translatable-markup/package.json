@@ -29,7 +29,7 @@
         "postversion": "biome check --write package.json"
     },
     "devDependencies": {
-        "@biomejs/biome": "^1.9.4",
+        "@biomejs/biome": "^2.0.4",
         "@lokalise/biome-config": "^2.0.0",
         "@lokalise/tsconfig": "*",
         "@vitest/coverage-v8": "^3.0.7",

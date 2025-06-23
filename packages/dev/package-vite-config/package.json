@@ -36,7 +36,7 @@
         "vitest": "^3.0.7"
     },
     "devDependencies": {
-        "@biomejs/biome": "^1.9.4",
+        "@biomejs/biome": "^2.0.4",
         "@lokalise/biome-config": "^2.0.0",
         "@types/node": "^24.0.3",
         "rimraf": "^6.0.1",
