@@ -11,7 +11,7 @@
         }
     },
     "files": {
-        "include": ["**/*.css"]
+        "includes": ["**/*.css"]
     },
     "css": {
         "parser": {
@@ -29,5 +29,6 @@
                 "useHookAtTopLevel": "error"
             }
         }
-    }
+    },
+    "plugins": ["./node_modules/@lokalise/biome-config/configs/plugins/no-manual-z-index.grit"]
 }
