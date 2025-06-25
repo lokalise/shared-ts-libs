@@ -51,7 +51,16 @@
         }
     },
     "files": {
-        "includes": ["**/*.ts", "**/*.mts", "**/*.tsx", "**/*.json", "**/*.jsonc", "!dist", "!coverage", "!node_modules"]
+        "includes": [
+            "**/*.ts",
+            "**/*.mts",
+            "**/*.tsx",
+            "**/*.json",
+            "**/*.jsonc",
+            "!dist",
+            "!coverage",
+            "!node_modules"
+        ]
     },
     "formatter": {
         "enabled": true,
