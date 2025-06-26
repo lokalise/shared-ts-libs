@@ -15,7 +15,7 @@ declare module '@lokalise/api-contracts' {
 
 describe('fastifyApiContracts - api contract metadata mapper', () => {
   describe('buildFastifyNoPayloadRoute', () => {
-    it('should use metadata mapper to build the route', async () => {
+    it('should use metadata mapper to build the route', () => {
       const contract = buildGetRoute({
         successResponseBodySchema: SCHEMA,
         requestPathParamsSchema: SCHEMA,
@@ -46,7 +46,7 @@ describe('fastifyApiContracts - api contract metadata mapper', () => {
   })
 
   describe('buildFastifyPayloadRoute', () => {
-    it('should use metadata mapper to build the route', async () => {
+    it('should use metadata mapper to build the route', () => {
       const contract = buildPayloadRoute({
         method: 'post',
         requestBodySchema: SCHEMA,
