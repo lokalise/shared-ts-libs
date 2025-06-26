@@ -58,6 +58,7 @@
             "**/*.json",
             "**/*.jsonc",
             "!dist",
+            "!**/dist/*",
             "!coverage",
             "!node_modules"
         ]
