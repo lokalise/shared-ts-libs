@@ -2,18 +2,16 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 import {
   type CommonLogger,
   type ErrorReporter,
-  InternalError,
-  type TransactionObservabilityManager,
   globalLogger,
+  InternalError,
   isError,
+  resolveGlobalErrorLogObject,
+  type TransactionObservabilityManager,
 } from '@lokalise/node-core'
-import { resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
-import type { LockOptions } from 'redis-semaphore'
+import type { LockLostCallback, LockOptions } from 'redis-semaphore'
 import { Mutex } from 'redis-semaphore'
-import type { LockLostCallback } from 'redis-semaphore'
-import { CronJob, type ToadScheduler } from 'toad-scheduler'
-import { SimpleIntervalJob } from 'toad-scheduler'
+import { CronJob, SimpleIntervalJob, type ToadScheduler } from 'toad-scheduler'
 import type {
   BackgroundJobConfiguration,
   JobExecutionContext,

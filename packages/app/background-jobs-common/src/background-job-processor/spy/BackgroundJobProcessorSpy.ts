@@ -1,8 +1,6 @@
 import { deepClone, removeNullish } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
-
 import type { SafeJob } from '../types.ts'
-
 import type {
   BackgroundJobProcessorSpyInterface,
   JobDataSelector,
@@ -65,6 +63,7 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
     return this.registerPromise((job) => jobSelector(job.data), awaitedState)
   }
 
+  // biome-ignore lint/suspicious/useAwait: <explanation>
   private async registerPromise(
     selector: JobSelector<JobData, JobReturn>,
     state: JobSpyState,

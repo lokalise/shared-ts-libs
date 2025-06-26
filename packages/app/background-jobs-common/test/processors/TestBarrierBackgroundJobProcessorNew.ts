@@ -1,3 +1,4 @@
+import type { BarrierCallback } from '../../src/index.ts'
 import {
   AbstractBackgroundJobProcessorNew,
   type BackgroundJobProcessorDependenciesNew,
@@ -5,7 +6,6 @@ import {
   type QueueConfiguration,
   type SupportedQueueIds,
 } from '../../src/index.ts'
-import type { BarrierCallback } from '../../src/index.ts'
 
 export class TestBarrierBackgroundJobProcessorNew<
   Q extends QueueConfiguration[],

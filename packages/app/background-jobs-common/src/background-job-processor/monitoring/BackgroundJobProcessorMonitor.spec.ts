@@ -1,13 +1,13 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import pino from 'pino'
 import {
-  type MockInstance,
   afterAll,
   beforeAll,
   beforeEach,
   describe,
   expect,
   it,
+  type MockInstance,
   vi,
 } from 'vitest'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'

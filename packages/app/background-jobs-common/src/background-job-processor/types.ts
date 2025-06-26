@@ -1,6 +1,5 @@
-import type { FinishedStatus, Job } from 'bullmq'
-
 import type { CommonLogger } from '@lokalise/node-core'
+import type { FinishedStatus, Job } from 'bullmq'
 import { z } from 'zod/v4'
 
 export interface RequestContext {
