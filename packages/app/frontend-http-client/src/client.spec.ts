@@ -1,11 +1,10 @@
+import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import failOnConsole from 'jest-fail-on-console'
+import { newServer } from 'mock-xmlhttprequest'
 import { getLocal } from 'mockttp'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import wretch from 'wretch'
 import { z } from 'zod/v4'
-
-import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
-import { newServer } from 'mock-xmlhttprequest'
 import {
   sendByDeleteRoute,
   sendByGetRoute,

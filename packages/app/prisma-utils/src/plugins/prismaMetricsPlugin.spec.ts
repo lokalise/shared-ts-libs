@@ -7,7 +7,7 @@ import type { FastifyInstance } from 'fastify'
 import fastify from 'fastify'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod/v4'
-import { DB_MODEL, cleanTables } from '../../test/DbCleaner.ts'
+import { cleanTables, DB_MODEL } from '../../test/DbCleaner.ts'
 import { getDatasourceUrl } from '../../test/getDatasourceUrl.ts'
 import { type PrismaMetricsPluginOptions, prismaMetricsPlugin } from './prismaMetricsPlugin.ts'
 

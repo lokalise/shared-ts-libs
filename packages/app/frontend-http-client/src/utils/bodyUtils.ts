@@ -1,6 +1,5 @@
 import type { WretchResponse } from 'wretch'
 import type { ZodError, z } from 'zod/v4'
-
 import type { Either } from './either.ts'
 import { failure, success } from './either.ts'
 
@@ -55,6 +54,7 @@ export function parseResponseBody<ResponseBody>({
   const result = responseBodySchema.safeParse(response)
 
   if (!result.success) {
+    // biome-ignore lint/suspicious/noConsole: <biome v2 migration>
     console.error({
       path,
       response,
@@ -87,6 +87,7 @@ export function parseRequestBody<RequestBodySchema extends z.Schema>({
   const result = requestBodySchema.safeParse(body)
 
   if (!result.success) {
+    // biome-ignore lint/suspicious/noConsole: <biome v2 migration>
     console.error({
       path,
       body,
