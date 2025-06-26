@@ -5,23 +5,7 @@
             "correctness": {
                 "useImportExtensions": {
                     "level": "error",
-                    "fix": "safe",
-                    "options": {
-                        "suggestedExtensions": {
-                            "ts": {
-                                "module": "ts",
-                                "component": "ts"
-                            },
-                            "tsx": {
-                                "module": "ts",
-                                "component": "tsx"
-                            },
-                            "mts": {
-                                "module": "mts",
-                                "component": "mts"
-                            }
-                        }
-                    }
+                    "fix": "safe"
                 }
             }
         }

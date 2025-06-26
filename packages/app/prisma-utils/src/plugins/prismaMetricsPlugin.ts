@@ -1,8 +1,7 @@
 import type { FastifyInstance, FastifyPluginCallback } from 'fastify'
 import 'fastify-metrics'
-import fp from 'fastify-plugin'
-
 import type { PrismaClient } from '@prisma/client'
+import fp from 'fastify-plugin'
 import type { CollectionScheduler } from './CollectionScheduler.ts'
 import { PromiseBasedCollectionScheduler } from './CollectionScheduler.ts'
 import type { MetricCollectorOptions } from './MetricsCollector.ts'

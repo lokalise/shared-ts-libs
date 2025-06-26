@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod/v4'
-
 import { stringSplitFactory } from './stringSplitFactory.ts'
 
 describe('stringSplitFactory', () => {

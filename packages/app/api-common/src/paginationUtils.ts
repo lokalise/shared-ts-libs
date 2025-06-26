@@ -156,7 +156,7 @@ export async function getPaginatedEntries<T extends Record<string, unknown>>(
   apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,
 ): Promise<T[]> {
   const resultArray: T[] = []
-  let currentCursor: string | undefined = undefined
+  let currentCursor: string | undefined
   do {
     const pageResult = await apiCall({ ...pagination, after: currentCursor })
     resultArray.push(...pageResult.data)

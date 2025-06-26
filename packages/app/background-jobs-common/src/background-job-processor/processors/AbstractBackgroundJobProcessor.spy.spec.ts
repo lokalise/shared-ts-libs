@@ -1,9 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import { TestReturnValueBackgroundJobProcessor } from '../../../test/processors/TestReturnValueBackgroundJobProcessor.ts'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import type { BaseJobPayload } from '../types.ts'
-
 import { FakeBackgroundJobProcessor } from './FakeBackgroundJobProcessor.ts'
 import type { BackgroundJobProcessorDependencies } from './types.ts'
 

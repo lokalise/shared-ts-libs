@@ -14,7 +14,6 @@ export * from './public/array/sort.ts'
 export * from './public/array/sortByField.ts'
 export * from './public/array/unique.ts'
 export * from './public/array/uniqueByProperty.ts'
-
 // object
 export * from './public/object/areDeepEqual.ts'
 export * from './public/object/convertDateFieldsToIsoString.ts'
@@ -27,10 +26,8 @@ export * from './public/object/groupByUnique.ts'
 export * from './public/object/isEmpty.ts'
 export * from './public/object/pick.ts'
 export * from './public/object/transformToKebabCase.ts'
-
 // string
 export * from './public/string/trimText.ts'
-
 // type
 export * from './public/type/FreeformRecord.ts'
 export * from './public/type/hasMessage.ts'
@@ -40,5 +37,4 @@ export * from './public/type/isStandardizedError.ts'
 export * from './public/type/MakeRequired.ts'
 export * from './public/type/MayOmit.ts'
 export * from './public/type/ObjectValues.ts'
-
 export * from './public/waitAndRetry.ts'

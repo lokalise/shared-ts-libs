@@ -1,5 +1,4 @@
 import type { ZodObject, z } from 'zod'
-
 import type { ReservedClientToServerEvents, ReservedServerToClientEvents } from '../events/index.ts'
 
 export interface WebsocketEvent {

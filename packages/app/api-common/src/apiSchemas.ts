@@ -1,6 +1,5 @@
-import z from 'zod'
 import type { RefinementCtx } from 'zod'
-
+import z from 'zod'
 import { decodeCursor } from './cursorCodec.ts'
 
 export const MANDATORY_PAGINATION_CONFIG_SCHEMA = z.object({

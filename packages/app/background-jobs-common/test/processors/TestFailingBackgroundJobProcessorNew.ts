@@ -1,11 +1,11 @@
 import type { Job } from 'bullmq'
+import type { RequestContext } from '../../src/index.ts'
 import {
   FakeBackgroundJobProcessorNew,
   type JobPayloadForQueue,
   type QueueConfiguration,
   type SupportedQueueIds,
 } from '../../src/index.ts'
-import type { RequestContext } from '../../src/index.ts'
 
 export class TestFailingBackgroundJobProcessorNew<
   Q extends QueueConfiguration[],

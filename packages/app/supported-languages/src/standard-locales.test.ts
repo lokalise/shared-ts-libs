@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-
 import { languages } from './languages.ts'
 import { regions } from './regions.ts'
 import { scripts } from './scripts.ts'

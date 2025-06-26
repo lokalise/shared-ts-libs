@@ -1,6 +1,5 @@
 import type { Redis } from 'ioredis'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-
 import { TestDependencyFactory } from './TestDependencyFactory.ts'
 
 describe('TestDependencyFactory', () => {

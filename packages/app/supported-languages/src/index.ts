@@ -1,5 +1,4 @@
 import type { Either } from '@lokalise/node-core'
-
 import type { Language } from './languages.ts'
 import { languages, languagesSet } from './languages.ts'
 import { lokaliseSupportedLanguagesAndLocales } from './lokaliseLanguages.ts'

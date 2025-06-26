@@ -3,7 +3,11 @@
     "version": "4.0.1",
     "type": "module",
     "license": "Apache-2.0",
-    "files": ["dist", "README.md", "LICENSE.md"],
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE.md"
+    ],
     "main": "./dist/index.js",
     "exports": {
         ".": "./dist/index.js",
@@ -40,7 +44,7 @@
         "prisma": ">=5.0.0 <7.0.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "^1.9.4",
+        "@biomejs/biome": "^2.0.5",
         "@lokalise/biome-config": "^2.0.0",
         "@lokalise/backend-http-client": "^7.0.0",
         "@lokalise/fastify-extras": "^28.0.0",

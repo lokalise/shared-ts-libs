@@ -1,5 +1,4 @@
 import type { Worker, WorkerOptions } from 'bullmq'
-
 import type { BullmqProcessor, SafeJob } from '../types.ts'
 
 export interface BullmqWorkerFactory<

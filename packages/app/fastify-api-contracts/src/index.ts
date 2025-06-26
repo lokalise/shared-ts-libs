@@ -5,8 +5,8 @@ export {
   buildFastifyPayloadRouteHandler,
 } from './fastifyApiContracts.ts'
 export {
-  injectGet,
   injectDelete,
+  injectGet,
   injectPatch,
   injectPost,
   injectPut,

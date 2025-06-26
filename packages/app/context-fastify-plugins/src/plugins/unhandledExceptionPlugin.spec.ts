@@ -1,6 +1,5 @@
 import { type ErrorReport, isInternalError } from '@lokalise/node-core'
-import { type RouteHandlerMethod, fastify } from 'fastify'
-
+import { fastify, type RouteHandlerMethod } from 'fastify'
 import {
   getRequestIdFastifyAppConfig,
   requestContextProviderPlugin,
@@ -8,6 +7,7 @@ import {
 import { unhandledExceptionPlugin } from './unhandledExceptionPlugin.ts'
 
 process.on('unhandledRejection', (error) => {
+  // biome-ignore lint/suspicious/noConsole: <explanation>
   console.error('Unhandled Rejection:', error)
   // Optionally throw an error here to fail the test
 })

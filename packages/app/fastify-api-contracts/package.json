@@ -2,7 +2,11 @@
     "name": "@lokalise/fastify-api-contracts",
     "version": "4.0.0",
     "type": "module",
-    "files": ["dist", "README.md", "LICENSE.md"],
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE.md"
+    ],
     "license": "Apache-2.0",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
@@ -11,7 +15,14 @@
         ".": "./dist/index.js",
         "./package.json": "./package.json"
     },
-    "keywords": ["fastify", "api", "contracts", "route", "definition", "contract"],
+    "keywords": [
+        "fastify",
+        "api",
+        "contracts",
+        "route",
+        "definition",
+        "contract"
+    ],
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
@@ -38,7 +49,7 @@
         "zod": ">=3.25.56"
     },
     "devDependencies": {
-        "@biomejs/biome": "^1.9.4",
+        "@biomejs/biome": "^2.0.5",
         "@lokalise/api-contracts": "^5.0.0",
         "@lokalise/biome-config": "^2.0.0",
         "@lokalise/tsconfig": "~1.2.0",

@@ -1,7 +1,7 @@
 /* c8 ignore next */
 export {
   synchronizeEnvFileWithVault,
-  upsertEnvValue,
   updateEnvFile,
+  upsertEnvValue,
 } from './vault/syncEnvWithVault.ts'
-export { vaultLogin, vaultGetVars, vaultGetVarsAsync } from './vault/vault.ts'
+export { vaultGetVars, vaultGetVarsAsync, vaultLogin } from './vault/vault.ts'

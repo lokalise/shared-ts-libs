@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod/v4'
-
 import { toStringPreprocessor } from './toStringPreprocessor.ts'
 
 describe('toStringPreprocessor', () => {

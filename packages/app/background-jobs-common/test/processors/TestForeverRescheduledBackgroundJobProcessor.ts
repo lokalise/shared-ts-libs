@@ -1,7 +1,6 @@
-import { DelayedError, type Job } from 'bullmq'
-
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
+import { DelayedError, type Job } from 'bullmq'
 import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,

@@ -1,7 +1,8 @@
-import type { InferSchemaInput, InferSchemaOutput } from '@lokalise/api-contracts'
 import type {
   DeleteRouteDefinition,
   GetRouteDefinition,
+  InferSchemaInput,
+  InferSchemaOutput,
   PayloadRouteDefinition,
 } from '@lokalise/api-contracts'
 import type { FastifyInstance } from 'fastify'

@@ -1,10 +1,10 @@
 import type { AwsConfig } from '../awsConfig.ts'
 import type { TopicConfig } from '../event-routing/eventRoutingConfig.ts'
 import {
-  QUEUE_NAME_REGEX,
-  TOPIC_NAME_REGEX,
   buildQueueUrlsWithSubscribePermissionsPrefix,
   buildTopicArnsWithPublishPermissionsPrefix,
+  QUEUE_NAME_REGEX,
+  TOPIC_NAME_REGEX,
 } from './utils.ts'
 
 const buildTopicConfig = (

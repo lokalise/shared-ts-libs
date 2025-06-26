@@ -1,5 +1,4 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-
 import type { RedisConfig } from '@lokalise/node-core'
 import type { BarrierCallback } from '../../src/background-job-processor/barrier/barrier.ts'
 import {

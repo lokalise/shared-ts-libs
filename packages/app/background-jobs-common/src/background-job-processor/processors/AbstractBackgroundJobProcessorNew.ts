@@ -12,16 +12,16 @@ import {
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
 import { DEFAULT_WORKER_OPTIONS } from '../constants.ts'
-import { ZodUnrecoverableError } from '../errors/ZodUnrecoverableError.js'
 import {
   isJobMissingError,
   isMutedUnrecoverableJobError,
   isStalledJobError,
   isUnrecoverableJobError,
 } from '../errors/utils.ts'
+import { ZodUnrecoverableError } from '../errors/ZodUnrecoverableError.js'
 import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory.ts'
-import type { QueueManager } from '../managers/QueueManager.ts'
 import type { ProtectedQueue } from '../managers/index.ts'
+import type { QueueManager } from '../managers/QueueManager.ts'
 import type {
   JobPayloadForQueue,
   QueueConfiguration,

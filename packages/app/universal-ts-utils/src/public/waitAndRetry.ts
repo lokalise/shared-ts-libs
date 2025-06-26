@@ -16,6 +16,8 @@
  *   .catch((error) => { console.error('An error occurred:', error) })
  * ```
  */
+
+// biome-ignore lint/suspicious/useAwait: <explanation>
 export const waitAndRetry = async <T>(
   predicateFn: () => T,
   sleepTime = 20,

@@ -2,9 +2,7 @@ import type { Either } from '@lokalise/node-core'
 import { PrismaClient } from '@prisma/client'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { DB_MODEL, cleanTables } from '../test/DbCleaner.ts'
-
+import { cleanTables, DB_MODEL } from '../test/DbCleaner.ts'
 import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
 import {
   PRISMA_NOT_FOUND_ERROR,

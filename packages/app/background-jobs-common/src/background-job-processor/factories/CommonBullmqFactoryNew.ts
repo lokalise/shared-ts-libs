@@ -1,5 +1,5 @@
-import { type Job, Queue, Worker } from 'bullmq'
 import type { Processor, QueueOptions, WorkerOptions } from 'bullmq'
+import { type Job, Queue, Worker } from 'bullmq'
 import type { BullmqProcessor } from '../types.ts'
 import type { BullmqQueueFactory } from './BullmqQueueFactory.ts'
 import type { BullmqWorkerFactory } from './BullmqWorkerFactory.ts'

@@ -2,8 +2,8 @@ import { randomUUID } from 'node:crypto'
 import type { PeriodicJobDependencies } from '@lokalise/background-jobs-common'
 import {
   type Either,
-  type TransactionObservabilityManager,
   globalLogger,
+  type TransactionObservabilityManager,
 } from '@lokalise/node-core'
 import { Redis } from 'ioredis'
 import { ToadScheduler } from 'toad-scheduler'

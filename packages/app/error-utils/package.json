@@ -2,7 +2,11 @@
     "name": "@lokalise/error-utils",
     "version": "3.0.0",
     "license": "Apache-2.0",
-    "files": ["dist/**", "LICENSE.md", "README.md"],
+    "files": [
+        "dist/**",
+        "LICENSE.md",
+        "README.md"
+    ],
     "type": "module",
     "main": "./dist/index.js",
     "exports": {
@@ -31,7 +35,7 @@
         "@lokalise/node-core": ">=11.0.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "^1.9.4",
+        "@biomejs/biome": "^2.0.5",
         "@lokalise/biome-config": "^2.0.0",
         "@lokalise/node-core": "^14.0.0",
         "@lokalise/tsconfig": "^1.3.0",

@@ -7,7 +7,6 @@ import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
 import { PrismaInstrumentation } from '@prisma/instrumentation'
 import type { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
-
 import { LokaliseBatchSpanProcessor, LokaliseSimpleSpanProcessor } from './spanProcessors.ts'
 
 export interface PrismaOtelTracingPluginConfig {
