@@ -3,29 +3,7 @@
     "assist": {
         "actions": {
             "source": {
-                "organizeImports": {
-                    "level": "on",
-                    "options": {
-                        "groups": [
-                            // Node.js modules
-                            ":NODE:",
-                            // Modules imported with the `npm:` protocol
-                            ["npm:*", "npm:*/**"],
-                            // Modules imported with another protocol. e.g. `jsr:`
-                            ":PACKAGE_WITH_PROTOCOL:",
-                            // URLs
-                            ":URL:",
-                            // Libraries
-                            ":PACKAGE:",
-                            // Absolute paths
-                            ["/**"],
-                            // Sharp aliases
-                            ["#*", "#*/**"],
-                            // All other paths
-                            ":PATH:"
-                        ]
-                    }
-                }
+                "organizeImports": "on"
             }
         }
     },
