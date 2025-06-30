@@ -1,5 +1,4 @@
 import type { Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
-
 import type { BullmqProcessor, SafeJob } from '../types.ts'
 
 export abstract class AbstractBullmqFactory<

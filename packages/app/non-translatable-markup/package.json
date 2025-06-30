@@ -1,7 +1,9 @@
 {
     "name": "@lokalise/non-translatable-markup",
     "version": "3.1.0",
-    "files": ["dist"],
+    "files": [
+        "dist"
+    ],
     "license": "Apache-2.0",
     "type": "module",
     "main": "./dist/index.js",
@@ -29,7 +31,7 @@
         "postversion": "biome check --write package.json"
     },
     "devDependencies": {
-        "@biomejs/biome": "^1.9.4",
+        "@biomejs/biome": "^2.0.5",
         "@lokalise/biome-config": "^2.0.0",
         "@lokalise/tsconfig": "*",
         "@vitest/coverage-v8": "^3.0.7",

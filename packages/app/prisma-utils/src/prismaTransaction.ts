@@ -1,17 +1,15 @@
 import { setTimeout } from 'node:timers/promises'
-
 import type { Either } from '@lokalise/node-core'
 import { deepClone } from '@lokalise/node-core'
 import type { Prisma, PrismaClient } from '@prisma/client'
 import type * as runtime from '@prisma/client/runtime/library'
-
 import { isCockroachDBRetryTransaction } from './errors/cockroachdbError.ts'
 import {
+  isPrismaClientKnownRequestError,
+  isPrismaTransactionClosedError,
   PRISMA_SERIALIZATION_ERROR,
   PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
   PRISMA_TRANSACTION_ERROR,
-  isPrismaClientKnownRequestError,
-  isPrismaTransactionClosedError,
 } from './errors/prismaError.ts'
 import type {
   DbDriver,
@@ -45,7 +43,7 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
   options?: PrismaTransactionOptions | PrismaTransactionBasicOptions,
 ): Promise<PrismaTransactionReturnType<T>> => {
   let optionsWithDefaults = { ...DEFAULT_OPTIONS, ...options }
-  let result: PrismaTransactionReturnType<T> | undefined = undefined
+  let result: PrismaTransactionReturnType<T> | undefined
 
   let retries = 0
   do {

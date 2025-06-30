@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
 import { prismaClientFactory } from './prismaClientFactory.ts'
 

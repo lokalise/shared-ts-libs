@@ -1,9 +1,9 @@
 import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import { fastify } from 'fastify'
 import {
-  type ZodTypeProvider,
   serializerCompiler,
   validatorCompiler,
+  type ZodTypeProvider,
 } from 'fastify-type-provider-zod'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'

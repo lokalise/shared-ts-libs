@@ -1,6 +1,5 @@
 import type { MayOmit } from '@lokalise/node-core'
 import type { Client } from 'undici'
-
 import { z } from 'zod/v4'
 import type { RequestOptions } from './types.ts'
 

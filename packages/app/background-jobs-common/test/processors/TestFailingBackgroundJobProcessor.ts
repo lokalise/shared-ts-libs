@@ -1,6 +1,5 @@
-import type { Job } from 'bullmq'
-
 import type { RedisConfig } from '@lokalise/node-core'
+import type { Job } from 'bullmq'
 import {
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,

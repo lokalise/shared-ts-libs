@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
-
 import {
-  type ConversionMode,
   base64urlToString,
+  type ConversionMode,
   decodeCursor,
   encodeCursor,
   stringToBase64url,

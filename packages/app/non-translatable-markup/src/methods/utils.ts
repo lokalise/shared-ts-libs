@@ -49,6 +49,7 @@ export const symbolsAndNumberRegexpG = new RegExp(symbolsAndNumberPattern)
  *      `\d{2,4}` -> matches year format YYYY | YY
  *  )
  */
+// biome-ignore  lint/complexity/noUselessEscapeInRegex: <leaving as is after biome migration to v2>
 const datePattern = /(\d{2,4}([-\/.])\d{1,2}\2\d{1,2})|(\d{1,2}([-\/.])\d{1,2}\4\d{2,4})/
 export const dateRegexp = new RegExp(datePattern)
 

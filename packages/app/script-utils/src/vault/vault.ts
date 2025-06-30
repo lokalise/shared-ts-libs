@@ -2,7 +2,6 @@
 import type { SpawnSyncReturns } from 'node:child_process'
 import { exec, execSync } from 'node:child_process'
 import { promisify } from 'node:util'
-
 import { globalLogger } from '@lokalise/node-core'
 
 const execAsync = promisify(exec)

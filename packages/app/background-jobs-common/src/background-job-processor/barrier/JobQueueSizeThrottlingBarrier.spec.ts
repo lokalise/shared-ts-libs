@@ -1,7 +1,7 @@
 import { setTimeout } from 'node:timers/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import { TestQueueSizeJobBarrierBackgroundJobProcessor } from '../../../test/processors/TestQueueSizeJobBarrierBackgroundJobProcessor.ts'
+import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import type { BackgroundJobProcessorDependencies } from '../processors/types.ts'
 import type { BaseJobPayload } from '../types.ts'
 import { createJobQueueSizeThrottlingBarrier } from './JobQueueSizeThrottlingBarrier.ts'
