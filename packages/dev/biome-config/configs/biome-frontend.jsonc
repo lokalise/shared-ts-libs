@@ -11,7 +11,7 @@
         }
     },
     "files": {
-        "include": ["**/*.css"]
+        "includes": ["**/*.css"]
     },
     "css": {
         "parser": {

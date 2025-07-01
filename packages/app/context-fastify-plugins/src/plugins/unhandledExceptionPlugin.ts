@@ -4,7 +4,6 @@ import { InternalError, isError } from '@lokalise/node-core'
 import type { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
 import { stdSerializers } from 'pino'
-
 import { REQUEST_ID_STORE_KEY } from './requestContextProviderPlugin.ts'
 
 export const commonErrorObjectResolver: ErrorObjectResolver = (

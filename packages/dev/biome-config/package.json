@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/biome-config",
-    "version": "2.0.0",
+    "version": "3.0.0",
     "license": "Apache-2.0",
     "files": [
         "configs/*"
@@ -22,6 +22,6 @@
     },
     "private": false,
     "devDependencies": {
-        "@biomejs/biome": "^1.9.4"
+        "@biomejs/biome": "^2.0.5"
     }
 }

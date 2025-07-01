@@ -1,7 +1,6 @@
 import { builtinModules } from 'node:module'
-
 import dts from 'vite-plugin-dts'
-import { type ViteUserConfig, defineConfig } from 'vitest/config'
+import { defineConfig, type ViteUserConfig } from 'vitest/config'
 
 export const extractDependencies = (packageJson: {
   dependencies?: Record<string, unknown>

@@ -1,5 +1,4 @@
-import { type FastifyInstance, type RouteHandlerMethod, fastify } from 'fastify'
-
+import { type FastifyInstance, fastify, type RouteHandlerMethod } from 'fastify'
 import {
   getRequestIdFastifyAppConfig,
   requestContextProviderPlugin,

@@ -1,4 +1,4 @@
-import { type RedisConfig, globalLogger } from '@lokalise/node-core'
+import { globalLogger, type RedisConfig } from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
 import { vi } from 'vitest'
 import { CommonBullmqFactoryNew } from '../src/background-job-processor/factories/CommonBullmqFactoryNew.ts'

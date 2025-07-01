@@ -28,7 +28,7 @@ import {
   tryToResolveJsonBody,
 } from './utils/bodyUtils.ts'
 import { isFailure } from './utils/either.ts'
-import { XmlHttpRequestError, buildWretchError } from './utils/errorUtils.ts'
+import { buildWretchError, XmlHttpRequestError } from './utils/errorUtils.ts'
 import { parseQueryParams } from './utils/queryUtils.ts'
 
 export const UNKNOWN_SCHEMA = z.unknown()
