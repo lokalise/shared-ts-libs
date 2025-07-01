@@ -16,9 +16,7 @@
         "url": "git://github.com/lokalise/shared-ts-libs.git"
     },
     "exports": {
-        "./*": [
-            "./configs/*.jsonc"
-        ]
+        "./configs/*": "./configs/*"
     },
     "private": false,
     "devDependencies": {
