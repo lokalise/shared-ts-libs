@@ -13,7 +13,7 @@ export type AuthConfig = {
 
 type BasicAuthOptions = {
   config: AuthConfig
-  skipList: Set<string>
+  enableList: Set<string>
 }
 
 function validate(config: AuthConfig) {
@@ -32,9 +32,9 @@ function validate(config: AuthConfig) {
   }
 }
 
-function skipListAuthHandler(skipList: Set<string>): FastifyAuthFunction {
+function enableListAuthHandler(enableList: Set<string>): FastifyAuthFunction {
   return (req, _res, done) => {
-    if (req.routeOptions.url && skipList.has(req.routeOptions.url)) {
+    if (req.routeOptions.url && !enableList.has(req.routeOptions.url)) {
       return done()
     }
 
@@ -56,7 +56,7 @@ async function plugin(fastify: FastifyInstance, pluginOptions: BasicAuthOptions)
   fastify.after(() => {
     fastify.addHook(
       'onRequest',
-      fastify.auth([skipListAuthHandler(pluginOptions.skipList), fastify.basicAuth]),
+      fastify.auth([enableListAuthHandler(pluginOptions.enableList), fastify.basicAuth]),
     )
   })
 }

@@ -1,3 +1,3 @@
-export { bullBoard, type QueueProConstructor, type BullBoardOptions } from './bullBoard.js'
-export { errorReporterPlugin, type ErrorReporterOptions } from './errorReporterPlugin.js'
-export { basicAuth, type AuthConfig } from './basicAuth.js'
+export { type AuthConfig, basicAuth } from './basicAuth.js'
+export { type BullBoardOptions, bullBoard, type QueueProConstructor } from './bullBoard.js'
+export { type ErrorReporterOptions, errorReporterPlugin } from './errorReporterPlugin.js'

@@ -1,6 +1,6 @@
 # bull-board
 
-Bull board is an internal Autopilot dashboard which provided a UI built on top of Bull or BullMQ to help you visualize
+Bull-board is a dashboard which provided a UI built on top of BullMQ or BullMQ Pro to help you visualize
 your queues and their jobs.
 It gives you the possibility of visualizing what's happening with each job in your queues, their status and some actions
 that will enable you to get the job done.
@@ -8,27 +8,34 @@ that will enable you to get the job done.
 Internally, we are using an open source library, [bull-board](https://github.com/felixmosh/bull-board), which provides
 all the functionalities we mentioned above.
 
-## Ownership
+## Adding bullboard to your app
 
-This service is owned and maintained by the members of the Translation team of Autopilot.
-Namely, it was initiated by @CarlosGamero.
+Register a bullboard plugin in your fastify app:
 
-## Getting Started
+```ts
+import fastify from 'fastify'
+import { bullBoard, basicAuth } from '@lokalise/fastify-bullboard-plugin'
+import { Queue } from 'bullmq'
 
-1. Install all project dependencies:
+const app = fastify()
 
-   ```shell
-   npm install
-   ```
+await app.register(basicAuth, {
+    config: {
+        isEnabled: true,
+        username: 'username',
+        password: 'pass',
+    },
+    enableList: new Set(['/bull']),
+})
 
-2. Launch all the infrastructural dependencies locally:
-
-   ```shell
-   npm run docker:start:ci
-   ```
-
-3. To run tests:
-   
-   ```shell
-   npm run test
-   ```
+await app.register(bullBoard, {
+  queueConstructor: Queue, // can be QueuePro if bullmq-pro is used
+  redisInstances: [
+      new Redis({
+          // some redis config
+      }),
+  ],
+  basePath: '/bull',
+  refreshIntervalInSeconds: config.bullBoard.refreshIntervalInSeconds,
+})
+```

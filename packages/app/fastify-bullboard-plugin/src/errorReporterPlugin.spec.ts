@@ -1,7 +1,7 @@
 import { type ErrorReporter, InternalError, PublicNonRecoverableError } from '@lokalise/node-core'
 import fastify, { type FastifyInstance, type RouteHandlerMethod } from 'fastify'
 import { pino } from 'pino'
-import { type MockInstance, afterAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, describe, expect, it, type MockInstance, vi } from 'vitest'
 
 import { FakeErrorReporter } from '../test/FakeErrorReporter.js'
 import { errorReporterPlugin } from './errorReporterPlugin.js'

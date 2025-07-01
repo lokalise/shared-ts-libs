@@ -1,8 +1,7 @@
+import { Queue } from 'bullmq'
 import fastify, { type FastifyInstance } from 'fastify'
 import { beforeAll, expect } from 'vitest'
-
-import { Queue } from 'bullmq'
-import { type BullBoardOptions, type QueueProConstructor, bullBoard } from './bullBoard.js'
+import { type BullBoardOptions, bullBoard, type QueueProConstructor } from './bullBoard.js'
 
 const QueuePro: QueueProConstructor = Queue as QueueProConstructor
 
@@ -25,7 +24,7 @@ describe('bull board', () => {
   describe('refresh disabled', () => {
     beforeAll(async () => {
       app = await initApp({
-        queueProConstructor: QueuePro,
+        queueConstructor: QueuePro,
         redisInstances: [],
         basePath: '/test-disabled',
       })
@@ -45,7 +44,7 @@ describe('bull board', () => {
   describe('refresh enabled', () => {
     beforeAll(async () => {
       app = await initApp({
-        queueProConstructor: QueuePro,
+        queueConstructor: Queue,
         redisInstances: [],
         basePath: '/test-enabled',
         refreshIntervalInSeconds: 1,

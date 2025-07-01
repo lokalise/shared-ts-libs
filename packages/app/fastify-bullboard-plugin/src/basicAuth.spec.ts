@@ -4,12 +4,13 @@ import { beforeAll, describe, expect } from 'vitest'
 import { basicAuth } from './basicAuth.js'
 
 const skippedEndpoint = '/skipAuth'
+const enabledEndpoint = '/'
 
 async function initApp(authEnabled: boolean) {
   const app = fastify()
   await app.register(basicAuth, {
     config: { isEnabled: authEnabled, username: 'test', password: 'test' },
-    skipList: new Set([skippedEndpoint]),
+    enableList: new Set([enabledEndpoint]),
   })
 
   app.route({
