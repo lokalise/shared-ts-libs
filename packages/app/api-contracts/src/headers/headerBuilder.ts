@@ -3,7 +3,7 @@ import type { HeaderBuilderMiddleware } from './createHeaderBuilderMiddleware.js
 export type Headers<K extends string = string, V extends string = string> = Record<K, V>
 
 // biome-ignore lint/complexity/noBannedTypes: To represent no headers we need use an empty object
-type NoHeaders = {}
+export type NoHeaders = {}
 
 type Factories = (() => Promise<Headers> | Headers)[]
 

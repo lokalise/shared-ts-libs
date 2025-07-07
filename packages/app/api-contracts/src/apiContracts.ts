@@ -264,3 +264,7 @@ export function mapRouteToPath(
 
   return routeDefinition.pathResolver(resolverParams)
 }
+
+export * from './contractService.js'
+export * from './headers/headerBuilder.js'
+export * from './headers/createHeaderBuilderMiddleware.js'
