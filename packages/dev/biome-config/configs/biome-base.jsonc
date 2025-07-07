@@ -49,6 +49,7 @@
     "linter": {
         "rules": {
             "performance": {
+                "useTopLevelRegex": "error",
                 "noBarrelFile": "error"
             },
             "style": {
