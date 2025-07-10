@@ -1,4 +1,5 @@
 import type { ZodSchema, z } from 'zod/v4'
+import type { AnyDeleteRoute, AnyGetRoute, AnyPayloadRoute } from './contractService.js'
 import type { HttpStatusCode } from './HttpStatusCodes.ts'
 
 export type { HttpStatusCode }
@@ -265,6 +266,63 @@ export function mapRouteToPath(
   return routeDefinition.pathResolver(resolverParams)
 }
 
+export type InferGetDetails<Route extends AnyGetRoute> = Route extends GetRouteDefinition<
+  infer SuccessResponseBodySchema,
+  infer PathParamsSchema,
+  infer RequestQuerySchema,
+  infer RequestHeaderSchema,
+  infer IsNonJSONResponseExpected,
+  infer IsEmptyResponseExpected
+>
+  ? {
+      responseBodySchema: SuccessResponseBodySchema
+      pathParamsSchema: PathParamsSchema
+      requestQuerySchema: RequestQuerySchema
+      requestHeaderSchema: RequestHeaderSchema
+      isNonJSONResponseExpected: IsNonJSONResponseExpected
+      isEmptyResponseExpected: IsEmptyResponseExpected
+    }
+  : never
+
+export type InferDeleteDetails<Route extends AnyDeleteRoute> = Route extends DeleteRouteDefinition<
+  infer SuccessResponseBodySchema,
+  infer PathParamsSchema,
+  infer RequestQuerySchema,
+  infer RequestHeaderSchema,
+  infer IsNonJSONResponseExpected,
+  infer IsEmptyResponseExpected
+>
+  ? {
+      responseBodySchema: SuccessResponseBodySchema
+      pathParamsSchema: PathParamsSchema
+      requestQuerySchema: RequestQuerySchema
+      requestHeaderSchema: RequestHeaderSchema
+      isNonJSONResponseExpected: IsNonJSONResponseExpected
+      isEmptyResponseExpected: IsEmptyResponseExpected
+    }
+  : never
+
+export type InferPayloadDetails<Route extends AnyPayloadRoute> =
+  Route extends PayloadRouteDefinition<
+    infer RequestBodySchema,
+    infer SuccessResponseBodySchema,
+    infer PathParamsSchema,
+    infer RequestQuerySchema,
+    infer RequestHeaderSchema,
+    infer IsNonJSONResponseExpected,
+    infer IsEmptyResponseExpected
+  >
+    ? {
+        requestBodySchema: RequestBodySchema
+        responseBodySchema: SuccessResponseBodySchema
+        pathParamsSchema: PathParamsSchema
+        requestQuerySchema: RequestQuerySchema
+        requestHeaderSchema: RequestHeaderSchema
+        isNonJSONResponseExpected: IsNonJSONResponseExpected
+        isEmptyResponseExpected: IsEmptyResponseExpected
+      }
+    : never
+
 export * from './contractService.js'
-export * from './headers/headerBuilder.js'
 export * from './headers/createHeaderBuilderMiddleware.js'
+export * from './headers/headerBuilder.js'

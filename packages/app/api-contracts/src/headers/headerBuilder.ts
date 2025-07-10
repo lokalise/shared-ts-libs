@@ -5,6 +5,10 @@ export type Headers<K extends string = string, V extends string = string> = Reco
 // biome-ignore lint/complexity/noBannedTypes: To represent no headers we need use an empty object
 export type NoHeaders = {}
 
+export type HeadersFromBuilder<H extends HeaderBuilder> = H extends HeaderBuilder<infer T>
+    ? T
+    : never
+
 type Factories = (() => Promise<Headers> | Headers)[]
 
 /**
@@ -48,9 +52,8 @@ export class HeaderBuilder<H extends Headers = NoHeaders> {
      * console.log(builderWithHeaders) // { 'Content-Type': 'application/json' }
      * ```
      */
-    // biome-ignore lint/complexity/noBannedTypes: If headers are not provided the initial type is an empty object
-    static create<const H extends Headers = {}>(): HeaderBuilder<H>
-    static create<const H extends Headers>(initialHeaders: H): HeaderBuilder<H>
+    static create<const H extends Headers = NoHeaders>(): HeaderBuilder<H>
+    static create<const H extends Headers>(initialHeaders: H | (() => H) | (() => Promise<H>)): HeaderBuilder<H>
     static create<const H extends Headers>(initialHeaders = {} as H): HeaderBuilder<H> {
         return new HeaderBuilder([() => initialHeaders])
     }

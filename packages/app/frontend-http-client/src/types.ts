@@ -1,4 +1,21 @@
+import type {
+  AnyDeleteRoute,
+  AnyGetRoute,
+  AnyPayloadRoute,
+  AnyRoute,
+  AnyRoutes,
+  ConfiguredContractService,
+  ContractDefinitions,
+  Headers,
+  HeadersFromBuilder,
+  InferDeleteDetails,
+  InferGetDetails,
+  InferPayloadDetails,
+  InferSchemaInput,
+  InferSchemaOutput,
+} from '@lokalise/api-contracts'
 import type { Wretch, WretchResponse } from 'wretch'
+import type { Wretch } from 'wretch/dist/cjs/index.js'
 import type { ZodSchema, z } from 'zod/v4'
 
 export type HeadersObject = Record<string, string>
@@ -197,3 +214,108 @@ export type RouteRequestParams<
 
 // biome-ignore lint/suspicious/noExplicitAny: We don't know which addons Wretch will have, and we don't really care, hence any
 export type WretchInstance = Wretch<any, unknown, undefined>
+
+type ResolveRequiredHeaders<H extends Headers, E extends Headers> = Omit<H, keyof E>
+
+export type GetRouteParameters<
+  Route extends AnyGetRoute,
+  ExcludeHeaders extends Headers,
+  Inferred extends InferGetDetails<Route> = InferGetDetails<Route>,
+  RequestHeader extends Headers = InferSchemaInput<Inferred['requestHeaderSchema']>,
+  RequiredHeaders extends Headers = ResolveRequiredHeaders<RequestHeader, ExcludeHeaders>,
+> = RouteRequestParams<
+  InferSchemaInput<Inferred['pathParamsSchema']>,
+  InferSchemaInput<Inferred['requestQuerySchema']>,
+  keyof RequestHeader extends never ? never : RequiredHeaders
+>
+
+export type GetRouteReturnType<
+  Route extends AnyGetRoute,
+  Inferred extends InferGetDetails<Route> = InferGetDetails<Route>,
+> = Promise<
+  RequestResultType<
+    InferSchemaOutput<Inferred['responseBodySchema']>,
+    Inferred['isNonJSONResponseExpected'],
+    Inferred['isEmptyResponseExpected']
+  >
+>
+
+export type DeleteRouteParameters<
+  Route extends AnyDeleteRoute,
+  ExcludeHeaders extends Headers,
+  Inferred extends InferDeleteDetails<Route> = InferDeleteDetails<Route>,
+  RequestHeader extends Headers = InferSchemaInput<Inferred['requestHeaderSchema']>,
+  RequiredHeaders extends Headers = ResolveRequiredHeaders<RequestHeader, ExcludeHeaders>,
+> = RouteRequestParams<
+  InferSchemaInput<Inferred['pathParamsSchema']>,
+  InferSchemaInput<Inferred['requestQuerySchema']>,
+  keyof RequestHeader extends never ? never : RequiredHeaders
+>
+
+export type DeleteRouteReturnType<
+  Route extends AnyDeleteRoute,
+  Inferred extends InferDeleteDetails<Route> = InferDeleteDetails<Route>,
+> = Promise<
+  RequestResultType<
+    InferSchemaOutput<Inferred['responseBodySchema']>,
+    Inferred['isNonJSONResponseExpected'],
+    Inferred['isEmptyResponseExpected']
+  >
+>
+
+export type PayloadRouteParameters<
+  Route extends AnyPayloadRoute,
+  ExcludeHeaders extends Headers,
+  Inferred extends InferPayloadDetails<Route> = InferPayloadDetails<Route>,
+  RequestHeader extends Headers = InferSchemaInput<Inferred['requestHeaderSchema']>,
+  RequiredHeaders extends Headers = ResolveRequiredHeaders<RequestHeader, ExcludeHeaders>,
+> = PayloadRouteRequestParams<
+  InferSchemaInput<Inferred['pathParamsSchema']>,
+  InferSchemaInput<Inferred['requestBodySchema']>,
+  InferSchemaInput<Inferred['requestQuerySchema']>,
+  keyof RequestHeader extends never ? never : RequiredHeaders
+>
+
+export type PayloadRouteReturnType<
+  Route extends AnyPayloadRoute,
+  Inferred extends InferPayloadDetails<Route> = InferPayloadDetails<Route>,
+> = Promise<
+  RequestResultType<
+    InferSchemaOutput<Inferred['responseBodySchema']>,
+    Inferred['isNonJSONResponseExpected'],
+    Inferred['isEmptyResponseExpected']
+  >
+>
+
+export type ContractService<
+  Configured extends ConfiguredContractService<Wretch, ContractDefinitions<AnyRoutes>, Headers>,
+> = {
+  [K in keyof Configured['definition']['routes']]: Configured['definition']['routes'][K] extends {
+    route: infer T
+  }
+    ? T extends AnyGetRoute
+      ? (
+          params: GetRouteParameters<T, HeadersFromBuilder<Configured['contractHeaders']>>,
+        ) => GetRouteReturnType<T>
+      : T extends AnyDeleteRoute
+        ? (
+            params: DeleteRouteParameters<T, HeadersFromBuilder<Configured['contractHeaders']>>,
+          ) => DeleteRouteReturnType<T>
+        : T extends AnyPayloadRoute
+          ? (
+              params: PayloadRouteParameters<T, HeadersFromBuilder<Configured['contractHeaders']>>,
+            ) => PayloadRouteReturnType<T>
+          : never
+    : never
+}
+
+export type AnyRouteParameters<
+  T extends AnyRoute,
+  ExcludeHeaders extends Headers,
+> = T extends AnyGetRoute
+  ? GetRouteParameters<T, ExcludeHeaders>
+  : T extends AnyDeleteRoute
+    ? DeleteRouteParameters<T, ExcludeHeaders>
+    : T extends AnyPayloadRoute
+      ? PayloadRouteParameters<T, ExcludeHeaders>
+      : never
