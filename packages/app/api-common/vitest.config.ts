@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config'
 
-// biome-ignore lint/style/noDefaultExport: <explanation>
+// biome-ignore lint/style/noDefaultExport: needed by vite
 export default defineConfig({
   test: {
     globals: true,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import {
   multiCursorMandatoryPaginationSchema,
   multiCursorOptionalPaginationSchema,
@@ -65,18 +65,18 @@ describe('apiSchemas', () => {
         const result = schema.safeParse({ limit: 10, after: {} })
         expect(result.success).toBe(false)
         expect(result.error).toBeDefined()
-        expect(result.error).toMatchObject({
-          issues: [
+        expect(result.error).toMatchInlineSnapshot(`
+          [ZodError: [
             {
-              code: 'invalid_type',
-              expected: 'string',
-              received: 'object',
-              path: ['after'],
-              message: 'Expected string, received object',
-            },
-          ],
-          name: 'ZodError',
-        })
+              "expected": "string",
+              "code": "invalid_type",
+              "path": [
+                "after"
+              ],
+              "message": "Invalid input: expected string, received object"
+            }
+          ]]
+        `)
       })
 
       it('wrong cursor string should produce error', () => {
@@ -111,17 +111,21 @@ describe('apiSchemas', () => {
         })
         expect(result.success).toBe(false)
         expect(result.error).toBeDefined()
-        expect(result.error).toMatchObject({
-          issues: [
+        expect(result.error).toMatchInlineSnapshot(`
+          [ZodError: [
             {
-              validation: 'uuid',
-              code: 'invalid_string',
-              message: 'Invalid uuid',
-              path: ['after', 'id'],
-            },
-          ],
-          name: 'ZodError',
-        })
+              "origin": "string",
+              "code": "invalid_format",
+              "format": "uuid",
+              "pattern": "/^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$/",
+              "path": [
+                "after",
+                "id"
+              ],
+              "message": "Invalid UUID"
+            }
+          ]]
+        `)
       })
     })
 
