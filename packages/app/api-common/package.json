@@ -29,7 +29,7 @@
         "postversion": "biome check --write package.json"
     },
     "peerDependencies": {
-        "zod": "^3.23.8"
+        "zod": ">=3.25.76"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.0.5",
@@ -38,7 +38,8 @@
         "@vitest/coverage-v8": "^3.0.7",
         "rimraf": "^6.0.1",
         "typescript": "5.8.3",
-        "vitest": "^3.0.7"
+        "vitest": "^3.0.7",
+        "zod": "^3.25.76"
     },
     "dependencies": {
         "@lokalise/universal-ts-utils": "^4.2.3"
