@@ -6,7 +6,7 @@ import {
   type ConfiguredContractService,
   HeaderBuilder,
 } from '@lokalise/api-contracts'
-import { assertIsNever } from '@lokalise/universal-ts-utils'
+import { assertIsNever } from '@lokalise/universal-ts-utils/node'
 import type { Client } from 'undici'
 import { sendByDeleteRoute, sendByGetRoute, sendByPayloadRoute } from '../client/httpClient.js'
 import type {
