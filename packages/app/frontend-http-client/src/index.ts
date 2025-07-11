@@ -10,3 +10,5 @@ export {
   sendPut,
   UNKNOWN_SCHEMA,
 } from './client.ts'
+
+export { createContractService } from './contract.ts'
