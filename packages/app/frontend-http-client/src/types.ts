@@ -15,7 +15,6 @@ import type {
   InferSchemaOutput,
 } from '@lokalise/api-contracts'
 import type { Wretch, WretchResponse } from 'wretch'
-import type { Wretch } from 'wretch/dist/cjs/index.js'
 import type { ZodSchema, z } from 'zod/v4'
 
 export type HeadersObject = Record<string, string>

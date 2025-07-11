@@ -1,5 +1,11 @@
 import type { ZodSchema, z } from 'zod/v4'
-import type { AnyDeleteRoute, AnyGetRoute, AnyPayloadRoute } from './contractService.js'
+import type {
+  AnyDeleteRoute,
+  AnyGetRoute,
+  AnyPayloadRoute,
+  AnyRoute,
+  AnyRoutes,
+} from './contractService.js'
 import type { HttpStatusCode } from './HttpStatusCodes.ts'
 
 export type { HttpStatusCode }
@@ -322,6 +328,14 @@ export type InferPayloadDetails<Route extends AnyPayloadRoute> =
         isEmptyResponseExpected: IsEmptyResponseExpected
       }
     : never
+
+export type InferRouteDetails<Route extends AnyRoute> = Route extends AnyGetRoute
+  ? InferGetDetails<Route>
+  : Route extends AnyDeleteRoute
+    ? InferDeleteDetails<Route>
+    : Route extends AnyPayloadRoute
+      ? InferPayloadDetails<Route>
+      : never
 
 export * from './contractService.js'
 export * from './headers/createHeaderBuilderMiddleware.js'
