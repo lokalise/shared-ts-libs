@@ -1,5 +1,5 @@
 import type promClient from 'prom-client'
-import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import { AbstractCounterMetric } from './AbstractCounterMetric.ts'
 
 class ConcreteCounterMetric extends AbstractCounterMetric<'status', ['successful', 'failed']> {
@@ -97,6 +97,18 @@ describe('AbstractCounterMetric', () => {
       expect(incMock).toHaveBeenNthCalledWith(1, 20)
       expect(incMock).toHaveBeenCalledTimes(1)
       expect(labelsMock).not.toHaveBeenCalledWith({ status: 'failed' })
+    })
+
+    it('should ignore measurements if client is not provided', () => {
+      // Given
+      const metric = new ConcreteCounterMetric()
+
+      // When
+      metric.registerMeasurement({ successful: 20 })
+
+      // Then
+      expect(labelsMock).not.toHaveBeenCalled()
+      expect(incMock).not.toHaveBeenCalled()
     })
   })
 })
