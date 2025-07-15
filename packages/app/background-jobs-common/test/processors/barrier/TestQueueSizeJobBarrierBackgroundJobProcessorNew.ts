@@ -7,7 +7,7 @@ import {
   type BarrierCallback,
   type JobPayloadForQueue,
   type SafeJob,
-} from '../../../src/index.ts'
+} from '../../../src/index.js'
 
 const schema = z.object({
   id: z.string(),
@@ -47,14 +47,6 @@ export class TestQueueSizeJobBarrierBackgroundJobProcessorNew extends AbstractBa
     })
   }
 
-  override async start(): Promise<void> {
-    await super.start()
-  }
-
-  override async dispose(): Promise<void> {
-    await super.dispose()
-  }
-
   protected override resolveExecutionContext(): JobQueueSizeThrottlingBarrierContextNew<BarrierSupportedQueues> {
     return {
       queueManager: this.queueManager,
@@ -65,6 +57,5 @@ export class TestQueueSizeJobBarrierBackgroundJobProcessorNew extends AbstractBa
     job: SafeJob<JobPayloadForQueue<BarrierSupportedQueues, 'queue'>>,
   ): Promise<void> {
     await this.queueManager.schedule('forever_reschedule_queue', job.data)
-    return Promise.resolve()
   }
 }
