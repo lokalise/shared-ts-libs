@@ -1,13 +1,11 @@
 import type promClient from 'prom-client'
 import type { Counter } from 'prom-client'
-import { AbstractMetric } from './AbstractMetric.js'
+import { AbstractMetric, type BaseMetricParams } from './AbstractMetric.js'
 
-export type CounterMetricConfiguration<
+type CounterMetricConfiguration<
   TMetricLabel extends string,
   TMetricMeasurementKeys extends string[],
-> = {
-  name: string
-  helpDescription: string
+> = BaseMetricParams & {
   label: TMetricLabel
   measurementKeys: TMetricMeasurementKeys
 }

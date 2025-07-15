@@ -36,10 +36,6 @@ describe('AbstractCounterMetric', () => {
     } as any as typeof promClient
   })
 
-  afterEach(() => {
-    vi.clearAllMocks()
-  })
-
   describe('registerMeasurement', () => {
     it('gracefully aborts if metrics are not enabled', () => {
       // Given

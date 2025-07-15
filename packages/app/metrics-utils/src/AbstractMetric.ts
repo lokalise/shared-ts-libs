@@ -1,8 +1,9 @@
 import type promClient from 'prom-client'
 import type { Metric } from 'prom-client'
 
-type BaseMetricParams = {
+export type BaseMetricParams = {
   name: string
+  helpDescription: string
 }
 
 export abstract class AbstractMetric<
