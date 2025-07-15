@@ -30,13 +30,13 @@ export class TestQueueSizeJobBarrierBackgroundJobProcessorNew extends AbstractBa
   BarrierSupportedQueues,
   'queue',
   void,
-  JobQueueSizeThrottlingBarrierContextNew
+  JobQueueSizeThrottlingBarrierContextNew<BarrierSupportedQueues>
 > {
   constructor(
     dependencies: BackgroundJobProcessorDependenciesNew<BarrierSupportedQueues, 'queue'>,
     barrier: BarrierCallback<
       JobPayloadForQueue<BarrierSupportedQueues, 'queue'>,
-      JobQueueSizeThrottlingBarrierContextNew
+      JobQueueSizeThrottlingBarrierContextNew<BarrierSupportedQueues>
     >,
   ) {
     super(dependencies, {
@@ -55,7 +55,7 @@ export class TestQueueSizeJobBarrierBackgroundJobProcessorNew extends AbstractBa
     await super.dispose()
   }
 
-  protected override resolveExecutionContext(): JobQueueSizeThrottlingBarrierContextNew {
+  protected override resolveExecutionContext(): JobQueueSizeThrottlingBarrierContextNew<BarrierSupportedQueues> {
     return {
       queueManager: this.queueManager,
     }
