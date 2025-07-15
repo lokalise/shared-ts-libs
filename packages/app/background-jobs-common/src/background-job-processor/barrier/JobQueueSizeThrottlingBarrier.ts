@@ -8,7 +8,7 @@ export type ChildJobThrottlingBarrierConfig = {
 }
 
 export type JobQueueSizeThrottlingBarrierContext = {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: type dependencies are not known at this point
   throttledQueueJobProcessor: AbstractBackgroundJobProcessor<any>
 }
 

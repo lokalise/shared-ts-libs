@@ -2,15 +2,18 @@ import type { QueueConfiguration, QueueManager, SupportedQueueIds } from '../man
 import type { BaseJobPayload } from '../types.ts'
 import type { BarrierCallback } from './barrier.ts'
 
+// biome-ignore lint/suspicious/noExplicitAny: type dependencies don't matter at this point
 export type ChildJobThrottlingBarrierConfigNew<Queues extends QueueConfiguration<any, any>[]> = {
   retryPeriodInMsecs: number
   maxQueueJobsInclusive: number
   queueId: SupportedQueueIds<Queues>
 }
 
-export type JobQueueSizeThrottlingBarrierContextNew = {
-  queueManager: QueueManager<any>
-}
+// biome-ignore lint/suspicious/noExplicitAny: type dependencies don't matter at this point
+export type JobQueueSizeThrottlingBarrierContextNew<Queues extends QueueConfiguration<any, any>[]> =
+  {
+    queueManager: QueueManager<Queues>
+  }
 
 /**
  * This barrier limits the number of jobs that can exist in a queue for a given job processor at a time.
@@ -18,11 +21,12 @@ export type JobQueueSizeThrottlingBarrierContextNew = {
  * so it is recommended to use lower values for max queue jobs, to preserve a buffer for the overflow
  */
 export function createJobQueueSizeThrottlingBarrierNew<
+  // biome-ignore lint/suspicious/noExplicitAny: type dependencies don't matter at this point
   Queues extends QueueConfiguration<any, any>[],
 >(
   config: ChildJobThrottlingBarrierConfigNew<Queues>,
-): BarrierCallback<BaseJobPayload, JobQueueSizeThrottlingBarrierContextNew> {
-  return async (_job, context: JobQueueSizeThrottlingBarrierContextNew) => {
+): BarrierCallback<BaseJobPayload, JobQueueSizeThrottlingBarrierContextNew<Queues>> {
+  return async (_job, context: JobQueueSizeThrottlingBarrierContextNew<Queues>) => {
     const throttledQueueJobCount = await context.queueManager.getJobCount(config.queueId)
 
     if (throttledQueueJobCount < config.maxQueueJobsInclusive) {

@@ -27,7 +27,6 @@ describe('JobQueueSizeThrottlingBarrier', () => {
   it('processes a job when barrier passes', async () => {
     const processor = new TestQueueSizeJobBarrierBackgroundJobProcessorNew(
       deps,
-      factory.getRedisConfig(),
       createJobQueueSizeThrottlingBarrierNew<BarrierSupportedQueues>({
         queueId: 'forever_reschedule_queue',
         maxQueueJobsInclusive: 5,
@@ -54,7 +53,6 @@ describe('JobQueueSizeThrottlingBarrier', () => {
   it('delays when barrier does not pass', async () => {
     const processor = new TestQueueSizeJobBarrierBackgroundJobProcessorNew(
       deps,
-      factory.getRedisConfig(),
       createJobQueueSizeThrottlingBarrierNew<BarrierSupportedQueues>({
         queueId: 'forever_reschedule_queue',
         maxQueueJobsInclusive: 2,
