@@ -1,6 +1,6 @@
 import type promClient from 'prom-client'
 import type { Counter } from 'prom-client'
-import { AbstractMetric, type BaseMetricParams } from './AbstractMetric.js'
+import { AbstractMetric, type BaseMetricParams } from './AbstractMetric.ts'
 
 type CounterMetricConfiguration<
   TMetricLabel extends string,
@@ -9,6 +9,10 @@ type CounterMetricConfiguration<
   label: TMetricLabel
   measurementKeys: TMetricMeasurementKeys
 }
+
+type CounterMeasurement<TMetricMeasurementKeys extends string[]> = Partial<
+  Record<TMetricMeasurementKeys[number], number>
+>
 
 export abstract class AbstractCounterMetric<
   TMetricLabel extends string,
@@ -44,7 +48,7 @@ export abstract class AbstractCounterMetric<
   }
 
   public override registerMeasurement(
-    measurement: Partial<Record<TMetricMeasurementKeys[number], number>>,
+    measurement: CounterMeasurement<TMetricMeasurementKeys>,
   ): void {
     if (!this.metric) return
 

@@ -1,8 +1,8 @@
 import type promClient from 'prom-client'
 import type { Histogram } from 'prom-client'
-import { AbstractMetric, type BaseMetricParams } from './AbstractMetric.js'
+import { AbstractMetric, type BaseMetricParams } from './AbstractMetric.ts'
 
-type CounterMetricConfiguration<Labels extends string[]> = BaseMetricParams & {
+type HistogramMetricConfiguration<Labels extends string[]> = BaseMetricParams & {
   buckets: number[]
   labelNames: Labels
 }
@@ -25,10 +25,10 @@ type HistogramMeasurement<Labels extends string[]> = Partial<
 
 export abstract class AbstractHistogramMetric<Labels extends string[]> extends AbstractMetric<
   Histogram<Labels[number]>,
-  CounterMetricConfiguration<Labels>
+  HistogramMetricConfiguration<Labels>
 > {
   protected constructor(
-    metricConfig: CounterMetricConfiguration<Labels>,
+    metricConfig: HistogramMetricConfiguration<Labels>,
     client?: typeof promClient,
   ) {
     super(metricConfig, client)
@@ -48,8 +48,7 @@ export abstract class AbstractHistogramMetric<Labels extends string[]> extends A
 
     const { time, startTime, endTime, ...labels } = measurement
 
-    // biome-ignore lint/style/noNonNullAssertion: Should be safe, handled by the type guard
-    const duration = time ? time : endTime! - startTime!
+    const duration = time ?? endTime - startTime
 
     this.metric.observe(labels as object, duration)
   }
