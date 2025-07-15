@@ -7,6 +7,11 @@ export {
   createJobQueueSizeThrottlingBarrier,
   type JobQueueSizeThrottlingBarrierContext,
 } from './background-job-processor/barrier/JobQueueSizeThrottlingBarrier.ts'
+export {
+  type ChildJobThrottlingBarrierConfigNew,
+  createJobQueueSizeThrottlingBarrierNew,
+  type JobQueueSizeThrottlingBarrierContextNew,
+} from './background-job-processor/barrier/JobQueueSizeThrottlingBarrierNew.ts'
 export * from './background-job-processor/index.ts'
 export { AbstractPeriodicJob } from './periodic-jobs/AbstractPeriodicJob.ts'
 export type {

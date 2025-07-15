@@ -1,11 +1,11 @@
+import type { QueueConfiguration, QueueManager, SupportedQueueIds } from '../managers/index.js'
 import type { BaseJobPayload } from '../types.ts'
 import type { BarrierCallback } from './barrier.ts'
-import {QueueManager} from "../managers/index.js";
 
-export type ChildJobThrottlingBarrierConfigNew = {
+export type ChildJobThrottlingBarrierConfigNew<Queues extends QueueConfiguration<any, any>[]> = {
   retryPeriodInMsecs: number
   maxQueueJobsInclusive: number
-  queueId: string
+  queueId: SupportedQueueIds<Queues>
 }
 
 export type JobQueueSizeThrottlingBarrierContextNew = {
@@ -17,8 +17,10 @@ export type JobQueueSizeThrottlingBarrierContextNew = {
  * Note that for performance reasons it performs an optimistic check and can overflow in highly concurrent systems,
  * so it is recommended to use lower values for max queue jobs, to preserve a buffer for the overflow
  */
-export function createJobQueueSizeThrottlingBarrierNew(
-    config: ChildJobThrottlingBarrierConfigNew,
+export function createJobQueueSizeThrottlingBarrierNew<
+  Queues extends QueueConfiguration<any, any>[],
+>(
+  config: ChildJobThrottlingBarrierConfigNew<Queues>,
 ): BarrierCallback<BaseJobPayload, JobQueueSizeThrottlingBarrierContextNew> {
   return async (_job, context: JobQueueSizeThrottlingBarrierContextNew) => {
     const throttledQueueJobCount = await context.queueManager.getJobCount(config.queueId)
