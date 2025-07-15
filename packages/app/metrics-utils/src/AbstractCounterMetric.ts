@@ -1,8 +1,8 @@
-import type { RequestContext } from '@lokalise/fastify-extras'
-import type { IFastifyMetrics } from 'fastify-metrics'
+import type promClient from 'prom-client'
 import type { Counter } from 'prom-client'
+import { AbstractMetric } from './AbstractMetric.js'
 
-type CounterMetricConfiguration<
+export type CounterMetricConfiguration<
   TMetricLabel extends string,
   TMetricMeasurementKeys extends string[],
 > = {
@@ -15,47 +15,29 @@ type CounterMetricConfiguration<
 export abstract class AbstractCounterMetric<
   TMetricLabel extends string,
   TMetricMeasurementKeys extends string[],
+> extends AbstractMetric<
+  Counter<TMetricLabel>,
+  CounterMetricConfiguration<TMetricLabel, TMetricMeasurementKeys>
 > {
-  /** Fallbacks to null if metrics are disabled on app level */
-  private readonly counterMetric: Counter<TMetricLabel> | null
-
-  private readonly metricConfiguration: CounterMetricConfiguration<
-    TMetricLabel,
-    TMetricMeasurementKeys
-  >
-
   protected constructor(
-    metricConfiguration: CounterMetricConfiguration<TMetricLabel, TMetricMeasurementKeys>,
-    appMetrics?: IFastifyMetrics,
+    metricConfig: CounterMetricConfiguration<TMetricLabel, TMetricMeasurementKeys>,
+    client?: typeof promClient,
   ) {
-    this.metricConfiguration = metricConfiguration
-    this.counterMetric = this.registerMetric(appMetrics)
+    super(metricConfig, client)
   }
 
-  protected registerMetric(appMetrics?: IFastifyMetrics): Counter<TMetricLabel> | null {
-    if (!appMetrics) {
-      return null
-    }
-
-    const existingMetric = appMetrics.client.register.getSingleMetric(
-      this.metricConfiguration.name,
-    ) as Counter<TMetricLabel> | undefined
-
-    if (existingMetric) {
-      return existingMetric
-    }
-
-    const counter = new appMetrics.client.Counter({
-      name: this.metricConfiguration.name,
-      help: this.metricConfiguration.helpDescription,
-      labelNames: [this.metricConfiguration.label],
+  protected override createMetric(client: typeof promClient): Counter<TMetricLabel> {
+    const counter = new client.Counter({
+      name: this.metricConfig.name,
+      help: this.metricConfig.helpDescription,
+      labelNames: [this.metricConfig.label],
     })
 
     // Initializing the metric with default values, so that they are present even if no data was registered yet.
-    for (const measurementKey of this.metricConfiguration.measurementKeys) {
+    for (const measurementKey of this.metricConfig.measurementKeys) {
       counter
         .labels({
-          [this.metricConfiguration.label]: measurementKey,
+          [this.metricConfig.label]: measurementKey,
         } as Record<TMetricLabel, string>)
         .inc(0)
     }
@@ -63,24 +45,18 @@ export abstract class AbstractCounterMetric<
     return counter
   }
 
-  public registerMeasurement(
-    measurementKeyToValue: Partial<Record<TMetricMeasurementKeys[number], number>>,
-    reqContext?: RequestContext,
-  ) {
-    if (!this.counterMetric) {
-      reqContext?.logger.warn('Metrics not enabled, skipping')
-      return
-    }
+  public override registerMeasurement(
+    measurement: Partial<Record<TMetricMeasurementKeys[number], number>>,
+  ): void {
+    if (!this.metric) return
 
-    reqContext?.logger.info({ measurementKeyToValue }, 'Registering new metric measurements')
-
-    for (const [measurementKey, value] of Object.entries(measurementKeyToValue) as [
+    for (const [measurementKey, value] of Object.entries(measurement) as [
       TMetricMeasurementKeys[number],
       number,
     ][]) {
-      this.counterMetric
+      this.metric
         .labels({
-          [this.metricConfiguration.label]: measurementKey,
+          [this.metricConfig.label]: measurementKey,
         } as Record<TMetricLabel, string>)
         .inc(value)
     }
