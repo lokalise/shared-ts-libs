@@ -8,12 +8,12 @@ export type ChildJobThrottlingBarrierConfig = {
 }
 
 export type JobQueueSizeThrottlingBarrierContext = {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: type dependencies are not known at this point
   throttledQueueJobProcessor: AbstractBackgroundJobProcessor<any>
 }
 
 /**
- * This barrier limits amount of jobs that can exist in a queue for a given job processor at a time.
+ * This barrier limits the number of jobs that can exist in a queue for a given job processor at a time.
  * Note that for performance reasons it performs an optimistic check and can overflow in highly concurrent systems,
  * so it is recommended to use lower values for max queue jobs, to preserve a buffer for the overflow
  */

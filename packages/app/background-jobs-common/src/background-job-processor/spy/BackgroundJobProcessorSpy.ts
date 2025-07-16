@@ -63,7 +63,7 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
     return this.registerPromise((job) => jobSelector(job.data), awaitedState)
   }
 
-  // biome-ignore lint/suspicious/useAwait: <explanation>
+  // biome-ignore lint/suspicious/useAwait: allowed to be used in async context
   private async registerPromise(
     selector: JobSelector<JobData, JobReturn>,
     state: JobSpyState,
