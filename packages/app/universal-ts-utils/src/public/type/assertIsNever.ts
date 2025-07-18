@@ -25,5 +25,14 @@
  * ```
  */
 export const assertIsNever = (value: never): never => {
-  throw new Error(`Unexpected value: ${value}`)
+  let stringValue: string = `${value}`
+
+  try {
+    // biome-ignore lint/suspicious/noExplicitAny: We should never here, but is a case has been missed this will not be never..
+    stringValue = typeof (value as any) === 'string' ? `"${value}"` : JSON.stringify(value)
+  } catch (_error) {
+    // If JSON.stringify fails, we fall back to the default string representation
+  }
+
+  throw new Error(`Unexpected value: ${stringValue}.`)
 }
