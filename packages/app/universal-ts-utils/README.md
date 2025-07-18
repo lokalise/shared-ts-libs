@@ -408,7 +408,7 @@ switch (value) {
 
     default:
         return assertIsNever(value);
-    //                   ^^^^^ - TS error that we don't handle 'case3'
+    //                       ^^^^^ - TS error that we don't handle 'case3'
 }
 ```
 
