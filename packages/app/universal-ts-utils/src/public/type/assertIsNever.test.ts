@@ -24,5 +24,14 @@ describe('assertIsNever', () => {
     it('should throw an error with descriptive message for null values', () => {
       expect(() => assertIsNever(null as never)).toThrowError('Unexpected value: null')
     })
+
+    it('should handle a recursive structure passed into to the function', () => {
+      const recursiveObject: any = { key: 'value' }
+      recursiveObject.self = recursiveObject
+
+      expect(() => assertIsNever(recursiveObject as never)).toThrowError(
+        'Unexpected value: [object Object]',
+      )
+    })
   })
 })
