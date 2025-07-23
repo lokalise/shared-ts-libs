@@ -29,6 +29,7 @@ export * from './public/object/transformToKebabCase.ts'
 // string
 export * from './public/string/trimText.ts'
 // type
+export * from './public/type/assertIsNever.ts'
 export * from './public/type/FreeformRecord.ts'
 export * from './public/type/hasMessage.ts'
 export * from './public/type/isError.ts'
