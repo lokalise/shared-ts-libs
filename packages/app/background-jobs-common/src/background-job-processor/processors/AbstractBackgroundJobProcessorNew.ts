@@ -96,7 +96,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
     JobType,
     ProcessorType
   >
-  private readonly queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
+  protected readonly queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
 
   private _executionContext?: ExecutionContext
   private startPromise?: Promise<void>

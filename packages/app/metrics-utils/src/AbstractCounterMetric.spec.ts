@@ -1,9 +1,9 @@
-import type { IFastifyMetrics } from 'fastify-metrics'
-import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
+import type promClient from 'prom-client'
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import { AbstractCounterMetric } from './AbstractCounterMetric.ts'
 
 class ConcreteCounterMetric extends AbstractCounterMetric<'status', ['successful', 'failed']> {
-  constructor(appMetrics?: IFastifyMetrics) {
+  constructor(client?: typeof promClient) {
     super(
       {
         name: 'dummy_metric_name',
@@ -11,7 +11,7 @@ class ConcreteCounterMetric extends AbstractCounterMetric<'status', ['successful
         label: 'status',
         measurementKeys: ['successful', 'failed'],
       },
-      appMetrics,
+      client,
     )
   }
 }
@@ -21,25 +21,19 @@ describe('AbstractCounterMetric', () => {
   let labelsMock: Mock
   let counterMock: Mock
   let getSingleMetricMock: Mock
-  let appMetrics: IFastifyMetrics
+  let client: typeof promClient
 
   beforeEach(() => {
     incMock = vi.fn()
     labelsMock = vi.fn().mockImplementation(() => ({ inc: incMock }))
     counterMock = vi.fn().mockImplementation(() => ({ labels: labelsMock }))
     getSingleMetricMock = vi.fn()
-    appMetrics = {
-      client: {
-        Counter: counterMock,
-        register: {
-          getSingleMetric: getSingleMetricMock,
-        },
+    client = {
+      Counter: counterMock,
+      register: {
+        getSingleMetric: getSingleMetricMock,
       },
-    } as unknown as IFastifyMetrics
-  })
-
-  afterEach(() => {
-    vi.clearAllMocks()
+    } as any as typeof promClient
   })
 
   describe('registerMeasurement', () => {
@@ -60,7 +54,7 @@ describe('AbstractCounterMetric', () => {
       getSingleMetricMock.mockReturnValueOnce(undefined)
 
       // When
-      new ConcreteCounterMetric(appMetrics)
+      new ConcreteCounterMetric(client)
 
       // Then
       expect(getSingleMetricMock).toHaveBeenCalledWith('dummy_metric_name')
@@ -78,7 +72,7 @@ describe('AbstractCounterMetric', () => {
     it('registers all measurements properly', () => {
       // Given
       getSingleMetricMock.mockReturnValueOnce(counterMock())
-      const metric = new ConcreteCounterMetric(appMetrics)
+      const metric = new ConcreteCounterMetric(client)
 
       // When
       metric.registerMeasurement({ successful: 20, failed: 10 })
@@ -93,7 +87,7 @@ describe('AbstractCounterMetric', () => {
     it('registers selected measurements properly', () => {
       // Given
       getSingleMetricMock.mockReturnValueOnce(counterMock())
-      const metric = new ConcreteCounterMetric(appMetrics)
+      const metric = new ConcreteCounterMetric(client)
 
       // When
       metric.registerMeasurement({ successful: 20 })
@@ -103,6 +97,18 @@ describe('AbstractCounterMetric', () => {
       expect(incMock).toHaveBeenNthCalledWith(1, 20)
       expect(incMock).toHaveBeenCalledTimes(1)
       expect(labelsMock).not.toHaveBeenCalledWith({ status: 'failed' })
+    })
+
+    it('should ignore measurements if client is not provided', () => {
+      // Given
+      const metric = new ConcreteCounterMetric()
+
+      // When
+      metric.registerMeasurement({ successful: 20 })
+
+      // Then
+      expect(labelsMock).not.toHaveBeenCalled()
+      expect(incMock).not.toHaveBeenCalled()
     })
   })
 })
