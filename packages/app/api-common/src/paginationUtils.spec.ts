@@ -207,7 +207,7 @@ describe('paginationUtils', () => {
       })
 
       expect(spy).toHaveBeenCalledTimes(1)
-      expect(spy).toHaveBeenCalledWith({ limit: 1 })
+      expect(spy.mock.calls[0]![0]).toStrictEqual({ limit: 1 })
       expect(result).toEqual([{ id: 'red' }])
     })
     it('should call api 1 time', async () => {
@@ -224,7 +224,7 @@ describe('paginationUtils', () => {
       })
 
       expect(spy).toHaveBeenCalledTimes(1)
-      expect(spy).toHaveBeenNthCalledWith(1, { limit: 1 })
+      expect(spy.mock.calls[0]![0]).toStrictEqual({ limit: 1 })
       expect(result).toEqual([])
     })
     it('should call api 2 time', async () => {
@@ -252,10 +252,11 @@ describe('paginationUtils', () => {
       })
 
       expect(spy).toHaveBeenCalledTimes(2)
-      expect(spy).toHaveBeenNthCalledWith(1, { limit: 1 })
-      expect(spy).toHaveBeenNthCalledWith(2, { after: 'red', limit: 1 })
+      expect(spy.mock.calls[0]![0]).toStrictEqual({ limit: 1 })
+      expect(spy.mock.calls[1]![0]).toStrictEqual({ limit: 1, after: 'red' })
       expect(result).toEqual([{ id: 'red' }, { id: 'blue' }])
     })
+
     it('should respect initial cursor', async () => {
       const spy = vi.spyOn(market, 'getApples').mockResolvedValueOnce({
         data: [{ id: 'red' }],
@@ -271,8 +272,39 @@ describe('paginationUtils', () => {
       })
 
       expect(spy).toHaveBeenCalledTimes(1)
-      expect(spy).toHaveBeenCalledWith({ limit: 1, after: 'red' })
+      expect(spy.mock.calls[0]![0]).toStrictEqual({ limit: 1, after: 'red' })
       expect(result).toEqual([{ id: 'red' }])
+    })
+
+    it('should skip undefined even if provided explicitly', async () => {
+      const spy = vi.spyOn(market, 'getApples').mockResolvedValueOnce({
+        data: [{ id: 'red' }],
+        meta: {
+          count: 1,
+          cursor: 'red',
+          hasMore: false,
+        },
+      })
+
+      const undefinedCursorResult = await getPaginatedEntriesByHasMore(
+        { limit: 1, after: undefined },
+        (params) => {
+          return market.getApples(params)
+        },
+      )
+
+      const undefinedLimitResult = await getPaginatedEntriesByHasMore(
+        { limit: undefined },
+        (params) => {
+          return market.getApples(params)
+        },
+      )
+
+      expect(spy).toHaveBeenCalledTimes(2)
+      expect(spy.mock.calls[0]![0]).toStrictEqual({ limit: 1 })
+      expect(spy.mock.calls[1]![0]).toStrictEqual({})
+      expect(undefinedCursorResult).toEqual([{ id: 'red' }])
+      expect(undefinedLimitResult).toEqual([{ id: 'red' }])
     })
   })
 })
