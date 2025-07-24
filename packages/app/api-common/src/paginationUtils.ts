@@ -158,7 +158,10 @@ export async function getPaginatedEntries<T extends Record<string, unknown>>(
   const resultArray: T[] = []
   let currentCursor: string | undefined
   do {
-    const pageResult = await apiCall({ ...pagination, after: currentCursor })
+    const pageResult = await apiCall({
+      ...pagination,
+      ...(currentCursor ? { after: currentCursor } : {}),
+    })
     resultArray.push(...pageResult.data)
     currentCursor = pageResult.meta.cursor
   } while (currentCursor)
@@ -193,7 +196,10 @@ export async function getPaginatedEntriesByHasMore<T extends Record<string, unkn
   let hasMore: boolean | undefined
   let currentCursor: string | undefined = pagination.after
   do {
-    const pageResult = await apiCall({ ...pagination, after: currentCursor })
+    const pageResult = await apiCall({
+      ...pagination,
+      ...(currentCursor ? { after: currentCursor } : {}),
+    })
     resultArray.push(...pageResult.data)
     hasMore = pageResult.meta.hasMore
     currentCursor = pageResult.meta.cursor
