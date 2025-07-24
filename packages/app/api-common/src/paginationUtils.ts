@@ -159,7 +159,7 @@ export async function getPaginatedEntries<T extends Record<string, unknown>>(
   let currentCursor: string | undefined
   do {
     const pageResult = await apiCall({
-      ...pagination,
+      ...(pagination.limit ? { limit: pagination.limit } : {}),
       ...(currentCursor ? { after: currentCursor } : {}),
     })
     resultArray.push(...pageResult.data)
@@ -197,7 +197,7 @@ export async function getPaginatedEntriesByHasMore<T extends Record<string, unkn
   let currentCursor: string | undefined = pagination.after
   do {
     const pageResult = await apiCall({
-      ...pagination,
+      ...(pagination.limit ? { limit: pagination.limit } : {}),
       ...(currentCursor ? { after: currentCursor } : {}),
     })
     resultArray.push(...pageResult.data)
