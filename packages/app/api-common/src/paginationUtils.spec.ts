@@ -286,13 +286,19 @@ describe('paginationUtils', () => {
         },
       })
 
-      const undefinedCursorResult = await getPaginatedEntriesByHasMore({ limit: 1, after: undefined }, (params) => {
-        return market.getApples(params)
-      })
+      const undefinedCursorResult = await getPaginatedEntriesByHasMore(
+        { limit: 1, after: undefined },
+        (params) => {
+          return market.getApples(params)
+        },
+      )
 
-      const undefinedLimitResult = await getPaginatedEntriesByHasMore({ limit: undefined }, (params) => {
-        return market.getApples(params)
-      })
+      const undefinedLimitResult = await getPaginatedEntriesByHasMore(
+        { limit: undefined },
+        (params) => {
+          return market.getApples(params)
+        },
+      )
 
       expect(spy).toHaveBeenCalledTimes(2)
       expect(spy.mock.calls[0]![0]).toStrictEqual({ limit: 1 })
