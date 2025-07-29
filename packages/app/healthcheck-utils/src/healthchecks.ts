@@ -52,7 +52,7 @@ export abstract class AbstractHealthcheck<SupportedHealthchecks extends string>
       help: `Whether ${id} was available at the time`,
       collect() {
         const checkResult = store.getHealthcheckResult(id)
-        this.set(checkResult ? 1 : 0)
+        this.set(checkResult.result ? 1 : 0)
       },
     })
     new Gauge({
