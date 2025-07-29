@@ -114,7 +114,7 @@ describe('HealthcheckRefreshJob', () => {
     await job.process(randomUUID())
 
     const healthcheckSuccess = store.getHealthcheckResult('test')
-    expect(healthcheckSuccess).toBe(true)
+    expect(healthcheckSuccess).toStrictEqual({ result: true })
   })
 
   it('updates failed redis healthcheck', async () => {
@@ -132,7 +132,10 @@ describe('HealthcheckRefreshJob', () => {
     await job.process(randomUUID())
 
     const healthcheckSuccess = store.getHealthcheckResult('test')
-    expect(healthcheckSuccess).toBe(false)
+    expect(healthcheckSuccess).toStrictEqual({
+      error: 'error',
+      result: false,
+    })
   })
 
   it('returns failed for unregistered healthchecks', async () => {
@@ -141,7 +144,10 @@ describe('HealthcheckRefreshJob', () => {
     await job.process(randomUUID())
 
     const healthcheckSuccess = store.getHealthcheckResult('test')
-    expect(healthcheckSuccess).toBe(false)
+    expect(healthcheckSuccess).toStrictEqual({
+      error: 'Healthcheck result for test is not available',
+      result: false,
+    })
   })
 
   it('updates successfully for multiple healthchecks', async () => {
@@ -168,7 +174,11 @@ describe('HealthcheckRefreshJob', () => {
 
     const healthcheckSuccess1 = store.getHealthcheckResult('test')
     const healthcheckSuccess2 = store.getHealthcheckResult('test2')
-    expect(healthcheckSuccess1).toBe(true)
-    expect(healthcheckSuccess2).toBe(true)
+    expect(healthcheckSuccess1).toStrictEqual({
+      result: true,
+    })
+    expect(healthcheckSuccess2).toStrictEqual({
+      result: true,
+    })
   })
 })
