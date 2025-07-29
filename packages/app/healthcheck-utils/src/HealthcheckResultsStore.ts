@@ -1,4 +1,4 @@
-import type { DefiniteEither } from '@lokalise/node-core'
+import type { DefiniteEither, Either } from '@lokalise/node-core'
 import { FifoMap } from 'toad-cache'
 
 export type HealthcheckEntry = {
@@ -50,6 +50,18 @@ export class HealthcheckResultsStore<SupportedHealthchecks extends string> {
       error: healthcheckEntry.errorMessage,
       result: false,
     }
+  }
+
+  getAsyncHealthCheckResult(healthCheck: SupportedHealthchecks): Promise<Either<Error, true>> {
+    const checkResult = this.getHealthcheckResult(healthCheck)
+    if (!checkResult.result) {
+      return Promise.resolve({
+        error: new Error(
+          `Error occurred during ${healthCheck} healthcheck. Error: ${checkResult.error ?? 'unknown error'}`,
+        ),
+      })
+    }
+    return Promise.resolve({ result: true })
   }
 
   getHealthcheckLatency(healthcheck: SupportedHealthchecks): number | undefined {
