@@ -69,6 +69,57 @@ describe('HealthcheckResultsStore', () => {
     })
   })
 
+  describe('getAsyncHealthCheckResult', () => {
+    it('returns false for fresh undefined values', async () => {
+      const value = await store.getAsyncHealthCheckResult('db')
+
+      expect(value).toStrictEqual({
+        error: new Error(
+          'Error occurred during db healthcheck: Healthcheck result for db is not available',
+        ),
+      })
+    })
+
+    it('returns true for defined values', async () => {
+      store.set('db', {
+        checkTimestamp: new Date(),
+        isSuccessful: true,
+        latency: 11,
+      })
+
+      const value = await store.getAsyncHealthCheckResult('db')
+
+      expect(value).toStrictEqual({
+        result: true,
+      })
+    })
+
+    it('returns false and error reason for failed check', async () => {
+      store.set('db', {
+        checkTimestamp: new Date(),
+        errorMessage: 'Database connection failed',
+      })
+
+      const value = await store.getAsyncHealthCheckResult('db')
+
+      expect(value).toStrictEqual({
+        error: new Error('Error occurred during db healthcheck: Database connection failed'),
+      })
+    })
+
+    it('returns false for stale undefined values', async () => {
+      store.set('db', {
+        checkTimestamp: new Date(2022),
+      })
+
+      const value = await store.getAsyncHealthCheckResult('db')
+
+      expect(value).toStrictEqual({
+        error: new Error('Error occurred during db healthcheck: unknown error'),
+      })
+    })
+  })
+
   describe('getHealthcheckLatency', () => {
     it('returns undefined for undefined values', () => {
       const value = store.getHealthcheckLatency('db')
