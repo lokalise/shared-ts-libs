@@ -21,7 +21,10 @@ describe('HealthcheckResultsStore', () => {
     it('returns false for fresh undefined values', () => {
       const value = store.getHealthcheckResult('db')
 
-      expect(value).toBe(false)
+      expect(value).toStrictEqual({
+        error: 'Healthcheck result for db is not available',
+        result: false,
+      })
     })
 
     it('returns true for defined values', () => {
@@ -33,17 +36,36 @@ describe('HealthcheckResultsStore', () => {
 
       const value = store.getHealthcheckResult('db')
 
-      expect(value).toBe(true)
+      expect(value).toStrictEqual({
+        result: true,
+      })
     })
 
-    it('returns false for stale undefined alues', () => {
+    it('returns false and error reason for failed check', () => {
+      store.set('db', {
+        checkTimestamp: new Date(),
+        errorMessage: 'Database connection failed',
+      })
+
+      const value = store.getHealthcheckResult('db')
+
+      expect(value).toStrictEqual({
+        error: 'Database connection failed',
+        result: false,
+      })
+    })
+
+    it('returns false for stale undefined values', () => {
       store.set('db', {
         checkTimestamp: new Date(2022),
       })
 
       const value = store.getHealthcheckResult('db')
 
-      expect(value).toBe(false)
+      expect(value).toStrictEqual({
+        error: undefined,
+        result: false,
+      })
     })
   })
 
