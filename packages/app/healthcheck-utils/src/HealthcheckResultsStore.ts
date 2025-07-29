@@ -57,7 +57,7 @@ export class HealthcheckResultsStore<SupportedHealthchecks extends string> {
     if (!checkResult.result) {
       return Promise.resolve({
         error: new Error(
-          `Error occurred during ${healthCheck} healthcheck. Error: ${checkResult.error ?? 'unknown error'}`,
+          `Error occurred during ${healthCheck} healthcheck: ${checkResult.error ?? 'unknown error'}`,
         ),
       })
     }

@@ -75,7 +75,7 @@ describe('HealthcheckResultsStore', () => {
 
       expect(value).toStrictEqual({
         error: new Error(
-          'Error occurred during db healthcheck. Error: Healthcheck result for db is not available',
+          'Error occurred during db healthcheck: Healthcheck result for db is not available',
         ),
       })
     })
@@ -103,7 +103,7 @@ describe('HealthcheckResultsStore', () => {
       const value = await store.getAsyncHealthCheckResult('db')
 
       expect(value).toStrictEqual({
-        error: new Error('Error occurred during db healthcheck. Error: Database connection failed'),
+        error: new Error('Error occurred during db healthcheck: Database connection failed'),
       })
     })
 
@@ -115,7 +115,7 @@ describe('HealthcheckResultsStore', () => {
       const value = await store.getAsyncHealthCheckResult('db')
 
       expect(value).toStrictEqual({
-        error: new Error('Error occurred during db healthcheck. Error: unknown error'),
+        error: new Error('Error occurred during db healthcheck: unknown error'),
       })
     })
   })
