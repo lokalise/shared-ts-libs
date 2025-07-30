@@ -28,7 +28,7 @@ export abstract class AbstractPeriodicJob {
   protected readonly options: Required<BackgroundJobConfiguration>
   protected readonly errorReporter?: ErrorReporter
   protected readonly redis?: Redis
-  private readonly logger: CommonLogger
+  protected readonly logger: CommonLogger
   private readonly transactionObservabilityManager?: TransactionObservabilityManager
   private readonly scheduler: ToadScheduler
   private singleConsumerLock?: Mutex
