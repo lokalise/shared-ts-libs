@@ -69,7 +69,7 @@ export abstract class AbstractHealthcheck<SupportedHealthchecks extends string>
   }
 
   /**
-   *
+   * Execute healthcheck, store results and return them
    */
   async execute(): Promise<Either<Error, number>> {
     const result = await this.check()
