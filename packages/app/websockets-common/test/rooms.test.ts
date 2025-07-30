@@ -42,7 +42,6 @@ describe('Rooms', () => {
   })
 
   it('should return error for invalid room id', () => {
-    // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
     const parseResult = ROOM_ID_SCHEMA.safeParse(`invalid-room-id`)
     expect(parseResult.success).toBe(false)
   })

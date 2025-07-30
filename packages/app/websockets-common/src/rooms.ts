@@ -1,6 +1,6 @@
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
-const Uuid = z.string().uuid()
+const Uuid = z.guid()
 
 const WORKSPACE_ID_SCHEMA = z.object({ workspaceId: Uuid })
 const PROJECT_ID_SCHEMA = z.object({ projectId: Uuid })
