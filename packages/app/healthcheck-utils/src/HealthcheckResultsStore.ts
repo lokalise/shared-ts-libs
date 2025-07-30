@@ -1,3 +1,4 @@
+import type { DefiniteEither, Either } from '@lokalise/node-core'
 import { FifoMap } from 'toad-cache'
 
 export type HealthcheckEntry = {
@@ -29,20 +30,38 @@ export class HealthcheckResultsStore<SupportedHealthchecks extends string> {
   }
 
   /**
-   * Returns true if check is passing, false if not
+   * Returns true if the healthcheck is successful, false if it is not, plus error message if it provided.
    */
-  getHealthcheckResult(healthcheck: SupportedHealthchecks): boolean {
+  getHealthcheckResult(healthcheck: SupportedHealthchecks): DefiniteEither<string, boolean> {
     const healthcheckEntry = this.store.get(healthcheck)
-    // If we don't have any results yet, we assume service is not healthy
+    // If we don't have any results yet, we assume the service is not healthy
     if (!healthcheckEntry) {
-      return false
+      return {
+        error: `Healthcheck result for ${healthcheck} is not available`,
+        result: false,
+      }
     }
 
     if (healthcheckEntry.isSuccessful) {
-      return true
+      return { result: true }
     }
 
-    return false
+    return {
+      error: healthcheckEntry.errorMessage,
+      result: false,
+    }
+  }
+
+  getAsyncHealthCheckResult(healthCheck: SupportedHealthchecks): Promise<Either<Error, true>> {
+    const checkResult = this.getHealthcheckResult(healthCheck)
+    if (!checkResult.result) {
+      return Promise.resolve({
+        error: new Error(
+          `Error occurred during ${healthCheck} healthcheck: ${checkResult.error ?? 'unknown error'}`,
+        ),
+      })
+    }
+    return Promise.resolve({ result: true })
   }
 
   getHealthcheckLatency(healthcheck: SupportedHealthchecks): number | undefined {

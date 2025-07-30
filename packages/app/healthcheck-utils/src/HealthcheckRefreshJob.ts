@@ -41,7 +41,14 @@ export class HealthcheckRefreshJob extends AbstractPeriodicJob {
     return PromisePool.withConcurrency(2)
       .for(this.healthCheckers)
       .process(async (healthcheck) => {
-        await healthcheck.execute()
+        if (this.options.shouldLogExecution) {
+          this.logger.info(`Starting healthcheck ${healthcheck.getId()} execution`)
+        }
+
+        const result = await healthcheck.execute()
+        if (this.options.shouldLogExecution && !result.error) {
+          this.logger.info(`Healthcheck ${healthcheck.getId()} executed successfully`)
+        }
       })
   }
 }

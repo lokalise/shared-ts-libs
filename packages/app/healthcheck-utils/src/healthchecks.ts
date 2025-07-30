@@ -5,8 +5,9 @@ import type { HealthcheckResultsStore } from './HealthcheckResultsStore.ts'
 export type Healthcheck = {
   areMetricsEnabled: boolean
 
+  getId: () => string
   instantiateMetrics: () => void
-  execute: () => Promise<void>
+  execute: () => Promise<Either<Error, number>>
   check: () => Promise<Either<Error, number>>
   storeResult: (result: Either<Error, number>) => void
 }
@@ -52,7 +53,7 @@ export abstract class AbstractHealthcheck<SupportedHealthchecks extends string>
       help: `Whether ${id} was available at the time`,
       collect() {
         const checkResult = store.getHealthcheckResult(id)
-        this.set(checkResult ? 1 : 0)
+        this.set(checkResult.result ? 1 : 0)
       },
     })
     new Gauge({
@@ -67,9 +68,13 @@ export abstract class AbstractHealthcheck<SupportedHealthchecks extends string>
     metricsRegistered.set(id, true)
   }
 
-  async execute(): Promise<void> {
+  /**
+   * Execute healthcheck, store results and return them
+   */
+  async execute(): Promise<Either<Error, number>> {
     const result = await this.check()
     this.storeResult(result)
+    return result
   }
   storeResult(result: Either<Error, number>): void {
     const id = this.getId()
