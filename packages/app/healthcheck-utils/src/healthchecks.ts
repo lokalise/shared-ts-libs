@@ -5,6 +5,7 @@ import type { HealthcheckResultsStore } from './HealthcheckResultsStore.ts'
 export type Healthcheck = {
   areMetricsEnabled: boolean
 
+  getId: () => string
   instantiateMetrics: () => void
   execute: () => Promise<Either<Error, number>>
   check: () => Promise<Either<Error, number>>
