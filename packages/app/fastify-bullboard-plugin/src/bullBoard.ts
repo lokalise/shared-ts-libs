@@ -6,10 +6,10 @@ import { FastifyAdapter } from '@bull-board/fastify'
 import fastifySchedule from '@fastify/schedule'
 import {
   backgroundJobProcessorGetActiveQueueIds,
+  createSanitizedRedisClient,
   QUEUE_GROUP_DELIMITER,
-  createSanitizedRedisClient
 } from '@lokalise/background-jobs-common'
-import { resolveGlobalErrorLogObject, type RedisConfig } from '@lokalise/node-core'
+import { type RedisConfig, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type { Queue, QueueOptions, RedisConnection } from 'bullmq'
 import type { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
@@ -20,13 +20,16 @@ export type BullBoardOptions = {
   queueConstructor: QueueProConstructor | QueueConstructor
   basePath: string
   refreshIntervalInSeconds?: number
-} & ({
-  redisInstances: Redis[]
-  redisConfigs?: never
-} | {
-  redisInstances?: never
-  redisConfigs: RedisConfig[]
-})
+} & (
+  | {
+      redisInstances: Redis[]
+      redisConfigs?: never
+    }
+  | {
+      redisInstances?: never
+      redisConfigs: RedisConfig[]
+    }
+)
 
 function containStatusCode(error: Error): error is Error & { statusCode: number } {
   return Object.hasOwn(error, 'statusCode')
