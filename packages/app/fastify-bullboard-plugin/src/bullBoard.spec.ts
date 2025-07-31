@@ -45,7 +45,7 @@ describe('bull board', () => {
     beforeAll(async () => {
       app = await initApp({
         queueConstructor: Queue,
-        redisInstances: [],
+        redisConfigs: [],
         basePath: '/test-enabled',
         refreshIntervalInSeconds: 1,
       })
