@@ -2,6 +2,11 @@
     "name": "@lokalise/fastify-bullboard-plugin",
     "version": "1.0.0",
     "type": "module",
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE.md"
+    ],
     "engines": {
         "node": ">=20.13.0"
     },
