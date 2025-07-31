@@ -88,7 +88,9 @@ async function scheduleUpdates(
     (e) => fastify.log.error(resolveGlobalErrorLogObject(e)),
   )
 
-  await fastify.register(fastifySchedule)
+  // if scheduler is not registered, register it
+  if (!fastify.scheduler) await fastify.register(fastifySchedule)
+
   fastify.scheduler.addSimpleIntervalJob(
     new SimpleIntervalJob({ seconds: refreshIntervalInSeconds }, refreshTask, {
       id: 'bull-board-queues-update',
