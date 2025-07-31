@@ -2,8 +2,8 @@ import type { ZodObject, z } from 'zod/v4'
 import type { ReservedClientToServerEvents, ReservedServerToClientEvents } from '../events/index.ts'
 
 export interface WebsocketEvent {
-  // We do not care about specific type
-  schema: ZodObject
+  //biome-ignore lint/suspicious/noExplicitAny: We do not care about specific type
+  schema: ZodObject<any>
 }
 
 export type WebsocketEventMap = Record<string, WebsocketEvent>
