@@ -47,7 +47,9 @@ async function plugin(fastify: FastifyInstance, pluginOptions: BasicAuthOptions)
     return
   }
 
-  await fastify.register(fastifyAuth)
+  if (!fastify.auth) {
+    await fastify.register(fastifyAuth)
+  }
   await fastify.register(fastifyBasicAuth, {
     validate: validate(pluginOptions.config),
     authenticate: true,
