@@ -189,7 +189,7 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       expect(processor.resolvedQueueId).toBe('prefix1.prefix2.my-queue')
 
-      expect(backgroundJobProcessorGetActiveQueueIds(factory.getRedisConfig())).resolves.toEqual([
+      await expect(backgroundJobProcessorGetActiveQueueIds(factory.getRedisConfig())).resolves.toEqual([
         'prefix1.prefix2.my-queue',
       ])
 
