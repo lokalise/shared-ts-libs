@@ -30,12 +30,25 @@ await app.register(basicAuth, {
 
 await app.register(bullBoard, {
   queueConstructor: Queue, // can be QueuePro if bullmq-pro is used
-  redisInstances: [
-      new Redis({
-          // some redis config
-      }),
+  redisConfigs: [
+      {
+          host: process.env.REDIS_HOST!,
+          port: Number(process.env.REDIS_PORT),
+          username: process.env.REDIS_USERNAME,
+          password: process.env.REDIS_PASSWORD,
+          keyPrefix: process.env.REDIS_KEY_PREFIX,
+          useTls: false,
+      } // any Redis config
   ],
   basePath: '/bull',
   refreshIntervalInSeconds: config.bullBoard.refreshIntervalInSeconds,
 })
 ```
+
+## Compatibility with existing fastify plugins
+
+`@lokalise/fastify-bullboard-plugin/basicAuth` registers it own instance of `fastifyBasicAuth`, it will not work if you also have it installed in your fastify app.
+
+It will also attempt registering `fastifyAuth` if it is not yet registered, so if you prefer to register it explicitly in your app, make sure that `@lokalise/fastify-bullboard-plugin/basicAuth` is registered after `fastifyAuth`.
+
+`bullBoard` attempts to register `fastifySchedule` if it's not already registered, so if you are registering it explicitly in your app, make sure that `bullBoard` plugin is registered after `fastifySchedule`.

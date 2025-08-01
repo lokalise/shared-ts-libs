@@ -34,11 +34,13 @@ function validate(config: AuthConfig) {
 
 function enableListAuthHandler(enableList: Set<string>): FastifyAuthFunction {
   return (req, _res, done) => {
-    if (req.routeOptions.url && !enableList.has(req.routeOptions.url)) {
-      return done()
+    // If the route is NOT in enableList, allow through: skip auth
+    if (!req.routeOptions.url || !enableList.has(req.routeOptions.url)) {
+      return done() // success: skip the rest of the handlers
     }
-
-    return done(new AuthFailedError())
+    // If the route IS in enableList, fail: go to next handler (basicAuth)
+    // String for performance, it also works
+    return done('Needs auth' as unknown as Error)
   }
 }
 
@@ -47,7 +49,9 @@ async function plugin(fastify: FastifyInstance, pluginOptions: BasicAuthOptions)
     return
   }
 
-  await fastify.register(fastifyAuth)
+  if (!fastify.auth) {
+    await fastify.register(fastifyAuth)
+  }
   await fastify.register(fastifyBasicAuth, {
     validate: validate(pluginOptions.config),
     authenticate: true,
