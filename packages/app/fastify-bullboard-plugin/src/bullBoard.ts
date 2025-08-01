@@ -86,7 +86,7 @@ const replaceQueues = async (
     queueConstructor,
   )
   bullBoard.replaceQueues(queuesAdapter)
-  await Promise.all(currentQueues.map((queue) => queue.disconnect()))
+  await Promise.all(currentQueues.map((queue) => queue.close()))
   currentQueues = newQueues
 }
 
