@@ -39,7 +39,7 @@
         "rimraf": "^6.0.1",
         "typescript": "5.8.3",
         "vitest": "^3.0.7",
-        "zod": "^3.25.76"
+        "zod": "^4.0.14"
     },
     "dependencies": {
         "@lokalise/universal-ts-utils": "^4.2.3"
