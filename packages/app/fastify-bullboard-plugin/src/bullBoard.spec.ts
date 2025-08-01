@@ -26,17 +26,11 @@ describe('bull board', () => {
     await app.close()
   })
 
-  it('should throw an error if redis is undefined', async () => {
-    await expect(() => initApp({} as any)).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[Error: Either \`redisInstances\` or \`redisConfigs\` must be provided in BullBoardOptions]`,
-    )
-  })
-
   describe('refresh disabled', () => {
     beforeAll(async () => {
       app = await initApp({
         queueConstructor: QueuePro,
-        redisInstances: [],
+        redisConfigs: [],
         basePath: '/test-disabled',
       })
     })

@@ -6,30 +6,24 @@ import { FastifyAdapter } from '@bull-board/fastify'
 import fastifySchedule from '@fastify/schedule'
 import {
   backgroundJobProcessorGetActiveQueueIds,
-  createSanitizedRedisClient,
   QUEUE_GROUP_DELIMITER,
+  sanitizeRedisConfig,
 } from '@lokalise/background-jobs-common'
 import { type RedisConfig, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type { Queue, QueueOptions, RedisConnection } from 'bullmq'
 import type { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
-import type { Redis } from 'ioredis'
+import { Redis } from 'ioredis'
 import { AsyncTask, SimpleIntervalJob } from 'toad-scheduler'
 
 export type BullBoardOptions = {
   queueConstructor: QueueProConstructor | QueueConstructor
   basePath: string
   refreshIntervalInSeconds?: number
-} & (
-  | {
-      redisInstances: Redis[]
-      redisConfigs?: never
-    }
-  | {
-      redisInstances?: never
-      redisConfigs: RedisConfig[]
-    }
-)
+  redisConfigs: RedisConfig[]
+}
+
+type ResolvedRedis = { redis: Redis; prefix: string | undefined }
 
 function containStatusCode(error: Error): error is Error & { statusCode: number } {
   return Object.hasOwn(error, 'statusCode')
@@ -54,17 +48,20 @@ export interface QueueConstructor {
 }
 
 async function getCurrentQueues(
-  redisInstances: Redis[],
+    resolvedRedis: ResolvedRedis[],
   queueConstructor: QueueProConstructor | QueueConstructor,
 ): Promise<BullMQAdapter[]> {
   const queueIds = await Promise.all(
-    redisInstances.map((redis) => backgroundJobProcessorGetActiveQueueIds(redis)),
+      resolvedRedis.map((e) => backgroundJobProcessorGetActiveQueueIds(e.redis)),
   )
 
   return queueIds
     .flatMap((ids, index) =>
       // biome-ignore lint/style/noNonNullAssertion: Should exist
-      ids.map((id) => new queueConstructor(id, { connection: redisInstances[index]! })),
+      ids.map((id) => {
+        const redisConfig = resolvedRedis[index]!
+        return new queueConstructor(id, { connection: redisConfig.redis, prefix: redisConfig.prefix })
+      }),
     )
     .map((queue) => new BullMQAdapter(queue, { delimiter: QUEUE_GROUP_DELIMITER }))
 }
@@ -72,7 +69,7 @@ async function getCurrentQueues(
 async function scheduleUpdates(
   fastify: FastifyInstance,
   bullBoard: ReturnType<typeof createBullBoard>,
-  resolvedRedisInstances: Redis[],
+  resolvedRedis: ResolvedRedis[],
   pluginOptions: BullBoardOptions,
 ) {
   const { refreshIntervalInSeconds, queueConstructor } = pluginOptions
@@ -83,7 +80,7 @@ async function scheduleUpdates(
     'Bull-board - update queues',
     async () => {
       fastify.log.debug({ refreshIntervalInSeconds }, 'Bull-dashboard -> updating queues')
-      bullBoard.replaceQueues(await getCurrentQueues(resolvedRedisInstances, queueConstructor))
+      bullBoard.replaceQueues(await getCurrentQueues(resolvedRedis, queueConstructor))
     },
     (e) => fastify.log.error(resolveGlobalErrorLogObject(e)),
   )
@@ -99,20 +96,21 @@ async function scheduleUpdates(
   )
 }
 
-const resolveRedisInstances = (options: BullBoardOptions): Redis[] => {
-  if (options.redisInstances) return options.redisInstances
-  if (options.redisConfigs) return options.redisConfigs.map(createSanitizedRedisClient)
-
-  throw new Error('Either `redisInstances` or `redisConfigs` must be provided in BullBoardOptions')
-}
+const resolveRedis = (
+  options: BullBoardOptions,
+): ResolvedRedis[] =>
+  options.redisConfigs.map((config) => ({
+    redis: new Redis(sanitizeRedisConfig(config)),
+    prefix: config.keyPrefix,
+  }))
 
 const plugin = async (fastify: FastifyInstance, pluginOptions: BullBoardOptions) => {
   const { basePath, queueConstructor } = pluginOptions
-  const resolvedRedisInstances = resolveRedisInstances(pluginOptions)
+  const resolvedRedis = resolveRedis(pluginOptions)
 
   const serverAdapter = new FastifyAdapter()
   const bullBoard = createBullBoard({
-    queues: await getCurrentQueues(resolvedRedisInstances, queueConstructor),
+    queues: await getCurrentQueues(resolvedRedis, queueConstructor),
     serverAdapter,
   })
   // biome-ignore lint/suspicious/noExplicitAny: bull-board is not exporting this type
@@ -123,7 +121,7 @@ const plugin = async (fastify: FastifyInstance, pluginOptions: BullBoardOptions)
     prefix: basePath,
   })
 
-  await scheduleUpdates(fastify, bullBoard, resolvedRedisInstances, pluginOptions)
+  await scheduleUpdates(fastify, bullBoard, resolvedRedis, pluginOptions)
 }
 
 export const bullBoard = fp<BullBoardOptions>(plugin, {
