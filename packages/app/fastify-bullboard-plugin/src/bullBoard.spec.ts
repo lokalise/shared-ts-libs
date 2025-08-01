@@ -51,8 +51,8 @@ describe('bull board', () => {
       app = await initApp(
         {
           queueConstructor: QueuePro,
-          redisInstances: [],
           basePath: '/test-enabled',
+          redisConfigs: [],
           refreshIntervalInSeconds: 1,
         },
         preRegisterScheduler,

@@ -24,6 +24,7 @@ export type BullBoardOptions = {
 }
 
 type ResolvedRedis = { redis: Redis; prefix: string | undefined }
+let currentQueues: Queue[] = []
 
 function containStatusCode(error: Error): error is Error & { statusCode: number } {
   return Object.hasOwn(error, 'statusCode')
@@ -48,22 +49,45 @@ export interface QueueConstructor {
 }
 
 async function getCurrentQueues(
-    resolvedRedis: ResolvedRedis[],
+  resolvedRedis: ResolvedRedis[],
   queueConstructor: QueueProConstructor | QueueConstructor,
-): Promise<BullMQAdapter[]> {
+) {
   const queueIds = await Promise.all(
-      resolvedRedis.map((e) => backgroundJobProcessorGetActiveQueueIds(e.redis)),
+    resolvedRedis.map((e) => backgroundJobProcessorGetActiveQueueIds(e.redis)),
   )
 
-  return queueIds
-    .flatMap((ids, index) =>
+  const queues = queueIds.flatMap((ids, index) =>
+    ids.map((id) => {
       // biome-ignore lint/style/noNonNullAssertion: Should exist
-      ids.map((id) => {
-        const redisConfig = resolvedRedis[index]!
-        return new queueConstructor(id, { connection: redisConfig.redis, prefix: redisConfig.prefix })
-      }),
-    )
-    .map((queue) => new BullMQAdapter(queue, { delimiter: QUEUE_GROUP_DELIMITER }))
+      const redisConfig = resolvedRedis[index]!
+      return new queueConstructor(id, { connection: redisConfig.redis, prefix: redisConfig.prefix })
+    }),
+  )
+
+  return {
+    queues,
+    queuesAdapter: queues.map(
+      (queue) => new BullMQAdapter(queue, { delimiter: QUEUE_GROUP_DELIMITER }),
+    ),
+  }
+}
+
+const replaceQueues = async (
+  fastify: FastifyInstance,
+  bullBoard: ReturnType<typeof createBullBoard>,
+  resolvedRedis: ResolvedRedis[],
+  pluginOptions: BullBoardOptions,
+) => {
+  const { refreshIntervalInSeconds, queueConstructor } = pluginOptions
+
+  fastify.log.debug({ refreshIntervalInSeconds }, 'Bull-dashboard -> updating queues')
+  const { queues: newQueues, queuesAdapter } = await getCurrentQueues(
+    resolvedRedis,
+    queueConstructor,
+  )
+  bullBoard.replaceQueues(queuesAdapter)
+  await Promise.all(currentQueues.map((queue) => queue.disconnect()))
+  currentQueues = newQueues
 }
 
 async function scheduleUpdates(
@@ -72,16 +96,13 @@ async function scheduleUpdates(
   resolvedRedis: ResolvedRedis[],
   pluginOptions: BullBoardOptions,
 ) {
-  const { refreshIntervalInSeconds, queueConstructor } = pluginOptions
+  const { refreshIntervalInSeconds } = pluginOptions
 
   if (!refreshIntervalInSeconds || refreshIntervalInSeconds <= 0) return
 
   const refreshTask = new AsyncTask(
     'Bull-board - update queues',
-    async () => {
-      fastify.log.debug({ refreshIntervalInSeconds }, 'Bull-dashboard -> updating queues')
-      bullBoard.replaceQueues(await getCurrentQueues(resolvedRedis, queueConstructor))
-    },
+    () => replaceQueues(fastify, bullBoard, resolvedRedis, pluginOptions),
     (e) => fastify.log.error(resolveGlobalErrorLogObject(e)),
   )
 
@@ -96,9 +117,7 @@ async function scheduleUpdates(
   )
 }
 
-const resolveRedis = (
-  options: BullBoardOptions,
-): ResolvedRedis[] =>
+const resolveRedis = (options: BullBoardOptions): ResolvedRedis[] =>
   options.redisConfigs.map((config) => ({
     redis: new Redis(sanitizeRedisConfig(config)),
     prefix: config.keyPrefix,
@@ -109,10 +128,13 @@ const plugin = async (fastify: FastifyInstance, pluginOptions: BullBoardOptions)
   const resolvedRedis = resolveRedis(pluginOptions)
 
   const serverAdapter = new FastifyAdapter()
+  const { queues, queuesAdapter } = await getCurrentQueues(resolvedRedis, queueConstructor)
   const bullBoard = createBullBoard({
-    queues: await getCurrentQueues(resolvedRedis, queueConstructor),
+    queues: queuesAdapter,
     serverAdapter,
   })
+  currentQueues = queues
+
   // biome-ignore lint/suspicious/noExplicitAny: bull-board is not exporting this type
   serverAdapter.setErrorHandler(bullBoardErrorHandler as any)
   serverAdapter.setBasePath(basePath)
