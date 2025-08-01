@@ -29,8 +29,8 @@
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
-        "@bull-board/api": "^6.11.0",
-        "@bull-board/fastify": "^6.11.0",
+        "@bull-board/api": "6.10.1",
+        "@bull-board/fastify": "6.10.1",
         "@fastify/auth": "^5.0.2",
         "@fastify/basic-auth": "^6.2.0"
     },
