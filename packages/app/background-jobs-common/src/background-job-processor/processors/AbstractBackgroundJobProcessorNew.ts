@@ -18,7 +18,7 @@ import {
   isStalledJobError,
   isUnrecoverableJobError,
 } from '../errors/utils.ts'
-import { ZodUnrecoverableError } from '../errors/ZodUnrecoverableError.js'
+import { ZodUnrecoverableError } from '../errors/ZodUnrecoverableError.ts'
 import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory.ts'
 import type { ProtectedQueue } from '../managers/index.ts'
 import type { QueueManager } from '../managers/QueueManager.ts'
@@ -29,7 +29,7 @@ import type {
   SupportedQueueIds,
 } from '../managers/types.ts'
 import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
-import { sanitizeRedisConfig } from '../public-utils/index.js'
+import { sanitizeRedisConfig } from '../public-utils/index.ts'
 import type { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
 import type { BullmqProcessor, RequestContext, SafeJob } from '../types.ts'

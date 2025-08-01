@@ -4,7 +4,7 @@ import { merge } from 'ts-deepmerge'
 import { DEFAULT_QUEUE_OPTIONS } from '../constants.ts'
 import type { BullmqQueueFactory } from '../factories/index.ts'
 import { registerActiveQueueIds } from '../monitoring/registerActiveQueueIds.ts'
-import { sanitizeRedisConfig } from '../public-utils/index.js'
+import { sanitizeRedisConfig } from '../public-utils/index.ts'
 import { resolveQueueId } from '../utils.ts'
 import type { QueueConfiguration, SupportedQueueIds } from './types.ts'
 

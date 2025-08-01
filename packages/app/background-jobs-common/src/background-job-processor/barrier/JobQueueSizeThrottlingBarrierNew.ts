@@ -1,4 +1,4 @@
-import type { QueueConfiguration, QueueManager, SupportedQueueIds } from '../managers/index.js'
+import type { QueueConfiguration, QueueManager, SupportedQueueIds } from '../managers/index.ts'
 import type { BaseJobPayload } from '../types.ts'
 import type { BarrierCallback } from './barrier.ts'
 
