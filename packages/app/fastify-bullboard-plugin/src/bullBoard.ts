@@ -6,32 +6,35 @@ import { FastifyAdapter } from '@bull-board/fastify'
 import fastifySchedule from '@fastify/schedule'
 import {
   backgroundJobProcessorGetActiveQueueIds,
-  createSanitizedRedisClient,
   QUEUE_GROUP_DELIMITER,
+  sanitizeRedisConfig,
 } from '@lokalise/background-jobs-common'
 import { type RedisConfig, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type { Queue, QueueOptions, RedisConnection } from 'bullmq'
 import type { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
-import type { Redis } from 'ioredis'
+import { Redis } from 'ioredis'
 import { AsyncTask, SimpleIntervalJob } from 'toad-scheduler'
 
 export type BullBoardOptions = {
   queueConstructor: QueueProConstructor | QueueConstructor
   basePath: string
   refreshIntervalInSeconds?: number
-} & (
-  | {
-      redisInstances: Redis[]
-      redisConfigs?: never
-    }
-  | {
-      redisInstances?: never
-      redisConfigs: RedisConfig[]
-    }
-)
+  redisConfigs: RedisConfig[]
+}
 
-function containStatusCode(error: Error): error is Error & { statusCode: number } {
+export interface QueueProConstructor {
+  new (name: string, opts?: Record<string, unknown>): Queue
+}
+
+export interface QueueConstructor {
+  new (name: string, opts?: QueueOptions, Connection?: typeof RedisConnection): Queue
+}
+
+type ResolvedRedis = { redis: Redis; prefix: string | undefined }
+let currentQueues: Queue[] = []
+
+const containStatusCode = (error: Error): error is Error & { statusCode: number } => {
   return Object.hasOwn(error, 'statusCode')
 }
 
@@ -45,46 +48,61 @@ const bullBoardErrorHandler = (error: Error) => {
   }
 }
 
-export interface QueueProConstructor {
-  new (name: string, opts?: Record<string, unknown>): Queue
-}
-
-export interface QueueConstructor {
-  new (name: string, opts?: QueueOptions, Connection?: typeof RedisConnection): Queue
-}
-
-async function getCurrentQueues(
-  redisInstances: Redis[],
+const getCurrentQueues = async (
+  resolvedRedis: ResolvedRedis[],
   queueConstructor: QueueProConstructor | QueueConstructor,
-): Promise<BullMQAdapter[]> {
+) => {
   const queueIds = await Promise.all(
-    redisInstances.map((redis) => backgroundJobProcessorGetActiveQueueIds(redis)),
+    resolvedRedis.map((e) => backgroundJobProcessorGetActiveQueueIds(e.redis)),
   )
 
-  return queueIds
-    .flatMap((ids, index) =>
+  const queues = queueIds.flatMap((ids, index) =>
+    ids.map((id) => {
       // biome-ignore lint/style/noNonNullAssertion: Should exist
-      ids.map((id) => new queueConstructor(id, { connection: redisInstances[index]! })),
-    )
-    .map((queue) => new BullMQAdapter(queue, { delimiter: QUEUE_GROUP_DELIMITER }))
+      const redisConfig = resolvedRedis[index]!
+      return new queueConstructor(id, { connection: redisConfig.redis, prefix: redisConfig.prefix })
+    }),
+  )
+
+  return {
+    queues,
+    queuesAdapter: queues.map(
+      (queue) => new BullMQAdapter(queue, { delimiter: QUEUE_GROUP_DELIMITER }),
+    ),
+  }
 }
 
-async function scheduleUpdates(
+const replaceQueues = async (
   fastify: FastifyInstance,
   bullBoard: ReturnType<typeof createBullBoard>,
-  resolvedRedisInstances: Redis[],
+  resolvedRedis: ResolvedRedis[],
   pluginOptions: BullBoardOptions,
-) {
+) => {
   const { refreshIntervalInSeconds, queueConstructor } = pluginOptions
+
+  fastify.log.debug({ refreshIntervalInSeconds }, 'Bull-dashboard -> updating queues')
+  const { queues: newQueues, queuesAdapter } = await getCurrentQueues(
+    resolvedRedis,
+    queueConstructor,
+  )
+  bullBoard.replaceQueues(queuesAdapter)
+  await Promise.all(currentQueues.map((queue) => queue.disconnect()))
+  currentQueues = newQueues
+}
+
+const scheduleUpdates = async (
+  fastify: FastifyInstance,
+  bullBoard: ReturnType<typeof createBullBoard>,
+  resolvedRedis: ResolvedRedis[],
+  pluginOptions: BullBoardOptions,
+) => {
+  const { refreshIntervalInSeconds } = pluginOptions
 
   if (!refreshIntervalInSeconds || refreshIntervalInSeconds <= 0) return
 
   const refreshTask = new AsyncTask(
     'Bull-board - update queues',
-    async () => {
-      fastify.log.debug({ refreshIntervalInSeconds }, 'Bull-dashboard -> updating queues')
-      bullBoard.replaceQueues(await getCurrentQueues(resolvedRedisInstances, queueConstructor))
-    },
+    () => replaceQueues(fastify, bullBoard, resolvedRedis, pluginOptions),
     (e) => fastify.log.error(resolveGlobalErrorLogObject(e)),
   )
 
@@ -99,22 +117,25 @@ async function scheduleUpdates(
   )
 }
 
-const resolveRedisInstances = (options: BullBoardOptions): Redis[] => {
-  if (options.redisInstances) return options.redisInstances
-  if (options.redisConfigs) return options.redisConfigs.map(createSanitizedRedisClient)
-
-  throw new Error('Either `redisInstances` or `redisConfigs` must be provided in BullBoardOptions')
-}
+const resolveRedis = (options: BullBoardOptions): ResolvedRedis[] =>
+  options.redisConfigs.map((config) => ({
+    redis: new Redis(sanitizeRedisConfig(config)),
+    prefix: config.keyPrefix,
+  }))
 
 const plugin = async (fastify: FastifyInstance, pluginOptions: BullBoardOptions) => {
   const { basePath, queueConstructor } = pluginOptions
-  const resolvedRedisInstances = resolveRedisInstances(pluginOptions)
+  const resolvedRedis = resolveRedis(pluginOptions)
+
+  const { queues, queuesAdapter } = await getCurrentQueues(resolvedRedis, queueConstructor)
+  currentQueues = queues
 
   const serverAdapter = new FastifyAdapter()
   const bullBoard = createBullBoard({
-    queues: await getCurrentQueues(resolvedRedisInstances, queueConstructor),
+    queues: queuesAdapter,
     serverAdapter,
   })
+
   // biome-ignore lint/suspicious/noExplicitAny: bull-board is not exporting this type
   serverAdapter.setErrorHandler(bullBoardErrorHandler as any)
   serverAdapter.setBasePath(basePath)
@@ -123,7 +144,7 @@ const plugin = async (fastify: FastifyInstance, pluginOptions: BullBoardOptions)
     prefix: basePath,
   })
 
-  await scheduleUpdates(fastify, bullBoard, resolvedRedisInstances, pluginOptions)
+  await scheduleUpdates(fastify, bullBoard, resolvedRedis, pluginOptions)
 }
 
 export const bullBoard = fp<BullBoardOptions>(plugin, {
