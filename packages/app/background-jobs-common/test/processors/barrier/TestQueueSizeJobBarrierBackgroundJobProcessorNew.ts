@@ -1,13 +1,13 @@
 import { z } from 'zod/v4'
-import type { JobQueueSizeThrottlingBarrierContextNew } from '../../../src/background-job-processor/barrier/JobQueueSizeThrottlingBarrierNew.js'
-import type { QueueConfiguration } from '../../../src/index.js'
+import type { JobQueueSizeThrottlingBarrierContextNew } from '../../../src/background-job-processor/barrier/JobQueueSizeThrottlingBarrierNew.ts'
+import type { QueueConfiguration } from '../../../src/index.ts'
 import {
   AbstractBackgroundJobProcessorNew,
   type BackgroundJobProcessorDependenciesNew,
   type BarrierCallback,
   type JobPayloadForQueue,
   type SafeJob,
-} from '../../../src/index.js'
+} from '../../../src/index.ts'
 
 const schema = z.object({
   id: z.string(),

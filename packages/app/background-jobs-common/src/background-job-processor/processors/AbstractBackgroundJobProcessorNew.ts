@@ -18,7 +18,7 @@ import {
   isStalledJobError,
   isUnrecoverableJobError,
 } from '../errors/utils.ts'
-import { ZodUnrecoverableError } from '../errors/ZodUnrecoverableError.js'
+import { ZodUnrecoverableError } from '../errors/ZodUnrecoverableError.ts'
 import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory.ts'
 import type { ProtectedQueue } from '../managers/index.ts'
 import type { QueueManager } from '../managers/QueueManager.ts'

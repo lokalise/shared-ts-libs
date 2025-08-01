@@ -4,10 +4,10 @@ import {
   type BarrierSupportedQueues,
   barrierSupportedQueues,
   TestQueueSizeJobBarrierBackgroundJobProcessorNew,
-} from '../../../test/processors/barrier/TestQueueSizeJobBarrierBackgroundJobProcessorNew.js'
+} from '../../../test/processors/barrier/TestQueueSizeJobBarrierBackgroundJobProcessorNew.ts'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import type { BackgroundJobProcessorDependenciesNew } from '../processors/types.ts'
-import { createJobQueueSizeThrottlingBarrierNew } from './JobQueueSizeThrottlingBarrierNew.js'
+import { createJobQueueSizeThrottlingBarrierNew } from './JobQueueSizeThrottlingBarrierNew.ts'
 
 describe('JobQueueSizeThrottlingBarrier', () => {
   let factory: TestDependencyFactory

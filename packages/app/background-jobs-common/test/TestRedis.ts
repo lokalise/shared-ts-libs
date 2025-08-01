@@ -22,7 +22,6 @@ export function getTestRedisConfig(): RedisConfig {
 export function createRedisClient(redisConfig: RedisConfig): Redis {
   return new Redis({
     ...redisConfig,
-    keyPrefix: undefined,
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
   })

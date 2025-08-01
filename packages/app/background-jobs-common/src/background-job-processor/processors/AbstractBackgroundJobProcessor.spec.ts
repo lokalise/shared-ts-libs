@@ -189,9 +189,9 @@ describe('AbstractBackgroundJobProcessor', () => {
 
       expect(processor.resolvedQueueId).toBe('prefix1.prefix2.my-queue')
 
-      expect(backgroundJobProcessorGetActiveQueueIds(factory.getRedisConfig())).resolves.toEqual([
-        'prefix1.prefix2.my-queue',
-      ])
+      await expect(
+        backgroundJobProcessorGetActiveQueueIds(factory.getRedisConfig()),
+      ).resolves.toEqual(['prefix1.prefix2.my-queue'])
 
       await processor.dispose()
     })
