@@ -1,3 +1,4 @@
+import fastifySchedule from '@fastify/schedule'
 import { Queue } from 'bullmq'
 import fastify, { type FastifyInstance } from 'fastify'
 import { beforeAll, expect } from 'vitest'
@@ -5,8 +6,12 @@ import { type BullBoardOptions, bullBoard, type QueueProConstructor } from './bu
 
 const QueuePro: QueueProConstructor = Queue as QueueProConstructor
 
-async function initApp(options: BullBoardOptions) {
+async function initApp(
+  options: BullBoardOptions,
+  preRegisterScheduler = false,
+): Promise<FastifyInstance> {
   const app = fastify()
+  if (preRegisterScheduler) await app.register(fastifySchedule)
 
   await app.register(bullBoard, options)
 
@@ -48,26 +53,34 @@ describe('bull board', () => {
   })
 
   describe('refresh enabled', () => {
-    beforeAll(async () => {
-      app = await initApp({
-        queueConstructor: Queue,
-        redisConfigs: [],
-        basePath: '/test-enabled',
-        refreshIntervalInSeconds: 1,
-      })
-    })
+    const startApp = async (preRegisterScheduler: boolean) => {
+      app = await initApp(
+        {
+          queueConstructor: QueuePro,
+          redisInstances: [],
+          basePath: '/test-enabled',
+          refreshIntervalInSeconds: 1,
+        },
+        preRegisterScheduler,
+      )
+    }
 
-    it('works', async () => {
-      const response = await app.inject().get('/test-enabled').end()
+    it.each([false, true])(
+      'should work if scheduler is already registered: %s',
+      async (preRegisterScheduler) => {
+        await startApp(preRegisterScheduler)
 
-      expect(response.statusCode).toBe(200)
-      expect(response.body.toLowerCase()).includes('<!doctype html>')
-      expect(response.body.toLowerCase()).includes('<title>bull dashboard</title>')
+        const response = await app.inject().get('/test-enabled').end()
 
-      expect(app.scheduler).toBeDefined()
-      const jobs = app.scheduler.getAllJobs()
-      expect(jobs).toHaveLength(1)
-      expect(jobs[0]!.id).toBe('bull-board-queues-update')
-    })
+        expect(response.statusCode).toBe(200)
+        expect(response.body.toLowerCase()).includes('<!doctype html>')
+        expect(response.body.toLowerCase()).includes('<title>bull dashboard</title>')
+
+        expect(app.scheduler).toBeDefined()
+        const jobs = app.scheduler.getAllJobs()
+        expect(jobs).toHaveLength(1)
+        expect(jobs[0]!.id).toBe('bull-board-queues-update')
+      },
+    )
   })
 })
