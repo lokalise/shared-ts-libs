@@ -23,10 +23,18 @@ export type BullBoardOptions = {
   redisConfigs: RedisConfig[]
 }
 
+export interface QueueProConstructor {
+  new (name: string, opts?: Record<string, unknown>): Queue
+}
+
+export interface QueueConstructor {
+  new (name: string, opts?: QueueOptions, Connection?: typeof RedisConnection): Queue
+}
+
 type ResolvedRedis = { redis: Redis; prefix: string | undefined }
 let currentQueues: Queue[] = []
 
-function containStatusCode(error: Error): error is Error & { statusCode: number } {
+const containStatusCode = (error: Error): error is Error & { statusCode: number } => {
   return Object.hasOwn(error, 'statusCode')
 }
 
@@ -40,18 +48,10 @@ const bullBoardErrorHandler = (error: Error) => {
   }
 }
 
-export interface QueueProConstructor {
-  new (name: string, opts?: Record<string, unknown>): Queue
-}
-
-export interface QueueConstructor {
-  new (name: string, opts?: QueueOptions, Connection?: typeof RedisConnection): Queue
-}
-
-async function getCurrentQueues(
+const getCurrentQueues = async (
   resolvedRedis: ResolvedRedis[],
   queueConstructor: QueueProConstructor | QueueConstructor,
-) {
+) => {
   const queueIds = await Promise.all(
     resolvedRedis.map((e) => backgroundJobProcessorGetActiveQueueIds(e.redis)),
   )
@@ -90,12 +90,12 @@ const replaceQueues = async (
   currentQueues = newQueues
 }
 
-async function scheduleUpdates(
+const scheduleUpdates = async (
   fastify: FastifyInstance,
   bullBoard: ReturnType<typeof createBullBoard>,
   resolvedRedis: ResolvedRedis[],
   pluginOptions: BullBoardOptions,
-) {
+) => {
   const { refreshIntervalInSeconds } = pluginOptions
 
   if (!refreshIntervalInSeconds || refreshIntervalInSeconds <= 0) return
@@ -127,13 +127,14 @@ const plugin = async (fastify: FastifyInstance, pluginOptions: BullBoardOptions)
   const { basePath, queueConstructor } = pluginOptions
   const resolvedRedis = resolveRedis(pluginOptions)
 
-  const serverAdapter = new FastifyAdapter()
   const { queues, queuesAdapter } = await getCurrentQueues(resolvedRedis, queueConstructor)
+  currentQueues = queues
+
+  const serverAdapter = new FastifyAdapter()
   const bullBoard = createBullBoard({
     queues: queuesAdapter,
     serverAdapter,
   })
-  currentQueues = queues
 
   // biome-ignore lint/suspicious/noExplicitAny: bull-board is not exporting this type
   serverAdapter.setErrorHandler(bullBoardErrorHandler as any)
