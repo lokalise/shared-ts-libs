@@ -46,6 +46,6 @@
         "@lokalise/biome-config": "^2.0.0",
         "@types/node": "^24.0.3",
         "rimraf": "^6.0.1",
-        "typescript": "^5.8.3"
+        "typescript": "^5.9.2"
     }
 }

@@ -55,7 +55,7 @@
         "mock-xmlhttprequest": "^8.4.1",
         "mockttp": "^4.0.1",
         "rimraf": "^6.0.1",
-        "typescript": "~5.8.3",
+        "typescript": "~5.9.2",
         "vitest": "^3.2.2"
     },
     "keywords": [
