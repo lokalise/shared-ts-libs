@@ -132,24 +132,24 @@ export type PayloadRouteReturnType<
 >
 
 export type ContractService<
-  Configured extends ConfiguredContractService<Client, ContractDefinitions<AnyRoutes>, Headers>,
+  Routes extends AnyRoutes,
+  ContractHeaders extends Headers,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
-  Routes extends AnyRoutes = Configured['definition']['routes'],
 > = {
   [K in keyof Routes]: Routes[K] extends { route: infer T }
     ? T extends AnyGetRoute
       ? (
-          params: GetRouteParameters<T, HeadersFromBuilder<Configured['contractHeaders']>>,
+          params: GetRouteParameters<T, ContractHeaders>,
           options: GetRouteOptions<T, DoThrowOnError>,
         ) => GetRouteReturnType<T>
       : T extends AnyDeleteRoute
         ? (
-            params: DeleteRouteParameters<T, HeadersFromBuilder<Configured['contractHeaders']>>,
+            params: DeleteRouteParameters<T, ContractHeaders>,
             options: DeleteRouteReturnOptions<T, DoThrowOnError>,
           ) => DeleteRouteReturnType<T>
         : T extends AnyPayloadRoute
           ? (
-              params: PayloadRouteParameters<T, HeadersFromBuilder<Configured['contractHeaders']>>,
+              params: PayloadRouteParameters<T, ContractHeaders>,
               options: PayloadRouteReturnOptions<T, DoThrowOnError>,
             ) => PayloadRouteReturnType<T>
           : never

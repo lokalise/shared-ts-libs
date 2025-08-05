@@ -10,11 +10,16 @@ import type {
 import { assertIsNever } from '@lokalise/universal-ts-utils/node'
 import type { Wretch } from 'wretch'
 import { sendByDeleteRoute, sendByGetRoute, sendByPayloadRoute } from './client.js'
-import type { AnyRouteParameters, ContractService, PayloadRouteParameters } from './types.js'
+import type {
+  AnyRouteParameters,
+  ContractService,
+  PayloadRouteParameters,
+  WretchInstance,
+} from './types.js'
 
 export function createContractService<
   const Routes extends AnyRoutes,
-  const Client extends Wretch,
+  const Client extends WretchInstance,
   const ContractHeaders extends Headers = NoHeaders,
 >(
   definition: ContractDefinitions<Routes>,

@@ -1,10 +1,10 @@
-import type { AnyRoutes, ContractDefinitions, Headers } from '@lokalise/api-contracts'
-import {
-  type AnyDeleteRoute,
-  type AnyGetRoute,
-  type AnyPayloadRoute,
-  type ConfiguredContractService,
-  HeaderBuilder,
+import type {
+  AnyDeleteRoute,
+  AnyGetRoute,
+  AnyPayloadRoute,
+  AnyRoutes,
+  ContractDefinitions,
+  NoHeaders,
 } from '@lokalise/api-contracts'
 import { assertIsNever } from '@lokalise/universal-ts-utils/node'
 import type { Client } from 'undici'
@@ -21,24 +21,30 @@ type RouteOptions<Routers extends AnyRoutes> = {
 }
 
 export function createContractService<
-  const ContractHeaders extends Headers,
-  Configured extends ConfiguredContractService<
-    Client,
-    ContractDefinitions<AnyRoutes>,
-    ContractHeaders
-  >,
+  const Routes extends AnyRoutes,
+  const C extends Client,
+  const ContractHeaders extends Headers = NoHeaders,
 >(
-  contract: Configured,
-  defaultOptions?: Partial<RouteOptions<Configured['definition']['routes']>>,
-): ContractService<Configured> {
-  const service = {} as Partial<ContractService<Configured>>
+  definition: ContractDefinitions<Routes>,
+  clientResolver: (service: string) => Promise<C>,
+  contractHeaders?: ContractHeaders | (() => ContractHeaders) | (() => Promise<ContractHeaders>),
+  defaultOptions?: Partial<RouteOptions<Routes>>,
+): ContractService<Routes, ContractHeaders> {
+  const service = {} as Partial<ContractService<Routes, ContractHeaders>>
 
-  for (const key in contract.definition.routes) {
-    const route = contract.definition.routes[key]?.route
+  //   // Intentionally not awaiting the clientResolver
+  const clientCache = clientResolver(definition.serviceName)
+  const contractHeadersCache =
+    typeof contractHeaders === 'function' ? contractHeaders() : (contractHeaders ?? ({} as Headers))
 
-    if (route === undefined) {
+  for (const key in definition.config.routes) {
+    const routeConfig = definition.config.routes[key]
+
+    if (routeConfig === undefined) {
       throw new Error(`Route ${key} is not defined in the contract`)
     }
+
+    const route = routeConfig.route
 
     // @ts-ignore
     // Is there a way to not need the `@ts-ignore` here?
@@ -46,16 +52,18 @@ export function createContractService<
       params: AnyRouteParameters<typeof route, ContractHeaders>,
       options: AnyRouteOptions<typeof route>,
     ) => {
-      const prepared = contract.prepared[key]
-      if (!prepared) {
-        throw new Error(`Route ${key} is not prepared`)
-      }
+      const client = await clientCache
 
-      const { client, route, headers: contractHeaders } = await prepared
+      const resolvedHeaders = await Promise.all([
+        contractHeadersCache,
+        'headers' in params ? (params.headers as Headers) : Promise.resolve({} as Headers),
+      ])
 
-      const headers = HeaderBuilder.create('headers' in params ? (params.headers as Headers) : {})
-        .and(contractHeaders)
-        .resolve()
+      const headers: Headers = resolvedHeaders.reduce(
+        // biome-ignore lint/performance/noAccumulatingSpread: This is a clean way to merge headers
+        (acc, headers) => ({ ...acc, ...headers }),
+        {} as Headers,
+      )
 
       const requestOptions = {
         ...defaultOptions?.[key],
@@ -98,5 +106,5 @@ export function createContractService<
     }
   }
 
-  return service as ContractService<Configured>
+  return service as ContractService<Routes, ContractHeaders>
 }
