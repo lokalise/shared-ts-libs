@@ -474,7 +474,6 @@ export function sendByGetRoute<
     IsEmptyResponseExpected
   >
 > {
-  // @ts-expect-error fixme
   return sendGet(wretch, {
     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
@@ -491,6 +490,8 @@ export function sendByGetRoute<
   })
 }
 
+// @ts-ignore
+// @ts-ignore
 export function sendByDeleteRoute<
   T extends WretchInstance,
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -521,7 +522,6 @@ export function sendByDeleteRoute<
     IsEmptyResponseExpected
   >
 > {
-  // @ts-expect-error fixme
   return sendDelete(wretch, {
     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,

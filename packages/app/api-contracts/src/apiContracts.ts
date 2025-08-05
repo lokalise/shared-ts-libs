@@ -1,11 +1,5 @@
 import type { ZodSchema, z } from 'zod/v4'
-import type {
-  AnyDeleteRoute,
-  AnyGetRoute,
-  AnyPayloadRoute,
-  AnyRoute,
-  AnyRoutes,
-} from './contractService.js'
+import type { AnyDeleteRoute, AnyGetRoute, AnyPayloadRoute, AnyRoute } from './contractService.js'
 import type { HttpStatusCode } from './HttpStatusCodes.ts'
 
 export type { HttpStatusCode }

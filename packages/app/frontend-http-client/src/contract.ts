@@ -1,10 +1,12 @@
-import type { AnyRoutes, ContractDefinitions, Headers } from '@lokalise/api-contracts'
 import {
   type AnyDeleteRoute,
   type AnyGetRoute,
   type AnyPayloadRoute,
-  type ConfiguredContractService,
+  type AnyRoutes,
+  type ContractDefinitions,
   HeaderBuilder,
+  type Headers,
+  type NoHeaders,
 } from '@lokalise/api-contracts'
 import { assertIsNever } from '@lokalise/universal-ts-utils/node'
 import type { Wretch } from 'wretch'
@@ -12,34 +14,35 @@ import { sendByDeleteRoute, sendByGetRoute, sendByPayloadRoute } from './client.
 import type { AnyRouteParameters, ContractService, PayloadRouteParameters } from './types.js'
 
 export function createContractService<
-  const ContractHeaders extends Headers,
-  Configured extends ConfiguredContractService<
-    Wretch,
-    ContractDefinitions<AnyRoutes>,
-    ContractHeaders
-  >,
->(contract: Configured): ContractService<Configured> {
-  const service = {} as Partial<ContractService<Configured>>
+  const Routes extends AnyRoutes,
+  const Client extends Wretch,
+  const ContractHeaders extends Headers = NoHeaders,
+>(
+  definition: ContractDefinitions<Routes>,
+  clientResolver: (service: string) => Promise<Client>,
+  contractHeaders?: HeaderBuilder<ContractHeaders>,
+): ContractService<Routes, ContractHeaders> {
+  const service = {} as Partial<ContractService<Routes, ContractHeaders>>
 
-  for (const key in contract.definition.routes) {
-    const route = contract.definition.routes[key]?.route
+  // Intentionally not awaiting the clientResolver
+  const clientCache = clientResolver(definition.serviceName)
+  const contractHeadersCache = contractHeaders?.resolve() ?? Promise.resolve({})
 
-    if (route === undefined) {
+  for (const key in definition.config.routes) {
+    const routeConfig = definition.config.routes[key]
+
+    if (routeConfig === undefined) {
       throw new Error(`Route ${key} is not defined in the contract`)
     }
 
-    // @ts-ignore
-    // Is there a way to not need the `@ts-ignore` here?
-    service[key] = async (params: AnyRouteParameters<typeof route, ContractHeaders>) => {
-      const prepared = contract.prepared[key]
-      if (!prepared) {
-        throw new Error(`Route ${key} is not prepared`)
-      }
+    const route = routeConfig.route
 
-      const { client, route, headers: contractHeaders } = await prepared
+    // biome-ignore lint/suspicious/noExplicitAny: This is to get around TypeScript's limitation of assignment of generic records
+    ;(service as any)[key] = async (params: AnyRouteParameters<typeof route, ContractHeaders>) => {
+      const client = await clientCache
 
       const headers = HeaderBuilder.create('headers' in params ? (params.headers as Headers) : {})
-        .and(contractHeaders)
+        .and(contractHeadersCache)
         .resolve()
 
       switch (route.method) {
@@ -53,7 +56,7 @@ export function createContractService<
         case 'put':
         case 'patch':
           return sendByPayloadRoute(client, route as AnyPayloadRoute, {
-            ...(params as PayloadRouteParameters<typeof route, ContractHeaders>),
+            ...(params as PayloadRouteParameters<AnyPayloadRoute, ContractHeaders>),
             headers,
           })
 
@@ -63,5 +66,5 @@ export function createContractService<
     }
   }
 
-  return service as ContractService<Configured>
+  return service as ContractService<Routes, ContractHeaders>
 }
