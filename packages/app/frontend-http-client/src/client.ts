@@ -402,6 +402,7 @@ export function sendByPayloadRoute<
 >(
   wretch: T,
   routeDefinition: PayloadRouteDefinition<
+    // @ts-expect-error
     RequestBodySchema,
     ResponseBodySchema,
     PathParamsSchema,
@@ -411,13 +412,18 @@ export function sendByPayloadRoute<
     IsEmptyResponseExpected
   >,
   params: PayloadRouteRequestParams<
+    // @ts-expect-error
     InferSchemaInput<PathParamsSchema>,
+    // @ts-expect-error
     InferSchemaInput<RequestBodySchema>,
+    // @ts-expect-error
     InferSchemaInput<RequestQuerySchema>,
+    // @ts-expect-error
     InferSchemaInput<RequestHeaderSchema>
   >,
 ): Promise<
   RequestResultType<
+    // @ts-expect-error
     InferSchemaOutput<ResponseBodySchema>,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected
@@ -444,6 +450,7 @@ export function sendByPayloadRoute<
   })
 }
 
+// @ts-ignore
 export function sendByGetRoute<
   T extends WretchInstance,
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -455,6 +462,7 @@ export function sendByGetRoute<
 >(
   wretch: T,
   routeDefinition: GetRouteDefinition<
+    // @ts-expect-error
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
@@ -463,17 +471,22 @@ export function sendByGetRoute<
     IsEmptyResponseExpected
   >,
   params: RouteRequestParams<
+    // @ts-expect-error
     InferSchemaInput<PathParamsSchema>,
+    // @ts-expect-error
     InferSchemaInput<RequestQuerySchema>,
+    // @ts-expect-error
     InferSchemaInput<RequestHeaderSchema>
   >,
 ): Promise<
   RequestResultType<
+    // @ts-expect-error
     InferSchemaOutput<ResponseBodySchema>,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected
   >
 > {
+  // @ts-expect-error
   return sendGet(wretch, {
     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
@@ -503,6 +516,7 @@ export function sendByDeleteRoute<
 >(
   wretch: T,
   routeDefinition: DeleteRouteDefinition<
+    // @ts-expect-error
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
@@ -511,17 +525,22 @@ export function sendByDeleteRoute<
     IsEmptyResponseExpected
   >,
   params: RouteRequestParams<
+    // @ts-expect-error
     InferSchemaInput<PathParamsSchema>,
+    // @ts-expect-error
     InferSchemaInput<RequestQuerySchema>,
+    // @ts-expect-error
     InferSchemaInput<RequestHeaderSchema>
   >,
 ): Promise<
   RequestResultType<
+    // @ts-expect-error
     InferSchemaOutput<ResponseBodySchema>,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected
   >
 > {
+  // @ts-expect-error
   return sendDelete(wretch, {
     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,

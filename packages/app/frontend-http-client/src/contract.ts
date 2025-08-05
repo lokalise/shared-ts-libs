@@ -1,12 +1,11 @@
-import {
-  type AnyDeleteRoute,
-  type AnyGetRoute,
-  type AnyPayloadRoute,
-  type AnyRoutes,
-  type ContractDefinitions,
-  HeaderBuilder,
-  type Headers,
-  type NoHeaders,
+import type {
+  AnyDeleteRoute,
+  AnyGetRoute,
+  AnyPayloadRoute,
+  AnyRoutes,
+  ContractDefinitions,
+  Headers,
+  NoHeaders,
 } from '@lokalise/api-contracts'
 import { assertIsNever } from '@lokalise/universal-ts-utils/node'
 import type { Wretch } from 'wretch'
@@ -20,13 +19,14 @@ export function createContractService<
 >(
   definition: ContractDefinitions<Routes>,
   clientResolver: (service: string) => Promise<Client>,
-  contractHeaders?: HeaderBuilder<ContractHeaders>,
+  contractHeaders?: ContractHeaders | (() => ContractHeaders) | (() => Promise<ContractHeaders>),
 ): ContractService<Routes, ContractHeaders> {
   const service = {} as Partial<ContractService<Routes, ContractHeaders>>
 
   // Intentionally not awaiting the clientResolver
   const clientCache = clientResolver(definition.serviceName)
-  const contractHeadersCache = contractHeaders?.resolve() ?? Promise.resolve({})
+  const contractHeadersCache =
+    typeof contractHeaders === 'function' ? contractHeaders() : (contractHeaders ?? ({} as Headers))
 
   for (const key in definition.config.routes) {
     const routeConfig = definition.config.routes[key]
@@ -41,9 +41,16 @@ export function createContractService<
     ;(service as any)[key] = async (params: AnyRouteParameters<typeof route, ContractHeaders>) => {
       const client = await clientCache
 
-      const headers = HeaderBuilder.create('headers' in params ? (params.headers as Headers) : {})
-        .and(contractHeadersCache)
-        .resolve()
+      const resolvedHeaders = await Promise.all([
+        contractHeadersCache,
+        'headers' in params ? (params.headers as Headers) : Promise.resolve({} as Headers),
+      ])
+
+      const headers: Headers = resolvedHeaders.reduce(
+        // biome-ignore lint/performance/noAccumulatingSpread: This is a clean way to merge headers
+        (acc, headers) => ({ ...acc, ...headers }),
+        {} as Headers,
+      )
 
       switch (route.method) {
         case 'get':
