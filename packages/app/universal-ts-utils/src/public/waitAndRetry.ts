@@ -17,8 +17,7 @@
  * ```
  */
 
-// biome-ignore lint/suspicious/useAwait: <explanation>
-export const waitAndRetry = async <T>(
+export const waitAndRetry = <T>(
   predicateFn: () => T,
   sleepTime = 20,
   maxRetryCount = 15,
