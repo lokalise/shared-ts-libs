@@ -9,7 +9,7 @@ import {
 } from '@lokalise/node-core'
 import type { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
-import { pino } from 'pino'
+import pino from 'pino'
 
 export type ErrorReporterOptions = {
   errorReporter: ErrorReporter

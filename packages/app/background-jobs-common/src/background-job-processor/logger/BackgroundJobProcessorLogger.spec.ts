@@ -39,7 +39,7 @@ describe('BackgroundJobProcessorLogger', () => {
 
     it.each(['test', { msg: 'test', prop: 'prop' }])('log', (testCase) => {
       backgroundJobProcessorLogger.silent(testCase)
-      expect(silentSpy).toHaveBeenCalledWith(testCase, undefined, [])
+      expect(silentSpy).toHaveBeenCalledWith(testCase, undefined)
       expect(jobLogSpy).not.toHaveBeenCalled()
     })
   })
@@ -54,7 +54,7 @@ describe('BackgroundJobProcessorLogger', () => {
 
     it.each(['test', { msg: 'test', prop: 'prop' }, { message: 'test' }])('log', (testCase) => {
       backgroundJobProcessorLogger.trace(testCase)
-      expect(traceSpy).toHaveBeenCalledWith(testCase, undefined, [])
+      expect(traceSpy).toHaveBeenCalledWith(testCase, undefined)
       expect(jobLogSpy).toHaveBeenCalledWith('[trace] test')
     })
 
@@ -76,7 +76,7 @@ describe('BackgroundJobProcessorLogger', () => {
 
     it.each(['test', { msg: 'test', prop: 'prop' }, { message: 'test' }])('log', (testCase) => {
       backgroundJobProcessorLogger.debug(testCase)
-      expect(debugSpy).toHaveBeenCalledWith(testCase, undefined, [])
+      expect(debugSpy).toHaveBeenCalledWith(testCase, undefined)
       expect(jobLogSpy).toHaveBeenCalledWith('[debug] test')
     })
 
@@ -98,7 +98,7 @@ describe('BackgroundJobProcessorLogger', () => {
 
     it.each(['test', { msg: 'test', prop: 'prop' }, { message: 'test' }])('log', (testCase) => {
       backgroundJobProcessorLogger.info(testCase)
-      expect(infoSpy).toHaveBeenCalledWith(testCase, undefined, [])
+      expect(infoSpy).toHaveBeenCalledWith(testCase, undefined)
       expect(jobLogSpy).toHaveBeenCalledWith('[info] test')
     })
 
@@ -128,7 +128,7 @@ describe('BackgroundJobProcessorLogger', () => {
 
     it.each(['test', { msg: 'test', prop: 'prop' }, { message: 'test' }])('log', (testCase) => {
       backgroundJobProcessorLogger.warn(testCase)
-      expect(warnSpy).toHaveBeenCalledWith(testCase, undefined, [])
+      expect(warnSpy).toHaveBeenCalledWith(testCase, undefined)
       expect(jobLogSpy).toHaveBeenCalledWith('[warn] test')
     })
 
@@ -150,7 +150,7 @@ describe('BackgroundJobProcessorLogger', () => {
 
     it.each(['test', { msg: 'test', prop: 'prop' }, { message: 'test' }])('log', (testCase) => {
       backgroundJobProcessorLogger.error(testCase)
-      expect(errorSpy).toHaveBeenCalledWith(testCase, undefined, [])
+      expect(errorSpy).toHaveBeenCalledWith(testCase, undefined)
       expect(jobLogSpy).toHaveBeenCalledWith('[error] test')
     })
 
@@ -172,7 +172,7 @@ describe('BackgroundJobProcessorLogger', () => {
 
     it.each(['test', { msg: 'test', prop: 'prop' }, { message: 'test' }])('log', (testCase) => {
       backgroundJobProcessorLogger.fatal(testCase)
-      expect(fatalSpy).toHaveBeenCalledWith(testCase, undefined, [])
+      expect(fatalSpy).toHaveBeenCalledWith(testCase, undefined)
       expect(jobLogSpy).toHaveBeenCalledWith('[fatal] test')
     })
   })

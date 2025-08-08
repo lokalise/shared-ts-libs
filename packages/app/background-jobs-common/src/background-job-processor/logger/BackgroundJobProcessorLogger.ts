@@ -22,6 +22,10 @@ export class BackgroundJobProcessorLogger implements CommonLogger {
     this.job = job
   }
 
+  get msgPrefix(): string | undefined {
+    return this.logger.msgPrefix
+  }
+
   get level(): pino.LevelWithSilentOrString {
     return this.logger.level
   }
@@ -30,38 +34,38 @@ export class BackgroundJobProcessorLogger implements CommonLogger {
     this.logger.level = level
   }
 
-  silent: pino.LogFn = (obj: unknown, msg?: string, ...args: unknown[]) => {
-    this.logger.silent(obj, msg, args)
-    // silent should not log on job
+  silent: pino.LogFn = (obj: unknown, msg?: string) => {
+    this.logger.silent(obj, msg)
   }
 
-  trace: pino.LogFn = (obj: unknown, msg?: string, ...args: unknown[]) => {
-    this.logger.trace(obj, msg, args)
+  trace: pino.LogFn = (obj: unknown, msg?: string) => {
+    this.logger.trace(obj, msg)
     this.jobLog('trace', obj, msg)
   }
 
-  debug: pino.LogFn = (obj: unknown, msg?: string, ...args: unknown[]) => {
-    this.logger.debug(obj, msg, args)
+  debug: pino.LogFn = (obj: unknown, msg?: string) => {
+    this.logger.debug(obj, msg)
+    this.logger.debug(obj, 'msg')
     this.jobLog('debug', obj, msg)
   }
 
-  info: pino.LogFn = (obj: unknown, msg?: string, ...args: unknown[]) => {
-    this.logger.info(obj, msg, args)
+  info: pino.LogFn = (obj: unknown, msg?: string) => {
+    this.logger.info(obj, msg)
     this.jobLog('info', obj, msg)
   }
 
-  warn: pino.LogFn = (obj: unknown, msg?: string, ...args: unknown[]) => {
-    this.logger.warn(obj, msg, args)
+  warn: pino.LogFn = (obj: unknown, msg?: string) => {
+    this.logger.warn(obj, msg)
     this.jobLog('warn', obj, msg)
   }
 
-  error: pino.LogFn = (obj: unknown, msg?: string, ...args: unknown[]) => {
-    this.logger.error(obj, msg, args)
+  error: pino.LogFn = (obj: unknown, msg?: string) => {
+    this.logger.error(obj, msg)
     this.jobLog('error', obj, msg)
   }
 
-  fatal: pino.LogFn = (obj: unknown, msg?: string, ...args: unknown[]) => {
-    this.logger.fatal(obj, msg, args)
+  fatal: pino.LogFn = (obj: unknown, msg?: string) => {
+    this.logger.fatal(obj, msg)
     this.jobLog('fatal', obj, msg)
   }
 
