@@ -6,11 +6,11 @@ export function isResponseStatusError(entity: unknown): entity is ResponseStatus
 }
 
 export class ResponseStatusError extends InternalError {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: ok
   public readonly response: RequestResult<any>
   public readonly isResponseStatusError = true
 
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: ok
   constructor(requestResult: RequestResult<any>, requestLabel = 'N/A') {
     super({
       message: `Response status code ${requestResult.statusCode}`,

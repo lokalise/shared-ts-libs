@@ -3,7 +3,7 @@ import type { Client } from 'undici'
 import type { Either, InternalRequestError, RequestResult, RetryConfig } from 'undici-retry'
 import type { ZodSchema } from 'zod/v4'
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+// biome-ignore lint/suspicious/noExplicitAny: ok
 export type RecordObject = Record<string, any>
 
 export type HttpRequestContext = {
