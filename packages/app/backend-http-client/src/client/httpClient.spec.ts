@@ -79,8 +79,7 @@ describe('httpClient', () => {
             "path": [
               "id"
             ],
-            "message": "Invalid input: expected string, received number",
-            "requestLabel": "dummy"
+            "message": "Invalid input: expected string, received number"
           }
         ]]
       `)
@@ -157,8 +156,7 @@ describe('httpClient', () => {
             "expected": "number",
             "code": "invalid_type",
             "path": [],
-            "message": "Invalid input: expected number, received string",
-            "requestLabel": "dummy"
+            "message": "Invalid input: expected number, received string"
           }
         ]]
       `)
@@ -509,8 +507,7 @@ describe('httpClient', () => {
             "path": [
               "id"
             ],
-            "message": "Invalid input: expected string, received number",
-            "requestLabel": "Test request"
+            "message": "Invalid input: expected string, received number"
           }
         ]]
       `)
@@ -620,8 +617,7 @@ describe('httpClient', () => {
             "expected": "number",
             "code": "invalid_type",
             "path": [],
-            "message": "Invalid input: expected number, received string",
-            "requestLabel": "dummy"
+            "message": "Invalid input: expected number, received string"
           }
         ]]
       `)
@@ -775,8 +771,7 @@ describe('httpClient', () => {
             "expected": "number",
             "code": "invalid_type",
             "path": [],
-            "message": "Invalid input: expected number, received string",
-            "requestLabel": "dummy"
+            "message": "Invalid input: expected number, received string"
           }
         ]]
       `)
@@ -856,8 +851,7 @@ describe('httpClient', () => {
             "path": [
               "id"
             ],
-            "message": "Invalid input: expected string, received number",
-            "requestLabel": "Test request"
+            "message": "Invalid input: expected string, received number"
           }
         ]]
       `)
@@ -996,8 +990,7 @@ describe('httpClient', () => {
             "expected": "number",
             "code": "invalid_type",
             "path": [],
-            "message": "Invalid input: expected number, received string",
-            "requestLabel": "dummy"
+            "message": "Invalid input: expected number, received string"
           }
         ]]
       `)
@@ -1042,8 +1035,7 @@ describe('httpClient', () => {
             "path": [
               "id"
             ],
-            "message": "Invalid input: expected string, received number",
-            "requestLabel": "Test request"
+            "message": "Invalid input: expected string, received number"
           }
         ]]
       `)
@@ -1160,8 +1152,7 @@ describe('httpClient', () => {
             "path": [
               "id"
             ],
-            "message": "Invalid input: expected string, received number",
-            "requestLabel": "Test request"
+            "message": "Invalid input: expected string, received number"
           }
         ]]
       `)
@@ -1254,8 +1245,7 @@ describe('httpClient', () => {
             "expected": "number",
             "code": "invalid_type",
             "path": [],
-            "message": "Invalid input: expected number, received string",
-            "requestLabel": "dummy"
+            "message": "Invalid input: expected number, received string"
           }
         ]]
       `)
@@ -1431,8 +1421,7 @@ describe('httpClient', () => {
             "path": [
               "id"
             ],
-            "message": "Invalid input: expected string, received number",
-            "requestLabel": "dummy"
+            "message": "Invalid input: expected string, received number"
           }
         ]]
       `)
@@ -1510,8 +1499,7 @@ describe('httpClient', () => {
             "expected": "number",
             "code": "invalid_type",
             "path": [],
-            "message": "Invalid input: expected number, received string",
-            "requestLabel": "dummy"
+            "message": "Invalid input: expected number, received string"
           }
         ]]
       `)
@@ -1766,8 +1754,7 @@ describe('httpClient', () => {
             "expected": "number",
             "code": "invalid_type",
             "path": [],
-            "message": "Invalid input: expected number, received string",
-            "requestLabel": "dummy"
+            "message": "Invalid input: expected number, received string"
           }
         ]]
       `)
@@ -1922,8 +1909,7 @@ describe('httpClient', () => {
             "expected": "number",
             "code": "invalid_type",
             "path": [],
-            "message": "Invalid input: expected number, received string",
-            "requestLabel": "dummy"
+            "message": "Invalid input: expected number, received string"
           }
         ]]
       `)
@@ -2089,8 +2075,7 @@ describe('httpClient', () => {
             "expected": "number",
             "code": "invalid_type",
             "path": [],
-            "message": "Invalid input: expected number, received string",
-            "requestLabel": "dummy"
+            "message": "Invalid input: expected number, received string"
           }
         ]]
       `)
