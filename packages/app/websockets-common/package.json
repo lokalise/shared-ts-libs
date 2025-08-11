@@ -31,12 +31,16 @@
         "socket.io": "^4.8.0",
         "zod": "^3.25.76"
     },
+    "peerDependencies": {
+        "zod": ">=3.25.76 <5.0.0"
+    },
     "devDependencies": {
         "@biomejs/biome": "^2.0.5",
         "@lokalise/biome-config": "^2.0.0",
         "@lokalise/tsconfig": "^1.3.0",
         "rimraf": "^6.0.1",
         "typescript": "~5.9.2",
-        "vitest": "^3.0.7"
+        "vitest": "^3.0.7",
+        "zod": "^4.0.17"
     }
 }
