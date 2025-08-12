@@ -60,7 +60,7 @@ export type MockEndpointParams<
   server: SetupServerApi
   contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>
   pathParams: InferSchemaOutput<PathParamsSchema>
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: we accept any input
   responseBody: any
   responseCode: number
   validateResponse: boolean
