@@ -73,14 +73,13 @@ export class BackgroundJobProcessorMonitor<
     if (hasRequestContext(job)) return job.requestContext
     // if not creating it and attaching to the job for next time
 
-    const jobId = resolveJobId(job)
     const requestContext: RequestContext = {
-      reqId: jobId,
+      reqId: job.data.metadata.correlationId,
       logger: new BackgroundJobProcessorLogger(
         this.logger.child({
-          'x-request-id': job.data.metadata.correlationId,
-          jobId,
+          jobId: resolveJobId(job),
           jobName: job.name,
+          'x-request-id': job.data.metadata.correlationId,
         }),
         job,
       ),
