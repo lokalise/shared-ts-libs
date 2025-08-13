@@ -4,7 +4,7 @@ Reusable testing utilities that are potentially relevant for both backend and fr
 
 ## msw integration with API contracts
 
-## Basic usage
+### Basic usage
 
 ```ts
 import { buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
@@ -150,6 +150,75 @@ describe('MswHelper', () => {
             expect(await response.json()).toMatchInlineSnapshot(`
               {
                 "wrongId": "1",
+              }
+            `)
+        })
+    })
+})
+```
+
+## mockttp integration with API contracts
+
+API contract-based mock servers for testing.
+Resolves path to be mocked based on the contract and passed path params, and automatically infers type for the response based on the contract schema
+
+### Basic usage
+
+```ts
+import { buildPayloadRoute } from '@lokalise/api-contracts'
+import { sendByPayloadRoute } from '@lokalise/frontend-http-client'
+import { getLocal } from 'mockttp'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import wretch, { type Wretch } from 'wretch'
+import { z } from 'zod'
+import { MockttpHelper } from '@lokalise/universal-testing-utils'
+
+const REQUEST_BODY_SCHEMA = z.object({
+  name: z.string(),
+})
+const RESPONSE_BODY_SCHEMA = z.object({
+  id: z.string(),
+})
+const PATH_PARAMS_SCHEMA = z.object({
+  userId: z.string(),
+})
+
+const contractWithPathParams = buildPayloadRoute({
+  successResponseBodySchema: RESPONSE_BODY_SCHEMA,
+  requestBodySchema: REQUEST_BODY_SCHEMA,
+  requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+  method: 'post',
+  description: 'some description',
+  responseSchemasByStatusCode: {
+    200: RESPONSE_BODY_SCHEMA,
+  },
+  pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+})
+
+describe('mockttpUtils', () => {
+    const mockServer = getLocal()
+    const mockttpHelper = new MockttpHelper(mockServer)
+    let wretchClient: Wretch
+
+    beforeEach(async () => {
+        await mockServer.start()
+        wretchClient = wretch(mockServer.url)
+    })
+    afterEach(() => mockServer.stop())
+
+    describe('mockValidPayloadResponse', () => {
+        it('mocks POST request without path params', async () => {
+            await mockttpHelper.mockValidResponse(postContract, {
+                responseBody: {id: '1'},
+            })
+
+            const response = await sendByPayloadRoute(wretchClient, postContract, {
+                body: {name: 'frf'},
+            })
+
+            expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "1",
               }
             `)
         })
