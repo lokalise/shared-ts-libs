@@ -15,7 +15,7 @@ export const REQUEST_ID_STORE_KEY = 'request_id'
 // Augment existing FastifyRequest interface with new fields
 declare module 'fastify' {
   interface FastifyRequest {
-    // biome-ignore lint/correctness/noUndeclaredVariables: <explanation>
+    // biome-ignore lint/correctness/noUndeclaredVariables: ok
     reqContext: RequestContext
   }
 }

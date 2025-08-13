@@ -7,7 +7,7 @@ import {
 import { unhandledExceptionPlugin } from './unhandledExceptionPlugin.ts'
 
 process.on('unhandledRejection', (error) => {
-  // biome-ignore lint/suspicious/noConsole: <explanation>
+  // biome-ignore lint/suspicious/noConsole: it's a test
   console.error('Unhandled Rejection:', error)
   // Optionally throw an error here to fail the test
 })

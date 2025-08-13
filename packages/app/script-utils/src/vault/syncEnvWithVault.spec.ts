@@ -2,7 +2,7 @@ import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'vitest'
 import { updateEnvFile } from './syncEnvWithVault.ts'
 
-// biome-ignore lint/style/useTemplate: <explanation>
+// biome-ignore lint/style/useTemplate: It's a test
 const DOT_ENV_PATH = __dirname + '/test_env'
 
 function readDotEnvFile() {
