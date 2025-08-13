@@ -142,9 +142,10 @@ describe('BackgroundJobProcessorMonitor', () => {
     })
 
     it('request context not in job so a new one is generated', () => {
-      const job = createFakeJob('test-correlation-id')
+      const correlationId = generateMonotonicUuid()
+      const job = createFakeJob(correlationId)
       const requestContext = monitor.getRequestContext(job)
-      expect(requestContext.reqId).toEqual(job.id)
+      expect(requestContext.reqId).toEqual(correlationId)
       expect(requestContext.logger).toBeDefined()
 
       // @ts-ignore
@@ -154,7 +155,7 @@ describe('BackgroundJobProcessorMonitor', () => {
       const loggerProps = pinoLogger?.[symbols.chindingsSym]
       expect(loggerProps).toContain(`"x-request-id":"${job.data.metadata.correlationId}"`)
       expect(loggerProps).toContain(`"jobId":"${job.id}"`)
-      expect(loggerProps).toContain('"jobName":"name_test-correlation-id_job"')
+      expect(loggerProps).toContain(`"jobName":"name_${correlationId}_job"`)
     })
 
     it('request context exists so it is not recreated', () => {
