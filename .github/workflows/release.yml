@@ -44,7 +44,7 @@ jobs:
       contains(needs.changed-files-job.outputs.all_changed_files, 'packages/dev/biome-config/')
     needs:
       - changed-files-job
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/dev/biome-config'
       package_name: '@lokalise/biome-config'
@@ -60,7 +60,8 @@ jobs:
       contains(needs.changed-files-job.outputs.all_changed_files, 'packages/dev/prettier-config/')
     needs:
       - changed-files-job
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - biome-config
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/dev/prettier-config'
       package_name: '@lokalise/prettier-config'
@@ -77,7 +78,7 @@ jobs:
     needs:
       - changed-files-job
       - prettier-config
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/dev/eslint-config'
       package_name: '@lokalise/eslint-config'
@@ -94,7 +95,8 @@ jobs:
     needs:
       - changed-files-job
       - biome-config
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - eslint-config
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/dev/package-vite-config'
       package_name: '@lokalise/package-vite-config'
@@ -111,7 +113,8 @@ jobs:
     needs:
       - changed-files-job
       - biome-config
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - package-vite-config
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/dev/tsconfig'
       package_name: '@lokalise/tsconfig'
@@ -119,6 +122,23 @@ jobs:
       npm_token: ${{ secrets.NPM_TOKEN }}
 
   ### APP packages
+  universal-ts-utils:
+    name: Release universal-ts-utils
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/universal-ts-utils/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: ./.github/workflows/release.package.yml
+    with:
+      working_directory: 'packages/app/universal-ts-utils'
+      package_name: '@lokalise/universal-ts-utils'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
 
   api-common:
     name: Release api-common
@@ -131,7 +151,8 @@ jobs:
       - changed-files-job
       - biome-config
       - tsconfig
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - universal-ts-utils
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/api-common'
       package_name: '@lokalise/api-common'
@@ -149,7 +170,8 @@ jobs:
       - changed-files-job
       - biome-config
       - tsconfig
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - api-common
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/api-contracts'
       package_name: '@lokalise/api-contracts'
@@ -168,7 +190,8 @@ jobs:
       - biome-config
       - tsconfig
       - universal-ts-utils
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - api-contracts
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/aws-config'
       package_name: '@lokalise/aws-config'
@@ -187,10 +210,30 @@ jobs:
       - biome-config
       - tsconfig
       - api-contracts
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - aws-config
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/backend-http-client'
       package_name: '@lokalise/backend-http-client'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
+
+  id-utils:
+    name: Release id-utils
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/id-utils/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+      - backend-http-client
+    uses: ./.github/workflows/release.package.yml
+    with:
+      working_directory: 'packages/app/id-utils'
+      package_name: '@lokalise/id-utils'
     secrets:
       npm_token: ${{ secrets.NPM_TOKEN }}
 
@@ -206,7 +249,7 @@ jobs:
       - biome-config
       - tsconfig
       - id-utils
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/background-jobs-common'
       package_name: '@lokalise/background-jobs-common'
@@ -224,7 +267,8 @@ jobs:
       - changed-files-job
       - biome-config
       - tsconfig
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - background-jobs-common
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/context-fastify-plugins'
       package_name: '@lokalise/context-fastify-plugins'
@@ -242,7 +286,8 @@ jobs:
       - changed-files-job
       - biome-config
       - tsconfig
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - context-fastify-plugins
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/error-utils'
       package_name: '@lokalise/error-utils'
@@ -261,7 +306,8 @@ jobs:
       - biome-config
       - tsconfig
       - api-contracts
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - error-utils
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/fastify-api-contracts'
       package_name: '@lokalise/fastify-api-contracts'
@@ -280,7 +326,8 @@ jobs:
       - biome-config
       - tsconfig
       - api-contracts
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - fastify-api-contracts
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/frontend-http-client'
       package_name: '@lokalise/frontend-http-client'
@@ -299,28 +346,11 @@ jobs:
       - biome-config
       - tsconfig
       - background-jobs-common
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - frontend-http-client
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/healthcheck-utils'
       package_name: '@lokalise/healthcheck-utils'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
-
-  id-utils:
-    name: Release id-utils
-    if: |
-      always() &&
-      !contains(needs.*.result, 'failure') &&
-      !contains(needs.*.result, 'cancelled') &&
-      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/id-utils/')
-    needs:
-      - changed-files-job
-      - biome-config
-      - tsconfig
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
-    with:
-      working_directory: 'packages/app/id-utils'
-      package_name: '@lokalise/id-utils'
     secrets:
       npm_token: ${{ secrets.NPM_TOKEN }}
 
@@ -335,7 +365,8 @@ jobs:
       - changed-files-job
       - biome-config
       - tsconfig
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - healthcheck-utils
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/metrics-utils'
       package_name: '@lokalise/metrics-utils'
@@ -353,7 +384,8 @@ jobs:
       - changed-files-job
       - biome-config
       - tsconfig
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - metrics-utils
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/non-translatable-markup'
       package_name: '@lokalise/non-translatable-markup'
@@ -372,7 +404,8 @@ jobs:
       - biome-config
       - tsconfig
       - backend-http-client
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - non-translatable-markup
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/prisma-utils'
       package_name: '@lokalise/prisma-utils'
@@ -390,7 +423,8 @@ jobs:
       - changed-files-job
       - biome-config
       - tsconfig
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - prisma-utils
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/script-utils'
       package_name: '@lokalise/script-utils'
@@ -408,7 +442,8 @@ jobs:
       - changed-files-job
       - biome-config
       - tsconfig
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - script-utils
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/supported-languages'
       package_name: '@lokalise/supported-languages'
@@ -428,28 +463,11 @@ jobs:
       - tsconfig
       - api-contracts
       - frontend-http-client
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - supported-languages
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/universal-testing-utils'
       package_name: '@lokalise/universal-testing-utils'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
-
-  universal-ts-utils:
-    name: Release universal-ts-utils
-    if: |
-      always() &&
-      !contains(needs.*.result, 'failure') &&
-      !contains(needs.*.result, 'cancelled') &&
-      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/universal-ts-utils/')
-    needs:
-      - changed-files-job
-      - biome-config
-      - tsconfig
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
-    with:
-      working_directory: 'packages/app/universal-ts-utils'
-      package_name: '@lokalise/universal-ts-utils'
     secrets:
       npm_token: ${{ secrets.NPM_TOKEN }}
 
@@ -464,7 +482,8 @@ jobs:
       - changed-files-job
       - biome-config
       - tsconfig
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - universal-testing-utils
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/websockets-common'
       package_name: '@lokalise/websockets-common'
@@ -482,7 +501,8 @@ jobs:
       - changed-files-job
       - biome-config
       - tsconfig
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - websockets-common
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/zod-extras'
       package_name: '@lokalise/zod-extras'
@@ -500,7 +520,8 @@ jobs:
       - changed-files-job
       - biome-config
       - tsconfig
-    uses: lokalise/shared-ts-libs/.github/workflows/release.package.yml@main
+      - zod-extras
+    uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/fastify-bullboard-plugin'
       package_name: '@lokalise/fastify-bullboard-plugin'
