@@ -1,7 +1,6 @@
 import { constants as httpConstants } from 'node:http2'
 import { createBullBoard } from '@bull-board/api'
-// @ts-expect-error
-import { BullMQAdapter } from '@bull-board/api/bullMQAdapter.js'
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
 import { FastifyAdapter } from '@bull-board/fastify'
 import fastifySchedule from '@fastify/schedule'
 import {
