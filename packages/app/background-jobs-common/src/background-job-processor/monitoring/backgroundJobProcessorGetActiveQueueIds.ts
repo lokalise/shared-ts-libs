@@ -6,12 +6,12 @@ import { daysToMilliseconds, isRedisClient } from '../utils.ts'
 export const backgroundJobProcessorGetActiveQueueIds = async (
   redis: RedisConfig | Redis,
 ): Promise<string[]> => {
-  const redisWithoutPrefix = isRedisClient(redis) ? redis : new Redis(redis)
+  const redisClient = isRedisClient(redis) ? redis : new Redis(redis)
 
-  await cleanOldQueueIds(redisWithoutPrefix)
+  await cleanOldQueueIds(redisClient)
 
-  const queueIds = await redisWithoutPrefix.zrange(QUEUE_IDS_KEY, 0, -1)
-  if (!isRedisClient(redis)) redisWithoutPrefix.disconnect()
+  const queueIds = await redisClient.zrange(QUEUE_IDS_KEY, 0, -1)
+  if (!isRedisClient(redis)) redisClient.disconnect()
 
   return queueIds.sort()
 }
