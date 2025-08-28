@@ -408,7 +408,7 @@ function handleRequestResultSuccess<T extends ZodSchema | undefined>(
   isEmptyResponseExpected: boolean,
 ) {
   if (result.statusCode === 204 && isEmptyResponseExpected) {
-    // @ts-ignore
+    // @ts-expect-error
     result.body = null
     return result
   }
@@ -422,10 +422,10 @@ function handleRequestResultSuccess<T extends ZodSchema | undefined>(
       result.body = validationSchema.parse(result.body)
     } catch (err: unknown) {
       for (const issue of (err as ZodError).issues) {
-        // @ts-ignore
+        // @ts-expect-error
         issue.requestLabel = requestLabel
       }
-      // @ts-ignore
+      // @ts-expect-error
       err.requestLabel = requestLabel
       throw err
     }

@@ -95,7 +95,7 @@ const executeTransactionTry = async <T, P extends PrismaClient>(
 ): Promise<PrismaTransactionReturnType<T>> => {
   try {
     return {
-      // @ts-ignore
+      // @ts-expect-error
       result: await prisma.$transaction<T>(arg, options),
     }
   } catch (error) {

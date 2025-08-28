@@ -17,9 +17,9 @@ import {
   sendPut,
   sendPutBinary,
 } from './httpClient.ts'
-// @ts-ignore
+// @ts-expect-error
 import mockProduct1 from './mock-data/mockProduct1.json'
-// @ts-ignore
+// @ts-expect-error
 import mockProductsLimit3 from './mock-data/mockProductsLimit3.json'
 import { type HttpRequestContext, isInternalRequestError } from './types.ts'
 

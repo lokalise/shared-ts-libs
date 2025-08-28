@@ -614,7 +614,7 @@ describe('QueueManager', () => {
         redisConfig,
       })
       await queueManager.start()
-      // @ts-ignore
+      // @ts-expect-error
       vi.spyOn(queueManager.getQueue('queue1'), 'close').mockRejectedValue(new Error('close error'))
       await expect(queueManager.dispose()).resolves.not.toThrowError()
     })
