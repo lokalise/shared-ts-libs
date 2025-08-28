@@ -31,7 +31,7 @@ export const areDeepEqual = (a: unknown, b: unknown): boolean => {
   if (typeof a === 'object' && typeof b === 'object') {
     return Object.keys(a).every((k) => {
       if (!Object.hasOwn(b, k)) return false
-      // @ts-ignore
+      // @ts-expect-error
       return areDeepEqual(a[k], b[k])
     })
   }

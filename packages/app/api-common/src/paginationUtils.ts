@@ -8,10 +8,9 @@ const pick = <T, K extends string | number | symbol>(
   const result = {} as T
   let idx = 0
   while (idx < propNames.length) {
-    // @ts-ignore
+    // @ts-expect-error
     if (propNames[idx] in source) {
-      // @ts-ignore
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      // @ts-expect-error
       result[propNames[idx]] = source[propNames[idx]]
     }
     idx += 1
@@ -131,7 +130,7 @@ export function createPaginatedResponse<T extends Record<string, unknown>, K ext
 ): PaginatedResponse<T> {
   return {
     data: page.slice(0, pageLimit),
-    // @ts-ignore -> on next major version, we can simplify getMetaForNextPage signature and remove ts-ignore
+    // @ts-expect-error -> on next major version, we can simplify getMetaForNextPage signature and remove ts-ignore
     meta: getMetaForNextPage(page, cursorKeys, pageLimit),
   }
 }

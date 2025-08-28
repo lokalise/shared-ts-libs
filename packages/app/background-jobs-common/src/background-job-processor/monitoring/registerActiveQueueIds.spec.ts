@@ -38,7 +38,7 @@ describe('registerActiveQueueIds', () => {
 
     // Comparing timestamps in seconds
     const todaySeconds = Math.floor(today.getTime() / 1000)
-    const scoreSeconds = Math.floor(new Date(Number.parseInt(score!)).getTime() / 1000)
+    const scoreSeconds = Math.floor(new Date(Number.parseInt(score!, 10)).getTime() / 1000)
     // max difference 1 to handle edge case of 0.1 - 1.0
     expect(scoreSeconds - todaySeconds).lessThanOrEqual(1)
   })
@@ -56,8 +56,8 @@ describe('registerActiveQueueIds', () => {
     const [_, scoreUpdated] = await redis.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
     expect(queueId).toStrictEqual('queue1')
 
-    const initialScoreDate = new Date(Number.parseInt(score!))
-    const updatedScoreDate = new Date(Number.parseInt(scoreUpdated!))
+    const initialScoreDate = new Date(Number.parseInt(score!, 10))
+    const updatedScoreDate = new Date(Number.parseInt(scoreUpdated!, 10))
 
     expect(initialScoreDate).not.toEqual(updatedScoreDate)
     expect(initialScoreDate.getTime()).toBeLessThan(updatedScoreDate.getTime())

@@ -85,7 +85,7 @@ export class BackgroundJobProcessorMonitor<
       ),
     }
 
-    // @ts-ignore
+    // @ts-expect-error
     job.requestContext = requestContext
 
     return requestContext

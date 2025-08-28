@@ -29,7 +29,7 @@ export class TestQueueSizeJobBarrierBackgroundJobProcessor<
       barrier,
     })
     this.throttledQueueJobProcessor = new TestForeverRescheduledBackgroundJobProcessor(
-      // @ts-ignore
+      // @ts-expect-error
       dependencies,
       redisConfig,
     )

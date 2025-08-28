@@ -72,7 +72,7 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
     const promise = new Promise<Job<JobData, JobReturn>>((_resolve) => {
       resolve = _resolve
     })
-    // @ts-ignore
+    // @ts-expect-error
     this.promises.push({ selector, awaitedState: state, resolve, promise })
 
     return promise
@@ -106,6 +106,7 @@ export class BackgroundJobProcessorSpy<JobData extends object, JobReturn>
         promise.resolve(clonedJob)
         return index
       }
+      return null
     })
     for (const index of removeNullish(indexes)) {
       this.promises.splice(index, 1)

@@ -16,7 +16,7 @@ import type { BaseJobPayload, RequestContext, SafeJob } from '../types.ts'
 import { BackgroundJobProcessorMonitor } from './BackgroundJobProcessorMonitor.ts'
 import { backgroundJobProcessorGetActiveQueueIds } from './backgroundJobProcessorGetActiveQueueIds.ts'
 
-// @ts-ignore
+// @ts-expect-error
 import symbols = pino.symbols
 
 describe('BackgroundJobProcessorMonitor', () => {
@@ -148,11 +148,9 @@ describe('BackgroundJobProcessorMonitor', () => {
       expect(requestContext.reqId).toEqual(correlationId)
       expect(requestContext.logger).toBeDefined()
 
-      // @ts-ignore
-
+      // @ts-expect-error
       const pinoLogger = requestContext.logger?.logger
-      // @ts-ignore
-      const loggerProps = pinoLogger?.[symbols.chindingsSym]
+      const loggerProps = pinoLogger[symbols.chindingsSym]
       expect(loggerProps).toContain(`"x-request-id":"${job.data.metadata.correlationId}"`)
       expect(loggerProps).toContain(`"jobId":"${job.id}"`)
       expect(loggerProps).toContain(`"jobName":"name_${correlationId}_job"`)
@@ -160,7 +158,7 @@ describe('BackgroundJobProcessorMonitor', () => {
 
     it('request context exists so it is not recreated', () => {
       const job = createFakeJob('test-correlation-id')
-      // @ts-ignore
+      // @ts-expect-error
       job.requestContext = {
         reqId: 'test-req-id',
         logger: { hello: 'world' } as any,
