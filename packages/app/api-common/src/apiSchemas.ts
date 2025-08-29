@@ -14,6 +14,11 @@ export const OPTIONAL_PAGINATION_CONFIG_SCHEMA = MANDATORY_PAGINATION_CONFIG_SCH
 })
 export type OptionalPaginationParams = z.infer<typeof OPTIONAL_PAGINATION_CONFIG_SCHEMA>
 
+export const AFTER_PAGINATION_CONFIG_SCHEMA = MANDATORY_PAGINATION_CONFIG_SCHEMA.omit({
+  before: true,
+})
+export type AfterPaginationParams = z.infer<typeof AFTER_PAGINATION_CONFIG_SCHEMA>
+
 const decodeCursorHook = (value: string | undefined, ctx: RefinementCtx) => {
   if (!value) return undefined
 
