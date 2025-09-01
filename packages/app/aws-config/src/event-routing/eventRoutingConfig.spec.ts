@@ -1,5 +1,6 @@
 import { expectTypeOf } from 'vitest'
 import type {
+  CommandConfig,
   EventRoutingConfig,
   ExternalQueueConfig,
   InternalQueueConfig,
@@ -50,6 +51,44 @@ describe('eventRoutingConfig', () => {
         expectTypeOf(queueConfig).toEqualTypeOf<ExternalQueueConfig>()
         expectTypeOf(queueConfig).not.toEqualTypeOf<InternalQueueConfig<'owner', 'service'>>()
       })
+    })
+  })
+
+  describe('CommandConfig', () => {
+    it('should use default generic types', () => {
+      const config = {
+        myCommand: {
+          name: 'my-queue',
+          owner: 'my-team',
+          service: 'my-service',
+        },
+        anotherCommand: {
+          name: 'external-queue',
+          isExternal: true,
+        },
+      } satisfies CommandConfig
+
+      expectTypeOf(config).toExtend<CommandConfig>()
+      expectTypeOf(config.myCommand).toExtend<InternalQueueConfig>()
+      expectTypeOf(config.anotherCommand).toExtend<ExternalQueueConfig>()
+    })
+
+    it('should respect generic types', () => {
+      const config = {
+        myCommand: {
+          name: 'my-queue',
+          owner: 'owner',
+          service: 'service',
+        },
+        anotherCommand: {
+          name: 'external-queue',
+          isExternal: true,
+        },
+      } satisfies CommandConfig<'owner', 'service'>
+
+      expectTypeOf(config).toExtend<CommandConfig<'owner', 'service'>>()
+      expectTypeOf(config.myCommand).toExtend<InternalQueueConfig<'owner', 'service'>>()
+      expectTypeOf(config.anotherCommand).toExtend<ExternalQueueConfig>()
     })
   })
 
@@ -134,7 +173,7 @@ describe('eventRoutingConfig', () => {
         },
       } satisfies EventRoutingConfig
 
-      expectTypeOf(config).toExtend<EventRoutingConfig<string, string, string>>()
+      expectTypeOf(config).toExtend<EventRoutingConfig>()
     })
 
     it('should respect generic types', () => {

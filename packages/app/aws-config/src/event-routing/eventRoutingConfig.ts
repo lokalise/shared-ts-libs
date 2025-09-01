@@ -51,8 +51,24 @@ export type QueueConfig<Owner extends string = string, Service extends string = 
   | InternalQueueConfig<Owner, Service>
 
 /**
+ * Configuration for routing command messages to SQS queues.
+ *
+ * This type maps command names (as string keys) to their corresponding queue configuration.
+ * Each entry can be either an internal queue or an external queue.
+
+ * Use this type to define which queues should receive specific command messages.
+ *
+ * @template Owner - The type representing the owner or team name (defaults to string).
+ * @template Service - The type representing the service name (defaults to string).
+ */
+export type CommandConfig<
+    Owner extends string = string,
+    Service extends string = string
+> = Record<string, QueueConfig<Owner, Service>>
+
+/**
  * Configuration for an SNS topic and its associated queues.
- * Supports both internal (managed within your application) and external (managed outside your control) topics.
+ * Supports both internal and external topics.
  *
  * There are two modes for this config:
  * 1. Internal Topic (default): Includes full config and the set of external apps with subscribe permissions,
@@ -99,6 +115,9 @@ export type TopicConfig<
  *
  * Each topic can be either internal (managed by your application) or external (managed outside your application).
  * Topics contain queues that subscribe to them for message processing.
+ *
+ * Use this type to define which topics and queues participate in your event-driven architecture,
+ * specifying how events are published and which queues process them.
  *
  * @template Owner - The type representing the owner or team name.
  * @template Service - The type representing the service name.
