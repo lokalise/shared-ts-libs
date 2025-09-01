@@ -8,9 +8,33 @@ type CommonConfig<Owner extends string, Service extends string> = Pick<
   AwsTagsParams<string, Owner, string, Service>,
   'owner' | 'service'
 >
+/**
+ * Configuration for an external SQS queue.
+ * External queues are managed outside your application and your app should only locate them.
+ */
+export type ExternalQueueConfig = {
+  /** The name of the SQS queue */
+  name: string
+  /** Marks this as an external topic. */
+  isExternal: true
+}
 
 /**
- * Configuration for an SQS queue.
+ * Configuration for an internal SQS queue.
+ * Internal queues are managed and created by your application.
+ *
+ * @template Owner - The type representing the owner or team name.
+ * @template Service - The type representing the service name.
+ */
+export type InternalQueueConfig<Owner extends string, Service extends string> = {
+  /** The name of the SQS queue */
+  name: string
+  /** Should not be present in internal queues */
+  isExternal?: never
+} & CommonConfig<Owner, Service>
+
+/**
+ * Configuration for an SQS queue. This is a union type that can be either an internal or external queue configuration.
  * Supports both internal (managed within your application)
  * and external (managed outside your control) queues.
  *
@@ -22,37 +46,23 @@ type CommonConfig<Owner extends string, Service extends string> = Pick<
  * @template Owner - The type representing the owner or team name (defaults to string).
  * @template Service - The type representing the service name (defaults to string).
  */
-export type QueueConfig<Owner extends string = string, Service extends string = string> = {
-  /** The name of the SQS queue */
-  name: string
-} & (
-  | (CommonConfig<Owner, Service> & {
-      /** Should not be present in internal queues */
-      isExternal?: never
-    })
-  | /** External queue*/ {
-      /** Marks this as an external queue. */
-      isExternal: true
-      /** Should not be present in external queues */
-      owner?: never
-      /** Should not be present in external queues */
-      service?: never
-    }
-)
+export type QueueConfig<Owner extends string = string, Service extends string = string> =
+  | ExternalQueueConfig
+  | InternalQueueConfig<Owner, Service>
 
 /**
  * Configuration for an SNS topic and its associated queues.
  * Supports both internal (managed within your application) and external (managed outside your control) topics.
  *
  * There are two modes for this config:
- * 1. Internal Topic (default): Includes full config and the set of external apps with subscribed permissions,
+ * 1. Internal Topic (default): Includes full config and the set of external apps with subscribe permissions,
  *  these topics are supposed to be managed and created by your application.
  * 2. External Topic: Minimal config indicating only the topic name and that it is external,
  *  these topics are supposed to be created and managed by another application, our app should only locate them.
  *
  * @template Owner - The type representing the owner/team name.
  * @template Service - The type representing the service name.
- * @template ExternalApp - The type representing external apps with subscribed permissions.
+ * @template ExternalApp - The type representing external apps with subscribe permissions.
  */
 export type TopicConfig<
   Owner extends string = string,
@@ -68,17 +78,17 @@ export type TopicConfig<
   (CommonConfig<Owner, Service> & {
       /** Should not be present in internal topics */
       isExternal?: never
-      /** List of external applications allowed to subscribe to this topic. Leave undefined if only current apps is allowed */
+      /** List of external applications allowed to subscribe to this topic. Leave undefined if only current apps are allowed */
       externalAppsWithSubscribePermissions?: ExternalApp[]
     })
-  | /** External queue*/ {
-      /** Marks this as an external queue. */
+  | /** External topic*/ {
+      /** Marks this as an external topic. */
       isExternal: true
-      /** Should not be present in external queues */
+      /** Should not be present in external topics */
       owner?: never
-      /** Should not be present in external queues */
+      /** Should not be present in external topics */
       service?: never
-      /** Should not be present in external queues */
+      /** Should not be present in external topics */
       externalAppsWithSubscribePermissions?: never
     }
 )
