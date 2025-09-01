@@ -93,6 +93,17 @@ export type TopicConfig<
     }
 )
 
+/**
+ * Configuration for event routing across SNS topics and SQS queues.
+ * This is the top-level configuration that maps topic names to their configurations.
+ *
+ * Each topic can be either internal (managed by your application) or external (managed outside your application).
+ * Topics contain queues that subscribe to them for message processing.
+ *
+ * @template Owner - The type representing the owner or team name.
+ * @template Service - The type representing the service name.
+ * @template ExternalApp - The type representing external apps with subscribed permissions.
+ */
 export type EventRoutingConfig<
   Owner extends string = string,
   Service extends string = string,
