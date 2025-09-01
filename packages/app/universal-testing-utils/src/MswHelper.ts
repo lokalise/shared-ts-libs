@@ -56,9 +56,10 @@ function joinURL(base: string, path: string): string {
 export type MockEndpointParams<
   ResponseBodySchema extends z.Schema<JsonBodyType>,
   PathParamsSchema extends z.Schema | undefined,
+  RequestQuerySchema extends z.Schema | undefined,
 > = {
   server: SetupServerApi
-  contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>
+  contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>
   pathParams: InferSchemaOutput<PathParamsSchema>
   // biome-ignore lint/suspicious/noExplicitAny: we accept any input
   responseBody: any
@@ -76,8 +77,9 @@ export class MswHelper {
   private resolveParams<
     ResponseBodySchema extends z.Schema<JsonBodyType>,
     PathParamsSchema extends z.Schema | undefined,
+    RequestQuerySchema extends z.Schema | undefined,
   >(
-    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>,
+    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>,
     pathParams: InferSchemaOutput<PathParamsSchema>,
   ) {
     const path = contract.requestPathParamsSchema
@@ -94,7 +96,8 @@ export class MswHelper {
   private registerEndpointMock<
     ResponseBodySchema extends z.Schema<JsonBodyType>,
     PathParamsSchema extends z.Schema | undefined,
-  >(params: MockEndpointParams<ResponseBodySchema, PathParamsSchema>) {
+    RequestQuerySchema extends z.Schema | undefined = undefined,
+  >(params: MockEndpointParams<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>) {
     const { method, resolvedPath } = this.resolveParams(params.contract, params.pathParams)
     params.server.use(
       http[method](resolvedPath, () => {
@@ -111,8 +114,9 @@ export class MswHelper {
   mockValidResponse<
     ResponseBodySchema extends z.Schema<JsonBodyType>,
     PathParamsSchema extends z.Schema | undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>,
+    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
       ? MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
@@ -132,8 +136,9 @@ export class MswHelper {
   mockValidResponseWithAnyPath<
     ResponseBodySchema extends z.Schema<JsonBodyType>,
     PathParamsSchema extends z.Schema | undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>,
+    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>,
     server: SetupServerApi,
     params: MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>,
   ): void {
