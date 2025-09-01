@@ -72,7 +72,7 @@ export type TopicConfig<
   /** The name of the SNS topic */
   topicName: string
   /** A mapping of queue names to their configuration for queues subscribed to this topic */
-  queues: Record<string, QueueConfig<Owner, Service>>
+  queues: Record<string, InternalQueueConfig<Owner, Service>>
 } & (
   | /** Internal topic */
   (CommonConfig<Owner, Service> & {
