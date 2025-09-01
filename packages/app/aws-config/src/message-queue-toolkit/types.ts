@@ -1,5 +1,9 @@
 import type { CommonLogger } from '@lokalise/node-core'
-import type { CommonQueueOptions, ConsumerBaseMessageType } from '@message-queue-toolkit/core'
+import type {
+  CommonQueueOptions,
+  ConsumerBaseMessageType,
+  QueuePublisherOptions,
+} from '@message-queue-toolkit/core'
 import type { SNSPublisherOptions, SNSSQSConsumerOptions } from '@message-queue-toolkit/sns'
 import type { SQSConsumerOptions } from '@message-queue-toolkit/sqs'
 import type { AwsConfig } from '../awsConfig.ts'
@@ -31,6 +35,30 @@ type SqsBaseParams = BaseParams & {
   /** SQS queue name */
   queueName: string
 }
+
+type SqsPublisherOptions<MessagePayloadSchemas extends ConsumerBaseMessageType> =
+  QueuePublisherOptions<
+    // biome-ignore lint/suspicious/noExplicitAny: We don't care
+    any,
+    // biome-ignore lint/suspicious/noExplicitAny: We don't care
+    any,
+    MessagePayloadSchemas
+  >
+
+export type ResolveSqsPublisherBuildOptionsParams<
+  MessagePayloadType extends ConsumerBaseMessageType,
+> = SqsBaseParams & Pick<SqsPublisherOptions<MessagePayloadType>, 'messageSchemas'>
+
+export type ResolvedSqsPublisherBuildOptions<MessagePayloadType extends ConsumerBaseMessageType> =
+  Pick<
+    SqsPublisherOptions<MessagePayloadType>,
+    | 'locatorConfig'
+    | 'creationConfig'
+    | 'logMessages'
+    | 'messageTypeField'
+    | 'handlerSpy'
+    | 'messageSchemas'
+  >
 
 type SqsConsumerOptions<MessagePayloadType extends ConsumerBaseMessageType> = SQSConsumerOptions<
   MessagePayloadType,
@@ -92,9 +120,6 @@ export type ResolveSnsConsumerBuildOptionsParams<
     /** The number of messages to request from SQS when polling */
     batchSize?: number
   }
-export type ResolveSnsPublisherBuildOptionsParams<
-  MessagePayloadType extends ConsumerBaseMessageType,
-> = SNSBaseParams & Pick<SNSPublisherOptions<MessagePayloadType>, 'messageSchemas'>
 
 export type ResolvedSnsConsumerBuildOptions<MessagePayloadType extends ConsumerBaseMessageType> =
   Pick<
@@ -112,6 +137,10 @@ export type ResolvedSnsConsumerBuildOptions<MessagePayloadType extends ConsumerB
     | 'messageTypeField'
     | 'handlerSpy'
   >
+
+export type ResolveSnsPublisherBuildOptionsParams<
+  MessagePayloadType extends ConsumerBaseMessageType,
+> = SNSBaseParams & Pick<SNSPublisherOptions<MessagePayloadType>, 'messageSchemas'>
 
 export type ResolvedSnsPublisherBuildOptions<MessagePayloadType extends ConsumerBaseMessageType> =
   Pick<

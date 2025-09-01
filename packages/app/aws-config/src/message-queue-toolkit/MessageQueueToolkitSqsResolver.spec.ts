@@ -1,4 +1,3 @@
-import { CONSUMER_BASE_MESSAGE_SCHEMA } from '@message-queue-toolkit/core'
 import { beforeAll, expect } from 'vitest'
 import { FakeLogger } from '../../tests/FakeLogger.ts'
 import type { AwsConfig } from '../awsConfig.ts'
@@ -123,6 +122,82 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
     })
   })
 
+  describe('resolvePublisherBuildOptions', () => {
+    it('should throw an error if queue name is not found', () => {
+      expect(() =>
+        resolver.resolvePublisherBuildOptions({
+          queueName: 'invalid-queue',
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(`[Error: Queue invalid-queue not found]`)
+    })
+
+    describe('internal queues', () => {
+      const queueName = config.queue1.queueName
+
+      it('should throw an error', () => {
+        expect(() =>
+          resolver.resolvePublisherBuildOptions({
+            queueName,
+            awsConfig: buildAwsConfig(),
+            messageSchemas: [],
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Error: SQS Publisher can only be created for external queues]`,
+        )
+      })
+    })
+
+    describe('external queues', () => {
+      const queueName = config.queue2.queueName
+
+      it('should work using all props', () => {
+        const result = resolver.resolvePublisherBuildOptions({
+          queueName,
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
+          updateAttributesIfExists: true,
+          forceTagUpdate: true,
+          logMessages: true,
+          isTest: true,
+          messageSchemas: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "handlerSpy": true,
+            "locatorConfig": {
+              "queueName": "prefix_test-queue2",
+            },
+            "logMessages": true,
+            "messageSchemas": [],
+            "messageTypeField": "type",
+          }
+        `)
+      })
+
+      it('should work using only required props', () => {
+        const result = resolver.resolvePublisherBuildOptions({
+          queueName,
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "handlerSpy": undefined,
+            "locatorConfig": {
+              "queueName": "test-queue2",
+            },
+            "logMessages": undefined,
+            "messageSchemas": [],
+            "messageTypeField": "type",
+          }
+        `)
+      })
+    })
+  })
+
   describe('resolveConsumerBuildOptions', () => {
     it('should throw an error if queue name is not found', () => {
       expect(() =>
@@ -135,7 +210,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       ).toThrowErrorMatchingInlineSnapshot(`[Error: Queue invalid not found]`)
     })
 
-    describe('internal topics', () => {
+    describe('internal queue', () => {
       const queueName = config.queue1.queueName
 
       it('should work using all properties', () => {
@@ -261,7 +336,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       })
     })
 
-    describe('external topics', () => {
+    describe('external queue', () => {
       const queueName = config.queue2.queueName
 
       it('should throw an error', () => {
@@ -272,7 +347,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             awsConfig: buildAwsConfig(),
             handlers: [],
           }),
-        ).toThrowErrorMatchingInlineSnapshot(`[Error: SQS Consumer can only be created for non-external queues]`)
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Error: SQS Consumer can only be created for non-external queues]`,
+        )
       })
     })
   })

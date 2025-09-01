@@ -7,19 +7,23 @@ import { getSqsTags } from '../tags/index.ts'
 import { createRequestContextPreHandler } from './prehandlers/createRequestContextPreHandler.ts'
 import type {
   MessageQueueToolkitOptionsResolverConfig,
+  ResolvedSnsPublisherBuildOptions,
   ResolvedSqsConsumerBuildOptions,
+  ResolvedSqsPublisherBuildOptions,
+  ResolveSnsPublisherBuildOptionsParams,
   ResolveSqsConsumerBuildOptionsParams,
+  ResolveSqsPublisherBuildOptionsParams,
 } from './types.ts'
-import { QUEUE_NAME_REGEX } from './utils.ts'
+import { buildQueueUrlsWithSubscribePermissionsPrefix, QUEUE_NAME_REGEX } from './utils.ts'
 
 type ResolvedQueueResult =
   | {
       locatorConfig: SQSQueueLocatorType
-      createCommand?: never
+      creationConfig?: never
     }
   | {
       locatorConfig?: never
-      createCommand: SQSCreationConfig
+      creationConfig: SQSCreationConfig
     }
 
 const MESSAGE_TYPE_FIELD = 'type'
@@ -58,12 +62,30 @@ export class MessageQueueToolkitSqsOptionsResolver {
     }
   }
 
+  public resolvePublisherBuildOptions<MessagePayloadType extends ConsumerBaseMessageType>(
+    params: ResolveSqsPublisherBuildOptionsParams<MessagePayloadType>,
+  ): ResolvedSqsPublisherBuildOptions<MessagePayloadType> {
+    const resolvedQueue = this.resolveQueue(params)
+
+    if (!resolvedQueue.locatorConfig) {
+      throw new Error(`SQS Publisher can only be created for external queues`)
+    }
+
+    return {
+      locatorConfig: resolvedQueue.locatorConfig,
+      handlerSpy: params.isTest,
+      messageTypeField: MESSAGE_TYPE_FIELD,
+      logMessages: params.logMessages,
+      messageSchemas: params.messageSchemas,
+    }
+  }
+
   resolveConsumerBuildOptions<MessagePayloadType extends ConsumerBaseMessageType>(
     params: ResolveSqsConsumerBuildOptionsParams<MessagePayloadType>,
   ): ResolvedSqsConsumerBuildOptions<MessagePayloadType> {
     const resolvedQueue = this.resolveQueue(params)
 
-    if (!resolvedQueue.createCommand) {
+    if (!resolvedQueue.creationConfig) {
       throw new Error(`SQS Consumer can only be created for non-external queues`)
     }
 
@@ -74,7 +96,7 @@ export class MessageQueueToolkitSqsOptionsResolver {
     }
 
     return {
-      creationConfig: resolvedQueue.createCommand,
+      creationConfig: resolvedQueue.creationConfig,
       messageTypeField: MESSAGE_TYPE_FIELD,
       deletionConfig: { deleteIfExists: params.isTest },
       handlers: handlerConfigs,
@@ -97,8 +119,8 @@ export class MessageQueueToolkitSqsOptionsResolver {
         : {
             creationConfig: {
               queue: {
-                QueueName: `${resolvedQueue.createCommand.queue.QueueName}${DLQ_SUFFIX}`,
-                tags: resolvedQueue.createCommand.queue.tags,
+                QueueName: `${resolvedQueue.creationConfig.queue.QueueName}${DLQ_SUFFIX}`,
+                tags: resolvedQueue.creationConfig.queue.tags,
                 Attributes: {
                   KmsMasterKeyId: params.awsConfig.kmsKeyId,
                   MessageRetentionPeriod: DLQ_MESSAGE_RETENTION_PERIOD.toString(),
@@ -114,7 +136,9 @@ export class MessageQueueToolkitSqsOptionsResolver {
   }
 
   private resolveQueue<MessagePayloadType extends ConsumerBaseMessageType>(
-    params: ResolveSqsConsumerBuildOptionsParams<MessagePayloadType>,
+    params:
+      | ResolveSqsConsumerBuildOptionsParams<MessagePayloadType>
+      | ResolveSqsPublisherBuildOptionsParams<MessagePayloadType>,
   ): ResolvedQueueResult {
     const { queueName, awsConfig } = params
 
@@ -128,7 +152,7 @@ export class MessageQueueToolkitSqsOptionsResolver {
     }
 
     return {
-      createCommand: {
+      creationConfig: {
         queue: {
           QueueName: applyAwsResourcePrefix(queueConfig.queueName, awsConfig),
           tags: getSqsTags({ ...queueConfig, ...this.config }),
