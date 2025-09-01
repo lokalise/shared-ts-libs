@@ -1,10 +1,10 @@
 import type { CommonLogger } from '@lokalise/node-core'
-import type { CommonQueueOptions, ConsumerBaseMessageType } from '@message-queue-toolkit/core'
+import type {CommonQueueOptions, ConsumerBaseMessageType, QueuePublisherOptions} from '@message-queue-toolkit/core'
 import type { SNSPublisherOptions, SNSSQSConsumerOptions } from '@message-queue-toolkit/sns'
 import type { AwsConfig } from '../awsConfig.ts'
 import type { AwsTagsParams } from '../tags/index.ts'
 
-export type MessageQueueToolkitSnsOptionsResolverConfig = Pick<
+export type MessageQueueToolkitOptionsResolverConfig = Pick<
   AwsTagsParams,
   'appEnv' | 'system' | 'project'
 > & {

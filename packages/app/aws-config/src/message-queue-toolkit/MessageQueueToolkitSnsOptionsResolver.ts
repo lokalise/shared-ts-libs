@@ -8,7 +8,7 @@ import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRout
 import { getSnsTags, getSqsTags } from '../tags/index.ts'
 import { createRequestContextPreHandler } from './prehandlers/createRequestContextPreHandler.ts'
 import type {
-  MessageQueueToolkitSnsOptionsResolverConfig,
+  MessageQueueToolkitOptionsResolverConfig,
   ResolveConsumerBuildOptionsParams,
   ResolvedSnsConsumerBuildOptions,
   ResolvedSnsPublisherBuildOptions,
@@ -45,11 +45,11 @@ const MAX_TOPIC_NAME_LENGTH = 246 // AWS limit is 256, but we need to leave spac
 
 export class MessageQueueToolkitSnsOptionsResolver {
   private readonly routingConfig: EventRoutingConfig
-  private readonly config: MessageQueueToolkitSnsOptionsResolverConfig
+  private readonly config: MessageQueueToolkitOptionsResolverConfig
 
   constructor(
     routingConfig: EventRoutingConfig,
-    config: MessageQueueToolkitSnsOptionsResolverConfig,
+    config: MessageQueueToolkitOptionsResolverConfig,
   ) {
     this.routingConfig = groupByUnique(
       Object.values(routingConfig).map((topic) => ({
