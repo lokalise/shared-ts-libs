@@ -1,25 +1,55 @@
 import { expectTypeOf } from 'vitest'
-import type { EventRoutingConfig, QueueConfig, TopicConfig } from './eventRoutingConfig.ts'
+import type {
+  EventRoutingConfig,
+  ExternalQueueConfig,
+  InternalQueueConfig,
+  QueueConfig,
+  TopicConfig,
+} from './eventRoutingConfig.ts'
 
 describe('eventRoutingConfig', () => {
   describe('QueueConfig', () => {
-    it('should use default generic types', () => {
-      const queueConfig: QueueConfig = {
-        name: 'my-queue',
-        owner: 'my-team',
-        service: 'my-service',
-      }
-      expectTypeOf(queueConfig).toEqualTypeOf<QueueConfig<string, string>>()
+    describe('InternalQueueConfig', () => {
+      it('should use default generic types', () => {
+        const queueConfig: QueueConfig = {
+          name: 'my-queue',
+          owner: 'my-team',
+          service: 'my-service',
+        }
+        expectTypeOf(queueConfig).toEqualTypeOf<InternalQueueConfig>()
+        expectTypeOf(queueConfig).not.toEqualTypeOf<ExternalQueueConfig>()
+      })
+
+      it('should use generic types', () => {
+        const queueConfig: QueueConfig<'owner', 'service'> = {
+          name: 'my-queue',
+          owner: 'owner',
+          service: 'service',
+        }
+        expectTypeOf(queueConfig).toEqualTypeOf<InternalQueueConfig<'owner', 'service'>>()
+        expectTypeOf(queueConfig).not.toEqualTypeOf<ExternalQueueConfig>()
+        expectTypeOf(queueConfig).not.toEqualTypeOf<InternalQueueConfig>()
+      })
     })
 
-    it('should use generic types', () => {
-      const queueConfig: QueueConfig<'owner', 'service'> = {
-        name: 'my-queue',
-        owner: 'owner',
-        service: 'service',
-      }
-      expectTypeOf(queueConfig).toEqualTypeOf<QueueConfig<'owner', 'service'>>()
-      expectTypeOf(queueConfig).not.toEqualTypeOf<QueueConfig>()
+    describe('ExternalQueueConfig', () => {
+      it('should use default generic types', () => {
+        const queueConfig: QueueConfig = {
+          name: 'my-queue',
+          isExternal: true,
+        }
+        expectTypeOf(queueConfig).toEqualTypeOf<ExternalQueueConfig>()
+        expectTypeOf(queueConfig).not.toEqualTypeOf<InternalQueueConfig>()
+      })
+
+      it('should use generic types', () => {
+        const queueConfig: QueueConfig<'owner', 'service'> = {
+          name: 'my-queue',
+          isExternal: true,
+        }
+        expectTypeOf(queueConfig).toEqualTypeOf<ExternalQueueConfig>()
+        expectTypeOf(queueConfig).not.toEqualTypeOf<InternalQueueConfig<'owner', 'service'>>()
+      })
     })
   })
 
