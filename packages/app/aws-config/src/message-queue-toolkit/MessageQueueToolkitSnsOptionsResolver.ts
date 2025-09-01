@@ -51,7 +51,7 @@ export class MessageQueueToolkitSnsOptionsResolver {
     this.routingConfig = groupByUnique(
       Object.values(routingConfig).map((topic) => ({
         ...topic,
-        queues: groupByUnique(Object.values(topic.queues), 'name'),
+        queues: groupByUnique(Object.values(topic.queues), 'queueName'),
       })),
       'topicName',
     )
@@ -220,7 +220,7 @@ export class MessageQueueToolkitSnsOptionsResolver {
     if (!queueConfig) throw new Error(`Queue ${queueName} not found`)
 
     return {
-      QueueName: applyAwsResourcePrefix(queueConfig.name, awsConfig),
+      QueueName: applyAwsResourcePrefix(queueConfig.queueName, awsConfig),
       tags: getSqsTags({ ...queueConfig, ...this.config }),
       Attributes: {
         KmsMasterKeyId: awsConfig.kmsKeyId,
