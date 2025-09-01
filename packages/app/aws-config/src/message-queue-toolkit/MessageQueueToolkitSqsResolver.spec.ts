@@ -160,14 +160,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
               "terminateVisibilityTimeout": true,
             },
             "creationConfig": {
-              "allowedSourceOwner": "test allowedSourceOwner",
               "forceTagUpdate": true,
               "queue": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "prefix_test-first_entity-first_service",
+                "QueueName": "prefix_test-queue1",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
@@ -177,42 +176,6 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                   "service": "sqs",
                 },
               },
-              "queueUrlsWithSubscribePermissionsPrefix": [
-                "arn:aws:sqs:*:*:prefix_test-*",
-              ],
-              "topic": {
-                "Attributes": {
-                  "KmsMasterKeyId": "test kmsKeyId",
-                },
-                "Name": "prefix_test-first_entity",
-                "Tags": [
-                  {
-                    "Key": "env",
-                    "Value": "dev",
-                  },
-                  {
-                    "Key": "project",
-                    "Value": "my-project",
-                  },
-                  {
-                    "Key": "service",
-                    "Value": "sns",
-                  },
-                  {
-                    "Key": "lok-owner",
-                    "Value": "team 1",
-                  },
-                  {
-                    "Key": "lok-cost-system",
-                    "Value": "my-system",
-                  },
-                  {
-                    "Key": "lok-cost-service",
-                    "Value": "service 1",
-                  },
-                ],
-              },
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-*",
               "updateAttributesIfExists": true,
             },
             "deadLetterQueue": undefined,
@@ -221,17 +184,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
             "handlerSpy": true,
             "handlers": [],
-            "locatorConfig": undefined,
             "logMessages": true,
             "maxRetryDuration": 172800,
             "messageTypeField": "type",
-            "subscriptionConfig": {
-              "Attributes": {
-                "FilterPolicy": "{"type":[]}",
-                "FilterPolicyScope": "MessageBody",
-              },
-              "updateAttributesIfExists": true,
-            },
           }
         `)
       })
@@ -252,14 +207,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
               "heartbeatInterval": 20,
             },
             "creationConfig": {
-              "allowedSourceOwner": "test allowedSourceOwner",
               "forceTagUpdate": undefined,
               "queue": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "test-first_entity-first_service",
+                "QueueName": "test-queue1",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
@@ -269,42 +223,6 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                   "service": "sqs",
                 },
               },
-              "queueUrlsWithSubscribePermissionsPrefix": [
-                "arn:aws:sqs:*:*:test-*",
-              ],
-              "topic": {
-                "Attributes": {
-                  "KmsMasterKeyId": "test kmsKeyId",
-                },
-                "Name": "test-first_entity",
-                "Tags": [
-                  {
-                    "Key": "env",
-                    "Value": "dev",
-                  },
-                  {
-                    "Key": "project",
-                    "Value": "my-project",
-                  },
-                  {
-                    "Key": "service",
-                    "Value": "sns",
-                  },
-                  {
-                    "Key": "lok-owner",
-                    "Value": "team 1",
-                  },
-                  {
-                    "Key": "lok-cost-system",
-                    "Value": "my-system",
-                  },
-                  {
-                    "Key": "lok-cost-service",
-                    "Value": "service 1",
-                  },
-                ],
-              },
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:test-*",
               "updateAttributesIfExists": true,
             },
             "deadLetterQueue": {
@@ -314,7 +232,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                     "KmsMasterKeyId": "test kmsKeyId",
                     "MessageRetentionPeriod": "604800",
                   },
-                  "QueueName": "test-first_entity-first_service-dlq",
+                  "QueueName": "test-queue1-dlq",
                   "tags": {
                     "env": "dev",
                     "lok-cost-service": "service 1",
@@ -335,17 +253,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
             "handlerSpy": undefined,
             "handlers": [],
-            "locatorConfig": undefined,
             "logMessages": undefined,
             "maxRetryDuration": 172800,
             "messageTypeField": "type",
-            "subscriptionConfig": {
-              "Attributes": {
-                "FilterPolicy": "{"type":[]}",
-                "FilterPolicyScope": "MessageBody",
-              },
-              "updateAttributesIfExists": true,
-            },
           }
         `)
       })
