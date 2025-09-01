@@ -10,32 +10,49 @@ type CommonConfig<Owner extends string, Service extends string> = Pick<
 >
 
 /**
- * Configuration for a single SQS queue, including its name and shared metadata.
+ * Configuration for an SQS queue.
+ * Supports both internal (managed within your application)
+ * and external (managed outside your control) queues.
+ *
+ * There are two modes for this config:
+ * 1. Internal queue (default): These queues are supposed to be managed and created by your application.
+ * 2. External queue: Minimal config indicating only the queue name and that it is external,
+ *  these queues are supposed to be created and managed by another application, your app should only locate them.
  *
  * @template Owner - The type representing the owner or team name (defaults to string).
  * @template Service - The type representing the service name (defaults to string).
  */
-export type QueueConfig<
-  Owner extends string = string,
-  Service extends string = string,
-> = CommonConfig<Owner, Service> & {
+export type QueueConfig<Owner extends string = string, Service extends string = string> = {
   /** The name of the SQS queue */
   name: string
-}
+} & (
+  | (CommonConfig<Owner, Service> & {
+      /** Should not be present in internal queues */
+      isExternal?: never
+    })
+  | /** External queue*/ {
+      /** Marks this as an external queue. */
+      isExternal: true
+      /** Should not be present in external queues */
+      owner?: never
+      /** Should not be present in external queues */
+      service?: never
+    }
+)
 
 /**
  * Configuration for an SNS topic and its associated queues.
  * Supports both internal (managed within your application) and external (managed outside your control) topics.
  *
  * There are two modes for this config:
- * 1. Internal Topic (default): Includes full config and the set of external apps with subscribe permissions,
+ * 1. Internal Topic (default): Includes full config and the set of external apps with subscribed permissions,
  *  these topics are supposed to be managed and created by your application.
  * 2. External Topic: Minimal config indicating only the topic name and that it is external,
- *  these topics are supposed to be created and managed by other application, our app should only locate them.
+ *  these topics are supposed to be created and managed by another application, our app should only locate them.
  *
  * @template Owner - The type representing the owner/team name.
  * @template Service - The type representing the service name.
- * @template ExternalApp - The type representing external apps with subscribe permissions.
+ * @template ExternalApp - The type representing external apps with subscribed permissions.
  */
 export type TopicConfig<
   Owner extends string = string,
@@ -54,14 +71,14 @@ export type TopicConfig<
       /** List of external applications allowed to subscribe to this topic. Leave undefined if only current apps is allowed */
       externalAppsWithSubscribePermissions?: ExternalApp[]
     })
-  | /** External topic*/ {
-      /** Marks this as an external topic. */
+  | /** External queue*/ {
+      /** Marks this as an external queue. */
       isExternal: true
-      /** Should not be present in external topics */
+      /** Should not be present in external queues */
       owner?: never
-      /** Should not be present in external topics */
+      /** Should not be present in external queues */
       service?: never
-      /** Should not be present in external topics */
+      /** Should not be present in external queues */
       externalAppsWithSubscribePermissions?: never
     }
 )
