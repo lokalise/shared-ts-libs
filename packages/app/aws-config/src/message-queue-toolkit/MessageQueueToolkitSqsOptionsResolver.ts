@@ -7,14 +7,12 @@ import { getSqsTags } from '../tags/index.ts'
 import { createRequestContextPreHandler } from './prehandlers/createRequestContextPreHandler.ts'
 import type {
   MessageQueueToolkitOptionsResolverConfig,
-  ResolvedSnsPublisherBuildOptions,
   ResolvedSqsConsumerBuildOptions,
   ResolvedSqsPublisherBuildOptions,
-  ResolveSnsPublisherBuildOptionsParams,
   ResolveSqsConsumerBuildOptionsParams,
   ResolveSqsPublisherBuildOptionsParams,
 } from './types.ts'
-import { buildQueueUrlsWithSubscribePermissionsPrefix, QUEUE_NAME_REGEX } from './utils.ts'
+import { QUEUE_NAME_REGEX } from './utils.ts'
 
 type ResolvedQueueResult =
   | {
@@ -58,7 +56,9 @@ export class MessageQueueToolkitSqsOptionsResolver {
           `Queue name too long: ${queueName}. Max allowed length is ${MAX_QUEUE_NAME_LENGTH}, received ${queueName.length}`,
         )
       }
-      if (!QUEUE_NAME_REGEX.test(queueName)) throw new Error(`Invalid queue name: ${queueName}`)
+      if (!QUEUE_NAME_REGEX.test(queueName)) {
+        throw new Error(`Invalid queue name: ${queueName}`)
+      }
     }
   }
 

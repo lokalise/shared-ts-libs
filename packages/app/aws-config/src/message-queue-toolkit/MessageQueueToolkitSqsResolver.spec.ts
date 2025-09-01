@@ -6,12 +6,12 @@ import { MessageQueueToolkitSqsOptionsResolver } from './MessageQueueToolkitSqsO
 
 const config = {
   queue1: {
-    queueName: 'test-queue1',
+    queueName: 'test-mqt-queue_first',
     owner: 'team 1',
     service: 'service 1',
   },
   queue2: {
-    queueName: 'test-queue2',
+    queueName: 'test-mqt-queue_second',
     isExternal: true,
   },
 } satisfies CommandConfig
@@ -167,7 +167,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
           {
             "handlerSpy": true,
             "locatorConfig": {
-              "queueName": "prefix_test-queue2",
+              "queueName": "prefix_test-mqt-queue_second",
             },
             "logMessages": true,
             "messageSchemas": [],
@@ -187,7 +187,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
           {
             "handlerSpy": undefined,
             "locatorConfig": {
-              "queueName": "test-queue2",
+              "queueName": "test-mqt-queue_second",
             },
             "logMessages": undefined,
             "messageSchemas": [],
@@ -241,7 +241,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "prefix_test-queue1",
+                "QueueName": "prefix_test-mqt-queue_first",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
@@ -288,7 +288,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "test-queue1",
+                "QueueName": "test-mqt-queue_first",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
@@ -307,7 +307,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                     "KmsMasterKeyId": "test kmsKeyId",
                     "MessageRetentionPeriod": "604800",
                   },
-                  "QueueName": "test-queue1-dlq",
+                  "QueueName": "test-mqt-queue_first-dlq",
                   "tags": {
                     "env": "dev",
                     "lok-cost-service": "service 1",
