@@ -9,10 +9,10 @@ import { getSnsTags, getSqsTags } from '../tags/index.ts'
 import { createRequestContextPreHandler } from './prehandlers/createRequestContextPreHandler.ts'
 import type {
   MessageQueueToolkitOptionsResolverConfig,
-  ResolveConsumerBuildOptionsParams,
   ResolvedSnsConsumerBuildOptions,
   ResolvedSnsPublisherBuildOptions,
-  ResolvePublisherBuildOptionsParams,
+  ResolveSnsConsumerBuildOptionsParams,
+  ResolveSnsPublisherBuildOptionsParams,
 } from './types.ts'
 import {
   buildQueueUrlsWithSubscribePermissionsPrefix,
@@ -47,10 +47,7 @@ export class MessageQueueToolkitSnsOptionsResolver {
   private readonly routingConfig: EventRoutingConfig
   private readonly config: MessageQueueToolkitOptionsResolverConfig
 
-  constructor(
-    routingConfig: EventRoutingConfig,
-    config: MessageQueueToolkitOptionsResolverConfig,
-  ) {
+  constructor(routingConfig: EventRoutingConfig, config: MessageQueueToolkitOptionsResolverConfig) {
     this.routingConfig = groupByUnique(
       Object.values(routingConfig).map((topic) => ({
         ...topic,
@@ -90,7 +87,7 @@ export class MessageQueueToolkitSnsOptionsResolver {
   }
 
   public resolvePublisherBuildOptions<MessagePayloadType extends ConsumerBaseMessageType>(
-    params: ResolvePublisherBuildOptionsParams<MessagePayloadType>,
+    params: ResolveSnsPublisherBuildOptionsParams<MessagePayloadType>,
   ): ResolvedSnsPublisherBuildOptions<MessagePayloadType> {
     const topicConfig = this.getTopicConfig(params.topicName)
     const resolvedTopic = this.resolveTopic(this.getTopicConfig(params.topicName), params)
@@ -117,7 +114,7 @@ export class MessageQueueToolkitSnsOptionsResolver {
   }
 
   resolveConsumerBuildOptions<MessagePayloadType extends ConsumerBaseMessageType>(
-    params: ResolveConsumerBuildOptionsParams<MessagePayloadType>,
+    params: ResolveSnsConsumerBuildOptionsParams<MessagePayloadType>,
   ): ResolvedSnsConsumerBuildOptions<MessagePayloadType> {
     const topicConfig = this.getTopicConfig(params.topicName)
     const resolvedTopic = this.resolveTopic(topicConfig, params)
@@ -194,7 +191,7 @@ export class MessageQueueToolkitSnsOptionsResolver {
 
   private resolveTopic<MessagePayloadType extends ConsumerBaseMessageType>(
     topicConfig: TopicConfig,
-    params: MayOmit<ResolvePublisherBuildOptionsParams<MessagePayloadType>, 'messageSchemas'>,
+    params: MayOmit<ResolveSnsPublisherBuildOptionsParams<MessagePayloadType>, 'messageSchemas'>,
   ): ResolveTopicResult {
     if (topicConfig.isExternal) {
       return {
@@ -215,7 +212,7 @@ export class MessageQueueToolkitSnsOptionsResolver {
 
   private resolveQueue<MessagePayloadType extends ConsumerBaseMessageType>(
     topicConfig: TopicConfig,
-    params: ResolveConsumerBuildOptionsParams<MessagePayloadType>,
+    params: ResolveSnsConsumerBuildOptionsParams<MessagePayloadType>,
   ): CreateQueueRequest {
     const { queueName, awsConfig } = params
 

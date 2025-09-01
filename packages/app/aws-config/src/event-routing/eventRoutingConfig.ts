@@ -61,10 +61,10 @@ export type QueueConfig<Owner extends string = string, Service extends string = 
  * @template Owner - The type representing the owner or team name (defaults to string).
  * @template Service - The type representing the service name (defaults to string).
  */
-export type CommandConfig<
-    Owner extends string = string,
-    Service extends string = string
-> = Record<string, QueueConfig<Owner, Service>>
+export type CommandConfig<Owner extends string = string, Service extends string = string> = Record<
+  string,
+  QueueConfig<Owner, Service>
+>
 
 /**
  * Configuration for an SNS topic and its associated queues.
