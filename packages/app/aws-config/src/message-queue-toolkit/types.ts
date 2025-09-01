@@ -1,6 +1,7 @@
 import type { CommonLogger } from '@lokalise/node-core'
 import type { CommonQueueOptions, ConsumerBaseMessageType } from '@message-queue-toolkit/core'
 import type { SNSPublisherOptions, SNSSQSConsumerOptions } from '@message-queue-toolkit/sns'
+import type { SQSConsumerOptions } from '@message-queue-toolkit/sqs'
 import type { AwsConfig } from '../awsConfig.ts'
 import type { AwsTagsParams } from '../tags/index.ts'
 
@@ -22,6 +23,47 @@ type BaseParams = {
   /** In case of existing resources with different tags, update them*/
   forceTagUpdate?: boolean
 } & Pick<CommonQueueOptions, 'logMessages'>
+
+// ----------------------------------------
+//                  SQS
+// ----------------------------------------
+type SqsBaseParams = BaseParams & {
+  /** SQS queue name */
+  queueName: string
+}
+
+type SqsConsumerOptions<MessagePayloadType extends ConsumerBaseMessageType> = SQSConsumerOptions<
+  MessagePayloadType,
+  // biome-ignore lint/suspicious/noExplicitAny: We don't care
+  any,
+  // biome-ignore lint/suspicious/noExplicitAny: We don't care
+  any
+>
+
+export type ResolveSqsConsumerBuildOptionsParams<
+  MessagePayloadType extends ConsumerBaseMessageType,
+> = SqsBaseParams &
+  Pick<SqsConsumerOptions<MessagePayloadType>, 'handlers' | 'concurrentConsumersAmount'> & {
+    /** logger */
+    logger: CommonLogger
+    /** The number of messages to request from SQS when polling */
+    batchSize?: number
+  }
+
+export type ResolvedSqsConsumerBuildOptions<MessagePayloadType extends ConsumerBaseMessageType> =
+  Pick<
+    SqsConsumerOptions<MessagePayloadType>,
+    | 'creationConfig'
+    | 'deletionConfig'
+    | 'handlers'
+    | 'consumerOverrides'
+    | 'deadLetterQueue'
+    | 'maxRetryDuration'
+    | 'concurrentConsumersAmount'
+    | 'logMessages'
+    | 'messageTypeField'
+    | 'handlerSpy'
+  >
 
 // ----------------------------------------
 //                  SNS
