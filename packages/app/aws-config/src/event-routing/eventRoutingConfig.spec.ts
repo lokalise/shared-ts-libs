@@ -13,7 +13,7 @@ describe('eventRoutingConfig', () => {
     describe('InternalQueueConfig', () => {
       it('should use default generic types', () => {
         const queueConfig: QueueConfig = {
-          name: 'my-queue',
+          queueName: 'my-queue',
           owner: 'my-team',
           service: 'my-service',
         }
@@ -23,7 +23,7 @@ describe('eventRoutingConfig', () => {
 
       it('should use generic types', () => {
         const queueConfig: QueueConfig<'owner', 'service'> = {
-          name: 'my-queue',
+          queueName: 'my-queue',
           owner: 'owner',
           service: 'service',
         }
@@ -36,7 +36,7 @@ describe('eventRoutingConfig', () => {
     describe('ExternalQueueConfig', () => {
       it('should use default generic types', () => {
         const queueConfig: QueueConfig = {
-          name: 'my-queue',
+          queueName: 'my-queue',
           isExternal: true,
         }
         expectTypeOf(queueConfig).toEqualTypeOf<ExternalQueueConfig>()
@@ -45,7 +45,7 @@ describe('eventRoutingConfig', () => {
 
       it('should use generic types', () => {
         const queueConfig: QueueConfig<'owner', 'service'> = {
-          name: 'my-queue',
+          queueName: 'my-queue',
           isExternal: true,
         }
         expectTypeOf(queueConfig).toEqualTypeOf<ExternalQueueConfig>()
@@ -58,12 +58,12 @@ describe('eventRoutingConfig', () => {
     it('should use default generic types', () => {
       const config = {
         myCommand: {
-          name: 'my-queue',
+          queueName: 'my-queue',
           owner: 'my-team',
           service: 'my-service',
         },
         anotherCommand: {
-          name: 'external-queue',
+          queueName: 'external-queue',
           isExternal: true,
         },
       } satisfies CommandConfig
@@ -76,12 +76,12 @@ describe('eventRoutingConfig', () => {
     it('should respect generic types', () => {
       const config = {
         myCommand: {
-          name: 'my-queue',
+          queueName: 'my-queue',
           owner: 'owner',
           service: 'service',
         },
         anotherCommand: {
-          name: 'external-queue',
+          queueName: 'external-queue',
           isExternal: true,
         },
       } satisfies CommandConfig<'owner', 'service'>
@@ -100,7 +100,7 @@ describe('eventRoutingConfig', () => {
         service: 'my-service',
         queues: {
           myQueue: {
-            name: 'my-queue',
+            queueName: 'my-queue',
             owner: 'my-team',
             service: 'my-service',
           },
@@ -118,7 +118,7 @@ describe('eventRoutingConfig', () => {
         externalAppsWithSubscribePermissions: ['another-app'],
         queues: {
           myQueue: {
-            name: 'my-queue',
+            queueName: 'my-queue',
             owner: 'owner',
             service: 'service',
           },
@@ -165,7 +165,7 @@ describe('eventRoutingConfig', () => {
           service: 'my-service',
           queues: {
             myQueue: {
-              name: 'my-queue',
+              queueName: 'my-queue',
               owner: 'my-team',
               service: 'my-service',
             },
@@ -185,7 +185,7 @@ describe('eventRoutingConfig', () => {
           externalAppsWithSubscribePermissions: ['another-app'],
           queues: {
             myQueue: {
-              name: 'my-queue',
+              queueName: 'my-queue',
               owner: 'owner',
               service: 'service',
             },

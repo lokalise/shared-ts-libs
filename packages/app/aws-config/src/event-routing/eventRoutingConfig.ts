@@ -14,7 +14,7 @@ type CommonConfig<Owner extends string, Service extends string> = Pick<
  */
 export type ExternalQueueConfig = {
   /** The name of the SQS queue */
-  name: string
+  queueName: string
   /** Marks this as an external topic. */
   isExternal: true
 }
@@ -28,7 +28,7 @@ export type ExternalQueueConfig = {
  */
 export type InternalQueueConfig<Owner extends string = string, Service extends string = string> = {
   /** The name of the SQS queue */
-  name: string
+  queueName: string
   /** Should not be present in internal queues */
   isExternal?: never
 } & CommonConfig<Owner, Service>
