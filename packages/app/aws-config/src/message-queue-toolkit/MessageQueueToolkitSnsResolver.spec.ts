@@ -12,12 +12,12 @@ const EventRouting = {
     service: 'service 1',
     queues: {
       topic1Queue1: {
-        name: 'test-first_entity-first_service',
+        queueName: 'test-first_entity-first_service',
         owner: 'team 1',
         service: 'service 1',
       },
       topic1Queue2: {
-        name: 'test-first_entity-second_service',
+        queueName: 'test-first_entity-second_service',
         owner: 'team 2',
         service: 'service 2',
       },
@@ -28,7 +28,7 @@ const EventRouting = {
     isExternal: true,
     queues: {
       topic2Queue1: {
-        name: 'test-second_entity-service',
+        queueName: 'test-second_entity-service',
         owner: 'team 1',
         service: 'service 2',
       },
@@ -106,7 +106,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           isExternal: true,
           queues: {
             invalid: {
-              name: 'invalid',
+              queueName: 'invalid',
               owner: 'test',
               service: 'test',
             },
@@ -141,7 +141,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           isExternal: true,
           queues: {
             invalid: {
-              name: longQueueName,
+              queueName: longQueueName,
               owner: 'test',
               service: 'test',
             },
@@ -178,7 +178,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           isExternal: true,
           queues: {
             invalid: {
-              name: 'test-queue_name',
+              queueName: 'test-queue_name',
               owner: 'test',
               service: 'test',
             },
@@ -424,7 +424,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
         resolver.resolveConsumerBuildOptions({
           logger,
           topicName: EventRouting.topic1.topicName,
-          queueName: EventRouting.topic2.queues.topic2Queue1.name,
+          queueName: EventRouting.topic2.queues.topic2Queue1.queueName,
           awsConfig: buildAwsConfig(),
           handlers: [],
         }),
@@ -435,7 +435,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       const options = resolver.resolveConsumerBuildOptions({
         logger,
         topicName: EventRouting.topic1.topicName,
-        queueName: EventRouting.topic1.queues.topic1Queue1.name,
+        queueName: EventRouting.topic1.queues.topic1Queue1.queueName,
         awsConfig: buildAwsConfig(),
         handlers: [
           {
@@ -462,7 +462,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
 
     describe('internal topics', () => {
       const topicName = EventRouting.topic1.topicName
-      const queueName = EventRouting.topic1.queues.topic1Queue1.name
+      const queueName = EventRouting.topic1.queues.topic1Queue1.queueName
 
       it('should work using all properties', () => {
         const result = resolver.resolveConsumerBuildOptions({
@@ -681,7 +681,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
 
     describe('external topics', () => {
       const topicName = EventRouting.topic2.topicName
-      const queueName = EventRouting.topic2.queues.topic2Queue1.name
+      const queueName = EventRouting.topic2.queues.topic2Queue1.queueName
 
       it('should work using all props', () => {
         const result = resolver.resolveConsumerBuildOptions({
