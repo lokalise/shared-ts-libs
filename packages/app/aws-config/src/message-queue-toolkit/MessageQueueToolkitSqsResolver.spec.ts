@@ -122,11 +122,10 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
     })
   })
 
-  describe('resolvePublisherBuildOptions', () => {
+  describe('resolvePublisherOptions', () => {
     it('should throw an error if queue name is not found', () => {
       expect(() =>
-        resolver.resolvePublisherBuildOptions({
-          queueName: 'invalid-queue',
+        resolver.resolvePublisherOptions('invalid-queue', {
           awsConfig: buildAwsConfig(),
           messageSchemas: [],
         }),
@@ -137,8 +136,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       const queueName = config.queue1.queueName
 
       it('should work using all props', () => {
-        const result = resolver.resolvePublisherBuildOptions({
-          queueName,
+        const result = resolver.resolvePublisherOptions(queueName, {
           awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
@@ -178,8 +176,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       })
 
       it('should work using only required props', () => {
-        const result = resolver.resolvePublisherBuildOptions({
-          queueName,
+        const result = resolver.resolvePublisherOptions(queueName, {
           awsConfig: buildAwsConfig(),
           messageSchemas: [],
         })
@@ -219,8 +216,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       const queueName = config.queue2.queueName
 
       it('should work using all props', () => {
-        const result = resolver.resolvePublisherBuildOptions({
-          queueName,
+        const result = resolver.resolvePublisherOptions(queueName, {
           awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
@@ -231,6 +227,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
+            "creationConfig": undefined,
             "handlerSpy": true,
             "locatorConfig": {
               "queueName": "prefix_test-mqt-queue_second",
@@ -243,14 +240,14 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       })
 
       it('should work using only required props', () => {
-        const result = resolver.resolvePublisherBuildOptions({
-          queueName,
+        const result = resolver.resolvePublisherOptions(queueName, {
           awsConfig: buildAwsConfig(),
           messageSchemas: [],
         })
 
         expect(result).toMatchInlineSnapshot(`
           {
+            "creationConfig": undefined,
             "handlerSpy": undefined,
             "locatorConfig": {
               "queueName": "test-mqt-queue_second",
@@ -264,12 +261,11 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
     })
   })
 
-  describe('resolveConsumerBuildOptions', () => {
+  describe('resolveConsumerOptions', () => {
     it('should throw an error if queue name is not found', () => {
       expect(() =>
-        resolver.resolveConsumerBuildOptions({
+        resolver.resolveConsumerOptions('invalid', {
           logger,
-          queueName: 'invalid',
           awsConfig: buildAwsConfig(),
           handlers: [],
         }),
@@ -280,8 +276,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       const queueName = config.queue1.queueName
 
       it('should work using all properties', () => {
-        const result = resolver.resolveConsumerBuildOptions({
-          queueName,
+        const result = resolver.resolveConsumerOptions(queueName, {
           logger,
           handlers: [],
           awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
@@ -325,6 +320,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
             "handlerSpy": true,
             "handlers": [],
+            "locatorConfig": undefined,
             "logMessages": true,
             "maxRetryDuration": 172800,
             "messageTypeField": "type",
@@ -333,9 +329,8 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       })
 
       it('should work using only required props', () => {
-        const result = resolver.resolveConsumerBuildOptions({
+        const result = resolver.resolveConsumerOptions(queueName, {
           logger,
-          queueName,
           awsConfig: buildAwsConfig(),
           handlers: [],
         })
@@ -394,6 +389,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
             "handlerSpy": undefined,
             "handlers": [],
+            "locatorConfig": undefined,
             "logMessages": undefined,
             "maxRetryDuration": 172800,
             "messageTypeField": "type",
@@ -406,8 +402,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       const queueName = config.queue2.queueName
 
       it('should work using all properties', () => {
-        const result = resolver.resolveConsumerBuildOptions({
-          queueName,
+        const result = resolver.resolveConsumerOptions(queueName, {
           logger,
           handlers: [],
           awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
@@ -444,9 +439,8 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       })
 
       it('should work using only required props', () => {
-        const result = resolver.resolveConsumerBuildOptions({
+        const result = resolver.resolveConsumerOptions(queueName, {
           logger,
-          queueName,
           awsConfig: buildAwsConfig(),
           handlers: [],
         })

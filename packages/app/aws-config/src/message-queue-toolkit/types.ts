@@ -1,13 +1,14 @@
 import type { CommonLogger } from '@lokalise/node-core'
 import type {
+  CommonCreationConfigType,
   CommonQueueOptions,
   ConsumerBaseMessageType,
   QueuePublisherOptions,
 } from '@message-queue-toolkit/core'
-import type { SNSPublisherOptions, SNSSQSConsumerOptions } from '@message-queue-toolkit/sns'
-import type { SQSConsumerOptions } from '@message-queue-toolkit/sqs'
+import type { SQSConsumerOptions, SQSCreationConfig } from '@message-queue-toolkit/sqs'
 import type { AwsConfig } from '../awsConfig.ts'
 import type { AwsTagsParams } from '../tags/index.ts'
+import type { MqtResolverBaseParams } from './MessageQueueToolkitOptionsResolver.js'
 
 export type MessageQueueToolkitOptionsResolverConfig = Pick<
   AwsTagsParams,
@@ -28,128 +29,64 @@ type BaseParams = {
   forceTagUpdate?: boolean
 } & Pick<CommonQueueOptions, 'logMessages'>
 
-// ----------------------------------------
-//                  SQS
-// ----------------------------------------
-type SqsBaseParams = BaseParams & {
-  /** SQS queue name */
-  queueName: string
-}
+export type PublisherBuildOptionsParams<MessagePayload extends ConsumerBaseMessageType> =
+  BaseParams & Pick<QueuePublisherOptions<object, object, MessagePayload>, 'messageSchemas'>
 
-type SqsPublisherOptions<MessagePayloadSchemas extends ConsumerBaseMessageType> =
-  QueuePublisherOptions<
-    // biome-ignore lint/suspicious/noExplicitAny: We don't care
-    any,
-    // biome-ignore lint/suspicious/noExplicitAny: We don't care
-    any,
-    MessagePayloadSchemas
-  >
+export type PublisherBuildOptions<
+  CreationConfig extends CommonCreationConfigType,
+  LocatorConfig extends object,
+  MessagePayload extends ConsumerBaseMessageType,
+> = Pick<
+  QueuePublisherOptions<CreationConfig, LocatorConfig, MessagePayload>,
+  | 'locatorConfig'
+  | 'creationConfig'
+  | 'logMessages'
+  | 'messageTypeField'
+  | 'handlerSpy'
+  | 'messageSchemas'
+>
 
-export type ResolveSqsPublisherBuildOptionsParams<
-  MessagePayloadType extends ConsumerBaseMessageType,
-> = SqsBaseParams & Pick<SqsPublisherOptions<MessagePayloadType>, 'messageSchemas'>
-
-export type ResolvedSqsPublisherBuildOptions<MessagePayloadType extends ConsumerBaseMessageType> =
-  Pick<
-    SqsPublisherOptions<MessagePayloadType>,
-    | 'locatorConfig'
-    | 'creationConfig'
-    | 'logMessages'
-    | 'messageTypeField'
-    | 'handlerSpy'
-    | 'messageSchemas'
-  >
-
-type SqsConsumerOptions<MessagePayloadType extends ConsumerBaseMessageType> = SQSConsumerOptions<
-  MessagePayloadType,
+type ConsumerOptions<
+  CreationConfig extends SQSCreationConfig,
+  LocatorConfig extends object,
+  MessagePayload extends ConsumerBaseMessageType,
+> = SQSConsumerOptions<
+  MessagePayload,
   // biome-ignore lint/suspicious/noExplicitAny: We don't care
   any,
   // biome-ignore lint/suspicious/noExplicitAny: We don't care
-  any
->
-
-export type ResolveSqsConsumerBuildOptionsParams<
-  MessagePayloadType extends ConsumerBaseMessageType,
-> = SqsBaseParams &
-  Pick<SqsConsumerOptions<MessagePayloadType>, 'handlers' | 'concurrentConsumersAmount'> & {
-    /** logger */
-    logger: CommonLogger
-    /** The number of messages to request from SQS when polling */
-    batchSize?: number
-  }
-
-export type ResolvedSqsConsumerBuildOptions<MessagePayloadType extends ConsumerBaseMessageType> =
-  Pick<
-    SqsConsumerOptions<MessagePayloadType>,
-    | 'creationConfig'
-    | 'locatorConfig'
-    | 'deletionConfig'
-    | 'handlers'
-    | 'consumerOverrides'
-    | 'deadLetterQueue'
-    | 'maxRetryDuration'
-    | 'concurrentConsumersAmount'
-    | 'logMessages'
-    | 'messageTypeField'
-    | 'handlerSpy'
-  >
-
-// ----------------------------------------
-//                  SNS
-// ----------------------------------------
-type SNSBaseParams = BaseParams & {
-  /** SNS topic name */
-  topicName: string
-}
-
-type SnsConsumerOptions<MessagePayloadType extends ConsumerBaseMessageType> = SNSSQSConsumerOptions<
-  MessagePayloadType,
-  // biome-ignore lint/suspicious/noExplicitAny: it's ok
   any,
-  // biome-ignore lint/suspicious/noExplicitAny: it's ok
-  any
+  CreationConfig,
+  LocatorConfig
 >
 
-export type ResolveSnsConsumerBuildOptionsParams<
-  MessagePayloadType extends ConsumerBaseMessageType,
-> = SNSBaseParams &
-  Pick<SnsConsumerOptions<MessagePayloadType>, 'handlers' | 'concurrentConsumersAmount'> & {
-    /** SQS queue name */
-    queueName: string
-    /** logger */
-    logger: CommonLogger
-    /** The number of messages to request from SQS when polling */
-    batchSize?: number
-  }
+export type ConsumerBuildOptionsParams<MessagePayload extends ConsumerBaseMessageType> =
+  MqtResolverBaseParams &
+    Pick<
+      ConsumerOptions<SQSCreationConfig, object, MessagePayload>,
+      'handlers' | 'concurrentConsumersAmount'
+    > & {
+      /** logger */
+      logger: CommonLogger
+      /** The number of messages to request from SQS when polling */
+      batchSize?: number
+    }
 
-export type ResolvedSnsConsumerBuildOptions<MessagePayloadType extends ConsumerBaseMessageType> =
-  Pick<
-    SnsConsumerOptions<MessagePayloadType>,
-    | 'locatorConfig'
-    | 'creationConfig'
-    | 'subscriptionConfig'
-    | 'deletionConfig'
-    | 'handlers'
-    | 'consumerOverrides'
-    | 'deadLetterQueue'
-    | 'maxRetryDuration'
-    | 'concurrentConsumersAmount'
-    | 'logMessages'
-    | 'messageTypeField'
-    | 'handlerSpy'
-  >
-
-export type ResolveSnsPublisherBuildOptionsParams<
-  MessagePayloadType extends ConsumerBaseMessageType,
-> = SNSBaseParams & Pick<SNSPublisherOptions<MessagePayloadType>, 'messageSchemas'>
-
-export type ResolvedSnsPublisherBuildOptions<MessagePayloadType extends ConsumerBaseMessageType> =
-  Pick<
-    SNSPublisherOptions<MessagePayloadType>,
-    | 'locatorConfig'
-    | 'creationConfig'
-    | 'logMessages'
-    | 'messageTypeField'
-    | 'handlerSpy'
-    | 'messageSchemas'
-  >
+export type ConsumerBuildOptions<
+  CreationConfig extends SQSCreationConfig,
+  LocatorConfig extends object,
+  MessagePayload extends ConsumerBaseMessageType,
+> = Pick<
+  ConsumerOptions<CreationConfig, LocatorConfig, MessagePayload>,
+  | 'creationConfig'
+  | 'locatorConfig'
+  | 'deletionConfig'
+  | 'handlers'
+  | 'consumerOverrides'
+  | 'deadLetterQueue'
+  | 'maxRetryDuration'
+  | 'concurrentConsumersAmount'
+  | 'logMessages'
+  | 'messageTypeField'
+  | 'handlerSpy'
+>
