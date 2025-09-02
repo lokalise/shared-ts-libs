@@ -1,5 +1,6 @@
 import { buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import { fastify } from 'fastify'
+import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod/v4'
 import {
@@ -37,7 +38,7 @@ const getRouteWithMultipleResponses = buildGetRoute({
     200: SuccessResponseSchema,
     400: ErrorResponseSchema,
     422: ValidationErrorSchema,
-  } as const,
+  },
 })
 
 // Test route with only success response schema (no responseSchemasByStatusCode)
@@ -53,7 +54,7 @@ const _getRouteErrorsOnly = buildGetRoute({
   responseSchemasByStatusCode: {
     400: ErrorResponseSchema,
     404: NotFoundSchema,
-  } as const,
+  },
 })
 
 // Test route where success schema is also included in responseSchemasByStatusCode
@@ -64,23 +65,23 @@ const _getRouteWithDuplicateSuccess = buildGetRoute({
     200: SuccessResponseSchema,
     400: ErrorResponseSchema,
     422: ValidationErrorSchema,
-  } as const,
+  },
 })
 
 const _postRouteWithMultipleResponses = buildPayloadRoute({
-  method: 'post' as const,
+  method: 'post',
   pathResolver: () => '/test',
   requestBodySchema: z.object({ input: z.string() }),
   successResponseBodySchema: SuccessResponseSchema,
   responseSchemasByStatusCode: {
     400: ErrorResponseSchema,
     422: ValidationErrorSchema,
-  } as const,
+  },
 })
 
 // POST route with only success response schema
 const _postRouteSuccessOnly = buildPayloadRoute({
-  method: 'post' as const,
+  method: 'post',
   pathResolver: () => '/success-only',
   requestBodySchema: z.object({ data: z.string() }),
   successResponseBodySchema: SuccessResponseSchema,
@@ -88,14 +89,14 @@ const _postRouteSuccessOnly = buildPayloadRoute({
 
 // POST route with no success response schema, only responseSchemasByStatusCode
 const _postRouteErrorsOnly = buildPayloadRoute({
-  method: 'post' as const,
+  method: 'post',
   pathResolver: () => '/errors-only',
   requestBodySchema: z.object({ action: z.string() }),
   successResponseBodySchema: undefined,
   responseSchemasByStatusCode: {
     400: ErrorResponseSchema,
     404: NotFoundSchema,
-  } as const,
+  },
 })
 
 async function initApp<Route extends RouteType>(route: Route) {
@@ -104,9 +105,8 @@ async function initApp<Route extends RouteType>(route: Route) {
     disableRequestLogging: true,
   })
 
-  // Simple validation that just passes through - focusing on response type testing
-  app.setValidatorCompiler(() => () => true)
-  app.setSerializerCompiler(() => (data) => JSON.stringify(data))
+  app.setValidatorCompiler(validatorCompiler)
+  app.setSerializerCompiler(serializerCompiler)
 
   app.route(route)
   await app.ready()
@@ -152,7 +152,7 @@ describe('Response types with multiple status codes', () => {
   })
 
   describe('GET endpoint with multiple response types', () => {
-    it('should return success response', async () => {
+    it('should return responses according to defined schemas', async () => {
       const getHandler = buildFastifyNoPayloadRouteHandler(
         getRouteWithMultipleResponses,
         async (request, reply) => {
@@ -177,9 +177,7 @@ describe('Response types with multiple status codes', () => {
 
           // Test with invalid response
           if (request.query!.input === 'invalid_error') {
-            // This should be caught as an error
-            reply.code(400)
-            await reply.send({
+            await reply.status(200).send({
               //@ts-expect-error Invalid response - these fields don't exist in any schema
               completely: 'wrong',
               fields: 'here',
@@ -197,15 +195,41 @@ describe('Response types with multiple status codes', () => {
       const route = buildFastifyNoPayloadRoute(getRouteWithMultipleResponses, getHandler)
       const app = await initApp(route)
 
-      const response = await app.inject({
+      const response200 = await app.inject({
         method: 'GET',
         url: '/test',
+        query: {
+          input: 'data',
+        },
       })
+      expect(response200.statusCode).toBe(200)
 
-      expect(response.statusCode).toBe(200)
-      expect(response.json()).toEqual({
-        data: 'success',
+      const response400 = await app.inject({
+        method: 'GET',
+        url: '/test',
+        query: {
+          input: 'error',
+        },
       })
+      expect(response400.statusCode).toBe(400)
+
+      const response422 = await app.inject({
+        method: 'GET',
+        url: '/test',
+        query: {
+          input: 'validation',
+        },
+      })
+      expect(response422.statusCode).toBe(422)
+
+      const response500 = await app.inject({
+        method: 'GET',
+        url: '/test',
+        query: {
+          input: 'invalid_error',
+        },
+      })
+      expect(response500.statusCode).toBe(500)
 
       await app.close()
     })
