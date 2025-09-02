@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noExplicitAny: expected here
 import {
   type CommonRouteDefinition,
   type InferSchemaInput,
@@ -53,15 +54,12 @@ function joinURL(base: string, path: string): string {
   return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
 }
 
-export type MockEndpointParams<
-  ResponseBodySchema extends z.Schema<JsonBodyType>,
-  PathParamsSchema extends z.Schema | undefined,
-  RequestQuerySchema extends z.Schema | undefined,
-> = {
+export type MockEndpointParams<PathParamsSchema extends z.Schema | undefined> = {
   server: SetupServerApi
-  contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>
+  contract:
+    | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any>
+    | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any>
   pathParams: InferSchemaOutput<PathParamsSchema>
-  // biome-ignore lint/suspicious/noExplicitAny: we accept any input
   responseBody: any
   responseCode: number
   validateResponse: boolean
@@ -74,12 +72,10 @@ export class MswHelper {
     this.baseUrl = baseUrl
   }
 
-  private resolveParams<
-    ResponseBodySchema extends z.Schema<JsonBodyType>,
-    PathParamsSchema extends z.Schema | undefined,
-    RequestQuerySchema extends z.Schema | undefined,
-  >(
-    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>,
+  private resolveParams<PathParamsSchema extends z.Schema | undefined>(
+    contract:
+      | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any>
+      | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any>,
     pathParams: InferSchemaOutput<PathParamsSchema>,
   ) {
     const path = contract.requestPathParamsSchema
@@ -87,17 +83,14 @@ export class MswHelper {
       : mapRouteToPath(contract)
 
     const resolvedPath = joinURL(this.baseUrl, path)
-    // @ts-expect-error
-    const method: HttpMethod = contract.method
+    const method = ('method' in contract ? contract.method : 'get') as HttpMethod
 
     return { method, resolvedPath }
   }
 
-  private registerEndpointMock<
-    ResponseBodySchema extends z.Schema<JsonBodyType>,
-    PathParamsSchema extends z.Schema | undefined,
-    RequestQuerySchema extends z.Schema | undefined = undefined,
-  >(params: MockEndpointParams<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>) {
+  private registerEndpointMock<PathParamsSchema extends z.Schema | undefined>(
+    params: MockEndpointParams<PathParamsSchema>,
+  ) {
     const { method, resolvedPath } = this.resolveParams(params.contract, params.pathParams)
     params.server.use(
       http[method](resolvedPath, () => {
@@ -114,9 +107,27 @@ export class MswHelper {
   mockValidResponse<
     ResponseBodySchema extends z.Schema<JsonBodyType>,
     PathParamsSchema extends z.Schema | undefined,
-    RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>,
+    contract:
+      | CommonRouteDefinition<
+          ResponseBodySchema,
+          PathParamsSchema,
+          z.Schema | undefined,
+          z.Schema | undefined,
+          boolean,
+          boolean,
+          any // ResponseSchemasByStatusCode - not used in mocking
+        >
+      | PayloadRouteDefinition<
+          z.Schema | undefined,
+          ResponseBodySchema,
+          PathParamsSchema,
+          z.Schema | undefined,
+          z.Schema | undefined,
+          boolean,
+          boolean,
+          any // ResponseSchemasByStatusCode - not used in mocking
+        >,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
       ? MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
@@ -133,20 +144,32 @@ export class MswHelper {
     })
   }
 
-  mockValidResponseWithAnyPath<
-    ResponseBodySchema extends z.Schema<JsonBodyType>,
-    PathParamsSchema extends z.Schema | undefined,
-    RequestQuerySchema extends z.Schema | undefined = undefined,
-  >(
-    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>,
+  mockValidResponseWithAnyPath<ResponseBodySchema extends z.Schema<JsonBodyType>>(
+    contract:
+      | CommonRouteDefinition<
+          ResponseBodySchema,
+          z.Schema | undefined,
+          z.Schema | undefined,
+          z.Schema | undefined,
+          boolean,
+          boolean,
+          any // ResponseSchemasByStatusCode - not used in mocking
+        >
+      | PayloadRouteDefinition<
+          z.Schema | undefined,
+          ResponseBodySchema,
+          z.Schema | undefined,
+          z.Schema | undefined,
+          z.Schema | undefined,
+          boolean,
+          boolean,
+          any // ResponseSchemasByStatusCode - not used in mocking
+        >,
     server: SetupServerApi,
     params: MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>,
   ): void {
     const pathParams = contract.requestPathParamsSchema
-      ? Object.keys(
-          // @ts-expect-error this is fine
-          (contract.requestPathParamsSchema as unknown as ZodObject<unknown>).shape,
-        ).reduce(
+      ? Object.keys((contract.requestPathParamsSchema as ZodObject<any>).shape).reduce(
           (acc, value) => {
             acc[value] = '*'
             return acc
@@ -159,8 +182,7 @@ export class MswHelper {
       responseBody: params.responseBody,
       contract,
       server,
-      // @ts-expect-error this is safe
-      pathParams,
+      pathParams: pathParams as any,
       responseCode: params.responseCode ?? 200,
       validateResponse: true,
     })
@@ -170,80 +192,52 @@ export class MswHelper {
     ResponseBodySchema extends z.Schema,
     PathParamsSchema extends z.Schema | undefined,
     RequestBodySchema extends z.Schema | undefined = undefined,
-    RequestQuerySchema extends z.Schema | undefined = undefined,
-    RequestHeaderSchema extends z.Schema | undefined = undefined,
-    IsNonJSONResponseExpected extends boolean = false,
-    IsEmptyResponseExpected extends boolean = false,
   >(
     contract:
       | CommonRouteDefinition<
           ResponseBodySchema,
           PathParamsSchema,
-          RequestQuerySchema,
-          RequestHeaderSchema,
-          IsNonJSONResponseExpected,
-          IsEmptyResponseExpected
+          z.Schema | undefined,
+          z.Schema | undefined,
+          boolean,
+          boolean,
+          any // ResponseSchemasByStatusCode - not used in mocking
         >
-      | PayloadRouteDefinition<RequestBodySchema>,
+      | PayloadRouteDefinition<
+          RequestBodySchema,
+          ResponseBodySchema,
+          PathParamsSchema,
+          z.Schema | undefined,
+          z.Schema | undefined,
+          boolean,
+          boolean,
+          any // ResponseSchemasByStatusCode - not used in mocking
+        >,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
-      ? MockWithImplementationParamsNoPath<
-          PathParams,
-          // @ts-expect-error fixme, after v4 migration
-          InferSchemaInput<RequestBodySchema>,
-          InferSchemaInput<ResponseBodySchema>
-        >
-      : MockWithImplementationParams<
-          // @ts-expect-error fixme, after v4 migration
-          InferSchemaInput<PathParamsSchema>,
-          InferSchemaInput<RequestBodySchema>,
-          InferSchemaInput<ResponseBodySchema>
-        >,
+      ? MockWithImplementationParamsNoPath<any, any, any>
+      : MockWithImplementationParams<any, any, any>,
   ): void {
-    // @ts-expect-error this is safe
-
+    // @ts-expect-error pathParams might not exist
     const { method, resolvedPath } = this.resolveParams(contract, params.pathParams)
 
     server.use(
       http[method](resolvedPath, async (requestInfo) => {
-        return HttpResponse.json(
-          // @ts-expect-error fixme, after v4 migration
-          await params.handleRequest(
-            // @ts-expect-error fixme, after v4 migration
-            requestInfo as Parameters<
-              HttpResponseResolver<
-                // @ts-expect-error fixme, after v4 migration
-                InferSchemaInput<PathParamsSchema>,
-                InferSchemaInput<RequestBodySchema>,
-                InferSchemaInput<ResponseBodySchema>
-              >
-            >[0],
-          ),
-          {
-            status: params.responseCode,
-          },
-        )
+        return HttpResponse.json(await params.handleRequest(requestInfo), {
+          status: params.responseCode,
+        })
       }),
     )
   }
 
   mockAnyResponse<PathParamsSchema extends z.Schema | undefined>(
-    contract: CommonRouteDefinition<
-      // biome-ignore lint/suspicious/noExplicitAny: we accept any input
-      any,
-      PathParamsSchema
-    >,
+    contract:
+      | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any>
+      | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any>,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
-      ? MockParamsNoPath<
-          // biome-ignore lint/suspicious/noExplicitAny: we accept any input
-          InferSchemaInput<any>
-        >
-      : MockParams<
-          InferSchemaInput<PathParamsSchema>,
-          // biome-ignore lint/suspicious/noExplicitAny: we accept any input
-          InferSchemaInput<any>
-        >,
+      ? MockParamsNoPath<InferSchemaInput<any>>
+      : MockParams<InferSchemaInput<PathParamsSchema>, InferSchemaInput<any>>,
   ): void {
     this.registerEndpointMock({
       responseBody: params.responseBody,

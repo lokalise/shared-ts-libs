@@ -2,6 +2,7 @@ import type { Readable } from 'node:stream'
 import type {
   DeleteRouteDefinition,
   GetRouteDefinition,
+  HttpStatusCode,
   InferSchemaInput,
   InferSchemaOutput,
   PayloadRouteDefinition,
@@ -443,6 +444,9 @@ export function sendByPayloadRoute<
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   client: Client,
   routeDefinition: PayloadRouteDefinition<
@@ -452,7 +456,8 @@ export function sendByPayloadRoute<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: PayloadRouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -499,6 +504,9 @@ export function sendByGetRoute<
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   client: Client,
   routeDefinition: GetRouteDefinition<
@@ -507,7 +515,8 @@ export function sendByGetRoute<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -551,6 +560,9 @@ export function sendByDeleteRoute<
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   client: Client,
   routeDefinition: DeleteRouteDefinition<
@@ -559,7 +571,8 @@ export function sendByDeleteRoute<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
