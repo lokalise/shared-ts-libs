@@ -38,6 +38,23 @@ describe('MockttpHelper', () => {
             `)
     })
 
+    it('enforces POST contract', async () => {
+      await mockttpHelper.mockValidResponse(postContract, {
+        // @ts-expect-error this should fail - wrong property
+        responseBody: { id: '1', wrong: 'wrong' },
+      })
+
+      const response = await sendByPayloadRoute(wretchClient, postContract, {
+        body: { name: 'frf' },
+      })
+
+      expect(response).toMatchInlineSnapshot(`
+            {
+              "id": "1",
+            }
+          `)
+    })
+
     it('mocks POST request with path params', async () => {
       await mockttpHelper.mockValidResponse(postContractWithPathParams, {
         pathParams: { userId: '3' },

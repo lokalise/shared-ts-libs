@@ -66,6 +66,28 @@ describe('MswHelper', () => {
             `)
     })
 
+    it('enforces POST request with path params contract', async () => {
+      mswHelper.mockValidResponse(postContractWithPathParams, server, {
+        // @ts-expect-error this should fail - wrong property
+        pathParams: { userId: '3', invalid: 'invalid' },
+        // @ts-expect-error this should fail - wrong property
+        responseBody: { id: '2', invalidField: 'frfr' },
+      })
+
+      const response = await sendByPayloadRoute(wretchClient, postContractWithPathParams, {
+        pathParams: {
+          userId: '3',
+        },
+        body: { name: 'frf' },
+      })
+
+      expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "2",
+              }
+            `)
+    })
+
     it('mocks GET request without path params', async () => {
       mswHelper.mockValidResponse(getContract, server, {
         responseBody: { id: '1' },
@@ -182,6 +204,21 @@ describe('MswHelper', () => {
                 "wrongId": "1",
               }
             `)
+    })
+
+    it('accepts any response shape', async () => {
+      mswHelper.mockAnyResponse(postContract, server, {
+        responseBody: { wrongId: '1', wrongField: 'wrong' },
+      })
+
+      const response = await wretchClient.post({ name: 'frf' }, mapRouteToPath(postContract))
+
+      expect(await response.json()).toMatchInlineSnapshot(`
+        {
+          "wrongField": "wrong",
+          "wrongId": "1",
+        }
+      `)
     })
 
     it('mocks GET request without path params', async () => {
