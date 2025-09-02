@@ -12,8 +12,8 @@ import {
 import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
 import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRoutingConfig.ts'
 import { getSnsTags } from '../tags/index.ts'
-import { AbstractMessageQueueToolkitOptionsResolver } from './AbstractMessageQueueToolkitOptionsResolver.js'
-import { MAX_TOPIC_NAME_LENGTH, MESSAGE_TYPE_FIELD } from './constants.js'
+import { AbstractMessageQueueToolkitOptionsResolver } from './AbstractMessageQueueToolkitOptionsResolver.ts'
+import { MAX_TOPIC_NAME_LENGTH, MESSAGE_TYPE_FIELD } from './constants.ts'
 import type {
   MessageQueueToolkitOptionsResolverConfig,
   ResolveConsumerOptionsParams,

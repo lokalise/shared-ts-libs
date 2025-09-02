@@ -13,15 +13,15 @@ import {
   MAX_RETRY_DURATION,
   MESSAGE_TYPE_FIELD,
   VISIBILITY_TIMEOUT,
-} from './constants.js'
-import { createRequestContextPreHandler } from './prehandlers/createRequestContextPreHandler.js'
+} from './constants.ts'
+import { createRequestContextPreHandler } from './prehandlers/createRequestContextPreHandler.ts'
 import type {
   MessageQueueToolkitOptionsResolverConfig,
   ResolveConsumerOptionsParams,
   ResolvedConsumerOptions,
   ResolvedPublisherOptions,
   ResolvePublisherOptionsParams,
-} from './types.js'
+} from './types.ts'
 import { QUEUE_NAME_REGEX } from './utils.ts'
 
 type ResolvedQueueResult =

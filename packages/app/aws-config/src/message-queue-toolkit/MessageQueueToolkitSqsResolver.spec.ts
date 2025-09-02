@@ -2,7 +2,7 @@ import { beforeAll, expect } from 'vitest'
 import { FakeLogger } from '../../tests/FakeLogger.ts'
 import type { AwsConfig } from '../awsConfig.ts'
 import type { CommandConfig } from './../event-routing/eventRoutingConfig.ts'
-import { MessageQueueToolkitSqsOptionsResolver } from './MessageQueueToolkitSqsOptionsResolver.js'
+import { MessageQueueToolkitSqsOptionsResolver } from './MessageQueueToolkitSqsOptionsResolver.ts'
 
 const config = {
   queue1: {

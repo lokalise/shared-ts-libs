@@ -2,7 +2,7 @@ import { groupByUnique } from '@lokalise/universal-ts-utils/node'
 import type { ConsumerBaseMessageType } from '@message-queue-toolkit/core'
 import type { SQSCreationConfig, SQSQueueLocatorType } from '@message-queue-toolkit/sqs'
 import type { CommandConfig } from '../event-routing/eventRoutingConfig.ts'
-import { AbstractMessageQueueToolkitOptionsResolver } from './AbstractMessageQueueToolkitOptionsResolver.js'
+import { AbstractMessageQueueToolkitOptionsResolver } from './AbstractMessageQueueToolkitOptionsResolver.ts'
 import type {
   MessageQueueToolkitOptionsResolverConfig,
   ResolveConsumerOptionsParams,
