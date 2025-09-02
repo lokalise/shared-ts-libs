@@ -44,7 +44,7 @@
     "dependencies": {},
     "peerDependencies": {
         "@lokalise/node-core": ">=13.5.0",
-        "@lokalise/api-contracts": ">=5.0.0",
+        "@lokalise/api-contracts": ">=5.1.0",
         "fastify": ">=5.0.0",
         "zod": ">=3.25.56"
     },

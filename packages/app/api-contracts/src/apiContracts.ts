@@ -281,7 +281,7 @@ export function buildDeleteRoute<
  */
 export function mapRouteToPath(
   // biome-ignore lint/suspicious/noExplicitAny: We don't care about types here, we just need Zod schema
-  routeDefinition: CommonRouteDefinition<any, any, any, any, any, any>,
+  routeDefinition: CommonRouteDefinition<any, any, any, any, any, any, any>,
 ): string {
   if (!routeDefinition.requestPathParamsSchema) {
     return routeDefinition.pathResolver(EMPTY_PARAMS)

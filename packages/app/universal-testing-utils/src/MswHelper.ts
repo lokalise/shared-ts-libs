@@ -57,9 +57,21 @@ export type MockEndpointParams<
   ResponseBodySchema extends z.Schema<JsonBodyType>,
   PathParamsSchema extends z.Schema | undefined,
   RequestQuerySchema extends z.Schema | undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends Partial<Record<number, z.Schema>> | undefined = undefined,
 > = {
   server: SetupServerApi
-  contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>
+  contract: CommonRouteDefinition<
+    ResponseBodySchema,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
+  >
   pathParams: InferSchemaOutput<PathParamsSchema>
   // biome-ignore lint/suspicious/noExplicitAny: we accept any input
   responseBody: any
@@ -78,8 +90,20 @@ export class MswHelper {
     ResponseBodySchema extends z.Schema<JsonBodyType>,
     PathParamsSchema extends z.Schema | undefined,
     RequestQuerySchema extends z.Schema | undefined,
+    RequestHeaderSchema extends z.Schema | undefined = undefined,
+    IsNonJSONResponseExpected extends boolean = false,
+    IsEmptyResponseExpected extends boolean = false,
+    ResponseSchemasByStatusCode extends Partial<Record<number, z.Schema>> | undefined = undefined,
   >(
-    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>,
+    contract: CommonRouteDefinition<
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >,
     pathParams: InferSchemaOutput<PathParamsSchema>,
   ) {
     const path = contract.requestPathParamsSchema
@@ -97,7 +121,21 @@ export class MswHelper {
     ResponseBodySchema extends z.Schema<JsonBodyType>,
     PathParamsSchema extends z.Schema | undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
-  >(params: MockEndpointParams<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>) {
+    RequestHeaderSchema extends z.Schema | undefined = undefined,
+    IsNonJSONResponseExpected extends boolean = false,
+    IsEmptyResponseExpected extends boolean = false,
+    ResponseSchemasByStatusCode extends Partial<Record<number, z.Schema>> | undefined = undefined,
+  >(
+    params: MockEndpointParams<
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >,
+  ) {
     const { method, resolvedPath } = this.resolveParams(params.contract, params.pathParams)
     params.server.use(
       http[method](resolvedPath, () => {
@@ -115,8 +153,20 @@ export class MswHelper {
     ResponseBodySchema extends z.Schema<JsonBodyType>,
     PathParamsSchema extends z.Schema | undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
+    RequestHeaderSchema extends z.Schema | undefined = undefined,
+    IsNonJSONResponseExpected extends boolean = false,
+    IsEmptyResponseExpected extends boolean = false,
+    ResponseSchemasByStatusCode extends Partial<Record<number, z.Schema>> | undefined = undefined,
   >(
-    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>,
+    contract: CommonRouteDefinition<
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
       ? MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
@@ -137,8 +187,20 @@ export class MswHelper {
     ResponseBodySchema extends z.Schema<JsonBodyType>,
     PathParamsSchema extends z.Schema | undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
+    RequestHeaderSchema extends z.Schema | undefined = undefined,
+    IsNonJSONResponseExpected extends boolean = false,
+    IsEmptyResponseExpected extends boolean = false,
+    ResponseSchemasByStatusCode extends Partial<Record<number, z.Schema>> | undefined = undefined,
   >(
-    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema, RequestQuerySchema>,
+    contract: CommonRouteDefinition<
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >,
     server: SetupServerApi,
     params: MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>,
   ): void {
@@ -174,6 +236,7 @@ export class MswHelper {
     RequestHeaderSchema extends z.Schema | undefined = undefined,
     IsNonJSONResponseExpected extends boolean = false,
     IsEmptyResponseExpected extends boolean = false,
+    ResponseSchemasByStatusCode extends Partial<Record<number, z.Schema>> | undefined = undefined,
   >(
     contract:
       | CommonRouteDefinition<
@@ -182,9 +245,19 @@ export class MswHelper {
           RequestQuerySchema,
           RequestHeaderSchema,
           IsNonJSONResponseExpected,
-          IsEmptyResponseExpected
+          IsEmptyResponseExpected,
+          ResponseSchemasByStatusCode
         >
-      | PayloadRouteDefinition<RequestBodySchema>,
+      | PayloadRouteDefinition<
+          RequestBodySchema,
+          ResponseBodySchema,
+          PathParamsSchema,
+          RequestQuerySchema,
+          RequestHeaderSchema,
+          IsNonJSONResponseExpected,
+          IsEmptyResponseExpected,
+          ResponseSchemasByStatusCode
+        >,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
       ? MockWithImplementationParamsNoPath<
@@ -227,11 +300,23 @@ export class MswHelper {
     )
   }
 
-  mockAnyResponse<PathParamsSchema extends z.Schema | undefined>(
+  mockAnyResponse<
+    PathParamsSchema extends z.Schema | undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
+    RequestHeaderSchema extends z.Schema | undefined = undefined,
+    IsNonJSONResponseExpected extends boolean = false,
+    IsEmptyResponseExpected extends boolean = false,
+    ResponseSchemasByStatusCode extends Partial<Record<number, z.Schema>> | undefined = undefined,
+  >(
     contract: CommonRouteDefinition<
       // biome-ignore lint/suspicious/noExplicitAny: we accept any input
       any,
-      PathParamsSchema
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
     >,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined

@@ -27,8 +27,21 @@ export class MockttpHelper {
   async mockValidResponse<
     ResponseBodySchema extends z.Schema,
     PathParamsSchema extends z.Schema | undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
+    RequestHeaderSchema extends z.Schema | undefined = undefined,
+    IsNonJSONResponseExpected extends boolean = false,
+    IsEmptyResponseExpected extends boolean = false,
+    ResponseSchemasByStatusCode extends Partial<Record<number, z.Schema>> | undefined = undefined,
   >(
-    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>,
+    contract: CommonRouteDefinition<
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >,
     params: PathParamsSchema extends undefined
       ? PayloadMockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
       : PayloadMockParams<InferSchemaInput<PathParamsSchema>, InferSchemaInput<ResponseBodySchema>>,
