@@ -114,10 +114,13 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
       topicConfig.queues,
       params,
     )
+
+    /* v8 ignore start */
     if (!queueCreationConfig) {
       // This should not happen due to typing, but just in case
       throw new Error(`Queue configuration for ${queueName} should not be external`)
     }
+    /* v8 ignore stop */
 
     const options = this.commonConsumerOptions(params, queueCreationConfig.queue)
 
