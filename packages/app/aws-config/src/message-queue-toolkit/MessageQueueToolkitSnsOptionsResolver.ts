@@ -4,6 +4,7 @@ import type { ConsumerBaseMessageType } from '@message-queue-toolkit/core'
 import {
   generateFilterAttributes,
   type SNSCreationConfig,
+  type SNSSQSConsumerOptions,
   type SNSSQSCreationConfig,
   type SNSSQSQueueLocatorType,
   type SNSTopicLocatorType,
@@ -11,14 +12,14 @@ import {
 import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
 import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRoutingConfig.ts'
 import { getSnsTags } from '../tags/index.ts'
+import { AbstractMessageQueueToolkitOptionsResolver } from './AbstractMessageQueueToolkitOptionsResolver.js'
 import { MAX_TOPIC_NAME_LENGTH, MESSAGE_TYPE_FIELD } from './constants.js'
-import { AbstractMessageQueueToolkitSqsOptionsResolver } from './MessageQueueToolkitOptionsResolver.js'
 import type {
-  ConsumerBuildOptions,
-  ConsumerBuildOptionsParams,
   MessageQueueToolkitOptionsResolverConfig,
-  PublisherBuildOptions,
-  PublisherBuildOptionsParams,
+  ResolveConsumerOptionsParams,
+  ResolvedConsumerOptions,
+  ResolvedPublisherOptions,
+  ResolvePublisherOptionsParams,
 } from './types.ts'
 import {
   buildQueueUrlsWithSubscribePermissionsPrefix,
@@ -36,7 +37,11 @@ type ResolveTopicResult =
       createCommand: CreateTopicCommandInput
     }
 
-export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueToolkitSqsOptionsResolver {
+export type ResolvedSnsConsumerOptions<MessagePayload extends ConsumerBaseMessageType> =
+  ResolvedConsumerOptions<SNSSQSCreationConfig, SNSSQSQueueLocatorType, MessagePayload> &
+    Pick<SNSSQSConsumerOptions<MessagePayload, object, object>, 'subscriptionConfig'>
+
+export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueToolkitOptionsResolver {
   private readonly routingConfig: EventRoutingConfig
 
   constructor(routingConfig: EventRoutingConfig, config: MessageQueueToolkitOptionsResolverConfig) {
@@ -71,10 +76,10 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
     )
   }
 
-  public resolvePublisherOptions<MessagePayloadType extends ConsumerBaseMessageType>(
+  public resolvePublisherOptions<MessagePayload extends ConsumerBaseMessageType>(
     topicName: string,
-    params: PublisherBuildOptionsParams<MessagePayloadType>,
-  ): PublisherBuildOptions<SNSCreationConfig, SNSTopicLocatorType, MessagePayloadType> {
+    params: ResolvePublisherOptionsParams<MessagePayload>,
+  ): ResolvedPublisherOptions<SNSCreationConfig, SNSTopicLocatorType, MessagePayload> {
     const topicConfig = this.getTopicConfig(topicName)
     const resolvedTopic = this.resolveTopic(topicConfig, params)
 
@@ -92,17 +97,15 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
             forceTagUpdate: params.forceTagUpdate,
           }
         : undefined,
-      ...this.buildCommonPublisherConfig(params),
+      ...this.commonPublisherOptions(params),
     }
   }
 
-  resolveConsumerOptions<MessagePayloadType extends ConsumerBaseMessageType>(
+  resolveConsumerOptions<MessagePayload extends ConsumerBaseMessageType>(
     topicName: string,
     queueName: string,
-    params: ConsumerBuildOptionsParams<MessagePayloadType>,
-  ): ConsumerBuildOptions<SNSSQSCreationConfig, SNSSQSQueueLocatorType, MessagePayloadType> & {
-    subscriptionConfig: object
-  } {
+    params: ResolveConsumerOptionsParams<MessagePayload>,
+  ): ResolvedSnsConsumerOptions<MessagePayload> {
     const topicConfig = this.getTopicConfig(topicName)
     const resolvedTopic = this.resolveTopic(topicConfig, params)
 
@@ -116,7 +119,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
       throw new Error(`Queue configuration for ${queueName} should not be external`)
     }
 
-    const options = this.buildCommonConsumerConfig(params, queueCreationConfig.queue)
+    const options = this.commonConsumerOptions(params, queueCreationConfig.queue)
 
     return {
       locatorConfig: resolvedTopic.locatorConfig,
@@ -154,7 +157,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
 
   private resolveTopic<MessagePayloadType extends ConsumerBaseMessageType>(
     topicConfig: TopicConfig,
-    params: MayOmit<PublisherBuildOptionsParams<MessagePayloadType>, 'messageSchemas'>,
+    params: MayOmit<ResolvePublisherOptionsParams<MessagePayloadType>, 'messageSchemas'>,
   ): ResolveTopicResult {
     if (topicConfig.isExternal) {
       return {

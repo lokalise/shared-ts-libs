@@ -1,10 +1,9 @@
 import type { CreateQueueRequest } from '@aws-sdk/client-sqs'
-import type { CommonQueueOptions, ConsumerBaseMessageType } from '@message-queue-toolkit/core'
+import type { ConsumerBaseMessageType } from '@message-queue-toolkit/core'
 import type { SQSCreationConfig, SQSQueueLocatorType } from '@message-queue-toolkit/sqs'
 import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
-import type { AwsConfig } from '../awsConfig.js'
 import type { QueueConfig } from '../event-routing/eventRoutingConfig.ts'
-import { type AwsTagsParams, getSqsTags } from '../tags/index.ts'
+import { getSqsTags } from '../tags/index.ts'
 import {
   DLQ_MAX_RECEIVE_COUNT,
   DLQ_MESSAGE_RETENTION_PERIOD,
@@ -17,31 +16,13 @@ import {
 } from './constants.js'
 import { createRequestContextPreHandler } from './prehandlers/createRequestContextPreHandler.js'
 import type {
-  ConsumerBuildOptions,
-  ConsumerBuildOptionsParams,
-  PublisherBuildOptions,
-  PublisherBuildOptionsParams,
+  MessageQueueToolkitOptionsResolverConfig,
+  ResolveConsumerOptionsParams,
+  ResolvedConsumerOptions,
+  ResolvedPublisherOptions,
+  ResolvePublisherOptionsParams,
 } from './types.js'
 import { QUEUE_NAME_REGEX } from './utils.ts'
-
-export type MessageQueueToolkitOptionsResolverConfig = Pick<
-  AwsTagsParams,
-  'appEnv' | 'system' | 'project'
-> & {
-  /** Enable validation of topic and queue names */
-  validateNamePatterns?: boolean
-}
-
-export type MqtResolverBaseParams = {
-  /** AWS config object */
-  awsConfig: AwsConfig
-  /** Enable test mode */
-  isTest?: boolean
-  /** Update resources attributes if they exists (default: true)*/
-  updateAttributesIfExists?: boolean
-  /** In case of existing resources with different tags, update them*/
-  forceTagUpdate?: boolean
-} & Pick<CommonQueueOptions, 'logMessages'>
 
 type ResolvedQueueResult =
   | {
@@ -53,7 +34,7 @@ type ResolvedQueueResult =
       creationConfig: SQSCreationConfig
     }
 
-export abstract class AbstractMessageQueueToolkitSqsOptionsResolver {
+export abstract class AbstractMessageQueueToolkitOptionsResolver {
   protected readonly config: MessageQueueToolkitOptionsResolverConfig
 
   constructor(config: MessageQueueToolkitOptionsResolverConfig) {
@@ -75,10 +56,10 @@ export abstract class AbstractMessageQueueToolkitSqsOptionsResolver {
     }
   }
 
-  protected buildCommonPublisherConfig<MessagePayload extends ConsumerBaseMessageType>(
-    params: PublisherBuildOptionsParams<MessagePayload>,
+  protected commonPublisherOptions<MessagePayload extends ConsumerBaseMessageType>(
+    params: ResolvePublisherOptionsParams<MessagePayload>,
   ): Omit<
-    PublisherBuildOptions<object, object, MessagePayload>,
+    ResolvedPublisherOptions<object, object, MessagePayload>,
     'creationConfig' | 'locatorConfig'
   > {
     return {
@@ -89,11 +70,11 @@ export abstract class AbstractMessageQueueToolkitSqsOptionsResolver {
     }
   }
 
-  protected buildCommonConsumerConfig<MessagePayload extends ConsumerBaseMessageType>(
-    params: ConsumerBuildOptionsParams<MessagePayload>,
+  protected commonConsumerOptions<MessagePayload extends ConsumerBaseMessageType>(
+    params: ResolveConsumerOptionsParams<MessagePayload>,
     createQueueRequest: CreateQueueRequest | undefined,
   ): Omit<
-    ConsumerBuildOptions<SQSCreationConfig, object, MessagePayload>,
+    ResolvedConsumerOptions<SQSCreationConfig, object, MessagePayload>,
     'creationConfig' | 'locatorConfig'
   > {
     const handlerConfigs = params.handlers
@@ -146,7 +127,7 @@ export abstract class AbstractMessageQueueToolkitSqsOptionsResolver {
     queueName: string,
     queueConfigs: Record<string, QueueConfig>,
     // biome-ignore lint/suspicious/noExplicitAny: It is not important here
-    params: ConsumerBuildOptionsParams<any> | PublisherBuildOptionsParams<any>,
+    params: ResolveConsumerOptionsParams<any> | ResolvePublisherOptionsParams<any>,
   ): ResolvedQueueResult {
     const queueConfig = queueConfigs[queueName]
     if (!queueConfig) throw new Error(`Queue ${queueName} not found`)

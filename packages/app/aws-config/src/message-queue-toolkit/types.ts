@@ -8,7 +8,6 @@ import type {
 import type { SQSConsumerOptions, SQSCreationConfig } from '@message-queue-toolkit/sqs'
 import type { AwsConfig } from '../awsConfig.ts'
 import type { AwsTagsParams } from '../tags/index.ts'
-import type { MqtResolverBaseParams } from './MessageQueueToolkitOptionsResolver.js'
 
 export type MessageQueueToolkitOptionsResolverConfig = Pick<
   AwsTagsParams,
@@ -29,10 +28,10 @@ type BaseParams = {
   forceTagUpdate?: boolean
 } & Pick<CommonQueueOptions, 'logMessages'>
 
-export type PublisherBuildOptionsParams<MessagePayload extends ConsumerBaseMessageType> =
+export type ResolvePublisherOptionsParams<MessagePayload extends ConsumerBaseMessageType> =
   BaseParams & Pick<QueuePublisherOptions<object, object, MessagePayload>, 'messageSchemas'>
 
-export type PublisherBuildOptions<
+export type ResolvedPublisherOptions<
   CreationConfig extends CommonCreationConfigType,
   LocatorConfig extends object,
   MessagePayload extends ConsumerBaseMessageType,
@@ -60,8 +59,8 @@ type ConsumerOptions<
   LocatorConfig
 >
 
-export type ConsumerBuildOptionsParams<MessagePayload extends ConsumerBaseMessageType> =
-  MqtResolverBaseParams &
+export type ResolveConsumerOptionsParams<MessagePayload extends ConsumerBaseMessageType> =
+  BaseParams &
     Pick<
       ConsumerOptions<SQSCreationConfig, object, MessagePayload>,
       'handlers' | 'concurrentConsumersAmount'
@@ -72,7 +71,7 @@ export type ConsumerBuildOptionsParams<MessagePayload extends ConsumerBaseMessag
       batchSize?: number
     }
 
-export type ConsumerBuildOptions<
+export type ResolvedConsumerOptions<
   CreationConfig extends SQSCreationConfig,
   LocatorConfig extends object,
   MessagePayload extends ConsumerBaseMessageType,

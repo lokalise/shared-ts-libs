@@ -2,16 +2,16 @@ import { groupByUnique } from '@lokalise/universal-ts-utils/node'
 import type { ConsumerBaseMessageType } from '@message-queue-toolkit/core'
 import type { SQSCreationConfig, SQSQueueLocatorType } from '@message-queue-toolkit/sqs'
 import type { CommandConfig } from '../event-routing/eventRoutingConfig.ts'
-import { AbstractMessageQueueToolkitSqsOptionsResolver } from './MessageQueueToolkitOptionsResolver.js'
+import { AbstractMessageQueueToolkitOptionsResolver } from './AbstractMessageQueueToolkitOptionsResolver.js'
 import type {
-  ConsumerBuildOptions,
-  ConsumerBuildOptionsParams,
   MessageQueueToolkitOptionsResolverConfig,
-  PublisherBuildOptions,
-  PublisherBuildOptionsParams,
+  ResolveConsumerOptionsParams,
+  ResolvedConsumerOptions,
+  ResolvedPublisherOptions,
+  ResolvePublisherOptionsParams,
 } from './types.ts'
 
-export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueToolkitSqsOptionsResolver {
+export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueToolkitOptionsResolver {
   private readonly commandConfig: CommandConfig
 
   constructor(commandConfig: CommandConfig, config: MessageQueueToolkitOptionsResolverConfig) {
@@ -23,27 +23,27 @@ export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueT
 
   public resolvePublisherOptions<MessagePayload extends ConsumerBaseMessageType>(
     queueName: string,
-    params: PublisherBuildOptionsParams<MessagePayload>,
-  ): PublisherBuildOptions<SQSCreationConfig, SQSQueueLocatorType, MessagePayload> {
+    params: ResolvePublisherOptionsParams<MessagePayload>,
+  ): ResolvedPublisherOptions<SQSCreationConfig, SQSQueueLocatorType, MessagePayload> {
     const resolvedQueue = this.resolveQueue(queueName, this.commandConfig, params)
 
     return {
       creationConfig: resolvedQueue.creationConfig,
       locatorConfig: resolvedQueue.locatorConfig,
-      ...this.buildCommonPublisherConfig(params),
+      ...this.commonPublisherOptions(params),
     }
   }
 
   resolveConsumerOptions<MessagePayloadType extends ConsumerBaseMessageType>(
     queueName: string,
-    params: ConsumerBuildOptionsParams<MessagePayloadType>,
-  ): ConsumerBuildOptions<SQSCreationConfig, SQSQueueLocatorType, MessagePayloadType> {
+    params: ResolveConsumerOptionsParams<MessagePayloadType>,
+  ): ResolvedConsumerOptions<SQSCreationConfig, SQSQueueLocatorType, MessagePayloadType> {
     const resolvedQueue = this.resolveQueue(queueName, this.commandConfig, params)
 
     return {
       creationConfig: resolvedQueue.creationConfig,
       locatorConfig: resolvedQueue.locatorConfig,
-      ...this.buildCommonConsumerConfig(params, resolvedQueue.creationConfig?.queue),
+      ...this.commonConsumerOptions(params, resolvedQueue.creationConfig?.queue),
     }
   }
 }
