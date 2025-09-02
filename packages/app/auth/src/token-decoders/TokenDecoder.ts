@@ -44,7 +44,7 @@ export abstract class TokenDecoder {
     token: string,
   ): Promise<Either<TokenValidationError, object>> {
     try {
-      const result = await Promise.resolve(this.verify(token))
+      const result = await this.verify(token)
       return this.handleSuccessfulDecode(requestContext, result)
     } catch (error) {
       return this.handleDecodeError(requestContext, error)
