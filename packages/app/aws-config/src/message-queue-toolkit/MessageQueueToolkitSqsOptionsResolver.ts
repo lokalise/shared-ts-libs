@@ -11,6 +11,9 @@ import type {
   ResolvePublisherOptionsParams,
 } from './types.ts'
 
+/**
+ * Options resolver for MQT SQS lib.
+ */
 export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueToolkitOptionsResolver {
   private readonly commandConfig: CommandConfig
 
@@ -21,6 +24,13 @@ export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueT
     this.validateQueueNames(Object.values(this.commandConfig).flatMap((queue) => queue.queueName))
   }
 
+  /**
+   * Resolves publisher options for an SQS queue.
+   *
+   * @template MessagePayload - The type of message payload being published
+   * @param queueName - The name of the queue to publish to
+   * @param params - Parameters containing AWS config, schemas, and other settings
+   */
   public resolvePublisherOptions<MessagePayload extends ConsumerBaseMessageType>(
     queueName: string,
     params: ResolvePublisherOptionsParams<MessagePayload>,
@@ -34,6 +44,13 @@ export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueT
     }
   }
 
+  /**
+   * Resolves consumer options for an SQS queue.
+   *
+   * @template MessagePayloadType - The type of message payload being consumed
+   * @param queueName - The name of the queue to consume from
+   * @param params - Parameters containing AWS config, handlers, and other settings
+   */
   resolveConsumerOptions<MessagePayloadType extends ConsumerBaseMessageType>(
     queueName: string,
     params: ResolveConsumerOptionsParams<MessagePayloadType>,

@@ -9,6 +9,9 @@ import type { SQSConsumerOptions, SQSCreationConfig } from '@message-queue-toolk
 import type { AwsConfig } from '../awsConfig.ts'
 import type { AwsTagsParams } from '../tags/index.ts'
 
+/**
+ * Configuration for the Message Queue Toolkit Options Resolver.
+ */
 export type MessageQueueToolkitOptionsResolverConfig = Pick<
   AwsTagsParams,
   'appEnv' | 'system' | 'project'
@@ -24,13 +27,23 @@ type BaseParams = {
   isTest?: boolean
   /** Update resources attributes if they exists (default: true)*/
   updateAttributesIfExists?: boolean
-  /** In case of existing resources with different tags, update them*/
+  /** In case of existing resources with different tags, update them (default: false)*/
   forceTagUpdate?: boolean
 } & Pick<CommonQueueOptions, 'logMessages'>
 
+/**
+ * Parameters for resolving publisher options for message queues.
+ */
 export type ResolvePublisherOptionsParams<MessagePayload extends ConsumerBaseMessageType> =
   BaseParams & Pick<QueuePublisherOptions<object, object, MessagePayload>, 'messageSchemas'>
 
+/**
+ * Resolved publisher options after processing through the option resolver.
+ *
+ * @template CreationConfig - The type of creation configuration (SQS, SNS, etc.)
+ * @template LocatorConfig - The type of locator configuration for finding existing resources
+ * @template MessagePayload - The type of message payload being published
+ */
 export type ResolvedPublisherOptions<
   CreationConfig extends CommonCreationConfigType,
   LocatorConfig extends object,
@@ -45,6 +58,13 @@ export type ResolvedPublisherOptions<
   | 'messageSchemas'
 >
 
+/**
+ * Consumer options type for SQS-based message consumers.
+ *
+ * @template CreationConfig - The SQS creation configuration type
+ * @template LocatorConfig - The SQS locator configuration type
+ * @template MessagePayload - The type of message payload being consumed
+ */
 type ConsumerOptions<
   CreationConfig extends SQSCreationConfig,
   LocatorConfig extends object,
@@ -59,6 +79,11 @@ type ConsumerOptions<
   LocatorConfig
 >
 
+/**
+ * Parameters for resolving consumer options for message queues.
+ *
+ * @template MessagePayload - The type of message payload that will be consumed
+ */
 export type ResolveConsumerOptionsParams<MessagePayload extends ConsumerBaseMessageType> =
   BaseParams &
     Pick<
@@ -71,6 +96,13 @@ export type ResolveConsumerOptionsParams<MessagePayload extends ConsumerBaseMess
       batchSize?: number
     }
 
+/**
+ * Resolved consumer options after processing through the options resolver.
+ *
+ * @template CreationConfig - The type of creation configuration (SQS, SNS, etc.)
+ * @template LocatorConfig - The type of locator configuration for finding existing resources
+ * @template MessagePayload - The type of message payload being consumed
+ */
 export type ResolvedConsumerOptions<
   CreationConfig extends SQSCreationConfig,
   LocatorConfig extends object,

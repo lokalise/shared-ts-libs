@@ -37,10 +37,18 @@ type ResolveTopicResult =
       createCommand: CreateTopicCommandInput
     }
 
+/**
+ * Resolved SNS consumer options.
+ *
+ * @template MessagePayload - The type of message payload being consumed
+ */
 export type ResolvedSnsConsumerOptions<MessagePayload extends ConsumerBaseMessageType> =
   ResolvedConsumerOptions<SNSSQSCreationConfig, SNSSQSQueueLocatorType, MessagePayload> &
     Pick<SNSSQSConsumerOptions<MessagePayload, object, object>, 'subscriptionConfig'>
 
+/**
+ * Options resolver for MQT SNS lib.
+ */
 export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueToolkitOptionsResolver {
   private readonly routingConfig: EventRoutingConfig
 
@@ -76,6 +84,14 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
     )
   }
 
+  /**
+   * Resolves publisher options for an SNS topic.
+   *
+   * @template MessagePayload - The type of message payload being published
+   * @param topicName - The name of the topic to publish to
+   * @param params - Parameters containing AWS config, schemas, and other settings
+   * @returns Resolved publisher options for the SNS topic
+   */
   public resolvePublisherOptions<MessagePayload extends ConsumerBaseMessageType>(
     topicName: string,
     params: ResolvePublisherOptionsParams<MessagePayload>,
@@ -101,6 +117,14 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
     }
   }
 
+  /**
+   * Resolves consumer options for an SNS topic and its associated SQS queue.
+   *
+   * @template MessagePayload - The type of message payload being consumed
+   * @param topicName - The name of the SNS topic to subscribe to
+   * @param queueName - The name of the SQS queue to consume from
+   * @param params - Parameters containing AWS config, handlers, and other settings
+   */
   resolveConsumerOptions<MessagePayload extends ConsumerBaseMessageType>(
     topicName: string,
     queueName: string,
@@ -114,13 +138,10 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
       topicConfig.queues,
       params,
     )
-
-    /* v8 ignore start */
     if (!queueCreationConfig) {
       // This should not happen due to typing, but just in case
       throw new Error(`Queue configuration for ${queueName} should not be external`)
     }
-    /* v8 ignore stop */
 
     const options = this.commonConsumerOptions(params, queueCreationConfig.queue)
 
