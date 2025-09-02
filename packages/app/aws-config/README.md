@@ -1,7 +1,7 @@
 # @lokalise/aws-config
 
 Very opinionated TypeScript library for managing AWS configuration, resource naming, tagging, event routing, 
-and integration with @message-queue-toolkit/sns.
+and integration with @message-queue-toolkit/sns and @message-queue-toolkit/sqs.
 
 ## Usage
 
@@ -50,7 +50,7 @@ applyAwsResourcePrefix('orders', awsConfig) // returns 'tenant123_orders' when A
 
 This helps:
 - Prevent naming collisions across environments, accounts, or tenants  
-- Support multi-tenancy by isolating each tenant’s resources  
+- Support multi-tenancy by isolating each tenant's resources  
 
 If no prefix is provided, the original resource name is returned unchanged. Note that the prefix contributes to the total resource name length, which must comply with AWS service limits.
 
@@ -73,9 +73,9 @@ const snsTags = getSnsTags(tagParams);
 const sqsTags = getSqsTags(tagParams);
 ```
 
-### Event Routing Configuration
+### Event Routing Configuration (SNS Topics)
 
-Define SNS topics and SQS queues:
+Define SNS topics and their associated SQS queues for event-driven architecture:
 
 ```ts
 import type { EventRoutingConfig } from '@lokalise/aws-config';
@@ -87,7 +87,7 @@ const routingConfig: EventRoutingConfig = {
     owner: 'team-x',
     service: 'order-service',
     queues: {
-      orderCreated: { name: 'order-created', owner: 'team-x', service: 'order-service' },
+      orderCreated: { queueName: 'order-created', owner: 'team-x', service: 'order-service' },
     },
     externalAppsWithSubscribePermissions: ['other-app'],
   },
@@ -96,7 +96,7 @@ const routingConfig: EventRoutingConfig = {
     topicName: 'external-events',
     isExternal: true,
     queues: {
-      eventQueue: { name: 'event-queue', owner: 'team-x', service: 'order-service' },
+      eventQueue: { queueName: 'event-queue', owner: 'team-x', service: 'order-service' },
     },
   },
 };
@@ -115,9 +115,50 @@ const routingConfig: EventRoutingConfig = {
   - `TopicConfig` includes `topicName`, `isExternal: true`, and your `queues`, but **must omit** `owner`, `service`, 
    and `externalAppsWithSubscribePermissions`.
   - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing topic by name 
-  - and subscribe your queues. **No topic creation or tagging** is attempted.
+   and subscribe your queues. **No topic creation or tagging** is attempted.
 
 Under the hood, the TypeScript union enforces this shape.
+
+### Command Configuration (SQS Queues)
+
+Define SQS queues for command-based messaging patterns:
+
+```ts
+import type { CommandConfig } from '@lokalise/aws-config';
+
+const commandConfig: CommandConfig = {
+  // internal queue example (managed and created by your application)
+  processOrder: {
+    queueName: 'process-order',
+    owner: 'team-x',
+    service: 'order-service',
+  },
+  sendNotification: {
+    queueName: 'send-notification',
+    owner: 'team-y',
+    service: 'notification-service',
+  },
+  // external queue example (managed outside your application)
+  externalCommand: {
+    queueName: 'external-command-queue',
+    isExternal: true,
+  },
+};
+```
+
+#### Internal vs. External Queues
+
+- **Internal Queues** (default)
+  - You own and manage the SQS queue.
+  - `QueueConfig` must include `owner` and `service`.
+  - At runtime, the `MessageQueueToolkitSqsOptionsResolver` will resolve consumer/publisher options with a **CreateQueue** command 
+   (with name prefixing, tags, KMS settings, DLQ configuration).
+
+- **External Queues** (`isExternal: true`)
+  - The SQS queue is pre‑existing and managed outside your application.
+  - `QueueConfig` includes `queueName` and `isExternal: true`, but **must omit** `owner` and `service`.
+  - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing queue by name.
+  - **No queue creation or tagging** is attempted.
 
 ### Message Queue Toolkit SNS Resolver
 
@@ -156,10 +197,44 @@ const consumeOpts = resolver.resolveConsumerBuildOptions({
 });
 ```
 
+### Message Queue Toolkit SQS Resolver
+
+Automatically build publisher and consumer options with `@message-queue-toolkit/sqs`:
+
+```ts
+import { MessageQueueToolkitSqsOptionsResolver } from '@lokalise/aws-config';
+import { getAwsConfig } from '@lokalise/aws-config';
+import { logger } from '@lokalise/node-core';
+
+const awsConfig = getAwsConfig();
+const resolver = new MessageQueueToolkitSqsOptionsResolver(commandConfig, {
+  appEnv: 'production',
+  system: 'backend',
+  project: 'order-project',
+  validateNamePatterns: true,
+});
+
+const publishOpts = resolver.resolvePublisherOptions('processOrder', {
+  awsConfig,
+  logger,
+  messageSchemas: { /* your schemas… */ },
+  logMessages: true,
+});
+
+const consumeOpts = resolver.resolveConsumerOptions('processOrder', {
+  awsConfig,
+  logger,
+  handlers: [ /* your handlers… */ ],
+  concurrentConsumersAmount: 2,
+  batchSize: 10,
+  logMessages: false,
+});
+```
+
 #### Request Context Pre-handler
 
-When processing messages, the resolver automatically injects a **request context pre-handler** to each handler. This pre-handler populates a `requestContext` object with:
-- `reqId`: the SNS message metadata correlation ID
+When processing messages, both resolvers automatically inject a **request context pre-handler** to each handler. This pre-handler populates a `requestContext` object with:
+- `reqId`: the message metadata correlation ID
 - `logger`: a child logger instance scoped with the correlation ID (under `x-request-id`)
 
 Please refer to `@message-queue-toolkit` documentation for more details on how to use the pre-handler output in your
@@ -167,18 +242,18 @@ event handlers.
 
 #### Opinionated Defaults
 
-`MessageQueueToolkitSnsOptionsResolver` applies opinionated defaults to reduce boilerplate:
+Both `MessageQueueToolkitSnsOptionsResolver` and `MessageQueueToolkitSqsOptionsResolver` apply opinionated defaults to reduce boilerplate:
+
 - **Default message type field**: `'type'`, used for filtering and routing messages.
 - **Publisher**:
-  - `updateAttributesIfExists`: `true` (updates tags and config on existing topics).
+  - `updateAttributesIfExists`: `true` (updates tags and config on existing resources).
   - `forceTagUpdate`: `false`.
   - Applies standardized tags, see tags section above.
 - **Consumer**:
   - Dead-letter queue automatically created with suffix `-dlq`, `redrivePolicy.maxReceiveCount = 5`, retention = 7 days.
   - `maxRetryDuration`: 2 days for in-flight message retries.
   - `heartbeatInterval`: 20 seconds for visibility timeout heartbeats.
-  - `updateAttributesIfExists`: `true` (updates tags/config if queue exists).
-  - Subscription filters generated based on the message type field.
+  - `updateAttributesIfExists`: `true` (updates tags/config if resource exists).
   - Resource prefixing and tagging applied uniformly to topics and queues.
   - In test mode (`isTest = true`):
     - Skips DLQ creation.
