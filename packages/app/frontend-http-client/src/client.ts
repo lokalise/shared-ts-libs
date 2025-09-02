@@ -1,6 +1,7 @@
 import type {
   DeleteRouteDefinition,
   GetRouteDefinition,
+  HttpStatusCode,
   InferSchemaInput,
   InferSchemaOutput,
   PayloadRouteDefinition,
@@ -399,6 +400,9 @@ export function sendByPayloadRoute<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   wretch: T,
   routeDefinition: PayloadRouteDefinition<
@@ -408,7 +412,8 @@ export function sendByPayloadRoute<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: PayloadRouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -452,6 +457,9 @@ export function sendByGetRoute<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   wretch: T,
   routeDefinition: GetRouteDefinition<
@@ -460,7 +468,8 @@ export function sendByGetRoute<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -499,6 +508,9 @@ export function sendByDeleteRoute<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   wretch: T,
   routeDefinition: DeleteRouteDefinition<
@@ -507,7 +519,8 @@ export function sendByDeleteRoute<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
