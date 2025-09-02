@@ -3,6 +3,13 @@ import { createVerifier, type DecodedJwt, type VerifierOptions } from 'fast-jwt'
 import type { JwksClient } from 'jwks-rsa'
 import { TokenDecoder } from './TokenDecoder.ts'
 
+/**
+ * Token decoder implementation that uses JSON Web Key Set (JWKS) for token verification.
+ *
+ * This decoder fetches public keys from a JWKS endpoint to verify JWT tokens.
+ * It supports both key ID (kid) based key selection and fallback to the first available key.
+ * This is commonly used with OAuth 2.0 and OpenID Connect providers.
+ */
 export class JwksTokenDecoder extends TokenDecoder {
   private readonly jwksClient: JwksClient
 
