@@ -82,6 +82,7 @@ export type ResolvedSqsConsumerBuildOptions<MessagePayloadType extends ConsumerB
   Pick<
     SqsConsumerOptions<MessagePayloadType>,
     | 'creationConfig'
+    | 'locatorConfig'
     | 'deletionConfig'
     | 'handlers'
     | 'consumerOverrides'

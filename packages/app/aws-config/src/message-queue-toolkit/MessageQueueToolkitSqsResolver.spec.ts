@@ -136,16 +136,82 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
     describe('internal queues', () => {
       const queueName = config.queue1.queueName
 
-      it('should throw an error', () => {
-        expect(() =>
-          resolver.resolvePublisherBuildOptions({
-            queueName,
-            awsConfig: buildAwsConfig(),
-            messageSchemas: [],
-          }),
-        ).toThrowErrorMatchingInlineSnapshot(
-          `[Error: SQS Publisher can only be created for external queues]`,
-        )
+      it('should work using all props', () => {
+        const result = resolver.resolvePublisherBuildOptions({
+          queueName,
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
+          updateAttributesIfExists: true,
+          forceTagUpdate: true,
+          logMessages: true,
+          isTest: true,
+          messageSchemas: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "creationConfig": {
+              "forceTagUpdate": true,
+              "queue": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                  "VisibilityTimeout": "60",
+                },
+                "QueueName": "prefix_test-mqt-queue_first",
+                "tags": {
+                  "env": "dev",
+                  "lok-cost-service": "service 1",
+                  "lok-cost-system": "my-system",
+                  "lok-owner": "team 1",
+                  "project": "my-project",
+                  "service": "sqs",
+                },
+              },
+              "updateAttributesIfExists": true,
+            },
+            "handlerSpy": true,
+            "locatorConfig": undefined,
+            "logMessages": true,
+            "messageSchemas": [],
+            "messageTypeField": "type",
+          }
+        `)
+      })
+
+      it('should work using only required props', () => {
+        const result = resolver.resolvePublisherBuildOptions({
+          queueName,
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "creationConfig": {
+              "forceTagUpdate": undefined,
+              "queue": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                  "VisibilityTimeout": "60",
+                },
+                "QueueName": "test-mqt-queue_first",
+                "tags": {
+                  "env": "dev",
+                  "lok-cost-service": "service 1",
+                  "lok-cost-system": "my-system",
+                  "lok-owner": "team 1",
+                  "project": "my-project",
+                  "service": "sqs",
+                },
+              },
+              "updateAttributesIfExists": true,
+            },
+            "handlerSpy": undefined,
+            "locatorConfig": undefined,
+            "logMessages": undefined,
+            "messageSchemas": [],
+            "messageTypeField": "type",
+          }
+        `)
       })
     })
 
@@ -339,17 +405,74 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
     describe('external queue', () => {
       const queueName = config.queue2.queueName
 
-      it('should throw an error', () => {
-        expect(() =>
-          resolver.resolveConsumerBuildOptions({
-            logger,
-            queueName,
-            awsConfig: buildAwsConfig(),
-            handlers: [],
-          }),
-        ).toThrowErrorMatchingInlineSnapshot(
-          `[Error: SQS Consumer can only be created for non-external queues]`,
-        )
+      it('should work using all properties', () => {
+        const result = resolver.resolveConsumerBuildOptions({
+          queueName,
+          logger,
+          handlers: [],
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
+          updateAttributesIfExists: true,
+          forceTagUpdate: true,
+          logMessages: true,
+          isTest: true,
+          batchSize: 1,
+          concurrentConsumersAmount: 1,
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "concurrentConsumersAmount": 1,
+            "consumerOverrides": {
+              "batchSize": 1,
+              "terminateVisibilityTimeout": true,
+            },
+            "creationConfig": undefined,
+            "deadLetterQueue": undefined,
+            "deletionConfig": {
+              "deleteIfExists": true,
+            },
+            "handlerSpy": true,
+            "handlers": [],
+            "locatorConfig": {
+              "queueName": "prefix_test-mqt-queue_second",
+            },
+            "logMessages": true,
+            "maxRetryDuration": 172800,
+            "messageTypeField": "type",
+          }
+        `)
+      })
+
+      it('should work using only required props', () => {
+        const result = resolver.resolveConsumerBuildOptions({
+          logger,
+          queueName,
+          awsConfig: buildAwsConfig(),
+          handlers: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "concurrentConsumersAmount": undefined,
+            "consumerOverrides": {
+              "batchSize": undefined,
+              "heartbeatInterval": 20,
+            },
+            "creationConfig": undefined,
+            "deadLetterQueue": undefined,
+            "deletionConfig": {
+              "deleteIfExists": undefined,
+            },
+            "handlerSpy": undefined,
+            "handlers": [],
+            "locatorConfig": {
+              "queueName": "test-mqt-queue_second",
+            },
+            "logMessages": undefined,
+            "maxRetryDuration": 172800,
+            "messageTypeField": "type",
+          }
+        `)
       })
     })
   })

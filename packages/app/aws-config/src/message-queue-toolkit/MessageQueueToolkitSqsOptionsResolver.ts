@@ -67,11 +67,8 @@ export class MessageQueueToolkitSqsOptionsResolver {
   ): ResolvedSqsPublisherBuildOptions<MessagePayloadType> {
     const resolvedQueue = this.resolveQueue(params)
 
-    if (!resolvedQueue.locatorConfig) {
-      throw new Error(`SQS Publisher can only be created for external queues`)
-    }
-
     return {
+      creationConfig: resolvedQueue.creationConfig,
       locatorConfig: resolvedQueue.locatorConfig,
       handlerSpy: params.isTest,
       messageTypeField: MESSAGE_TYPE_FIELD,
@@ -85,10 +82,6 @@ export class MessageQueueToolkitSqsOptionsResolver {
   ): ResolvedSqsConsumerBuildOptions<MessagePayloadType> {
     const resolvedQueue = this.resolveQueue(params)
 
-    if (!resolvedQueue.creationConfig) {
-      throw new Error(`SQS Consumer can only be created for non-external queues`)
-    }
-
     const handlerConfigs = params.handlers
     for (const handlerConfig of handlerConfigs) {
       const requestContextPreHandler = createRequestContextPreHandler(params.logger)
@@ -97,6 +90,7 @@ export class MessageQueueToolkitSqsOptionsResolver {
 
     return {
       creationConfig: resolvedQueue.creationConfig,
+      locatorConfig: resolvedQueue.locatorConfig,
       messageTypeField: MESSAGE_TYPE_FIELD,
       deletionConfig: { deleteIfExists: params.isTest },
       handlers: handlerConfigs,
@@ -114,24 +108,25 @@ export class MessageQueueToolkitSqsOptionsResolver {
             heartbeatInterval: HEARTBEAT_INTERVAL,
             batchSize: params.batchSize,
           },
-      deadLetterQueue: params.isTest
-        ? undefined // no DLQ in test mode
-        : {
-            creationConfig: {
-              queue: {
-                QueueName: `${resolvedQueue.creationConfig.queue.QueueName}${DLQ_SUFFIX}`,
-                tags: resolvedQueue.creationConfig.queue.tags,
-                Attributes: {
-                  KmsMasterKeyId: params.awsConfig.kmsKeyId,
-                  MessageRetentionPeriod: DLQ_MESSAGE_RETENTION_PERIOD.toString(),
+      deadLetterQueue:
+        !params.isTest && resolvedQueue.creationConfig
+          ? {
+              creationConfig: {
+                queue: {
+                  QueueName: `${resolvedQueue.creationConfig.queue.QueueName}${DLQ_SUFFIX}`,
+                  tags: resolvedQueue.creationConfig.queue.tags,
+                  Attributes: {
+                    KmsMasterKeyId: params.awsConfig.kmsKeyId,
+                    MessageRetentionPeriod: DLQ_MESSAGE_RETENTION_PERIOD.toString(),
+                  },
                 },
+                updateAttributesIfExists: params.updateAttributesIfExists ?? true,
               },
-              updateAttributesIfExists: params.updateAttributesIfExists ?? true,
-            },
-            redrivePolicy: {
-              maxReceiveCount: DLQ_MAX_RECEIVE_COUNT,
-            },
-          },
+              redrivePolicy: {
+                maxReceiveCount: DLQ_MAX_RECEIVE_COUNT,
+              },
+            }
+          : undefined,
     }
   }
 
