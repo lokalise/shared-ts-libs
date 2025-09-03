@@ -106,6 +106,9 @@ export function buildFastifyNoPayloadRoute<
   PathParams extends OptionalZodSchema = undefined,
   RequestQuerySchema extends OptionalZodSchema = undefined,
   RequestHeaderSchema extends OptionalZodSchema = undefined,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   apiContract:
     | GetRouteDefinition<
@@ -115,8 +118,7 @@ export function buildFastifyNoPayloadRoute<
         RequestHeaderSchema,
         boolean,
         boolean,
-        // biome-ignore lint/suspicious/noExplicitAny: this is expected
-        any
+        ResponseSchemasByStatusCode
       >
     | DeleteRouteDefinition<
         ResponseBodySchema,
@@ -125,18 +127,17 @@ export function buildFastifyNoPayloadRoute<
         RequestHeaderSchema,
         boolean,
         boolean,
-        // biome-ignore lint/suspicious/noExplicitAny: this is expected
-        any
+        ResponseSchemasByStatusCode
       >,
   handler: FastifyNoPayloadHandlerFn<
-    InferredOptionalSchema<ResponseBodySchema>,
+    BuildResponseType<ResponseBodySchema, ResponseSchemasByStatusCode>,
     InferredOptionalSchema<PathParams>,
     InferredOptionalSchema<RequestQuerySchema>,
     InferredOptionalSchema<RequestHeaderSchema>
   >,
   contractMetadataToRouteMapper: ApiContractMetadataToRouteMapper = () => ({}),
 ): RouteType<
-  InferredOptionalSchema<ResponseBodySchema>,
+  BuildResponseType<ResponseBodySchema, ResponseSchemasByStatusCode>,
   undefined,
   InferredOptionalSchema<PathParams>,
   InferredOptionalSchema<RequestQuerySchema>,
@@ -220,6 +221,9 @@ export function buildFastifyPayloadRoute<
   RequestHeaderSchema extends OptionalZodSchema = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   apiContract: PayloadRouteDefinition<
     RequestBodySchema,
@@ -229,11 +233,10 @@ export function buildFastifyPayloadRoute<
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
-    // biome-ignore lint/suspicious/noExplicitAny: this is expected
-    any
+    ResponseSchemasByStatusCode
   >,
   handler: FastifyPayloadHandlerFn<
-    InferredOptionalSchema<ResponseBodySchema>,
+    BuildResponseType<ResponseBodySchema, ResponseSchemasByStatusCode>,
     InferredOptionalSchema<RequestBodySchema>,
     InferredOptionalSchema<PathParams>,
     InferredOptionalSchema<RequestQuerySchema>,
@@ -241,7 +244,7 @@ export function buildFastifyPayloadRoute<
   >,
   contractMetadataToRouteMapper: ApiContractMetadataToRouteMapper = () => ({}),
 ): RouteType<
-  InferredOptionalSchema<ResponseBodySchema>,
+  BuildResponseType<ResponseBodySchema, ResponseSchemasByStatusCode>,
   InferredOptionalSchema<RequestBodySchema>,
   InferredOptionalSchema<PathParams>,
   InferredOptionalSchema<RequestQuerySchema>,

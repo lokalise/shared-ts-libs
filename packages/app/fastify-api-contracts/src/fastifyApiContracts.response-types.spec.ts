@@ -96,7 +96,7 @@ describe('Response types with multiple status codes', () => {
   })
 
   describe('GET endpoint with multiple response types', () => {
-    it('should return responses according to defined schemas', async () => {
+    it('should return responses according to defined schemas, when using buildFastifyNoPayloadRouteHandler', async () => {
       const getHandler = buildFastifyNoPayloadRouteHandler(
         getRouteWithMultipleResponses,
         async (request, reply) => {
@@ -137,6 +137,87 @@ describe('Response types with multiple status codes', () => {
       )
 
       const route = buildFastifyNoPayloadRoute(getRouteWithMultipleResponses, getHandler)
+      const app = await initApp(route)
+
+      const response200 = await app.inject({
+        method: 'GET',
+        url: '/test',
+        query: {
+          input: 'data',
+        },
+      })
+      expect(response200.statusCode).toBe(200)
+
+      const response400 = await app.inject({
+        method: 'GET',
+        url: '/test',
+        query: {
+          input: 'error',
+        },
+      })
+      expect(response400.statusCode).toBe(400)
+
+      const response422 = await app.inject({
+        method: 'GET',
+        url: '/test',
+        query: {
+          input: 'validation',
+        },
+      })
+      expect(response422.statusCode).toBe(422)
+
+      const response500 = await app.inject({
+        method: 'GET',
+        url: '/test',
+        query: {
+          input: 'invalid_error',
+        },
+      })
+      expect(response500.statusCode).toBe(500)
+
+      await app.close()
+    })
+
+    it('should return responses according to defined schemas, when using buildFastifyNoPayloadRoute', async () => {
+      const route = buildFastifyNoPayloadRoute(
+        getRouteWithMultipleResponses,
+        async (request, reply) => {
+          // With union types, we can send any of the defined response types
+          // The status code should still be set appropriately for semantic correctness
+          // but TypeScript won't enforce matching status codes to response types
+          if (request.query!.input === 'error') {
+            reply.code(400)
+            await reply.send({
+              error: 'error',
+            })
+            return
+          }
+
+          if (request.query!.input === 'validation') {
+            reply.code(422)
+            await reply.send({
+              errors: ['validation error'],
+            })
+            return
+          }
+
+          // Test with invalid response
+          if (request.query!.input === 'invalid_error') {
+            await reply.status(200).send({
+              //@ts-expect-error Invalid response - these fields don't exist in any schema
+              completely: 'wrong',
+              fields: 'here',
+            })
+            return
+          }
+
+          reply.code(200)
+          await reply.send({
+            data: 'success',
+          })
+        },
+      )
+
       const app = await initApp(route)
 
       const response200 = await app.inject({

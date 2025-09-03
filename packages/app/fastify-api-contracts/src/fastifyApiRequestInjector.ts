@@ -1,6 +1,7 @@
 import type {
   DeleteRouteDefinition,
   GetRouteDefinition,
+  HttpStatusCode,
   InferSchemaInput,
   InferSchemaOutput,
   PayloadRouteDefinition,
@@ -52,6 +53,9 @@ export async function injectGet<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   app: AnyFastifyInstance,
   apiContract: GetRouteDefinition<
@@ -60,7 +64,8 @@ export async function injectGet<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: RouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
@@ -91,6 +96,9 @@ export async function injectDelete<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   app: AnyFastifyInstance,
   apiContract: DeleteRouteDefinition<
@@ -99,7 +107,8 @@ export async function injectDelete<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: RouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
@@ -131,6 +140,9 @@ export async function injectPost<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   app: AnyFastifyInstance,
   apiContract: PayloadRouteDefinition<
@@ -140,7 +152,8 @@ export async function injectPost<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: PayloadRouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
@@ -175,6 +188,9 @@ export async function injectPut<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   app: AnyFastifyInstance,
   apiContract: PayloadRouteDefinition<
@@ -184,7 +200,8 @@ export async function injectPut<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: PayloadRouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
@@ -219,6 +236,9 @@ export async function injectPatch<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   app: AnyFastifyInstance,
   apiContract: PayloadRouteDefinition<
@@ -228,7 +248,8 @@ export async function injectPatch<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: PayloadRouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
