@@ -12,12 +12,12 @@ const EventRouting = {
     service: 'service 1',
     queues: {
       topic1Queue1: {
-        name: 'test-first_entity-first_service',
+        queueName: 'test-first_entity-first_service',
         owner: 'team 1',
         service: 'service 1',
       },
       topic1Queue2: {
-        name: 'test-first_entity-second_service',
+        queueName: 'test-first_entity-second_service',
         owner: 'team 2',
         service: 'service 2',
       },
@@ -28,7 +28,7 @@ const EventRouting = {
     isExternal: true,
     queues: {
       topic2Queue1: {
-        name: 'test-second_entity-service',
+        queueName: 'test-second_entity-service',
         owner: 'team 1',
         service: 'service 2',
       },
@@ -106,7 +106,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           isExternal: true,
           queues: {
             invalid: {
-              name: 'invalid',
+              queueName: 'invalid',
               owner: 'test',
               service: 'test',
             },
@@ -141,7 +141,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           isExternal: true,
           queues: {
             invalid: {
-              name: longQueueName,
+              queueName: longQueueName,
               owner: 'test',
               service: 'test',
             },
@@ -178,7 +178,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           isExternal: true,
           queues: {
             invalid: {
-              name: 'test-queue_name',
+              queueName: 'test-queue_name',
               owner: 'test',
               service: 'test',
             },
@@ -220,11 +220,10 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
     })
   })
 
-  describe('resolvePublisherBuildOptions', () => {
+  describe('resolvePublisherOptions', () => {
     it('should throw an error if topic name is not found', () => {
       expect(() =>
-        resolver.resolvePublisherBuildOptions({
-          topicName: 'invalid-topic',
+        resolver.resolvePublisherOptions('invalid-topic', {
           awsConfig: buildAwsConfig(),
           messageSchemas: [],
         }),
@@ -235,8 +234,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       const topicName = EventRouting.topic1.topicName
 
       it('should work using all properties', () => {
-        const result = resolver.resolvePublisherBuildOptions({
-          topicName,
+        const result = resolver.resolvePublisherOptions(topicName, {
           awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
@@ -297,8 +295,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       })
 
       it('should work using only required props', () => {
-        const result = resolver.resolvePublisherBuildOptions({
-          topicName,
+        const result = resolver.resolvePublisherOptions(topicName, {
           awsConfig: buildAwsConfig(),
           messageSchemas: [],
         })
@@ -359,8 +356,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       const topicName = EventRouting.topic2.topicName
 
       it('should work using all props', () => {
-        const result = resolver.resolvePublisherBuildOptions({
-          topicName,
+        const result = resolver.resolvePublisherOptions(topicName, {
           awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
           updateAttributesIfExists: true,
           forceTagUpdate: true,
@@ -384,8 +380,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       })
 
       it('should work using only required props', () => {
-        const result = resolver.resolvePublisherBuildOptions({
-          topicName,
+        const result = resolver.resolvePublisherOptions(topicName, {
           awsConfig: buildAwsConfig(),
           messageSchemas: [],
         })
@@ -406,13 +401,11 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
     })
   })
 
-  describe('resolveConsumerBuildOptions', () => {
+  describe('resolveConsumerOptions', () => {
     it('should throw an error if topic name is not found', () => {
       expect(() =>
-        resolver.resolveConsumerBuildOptions({
+        resolver.resolveConsumerOptions('invalid-topic', 'test-first_entity-first_service', {
           logger,
-          topicName: 'invalid-topic',
-          queueName: 'test-first_entity-first_service',
           awsConfig: buildAwsConfig(),
           handlers: [],
         }),
@@ -421,31 +414,35 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
 
     it('should throw an error if queue is not defined for given topic', () => {
       expect(() =>
-        resolver.resolveConsumerBuildOptions({
-          logger,
-          topicName: EventRouting.topic1.topicName,
-          queueName: EventRouting.topic2.queues.topic2Queue1.name,
-          awsConfig: buildAwsConfig(),
-          handlers: [],
-        }),
+        resolver.resolveConsumerOptions(
+          EventRouting.topic1.topicName,
+          EventRouting.topic2.queues.topic2Queue1.queueName,
+          {
+            logger,
+            awsConfig: buildAwsConfig(),
+            handlers: [],
+          },
+        ),
       ).toThrowErrorMatchingInlineSnapshot('[Error: Queue test-second_entity-service not found]')
     })
 
     it('should properly use handlers', () => {
-      const options = resolver.resolveConsumerBuildOptions({
-        logger,
-        topicName: EventRouting.topic1.topicName,
-        queueName: EventRouting.topic1.queues.topic1Queue1.name,
-        awsConfig: buildAwsConfig(),
-        handlers: [
-          {
-            schema: CONSUMER_BASE_MESSAGE_SCHEMA,
-            handler: () => Promise.resolve({ result: 'success' }),
-            preHandlers: [],
-            messageLogFormatter: () => undefined,
-          },
-        ],
-      })
+      const options = resolver.resolveConsumerOptions(
+        EventRouting.topic1.topicName,
+        EventRouting.topic1.queues.topic1Queue1.queueName,
+        {
+          logger,
+          awsConfig: buildAwsConfig(),
+          handlers: [
+            {
+              schema: CONSUMER_BASE_MESSAGE_SCHEMA,
+              handler: () => Promise.resolve({ result: 'success' }),
+              preHandlers: [],
+              messageLogFormatter: () => undefined,
+            },
+          ],
+        },
+      )
 
       expect(options.handlers).toHaveLength(1)
       expect(options.handlers[0]!.preHandlers).toHaveLength(1)
@@ -462,12 +459,10 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
 
     describe('internal topics', () => {
       const topicName = EventRouting.topic1.topicName
-      const queueName = EventRouting.topic1.queues.topic1Queue1.name
+      const queueName = EventRouting.topic1.queues.topic1Queue1.queueName
 
       it('should work using all properties', () => {
-        const result = resolver.resolveConsumerBuildOptions({
-          topicName,
-          queueName,
+        const result = resolver.resolveConsumerOptions(topicName, queueName, {
           logger,
           handlers: [],
           awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
@@ -564,10 +559,8 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       })
 
       it('should work using only required props', () => {
-        const result = resolver.resolveConsumerBuildOptions({
+        const result = resolver.resolveConsumerOptions(topicName, queueName, {
           logger,
-          topicName,
-          queueName,
           awsConfig: buildAwsConfig(),
           handlers: [],
         })
@@ -681,13 +674,11 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
 
     describe('external topics', () => {
       const topicName = EventRouting.topic2.topicName
-      const queueName = EventRouting.topic2.queues.topic2Queue1.name
+      const queueName = EventRouting.topic2.queues.topic2Queue1.queueName
 
       it('should work using all props', () => {
-        const result = resolver.resolveConsumerBuildOptions({
+        const result = resolver.resolveConsumerOptions(topicName, queueName, {
           logger,
-          topicName,
-          queueName,
           handlers: [],
           awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
           updateAttributesIfExists: true,
@@ -752,9 +743,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       })
 
       it('should work using only required props', () => {
-        const result = resolver.resolveConsumerBuildOptions({
-          topicName,
-          queueName,
+        const result = resolver.resolveConsumerOptions(topicName, queueName, {
           logger,
           handlers: [],
           awsConfig: buildAwsConfig(),

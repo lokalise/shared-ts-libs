@@ -2,8 +2,16 @@ import type { RequestContext } from '@lokalise/fastify-extras'
 import type { CommonLogger } from '@lokalise/node-core'
 import type { ConsumerBaseMessageType, Prehandler } from '@message-queue-toolkit/core'
 
-export type RequestContextPreHandlerOutput = { requestContext: RequestContext }
+/**
+ * Output type for the request context pre-handler.
+ */
+export type RequestContextPreHandlerOutput = {
+  requestContext: RequestContext
+}
 
+/**
+ * Creates a pre-handler that create request context using message metadata.
+ */
 export const createRequestContextPreHandler =
   (
     logger: CommonLogger,
