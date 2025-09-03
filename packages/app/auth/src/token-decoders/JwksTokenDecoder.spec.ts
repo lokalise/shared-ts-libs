@@ -13,7 +13,7 @@ describe('JwksTokenDecoder', () => {
   let tokenDecoder: JwksTokenDecoder
 
   beforeAll(async () => {
-    testContext = await createTestContext()
+    testContext = await createTestContext('myKeyId')
     jwksServer = new JwksServer()
     await jwksServer.start(testContext)
     tokenDecoder = new JwksTokenDecoder(

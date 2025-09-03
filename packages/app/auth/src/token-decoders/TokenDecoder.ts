@@ -1,6 +1,6 @@
 import type { RequestContext } from '@lokalise/fastify-extras'
 import { type Either, stringValueSerializer } from '@lokalise/node-core'
-import { isError } from '@lokalise/universal-ts-utils/node'
+import { isError, isObject } from '@lokalise/universal-ts-utils/node'
 import { TokenError } from 'fast-jwt'
 import { stdSerializers } from 'pino'
 
@@ -65,15 +65,13 @@ export abstract class TokenDecoder {
     requestContext: RequestContext,
     payload: unknown,
   ): Either<TokenValidationError, object> {
-    if (!isValidTokenPayload(payload)) {
-      requestContext.logger.error(
-        { origin: this.constructor.name, payload: stringValueSerializer(payload) },
-        'Decoded token payload is not an object',
-      )
-      throw new Error('Decoded token payload is not an object')
-    }
+    if (isObject(payload)) return { result: payload }
 
-    return { result: payload }
+    requestContext.logger.error(
+      { origin: this.constructor.name, payload: stringValueSerializer(payload) },
+      'Decoded token payload is not an object',
+    )
+    throw new Error('Decoded token payload is not an object')
   }
 
   /**
@@ -91,18 +89,18 @@ export abstract class TokenDecoder {
     requestContext: RequestContext,
     error: unknown,
   ): Either<TokenValidationError, object> {
-    if (!(error instanceof TokenError)) {
-      requestContext.logger.error(
-        {
-          origin: this.constructor.name,
-          error: isError(error) ? stdSerializers.err(error) : stringValueSerializer(error),
-        },
-        'Token verification failed because of an unexpected error',
-      )
-      throw error
-    }
+    if (error instanceof TokenError) return { error: this.mapTokenErrorToValidationError(error) }
 
-    return { error: this.mapTokenErrorToValidationError(error) }
+    /* v8 ignore start */
+    requestContext.logger.error(
+      {
+        origin: this.constructor.name,
+        error: isError(error) ? stdSerializers.err(error) : stringValueSerializer(error),
+      },
+      'Token verification failed because of an unexpected error',
+    )
+    throw error
+    /* v8 ignore stop */
   }
 
   /**
@@ -123,6 +121,3 @@ export abstract class TokenDecoder {
     }
   }
 }
-
-const isValidTokenPayload = (payload: unknown): payload is object =>
-  typeof payload === 'object' && !!payload

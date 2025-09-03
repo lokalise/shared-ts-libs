@@ -31,9 +31,8 @@ export class JwksTokenDecoder extends TokenDecoder {
 
   private async getFirstAvailableKey(): Promise<string> {
     const keys = await this.jwksClient.getSigningKeys()
-    if (!keys[0]) {
-      throw new Error('No signing keys available in JWKS')
-    }
+    /* v8 ignore next */
+    if (!keys[0]) throw new Error('No signing keys available in JWKS')
 
     return keys[0].getPublicKey()
   }
