@@ -91,7 +91,6 @@ export abstract class TokenDecoder {
   ): Either<TokenValidationError, object> {
     if (error instanceof TokenError) return { error: this.mapTokenErrorToValidationError(error) }
 
-    /* v8 ignore start */
     requestContext.logger.error(
       {
         origin: this.constructor.name,
@@ -100,7 +99,6 @@ export abstract class TokenDecoder {
       'Token verification failed because of an unexpected error',
     )
     throw error
-    /* v8 ignore stop */
   }
 
   /**
