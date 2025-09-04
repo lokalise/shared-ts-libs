@@ -5,7 +5,7 @@ Shared TypeScript configuration for Lokalise projects.
 ## Getting Started
 
 ### Requirements:
-- TypeScript `^5.9.0`
+- TypeScript `>=5.9.0`
 - ESM codebase
 
 ### Installation:
