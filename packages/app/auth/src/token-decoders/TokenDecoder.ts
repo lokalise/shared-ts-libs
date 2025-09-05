@@ -12,7 +12,7 @@ export type TokenValidationError = 'INVALID_TOKEN' | 'EXPIRED_TOKEN'
 /**
  * Function type for token verification that can return a promise or synchronous result
  */
-type Verify = (token: string) => Promise<unknown> | unknown
+type Decode = (token: string) => Promise<unknown> | unknown
 
 /**
  * Abstract base class for token decoders that provides common token verification functionality.
@@ -22,10 +22,10 @@ type Verify = (token: string) => Promise<unknown> | unknown
  * to define their own verification logic through the constructor.
  */
 export abstract class TokenDecoder {
-  private readonly verify: Verify
+  private readonly decodeFn: Decode
 
-  protected constructor(verify: Verify) {
-    this.verify = verify
+  protected constructor(decode: Decode) {
+    this.decodeFn = decode
   }
 
   /**
@@ -44,7 +44,7 @@ export abstract class TokenDecoder {
     token: string,
   ): Promise<Either<TokenValidationError, object>> {
     try {
-      const result = await this.verify(token)
+      const result = await this.decodeFn(token)
       return this.handleSuccessfulDecode(requestContext, result)
     } catch (error) {
       return this.handleDecodeError(requestContext, error)
