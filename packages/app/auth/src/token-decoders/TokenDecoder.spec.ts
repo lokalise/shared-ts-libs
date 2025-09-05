@@ -2,15 +2,6 @@ import { TokenError } from 'fast-jwt'
 import { createRequestContext } from '../../tests/createRequestContext.js'
 import { TokenDecoder } from './TokenDecoder.js'
 
-/**
- * Concrete test implementation of TokenDecoder for testing purposes
- */
-class TestTokenDecoder extends TokenDecoder {
-  constructor(verify: (token: string) => Promise<unknown> | unknown) {
-    super(verify)
-  }
-}
-
 describe('TokenDecoder', () => {
   const reqContext = createRequestContext()
 
@@ -19,7 +10,7 @@ describe('TokenDecoder', () => {
       it('should return result when payload is a plain object', async () => {
         // Given
         const payload = { userId: 123, name: 'John Doe' }
-        const tokenDecoder = new TestTokenDecoder(() => payload)
+        const tokenDecoder = new TokenDecoder(() => payload)
 
         // When
         const result = await tokenDecoder.decode(reqContext, 'dummy-token')
@@ -31,7 +22,7 @@ describe('TokenDecoder', () => {
       it('should return result when payload is an empty object', async () => {
         // Given
         const payload = {}
-        const tokenDecoder = new TestTokenDecoder(() => Promise.resolve(payload))
+        const tokenDecoder = new TokenDecoder(() => Promise.resolve(payload))
 
         // When
         const result = await tokenDecoder.decode(reqContext, 'dummy-token')
@@ -43,7 +34,7 @@ describe('TokenDecoder', () => {
       it('should return result when payload is an array', async () => {
         // Given
         const payload = [1, 2, 3, 'hello', { nested: 'object' }]
-        const tokenDecoder = new TestTokenDecoder(() => Promise.resolve(payload))
+        const tokenDecoder = new TokenDecoder(() => Promise.resolve(payload))
 
         // When
         const result = await tokenDecoder.decode(reqContext, 'dummy-token')
@@ -55,7 +46,7 @@ describe('TokenDecoder', () => {
       it('should return when payload is not an object', async () => {
         // Given
         const payload = 'hello world'
-        const tokenDecoder = new TestTokenDecoder(() => Promise.resolve(payload))
+        const tokenDecoder = new TokenDecoder(() => Promise.resolve(payload))
 
         // When - Then
         await expect(() =>
@@ -71,7 +62,7 @@ describe('TokenDecoder', () => {
         'should properly deal with token error codes',
         async (tokenErrorCode) => {
           // Given
-          const tokenDecoder = new TestTokenDecoder(() => {
+          const tokenDecoder = new TokenDecoder(() => {
             throw new TokenError(tokenErrorCode)
           })
 
@@ -87,7 +78,7 @@ describe('TokenDecoder', () => {
 
       it('should handle unexpected error', async () => {
         // Given
-        const tokenDecoder = new TestTokenDecoder(() => {
+        const tokenDecoder = new TokenDecoder(() => {
           throw new Error('test error')
         })
 
@@ -99,7 +90,7 @@ describe('TokenDecoder', () => {
 
       it('should handle non error thrown', async () => {
         // Given
-        const tokenDecoder = new TestTokenDecoder(() => {
+        const tokenDecoder = new TokenDecoder(() => {
           throw { hello: 'world' }
         })
 

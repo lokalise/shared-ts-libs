@@ -15,16 +15,16 @@ export type TokenValidationError = 'INVALID_TOKEN' | 'EXPIRED_TOKEN'
 type Decode = (token: string) => Promise<unknown> | unknown
 
 /**
- * Abstract base class for token decoders that provides common token verification functionality.
+ * Class for token decoders that provides token verification functionality.
  *
  * This class handles token decoding, error mapping, and logging for different token types.
  * It provides a unified interface for token verification while allowing specific implementations
  * to define their own verification logic through the constructor.
  */
-export abstract class TokenDecoder {
+export class TokenDecoder {
   private readonly decodeFn: Decode
 
-  protected constructor(decode: Decode) {
+  constructor(decode: Decode) {
     this.decodeFn = decode
   }
 
