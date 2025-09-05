@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMockFastifyRequest } from '../../tests/createMockFastifyRequest.js'
 import { createToken } from '../../tests/createToken.js'
 import { createTestContext, type TestContext } from '../../tests/testContext.js'
-import { KeyBasedTokenDecoder, type TokenDecoder } from '../token-decoders/index.js'
+import { KeyBasedTokenDecoder, TokenDecoder } from '../token-decoders/index.js'
 import type { TokenValidationError } from '../token-decoders/TokenDecoder.ts'
 import type { AuthFailureReason, AuthResult, BaseAuthInfo } from './Authenticator.ts'
 import { JwtBasedAuthenticator } from './JwtBasedAuthenticator.js'
@@ -85,44 +85,67 @@ describe('JwtBasedAuthenticator', () => {
     describe('no Bearer token', () => {
       it('returns INVALID_CREDENTIALS when no Authorization header', async () => {
         // Given
-        const request = createMockRequest()
+        const request = createMockFastifyRequest()
+        const authenticator = new TestJwtAuthenticator(
+          new TokenDecoder(() => {
+            throw new Error()
+          }),
+        )
+
         // When
         const result = await authenticator.authenticate(request)
+
         // Then
         expect(result).toEqual({ success: false, failure: 'INVALID_CREDENTIALS' })
-        expect(mockTokenDecoder.decode).not.toHaveBeenCalled()
       })
 
       it('returns INVALID_CREDENTIALS when Authorization header is not Bearer', async () => {
         // Given
-        const request = createMockRequest('Basic dXNlcjpwYXNzd29yZA==')
+        const request = createMockFastifyRequest('Basic dXNlcjpwYXNzd29yZA==')
+        const authenticator = new TestJwtAuthenticator(
+          new TokenDecoder(() => {
+            throw new Error()
+          }),
+        )
+
         // When
         const result = await authenticator.authenticate(request)
+
         // Then
         expect(result).toEqual({ success: false, failure: 'INVALID_CREDENTIALS' })
-        expect(mockTokenDecoder.decode).not.toHaveBeenCalled()
       })
 
       it('returns INVALID_CREDENTIALS when Authorization header is malformed', async () => {
         // Given
-        const request = createMockRequest('Bearer')
+        const request = createMockFastifyRequest('Bearer')
+        const authenticator = new TestJwtAuthenticator(
+          new TokenDecoder(() => {
+            throw new Error()
+          }),
+        )
+
         // When
         const result = await authenticator.authenticate(request)
+
         // Then
         expect(result).toEqual({ success: false, failure: 'INVALID_CREDENTIALS' })
-        expect(mockTokenDecoder.decode).not.toHaveBeenCalled()
       })
     })
 
     describe('invalid JWT tokens', () => {
       it('returns INVALID_CREDENTIALS when JWT verification fails with TokenInvalidError', async () => {
         // Given
-        mockTokenDecoder.decode = vi
-          .fn()
-          .mockResolvedValue({ error: 'INVALID_TOKEN' satisfies TokenValidationError })
-        const request = createMockRequest('Bearer invalid-token')
+        const mockTokenDecoder = {
+          decode: vi.fn().mockResolvedValue({
+            error: 'INVALID_TOKEN' satisfies TokenValidationError,
+          }),
+        } as unknown as TokenDecoder
+        const request = createMockFastifyRequest('Bearer invalid-token')
+        const authenticator = new TestJwtAuthenticator(mockTokenDecoder)
+
         // When
         const result = await authenticator.authenticate(request)
+
         // Then
         expect(result).toEqual({
           success: false,
@@ -133,12 +156,17 @@ describe('JwtBasedAuthenticator', () => {
 
       it('returns EXPIRED_CREDENTIALS when JWT verification fails with TokenExpiredError', async () => {
         // Given
-        mockTokenDecoder.decode = vi
-          .fn()
-          .mockResolvedValue({ error: 'EXPIRED_TOKEN' satisfies TokenValidationError })
-        const request = createMockRequest('Bearer expired-token')
+        const mockTokenDecoder = {
+          decode: vi.fn().mockResolvedValue({
+            error: 'EXPIRED_TOKEN' satisfies TokenValidationError,
+          }),
+        } as unknown as TokenDecoder
+        const request = createMockFastifyRequest('Bearer expired-token')
+        const authenticator = new TestJwtAuthenticator(mockTokenDecoder)
+
         // When
         const result = await authenticator.authenticate(request)
+
         // Then
         expect(result).toEqual({
           success: false,
