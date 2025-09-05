@@ -1,6 +1,6 @@
 import type { RequestContext } from '@lokalise/fastify-extras'
 import type { FastifyRequest } from 'fastify'
-import type { TokenDecoder } from '../token-decoders/index.js'
+import type { TokenDecoder } from '../token-decoders/index.ts'
 import type { Authenticator, AuthResult, BaseAuthInfo } from './Authenticator.ts'
 
 /**

@@ -1,9 +1,9 @@
 import jwksClient from 'jwks-rsa'
-import { createRequestContext } from '../../tests/createRequestContext.js'
-import { createToken } from '../../tests/createToken.js'
-import { JwksServer } from '../../tests/JwksServer.js'
-import { createTestContext, type TestContext } from '../../tests/testContext.js'
-import { JwksTokenDecoder } from './JwksTokenDecoder.js'
+import { createRequestContext } from '../../tests/createRequestContext.ts'
+import { createToken } from '../../tests/createToken.ts'
+import { JwksServer } from '../../tests/JwksServer.ts'
+import { createTestContext, type TestContext } from '../../tests/testContext.ts'
+import { JwksTokenDecoder } from './JwksTokenDecoder.ts'
 
 describe('JwksTokenDecoder', () => {
   const reqContext = createRequestContext()

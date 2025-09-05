@@ -1,6 +1,6 @@
 import type { FastifyRequest } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createMockFastifyRequest } from '../../tests/createMockFastifyRequest.js'
+import { createMockFastifyRequest } from '../../tests/createMockFastifyRequest.ts'
 import type { Authenticator, AuthResult, BaseAuthInfo } from './Authenticator.ts'
 import { AuthenticatorChain } from './AuthenticatorChain.ts'
 

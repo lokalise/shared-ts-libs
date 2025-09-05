@@ -1,17 +1,20 @@
 import type { RequestContext } from '@lokalise/fastify-extras'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createMockFastifyRequest } from '../../tests/createMockFastifyRequest.js'
-import { createToken } from '../../tests/createToken.js'
-import { createTestContext, type TestContext } from '../../tests/testContext.js'
-import { KeyBasedTokenDecoder, TokenDecoder } from '../token-decoders/index.js'
-import type { TokenValidationError } from '../token-decoders/TokenDecoder.ts'
+import { createMockFastifyRequest } from '../../tests/createMockFastifyRequest.ts'
+import { createToken } from '../../tests/createToken.ts'
+import { createTestContext, type TestContext } from '../../tests/testContext.ts'
+import {
+  KeyBasedTokenDecoder,
+  TokenDecoder,
+  type TokenValidationError,
+} from '../token-decoders/index.ts'
 import type { AuthFailureReason, AuthResult, BaseAuthInfo } from './Authenticator.ts'
-import { JwtBasedAuthenticator } from './JwtBasedAuthenticator.js'
+import { JwtBasedAuthenticator } from './JwtBasedAuthenticator.ts'
 
 type AuthInfo = BaseAuthInfo<'test-provider'>
 
 class TestJwtAuthenticator extends JwtBasedAuthenticator<AuthInfo> {
-  error?: AuthFailureReason
+  private readonly error?: AuthFailureReason
 
   constructor(tokenDecoder: TokenDecoder, error?: AuthFailureReason, authHeader?: string) {
     super(tokenDecoder, authHeader)

@@ -1,7 +1,7 @@
-import { createRequestContext } from '../../tests/createRequestContext.js'
-import { createToken } from '../../tests/createToken.js'
-import { createTestContext, type TestContext } from '../../tests/testContext.js'
-import { KeyBasedTokenDecoder } from './KeyBasedTokenDecoder.js'
+import { createRequestContext } from '../../tests/createRequestContext.ts'
+import { createToken } from '../../tests/createToken.ts'
+import { createTestContext, type TestContext } from '../../tests/testContext.ts'
+import { KeyBasedTokenDecoder } from './KeyBasedTokenDecoder.ts'
 
 describe('KeyBasedTokenDecoder', () => {
   const reqContext = createRequestContext()

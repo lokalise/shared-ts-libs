@@ -1,6 +1,6 @@
 import { TokenError } from 'fast-jwt'
-import { createRequestContext } from '../../tests/createRequestContext.js'
-import { TokenDecoder } from './TokenDecoder.js'
+import { createRequestContext } from '../../tests/createRequestContext.ts'
+import { TokenDecoder } from './TokenDecoder.ts'
 
 describe('TokenDecoder', () => {
   const reqContext = createRequestContext()
