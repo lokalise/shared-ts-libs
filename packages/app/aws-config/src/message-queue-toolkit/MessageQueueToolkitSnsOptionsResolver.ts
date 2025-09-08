@@ -137,6 +137,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
       queueName,
       topicConfig.queues,
       params,
+      false,
     )
 
     /* v8 ignore start */

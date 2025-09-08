@@ -128,6 +128,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
     queueConfigs: Record<string, QueueConfig>,
     // biome-ignore lint/suspicious/noExplicitAny: It is not important here
     params: ResolveConsumerOptionsParams<any> | ResolvePublisherOptionsParams<any>,
+    addSqsPolicy: boolean,
   ): ResolvedQueueResult {
     const queueConfig = queueConfigs[queueName]
     if (!queueConfig) throw new Error(`Queue ${queueName} not found`)
@@ -148,6 +149,20 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
           Attributes: {
             KmsMasterKeyId: awsConfig.kmsKeyId,
             VisibilityTimeout: VISIBILITY_TIMEOUT.toString(),
+            ...(addSqsPolicy
+              ? {
+                  Policy: JSON.stringify({
+                    Version: '2012-10-17',
+                    Statement: [
+                      {
+                        Effect: 'Allow',
+                        Principal: { AWS: '*' },
+                        Action: ['sqs:SendMessage', 'sqs:GetQueueAttributes', 'sqs:GetQueueUrl'],
+                      },
+                    ],
+                  }),
+                }
+              : {}),
           },
         },
         updateAttributesIfExists: updateAttributesIfExists ?? true,
