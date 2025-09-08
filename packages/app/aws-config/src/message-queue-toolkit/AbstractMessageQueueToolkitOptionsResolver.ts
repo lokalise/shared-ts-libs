@@ -1,6 +1,10 @@
 import type { CreateQueueRequest } from '@aws-sdk/client-sqs'
 import type { ConsumerBaseMessageType } from '@message-queue-toolkit/core'
-import type { SQSCreationConfig, SQSQueueLocatorType } from '@message-queue-toolkit/sqs'
+import type {
+  SQSCreationConfig,
+  SQSPolicyConfig,
+  SQSQueueLocatorType,
+} from '@message-queue-toolkit/sqs'
 import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
 import type { QueueConfig } from '../event-routing/eventRoutingConfig.ts'
 import { getSqsTags } from '../tags/index.ts'
@@ -128,7 +132,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
     queueConfigs: Record<string, QueueConfig>,
     // biome-ignore lint/suspicious/noExplicitAny: It is not important here
     params: ResolveConsumerOptionsParams<any> | ResolvePublisherOptionsParams<any>,
-    addSqsPolicy: boolean,
+    policyConfig?: SQSPolicyConfig,
   ): ResolvedQueueResult {
     const queueConfig = queueConfigs[queueName]
     if (!queueConfig) throw new Error(`Queue ${queueName} not found`)
@@ -149,22 +153,9 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
           Attributes: {
             KmsMasterKeyId: awsConfig.kmsKeyId,
             VisibilityTimeout: VISIBILITY_TIMEOUT.toString(),
-            ...(addSqsPolicy
-              ? {
-                  Policy: JSON.stringify({
-                    Version: '2012-10-17',
-                    Statement: [
-                      {
-                        Effect: 'Allow',
-                        Principal: { AWS: '*' },
-                        Action: ['sqs:SendMessage', 'sqs:GetQueueAttributes', 'sqs:GetQueueUrl'],
-                      },
-                    ],
-                  }),
-                }
-              : {}),
           },
         },
+        policyConfig,
         updateAttributesIfExists: updateAttributesIfExists ?? true,
         forceTagUpdate: forceTagUpdate,
       },

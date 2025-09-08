@@ -1,6 +1,11 @@
 import { groupByUnique } from '@lokalise/universal-ts-utils/node'
 import type { ConsumerBaseMessageType } from '@message-queue-toolkit/core'
-import type { SQSCreationConfig, SQSQueueLocatorType } from '@message-queue-toolkit/sqs'
+import {
+  SQS_RESOURCE_CURRENT_QUEUE,
+  type SQSCreationConfig,
+  type SQSPolicyConfig,
+  type SQSQueueLocatorType,
+} from '@message-queue-toolkit/sqs'
 import type { CommandConfig } from '../event-routing/eventRoutingConfig.ts'
 import { AbstractMessageQueueToolkitOptionsResolver } from './AbstractMessageQueueToolkitOptionsResolver.ts'
 import type {
@@ -35,7 +40,12 @@ export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueT
     queueName: string,
     params: ResolvePublisherOptionsParams<MessagePayload>,
   ): ResolvedPublisherOptions<SQSCreationConfig, SQSQueueLocatorType, MessagePayload> {
-    const resolvedQueue = this.resolveQueue(queueName, this.commandConfig, params, true)
+    const resolvedQueue = this.resolveQueue(
+      queueName,
+      this.commandConfig,
+      params,
+      this.resolvePolicyConfig(),
+    )
 
     return {
       creationConfig: resolvedQueue.creationConfig,
@@ -55,12 +65,28 @@ export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueT
     queueName: string,
     params: ResolveConsumerOptionsParams<MessagePayloadType>,
   ): ResolvedConsumerOptions<SQSCreationConfig, SQSQueueLocatorType, MessagePayloadType> {
-    const resolvedQueue = this.resolveQueue(queueName, this.commandConfig, params, true)
+    const resolvedQueue = this.resolveQueue(
+      queueName,
+      this.commandConfig,
+      params,
+      this.resolvePolicyConfig(),
+    )
 
     return {
       creationConfig: resolvedQueue.creationConfig,
       locatorConfig: resolvedQueue.locatorConfig,
       ...this.commonConsumerOptions(params, resolvedQueue.creationConfig?.queue),
+    }
+  }
+
+  private resolvePolicyConfig(): SQSPolicyConfig {
+    return {
+      resource: SQS_RESOURCE_CURRENT_QUEUE,
+      statements: {
+        Effect: 'Allow',
+        Principal: '*',
+        Action: ['sqs:SendMessage', 'sqs:GetQueueAttributes', 'sqs:GetQueueUrl'],
+      },
     }
   }
 }
