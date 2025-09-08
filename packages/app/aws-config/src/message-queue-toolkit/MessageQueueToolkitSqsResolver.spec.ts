@@ -149,10 +149,21 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
           {
             "creationConfig": {
               "forceTagUpdate": true,
+              "policyConfig": {
+                "resource": Symbol(current_queue),
+                "statements": {
+                  "Action": [
+                    "sqs:SendMessage",
+                    "sqs:GetQueueAttributes",
+                    "sqs:GetQueueUrl",
+                  ],
+                  "Effect": "Allow",
+                  "Principal": "*",
+                },
+              },
               "queue": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
-                  "Policy": "{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"*"},"Action":["sqs:SendMessage","sqs:GetQueueAttributes","sqs:GetQueueUrl"]}]}",
                   "VisibilityTimeout": "60",
                 },
                 "QueueName": "prefix_test-mqt-queue_first",
@@ -186,10 +197,21 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
           {
             "creationConfig": {
               "forceTagUpdate": undefined,
+              "policyConfig": {
+                "resource": Symbol(current_queue),
+                "statements": {
+                  "Action": [
+                    "sqs:SendMessage",
+                    "sqs:GetQueueAttributes",
+                    "sqs:GetQueueUrl",
+                  ],
+                  "Effect": "Allow",
+                  "Principal": "*",
+                },
+              },
               "queue": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
-                  "Policy": "{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"*"},"Action":["sqs:SendMessage","sqs:GetQueueAttributes","sqs:GetQueueUrl"]}]}",
                   "VisibilityTimeout": "60",
                 },
                 "QueueName": "test-mqt-queue_first",
@@ -299,10 +321,21 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
             "creationConfig": {
               "forceTagUpdate": true,
+              "policyConfig": {
+                "resource": Symbol(current_queue),
+                "statements": {
+                  "Action": [
+                    "sqs:SendMessage",
+                    "sqs:GetQueueAttributes",
+                    "sqs:GetQueueUrl",
+                  ],
+                  "Effect": "Allow",
+                  "Principal": "*",
+                },
+              },
               "queue": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
-                  "Policy": "{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"*"},"Action":["sqs:SendMessage","sqs:GetQueueAttributes","sqs:GetQueueUrl"]}]}",
                   "VisibilityTimeout": "60",
                 },
                 "QueueName": "prefix_test-mqt-queue_first",
@@ -347,10 +380,21 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
             "creationConfig": {
               "forceTagUpdate": undefined,
+              "policyConfig": {
+                "resource": Symbol(current_queue),
+                "statements": {
+                  "Action": [
+                    "sqs:SendMessage",
+                    "sqs:GetQueueAttributes",
+                    "sqs:GetQueueUrl",
+                  ],
+                  "Effect": "Allow",
+                  "Principal": "*",
+                },
+              },
               "queue": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
-                  "Policy": "{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"*"},"Action":["sqs:SendMessage","sqs:GetQueueAttributes","sqs:GetQueueUrl"]}]}",
                   "VisibilityTimeout": "60",
                 },
                 "QueueName": "test-mqt-queue_first",
