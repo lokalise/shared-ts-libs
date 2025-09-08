@@ -35,7 +35,7 @@ export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueT
     queueName: string,
     params: ResolvePublisherOptionsParams<MessagePayload>,
   ): ResolvedPublisherOptions<SQSCreationConfig, SQSQueueLocatorType, MessagePayload> {
-    const resolvedQueue = this.resolveQueue(queueName, this.commandConfig, params)
+    const resolvedQueue = this.resolveQueue(queueName, this.commandConfig, params, true)
 
     return {
       creationConfig: resolvedQueue.creationConfig,
@@ -55,7 +55,7 @@ export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueT
     queueName: string,
     params: ResolveConsumerOptionsParams<MessagePayloadType>,
   ): ResolvedConsumerOptions<SQSCreationConfig, SQSQueueLocatorType, MessagePayloadType> {
-    const resolvedQueue = this.resolveQueue(queueName, this.commandConfig, params)
+    const resolvedQueue = this.resolveQueue(queueName, this.commandConfig, params, true)
 
     return {
       creationConfig: resolvedQueue.creationConfig,
