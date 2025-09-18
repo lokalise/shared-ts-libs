@@ -17,22 +17,20 @@ describe('collectFromIterable', () => {
     })
 
     it('collects items from a custom synchronous iterable', () => {
-      const customIterable = {
-        *[Symbol.iterator]() {
-          yield 1
-          yield 2
-          yield 3
-        },
+      function* generator() {
+        yield 1
+        yield 2
+        yield 3
       }
-      const result = collectFromIterable(customIterable)
+      const result = collectFromIterable(generator())
       expect(result).toEqual([1, 2, 3])
     })
 
-    it('collects items from an empty async generator', async () => {
-      async function* emptyAsyncGenerator() {
+    it('collects items from an empty async generator', () => {
+      function* emptyGenerator() {
         // No yields
       }
-      const result = await collectFromIterable(emptyAsyncGenerator())
+      const result = collectFromIterable(emptyGenerator())
       expect(result).toEqual([])
     })
 
