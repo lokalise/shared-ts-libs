@@ -28,6 +28,37 @@ export class MockttpHelper {
     this.mockServer = mockServer
   }
 
+  mockAnyResponse<
+    ResponseBodySchema extends z.Schema,
+    PathParamsSchema extends z.Schema | undefined,
+  >(
+    contract:
+      | CommonRouteDefinition<
+          ResponseBodySchema,
+          PathParamsSchema,
+          z.Schema | undefined,
+          z.Schema | undefined,
+          boolean,
+          boolean,
+          any // ResponseSchemasByStatusCode - not used in mocking
+        >
+      | PayloadRouteDefinition<
+          z.Schema | undefined,
+          ResponseBodySchema,
+          PathParamsSchema,
+          z.Schema | undefined,
+          z.Schema | undefined,
+          boolean,
+          boolean,
+          any // ResponseSchemasByStatusCode - not used in mocking
+        >,
+    params: PathParamsSchema extends undefined
+      ? PayloadMockParamsNoPath<any>
+      : PayloadMockParams<InferSchemaInput<PathParamsSchema>, any>,
+  ): Promise<void> {
+    return this.mockValidResponse(contract, params)
+  }
+
   async mockValidResponse<
     ResponseBodySchema extends z.Schema,
     PathParamsSchema extends z.Schema | undefined,
