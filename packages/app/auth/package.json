@@ -41,13 +41,15 @@
         "jwks-rsa": "^3.2.0"
     },
     "peerDependencies": {
+        "@lokalise/fastify-extras": ">=29.0.0",
         "@lokalise/node-core": ">=14.0.0",
-        "@lokalise/universal-ts-utils": ">=4.0.0",
+        "@lokalise/universal-ts-utils": ">=4.5.0",
         "fastify": "^5.6.0"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.1.4",
         "@lokalise/biome-config": "^3.1.0",
+        "@lokalise/fastify-extras": "^30.0.0",
         "@lokalise/node-core": "^14.4.1",
         "@lokalise/tsconfig": "^1.3.0",
         "@lokalise/universal-ts-utils": "^4.5.1",
