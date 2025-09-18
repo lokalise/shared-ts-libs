@@ -6,6 +6,7 @@ import type {
   InferSchemaOutput,
   PayloadRouteDefinition,
 } from '@lokalise/api-contracts'
+import { buildRequestPath } from '@lokalise/api-contracts'
 import type { WretchResponse } from 'wretch'
 import { type ZodSchema, z } from 'zod/v4'
 import type {
@@ -441,7 +442,7 @@ export function sendByPayloadRoute<
     queryParams: params.queryParams,
     queryParamsSchema: routeDefinition.requestQuerySchema,
     // @ts-expect-error magic type inferring happening
-    path: routeDefinition.pathResolver(params.pathParams),
+    path: buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
     // @ts-expect-error FixMe
     headers: params.headers,
     // @ts-expect-error magic type inferring happening
@@ -492,7 +493,7 @@ export function sendByGetRoute<
     queryParams: params.queryParams,
     queryParamsSchema: routeDefinition.requestQuerySchema,
     // @ts-expect-error magic type inferring happening
-    path: routeDefinition.pathResolver(params.pathParams),
+    path: buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
     // @ts-expect-error FixMe
     headers: params.headers,
     // @ts-expect-error magic type inferring happening
@@ -543,7 +544,7 @@ export function sendByDeleteRoute<
     queryParams: params.queryParams,
     queryParamsSchema: routeDefinition.requestQuerySchema,
     // @ts-expect-error magic type inferring happening
-    path: routeDefinition.pathResolver(params.pathParams),
+    path: buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
     // @ts-expect-error FIXME
     headers: params.headers,
     // @ts-expect-error FIXME

@@ -173,6 +173,7 @@ export type PayloadRouteRequestParams<
     ? never
     : RequestHeader | (() => RequestHeader) | (() => Promise<RequestHeader>)
   pathParams: PathParams extends undefined ? never : PathParams
+  pathPrefix?: string
 } extends infer Mandatory
   ? {
       [K in keyof Mandatory as Mandatory[K] extends never ? never : K]: Mandatory[K]
@@ -189,6 +190,7 @@ export type RouteRequestParams<
     ? never
     : RequestHeader | (() => RequestHeader) | (() => Promise<RequestHeader>)
   pathParams: PathParams extends undefined ? never : PathParams
+  pathPrefix?: string
 } extends infer Mandatory
   ? {
       [K in keyof Mandatory as Mandatory[K] extends never ? never : K]: Mandatory[K]
