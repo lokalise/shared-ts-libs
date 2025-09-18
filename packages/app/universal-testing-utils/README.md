@@ -223,5 +223,55 @@ describe('mockttpUtils', () => {
             `)
         })
     })
+
+    describe('mockAnyResponse', () => {
+        it('mocks error response with non-matching schema', async () => {
+            // mockAnyResponse allows any response body, bypassing schema validation
+            // Useful for testing error responses or edge cases
+            await mockttpHelper.mockAnyResponse(postContract, {
+                responseBody: { error: 'Internal Server Error', code: 'ERR_500' },
+                responseCode: 500
+            })
+
+            const response = await sendByPayloadRoute(wretchClient, postContract, {
+                body: {name: 'test'},
+            })
+
+            // Response will contain the error structure, not the expected schema
+            expect(response).toMatchInlineSnapshot(`
+              {
+                "error": "Internal Server Error",
+                "code": "ERR_500"
+              }
+            `)
+        })
+
+        it('mocks response with invalid schema for testing error handling', async () => {
+            await mockttpHelper.mockAnyResponse(postContract, {
+                responseBody: { unexpectedField: 'value', wrongType: 123 }
+            })
+
+            const response = await sendByPayloadRoute(wretchClient, postContract, {
+                body: {name: 'test'},
+            })
+
+            expect(response).toMatchInlineSnapshot(`
+              {
+                "unexpectedField": "value",
+                "wrongType": 123
+              }
+            `)
+        })
+    })
 })
 ```
+
+### mockAnyResponse
+
+The `mockAnyResponse` method allows you to mock API responses with any response body, bypassing contract schema validation. This is particularly useful for:
+
+- Testing error responses (4xx, 5xx status codes)
+- Testing edge cases where the response doesn't match the expected schema
+- Simulating malformed responses to test error handling
+
+Unlike `mockValidResponse` which enforces schema validation, `mockAnyResponse` accepts any response body structure, making it ideal for testing how your application handles unexpected API responses.
