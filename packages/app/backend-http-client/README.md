@@ -124,3 +124,10 @@ const responseBodyGet = await sendByGetRoute(client, someGetRouteDefinition,
         }
 )
 ```
+
+The following parameters can be specified when sending API contract-based requests:
+- `body` - request body (only applicable for `sendByPayloadRoute`, type needs to match with contract definition)
+- `queryParams` - query parameters (type needs to match with contract definition)
+- `headers` - custom headers to be sent with the request (type needs to match with contract definition)
+- `pathParams` – parameters used for path resolver (type needs to match with contract definition)
+- `pathPrefix` - optional prefix to be prepended to the path resolved by the contract's path resolver

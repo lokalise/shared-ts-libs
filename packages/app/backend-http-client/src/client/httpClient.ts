@@ -7,6 +7,7 @@ import type {
   InferSchemaOutput,
   PayloadRouteDefinition,
 } from '@lokalise/api-contracts'
+import { buildRequestPath } from '@lokalise/api-contracts'
 import { copyWithoutUndefined } from '@lokalise/node-core'
 import type { FormData } from 'undici'
 import { Client } from 'undici'
@@ -481,7 +482,7 @@ export function sendByPayloadRoute<
     // @ts-expect-error TS loses exact string type during uppercasing
     routeDefinition.method.toUpperCase(),
     // @ts-expect-error magic type inferring happening
-    routeDefinition.pathResolver(params.pathParams),
+    buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
     // @ts-expect-error magic type inferring happening
     params.body,
     {
@@ -539,7 +540,7 @@ export function sendByGetRoute<
     // @ts-expect-error TS loses exact string type during uppercasing
     routeDefinition.method.toUpperCase(),
     // @ts-expect-error magic type inferring happening
-    routeDefinition.pathResolver(params.pathParams),
+    buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
     {
       isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected ?? false,
       // @ts-expect-error FixMe
@@ -595,7 +596,7 @@ export function sendByDeleteRoute<
     // @ts-expect-error TS loses exact string type during uppercasing
     routeDefinition.method.toUpperCase(),
     // @ts-expect-error magic type inferring happening
-    routeDefinition.pathResolver(params.pathParams),
+    buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
     {
       isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected ?? true,
       // @ts-expect-error FixMe

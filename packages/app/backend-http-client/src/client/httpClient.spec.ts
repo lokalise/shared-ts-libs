@@ -680,6 +680,50 @@ describe('httpClient', () => {
       expect(result.result.statusCode).toBe(204)
       expect(result.result.body).toBeNull()
     })
+
+    it('works with path prefix', async () => {
+      const schema = z.object({
+        category: z.string(),
+        description: z.string(),
+        id: z.number(),
+        image: z.string(),
+        price: z.number(),
+        rating: z.object({
+          count: z.number(),
+          rate: z.number(),
+        }),
+        title: z.string(),
+      })
+
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: 'resources/products/1',
+          method: 'GET',
+        })
+        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+      const result = await sendByGetRoute(
+        client,
+        apiContract,
+        {
+          pathPrefix: 'resources',
+        },
+        {
+          validateResponse: true,
+          throwOnError: true,
+          requestLabel: 'dummy',
+          reqContext,
+        },
+      )
+
+      expect(result.result.body).toEqual(mockProduct1)
+    })
   })
 
   describe('DELETE', () => {
@@ -995,6 +1039,41 @@ describe('httpClient', () => {
         ]]
       `)
     })
+
+    it('works with path prefix', async () => {
+      const schema = z.object({
+        id: z.number(),
+      })
+
+      const apiContract = buildDeleteRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: 'resources/products/1',
+          method: 'DELETE',
+        })
+        .reply(200, { id: 1 }, { headers: JSON_HEADERS })
+
+      const result = await sendByDeleteRoute(
+        client,
+        apiContract,
+        {
+          pathPrefix: 'resources/',
+        },
+        {
+          validateResponse: true,
+          throwOnError: true,
+          requestLabel: 'dummy',
+          reqContext,
+        },
+      )
+
+      expect(result.result.body).toEqual({ id: 1 })
+    })
   })
 
   describe('sendByPayloadRoute', () => {
@@ -1117,6 +1196,43 @@ describe('httpClient', () => {
       )
 
       expect(result.result.body).toEqual(mockProduct1)
+    })
+
+    it('works with path prefix', async () => {
+      const schema = z.object({
+        id: z.number(),
+      })
+
+      const apiContract = buildPayloadRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        method: 'post',
+        requestBodySchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: 'resources/products/1',
+          method: 'POST',
+        })
+        .reply(200, { id: 1 }, { headers: JSON_HEADERS })
+
+      const result = await sendByPayloadRoute(
+        client,
+        apiContract,
+        {
+          pathPrefix: '/resources/',
+        },
+        {
+          validateResponse: true,
+          throwOnError: true,
+          requestLabel: 'dummy',
+          reqContext,
+        },
+      )
+
+      expect(result.result.body).toEqual({ id: 1 })
     })
   })
 
