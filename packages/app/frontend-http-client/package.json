@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/frontend-http-client",
-    "version": "6.2.0",
+    "version": "6.3.0",
     "description": "Opinionated HTTP client for the frontend",
     "files": [
         "dist/**",
