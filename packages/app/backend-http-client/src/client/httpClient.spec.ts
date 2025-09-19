@@ -1062,7 +1062,7 @@ describe('httpClient', () => {
         client,
         apiContract,
         {
-          pathPrefix: 'resources',
+          pathPrefix: 'resources/',
         },
         {
           validateResponse: true,
