@@ -21,8 +21,8 @@ export function buildRequestPath(path: string, pathPrefix?: string): string {
   }
 
   // Remove trailing slash from pathPrefix and leading slash from path
-  const cleanPrefix = pathPrefix.replace(/\/$/, '')
-  const cleanPath = path.replace(/^\//, '')
+  const cleanPrefix = pathPrefix.endsWith('/') ? pathPrefix.slice(0, -1) : pathPrefix
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path
 
   return ensureStartsWithSlash(`${cleanPrefix}/${cleanPath}`)
 }

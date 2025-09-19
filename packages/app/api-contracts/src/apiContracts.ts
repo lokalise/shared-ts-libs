@@ -1,9 +1,6 @@
 import type { ZodSchema, z } from 'zod/v4'
 import type { HttpStatusCode } from './HttpStatusCodes.ts'
 
-export type { HttpStatusCode }
-export { buildRequestPath } from './pathUtils.ts'
-
 const EMPTY_PARAMS = {}
 
 export type InferSchemaInput<T extends ZodSchema | undefined> = T extends ZodSchema
