@@ -40,7 +40,7 @@
         "@aws-sdk/client-sns": "^3.750.0",
         "@aws-sdk/client-sqs": "^3.750.0",
         "@aws-sdk/credential-providers": "^3.750.0",
-        "@lokalise/fastify-extras": ">=27.0.0",
+        "@lokalise/fastify-extras": ">=30.0.0",
         "@lokalise/node-core": ">=13.0.0",
         "@lokalise/universal-ts-utils": ">=4.0.0",
         "@message-queue-toolkit/core": ">=20.0.0",
