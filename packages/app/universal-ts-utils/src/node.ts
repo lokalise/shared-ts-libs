@@ -14,6 +14,8 @@ export * from './public/array/sort.ts'
 export * from './public/array/sortByField.ts'
 export * from './public/array/unique.ts'
 export * from './public/array/uniqueByProperty.ts'
+// iterable
+export * from './public/iterable/collectFromIterable.ts'
 // object
 export * from './public/object/areDeepEqual.ts'
 export * from './public/object/convertDateFieldsToIsoString.ts'
