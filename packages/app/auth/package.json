@@ -1,5 +1,5 @@
 {
-    "name": "@lokalise/name-tbd",
+    "name": "@lokalise/auth",
     "version": "0.0.0",
     "files": [
         "dist",
