@@ -527,3 +527,22 @@ jobs:
       package_name: '@lokalise/fastify-bullboard-plugin'
     secrets:
       npm_token: ${{ secrets.NPM_TOKEN }}
+
+  auth:
+    name: Release auth
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/auth/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+      - universal-ts-utils
+    uses: ./.github/workflows/release.package.yml
+    with:
+      working_directory: 'packages/app/auth'
+      package_name: '@lokalise/auth'
+    secrets:
+      npm_token: ${{ secrets.NPM_TOKEN }}
