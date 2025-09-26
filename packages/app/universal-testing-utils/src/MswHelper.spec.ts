@@ -5,6 +5,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch from 'wretch'
 import {
   getContract,
+  getContractWithPathAndHeaderParams,
   getContractWithPathParams,
   getContractWithQueryParams,
   postContract,
@@ -112,6 +113,36 @@ describe('MswHelper', () => {
         pathParams: {
           userId: '3',
         },
+      })
+
+      expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "2",
+              }
+            `)
+    })
+
+    it('mocks GET request with path params and header', async () => {
+        mswHelper.mockValidResponse(getContractWithPathAndHeaderParams, server, {
+        pathParams: { userId: '3' },
+        headerParams: {
+            authorization: 'someValue',
+            // @ts-expect-error Correctly validate non-existing field
+            wrong: 'wrong',
+        },
+        // @ts-expect-error Query params are not expected on this schema
+        queryParams: {
+        },
+        responseBody: { id: '2' },
+      })
+
+      const response = await sendByGetRoute(wretchClient, getContractWithPathAndHeaderParams, {
+        pathParams: {
+          userId: '3',
+        },
+        headers: {
+            authorization: 'someValue',
+        }
       })
 
       expect(response).toMatchInlineSnapshot(`
