@@ -501,6 +501,91 @@ describe('frontend-http-client', () => {
         },
       })
     })
+
+    it('works with path prefix for GET routes', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/v1/users/1').thenJson(200, { id: 1 })
+
+      const responseBodySchema = z.object({
+        id: z.number(),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildGetRoute({
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByGetRoute(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        pathPrefix: 'v1',
+      })
+
+      expect(responseBody).toEqual({ id: 1 })
+    })
+
+    it('works with path prefix for POST routes', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPost('/v1/users/1').thenJson(200, { id: 1 })
+
+      const responseBodySchema = z.object({
+        id: z.number(),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildPayloadRoute({
+        method: 'post',
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestBodySchema: undefined,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByPayloadRoute(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        pathPrefix: 'v1',
+      })
+
+      expect(responseBody).toEqual({ id: 1 })
+    })
+
+    it('works with path prefix for DELETE routes', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forDelete('/v1/users/1').thenReply(204)
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildDeleteRoute({
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: pathSchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByDeleteRoute(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        pathPrefix: 'v1',
+      })
+
+      expect(responseBody).toBeNull()
+    })
   })
 
   describe('sendPost', () => {

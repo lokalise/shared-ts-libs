@@ -63,3 +63,63 @@ Note that in order to make contract-based requests, you need to use a compatible
 (`@lokalise/frontend-http-client` or `@lokalise/backend-http-client`)
 
 In case you are using fastify on the backend, you can also use `@lokalise/fastify-api-contracts` in order to simplify definition of your fastify routes, utilizing contracts as the single source of truth.
+
+## Utility Functions
+
+### `mapRouteToPath`
+
+Converts a route definition to its corresponding path pattern with parameter placeholders.
+
+```ts
+import { mapRouteToPath, buildGetRoute } from '@lokalise/api-contracts'
+
+const userContract = buildGetRoute({
+    requestPathParamsSchema: z.object({ userId: z.string() }),
+    successResponseBodySchema: USER_SCHEMA,
+    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+})
+
+const pathPattern = mapRouteToPath(userContract)
+// Returns: "/users/:userId"
+```
+
+This function is useful when you need to:
+- Generate OpenAPI/Swagger documentation
+- Create route patterns for server-side routing frameworks
+- Display route information in debugging or logging
+
+The function replaces actual path parameters with placeholder syntax (`:paramName`), making it compatible with Express-style route patterns.
+
+### `describeContract`
+
+Generates a human-readable description of a route contract, combining the HTTP method with the route path.
+
+```ts
+import { describeContract, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
+
+const getContract = buildGetRoute({
+    requestPathParamsSchema: z.object({ userId: z.string() }),
+    successResponseBodySchema: USER_SCHEMA,
+    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+})
+
+const postContract = buildPayloadRoute({
+    method: 'post',
+    requestPathParamsSchema: z.object({ 
+        orgId: z.string(),
+        userId: z.string() 
+    }),
+    requestBodySchema: CREATE_USER_SCHEMA,
+    successResponseBodySchema: USER_SCHEMA,
+    pathResolver: (pathParams) => `/orgs/${pathParams.orgId}/users/${pathParams.userId}`,
+})
+
+console.log(describeContract(getContract))  // "GET /users/:userId"
+console.log(describeContract(postContract)) // "POST /orgs/:orgId/users/:userId"
+```
+
+This function is particularly useful for:
+- Logging and debugging API calls
+- Generating documentation or route summaries
+- Error messages that need to reference specific endpoints
+- Test descriptions and assertions

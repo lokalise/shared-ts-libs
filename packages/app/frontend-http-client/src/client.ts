@@ -1,10 +1,12 @@
 import type {
   DeleteRouteDefinition,
   GetRouteDefinition,
+  HttpStatusCode,
   InferSchemaInput,
   InferSchemaOutput,
   PayloadRouteDefinition,
 } from '@lokalise/api-contracts'
+import { buildRequestPath } from '@lokalise/api-contracts'
 import type { WretchResponse } from 'wretch'
 import { type ZodSchema, z } from 'zod/v4'
 import type {
@@ -399,6 +401,9 @@ export function sendByPayloadRoute<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   wretch: T,
   routeDefinition: PayloadRouteDefinition<
@@ -408,7 +413,8 @@ export function sendByPayloadRoute<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: PayloadRouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -436,7 +442,7 @@ export function sendByPayloadRoute<
     queryParams: params.queryParams,
     queryParamsSchema: routeDefinition.requestQuerySchema,
     // @ts-expect-error magic type inferring happening
-    path: routeDefinition.pathResolver(params.pathParams),
+    path: buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
     // @ts-expect-error FixMe
     headers: params.headers,
     // @ts-expect-error magic type inferring happening
@@ -452,6 +458,9 @@ export function sendByGetRoute<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   wretch: T,
   routeDefinition: GetRouteDefinition<
@@ -460,7 +469,8 @@ export function sendByGetRoute<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -483,7 +493,7 @@ export function sendByGetRoute<
     queryParams: params.queryParams,
     queryParamsSchema: routeDefinition.requestQuerySchema,
     // @ts-expect-error magic type inferring happening
-    path: routeDefinition.pathResolver(params.pathParams),
+    path: buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
     // @ts-expect-error FixMe
     headers: params.headers,
     // @ts-expect-error magic type inferring happening
@@ -499,6 +509,9 @@ export function sendByDeleteRoute<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   wretch: T,
   routeDefinition: DeleteRouteDefinition<
@@ -507,7 +520,8 @@ export function sendByDeleteRoute<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -530,7 +544,7 @@ export function sendByDeleteRoute<
     queryParams: params.queryParams,
     queryParamsSchema: routeDefinition.requestQuerySchema,
     // @ts-expect-error magic type inferring happening
-    path: routeDefinition.pathResolver(params.pathParams),
+    path: buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
     // @ts-expect-error FIXME
     headers: params.headers,
     // @ts-expect-error FIXME

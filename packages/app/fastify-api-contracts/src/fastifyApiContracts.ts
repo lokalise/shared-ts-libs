@@ -1,4 +1,4 @@
-import type { CommonRouteDefinition } from '@lokalise/api-contracts'
+import type { CommonRouteDefinition, HttpStatusCode } from '@lokalise/api-contracts'
 import {
   type DeleteRouteDefinition,
   type GetRouteDefinition,
@@ -18,6 +18,39 @@ import type {
 type OptionalZodSchema = z.Schema | undefined
 type InferredOptionalSchema<Schema> = Schema extends z.Schema ? z.infer<Schema> : undefined
 
+// Helper to create a union of all response types from responseSchemasByStatusCode
+// Filters out undefined values that come from Partial<Record<...>>
+type InferResponseUnion<T> = T extends object
+  ? {
+      [K in keyof T as T[K] extends z.Schema ? K : never]: T[K] extends z.Schema
+        ? z.infer<T[K]>
+        : never
+    }[keyof { [K in keyof T as T[K] extends z.Schema ? K : never]: T[K] }]
+  : never
+
+// Build response type - either a union of all schemas or just the success schema
+// Note: This creates a union type of all possible responses, which means TypeScript
+// will accept any of the response types regardless of the status code being set.
+// This is a limitation compared to Fastify's native multi-reply system which can
+// narrow types based on the status code. Full multi-reply support would require
+// deeper integration with Fastify's SchemaCompiler generic system.
+type BuildResponseType<SuccessSchema, ResponseSchemasByStatusCode> =
+  ResponseSchemasByStatusCode extends object
+    ? keyof ResponseSchemasByStatusCode extends never
+      ? SuccessSchema extends z.Schema
+        ? z.infer<SuccessSchema>
+        : undefined
+      :
+          | InferResponseUnion<ResponseSchemasByStatusCode>
+          | (SuccessSchema extends z.Schema
+              ? 200 extends keyof ResponseSchemasByStatusCode
+                ? never
+                : z.infer<SuccessSchema>
+              : never)
+    : SuccessSchema extends z.Schema
+      ? z.infer<SuccessSchema>
+      : undefined
+
 declare module 'fastify' {
   interface FastifyContextConfig {
     apiContract: CommonRouteDefinition
@@ -32,6 +65,9 @@ export function buildFastifyNoPayloadRouteHandler<
   PathParams extends OptionalZodSchema = undefined,
   RequestQuerySchema extends OptionalZodSchema = undefined,
   RequestHeaderSchema extends OptionalZodSchema = undefined,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   _apiContract:
     | GetRouteDefinition<
@@ -40,7 +76,8 @@ export function buildFastifyNoPayloadRouteHandler<
         RequestQuerySchema,
         RequestHeaderSchema,
         boolean,
-        boolean
+        boolean,
+        ResponseSchemasByStatusCode
       >
     | DeleteRouteDefinition<
         ResponseBodySchema,
@@ -48,20 +85,16 @@ export function buildFastifyNoPayloadRouteHandler<
         RequestQuerySchema,
         RequestHeaderSchema,
         boolean,
-        boolean
+        boolean,
+        ResponseSchemasByStatusCode
       >,
   handler: FastifyNoPayloadHandlerFn<
-    InferredOptionalSchema<ResponseBodySchema>,
+    BuildResponseType<ResponseBodySchema, ResponseSchemasByStatusCode>,
     InferredOptionalSchema<PathParams>,
     InferredOptionalSchema<RequestQuerySchema>,
     InferredOptionalSchema<RequestHeaderSchema>
   >,
-): FastifyNoPayloadHandlerFn<
-  InferredOptionalSchema<ResponseBodySchema>,
-  InferredOptionalSchema<PathParams>,
-  InferredOptionalSchema<RequestQuerySchema>,
-  InferredOptionalSchema<RequestHeaderSchema>
-> {
+): typeof handler {
   return handler
 }
 
@@ -73,6 +106,9 @@ export function buildFastifyNoPayloadRoute<
   PathParams extends OptionalZodSchema = undefined,
   RequestQuerySchema extends OptionalZodSchema = undefined,
   RequestHeaderSchema extends OptionalZodSchema = undefined,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   apiContract:
     | GetRouteDefinition<
@@ -81,7 +117,8 @@ export function buildFastifyNoPayloadRoute<
         RequestQuerySchema,
         RequestHeaderSchema,
         boolean,
-        boolean
+        boolean,
+        ResponseSchemasByStatusCode
       >
     | DeleteRouteDefinition<
         ResponseBodySchema,
@@ -89,17 +126,18 @@ export function buildFastifyNoPayloadRoute<
         RequestQuerySchema,
         RequestHeaderSchema,
         boolean,
-        boolean
+        boolean,
+        ResponseSchemasByStatusCode
       >,
   handler: FastifyNoPayloadHandlerFn<
-    InferredOptionalSchema<ResponseBodySchema>,
+    BuildResponseType<ResponseBodySchema, ResponseSchemasByStatusCode>,
     InferredOptionalSchema<PathParams>,
     InferredOptionalSchema<RequestQuerySchema>,
     InferredOptionalSchema<RequestHeaderSchema>
   >,
   contractMetadataToRouteMapper: ApiContractMetadataToRouteMapper = () => ({}),
 ): RouteType<
-  InferredOptionalSchema<ResponseBodySchema>,
+  BuildResponseType<ResponseBodySchema, ResponseSchemasByStatusCode>,
   undefined,
   InferredOptionalSchema<PathParams>,
   InferredOptionalSchema<RequestQuerySchema>,
@@ -147,6 +185,9 @@ export function buildFastifyPayloadRouteHandler<
   RequestHeaderSchema extends OptionalZodSchema = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   _apiContract: PayloadRouteDefinition<
     RequestBodySchema,
@@ -155,22 +196,17 @@ export function buildFastifyPayloadRouteHandler<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   handler: FastifyPayloadHandlerFn<
-    InferredOptionalSchema<ResponseBodySchema>,
+    BuildResponseType<ResponseBodySchema, ResponseSchemasByStatusCode>,
     InferredOptionalSchema<RequestBodySchema>,
     InferredOptionalSchema<PathParams>,
     InferredOptionalSchema<RequestQuerySchema>,
     InferredOptionalSchema<RequestHeaderSchema>
   >,
-): FastifyPayloadHandlerFn<
-  InferredOptionalSchema<ResponseBodySchema>,
-  InferredOptionalSchema<RequestBodySchema>,
-  InferredOptionalSchema<PathParams>,
-  InferredOptionalSchema<RequestQuerySchema>,
-  InferredOptionalSchema<RequestHeaderSchema>
-> {
+): typeof handler {
   return handler
 }
 
@@ -185,6 +221,9 @@ export function buildFastifyPayloadRoute<
   RequestHeaderSchema extends OptionalZodSchema = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   apiContract: PayloadRouteDefinition<
     RequestBodySchema,
@@ -193,10 +232,11 @@ export function buildFastifyPayloadRoute<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   handler: FastifyPayloadHandlerFn<
-    InferredOptionalSchema<ResponseBodySchema>,
+    BuildResponseType<ResponseBodySchema, ResponseSchemasByStatusCode>,
     InferredOptionalSchema<RequestBodySchema>,
     InferredOptionalSchema<PathParams>,
     InferredOptionalSchema<RequestQuerySchema>,
@@ -204,7 +244,7 @@ export function buildFastifyPayloadRoute<
   >,
   contractMetadataToRouteMapper: ApiContractMetadataToRouteMapper = () => ({}),
 ): RouteType<
-  InferredOptionalSchema<ResponseBodySchema>,
+  BuildResponseType<ResponseBodySchema, ResponseSchemasByStatusCode>,
   InferredOptionalSchema<RequestBodySchema>,
   InferredOptionalSchema<PathParams>,
   InferredOptionalSchema<RequestQuerySchema>,

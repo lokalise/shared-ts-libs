@@ -1,23 +1,29 @@
 import type { CreateTopicCommandInput } from '@aws-sdk/client-sns'
-import type { CreateQueueRequest } from '@aws-sdk/client-sqs'
 import { groupByUnique, type MayOmit } from '@lokalise/universal-ts-utils/node'
 import type { ConsumerBaseMessageType } from '@message-queue-toolkit/core'
-import { generateFilterAttributes, type SNSTopicLocatorType } from '@message-queue-toolkit/sns'
+import {
+  generateFilterAttributes,
+  type SNSCreationConfig,
+  type SNSSQSConsumerOptions,
+  type SNSSQSCreationConfig,
+  type SNSSQSQueueLocatorType,
+  type SNSTopicLocatorType,
+} from '@message-queue-toolkit/sns'
 import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
 import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRoutingConfig.ts'
-import { getSnsTags, getSqsTags } from '../tags/index.ts'
-import { createRequestContextPreHandler } from './prehandlers/createRequestContextPreHandler.ts'
+import { getSnsTags } from '../tags/index.ts'
+import { AbstractMessageQueueToolkitOptionsResolver } from './AbstractMessageQueueToolkitOptionsResolver.ts'
+import { MAX_TOPIC_NAME_LENGTH, MESSAGE_TYPE_FIELD } from './constants.ts'
 import type {
-  MessageQueueToolkitSnsOptionsResolverConfig,
-  ResolveConsumerBuildOptionsParams,
-  ResolvedSnsConsumerBuildOptions,
-  ResolvedSnsPublisherBuildOptions,
-  ResolvePublisherBuildOptionsParams,
+  MessageQueueToolkitOptionsResolverConfig,
+  ResolveConsumerOptionsParams,
+  ResolvedConsumerOptions,
+  ResolvedPublisherOptions,
+  ResolvePublisherOptionsParams,
 } from './types.ts'
 import {
   buildQueueUrlsWithSubscribePermissionsPrefix,
   buildTopicArnsWithPublishPermissionsPrefix,
-  QUEUE_NAME_REGEX,
   TOPIC_NAME_REGEX,
 } from './utils.ts'
 
@@ -31,35 +37,30 @@ type ResolveTopicResult =
       createCommand: CreateTopicCommandInput
     }
 
-const MESSAGE_TYPE_FIELD = 'type'
-const DLQ_SUFFIX = '-dlq'
-const DLQ_MAX_RECEIVE_COUNT = 5
-const DLQ_MESSAGE_RETENTION_PERIOD = 7 * 24 * 60 * 60 // 7 days in seconds
-const VISIBILITY_TIMEOUT = 60 // 1 minutes
-const HEARTBEAT_INTERVAL = 20 // 20 seconds
-const MAX_RETRY_DURATION = 2 * 24 * 60 * 60 // 2 days in seconds
+/**
+ * Resolved SNS consumer options.
+ *
+ * @template MessagePayload - The type of message payload being consumed
+ */
+export type ResolvedSnsConsumerOptions<MessagePayload extends ConsumerBaseMessageType> =
+  ResolvedConsumerOptions<SNSSQSCreationConfig, SNSSQSQueueLocatorType, MessagePayload> &
+    Pick<SNSSQSConsumerOptions<MessagePayload, object, object>, 'subscriptionConfig'>
 
-/** Maximum lengths for queue and topic names allowed, to ensure that AWS limits are not exceeded after applying prefixes. */
-const MAX_QUEUE_NAME_LENGTH = 64 // AWS limit is 80, but we need to leave space for the prefix and -dlq suffix
-const MAX_TOPIC_NAME_LENGTH = 246 // AWS limit is 256, but we need to leave space for the prefix
-
-export class MessageQueueToolkitSnsOptionsResolver {
+/**
+ * Options resolver for MQT SNS lib.
+ */
+export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueToolkitOptionsResolver {
   private readonly routingConfig: EventRoutingConfig
-  private readonly config: MessageQueueToolkitSnsOptionsResolverConfig
 
-  constructor(
-    routingConfig: EventRoutingConfig,
-    config: MessageQueueToolkitSnsOptionsResolverConfig,
-  ) {
+  constructor(routingConfig: EventRoutingConfig, config: MessageQueueToolkitOptionsResolverConfig) {
+    super(config)
     this.routingConfig = groupByUnique(
       Object.values(routingConfig).map((topic) => ({
         ...topic,
-        queues: groupByUnique(Object.values(topic.queues), 'name'),
+        queues: groupByUnique(Object.values(topic.queues), 'queueName'),
       })),
       'topicName',
     )
-    this.config = config
-
     this.validateNamePatterns()
   }
 
@@ -76,24 +77,27 @@ export class MessageQueueToolkitSnsOptionsResolver {
       if (!TOPIC_NAME_REGEX.test(topicName)) throw new Error(`Invalid topic name: ${topicName}`)
     }
 
-    const queueNames = Object.values(this.routingConfig).flatMap((topic) =>
-      Object.keys(topic.queues),
+    this.validateQueueNames(
+      Object.values(this.routingConfig).flatMap(({ queues }) =>
+        Object.values(queues).map((queue) => queue.queueName),
+      ),
     )
-    for (const queueName of queueNames) {
-      if (queueName.length > MAX_QUEUE_NAME_LENGTH) {
-        throw new Error(
-          `Queue name too long: ${queueName}. Max allowed length is ${MAX_QUEUE_NAME_LENGTH}, received ${queueName.length}`,
-        )
-      }
-      if (!QUEUE_NAME_REGEX.test(queueName)) throw new Error(`Invalid queue name: ${queueName}`)
-    }
   }
 
-  public resolvePublisherBuildOptions<MessagePayloadType extends ConsumerBaseMessageType>(
-    params: ResolvePublisherBuildOptionsParams<MessagePayloadType>,
-  ): ResolvedSnsPublisherBuildOptions<MessagePayloadType> {
-    const topicConfig = this.getTopicConfig(params.topicName)
-    const resolvedTopic = this.resolveTopic(this.getTopicConfig(params.topicName), params)
+  /**
+   * Resolves publisher options for an SNS topic.
+   *
+   * @template MessagePayload - The type of message payload being published
+   * @param topicName - The name of the topic to publish to
+   * @param params - Parameters containing AWS config, schemas, and other settings
+   * @returns Resolved publisher options for the SNS topic
+   */
+  public resolvePublisherOptions<MessagePayload extends ConsumerBaseMessageType>(
+    topicName: string,
+    params: ResolvePublisherOptionsParams<MessagePayload>,
+  ): ResolvedPublisherOptions<SNSCreationConfig, SNSTopicLocatorType, MessagePayload> {
+    const topicConfig = this.getTopicConfig(topicName)
+    const resolvedTopic = this.resolveTopic(topicConfig, params)
 
     return {
       locatorConfig: resolvedTopic.locatorConfig,
@@ -109,32 +113,46 @@ export class MessageQueueToolkitSnsOptionsResolver {
             forceTagUpdate: params.forceTagUpdate,
           }
         : undefined,
-      handlerSpy: params.isTest,
-      messageTypeField: MESSAGE_TYPE_FIELD,
-      logMessages: params.logMessages,
-      messageSchemas: params.messageSchemas,
+      ...this.commonPublisherOptions(params),
     }
   }
 
-  resolveConsumerBuildOptions<MessagePayloadType extends ConsumerBaseMessageType>(
-    params: ResolveConsumerBuildOptionsParams<MessagePayloadType>,
-  ): ResolvedSnsConsumerBuildOptions<MessagePayloadType> {
-    const topicConfig = this.getTopicConfig(params.topicName)
+  /**
+   * Resolves consumer options for an SNS topic and its associated SQS queue.
+   *
+   * @template MessagePayload - The type of message payload being consumed
+   * @param topicName - The name of the SNS topic to subscribe to
+   * @param queueName - The name of the SQS queue to consume from
+   * @param params - Parameters containing AWS config, handlers, and other settings
+   */
+  resolveConsumerOptions<MessagePayload extends ConsumerBaseMessageType>(
+    topicName: string,
+    queueName: string,
+    params: ResolveConsumerOptionsParams<MessagePayload>,
+  ): ResolvedSnsConsumerOptions<MessagePayload> {
+    const topicConfig = this.getTopicConfig(topicName)
     const resolvedTopic = this.resolveTopic(topicConfig, params)
 
-    const queueCreateRequest = this.resolveQueue(topicConfig, params)
+    const { creationConfig: queueCreationConfig } = this.resolveQueue(
+      queueName,
+      topicConfig.queues,
+      params,
+    )
 
-    const handlerConfigs = params.handlers
-    for (const handlerConfig of handlerConfigs) {
-      const requestContextPreHandler = createRequestContextPreHandler(params.logger)
-      handlerConfig.preHandlers.push(requestContextPreHandler)
+    /* v8 ignore start */
+    if (!queueCreationConfig) {
+      // This should not happen due to typing, but just in case
+      throw new Error(`Queue configuration for ${queueName} should not be external`)
     }
+    /* v8 ignore stop */
+
+    const options = this.commonConsumerOptions(params, queueCreationConfig.queue)
 
     return {
       locatorConfig: resolvedTopic.locatorConfig,
       creationConfig: {
         topic: resolvedTopic.createCommand,
-        queue: queueCreateRequest,
+        queue: queueCreationConfig.queue,
         topicArnsWithPublishPermissionsPrefix: buildTopicArnsWithPublishPermissionsPrefix(
           topicConfig,
           params.awsConfig,
@@ -147,54 +165,26 @@ export class MessageQueueToolkitSnsOptionsResolver {
         updateAttributesIfExists: params.updateAttributesIfExists ?? true,
         forceTagUpdate: params.forceTagUpdate,
       },
-      messageTypeField: MESSAGE_TYPE_FIELD,
       subscriptionConfig: {
         updateAttributesIfExists: params.updateAttributesIfExists ?? true,
         Attributes: generateFilterAttributes(
-          handlerConfigs.map((entry) => entry.schema),
+          options.handlers.map((entry) => entry.schema),
           MESSAGE_TYPE_FIELD,
         ),
       },
-      deletionConfig: { deleteIfExists: params.isTest },
-      handlers: handlerConfigs,
-      logMessages: params.logMessages,
-      handlerSpy: params.isTest,
-      concurrentConsumersAmount: params.concurrentConsumersAmount,
-      maxRetryDuration: MAX_RETRY_DURATION,
-      consumerOverrides: params.isTest
-        ? {
-            // allows to retry failed messages immediately
-            terminateVisibilityTimeout: true,
-            batchSize: params.batchSize,
-          }
-        : {
-            heartbeatInterval: HEARTBEAT_INTERVAL,
-            batchSize: params.batchSize,
-          },
-      deadLetterQueue: params.isTest
-        ? undefined // no DLQ in test mode
-        : {
-            redrivePolicy: {
-              maxReceiveCount: DLQ_MAX_RECEIVE_COUNT,
-            },
-            creationConfig: {
-              queue: {
-                QueueName: `${queueCreateRequest.QueueName}${DLQ_SUFFIX}`,
-                tags: queueCreateRequest.tags,
-                Attributes: {
-                  KmsMasterKeyId: params.awsConfig.kmsKeyId,
-                  MessageRetentionPeriod: DLQ_MESSAGE_RETENTION_PERIOD.toString(),
-                },
-              },
-              updateAttributesIfExists: params.updateAttributesIfExists ?? true,
-            },
-          },
+      ...options,
     }
+  }
+
+  private getTopicConfig(topicName: string): TopicConfig {
+    const topicConfig = this.routingConfig[topicName]
+    if (!topicConfig) throw new Error(`Topic ${topicName} not found`)
+    return topicConfig
   }
 
   private resolveTopic<MessagePayloadType extends ConsumerBaseMessageType>(
     topicConfig: TopicConfig,
-    params: MayOmit<ResolvePublisherBuildOptionsParams<MessagePayloadType>, 'messageSchemas'>,
+    params: MayOmit<ResolvePublisherOptionsParams<MessagePayloadType>, 'messageSchemas'>,
   ): ResolveTopicResult {
     if (topicConfig.isExternal) {
       return {
@@ -211,30 +201,5 @@ export class MessageQueueToolkitSnsOptionsResolver {
         Attributes: { KmsMasterKeyId: params.awsConfig.kmsKeyId },
       },
     }
-  }
-
-  private resolveQueue<MessagePayloadType extends ConsumerBaseMessageType>(
-    topicConfig: TopicConfig,
-    params: ResolveConsumerBuildOptionsParams<MessagePayloadType>,
-  ): CreateQueueRequest {
-    const { queueName, awsConfig } = params
-
-    const queueConfig = topicConfig.queues[queueName]
-    if (!queueConfig) throw new Error(`Queue ${queueName} not found`)
-
-    return {
-      QueueName: applyAwsResourcePrefix(queueConfig.name, awsConfig),
-      tags: getSqsTags({ ...queueConfig, ...this.config }),
-      Attributes: {
-        KmsMasterKeyId: awsConfig.kmsKeyId,
-        VisibilityTimeout: VISIBILITY_TIMEOUT.toString(),
-      },
-    }
-  }
-
-  private getTopicConfig(topicName: string): TopicConfig {
-    const topicConfig = this.routingConfig[topicName]
-    if (!topicConfig) throw new Error(`Topic ${topicName} not found`)
-    return topicConfig
   }
 }

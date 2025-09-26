@@ -4,6 +4,7 @@ import {
   buildDeleteRoute,
   buildGetRoute,
   buildPayloadRoute,
+  describeContract,
   mapRouteToPath,
 } from './apiContracts.ts'
 
@@ -105,6 +106,39 @@ describe('apiContracts', () => {
 
       const path = mapRouteToPath(contract)
       expect(path).toEqual('/orgs/:orgId/users/:userId')
+    })
+  })
+
+  describe('describeContract', () => {
+    it('returns path without params', () => {
+      const contract = buildGetRoute({
+        successResponseBodySchema: BODY_SCHEMA,
+        pathResolver: () => '/',
+      })
+
+      expect(describeContract(contract)).toEqual('GET /')
+    })
+
+    it('returns path with one param', () => {
+      const contract = buildGetRoute({
+        successResponseBodySchema: BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      expect(describeContract(contract)).toEqual('GET /users/:userId')
+    })
+
+    it('returns path with multiple params', () => {
+      const contract = buildPayloadRoute({
+        method: 'post',
+        requestBodySchema: z.undefined(),
+        successResponseBodySchema: BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_MULTI_SCHEMA,
+        pathResolver: (pathParams) => `/orgs/${pathParams.orgId}/users/${pathParams.userId}`,
+      })
+
+      expect(describeContract(contract)).toEqual('POST /orgs/:orgId/users/:userId')
     })
   })
 })

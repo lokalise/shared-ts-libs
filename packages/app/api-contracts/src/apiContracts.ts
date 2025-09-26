@@ -1,8 +1,6 @@
 import type { ZodSchema, z } from 'zod/v4'
 import type { HttpStatusCode } from './HttpStatusCodes.ts'
 
-export type { HttpStatusCode }
-
 const EMPTY_PARAMS = {}
 
 export type InferSchemaInput<T extends ZodSchema | undefined> = T extends ZodSchema
@@ -28,6 +26,9 @@ export type CommonRouteDefinition<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 > = {
   isNonJSONResponseExpected?: IsNonJSONResponseExpected
   isEmptyResponseExpected?: IsEmptyResponseExpected
@@ -36,7 +37,7 @@ export type CommonRouteDefinition<
   requestQuerySchema?: RequestQuerySchema
   requestHeaderSchema?: RequestHeaderSchema
   pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
-  responseSchemasByStatusCode?: Partial<Record<HttpStatusCode, z.Schema>>
+  responseSchemasByStatusCode?: ResponseSchemasByStatusCode
   metadata?: CommonRouteDefinitionMetadata
 
   /*
@@ -62,13 +63,17 @@ export type PayloadRouteDefinition<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 > = CommonRouteDefinition<
   SuccessResponseBodySchema,
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
   IsNonJSONResponseExpected,
-  IsEmptyResponseExpected
+  IsEmptyResponseExpected,
+  ResponseSchemasByStatusCode
 > & {
   method: 'post' | 'put' | 'patch'
   requestBodySchema: RequestBodySchema
@@ -81,13 +86,17 @@ export type GetRouteDefinition<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 > = CommonRouteDefinition<
   SuccessResponseBodySchema,
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
   IsNonJSONResponseExpected,
-  IsEmptyResponseExpected
+  IsEmptyResponseExpected,
+  ResponseSchemasByStatusCode
 > & {
   method: 'get'
 }
@@ -99,13 +108,17 @@ export type DeleteRouteDefinition<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 > = CommonRouteDefinition<
   SuccessResponseBodySchema,
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
   IsNonJSONResponseExpected,
-  IsEmptyResponseExpected
+  IsEmptyResponseExpected,
+  ResponseSchemasByStatusCode
 > & {
   method: 'delete'
 }
@@ -118,6 +131,9 @@ export function buildPayloadRoute<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   params: PayloadRouteDefinition<
     RequestBodySchema,
@@ -126,7 +142,8 @@ export function buildPayloadRoute<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
 ): PayloadRouteDefinition<
   RequestBodySchema,
@@ -135,7 +152,8 @@ export function buildPayloadRoute<
   RequestQuerySchema,
   RequestHeaderSchema,
   IsNonJSONResponseExpected,
-  IsEmptyResponseExpected
+  IsEmptyResponseExpected,
+  ResponseSchemasByStatusCode
 > {
   return {
     isEmptyResponseExpected: params.isEmptyResponseExpected ?? (false as IsEmptyResponseExpected),
@@ -163,6 +181,9 @@ export function buildGetRoute<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   params: Omit<
     GetRouteDefinition<
@@ -171,7 +192,8 @@ export function buildGetRoute<
       RequestQuerySchema,
       RequestHeaderSchema,
       IsNonJSONResponseExpected,
-      IsEmptyResponseExpected
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
     >,
     'method'
   >,
@@ -181,7 +203,8 @@ export function buildGetRoute<
   RequestQuerySchema,
   RequestHeaderSchema,
   IsNonJSONResponseExpected,
-  IsEmptyResponseExpected
+  IsEmptyResponseExpected,
+  ResponseSchemasByStatusCode
 > {
   return {
     isEmptyResponseExpected: params.isEmptyResponseExpected ?? (false as IsEmptyResponseExpected),
@@ -208,6 +231,9 @@ export function buildDeleteRoute<
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   params: Omit<
     DeleteRouteDefinition<
@@ -216,7 +242,8 @@ export function buildDeleteRoute<
       RequestQuerySchema,
       RequestHeaderSchema,
       IsNonJSONResponseExpected,
-      IsEmptyResponseExpected
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
     >,
     'method'
   >,
@@ -226,7 +253,8 @@ export function buildDeleteRoute<
   RequestQuerySchema,
   RequestHeaderSchema,
   IsNonJSONResponseExpected,
-  IsEmptyResponseExpected
+  IsEmptyResponseExpected,
+  ResponseSchemasByStatusCode
 > {
   return {
     isEmptyResponseExpected: params.isEmptyResponseExpected ?? (true as IsEmptyResponseExpected),
@@ -251,7 +279,7 @@ export function buildDeleteRoute<
  */
 export function mapRouteToPath(
   // biome-ignore lint/suspicious/noExplicitAny: We don't care about types here, we just need Zod schema
-  routeDefinition: CommonRouteDefinition<any, any, any, any, any, any>,
+  routeDefinition: CommonRouteDefinition<any, any, any, any, any, any, any>,
 ): string {
   if (!routeDefinition.requestPathParamsSchema) {
     return routeDefinition.pathResolver(EMPTY_PARAMS)
@@ -263,4 +291,15 @@ export function mapRouteToPath(
   }
 
   return routeDefinition.pathResolver(resolverParams)
+}
+
+export function describeContract(
+  contract: // biome-ignore lint/suspicious/noExplicitAny: we accept any contract here
+    | PayloadRouteDefinition<any, any, any, any, any, any, any, any>
+    // biome-ignore lint/suspicious/noExplicitAny: we accept any contract here
+    | GetRouteDefinition<any, any, any, any, any, any, any>
+    // biome-ignore lint/suspicious/noExplicitAny: we accept any contract here
+    | DeleteRouteDefinition<any, any, any, any, any, any, any>,
+): string {
+  return `${contract.method.toUpperCase()} ${mapRouteToPath(contract)}`
 }

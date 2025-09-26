@@ -1,7 +1,9 @@
+// biome-ignore-all lint/suspicious/noExplicitAny: Expected for mocking
 import {
   type CommonRouteDefinition,
   type InferSchemaInput,
   mapRouteToPath,
+  type PayloadRouteDefinition,
 } from '@lokalise/api-contracts'
 import type { Mockttp, RequestRuleBuilder } from 'mockttp'
 import type { z } from 'zod/v4'
@@ -17,6 +19,8 @@ export type PayloadMockParamsNoPath<ResponseBody> = {
   responseBody: ResponseBody
 }
 
+type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
+
 export class MockttpHelper {
   private readonly mockServer: Mockttp
 
@@ -24,22 +28,75 @@ export class MockttpHelper {
     this.mockServer = mockServer
   }
 
+  mockAnyResponse<
+    ResponseBodySchema extends z.Schema,
+    PathParamsSchema extends z.Schema | undefined,
+  >(
+    contract:
+      | CommonRouteDefinition<
+          ResponseBodySchema,
+          PathParamsSchema,
+          z.Schema | undefined,
+          z.Schema | undefined,
+          boolean,
+          boolean,
+          any // ResponseSchemasByStatusCode - not used in mocking
+        >
+      | PayloadRouteDefinition<
+          z.Schema | undefined,
+          ResponseBodySchema,
+          PathParamsSchema,
+          z.Schema | undefined,
+          z.Schema | undefined,
+          boolean,
+          boolean,
+          any // ResponseSchemasByStatusCode - not used in mocking
+        >,
+    params: PathParamsSchema extends undefined
+      ? PayloadMockParamsNoPath<any>
+      : PayloadMockParams<InferSchemaInput<PathParamsSchema>, any>,
+  ): Promise<void> {
+    return this.mockValidResponse(contract, params)
+  }
+
   async mockValidResponse<
     ResponseBodySchema extends z.Schema,
     PathParamsSchema extends z.Schema | undefined,
   >(
-    contract: CommonRouteDefinition<ResponseBodySchema, PathParamsSchema>,
+    contract:
+      | CommonRouteDefinition<
+          ResponseBodySchema,
+          PathParamsSchema,
+          z.Schema | undefined,
+          z.Schema | undefined,
+          boolean,
+          boolean,
+          any // ResponseSchemasByStatusCode - not used in mocking
+        >
+      | PayloadRouteDefinition<
+          z.Schema | undefined,
+          ResponseBodySchema,
+          PathParamsSchema,
+          z.Schema | undefined,
+          z.Schema | undefined,
+          boolean,
+          boolean,
+          any // ResponseSchemasByStatusCode - not used in mocking
+        >,
     params: PathParamsSchema extends undefined
       ? PayloadMockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
       : PayloadMockParams<InferSchemaInput<PathParamsSchema>, InferSchemaInput<ResponseBodySchema>>,
   ): Promise<void> {
-    const path = contract.requestPathParamsSchema
-      ? // @ts-expect-error this is safe
-        contract.pathResolver(params.pathParams)
-      : mapRouteToPath(contract)
-    let mockttp: RequestRuleBuilder
     // @ts-expect-error this is safe
-    const method: 'get' | 'delete' | 'post' | 'patch' | 'put' = contract.method
+    const pathParams = params.pathParams
+
+    const path =
+      contract.requestPathParamsSchema && pathParams && contract.pathResolver
+        ? contract.pathResolver(pathParams)
+        : mapRouteToPath(contract)
+
+    let mockttp: RequestRuleBuilder
+    const method = ('method' in contract ? contract.method : 'get') as HttpMethod
 
     switch (method) {
       case 'get':

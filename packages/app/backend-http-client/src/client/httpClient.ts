@@ -2,10 +2,12 @@ import type { Readable } from 'node:stream'
 import type {
   DeleteRouteDefinition,
   GetRouteDefinition,
+  HttpStatusCode,
   InferSchemaInput,
   InferSchemaOutput,
   PayloadRouteDefinition,
 } from '@lokalise/api-contracts'
+import { buildRequestPath } from '@lokalise/api-contracts'
 import { copyWithoutUndefined } from '@lokalise/node-core'
 import type { FormData } from 'undici'
 import { Client } from 'undici'
@@ -443,6 +445,9 @@ export function sendByPayloadRoute<
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   client: Client,
   routeDefinition: PayloadRouteDefinition<
@@ -452,7 +457,8 @@ export function sendByPayloadRoute<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: PayloadRouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -476,7 +482,7 @@ export function sendByPayloadRoute<
     // @ts-expect-error TS loses exact string type during uppercasing
     routeDefinition.method.toUpperCase(),
     // @ts-expect-error magic type inferring happening
-    routeDefinition.pathResolver(params.pathParams),
+    buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
     // @ts-expect-error magic type inferring happening
     params.body,
     {
@@ -499,6 +505,9 @@ export function sendByGetRoute<
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   client: Client,
   routeDefinition: GetRouteDefinition<
@@ -507,7 +516,8 @@ export function sendByGetRoute<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -530,7 +540,7 @@ export function sendByGetRoute<
     // @ts-expect-error TS loses exact string type during uppercasing
     routeDefinition.method.toUpperCase(),
     // @ts-expect-error magic type inferring happening
-    routeDefinition.pathResolver(params.pathParams),
+    buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
     {
       isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected ?? false,
       // @ts-expect-error FixMe
@@ -551,6 +561,9 @@ export function sendByDeleteRoute<
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   client: Client,
   routeDefinition: DeleteRouteDefinition<
@@ -559,7 +572,8 @@ export function sendByDeleteRoute<
     RequestQuerySchema,
     RequestHeaderSchema,
     IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -582,7 +596,7 @@ export function sendByDeleteRoute<
     // @ts-expect-error TS loses exact string type during uppercasing
     routeDefinition.method.toUpperCase(),
     // @ts-expect-error magic type inferring happening
-    routeDefinition.pathResolver(params.pathParams),
+    buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
     {
       isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected ?? true,
       // @ts-expect-error FixMe

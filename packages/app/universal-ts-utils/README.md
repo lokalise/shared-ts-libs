@@ -374,6 +374,40 @@ const result = transformToKebabCase(obj)
 console.log(result) // Returns: { 'my-id': 1, 'creation-date': 1, meta-obj: { 'update-date': 1 } }
 ```
 
+### Iterable Utilities
+
+This section describes utility functions to work with iterables efficiently and elegantly.
+
+#### `collectFromIterable`
+
+Collects all items from an iterable or async iterable into an array. This function handles both synchronous and
+asynchronous iterables with conditional return types for optimal developer experience.
+
+For synchronous iterables, it returns the array directly. For asynchronous iterables, it returns a Promise that
+resolves to an array containing all items.
+
+```typescript
+// With synchronous iterable - returns array directly
+const syncIterable = [1, 2, 3, 4, 5]
+const result1 = collectFromIterable(syncIterable) // Returns: [1, 2, 3, 4, 5]
+
+// With async iterable - returns Promise
+async function* asyncGenerator() {
+  yield 1
+  yield 2
+  yield 3
+}
+const result2 = await collectFromIterable(asyncGenerator()) // Returns: Promise<[1, 2, 3]>
+
+// Works with Sets, Maps, and other iterables
+const set = new Set([1, 2, 3])
+const setResult = collectFromIterable(set) // Returns: [1, 2, 3]
+
+const map = new Map([['a', 1], ['b', 2]])
+const mapKeys = collectFromIterable(map.keys()) // Returns: ['a', 'b']
+const mapValues = collectFromIterable(map.values()) // Returns: [1, 2]
+```
+
 ### String Utilities
 
 This section describes utility functions to work with strings efficiently and elegantly.

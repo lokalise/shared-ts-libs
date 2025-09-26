@@ -1,12 +1,12 @@
 {
     "name": "@lokalise/api-contracts",
-    "version": "5.0.0",
+    "version": "5.4.0",
     "files": [
         "dist"
     ],
     "license": "Apache-2.0",
     "type": "module",
-    "main": "./dist/apiContracts.js",
+    "main": "./dist/index.js",
     "enableTransparentWorkspaces": "false",
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
@@ -14,7 +14,7 @@
         "url": "git://github.com/lokalise/shared-ts-libs.git"
     },
     "exports": {
-        ".": "./dist/apiContracts.js",
+        ".": "./dist/index.js",
         "./package.json": "./package.json"
     },
     "private": false,
