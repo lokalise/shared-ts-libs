@@ -540,6 +540,7 @@ jobs:
       - biome-config
       - tsconfig
       - universal-ts-utils
+      - fastify-bullboard-plugin
     uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/auth'
