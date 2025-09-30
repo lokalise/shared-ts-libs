@@ -36,16 +36,14 @@
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
     },
-    "dependencies": {
-        "fast-jwt": "^6.0.2",
-        "jwks-rsa": "^3.2.0",
-        "pino": "^9.0.0"
-    },
     "peerDependencies": {
         "@lokalise/fastify-extras": ">=29.0.0",
         "@lokalise/node-core": ">=14.0.0",
         "@lokalise/universal-ts-utils": ">=4.5.0",
-        "fastify": "^5.6.0"
+        "fastify": "^5.6.0",
+        "fast-jwt": "^6.0.2",
+        "jwks-rsa": "^3.2.0",
+        "pino": "^9.0.0"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.1.4",
