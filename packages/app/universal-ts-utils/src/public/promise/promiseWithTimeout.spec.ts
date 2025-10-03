@@ -5,45 +5,60 @@ describe('promiseWithTimeout', () => {
   it('returns finished: true with result for an already resolved promise', async () => {
     const promise = Promise.resolve('done')
     const result = await promiseWithTimeout(promise, 1000)
-    expect(result).toEqual({ finished: true, result: 'done' })
+    expect(result.finished).toBe(true)
+    if (result.finished) {
+      expect(result.result).toBe('done')
+    }
   })
 
   it('returns finished: true with error for an already rejected promise', async () => {
     const error = new Error('failed')
     const promise = Promise.reject(error)
     const result = await promiseWithTimeout(promise, 1000)
-    expect(result).toEqual({ finished: true, result: error })
+    expect(result.finished).toBe(true)
+    if (result.finished) {
+      expect(result.result).toBe(error)
+    }
   })
 
   it('returns finished: false when promise takes longer than timeout', async () => {
     const slowPromise = new Promise((resolve) => setTimeout(() => resolve('done'), 2000))
     const result = await promiseWithTimeout(slowPromise, 500)
-    expect(result).toEqual({ finished: false })
+    expect(result.finished).toBe(false)
   })
 
   it('returns finished: true with result when promise resolves before timeout', async () => {
     const fastPromise = new Promise((resolve) => setTimeout(() => resolve('done'), 100))
     const result = await promiseWithTimeout(fastPromise, 500)
-    expect(result).toEqual({ finished: true, result: 'done' })
+    expect(result.finished).toBe(true)
+    if (result.finished) {
+      expect(result.result).toBe('done')
+    }
   })
 
   it('returns finished: true with error when promise rejects before timeout', async () => {
     const error = new Error('error')
     const fastReject = new Promise((_, reject) => setTimeout(() => reject(error), 100))
     const result = await promiseWithTimeout(fastReject, 500)
-    expect(result).toEqual({ finished: true, result: error })
+    expect(result.finished).toBe(true)
+    if (result.finished) {
+      expect(result.result).toBe(error)
+    }
   })
 
   it('uses default timeout of 1000ms when not specified', async () => {
     const slowPromise = new Promise((resolve) => setTimeout(() => resolve('done'), 1500))
     const result = await promiseWithTimeout(slowPromise)
-    expect(result).toEqual({ finished: false })
+    expect(result.finished).toBe(false)
   })
 
   it('handles a promise that resolves within default timeout', async () => {
     const fastPromise = new Promise((resolve) => setTimeout(() => resolve('done'), 500))
     const result = await promiseWithTimeout(fastPromise)
-    expect(result).toEqual({ finished: true, result: 'done' })
+    expect(result.finished).toBe(true)
+    if (result.finished) {
+      expect(result.result).toBe('done')
+    }
   })
 
   it('preserves the type of resolved values', async () => {
@@ -60,5 +75,30 @@ describe('promiseWithTimeout', () => {
     if (result.finished) {
       expect(result.result).toEqual({ id: 1, name: 'test' })
     }
+  })
+
+  it('automatically aborts controller when timeout fires', async () => {
+    const controller = new AbortController()
+    let aborted = false
+
+    controller.signal.addEventListener('abort', () => {
+      aborted = true
+    })
+
+    const slowPromise = new Promise((resolve) => setTimeout(() => resolve('done'), 2000))
+    const result = await promiseWithTimeout(slowPromise, 100, { abortController: controller })
+
+    expect(result.finished).toBe(false)
+    expect(aborted).toBe(true)
+  })
+
+  it('returns immediately if controller is already aborted', async () => {
+    const controller = new AbortController()
+    controller.abort()
+
+    const promise = Promise.resolve('done')
+    const result = await promiseWithTimeout(promise, 1000, { abortController: controller })
+
+    expect(result.finished).toBe(false)
   })
 })

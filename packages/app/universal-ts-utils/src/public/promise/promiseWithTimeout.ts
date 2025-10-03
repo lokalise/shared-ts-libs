@@ -1,44 +1,95 @@
 type PromiseWithTimeoutResult<T> = { finished: false } | { finished: true; result: Error | T }
 
+type PromiseWithTimeoutOptions = {
+  /**
+   * An AbortController for bidirectional cancellation:
+   * - If timeout fires first: controller.abort() is called automatically
+   * - If controller.abort() is called externally: timeout is cancelled immediately
+   *
+   * The controller's signal should be passed to the operation you want to cancel.
+   *
+   * @example
+   * const controller = new AbortController();
+   * const result = await promiseWithTimeout(
+   *   fetch(url, { signal: controller.signal }),
+   *   5000,
+   *   { abortController: controller }
+   * );
+   * // If timeout fires, fetch will be aborted automatically
+   * // If you call controller.abort(), the timeout is cancelled
+   */
+  abortController?: AbortController
+}
+
 /**
- * Races a promise against a timeout, returning the result if the promise completes within the timeout period.
- * Returns an object indicating whether the promise finished, and if so, includes the result or error.
+ * Wraps a promise with a timeout, returning a result object that indicates
+ * whether the promise finished and whether it succeeded or failed.
  *
- * @template T - The type of the value the promise resolves to.
- * @param {Promise<T>} promise - The promise to race against the timeout.
- * @param {number} [timeout=1000] - The timeout in milliseconds to wait before considering the promise unfinished.
- * @returns {Promise<PromiseWithTimeoutResult<T>>} A promise that resolves to `{ finished: false }` if the timeout occurred, or `{ finished: true, result: T | Error }` if the promise completed.
+ * Unlike Promise.race, this properly cleans up the timeout timer to prevent
+ * memory leaks.
+ *
+ * @param promise - The promise to wrap with a timeout
+ * @param timeout - Timeout in milliseconds
+ * @param opts - Optional configuration
+ * @returns A promise that always resolves with a TimeoutResult
  *
  * @example
- * ```typescript
- * const slowPromise = new Promise((resolve) => setTimeout(() => resolve('done'), 2000))
- * const result = await promiseWithTimeout(slowPromise, 1000)
- * console.log(result) // { finished: false } (promise takes 2s, timeout is 1s)
+ * // Basic usage
+ * const result = await promiseWithTimeout(fetchData(), 5000);
+ * if (!result.finished) {
+ *   console.log('Timed out');
+ * } else if (result.ok) {
+ *   console.log('Success:', result.result);
+ * } else {
+ *   console.log('Error:', result.error);
+ * }
  *
- * const fastPromise = Promise.resolve('done')
- * const result2 = await promiseWithTimeout(fastPromise, 1000)
- * console.log(result2) // { finished: true, result: 'done' }
- *
- * const failedPromise = Promise.reject(new Error('failed'))
- * const result3 = await promiseWithTimeout(failedPromise, 1000)
- * console.log(result3) // { finished: true, result: Error('failed') }
- * ```
+ * @example
+ * // With abort on timeout
+ * const controller = new AbortController();
+ * const result = await promiseWithTimeout(
+ *   fetch(url, { signal: controller.signal }),
+ *   5000,
+ *   { abortController: controller }
+ * );
  */
 export const promiseWithTimeout = <T>(
   promise: Promise<T>,
-  timeout: number = 1000,
-): Promise<PromiseWithTimeoutResult<T>> =>
-  Promise.race<PromiseWithTimeoutResult<T>>([
-    new Promise<PromiseWithTimeoutResult<T>>((done) =>
-      setTimeout(() => done({ finished: false }), timeout),
-    ),
-    promise
-      .then((result) => ({
-        finished: true,
-        result,
-      }))
-      .catch((error) => ({
-        finished: true,
-        result: error,
-      })),
-  ])
+  timeout = 1000,
+  opts?: PromiseWithTimeoutOptions,
+): Promise<PromiseWithTimeoutResult<T>> => {
+  // Handle already-aborted controller
+  if (opts?.abortController?.signal.aborted) return Promise.resolve({ finished: false })
+
+  return new Promise<PromiseWithTimeoutResult<T>>((resolve) => {
+    let settled = false
+
+    const settle = (result: PromiseWithTimeoutResult<T>) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      resolve(result)
+    }
+
+    const timer = setTimeout(() => {
+      if (opts?.abortController && !opts.abortController.signal.aborted) {
+        opts.abortController.abort()
+      }
+      settle({ finished: false })
+    }, timeout)
+
+    // Listen for external abort
+    opts?.abortController?.signal.addEventListener(
+      'abort',
+      () => {
+        settle({ finished: false })
+      },
+      { once: true },
+    )
+
+    promise.then(
+      (value) => settle({ finished: true, result: value }),
+      (error) => settle({ finished: true, result: error }),
+    )
+  })
+}
