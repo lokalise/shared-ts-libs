@@ -6,8 +6,8 @@ import { z } from 'zod/v4'
 import {
   buildFastifyNoPayloadRoute,
   buildFastifyNoPayloadRouteHandler,
-} from './fastifyApiContracts.js'
-import type { RouteType } from './types.js'
+} from './fastifyApiContracts.ts'
+import type { RouteType } from './types.ts'
 
 // Test schemas
 const SuccessResponseSchema = z.object({
