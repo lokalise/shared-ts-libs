@@ -1,7 +1,7 @@
 import { constants as httpConstants } from 'node:http2'
 import { PublicNonRecoverableError } from '@lokalise/node-core'
 import type { FastifyRequest } from 'fastify'
-import type { Authenticator, BaseAuthInfo } from '../authenticators/index.js'
+import type { Authenticator, BaseAuthInfo } from '../authenticators/index.ts'
 
 declare module '@lokalise/fastify-extras' {
   interface RequestContext {

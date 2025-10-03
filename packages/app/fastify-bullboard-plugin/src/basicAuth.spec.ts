@@ -1,7 +1,7 @@
 import fastifyAuth from '@fastify/auth'
 import fastify, { type FastifyInstance } from 'fastify'
 import { beforeAll, describe, expect } from 'vitest'
-import { basicAuth } from './basicAuth.js'
+import { basicAuth } from './basicAuth.ts'
 
 const skippedEndpoint = '/skipAuth'
 const enabledEndpoint = '/'

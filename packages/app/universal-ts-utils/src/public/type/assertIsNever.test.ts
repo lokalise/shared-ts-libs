@@ -1,5 +1,5 @@
 import { expect } from 'vitest'
-import { assertIsNever } from './assertIsNever.js'
+import { assertIsNever } from './assertIsNever.ts'
 
 describe('assertIsNever', () => {
   it('should throw an error if a non-never value is passed in', () => {
