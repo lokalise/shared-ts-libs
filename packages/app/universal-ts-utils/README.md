@@ -538,6 +538,30 @@ const myValue: MyType = 'optionA' // valid
 const invalidValue: MyType = 'invalid' // TypeScript error
 ```
 
+### Promise Utilities
+
+This section describes utility functions to work with promises efficiently and elegantly.
+
+#### `promiseWithTimeout`
+
+Races a promise against a timeout, returning the result if the promise completes within the timeout period.
+Returns an object indicating whether the promise finished, and if so, includes the result or error.
+This is useful for testing or checking the state of asynchronous operations without blocking indefinitely.
+
+```typescript
+const slowPromise = new Promise((resolve) => setTimeout(() => resolve('done'), 2000))
+const result = await promiseWithTimeout(slowPromise, 1000)
+console.log(result) // { finished: false } (promise takes 2s, timeout is 1s)
+
+const fastPromise = Promise.resolve('done')
+const result2 = await promiseWithTimeout(fastPromise, 1000)
+console.log(result2) // { finished: true, result: 'done' }
+
+const failedPromise = Promise.reject(new Error('failed'))
+const result3 = await promiseWithTimeout(failedPromise, 1000)
+console.log(result3) // { finished: true, result: Error('failed') }
+```
+
 ### Other Utilities
 
 This section describes other utility functions included in this package.
