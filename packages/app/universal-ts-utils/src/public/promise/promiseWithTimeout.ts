@@ -26,26 +26,29 @@ type PromiseWithTimeoutOptions = {
  * whether the promise finished and whether it succeeded or failed.
  *
  * Unlike Promise.race, this properly cleans up the timeout timer to prevent
- * memory leaks.
+ * memory leaks. The timeout timer is automatically cleared when:
+ * - The promise resolves or rejects
+ * - The timeout fires
+ * - An external AbortController is aborted
  *
+ * @template T - The type of the promise value
  * @param promise - The promise to wrap with a timeout
- * @param timeout - Timeout in milliseconds
+ * @param timeout - Timeout in milliseconds (default: 1000)
  * @param opts - Optional configuration
- * @returns A promise that always resolves with a TimeoutResult
+ * @returns A promise that resolves with `{ finished: false }` on timeout,
+ *          or `{ finished: true, result: T | Error }` when the promise settles
  *
  * @example
- * // Basic usage
+ * // Basic usage - check if operation completed
  * const result = await promiseWithTimeout(fetchData(), 5000);
  * if (!result.finished) {
  *   console.log('Timed out');
- * } else if (result.ok) {
- *   console.log('Success:', result.result);
  * } else {
- *   console.log('Error:', result.error);
+ *   console.log('Result:', result.result);
  * }
  *
  * @example
- * // With abort on timeout
+ * // With AbortController - cancel operation on timeout
  * const controller = new AbortController();
  * const result = await promiseWithTimeout(
  *   fetch(url, { signal: controller.signal }),
