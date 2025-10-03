@@ -62,14 +62,7 @@ export const promiseWithTimeout = <T>(
   if (opts?.abortController?.signal.aborted) return Promise.resolve({ finished: false })
 
   return new Promise<PromiseWithTimeoutResult<T>>((resolve) => {
-    let settled = false
-
-    const settle = (result: PromiseWithTimeoutResult<T>) => {
-      if (settled) return
-      settled = true
-      clearTimeout(timer)
-      resolve(result)
-    }
+    let settle: ReturnType<typeof createSettler<T>>
 
     const timer = setTimeout(() => {
       if (opts?.abortController && !opts.abortController.signal.aborted) {
@@ -78,18 +71,34 @@ export const promiseWithTimeout = <T>(
       settle({ finished: false })
     }, timeout)
 
+    settle = createSettler<T>(resolve, timer)
+
     // Listen for external abort
-    opts?.abortController?.signal.addEventListener(
-      'abort',
-      () => {
-        settle({ finished: false })
-      },
-      { once: true },
-    )
+    opts?.abortController?.signal.addEventListener('abort', () => settle({ finished: false }), {
+      once: true,
+    })
 
     promise.then(
       (value) => settle({ finished: true, result: value }),
       (error) => settle({ finished: true, result: error }),
     )
   })
+}
+
+/**
+ * Creates a settler function that ensures a promise can only be resolved once
+ * and handles cleanup of the timeout timer.
+ */
+const createSettler = <T>(
+  resolve: (result: PromiseWithTimeoutResult<T>) => void,
+  timer: NodeJS.Timeout | ReturnType<typeof setTimeout>,
+) => {
+  let settled = false
+
+  return (result: PromiseWithTimeoutResult<T>) => {
+    if (settled) return
+    settled = true
+    clearTimeout(timer)
+    resolve(result)
+  }
 }
