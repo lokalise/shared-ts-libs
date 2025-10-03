@@ -27,9 +27,7 @@ describe('isPromiseFinished', () => {
   })
 
   it('returns true when promise rejects before timeout', async () => {
-    const fastReject = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('error')), 100),
-    )
+    const fastReject = new Promise((_, reject) => setTimeout(() => reject(new Error('error')), 100))
     const result = await isPromiseFinished(fastReject, 500)
     expect(result).toBe(true)
   })
