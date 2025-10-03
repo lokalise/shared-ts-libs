@@ -2,7 +2,7 @@ import fastifySchedule from '@fastify/schedule'
 import { Queue } from 'bullmq'
 import fastify, { type FastifyInstance } from 'fastify'
 import { beforeAll, expect } from 'vitest'
-import { type BullBoardOptions, bullBoard, type QueueProConstructor } from './bullBoard.js'
+import { type BullBoardOptions, bullBoard, type QueueProConstructor } from './bullBoard.ts'
 
 const QueuePro: QueueProConstructor = Queue as QueueProConstructor
 
