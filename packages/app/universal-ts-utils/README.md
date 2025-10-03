@@ -544,11 +544,14 @@ This section describes utility functions to work with promises efficiently and e
 
 #### `promiseWithTimeout`
 
-Races a promise against a timeout, returning the result if the promise completes within the timeout period.
-Returns an object indicating whether the promise finished, and if so, includes the result or error.
-This is useful for testing or checking the state of asynchronous operations without blocking indefinitely.
+Wraps a promise with a timeout, returning a result object that indicates whether the promise finished and whether it succeeded or failed. Unlike `Promise.race`, this properly cleans up the timeout timer to prevent memory leaks.
+
+Supports optional `AbortController` for bidirectional cancellation:
+- If the timeout fires first, the controller is automatically aborted
+- If the controller is aborted externally, the timeout is immediately cancelled
 
 ```typescript
+// Basic usage
 const slowPromise = new Promise((resolve) => setTimeout(() => resolve('done'), 2000))
 const result = await promiseWithTimeout(slowPromise, 1000)
 console.log(result) // { finished: false } (promise takes 2s, timeout is 1s)
@@ -560,6 +563,16 @@ console.log(result2) // { finished: true, result: 'done' }
 const failedPromise = Promise.reject(new Error('failed'))
 const result3 = await promiseWithTimeout(failedPromise, 1000)
 console.log(result3) // { finished: true, result: Error('failed') }
+
+// With AbortController to prevent memory leaks from hanging operations
+const controller = new AbortController()
+const result4 = await promiseWithTimeout(
+  fetch(url, { signal: controller.signal }),
+  5000,
+  { abortController: controller }
+)
+// If timeout fires, fetch is automatically aborted
+// If you call controller.abort(), the timeout is cancelled
 ```
 
 ### Other Utilities
