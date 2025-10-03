@@ -28,6 +28,8 @@ export * from './public/object/groupByUnique.ts'
 export * from './public/object/isEmpty.ts'
 export * from './public/object/pick.ts'
 export * from './public/object/transformToKebabCase.ts'
+// promise
+export * from './public/promise/promiseWithTimeout.ts'
 // string
 export * from './public/string/trimText.ts'
 // type
