@@ -542,18 +542,24 @@ const invalidValue: MyType = 'invalid' // TypeScript error
 
 This section describes utility functions to work with promises efficiently and elegantly.
 
-#### `isPromiseFinished`
+#### `promiseWithTimeout`
 
-Checks if a promise has finished (resolved or rejected) within a specified timeout period. This is useful for testing or checking the state of asynchronous operations without blocking indefinitely.
+Races a promise against a timeout, returning the result if the promise completes within the timeout period.
+Returns an object indicating whether the promise finished, and if so, includes the result or error.
+This is useful for testing or checking the state of asynchronous operations without blocking indefinitely.
 
 ```typescript
 const slowPromise = new Promise((resolve) => setTimeout(() => resolve('done'), 2000))
-const isFinished = await isPromiseFinished(slowPromise, 1000)
-console.log(isFinished) // false (promise takes 2s, timeout is 1s)
+const result = await promiseWithTimeout(slowPromise, 1000)
+console.log(result) // { finished: false } (promise takes 2s, timeout is 1s)
 
 const fastPromise = Promise.resolve('done')
-const isFinished2 = await isPromiseFinished(fastPromise, 1000)
-console.log(isFinished2) // true (promise resolves immediately)
+const result2 = await promiseWithTimeout(fastPromise, 1000)
+console.log(result2) // { finished: true, result: 'done' }
+
+const failedPromise = Promise.reject(new Error('failed'))
+const result3 = await promiseWithTimeout(failedPromise, 1000)
+console.log(result3) // { finished: true, result: Error('failed') }
 ```
 
 ### Other Utilities
