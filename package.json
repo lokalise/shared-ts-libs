@@ -14,7 +14,7 @@
     "lint:fix": "turbo run lint:fix --continue=always"
   },
   "devDependencies": {
-    "pino": "^9.0.0",
+    "pino": "^10.0.0",
     "turbo": "^2.4.4"
   },
   "packageManager": "npm@10.7.0"
