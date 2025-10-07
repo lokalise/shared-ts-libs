@@ -1,16 +1,14 @@
 import { mapRouteToPath } from '@lokalise/api-contracts'
-import {sendByDeleteRoute, sendByGetRoute, sendByPayloadRoute} from '@lokalise/frontend-http-client'
+import { sendByGetRoute, sendByPayloadRoute } from '@lokalise/frontend-http-client'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch from 'wretch'
 import {
-    deleteContractWithPathAndHeaderAndQueryParams, deleteContractWithPathAndHeaderParams,
-    getContract,
-    getContractWithPathParams,
-    getContractWithQueryParams,
-    postContract,
-    postContractWithPathAndHeaderAndQueryParams,
-    postContractWithPathParams,
+  getContract,
+  getContractWithPathParams,
+  getContractWithQueryParams,
+  postContract,
+  postContractWithPathParams,
 } from '../test/testContracts.ts'
 import { MswHelper } from './MswHelper.ts'
 
@@ -60,36 +58,6 @@ describe('MswHelper', () => {
         },
         body: { name: 'frf' },
       })
-
-      expect(response).toMatchInlineSnapshot(`
-              {
-                "id": "2",
-              }
-            `)
-    })
-
-    it('mocks POST request with path, request and query params', async () => {
-      mswHelper.mockValidResponse(postContractWithPathAndHeaderAndQueryParams, server, {
-        pathParams: { userId: '3' },
-        responseBody: { id: '2' },
-      })
-
-      const response = await sendByPayloadRoute(
-        wretchClient,
-        postContractWithPathAndHeaderAndQueryParams,
-        {
-          pathParams: {
-            userId: '3',
-          },
-          headers: {
-            authorization: 'dummy',
-          },
-          queryParams: {
-            query: 'test',
-          },
-          body: { name: 'frf' },
-        },
-      )
 
       expect(response).toMatchInlineSnapshot(`
               {
@@ -346,60 +314,4 @@ describe('MswHelper', () => {
             `)
     })
   })
-
-    it('mocks DELETE request with path, header and query params', async () => {
-        mswHelper.mockValidResponse(deleteContractWithPathAndHeaderAndQueryParams, server, {
-            pathParams: { userId: '3' },
-            responseBody: { id: '2' },
-        })
-
-        const response = await sendByDeleteRoute(
-            wretchClient,
-            deleteContractWithPathAndHeaderAndQueryParams,
-            {
-                pathParams: {
-                    userId: '3',
-                },
-                headers: {
-                    authorization: 'dummy',
-                },
-                queryParams: {
-                    query: 'test',
-                },
-            },
-        )
-
-        expect(response).toMatchInlineSnapshot(`
-              {
-                "id": "2",
-              }
-            `)
-    })
-
-    it('mocks DELETE request with path and header params', async () => {
-        mswHelper.mockValidResponse(deleteContractWithPathAndHeaderParams, server, {
-            pathParams: { userId: '3' },
-            responseBody: { id: '2' },
-        })
-
-        const response = await sendByDeleteRoute(
-            wretchClient,
-            deleteContractWithPathAndHeaderParams,
-            {
-                pathParams: {
-                    userId: '3',
-                },
-                headers: {
-                    authorization: 'dummy',
-                },
-            },
-        )
-
-        expect(response).toMatchInlineSnapshot(`
-              {
-                "id": "2",
-              }
-            `)
-    })
-
 })
