@@ -165,6 +165,32 @@ describe('toArrayPreprocessor', () => {
     `)
   })
 
+    it('sandbox', () => {
+        const itemListRequestQueryString = z.object({
+            /**
+             * If not specified, connector-specific default will be used
+             * If specified value exceeds connector-specific default, the default value will be used instead
+             */
+            limit: z.coerce.number().optional(),
+            /**
+             * Opaque connector-specific string that can be used to retrieve the next page of items.
+             * If not specified, the first page of items will be returned.
+             * For this param you are expected to pass the cursor value returned in the response to the last request.
+             */
+            cursor: z.string().optional(),
+            /**
+             * Domain content type to filter by, e. g. "newsletters", "campaigns", "emails". In case more than one value is provided, cursor is expected to keep track of what content type it is fetching now.
+             */
+            contentTypes: z.preprocess(toArrayPreprocessor, z.array(z.string())).optional(),
+        })
+
+        const value = itemListRequestQueryString.parse({
+            limit: '12',
+            custor: 'frf',
+        })
+        console.log(JSON.stringify(value, null, 2))
+    })
+
   it('does not convert function input', () => {
     const SCHEMA = z.object({
       name: z.preprocess(toArrayPreprocessor, z.array(z.any())),
