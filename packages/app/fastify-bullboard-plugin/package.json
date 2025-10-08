@@ -60,7 +60,7 @@
         "toad-scheduler": "^3.0.1",
         "ts-deepmerge": "^7.0.3",
         "pino-pretty": "^13.0.0",
-        "typescript": "5.9.2",
+        "typescript": "5.9.3",
         "vitest": "^3.2.4"
     },
     "keywords": [
