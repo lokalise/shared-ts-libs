@@ -28,8 +28,7 @@
         "dist"
     ],
     "dependencies": {
-        "socket.io": "^4.8.0",
-        "zod": "^4.1.9"
+        "socket.io": "^4.8.0"
     },
     "peerDependencies": {
         "zod": ">=3.25.76 <5.0.0"
