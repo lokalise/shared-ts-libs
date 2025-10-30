@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/fastify-api-contracts",
-    "version": "4.2.1",
+    "version": "5.0.0",
     "type": "module",
     "files": [
         "dist",
