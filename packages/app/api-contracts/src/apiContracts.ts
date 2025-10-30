@@ -24,6 +24,7 @@ export type CommonRouteDefinition<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
@@ -35,7 +36,36 @@ export type CommonRouteDefinition<
   successResponseBodySchema: ResponseBodySchema
   requestPathParamsSchema?: PathParamsSchema
   requestQuerySchema?: RequestQuerySchema
+  /**
+   * Schema for validating request headers.
+   * Used to define and validate headers that the client must send with the request.
+   *
+   * @example
+   * ```ts
+   * requestHeaderSchema: z.object({
+   *   'authorization': z.string(),
+   *   'x-api-key': z.string()
+   * })
+   * ```
+   */
   requestHeaderSchema?: RequestHeaderSchema
+  /**
+   * Schema for validating response headers.
+   * Used to define and validate headers that the server will send in the response.
+   * This is useful for documenting expected response headers (e.g., rate limit headers,
+   * pagination headers, cache control headers) and can be used by clients to validate
+   * the response they receive.
+   *
+   * @example
+   * ```ts
+   * responseHeaderSchema: z.object({
+   *   'x-ratelimit-limit': z.string(),
+   *   'x-ratelimit-remaining': z.string(),
+   *   'x-ratelimit-reset': z.string()
+   * })
+   * ```
+   */
+  responseHeaderSchema?: ResponseHeaderSchema
   pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
   responseSchemasByStatusCode?: ResponseSchemasByStatusCode
   metadata?: CommonRouteDefinitionMetadata
@@ -61,6 +91,7 @@ export type PayloadRouteDefinition<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
@@ -71,6 +102,7 @@ export type PayloadRouteDefinition<
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
+  ResponseHeaderSchema,
   IsNonJSONResponseExpected,
   IsEmptyResponseExpected,
   ResponseSchemasByStatusCode
@@ -84,6 +116,7 @@ export type GetRouteDefinition<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
@@ -94,6 +127,7 @@ export type GetRouteDefinition<
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
+  ResponseHeaderSchema,
   IsNonJSONResponseExpected,
   IsEmptyResponseExpected,
   ResponseSchemasByStatusCode
@@ -106,6 +140,7 @@ export type DeleteRouteDefinition<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
   ResponseSchemasByStatusCode extends
@@ -116,6 +151,7 @@ export type DeleteRouteDefinition<
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
+  ResponseHeaderSchema,
   IsNonJSONResponseExpected,
   IsEmptyResponseExpected,
   ResponseSchemasByStatusCode
@@ -129,6 +165,7 @@ export function buildPayloadRoute<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
@@ -141,6 +178,7 @@ export function buildPayloadRoute<
     PathParamsSchema,
     RequestQuerySchema,
     RequestHeaderSchema,
+    ResponseHeaderSchema,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     ResponseSchemasByStatusCode
@@ -151,6 +189,7 @@ export function buildPayloadRoute<
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
+  ResponseHeaderSchema,
   IsNonJSONResponseExpected,
   IsEmptyResponseExpected,
   ResponseSchemasByStatusCode
@@ -163,6 +202,7 @@ export function buildPayloadRoute<
     pathResolver: params.pathResolver,
     requestBodySchema: params.requestBodySchema,
     requestHeaderSchema: params.requestHeaderSchema,
+    responseHeaderSchema: params.responseHeaderSchema,
     requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
     successResponseBodySchema: params.successResponseBodySchema,
@@ -179,6 +219,7 @@ export function buildGetRoute<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
@@ -191,6 +232,7 @@ export function buildGetRoute<
       PathParamsSchema,
       RequestQuerySchema,
       RequestHeaderSchema,
+      ResponseHeaderSchema,
       IsNonJSONResponseExpected,
       IsEmptyResponseExpected,
       ResponseSchemasByStatusCode
@@ -202,6 +244,7 @@ export function buildGetRoute<
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
+  ResponseHeaderSchema,
   IsNonJSONResponseExpected,
   IsEmptyResponseExpected,
   ResponseSchemasByStatusCode
@@ -213,6 +256,7 @@ export function buildGetRoute<
     method: 'get',
     pathResolver: params.pathResolver,
     requestHeaderSchema: params.requestHeaderSchema,
+    responseHeaderSchema: params.responseHeaderSchema,
     requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
     successResponseBodySchema: params.successResponseBodySchema,
@@ -229,6 +273,7 @@ export function buildDeleteRoute<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
   ResponseSchemasByStatusCode extends
@@ -241,6 +286,7 @@ export function buildDeleteRoute<
       PathParamsSchema,
       RequestQuerySchema,
       RequestHeaderSchema,
+      ResponseHeaderSchema,
       IsNonJSONResponseExpected,
       IsEmptyResponseExpected,
       ResponseSchemasByStatusCode
@@ -252,6 +298,7 @@ export function buildDeleteRoute<
   PathParamsSchema,
   RequestQuerySchema,
   RequestHeaderSchema,
+  ResponseHeaderSchema,
   IsNonJSONResponseExpected,
   IsEmptyResponseExpected,
   ResponseSchemasByStatusCode
@@ -263,6 +310,7 @@ export function buildDeleteRoute<
     method: 'delete',
     pathResolver: params.pathResolver,
     requestHeaderSchema: params.requestHeaderSchema,
+    responseHeaderSchema: params.responseHeaderSchema,
     requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
     successResponseBodySchema: params.successResponseBodySchema,
