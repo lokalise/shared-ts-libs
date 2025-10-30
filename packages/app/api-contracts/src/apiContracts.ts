@@ -327,7 +327,7 @@ export function buildDeleteRoute<
  */
 export function mapRouteToPath(
   // biome-ignore lint/suspicious/noExplicitAny: We don't care about types here, we just need Zod schema
-  routeDefinition: CommonRouteDefinition<any, any, any, any, any, any, any>,
+  routeDefinition: CommonRouteDefinition<any, any, any, any, any, any, any, any>,
 ): string {
   if (!routeDefinition.requestPathParamsSchema) {
     return routeDefinition.pathResolver(EMPTY_PARAMS)
@@ -343,11 +343,11 @@ export function mapRouteToPath(
 
 export function describeContract(
   contract: // biome-ignore lint/suspicious/noExplicitAny: we accept any contract here
-    | PayloadRouteDefinition<any, any, any, any, any, any, any, any>
+    | PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>
     // biome-ignore lint/suspicious/noExplicitAny: we accept any contract here
-    | GetRouteDefinition<any, any, any, any, any, any, any>
+    | GetRouteDefinition<any, any, any, any, any, any, any, any>
     // biome-ignore lint/suspicious/noExplicitAny: we accept any contract here
-    | DeleteRouteDefinition<any, any, any, any, any, any, any>,
+    | DeleteRouteDefinition<any, any, any, any, any, any, any, any>,
 ): string {
   return `${contract.method.toUpperCase()} ${mapRouteToPath(contract)}`
 }

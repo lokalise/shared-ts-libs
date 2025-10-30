@@ -65,6 +65,7 @@ export function buildFastifyNoPayloadRouteHandler<
   PathParams extends OptionalZodSchema = undefined,
   RequestQuerySchema extends OptionalZodSchema = undefined,
   RequestHeaderSchema extends OptionalZodSchema = undefined,
+  ResponseHeaderSchema extends OptionalZodSchema = undefined,
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
@@ -75,6 +76,7 @@ export function buildFastifyNoPayloadRouteHandler<
         PathParams,
         RequestQuerySchema,
         RequestHeaderSchema,
+        ResponseHeaderSchema,
         boolean,
         boolean,
         ResponseSchemasByStatusCode
@@ -84,6 +86,7 @@ export function buildFastifyNoPayloadRouteHandler<
         PathParams,
         RequestQuerySchema,
         RequestHeaderSchema,
+        ResponseHeaderSchema,
         boolean,
         boolean,
         ResponseSchemasByStatusCode
@@ -106,6 +109,7 @@ export function buildFastifyNoPayloadRoute<
   PathParams extends OptionalZodSchema = undefined,
   RequestQuerySchema extends OptionalZodSchema = undefined,
   RequestHeaderSchema extends OptionalZodSchema = undefined,
+  ResponseHeaderSchema extends OptionalZodSchema = undefined,
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
@@ -116,6 +120,7 @@ export function buildFastifyNoPayloadRoute<
         PathParams,
         RequestQuerySchema,
         RequestHeaderSchema,
+        ResponseHeaderSchema,
         boolean,
         boolean,
         ResponseSchemasByStatusCode
@@ -125,6 +130,7 @@ export function buildFastifyNoPayloadRoute<
         PathParams,
         RequestQuerySchema,
         RequestHeaderSchema,
+        ResponseHeaderSchema,
         boolean,
         boolean,
         ResponseSchemasByStatusCode
@@ -183,6 +189,7 @@ export function buildFastifyPayloadRouteHandler<
   PathParams extends OptionalZodSchema = undefined,
   RequestQuerySchema extends OptionalZodSchema = undefined,
   RequestHeaderSchema extends OptionalZodSchema = undefined,
+  ResponseHeaderSchema extends OptionalZodSchema = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
@@ -195,6 +202,7 @@ export function buildFastifyPayloadRouteHandler<
     PathParams,
     RequestQuerySchema,
     RequestHeaderSchema,
+    ResponseHeaderSchema,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     ResponseSchemasByStatusCode
@@ -219,6 +227,7 @@ export function buildFastifyPayloadRoute<
   PathParams extends OptionalZodSchema = undefined,
   RequestQuerySchema extends OptionalZodSchema = undefined,
   RequestHeaderSchema extends OptionalZodSchema = undefined,
+  ResponseHeaderSchema extends OptionalZodSchema = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
@@ -231,6 +240,7 @@ export function buildFastifyPayloadRoute<
     PathParams,
     RequestQuerySchema,
     RequestHeaderSchema,
+    ResponseHeaderSchema,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     ResponseSchemasByStatusCode

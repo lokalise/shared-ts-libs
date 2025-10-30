@@ -399,6 +399,7 @@ export function sendByPayloadRoute<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
@@ -412,6 +413,7 @@ export function sendByPayloadRoute<
     PathParamsSchema,
     RequestQuerySchema,
     RequestHeaderSchema,
+    ResponseHeaderSchema,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     ResponseSchemasByStatusCode
@@ -456,6 +458,7 @@ export function sendByGetRoute<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
@@ -468,6 +471,7 @@ export function sendByGetRoute<
     PathParamsSchema,
     RequestQuerySchema,
     RequestHeaderSchema,
+    ResponseHeaderSchema,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     ResponseSchemasByStatusCode
@@ -507,6 +511,7 @@ export function sendByDeleteRoute<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
   ResponseSchemasByStatusCode extends
@@ -519,6 +524,7 @@ export function sendByDeleteRoute<
     PathParamsSchema,
     RequestQuerySchema,
     RequestHeaderSchema,
+    ResponseHeaderSchema,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     ResponseSchemasByStatusCode

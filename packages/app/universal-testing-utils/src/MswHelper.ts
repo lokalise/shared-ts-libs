@@ -57,8 +57,8 @@ function joinURL(base: string, path: string): string {
 export type MockEndpointParams<PathParamsSchema extends z.Schema | undefined> = {
   server: SetupServerApi
   contract:
-    | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any>
-    | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any>
+    | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any, any>
+    | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any, any>
   pathParams: InferSchemaOutput<PathParamsSchema>
   responseBody: any
   responseCode: number
@@ -74,8 +74,8 @@ export class MswHelper {
 
   private resolveParams<PathParamsSchema extends z.Schema | undefined>(
     contract:
-      | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any>
-      | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any>,
+      | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any, any>
+      | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any, any>,
     pathParams: InferSchemaOutput<PathParamsSchema>,
   ) {
     const path = contract.requestPathParamsSchema
@@ -114,6 +114,7 @@ export class MswHelper {
           PathParamsSchema,
           z.Schema | undefined,
           z.Schema | undefined,
+          z.Schema | undefined,
           boolean,
           boolean,
           any // ResponseSchemasByStatusCode - not used in mocking
@@ -122,6 +123,7 @@ export class MswHelper {
           z.Schema | undefined,
           ResponseBodySchema,
           PathParamsSchema,
+          z.Schema | undefined,
           z.Schema | undefined,
           z.Schema | undefined,
           boolean,
@@ -151,6 +153,7 @@ export class MswHelper {
           z.Schema | undefined,
           z.Schema | undefined,
           z.Schema | undefined,
+          z.Schema | undefined,
           boolean,
           boolean,
           any // ResponseSchemasByStatusCode - not used in mocking
@@ -158,6 +161,7 @@ export class MswHelper {
       | PayloadRouteDefinition<
           z.Schema | undefined,
           ResponseBodySchema,
+          z.Schema | undefined,
           z.Schema | undefined,
           z.Schema | undefined,
           z.Schema | undefined,
@@ -199,6 +203,7 @@ export class MswHelper {
           PathParamsSchema,
           z.Schema | undefined,
           z.Schema | undefined,
+          z.Schema | undefined,
           boolean,
           boolean,
           any // ResponseSchemasByStatusCode - not used in mocking
@@ -207,6 +212,7 @@ export class MswHelper {
           RequestBodySchema,
           ResponseBodySchema,
           PathParamsSchema,
+          z.Schema | undefined,
           z.Schema | undefined,
           z.Schema | undefined,
           boolean,
@@ -232,8 +238,8 @@ export class MswHelper {
 
   mockAnyResponse<PathParamsSchema extends z.Schema | undefined>(
     contract:
-      | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any>
-      | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any>,
+      | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any, any>
+      | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any, any>,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
       ? MockParamsNoPath<InferSchemaInput<any>>
