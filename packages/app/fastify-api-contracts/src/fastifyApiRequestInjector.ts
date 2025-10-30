@@ -51,6 +51,7 @@ export async function injectGet<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
@@ -63,6 +64,7 @@ export async function injectGet<
     PathParamsSchema,
     RequestQuerySchema,
     RequestHeaderSchema,
+    ResponseHeaderSchema,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     ResponseSchemasByStatusCode
@@ -94,6 +96,7 @@ export async function injectDelete<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
   ResponseSchemasByStatusCode extends
@@ -106,6 +109,7 @@ export async function injectDelete<
     PathParamsSchema,
     RequestQuerySchema,
     RequestHeaderSchema,
+    ResponseHeaderSchema,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     ResponseSchemasByStatusCode
@@ -138,6 +142,7 @@ export async function injectPost<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
@@ -151,6 +156,7 @@ export async function injectPost<
     PathParamsSchema,
     RequestQuerySchema,
     RequestHeaderSchema,
+    ResponseHeaderSchema,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     ResponseSchemasByStatusCode
@@ -186,6 +192,7 @@ export async function injectPut<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
@@ -199,6 +206,7 @@ export async function injectPut<
     PathParamsSchema,
     RequestQuerySchema,
     RequestHeaderSchema,
+    ResponseHeaderSchema,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     ResponseSchemasByStatusCode
@@ -234,6 +242,7 @@ export async function injectPatch<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
@@ -247,6 +256,7 @@ export async function injectPatch<
     PathParamsSchema,
     RequestQuerySchema,
     RequestHeaderSchema,
+    ResponseHeaderSchema,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
     ResponseSchemasByStatusCode

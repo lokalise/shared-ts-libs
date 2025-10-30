@@ -38,6 +38,7 @@ export class MockttpHelper {
           PathParamsSchema,
           z.Schema | undefined,
           z.Schema | undefined,
+          z.Schema | undefined,
           boolean,
           boolean,
           any // ResponseSchemasByStatusCode - not used in mocking
@@ -46,6 +47,7 @@ export class MockttpHelper {
           z.Schema | undefined,
           ResponseBodySchema,
           PathParamsSchema,
+          z.Schema | undefined,
           z.Schema | undefined,
           z.Schema | undefined,
           boolean,
@@ -69,6 +71,7 @@ export class MockttpHelper {
           PathParamsSchema,
           z.Schema | undefined,
           z.Schema | undefined,
+          z.Schema | undefined,
           boolean,
           boolean,
           any // ResponseSchemasByStatusCode - not used in mocking
@@ -77,6 +80,7 @@ export class MockttpHelper {
           z.Schema | undefined,
           ResponseBodySchema,
           PathParamsSchema,
+          z.Schema | undefined,
           z.Schema | undefined,
           z.Schema | undefined,
           boolean,

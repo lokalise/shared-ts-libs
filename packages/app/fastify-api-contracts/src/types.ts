@@ -85,6 +85,7 @@ export type ApiContractMetadataToRouteMapper = <
     z.Schema | undefined,
     z.Schema | undefined,
     z.Schema | undefined,
+    z.Schema | undefined,
     boolean,
     boolean
   >,

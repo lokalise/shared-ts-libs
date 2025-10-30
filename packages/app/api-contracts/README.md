@@ -18,6 +18,7 @@ const getContract = buildGetRoute({
     requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
     requestQuerySchema: REQUEST_QUERY_SCHEMA,
     requestHeaderSchema: REQUEST_HEADER_SCHEMA,
+    responseHeaderSchema: RESPONSE_HEADER_SCHEMA,
     pathResolver: (pathParams) => `/users/${pathParams.userId}`,
     summary: 'Route summary',
     metadata: { allowedRoles: ['admin'] },
@@ -63,6 +64,73 @@ Note that in order to make contract-based requests, you need to use a compatible
 (`@lokalise/frontend-http-client` or `@lokalise/backend-http-client`)
 
 In case you are using fastify on the backend, you can also use `@lokalise/fastify-api-contracts` in order to simplify definition of your fastify routes, utilizing contracts as the single source of truth.
+
+## Header Schemas
+
+### Request Headers (`requestHeaderSchema`)
+
+Use `requestHeaderSchema` to define and validate headers that the client must send with the request. This is useful for authentication headers, API keys, content negotiation, and other request-specific headers.
+
+```ts
+import { buildGetRoute } from '@lokalise/api-contracts'
+import { z } from 'zod'
+
+const contract = buildGetRoute({
+    successResponseBodySchema: DATA_SCHEMA,
+    requestHeaderSchema: z.object({
+        'authorization': z.string(),
+        'x-api-key': z.string(),
+        'accept-language': z.string().optional(),
+    }),
+    pathResolver: () => '/api/data',
+})
+```
+
+### Response Headers (`responseHeaderSchema`)
+
+Use `responseHeaderSchema` to define and validate headers that the server will send in the response. This is particularly useful for documenting:
+- Rate limiting headers
+- Pagination headers
+- Cache control headers
+- Custom API metadata headers
+
+```ts
+import { buildGetRoute } from '@lokalise/api-contracts'
+import { z } from 'zod'
+
+const contract = buildGetRoute({
+    successResponseBodySchema: DATA_SCHEMA,
+    responseHeaderSchema: z.object({
+        'x-ratelimit-limit': z.string(),
+        'x-ratelimit-remaining': z.string(),
+        'x-ratelimit-reset': z.string(),
+        'cache-control': z.string(),
+    }),
+    pathResolver: () => '/api/data',
+})
+```
+
+Both header schemas can be used together in a single contract:
+
+```ts
+const contract = buildGetRoute({
+    successResponseBodySchema: DATA_SCHEMA,
+    requestHeaderSchema: z.object({
+        'authorization': z.string(),
+    }),
+    responseHeaderSchema: z.object({
+        'x-ratelimit-limit': z.string(),
+        'x-ratelimit-remaining': z.string(),
+    }),
+    pathResolver: () => '/api/data',
+})
+```
+
+These header schemas are primarily used for:
+- OpenAPI/Swagger documentation generation
+- Client-side validation of response headers
+- Type-safe header access in TypeScript
+- Contract testing between frontend and backend
 
 ## Utility Functions
 
