@@ -94,9 +94,9 @@ export type PayloadRouteDefinition<
   ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
-  ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode, z.Schema>>
-    | undefined = undefined,
+  ResponseSchemasByStatusCode extends Partial<Record<HttpStatusCode, z.Schema>> | undefined =
+    | Record<HttpStatusCode, z.Schema>
+    | undefined,
 > = CommonRouteDefinition<
   SuccessResponseBodySchema,
   PathParamsSchema,
@@ -119,9 +119,9 @@ export type GetRouteDefinition<
   ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
-  ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode, z.Schema>>
-    | undefined = undefined,
+  ResponseSchemasByStatusCode extends Partial<Record<HttpStatusCode, z.Schema>> | undefined =
+    | Record<HttpStatusCode, z.Schema>
+    | undefined,
 > = CommonRouteDefinition<
   SuccessResponseBodySchema,
   PathParamsSchema,
@@ -143,9 +143,9 @@ export type DeleteRouteDefinition<
   ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
-  ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode, z.Schema>>
-    | undefined = undefined,
+  ResponseSchemasByStatusCode extends Partial<Record<HttpStatusCode, z.Schema>> | undefined =
+    | Record<HttpStatusCode, z.Schema>
+    | undefined,
 > = CommonRouteDefinition<
   SuccessResponseBodySchema,
   PathParamsSchema,
@@ -168,9 +168,9 @@ export function buildPayloadRoute<
   ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
-  ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode, z.Schema>>
-    | undefined = undefined,
+  ResponseSchemasByStatusCode extends Partial<Record<HttpStatusCode, z.Schema>> | undefined =
+    | Record<HttpStatusCode, z.Schema>
+    | undefined,
 >(
   params: PayloadRouteDefinition<
     RequestBodySchema,
@@ -222,9 +222,9 @@ export function buildGetRoute<
   ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
-  ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode, z.Schema>>
-    | undefined = undefined,
+  ResponseSchemasByStatusCode extends Partial<Record<HttpStatusCode, z.Schema>> | undefined =
+    | Record<HttpStatusCode, z.Schema>
+    | undefined,
 >(
   params: Omit<
     GetRouteDefinition<
@@ -276,9 +276,9 @@ export function buildDeleteRoute<
   ResponseHeaderSchema extends z.Schema | undefined = undefined,
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = true,
-  ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode, z.Schema>>
-    | undefined = undefined,
+  ResponseSchemasByStatusCode extends Partial<Record<HttpStatusCode, z.Schema>> | undefined =
+    | Record<HttpStatusCode, z.Schema>
+    | undefined,
 >(
   params: Omit<
     DeleteRouteDefinition<
