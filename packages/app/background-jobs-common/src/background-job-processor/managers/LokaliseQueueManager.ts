@@ -5,10 +5,11 @@ import { QueueManager } from './QueueManager.ts'
 import type { QueueConfiguration, QueueManagerConfig, SupportedJobPayloads } from './types.ts'
 
 export type LokaliseQueueConfiguration<
+  ModuleId extends string = string,
   QueueOptionsType extends QueueOptions = QueueOptions,
   JobOptionsType extends JobsOptions = JobsOptions,
 > = Omit<QueueConfiguration<QueueOptionsType, JobOptionsType>, 'bullDashboardGrouping'> & {
-  moduleId: string
+  moduleId: ModuleId
 }
 
 /**
@@ -18,7 +19,8 @@ export type LokaliseQueueConfiguration<
  * - Enables lazy initialization in production (disabled in tests)
  */
 export class LokaliseQueueManager<
-  Queues extends LokaliseQueueConfiguration<QueueOptionsType, JobOptionsType>[],
+  Queues extends LokaliseQueueConfiguration<ModuleId, QueueOptionsType, JobOptionsType>[],
+  ModuleId extends string = string,
   QueueType extends Queue<
     SupportedJobPayloads<Queues>,
     unknown,
@@ -47,9 +49,10 @@ export class LokaliseQueueManager<
    * Resolve queues config by adding bullDashboardGrouping.
    */
   private static resolveQueuesGrouping<
+    ModuleId extends string,
     QueueOptionsType extends QueueOptions,
     JobOptionsType extends JobsOptions,
-    Queues extends LokaliseQueueConfiguration<QueueOptionsType, JobOptionsType>[],
+    Queues extends LokaliseQueueConfiguration<ModuleId, QueueOptionsType, JobOptionsType>[],
   >(serviceId: string, queues: Queues): Queues {
     return queues.map((queue) => ({
       ...queue,
