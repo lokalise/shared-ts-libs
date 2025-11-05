@@ -152,6 +152,14 @@ const plugin = async (fastify: FastifyInstance, pluginOptions: BullBoardOptions)
   })
 
   await scheduleUpdates(fastify, bullBoard, resolvedRedis, pluginOptions)
+
+  // Cleanup connections on shutdown
+  fastify.addHook('onClose', async () => {
+    await Promise.allSettled([
+      ...currentQueues.map((queue) => queue.close()),
+      ...resolvedRedis.map((r) => r.redis.quit()),
+    ])
+  })
 }
 
 export const bullBoard = fp<BullBoardOptions>(plugin, {
