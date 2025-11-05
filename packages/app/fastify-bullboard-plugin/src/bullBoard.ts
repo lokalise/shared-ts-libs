@@ -30,7 +30,11 @@ export interface QueueConstructor {
   new (name: string, opts?: QueueOptions, Connection?: typeof RedisConnection): Queue
 }
 
-type ResolvedRedis = { redis: Redis; prefix: string | undefined }
+type ResolvedRedis = {
+  redis: Redis
+  sanitizedConfig: RedisConfig
+  prefix: string | undefined
+}
 let currentQueues: Queue[] = []
 
 const containStatusCode = (error: Error): error is Error & { statusCode: number } => {
@@ -59,7 +63,10 @@ const getCurrentQueues = async (
     ids.map((id) => {
       // biome-ignore lint/style/noNonNullAssertion: Should exist
       const redisConfig = resolvedRedis[index]!
-      return new queueConstructor(id, { connection: redisConfig.redis, prefix: redisConfig.prefix })
+      return new queueConstructor(id, {
+        connection: redisConfig.sanitizedConfig,
+        prefix: redisConfig.prefix,
+      })
     }),
   )
 
@@ -118,7 +125,8 @@ const scheduleUpdates = async (
 
 const resolveRedis = (options: BullBoardOptions): ResolvedRedis[] =>
   options.redisConfigs.map((config) => ({
-    redis: new Redis(sanitizeRedisConfig(config)),
+    redis: new Redis(config),
+    sanitizedConfig: sanitizeRedisConfig(config),
     prefix: config.keyPrefix,
   }))
 
