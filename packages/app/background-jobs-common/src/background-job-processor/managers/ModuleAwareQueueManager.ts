@@ -4,7 +4,7 @@ import { commonBullDashboardGroupingBuilder } from '../public-utils/index.ts'
 import { QueueManager } from './QueueManager.ts'
 import type { QueueConfiguration, QueueManagerConfig, SupportedJobPayloads } from './types.ts'
 
-export type LokaliseQueueConfiguration<
+export type ModuleAwareQueueConfiguration<
   ModuleId extends string = string,
   QueueOptionsType extends QueueOptions = QueueOptions,
   JobOptionsType extends JobsOptions = JobsOptions,
@@ -18,8 +18,8 @@ export type LokaliseQueueConfiguration<
  * - Automatically builds dashboard grouping as [serviceId, moduleId]
  * - Enables lazy initialization in production (disabled in tests)
  */
-export class LokaliseQueueManager<
-  Queues extends LokaliseQueueConfiguration<ModuleId, QueueOptionsType, JobOptionsType>[],
+export class ModuleAwareQueueManager<
+  Queues extends ModuleAwareQueueConfiguration<ModuleId, QueueOptionsType, JobOptionsType>[],
   ModuleId extends string = string,
   QueueType extends Queue<
     SupportedJobPayloads<Queues>,
@@ -38,7 +38,7 @@ export class LokaliseQueueManager<
     queues: Queues,
     config: Omit<QueueManagerConfig, 'lazyInitEnabled'>,
   ) {
-    super(queueFactory, LokaliseQueueManager.resolveQueuesGrouping(serviceId, queues), {
+    super(queueFactory, ModuleAwareQueueManager.resolveQueuesGrouping(serviceId, queues), {
       isTest: config.isTest,
       redisConfig: config.redisConfig,
       lazyInitEnabled: !config.isTest,
@@ -52,7 +52,7 @@ export class LokaliseQueueManager<
     ModuleId extends string,
     QueueOptionsType extends QueueOptions,
     JobOptionsType extends JobsOptions,
-    Queues extends LokaliseQueueConfiguration<ModuleId, QueueOptionsType, JobOptionsType>[],
+    Queues extends ModuleAwareQueueConfiguration<ModuleId, QueueOptionsType, JobOptionsType>[],
   >(serviceId: string, queues: Queues): Queues {
     return queues.map((queue) => ({
       ...queue,

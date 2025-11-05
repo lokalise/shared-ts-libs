@@ -1,15 +1,17 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
 import type { RedisConfig } from '@lokalise/node-core'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod/v4'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import { CommonBullmqFactoryNew } from '../factories/index.ts'
-import { type LokaliseQueueConfiguration, LokaliseQueueManager } from './LokaliseQueueManager.ts'
+import {
+  type ModuleAwareQueueConfiguration,
+  ModuleAwareQueueManager,
+} from './ModuleAwareQueueManager.ts'
 
 const supportedQueues = [
   {
     queueId: 'email-queue',
-    moduleId: 'notifications',
+    moduleId: 'emails',
     jobPayloadSchema: z.object({
       id: z.string(),
       email: z.string(),
@@ -20,7 +22,7 @@ const supportedQueues = [
   },
   {
     queueId: 'sms-queue',
-    moduleId: 'notifications',
+    moduleId: 'phone',
     jobPayloadSchema: z.object({
       id: z.string(),
       phone: z.string(),
@@ -29,18 +31,18 @@ const supportedQueues = [
       }),
     }),
   },
-] as const satisfies LokaliseQueueConfiguration[]
+] as const satisfies ModuleAwareQueueConfiguration[]
 
 type SupportedQueues = typeof supportedQueues
 
 /**
- * Note that these tests focus on the LokaliseQueueManager extended functionality only
+ * Note that these tests focus on the ModuleAwareQueueManager extended functionality only
  * and do not cover the base QueueManager functionality, which is tested separately.
  */
-describe('LokaliseQueueManager', () => {
+describe('ModuleAwareQueueManager', () => {
   let factory: TestDependencyFactory
   let redisConfig: RedisConfig
-  let queueManager: LokaliseQueueManager<SupportedQueues>
+  let queueManager: ModuleAwareQueueManager<SupportedQueues>
 
   beforeAll(() => {
     factory = new TestDependencyFactory()
@@ -61,7 +63,7 @@ describe('LokaliseQueueManager', () => {
   })
 
   it('should automatically build bullDashboardGrouping from serviceId and moduleId', async () => {
-    queueManager = new LokaliseQueueManager(
+    queueManager = new ModuleAwareQueueManager(
       'test-service',
       new CommonBullmqFactoryNew(),
       supportedQueues,
@@ -76,13 +78,13 @@ describe('LokaliseQueueManager', () => {
     const queue1Config = queueManager.getQueueConfig('email-queue')
     const queue2Config = queueManager.getQueueConfig('sms-queue')
 
-    expect(queue1Config).toMatchObject({ bullDashboardGrouping: ['test-service', 'notifications'] })
-    expect(queue2Config).toMatchObject({ bullDashboardGrouping: ['test-service', 'notifications'] })
+    expect(queue1Config).toMatchObject({ bullDashboardGrouping: ['test-service', 'emails'] })
+    expect(queue2Config).toMatchObject({ bullDashboardGrouping: ['test-service', 'phone'] })
   })
 
   it('should set lazyInitEnabled to false in test mode and true in production', async () => {
     // Test mode: lazyInitEnabled should be false
-    const testQueueManager = new LokaliseQueueManager(
+    const testQueueManager = new ModuleAwareQueueManager(
       'test-service',
       new CommonBullmqFactoryNew(),
       supportedQueues,
@@ -96,7 +98,7 @@ describe('LokaliseQueueManager', () => {
     await testQueueManager.dispose()
 
     // Production mode: lazyInitEnabled should be true
-    const prodQueueManager = new LokaliseQueueManager(
+    const prodQueueManager = new ModuleAwareQueueManager(
       'test-service',
       new CommonBullmqFactoryNew(),
       supportedQueues,
@@ -111,7 +113,7 @@ describe('LokaliseQueueManager', () => {
   })
 
   it('should schedule jobs and work like base QueueManager', async () => {
-    queueManager = new LokaliseQueueManager(
+    queueManager = new ModuleAwareQueueManager(
       'test-service',
       new CommonBullmqFactoryNew(),
       supportedQueues,
