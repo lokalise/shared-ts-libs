@@ -14,6 +14,7 @@ The library provides methods to implement the client side of HTTP protocols. Pub
     keepAliveTimeout: 4000,
     ```
 - `sendGet()`;
+- `sendGetWithStreamedResponse()`;
 - `sendPost()`;
 - `sendPut()`;
 - `sendPutBinary()`;
@@ -131,3 +132,96 @@ The following parameters can be specified when sending API contract-based reques
 - `headers` - custom headers to be sent with the request (type needs to match with contract definition)
 - `pathParams` – parameters used for path resolver (type needs to match with contract definition)
 - `pathPrefix` - optional prefix to be prepended to the path resolved by the contract's path resolver
+
+### Streaming responses
+
+For scenarios where you need to process large response bodies without loading them entirely into memory (e.g., downloading large files, processing data incrementally), use the streaming variants:
+
+- `sendGetWithStreamedResponse()` - for direct path-based requests
+- `sendByGetRouteWithStreamedResponse()` - for API contract-based requests
+
+These methods return a `Readable` stream instead of parsing the entire response body, allowing for memory-efficient processing.
+
+**Important limitations:**
+- Response validation (`validateResponse`) is not supported for streamed responses
+- Schema-based parsing (`responseSchema`) is not part of the options (the response is always a `Readable` stream)
+- **The response body MUST be fully consumed or explicitly dumped** - Failing to do so can lead to connection leaks and performance issues
+
+**Critical: Body consumption requirement**
+
+According to the undici documentation, garbage collection in Node.js is less aggressive and deterministic compared to browsers, which means leaving the release of connection resources to the garbage collector can lead to excessive connection usage, reduced performance (due to less connection re-use), and even stalls or deadlocks when running out of connections.
+
+Therefore, when using streaming response methods, you **must** either:
+1. Fully consume the response body by reading all chunks
+2. Explicitly cancel/dump the body if you don't need it
+
+```ts
+// ✓ GOOD - Consume the entire stream
+for await (const chunk of result.result.body) {
+  processChunk(chunk)
+}
+
+// ✓ GOOD - Pipe to another stream (consumes it)
+result.result.body.pipe(writeStream)
+
+// ✓ GOOD - Dump the body if not needed
+await result.result.body.dump()
+
+// ✗ BAD - Never do this (causes connection leaks)
+const { headers } = result.result
+// body is never consumed - CONNECTION LEAK!
+```
+
+Usage example:
+
+```ts
+import { sendByGetRouteWithStreamedResponse, buildClient } from '@lokalise/backend-http-client'
+import { createWriteStream } from 'node:fs'
+
+const client = buildClient('https://api.example.com')
+
+// Using contract-based request
+const result = await sendByGetRouteWithStreamedResponse(
+  client,
+  downloadFileRouteDefinition,
+  {
+    pathParams: { fileId: '12345' },
+  },
+  {
+    requestLabel: 'Download large file',
+    retryConfig: {
+      maxAttempts: 3,
+      statusCodesToRetry: [500, 502, 503],
+      retryOnTimeout: true,
+    },
+  }
+)
+
+if (result.result) {
+  // Stream the response to a file
+  const writeStream = createWriteStream('/path/to/file')
+  result.result.body.pipe(writeStream)
+
+  // Or process chunks manually
+  for await (const chunk of result.result.body) {
+    // Process chunk
+    console.log('Received chunk:', chunk.length)
+  }
+}
+
+// Using direct path-based request
+const streamResult = await sendGetWithStreamedResponse(
+  client,
+  '/api/files/12345',
+  {
+    requestLabel: 'Download file',
+  }
+)
+
+if (streamResult.result) {
+  // Process the stream
+  for await (const chunk of streamResult.result.body) {
+    // Handle chunk
+  }
+}
+```
