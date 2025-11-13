@@ -98,7 +98,7 @@ describe('prismaMetricsPlugin', () => {
     const responseBefore = await getMetrics()
     const bodyBefore = responseBefore.result.body as string
     const matchBefore = bodyBefore.match(/prisma_pool_connections_opened_total (\d+)/)
-    const connectionsBefore = matchBefore ? Number.parseInt(matchBefore[1], 10) : 0
+    const connectionsBefore = matchBefore ? Number.parseInt(matchBefore[1] ?? '0', 10) : 0
 
     // prisma call
     await prisma.item1.create({ data: TEST_ITEM_1 })
@@ -109,7 +109,7 @@ describe('prismaMetricsPlugin', () => {
         const metrics = await getMetrics()
         const bodyAfter = metrics.result.body as string
         const matchAfter = bodyAfter.match(/prisma_pool_connections_opened_total (\d+)/)
-        const connectionsAfter = matchAfter ? Number.parseInt(matchAfter[1], 10) : 0
+        const connectionsAfter = matchAfter ? Number.parseInt(matchAfter[1] ?? '0', 10) : 0
         // Check that connections increased or at least exist
         return connectionsAfter >= connectionsBefore && connectionsAfter > 0
       },
@@ -136,7 +136,7 @@ describe('prismaMetricsPlugin', () => {
     const responseBefore = await getMetrics()
     const bodyBefore = responseBefore.result.body as string
     const matchBefore = bodyBefore.match(/prisma_pool_connections_opened_total (\d+)/)
-    const connectionsBefore = matchBefore ? Number.parseInt(matchBefore[1], 10) : 0
+    const connectionsBefore = matchBefore ? Number.parseInt(matchBefore[1] ?? '0', 10) : 0
 
     // prisma call
     await prisma.item1.create({ data: TEST_ITEM_1 })
@@ -147,7 +147,7 @@ describe('prismaMetricsPlugin', () => {
         const metrics = await getMetrics()
         const bodyAfter = metrics.result.body as string
         const matchAfter = bodyAfter.match(/prisma_pool_connections_opened_total (\d+)/)
-        const connectionsAfter = matchAfter ? Number.parseInt(matchAfter[1], 10) : 0
+        const connectionsAfter = matchAfter ? Number.parseInt(matchAfter[1] ?? '0', 10) : 0
         // Check that connections increased or at least exist
         return connectionsAfter >= connectionsBefore && connectionsAfter > 0
       },
