@@ -74,20 +74,20 @@ describe('prismaMetricsPlugin', () => {
     prisma = new PrismaClient({
       datasourceUrl: getDatasourceUrl(),
     })
-    httpClient = buildClient('http://127.0.0.1:9080')
   })
 
   beforeEach(async () => {
     await cleanTables(prisma, [DB_MODEL.item1, DB_MODEL.item2])
+    httpClient = buildClient('http://127.0.0.1:9080')
   })
 
   afterEach(async () => {
+    httpClient.close()
     if (app) await app.close()
   })
 
   afterAll(async () => {
     await prisma.$disconnect()
-    httpClient.close()
   })
 
   it('throws if fastify-metrics was not initialized', async () => {
