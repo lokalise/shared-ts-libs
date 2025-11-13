@@ -1,6 +1,6 @@
 # Migration Guide
 
-## Version 10.0.0 (Upcoming)
+## Version 10.0.0
 
 ### New Features
 
@@ -15,7 +15,81 @@ These methods use `sendWithRetryReturnStream` under the hood to return a `Readab
 
 #### Breaking Changes
 
-**None.** This release is fully backward compatible. All existing methods continue to work as before.
+#### Retry Configuration API Change
+
+**What changed:** The `retryConfig` option now uses `delayResolver` function instead of `delayBetweenAttemptsInMsecs` number.
+
+**Reason:** Updated to undici-retry v7, which provides more flexible retry delay calculation through a function-based approach.
+
+**Before (v9.x and earlier):**
+```ts
+const result = await sendGet(client, '/api/data', {
+  responseSchema: mySchema,
+  requestLabel: 'Fetch data',
+  retryConfig: {
+    maxAttempts: 3,
+    delayBetweenAttemptsInMsecs: 1000,  // ❌ No longer supported
+    statusCodesToRetry: [500, 502, 503],
+    retryOnTimeout: true,
+  },
+})
+```
+
+**After (v9.0.0+):**
+```ts
+import { sendGet, createDefaultRetryResolver } from '@lokalise/backend-http-client'
+
+const result = await sendGet(client, '/api/data', {
+  responseSchema: mySchema,
+  requestLabel: 'Fetch data',
+  retryConfig: {
+    maxAttempts: 3,
+    delayResolver: createDefaultRetryResolver({
+        baseDelay: 1000,
+        maxDelay: 1000,
+    }),  // ✅ Use resolver-based approach
+    statusCodesToRetry: [500, 502, 503],
+    retryOnTimeout: true,
+  },
+})
+```
+
+**Migration steps:**
+
+1. If you weren't using `retryConfig`, no changes needed
+2. If you were using default retry behavior (maxAttempts: 1), no changes needed
+3. If you were using `delayBetweenAttemptsInMsecs`:
+    - Import `createDefaultRetryResolver` from '@lokalise/backend-http-client' (or 'undici-retry')
+    - Replace `delayBetweenAttemptsInMsecs: X` with `delayResolver: createDefaultRetryResolver({ delayMs: X })`
+    - Or implement a custom delay resolver function
+
+**Custom delay resolver example:**
+```ts
+const result = await sendGet(client, '/api/data', {
+  responseSchema: mySchema,
+  requestLabel: 'Fetch data',
+  retryConfig: {
+    maxAttempts: 3,
+    delayResolver: (response, attemptNumber, statusCodesToRetry) => {
+      // Exponential backoff
+      return Math.pow(2, attemptNumber) * 1000
+    },
+    statusCodesToRetry: [500, 502, 503],
+    retryOnTimeout: true,
+  },
+})
+```
+
+**RetryConfig Type:**
+```ts
+type RetryConfig = {
+  maxAttempts: number
+  delayResolver?: (response: ResponseData, attemptNumber: number, statusCodesToRetry: readonly number[]) => number | undefined
+  statusCodesToRetry?: readonly number[]
+  retryOnTimeout: boolean
+}
+```
+
 
 #### Usage Changes
 
@@ -126,7 +200,6 @@ const result = await sendGetWithStreamedResponse(
   client,
   '/api/large-dataset',
   {
-    responseSchema: undefined,
     requestLabel: 'Process dataset',
   }
 )
@@ -155,9 +228,3 @@ const result = await sendByGetRouteWithStreamedResponse(
   }
 )
 ```
-
-## Previous Versions
-
-### Version 9.0.0
-
-(Add previous migration notes here as needed)

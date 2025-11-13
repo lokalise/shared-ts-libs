@@ -38,9 +38,9 @@ All _send_ methods accept a type parameter and the following arguments:
   - `disableKeepAlive`;`
   - `retryConfig`, defined by:
     - `maxAttempts`, the maximum number of times a request should be retried;
-    - `delayBetweenAttemptsInMsecs`;
-    - `statusCodesToRetry`, the status codes that trigger a retry;
-    - `retryOnTimeout`;
+    - `delayResolver?`, an optional function that calculates retry delay: `(response, attemptNumber, statusCodesToRetry) => number | undefined`;
+    - `statusCodesToRetry?`, the status codes that trigger a retry;
+    - `retryOnTimeout`, whether to retry on timeout;
   - `clientOptions`;
   - `responseSchema`, used both for inferring the response type of the call, and also (if `validateResponse` is `true`) for validating the response structure;
   - `validateResponse`;
@@ -53,8 +53,7 @@ All _send_ methods accept a type parameter and the following arguments:
   throwOnError: true,
   timeout: 30000,
   retryConfig: {
-      maxAttemps: 1,
-      delayBetweenAttemptsInMsecs: 0,
+      maxAttempts: 1,
       statusCodesToRetry: [],
       retryOnTimeout: false,
   }
