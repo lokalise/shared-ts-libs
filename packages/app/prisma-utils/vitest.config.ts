@@ -7,6 +7,12 @@ export default defineConfig({
     watch: false,
     restoreMocks: true,
     pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true,
+        isolate: false,
+      },
+    },
     setupFiles: ['test/envSetupHook.ts'],
     coverage: {
       provider: 'v8',
