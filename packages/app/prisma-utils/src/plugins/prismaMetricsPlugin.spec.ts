@@ -58,21 +58,23 @@ async function initAppWithPrismaMetrics(
   return app
 }
 
-async function getMetrics() {
-  return await sendGet(buildClient('http://127.0.0.1:9080'), '/metrics', {
-    requestLabel: 'test',
-    responseSchema: UNKNOWN_RESPONSE_SCHEMA,
-  })
-}
-
 describe('prismaMetricsPlugin', () => {
   let app: FastifyInstance
   let prisma: PrismaClient
+  let httpClient: ReturnType<typeof buildClient>
+
+  async function getMetrics() {
+    return await sendGet(httpClient, '/metrics', {
+      requestLabel: 'test',
+      responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+    })
+  }
 
   beforeAll(() => {
     prisma = new PrismaClient({
       datasourceUrl: getDatasourceUrl(),
     })
+    httpClient = buildClient('http://127.0.0.1:9080')
   })
 
   beforeEach(async () => {
@@ -81,6 +83,11 @@ describe('prismaMetricsPlugin', () => {
 
   afterEach(async () => {
     if (app) await app.close()
+  })
+
+  afterAll(async () => {
+    await prisma.$disconnect()
+    httpClient.close()
   })
 
   it('throws if fastify-metrics was not initialized', async () => {
