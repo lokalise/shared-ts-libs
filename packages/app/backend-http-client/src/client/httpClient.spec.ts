@@ -2584,6 +2584,10 @@ describe('httpClient', () => {
             maxAttempts: 2,
             statusCodesToRetry: [500],
             retryOnTimeout: false,
+            delayResolver: createDefaultRetryResolver({
+              baseDelay: 0,
+              maxDelay: 0,
+            }),
           },
         },
       )
