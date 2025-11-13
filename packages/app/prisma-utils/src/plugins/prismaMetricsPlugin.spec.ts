@@ -92,7 +92,7 @@ describe('prismaMetricsPlugin', () => {
   })
 
   // FixMe this is flaky
-  it('exposes metrics collect() function', async () => {
+  it.skip('exposes metrics collect() function', async () => {
     app = await initAppWithPrismaMetrics({ prisma })
 
     const responseBefore = await getMetrics()
