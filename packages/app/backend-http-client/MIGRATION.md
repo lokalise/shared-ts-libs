@@ -1,0 +1,163 @@
+# Migration Guide
+
+## Version 10.0.0 (Upcoming)
+
+### New Features
+
+This release introduces streaming response support for GET requests, allowing memory-efficient processing of large response bodies.
+
+#### Added Methods
+
+- `sendGetWithStreamedResponse()` - Direct path-based GET requests with streamed responses
+- `sendByGetRouteWithStreamedResponse()` - API contract-based GET requests with streamed responses
+
+These methods use `sendWithRetryReturnStream` under the hood to return a `Readable` stream instead of consuming the entire response body.
+
+#### Breaking Changes
+
+**None.** This release is fully backward compatible. All existing methods continue to work as before.
+
+#### Usage Changes
+
+If you need to process large response bodies without loading them entirely into memory, you can now use the new streaming methods:
+
+**Before (loads entire response into memory):**
+```ts
+const result = await sendByGetRoute(
+  client,
+  largeFileRouteDefinition,
+  { pathParams: { fileId: '12345' } },
+  { requestLabel: 'Download file' }
+)
+
+// result.result.body contains the entire response in memory
+const data = result.result.body
+```
+
+**After (streams response for memory efficiency):**
+```ts
+const result = await sendByGetRouteWithStreamedResponse(
+  client,
+  largeFileRouteDefinition,
+  { pathParams: { fileId: '12345' } },
+  { requestLabel: 'Download file' }
+)
+
+// result.result.body is a Readable stream
+if (result.result) {
+  for await (const chunk of result.result.body) {
+    // Process chunk by chunk
+  }
+}
+```
+
+#### Important Limitations
+
+The streaming methods have intentional limitations to ensure proper usage:
+
+1. **No response validation** - `validateResponse` is not supported for streamed responses
+2. **No schema parsing** - `responseSchema` is not part of the options (the response is always a `Readable` stream)
+3. **No automatic JSON parsing** - The response body is returned as a raw stream
+4. **Mandatory body consumption** - You MUST fully consume or explicitly dump the response body
+
+#### Critical Warning: Body Consumption
+
+**Failing to consume the response body will cause connection leaks!**
+
+According to the undici documentation, garbage collection in Node.js is less aggressive than in browsers, which means leaving connection resources to the garbage collector can lead to:
+- Excessive connection usage
+- Reduced performance (less connection re-use)
+- Stalls or deadlocks when running out of connections
+
+**You MUST either:**
+1. Fully consume the response body by reading all chunks
+2. Explicitly dump the body using `await body.dump()`
+
+```ts
+// ✓ GOOD - Consume the entire stream
+for await (const chunk of result.result.body) {
+  processChunk(chunk)
+}
+
+// ✓ GOOD - Pipe to another stream
+result.result.body.pipe(writeStream)
+
+// ✓ GOOD - Dump if not needed
+await result.result.body.dump()
+
+// ✗ BAD - CONNECTION LEAK!
+const { headers } = result.result
+// Never consumed body = connection leak
+```
+
+#### Migration Steps
+
+No migration steps are required. The new methods are additive and do not affect existing code.
+
+If you want to adopt streaming for large file downloads or data processing:
+
+1. Identify GET requests that handle large response bodies
+2. Replace `sendGet` with `sendGetWithStreamedResponse` or `sendByGetRoute` with `sendByGetRouteWithStreamedResponse`
+3. Update response handling to process the stream instead of accessing a parsed body
+4. Remove `validateResponse`, `responseSchema`, `safeParseJson`, and `blobResponseBody` from options (not supported in streaming mode)
+
+#### Examples
+
+**Streaming to a file:**
+```ts
+import { createWriteStream } from 'node:fs'
+
+const result = await sendByGetRouteWithStreamedResponse(
+  client,
+  downloadRouteDefinition,
+  { pathParams: { fileId: '12345' } },
+  { requestLabel: 'Download file' }
+)
+
+if (result.result) {
+  const writeStream = createWriteStream('/path/to/file')
+  result.result.body.pipe(writeStream)
+}
+```
+
+**Processing chunks:**
+```ts
+const result = await sendGetWithStreamedResponse(
+  client,
+  '/api/large-dataset',
+  {
+    responseSchema: undefined,
+    requestLabel: 'Process dataset',
+  }
+)
+
+if (result.result) {
+  for await (const chunk of result.result.body) {
+    // Process each chunk
+    await processChunk(chunk)
+  }
+}
+```
+
+**With retry configuration:**
+```ts
+const result = await sendByGetRouteWithStreamedResponse(
+  client,
+  routeDefinition,
+  { pathParams: { id: '123' } },
+  {
+    requestLabel: 'Download with retry',
+    retryConfig: {
+      maxAttempts: 3,
+      statusCodesToRetry: [500, 502, 503],
+      retryOnTimeout: true,
+    },
+  }
+)
+```
+
+## Previous Versions
+
+### Version 9.0.0
+
+(Add previous migration notes here as needed)
