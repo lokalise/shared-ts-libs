@@ -6,14 +6,15 @@ export default defineConfig({
     globals: true,
     watch: false,
     restoreMocks: true,
-    pool: 'threads',
+    pool: 'forks',
     poolOptions: {
-      threads: {
-        singleThread: true,
-        isolate: false,
+      forks: {
+        singleFork: true,
       },
     },
     setupFiles: ['test/envSetupHook.ts'],
+    hookTimeout: 30000,
+    teardownTimeout: 10000,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
