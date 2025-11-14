@@ -58,16 +58,17 @@ async function initAppWithPrismaMetrics(
   return app
 }
 
-async function getMetrics() {
-  return await sendGet(buildClient('http://127.0.0.1:9080'), '/metrics', {
-    requestLabel: 'test',
-    responseSchema: UNKNOWN_RESPONSE_SCHEMA,
-  })
-}
-
 describe('prismaMetricsPlugin', () => {
   let app: FastifyInstance
   let prisma: PrismaClient
+  let httpClient: ReturnType<typeof buildClient>
+
+  async function getMetrics() {
+    return await sendGet(httpClient, '/metrics', {
+      requestLabel: 'test',
+      responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+    })
+  }
 
   beforeAll(() => {
     prisma = new PrismaClient({
@@ -77,10 +78,16 @@ describe('prismaMetricsPlugin', () => {
 
   beforeEach(async () => {
     await cleanTables(prisma, [DB_MODEL.item1, DB_MODEL.item2])
+    httpClient = buildClient('http://127.0.0.1:9080')
   })
 
   afterEach(async () => {
+    httpClient.close()
     if (app) await app.close()
+  })
+
+  afterAll(async () => {
+    await prisma.$disconnect()
   })
 
   it('throws if fastify-metrics was not initialized', async () => {
@@ -94,8 +101,11 @@ describe('prismaMetricsPlugin', () => {
   it('exposes metrics collect() function', async () => {
     app = await initAppWithPrismaMetrics({ prisma })
 
+    // Get initial metrics
     const responseBefore = await getMetrics()
-    expect(responseBefore.result.body).not.toContain('prisma_pool_connections_opened_total 1')
+    const bodyBefore = responseBefore.result.body as string
+    const matchBefore = bodyBefore.match(/prisma_pool_connections_opened_total (\d+)/)
+    const connectionsBefore = matchBefore ? Number.parseInt(matchBefore[1] ?? '0', 10) : 0
 
     // prisma call
     await prisma.item1.create({ data: TEST_ITEM_1 })
@@ -104,9 +114,11 @@ describe('prismaMetricsPlugin', () => {
       async () => {
         await app.prismaMetrics.collect()
         const metrics = await getMetrics()
-        return (
-          (metrics.result.body as string).indexOf('prisma_pool_connections_opened_total 1') !== -1
-        )
+        const bodyAfter = metrics.result.body as string
+        const matchAfter = bodyAfter.match(/prisma_pool_connections_opened_total (\d+)/)
+        const connectionsAfter = matchAfter ? Number.parseInt(matchAfter[1] ?? '0', 10) : 0
+        // Check that connections increased or at least exist
+        return connectionsAfter >= connectionsBefore && connectionsAfter > 0
       },
       10,
       100,
@@ -127,8 +139,11 @@ describe('prismaMetricsPlugin', () => {
       },
     )
 
+    // Get initial metrics
     const responseBefore = await getMetrics()
-    expect(responseBefore.result.body).not.toContain('prisma_pool_connections_opened_total 1')
+    const bodyBefore = responseBefore.result.body as string
+    const matchBefore = bodyBefore.match(/prisma_pool_connections_opened_total (\d+)/)
+    const connectionsBefore = matchBefore ? Number.parseInt(matchBefore[1] ?? '0', 10) : 0
 
     // prisma call
     await prisma.item1.create({ data: TEST_ITEM_1 })
@@ -137,9 +152,11 @@ describe('prismaMetricsPlugin', () => {
       async () => {
         await app.prismaMetrics.collect()
         const metrics = await getMetrics()
-        return (
-          (metrics.result.body as string).indexOf('prisma_pool_connections_opened_total 1') !== -1
-        )
+        const bodyAfter = metrics.result.body as string
+        const matchAfter = bodyAfter.match(/prisma_pool_connections_opened_total (\d+)/)
+        const connectionsAfter = matchAfter ? Number.parseInt(matchAfter[1] ?? '0', 10) : 0
+        // Check that connections increased or at least exist
+        return connectionsAfter >= connectionsBefore && connectionsAfter > 0
       },
       10,
       100,

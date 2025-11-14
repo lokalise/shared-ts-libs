@@ -1,6 +1,7 @@
 import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import type { Interceptable } from 'undici'
 import { Client, MockAgent, setGlobalDispatcher } from 'undici'
+import { createDefaultRetryResolver } from 'undici-retry'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod/v4'
 import { JSON_HEADERS } from './constants.ts'
@@ -8,9 +9,11 @@ import {
   buildClient,
   sendByDeleteRoute,
   sendByGetRoute,
+  sendByGetRouteWithStreamedResponse,
   sendByPayloadRoute,
   sendDelete,
   sendGet,
+  sendGetWithStreamedResponse,
   sendPatch,
   sendPost,
   sendPostBinary,
@@ -33,6 +36,14 @@ const reqContext: HttpRequestContext = {
 }
 
 const UNKNOWN_RESPONSE_SCHEMA = z.unknown()
+
+async function streamToString(stream: ReadableStream | NodeJS.ReadableStream): Promise<string> {
+  const chunks: Buffer[] = []
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
+  return Buffer.concat(chunks).toString()
+}
 
 describe('httpClient', () => {
   let mockAgent: MockAgent
@@ -462,7 +473,10 @@ describe('httpClient', () => {
         retryConfig: {
           statusCodesToRetry: [500],
           retryOnTimeout: false,
-          delayBetweenAttemptsInMsecs: 0,
+          delayResolver: createDefaultRetryResolver({
+            baseDelay: 0,
+            maxDelay: 0,
+          }),
           maxAttempts: 2,
         },
       })
@@ -2242,6 +2256,894 @@ describe('httpClient', () => {
 
       expect(result.result.statusCode).toBe(204)
       expect(result.result.body).toBeNull()
+    })
+  })
+
+  describe('sendGetWithStreamedResponse', () => {
+    it('returns streamed response body', async () => {
+      const responseData = JSON.stringify(mockProduct1)
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(200, responseData, { headers: JSON_HEADERS })
+
+      const result = await sendGetWithStreamedResponse(client, '/products/1', {
+        requestLabel: 'dummy',
+      })
+
+      expect(result.result).toBeDefined()
+      expect(result.result.statusCode).toBe(200)
+      expect(result.result.body).toBeDefined()
+
+      // Read the stream to verify content
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('returns streamed response with query params', async () => {
+      const query = {
+        limit: 3,
+      }
+      const responseData = JSON.stringify(mockProductsLimit3)
+
+      client
+        .intercept({
+          path: '/products',
+          method: 'GET',
+          query,
+        })
+        .reply(200, responseData, { headers: JSON_HEADERS })
+
+      const result = await sendGetWithStreamedResponse(client, '/products', {
+        query,
+        requestLabel: 'dummy',
+      })
+
+      expect(result.result).toBeDefined()
+      expect(result.result.statusCode).toBe(200)
+
+      // Read the stream to verify content
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProductsLimit3)
+    })
+
+    it('throws an error when throwOnError is true and request fails', async () => {
+      expect.assertions(1)
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(500, { error: 'Internal Server Error' }, { headers: JSON_HEADERS })
+
+      await expect(
+        sendGetWithStreamedResponse(client, '/products/1', {
+          requestLabel: 'dummy',
+          throwOnError: true,
+        }),
+      ).rejects.toMatchObject({
+        message: 'Response status code 500',
+        errorCode: 'REQUEST_ERROR',
+      })
+    })
+
+    it('returns error when throwOnError is false and request fails', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(500, { error: 'Internal Server Error' }, { headers: JSON_HEADERS })
+
+      const result = await sendGetWithStreamedResponse(client, '/products/1', {
+        requestLabel: 'dummy',
+        throwOnError: false,
+      })
+
+      expect(result.error).toBeDefined()
+      expect(result.result).toBeUndefined()
+    })
+
+    it('returns internal error when connection fails with throwOnError false', async () => {
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .replyWithError(new Error('connection error'))
+
+      const result = await sendGetWithStreamedResponse(client, '/products/1', {
+        requestLabel: 'dummy',
+        throwOnError: false,
+      })
+
+      expect(result.result).toBeUndefined()
+      expect(isInternalRequestError(result.error)).toBe(true)
+    })
+
+    it('throws on internal error when throwOnError is true', async () => {
+      expect.assertions(1)
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .replyWithError(new Error('connection error'))
+
+      await expect(
+        sendGetWithStreamedResponse(client, '/products/1', {
+          requestLabel: 'dummy',
+          throwOnError: true,
+        }),
+      ).rejects.toMatchObject({
+        message: 'connection error',
+      })
+    })
+  })
+
+  describe('sendByGetRouteWithStreamedResponse', () => {
+    it('returns streamed response body', async () => {
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+      const responseData = JSON.stringify(mockProduct1)
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(200, responseData, { headers: JSON_HEADERS })
+
+      const result = await sendByGetRouteWithStreamedResponse(
+        client,
+        apiContract,
+        {},
+        {
+          requestLabel: 'dummy',
+        },
+      )
+
+      expect(result.result).toBeDefined()
+      expect(result.result.statusCode).toBe(200)
+      expect(result.result.body).toBeDefined()
+
+      // Read the stream to verify content
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('returns streamed response with path and query params', async () => {
+      const pathParamsSchema = z.object({
+        productId: z.number(),
+      })
+      const queryParamsSchema = z.object({
+        limit: z.number(),
+      })
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: pathParamsSchema,
+        requestQuerySchema: queryParamsSchema,
+        pathResolver: (params) => `/products/${params.productId}`,
+      })
+      const responseData = JSON.stringify(mockProduct1)
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+          query: { limit: 3 },
+        })
+        .reply(200, responseData, { headers: JSON_HEADERS })
+
+      const result = await sendByGetRouteWithStreamedResponse(
+        client,
+        apiContract,
+        {
+          pathParams: { productId: 1 },
+          queryParams: { limit: 3 },
+        },
+        {
+          requestLabel: 'dummy',
+        },
+      )
+
+      expect(result.result).toBeDefined()
+      expect(result.result.statusCode).toBe(200)
+
+      // Read the stream to verify content
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('throws an error when throwOnError is true and request fails', async () => {
+      expect.assertions(1)
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(500, { error: 'Internal Server Error' }, { headers: JSON_HEADERS })
+
+      await expect(
+        sendByGetRouteWithStreamedResponse(
+          client,
+          apiContract,
+          {},
+          {
+            requestLabel: 'Test request',
+            throwOnError: true,
+          },
+        ),
+      ).rejects.toMatchObject({
+        message: 'Response status code 500',
+        errorCode: 'REQUEST_ERROR',
+      })
+    })
+
+    it('returns error when throwOnError is false and request fails', async () => {
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(500, { error: 'Internal Server Error' }, { headers: JSON_HEADERS })
+
+      const result = await sendByGetRouteWithStreamedResponse(
+        client,
+        apiContract,
+        {},
+        {
+          requestLabel: 'dummy',
+          throwOnError: false,
+        },
+      )
+
+      expect(result.error).toBeDefined()
+      expect(result.result).toBeUndefined()
+    })
+
+    it('returns internal error when connection fails with throwOnError false', async () => {
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .replyWithError(new Error('connection error'))
+
+      const result = await sendByGetRouteWithStreamedResponse(
+        client,
+        apiContract,
+        {},
+        {
+          requestLabel: 'dummy',
+          throwOnError: false,
+        },
+      )
+
+      expect(result.result).toBeUndefined()
+      expect(isInternalRequestError(result.error)).toBe(true)
+    })
+
+    it('supports retry configuration', async () => {
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+      const responseData = JSON.stringify(mockProduct1)
+
+      // First call fails with 500
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(500, { error: 'Internal Server Error' }, { headers: JSON_HEADERS })
+
+      // Second call succeeds
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(200, responseData, { headers: JSON_HEADERS })
+
+      const result = await sendByGetRouteWithStreamedResponse(
+        client,
+        apiContract,
+        {},
+        {
+          requestLabel: 'dummy',
+          retryConfig: {
+            maxAttempts: 2,
+            statusCodesToRetry: [500],
+            retryOnTimeout: false,
+            delayResolver: createDefaultRetryResolver({
+              baseDelay: 0,
+              maxDelay: 0,
+            }),
+          },
+        },
+      )
+
+      expect(result.result).toBeDefined()
+      expect(result.result.statusCode).toBe(200)
+
+      // Read the stream to verify content
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('sendGetWithStreamedResponse with timeout', async () => {
+      const responseData = JSON.stringify(mockProduct1)
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(200, responseData, { headers: JSON_HEADERS })
+
+      const result = await sendGetWithStreamedResponse(client, '/products/1', {
+        requestLabel: 'dummy',
+        timeout: 60000,
+      })
+
+      expect(result.result.statusCode).toBe(200)
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('sendGetWithStreamedResponse with disableKeepAlive', async () => {
+      const responseData = JSON.stringify(mockProduct1)
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(200, responseData, { headers: JSON_HEADERS })
+
+      const result = await sendGetWithStreamedResponse(client, '/products/1', {
+        requestLabel: 'dummy',
+        disableKeepAlive: true,
+      })
+
+      expect(result.result.statusCode).toBe(200)
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('sendGetWithStreamedResponse without throwOnError uses default', async () => {
+      const responseData = JSON.stringify(mockProduct1)
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(200, responseData, { headers: JSON_HEADERS })
+
+      const result = await sendGetWithStreamedResponse(client, '/products/1', {
+        requestLabel: 'dummy',
+      })
+
+      expect(result.result.statusCode).toBe(200)
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('sendGetWithStreamedResponse without reqContext', async () => {
+      const responseData = JSON.stringify(mockProduct1)
+
+      client
+        .intercept({
+          path: '/products/1',
+          method: 'GET',
+        })
+        .reply(200, responseData, { headers: JSON_HEADERS })
+
+      const result = await sendGetWithStreamedResponse(client, '/products/1', {
+        requestLabel: 'dummy',
+        throwOnError: true,
+      })
+
+      expect(result.result.statusCode).toBe(200)
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+  })
+
+  describe('Coverage for optional parameters', () => {
+    describe('timeout options', () => {
+      it('GET with explicit timeout', async () => {
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'GET',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendGet(client, '/products/1', {
+          responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestLabel: 'dummy',
+          timeout: 60000,
+        })
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+
+      it('GET with null timeout', async () => {
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'GET',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendGet(client, '/products/1', {
+          responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestLabel: 'dummy',
+          timeout: null,
+        })
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+
+      it('DELETE with explicit timeout', async () => {
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'DELETE',
+          })
+          .reply(204)
+
+        const result = await sendDelete(client, '/products/1', {
+          responseSchema: z.number(),
+          requestLabel: 'dummy',
+          timeout: 60000,
+          isEmptyResponseExpected: true,
+        })
+
+        expect(result.result.statusCode).toBe(204)
+      })
+
+      it('POST with explicit timeout', async () => {
+        client
+          .intercept({
+            path: '/products',
+            method: 'POST',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendPost(client, '/products', mockProduct1, {
+          responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestLabel: 'dummy',
+          timeout: 60000,
+        })
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+
+      it('PUT with explicit timeout', async () => {
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'PUT',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendPut(client, '/products/1', mockProduct1, {
+          responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestLabel: 'dummy',
+          timeout: 60000,
+        })
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+
+      it('PATCH with explicit timeout', async () => {
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'PATCH',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendPatch(client, '/products/1', mockProduct1, {
+          responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestLabel: 'dummy',
+          timeout: 60000,
+        })
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+
+      it('POST binary with explicit timeout', async () => {
+        client
+          .intercept({
+            path: '/products',
+            method: 'POST',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendPostBinary(client, '/products', Buffer.from('test'), {
+          responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestLabel: 'dummy',
+          timeout: 60000,
+        })
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+
+      it('PUT binary with explicit timeout', async () => {
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'PUT',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendPutBinary(client, '/products/1', Buffer.from('test'), {
+          responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestLabel: 'dummy',
+          timeout: 60000,
+        })
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+    })
+
+    describe('disableKeepAlive option', () => {
+      it('GET with disableKeepAlive true', async () => {
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'GET',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendGet(client, '/products/1', {
+          responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestLabel: 'dummy',
+          disableKeepAlive: true,
+        })
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+
+      it('DELETE with disableKeepAlive true', async () => {
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'DELETE',
+          })
+          .reply(204)
+
+        const result = await sendDelete(client, '/products/1', {
+          responseSchema: z.number(),
+          requestLabel: 'dummy',
+          disableKeepAlive: true,
+          isEmptyResponseExpected: true,
+        })
+
+        expect(result.result.statusCode).toBe(204)
+      })
+
+      it('POST with disableKeepAlive true', async () => {
+        client
+          .intercept({
+            path: '/products',
+            method: 'POST',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendPost(client, '/products', mockProduct1, {
+          responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestLabel: 'dummy',
+          disableKeepAlive: true,
+        })
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+
+      it('PUT with disableKeepAlive true', async () => {
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'PUT',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendPut(client, '/products/1', mockProduct1, {
+          responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestLabel: 'dummy',
+          disableKeepAlive: true,
+        })
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+
+      it('PATCH with disableKeepAlive true', async () => {
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'PATCH',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendPatch(client, '/products/1', mockProduct1, {
+          responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestLabel: 'dummy',
+          disableKeepAlive: true,
+        })
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+    })
+
+    describe('validateResponse default behavior', () => {
+      it('POST without validateResponse set uses default', async () => {
+        client
+          .intercept({
+            path: '/products',
+            method: 'POST',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendPost(client, '/products', mockProduct1, {
+          responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestLabel: 'dummy',
+        })
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+    })
+
+    describe('route definition isEmptyResponseExpected', () => {
+      it('sendByGetRoute with explicit isEmptyResponseExpected true', async () => {
+        const apiContract = buildGetRoute({
+          successResponseBodySchema: z.number(),
+          requestPathParamsSchema: z.undefined(),
+          pathResolver: () => '/products/1',
+          isEmptyResponseExpected: true,
+        })
+
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'GET',
+          })
+          .reply(204)
+
+        const result = await sendByGetRoute(
+          client,
+          apiContract,
+          {},
+          {
+            requestLabel: 'dummy',
+            validateResponse: false,
+          },
+        )
+
+        expect(result.result.statusCode).toBe(204)
+      })
+
+      it('sendByGetRoute without isEmptyResponseExpected defaults to false', async () => {
+        const apiContract = buildGetRoute({
+          successResponseBodySchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestPathParamsSchema: z.undefined(),
+          pathResolver: () => '/products/1',
+        })
+
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'GET',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendByGetRoute(
+          client,
+          apiContract,
+          {},
+          {
+            requestLabel: 'dummy',
+            validateResponse: false,
+          },
+        )
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+
+      it('sendByDeleteRoute with explicit isEmptyResponseExpected false', async () => {
+        const apiContract = buildDeleteRoute({
+          successResponseBodySchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestPathParamsSchema: z.undefined(),
+          pathResolver: () => '/products/1',
+          isEmptyResponseExpected: false,
+        })
+
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'DELETE',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendByDeleteRoute(
+          client,
+          apiContract,
+          {},
+          {
+            requestLabel: 'dummy',
+            validateResponse: false,
+          },
+        )
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+
+      it('sendByDeleteRoute without isEmptyResponseExpected defaults to true', async () => {
+        const apiContract = buildDeleteRoute({
+          successResponseBodySchema: z.number(),
+          requestPathParamsSchema: z.undefined(),
+          pathResolver: () => '/products/1',
+        })
+
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'DELETE',
+          })
+          .reply(204)
+
+        const result = await sendByDeleteRoute(
+          client,
+          apiContract,
+          {},
+          {
+            requestLabel: 'dummy',
+            validateResponse: false,
+          },
+        )
+
+        expect(result.result.statusCode).toBe(204)
+      })
+
+      it('sendByGetRoute with timeout', async () => {
+        const apiContract = buildGetRoute({
+          successResponseBodySchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestPathParamsSchema: z.undefined(),
+          pathResolver: () => '/products/1',
+        })
+
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'GET',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendByGetRoute(
+          client,
+          apiContract,
+          {},
+          {
+            requestLabel: 'dummy',
+            validateResponse: false,
+            timeout: 60000,
+          },
+        )
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+
+      it('sendByDeleteRoute with timeout', async () => {
+        const apiContract = buildDeleteRoute({
+          successResponseBodySchema: z.number(),
+          requestPathParamsSchema: z.undefined(),
+          pathResolver: () => '/products/1',
+        })
+
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'DELETE',
+          })
+          .reply(204)
+
+        const result = await sendByDeleteRoute(
+          client,
+          apiContract,
+          {},
+          {
+            requestLabel: 'dummy',
+            validateResponse: false,
+            timeout: 60000,
+          },
+        )
+
+        expect(result.result.statusCode).toBe(204)
+      })
+
+      it('sendByGetRoute without validateResponse uses default', async () => {
+        const apiContract = buildGetRoute({
+          successResponseBodySchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestPathParamsSchema: z.undefined(),
+          pathResolver: () => '/products/1',
+        })
+
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'GET',
+          })
+          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+
+        const result = await sendByGetRoute(
+          client,
+          apiContract,
+          {},
+          {
+            requestLabel: 'dummy',
+          },
+        )
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+
+      it('sendByDeleteRoute without validateResponse uses default', async () => {
+        const apiContract = buildDeleteRoute({
+          successResponseBodySchema: z.number(),
+          requestPathParamsSchema: z.undefined(),
+          pathResolver: () => '/products/1',
+        })
+
+        client
+          .intercept({
+            path: '/products/1',
+            method: 'DELETE',
+          })
+          .reply(204)
+
+        const result = await sendByDeleteRoute(
+          client,
+          apiContract,
+          {},
+          {
+            requestLabel: 'dummy',
+          },
+        )
+
+        expect(result.result.statusCode).toBe(204)
+      })
     })
   })
 })
