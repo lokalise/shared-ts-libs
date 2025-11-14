@@ -19,8 +19,6 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: [
         'src/**/index.ts',
-        'src/plugins/CollectionScheduler.ts',
-        'src/plugins/MetricsCollector.ts',
       ],
       thresholds: {
         lines: 45,
