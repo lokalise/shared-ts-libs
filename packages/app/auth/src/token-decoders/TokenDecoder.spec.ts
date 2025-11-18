@@ -58,23 +58,22 @@ describe('TokenDecoder', () => {
     })
 
     describe('error', () => {
-      it.each(Object.values(TokenError.codes))(
-        'should properly deal with token error codes',
-        async (tokenErrorCode) => {
-          // Given
-          const tokenDecoder = new TokenDecoder(() => {
-            throw new TokenError(tokenErrorCode)
-          })
+      it.each(
+        Object.values(TokenError.codes),
+      )('should properly deal with token error codes', async (tokenErrorCode) => {
+        // Given
+        const tokenDecoder = new TokenDecoder(() => {
+          throw new TokenError(tokenErrorCode)
+        })
 
-          // When
-          const result = await tokenDecoder.decode(reqContext, 'dummy-token')
+        // When
+        const result = await tokenDecoder.decode(reqContext, 'dummy-token')
 
-          // Then
-          expect(result).toEqual({
-            error: tokenErrorCode === TokenError.codes.expired ? 'EXPIRED_TOKEN' : 'INVALID_TOKEN',
-          })
-        },
-      )
+        // Then
+        expect(result).toEqual({
+          error: tokenErrorCode === TokenError.codes.expired ? 'EXPIRED_TOKEN' : 'INVALID_TOKEN',
+        })
+      })
 
       it('should handle unexpected error', async () => {
         // Given

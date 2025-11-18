@@ -22,19 +22,19 @@ describe('backgroundJobProcessorGetActiveQueueIds', () => {
     await factory.dispose()
   })
 
-  it.each([[true], [false]])(
-    'returns not expired elements on the set using redis client=%s',
-    async (useRedisClient) => {
-      const retentionMs = daysToMilliseconds(RETENTION_QUEUE_IDS_IN_DAYS)
+  it.each([
+    [true],
+    [false],
+  ])('returns not expired elements on the set using redis client=%s', async (useRedisClient) => {
+    const retentionMs = daysToMilliseconds(RETENTION_QUEUE_IDS_IN_DAYS)
 
-      await redis.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs, 'expired')
-      await redis.zadd(QUEUE_IDS_KEY, Date.now(), 'queue2')
-      await redis.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs + 100, 'queue1')
+    await redis.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs, 'expired')
+    await redis.zadd(QUEUE_IDS_KEY, Date.now(), 'queue2')
+    await redis.zadd(QUEUE_IDS_KEY, Date.now() - retentionMs + 100, 'queue1')
 
-      const queues = await backgroundJobProcessorGetActiveQueueIds(
-        useRedisClient ? redis : factory.getRedisConfig(),
-      )
-      expect(queues).toEqual(['queue1', 'queue2'])
-    },
-  )
+    const queues = await backgroundJobProcessorGetActiveQueueIds(
+      useRedisClient ? redis : factory.getRedisConfig(),
+    )
+    expect(queues).toEqual(['queue1', 'queue2'])
+  })
 })

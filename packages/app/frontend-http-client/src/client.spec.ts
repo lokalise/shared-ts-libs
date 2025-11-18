@@ -928,36 +928,35 @@ describe('frontend-http-client', () => {
       },
     ]
 
-    it.each(TEST_CASES)(
-      'allows sending $type and returns deserialized response',
-      async ({ getData }) => {
-        const handlePostRequestMock = vi.fn().mockReturnValue({ data: { code: 99 } })
+    it.each(TEST_CASES)('allows sending $type and returns deserialized response', async ({
+      getData,
+    }) => {
+      const handlePostRequestMock = vi.fn().mockReturnValue({ data: { code: 99 } })
 
-        const mockXhrServer = newServer().post('/', (request) =>
-          request.respond(
-            201,
-            { 'Content-Type': 'application/json' },
-            JSON.stringify(handlePostRequestMock(request.body)),
-          ),
-        )
+      const mockXhrServer = newServer().post('/', (request) =>
+        request.respond(
+          201,
+          { 'Content-Type': 'application/json' },
+          JSON.stringify(handlePostRequestMock(request.body)),
+        ),
+      )
 
-        mockXhrServer.install()
+      mockXhrServer.install()
 
-        const data = getData()
+      const data = getData()
 
-        const response = await sendPostWithProgress({
-          path: '/',
-          data,
-          responseBodySchema: successResponseSchema,
-          onProgress: vi.fn(),
-        })
+      const response = await sendPostWithProgress({
+        path: '/',
+        data,
+        responseBodySchema: successResponseSchema,
+        onProgress: vi.fn(),
+      })
 
-        expect(response).toEqual({ data: { code: 99 } })
-        expect(handlePostRequestMock).toHaveBeenCalledWith(data)
+      expect(response).toEqual({ data: { code: 99 } })
+      expect(handlePostRequestMock).toHaveBeenCalledWith(data)
 
-        mockXhrServer.remove()
-      },
-    )
+      mockXhrServer.remove()
+    })
 
     it('sets headers properly', async () => {
       const headersMock = vi.fn()
