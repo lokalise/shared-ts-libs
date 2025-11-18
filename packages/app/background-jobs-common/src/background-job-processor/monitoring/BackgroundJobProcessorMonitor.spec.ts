@@ -269,30 +269,32 @@ describe('BackgroundJobProcessorMonitor', () => {
       transactionManagerSpy = vi.spyOn(deps.transactionObservabilityManager, 'stop')
     })
 
-    it.each([[undefined], [0], [50], [100]])(
-      'should stop transaction and log result - %s',
-      (progress) => {
-        const job = createFakeJob('test-correlation-id', progress)
+    it.each([
+      [undefined],
+      [0],
+      [50],
+      [100],
+    ])('should stop transaction and log result - %s', (progress) => {
+      const job = createFakeJob('test-correlation-id', progress)
 
-        const requestContext = {
-          reqId: 'test-req-id',
-          logger: { info: (_obj: unknown, _msg: unknown) => undefined },
-        } as RequestContext
-        const loggerSpy = vi.spyOn(requestContext.logger, 'info')
+      const requestContext = {
+        reqId: 'test-req-id',
+        logger: { info: (_obj: unknown, _msg: unknown) => undefined },
+      } as RequestContext
+      const loggerSpy = vi.spyOn(requestContext.logger, 'info')
 
-        monitor.jobEnd(job, requestContext)
+      monitor.jobEnd(job, requestContext)
 
-        expect(transactionManagerSpy).toHaveBeenCalledWith(job.id)
-        expect(loggerSpy).toHaveBeenCalledWith(
-          {
-            origin: 'BackgroundJobProcessorMonitor tests',
-            isSuccess: progress === 100,
-            jobProgress: progress,
-          },
-          'Finished job name_test-correlation-id_job',
-        )
-      },
-    )
+      expect(transactionManagerSpy).toHaveBeenCalledWith(job.id)
+      expect(loggerSpy).toHaveBeenCalledWith(
+        {
+          origin: 'BackgroundJobProcessorMonitor tests',
+          isSuccess: progress === 100,
+          jobProgress: progress,
+        },
+        'Finished job name_test-correlation-id_job',
+      )
+    })
   })
 })
 

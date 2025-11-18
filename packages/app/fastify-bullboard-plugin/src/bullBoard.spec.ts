@@ -59,22 +59,22 @@ describe('bull board', () => {
       )
     }
 
-    it.each([false, true])(
-      'should work if scheduler is already registered: %s',
-      async (preRegisterScheduler) => {
-        await startApp(preRegisterScheduler)
+    it.each([
+      false,
+      true,
+    ])('should work if scheduler is already registered: %s', async (preRegisterScheduler) => {
+      await startApp(preRegisterScheduler)
 
-        const response = await app.inject().get('/test-enabled').end()
+      const response = await app.inject().get('/test-enabled').end()
 
-        expect(response.statusCode).toBe(200)
-        expect(response.body.toLowerCase()).includes('<!doctype html>')
-        expect(response.body.toLowerCase()).includes('<title>bull dashboard</title>')
+      expect(response.statusCode).toBe(200)
+      expect(response.body.toLowerCase()).includes('<!doctype html>')
+      expect(response.body.toLowerCase()).includes('<title>bull dashboard</title>')
 
-        expect(app.scheduler).toBeDefined()
-        const jobs = app.scheduler.getAllJobs()
-        expect(jobs).toHaveLength(1)
-        expect(jobs[0]!.id).toBe('bull-board-queues-update')
-      },
-    )
+      expect(app.scheduler).toBeDefined()
+      const jobs = app.scheduler.getAllJobs()
+      expect(jobs).toHaveLength(1)
+      expect(jobs[0]!.id).toBe('bull-board-queues-update')
+    })
   })
 })
