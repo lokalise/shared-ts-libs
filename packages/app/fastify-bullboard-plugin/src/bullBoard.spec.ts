@@ -46,6 +46,27 @@ describe('bull board', () => {
     })
   })
 
+  describe('assets path set', () => {
+    beforeAll(async () => {
+      app = await initApp({
+        queueConstructor: QueuePro,
+        redisConfigs: [],
+        basePath: '/test-disabled',
+        assetsPath: '/test-disabled',
+      })
+    })
+
+    it('works', async () => {
+      const response = await app.inject().get('/test-disabled').end()
+
+      expect(response.statusCode).toBe(200)
+      expect(response.body.toLowerCase()).includes('<!doctype html>')
+      expect(response.body.toLowerCase()).includes('<title>bull dashboard</title>')
+
+      expect(app.scheduler).toBeUndefined()
+    })
+  })
+
   describe('refresh enabled', () => {
     const startApp = async (preRegisterScheduler: boolean) => {
       app = await initApp(
