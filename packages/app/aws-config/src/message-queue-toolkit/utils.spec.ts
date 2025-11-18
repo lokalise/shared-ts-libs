@@ -26,9 +26,12 @@ const buildAwsConfig = (resourcePrefix?: string): AwsConfig => ({
 
 describe('utils', () => {
   describe('TOPIC_NAME_REGEX', () => {
-    it.each(['foo-bar', 'one_two-three_four'])('should match regex (%s)', (name) => {
-      expect(TOPIC_NAME_REGEX.test(name)).toBe(true)
-    })
+    it.each(['foo-bar', 'one_two-three_four', 'repo-name-process_name'])(
+      'should match regex (%s)',
+      (name) => {
+        expect(TOPIC_NAME_REGEX.test(name)).toBe(true)
+      },
+    )
 
     it.each([
       // Numbers not allowed
@@ -51,7 +54,6 @@ describe('utils', () => {
 
       // Hyphen issues (only one hyphen allowed between two sections)
       'foo--bar', // double hyphen
-      'foo-bar-baz', // too many sections (three parts)
       'foo-', // second part empty
       '-bar', // first part missing
       'foo-', // second part empty

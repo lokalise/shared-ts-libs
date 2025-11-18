@@ -53,6 +53,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       system: 'my-system',
       project: 'my-project',
       appEnv: 'development',
+      useDefaultKmsKeyId: true,
     })
   })
 
@@ -311,6 +312,63 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               "topic": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
+                },
+                "Name": "test-first_entity",
+                "Tags": [
+                  {
+                    "Key": "env",
+                    "Value": "dev",
+                  },
+                  {
+                    "Key": "project",
+                    "Value": "my-project",
+                  },
+                  {
+                    "Key": "service",
+                    "Value": "sns",
+                  },
+                  {
+                    "Key": "lok-owner",
+                    "Value": "team 1",
+                  },
+                  {
+                    "Key": "lok-cost-system",
+                    "Value": "my-system",
+                  },
+                  {
+                    "Key": "lok-cost-service",
+                    "Value": "service 1",
+                  },
+                ],
+              },
+              "updateAttributesIfExists": true,
+            },
+            "handlerSpy": undefined,
+            "locatorConfig": undefined,
+            "logMessages": undefined,
+            "messageSchemas": [],
+            "messageTypeField": "type",
+          }
+        `)
+      })
+
+      it('should use default kms key if was not provided explicitly', () => {
+        const result = resolver.resolvePublisherOptions(topicName, {
+          awsConfig: buildAwsConfig({ kmsKeyId: '' }),
+          messageSchemas: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "creationConfig": {
+              "allowedSourceOwner": "test allowedSourceOwner",
+              "forceTagUpdate": undefined,
+              "queueUrlsWithSubscribePermissionsPrefix": [
+                "arn:aws:sqs:*:*:test-*",
+              ],
+              "topic": {
+                "Attributes": {
+                  "KmsMasterKeyId": "alias/aws/sns",
                 },
                 "Name": "test-first_entity",
                 "Tags": [
@@ -633,6 +691,119 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                 "queue": {
                   "Attributes": {
                     "KmsMasterKeyId": "test kmsKeyId",
+                    "MessageRetentionPeriod": "604800",
+                  },
+                  "QueueName": "test-first_entity-first_service-dlq",
+                  "tags": {
+                    "env": "dev",
+                    "lok-cost-service": "service 1",
+                    "lok-cost-system": "my-system",
+                    "lok-owner": "team 1",
+                    "project": "my-project",
+                    "service": "sqs",
+                  },
+                },
+                "updateAttributesIfExists": true,
+              },
+              "redrivePolicy": {
+                "maxReceiveCount": 5,
+              },
+            },
+            "deletionConfig": {
+              "deleteIfExists": undefined,
+            },
+            "handlerSpy": undefined,
+            "handlers": [],
+            "locatorConfig": undefined,
+            "logMessages": undefined,
+            "maxRetryDuration": 172800,
+            "messageTypeField": "type",
+            "subscriptionConfig": {
+              "Attributes": {
+                "FilterPolicy": "{"type":[]}",
+                "FilterPolicyScope": "MessageBody",
+              },
+              "updateAttributesIfExists": true,
+            },
+          }
+        `)
+      })
+
+      it('should use default kms key if was not provided explicitly', () => {
+        const result = resolver.resolveConsumerOptions(topicName, queueName, {
+          logger,
+          awsConfig: buildAwsConfig({ kmsKeyId: '' }),
+          handlers: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "concurrentConsumersAmount": undefined,
+            "consumerOverrides": {
+              "batchSize": undefined,
+              "heartbeatInterval": 20,
+            },
+            "creationConfig": {
+              "allowedSourceOwner": "test allowedSourceOwner",
+              "forceTagUpdate": undefined,
+              "queue": {
+                "Attributes": {
+                  "KmsMasterKeyId": "alias/aws/sns",
+                  "VisibilityTimeout": "60",
+                },
+                "QueueName": "test-first_entity-first_service",
+                "tags": {
+                  "env": "dev",
+                  "lok-cost-service": "service 1",
+                  "lok-cost-system": "my-system",
+                  "lok-owner": "team 1",
+                  "project": "my-project",
+                  "service": "sqs",
+                },
+              },
+              "queueUrlsWithSubscribePermissionsPrefix": [
+                "arn:aws:sqs:*:*:test-*",
+              ],
+              "topic": {
+                "Attributes": {
+                  "KmsMasterKeyId": "alias/aws/sns",
+                },
+                "Name": "test-first_entity",
+                "Tags": [
+                  {
+                    "Key": "env",
+                    "Value": "dev",
+                  },
+                  {
+                    "Key": "project",
+                    "Value": "my-project",
+                  },
+                  {
+                    "Key": "service",
+                    "Value": "sns",
+                  },
+                  {
+                    "Key": "lok-owner",
+                    "Value": "team 1",
+                  },
+                  {
+                    "Key": "lok-cost-system",
+                    "Value": "my-system",
+                  },
+                  {
+                    "Key": "lok-cost-service",
+                    "Value": "service 1",
+                  },
+                ],
+              },
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:test-*",
+              "updateAttributesIfExists": true,
+            },
+            "deadLetterQueue": {
+              "creationConfig": {
+                "queue": {
+                  "Attributes": {
+                    "KmsMasterKeyId": "alias/aws/sns",
                     "MessageRetentionPeriod": "604800",
                   },
                   "QueueName": "test-first_entity-first_service-dlq",

@@ -6,6 +6,7 @@ import {
   type SQSPolicyConfig,
   type SQSQueueLocatorType,
 } from '@message-queue-toolkit/sqs'
+import type { AwsConfig } from '../awsConfig.ts'
 import type { CommandConfig } from '../event-routing/eventRoutingConfig.ts'
 import { AbstractMessageQueueToolkitOptionsResolver } from './AbstractMessageQueueToolkitOptionsResolver.ts'
 import type {
@@ -77,6 +78,14 @@ export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueT
       locatorConfig: resolvedQueue.locatorConfig,
       ...this.commonConsumerOptions(params, resolvedQueue.creationConfig?.queue),
     }
+  }
+
+  protected override resolveKmsKeyId(awsConfig: AwsConfig) {
+    if (!this.config.useDefaultKmsKeyId || (awsConfig.kmsKeyId && awsConfig.kmsKeyId !== '')) {
+      return awsConfig.kmsKeyId
+    }
+
+    return 'alias/aws/sqs'
   }
 
   private resolvePolicyConfig(): SQSPolicyConfig {
