@@ -42,15 +42,15 @@ describe('cursorCodec', () => {
       ['buffer', 'atob-btoa'],
       ['atob-btoa', 'buffer'],
       ['atob-btoa', 'atob-btoa'],
-    ] satisfies [ConversionMode, ConversionMode][])(
-      'works properly for modes (encoding: %s, decoding: %s)',
-      (encodingMode, decodingMode) => {
-        const encoded = stringToBase64url(stringifiedValue, encodingMode)
-        const decoded = base64urlToString(encoded, decodingMode)
+    ] satisfies [
+      ConversionMode,
+      ConversionMode,
+    ][])('works properly for modes (encoding: %s, decoding: %s)', (encodingMode, decodingMode) => {
+      const encoded = stringToBase64url(stringifiedValue, encodingMode)
+      const decoded = base64urlToString(encoded, decodingMode)
 
-        expect(decoded).toStrictEqual(stringifiedValue)
-        expect(JSON.parse(decoded)).toStrictEqual(testValue)
-      },
-    )
+      expect(decoded).toStrictEqual(stringifiedValue)
+      expect(JSON.parse(decoded)).toStrictEqual(testValue)
+    })
   })
 })

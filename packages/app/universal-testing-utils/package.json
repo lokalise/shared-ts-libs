@@ -50,7 +50,7 @@
         "zod": ">=3.25.56"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.3.2",
+        "@biomejs/biome": "^2.3.6",
         "@lokalise/api-contracts": "^6.0.0",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/frontend-http-client": "*",
