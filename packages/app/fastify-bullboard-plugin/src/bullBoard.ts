@@ -146,11 +146,7 @@ const plugin = async (fastify: FastifyInstance, pluginOptions: BullBoardOptions)
 
   // biome-ignore lint/suspicious/noExplicitAny: bull-board is not exporting this type
   serverAdapter.setErrorHandler(bullBoardErrorHandler as any)
-  if (!assetsPath) {
-    serverAdapter.setBasePath(basePath)
-  } else {
-    serverAdapter.setBasePath(assetsPath)
-  }
+  serverAdapter.setBasePath(assetPath ?? basePath)
 
   await fastify.register(serverAdapter.registerPlugin(), {
     prefix: basePath,
