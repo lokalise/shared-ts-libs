@@ -18,7 +18,12 @@ import type {
   RequestResult,
   RetryConfig,
 } from 'undici-retry'
-import { isRequestResult, NO_RETRY_CONFIG, sendWithRetry } from 'undici-retry'
+import {
+  isRequestResult,
+  NO_RETRY_CONFIG,
+  sendWithRetry,
+  sendWithRetryReturnStream,
+} from 'undici-retry'
 import type { ZodError, ZodSchema } from 'zod/v4'
 import { z } from 'zod/v4'
 import { ResponseStatusError } from '../errors/ResponseStatusError.ts'
@@ -83,6 +88,53 @@ export async function sendGet<
     options.requestLabel,
     options.isEmptyResponseExpected ?? false,
   )
+}
+
+export async function sendGetWithStreamedResponse<
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
+  client: Client,
+  path: string,
+  options: Omit<
+    RequestOptions<undefined, false, DoThrowOnError>,
+    | 'responseSchema'
+    | 'validateResponse'
+    | 'isEmptyResponseExpected'
+    | 'safeParseJson'
+    | 'blobResponseBody'
+  >,
+): Promise<RequestResultDefinitiveEither<Readable, false, DoThrowOnError>> {
+  const result = await sendWithRetryReturnStream(
+    client,
+    {
+      ...DEFAULT_OPTIONS,
+      path: path,
+      method: 'GET',
+      query: options.query,
+      headers: copyWithoutUndefined({
+        'x-request-id': options.reqContext?.reqId,
+        ...options.headers,
+      }),
+      reset: options.disableKeepAlive ?? false,
+      bodyTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
+      headersTimeout: Object.hasOwn(options, 'timeout') ? options.timeout : DEFAULT_OPTIONS.timeout,
+      throwOnError: undefined,
+    },
+    resolveRetryConfig(options),
+    {
+      throwOnInternalError: false,
+      requestLabel: options.requestLabel,
+    },
+  )
+
+  // Handle errors if throwOnError is enabled
+  if (result.error && (options.throwOnError ?? DEFAULT_OPTIONS.throwOnError)) {
+    throw isRequestResult(result.error)
+      ? new ResponseStatusError(result.error, options.requestLabel)
+      : result.error
+  }
+
+  return result as RequestResultDefinitiveEither<Readable, false, DoThrowOnError>
 }
 
 export async function sendDelete<
@@ -358,8 +410,10 @@ function resolveRequestConfig(options: InternalRequestOptions<any>): RequestPara
   }
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: we don't care here
-function resolveRetryConfig(options: InternalRequestOptions<any>): RetryConfig {
+function resolveRetryConfig(
+  // biome-ignore lint/suspicious/noExplicitAny: we don't care here
+  options: Pick<InternalRequestOptions<any>, 'retryConfig'>,
+): RetryConfig {
   return options.retryConfig ?? NO_RETRY_CONFIG
 }
 
@@ -610,6 +664,54 @@ export function sendByDeleteRoute<
       // @ts-expect-error magic type inferring happening
       query: params.queryParams,
       responseSchema: routeDefinition.successResponseBodySchema,
+      ...options,
+    },
+  )
+}
+
+export function sendByGetRouteWithStreamedResponse<
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
+  client: Client,
+  routeDefinition: GetRouteDefinition<
+    undefined,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    undefined,
+    false,
+    false,
+    undefined
+  >,
+  params: RouteRequestParams<
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
+  >,
+  options: Omit<
+    RequestOptions<undefined, false, DoThrowOnError>,
+    | 'body'
+    | 'headers'
+    | 'query'
+    | 'responseSchema'
+    | 'isEmptyResponseExpected'
+    | 'validateResponse'
+    | 'safeParseJson'
+    | 'blobResponseBody'
+  >,
+): Promise<RequestResultDefinitiveEither<Readable, false, DoThrowOnError>> {
+  return sendGetWithStreamedResponse(
+    client,
+    // @ts-expect-error magic type inferring happening
+    buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
+    {
+      // @ts-expect-error FixMe
+      headers: params.headers,
+      // @ts-expect-error magic type inferring happening
+      query: params.queryParams,
       ...options,
     },
   )

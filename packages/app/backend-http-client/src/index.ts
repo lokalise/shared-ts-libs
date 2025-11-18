@@ -1,3 +1,6 @@
+export type { DelayResolver, RetryConfig } from 'undici-retry'
+// Re-export retry utilities from undici-retry for convenience
+export { createDefaultRetryResolver, DEFAULT_RETRY_CONFIG } from 'undici-retry'
 export {
   JSON_HEADERS,
   NO_CONTENT_RESPONSE_SCHEMA,
@@ -9,9 +12,11 @@ export {
   httpClient,
   sendByDeleteRoute,
   sendByGetRoute,
+  sendByGetRouteWithStreamedResponse,
   sendByPayloadRoute,
   sendDelete,
   sendGet,
+  sendGetWithStreamedResponse,
   sendPatch,
   sendPost,
   sendPostBinary,
