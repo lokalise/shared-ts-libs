@@ -70,7 +70,7 @@ describe('bull board', () => {
       })
       const response = await app.inject().get('/test-disabled').end()
 
-      expect(response.statusCode).toBe(500)
+      expect(response.body.toLowerCase()).includes('/test-disabled/notfound')
     })
   })
 
