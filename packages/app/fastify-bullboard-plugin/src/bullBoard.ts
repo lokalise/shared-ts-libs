@@ -18,6 +18,7 @@ import { AsyncTask, SimpleIntervalJob } from 'toad-scheduler'
 export type BullBoardOptions = {
   queueConstructor: QueueProConstructor | QueueConstructor
   basePath: string
+  assetsPath?: string
   refreshIntervalInSeconds?: number
   redisConfigs: RedisConfig[]
 }
@@ -131,7 +132,7 @@ const resolveRedis = (options: BullBoardOptions): ResolvedRedis[] =>
   }))
 
 const plugin = async (fastify: FastifyInstance, pluginOptions: BullBoardOptions) => {
-  const { basePath, queueConstructor } = pluginOptions
+  const { basePath, assetsPath, queueConstructor } = pluginOptions
   const resolvedRedis = resolveRedis(pluginOptions)
 
   const { queues, queuesAdapter } = await getCurrentQueues(resolvedRedis, queueConstructor)
@@ -145,7 +146,7 @@ const plugin = async (fastify: FastifyInstance, pluginOptions: BullBoardOptions)
 
   // biome-ignore lint/suspicious/noExplicitAny: bull-board is not exporting this type
   serverAdapter.setErrorHandler(bullBoardErrorHandler as any)
-  serverAdapter.setBasePath(basePath)
+  serverAdapter.setBasePath(assetsPath ?? basePath)
 
   await fastify.register(serverAdapter.registerPlugin(), {
     prefix: basePath,
