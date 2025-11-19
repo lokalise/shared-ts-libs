@@ -33,6 +33,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       system: 'my-system',
       project: 'my-project',
       appEnv: 'development',
+      useDefaultKmsKeyId: true,
     })
   })
 
@@ -234,6 +235,108 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
           }
         `)
       })
+
+      it('should use default kms key if was not provided explicitly', () => {
+        const result = resolver.resolvePublisherOptions(queueName, {
+          awsConfig: buildAwsConfig({ kmsKeyId: '' }),
+          messageSchemas: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "creationConfig": {
+              "forceTagUpdate": undefined,
+              "policyConfig": {
+                "resource": Symbol(current_queue),
+                "statements": {
+                  "Action": [
+                    "sqs:SendMessage",
+                    "sqs:GetQueueAttributes",
+                    "sqs:GetQueueUrl",
+                  ],
+                  "Effect": "Allow",
+                  "Principal": "*",
+                },
+              },
+              "queue": {
+                "Attributes": {
+                  "KmsMasterKeyId": "alias/aws/sqs",
+                  "VisibilityTimeout": "60",
+                },
+                "QueueName": "test-mqt-queue_first",
+                "tags": {
+                  "env": "dev",
+                  "lok-cost-service": "service 1",
+                  "lok-cost-system": "my-system",
+                  "lok-owner": "team 1",
+                  "project": "my-project",
+                  "service": "sqs",
+                },
+              },
+              "updateAttributesIfExists": true,
+            },
+            "handlerSpy": undefined,
+            "locatorConfig": undefined,
+            "logMessages": undefined,
+            "messageSchemas": [],
+            "messageTypeField": "type",
+          }
+        `)
+      })
+
+      it('should not use default kms key if option is disabled', () => {
+        const testResolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+          system: 'my-system',
+          project: 'my-project',
+          appEnv: 'development',
+          useDefaultKmsKeyId: false,
+        })
+        const result = testResolver.resolvePublisherOptions(queueName, {
+          awsConfig: buildAwsConfig({ kmsKeyId: '' }),
+          messageSchemas: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "creationConfig": {
+              "forceTagUpdate": undefined,
+              "policyConfig": {
+                "resource": Symbol(current_queue),
+                "statements": {
+                  "Action": [
+                    "sqs:SendMessage",
+                    "sqs:GetQueueAttributes",
+                    "sqs:GetQueueUrl",
+                  ],
+                  "Effect": "Allow",
+                  "Principal": "*",
+                },
+              },
+              "queue": {
+                "Attributes": {
+                  "KmsMasterKeyId": "",
+                  "VisibilityTimeout": "60",
+                },
+                "QueueName": "test-mqt-queue_first",
+                "tags": {
+                  "env": "dev",
+                  "lok-cost-service": "service 1",
+                  "lok-cost-system": "my-system",
+                  "lok-owner": "team 1",
+                  "project": "my-project",
+                  "service": "sqs",
+                },
+              },
+              "updateAttributesIfExists": true,
+            },
+            "handlerSpy": undefined,
+            "locatorConfig": undefined,
+            "logMessages": undefined,
+            "messageSchemas": [],
+            "messageTypeField": "type",
+          }
+        `)
+      })
     })
 
     describe('external queues', () => {
@@ -365,6 +468,87 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       })
 
       it('should work using only required props', () => {
+        const result = resolver.resolveConsumerOptions(queueName, {
+          logger,
+          awsConfig: buildAwsConfig(),
+          handlers: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "concurrentConsumersAmount": undefined,
+            "consumerOverrides": {
+              "batchSize": undefined,
+              "heartbeatInterval": 20,
+            },
+            "creationConfig": {
+              "forceTagUpdate": undefined,
+              "policyConfig": {
+                "resource": Symbol(current_queue),
+                "statements": {
+                  "Action": [
+                    "sqs:SendMessage",
+                    "sqs:GetQueueAttributes",
+                    "sqs:GetQueueUrl",
+                  ],
+                  "Effect": "Allow",
+                  "Principal": "*",
+                },
+              },
+              "queue": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                  "VisibilityTimeout": "60",
+                },
+                "QueueName": "test-mqt-queue_first",
+                "tags": {
+                  "env": "dev",
+                  "lok-cost-service": "service 1",
+                  "lok-cost-system": "my-system",
+                  "lok-owner": "team 1",
+                  "project": "my-project",
+                  "service": "sqs",
+                },
+              },
+              "updateAttributesIfExists": true,
+            },
+            "deadLetterQueue": {
+              "creationConfig": {
+                "queue": {
+                  "Attributes": {
+                    "KmsMasterKeyId": "test kmsKeyId",
+                    "MessageRetentionPeriod": "604800",
+                  },
+                  "QueueName": "test-mqt-queue_first-dlq",
+                  "tags": {
+                    "env": "dev",
+                    "lok-cost-service": "service 1",
+                    "lok-cost-system": "my-system",
+                    "lok-owner": "team 1",
+                    "project": "my-project",
+                    "service": "sqs",
+                  },
+                },
+                "updateAttributesIfExists": true,
+              },
+              "redrivePolicy": {
+                "maxReceiveCount": 5,
+              },
+            },
+            "deletionConfig": {
+              "deleteIfExists": undefined,
+            },
+            "handlerSpy": undefined,
+            "handlers": [],
+            "locatorConfig": undefined,
+            "logMessages": undefined,
+            "maxRetryDuration": 172800,
+            "messageTypeField": "type",
+          }
+        `)
+      })
+
+      it('should use default kms key if was not provided explicitly', () => {
         const result = resolver.resolveConsumerOptions(queueName, {
           logger,
           awsConfig: buildAwsConfig(),

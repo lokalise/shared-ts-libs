@@ -18,6 +18,12 @@ export type MessageQueueToolkitOptionsResolverConfig = Pick<
 > & {
   /** Enable validation of topic and queue names */
   validateNamePatterns?: boolean
+
+  /** Use default KmsKeyId if it's not explicitly provided:
+   * - aws/sns for SNS config
+   * - aws/sqs for SQS config
+   * */
+  useDefaultKmsKeyId?: boolean
 }
 
 type BaseParams = {

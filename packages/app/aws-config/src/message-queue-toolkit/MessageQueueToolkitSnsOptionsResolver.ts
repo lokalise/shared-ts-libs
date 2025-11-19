@@ -10,6 +10,7 @@ import {
   type SNSTopicLocatorType,
 } from '@message-queue-toolkit/sns'
 import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
+import type { AwsConfig } from '../awsConfig.ts'
 import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRoutingConfig.ts'
 import { getSnsTags } from '../tags/index.ts'
 import { AbstractMessageQueueToolkitOptionsResolver } from './AbstractMessageQueueToolkitOptionsResolver.ts'
@@ -176,6 +177,14 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
     }
   }
 
+  protected override resolveKmsKeyId(awsConfig: AwsConfig) {
+    if (!this.config.useDefaultKmsKeyId || (awsConfig.kmsKeyId && awsConfig.kmsKeyId !== '')) {
+      return awsConfig.kmsKeyId
+    }
+
+    return 'alias/aws/sns'
+  }
+
   private getTopicConfig(topicName: string): TopicConfig {
     const topicConfig = this.routingConfig[topicName]
     if (!topicConfig) throw new Error(`Topic ${topicName} not found`)
@@ -198,7 +207,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
       createCommand: {
         Name: applyAwsResourcePrefix(topicConfig.topicName, params.awsConfig),
         Tags: getSnsTags({ ...topicConfig, ...this.config }),
-        Attributes: { KmsMasterKeyId: params.awsConfig.kmsKeyId },
+        Attributes: { KmsMasterKeyId: this.resolveKmsKeyId(params.awsConfig) },
       },
     }
   }

@@ -240,6 +240,11 @@ When processing messages, both resolvers automatically inject a **request contex
 Please refer to `@message-queue-toolkit` documentation for more details on how to use the pre-handler output in your
 event handlers.
 
+#### Constructor params
+
+- `validateNamePatterns` - if set to true, topic/queue names will be validated against regex (see `TOPIC_NAME_REGEX` and `QUEUE_NAME_REGEX`)
+- `useDefaultKmsKeyId` - if set to true, default Kms Key Id will be used if not provided explicitly (`alias/aws/sns` and `alias/aws/sqs` respectively)
+
 #### Opinionated Defaults
 
 Both `MessageQueueToolkitSnsOptionsResolver` and `MessageQueueToolkitSqsOptionsResolver` apply opinionated defaults to reduce boilerplate:

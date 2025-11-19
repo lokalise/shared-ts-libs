@@ -6,6 +6,7 @@ import type {
   SQSQueueLocatorType,
 } from '@message-queue-toolkit/sqs'
 import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
+import type { AwsConfig } from '../awsConfig.ts'
 import type { QueueConfig } from '../event-routing/eventRoutingConfig.ts'
 import { getSqsTags } from '../tags/index.ts'
 import {
@@ -44,6 +45,8 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
   constructor(config: MessageQueueToolkitOptionsResolverConfig) {
     this.config = config
   }
+
+  protected abstract resolveKmsKeyId(awsConfig: AwsConfig): string
 
   protected validateQueueNames(queueNames: string[]): void {
     if (!this.config.validateNamePatterns) return
@@ -113,7 +116,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
                   QueueName: `${createQueueRequest.QueueName}${DLQ_SUFFIX}`,
                   tags: createQueueRequest.tags,
                   Attributes: {
-                    KmsMasterKeyId: params.awsConfig.kmsKeyId,
+                    KmsMasterKeyId: this.resolveKmsKeyId(params.awsConfig),
                     MessageRetentionPeriod: DLQ_MESSAGE_RETENTION_PERIOD.toString(),
                   },
                 },
@@ -151,7 +154,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
           QueueName: applyAwsResourcePrefix(queueConfig.queueName, awsConfig),
           tags: getSqsTags({ ...queueConfig, ...this.config }),
           Attributes: {
-            KmsMasterKeyId: awsConfig.kmsKeyId,
+            KmsMasterKeyId: this.resolveKmsKeyId(awsConfig),
             VisibilityTimeout: VISIBILITY_TIMEOUT.toString(),
           },
         },
