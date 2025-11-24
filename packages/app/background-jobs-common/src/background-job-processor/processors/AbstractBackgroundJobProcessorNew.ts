@@ -29,7 +29,7 @@ import type {
   SupportedQueueIds,
 } from '../managers/types.ts'
 import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
-import { sanitizeRedisConfig } from '../public-utils/index.ts'
+import { enrichRedisConfig, sanitizeRedisConfig } from '../public-utils/index.ts'
 import type { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
 import type { BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
@@ -206,7 +206,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
           WorkerOptionsType,
           'connection' | 'prefix'
         >),
-        connection: sanitizeRedisConfig(redisConfig),
+        connection: sanitizeRedisConfig(enrichRedisConfig(redisConfig)),
         prefix: redisConfig.keyPrefix ?? undefined,
       } as unknown as WorkerOptionsType,
     )

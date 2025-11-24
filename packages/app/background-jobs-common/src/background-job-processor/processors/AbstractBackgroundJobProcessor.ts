@@ -22,7 +22,7 @@ import {
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory.ts'
 import type { JobsPaginatedResponse, ProtectedQueue } from '../managers/index.ts'
 import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
-import { sanitizeRedisConfig } from '../public-utils/index.ts'
+import { enrichRedisConfig, sanitizeRedisConfig } from '../public-utils/index.ts'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
 import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
@@ -199,7 +199,7 @@ export abstract class AbstractBackgroundJobProcessor<
         QueueOptionsType,
         'connection' | 'prefix'
       >),
-      connection: sanitizeRedisConfig(this.config.redisConfig),
+      connection: sanitizeRedisConfig(enrichRedisConfig(this.config.redisConfig)),
       prefix: this.config.redisConfig?.keyPrefix ?? undefined,
     } as unknown as QueueOptionsType)
     await this._queue.waitUntilReady()
@@ -211,7 +211,7 @@ export abstract class AbstractBackgroundJobProcessor<
         ...(merge(DEFAULT_WORKER_OPTIONS, this.config.workerOptions, {
           autorun: this.config.workerAutoRunEnabled !== false,
         }) as Omit<WorkerOptionsType, 'connection' | 'prefix'>),
-        connection: sanitizeRedisConfig(this.config.redisConfig),
+        connection: sanitizeRedisConfig(enrichRedisConfig(this.config.redisConfig)),
         prefix: this.config.redisConfig?.keyPrefix ?? undefined,
       } as unknown as WorkerOptionsType,
     )

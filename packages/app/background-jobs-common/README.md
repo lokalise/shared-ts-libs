@@ -312,6 +312,90 @@ class myJobProcessor extends AbstractBackgroundJobProcessor<Generics> {
 ```
 
 
+### Redis Connection Resilience
+
+The library provides utilities to enrich Redis configuration for better connection resilience during failover scenarios.
+
+#### `enrichRedisConfig`
+
+Automatically adds a `reconnectOnError` hook to Redis connections if not already present. This is particularly important when Redis switches from master to replica during failover events.
+
+**How it works:**
+
+The `enrichRedisConfig` function is automatically applied to all Redis connections (QueueManager, AbstractBackgroundJobProcessor, etc.) through the internal connection setup. It adds a default `reconnectOnError` hook that:
+- Returns `true` for READONLY errors (triggering reconnection)
+- Returns `false` for other errors
+
+**Default Behavior:**
+
+```ts
+// reconnectOnError is automatically added by enrichRedisConfig
+const queueManager = new QueueManager(new CommonBullmqFactory(), supportedQueues, {
+  redisConfig: {
+    host: 'localhost',
+    port: 6379,
+    useTls: false,
+  },
+  isTest: false,
+  lazyInitEnabled: false,
+})
+```
+
+**Custom Reconnection Logic:**
+
+If you need custom reconnection logic, provide your own `reconnectOnError` function - it will be preserved:
+
+```ts
+const queueManager = new QueueManager(new CommonBullmqFactory(), supportedQueues, {
+  redisConfig: {
+    host: 'localhost',
+    port: 6379,
+    useTls: false,
+    reconnectOnError: (err) => {
+      // Custom reconnection logic
+      if (err.message.includes('READONLY')) return true
+      if (err.message.includes('CUSTOM_ERROR')) return true
+      return false
+    },
+  },
+  isTest: false,
+  lazyInitEnabled: false,
+})
+```
+
+The `reconnectOnError` function can return:
+- `true` or `1`: Reconnect immediately
+- `2`: Reconnect and resend the failed command
+- `false`: Do not reconnect
+
+#### `enrichRedisConfigOptimizedForCloud`
+
+For managed Redis instances (AWS ElastiCache, GCP Memorystore, etc.), use this enhanced version that adds both `reconnectOnError` and optimized DNS lookup.
+
+**Why DNS lookup matters:**
+
+Managed Redis services often use DNS-based failover. When a failover occurs, the DNS record is updated to point to the new master. The `dnsLookup` configuration ensures DNS resolution uses IPv4 and doesn't cache stale records.
+
+**Usage:**
+
+```ts
+import { enrichRedisConfigOptimizedForCloud, sanitizeRedisConfig } from '@lokalise/background-jobs-common'
+
+// In QueueRegistry or processor setup, manually apply before sanitizing:
+const enrichedConfig = enrichRedisConfigOptimizedForCloud(redisConfig)
+const finalConfig = sanitizeRedisConfig(enrichedConfig)
+```
+
+**Note:** Currently, you need to manually apply `enrichRedisConfigOptimizedForCloud` if you want the cloud-optimized DNS behavior. The standard `enrichRedisConfig` is applied automatically by the library.
+
+**What it adds:**
+
+1. `reconnectOnError` hook (same as `enrichRedisConfig`)
+2. `dnsLookup` - Optimized DNS resolution for cloud environments:
+   - Forces IPv4 resolution
+   - Ensures fresh DNS lookups on reconnection
+   - Helps with faster failover detection in managed Redis services
+
 ### Queue events.
 The library optimized the default event stream settings to save memory. Specifically, the library sets the default
 maximum length of the BullMQ queue events stream to `0` ([doc](https://docs.bullmq.io/guide/events)). This means the 

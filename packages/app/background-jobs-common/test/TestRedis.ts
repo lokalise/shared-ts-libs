@@ -5,7 +5,7 @@ export function getTestRedisConfig(): RedisConfig {
   return {
     host: process.env.REDIS_HOST!,
     port: Number(process.env.REDIS_PORT),
-    db: process.env.REDIS_DB ? Number.parseInt(process.env.REDIS_DB) : undefined,
+    db: process.env.REDIS_DB ? Number.parseInt(process.env.REDIS_DB, 10) : undefined,
     username: process.env.REDIS_USERNAME,
     password: process.env.REDIS_PASSWORD,
     keyPrefix: process.env.REDIS_KEY_PREFIX,

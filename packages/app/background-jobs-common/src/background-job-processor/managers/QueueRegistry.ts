@@ -4,7 +4,7 @@ import { merge } from 'ts-deepmerge'
 import { DEFAULT_QUEUE_OPTIONS } from '../constants.ts'
 import type { BullmqQueueFactory } from '../factories/index.ts'
 import { registerActiveQueueIds } from '../monitoring/registerActiveQueueIds.ts'
-import { sanitizeRedisConfig } from '../public-utils/index.ts'
+import { enrichRedisConfig, sanitizeRedisConfig } from '../public-utils/index.ts'
 import { resolveQueueId } from '../utils.ts'
 import type { QueueConfiguration, SupportedQueueIds } from './types.ts'
 
@@ -48,7 +48,7 @@ export class QueueRegistry<
       const queueConfig = this.getQueueConfig(queueId)
       const queue = this.factory.buildQueue(resolveQueueId(queueConfig), {
         ...(merge(DEFAULT_QUEUE_OPTIONS, queueConfig.queueOptions ?? {}) as QueueOptionsType),
-        connection: sanitizeRedisConfig(this.redisConfig),
+        connection: sanitizeRedisConfig(enrichRedisConfig(this.redisConfig)),
         prefix: this.redisConfig.keyPrefix ?? undefined,
       })
       this.queues[queueId] = queue
