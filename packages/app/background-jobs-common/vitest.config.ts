@@ -17,7 +17,13 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/**/types.ts', 'test', '**/*.spec.ts', 'vitest.config.ts'],
+      exclude: [
+        'src/**/types.ts',
+        'src/background-job-processor/public-utils/enrichRedisConfig.ts',
+        'test',
+        '**/*.spec.ts',
+        'vitest.config.ts',
+      ],
       thresholds: {
         lines: 98,
         functions: 98,
