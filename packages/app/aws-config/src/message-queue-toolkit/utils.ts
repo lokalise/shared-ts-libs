@@ -42,30 +42,19 @@ export const buildTopicArnsWithPublishPermissionsPrefix = (
 
 export const buildQueueUrlsWithSubscribePermissionsPrefix = (
   topicConfig: TopicConfig,
+  project: string,
   awsConfig: AwsConfig,
 ): string[] | undefined => {
   if (topicConfig.isExternal) return undefined
 
-  const internalPermissions = extractAppNameFromTopic(topicConfig)
-  const externalPermissions = topicConfig.externalAppsWithSubscribePermissions ?? []
-
   return sqsPrefixTransformer(
-    [internalPermissions, ...externalPermissions]
+    [project, ...(topicConfig.externalAppsWithSubscribePermissions ?? [])]
       .map((value) => applyAwsResourcePrefix(value, awsConfig))
       .map((value) => {
         if (value.endsWith('*')) return value
         return ensureWildcard(value.endsWith('-') ? value : `${value}-`)
       }),
   )
-}
-
-const extractAppNameFromTopic = (topicConfig: TopicConfig): string => {
-  const topicNameParts = topicConfig.topicName.split('-')
-  if (!topicNameParts[0]?.trim().length) {
-    throw new Error(`Invalid topic name ${topicConfig.topicName}`)
-  }
-
-  return topicNameParts[0]
 }
 
 const snsPrefixTransformer = (value: string): string =>

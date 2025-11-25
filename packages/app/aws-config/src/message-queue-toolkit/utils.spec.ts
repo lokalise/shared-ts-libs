@@ -8,10 +8,11 @@ import {
 } from './utils.ts'
 
 const buildTopicConfig = (
-  config: Pick<TopicConfig, 'topicName' | 'isExternal' | 'externalAppsWithSubscribePermissions'>,
+  config?: Pick<TopicConfig, 'isExternal' | 'externalAppsWithSubscribePermissions'>,
 ): TopicConfig =>
   ({
     ...config,
+    topicName: 'default-topic',
     service: '',
     owner: '',
     queues: {},
@@ -166,30 +167,23 @@ describe('utils', () => {
   })
 
   describe('buildQueueUrlsWithSubscribePermissionsPrefix', () => {
-    it('should throw an error if app name cannot be extracted', () => {
-      expect(() =>
-        buildQueueUrlsWithSubscribePermissionsPrefix(
-          buildTopicConfig({ topicName: '   ' }),
-          buildAwsConfig(),
-        ),
-      ).toThrowErrorMatchingInlineSnapshot('[Error: Invalid topic name    ]')
-    })
-
     it('correctly composes ARN for typical valid topic', () => {
       const result = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app-' }),
+        buildTopicConfig(),
+        'my-app',
         buildAwsConfig(),
       )
       expect(result).toMatchInlineSnapshot(`
         [
-          "arn:aws:sqs:*:*:my_app-*",
+          "arn:aws:sqs:*:*:my-app-*",
         ]
       `)
     })
 
     it('should be undefined for external topics', () => {
       const result = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app-', isExternal: true }),
+        buildTopicConfig({ isExternal: true }),
+        'app',
         buildAwsConfig(),
       )
       expect(result).toBeUndefined()
@@ -197,65 +191,45 @@ describe('utils', () => {
 
     it('ensures wildcard is always present', () => {
       const result = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app' }),
+        buildTopicConfig(),
+        'my-app',
         buildAwsConfig(),
       )
       expect(result).toMatchInlineSnapshot(`
         [
-          "arn:aws:sqs:*:*:my_app-*",
+          "arn:aws:sqs:*:*:my-app-*",
         ]
       `)
     })
 
     it('should use prefix awsConfig', () => {
       const resourcePrefix = 'dev'
-      const result1 = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app-' }),
+      const result = buildQueueUrlsWithSubscribePermissionsPrefix(
+        buildTopicConfig(),
+        'my-app',
         buildAwsConfig(resourcePrefix),
       )
-      expect(result1).toMatchInlineSnapshot(`
+      expect(result).toMatchInlineSnapshot(`
         [
-          "arn:aws:sqs:*:*:dev_my_app-*",
-        ]
-      `)
-
-      const result2 = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app' }),
-        buildAwsConfig(resourcePrefix),
-      )
-      expect(result2).toMatchInlineSnapshot(`
-        [
-          "arn:aws:sqs:*:*:dev_my_app-*",
+          "arn:aws:sqs:*:*:dev_my-app-*",
         ]
       `)
     })
 
     it('should use externalAppsWithSubscribePermissions', () => {
       const resourcePrefix = 'dev'
-      const externalAppsWithSubscribePermissions = ['my_test1', 'my_test2-', 'my_test3-*']
-      const result1 = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app-', externalAppsWithSubscribePermissions }),
+      const externalAppsWithSubscribePermissions = ['my-test1', 'my-test2-', 'my-test3-*']
+      const result = buildQueueUrlsWithSubscribePermissionsPrefix(
+        buildTopicConfig({ externalAppsWithSubscribePermissions }),
+        'my-app-',
         buildAwsConfig(resourcePrefix),
       )
-      expect(result1).toMatchInlineSnapshot(`
+      expect(result).toMatchInlineSnapshot(`
         [
-          "arn:aws:sqs:*:*:dev_my_app-*",
-          "arn:aws:sqs:*:*:dev_my_test1-*",
-          "arn:aws:sqs:*:*:dev_my_test2-*",
-          "arn:aws:sqs:*:*:dev_my_test3-*",
-        ]
-      `)
-
-      const result2 = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app', externalAppsWithSubscribePermissions }),
-        buildAwsConfig(resourcePrefix),
-      )
-      expect(result2).toMatchInlineSnapshot(`
-        [
-          "arn:aws:sqs:*:*:dev_my_app-*",
-          "arn:aws:sqs:*:*:dev_my_test1-*",
-          "arn:aws:sqs:*:*:dev_my_test2-*",
-          "arn:aws:sqs:*:*:dev_my_test3-*",
+          "arn:aws:sqs:*:*:dev_my-app-*",
+          "arn:aws:sqs:*:*:dev_my-test1-*",
+          "arn:aws:sqs:*:*:dev_my-test2-*",
+          "arn:aws:sqs:*:*:dev_my-test3-*",
         ]
       `)
     })
