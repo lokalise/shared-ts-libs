@@ -38,7 +38,7 @@
         "@lokalise/background-jobs-common": ">=12.6.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.3.6",
+        "@biomejs/biome": "^2.3.7",
         "@lokalise/background-jobs-common": "^14.0.0",
         "@lokalise/biome-config": "^3.1.0",
         "@types/node": "^24.0.12",
