@@ -100,11 +100,11 @@
             "linter": {
                 "rules": {
                     "style": {
-                        "noNonNullAssertion": "off",
-                        "noNonNullAssertedOptionalChain": "off"
+                        "noNonNullAssertion": "off"
                     },
                     "suspicious": {
-                        "noExplicitAny": "off"
+                        "noExplicitAny": "off",
+                        "noNonNullAssertedOptionalChain": "off"
                     }
                 }
             }
