@@ -1,7 +1,6 @@
 type TransformToKebabCaseInputType = Record<string, unknown> | null | undefined
-type TransformToKebabCaseReturnType<Input, Output> = Input extends Record<string, unknown>
-  ? Output
-  : Input
+type TransformToKebabCaseReturnType<Input, Output> =
+  Input extends Record<string, unknown> ? Output : Input
 
 /**
  * Transforms the keys of an object or array of objects from camelCase or snake_case to kebab-case.
