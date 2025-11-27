@@ -25,6 +25,12 @@ import {
   type BaseAuthInfo 
 } from '@lokalise/auth'
 
+// Define your JWT payload type
+type MyJwtPayload = {
+  userId: string
+  email: string
+}
+
 // Define your authentication info type
 type MyAuthInfo = BaseAuthInfo<'my-provider'> & {
   userId: string
@@ -33,9 +39,11 @@ type MyAuthInfo = BaseAuthInfo<'my-provider'> & {
 
 // Create a custom authenticator
 class MyAuthenticator extends JwtBasedAuthenticator<MyAuthInfo> {
-  protected internalAuthenticate(reqContext, jwtPayload, rawToken) {
+  protected internalAuthenticate(reqContext, jwt, request) {
+    const payload = jwt.payload as MyJwtPayload
+
     // Validate the JWT payload and extract user information
-    if (!jwtPayload.sub || !jwtPayload.email) {
+    if (!payload.userId || !payload.email) {
       return { success: false, failure: 'INVALID_CREDENTIALS' }
     }
 
@@ -43,9 +51,9 @@ class MyAuthenticator extends JwtBasedAuthenticator<MyAuthInfo> {
       success: true,
       authInfo: {
         authType: 'my-provider',
-        rawToken,
-        userId: jwtPayload.sub,
-        email: jwtPayload.email
+        token: jwt.token,
+        userId: payload.sub,
+        email: payload.email
       }
     }
   }
@@ -118,7 +126,7 @@ Base interface for authentication information:
 ```typescript
 type BaseAuthInfo<AuthType extends string> = {
   authType: AuthType
-  rawToken: string
+  token: string
 }
 ```
 
@@ -150,13 +158,11 @@ Abstract base class for JWT-based authentication:
 
 ```typescript
 abstract class JwtBasedAuthenticator<AuthInfo extends BaseAuthInfo<string>> {
-  constructor(tokenDecoder: TokenDecoder, tokenHeader?: string)
-  
   // Must be implemented by subclasses
   protected abstract internalAuthenticate(
     reqContext: RequestContext,
-    jwtPayload: object,
-    rawToken: string
+    jwt: ValidatedJwt,
+    request: FastifyRequest
   ): AuthResult<AuthInfo> | Promise<AuthResult<AuthInfo>>
 }
 ```
@@ -165,11 +171,6 @@ abstract class JwtBasedAuthenticator<AuthInfo extends BaseAuthInfo<string>> {
 
 Chains multiple authenticators, trying each until one succeeds:
 
-```typescript
-class AuthenticatorChain<AuthInfo extends BaseAuthInfo<string>> {
-  constructor(authentators: Authenticator<AuthInfo>[])
-}
-```
 
 ### Token Decoders
 
