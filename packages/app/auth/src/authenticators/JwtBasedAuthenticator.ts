@@ -3,6 +3,11 @@ import type { FastifyRequest } from 'fastify'
 import type { TokenDecoder } from '../token-decoders/index.ts'
 import type { Authenticator, AuthResult, BaseAuthInfo } from './Authenticator.ts'
 
+export type ValidatedJwt = {
+  payload: object
+  token: string
+}
+
 /**
  * Abstract base class for JWT-based authenticators.
  */
@@ -27,7 +32,9 @@ export abstract class JwtBasedAuthenticator<AuthInfo extends BaseAuthInfo<string
     }
 
     return this.tokenDecoder.decode(request.reqContext, token).then(({ result, error }) => {
-      if (result) return this.internalAuthenticate(request.reqContext, result, token)
+      if (result) {
+        return this.internalAuthenticate(request.reqContext, { payload: result, token }, request)
+      }
 
       logger.warn({ origin: this.constructor.name, error }, 'Token validation failed')
       switch (error) {
@@ -50,14 +57,14 @@ export abstract class JwtBasedAuthenticator<AuthInfo extends BaseAuthInfo<string
    * Must be implemented by subclasses to validate the payload and construct the authentication result.
    *
    * @param reqContext - The request context containing request-scoped data and logger.
-   * @param jwtPayload - The decoded JWT payload.
-   * @param rawToken - The original JWT token string.
+   * @param jwt - The validated JWT containing both the decoded payload and the original token string.
+   * @param request - The Fastify request object for accessing additional request data.
    * @returns The authentication result, either success with auth info or failure.
    */
   protected abstract internalAuthenticate(
     reqContext: RequestContext,
-    jwtPayload: object,
-    rawToken: string,
+    jwt: ValidatedJwt,
+    request: FastifyRequest,
   ): AuthResult<AuthInfo> | Promise<AuthResult<AuthInfo>>
 
   private extractBearerToken(request: FastifyRequest): string | null {
