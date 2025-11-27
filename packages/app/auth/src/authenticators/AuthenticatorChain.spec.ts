@@ -34,7 +34,7 @@ describe('AuthenticatorChain', () => {
       // Given
       const authInfo: AuthInfo = {
         authType: 'provider-1',
-        rawToken: 'raw-token',
+        token: 'raw-token',
       }
 
       const firstAuth = new MockAuthenticator({ success: true, authInfo })
@@ -53,7 +53,7 @@ describe('AuthenticatorChain', () => {
       // Given
       const authInfo: AuthInfo = {
         authType: 'provider-2',
-        rawToken: 'raw-token',
+        token: 'raw-token',
       }
 
       const firstAuth = new MockAuthenticator({ success: false, failure: 'INVALID_CREDENTIALS' })

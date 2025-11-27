@@ -34,7 +34,7 @@ describe('createAuthenticationPreHandler', () => {
       // Given
       const authInfo: AuthInfo = {
         authType: 'test-provider',
-        rawToken: 'test-token',
+        token: 'test-token',
       }
       const authenticator = new MockAuthenticator({ success: true, authInfo })
       const preHandler = createAuthenticationPreHandler(authenticator)
