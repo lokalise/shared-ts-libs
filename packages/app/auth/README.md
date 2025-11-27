@@ -52,7 +52,7 @@ class MyAuthenticator extends JwtBasedAuthenticator<MyAuthInfo> {
       authInfo: {
         authType: 'my-provider',
         token: jwt.token,
-        userId: payload.sub,
+        userId: payload.userId,
         email: payload.email
       }
     }
