@@ -1,4 +1,5 @@
 import type { RequestContext } from '@lokalise/fastify-extras'
+import type { FastifyRequest } from 'fastify'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMockFastifyRequest } from '../../tests/createMockFastifyRequest.ts'
 import { createToken } from '../../tests/createToken.ts'
@@ -9,7 +10,7 @@ import {
   type TokenValidationError,
 } from '../token-decoders/index.ts'
 import type { AuthFailureReason, AuthResult, BaseAuthInfo } from './Authenticator.ts'
-import { JwtBasedAuthenticator } from './JwtBasedAuthenticator.ts'
+import { JwtBasedAuthenticator, type ValidatedJwt } from './JwtBasedAuthenticator.ts'
 
 type AuthInfo = BaseAuthInfo<'test-provider'>
 
@@ -23,15 +24,17 @@ class TestJwtAuthenticator extends JwtBasedAuthenticator<AuthInfo> {
 
   protected override internalAuthenticate(
     _reqContext: RequestContext,
-    _jwtPayload: object,
-    rawToken: string,
+    jwt: ValidatedJwt,
+    request: FastifyRequest,
   ): AuthResult<AuthInfo> | Promise<AuthResult<AuthInfo>> {
     if (!this.error) {
       return {
         success: true,
-        authInfo: { authType: 'test-provider', rawToken },
+        authInfo: { authType: 'test-provider', token: jwt.token },
       }
     }
+
+    expect(request).toBeDefined()
 
     return { success: false, failure: this.error }
   }
@@ -60,7 +63,7 @@ describe('JwtBasedAuthenticator', () => {
         // Then
         expect(result).toEqual({
           success: true,
-          authInfo: { authType: 'test-provider', rawToken: token },
+          authInfo: { authType: 'test-provider', token: token },
         })
       })
 
@@ -80,7 +83,7 @@ describe('JwtBasedAuthenticator', () => {
         // Then
         expect(result).toEqual({
           success: true,
-          authInfo: { authType: 'test-provider', rawToken: token },
+          authInfo: { authType: 'test-provider', token: token },
         })
       })
     })
