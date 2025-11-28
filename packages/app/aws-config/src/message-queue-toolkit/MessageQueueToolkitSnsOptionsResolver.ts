@@ -13,7 +13,7 @@ import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
 import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRoutingConfig.ts'
 import { getSnsTags } from '../tags/index.ts'
 import { AbstractMessageQueueToolkitOptionsResolver } from './AbstractMessageQueueToolkitOptionsResolver.ts'
-import { MAX_TOPIC_NAME_LENGTH, MESSAGE_TYPE_FIELD } from './constants.ts'
+import { MESSAGE_TYPE_FIELD } from './constants.ts'
 import type {
   MessageQueueToolkitOptionsResolverConfig,
   ResolveConsumerOptionsParams,
@@ -24,7 +24,7 @@ import type {
 import {
   buildQueueUrlsWithSubscribePermissionsPrefix,
   buildTopicArnsWithPublishPermissionsPrefix,
-  TOPIC_NAME_REGEX,
+  validateTopicsConfig,
 } from './utils.ts'
 
 type ResolveTopicResult =
@@ -54,33 +54,16 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
 
   constructor(routingConfig: EventRoutingConfig, config: MessageQueueToolkitOptionsResolverConfig) {
     super(config)
+    if (config.validateNamePatterns) {
+      validateTopicsConfig(Object.values(routingConfig), config.project)
+    }
+
     this.routingConfig = groupByUnique(
       Object.values(routingConfig).map((topic) => ({
         ...topic,
         queues: groupByUnique(Object.values(topic.queues), 'queueName'),
       })),
       'topicName',
-    )
-    this.validateNamePatterns()
-  }
-
-  private validateNamePatterns(): void {
-    if (!this.config.validateNamePatterns) return
-
-    const topicNames = Object.keys(this.routingConfig)
-    for (const topicName of topicNames) {
-      if (topicName.length > MAX_TOPIC_NAME_LENGTH) {
-        throw new Error(
-          `Topic name too long: ${topicName}. Max allowed length is ${MAX_TOPIC_NAME_LENGTH}, received ${topicName.length}`,
-        )
-      }
-      if (!TOPIC_NAME_REGEX.test(topicName)) throw new Error(`Invalid topic name: ${topicName}`)
-    }
-
-    this.validateQueueNames(
-      Object.values(this.routingConfig).flatMap(({ queues }) =>
-        Object.values(queues).map((queue) => queue.queueName),
-      ),
     )
   }
 
