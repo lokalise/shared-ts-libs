@@ -28,7 +28,7 @@ export const validateTopicsConfig = (topicsConfig: TopicConfig[], project: strin
     }
 
     const topicNameWithoutProjectPrefix = topicName.replace(new RegExp(`^${project}`), '')
-    if (!TOPIC_NAME_REGEX_new.test(topicNameWithoutProjectPrefix)) {
+    if (!TOPIC_NAME_REGEX.test(topicNameWithoutProjectPrefix)) {
       throw new Error(`Invalid topic name: ${topicName}`)
     }
 
@@ -57,7 +57,7 @@ export const validateQueueConfig = (queueConfigs: QueueConfig[], project: string
     }
 
     const queueNameWithoutProjectPrefix = queueName.replace(new RegExp(`^${project}`), '')
-    if (!QUEUE_NAME_REGEX_new.test(queueNameWithoutProjectPrefix)) {
+    if (!QUEUE_NAME_REGEX.test(queueNameWithoutProjectPrefix)) {
       throw new Error(`Invalid queue name: ${queueName}`)
     }
   }
@@ -78,7 +78,7 @@ export const validateQueueConfig = (queueConfigs: QueueConfig[], project: string
  * Valid examples: `-module`, `-module_name`, `_flow_name`, `-user_service`
  * Invalid examples: `module_name` (missing separator), `-moduleName` (uppercase), `-module-name` (hyphen instead of underscore)
  */
-const TOPIC_NAME_REGEX_new = /^[-_][a-z]+(_[a-z]+)*$/
+const TOPIC_NAME_REGEX = /^[-_][a-z]+(_[a-z]+)*$/
 
 /**
  * Regex to validate that queue names are following Lokalise convention.
@@ -96,7 +96,7 @@ const TOPIC_NAME_REGEX_new = /^[-_][a-z]+(_[a-z]+)*$/
  * Valid examples: `-flow_name-service_name`, `-service-module`, `-user_service-handler-processor`
  * Invalid examples: `flow-service` (missing initial hyphen), `-flow-Service` (uppercase), `-flow` (missing service segment)
  */
-const QUEUE_NAME_REGEX_new = /^-[a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*(?:-[a-z]+(_[a-z]+)*)?$/
+const QUEUE_NAME_REGEX = /^-[a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*(?:-[a-z]+(_[a-z]+)*)?$/
 
 export const buildTopicArnsWithPublishPermissionsPrefix = (
   project: string,
