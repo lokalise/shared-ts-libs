@@ -13,7 +13,6 @@ import {
   DLQ_MESSAGE_RETENTION_PERIOD,
   DLQ_SUFFIX,
   HEARTBEAT_INTERVAL,
-  MAX_QUEUE_NAME_LENGTH,
   MAX_RETRY_DURATION,
   MESSAGE_TYPE_FIELD,
   VISIBILITY_TIMEOUT,
@@ -26,7 +25,6 @@ import type {
   ResolvedPublisherOptions,
   ResolvePublisherOptionsParams,
 } from './types.ts'
-import { QUEUE_NAME_REGEX } from './utils.ts'
 
 type ResolvedQueueResult =
   | {
@@ -43,21 +41,6 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
 
   constructor(config: MessageQueueToolkitOptionsResolverConfig) {
     this.config = config
-  }
-
-  protected validateQueueNames(queueNames: string[]): void {
-    if (!this.config.validateNamePatterns) return
-
-    for (const queueName of queueNames) {
-      if (queueName.length > MAX_QUEUE_NAME_LENGTH) {
-        throw new Error(
-          `Queue name too long: ${queueName}. Max allowed length is ${MAX_QUEUE_NAME_LENGTH}, received ${queueName.length}`,
-        )
-      }
-      if (!QUEUE_NAME_REGEX.test(queueName)) {
-        throw new Error(`Invalid queue name: ${queueName}`)
-      }
-    }
   }
 
   protected commonPublisherOptions<MessagePayload extends ConsumerBaseMessageType>(
