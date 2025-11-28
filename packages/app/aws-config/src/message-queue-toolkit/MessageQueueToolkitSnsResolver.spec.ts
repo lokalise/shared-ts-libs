@@ -88,7 +88,9 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             system: 'test system',
             project,
           }),
-      ).toThrowErrorMatchingInlineSnapshot(`[Error: Topic name must start with project name 'test-project': invalid]`)
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Error: Topic name must start with project name 'test-project': invalid]`,
+      )
 
       expect(
         () =>
@@ -123,7 +125,9 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             system: 'test system',
             project,
           }),
-      ).toThrowErrorMatchingInlineSnapshot(`[Error: Topic name must start with project name 'test-project': valid-topic]`)
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Error: Topic name must start with project name 'test-project': valid-topic]`,
+      )
       expect(
         () =>
           new MessageQueueToolkitSnsOptionsResolver(config, {
@@ -424,7 +428,9 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             handlers: [],
           },
         ),
-      ).toThrowErrorMatchingInlineSnapshot(`[Error: Queue test-project-second_entity-service not found]`)
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Error: Queue test-project-second_entity-service not found]`,
+      )
     })
 
     it('should properly use handlers', () => {
