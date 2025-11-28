@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/websockets-common",
-    "version": "4.1.1",
+    "version": "4.2.0",
     "type": "module",
     "license": "Apache-2.0",
     "main": "./dist/index.js",
