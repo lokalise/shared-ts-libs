@@ -32,11 +32,11 @@ export const QUEUE_NAME_REGEX =
   /^[a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*(?:-[a-z]+(_[a-z]+)*)?(?:-[a-z]+(_[a-z]+)*)?$/
 
 export const buildTopicArnsWithPublishPermissionsPrefix = (
-  topicConfig: TopicConfig,
+  project: string,
   awsConfig: AwsConfig,
 ): string => {
   return snsPrefixTransformer(
-    applyAwsResourcePrefix(`${extractAppNameFromTopic(topicConfig)}-`, awsConfig),
+    applyAwsResourcePrefix(project.endsWith('-') ? project : `${project}-`, awsConfig),
   )
 }
 

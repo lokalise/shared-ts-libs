@@ -125,41 +125,26 @@ describe('utils', () => {
   })
 
   describe('buildTopicArnsWithPublishPermissionsPrefix', () => {
-    it('should throw an error if app name cannot be extracted', () => {
-      expect(() =>
-        buildTopicArnsWithPublishPermissionsPrefix(
-          buildTopicConfig({ topicName: '   ' }),
-          buildAwsConfig(),
-        ),
-      ).toThrowErrorMatchingInlineSnapshot('[Error: Invalid topic name    ]')
-    })
-
-    it('correctly composes ARN for typical valid topic', () => {
-      const result = buildTopicArnsWithPublishPermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app-' }),
-        buildAwsConfig(),
-      )
+    it('correctly composes ARN', () => {
+      const result = buildTopicArnsWithPublishPermissionsPrefix('my_app-', buildAwsConfig())
       expect(result).toMatchInlineSnapshot(`"arn:aws:sns:*:*:my_app-*"`)
     })
 
     it('ensures wildcard is always present', () => {
-      const result = buildTopicArnsWithPublishPermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app' }),
-        buildAwsConfig(),
-      )
+      const result = buildTopicArnsWithPublishPermissionsPrefix('my_app', buildAwsConfig())
       expect(result).toMatchInlineSnapshot(`"arn:aws:sns:*:*:my_app-*"`)
     })
 
     it('should use prefix from awsConfig', () => {
       const resourcePrefix = 'dev'
       const result1 = buildTopicArnsWithPublishPermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app-' }),
+        'my_app-',
         buildAwsConfig(resourcePrefix),
       )
       expect(result1).toMatchInlineSnapshot(`"arn:aws:sns:*:*:dev_my_app-*"`)
 
       const result2 = buildTopicArnsWithPublishPermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app' }),
+        'my_app',
         buildAwsConfig(resourcePrefix),
       )
       expect(result2).toMatchInlineSnapshot(`"arn:aws:sns:*:*:dev_my_app-*"`)
