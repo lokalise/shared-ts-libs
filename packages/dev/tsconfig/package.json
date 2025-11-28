@@ -30,7 +30,7 @@
         "postversion": "biome check --write package.json"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.3.6",
+        "@biomejs/biome": "^2.3.7",
         "@lokalise/biome-config": "^3.1.0"
     }
 }

@@ -6,7 +6,7 @@ import type { FastifyRequest } from 'fastify'
 export type BaseAuthInfo<AuthType extends string> = {
   authType: AuthType
   /** The raw authentication token. May be forwarded to downstream services. */
-  rawToken: string
+  token: string
 }
 
 /**
