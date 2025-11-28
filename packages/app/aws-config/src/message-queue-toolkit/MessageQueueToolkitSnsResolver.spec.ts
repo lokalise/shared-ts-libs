@@ -249,7 +249,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               "allowedSourceOwner": "test allowedSourceOwner",
               "forceTagUpdate": true,
               "queueUrlsWithSubscribePermissionsPrefix": [
-                "arn:aws:sqs:*:*:prefix_test-*",
+                "arn:aws:sqs:*:*:prefix_my-project-*",
               ],
               "topic": {
                 "Attributes": {
@@ -306,7 +306,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               "allowedSourceOwner": "test allowedSourceOwner",
               "forceTagUpdate": undefined,
               "queueUrlsWithSubscribePermissionsPrefix": [
-                "arn:aws:sqs:*:*:test-*",
+                "arn:aws:sqs:*:*:my-project-*",
               ],
               "topic": {
                 "Attributes": {
@@ -500,7 +500,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                 },
               },
               "queueUrlsWithSubscribePermissionsPrefix": [
-                "arn:aws:sqs:*:*:prefix_test-*",
+                "arn:aws:sqs:*:*:prefix_my-project-*",
               ],
               "topic": {
                 "Attributes": {
@@ -534,7 +534,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   },
                 ],
               },
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-*",
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_my-project-*",
               "updateAttributesIfExists": true,
             },
             "deadLetterQueue": undefined,
@@ -591,7 +591,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                 },
               },
               "queueUrlsWithSubscribePermissionsPrefix": [
-                "arn:aws:sqs:*:*:test-*",
+                "arn:aws:sqs:*:*:my-project-*",
               ],
               "topic": {
                 "Attributes": {
@@ -625,7 +625,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   },
                 ],
               },
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:test-*",
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:my-project-*",
               "updateAttributesIfExists": true,
             },
             "deadLetterQueue": {
@@ -716,7 +716,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               },
               "queueUrlsWithSubscribePermissionsPrefix": undefined,
               "topic": undefined,
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-*",
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_my-project-*",
               "updateAttributesIfExists": true,
             },
             "deadLetterQueue": undefined,
@@ -776,7 +776,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               },
               "queueUrlsWithSubscribePermissionsPrefix": undefined,
               "topic": undefined,
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:test-*",
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:my-project-*",
               "updateAttributesIfExists": true,
             },
             "deadLetterQueue": {

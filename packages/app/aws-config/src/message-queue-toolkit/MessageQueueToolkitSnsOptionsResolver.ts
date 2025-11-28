@@ -106,6 +106,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
             topic: resolvedTopic.createCommand,
             queueUrlsWithSubscribePermissionsPrefix: buildQueueUrlsWithSubscribePermissionsPrefix(
               topicConfig,
+              this.config.project,
               params.awsConfig,
             ),
             allowedSourceOwner: params.awsConfig.allowedSourceOwner,
@@ -154,11 +155,12 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
         topic: resolvedTopic.createCommand,
         queue: queueCreationConfig.queue,
         topicArnsWithPublishPermissionsPrefix: buildTopicArnsWithPublishPermissionsPrefix(
-          topicConfig,
+          this.config.project,
           params.awsConfig,
         ),
         queueUrlsWithSubscribePermissionsPrefix: buildQueueUrlsWithSubscribePermissionsPrefix(
           topicConfig,
+          this.config.project,
           params.awsConfig,
         ),
         allowedSourceOwner: params.awsConfig.allowedSourceOwner,
