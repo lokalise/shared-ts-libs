@@ -102,6 +102,7 @@ describe('utils', () => {
         { queueName: 'my-project-user_service-handler' },
         { queueName: 'my-project-flow-service-module' },
         { queueName: 'my-project-user_service-handler-processor' },
+        { queueName: 'my-project_legacy-service' },
       ] as QueueConfig[]
 
       expect(() => validateQueueConfig(validQueues, project)).not.toThrow()

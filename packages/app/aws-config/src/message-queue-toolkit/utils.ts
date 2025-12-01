@@ -67,8 +67,8 @@ export const validateQueueConfig = (queueConfigs: QueueConfig[], project: string
  * Regex to validate that topics names are following Lokalise convention.
  * pattern: <(-|_)><moduleOrFlowName>
  *
- * Note: It should start with `-` but allowing `_` to support existing topics. This won't be allowed in future versions.
  * Note: Project name is validated separately. This regex validates the part after removing the project prefix.
+ * Note: It should start with `-` but allowing `_` to support existing topics. This won't be allowed in future versions.
  *
  * Regex explanation (validates the part after removing the project prefix):
  *  [-_]          -> Must start with a hyphen or underscore (single character)
@@ -82,21 +82,22 @@ const TOPIC_NAME_REGEX = /^[-_][a-z]+(_[a-z]+)*$/
 
 /**
  * Regex to validate that queue names are following Lokalise convention.
- * pattern: -<flow|model>_name-<service|module>_name(-<module_name>)?
+ * pattern: <[-|_]>-<flow|model>_name-<service|module>_name(-<module_name>)?
  *
  * Note: Project name is validated separately. This regex validates the part after removing the project prefix.
+ * Note: It should start with `-` but allowing `_` to support existing topics. This won't be allowed in future versions.
  *
  * Regex explanation (validates the part after removing the project prefix):
- * -                    -                       -> Must start with hyphen
+ * [-_]                                         -> Must start with hyphen or underscore
  * flow or model name:  [a-z]+(_[a-z]+)*        -> One or more lowercase letters, optionally separated by underscores
- * -                    -                       -> Hyphen
+ * -                                            -> Hyphen
  * service or module:   [a-z]+(_[a-z]+)*        -> One or more lowercase letters, optionally separated by underscores
  * module_name:         (?:-[a-z]+(_[a-z]+)*)?  -> Optional: hyphen followed by one or more lowercase letters, optionally separated by underscores
  *
  * Valid examples: `-flow_name-service_name`, `-service-module`, `-user_service-handler-processor`
  * Invalid examples: `flow-service` (missing initial hyphen), `-flow-Service` (uppercase), `-flow` (missing service segment)
  */
-const QUEUE_NAME_REGEX = /^-[a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*(?:-[a-z]+(_[a-z]+)*)?$/
+const QUEUE_NAME_REGEX = /^[-_][a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*(?:-[a-z]+(_[a-z]+)*)?$/
 
 export const buildTopicArnsWithPublishPermissionsPrefix = (
   project: string,
