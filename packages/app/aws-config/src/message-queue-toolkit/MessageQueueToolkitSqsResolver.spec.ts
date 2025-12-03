@@ -18,7 +18,7 @@ const config = {
 
 const buildAwsConfig = (awsConfig?: Partial<AwsConfig>): AwsConfig => ({
   kmsKeyId: 'test kmsKeyId',
-  allowedSourceOwner: 'test allowedSourceOwner',
+  allowedSourceOwner: '123456',
   region: 'test region',
   ...awsConfig,
 })
@@ -158,7 +158,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                     "sqs:GetQueueUrl",
                   ],
                   "Effect": "Allow",
-                  "Principal": "*",
+                  "Principal": "123456",
                 },
               },
               "queue": {
@@ -190,6 +190,54 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       it('should work using only required props', () => {
         const result = resolver.resolvePublisherOptions(queueName, {
           awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "creationConfig": {
+              "forceTagUpdate": undefined,
+              "policyConfig": {
+                "resource": Symbol(current_queue),
+                "statements": {
+                  "Action": [
+                    "sqs:SendMessage",
+                    "sqs:GetQueueAttributes",
+                    "sqs:GetQueueUrl",
+                  ],
+                  "Effect": "Allow",
+                  "Principal": "123456",
+                },
+              },
+              "queue": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                  "VisibilityTimeout": "60",
+                },
+                "QueueName": "test-mqt-queue_first",
+                "tags": {
+                  "env": "dev",
+                  "lok-cost-service": "service 1",
+                  "lok-cost-system": "my-system",
+                  "lok-owner": "team 1",
+                  "project": "my-project",
+                  "service": "sqs",
+                },
+              },
+              "updateAttributesIfExists": true,
+            },
+            "handlerSpy": undefined,
+            "locatorConfig": undefined,
+            "logMessages": undefined,
+            "messageSchemas": [],
+            "messageTypeField": "type",
+          }
+        `)
+      })
+
+      it('should use default policy Principal if allowedSourceOwner is not set', () => {
+        const result = resolver.resolvePublisherOptions(queueName, {
+          awsConfig: buildAwsConfig({ allowedSourceOwner: undefined }),
           messageSchemas: [],
         })
 
@@ -330,7 +378,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                     "sqs:GetQueueUrl",
                   ],
                   "Effect": "Allow",
-                  "Principal": "*",
+                  "Principal": "123456",
                 },
               },
               "queue": {
@@ -368,6 +416,87 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
         const result = resolver.resolveConsumerOptions(queueName, {
           logger,
           awsConfig: buildAwsConfig(),
+          handlers: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "concurrentConsumersAmount": undefined,
+            "consumerOverrides": {
+              "batchSize": undefined,
+              "heartbeatInterval": 20,
+            },
+            "creationConfig": {
+              "forceTagUpdate": undefined,
+              "policyConfig": {
+                "resource": Symbol(current_queue),
+                "statements": {
+                  "Action": [
+                    "sqs:SendMessage",
+                    "sqs:GetQueueAttributes",
+                    "sqs:GetQueueUrl",
+                  ],
+                  "Effect": "Allow",
+                  "Principal": "123456",
+                },
+              },
+              "queue": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                  "VisibilityTimeout": "60",
+                },
+                "QueueName": "test-mqt-queue_first",
+                "tags": {
+                  "env": "dev",
+                  "lok-cost-service": "service 1",
+                  "lok-cost-system": "my-system",
+                  "lok-owner": "team 1",
+                  "project": "my-project",
+                  "service": "sqs",
+                },
+              },
+              "updateAttributesIfExists": true,
+            },
+            "deadLetterQueue": {
+              "creationConfig": {
+                "queue": {
+                  "Attributes": {
+                    "KmsMasterKeyId": "test kmsKeyId",
+                    "MessageRetentionPeriod": "604800",
+                  },
+                  "QueueName": "test-mqt-queue_first-dlq",
+                  "tags": {
+                    "env": "dev",
+                    "lok-cost-service": "service 1",
+                    "lok-cost-system": "my-system",
+                    "lok-owner": "team 1",
+                    "project": "my-project",
+                    "service": "sqs",
+                  },
+                },
+                "updateAttributesIfExists": true,
+              },
+              "redrivePolicy": {
+                "maxReceiveCount": 5,
+              },
+            },
+            "deletionConfig": {
+              "deleteIfExists": undefined,
+            },
+            "handlerSpy": undefined,
+            "handlers": [],
+            "locatorConfig": undefined,
+            "logMessages": undefined,
+            "maxRetryDuration": 172800,
+            "messageTypeField": "type",
+          }
+        `)
+      })
+
+      it('should use default policy Principal if allowedSourceOwner is not set', () => {
+        const result = resolver.resolveConsumerOptions(queueName, {
+          logger,
+          awsConfig: buildAwsConfig({ allowedSourceOwner: undefined }),
           handlers: [],
         })
 
