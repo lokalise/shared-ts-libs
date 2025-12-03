@@ -85,7 +85,9 @@ export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueT
       resource: SQS_RESOURCE_CURRENT_QUEUE,
       statements: {
         Effect: 'Allow',
-        Principal: awsConfig.allowedSourceOwner ?? '*',
+        Principal: awsConfig.allowedSourceOwner?.trim().length
+          ? awsConfig.allowedSourceOwner?.trim()
+          : '*',
         Action: ['sqs:SendMessage', 'sqs:GetQueueAttributes', 'sqs:GetQueueUrl'],
       },
     }

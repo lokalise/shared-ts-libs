@@ -58,7 +58,7 @@ describe('awsConfig', () => {
       expect(config).toEqual({
         region: DEFAULT_REGION,
         kmsKeyId: KMS_KEY_ID_LITERAL,
-        allowedSourceOwner: '',
+        allowedSourceOwner: undefined,
         endpoint: undefined,
         resourcePrefix: undefined,
         credentials: expect.any(Function),
@@ -76,7 +76,7 @@ describe('awsConfig', () => {
       expect(config).toEqual({
         region: DEFAULT_REGION,
         kmsKeyId: KMS_KEY_ID_LITERAL,
-        allowedSourceOwner: '',
+        allowedSourceOwner: undefined,
         endpoint: undefined,
         resourcePrefix: undefined,
         credentials: expect.any(Function),
@@ -94,7 +94,7 @@ describe('awsConfig', () => {
       expect(config).toEqual({
         region: DEFAULT_REGION,
         kmsKeyId: KMS_KEY_ID_LITERAL,
-        allowedSourceOwner: '',
+        allowedSourceOwner: undefined,
         endpoint: undefined,
         resourcePrefix: undefined,
         credentials: expect.any(Function),
