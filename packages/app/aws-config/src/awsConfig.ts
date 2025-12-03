@@ -20,7 +20,7 @@ export type AwsConfig = {
   /** The ID of the KMS (Key Management Service) key used for encryption or decryption */
   kmsKeyId: string
   /** AWS account ID or identifier for the permitted source of requests */
-  allowedSourceOwner: string
+  allowedSourceOwner?: string
   /** Custom endpoint URL to override the default AWS service endpoint */
   endpoint?: string
   /** String to prefix AWS resource names */
@@ -49,7 +49,7 @@ const generateAwsConfig = (configScope: ConfigScope): AwsConfig => {
   return {
     region: configScope.getMandatory('AWS_REGION'),
     kmsKeyId: configScope.getOptionalNullable('AWS_KMS_KEY_ID', ''),
-    allowedSourceOwner: configScope.getOptional('AWS_ALLOWED_SOURCE_OWNER', ''),
+    allowedSourceOwner: configScope.getOptionalNullable('AWS_ALLOWED_SOURCE_OWNER', undefined),
     endpoint: configScope.getOptionalNullable('AWS_ENDPOINT', undefined),
     resourcePrefix: configScope.getOptionalNullable('AWS_RESOURCE_PREFIX', undefined),
     credentials: resolveCredentials(configScope),
