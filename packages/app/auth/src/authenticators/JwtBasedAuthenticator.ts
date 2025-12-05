@@ -36,7 +36,7 @@ export abstract class JwtBasedAuthenticator<AuthInfo extends BaseAuthInfo<string
         return this.internalAuthenticate(request.reqContext, { payload: result, token }, request)
       }
 
-      logger.warn({ origin: this.constructor.name, error }, 'Token validation failed')
+      logger.debug({ origin: this.constructor.name, error }, 'Token validation failed')
       switch (error) {
         case 'EXPIRED_TOKEN':
           return {
