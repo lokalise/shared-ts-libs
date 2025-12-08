@@ -1,9 +1,10 @@
 import { setTimeout } from 'node:timers/promises'
 import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
+import { getLocal } from 'mockttp'
 import type { Interceptable } from 'undici'
 import { Client, MockAgent, setGlobalDispatcher } from 'undici'
 import { createDefaultRetryResolver } from 'undici-retry'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod/v4'
 import { JSON_HEADERS } from './constants.ts'
 import {
@@ -3148,6 +3149,20 @@ describe('httpClient', () => {
     })
 
     describe('Client-level and request-level timeout configuration', () => {
+      const mockServer = getLocal()
+
+      beforeAll(async () => {
+        await mockServer.start()
+      })
+
+      beforeEach(() => {
+        mockServer.reset()
+      })
+
+      afterAll(async () => {
+        await mockServer.stop()
+      })
+
       it('buildClient accepts custom bodyTimeout and headersTimeout', () => {
         const clientWithCustomTimeout = buildClient(baseUrl, {
           bodyTimeout: 100,
@@ -3157,192 +3172,191 @@ describe('httpClient', () => {
         expect(clientWithCustomTimeout).toBeInstanceOf(Client)
       })
 
-      it('Client-level timeout is honored when no request-level timeout provided', async () => {
-        const clientWithCustomTimeout = buildClient(baseUrl, {
+      it('Default client-level timeout (30s) is used when no request-level timeout provided', async () => {
+        const clientWithDefaultTimeout = buildClient(mockServer.url)
+
+        await mockServer.forGet('/timeout-client-level-default').thenCallback(async () => {
+          // Simulate a delay less than the default timeout (30s)
+          await setTimeout(1000)
+
+          return {
+            statusCode: 200,
+            headers: JSON_HEADERS,
+            body: JSON.stringify(mockProduct1),
+          }
+        })
+
+        const result = await sendGet(clientWithDefaultTimeout, '/timeout-client-level-default', {
+          responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+          requestLabel: 'dummy',
+          throwOnError: true,
+        })
+
+        expect(result.result.body).toEqual(mockProduct1)
+      })
+
+      it('Custom client-level timeout is honored when no request-level timeout provided', async () => {
+        const clientWithCustomTimeout = buildClient(mockServer.url, {
           bodyTimeout: 100,
           headersTimeout: 100,
         })
-        const mockAgentWithCustomTimeout = mockAgent.get(baseUrl) as unknown as Client &
-          Interceptable
-        mockAgentWithCustomTimeout
-          .intercept({
-            path: '/timeout-test',
-            method: 'GET',
-          })
-          .reply(
-            200,
-            async () => {
-              await setTimeout(200)
-              return mockProduct1
-            },
-            { headers: JSON_HEADERS },
-          )
+
+        await mockServer.forGet('/timeout-client-level-custom').thenCallback(async () => {
+          // Simulate a delay longer than the custom timeout (100ms)
+          await setTimeout(1000)
+
+          return {
+            statusCode: 200,
+            headers: JSON_HEADERS,
+            body: JSON.stringify(mockProduct1),
+          }
+        })
 
         await expect(
-          sendGet(clientWithCustomTimeout, '/timeout-test', {
+          sendGet(clientWithCustomTimeout, '/timeout-client-level-custom', {
             responseSchema: UNKNOWN_RESPONSE_SCHEMA,
             requestLabel: 'dummy',
             throwOnError: true,
           }),
-        ).rejects.toThrow()
+        ).rejects.toThrow(/Timeout Error/)
       })
 
       describe('Request-level timeout', () => {
         let clientWithCustomTimeout: Client
-        let mockAgentWithCustomTimeout: Client & Interceptable
 
         beforeEach(() => {
-          clientWithCustomTimeout = buildClient(baseUrl, {
+          clientWithCustomTimeout = buildClient(mockServer.url, {
             bodyTimeout: 5000,
             headersTimeout: 5000,
-          }) as unknown as Client & Interceptable
-          mockAgentWithCustomTimeout = mockAgent.get(baseUrl) as unknown as Client & Interceptable
+          })
         })
 
         it('Request-level timeout works with GET requests', async () => {
-          mockAgentWithCustomTimeout
-            .intercept({
-              path: '/timeout-test-get',
-              method: 'GET',
-            })
-            .reply(
-              200,
-              async () => {
-                await setTimeout(200)
-                return mockProduct1
-              },
-              { headers: JSON_HEADERS },
-            )
+          await mockServer.forGet('/timeout-request-level-get').thenCallback(async () => {
+            // Simulate a delay longer than the request-level timeout (100ms)
+            await setTimeout(1000)
+
+            return {
+              statusCode: 200,
+              headers: JSON_HEADERS,
+              body: JSON.stringify(mockProduct1),
+            }
+          })
 
           await expect(
-            sendGet(clientWithCustomTimeout, '/timeout-test-get', {
+            sendGet(clientWithCustomTimeout, '/timeout-request-level-get', {
               responseSchema: UNKNOWN_RESPONSE_SCHEMA,
               requestLabel: 'dummy',
               throwOnError: true,
               timeout: 100,
             }),
-          ).rejects.toThrow()
+          ).rejects.toThrow(/Timeout Error/)
         })
 
         it('Request-level timeout works with POST requests', async () => {
-          mockAgentWithCustomTimeout
-            .intercept({
-              path: '/timeout-test-post',
-              method: 'POST',
-            })
-            .reply(
-              200,
-              async () => {
-                await setTimeout(200)
-                return mockProduct1
-              },
-              { headers: JSON_HEADERS },
-            )
+          await mockServer.forPost('/timeout-request-level-post').thenCallback(async () => {
+            // Simulate a delay longer than the request-level timeout (100ms)
+            await setTimeout(1000)
+
+            return {
+              statusCode: 200,
+              headers: JSON_HEADERS,
+              body: JSON.stringify(mockProduct1),
+            }
+          })
 
           await expect(
-            sendPost(clientWithCustomTimeout, '/timeout-test-post', mockProduct1, {
+            sendPost(clientWithCustomTimeout, '/timeout-request-level-post', mockProduct1, {
               responseSchema: UNKNOWN_RESPONSE_SCHEMA,
               requestLabel: 'dummy',
               throwOnError: true,
               timeout: 100,
             }),
-          ).rejects.toThrow()
+          ).rejects.toThrow(/Timeout Error/)
         })
 
         it('Request-level timeout works with DELETE requests', async () => {
-          mockAgentWithCustomTimeout
-            .intercept({
-              path: '/timeout-test-delete',
-              method: 'DELETE',
-            })
-            .reply(
-              200,
-              async () => {
-                await setTimeout(200)
-                return mockProduct1
-              },
-              { headers: JSON_HEADERS },
-            )
+          await mockServer.forDelete('/timeout-request-level-delete').thenCallback(async () => {
+            // Simulate a delay longer than the request-level timeout (100ms)
+            await setTimeout(1000)
+
+            return {
+              statusCode: 200,
+              headers: JSON_HEADERS,
+              body: JSON.stringify(mockProduct1),
+            }
+          })
 
           await expect(
-            sendDelete(clientWithCustomTimeout, '/timeout-test-delete', {
+            sendDelete(clientWithCustomTimeout, '/timeout-request-level-delete', {
               responseSchema: UNKNOWN_RESPONSE_SCHEMA,
               requestLabel: 'dummy',
               throwOnError: true,
               timeout: 100,
             }),
-          ).rejects.toThrow()
+          ).rejects.toThrow(/Timeout Error/)
         })
 
         it('Request-level timeout works with PUT requests', async () => {
-          mockAgentWithCustomTimeout
-            .intercept({
-              path: '/timeout-test-put',
-              method: 'PUT',
-            })
-            .reply(
-              200,
-              async () => {
-                await setTimeout(200)
-                return mockProduct1
-              },
-              { headers: JSON_HEADERS },
-            )
+          await mockServer.forPut('/timeout-request-level-put').thenCallback(async () => {
+            // Simulate a delay longer than the request-level timeout (100ms)
+            await setTimeout(1000)
+
+            return {
+              statusCode: 200,
+              headers: JSON_HEADERS,
+              body: JSON.stringify(mockProduct1),
+            }
+          })
 
           await expect(
-            sendPut(clientWithCustomTimeout, '/timeout-test-put', mockProduct1, {
+            sendPut(clientWithCustomTimeout, '/timeout-request-level-put', mockProduct1, {
               responseSchema: UNKNOWN_RESPONSE_SCHEMA,
               requestLabel: 'dummy',
               throwOnError: true,
               timeout: 100,
             }),
-          ).rejects.toThrow()
+          ).rejects.toThrow(/Timeout Error/)
         })
 
         it('Request-level timeout works with PATCH requests', async () => {
-          mockAgentWithCustomTimeout
-            .intercept({
-              path: '/timeout-test-patch',
-              method: 'PATCH',
-            })
-            .reply(
-              200,
-              async () => {
-                await setTimeout(200)
-                return mockProduct1
-              },
-              { headers: JSON_HEADERS },
-            )
+          await mockServer.forPatch('/timeout-request-level-patch').thenCallback(async () => {
+            // Simulate a delay longer than the request-level timeout (100ms)
+            await setTimeout(1000)
+
+            return {
+              statusCode: 200,
+              headers: JSON_HEADERS,
+              body: JSON.stringify(mockProduct1),
+            }
+          })
 
           await expect(
-            sendPatch(clientWithCustomTimeout, '/timeout-test-patch', mockProduct1, {
+            sendPatch(clientWithCustomTimeout, '/timeout-request-level-patch', mockProduct1, {
               responseSchema: UNKNOWN_RESPONSE_SCHEMA,
               requestLabel: 'dummy',
               throwOnError: true,
               timeout: 100,
             }),
-          ).rejects.toThrow()
+          ).rejects.toThrow(/Timeout Error/)
         })
 
         it('Request-level timeout works with binary POST requests', async () => {
-          mockAgentWithCustomTimeout
-            .intercept({
-              path: '/timeout-test-binary-post',
-              method: 'POST',
-            })
-            .reply(
-              200,
-              async () => {
-                await setTimeout(200)
-                return mockProduct1
-              },
-              { headers: JSON_HEADERS },
-            )
+          await mockServer.forPost('/timeout-request-level-binary-post').thenCallback(async () => {
+            // Simulate a delay longer than the request-level timeout (100ms)
+            await setTimeout(1000)
+
+            return {
+              statusCode: 200,
+              headers: JSON_HEADERS,
+              body: JSON.stringify(mockProduct1),
+            }
+          })
 
           await expect(
             sendPostBinary(
               clientWithCustomTimeout,
-              '/timeout-test-binary-post',
+              '/timeout-request-level-binary-post',
               Buffer.from('test'),
               {
                 responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -3351,28 +3365,25 @@ describe('httpClient', () => {
                 timeout: 100,
               },
             ),
-          ).rejects.toThrow()
+          ).rejects.toThrow(/Timeout Error/)
         })
 
         it('Request-level timeout works with binary PUT requests', async () => {
-          mockAgentWithCustomTimeout
-            .intercept({
-              path: '/timeout-test-binary-put',
-              method: 'PUT',
-            })
-            .reply(
-              200,
-              async () => {
-                await setTimeout(200)
-                return mockProduct1
-              },
-              { headers: JSON_HEADERS },
-            )
+          await mockServer.forPut('/timeout-request-level-binary-put').thenCallback(async () => {
+            // Simulate a delay longer than the request-level timeout (100ms)
+            await setTimeout(1000)
+
+            return {
+              statusCode: 200,
+              headers: JSON_HEADERS,
+              body: JSON.stringify(mockProduct1),
+            }
+          })
 
           await expect(
             sendPutBinary(
               clientWithCustomTimeout,
-              '/timeout-test-binary-put',
+              '/timeout-request-level-binary-put',
               Buffer.from('test'),
               {
                 responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -3381,69 +3392,32 @@ describe('httpClient', () => {
                 timeout: 100,
               },
             ),
-          ).rejects.toThrow()
+          ).rejects.toThrow(/Timeout Error/)
         })
 
         it('Request-level timeout works with streamed GET requests', async () => {
-          mockAgentWithCustomTimeout
-            .intercept({
-              path: '/timeout-test-streamed-get',
-              method: 'GET',
-            })
-            .reply(
-              200,
-              async () => {
-                await setTimeout(200)
-                return mockProduct1
-              },
-              { headers: JSON_HEADERS },
-            )
+          await mockServer.forGet('/timeout-request-level-streamed-get').thenCallback(async () => {
+            // Simulate a delay longer than the request-level timeout (100ms)
+            await setTimeout(1000)
 
-          await expect(
-            sendGetWithStreamedResponse(clientWithCustomTimeout, '/timeout-test-streamed-get', {
-              requestLabel: 'dummy',
-              throwOnError: true,
-              timeout: 100,
-            }),
-          ).rejects.toThrow()
-        })
-      })
-
-      describe('Mixed timeout configuration', () => {
-        it('Request-level timeout overrides client-level bodyTimeout', async () => {
-          const clientWithMixedTimeout = buildClient(baseUrl, {
-            bodyTimeout: 5000,
-            // headersTimeout not provided, should use default 30000ms
+            return {
+              statusCode: 200,
+              headers: JSON_HEADERS,
+              body: JSON.stringify(mockProduct1),
+            }
           })
 
-          const mockAgentWithMixedTimeout = mockAgent.get(baseUrl) as unknown as Client &
-            Interceptable
-
-          mockAgentWithMixedTimeout
-            .intercept({
-              path: '/timeout-test-override',
-              method: 'GET',
-            })
-            .reply(
-              200,
-              async () => {
-                // 150ms delay - would succeed with client's 5000ms bodyTimeout
-                // but should timeout with request-level 100ms timeout
-                await setTimeout(150)
-                return mockProduct1
-              },
-              { headers: JSON_HEADERS },
-            )
-
-          // Request-level timeout (100ms) should override client-level (5000ms)
           await expect(
-            sendGet(clientWithMixedTimeout, '/timeout-test-override', {
-              responseSchema: UNKNOWN_RESPONSE_SCHEMA,
-              requestLabel: 'dummy',
-              throwOnError: true,
-              timeout: 100,
-            }),
-          ).rejects.toThrow()
+            sendGetWithStreamedResponse(
+              clientWithCustomTimeout,
+              '/timeout-request-level-streamed-get',
+              {
+                requestLabel: 'dummy',
+                throwOnError: true,
+                timeout: 100,
+              },
+            ),
+          ).rejects.toThrow(/Timeout Error/)
         })
       })
     })
