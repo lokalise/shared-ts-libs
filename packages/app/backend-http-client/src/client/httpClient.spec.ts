@@ -3408,6 +3408,44 @@ describe('httpClient', () => {
           ).rejects.toThrow()
         })
       })
+
+      describe('Mixed timeout configuration', () => {
+        it('Request-level timeout overrides client-level bodyTimeout', async () => {
+          const clientWithMixedTimeout = buildClient(baseUrl, {
+            bodyTimeout: 5000,
+            // headersTimeout not provided, should use default 30000ms
+          })
+
+          const mockAgentWithMixedTimeout = mockAgent.get(baseUrl) as unknown as Client &
+            Interceptable
+
+          mockAgentWithMixedTimeout
+            .intercept({
+              path: '/timeout-test-override',
+              method: 'GET',
+            })
+            .reply(
+              200,
+              async () => {
+                // 150ms delay - would succeed with client's 5000ms bodyTimeout
+                // but should timeout with request-level 100ms timeout
+                await setTimeout(150)
+                return mockProduct1
+              },
+              { headers: JSON_HEADERS },
+            )
+
+          // Request-level timeout (100ms) should override client-level (5000ms)
+          await expect(
+            sendGet(clientWithMixedTimeout, '/timeout-test-override', {
+              responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+              requestLabel: 'dummy',
+              throwOnError: true,
+              timeout: 100,
+            }),
+          ).rejects.toThrow()
+        })
+      })
     })
   })
 })
