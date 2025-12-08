@@ -3253,7 +3253,7 @@ describe('httpClient', () => {
           mockAgentWithCustomTimeout
             .intercept({
               path: '/timeout-test-delete',
-              method: 'POST',
+              method: 'DELETE',
             })
             .reply(
               200,
@@ -3370,7 +3370,7 @@ describe('httpClient', () => {
             )
 
           await expect(
-            sendPostBinary(
+            sendPutBinary(
               clientWithCustomTimeout,
               '/timeout-test-binary-put',
               Buffer.from('test'),
