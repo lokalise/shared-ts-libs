@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises'
 import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
-import { getLocal } from 'mockttp'
+import { getLocal, type Mockttp } from 'mockttp'
 import type { Interceptable } from 'undici'
 import { Client, MockAgent, setGlobalDispatcher } from 'undici'
 import { createDefaultRetryResolver } from 'undici-retry'
@@ -3149,9 +3149,10 @@ describe('httpClient', () => {
     })
 
     describe('Client-level and request-level timeout configuration', () => {
-      const mockServer = getLocal()
+      let mockServer: Mockttp
 
       beforeAll(async () => {
+        mockServer = getLocal()
         await mockServer.start()
       })
 
