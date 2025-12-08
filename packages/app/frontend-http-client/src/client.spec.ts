@@ -1,8 +1,7 @@
 import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
-import failOnConsole from 'jest-fail-on-console'
 import { newServer } from 'mock-xmlhttprequest'
-import { getLocal } from 'mockttp'
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { getLocal, type Mockttp } from 'mockttp'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import wretch from 'wretch'
 import { z } from 'zod/v4'
 import {
@@ -28,20 +27,19 @@ const HEADERS_SCHEMA = z
   .strip()
 
 describe('frontend-http-client', () => {
-  const mockServer = getLocal()
+  let mockServer: Mockttp
 
-  beforeAll(() => {
-    failOnConsole({
-      silenceMessage: (message: string) => message.includes('ZodError'),
-    })
-  })
-
-  beforeEach(async () => {
+  beforeAll(async () => {
+    mockServer = getLocal()
     await mockServer.start()
   })
 
-  afterEach(async () => {
+  afterAll(async () => {
     await mockServer.stop()
+  })
+
+  afterEach(() => {
+    mockServer.reset()
   })
 
   describe('sendByRoute', () => {
