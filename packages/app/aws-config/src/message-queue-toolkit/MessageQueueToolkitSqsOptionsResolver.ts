@@ -6,6 +6,7 @@ import {
   type SQSPolicyConfig,
   type SQSQueueLocatorType,
 } from '@message-queue-toolkit/sqs'
+import type { AwsConfig } from '../awsConfig.ts'
 import type { CommandConfig } from '../event-routing/eventRoutingConfig.ts'
 import { AbstractMessageQueueToolkitOptionsResolver } from './AbstractMessageQueueToolkitOptionsResolver.ts'
 import type {
@@ -47,7 +48,7 @@ export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueT
       queueName,
       this.commandConfig,
       params,
-      this.resolvePolicyConfig(),
+      this.resolvePolicyConfig(params.awsConfig),
     )
 
     return {
@@ -72,7 +73,7 @@ export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueT
       queueName,
       this.commandConfig,
       params,
-      this.resolvePolicyConfig(),
+      this.resolvePolicyConfig(params.awsConfig),
     )
 
     return {
@@ -82,12 +83,14 @@ export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueT
     }
   }
 
-  private resolvePolicyConfig(): SQSPolicyConfig {
+  private resolvePolicyConfig(awsConfig: AwsConfig): SQSPolicyConfig {
     return {
       resource: SQS_RESOURCE_CURRENT_QUEUE,
       statements: {
         Effect: 'Allow',
-        Principal: '*',
+        Principal: awsConfig.allowedSourceOwner?.trim().length
+          ? awsConfig.allowedSourceOwner?.trim()
+          : '*',
         Action: ['sqs:SendMessage', 'sqs:GetQueueAttributes', 'sqs:GetQueueUrl'],
       },
     }
