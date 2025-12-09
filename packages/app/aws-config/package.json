@@ -59,7 +59,7 @@
         "@lokalise/universal-ts-utils": "^4.5.1",
         "@message-queue-toolkit/core": "^23.1.0",
         "@message-queue-toolkit/sns": "^23.1.2",
-        "@message-queue-toolkit/sqs": "^22.2.0",
+        "@message-queue-toolkit/sqs": "^23.0.0",
         "@types/node": "^24.0.3",
         "@vitest/coverage-v8": "^3.0.7",
         "rimraf": "^6.0.1",
