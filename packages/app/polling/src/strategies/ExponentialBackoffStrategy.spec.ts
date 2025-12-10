@@ -515,6 +515,7 @@ describe('ExponentialBackoffStrategy', () => {
 
       const delays: number[] = []
       const attempts: number[] = []
+      let lastTime = Date.now()
 
       try {
         await strategy.execute<string>((attempt) => {
@@ -529,8 +530,6 @@ describe('ExponentialBackoffStrategy', () => {
       } catch (_error) {
         // Expected timeout
       }
-
-      let lastTime = Date.now()
 
       // All delays should be <= maxDelayMs + small tolerance for execution time
       for (const delay of delays) {
