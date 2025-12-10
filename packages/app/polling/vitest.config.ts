@@ -1,21 +1,20 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from "vitest/config";
 
-// biome-ignore lint/style/noDefaultExport: vitest config requires default export
 export default defineConfig({
-  test: {
-    globals: true,
-    watch: false,
-    restoreMocks: true,
-    pool: 'threads',
-    coverage: {
-      provider: 'v8',
-      include: ['src/**/*.ts'],
-      thresholds: {
-        lines: 100,
-        functions: 100,
-        branches: 100,
-        statements: 100,
-      },
-    },
-  },
-})
+	test: {
+		globals: true,
+		watch: false,
+		restoreMocks: true,
+		pool: "threads",
+		coverage: {
+			provider: "v8",
+			include: ["src/**/*.ts"],
+			thresholds: {
+				lines: 100,
+				functions: 100,
+				branches: 100,
+				statements: 100,
+			},
+		},
+	},
+});

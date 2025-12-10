@@ -1,0 +1,18 @@
+{
+	"$schema": "../../node_modules/@biomejs/biome/configuration_schema.json",
+	"overrides": [
+		{
+			"includes": ["**/*.spec.ts"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"useAwait": "off"
+					},
+					"complexity": {
+						"noExcessiveCognitiveComplexity": "off"
+					}
+				}
+			}
+		}
+	]
+}
