@@ -1,175 +1,470 @@
-# Polling
+# @lokalise/polling
 
-This package provides a flexible polling system with a strategy-based architecture, making it easy to implement different retry patterns.
+A flexible, production-ready polling library with configurable retry strategies and TypeScript support.
 
 ## Features
 
-- **Strategy Pattern**: Pluggable polling strategies for different use cases
-- **Exponential Backoff**: Built-in strategy with automatic delay increases
-- **Jitter Support**: Adds randomization to prevent thundering herd problems
-- **Builder Pattern**: Fluent API for creating pollers
-- **Type-Safe**: Full TypeScript support with strict types
-- **Error Handling**: Domain-specific error handling with timeout support
-- **Extensible**: Easy to add custom polling strategies
+- 🔄 **Flexible Strategy Pattern** - Easy to extend with custom polling strategies
+- ⏱️ **Exponential Backoff** - Built-in exponential backoff with jitter to prevent thundering herd
+- 🎯 **Type-Safe** - Full TypeScript support with discriminated unions
+- 🚫 **Cancellable** - Support for AbortSignal to cancel polling operations
+- 📊 **Observable** - Integrated logging with request context
+- ⚡ **Production-Ready** - Input validation, error handling, and configurable timeouts
 
-## Usage
+## Installation
 
-### Basic Example with Builder Pattern
+```bash
+npm install @lokalise/polling
+```
+
+## Quick Start
 
 ```typescript
-import {
-  createPollerBuilder,
-  STANDARD_EXPONENTIAL_BACKOFF_CONFIG,
-  type PollResult,
-} from '@lokalise/polling'
-import type { RequestContext } from '@lokalise/fastify-extras'
+import { Poller, ExponentialBackoffStrategy, STANDARD_EXPONENTIAL_BACKOFF_CONFIG } from '@lokalise/polling'
 
 // Create a poller with exponential backoff strategy
-const poller = createPollerBuilder()
-  .withExponentialBackoff(STANDARD_EXPONENTIAL_BACKOFF_CONFIG)
-  .build()
-
-// Your polling function
-async function checkJobStatus(jobId: string): Promise<PollResult<JobResult>> {
-  const job = await getJob(jobId)
-
-  if (job.status === 'completed') {
-    return { isComplete: true, value: job.result }
-  }
-
-  if (job.status === 'failed') {
-    throw new Error('Job failed')
-  }
-
-  return { isComplete: false }
-}
+const strategy = new ExponentialBackoffStrategy(STANDARD_EXPONENTIAL_BACKOFF_CONFIG)
+const poller = new Poller(strategy)
 
 // Poll until complete
+const result = await poller.poll(
+  async (attempt) => {
+    const status = await checkJobStatus(jobId)
+    
+    if (status === 'completed') {
+      return { isComplete: true, value: await getJobResult(jobId) }
+    }
+    
+    return { isComplete: false }
+  },
+  reqContext,
+  { jobId } // metadata for logging
+)
+```
+
+## Core Concepts
+
+### PollResult
+
+A discriminated union that represents the result of a polling attempt:
+
+```typescript
+type PollResult<T> = 
+  | { isComplete: true; value: T }   // Polling succeeded, return the value
+  | { isComplete: false }             // Not ready yet, keep polling
+```
+
+### Poll Function
+
+Your poll function receives the current attempt number (1-based) and should:
+1. Check if the operation is complete
+2. Return `{ isComplete: true, value }` if done
+3. Return `{ isComplete: false }` if not ready
+4. Throw domain-specific errors for terminal failures
+
+```typescript
+async (attempt: number) => {
+  console.log(`Attempt ${attempt}`)
+  
+  const status = await checkStatus()
+  
+  if (status === 'failed') {
+    // Terminal error - stop polling immediately
+    throw new Error('Operation failed permanently')
+  }
+  
+  if (status === 'completed') {
+    return { isComplete: true, value: await getResult() }
+  }
+  
+  // Still processing - continue polling
+  return { isComplete: false }
+}
+```
+
+## Strategies
+
+### ExponentialBackoffStrategy
+
+Implements exponential backoff with optional jitter to prevent request clustering.
+
+#### Configuration
+
+```typescript
+interface ExponentialBackoffConfig {
+  initialDelayMs: number      // Starting delay (must be >= 0)
+  maxDelayMs: number          // Maximum delay cap (must be >= initialDelayMs)
+  backoffMultiplier: number   // Exponential growth factor (must be > 0)
+  maxAttempts: number         // Maximum polling attempts (must be >= 1)
+  jitterFactor?: number       // Randomization factor 0-1 (default: 0.2)
+}
+```
+
+#### Standard Configuration
+
+The library provides a sensible default configuration:
+
+```typescript
+const STANDARD_EXPONENTIAL_BACKOFF_CONFIG = {
+  initialDelayMs: 2000,       // Start with 2 seconds
+  maxDelayMs: 15000,          // Cap at 15 seconds
+  backoffMultiplier: 1.5,     // Increase by 50% each time
+  maxAttempts: 20,            // Try up to 20 times (~4.5 min total)
+  jitterFactor: 0.2,          // ±20% randomization
+}
+```
+
+#### How Delays Are Calculated
+
+1. **Base delay**: `initialDelayMs × backoffMultiplier^(attempt-1)`
+2. **Capped**: `min(baseDelay, maxDelayMs)`
+3. **Jittered**: `baseDelay + (baseDelay × jitterFactor × random(-0.5 to 0.5))`
+4. **Ensured positive**: `max(0, jitteredDelay)`
+
+Example progression with standard config:
+- Attempt 1: Poll immediately (no delay)
+- Attempt 2: Wait ~2s (2000ms ± 20%)
+- Attempt 3: Wait ~3s (3000ms ± 20%)
+- Attempt 4: Wait ~4.5s (4500ms ± 20%)
+- Attempt 5: Wait ~6.8s (6750ms ± 20%)
+- ...continues until maxDelayMs...
+- Attempt 10+: Wait ~15s (15000ms ± 20%)
+
+#### Custom Configuration Examples
+
+**Quick polling for fast operations:**
+```typescript
+const quickConfig = {
+  initialDelayMs: 500,
+  maxDelayMs: 5000,
+  backoffMultiplier: 2,
+  maxAttempts: 10,
+  jitterFactor: 0.1,
+}
+```
+
+**Patient polling for slow operations:**
+```typescript
+const patientConfig = {
+  initialDelayMs: 5000,
+  maxDelayMs: 60000,
+  backoffMultiplier: 1.3,
+  maxAttempts: 50,
+  jitterFactor: 0.3,
+}
+```
+
+**Fixed interval (no backoff):**
+```typescript
+const fixedConfig = {
+  initialDelayMs: 3000,
+  maxDelayMs: 3000,
+  backoffMultiplier: 1,  // No growth
+  maxAttempts: 20,
+  jitterFactor: 0,       // No jitter
+}
+```
+
+## Usage Examples
+
+### Basic Polling
+
+```typescript
+import { Poller, ExponentialBackoffStrategy, STANDARD_EXPONENTIAL_BACKOFF_CONFIG } from '@lokalise/polling'
+
+const strategy = new ExponentialBackoffStrategy(STANDARD_EXPONENTIAL_BACKOFF_CONFIG)
+const poller = new Poller(strategy)
+
+const result = await poller.poll(
+  async (attempt) => {
+    const data = await fetchData()
+    return data.ready 
+      ? { isComplete: true, value: data.result }
+      : { isComplete: false }
+  },
+  reqContext
+)
+```
+
+### With Metadata for Logging
+
+```typescript
+const result = await poller.poll(
+  async (attempt) => {
+    const status = await checkJobStatus(jobId)
+    return status === 'done'
+      ? { isComplete: true, value: await getResult(jobId) }
+      : { isComplete: false }
+  },
+  reqContext,
+  { jobId, userId } // Included in all log messages
+)
+```
+
+### With Cancellation (AbortSignal)
+
+```typescript
+const controller = new AbortController()
+
+// Cancel after 30 seconds
+setTimeout(() => controller.abort(), 30000)
+
 try {
   const result = await poller.poll(
-    () => checkJobStatus('job-123'),
+    async (attempt) => {
+      const status = await checkStatus()
+      return status === 'ready'
+        ? { isComplete: true, value: status.data }
+        : { isComplete: false }
+    },
     reqContext,
-    { jobId: 'job-123' }, // optional metadata for logging
+    { operation: 'data-sync' },
+    controller.signal  // Pass the signal
   )
-  console.log('Job completed:', result)
 } catch (error) {
-  if (error instanceof PollingError) {
-    console.error('Polling timeout:', error.attemptsMade)
-  } else {
-    console.error('Job failed:', error)
+  if (error instanceof PollingError && error.failureCause === 'CANCELLED') {
+    console.log('Polling was cancelled')
   }
 }
 ```
 
-### Custom Configuration
+### Using Attempt Number
 
 ```typescript
-import {
-  createPollerBuilder,
-  type ExponentialBackoffConfig,
-} from '@lokalise/polling'
-
-const customConfig: ExponentialBackoffConfig = {
-  initialDelayMs: 1000, // Start with 1 second
-  maxDelayMs: 30000, // Cap at 30 seconds
-  backoffMultiplier: 2.0, // Double the delay each time
-  maxAttempts: 10, // Maximum 10 attempts
-  jitterFactor: 0.1, // 10% jitter
-}
-
-const poller = createPollerBuilder()
-  .withExponentialBackoff(customConfig)
-  .build()
-
-await poller.poll(myPollFn, reqContext)
+const result = await poller.poll(
+  async (attempt) => {
+    console.log(`Polling attempt ${attempt}`)
+    
+    // Maybe adjust behavior based on attempt
+    const timeout = attempt > 5 ? 10000 : 5000
+    
+    const status = await checkStatus({ timeout })
+    return status.complete
+      ? { isComplete: true, value: status.data }
+      : { isComplete: false }
+  },
+  reqContext
+)
 ```
 
-## Exponential Backoff Configuration
+### Handling Terminal Errors
 
-- `initialDelayMs`: Initial delay between attempts (milliseconds)
-- `maxDelayMs`: Maximum delay between attempts (milliseconds)
-- `backoffMultiplier`: Multiplier applied to delay after each attempt
-- `maxAttempts`: Maximum number of polling attempts before timeout
-- `jitterFactor`: Randomization factor (0-1) to prevent synchronized requests
+```typescript
+try {
+  const result = await poller.poll(
+    async (attempt) => {
+      const status = await checkJobStatus(jobId)
+      
+      // Terminal failure - throw immediately
+      if (status === 'failed') {
+        throw new Error('Job processing failed permanently')
+      }
+      
+      // Success
+      if (status === 'completed') {
+        return { isComplete: true, value: await getJobResult(jobId) }
+      }
+      
+      // Still processing
+      return { isComplete: false }
+    },
+    reqContext,
+    { jobId }
+  )
+} catch (error) {
+  if (error instanceof PollingError) {
+    // Timeout or cancellation
+    console.log(`Polling failed: ${error.failureCause} after ${error.attemptsMade} attempts`)
+  } else {
+    // Domain-specific error (job failed, network error, etc.)
+    console.log('Operation failed:', error)
+  }
+}
+```
 
-## Standard Config
+### Custom Strategy
 
-The package includes `STANDARD_EXPONENTIAL_BACKOFF_CONFIG` for typical use cases:
+Implement the `PollingStrategy` interface to create your own strategy:
 
-- Initial delay: 2 seconds
-- Max delay: 15 seconds
-- Backoff multiplier: 1.5x
-- Max attempts: 20 (~4.5 minutes total)
-- Jitter: 20%
+```typescript
+import type { PollingStrategy, PollResult } from '@lokalise/polling'
+import type { RequestContext } from '@lokalise/fastify-extras'
+
+class FixedIntervalStrategy implements PollingStrategy {
+  constructor(
+    private readonly intervalMs: number,
+    private readonly maxAttempts: number
+  ) {}
+
+  async execute<T>(
+    pollFn: (attempt: number) => Promise<PollResult<T>>,
+    reqContext: RequestContext,
+    metadata?: Record<string, unknown>,
+    signal?: AbortSignal,
+  ): Promise<T> {
+    for (let attempt = 1; attempt <= this.maxAttempts; attempt++) {
+      if (signal?.aborted) {
+        throw PollingError.cancelled(attempt - 1, metadata)
+      }
+
+      const result = await pollFn(attempt)
+      
+      if (result.isComplete) {
+        return result.value
+      }
+
+      if (attempt < this.maxAttempts) {
+        await setTimeout(this.intervalMs, undefined, { signal })
+      }
+    }
+
+    throw PollingError.timeout(this.maxAttempts, metadata)
+  }
+}
+
+// Use it
+const strategy = new FixedIntervalStrategy(5000, 10)
+const poller = new Poller(strategy)
+```
 
 ## Error Handling
 
-The poller will:
+### PollingError
 
-- **Re-throw domain errors**: Any error thrown by your poll function will bubble up
-- **Throw PollingError on timeout**: If max attempts are exceeded, throws `PollingError` with cause `TIMEOUT`
+The library throws `PollingError` (extends `InternalError` from `@lokalise/node-core`) for polling-specific failures:
+
+```typescript
+class PollingError extends InternalError {
+  readonly failureCause: 'TIMEOUT' | 'CANCELLED'
+  readonly attemptsMade: number
+  readonly errorCode: 'POLLING_TIMEOUT' | 'POLLING_CANCELLED'
+  readonly details: Record<string, unknown>
+}
+```
+
+**Factory methods:**
+- `PollingError.timeout(maxAttempts, metadata?)` - Max attempts exceeded
+- `PollingError.cancelled(attemptsMade, metadata?)` - AbortSignal triggered
+
+**Error properties:**
+- `failureCause` - Discriminator: `'TIMEOUT'` or `'CANCELLED'`
+- `attemptsMade` - Number of attempts completed before failure
+- `errorCode` - Structured error code: `'POLLING_TIMEOUT'` or `'POLLING_CANCELLED'`
+- `details` - Structured metadata including `failureCause`, `attemptsMade`, and any custom metadata you provide
+
+### Error Handling Pattern
 
 ```typescript
 import { PollingError, PollingFailureCause } from '@lokalise/polling'
+import { isInternalError } from '@lokalise/node-core'
 
 try {
-  await poller.poll(myPollFn, reqContext)
+  const result = await poller.poll(pollFn, reqContext, { jobId: '123' })
 } catch (error) {
   if (error instanceof PollingError) {
-    if (error.failureCause === PollingFailureCause.TIMEOUT) {
-      console.log(`Timed out after ${error.attemptsMade} attempts`)
+    switch (error.failureCause) {
+      case PollingFailureCause.TIMEOUT:
+        console.log(`Timed out after ${error.attemptsMade} attempts`)
+        console.log('Error code:', error.errorCode) // 'POLLING_TIMEOUT'
+        console.log('Details:', error.details) // { failureCause: 'TIMEOUT', attemptsMade: 20, jobId: '123' }
+        break
+      case PollingFailureCause.CANCELLED:
+        console.log(`Cancelled after ${error.attemptsMade} attempts`)
+        console.log('Error code:', error.errorCode) // 'POLLING_CANCELLED'
+        break
     }
+  } else if (isInternalError(error)) {
+    // Other InternalError types
+    console.log('Internal error:', error.errorCode, error.details)
+  } else {
+    // Domain-specific error from pollFn
+    console.log('Operation failed:', error)
   }
 }
 ```
 
-## Architecture
+## Logging
 
-### Strategy Pattern
-
-The package uses a strategy pattern to allow different polling behaviors. This makes it easy to add new retry strategies without modifying existing code.
+The library logs polling progress automatically using the provided `RequestContext`:
 
 ```typescript
-import { PollingStrategy, type PollResult } from '@lokalise/polling'
-import type { RequestContext } from '@lokalise/fastify-extras'
+// Success (debug level)
+// { attempt: 3, totalAttempts: 20, jobId: '123' }
+// "Polling completed successfully"
 
-// Example: Create a custom strategy
-class CustomStrategy implements PollingStrategy {
-  async execute<T>(
-    pollFn: () => Promise<PollResult<T>>,
+// Retry (debug level)
+// { attempt: 1, nextDelayMs: 2134, jobId: '123' }
+// "Polling not complete, waiting before retry"
+```
+
+All metadata you provide is included in log messages for better observability.
+
+## Best Practices
+
+1. **Choose appropriate timeouts**: Consider your operation's typical duration and set `maxAttempts` accordingly
+2. **Use metadata**: Include identifiers (job ID, user ID, etc.) for easier debugging
+3. **Handle terminal errors**: Throw errors from `pollFn` for failures that shouldn't retry
+4. **Enable jitter**: Keep `jitterFactor` enabled (default 0.2) to prevent request clustering
+5. **Support cancellation**: Pass `AbortSignal` for long-running operations that users might cancel
+6. **Monitor attempts**: Use the attempt number to implement progressive behavior or additional logging
+
+## API Reference
+
+### Poller
+
+```typescript
+class Poller {
+  constructor(strategy: PollingStrategy)
+  
+  poll<T>(
+    pollFn: (attempt: number) => Promise<PollResult<T>>,
     reqContext: RequestContext,
     metadata?: Record<string, unknown>,
-  ): Promise<T> {
-    // Your custom retry logic here
-  }
+    signal?: AbortSignal,
+  ): Promise<T>
 }
 ```
 
-### Builder Pattern
-
-The builder pattern provides a fluent API for constructing pollers:
+### ExponentialBackoffStrategy
 
 ```typescript
-const poller = createPollerBuilder()
-  .withExponentialBackoff(config) // Configure strategy
-  .build() // Build the poller
+class ExponentialBackoffStrategy implements PollingStrategy {
+  constructor(config: ExponentialBackoffConfig)
+  
+  execute<T>(
+    pollFn: (attempt: number) => Promise<PollResult<T>>,
+    reqContext: RequestContext,
+    metadata?: Record<string, unknown>,
+    signal?: AbortSignal,
+  ): Promise<T>
+}
 ```
 
-## Migration from Legacy API
-
-If you're using the old `ExponentialBackoffPoller` class, it's still available for backward compatibility but is deprecated:
+### Types
 
 ```typescript
-// Old API (deprecated but still works)
-import { ExponentialBackoffPoller, STANDARD_POLLER_CONFIG } from '@lokalise/polling'
-const poller = new ExponentialBackoffPoller()
-await poller.poll(myPollFn, STANDARD_POLLER_CONFIG, reqContext)
+type PollResult<T> = 
+  | { isComplete: true; value: T }
+  | { isComplete: false }
 
-// New API (recommended)
-import { createPollerBuilder, STANDARD_EXPONENTIAL_BACKOFF_CONFIG } from '@lokalise/polling'
-const poller = createPollerBuilder()
-  .withExponentialBackoff(STANDARD_EXPONENTIAL_BACKOFF_CONFIG)
-  .build()
-await poller.poll(myPollFn, reqContext)
+interface ExponentialBackoffConfig {
+  initialDelayMs: number
+  maxDelayMs: number
+  backoffMultiplier: number
+  maxAttempts: number
+  jitterFactor?: number
+}
+
+interface PollingStrategy {
+  execute<T>(
+    pollFn: (attempt: number) => Promise<PollResult<T>>,
+    reqContext: RequestContext,
+    metadata?: Record<string, unknown>,
+    signal?: AbortSignal,
+  ): Promise<T>
+}
 ```
 
+## License
+
+Apache-2.0
