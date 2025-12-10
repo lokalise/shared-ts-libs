@@ -1,8 +1,7 @@
 import { setTimeout } from 'node:timers/promises'
 import type { RequestContext } from '@lokalise/fastify-extras'
-import type { PollResult } from '../Poller.ts'
-import { PollingError } from '../PollingError.ts'
-import type { PollingStrategy } from './PollingStrategy.ts'
+import type { PollingStrategy, PollResult } from '../Poller.ts'
+import { PollingError, PollingFailureCause } from '../PollingError.ts'
 
 /**
  * Configuration for exponential backoff polling strategy.
@@ -42,19 +41,39 @@ export class ExponentialBackoffStrategy implements PollingStrategy {
 
   private validateConfig(config: ExponentialBackoffConfig): void {
     if (!Number.isFinite(config.initialDelayMs) || config.initialDelayMs < 0) {
-      throw new Error('initialDelayMs must be a non-negative finite number')
+      throw new PollingError(
+        'initialDelayMs must be a non-negative finite number',
+        PollingFailureCause.INVALID_CONFIG,
+        0,
+      )
     }
     if (!Number.isFinite(config.maxDelayMs) || config.maxDelayMs < 0) {
-      throw new Error('maxDelayMs must be a non-negative finite number')
+      throw new PollingError(
+        'maxDelayMs must be a non-negative finite number',
+        PollingFailureCause.INVALID_CONFIG,
+        0,
+      )
     }
     if (config.initialDelayMs > config.maxDelayMs) {
-      throw new Error('initialDelayMs must not exceed maxDelayMs')
+      throw new PollingError(
+        'initialDelayMs must not exceed maxDelayMs',
+        PollingFailureCause.INVALID_CONFIG,
+        0,
+      )
     }
     if (!Number.isFinite(config.backoffMultiplier) || config.backoffMultiplier <= 0) {
-      throw new Error('backoffMultiplier must be a positive finite number')
+      throw new PollingError(
+        'backoffMultiplier must be a positive finite number',
+        PollingFailureCause.INVALID_CONFIG,
+        0,
+      )
     }
     if (!Number.isInteger(config.maxAttempts) || config.maxAttempts < 1) {
-      throw new Error('maxAttempts must be a positive integer')
+      throw new PollingError(
+        'maxAttempts must be a positive integer',
+        PollingFailureCause.INVALID_CONFIG,
+        0,
+      )
     }
     if (config.jitterFactor !== undefined) {
       if (
@@ -62,7 +81,11 @@ export class ExponentialBackoffStrategy implements PollingStrategy {
         config.jitterFactor < 0 ||
         config.jitterFactor > 1
       ) {
-        throw new Error('jitterFactor must be a finite number between 0 and 1')
+        throw new PollingError(
+          'jitterFactor must be a finite number between 0 and 1',
+          PollingFailureCause.INVALID_CONFIG,
+          0,
+        )
       }
     }
   }
@@ -90,7 +113,12 @@ export class ExponentialBackoffStrategy implements PollingStrategy {
       }
     }
 
-    throw PollingError.timeout(this.config.maxAttempts, metadata)
+    throw new PollingError(
+      `Polling timeout after ${this.config.maxAttempts} attempts`,
+      PollingFailureCause.TIMEOUT,
+      this.config.maxAttempts,
+      metadata,
+    )
   }
 
   private checkAborted(
@@ -99,7 +127,12 @@ export class ExponentialBackoffStrategy implements PollingStrategy {
     metadata?: Record<string, unknown>,
   ): void {
     if (signal?.aborted) {
-      throw PollingError.cancelled(attemptsMade, metadata)
+      throw new PollingError(
+        `Polling cancelled after ${attemptsMade} attempts`,
+        PollingFailureCause.CANCELLED,
+        attemptsMade,
+        metadata,
+      )
     }
   }
 
@@ -128,11 +161,14 @@ export class ExponentialBackoffStrategy implements PollingStrategy {
 
     try {
       await setTimeout(delayMs, undefined, { signal })
-    } catch (error: unknown) {
-      if (signal?.aborted) {
-        throw PollingError.cancelled(attempt, metadata)
-      }
-      throw error instanceof Error ? error : new Error(String(error))
+    } catch {
+      // setTimeout with signal only throws when the signal is aborted
+      throw new PollingError(
+        `Polling cancelled after ${attempt} attempts`,
+        PollingFailureCause.CANCELLED,
+        attempt,
+        metadata,
+      )
     }
   }
 

@@ -36,97 +36,138 @@ describe('ExponentialBackoffStrategy', () => {
     })
 
     it('should reject negative initialDelayMs', () => {
-      expect(
-        () =>
-          new ExponentialBackoffStrategy({
-            initialDelayMs: -100,
-            maxDelayMs: 1000,
-            backoffMultiplier: 2,
-            maxAttempts: 5,
-          }),
-      ).toThrow('initialDelayMs must be a non-negative finite number')
+      try {
+        new ExponentialBackoffStrategy({
+          initialDelayMs: -100,
+          maxDelayMs: 1000,
+          backoffMultiplier: 2,
+          maxAttempts: 5,
+        })
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.message).toBe('initialDelayMs must be a non-negative finite number')
+        expect(pollingError.failureCause).toBe(PollingFailureCause.INVALID_CONFIG)
+        expect(pollingError.errorCode).toBe('POLLING_INVALID_CONFIG')
+      }
     })
 
     it('should reject negative maxDelayMs', () => {
-      expect(
-        () =>
-          new ExponentialBackoffStrategy({
-            initialDelayMs: 100,
-            maxDelayMs: -1000,
-            backoffMultiplier: 2,
-            maxAttempts: 5,
-          }),
-      ).toThrow('maxDelayMs must be a non-negative finite number')
+      try {
+        new ExponentialBackoffStrategy({
+          initialDelayMs: 100,
+          maxDelayMs: -1000,
+          backoffMultiplier: 2,
+          maxAttempts: 5,
+        })
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.message).toBe('maxDelayMs must be a non-negative finite number')
+        expect(pollingError.failureCause).toBe(PollingFailureCause.INVALID_CONFIG)
+      }
     })
 
     it('should reject initialDelayMs greater than maxDelayMs', () => {
-      expect(
-        () =>
-          new ExponentialBackoffStrategy({
-            initialDelayMs: 2000,
-            maxDelayMs: 1000,
-            backoffMultiplier: 2,
-            maxAttempts: 5,
-          }),
-      ).toThrow('initialDelayMs must not exceed maxDelayMs')
+      try {
+        new ExponentialBackoffStrategy({
+          initialDelayMs: 2000,
+          maxDelayMs: 1000,
+          backoffMultiplier: 2,
+          maxAttempts: 5,
+        })
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.message).toBe('initialDelayMs must not exceed maxDelayMs')
+        expect(pollingError.failureCause).toBe(PollingFailureCause.INVALID_CONFIG)
+      }
     })
 
     it('should reject non-positive backoffMultiplier', () => {
-      expect(
-        () =>
-          new ExponentialBackoffStrategy({
-            initialDelayMs: 100,
-            maxDelayMs: 1000,
-            backoffMultiplier: 0,
-            maxAttempts: 5,
-          }),
-      ).toThrow('backoffMultiplier must be a positive finite number')
+      try {
+        new ExponentialBackoffStrategy({
+          initialDelayMs: 100,
+          maxDelayMs: 1000,
+          backoffMultiplier: 0,
+          maxAttempts: 5,
+        })
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.message).toBe('backoffMultiplier must be a positive finite number')
+        expect(pollingError.failureCause).toBe(PollingFailureCause.INVALID_CONFIG)
+      }
 
-      expect(
-        () =>
-          new ExponentialBackoffStrategy({
-            initialDelayMs: 100,
-            maxDelayMs: 1000,
-            backoffMultiplier: -1,
-            maxAttempts: 5,
-          }),
-      ).toThrow('backoffMultiplier must be a positive finite number')
+      try {
+        new ExponentialBackoffStrategy({
+          initialDelayMs: 100,
+          maxDelayMs: 1000,
+          backoffMultiplier: -1,
+          maxAttempts: 5,
+        })
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.message).toBe('backoffMultiplier must be a positive finite number')
+        expect(pollingError.failureCause).toBe(PollingFailureCause.INVALID_CONFIG)
+      }
     })
 
     it('should reject non-positive maxAttempts', () => {
-      expect(
-        () =>
-          new ExponentialBackoffStrategy({
-            initialDelayMs: 100,
-            maxDelayMs: 1000,
-            backoffMultiplier: 2,
-            maxAttempts: 0,
-          }),
-      ).toThrow('maxAttempts must be a positive integer')
+      try {
+        new ExponentialBackoffStrategy({
+          initialDelayMs: 100,
+          maxDelayMs: 1000,
+          backoffMultiplier: 2,
+          maxAttempts: 0,
+        })
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.message).toBe('maxAttempts must be a positive integer')
+        expect(pollingError.failureCause).toBe(PollingFailureCause.INVALID_CONFIG)
+      }
     })
 
     it('should reject jitterFactor outside 0-1 range', () => {
-      expect(
-        () =>
-          new ExponentialBackoffStrategy({
-            initialDelayMs: 100,
-            maxDelayMs: 1000,
-            backoffMultiplier: 2,
-            maxAttempts: 5,
-            jitterFactor: -0.1,
-          }),
-      ).toThrow('jitterFactor must be a finite number between 0 and 1')
+      try {
+        new ExponentialBackoffStrategy({
+          initialDelayMs: 100,
+          maxDelayMs: 1000,
+          backoffMultiplier: 2,
+          maxAttempts: 5,
+          jitterFactor: -0.1,
+        })
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.message).toBe('jitterFactor must be a finite number between 0 and 1')
+        expect(pollingError.failureCause).toBe(PollingFailureCause.INVALID_CONFIG)
+      }
 
-      expect(
-        () =>
-          new ExponentialBackoffStrategy({
-            initialDelayMs: 100,
-            maxDelayMs: 1000,
-            backoffMultiplier: 2,
-            maxAttempts: 5,
-            jitterFactor: 1.5,
-          }),
-      ).toThrow('jitterFactor must be a finite number between 0 and 1')
+      try {
+        new ExponentialBackoffStrategy({
+          initialDelayMs: 100,
+          maxDelayMs: 1000,
+          backoffMultiplier: 2,
+          maxAttempts: 5,
+          jitterFactor: 1.5,
+        })
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.message).toBe('jitterFactor must be a finite number between 0 and 1')
+        expect(pollingError.failureCause).toBe(PollingFailureCause.INVALID_CONFIG)
+      }
     })
 
     it('should accept jitterFactor of 0', () => {

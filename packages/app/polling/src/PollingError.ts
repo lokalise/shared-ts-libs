@@ -3,6 +3,7 @@ import { InternalError } from '@lokalise/node-core'
 export const PollingFailureCause = {
   TIMEOUT: 'TIMEOUT',
   CANCELLED: 'CANCELLED',
+  INVALID_CONFIG: 'INVALID_CONFIG',
 } as const
 
 export type PollingFailureCause = (typeof PollingFailureCause)[keyof typeof PollingFailureCause]
@@ -34,23 +35,5 @@ export class PollingError extends InternalError {
     if (originalError) {
       this.cause = originalError
     }
-  }
-
-  static timeout(maxAttempts: number, metadata?: Record<string, unknown>): PollingError {
-    return new PollingError(
-      `Polling timeout after ${maxAttempts} attempts`,
-      PollingFailureCause.TIMEOUT,
-      maxAttempts,
-      metadata,
-    )
-  }
-
-  static cancelled(attemptsMade: number, metadata?: Record<string, unknown>): PollingError {
-    return new PollingError(
-      `Polling cancelled after ${attemptsMade} attempts`,
-      PollingFailureCause.CANCELLED,
-      attemptsMade,
-      metadata,
-    )
   }
 }

@@ -1,8 +1,7 @@
 import type { RequestContext } from '@lokalise/fastify-extras'
 import { describe, expect, it } from 'vitest'
-import { Poller, type PollResult } from './Poller.ts'
+import { Poller, type PollingStrategy, type PollResult } from './Poller.ts'
 import { PollingError, PollingFailureCause } from './PollingError.ts'
-import type { PollingStrategy } from './strategies/PollingStrategy.ts'
 
 // Test helper to create a minimal request context
 function createTestContext(): RequestContext {
@@ -93,7 +92,11 @@ describe('Poller', () => {
     it('should propagate errors from strategy', async () => {
       const failingStrategy: PollingStrategy = {
         execute<T>(): Promise<T> {
-          return Promise.reject(PollingError.timeout(5, { testId: 'error-test' }))
+          return Promise.reject(
+            new PollingError('Polling timeout after 5 attempts', PollingFailureCause.TIMEOUT, 5, {
+              testId: 'error-test',
+            }),
+          )
         },
       }
 
@@ -199,7 +202,12 @@ describe('Poller', () => {
               return result.value
             }
           }
-          throw PollingError.timeout(3, metadata)
+          throw new PollingError(
+            'Polling timeout after 3 attempts',
+            PollingFailureCause.TIMEOUT,
+            3,
+            metadata,
+          )
         },
       }
 
@@ -233,7 +241,12 @@ describe('Poller', () => {
         metadata?: Record<string, unknown>,
       ) => {
         if (signal?.aborted) {
-          throw PollingError.cancelled(attemptsMade, metadata)
+          throw new PollingError(
+            `Polling cancelled after ${attemptsMade} attempts`,
+            PollingFailureCause.CANCELLED,
+            attemptsMade,
+            metadata,
+          )
         }
       }
 
@@ -255,7 +268,12 @@ describe('Poller', () => {
             }
           }
 
-          throw PollingError.timeout(5, metadata)
+          throw new PollingError(
+            'Polling timeout after 5 attempts',
+            PollingFailureCause.TIMEOUT,
+            5,
+            metadata,
+          )
         },
       }
 

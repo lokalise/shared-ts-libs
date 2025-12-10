@@ -63,78 +63,106 @@ describe('PollingError', () => {
     })
   })
 
-  describe('factory methods', () => {
-    describe('timeout', () => {
-      it('should create timeout error with correct properties', () => {
-        const error = PollingError.timeout(10)
+  describe('creating timeout errors', () => {
+    it('should create timeout error with correct properties', () => {
+      const error = new PollingError(
+        'Polling timeout after 10 attempts',
+        PollingFailureCause.TIMEOUT,
+        10,
+      )
 
-        expect(error).toBeInstanceOf(PollingError)
-        expect(error.message).toBe('Polling timeout after 10 attempts')
-        expect(error.failureCause).toBe(PollingFailureCause.TIMEOUT)
-        expect(error.attemptsMade).toBe(10)
-        expect(error.errorCode).toBe('POLLING_TIMEOUT')
-      })
+      expect(error).toBeInstanceOf(PollingError)
+      expect(error.message).toBe('Polling timeout after 10 attempts')
+      expect(error.failureCause).toBe(PollingFailureCause.TIMEOUT)
+      expect(error.attemptsMade).toBe(10)
+      expect(error.errorCode).toBe('POLLING_TIMEOUT')
+    })
 
-      it('should include metadata when provided', () => {
-        const error = PollingError.timeout(5, {
+    it('should include metadata when provided', () => {
+      const error = new PollingError(
+        'Polling timeout after 5 attempts',
+        PollingFailureCause.TIMEOUT,
+        5,
+        {
           jobId: 'job-123',
           reason: 'slow-service',
-        })
+        },
+      )
 
-        expect(error.details).toEqual({
-          failureCause: PollingFailureCause.TIMEOUT,
-          attemptsMade: 5,
-          jobId: 'job-123',
-          reason: 'slow-service',
-        })
-      })
-
-      it('should work with zero attempts', () => {
-        const error = PollingError.timeout(0)
-
-        expect(error.message).toBe('Polling timeout after 0 attempts')
-        expect(error.attemptsMade).toBe(0)
-      })
-
-      it('should work with large attempt numbers', () => {
-        const error = PollingError.timeout(1000)
-
-        expect(error.message).toBe('Polling timeout after 1000 attempts')
-        expect(error.attemptsMade).toBe(1000)
+      expect(error.details).toEqual({
+        failureCause: PollingFailureCause.TIMEOUT,
+        attemptsMade: 5,
+        jobId: 'job-123',
+        reason: 'slow-service',
       })
     })
 
-    describe('cancelled', () => {
-      it('should create cancelled error with correct properties', () => {
-        const error = PollingError.cancelled(3)
+    it('should work with zero attempts', () => {
+      const error = new PollingError(
+        'Polling timeout after 0 attempts',
+        PollingFailureCause.TIMEOUT,
+        0,
+      )
 
-        expect(error).toBeInstanceOf(PollingError)
-        expect(error.message).toBe('Polling cancelled after 3 attempts')
-        expect(error.failureCause).toBe(PollingFailureCause.CANCELLED)
-        expect(error.attemptsMade).toBe(3)
-        expect(error.errorCode).toBe('POLLING_CANCELLED')
-      })
+      expect(error.message).toBe('Polling timeout after 0 attempts')
+      expect(error.attemptsMade).toBe(0)
+    })
 
-      it('should include metadata when provided', () => {
-        const error = PollingError.cancelled(7, {
+    it('should work with large attempt numbers', () => {
+      const error = new PollingError(
+        'Polling timeout after 1000 attempts',
+        PollingFailureCause.TIMEOUT,
+        1000,
+      )
+
+      expect(error.message).toBe('Polling timeout after 1000 attempts')
+      expect(error.attemptsMade).toBe(1000)
+    })
+  })
+
+  describe('creating cancelled errors', () => {
+    it('should create cancelled error with correct properties', () => {
+      const error = new PollingError(
+        'Polling cancelled after 3 attempts',
+        PollingFailureCause.CANCELLED,
+        3,
+      )
+
+      expect(error).toBeInstanceOf(PollingError)
+      expect(error.message).toBe('Polling cancelled after 3 attempts')
+      expect(error.failureCause).toBe(PollingFailureCause.CANCELLED)
+      expect(error.attemptsMade).toBe(3)
+      expect(error.errorCode).toBe('POLLING_CANCELLED')
+    })
+
+    it('should include metadata when provided', () => {
+      const error = new PollingError(
+        'Polling cancelled after 7 attempts',
+        PollingFailureCause.CANCELLED,
+        7,
+        {
           userId: 'user-456',
           reason: 'user-action',
-        })
+        },
+      )
 
-        expect(error.details).toEqual({
-          failureCause: PollingFailureCause.CANCELLED,
-          attemptsMade: 7,
-          userId: 'user-456',
-          reason: 'user-action',
-        })
+      expect(error.details).toEqual({
+        failureCause: PollingFailureCause.CANCELLED,
+        attemptsMade: 7,
+        userId: 'user-456',
+        reason: 'user-action',
       })
+    })
 
-      it('should work when cancelled before any attempts', () => {
-        const error = PollingError.cancelled(0)
+    it('should work when cancelled before any attempts', () => {
+      const error = new PollingError(
+        'Polling cancelled after 0 attempts',
+        PollingFailureCause.CANCELLED,
+        0,
+      )
 
-        expect(error.message).toBe('Polling cancelled after 0 attempts')
-        expect(error.attemptsMade).toBe(0)
-      })
+      expect(error.message).toBe('Polling cancelled after 0 attempts')
+      expect(error.attemptsMade).toBe(0)
     })
   })
 
@@ -152,8 +180,16 @@ describe('PollingError', () => {
 
   describe('discriminated union support', () => {
     it('should support type discrimination by failureCause', () => {
-      const timeoutError = PollingError.timeout(10)
-      const cancelledError = PollingError.cancelled(5)
+      const timeoutError = new PollingError(
+        'Polling timeout after 10 attempts',
+        PollingFailureCause.TIMEOUT,
+        10,
+      )
+      const cancelledError = new PollingError(
+        'Polling cancelled after 5 attempts',
+        PollingFailureCause.CANCELLED,
+        5,
+      )
 
       function handleError(error: PollingError): string {
         switch (error.failureCause) {
@@ -161,6 +197,8 @@ describe('PollingError', () => {
             return `Timed out after ${error.attemptsMade} attempts`
           case PollingFailureCause.CANCELLED:
             return `Cancelled after ${error.attemptsMade} attempts`
+          case PollingFailureCause.INVALID_CONFIG:
+            return `Invalid config`
         }
       }
 
@@ -173,20 +211,22 @@ describe('PollingError', () => {
     it('should export correct constant values', () => {
       expect(PollingFailureCause.TIMEOUT).toBe('TIMEOUT')
       expect(PollingFailureCause.CANCELLED).toBe('CANCELLED')
+      expect(PollingFailureCause.INVALID_CONFIG).toBe('INVALID_CONFIG')
     })
 
-    it('should have exactly two causes', () => {
+    it('should have exactly three causes', () => {
       const causes = Object.keys(PollingFailureCause)
-      expect(causes).toHaveLength(2)
+      expect(causes).toHaveLength(3)
       expect(causes).toContain('TIMEOUT')
       expect(causes).toContain('CANCELLED')
+      expect(causes).toContain('INVALID_CONFIG')
     })
   })
 
   describe('error handling patterns', () => {
     it('should be catchable as PollingError', () => {
       function mayThrowPollingError(): void {
-        throw PollingError.timeout(5)
+        throw new PollingError('Polling timeout after 5 attempts', PollingFailureCause.TIMEOUT, 5)
       }
 
       try {
@@ -202,7 +242,12 @@ describe('PollingError', () => {
 
     it('should be catchable as InternalError', () => {
       function mayThrowPollingError(): void {
-        throw PollingError.cancelled(3, { reason: 'test' })
+        throw new PollingError(
+          'Polling cancelled after 3 attempts',
+          PollingFailureCause.CANCELLED,
+          3,
+          { reason: 'test' },
+        )
       }
 
       try {
@@ -218,7 +263,11 @@ describe('PollingError', () => {
     })
 
     it('should support instanceof checks in catch blocks', () => {
-      const errors = [PollingError.timeout(10), PollingError.cancelled(5), new Error('Other')]
+      const errors = [
+        new PollingError('Polling timeout after 10 attempts', PollingFailureCause.TIMEOUT, 10),
+        new PollingError('Polling cancelled after 5 attempts', PollingFailureCause.CANCELLED, 5),
+        new Error('Other'),
+      ]
 
       const results = errors.map((error) => {
         if (error instanceof PollingError) {

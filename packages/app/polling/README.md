@@ -304,7 +304,12 @@ class FixedIntervalStrategy implements PollingStrategy {
   ): Promise<T> {
     for (let attempt = 1; attempt <= this.maxAttempts; attempt++) {
       if (signal?.aborted) {
-        throw PollingError.cancelled(attempt - 1, metadata)
+        throw new PollingError(
+          `Polling cancelled after ${attempt - 1} attempts`,
+          PollingFailureCause.CANCELLED,
+          attempt - 1,
+          metadata,
+        )
       }
 
       const result = await pollFn(attempt)
@@ -318,7 +323,12 @@ class FixedIntervalStrategy implements PollingStrategy {
       }
     }
 
-    throw PollingError.timeout(this.maxAttempts, metadata)
+    throw new PollingError(
+      `Polling timeout after ${this.maxAttempts} attempts`,
+      PollingFailureCause.TIMEOUT,
+      this.maxAttempts,
+      metadata,
+    )
   }
 }
 
@@ -335,21 +345,30 @@ The library throws `PollingError` (extends `InternalError` from `@lokalise/node-
 
 ```typescript
 class PollingError extends InternalError {
-  readonly failureCause: 'TIMEOUT' | 'CANCELLED'
+  readonly failureCause: 'TIMEOUT' | 'CANCELLED' | 'INVALID_CONFIG'
   readonly attemptsMade: number
-  readonly errorCode: 'POLLING_TIMEOUT' | 'POLLING_CANCELLED'
+  readonly errorCode: 'POLLING_TIMEOUT' | 'POLLING_CANCELLED' | 'POLLING_INVALID_CONFIG'
   readonly details: Record<string, unknown>
+  
+  constructor(
+    message: string,
+    failureCause: PollingFailureCause,
+    attemptsMade: number,
+    details?: Record<string, unknown>,
+    originalError?: Error,
+  )
 }
 ```
 
-**Factory methods:**
-- `PollingError.timeout(maxAttempts, metadata?)` - Max attempts exceeded
-- `PollingError.cancelled(attemptsMade, metadata?)` - AbortSignal triggered
+**Failure causes:**
+- `TIMEOUT` - Max attempts exceeded without completion
+- `CANCELLED` - AbortSignal triggered during polling
+- `INVALID_CONFIG` - Strategy configuration validation failed
 
 **Error properties:**
-- `failureCause` - Discriminator: `'TIMEOUT'` or `'CANCELLED'`
+- `failureCause` - Discriminator: `'TIMEOUT'`, `'CANCELLED'`, or `'INVALID_CONFIG'`
 - `attemptsMade` - Number of attempts completed before failure
-- `errorCode` - Structured error code: `'POLLING_TIMEOUT'` or `'POLLING_CANCELLED'`
+- `errorCode` - Structured error code (e.g., `'POLLING_TIMEOUT'`)
 - `details` - Structured metadata including `failureCause`, `attemptsMade`, and any custom metadata you provide
 
 ### Error Handling Pattern
@@ -371,6 +390,10 @@ try {
       case PollingFailureCause.CANCELLED:
         console.log(`Cancelled after ${error.attemptsMade} attempts`)
         console.log('Error code:', error.errorCode) // 'POLLING_CANCELLED'
+        break
+      case PollingFailureCause.INVALID_CONFIG:
+        console.log('Invalid strategy configuration:', error.message)
+        console.log('Error code:', error.errorCode) // 'POLLING_INVALID_CONFIG'
         break
     }
   } else if (isInternalError(error)) {
