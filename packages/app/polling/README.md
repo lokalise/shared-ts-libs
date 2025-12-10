@@ -1,28 +1,33 @@
 # Polling
 
-This package provides polling utilities with exponential backoff support.
+This package provides a flexible polling system with a strategy-based architecture, making it easy to implement different retry patterns.
 
 ## Features
 
-- **Exponential Backoff**: Automatically increases delay between polling attempts
+- **Strategy Pattern**: Pluggable polling strategies for different use cases
+- **Exponential Backoff**: Built-in strategy with automatic delay increases
 - **Jitter Support**: Adds randomization to prevent thundering herd problems
-- **Configurable**: Fully customizable polling behavior
+- **Builder Pattern**: Fluent API for creating pollers
 - **Type-Safe**: Full TypeScript support with strict types
 - **Error Handling**: Domain-specific error handling with timeout support
+- **Extensible**: Easy to add custom polling strategies
 
 ## Usage
 
-### Basic Example
+### Basic Example with Builder Pattern
 
 ```typescript
 import {
-  ExponentialBackoffPoller,
-  STANDARD_POLLER_CONFIG,
+  createPollerBuilder,
+  STANDARD_EXPONENTIAL_BACKOFF_CONFIG,
   type PollResult,
 } from '@lokalise/polling'
 import type { RequestContext } from '@lokalise/fastify-extras'
 
-const poller = new ExponentialBackoffPoller()
+// Create a poller with exponential backoff strategy
+const poller = createPollerBuilder()
+  .withExponentialBackoff(STANDARD_EXPONENTIAL_BACKOFF_CONFIG)
+  .build()
 
 // Your polling function
 async function checkJobStatus(jobId: string): Promise<PollResult<JobResult>> {
@@ -43,7 +48,6 @@ async function checkJobStatus(jobId: string): Promise<PollResult<JobResult>> {
 try {
   const result = await poller.poll(
     () => checkJobStatus('job-123'),
-    STANDARD_POLLER_CONFIG,
     reqContext,
     { jobId: 'job-123' }, // optional metadata for logging
   )
@@ -60,9 +64,12 @@ try {
 ### Custom Configuration
 
 ```typescript
-import { ExponentialBackoffPoller, type PollerConfig } from '@lokalise/polling'
+import {
+  createPollerBuilder,
+  type ExponentialBackoffConfig,
+} from '@lokalise/polling'
 
-const customConfig: PollerConfig = {
+const customConfig: ExponentialBackoffConfig = {
   initialDelayMs: 1000, // Start with 1 second
   maxDelayMs: 30000, // Cap at 30 seconds
   backoffMultiplier: 2.0, // Double the delay each time
@@ -70,11 +77,14 @@ const customConfig: PollerConfig = {
   jitterFactor: 0.1, // 10% jitter
 }
 
-const poller = new ExponentialBackoffPoller()
-await poller.poll(myPollFn, customConfig, reqContext)
+const poller = createPollerBuilder()
+  .withExponentialBackoff(customConfig)
+  .build()
+
+await poller.poll(myPollFn, reqContext)
 ```
 
-## Configuration Options
+## Exponential Backoff Configuration
 
 - `initialDelayMs`: Initial delay between attempts (milliseconds)
 - `maxDelayMs`: Maximum delay between attempts (milliseconds)
@@ -84,7 +94,7 @@ await poller.poll(myPollFn, customConfig, reqContext)
 
 ## Standard Config
 
-The package includes `STANDARD_POLLER_CONFIG` for typical use cases:
+The package includes `STANDARD_EXPONENTIAL_BACKOFF_CONFIG` for typical use cases:
 
 - Initial delay: 2 seconds
 - Max delay: 15 seconds
@@ -103,7 +113,7 @@ The poller will:
 import { PollingError, PollingFailureCause } from '@lokalise/polling'
 
 try {
-  await poller.poll(myPollFn, config, reqContext)
+  await poller.poll(myPollFn, reqContext)
 } catch (error) {
   if (error instanceof PollingError) {
     if (error.failureCause === PollingFailureCause.TIMEOUT) {
@@ -111,5 +121,55 @@ try {
     }
   }
 }
+```
+
+## Architecture
+
+### Strategy Pattern
+
+The package uses a strategy pattern to allow different polling behaviors. This makes it easy to add new retry strategies without modifying existing code.
+
+```typescript
+import { PollingStrategy, type PollResult } from '@lokalise/polling'
+import type { RequestContext } from '@lokalise/fastify-extras'
+
+// Example: Create a custom strategy
+class CustomStrategy implements PollingStrategy {
+  async execute<T>(
+    pollFn: () => Promise<PollResult<T>>,
+    reqContext: RequestContext,
+    metadata?: Record<string, unknown>,
+  ): Promise<T> {
+    // Your custom retry logic here
+  }
+}
+```
+
+### Builder Pattern
+
+The builder pattern provides a fluent API for constructing pollers:
+
+```typescript
+const poller = createPollerBuilder()
+  .withExponentialBackoff(config) // Configure strategy
+  .build() // Build the poller
+```
+
+## Migration from Legacy API
+
+If you're using the old `ExponentialBackoffPoller` class, it's still available for backward compatibility but is deprecated:
+
+```typescript
+// Old API (deprecated but still works)
+import { ExponentialBackoffPoller, STANDARD_POLLER_CONFIG } from '@lokalise/polling'
+const poller = new ExponentialBackoffPoller()
+await poller.poll(myPollFn, STANDARD_POLLER_CONFIG, reqContext)
+
+// New API (recommended)
+import { createPollerBuilder, STANDARD_EXPONENTIAL_BACKOFF_CONFIG } from '@lokalise/polling'
+const poller = createPollerBuilder()
+  .withExponentialBackoff(STANDARD_EXPONENTIAL_BACKOFF_CONFIG)
+  .build()
+await poller.poll(myPollFn, reqContext)
 ```
 

@@ -1,8 +1,10 @@
 import { setTimeout } from 'node:timers/promises'
 import type { RequestContext } from '@lokalise/fastify-extras'
-import { PollingError } from './PollingError.ts'
+import type { PollResult } from '../Poller.ts'
+import { PollingError } from '../PollingError.ts'
+import type { PollingStrategy } from './PollingStrategy.ts'
 
-export interface PollerConfig {
+export interface ExponentialBackoffConfig {
   initialDelayMs: number
   maxDelayMs: number
   backoffMultiplier: number
@@ -10,10 +12,8 @@ export interface PollerConfig {
   jitterFactor?: number
 }
 
-export type PollResult<T> = { isComplete: true; value: T } | { isComplete: false; value?: never }
-
 // Standard polling for typical async operations (max ~4.5 min)
-export const STANDARD_POLLER_CONFIG: PollerConfig = {
+export const STANDARD_EXPONENTIAL_BACKOFF_CONFIG: ExponentialBackoffConfig = {
   initialDelayMs: 2000,
   maxDelayMs: 15000,
   backoffMultiplier: 1.5,
@@ -21,25 +21,19 @@ export const STANDARD_POLLER_CONFIG: PollerConfig = {
   jitterFactor: 0.2,
 }
 
-export class ExponentialBackoffPoller {
-  /**
-   * Polls until complete or timeout.
-   *
-   * @param pollFn - Function that returns PollResult. Should throw domain-specific
-   *                 errors for terminal failure states.
-   * @param config - Polling configuration (delays, max attempts, etc.)
-   * @param reqContext - Request context for logging
-   * @param metadata - Additional context for logging
-   * @throws PollingError.timeout if max attempts exceeded
-   * @throws Any domain-specific errors thrown by pollFn
-   */
-  async poll<T>(
+export class ExponentialBackoffStrategy implements PollingStrategy {
+  private readonly config: ExponentialBackoffConfig
+
+  constructor(config: ExponentialBackoffConfig) {
+    this.config = config
+  }
+
+  async execute<T>(
     pollFn: () => Promise<PollResult<T>>,
-    config: PollerConfig,
     reqContext: RequestContext,
     metadata?: Record<string, unknown>,
   ): Promise<T> {
-    for (let attempt = 0; attempt < config.maxAttempts; attempt++) {
+    for (let attempt = 0; attempt < this.config.maxAttempts; attempt++) {
       // Let domain errors bubble up naturally
       const result = await pollFn()
 
@@ -52,8 +46,8 @@ export class ExponentialBackoffPoller {
       }
 
       // Only wait if there are more attempts remaining
-      if (attempt < config.maxAttempts - 1) {
-        const delayMs = this.calculateDelay(attempt, config)
+      if (attempt < this.config.maxAttempts - 1) {
+        const delayMs = this.calculateDelay(attempt)
         reqContext.logger.debug(
           { attempt: attempt + 1, nextDelayMs: delayMs, ...metadata },
           'Polling not complete, waiting before retry',
@@ -63,16 +57,16 @@ export class ExponentialBackoffPoller {
     }
 
     // Exceeded max attempts
-    throw PollingError.timeout(config.maxAttempts, metadata)
+    throw PollingError.timeout(this.config.maxAttempts, metadata)
   }
 
-  private calculateDelay(attempt: number, config: PollerConfig): number {
+  private calculateDelay(attempt: number): number {
     const baseDelay = Math.min(
-      config.initialDelayMs * Math.pow(config.backoffMultiplier, attempt),
-      config.maxDelayMs,
+      this.config.initialDelayMs * Math.pow(this.config.backoffMultiplier, attempt),
+      this.config.maxDelayMs,
     )
 
-    const jitterFactor = config.jitterFactor ?? 0.2
+    const jitterFactor = this.config.jitterFactor ?? 0.2
     const jitter = baseDelay * jitterFactor * (Math.random() - 0.5)
 
     return Math.round(baseDelay + jitter)
