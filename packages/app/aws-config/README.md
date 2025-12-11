@@ -52,7 +52,8 @@ This helps:
 - Prevent naming collisions across environments, accounts, or tenants  
 - Support multi-tenancy by isolating each tenant's resources  
 
-If no prefix is provided, the original resource name is returned unchanged. Note that the prefix contributes to the total resource name length, which must comply with AWS service limits.
+If no prefix is provided, the original resource name is returned unchanged. Note that the prefix contributes to the
+total resource name length, which must comply with AWS service limits.
 
 ### Tagging AWS Resources
 
@@ -107,15 +108,16 @@ const routingConfig: EventRoutingConfig = {
 - **Internal Topics** (default)
   - You own and manage the SNS topic.
   - `TopicConfig` must include `owner`, `service`, and optionally `externalAppsWithSubscribePermissions`.
-  - At runtime, the `MessageQueueToolkitSnsOptionsResolver` will resolve consumer/publisher options with a **CreateTopic** command 
-   (with name prefixing, tags, KMS settings) and set up subscriptions for your queues and any external apps.
+  - At runtime, the `MessageQueueToolkitSnsOptionsResolver` will resolve consumer/publisher options with a
+   **CreateTopic** command (with name prefixing, tags, KMS settings) and set up subscriptions for your queues and
+   any external apps.
 
 - **External Topics** (`isExternal: true`)
   - The SNS topic is pre‑existing and managed outside your application.
   - `TopicConfig` includes `topicName`, `isExternal: true`, and your `queues`, but **must omit** `owner`, `service`, 
    and `externalAppsWithSubscribePermissions`.
-  - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing topic by name 
-   and subscribe your queues. **No topic creation or tagging** is attempted.
+  - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing topic by 
+   name and subscribe your queues. **No topic creation or tagging** is attempted.
 
 Under the hood, the TypeScript union enforces this shape.
 
@@ -151,13 +153,14 @@ const commandConfig: CommandConfig = {
 - **Internal Queues** (default)
   - You own and manage the SQS queue.
   - `QueueConfig` must include `owner` and `service`.
-  - At runtime, the `MessageQueueToolkitSqsOptionsResolver` will resolve consumer/publisher options with a **CreateQueue** command 
-   (with name prefixing, tags, KMS settings, DLQ configuration).
+  - At runtime, the `MessageQueueToolkitSqsOptionsResolver` will resolve consumer/publisher options with a
+   **CreateQueue** command (with name prefixing, tags, KMS settings, DLQ configuration).
 
 - **External Queues** (`isExternal: true`)
   - The SQS queue is pre‑existing and managed outside your application.
   - `QueueConfig` includes `queueName` and `isExternal: true`, but **must omit** `owner` and `service`.
-  - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing queue by name.
+  - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing queue by 
+   name.
   - **No queue creation or tagging** is attempted.
 
 ### Message Queue Toolkit SNS Resolver
@@ -233,12 +236,45 @@ const consumeOpts = resolver.resolveConsumerOptions('processOrder', {
 
 #### Request Context Pre-handler
 
-When processing messages, both resolvers automatically inject a **request context pre-handler** to each handler. This pre-handler populates a `requestContext` object with:
+When processing messages, both resolvers automatically inject a **request context pre-handler** to each handler.
+This pre-handler populates a `requestContext` object with:
 - `reqId`: the message metadata correlation ID
 - `logger`: a child logger instance scoped with the correlation ID (under `x-request-id`)
 
 Please refer to `@message-queue-toolkit` documentation for more details on how to use the pre-handler output in your
 event handlers.
+
+#### Resource Name Validation
+
+Both resolvers support optional resource name validation via the `validateNamePatterns` configuration option. 
+When enabled, it validates that your topic and queue names follow Lokalise naming conventions:
+
+```ts
+const resolver = new MessageQueueToolkitSnsOptionsResolver(routingConfig, {
+  appEnv: 'production',
+  system: 'backend',
+  project: 'my-project',
+  validateNamePatterns: true, // Enable validation
+});
+```
+
+**Naming Conventions:**
+
+- **Topics**: Must follow the pattern `<project>-<moduleOrFlowName>`
+  - Valid examples: `my-project-user_service`, `my-project-orders`
+  - Module/flow names must be lowercase with optional underscores as separators
+  - Maximum length: 246 characters
+  - Note: `<project>_<moduleOrFlowName>` is temporarily allowed for backwards compatibility
+
+- **Queues**: Must follow the pattern `<project>-<flow>-<service>(-<module>)?`
+  - Valid examples: `my-project-orders-processor`, `my-project-user_service-handler-validator`
+  - Requires at least 2 segments after project: flow and service
+  - Optional third segment for module name
+  - All segments must be lowercase with optional underscores as separators
+  - Maximum length: 64 characters
+
+When validation is enabled, the resolver will throw descriptive errors during construction if any resource names don't 
+match these patterns. This helps catch naming issues early and ensures consistency across your AWS resources.
 
 #### Opinionated Defaults
 
