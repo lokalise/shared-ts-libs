@@ -1,4 +1,18 @@
-import type { RequestContext } from '@lokalise/fastify-extras'
+/**
+ * Minimal request context interface for logging and request identification.
+ * Provides a basic structure for passing logging capabilities through polling operations.
+ */
+export interface RequestContext {
+  /** Logger instance with standard logging methods */
+  logger: {
+    debug: (...args: unknown[]) => void
+    info: (...args: unknown[]) => void
+    warn: (...args: unknown[]) => void
+    error: (...args: unknown[]) => void
+  }
+  /** Unique request identifier for correlation */
+  reqId: string
+}
 
 export type PollResult<T> = { isComplete: true; value: T } | { isComplete: false }
 

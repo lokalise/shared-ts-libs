@@ -1,6 +1,5 @@
-import type { RequestContext } from '@lokalise/fastify-extras'
 import { describe, expect, it } from 'vitest'
-import { Poller, type PollingStrategy, type PollResult } from './Poller.ts'
+import { Poller, type PollingStrategy, type PollResult, type RequestContext } from './Poller.ts'
 import { PollingError, PollingFailureCause } from './PollingError.ts'
 
 // Test helper to create a minimal request context

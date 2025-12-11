@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises'
-import type { RequestContext } from '@lokalise/fastify-extras'
 import { describe, expect, it } from 'vitest'
+import type { RequestContext } from '../Poller.ts'
 import { PollingError, PollingFailureCause } from '../PollingError.ts'
 import {
   ExponentialBackoffStrategy,

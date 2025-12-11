@@ -1,6 +1,5 @@
 import { setTimeout } from 'node:timers/promises'
-import type { RequestContext } from '@lokalise/fastify-extras'
-import type { PollingStrategy, PollResult } from '../Poller.ts'
+import type { PollingStrategy, PollResult, RequestContext } from '../Poller.ts'
 import { PollingError, PollingFailureCause } from '../PollingError.ts'
 
 /**
