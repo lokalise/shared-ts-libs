@@ -336,7 +336,3 @@ const parentIds = extractInValues<string>(filter, 'parentId')
 // Use directly in your service
 const files = await fileService.getFilesForParents(parentIds)
 ```
-
-## License
-
-MIT

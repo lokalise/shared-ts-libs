@@ -259,7 +259,7 @@ export function extractAllFieldValues(
     for (const f of filters) {
       if (f.type === 'comparison') {
         values.push(f.value)
-      } else if (f.type === 'in') {
+      } else if (f.type === 'in' || f.type === 'not-in') {
         values.push(...f.values)
       } else if (f.type === 'string-function') {
         values.push(f.value)

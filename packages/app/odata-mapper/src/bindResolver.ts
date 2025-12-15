@@ -1,10 +1,12 @@
 import type { BindKey, BindReference, ODataBinds } from '@balena/odata-parser'
-import type { FilterValue } from './types.ts'
+import type { FilterValue, RawBindValue } from './types.ts'
 
 /**
- * Resolves a bind reference to its actual value from the binds array
+ * Resolves a bind reference to its actual value from the binds array.
+ * Returns RawBindValue because for 'in' operator, balena parser stores values
+ * as an array of bind tuples which gets returned as-is from the default case.
  */
-export function resolveBind(binds: ODataBinds, ref: BindReference): FilterValue {
+export function resolveBind(binds: ODataBinds, ref: BindReference): RawBindValue {
   const key = ref.bind
   const bind = typeof key === 'number' ? binds[key] : binds[key]
 
@@ -30,16 +32,18 @@ export function resolveBind(binds: ODataBinds, ref: BindReference): FilterValue 
       // Duration is typically returned as a string in ISO 8601 format
       return value as string
     default:
-      // For unknown types, return as-is
-      return value as FilterValue
+      // For unknown types (including arrays for 'in' operator), return as-is
+      return value as RawBindValue
   }
 }
 
 /**
- * Resolves multiple bind references to their actual values
+ * Resolves multiple bind references to their actual values.
+ * Used when we have an array of separate bind refs (e.g., [{ bind: 0 }, { bind: 1 }]).
+ * Each individual bind is expected to be a simple value, not an array.
  */
 export function resolveBinds(binds: ODataBinds, refs: BindReference[]): FilterValue[] {
-  return refs.map((ref) => resolveBind(binds, ref))
+  return refs.map((ref) => resolveBind(binds, ref) as FilterValue)
 }
 
 /**

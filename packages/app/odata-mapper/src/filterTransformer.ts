@@ -126,11 +126,18 @@ function isNullLiteral(value: unknown): value is null {
 }
 
 /**
- * Resolves a value that could be a bind reference, field reference, or literal
+ * Resolves a value that could be a bind reference, field reference, or literal.
+ * Used for comparison operators which expect single values, not arrays.
  */
 function resolveValue(value: unknown, binds: ODataBinds): FilterValue | string {
   if (isBindReference(value)) {
-    return resolveBind(binds, value)
+    const resolved = resolveBind(binds, value)
+    // resolveBind can return arrays for 'in' operator, but resolveValue is only
+    // used for comparison operators which expect single values
+    if (Array.isArray(resolved)) {
+      throw new Error(`Unexpected array value in comparison: ${JSON.stringify(resolved)}`)
+    }
+    return resolved
   }
   if (isFieldReference(value)) {
     return getFieldPath(value)

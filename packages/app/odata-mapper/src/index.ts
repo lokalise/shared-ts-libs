@@ -65,6 +65,7 @@ export type {
   NotInFilter,
   NotNode,
   ParsedFilter,
+  RawBindValue,
   StringFunction,
   StringFunctionFilter,
   TransformedFilter,

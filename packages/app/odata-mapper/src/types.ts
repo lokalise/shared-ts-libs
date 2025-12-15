@@ -81,7 +81,16 @@ export interface ParsedFilter {
  * High-level transformed filter types for service consumption
  */
 
+/** Primitive filter value types */
 export type FilterValue = string | number | boolean | Date | null
+
+/**
+ * Raw bind value that resolveBind can return.
+ * For 'in' operator, balena parser stores values as an array of bind tuples
+ * like [['Text', 'val1'], ['Text', 'val2'], ...] which gets returned as-is
+ * from the default case in resolveBind.
+ */
+export type RawBindValue = FilterValue | unknown[]
 
 export interface ComparisonFilter {
   type: 'comparison'
