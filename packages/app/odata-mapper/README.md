@@ -8,31 +8,177 @@ Transform low-level OData AST from [@balena/odata-parser](https://github.com/bal
 npm install @lokalise/odata-mapper @balena/odata-parser
 ```
 
-## Overview
-
-This library takes the output of `@balena/odata-parser` and transforms it into easy-to-use data structures for building web services. Instead of manually traversing complex AST nodes and resolving bind references, you get clean filter objects ready for use in your application logic.
-
 ## Quick Start
 
 ```typescript
-import { parse } from '@balena/odata-parser'
-import { transformFilter, extractEqualityValue, extractInValues } from '@lokalise/odata-mapper'
+import { parseODataFilter, transformFilter, extractEqualityValue, extractInValues } from '@lokalise/odata-mapper'
 
-// Parse an OData filter query
-const result = parse("$filter=status eq 'active' and parentId in ('root', 'parent-123')", {
-  startRule: 'ProcessRule',
-  rule: 'QueryOptions',
-})
+// Parse and transform in one go
+const parsed = parseODataFilter("status eq 'active' and parentId in ('root', 'parent-123')")
 
-// Transform the AST into a high-level filter structure
-const filter = transformFilter(result.tree.$filter, result.binds)
+if (parsed.tree) {
+  const filter = transformFilter(parsed.tree, parsed.binds)
 
-// Extract specific field values
-const status = extractEqualityValue<string>(filter, 'status') // 'active'
-const parentIds = extractInValues<string>(filter, 'parentId')   // ['root', 'parent-123']
+  const status = extractEqualityValue<string>(filter, 'status')     // 'active'
+  const parentIds = extractInValues<string>(filter, 'parentId')     // ['root', 'parent-123']
+}
+```
+
+## Real-World Usage
+
+### Dynamic Filter Handling
+
+For services where you don't know which fields users will filter on:
+
+```typescript
+import {
+  parseODataFilter,
+  extractAllFieldValues,
+  getFilteredFieldNames,
+  createFilterMap,
+  transformFilter,
+} from '@lokalise/odata-mapper'
+
+// User sends: $filter=status eq 'active' and categoryId in (1, 2, 3) and contains(name, 'test')
+const parsed = parseODataFilter(queryString)
+
+if (parsed.tree) {
+  // Option 1: Get all field values at once as a Map
+  const fieldValues = extractAllFieldValues(parsed.tree, parsed.binds)
+  // Map {
+  //   'status' => ['active'],
+  //   'categoryId' => [1, 2, 3],
+  //   'name' => ['test']
+  // }
+
+  // Use in your database query builder
+  for (const [field, values] of fieldValues) {
+    if (allowedFields.includes(field)) {
+      queryBuilder.where(field, values.length === 1 ? values[0] : values)
+    }
+  }
+
+  // Option 2: Check which fields are being filtered
+  const filter = transformFilter(parsed.tree, parsed.binds)
+  const filteredFields = getFilteredFieldNames(filter)
+  // ['status', 'categoryId', 'name']
+
+  // Option 3: Get full filter details with createFilterMap
+  const filterMap = createFilterMap(filter)
+  for (const [field, filters] of filterMap) {
+    for (const f of filters) {
+      if (f.type === 'comparison') {
+        // Handle equality, gt, lt, etc.
+      } else if (f.type === 'in') {
+        // Handle IN filters
+      } else if (f.type === 'string-function') {
+        // Handle contains, startswith, etc.
+      }
+    }
+  }
+}
+```
+
+### Known Field Extraction
+
+When you know the specific fields your service supports:
+
+```typescript
+import {
+  parseODataFilter,
+  transformFilter,
+  extractEqualityValue,
+  extractInValues,
+  extractRange,
+  extractStringFunction,
+} from '@lokalise/odata-mapper'
+
+const parsed = parseODataFilter(queryString)
+
+if (parsed.tree) {
+  const filter = transformFilter(parsed.tree, parsed.binds)
+
+  // Extract only the fields you support (undefined if not present)
+  const filters = {
+    status: extractEqualityValue<string>(filter, 'status'),
+    categoryIds: extractInValues<number>(filter, 'categoryId'),
+    priceRange: extractRange(filter, 'price'),
+    nameSearch: extractStringFunction(filter, 'name', 'contains')?.value,
+  }
+
+  // Build your query conditionally
+  const query = db.select().from('products')
+  if (filters.status) query.where('status', filters.status)
+  if (filters.categoryIds) query.whereIn('categoryId', filters.categoryIds)
+  if (filters.priceRange?.min) query.where('price', '>=', filters.priceRange.min)
+  if (filters.priceRange?.max) query.where('price', '<=', filters.priceRange.max)
+  if (filters.nameSearch) query.whereLike('name', `%${filters.nameSearch}%`)
+}
+```
+
+### Parent Filter Use Case
+
+```typescript
+import { parseODataFilter, transformFilter, extractInValues } from '@lokalise/odata-mapper'
+
+// Parse: $filter=parentId in ('root', 'parent-123', 'parent-456')
+const parsed = parseODataFilter(queryString)
+
+if (parsed.tree) {
+  const filter = transformFilter(parsed.tree, parsed.binds)
+  const parentIds = extractInValues<string>(filter, 'parentId')
+  // ['root', 'parent-123', 'parent-456']
+
+  // Use directly in your service
+  const files = await fileService.getFilesForParents(parentIds)
+}
+```
+
+### Error Handling
+
+```typescript
+import { parseODataFilter, ODataParseError } from '@lokalise/odata-mapper'
+
+try {
+  const parsed = parseODataFilter(userInput)
+  // ... use parsed result
+} catch (error) {
+  if (error instanceof ODataParseError) {
+    console.error(`Invalid filter: ${error.filter}`)
+    console.error(`Cause: ${error.cause?.message}`)
+    // Return 400 Bad Request to user
+  }
+  throw error
+}
 ```
 
 ## API Reference
+
+### Parsing
+
+#### `parseODataFilter(filter)`
+
+Convenience wrapper for parsing OData $filter expressions. Handles null/empty strings gracefully and provides structured error handling.
+
+```typescript
+const parsed = parseODataFilter("status eq 'active'")
+// { tree: FilterTreeNode | null, binds: ODataBinds, originalFilter: string | undefined }
+
+// Handle empty/null filters
+const empty = parseODataFilter(undefined)
+// { tree: null, binds: [], originalFilter: undefined }
+```
+
+#### `ODataParseError`
+
+Custom error class thrown when parsing fails. Includes the original filter string and cause.
+
+```typescript
+class ODataParseError extends Error {
+  filter: string      // The original filter string that failed to parse
+  cause?: Error       // The underlying parser error
+}
+```
 
 ### Core Transformation
 
@@ -41,9 +187,7 @@ const parentIds = extractInValues<string>(filter, 'parentId')   // ['root', 'par
 Transforms a filter AST into a high-level `TransformedFilter` structure.
 
 ```typescript
-import { transformFilter } from '@lokalise/odata-mapper'
-
-const filter = transformFilter(result.tree.$filter, result.binds)
+const filter = transformFilter(parsed.tree, parsed.binds)
 // Returns: TransformedFilter (ComparisonFilter | InFilter | LogicalFilter | ...)
 ```
 
@@ -143,12 +287,7 @@ const priceFilters = getFiltersForField(filter, 'price')
 Extracts all field values from a filter in one pass. Returns a `Map<string, FilterValue[]>`.
 
 ```typescript
-const result = parse("$filter=status eq 'active' and categoryId in (1, 2, 3)", {
-  startRule: 'ProcessRule',
-  rule: 'QueryOptions',
-})
-
-const fieldValues = extractAllFieldValues(result.tree.$filter, result.binds)
+const fieldValues = extractAllFieldValues(parsed.tree, parsed.binds)
 // Map {
 //   'status' => ['active'],
 //   'categoryId' => [1, 2, 3]
@@ -211,128 +350,22 @@ Supports nested property access: `address/city eq 'NYC'`
 
 ```typescript
 import type {
+  // Parser types
+  ParsedODataFilter,
+
+  // Filter types
   TransformedFilter,
   ComparisonFilter,
   InFilter,
+  NotInFilter,
   LogicalFilter,
   NotFilter,
   StringFunctionFilter,
+
+  // Value types
   FilterValue,
   ComparisonOperator,
   LogicalOperator,
   StringFunction,
 } from '@lokalise/odata-mapper'
-```
-
-## Real-World Examples
-
-### Dynamic Filter Handling
-
-For services where you don't know which fields users will filter on:
-
-```typescript
-import { parse } from '@balena/odata-parser'
-import {
-  extractAllFieldValues,
-  getFilteredFieldNames,
-  createFilterMap,
-  transformFilter,
-} from '@lokalise/odata-mapper'
-
-// User sends: $filter=status eq 'active' and categoryId in (1, 2, 3) and contains(name, 'test')
-const result = parse(queryString, {
-  startRule: 'ProcessRule',
-  rule: 'QueryOptions',
-})
-
-// Option 1: Get all field values at once as a Map
-const fieldValues = extractAllFieldValues(result.tree.$filter, result.binds)
-// Map {
-//   'status' => ['active'],
-//   'categoryId' => [1, 2, 3],
-//   'name' => ['test']
-// }
-
-// Use in your database query builder
-for (const [field, values] of fieldValues) {
-  if (allowedFields.includes(field)) {
-    queryBuilder.where(field, values.length === 1 ? values[0] : values)
-  }
-}
-
-// Option 2: Check which fields are being filtered
-const filteredFields = getFilteredFieldNames(transformFilter(result.tree.$filter, result.binds))
-// ['status', 'categoryId', 'name']
-
-// Option 3: Get full filter details with createFilterMap
-const filterMap = createFilterMap(transformFilter(result.tree.$filter, result.binds))
-for (const [field, filters] of filterMap) {
-  for (const filter of filters) {
-    if (filter.type === 'comparison') {
-      // Handle equality, gt, lt, etc.
-    } else if (filter.type === 'in') {
-      // Handle IN filters
-    } else if (filter.type === 'string-function') {
-      // Handle contains, startswith, etc.
-    }
-  }
-}
-```
-
-### Known Field Extraction
-
-When you know the specific fields your service supports:
-
-```typescript
-import { parse } from '@balena/odata-parser'
-import {
-  transformFilter,
-  extractEqualityValue,
-  extractInValues,
-  extractRange,
-  extractStringFunction,
-} from '@lokalise/odata-mapper'
-
-const result = parse(queryString, {
-  startRule: 'ProcessRule',
-  rule: 'QueryOptions',
-})
-
-const filter = transformFilter(result.tree.$filter, result.binds)
-
-// Extract only the fields you support (undefined if not present)
-const filters = {
-  status: extractEqualityValue<string>(filter, 'status'),
-  categoryIds: extractInValues<number>(filter, 'categoryId'),
-  priceRange: extractRange(filter, 'price'),
-  nameSearch: extractStringFunction(filter, 'name', 'contains')?.value,
-}
-
-// Build your query conditionally
-const query = db.select().from('products')
-if (filters.status) query.where('status', filters.status)
-if (filters.categoryIds) query.whereIn('categoryId', filters.categoryIds)
-if (filters.priceRange?.min) query.where('price', '>=', filters.priceRange.min)
-if (filters.priceRange?.max) query.where('price', '<=', filters.priceRange.max)
-if (filters.nameSearch) query.whereLike('name', `%${filters.nameSearch}%`)
-```
-
-### Parent Filter Use Case (Original Request)
-
-```typescript
-import { parse } from '@balena/odata-parser'
-import { transformFilter, extractInValues } from '@lokalise/odata-mapper'
-
-// Parse: $filter=parentId in ('root', 'parent-123', 'parent-456')
-const result = parse(queryString, {
-  startRule: 'ProcessRule',
-  rule: 'QueryOptions',
-})
-
-const filter = transformFilter(result.tree.$filter, result.binds)
-const parentIds = extractInValues<string>(filter, 'parentId')
-// ['root', 'parent-123', 'parent-456']
-
-// Use directly in your service
-const files = await fileService.getFilesForParents(parentIds)
 ```

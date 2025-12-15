@@ -38,7 +38,6 @@ export {
   getFiltersForField,
   hasFieldFilter,
 } from './filterExtractor.ts'
-
 // Export filter transformer
 export {
   getFieldPath,
@@ -46,6 +45,9 @@ export {
   transformFilter,
   transformFilterNode,
 } from './filterTransformer.ts'
+export type { ParsedODataFilter } from './parser.ts'
+// Export parser utilities
+export { ODataParseError, parseODataFilter } from './parser.ts'
 // Export our types
 export type {
   ComparisonFilter,
