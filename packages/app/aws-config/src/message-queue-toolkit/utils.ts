@@ -17,13 +17,14 @@ import { MAX_QUEUE_NAME_LENGTH, MAX_TOPIC_NAME_LENGTH } from './constants.ts'
  */
 export const validateTopicsConfig = (topicsConfig: TopicConfig[], project: string): void => {
   for (const { topicName, isExternal, queues } of topicsConfig) {
-    if (!isExternal) { // only validate internal topics
-      if (topicName.length > MAX_TOPIC_NAME_LENGTH) {
-        throw new Error(
-          `Topic name too long: ${topicName}. Max allowed length is ${MAX_TOPIC_NAME_LENGTH}, received ${topicName.length}`,
-        )
-      }
+    if (topicName.length > MAX_TOPIC_NAME_LENGTH) {
+      throw new Error(
+        `Topic name too long: ${topicName}. Max allowed length is ${MAX_TOPIC_NAME_LENGTH}, received ${topicName.length}`,
+      )
+    }
 
+    if (!isExternal) {
+      // only validate internal topics
       if (!topicName.startsWith(project)) {
         throw new Error(`Topic name must start with project name '${project}': ${topicName}`)
       }
@@ -48,13 +49,14 @@ export const validateTopicsConfig = (topicsConfig: TopicConfig[], project: strin
  */
 export const validateQueueConfig = (queueConfigs: QueueConfig[], project: string): void => {
   for (const { queueName, isExternal } of queueConfigs) {
-    if (isExternal) continue // Skip validation for external queues
-
     if (queueName.length > MAX_QUEUE_NAME_LENGTH) {
       throw new Error(
         `Queue name too long: ${queueName}. Max allowed length is ${MAX_QUEUE_NAME_LENGTH}, received ${queueName.length}`,
       )
     }
+
+    // For external queues, we only need to validate the length
+    if (isExternal) continue
 
     if (!queueName.startsWith(project)) {
       throw new Error(`Queue name must start with project name '${project}': ${queueName}`)
