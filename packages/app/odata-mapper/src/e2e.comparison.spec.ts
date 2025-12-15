@@ -1,11 +1,6 @@
 import { parse } from '@balena/odata-parser'
 import { describe, expect, it } from 'vitest'
-import {
-  extractComparison,
-  extractEqualityValue,
-  extractRange,
-  transformFilter,
-} from './index.ts'
+import { extractComparison, extractEqualityValue, extractRange, transformFilter } from './index.ts'
 
 describe('e2e: comparison operators', () => {
   describe('basic equality filters', () => {

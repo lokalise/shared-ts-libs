@@ -144,7 +144,9 @@ describe('e2e: utilities', () => {
     })
 
     it('getFieldPath uses custom separator', () => {
-      expect(getFieldPath({ name: 'parent', property: { name: 'child' } }, '.')).toBe('parent.child')
+      expect(getFieldPath({ name: 'parent', property: { name: 'child' } }, '.')).toBe(
+        'parent.child',
+      )
     })
   })
 

@@ -314,7 +314,9 @@ function transformLogical(
   return {
     type: 'logical',
     operator,
-    filters: operands.map((operand) => transformFilterNode(operand as FilterTreeNode, binds, options)),
+    filters: operands.map((operand) =>
+      transformFilterNode(operand as FilterTreeNode, binds, options),
+    ),
   }
 }
 

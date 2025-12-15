@@ -5,7 +5,6 @@ import {
   collectOrFilters,
   extractComparison,
   extractEqualityValue,
-  extractInValues,
   flattenFilters,
   hasFieldFilter,
   transformFilter,
@@ -152,7 +151,7 @@ describe('e2e: logical operators', () => {
     })
 
     it('handles deeply nested AND/OR', () => {
-      const result = parse("$filter=(a eq 1 and b eq 2) or (c eq 3 and d eq 4)", {
+      const result = parse('$filter=(a eq 1 and b eq 2) or (c eq 3 and d eq 4)', {
         startRule: 'ProcessRule',
         rule: 'QueryOptions',
       })

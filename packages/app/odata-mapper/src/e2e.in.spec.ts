@@ -1,11 +1,6 @@
 import { parse } from '@balena/odata-parser'
 import { describe, expect, it } from 'vitest'
-import {
-  extractFieldValues,
-  extractInValues,
-  hasFieldFilter,
-  transformFilter,
-} from './index.ts'
+import { extractFieldValues, extractInValues, hasFieldFilter, transformFilter } from './index.ts'
 
 describe('e2e: in operator', () => {
   describe('basic in filters', () => {

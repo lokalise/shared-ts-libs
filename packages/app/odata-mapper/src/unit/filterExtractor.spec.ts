@@ -16,7 +16,6 @@ import {
   hasFieldFilter,
 } from '../filterExtractor.ts'
 import { transformFilter } from '../filterTransformer.ts'
-import { createBinds } from './testHelpers.ts'
 import type {
   ComparisonFilter,
   FilterTreeNode,
@@ -25,6 +24,7 @@ import type {
   StringFunctionFilter,
   TransformedFilter,
 } from '../types.ts'
+import { createBinds } from './testHelpers.ts'
 
 describe('filterExtractor', () => {
   describe('flattenFilters', () => {

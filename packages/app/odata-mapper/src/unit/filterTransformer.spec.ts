@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getFieldPath, isFieldReference, transformFilter } from '../filterTransformer.ts'
-import { createBinds } from './testHelpers.ts'
 import type { FilterTreeNode } from '../types.ts'
+import { createBinds } from './testHelpers.ts'
 
 describe('filterTransformer', () => {
   describe('isFieldReference', () => {
