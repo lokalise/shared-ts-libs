@@ -4,14 +4,15 @@ import type { AwsConfig } from '../awsConfig.ts'
 import type { CommandConfig } from './../event-routing/eventRoutingConfig.ts'
 import { MessageQueueToolkitSqsOptionsResolver } from './MessageQueueToolkitSqsOptionsResolver.ts'
 
+const project = 'test-project'
 const config = {
   queue1: {
-    queueName: 'test-mqt-queue_first',
+    queueName: 'test-project-mqt_queue-first_service',
     owner: 'team 1',
     service: 'service 1',
   },
   queue2: {
-    queueName: 'test-mqt-queue_second',
+    queueName: 'test-project-mqt_queue-second_service',
     isExternal: true,
   },
 } satisfies CommandConfig
@@ -31,7 +32,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
   beforeAll(() => {
     resolver = new MessageQueueToolkitSqsOptionsResolver(config, {
       system: 'my-system',
-      project: 'my-project',
+      project,
       appEnv: 'development',
     })
   })
@@ -44,7 +45,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
           validateNamePatterns: true,
           appEnv: 'development',
           system: 'test system',
-          project: 'test project',
+          project,
         },
       )
       expect(resolver).toBeInstanceOf(MessageQueueToolkitSqsOptionsResolver)
@@ -65,15 +66,17 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             validateNamePatterns: true,
             appEnv: 'development',
             system: 'test system',
-            project: 'test project',
+            project,
           }),
-      ).toThrowErrorMatchingInlineSnapshot('[Error: Invalid queue name: invalid]')
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Error: Queue name must start with project name 'test-project': invalid]`,
+      )
       expect(
         () =>
           new MessageQueueToolkitSqsOptionsResolver(config, {
             appEnv: 'development',
             system: 'test system',
-            project: 'test project',
+            project,
           }),
       ).not.toThrowError()
     })
@@ -94,7 +97,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             validateNamePatterns: true,
             appEnv: 'development',
             system: 'test system',
-            project: 'test project',
+            project,
           }),
       ).toThrowErrorMatchingInlineSnapshot(
         `[Error: Queue name too long: ${longQueueName}. Max allowed length is 64, received ${longQueueName.length}]`,
@@ -104,7 +107,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
           new MessageQueueToolkitSqsOptionsResolver(config, {
             appEnv: 'development',
             system: 'test system',
-            project: 'test project',
+            project,
           }),
       ).not.toThrowError()
     })
@@ -116,7 +119,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             validateNamePatterns: true,
             appEnv: 'development',
             system: 'test system',
-            project: 'test project',
+            project,
           }),
       ).not.toThrowError()
     })
@@ -166,13 +169,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "prefix_test-mqt-queue_first",
+                "QueueName": "prefix_test-project-mqt_queue-first_service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
                   "lok-cost-system": "my-system",
                   "lok-owner": "team 1",
-                  "project": "my-project",
+                  "project": "test-project",
                   "service": "sqs",
                 },
               },
@@ -214,13 +217,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "test-mqt-queue_first",
+                "QueueName": "test-project-mqt_queue-first_service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
                   "lok-cost-system": "my-system",
                   "lok-owner": "team 1",
-                  "project": "my-project",
+                  "project": "test-project",
                   "service": "sqs",
                 },
               },
@@ -262,13 +265,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "test-mqt-queue_first",
+                "QueueName": "test-project-mqt_queue-first_service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
                   "lok-cost-system": "my-system",
                   "lok-owner": "team 1",
-                  "project": "my-project",
+                  "project": "test-project",
                   "service": "sqs",
                 },
               },
@@ -310,13 +313,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "test-mqt-queue_first",
+                "QueueName": "test-project-mqt_queue-first_service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
                   "lok-cost-system": "my-system",
                   "lok-owner": "team 1",
-                  "project": "my-project",
+                  "project": "test-project",
                   "service": "sqs",
                 },
               },
@@ -350,7 +353,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "creationConfig": undefined,
             "handlerSpy": true,
             "locatorConfig": {
-              "queueName": "prefix_test-mqt-queue_second",
+              "queueName": "prefix_test-project-mqt_queue-second_service",
             },
             "logMessages": true,
             "messageSchemas": [],
@@ -370,7 +373,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "creationConfig": undefined,
             "handlerSpy": undefined,
             "locatorConfig": {
-              "queueName": "test-mqt-queue_second",
+              "queueName": "test-project-mqt_queue-second_service",
             },
             "logMessages": undefined,
             "messageSchemas": [],
@@ -434,13 +437,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "prefix_test-mqt-queue_first",
+                "QueueName": "prefix_test-project-mqt_queue-first_service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
                   "lok-cost-system": "my-system",
                   "lok-owner": "team 1",
-                  "project": "my-project",
+                  "project": "test-project",
                   "service": "sqs",
                 },
               },
@@ -493,13 +496,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "test-mqt-queue_first",
+                "QueueName": "test-project-mqt_queue-first_service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
                   "lok-cost-system": "my-system",
                   "lok-owner": "team 1",
-                  "project": "my-project",
+                  "project": "test-project",
                   "service": "sqs",
                 },
               },
@@ -512,13 +515,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                     "KmsMasterKeyId": "test kmsKeyId",
                     "MessageRetentionPeriod": "604800",
                   },
-                  "QueueName": "test-mqt-queue_first-dlq",
+                  "QueueName": "test-project-mqt_queue-first_service-dlq",
                   "tags": {
                     "env": "dev",
                     "lok-cost-service": "service 1",
                     "lok-cost-system": "my-system",
                     "lok-owner": "team 1",
-                    "project": "my-project",
+                    "project": "test-project",
                     "service": "sqs",
                   },
                 },
@@ -574,13 +577,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "test-mqt-queue_first",
+                "QueueName": "test-project-mqt_queue-first_service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
                   "lok-cost-system": "my-system",
                   "lok-owner": "team 1",
-                  "project": "my-project",
+                  "project": "test-project",
                   "service": "sqs",
                 },
               },
@@ -593,13 +596,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                     "KmsMasterKeyId": "test kmsKeyId",
                     "MessageRetentionPeriod": "604800",
                   },
-                  "QueueName": "test-mqt-queue_first-dlq",
+                  "QueueName": "test-project-mqt_queue-first_service-dlq",
                   "tags": {
                     "env": "dev",
                     "lok-cost-service": "service 1",
                     "lok-cost-system": "my-system",
                     "lok-owner": "team 1",
-                    "project": "my-project",
+                    "project": "test-project",
                     "service": "sqs",
                   },
                 },
@@ -655,13 +658,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "test-mqt-queue_first",
+                "QueueName": "test-project-mqt_queue-first_service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
                   "lok-cost-system": "my-system",
                   "lok-owner": "team 1",
-                  "project": "my-project",
+                  "project": "test-project",
                   "service": "sqs",
                 },
               },
@@ -674,13 +677,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                     "KmsMasterKeyId": "test kmsKeyId",
                     "MessageRetentionPeriod": "604800",
                   },
-                  "QueueName": "test-mqt-queue_first-dlq",
+                  "QueueName": "test-project-mqt_queue-first_service-dlq",
                   "tags": {
                     "env": "dev",
                     "lok-cost-service": "service 1",
                     "lok-cost-system": "my-system",
                     "lok-owner": "team 1",
-                    "project": "my-project",
+                    "project": "test-project",
                     "service": "sqs",
                   },
                 },
@@ -735,7 +738,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "handlerSpy": true,
             "handlers": [],
             "locatorConfig": {
-              "queueName": "prefix_test-mqt-queue_second",
+              "queueName": "prefix_test-project-mqt_queue-second_service",
             },
             "logMessages": true,
             "maxRetryDuration": 172800,
@@ -766,7 +769,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "handlerSpy": undefined,
             "handlers": [],
             "locatorConfig": {
-              "queueName": "test-mqt-queue_second",
+              "queueName": "test-project-mqt_queue-second_service",
             },
             "logMessages": undefined,
             "maxRetryDuration": 172800,
