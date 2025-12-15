@@ -133,6 +133,12 @@ describe('utils', () => {
       )
     })
 
+    it('should skip validation for external queues', () => {
+      const queues = [{ queueName: 'wrong-flow-service', isExternal: true }] as QueueConfig[]
+
+      expect(() => validateQueueConfig(queues, project)).not.toThrow()
+    })
+
     it.each([
       'my-project-flow', // missing service segment
       'my-project', // missing segments
