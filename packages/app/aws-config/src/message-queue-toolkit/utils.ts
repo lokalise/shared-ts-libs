@@ -16,20 +16,22 @@ import { MAX_QUEUE_NAME_LENGTH, MAX_TOPIC_NAME_LENGTH } from './constants.ts'
  * Note: We temporarily allow topics with the pattern <project>_<moduleOrFlowName>. This won't be allowed in future versions.
  */
 export const validateTopicsConfig = (topicsConfig: TopicConfig[], project: string): void => {
-  for (const { topicName, queues } of topicsConfig) {
-    if (topicName.length > MAX_TOPIC_NAME_LENGTH) {
-      throw new Error(
-        `Topic name too long: ${topicName}. Max allowed length is ${MAX_TOPIC_NAME_LENGTH}, received ${topicName.length}`,
-      )
-    }
+  for (const { topicName, isExternal, queues } of topicsConfig) {
+    if (!isExternal) {
+      if (topicName.length > MAX_TOPIC_NAME_LENGTH) {
+        throw new Error(
+          `Topic name too long: ${topicName}. Max allowed length is ${MAX_TOPIC_NAME_LENGTH}, received ${topicName.length}`,
+        )
+      }
 
-    if (!topicName.startsWith(project)) {
-      throw new Error(`Topic name must start with project name '${project}': ${topicName}`)
-    }
+      if (!topicName.startsWith(project)) {
+        throw new Error(`Topic name must start with project name '${project}': ${topicName}`)
+      }
 
-    const topicNameWithoutProjectPrefix = topicName.replace(new RegExp(`^${project}`), '')
-    if (!TOPIC_NAME_REGEX.test(topicNameWithoutProjectPrefix)) {
-      throw new Error(`Invalid topic name: ${topicName}`)
+      const topicNameWithoutProjectPrefix = topicName.replace(new RegExp(`^${project}`), '')
+      if (!TOPIC_NAME_REGEX.test(topicNameWithoutProjectPrefix)) {
+        throw new Error(`Invalid topic name: ${topicName}`)
+      }
     }
 
     validateQueueConfig(Object.values(queues), project)

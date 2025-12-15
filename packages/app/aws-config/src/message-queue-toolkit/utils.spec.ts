@@ -57,6 +57,14 @@ describe('utils', () => {
       )
     })
 
+    it('should not validate external topics', () => {
+      const topics: TopicConfig[] = [
+        { topicName: 'wrong-module', isExternal: true, queues: {} } as TopicConfig,
+      ]
+
+      expect(() => validateTopicsConfig(topics, project)).not.toThrow()
+    })
+
     it.each([
       'my-project', // missing entity/flow
       'my-projectmodule', // missing separator
