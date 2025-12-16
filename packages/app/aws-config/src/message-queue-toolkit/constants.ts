@@ -2,7 +2,7 @@
  * The field name used to identify message types in the message queue system.
  * This field is used for message routing and handler selection.
  */
-export const MESSAGE_TYPE_FIELD = 'type'
+export const MESSAGE_TYPE_PATH = 'type'
 
 /**
  * Suffix appended to queue names to create Dead Letter Queues (DLQ).

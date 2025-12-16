@@ -53,7 +53,7 @@ export type ResolvedPublisherOptions<
   | 'locatorConfig'
   | 'creationConfig'
   | 'logMessages'
-  | 'messageTypeField'
+  | 'messageTypeResolver'
   | 'handlerSpy'
   | 'messageSchemas'
 >
@@ -118,6 +118,6 @@ export type ResolvedConsumerOptions<
   | 'maxRetryDuration'
   | 'concurrentConsumersAmount'
   | 'logMessages'
-  | 'messageTypeField'
+  | 'messageTypeResolver'
   | 'handlerSpy'
 >

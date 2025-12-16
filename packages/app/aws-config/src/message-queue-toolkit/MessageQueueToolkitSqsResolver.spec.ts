@@ -185,7 +185,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "locatorConfig": undefined,
             "logMessages": true,
             "messageSchemas": [],
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
@@ -233,7 +235,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "locatorConfig": undefined,
             "logMessages": undefined,
             "messageSchemas": [],
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
@@ -281,7 +285,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "locatorConfig": undefined,
             "logMessages": undefined,
             "messageSchemas": [],
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
@@ -329,7 +335,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "locatorConfig": undefined,
             "logMessages": undefined,
             "messageSchemas": [],
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
@@ -357,7 +365,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
             "logMessages": true,
             "messageSchemas": [],
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
@@ -377,7 +387,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
             "logMessages": undefined,
             "messageSchemas": [],
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
@@ -458,7 +470,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "locatorConfig": undefined,
             "logMessages": true,
             "maxRetryDuration": 172800,
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
@@ -539,7 +553,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "locatorConfig": undefined,
             "logMessages": undefined,
             "maxRetryDuration": 172800,
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
@@ -620,7 +636,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "locatorConfig": undefined,
             "logMessages": undefined,
             "maxRetryDuration": 172800,
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
@@ -701,7 +719,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "locatorConfig": undefined,
             "logMessages": undefined,
             "maxRetryDuration": 172800,
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
@@ -742,7 +762,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
             "logMessages": true,
             "maxRetryDuration": 172800,
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
@@ -773,7 +795,9 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
             "logMessages": undefined,
             "maxRetryDuration": 172800,
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
