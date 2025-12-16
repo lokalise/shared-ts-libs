@@ -16,20 +16,23 @@ import { MAX_QUEUE_NAME_LENGTH, MAX_TOPIC_NAME_LENGTH } from './constants.ts'
  * Note: We temporarily allow topics with the pattern <project>_<moduleOrFlowName>. This won't be allowed in future versions.
  */
 export const validateTopicsConfig = (topicsConfig: TopicConfig[], project: string): void => {
-  for (const { topicName, queues } of topicsConfig) {
+  for (const { topicName, isExternal, queues } of topicsConfig) {
     if (topicName.length > MAX_TOPIC_NAME_LENGTH) {
       throw new Error(
         `Topic name too long: ${topicName}. Max allowed length is ${MAX_TOPIC_NAME_LENGTH}, received ${topicName.length}`,
       )
     }
 
-    if (!topicName.startsWith(project)) {
-      throw new Error(`Topic name must start with project name '${project}': ${topicName}`)
-    }
+    if (!isExternal) {
+      // only validate internal topics
+      if (!topicName.startsWith(project)) {
+        throw new Error(`Topic name must start with project name '${project}': ${topicName}`)
+      }
 
-    const topicNameWithoutProjectPrefix = topicName.replace(new RegExp(`^${project}`), '')
-    if (!TOPIC_NAME_REGEX.test(topicNameWithoutProjectPrefix)) {
-      throw new Error(`Invalid topic name: ${topicName}`)
+      const topicNameWithoutProjectPrefix = topicName.replace(new RegExp(`^${project}`), '')
+      if (!TOPIC_NAME_REGEX.test(topicNameWithoutProjectPrefix)) {
+        throw new Error(`Invalid topic name: ${topicName}`)
+      }
     }
 
     validateQueueConfig(Object.values(queues), project)
@@ -45,12 +48,15 @@ export const validateTopicsConfig = (topicsConfig: TopicConfig[], project: strin
  * - Queue name follows the pattern: `<project>-<flow|model>_name-<service|module>_name(-<module_name>)?`
  */
 export const validateQueueConfig = (queueConfigs: QueueConfig[], project: string): void => {
-  for (const { queueName } of queueConfigs) {
+  for (const { queueName, isExternal } of queueConfigs) {
     if (queueName.length > MAX_QUEUE_NAME_LENGTH) {
       throw new Error(
         `Queue name too long: ${queueName}. Max allowed length is ${MAX_QUEUE_NAME_LENGTH}, received ${queueName.length}`,
       )
     }
+
+    // For external queues, we only need to validate the length
+    if (isExternal) continue
 
     if (!queueName.startsWith(project)) {
       throw new Error(`Queue name must start with project name '${project}': ${queueName}`)

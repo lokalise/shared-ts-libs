@@ -75,7 +75,8 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       const config = {
         invalid: {
           topicName: 'invalid',
-          isExternal: true,
+          owner: 'test',
+          service: 'test',
           queues: {},
         },
       } satisfies EventRoutingConfig
@@ -105,7 +106,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
     it('should throw an error if queue name pattern is invalid', () => {
       const config = {
         valid: {
-          topicName: 'valid-topic',
+          topicName: 'valid', // name check skipped as it is external
           isExternal: true,
           queues: {
             invalid: {
@@ -126,7 +127,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             project,
           }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Error: Topic name must start with project name 'test-project': valid-topic]`,
+        `[Error: Queue name must start with project name 'test-project': invalid]`,
       )
       expect(
         () =>
@@ -139,7 +140,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
     })
 
     it('should throw an error if queue name is too long', () => {
-      const longQueueName = `long-queue_name-${'a'.repeat(49)}` // 65 characters long
+      const longQueueName = `${project}-${'a'.repeat(30)}-${'a'.repeat(30)}`
       const config = {
         valid: {
           topicName: 'valid-topic',
@@ -163,7 +164,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             project,
           }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Error: Topic name must start with project name 'test-project': valid-topic]`,
+        `[Error: Queue name too long: test-project-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa. Max allowed length is 64, received 74]`,
       )
       expect(
         () =>

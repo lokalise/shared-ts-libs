@@ -42,7 +42,10 @@ describe('utils', () => {
 
     it('should throw error for topic name that is too long', () => {
       const longName = `my-project-${'a'.repeat(250)}`
-      const topics: TopicConfig[] = [{ topicName: longName, queues: {} }] as TopicConfig[]
+      const topics: TopicConfig[] = [
+        { topicName: longName, queues: {} },
+        { topicName: longName, isExternal: true, queues: {} },
+      ] as TopicConfig[]
 
       expect(() => validateTopicsConfig(topics, project)).toThrow(
         `Topic name too long: ${longName}. Max allowed length is 246`,
@@ -55,6 +58,14 @@ describe('utils', () => {
       expect(() => validateTopicsConfig(topics, project)).toThrow(
         `Topic name must start with project name 'my-project': wrong-module`,
       )
+    })
+
+    it('should not validate external topics', () => {
+      const topics: TopicConfig[] = [
+        { topicName: 'wrong-module', isExternal: true, queues: {} } as TopicConfig,
+      ]
+
+      expect(() => validateTopicsConfig(topics, project)).not.toThrow()
     })
 
     it.each([
@@ -110,7 +121,10 @@ describe('utils', () => {
 
     it('should throw error for queue name that is too long', () => {
       const longName = `my-project-${'a'.repeat(70)}`
-      const queues = [{ queueName: longName }] as QueueConfig[]
+      const queues = [
+        { queueName: longName },
+        { queueName: longName, isExternal: true },
+      ] as QueueConfig[]
 
       expect(() => validateQueueConfig(queues, project)).toThrow(
         `Queue name too long: ${longName}. Max allowed length is 64`,
@@ -123,6 +137,12 @@ describe('utils', () => {
       expect(() => validateQueueConfig(queues, project)).toThrow(
         `Queue name must start with project name 'my-project': wrong-flow-service`,
       )
+    })
+
+    it('should skip validation for external queues', () => {
+      const queues = [{ queueName: 'wrong-flow-service', isExternal: true }] as QueueConfig[]
+
+      expect(() => validateQueueConfig(queues, project)).not.toThrow()
     })
 
     it.each([
