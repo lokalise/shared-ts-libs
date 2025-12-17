@@ -13,7 +13,7 @@ import { applyAwsResourcePrefix } from '../applyAwsResourcePrefix.ts'
 import type { EventRoutingConfig, TopicConfig } from '../event-routing/eventRoutingConfig.ts'
 import { getSnsTags } from '../tags/index.ts'
 import { AbstractMessageQueueToolkitOptionsResolver } from './AbstractMessageQueueToolkitOptionsResolver.ts'
-import { MESSAGE_TYPE_FIELD } from './constants.ts'
+import { MESSAGE_TYPE_PATH } from './constants.ts'
 import type {
   MessageQueueToolkitOptionsResolverConfig,
   ResolveConsumerOptionsParams,
@@ -154,7 +154,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
         updateAttributesIfExists: params.updateAttributesIfExists ?? true,
         Attributes: generateFilterAttributes(
           options.handlers.map((entry) => entry.schema),
-          MESSAGE_TYPE_FIELD,
+          MESSAGE_TYPE_PATH,
         ),
       },
       ...options,

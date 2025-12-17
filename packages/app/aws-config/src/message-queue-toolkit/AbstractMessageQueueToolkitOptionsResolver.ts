@@ -14,7 +14,7 @@ import {
   DLQ_SUFFIX,
   HEARTBEAT_INTERVAL,
   MAX_RETRY_DURATION,
-  MESSAGE_TYPE_FIELD,
+  MESSAGE_TYPE_PATH,
   VISIBILITY_TIMEOUT,
 } from './constants.ts'
 import { createRequestContextPreHandler } from './prehandlers/createRequestContextPreHandler.ts'
@@ -51,7 +51,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
   > {
     return {
       handlerSpy: params.isTest,
-      messageTypeField: MESSAGE_TYPE_FIELD,
+      messageTypeResolver: { messageTypePath: MESSAGE_TYPE_PATH },
       logMessages: params.logMessages,
       messageSchemas: params.messageSchemas,
     }
@@ -71,7 +71,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
     }
 
     return {
-      messageTypeField: MESSAGE_TYPE_FIELD,
+      messageTypeResolver: { messageTypePath: MESSAGE_TYPE_PATH },
       deletionConfig: { deleteIfExists: params.isTest },
       handlers: handlerConfigs,
       logMessages: params.logMessages,
