@@ -63,5 +63,5 @@ jobs:
         run: COMMIT_MSG=$(npm run --silent package-version --workspace=${{ inputs.working_directory }}) && git commit -am "${{ inputs.package_name }} $COMMIT_MSG" && git push origin main
 
       - name: Release Package
-        run: npm publish --access public --provenance
+        run: npm publish --provenance --access public
         working-directory: ${{ inputs.working_directory }}
