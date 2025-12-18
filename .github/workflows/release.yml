@@ -48,8 +48,6 @@ jobs:
     with:
       working_directory: 'packages/dev/biome-config'
       package_name: '@lokalise/biome-config'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   prettier-config:
     name: Release prettier-config
@@ -65,8 +63,6 @@ jobs:
     with:
       working_directory: 'packages/dev/prettier-config'
       package_name: '@lokalise/prettier-config'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   eslint-config:
     name: Release eslint-config
@@ -82,8 +78,6 @@ jobs:
     with:
       working_directory: 'packages/dev/eslint-config'
       package_name: '@lokalise/eslint-config'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   package-vite-config:
     name: Release package-vite-config
@@ -100,8 +94,6 @@ jobs:
     with:
       working_directory: 'packages/dev/package-vite-config'
       package_name: '@lokalise/package-vite-config'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   tsconfig:
     name: Release tsconfig
@@ -118,8 +110,6 @@ jobs:
     with:
       working_directory: 'packages/dev/tsconfig'
       package_name: '@lokalise/tsconfig'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   ### APP packages
   universal-ts-utils:
@@ -137,8 +127,6 @@ jobs:
     with:
       working_directory: 'packages/app/universal-ts-utils'
       package_name: '@lokalise/universal-ts-utils'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   api-common:
     name: Release api-common
@@ -156,8 +144,6 @@ jobs:
     with:
       working_directory: 'packages/app/api-common'
       package_name: '@lokalise/api-common'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   api-contracts:
     name: Release api-contracts
@@ -175,8 +161,6 @@ jobs:
     with:
       working_directory: 'packages/app/api-contracts'
       package_name: '@lokalise/api-contracts'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   aws-config:
     name: Release aws-config
@@ -195,8 +179,6 @@ jobs:
     with:
       working_directory: 'packages/app/aws-config'
       package_name: '@lokalise/aws-config'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   backend-http-client:
     name: Release backend-http-client
@@ -215,8 +197,6 @@ jobs:
     with:
       working_directory: 'packages/app/backend-http-client'
       package_name: '@lokalise/backend-http-client'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   id-utils:
     name: Release id-utils
@@ -234,8 +214,6 @@ jobs:
     with:
       working_directory: 'packages/app/id-utils'
       package_name: '@lokalise/id-utils'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   background-jobs-common:
     name: Release background-jobs-common
@@ -253,8 +231,6 @@ jobs:
     with:
       working_directory: 'packages/app/background-jobs-common'
       package_name: '@lokalise/background-jobs-common'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   context-fastify-plugins:
     name: Release context-fastify-plugins
@@ -272,8 +248,6 @@ jobs:
     with:
       working_directory: 'packages/app/context-fastify-plugins'
       package_name: '@lokalise/context-fastify-plugins'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   error-utils:
     name: Release error-utils
@@ -291,8 +265,6 @@ jobs:
     with:
       working_directory: 'packages/app/error-utils'
       package_name: '@lokalise/error-utils'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   fastify-api-contracts:
     name: Release fastify-api-contracts
@@ -311,8 +283,6 @@ jobs:
     with:
       working_directory: 'packages/app/fastify-api-contracts'
       package_name: '@lokalise/fastify-api-contracts'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   frontend-http-client:
     name: Release frontend-http-client
@@ -331,8 +301,6 @@ jobs:
     with:
       working_directory: 'packages/app/frontend-http-client'
       package_name: '@lokalise/frontend-http-client'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   healthcheck-utils:
     name: Release healthcheck-utils
@@ -351,8 +319,6 @@ jobs:
     with:
       working_directory: 'packages/app/healthcheck-utils'
       package_name: '@lokalise/healthcheck-utils'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   metrics-utils:
     name: Release metrics-utils
@@ -370,8 +336,6 @@ jobs:
     with:
       working_directory: 'packages/app/metrics-utils'
       package_name: '@lokalise/metrics-utils'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   non-translatable-markup:
     name: Release non-translatable-markup
@@ -389,8 +353,6 @@ jobs:
     with:
       working_directory: 'packages/app/non-translatable-markup'
       package_name: '@lokalise/non-translatable-markup'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   prisma-utils:
     name: Release prisma-utils
@@ -409,8 +371,6 @@ jobs:
     with:
       working_directory: 'packages/app/prisma-utils'
       package_name: '@lokalise/prisma-utils'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   script-utils:
     name: Release script-utils
@@ -428,8 +388,6 @@ jobs:
     with:
       working_directory: 'packages/app/script-utils'
       package_name: '@lokalise/script-utils'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   supported-languages:
     name: Release supported-languages
@@ -447,8 +405,6 @@ jobs:
     with:
       working_directory: 'packages/app/supported-languages'
       package_name: '@lokalise/supported-languages'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   universal-testing-utils:
     name: Release universal-testing-utils
@@ -467,9 +423,6 @@ jobs:
     uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/universal-testing-utils'
-      package_name: '@lokalise/universal-testing-utils'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   websockets-common:
     name: Release websockets-common
@@ -487,8 +440,6 @@ jobs:
     with:
       working_directory: 'packages/app/websockets-common'
       package_name: '@lokalise/websockets-common'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   zod-extras:
     name: Release zod-extras
@@ -506,8 +457,6 @@ jobs:
     with:
       working_directory: 'packages/app/zod-extras'
       package_name: '@lokalise/zod-extras'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   fastify-bullboard-plugin:
     name: Release fastify-bullboard-plugin
@@ -525,8 +474,6 @@ jobs:
     with:
       working_directory: 'packages/app/fastify-bullboard-plugin'
       package_name: '@lokalise/fastify-bullboard-plugin'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   auth:
     name: Release auth
@@ -545,8 +492,6 @@ jobs:
     with:
       working_directory: 'packages/app/auth'
       package_name: '@lokalise/auth'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
 
   polling:
     name: Release polling
@@ -564,5 +509,3 @@ jobs:
     with:
       working_directory: 'packages/app/polling'
       package_name: '@lokalise/polling'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
