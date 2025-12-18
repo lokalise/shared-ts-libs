@@ -8,9 +8,6 @@ on:
       package_name:
         required: true
         type: string
-    secrets:
-      npm_token:
-        required: true
 
 jobs:
   release:
@@ -18,6 +15,9 @@ jobs:
     if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'skip-release') == false
     name: release
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for OIDC trusted publishing
+      contents: write  # Required for git operations
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -63,7 +63,5 @@ jobs:
         run: COMMIT_MSG=$(npm run --silent package-version --workspace=${{ inputs.working_directory }}) && git commit -am "${{ inputs.package_name }} $COMMIT_MSG" && git push origin main
 
       - name: Release Package
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
-        run: npm publish --access public
+        run: npm publish --access public --provenance
         working-directory: ${{ inputs.working_directory }}
