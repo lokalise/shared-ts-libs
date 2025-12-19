@@ -423,6 +423,7 @@ jobs:
     uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/universal-testing-utils'
+      package_name: '@lokalise/universal-testing-utils'
 
   websockets-common:
     name: Release websockets-common
