@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import { afterAll, beforeAll, describe, expect, it, vitest } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
 import { prismaTransaction } from './prismaTransaction.ts'
 
@@ -58,14 +58,10 @@ describe('prismaTransaction - isolation level', () => {
     const transactionSpy = vi.fn()
     const prisma = {
       $transaction: transactionSpy,
-      $queryRaw: () => Promise.resolve(1) as any
+      $queryRaw: () => Promise.resolve(1) as any,
     } as unknown as PrismaClient
 
-    await prismaTransaction(
-      prisma,
-      async () => undefined,
-      { isolationLevel: 'ReadCommitted' },
-    )
+    await prismaTransaction(prisma, async () => undefined, { isolationLevel: 'ReadCommitted' })
     await prismaTransaction(prisma, [prisma.$queryRaw`SELECT 1`], {
       isolationLevel: 'ReadCommitted',
     })
