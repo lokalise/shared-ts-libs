@@ -7,7 +7,7 @@ export default defineConfig({
     globals: true,
     watch: false,
     environment: 'node',
-    restoreMocks: true,
+    mockReset: true,
     reporters: ['default'],
     coverage: {
       include: ['src/**/*.ts'],
