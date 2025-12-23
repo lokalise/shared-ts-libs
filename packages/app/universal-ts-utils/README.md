@@ -9,6 +9,8 @@ tasks.
 
 ## Usage
 
+Triggering build
+
 This package is designed to be used in both client (frontend) and server (backend) environments. For optimization
 purposes,
 it intentionally does **not** have an index file to facilitate efficient tree-shaking by frontend bundlers.
