@@ -55,7 +55,7 @@
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/fastify-extras": "^30.0.0",
         "@lokalise/node-core": "^14.0.0",
-        "@lokalise/tsconfig": "^3.0.0",
+        "@lokalise/tsconfig": "^3.1.0",
         "@lokalise/universal-ts-utils": "^4.5.1",
         "@message-queue-toolkit/core": "^25.0.0",
         "@message-queue-toolkit/sns": "^24.0.0",

@@ -54,7 +54,7 @@
         "@lokalise/api-contracts": "^6.0.0",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/frontend-http-client": "*",
-        "@lokalise/tsconfig": "^3.0.0",
+        "@lokalise/tsconfig": "^3.1.0",
         "@vitest/coverage-v8": "^4.0.15",
         "mockttp": "^4.1.0",
         "msw": "^2.11.1",
