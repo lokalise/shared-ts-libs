@@ -63,6 +63,6 @@ export const decodeCursor = (value: string): Either<Error, Record<string, unknow
     error = e
   }
 
-  /* v8 ignore stop */
+  /* v8 ignore next */
   return { error: error instanceof Error ? error : new Error('Invalid cursor') }
 }
