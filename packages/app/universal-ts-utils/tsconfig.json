@@ -2,6 +2,6 @@
     "extends": "@lokalise/tsconfig/tsc",
     "include": ["src/**/*", "vitest.config.ts"],
     "compilerOptions": {
-        "types": ["vitest/globals"]
+        "types": ["vitest/globals", "node"]
     }
 }
