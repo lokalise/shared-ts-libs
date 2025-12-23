@@ -60,7 +60,7 @@
         "@message-queue-toolkit/core": "^25.0.0",
         "@message-queue-toolkit/sns": "^24.0.0",
         "@message-queue-toolkit/sqs": "^24.0.0",
-        "@types/node": "^25.0.3",
+        "@types/node": "^24.10.4",
         "@vitest/coverage-v8": "^4.0.15",
         "rimraf": "^6.0.1",
         "typescript": "5.9.3",
