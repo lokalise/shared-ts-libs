@@ -66,10 +66,11 @@ export class QueueRegistry<
 
     try {
       await Promise.allSettled(Object.values(this.queues).map((queue) => queue.close()))
-      /* v8 ignore next 3 */
+      /* v8 ignore start */
     } catch {
       //do nothing
     }
+    /* v8 ignore stop */
 
     this.queues = {}
   }
