@@ -5,13 +5,9 @@ export default defineConfig({
   test: {
     globals: true,
     watch: false,
-    restoreMocks: true,
-    pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    mockReset: true,
+    pool: 'threads',
+    maxWorkers: 1,
     setupFiles: ['test/envSetupHook.ts'],
     hookTimeout: 30000,
     teardownTimeout: 10000,

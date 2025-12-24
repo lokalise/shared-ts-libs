@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import { afterAll, beforeAll, describe, expect, it, vitest } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
 import { prismaTransaction } from './prismaTransaction.ts'
 
@@ -55,14 +55,14 @@ describe('prismaTransaction - isolation level', () => {
      * Read committed isolation level is not supported by CockroachDB without enterprise license
      * So checking that proper isolation level is passed to the transaction method
      */
-    const transactionSpy = vitest.spyOn(prisma, '$transaction')
+    const transactionSpy = vi.fn()
+    const prisma = {
+      $transaction: transactionSpy,
+      $queryRaw: () => Promise.resolve(1) as any,
+    } as unknown as PrismaClient
 
-    await prismaTransaction(
-      prisma,
-      async (client) => client.$queryRaw`SHOW transaction_isolation`,
-      { isolationLevel: 'ReadCommitted' },
-    )
-    await prismaTransaction(prisma, [prisma.$queryRaw`SHOW transaction_isolation`], {
+    await prismaTransaction(prisma, async () => undefined, { isolationLevel: 'ReadCommitted' })
+    await prismaTransaction(prisma, [prisma.$queryRaw`SELECT 1`], {
       isolationLevel: 'ReadCommitted',
     })
 

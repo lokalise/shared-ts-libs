@@ -69,11 +69,8 @@ export default ({
     ],
     test: {
       globals: true,
-      poolOptions: {
-        threads: {
-          singleThread: true,
-        },
-      },
+      pool: 'threads',
+      maxWorkers: 1,
       watch: false,
       environment: 'node',
       ...test,
@@ -82,7 +79,6 @@ export default ({
         include: ['src/**/*.ts'],
         exclude: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
         reporter: ['lcov', 'text'],
-        all: true,
         thresholds: {
           lines: 100,
           functions: 100,

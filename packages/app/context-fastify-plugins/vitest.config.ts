@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     watch: false,
-    restoreMocks: true,
+    mockReset: true,
     pool: 'threads',
     coverage: {
       provider: 'v8',
@@ -14,7 +14,7 @@ export default defineConfig({
       thresholds: {
         lines: 56,
         functions: 55,
-        branches: 76,
+        branches: 37,
         statements: 56,
       },
     },

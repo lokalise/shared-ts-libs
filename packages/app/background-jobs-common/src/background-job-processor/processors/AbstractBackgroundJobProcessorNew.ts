@@ -159,12 +159,13 @@ export abstract class AbstractBackgroundJobProcessorNew<
     JobReturn,
     WorkerType
   > {
-    /* v8 ignore next 5 */
+    /* v8 ignore start */
     if (!this._worker) {
       throw new Error(
         `worker for queue ${this.queueId} was not instantiated yet, please run "start()"`,
       )
     }
+    /* v8 ignore stop */
 
     return this._worker
   }
@@ -408,7 +409,6 @@ export abstract class AbstractBackgroundJobProcessorNew<
     return Promise.resolve()
   }
 
-  /* v8 ignore next 3 */
   protected resolveExecutionContext(): ExecutionContext {
     return undefined as ExecutionContext
   }

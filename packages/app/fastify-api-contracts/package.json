@@ -52,12 +52,12 @@
         "@biomejs/biome": "^2.3.7",
         "@lokalise/api-contracts": "^6.0.0",
         "@lokalise/biome-config": "^3.1.0",
-        "@lokalise/tsconfig": "^3.0.0",
-        "@vitest/coverage-v8": "^3.1.1",
+        "@lokalise/tsconfig": "^3.1.0",
+        "@vitest/coverage-v8": "^4.0.15",
         "fastify-type-provider-zod": "^6.0.0",
         "rimraf": "^6.0.1",
         "typescript": "5.9.3",
-        "vitest": "^3.2.2",
+        "vitest": "^4.0.15",
         "zod": "~4.1.13"
     }
 }

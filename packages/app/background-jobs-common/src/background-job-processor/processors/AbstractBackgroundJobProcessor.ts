@@ -134,12 +134,13 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   protected get queue(): ProtectedQueue<JobPayload, JobReturn, QueueType> {
-    /* v8 ignore next 3 */
+    /* v8 ignore start */
     if (!this._queue) {
       throw new Error(
         `queue ${resolveQueueId(this.config)} was not instantiated yet, please run "start()"`,
       )
     }
+    /* v8 ignore stop */
 
     return this._queue
   }
@@ -151,12 +152,13 @@ export abstract class AbstractBackgroundJobProcessor<
   }
 
   protected get worker(): ProtectedWorker<JobPayload, JobReturn, WorkerType> {
-    /* v8 ignore next 5 */
+    /* v8 ignore start */
     if (!this._worker) {
       throw new Error(
         `worker for queue ${resolveQueueId(this.config)} was not instantiated yet, please run "start()"`,
       )
     }
+    /* v8 ignore stop */
 
     return this._worker
   }
@@ -286,12 +288,14 @@ export abstract class AbstractBackgroundJobProcessor<
       )) ?? []
 
     const jobIds = jobs.map((job) => job.id)
-    /* v8 ignore next 4 */
+    /* v8 ignore start  */
     if (jobIds.length === 0 || !jobIds.every((id) => !!id)) {
       // Practically unreachable, but we want to simplify the signature of the method and avoid
       // stating that it could return undefined.
       throw new Error('Some scheduled job IDs are undefined')
     }
+    /* v8 ignore stop */
+
     if (this._spy) this._spy.addJobs(jobs, 'scheduled')
 
     return jobIds as string[]

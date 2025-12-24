@@ -24,7 +24,10 @@ describe('AbstractHistogramMetric', () => {
 
   beforeEach(() => {
     observeMock = vi.fn()
-    histogramMock = vi.fn().mockImplementation(() => ({ observe: observeMock }))
+    // biome-ignore lint/complexity/useArrowFunction: required for vitest
+    histogramMock = vi.fn().mockImplementation(function () {
+      return { observe: observeMock }
+    })
     getSingleMetricMock = vi.fn()
     client = {
       Histogram: histogramMock,

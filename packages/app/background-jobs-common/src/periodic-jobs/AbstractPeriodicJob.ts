@@ -221,7 +221,7 @@ export abstract class AbstractPeriodicJob {
       acquiredExternally: lockConfiguration?.acquiredExternally,
       identifier: lockConfiguration?.identifier,
       lockTimeout: lockConfiguration?.lockTimeout ?? this.options.singleConsumerMode.lockTimeout,
-      /* v8 ignore next 8 */
+      /* v8 ignore start */
       onLockLost: (error) => {
         this.errorReporter?.report({
           error,
@@ -230,6 +230,7 @@ export abstract class AbstractPeriodicJob {
           },
         })
       },
+      /* v8 ignore stop */
     } satisfies LockOptions
 
     // Try to acquire a fresh lock
