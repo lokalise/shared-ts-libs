@@ -73,6 +73,7 @@ export default ({
       maxWorkers: 1,
       watch: false,
       environment: 'node',
+      mockReset: true,
       ...test,
       coverage: {
         provider: 'v8',
