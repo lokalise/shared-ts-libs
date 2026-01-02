@@ -8,11 +8,10 @@ import {
 } from './utils.ts'
 
 const buildTopicConfig = (
-  config?: Pick<TopicConfig, 'isExternal' | 'externalAppsWithSubscribePermissions'>,
+  config?: Pick<TopicConfig, 'topicName' | 'isExternal' | 'externalAppsWithSubscribePermissions'>,
 ): TopicConfig =>
   ({
     ...config,
-    topicName: 'default-topic',
     service: '',
     owner: '',
     queues: {},
@@ -171,28 +170,17 @@ describe('utils', () => {
 
   describe('buildTopicArnsWithPublishPermissionsPrefix', () => {
     it('correctly composes ARN', () => {
-      const result = buildTopicArnsWithPublishPermissionsPrefix('my_app-', buildAwsConfig())
-      expect(result).toMatchInlineSnapshot(`"arn:aws:sns:*:*:my_app-*"`)
-    })
-
-    it('ensures wildcard is always present', () => {
-      const result = buildTopicArnsWithPublishPermissionsPrefix('my_app', buildAwsConfig())
-      expect(result).toMatchInlineSnapshot(`"arn:aws:sns:*:*:my_app-*"`)
+      const result = buildTopicArnsWithPublishPermissionsPrefix(buildTopicConfig({ topicName: 'my_app' }), buildAwsConfig())
+      expect(result).toMatchInlineSnapshot(`"arn:aws:sns:*:*:my_app*"`)
     })
 
     it('should use prefix from awsConfig', () => {
       const resourcePrefix = 'dev'
       const result1 = buildTopicArnsWithPublishPermissionsPrefix(
-        'my_app-',
+        buildTopicConfig({ topicName: 'my_app' }),
         buildAwsConfig(resourcePrefix),
       )
-      expect(result1).toMatchInlineSnapshot(`"arn:aws:sns:*:*:dev_my_app-*"`)
-
-      const result2 = buildTopicArnsWithPublishPermissionsPrefix(
-        'my_app',
-        buildAwsConfig(resourcePrefix),
-      )
-      expect(result2).toMatchInlineSnapshot(`"arn:aws:sns:*:*:dev_my_app-*"`)
+      expect(result1).toMatchInlineSnapshot(`"arn:aws:sns:*:*:dev_my_app*"`)
     })
   })
 
@@ -212,7 +200,7 @@ describe('utils', () => {
 
     it('should be undefined for external topics', () => {
       const result = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ isExternal: true }),
+        buildTopicConfig({ topicName: 'test', isExternal: true }),
         'app',
         buildAwsConfig(),
       )
@@ -250,7 +238,7 @@ describe('utils', () => {
       const resourcePrefix = 'dev'
       const externalAppsWithSubscribePermissions = ['my-test1', 'my-test2-', 'my-test3-*']
       const result = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ externalAppsWithSubscribePermissions }),
+        buildTopicConfig({ topicName: 'test', externalAppsWithSubscribePermissions }),
         'my-app-',
         buildAwsConfig(resourcePrefix),
       )
