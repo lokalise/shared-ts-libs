@@ -109,9 +109,7 @@ export const buildTopicArnsWithPublishPermissionsPrefix = (
   topicConfig: TopicConfig,
   awsConfig: AwsConfig,
 ): string => {
-  return snsPrefixTransformer(
-    applyAwsResourcePrefix(topicConfig.topicName, awsConfig),
-  )
+  return snsPrefixTransformer(applyAwsResourcePrefix(topicConfig.topicName, awsConfig))
 }
 
 export const buildQueueUrlsWithSubscribePermissionsPrefix = (

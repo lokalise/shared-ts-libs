@@ -170,7 +170,10 @@ describe('utils', () => {
 
   describe('buildTopicArnsWithPublishPermissionsPrefix', () => {
     it('correctly composes ARN', () => {
-      const result = buildTopicArnsWithPublishPermissionsPrefix(buildTopicConfig({ topicName: 'my_app' }), buildAwsConfig())
+      const result = buildTopicArnsWithPublishPermissionsPrefix(
+        buildTopicConfig({ topicName: 'my_app' }),
+        buildAwsConfig(),
+      )
       expect(result).toMatchInlineSnapshot(`"arn:aws:sns:*:*:my_app*"`)
     })
 
