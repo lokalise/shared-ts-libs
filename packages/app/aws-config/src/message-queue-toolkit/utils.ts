@@ -106,12 +106,10 @@ const TOPIC_NAME_REGEX = /^[-_][a-z]+(_[a-z]+)*$/
 const QUEUE_NAME_REGEX = /^[-_][a-z]+(_[a-z]+)*-[a-z]+(_[a-z]+)*(?:-[a-z]+(_[a-z]+)*)?$/
 
 export const buildTopicArnsWithPublishPermissionsPrefix = (
-  project: string,
+  topicConfig: TopicConfig,
   awsConfig: AwsConfig,
 ): string => {
-  return snsPrefixTransformer(
-    applyAwsResourcePrefix(project.endsWith('-') ? project : `${project}-`, awsConfig),
-  )
+  return snsPrefixTransformer(applyAwsResourcePrefix(topicConfig.topicName, awsConfig))
 }
 
 export const buildQueueUrlsWithSubscribePermissionsPrefix = (

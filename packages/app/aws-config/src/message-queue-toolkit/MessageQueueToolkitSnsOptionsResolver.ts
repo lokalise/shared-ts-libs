@@ -138,7 +138,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
         topic: resolvedTopic.createCommand,
         queue: queueCreationConfig.queue,
         topicArnsWithPublishPermissionsPrefix: buildTopicArnsWithPublishPermissionsPrefix(
-          this.config.project,
+          topicConfig,
           params.awsConfig,
         ),
         queueUrlsWithSubscribePermissionsPrefix: buildQueueUrlsWithSubscribePermissionsPrefix(
