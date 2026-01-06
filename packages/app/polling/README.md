@@ -37,8 +37,10 @@ const result = await poller.poll(
     
     return { isComplete: false }
   },
-  reqContext,
-  { jobId } // metadata for logging
+  {
+    reqContext,
+    metadata: { jobId }, // metadata for logging
+  },
 )
 ```
 
@@ -182,7 +184,7 @@ const result = await poller.poll(
       ? { isComplete: true, value: data.result }
       : { isComplete: false }
   },
-  reqContext
+  { reqContext },
 )
 ```
 
@@ -196,8 +198,10 @@ const result = await poller.poll(
       ? { isComplete: true, value: await getResult(jobId) }
       : { isComplete: false }
   },
-  reqContext,
-  { jobId, userId } // Included in all log messages
+  {
+    reqContext,
+    metadata: { jobId, userId }, // Included in all log messages
+  },
 )
 ```
 
@@ -217,9 +221,11 @@ try {
         ? { isComplete: true, value: status.data }
         : { isComplete: false }
     },
-    reqContext,
-    { operation: 'data-sync' },
-    controller.signal  // Pass the signal
+    {
+      reqContext,
+      metadata: { operation: 'data-sync' },
+      signal: controller.signal,  // Pass the signal
+    },
   )
 } catch (error) {
   if (error instanceof PollingError && error.failureCause === 'CANCELLED') {
@@ -243,7 +249,7 @@ const result = await poller.poll(
       ? { isComplete: true, value: status.data }
       : { isComplete: false }
   },
-  reqContext
+  { reqContext },
 )
 ```
 
@@ -268,8 +274,10 @@ try {
       // Still processing
       return { isComplete: false }
     },
-    reqContext,
-    { jobId }
+    {
+      reqContext,
+      metadata: { jobId },
+    },
   )
 } catch (error) {
   if (error instanceof PollingError) {
@@ -287,8 +295,7 @@ try {
 Implement the `PollingStrategy` interface to create your own strategy:
 
 ```typescript
-import type { PollingStrategy, PollResult } from '@lokalise/polling'
-import type { RequestContext } from '@lokalise/fastify-extras'
+import type { PollingStrategy, PollResult, PollingOptions } from '@lokalise/polling'
 
 class FixedIntervalStrategy implements PollingStrategy {
   constructor(
@@ -298,10 +305,10 @@ class FixedIntervalStrategy implements PollingStrategy {
 
   async execute<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    reqContext: RequestContext,
-    metadata?: Record<string, unknown>,
-    signal?: AbortSignal,
+    options: PollingOptions,
   ): Promise<T> {
+    const { reqContext, metadata, signal } = options
+    
     for (let attempt = 1; attempt <= this.maxAttempts; attempt++) {
       if (signal?.aborted) {
         throw new PollingError(
@@ -378,7 +385,10 @@ import { PollingError, PollingFailureCause } from '@lokalise/polling'
 import { isInternalError } from '@lokalise/node-core'
 
 try {
-  const result = await poller.poll(pollFn, reqContext, { jobId: '123' })
+  const result = await poller.poll(pollFn, {
+    reqContext,
+    metadata: { jobId: '123' },
+  })
 } catch (error) {
   if (error instanceof PollingError) {
     switch (error.failureCause) {
@@ -441,9 +451,7 @@ class Poller {
   
   poll<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    reqContext: RequestContext,
-    metadata?: Record<string, unknown>,
-    signal?: AbortSignal,
+    options: PollingOptions,
   ): Promise<T>
 }
 ```
@@ -456,9 +464,7 @@ class ExponentialBackoffStrategy implements PollingStrategy {
   
   execute<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    reqContext: RequestContext,
-    metadata?: Record<string, unknown>,
-    signal?: AbortSignal,
+    options: PollingOptions,
   ): Promise<T>
 }
 ```
@@ -469,6 +475,15 @@ class ExponentialBackoffStrategy implements PollingStrategy {
 type PollResult<T> = 
   | { isComplete: true; value: T }
   | { isComplete: false }
+
+interface PollingOptions {
+  /** Request context for logging and request identification */
+  reqContext: RequestContext
+  /** Additional metadata for logging and error reporting */
+  metadata?: Record<string, unknown>
+  /** Optional AbortSignal to cancel polling */
+  signal?: AbortSignal
+}
 
 interface ExponentialBackoffConfig {
   initialDelayMs: number
@@ -481,9 +496,7 @@ interface ExponentialBackoffConfig {
 interface PollingStrategy {
   execute<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    reqContext: RequestContext,
-    metadata?: Record<string, unknown>,
-    signal?: AbortSignal,
+    options: PollingOptions,
   ): Promise<T>
 }
 ```

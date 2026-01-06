@@ -16,24 +16,32 @@ export interface RequestContext {
 
 export type PollResult<T> = { isComplete: true; value: T } | { isComplete: false }
 
+/**
+ * Options for configuring polling behavior.
+ */
+export interface PollingOptions {
+  /** Request context for logging and request identification */
+  reqContext: RequestContext
+  /** Additional metadata for logging and error reporting */
+  metadata?: Record<string, unknown>
+  /** Optional AbortSignal to cancel polling */
+  signal?: AbortSignal
+}
+
 export interface PollingStrategy {
   /**
    * Execute polling with the strategy's specific retry logic.
    *
    * @param pollFn - Function that returns PollResult. Receives the current attempt number (1-based).
    *                 Should throw domain-specific errors for terminal failure states.
-   * @param reqContext - Request context for logging
-   * @param metadata - Additional context for logging
-   * @param signal - Optional AbortSignal to cancel polling
+   * @param options - Polling options including context, metadata, and signal
    * @throws PollingError.timeout if max attempts exceeded
    * @throws PollingError.cancelled if signal is aborted
    * @throws Any domain-specific errors thrown by pollFn
    */
   execute<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    reqContext: RequestContext,
-    metadata?: Record<string, unknown>,
-    signal?: AbortSignal,
+    options: PollingOptions,
   ): Promise<T>
 }
 
@@ -49,19 +57,15 @@ export class Poller {
    *
    * @param pollFn - Function that returns PollResult. Receives the current attempt number (1-based).
    *                 Should throw domain-specific errors for terminal failure states.
-   * @param reqContext - Request context for logging
-   * @param metadata - Additional context for logging
-   * @param signal - Optional AbortSignal to cancel polling
+   * @param options - Polling options including context, metadata, and signal
    * @throws PollingError.timeout if max attempts exceeded
    * @throws PollingError.cancelled if signal is aborted
    * @throws Any domain-specific errors thrown by pollFn
    */
   poll<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    reqContext: RequestContext,
-    metadata?: Record<string, unknown>,
-    signal?: AbortSignal,
+    options: PollingOptions,
   ): Promise<T> {
-    return this.strategy.execute(pollFn, reqContext, metadata, signal)
+    return this.strategy.execute(pollFn, options)
   }
 }

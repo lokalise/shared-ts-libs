@@ -1,5 +1,5 @@
 import { setTimeout } from 'node:timers/promises'
-import type { PollingStrategy, PollResult, RequestContext } from '../Poller.ts'
+import type { PollingOptions, PollingStrategy, PollResult, RequestContext } from '../Poller.ts'
 import { PollingError, PollingFailureCause } from '../PollingError.ts'
 
 /**
@@ -91,10 +91,10 @@ export class ExponentialBackoffStrategy implements PollingStrategy {
 
   async execute<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    reqContext: RequestContext,
-    metadata?: Record<string, unknown>,
-    signal?: AbortSignal,
+    options: PollingOptions,
   ): Promise<T> {
+    const { reqContext, metadata, signal } = options
+
     this.checkAborted(signal, 0, metadata)
 
     for (let attempt = 1; attempt <= this.config.maxAttempts; attempt++) {

@@ -1,6 +1,7 @@
 // Main poller
 export {
   Poller,
+  type PollingOptions,
   type PollingStrategy,
   type PollResult,
   type RequestContext,
