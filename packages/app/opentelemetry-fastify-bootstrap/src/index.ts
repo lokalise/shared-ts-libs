@@ -125,10 +125,9 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
           registerOnInitialization: true,
           ignorePaths: (req) => {
             if (!req.url) return false
-            // Ignore path and query string, if needed
-            const path = req.url.split('?')[0]
-            // biome-ignore lint/style/noNonNullAssertion: there will always be some path
-            return skippedPaths.includes(path!)
+            // Extract path without query string, normalize empty to '/'
+            const path = req.url.split('?')[0] || '/'
+            return skippedPaths.includes(path)
           },
         }),
       ],
