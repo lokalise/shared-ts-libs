@@ -1,7 +1,7 @@
-import { setTimeout } from 'node:timers/promises'
 import { describe, expect, it } from 'vitest'
 import type { RequestContext } from '../Poller.ts'
 import { PollingError, PollingFailureCause } from '../PollingError.ts'
+import { delay } from '../utils/delay.ts'
 import {
   ExponentialBackoffStrategy,
   STANDARD_EXPONENTIAL_BACKOFF_CONFIG,
@@ -413,7 +413,7 @@ describe('ExponentialBackoffStrategy', () => {
       const attempts: number[] = []
 
       // Abort after 250ms (should be during second wait)
-      setTimeout(250).then(() => controller.abort())
+      delay(250).then(() => controller.abort())
 
       try {
         await strategy.execute<string>(
@@ -450,7 +450,7 @@ describe('ExponentialBackoffStrategy', () => {
       const controller = new AbortController()
 
       // Abort after 500ms (polling will complete first)
-      setTimeout(500).then(() => controller.abort())
+      delay(500).then(() => controller.abort())
 
       const result = await strategy.execute<string>(
         (attempt) => {
@@ -666,7 +666,7 @@ describe('ExponentialBackoffStrategy', () => {
 
       // Simulate a database record that becomes ready after some time
       let recordStatus = 'pending'
-      setTimeout(150).then(() => {
+      delay(150).then(() => {
         recordStatus = 'ready'
       })
 
@@ -737,7 +737,7 @@ describe('ExponentialBackoffStrategy', () => {
 
       // Simulate a job that fails permanently after some attempts
       let jobStatus = 'processing'
-      setTimeout(150).then(() => {
+      delay(150).then(() => {
         jobStatus = 'failed'
       })
 

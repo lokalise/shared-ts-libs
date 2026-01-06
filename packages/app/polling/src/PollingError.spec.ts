@@ -1,4 +1,3 @@
-import { InternalError } from '@lokalise/node-core'
 import { describe, expect, it } from 'vitest'
 import { PollingError, PollingFailureCause } from './PollingError.ts'
 
@@ -10,7 +9,6 @@ describe('PollingError', () => {
       })
 
       expect(error).toBeInstanceOf(Error)
-      expect(error).toBeInstanceOf(InternalError)
       expect(error).toBeInstanceOf(PollingError)
       expect(error.name).toBe('PollingError')
       expect(error.message).toBe('Test error message')
@@ -223,8 +221,71 @@ describe('PollingError', () => {
     })
   })
 
+  describe('isPollingError type guard', () => {
+    it('should return true for PollingError instances', () => {
+      const error = new PollingError('Test', PollingFailureCause.TIMEOUT, 5)
+      expect(PollingError.isPollingError(error)).toBe(true)
+    })
+
+    it('should return false for regular Error', () => {
+      const error = new Error('Regular error')
+      expect(PollingError.isPollingError(error)).toBe(false)
+    })
+
+    it('should return false for non-error objects', () => {
+      expect(PollingError.isPollingError({})).toBe(false)
+      expect(PollingError.isPollingError({ message: 'test' })).toBe(false)
+      expect(PollingError.isPollingError(null)).toBe(false)
+      expect(PollingError.isPollingError(undefined)).toBe(false)
+      expect(PollingError.isPollingError('string')).toBe(false)
+      expect(PollingError.isPollingError(123)).toBe(false)
+    })
+
+    it('should return true for error-like objects with correct properties', () => {
+      const errorLike = {
+        name: 'PollingError',
+        message: 'Test',
+        failureCause: 'TIMEOUT',
+        attemptsMade: 5,
+        errorCode: 'POLLING_TIMEOUT',
+        details: { failureCause: 'TIMEOUT', attemptsMade: 5 },
+      }
+      expect(PollingError.isPollingError(errorLike)).toBe(true)
+    })
+
+    it('should return false for objects missing required properties', () => {
+      expect(PollingError.isPollingError({ name: 'PollingError' })).toBe(false)
+      expect(
+        PollingError.isPollingError({
+          name: 'PollingError',
+          failureCause: 'TIMEOUT',
+        }),
+      ).toBe(false)
+      expect(
+        PollingError.isPollingError({
+          name: 'PollingError',
+          failureCause: 'TIMEOUT',
+          attemptsMade: 5,
+        }),
+      ).toBe(false)
+    })
+
+    it('should provide proper type narrowing in TypeScript', () => {
+      const error: unknown = new PollingError('Test', PollingFailureCause.TIMEOUT, 5)
+
+      if (PollingError.isPollingError(error)) {
+        // TypeScript should know error is PollingError here
+        expect(error.failureCause).toBe('TIMEOUT')
+        expect(error.attemptsMade).toBe(5)
+        expect(error.errorCode).toBe('POLLING_TIMEOUT')
+      } else {
+        expect.fail('Should have been a PollingError')
+      }
+    })
+  })
+
   describe('error handling patterns', () => {
-    it('should be catchable as PollingError', () => {
+    it('should be catchable as PollingError using type guard (recommended)', () => {
       function mayThrowPollingError(): void {
         throw new PollingError('Polling timeout after 5 attempts', PollingFailureCause.TIMEOUT, 5)
       }
@@ -233,14 +294,14 @@ describe('PollingError', () => {
         mayThrowPollingError()
         expect.fail('Should have thrown')
       } catch (error) {
-        expect(error).toBeInstanceOf(PollingError)
-        if (error instanceof PollingError) {
+        expect(PollingError.isPollingError(error)).toBe(true)
+        if (PollingError.isPollingError(error)) {
           expect(error.attemptsMade).toBe(5)
         }
       }
     })
 
-    it('should be catchable as InternalError', () => {
+    it('should be catchable using isPollingError type guard', () => {
       function mayThrowPollingError(): void {
         throw new PollingError(
           'Polling cancelled after 3 attempts',
@@ -254,10 +315,26 @@ describe('PollingError', () => {
         mayThrowPollingError()
         expect.fail('Should have thrown')
       } catch (error) {
-        expect(error).toBeInstanceOf(InternalError)
-        if (error instanceof InternalError) {
+        expect(PollingError.isPollingError(error)).toBe(true)
+        if (PollingError.isPollingError(error)) {
           expect(error.errorCode).toBe('POLLING_CANCELLED')
           expect(error.details).toMatchObject({ reason: 'test' })
+        }
+      }
+    })
+
+    it('should be catchable using instanceof', () => {
+      function mayThrowPollingError(): void {
+        throw new PollingError('Polling timeout', PollingFailureCause.TIMEOUT, 10)
+      }
+
+      try {
+        mayThrowPollingError()
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        if (error instanceof PollingError) {
+          expect(error.errorCode).toBe('POLLING_TIMEOUT')
         }
       }
     })
@@ -270,7 +347,7 @@ describe('PollingError', () => {
       ]
 
       const results = errors.map((error) => {
-        if (error instanceof PollingError) {
+        if (PollingError.isPollingError(error)) {
           return `polling:${error.failureCause}`
         }
         return 'other'

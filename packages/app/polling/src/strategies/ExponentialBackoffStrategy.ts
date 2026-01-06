@@ -1,6 +1,6 @@
-import { setTimeout } from 'node:timers/promises'
 import type { PollingOptions, PollingStrategy, PollResult, RequestContext } from '../Poller.ts'
 import { PollingError, PollingFailureCause } from '../PollingError.ts'
+import { delay } from '../utils/delay.ts'
 
 /**
  * Configuration for exponential backoff polling strategy.
@@ -159,9 +159,9 @@ export class ExponentialBackoffStrategy implements PollingStrategy {
     )
 
     try {
-      await setTimeout(delayMs, undefined, { signal })
+      await delay(delayMs, signal)
     } catch {
-      // setTimeout with signal only throws when the signal is aborted
+      // delay with signal only throws when the signal is aborted
       throw new PollingError(
         `Polling cancelled after ${attempt} attempts`,
         PollingFailureCause.CANCELLED,

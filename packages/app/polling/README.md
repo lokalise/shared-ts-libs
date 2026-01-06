@@ -348,10 +348,10 @@ const poller = new Poller(strategy)
 
 ### PollingError
 
-The library throws `PollingError` (extends `InternalError` from `@lokalise/node-core`) for polling-specific failures:
+The library throws `PollingError` (extends `Error`) for polling-specific failures:
 
 ```typescript
-class PollingError extends InternalError {
+class PollingError extends Error {
   readonly failureCause: 'TIMEOUT' | 'CANCELLED' | 'INVALID_CONFIG'
   readonly attemptsMade: number
   readonly errorCode: 'POLLING_TIMEOUT' | 'POLLING_CANCELLED' | 'POLLING_INVALID_CONFIG'
@@ -364,6 +364,9 @@ class PollingError extends InternalError {
     details?: Record<string, unknown>,
     originalError?: Error,
   )
+
+  // Type guard for error checking
+  static isPollingError(error: unknown): error is PollingError
 }
 ```
 
@@ -382,7 +385,6 @@ class PollingError extends InternalError {
 
 ```typescript
 import { PollingError, PollingFailureCause } from '@lokalise/polling'
-import { isInternalError } from '@lokalise/node-core'
 
 try {
   const result = await poller.poll(pollFn, {
@@ -390,7 +392,7 @@ try {
     metadata: { jobId: '123' },
   })
 } catch (error) {
-  if (error instanceof PollingError) {
+  if (PollingError.isPollingError(error)) {
     switch (error.failureCause) {
       case PollingFailureCause.TIMEOUT:
         console.log(`Timed out after ${error.attemptsMade} attempts`)
@@ -406,9 +408,6 @@ try {
         console.log('Error code:', error.errorCode) // 'POLLING_INVALID_CONFIG'
         break
     }
-  } else if (isInternalError(error)) {
-    // Other InternalError types
-    console.log('Internal error:', error.errorCode, error.details)
   } else {
     // Domain-specific error from pollFn
     console.log('Operation failed:', error)

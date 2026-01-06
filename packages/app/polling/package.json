@@ -32,11 +32,7 @@
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
     },
-    "peerDependencies": {
-        "@lokalise/node-core": ">=13.1.0"
-    },
     "devDependencies": {
-        "@lokalise/node-core": "^14.4.2",
         "@biomejs/biome": "^2.3.7",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "^3.1.0",
