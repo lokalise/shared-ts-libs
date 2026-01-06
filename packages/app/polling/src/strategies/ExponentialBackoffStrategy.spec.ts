@@ -1,24 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { RequestContext } from '../Poller.ts'
 import { PollingError, PollingFailureCause } from '../PollingError.ts'
 import { delay } from '../utils/delay.ts'
 import {
   ExponentialBackoffStrategy,
   STANDARD_EXPONENTIAL_BACKOFF_CONFIG,
 } from './ExponentialBackoffStrategy.ts'
-
-// Test helper to create a minimal request context
-function createTestContext(): RequestContext {
-  return {
-    logger: {
-      debug: () => {},
-      info: () => {},
-      warn: () => {},
-      error: () => {},
-    },
-    reqId: 'test-req-id',
-  } as unknown as RequestContext
-}
 
 describe('ExponentialBackoffStrategy', () => {
   describe('configuration validation', () => {
@@ -207,13 +193,10 @@ describe('ExponentialBackoffStrategy', () => {
       })
 
       let attemptCount = 0
-      const result = await strategy.execute<string>(
-        (attempt) => {
-          attemptCount = attempt
-          return Promise.resolve({ isComplete: true, value: 'success' })
-        },
-        { reqContext: createTestContext() },
-      )
+      const result = await strategy.execute<string>((attempt) => {
+        attemptCount = attempt
+        return Promise.resolve({ isComplete: true, value: 'success' })
+      }, {})
 
       expect(result).toBe('success')
       expect(attemptCount).toBe(1)
@@ -231,16 +214,13 @@ describe('ExponentialBackoffStrategy', () => {
       const attempts: number[] = []
       const startTime = Date.now()
 
-      const result = await strategy.execute<string>(
-        (attempt) => {
-          attempts.push(attempt)
-          if (attempt < 3) {
-            return Promise.resolve({ isComplete: false })
-          }
-          return Promise.resolve({ isComplete: true, value: `completed-after-${attempt}` })
-        },
-        { reqContext: createTestContext() },
-      )
+      const result = await strategy.execute<string>((attempt) => {
+        attempts.push(attempt)
+        if (attempt < 3) {
+          return Promise.resolve({ isComplete: false })
+        }
+        return Promise.resolve({ isComplete: true, value: `completed-after-${attempt}` })
+      }, {})
 
       const elapsed = Date.now() - startTime
 
@@ -262,16 +242,13 @@ describe('ExponentialBackoffStrategy', () => {
 
       const attempts: number[] = []
 
-      const result = await strategy.execute<number>(
-        (attempt) => {
-          attempts.push(attempt)
-          if (attempt === 5) {
-            return Promise.resolve({ isComplete: true, value: 42 })
-          }
-          return Promise.resolve({ isComplete: false })
-        },
-        { reqContext: createTestContext() },
-      )
+      const result = await strategy.execute<number>((attempt) => {
+        attempts.push(attempt)
+        if (attempt === 5) {
+          return Promise.resolve({ isComplete: true, value: 42 })
+        }
+        return Promise.resolve({ isComplete: false })
+      }, {})
 
       expect(result).toBe(42)
       expect(attempts).toEqual([1, 2, 3, 4, 5])
@@ -288,16 +265,13 @@ describe('ExponentialBackoffStrategy', () => {
 
       const receivedAttempts: number[] = []
 
-      await strategy.execute<void>(
-        (attempt) => {
-          receivedAttempts.push(attempt)
-          if (attempt === 3) {
-            return Promise.resolve({ isComplete: true, value: undefined })
-          }
-          return Promise.resolve({ isComplete: false })
-        },
-        { reqContext: createTestContext() },
-      )
+      await strategy.execute<void>((attempt) => {
+        receivedAttempts.push(attempt)
+        if (attempt === 3) {
+          return Promise.resolve({ isComplete: true, value: undefined })
+        }
+        return Promise.resolve({ isComplete: false })
+      }, {})
 
       expect(receivedAttempts).toEqual([1, 2, 3])
     })
@@ -319,7 +293,6 @@ describe('ExponentialBackoffStrategy', () => {
             return Promise.resolve({ isComplete: false })
           },
           {
-            reqContext: createTestContext(),
             metadata: { testId: 'test-123' },
           },
         ),
@@ -347,7 +320,6 @@ describe('ExponentialBackoffStrategy', () => {
 
       try {
         await strategy.execute<string>(() => Promise.resolve({ isComplete: false }), {
-          reqContext: createTestContext(),
           metadata: {
             jobId: 'job-456',
             userId: 'user-789',
@@ -384,7 +356,6 @@ describe('ExponentialBackoffStrategy', () => {
             return Promise.resolve({ isComplete: false })
           },
           {
-            reqContext: createTestContext(),
             metadata: { testId: 'abort-test' },
             signal: controller.signal,
           },
@@ -422,7 +393,6 @@ describe('ExponentialBackoffStrategy', () => {
             return Promise.resolve({ isComplete: false })
           },
           {
-            reqContext: createTestContext(),
             metadata: { testId: 'abort-during' },
             signal: controller.signal,
           },
@@ -460,7 +430,6 @@ describe('ExponentialBackoffStrategy', () => {
           return Promise.resolve({ isComplete: false })
         },
         {
-          reqContext: createTestContext(),
           signal: controller.signal,
         },
       )
@@ -486,15 +455,12 @@ describe('ExponentialBackoffStrategy', () => {
       }
 
       await expect(
-        strategy.execute<string>(
-          (attempt) => {
-            if (attempt === 2) {
-              throw new CustomError('Operation failed permanently')
-            }
-            return Promise.resolve({ isComplete: false })
-          },
-          { reqContext: createTestContext() },
-        ),
+        strategy.execute<string>((attempt) => {
+          if (attempt === 2) {
+            throw new CustomError('Operation failed permanently')
+          }
+          return Promise.resolve({ isComplete: false })
+        }, {}),
       ).rejects.toThrow(CustomError)
     })
 
@@ -510,16 +476,13 @@ describe('ExponentialBackoffStrategy', () => {
       const attempts: number[] = []
 
       await expect(
-        strategy.execute<string>(
-          (attempt) => {
-            attempts.push(attempt)
-            if (attempt === 3) {
-              throw new Error('Terminal error')
-            }
-            return Promise.resolve({ isComplete: false })
-          },
-          { reqContext: createTestContext() },
-        ),
+        strategy.execute<string>((attempt) => {
+          attempts.push(attempt)
+          if (attempt === 3) {
+            throw new Error('Terminal error')
+          }
+          return Promise.resolve({ isComplete: false })
+        }, {}),
       ).rejects.toThrow('Terminal error')
 
       // Should have stopped immediately after error on attempt 3
@@ -542,18 +505,15 @@ describe('ExponentialBackoffStrategy', () => {
       let lastTime = Date.now()
 
       try {
-        await strategy.execute<string>(
-          (attempt) => {
-            attempts.push(attempt)
-            const now = Date.now()
-            if (attempts.length > 1) {
-              delays.push(now - lastTime)
-            }
-            lastTime = now
-            return Promise.resolve({ isComplete: false })
-          },
-          { reqContext: createTestContext() },
-        )
+        await strategy.execute<string>((attempt) => {
+          attempts.push(attempt)
+          const now = Date.now()
+          if (attempts.length > 1) {
+            delays.push(now - lastTime)
+          }
+          lastTime = now
+          return Promise.resolve({ isComplete: false })
+        }, {})
       } catch (_error) {
         // Expected timeout
       }
@@ -576,13 +536,10 @@ describe('ExponentialBackoffStrategy', () => {
       const timestamps: number[] = []
 
       try {
-        await strategy.execute<string>(
-          () => {
-            timestamps.push(Date.now())
-            return Promise.resolve({ isComplete: false })
-          },
-          { reqContext: createTestContext() },
-        )
+        await strategy.execute<string>(() => {
+          timestamps.push(Date.now())
+          return Promise.resolve({ isComplete: false })
+        }, {})
       } catch (_error) {
         // Expected timeout
       }
@@ -612,9 +569,7 @@ describe('ExponentialBackoffStrategy', () => {
       const startTime = Date.now()
 
       try {
-        await strategy.execute<string>(() => Promise.resolve({ isComplete: false }), {
-          reqContext: createTestContext(),
-        })
+        await strategy.execute<string>(() => Promise.resolve({ isComplete: false }), {})
       } catch (_error) {
         // Expected timeout
       }
@@ -640,15 +595,12 @@ describe('ExponentialBackoffStrategy', () => {
     it('should work with standard configuration', async () => {
       const strategy = new ExponentialBackoffStrategy(STANDARD_EXPONENTIAL_BACKOFF_CONFIG)
 
-      const result = await strategy.execute<number>(
-        (attempt) => {
-          if (attempt === 2) {
-            return Promise.resolve({ isComplete: true, value: 100 })
-          }
-          return Promise.resolve({ isComplete: false })
-        },
-        { reqContext: createTestContext() },
-      )
+      const result = await strategy.execute<number>((attempt) => {
+        if (attempt === 2) {
+          return Promise.resolve({ isComplete: true, value: 100 })
+        }
+        return Promise.resolve({ isComplete: false })
+      }, {})
 
       expect(result).toBe(100)
     })
@@ -670,18 +622,15 @@ describe('ExponentialBackoffStrategy', () => {
         recordStatus = 'ready'
       })
 
-      const result = await strategy.execute<{ status: string; data: string }>(
-        () => {
-          if (recordStatus === 'ready') {
-            return Promise.resolve({
-              isComplete: true,
-              value: { status: 'ready', data: 'result-data' },
-            })
-          }
-          return Promise.resolve({ isComplete: false })
-        },
-        { reqContext: createTestContext() },
-      )
+      const result = await strategy.execute<{ status: string; data: string }>(() => {
+        if (recordStatus === 'ready') {
+          return Promise.resolve({
+            isComplete: true,
+            value: { status: 'ready', data: 'result-data' },
+          })
+        }
+        return Promise.resolve({ isComplete: false })
+      }, {})
 
       expect(result).toEqual({ status: 'ready', data: 'result-data' })
     })
@@ -708,18 +657,15 @@ describe('ExponentialBackoffStrategy', () => {
       const result = await strategy.execute<{
         chunks: number
         complete: boolean
-      }>(
-        () => {
-          if (processedChunks >= totalChunks) {
-            return Promise.resolve({
-              isComplete: true,
-              value: { chunks: processedChunks, complete: true },
-            })
-          }
-          return Promise.resolve({ isComplete: false })
-        },
-        { reqContext: createTestContext() },
-      )
+      }>(() => {
+        if (processedChunks >= totalChunks) {
+          return Promise.resolve({
+            isComplete: true,
+            value: { chunks: processedChunks, complete: true },
+          })
+        }
+        return Promise.resolve({ isComplete: false })
+      }, {})
 
       clearInterval(processInterval)
       expect(result.complete).toBe(true)
@@ -742,18 +688,15 @@ describe('ExponentialBackoffStrategy', () => {
       })
 
       await expect(
-        strategy.execute<string>(
-          () => {
-            if (jobStatus === 'failed') {
-              throw new Error('Job processing failed permanently')
-            }
-            if (jobStatus === 'completed') {
-              return Promise.resolve({ isComplete: true, value: 'job-result' })
-            }
-            return Promise.resolve({ isComplete: false })
-          },
-          { reqContext: createTestContext() },
-        ),
+        strategy.execute<string>(() => {
+          if (jobStatus === 'failed') {
+            throw new Error('Job processing failed permanently')
+          }
+          if (jobStatus === 'completed') {
+            return Promise.resolve({ isComplete: true, value: 'job-result' })
+          }
+          return Promise.resolve({ isComplete: false })
+        }, {}),
       ).rejects.toThrow('Job processing failed permanently')
     })
   })

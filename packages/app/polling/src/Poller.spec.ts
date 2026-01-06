@@ -1,25 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import {
-  Poller,
-  type PollingOptions,
-  type PollingStrategy,
-  type PollResult,
-  type RequestContext,
-} from './Poller.ts'
+import { Poller, type PollingOptions, type PollingStrategy, type PollResult } from './Poller.ts'
 import { PollingError, PollingFailureCause } from './PollingError.ts'
-
-// Test helper to create a minimal request context
-function createTestContext(): RequestContext {
-  return {
-    logger: {
-      debug: () => {},
-      info: () => {},
-      warn: () => {},
-      error: () => {},
-    },
-    reqId: 'test-req-id',
-  } as unknown as RequestContext
-}
 
 describe('Poller', () => {
   describe('delegation to strategy', () => {
@@ -42,7 +23,7 @@ describe('Poller', () => {
 
       const result = await poller.poll<string>(
         async () => ({ isComplete: true, value: 'test-result' }),
-        { reqContext: createTestContext() },
+        {},
       )
 
       expect(result).toBe('test-result')
@@ -69,19 +50,16 @@ describe('Poller', () => {
       }
 
       const poller = new Poller(capturingStrategy)
-      const context = createTestContext()
       const metadata = { testId: 'test-123', userId: 'user-456' }
       const controller = new AbortController()
 
       await poller.poll<string>(async () => ({ isComplete: true, value: 'result' }), {
-        reqContext: context,
         metadata,
         signal: controller.signal,
       })
 
       expect(receivedPollFn).not.toBeNull()
       expect(receivedOptions).not.toBeNull()
-      expect(receivedOptions!.reqContext).toBe(context)
       expect(receivedOptions!.metadata).toEqual(metadata)
       expect(receivedOptions!.signal).toBe(controller.signal)
     })
@@ -100,9 +78,7 @@ describe('Poller', () => {
       const poller = new Poller(failingStrategy)
 
       await expect(
-        poller.poll<string>(async () => ({ isComplete: false }), {
-          reqContext: createTestContext(),
-        }),
+        poller.poll<string>(async () => ({ isComplete: false }), {}),
       ).rejects.toMatchObject({
         name: 'PollingError',
         failureCause: PollingFailureCause.TIMEOUT,
@@ -124,19 +100,18 @@ describe('Poller', () => {
       }
 
       const poller = new Poller(immediateStrategy)
-      const reqContext = createTestContext()
 
       // String result
       const stringResult = await poller.poll<string>(
         async () => ({ isComplete: true, value: 'hello' }),
-        { reqContext },
+        {},
       )
       expect(stringResult).toBe('hello')
 
       // Number result
       const numberResult = await poller.poll<number>(
         async () => ({ isComplete: true, value: 42 }),
-        { reqContext },
+        {},
       )
       expect(numberResult).toBe(42)
 
@@ -146,14 +121,14 @@ describe('Poller', () => {
           isComplete: true,
           value: { id: 'test-id', status: 'done' },
         }),
-        { reqContext },
+        {},
       )
       expect(objectResult).toEqual({ id: 'test-id', status: 'done' })
 
       // Array result
       const arrayResult = await poller.poll<number[]>(
         async () => ({ isComplete: true, value: [1, 2, 3] }),
-        { reqContext },
+        {},
       )
       expect(arrayResult).toEqual([1, 2, 3])
     })
@@ -174,16 +149,13 @@ describe('Poller', () => {
       const poller = new Poller(attemptAwareStrategy)
       const attempts: number[] = []
 
-      const result = await poller.poll<string>(
-        (attempt) => {
-          attempts.push(attempt)
-          if (attempt === 3) {
-            return Promise.resolve({ isComplete: true, value: `completed-at-${attempt}` })
-          }
-          return Promise.resolve({ isComplete: false })
-        },
-        { reqContext: createTestContext() },
-      )
+      const result = await poller.poll<string>((attempt) => {
+        attempts.push(attempt)
+        if (attempt === 3) {
+          return Promise.resolve({ isComplete: true, value: `completed-at-${attempt}` })
+        }
+        return Promise.resolve({ isComplete: false })
+      }, {})
 
       expect(result).toBe('completed-at-3')
       expect(attempts).toEqual([1, 2, 3])
@@ -216,21 +188,17 @@ describe('Poller', () => {
       const poller = new Poller(retryStrategy)
 
       // Success case
-      const successResult = await poller.poll<string>(
-        (attempt) => {
-          if (attempt === 2) {
-            return Promise.resolve({ isComplete: true, value: 'success' })
-          }
-          return Promise.resolve({ isComplete: false })
-        },
-        { reqContext: createTestContext() },
-      )
+      const successResult = await poller.poll<string>((attempt) => {
+        if (attempt === 2) {
+          return Promise.resolve({ isComplete: true, value: 'success' })
+        }
+        return Promise.resolve({ isComplete: false })
+      }, {})
       expect(successResult).toBe('success')
 
       // Timeout case
       await expect(
         poller.poll<string>(async () => ({ isComplete: false }), {
-          reqContext: createTestContext(),
           metadata: { jobId: 'timeout-job' },
         }),
       ).rejects.toMatchObject({
@@ -290,7 +258,6 @@ describe('Poller', () => {
 
       await expect(
         poller.poll<string>(async () => ({ isComplete: false }), {
-          reqContext: createTestContext(),
           metadata: { test: 'pre-cancelled' },
           signal: controller1.signal,
         }),
@@ -322,12 +289,9 @@ describe('Poller', () => {
       }
 
       await expect(
-        poller.poll<string>(
-          () => {
-            throw new DomainError('Business logic failure')
-          },
-          { reqContext: createTestContext() },
-        ),
+        poller.poll<string>(() => {
+          throw new DomainError('Business logic failure')
+        }, {}),
       ).rejects.toThrow(DomainError)
     })
   })

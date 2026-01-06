@@ -210,9 +210,7 @@ describe('delay', () => {
 
     it('should reject with TypeError for invalid input', async () => {
       await expect(delay(-1)).rejects.toThrow(TypeError)
-      await expect(delay(-1)).rejects.toThrow(
-        'delay time must be a non-negative finite number',
-      )
+      await expect(delay(-1)).rejects.toThrow('delay time must be a non-negative finite number')
       await expect(delay(Number.POSITIVE_INFINITY)).rejects.toThrow(TypeError)
       await expect(delay(NaN)).rejects.toThrow(TypeError)
     })

@@ -1,10 +1,10 @@
 // Main poller
 export {
   Poller,
+  type PollingHooks,
   type PollingOptions,
   type PollingStrategy,
   type PollResult,
-  type RequestContext,
 } from './Poller.ts'
 // Errors
 export { PollingError, PollingFailureCause } from './PollingError.ts'

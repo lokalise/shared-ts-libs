@@ -32,9 +32,7 @@
 export function delay(ms: number, signal?: AbortSignal): Promise<void> {
   // Validate input
   if (!Number.isFinite(ms) || ms < 0) {
-    return Promise.reject(
-      new TypeError('delay time must be a non-negative finite number'),
-    )
+    return Promise.reject(new TypeError('delay time must be a non-negative finite number'))
   }
 
   return new Promise((resolve, reject) => {
