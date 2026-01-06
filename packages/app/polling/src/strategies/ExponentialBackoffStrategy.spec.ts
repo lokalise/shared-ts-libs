@@ -677,4 +677,202 @@ describe('ExponentialBackoffStrategy', () => {
       ).rejects.toThrow('Job processing failed permanently')
     })
   })
+
+  describe('hooks integration', () => {
+    it('should call onAttempt hook after each polling attempt', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 50,
+        maxDelayMs: 200,
+        backoffMultiplier: 2,
+        maxAttempts: 5,
+        jitterFactor: 0,
+      })
+
+      const attemptCalls: Array<{ attempt: number; isComplete: boolean }> = []
+
+      await strategy.execute<string>(
+        (attempt) => {
+          if (attempt === 3) {
+            return Promise.resolve({ isComplete: true, value: 'success' })
+          }
+          return Promise.resolve({ isComplete: false })
+        },
+        {
+          hooks: {
+            onAttempt: (ctx) => {
+              attemptCalls.push({ attempt: ctx.attempt, isComplete: ctx.isComplete })
+            },
+          },
+        },
+      )
+
+      expect(attemptCalls).toEqual([
+        { attempt: 1, isComplete: false },
+        { attempt: 2, isComplete: false },
+        { attempt: 3, isComplete: true },
+      ])
+    })
+
+    it('should work without any options', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 50,
+        maxDelayMs: 200,
+        backoffMultiplier: 2,
+        maxAttempts: 3,
+        jitterFactor: 0,
+      })
+
+      const result = await strategy.execute<string>((attempt) => {
+        if (attempt === 2) {
+          return Promise.resolve({ isComplete: true, value: 'success' })
+        }
+        return Promise.resolve({ isComplete: false })
+      })
+
+      expect(result).toBe('success')
+    })
+
+    it('should call onWait hook before each delay', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 50,
+        maxDelayMs: 200,
+        backoffMultiplier: 2,
+        maxAttempts: 5,
+        jitterFactor: 0,
+      })
+
+      const waitCalls: Array<{ attempt: number; waitMs: number }> = []
+
+      await strategy.execute<string>(
+        (attempt) => {
+          if (attempt === 3) {
+            return Promise.resolve({ isComplete: true, value: 'success' })
+          }
+          return Promise.resolve({ isComplete: false })
+        },
+        {
+          hooks: {
+            onWait: (ctx) => {
+              waitCalls.push({ attempt: ctx.attempt, waitMs: ctx.waitMs })
+            },
+          },
+        },
+      )
+
+      // Should wait before attempt 2 and 3
+      expect(waitCalls).toEqual([
+        { attempt: 1, waitMs: 50 },
+        { attempt: 2, waitMs: 100 },
+      ])
+    })
+
+    it('should call onSuccess hook when polling completes', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 50,
+        maxDelayMs: 200,
+        backoffMultiplier: 2,
+        maxAttempts: 5,
+        jitterFactor: 0,
+      })
+
+      let successCalled = false
+      let totalAttempts = 0
+
+      await strategy.execute<string>(
+        (attempt) => {
+          if (attempt === 3) {
+            return Promise.resolve({ isComplete: true, value: 'success' })
+          }
+          return Promise.resolve({ isComplete: false })
+        },
+        {
+          hooks: {
+            onSuccess: (ctx) => {
+              successCalled = true
+              totalAttempts = ctx.totalAttempts
+            },
+          },
+        },
+      )
+
+      expect(successCalled).toBe(true)
+      expect(totalAttempts).toBe(3)
+    })
+
+    it('should call onFailure hook when timeout occurs', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 10,
+        maxDelayMs: 50,
+        backoffMultiplier: 2,
+        maxAttempts: 3,
+        jitterFactor: 0,
+      })
+
+      let failureCalled = false
+      let failureCause: string | undefined
+      let attemptsMade = 0
+
+      try {
+        await strategy.execute<string>(() => Promise.resolve({ isComplete: false }), {
+          hooks: {
+            onFailure: (ctx) => {
+              failureCalled = true
+              failureCause = ctx.cause
+              attemptsMade = ctx.attemptsMade
+            },
+          },
+        })
+        expect.fail('Should have thrown PollingError')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.failureCause).toBe(PollingFailureCause.TIMEOUT)
+      }
+
+      expect(failureCalled).toBe(true)
+      expect(failureCause).toBe(PollingFailureCause.TIMEOUT)
+      expect(attemptsMade).toBe(3)
+    })
+
+    it('should call onFailure when cancelled during delay', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 100,
+        maxDelayMs: 1000,
+        backoffMultiplier: 2,
+        maxAttempts: 10,
+        jitterFactor: 0,
+      })
+
+      const controller = new AbortController()
+      let failureCalled = false
+      let failureCause: string | undefined
+      let attemptsMade = 0
+
+      // Abort after 150ms (during second wait)
+      delay(150).then(() => controller.abort())
+
+      try {
+        await strategy.execute<string>(() => Promise.resolve({ isComplete: false }), {
+          signal: controller.signal,
+          hooks: {
+            onFailure: (ctx) => {
+              failureCalled = true
+              failureCause = ctx.cause
+              attemptsMade = ctx.attemptsMade
+            },
+          },
+        })
+        expect.fail('Should have thrown PollingError')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.failureCause).toBe(PollingFailureCause.CANCELLED)
+      }
+
+      expect(failureCalled).toBe(true)
+      expect(failureCause).toBe(PollingFailureCause.CANCELLED)
+      expect(attemptsMade).toBeGreaterThanOrEqual(1)
+      expect(attemptsMade).toBeLessThanOrEqual(2)
+    })
+  })
 })

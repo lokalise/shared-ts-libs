@@ -248,7 +248,7 @@ try {
     },
   )
 } catch (error) {
-  if (error instanceof PollingError && error.failureCause === 'CANCELLED') {
+  if (PollingError.isPollingError(error) && error.failureCause === 'CANCELLED') {
     console.log('Polling was cancelled')
   }
 }
@@ -324,7 +324,25 @@ Implement the `PollingStrategy` interface to create your own strategy:
 ```typescript
 import type { PollingStrategy, PollResult, PollingOptions } from '@lokalise/polling'
 import { PollingError, PollingFailureCause } from '@lokalise/polling'
-import { delay } from '@lokalise/polling/utils/delay'
+
+// Simple delay helper (or use a library like `p-timeout`)
+function delay(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new Error('Aborted'))
+      return
+    }
+    
+    const timeoutId = setTimeout(resolve, ms)
+    
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        clearTimeout(timeoutId)
+        reject(new Error('Aborted'))
+      }, { once: true })
+    }
+  })
+}
 
 class FixedIntervalStrategy implements PollingStrategy {
   constructor(
@@ -366,7 +384,20 @@ class FixedIntervalStrategy implements PollingStrategy {
 
       if (attempt < this.maxAttempts) {
         hooks?.onWait?.({ attempt, waitMs: this.intervalMs })
-        await delay(this.intervalMs, signal)
+        try {
+          await delay(this.intervalMs, signal)
+        } catch {
+          const error = new PollingError(
+            `Polling cancelled after ${attempt} attempts`,
+            PollingFailureCause.CANCELLED,
+            attempt,
+          )
+          hooks?.onFailure?.({
+            cause: PollingFailureCause.CANCELLED,
+            attemptsMade: attempt,
+          })
+          throw error
+        }
       }
     }
 
