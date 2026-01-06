@@ -44,11 +44,10 @@ export function delay(ms: number, signal?: AbortSignal): Promise<void> {
       return
     }
 
-    let timeoutId: ReturnType<typeof setTimeout> | undefined
     let abortHandler: (() => void) | undefined
 
     // Set up the delay
-    timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       // Clean up abort listener if it exists
       if (signal && abortHandler) {
         signal.removeEventListener('abort', abortHandler)
@@ -59,9 +58,7 @@ export function delay(ms: number, signal?: AbortSignal): Promise<void> {
     // Set up abort handling if signal is provided
     if (signal) {
       abortHandler = () => {
-        if (timeoutId !== undefined) {
-          clearTimeout(timeoutId)
-        }
+        clearTimeout(timeoutId)
         const error = new Error('Delay was aborted')
         error.name = 'AbortError'
         reject(error)

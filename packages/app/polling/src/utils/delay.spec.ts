@@ -242,25 +242,40 @@ describe('delay', () => {
       await expect(promise).rejects.toThrow('Delay was aborted')
     })
 
-    it('should handle abort handler when timeoutId might be undefined', async () => {
-      // This tests the defensive check in the abort handler
-      // Even though timeoutId should always be defined when the handler runs,
-      // the code defensively checks for undefined
-      const controller = new AbortController()
+    it('should handle abort with real timers', async () => {
+      // Test abort behavior with real event loop timing
 
-      // Use real timers for this edge case test
+      // Use real timers to ensure actual event loop behavior
       vi.useRealTimers()
 
       try {
-        const promise = delay(100, controller.signal)
+        const controller = new AbortController()
 
-        // Abort immediately in a microtask to test the abort handler
-        queueMicrotask(() => controller.abort())
+        // Start delay with signal
+        const promise = delay(50, controller.signal)
+
+        // Abort after a tiny delay to ensure abort handler is called
+        await new Promise((resolve) => setTimeout(resolve, 5))
+        controller.abort()
 
         await expect(promise).rejects.toThrow('Delay was aborted')
       } finally {
         vi.useFakeTimers()
       }
+    })
+
+    it('should handle multiple simultaneous abort calls', async () => {
+      // Another edge case: abort called multiple times rapidly
+      const controller = new AbortController()
+
+      const promise = delay(100, controller.signal)
+
+      // Abort multiple times rapidly
+      controller.abort()
+      controller.abort()
+      controller.abort()
+
+      await expect(promise).rejects.toThrow('Delay was aborted')
     })
   })
 })
