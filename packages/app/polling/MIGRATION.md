@@ -383,27 +383,56 @@ await poller.poll(pollFn, { signal })
 
 ### Step 3: Replace Logging with Hooks and Closures
 
-If you were relying on automatic logging:
+If you were relying on automatic logging, you need to manually implement it using hooks.
+
+**What logs were automatically generated in v2.x:**
+
+v2.x automatically logged two messages at **debug level**:
+
+1. **On each incomplete attempt (before waiting/retrying):**
+   - Message: `"Polling not complete, waiting before retry"`
+   - Data: `{ attempt, nextDelayMs, ...metadata }`
+
+2. **On successful completion:**
+   - Message: `"Polling completed successfully"`
+   - Data: `{ attempt, totalAttempts, ...metadata }`
+
+**Migration:**
 
 ```typescript
 // Before (v2.x)
 await poller.poll(pollFn, reqContext, { jobId: '123' })
-// Automatic logging via reqContext.logger
+// Automatic logging via reqContext.logger.debug()
 
-// After (v3.0)
+// After (v3.0) - Replicate the same logs using hooks
 const jobId = '123'
 
 await poller.poll(pollFn, {
   hooks: {
-    onAttempt: ({ attempt, isComplete }) => {
-      logger.debug({ attempt, isComplete, jobId }, 'Poll attempt')
+    onWait: ({ attempt, waitMs }) => {
+      // Replaces: "Polling not complete, waiting before retry"
+      logger.debug(
+        { attempt, nextDelayMs: waitMs, jobId },
+        'Polling not complete, waiting before retry'
+      )
     },
     onSuccess: ({ totalAttempts }) => {
-      logger.info({ totalAttempts, jobId }, 'Polling succeeded')
+      // Replaces: "Polling completed successfully"
+      logger.debug(
+        { attempt: totalAttempts, totalAttempts, jobId },
+        'Polling completed successfully'
+      )
     },
   },
 })
 ```
+
+**Note:** You're free to customize the logging to fit your needs. The hooks are flexible and allow you to:
+- Use any logging library
+- Change log levels (e.g., use `info` instead of `debug`)
+- Add additional context from closures
+- Send metrics to monitoring systems
+- Customize messages
 
 ### Step 4: Update Error Handling
 
