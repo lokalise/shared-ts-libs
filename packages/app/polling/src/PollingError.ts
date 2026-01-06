@@ -92,9 +92,14 @@ export class PollingError extends Error {
 
     const err = error as Record<string, unknown>
 
+    // Validate failureCause is one of the valid enum values
+    const validFailureCauses: string[] = Object.values(PollingFailureCause)
+    const isValidFailureCause =
+      typeof err.failureCause === 'string' && validFailureCauses.includes(err.failureCause)
+
     return (
       err.name === 'PollingError' &&
-      typeof err.failureCause === 'string' &&
+      isValidFailureCause &&
       typeof err.attemptsMade === 'number' &&
       typeof err.errorCode === 'string' &&
       typeof err.details === 'object' &&

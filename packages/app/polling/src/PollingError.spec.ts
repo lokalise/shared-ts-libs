@@ -270,6 +270,65 @@ describe('PollingError', () => {
       ).toBe(false)
     })
 
+    it('should return false for objects with invalid failureCause', () => {
+      const invalidError = {
+        name: 'PollingError',
+        message: 'Test',
+        failureCause: 'INVALID_CAUSE', // Not a valid PollingFailureCause
+        attemptsMade: 5,
+        errorCode: 'POLLING_INVALID_CAUSE',
+        details: { failureCause: 'INVALID_CAUSE', attemptsMade: 5 },
+      }
+      expect(PollingError.isPollingError(invalidError)).toBe(false)
+    })
+
+    it('should only accept valid PollingFailureCause enum values', () => {
+      // Valid causes should return true
+      const validTimeoutError = {
+        name: 'PollingError',
+        message: 'Test',
+        failureCause: 'TIMEOUT',
+        attemptsMade: 5,
+        errorCode: 'POLLING_TIMEOUT',
+        details: {},
+      }
+      expect(PollingError.isPollingError(validTimeoutError)).toBe(true)
+
+      const validCancelledError = {
+        name: 'PollingError',
+        message: 'Test',
+        failureCause: 'CANCELLED',
+        attemptsMade: 3,
+        errorCode: 'POLLING_CANCELLED',
+        details: {},
+      }
+      expect(PollingError.isPollingError(validCancelledError)).toBe(true)
+
+      const validConfigError = {
+        name: 'PollingError',
+        message: 'Test',
+        failureCause: 'INVALID_CONFIG',
+        attemptsMade: 0,
+        errorCode: 'POLLING_INVALID_CONFIG',
+        details: {},
+      }
+      expect(PollingError.isPollingError(validConfigError)).toBe(true)
+
+      // Invalid causes should return false
+      const invalidCauses = ['UNKNOWN', 'ERROR', 'FAILED', '', 'timeout', 'Timeout']
+      for (const invalidCause of invalidCauses) {
+        const invalidError = {
+          name: 'PollingError',
+          message: 'Test',
+          failureCause: invalidCause,
+          attemptsMade: 5,
+          errorCode: 'POLLING_ERROR',
+          details: {},
+        }
+        expect(PollingError.isPollingError(invalidError)).toBe(false)
+      }
+    })
+
     it('should provide proper type narrowing in TypeScript', () => {
       const error: unknown = new PollingError('Test', PollingFailureCause.TIMEOUT, 5)
 

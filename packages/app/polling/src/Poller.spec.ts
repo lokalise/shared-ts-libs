@@ -295,4 +295,434 @@ describe('Poller', () => {
       ).rejects.toThrow(DomainError)
     })
   })
+
+  describe('hooks', () => {
+    describe('onAttempt hook', () => {
+      it('should call onAttempt hook after each polling attempt', async () => {
+        const hookCalls: Array<{ attempt: number; isComplete: boolean }> = []
+
+        const strategy: PollingStrategy = {
+          async execute<T>(
+            pollFn: (attempt: number) => Promise<PollResult<T>>,
+            options: PollingOptions,
+          ): Promise<T> {
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              const result = await pollFn(attempt)
+
+              options.hooks?.onAttempt?.({
+                attempt,
+                isComplete: result.isComplete,
+                metadata: options.metadata,
+              })
+
+              if (result.isComplete) {
+                return result.value
+              }
+            }
+            throw new Error('Max attempts')
+          },
+        }
+
+        const poller = new Poller(strategy)
+
+        await poller.poll<string>(
+          (attempt) => {
+            if (attempt === 3) {
+              return Promise.resolve({ isComplete: true, value: 'success' })
+            }
+            return Promise.resolve({ isComplete: false })
+          },
+          {
+            hooks: {
+              onAttempt: (ctx) => {
+                hookCalls.push({ attempt: ctx.attempt, isComplete: ctx.isComplete })
+              },
+            },
+          },
+        )
+
+        expect(hookCalls).toEqual([
+          { attempt: 1, isComplete: false },
+          { attempt: 2, isComplete: false },
+          { attempt: 3, isComplete: true },
+        ])
+      })
+
+      it('should pass metadata to onAttempt hook', async () => {
+        let receivedMetadata: Record<string, unknown> | undefined
+
+        const strategy: PollingStrategy = {
+          async execute<T>(
+            pollFn: (attempt: number) => Promise<PollResult<T>>,
+            options: PollingOptions,
+          ): Promise<T> {
+            const result = await pollFn(1)
+            options.hooks?.onAttempt?.({
+              attempt: 1,
+              isComplete: result.isComplete,
+              metadata: options.metadata,
+            })
+            if (result.isComplete) {
+              return result.value
+            }
+            throw new Error('Not complete')
+          },
+        }
+
+        const poller = new Poller(strategy)
+        const metadata = { jobId: 'job-123', userId: 'user-456' }
+
+        await poller.poll<string>(async () => ({ isComplete: true, value: 'success' }), {
+          metadata,
+          hooks: {
+            onAttempt: (ctx) => {
+              receivedMetadata = ctx.metadata
+            },
+          },
+        })
+
+        expect(receivedMetadata).toEqual(metadata)
+      })
+    })
+
+    describe('onWait hook', () => {
+      it('should call onWait hook before delays', async () => {
+        const hookCalls: Array<{ attempt: number; waitMs: number }> = []
+
+        const strategy: PollingStrategy = {
+          async execute<T>(
+            pollFn: (attempt: number) => Promise<PollResult<T>>,
+            options: PollingOptions,
+          ): Promise<T> {
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              const result = await pollFn(attempt)
+              if (result.isComplete) {
+                return result.value
+              }
+
+              // Simulate delay with onWait hook
+              const waitMs = attempt * 100
+              options.hooks?.onWait?.({
+                attempt,
+                waitMs,
+                metadata: options.metadata,
+              })
+            }
+            throw new Error('Max attempts')
+          },
+        }
+
+        const poller = new Poller(strategy)
+
+        await poller.poll<string>(
+          (attempt) => {
+            if (attempt === 3) {
+              return Promise.resolve({ isComplete: true, value: 'success' })
+            }
+            return Promise.resolve({ isComplete: false })
+          },
+          {
+            hooks: {
+              onWait: (ctx) => {
+                hookCalls.push({ attempt: ctx.attempt, waitMs: ctx.waitMs })
+              },
+            },
+          },
+        )
+
+        expect(hookCalls).toEqual([
+          { attempt: 1, waitMs: 100 },
+          { attempt: 2, waitMs: 200 },
+        ])
+      })
+    })
+
+    describe('onSuccess hook', () => {
+      it('should call onSuccess hook when polling completes', async () => {
+        let successCalled = false
+        let totalAttempts = 0
+
+        const strategy: PollingStrategy = {
+          async execute<T>(
+            pollFn: (attempt: number) => Promise<PollResult<T>>,
+            options: PollingOptions,
+          ): Promise<T> {
+            for (let attempt = 1; attempt <= 5; attempt++) {
+              const result = await pollFn(attempt)
+              if (result.isComplete) {
+                options.hooks?.onSuccess?.({
+                  totalAttempts: attempt,
+                  metadata: options.metadata,
+                })
+                return result.value
+              }
+            }
+            throw new Error('Max attempts')
+          },
+        }
+
+        const poller = new Poller(strategy)
+
+        await poller.poll<string>(
+          (attempt) => {
+            if (attempt === 3) {
+              return Promise.resolve({ isComplete: true, value: 'success' })
+            }
+            return Promise.resolve({ isComplete: false })
+          },
+          {
+            metadata: { testId: 'success-test' },
+            hooks: {
+              onSuccess: (ctx) => {
+                successCalled = true
+                totalAttempts = ctx.totalAttempts
+              },
+            },
+          },
+        )
+
+        expect(successCalled).toBe(true)
+        expect(totalAttempts).toBe(3)
+      })
+
+      it('should not call onSuccess when polling fails', async () => {
+        let successCalled = false
+
+        const strategy: PollingStrategy = {
+          async execute<T>(
+            pollFn: (attempt: number) => Promise<PollResult<T>>,
+            options: PollingOptions,
+          ): Promise<T> {
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              const result = await pollFn(attempt)
+              if (result.isComplete) {
+                options.hooks?.onSuccess?.({
+                  totalAttempts: attempt,
+                  metadata: options.metadata,
+                })
+                return result.value
+              }
+            }
+            throw new PollingError('Timeout', PollingFailureCause.TIMEOUT, 3)
+          },
+        }
+
+        const poller = new Poller(strategy)
+
+        await expect(
+          poller.poll<string>(async () => ({ isComplete: false }), {
+            hooks: {
+              onSuccess: () => {
+                successCalled = true
+              },
+            },
+          }),
+        ).rejects.toThrow(PollingError)
+
+        expect(successCalled).toBe(false)
+      })
+    })
+
+    describe('onFailure hook', () => {
+      it('should call onFailure hook on timeout', async () => {
+        let failureCalled = false
+        let failureCause: string | undefined
+        let attemptsMade = 0
+
+        const strategy: PollingStrategy = {
+          async execute<T>(
+            pollFn: (attempt: number) => Promise<PollResult<T>>,
+            options: PollingOptions,
+          ): Promise<T> {
+            const maxAttempts = 3
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+              const result = await pollFn(attempt)
+              if (result.isComplete) {
+                return result.value
+              }
+            }
+
+            options.hooks?.onFailure?.({
+              cause: PollingFailureCause.TIMEOUT,
+              attemptsMade: maxAttempts,
+              metadata: options.metadata,
+            })
+
+            throw new PollingError('Timeout', PollingFailureCause.TIMEOUT, maxAttempts)
+          },
+        }
+
+        const poller = new Poller(strategy)
+
+        await expect(
+          poller.poll<string>(async () => ({ isComplete: false }), {
+            hooks: {
+              onFailure: (ctx) => {
+                failureCalled = true
+                failureCause = ctx.cause
+                attemptsMade = ctx.attemptsMade
+              },
+            },
+          }),
+        ).rejects.toThrow(PollingError)
+
+        expect(failureCalled).toBe(true)
+        expect(failureCause).toBe(PollingFailureCause.TIMEOUT)
+        expect(attemptsMade).toBe(3)
+      })
+
+      it('should call onFailure hook on cancellation', async () => {
+        let failureCalled = false
+        let failureCause: string | undefined
+
+        const strategy: PollingStrategy = {
+          async execute<T>(
+            pollFn: (attempt: number) => Promise<PollResult<T>>,
+            options: PollingOptions,
+          ): Promise<T> {
+            if (options.signal?.aborted) {
+              options.hooks?.onFailure?.({
+                cause: PollingFailureCause.CANCELLED,
+                attemptsMade: 0,
+                metadata: options.metadata,
+              })
+              throw new PollingError('Cancelled', PollingFailureCause.CANCELLED, 0)
+            }
+
+            const result = await pollFn(1)
+            if (result.isComplete) {
+              return result.value
+            }
+            throw new Error('Not complete')
+          },
+        }
+
+        const poller = new Poller(strategy)
+        const controller = new AbortController()
+        controller.abort()
+
+        await expect(
+          poller.poll<string>(async () => ({ isComplete: false }), {
+            signal: controller.signal,
+            hooks: {
+              onFailure: (ctx) => {
+                failureCalled = true
+                failureCause = ctx.cause
+              },
+            },
+          }),
+        ).rejects.toThrow(PollingError)
+
+        expect(failureCalled).toBe(true)
+        expect(failureCause).toBe(PollingFailureCause.CANCELLED)
+      })
+    })
+
+    describe('multiple hooks', () => {
+      it('should call all hooks in correct order', async () => {
+        const events: string[] = []
+
+        const strategy: PollingStrategy = {
+          async execute<T>(
+            pollFn: (attempt: number) => Promise<PollResult<T>>,
+            options: PollingOptions,
+          ): Promise<T> {
+            for (let attempt = 1; attempt <= 2; attempt++) {
+              const result = await pollFn(attempt)
+
+              options.hooks?.onAttempt?.({
+                attempt,
+                isComplete: result.isComplete,
+                metadata: options.metadata,
+              })
+
+              if (result.isComplete) {
+                options.hooks?.onSuccess?.({
+                  totalAttempts: attempt,
+                  metadata: options.metadata,
+                })
+                return result.value
+              }
+
+              options.hooks?.onWait?.({
+                attempt,
+                waitMs: 100,
+                metadata: options.metadata,
+              })
+            }
+            throw new Error('Max attempts')
+          },
+        }
+
+        const poller = new Poller(strategy)
+
+        await poller.poll<string>(
+          (attempt) => {
+            if (attempt === 2) {
+              return Promise.resolve({ isComplete: true, value: 'success' })
+            }
+            return Promise.resolve({ isComplete: false })
+          },
+          {
+            hooks: {
+              onAttempt: ({ attempt }) => events.push(`attempt-${attempt}`),
+              onWait: ({ attempt }) => events.push(`wait-${attempt}`),
+              onSuccess: () => events.push('success'),
+              onFailure: () => events.push('failure'),
+            },
+          },
+        )
+
+        expect(events).toEqual(['attempt-1', 'wait-1', 'attempt-2', 'success'])
+      })
+    })
+
+    describe('optional hooks', () => {
+      it('should work without any hooks provided', async () => {
+        const strategy: PollingStrategy = {
+          async execute<T>(
+            pollFn: (attempt: number) => Promise<PollResult<T>>,
+            options: PollingOptions,
+          ): Promise<T> {
+            const result = await pollFn(1)
+            options.hooks?.onAttempt?.({ attempt: 1, isComplete: result.isComplete })
+            if (result.isComplete) {
+              return result.value
+            }
+            throw new Error('Not complete')
+          },
+        }
+
+        const poller = new Poller(strategy)
+
+        const result = await poller.poll<string>(
+          async () => ({ isComplete: true, value: 'success' }),
+          {},
+        )
+
+        expect(result).toBe('success')
+      })
+
+      it('should work with undefined options', async () => {
+        const strategy: PollingStrategy = {
+          async execute<T>(pollFn: (attempt: number) => Promise<PollResult<T>>): Promise<T> {
+            const result = await pollFn(1)
+            if (result.isComplete) {
+              return result.value
+            }
+            throw new Error('Not complete')
+          },
+        }
+
+        const poller = new Poller(strategy)
+
+        const result = await poller.poll<string>(async () => ({
+          isComplete: true,
+          value: 'success',
+        }))
+
+        expect(result).toBe('success')
+      })
+    })
+  })
 })
