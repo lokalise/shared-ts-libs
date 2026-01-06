@@ -241,5 +241,26 @@ describe('delay', () => {
 
       await expect(promise).rejects.toThrow('Delay was aborted')
     })
+
+    it('should handle abort handler when timeoutId might be undefined', async () => {
+      // This tests the defensive check in the abort handler
+      // Even though timeoutId should always be defined when the handler runs,
+      // the code defensively checks for undefined
+      const controller = new AbortController()
+
+      // Use real timers for this edge case test
+      vi.useRealTimers()
+
+      try {
+        const promise = delay(100, controller.signal)
+
+        // Abort immediately in a microtask to test the abort handler
+        queueMicrotask(() => controller.abort())
+
+        await expect(promise).rejects.toThrow('Delay was aborted')
+      } finally {
+        vi.useFakeTimers()
+      }
+    })
   })
 })

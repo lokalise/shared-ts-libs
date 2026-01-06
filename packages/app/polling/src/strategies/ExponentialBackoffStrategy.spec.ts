@@ -874,5 +874,94 @@ describe('ExponentialBackoffStrategy', () => {
       expect(attemptsMade).toBeGreaterThanOrEqual(1)
       expect(attemptsMade).toBeLessThanOrEqual(2)
     })
+
+    it('should call onFailure when signal is already aborted before polling starts', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 100,
+        maxDelayMs: 1000,
+        backoffMultiplier: 2,
+        maxAttempts: 10,
+        jitterFactor: 0,
+      })
+
+      const controller = new AbortController()
+      controller.abort() // Abort before starting
+
+      let failureCalled = false
+      let failureCause: string | undefined
+      let attemptsMade = 0
+
+      try {
+        await strategy.execute<string>(() => Promise.resolve({ isComplete: false }), {
+          signal: controller.signal,
+          hooks: {
+            onFailure: (ctx) => {
+              failureCalled = true
+              failureCause = ctx.cause
+              attemptsMade = ctx.attemptsMade
+            },
+          },
+        })
+        expect.fail('Should have thrown PollingError')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.failureCause).toBe(PollingFailureCause.CANCELLED)
+        expect(pollingError.attemptsMade).toBe(0)
+      }
+
+      expect(failureCalled).toBe(true)
+      expect(failureCause).toBe(PollingFailureCause.CANCELLED)
+      expect(attemptsMade).toBe(0)
+    })
+
+    it('should call onFailure when signal is aborted between attempts', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 0,
+        maxDelayMs: 0,
+        backoffMultiplier: 1,
+        maxAttempts: 10,
+        jitterFactor: 0,
+      })
+
+      const controller = new AbortController()
+      let attemptCount = 0
+      let failureCalled = false
+      let failureCause: string | undefined
+      let attemptsMade = 0
+
+      try {
+        await strategy.execute<string>(
+          () => {
+            attemptCount++
+            // Abort after first attempt
+            if (attemptCount === 1) {
+              controller.abort()
+            }
+            return Promise.resolve({ isComplete: false })
+          },
+          {
+            signal: controller.signal,
+            hooks: {
+              onFailure: (ctx) => {
+                failureCalled = true
+                failureCause = ctx.cause
+                attemptsMade = ctx.attemptsMade
+              },
+            },
+          },
+        )
+        expect.fail('Should have thrown PollingError')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.failureCause).toBe(PollingFailureCause.CANCELLED)
+        expect(pollingError.attemptsMade).toBe(1)
+      }
+
+      expect(failureCalled).toBe(true)
+      expect(failureCause).toBe(PollingFailureCause.CANCELLED)
+      expect(attemptsMade).toBe(1)
+    })
   })
 })

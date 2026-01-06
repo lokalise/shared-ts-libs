@@ -346,4 +346,37 @@ describe('PollingError', () => {
       expect(results).toEqual(['polling:TIMEOUT', 'polling:CANCELLED', 'other'])
     })
   })
+
+  describe('stack trace capture', () => {
+    it('should work when Error.captureStackTrace is not available', () => {
+      // Save the original function
+      const originalCaptureStackTrace = Error.captureStackTrace
+
+      try {
+        // Temporarily remove Error.captureStackTrace to simulate non-V8 environment
+        // @ts-expect-error - Intentionally deleting to test fallback
+        delete Error.captureStackTrace
+
+        const error = new PollingError('Test error', PollingFailureCause.TIMEOUT, 5)
+
+        expect(error).toBeInstanceOf(Error)
+        expect(error).toBeInstanceOf(PollingError)
+        expect(error.message).toBe('Test error')
+        expect(error.stack).toBeDefined() // Stack should still be available from Error constructor
+      } finally {
+        // Restore the original function
+        if (originalCaptureStackTrace) {
+          Error.captureStackTrace = originalCaptureStackTrace
+        }
+      }
+    })
+
+    it('should capture stack trace when Error.captureStackTrace is available', () => {
+      // This test runs in V8 (Node.js/Vitest) where Error.captureStackTrace exists
+      const error = new PollingError('Test error', PollingFailureCause.TIMEOUT, 5)
+
+      expect(error.stack).toBeDefined()
+      expect(error.stack).toContain('PollingError')
+    })
+  })
 })

@@ -1,4 +1,4 @@
-import type { PollingOptions, PollingStrategy, PollResult } from '../Poller.ts'
+import type { PollingHooks, PollingOptions, PollingStrategy, PollResult } from '../Poller.ts'
 import { PollingError, PollingFailureCause } from '../PollingError.ts'
 import { delay } from '../utils/delay.ts'
 
@@ -95,10 +95,10 @@ export class ExponentialBackoffStrategy implements PollingStrategy {
   ): Promise<T> {
     const { hooks, signal } = options ?? {}
 
-    this.checkAborted(signal, 0)
+    this.checkAborted(signal, 0, hooks)
 
     for (let attempt = 1; attempt <= this.config.maxAttempts; attempt++) {
-      this.checkAborted(signal, attempt - 1)
+      this.checkAborted(signal, attempt - 1, hooks)
 
       const result = await pollFn(attempt)
 
@@ -133,13 +133,24 @@ export class ExponentialBackoffStrategy implements PollingStrategy {
     throw error
   }
 
-  private checkAborted(signal: AbortSignal | undefined, attemptsMade: number): void {
+  private checkAborted(
+    signal: AbortSignal | undefined,
+    attemptsMade: number,
+    hooks?: PollingHooks,
+  ): void {
     if (signal?.aborted) {
-      throw new PollingError(
+      const error = new PollingError(
         `Polling cancelled after ${attemptsMade} attempts`,
         PollingFailureCause.CANCELLED,
         attemptsMade,
       )
+
+      hooks?.onFailure?.({
+        cause: PollingFailureCause.CANCELLED,
+        attemptsMade,
+      })
+
+      throw error
     }
   }
 
