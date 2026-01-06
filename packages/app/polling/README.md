@@ -8,8 +8,10 @@ A flexible, production-ready polling library with configurable retry strategies 
 - ⏱️ **Exponential Backoff** - Built-in exponential backoff with jitter to prevent thundering herd
 - 🎯 **Type-Safe** - Full TypeScript support with discriminated unions
 - 🚫 **Cancellable** - Support for AbortSignal to cancel polling operations
-- 📊 **Observable** - Integrated logging with request context
+- 🪝 **Observable** - Lifecycle hooks for logging, metrics, and monitoring
+- 🌍 **Universal** - Works in Node.js, browsers, Deno, Bun, and React Native
 - ⚡ **Production-Ready** - Input validation, error handling, and configurable timeouts
+- 🪶 **Zero Dependencies** - No external runtime dependencies
 
 ## Installation
 
@@ -38,8 +40,11 @@ const result = await poller.poll(
     return { isComplete: false }
   },
   {
-    reqContext,
-    metadata: { jobId }, // metadata for logging
+    metadata: { jobId }, // Optional metadata for hooks
+    hooks: {
+      onAttempt: ({ attempt, isComplete }) => 
+        console.log(`Attempt ${attempt}: ${isComplete ? 'Complete' : 'Continuing'}`),
+    },
   },
 )
 ```
@@ -184,11 +189,12 @@ const result = await poller.poll(
       ? { isComplete: true, value: data.result }
       : { isComplete: false }
   },
-  { reqContext },
 )
 ```
 
-### With Metadata for Logging
+### With Lifecycle Hooks
+
+Use hooks to observe polling lifecycle events for logging, metrics, or monitoring:
 
 ```typescript
 const result = await poller.poll(
@@ -199,8 +205,21 @@ const result = await poller.poll(
       : { isComplete: false }
   },
   {
-    reqContext,
-    metadata: { jobId, userId }, // Included in all log messages
+    metadata: { jobId, userId },
+    hooks: {
+      onAttempt: ({ attempt, isComplete, metadata }) => {
+        console.log(`[${metadata?.jobId}] Attempt ${attempt}: ${isComplete ? 'Complete' : 'Pending'}`)
+      },
+      onWait: ({ attempt, waitMs, metadata }) => {
+        console.log(`[${metadata?.jobId}] Waiting ${waitMs}ms before attempt ${attempt + 1}`)
+      },
+      onSuccess: ({ totalAttempts, metadata }) => {
+        console.log(`[${metadata?.jobId}] Succeeded after ${totalAttempts} attempts`)
+      },
+      onFailure: ({ cause, attemptsMade, metadata }) => {
+        console.error(`[${metadata?.jobId}] Failed: ${cause} after ${attemptsMade} attempts`)
+      },
+    },
   },
 )
 ```
@@ -222,7 +241,6 @@ try {
         : { isComplete: false }
     },
     {
-      reqContext,
       metadata: { operation: 'data-sync' },
       signal: controller.signal,  // Pass the signal
     },
@@ -249,7 +267,6 @@ const result = await poller.poll(
       ? { isComplete: true, value: status.data }
       : { isComplete: false }
   },
-  { reqContext },
 )
 ```
 
@@ -275,7 +292,6 @@ try {
       return { isComplete: false }
     },
     {
-      reqContext,
       metadata: { jobId },
     },
   )
@@ -296,6 +312,8 @@ Implement the `PollingStrategy` interface to create your own strategy:
 
 ```typescript
 import type { PollingStrategy, PollResult, PollingOptions } from '@lokalise/polling'
+import { PollingError, PollingFailureCause } from '@lokalise/polling'
+import { delay } from '@lokalise/polling/utils/delay'
 
 class FixedIntervalStrategy implements PollingStrategy {
   constructor(
@@ -305,37 +323,57 @@ class FixedIntervalStrategy implements PollingStrategy {
 
   async execute<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    options: PollingOptions,
+    options?: PollingOptions,
   ): Promise<T> {
-    const { reqContext, metadata, signal } = options
+    const { hooks, metadata, signal } = options ?? {}
     
     for (let attempt = 1; attempt <= this.maxAttempts; attempt++) {
       if (signal?.aborted) {
-        throw new PollingError(
+        const error = new PollingError(
           `Polling cancelled after ${attempt - 1} attempts`,
           PollingFailureCause.CANCELLED,
           attempt - 1,
           metadata,
         )
+        hooks?.onFailure?.({
+          cause: PollingFailureCause.CANCELLED,
+          attemptsMade: attempt - 1,
+          metadata,
+        })
+        throw error
       }
 
       const result = await pollFn(attempt)
       
+      hooks?.onAttempt?.({
+        attempt,
+        isComplete: result.isComplete,
+        metadata,
+      })
+      
       if (result.isComplete) {
+        hooks?.onSuccess?.({ totalAttempts: attempt, metadata })
         return result.value
       }
 
       if (attempt < this.maxAttempts) {
-        await setTimeout(this.intervalMs, undefined, { signal })
+        hooks?.onWait?.({ attempt, waitMs: this.intervalMs, metadata })
+        await delay(this.intervalMs, signal)
       }
     }
 
-    throw new PollingError(
+    const error = new PollingError(
       `Polling timeout after ${this.maxAttempts} attempts`,
       PollingFailureCause.TIMEOUT,
       this.maxAttempts,
       metadata,
     )
+    hooks?.onFailure?.({
+      cause: PollingFailureCause.TIMEOUT,
+      attemptsMade: this.maxAttempts,
+      metadata,
+    })
+    throw error
   }
 }
 
@@ -388,7 +426,6 @@ import { PollingError, PollingFailureCause } from '@lokalise/polling'
 
 try {
   const result = await poller.poll(pollFn, {
-    reqContext,
     metadata: { jobId: '123' },
   })
 } catch (error) {
@@ -415,30 +452,52 @@ try {
 }
 ```
 
-## Logging
+## Observability
 
-The library logs polling progress automatically using the provided `RequestContext`:
+### Lifecycle Hooks
+
+The library provides lifecycle hooks for observing polling events. This is ideal for integrating with your logging, metrics, or monitoring systems:
 
 ```typescript
-// Success (debug level)
-// { attempt: 3, totalAttempts: 20, jobId: '123' }
-// "Polling completed successfully"
-
-// Retry (debug level)
-// { attempt: 1, nextDelayMs: 2134, jobId: '123' }
-// "Polling not complete, waiting before retry"
+const result = await poller.poll(pollFn, {
+  metadata: { jobId: '123', userId: '456' },
+  hooks: {
+    // Called after each attempt
+    onAttempt: ({ attempt, isComplete, metadata }) => {
+      logger.debug({ attempt, isComplete, ...metadata }, 'Poll attempt completed')
+    },
+    
+    // Called before waiting between attempts
+    onWait: ({ attempt, waitMs, metadata }) => {
+      logger.debug({ attempt, waitMs, ...metadata }, 'Waiting before next attempt')
+    },
+    
+    // Called when polling succeeds
+    onSuccess: ({ totalAttempts, metadata }) => {
+      logger.info({ totalAttempts, ...metadata }, 'Polling completed successfully')
+      metrics.increment('polling.success', { job: metadata?.jobId })
+    },
+    
+    // Called when polling fails
+    onFailure: ({ cause, attemptsMade, metadata }) => {
+      logger.error({ cause, attemptsMade, ...metadata }, 'Polling failed')
+      metrics.increment('polling.failure', { cause, job: metadata?.jobId })
+    },
+  },
+})
 ```
 
-All metadata you provide is included in log messages for better observability.
+All hooks are optional - provide only the ones you need. Metadata is automatically passed to all hooks.
 
 ## Best Practices
 
 1. **Choose appropriate timeouts**: Consider your operation's typical duration and set `maxAttempts` accordingly
-2. **Use metadata**: Include identifiers (job ID, user ID, etc.) for easier debugging
-3. **Handle terminal errors**: Throw errors from `pollFn` for failures that shouldn't retry
-4. **Enable jitter**: Keep `jitterFactor` enabled (default 0.2) to prevent request clustering
-5. **Support cancellation**: Pass `AbortSignal` for long-running operations that users might cancel
-6. **Monitor attempts**: Use the attempt number to implement progressive behavior or additional logging
+2. **Use metadata**: Include identifiers (job ID, user ID, etc.) for easier debugging and observability
+3. **Implement hooks**: Use lifecycle hooks for logging, metrics, and monitoring instead of coupling to specific logging libraries
+4. **Handle terminal errors**: Throw errors from `pollFn` for failures that shouldn't retry
+5. **Enable jitter**: Keep `jitterFactor` enabled (default 0.2) to prevent request clustering
+6. **Support cancellation**: Pass `AbortSignal` for long-running operations that users might cancel
+7. **Use type guards**: Prefer `PollingError.isPollingError()` over `instanceof` for better cross-realm compatibility
 
 ## API Reference
 
@@ -450,7 +509,7 @@ class Poller {
   
   poll<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    options: PollingOptions,
+    options?: PollingOptions,
   ): Promise<T>
 }
 ```
@@ -463,7 +522,7 @@ class ExponentialBackoffStrategy implements PollingStrategy {
   
   execute<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    options: PollingOptions,
+    options?: PollingOptions,
   ): Promise<T>
 }
 ```
@@ -476,12 +535,41 @@ type PollResult<T> =
   | { isComplete: false }
 
 interface PollingOptions {
-  /** Request context for logging and request identification */
-  reqContext: RequestContext
-  /** Additional metadata for logging and error reporting */
+  /** Optional lifecycle hooks for observability */
+  hooks?: PollingHooks
+  /** Additional metadata passed to hooks */
   metadata?: Record<string, unknown>
   /** Optional AbortSignal to cancel polling */
   signal?: AbortSignal
+}
+
+interface PollingHooks {
+  /** Called after each poll attempt completes (regardless of result) */
+  onAttempt?: (context: {
+    attempt: number
+    isComplete: boolean
+    metadata?: Record<string, unknown>
+  }) => void
+
+  /** Called before waiting/delaying between attempts */
+  onWait?: (context: {
+    attempt: number
+    waitMs: number
+    metadata?: Record<string, unknown>
+  }) => void
+
+  /** Called when polling completes successfully */
+  onSuccess?: (context: { 
+    totalAttempts: number
+    metadata?: Record<string, unknown>
+  }) => void
+
+  /** Called when polling fails (timeout or cancellation) */
+  onFailure?: (context: {
+    cause: PollingFailureCause
+    attemptsMade: number
+    metadata?: Record<string, unknown>
+  }) => void
 }
 
 interface ExponentialBackoffConfig {
@@ -495,7 +583,7 @@ interface ExponentialBackoffConfig {
 interface PollingStrategy {
   execute<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    options: PollingOptions,
+    options?: PollingOptions,
   ): Promise<T>
 }
 ```
