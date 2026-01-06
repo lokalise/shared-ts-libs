@@ -25,9 +25,6 @@ export class PollingError extends Error {
   /** Structured error code for programmatic error handling */
   readonly errorCode: string
 
-  /** Additional structured context and metadata */
-  readonly details: Record<string, unknown>
-
   /** Type of polling failure */
   readonly failureCause: PollingFailureCause
 
@@ -38,7 +35,6 @@ export class PollingError extends Error {
     message: string,
     failureCause: PollingFailureCause,
     attemptsMade: number,
-    details?: Record<string, unknown>,
     originalError?: Error,
   ) {
     super(message)
@@ -46,11 +42,6 @@ export class PollingError extends Error {
     this.errorCode = `POLLING_${failureCause}`
     this.failureCause = failureCause
     this.attemptsMade = attemptsMade
-    this.details = {
-      failureCause,
-      attemptsMade,
-      ...details,
-    }
 
     if (originalError) {
       this.cause = originalError
@@ -101,9 +92,7 @@ export class PollingError extends Error {
       err.name === 'PollingError' &&
       isValidFailureCause &&
       typeof err.attemptsMade === 'number' &&
-      typeof err.errorCode === 'string' &&
-      typeof err.details === 'object' &&
-      err.details !== null
+      typeof err.errorCode === 'string'
     )
   }
 }

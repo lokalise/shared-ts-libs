@@ -4,9 +4,7 @@ import { PollingError, PollingFailureCause } from './PollingError.ts'
 describe('PollingError', () => {
   describe('construction', () => {
     it('should create error with all properties', () => {
-      const error = new PollingError('Test error message', PollingFailureCause.TIMEOUT, 5, {
-        jobId: 'job-123',
-      })
+      const error = new PollingError('Test error message', PollingFailureCause.TIMEOUT, 5)
 
       expect(error).toBeInstanceOf(Error)
       expect(error).toBeInstanceOf(PollingError)
@@ -15,36 +13,16 @@ describe('PollingError', () => {
       expect(error.failureCause).toBe(PollingFailureCause.TIMEOUT)
       expect(error.attemptsMade).toBe(5)
       expect(error.errorCode).toBe('POLLING_TIMEOUT')
-      expect(error.details).toEqual({
-        failureCause: PollingFailureCause.TIMEOUT,
-        attemptsMade: 5,
-        jobId: 'job-123',
-      })
     })
 
-    it('should merge metadata into details', () => {
-      const error = new PollingError('Test', PollingFailureCause.CANCELLED, 3, {
-        userId: 'user-456',
-        sessionId: 'session-789',
-        extraData: { nested: 'value' },
-      })
+    it('should create error with different failure causes', () => {
+      const timeoutError = new PollingError('Timeout', PollingFailureCause.TIMEOUT, 10)
+      expect(timeoutError.failureCause).toBe(PollingFailureCause.TIMEOUT)
+      expect(timeoutError.errorCode).toBe('POLLING_TIMEOUT')
 
-      expect(error.details).toEqual({
-        failureCause: PollingFailureCause.CANCELLED,
-        attemptsMade: 3,
-        userId: 'user-456',
-        sessionId: 'session-789',
-        extraData: { nested: 'value' },
-      })
-    })
-
-    it('should work without metadata', () => {
-      const error = new PollingError('Test', PollingFailureCause.TIMEOUT, 10)
-
-      expect(error.details).toEqual({
-        failureCause: PollingFailureCause.TIMEOUT,
-        attemptsMade: 10,
-      })
+      const cancelledError = new PollingError('Cancelled', PollingFailureCause.CANCELLED, 3)
+      expect(cancelledError.failureCause).toBe(PollingFailureCause.CANCELLED)
+      expect(cancelledError.errorCode).toBe('POLLING_CANCELLED')
     })
 
     it('should preserve original error as cause', () => {
@@ -53,7 +31,6 @@ describe('PollingError', () => {
         'Polling failed',
         PollingFailureCause.TIMEOUT,
         5,
-        undefined,
         originalError,
       )
 
@@ -74,25 +51,6 @@ describe('PollingError', () => {
       expect(error.failureCause).toBe(PollingFailureCause.TIMEOUT)
       expect(error.attemptsMade).toBe(10)
       expect(error.errorCode).toBe('POLLING_TIMEOUT')
-    })
-
-    it('should include metadata when provided', () => {
-      const error = new PollingError(
-        'Polling timeout after 5 attempts',
-        PollingFailureCause.TIMEOUT,
-        5,
-        {
-          jobId: 'job-123',
-          reason: 'slow-service',
-        },
-      )
-
-      expect(error.details).toEqual({
-        failureCause: PollingFailureCause.TIMEOUT,
-        attemptsMade: 5,
-        jobId: 'job-123',
-        reason: 'slow-service',
-      })
     })
 
     it('should work with zero attempts', () => {
@@ -131,25 +89,6 @@ describe('PollingError', () => {
       expect(error.failureCause).toBe(PollingFailureCause.CANCELLED)
       expect(error.attemptsMade).toBe(3)
       expect(error.errorCode).toBe('POLLING_CANCELLED')
-    })
-
-    it('should include metadata when provided', () => {
-      const error = new PollingError(
-        'Polling cancelled after 7 attempts',
-        PollingFailureCause.CANCELLED,
-        7,
-        {
-          userId: 'user-456',
-          reason: 'user-action',
-        },
-      )
-
-      expect(error.details).toEqual({
-        failureCause: PollingFailureCause.CANCELLED,
-        attemptsMade: 7,
-        userId: 'user-456',
-        reason: 'user-action',
-      })
     })
 
     it('should work when cancelled before any attempts', () => {
@@ -248,7 +187,6 @@ describe('PollingError', () => {
         failureCause: 'TIMEOUT',
         attemptsMade: 5,
         errorCode: 'POLLING_TIMEOUT',
-        details: { failureCause: 'TIMEOUT', attemptsMade: 5 },
       }
       expect(PollingError.isPollingError(errorLike)).toBe(true)
     })
@@ -277,7 +215,6 @@ describe('PollingError', () => {
         failureCause: 'INVALID_CAUSE', // Not a valid PollingFailureCause
         attemptsMade: 5,
         errorCode: 'POLLING_INVALID_CAUSE',
-        details: { failureCause: 'INVALID_CAUSE', attemptsMade: 5 },
       }
       expect(PollingError.isPollingError(invalidError)).toBe(false)
     })
@@ -290,7 +227,6 @@ describe('PollingError', () => {
         failureCause: 'TIMEOUT',
         attemptsMade: 5,
         errorCode: 'POLLING_TIMEOUT',
-        details: {},
       }
       expect(PollingError.isPollingError(validTimeoutError)).toBe(true)
 
@@ -300,7 +236,6 @@ describe('PollingError', () => {
         failureCause: 'CANCELLED',
         attemptsMade: 3,
         errorCode: 'POLLING_CANCELLED',
-        details: {},
       }
       expect(PollingError.isPollingError(validCancelledError)).toBe(true)
 
@@ -310,7 +245,6 @@ describe('PollingError', () => {
         failureCause: 'INVALID_CONFIG',
         attemptsMade: 0,
         errorCode: 'POLLING_INVALID_CONFIG',
-        details: {},
       }
       expect(PollingError.isPollingError(validConfigError)).toBe(true)
 
@@ -323,7 +257,6 @@ describe('PollingError', () => {
           failureCause: invalidCause,
           attemptsMade: 5,
           errorCode: 'POLLING_ERROR',
-          details: {},
         }
         expect(PollingError.isPollingError(invalidError)).toBe(false)
       }
@@ -366,7 +299,6 @@ describe('PollingError', () => {
           'Polling cancelled after 3 attempts',
           PollingFailureCause.CANCELLED,
           3,
-          { reason: 'test' },
         )
       }
 
@@ -377,7 +309,6 @@ describe('PollingError', () => {
         expect(PollingError.isPollingError(error)).toBe(true)
         if (PollingError.isPollingError(error)) {
           expect(error.errorCode).toBe('POLLING_CANCELLED')
-          expect(error.details).toMatchObject({ reason: 'test' })
         }
       }
     })

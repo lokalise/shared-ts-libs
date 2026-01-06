@@ -93,25 +93,23 @@ export class ExponentialBackoffStrategy implements PollingStrategy {
     pollFn: (attempt: number) => Promise<PollResult<T>>,
     options?: PollingOptions,
   ): Promise<T> {
-    const { hooks, metadata, signal } = options ?? {}
+    const { hooks, signal } = options ?? {}
 
-    this.checkAborted(signal, 0, metadata)
+    this.checkAborted(signal, 0)
 
     for (let attempt = 1; attempt <= this.config.maxAttempts; attempt++) {
-      this.checkAborted(signal, attempt - 1, metadata)
+      this.checkAborted(signal, attempt - 1)
 
       const result = await pollFn(attempt)
 
       hooks?.onAttempt?.({
         attempt,
         isComplete: result.isComplete,
-        metadata,
       })
 
       if (result.isComplete) {
         hooks?.onSuccess?.({
           totalAttempts: attempt,
-          metadata,
         })
         return result.value
       }
@@ -125,41 +123,33 @@ export class ExponentialBackoffStrategy implements PollingStrategy {
       `Polling timeout after ${this.config.maxAttempts} attempts`,
       PollingFailureCause.TIMEOUT,
       this.config.maxAttempts,
-      metadata,
     )
 
     hooks?.onFailure?.({
       cause: PollingFailureCause.TIMEOUT,
       attemptsMade: this.config.maxAttempts,
-      metadata,
     })
 
     throw error
   }
 
-  private checkAborted(
-    signal: AbortSignal | undefined,
-    attemptsMade: number,
-    metadata?: Record<string, unknown>,
-  ): void {
+  private checkAborted(signal: AbortSignal | undefined, attemptsMade: number): void {
     if (signal?.aborted) {
       throw new PollingError(
         `Polling cancelled after ${attemptsMade} attempts`,
         PollingFailureCause.CANCELLED,
         attemptsMade,
-        metadata,
       )
     }
   }
 
   private async waitBeforeRetry(attempt: number, options?: PollingOptions): Promise<void> {
-    const { hooks, metadata, signal } = options ?? {}
+    const { hooks, signal } = options ?? {}
     const delayMs = this.calculateDelay(attempt - 1)
 
     hooks?.onWait?.({
       attempt,
       waitMs: delayMs,
-      metadata,
     })
 
     try {
@@ -170,13 +160,11 @@ export class ExponentialBackoffStrategy implements PollingStrategy {
         `Polling cancelled after ${attempt} attempts`,
         PollingFailureCause.CANCELLED,
         attempt,
-        metadata,
       )
 
       hooks?.onFailure?.({
         cause: PollingFailureCause.CANCELLED,
         attemptsMade: attempt,
-        metadata,
       })
 
       throw error

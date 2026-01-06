@@ -4,7 +4,11 @@ This guide helps you migrate from `@lokalise/polling` v2.x to v3.0.
 
 ## Overview
 
-Version 3.0 is a major release that removes Node.js-specific dependencies, making the library universal (works in Node.js, browsers, Deno, Bun, React Native, etc.). The API has been simplified with a cleaner options-based approach and adds powerful lifecycle hooks for observability.
+Version 3.0 is a major release with significant improvements:
+- **Universal Runtime Support**: Removes Node.js-specific dependencies, works in browsers, Deno, Bun, React Native, etc.
+- **Cleaner Architecture**: Removes `metadata` parameter for better separation of concerns
+- **Options-Based API**: Simplified with a single options object instead of positional parameters
+- **Powerful Lifecycle Hooks**: Better observability without coupling to specific logging libraries
 
 ## Breaking Changes
 
@@ -69,10 +73,16 @@ await poller.poll(
   controller.signal
 )
 
-// ✅ v3.0 - Options object
+// ✅ v3.0 - Options object with context captured via closures
+const jobId = '123'
+
 await poller.poll(pollFn, {
-  metadata: { jobId: '123' },
   signal: controller.signal,
+  hooks: {
+    onAttempt: ({ attempt }) => {
+      logger.debug({ attempt, jobId }, 'Poll attempt')
+    },
+  },
 })
 ```
 
@@ -93,18 +103,19 @@ await poller.poll(
   { jobId: '123' }
 )
 
-// ✅ v3.0 - Use hooks for logging
+// ✅ v3.0 - Use hooks and closures
+const jobId = '123'
+
 await poller.poll(pollFn, {
-  metadata: { jobId: '123' },
   hooks: {
-    onAttempt: ({ attempt, isComplete, metadata }) => {
-      logger.debug({ attempt, isComplete, ...metadata }, 'Poll attempt')
+    onAttempt: ({ attempt, isComplete }) => {
+      logger.debug({ attempt, isComplete, jobId }, 'Poll attempt')
     },
-    onSuccess: ({ totalAttempts, metadata }) => {
-      logger.info({ totalAttempts, ...metadata }, 'Polling succeeded')
+    onSuccess: ({ totalAttempts }) => {
+      logger.info({ totalAttempts, jobId }, 'Polling succeeded')
     },
-    onFailure: ({ cause, attemptsMade, metadata }) => {
-      logger.error({ cause, attemptsMade, ...metadata }, 'Polling failed')
+    onFailure: ({ cause, attemptsMade }) => {
+      logger.error({ cause, attemptsMade, jobId }, 'Polling failed')
     },
   },
 })
@@ -112,10 +123,80 @@ await poller.poll(pollFn, {
 
 **Why:** Decouples the library from specific logging implementations, making it more flexible and universal.
 
-### 4. Strategy Interface Changed
+### 4. Removed `metadata` Parameter
 
 **What Changed:**
-The `PollingStrategy.execute()` method signature changed to accept options object.
+The `metadata` parameter has been completely removed from the API. Domain context should be captured via closures instead, and errors should be converted at application boundaries.
+
+**Migration:**
+
+```typescript
+// ❌ v2.x - Metadata through API
+await poller.poll(pollFn, reqContext, { jobId: '123', userId: 'abc' })
+
+// ✅ v3.0 - Context via closures
+const jobId = '123'
+const userId = 'abc'
+
+await poller.poll(pollFn, {
+  hooks: {
+    onAttempt: ({ attempt }) => {
+      logger.debug({ attempt, jobId, userId }, 'Poll attempt')
+    },
+  },
+})
+```
+
+**Why:**
+- **Cleaner separation of concerns**: Polling utility stays domain-agnostic
+- **Better error handling**: Converts errors at boundaries where you have context
+- **Simpler API**: One less parameter to understand
+- **Natural pattern**: Uses standard JavaScript closures
+
+### 5. Removed `details` Property from `PollingError`
+
+**What Changed:**
+`PollingError` no longer has a `details` property. Convert polling errors to domain errors where you have context.
+
+**Migration:**
+
+```typescript
+// ❌ v2.x - Relied on details in error
+try {
+  await poller.poll(pollFn, reqContext, { jobId: '123' })
+} catch (error) {
+  if (error instanceof InternalError) {
+    console.log(error.details) // Had metadata
+  }
+}
+
+// ✅ v3.0 - Convert to domain error with context
+const jobId = '123'
+
+try {
+  await poller.poll(pollFn)
+} catch (error) {
+  if (PollingError.isPollingError(error)) {
+    // Convert to domain error at boundary
+    throw new JobProcessingError(
+      `Job ${jobId} polling failed: ${error.failureCause}`,
+      { 
+        jobId,
+        pollingAttempts: error.attemptsMade,
+        cause: error 
+      }
+    )
+  }
+  throw error
+}
+```
+
+**Why:** Utility errors should not carry domain-specific data; errors should be converted at boundaries.
+
+### 6. Strategy Interface Changed
+
+**What Changed:**
+The `PollingStrategy.execute()` method signature changed to accept options object without metadata support.
 
 **v2.x Interface:**
 ```typescript
@@ -155,16 +236,16 @@ class MyStrategy implements PollingStrategy {
   }
 }
 
-// ✅ v3.0 - Custom strategy with hooks
+// ✅ v3.0 - Custom strategy with hooks (no metadata)
 class MyStrategy implements PollingStrategy {
   async execute<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
     options?: PollingOptions,
   ): Promise<T> {
-    const { hooks, metadata, signal } = options ?? {}
+    const { hooks, signal } = options ?? {}
     
     // Use hooks instead of direct logging
-    hooks?.onAttempt?.({ attempt: 1, isComplete: false, metadata })
+    hooks?.onAttempt?.({ attempt: 1, isComplete: false })
     
     // ... implementation
   }
@@ -173,6 +254,35 @@ class MyStrategy implements PollingStrategy {
 
 **Why:** Consistent with the main API and more extensible.
 
+### 7. Hook Signatures Changed
+
+**What Changed:**
+All hooks no longer receive `metadata` parameter.
+
+**Migration:**
+
+```typescript
+// ❌ v2.x - Hooks received metadata
+{
+  hooks: {
+    onAttempt: ({ attempt, isComplete, metadata }) => {
+      logger.debug({ attempt, isComplete, ...metadata })
+    },
+  },
+}
+
+// ✅ v3.0 - Capture context from closure
+const jobId = '123'
+
+{
+  hooks: {
+    onAttempt: ({ attempt, isComplete }) => {
+      logger.debug({ attempt, isComplete, jobId })
+    },
+  },
+}
+```
+
 ## New Features
 
 ### 1. Lifecycle Hooks
@@ -180,27 +290,29 @@ class MyStrategy implements PollingStrategy {
 v3.0 introduces powerful lifecycle hooks for observability:
 
 ```typescript
+const jobId = '123'
+const userId = '456'
+
 await poller.poll(pollFn, {
-  metadata: { jobId: '123', userId: '456' },
   hooks: {
     // Called after each attempt
-    onAttempt: ({ attempt, isComplete, metadata }) => {
+    onAttempt: ({ attempt, isComplete }) => {
       console.log(`Attempt ${attempt}: ${isComplete ? 'Complete' : 'Pending'}`)
     },
     
     // Called before waiting between attempts
-    onWait: ({ attempt, waitMs, metadata }) => {
+    onWait: ({ attempt, waitMs }) => {
       console.log(`Waiting ${waitMs}ms before attempt ${attempt + 1}`)
     },
     
     // Called when polling succeeds
-    onSuccess: ({ totalAttempts, metadata }) => {
-      metrics.increment('polling.success')
+    onSuccess: ({ totalAttempts }) => {
+      metrics.increment('polling.success', { jobId })
     },
     
     // Called when polling fails
-    onFailure: ({ cause, attemptsMade, metadata }) => {
-      metrics.increment('polling.failure', { cause })
+    onFailure: ({ cause, attemptsMade }) => {
+      metrics.increment('polling.failure', { cause, jobId })
     },
   },
 })
@@ -265,11 +377,11 @@ await poller.poll(pollFn, reqContext, metadata, signal)
 
 // After (v3.0)
 await poller.poll(pollFn)
-await poller.poll(pollFn, { metadata })
-await poller.poll(pollFn, { metadata, signal })
+await poller.poll(pollFn, { signal })
+// Capture context via closures instead of metadata
 ```
 
-### Step 3: Replace Logging with Hooks
+### Step 3: Replace Logging with Hooks and Closures
 
 If you were relying on automatic logging:
 
@@ -279,14 +391,15 @@ await poller.poll(pollFn, reqContext, { jobId: '123' })
 // Automatic logging via reqContext.logger
 
 // After (v3.0)
+const jobId = '123'
+
 await poller.poll(pollFn, {
-  metadata: { jobId: '123' },
   hooks: {
-    onAttempt: ({ attempt, isComplete, metadata }) => {
-      logger.debug({ attempt, isComplete, ...metadata }, 'Poll attempt')
+    onAttempt: ({ attempt, isComplete }) => {
+      logger.debug({ attempt, isComplete, jobId }, 'Poll attempt')
     },
-    onSuccess: ({ totalAttempts, metadata }) => {
-      logger.info({ totalAttempts, ...metadata }, 'Polling succeeded')
+    onSuccess: ({ totalAttempts }) => {
+      logger.info({ totalAttempts, jobId }, 'Polling succeeded')
     },
   },
 })
@@ -297,7 +410,7 @@ await poller.poll(pollFn, {
 ```typescript
 // Before (v2.x)
 try {
-  await poller.poll(pollFn, reqContext)
+  await poller.poll(pollFn, reqContext, { jobId: '123' })
 } catch (error) {
   if (error instanceof InternalError) {
     console.log(error.errorCode)
@@ -305,11 +418,17 @@ try {
 }
 
 // After (v3.0)
+const jobId = '123'
+
 try {
   await poller.poll(pollFn)
 } catch (error) {
   if (PollingError.isPollingError(error)) {
-    console.log(error.errorCode)
+    // Convert to domain error with context
+    throw new JobProcessingError(
+      `Job ${jobId} polling failed: ${error.failureCause}`,
+      { jobId, attempts: error.attemptsMade, cause: error }
+    )
   }
 }
 ```
@@ -335,8 +454,76 @@ class CustomStrategy implements PollingStrategy {
     pollFn: (attempt: number) => Promise<PollResult<T>>,
     options?: PollingOptions,
   ): Promise<T> {
-    const { hooks, metadata, signal } = options ?? {}
-    // Implementation with hooks
+    const { hooks, signal } = options ?? {}
+    // Implementation with hooks (no metadata)
+  }
+}
+```
+
+## Complete Example: Before and After
+
+### Before (v2.x)
+
+```typescript
+import { Poller, ExponentialBackoffStrategy, STANDARD_EXPONENTIAL_BACKOFF_CONFIG } from '@lokalise/polling'
+
+async function processJob(jobId: string, reqContext: RequestContext) {
+  const strategy = new ExponentialBackoffStrategy(STANDARD_EXPONENTIAL_BACKOFF_CONFIG)
+  const poller = new Poller(strategy)
+
+  return await poller.poll(
+    async (attempt) => {
+      const status = await checkJobStatus(jobId)
+      if (status === 'completed') {
+        return { isComplete: true, value: await getJobResult(jobId) }
+      }
+      return { isComplete: false }
+    },
+    reqContext,  // Required
+    { jobId },   // Metadata
+  )
+}
+```
+
+### After (v3.0)
+
+```typescript
+import { Poller, ExponentialBackoffStrategy, STANDARD_EXPONENTIAL_BACKOFF_CONFIG, PollingError } from '@lokalise/polling'
+
+async function processJob(jobId: string) {
+  const strategy = new ExponentialBackoffStrategy(STANDARD_EXPONENTIAL_BACKOFF_CONFIG)
+  const poller = new Poller(strategy)
+
+  try {
+    return await poller.poll(
+      async (attempt) => {
+        const status = await checkJobStatus(jobId)
+        if (status === 'completed') {
+          return { isComplete: true, value: await getJobResult(jobId) }
+        }
+        return { isComplete: false }
+      },
+      {
+        hooks: {
+          // Context captured from closure
+          onAttempt: ({ attempt }) => {
+            logger.debug({ attempt, jobId }, 'Polling')
+          },
+          onFailure: ({ cause }) => {
+            logger.error({ cause, jobId }, 'Failed')
+          },
+        },
+      },
+    )
+  } catch (error) {
+    // Convert utility error to domain error at boundary
+    if (PollingError.isPollingError(error)) {
+      throw new JobProcessingError(
+        `Job ${jobId} polling ${error.failureCause.toLowerCase()}`,
+        { jobId, attempts: error.attemptsMade, cause: error }
+      )
+    }
+    throw error
   }
 }
 ```
@@ -368,10 +555,11 @@ import {
 | Use Case | v2.x | v3.0 |
 |----------|------|------|
 | Basic poll | `poll(fn, ctx)` | `poll(fn)` |
-| With metadata | `poll(fn, ctx, meta)` | `poll(fn, { metadata: meta })` |
-| With signal | `poll(fn, ctx, meta, sig)` | `poll(fn, { metadata: meta, signal: sig })` |
+| With context | `poll(fn, ctx, meta)` | Capture via closures |
+| With signal | `poll(fn, ctx, meta, sig)` | `poll(fn, { signal: sig })` |
 | With logging | Automatic via `ctx.logger` | `poll(fn, { hooks: { onAttempt: ... } })` |
 | Error check | `error instanceof InternalError` | `PollingError.isPollingError(error)` |
+| Error context | `error.details.metadata` | Convert to domain error with context |
 
 ## Compatibility Notes
 
@@ -379,6 +567,15 @@ import {
 - **TypeScript**: Requires TypeScript 4.5+ (same as v2.x)
 - **Breaking changes**: Yes (major version bump)
 - **Runtime compatibility**: Universal (works everywhere JavaScript runs)
+
+## Benefits of v3.0
+
+1. **Universal Runtime Support**: Works in browsers, Deno, Bun, React Native, etc.
+2. **Cleaner Architecture**: Clear separation between utility and domain concerns
+3. **Better Error Handling**: Forces proper error conversion at boundaries
+4. **Simpler API**: Fewer parameters, more flexible
+5. **More Idiomatic**: Uses standard JavaScript patterns (closures)
+6. **Better Observability**: Flexible hooks without coupling to specific libraries
 
 ## Need Help?
 
@@ -389,11 +586,14 @@ import {
 
 ## Summary
 
-v3.0 is a cleaner, more flexible, and universal version of the library. The migration effort is minimal for most use cases:
+v3.0 is a cleaner, more flexible, and universal version of the library with these key changes:
 
-1. ✅ Remove positional parameters, use options object
-2. ✅ Replace `reqContext` usage with hooks
-3. ✅ Use `PollingError.isPollingError()` type guard
-4. ✅ Update custom strategies (if any)
+1. ✅ Remove Node.js dependencies (universal runtime support)
+2. ✅ Remove positional parameters, use options object
+3. ✅ Remove `RequestContext` requirement
+4. ✅ Remove `metadata` parameter (use closures)
+5. ✅ Convert errors at boundaries (better architecture)
+6. ✅ Use `PollingError.isPollingError()` type guard
+7. ✅ Update custom strategies (if any)
 
-The result is a more maintainable codebase with better observability and wider runtime compatibility.
+The result is a more maintainable, universal codebase with better separation of concerns and wider runtime compatibility.

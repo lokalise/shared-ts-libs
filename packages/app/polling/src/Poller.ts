@@ -8,28 +8,16 @@ export type PollResult<T> = { isComplete: true; value: T } | { isComplete: false
  */
 export interface PollingHooks {
   /** Called after each poll attempt completes (regardless of result) */
-  onAttempt?: (context: {
-    attempt: number
-    isComplete: boolean
-    metadata?: Record<string, unknown>
-  }) => void
+  onAttempt?: (context: { attempt: number; isComplete: boolean }) => void
 
   /** Called before waiting/delaying between attempts */
-  onWait?: (context: {
-    attempt: number
-    waitMs: number
-    metadata?: Record<string, unknown>
-  }) => void
+  onWait?: (context: { attempt: number; waitMs: number }) => void
 
   /** Called when polling completes successfully */
-  onSuccess?: (context: { totalAttempts: number; metadata?: Record<string, unknown> }) => void
+  onSuccess?: (context: { totalAttempts: number }) => void
 
   /** Called when polling fails (timeout or cancellation) */
-  onFailure?: (context: {
-    cause: PollingFailureCause
-    attemptsMade: number
-    metadata?: Record<string, unknown>
-  }) => void
+  onFailure?: (context: { cause: PollingFailureCause; attemptsMade: number }) => void
 }
 
 /**
@@ -38,8 +26,6 @@ export interface PollingHooks {
 export interface PollingOptions {
   /** Optional lifecycle hooks for observability */
   hooks?: PollingHooks
-  /** Additional metadata passed to hooks */
-  metadata?: Record<string, unknown>
   /** Optional AbortSignal to cancel polling */
   signal?: AbortSignal
 }
@@ -50,7 +36,7 @@ export interface PollingStrategy {
    *
    * @param pollFn - Function that returns PollResult. Receives the current attempt number (1-based).
    *                 Should throw domain-specific errors for terminal failure states.
-   * @param options - Optional polling options including hooks, metadata, and signal
+   * @param options - Optional polling options including hooks and signal
    * @throws PollingError with cause TIMEOUT if max attempts exceeded
    * @throws PollingError with cause CANCELLED if signal is aborted
    * @throws Any domain-specific errors thrown by pollFn
@@ -73,7 +59,7 @@ export class Poller {
    *
    * @param pollFn - Function that returns PollResult. Receives the current attempt number (1-based).
    *                 Should throw domain-specific errors for terminal failure states.
-   * @param options - Optional polling options including hooks, metadata, and signal
+   * @param options - Optional polling options including hooks and signal
    * @throws PollingError with cause TIMEOUT if max attempts exceeded
    * @throws PollingError with cause CANCELLED if signal is aborted
    * @throws Any domain-specific errors thrown by pollFn

@@ -288,28 +288,18 @@ describe('ExponentialBackoffStrategy', () => {
       })
 
       await expect(
-        strategy.execute<string>(
-          () => {
-            return Promise.resolve({ isComplete: false })
-          },
-          {
-            metadata: { testId: 'test-123' },
-          },
-        ),
+        strategy.execute<string>(() => {
+          return Promise.resolve({ isComplete: false })
+        }, {}),
       ).rejects.toMatchObject({
         name: 'PollingError',
         failureCause: PollingFailureCause.TIMEOUT,
         attemptsMade: 3,
         errorCode: 'POLLING_TIMEOUT',
-        details: {
-          failureCause: PollingFailureCause.TIMEOUT,
-          attemptsMade: 3,
-          testId: 'test-123',
-        },
       })
     })
 
-    it('should include metadata in timeout error', async () => {
+    it('should throw PollingError on timeout with correct properties', async () => {
       const strategy = new ExponentialBackoffStrategy({
         initialDelayMs: 50,
         maxDelayMs: 200,
@@ -319,21 +309,13 @@ describe('ExponentialBackoffStrategy', () => {
       })
 
       try {
-        await strategy.execute<string>(() => Promise.resolve({ isComplete: false }), {
-          metadata: {
-            jobId: 'job-456',
-            userId: 'user-789',
-          },
-        })
+        await strategy.execute<string>(() => Promise.resolve({ isComplete: false }), {})
         expect.fail('Should have thrown PollingError')
       } catch (error) {
         expect(error).toBeInstanceOf(PollingError)
         const pollingError = error as PollingError
-        expect(pollingError.details).toMatchObject({
-          jobId: 'job-456',
-          userId: 'user-789',
-          attemptsMade: 2,
-        })
+        expect(pollingError.attemptsMade).toBe(2)
+        expect(pollingError.failureCause).toBe(PollingFailureCause.TIMEOUT)
       }
     })
   })
@@ -356,7 +338,6 @@ describe('ExponentialBackoffStrategy', () => {
             return Promise.resolve({ isComplete: false })
           },
           {
-            metadata: { testId: 'abort-test' },
             signal: controller.signal,
           },
         ),
@@ -365,9 +346,6 @@ describe('ExponentialBackoffStrategy', () => {
         failureCause: PollingFailureCause.CANCELLED,
         attemptsMade: 0,
         errorCode: 'POLLING_CANCELLED',
-        details: {
-          testId: 'abort-test',
-        },
       })
     })
 
@@ -393,7 +371,6 @@ describe('ExponentialBackoffStrategy', () => {
             return Promise.resolve({ isComplete: false })
           },
           {
-            metadata: { testId: 'abort-during' },
             signal: controller.signal,
           },
         )

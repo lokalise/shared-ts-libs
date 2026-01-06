@@ -50,17 +50,14 @@ describe('Poller', () => {
       }
 
       const poller = new Poller(capturingStrategy)
-      const metadata = { testId: 'test-123', userId: 'user-456' }
       const controller = new AbortController()
 
       await poller.poll<string>(async () => ({ isComplete: true, value: 'result' }), {
-        metadata,
         signal: controller.signal,
       })
 
       expect(receivedPollFn).not.toBeNull()
       expect(receivedOptions).not.toBeNull()
-      expect(receivedOptions!.metadata).toEqual(metadata)
       expect(receivedOptions!.signal).toBe(controller.signal)
     })
 
@@ -68,9 +65,7 @@ describe('Poller', () => {
       const failingStrategy: PollingStrategy = {
         execute<T>(): Promise<T> {
           return Promise.reject(
-            new PollingError('Polling timeout after 5 attempts', PollingFailureCause.TIMEOUT, 5, {
-              testId: 'error-test',
-            }),
+            new PollingError('Polling timeout after 5 attempts', PollingFailureCause.TIMEOUT, 5),
           )
         },
       }
@@ -168,7 +163,7 @@ describe('Poller', () => {
       const retryStrategy: PollingStrategy = {
         async execute<T>(
           pollFn: (attempt: number) => Promise<PollResult<T>>,
-          options: PollingOptions,
+          _options: PollingOptions,
         ): Promise<T> {
           for (let attempt = 1; attempt <= 3; attempt++) {
             const result = await pollFn(attempt)
@@ -176,12 +171,7 @@ describe('Poller', () => {
               return result.value
             }
           }
-          throw new PollingError(
-            'Polling timeout after 3 attempts',
-            PollingFailureCause.TIMEOUT,
-            3,
-            options.metadata,
-          )
+          throw new PollingError('Polling timeout after 3 attempts', PollingFailureCause.TIMEOUT, 3)
         },
       }
 
@@ -198,28 +188,20 @@ describe('Poller', () => {
 
       // Timeout case
       await expect(
-        poller.poll<string>(async () => ({ isComplete: false }), {
-          metadata: { jobId: 'timeout-job' },
-        }),
+        poller.poll<string>(async () => ({ isComplete: false }), {}),
       ).rejects.toMatchObject({
         failureCause: PollingFailureCause.TIMEOUT,
-        details: { jobId: 'timeout-job' },
       })
     })
 
     it('should support cancellation through strategy', async () => {
       // Helper to check for cancellation
-      const checkCancellation = (
-        signal: AbortSignal | undefined,
-        attemptsMade: number,
-        metadata?: Record<string, unknown>,
-      ) => {
+      const checkCancellation = (signal: AbortSignal | undefined, attemptsMade: number) => {
         if (signal?.aborted) {
           throw new PollingError(
             `Polling cancelled after ${attemptsMade} attempts`,
             PollingFailureCause.CANCELLED,
             attemptsMade,
-            metadata,
           )
         }
       }
@@ -229,11 +211,11 @@ describe('Poller', () => {
           pollFn: (attempt: number) => Promise<PollResult<T>>,
           options: PollingOptions,
         ): Promise<T> {
-          const { metadata, signal } = options
-          checkCancellation(signal, 0, metadata)
+          const { signal } = options
+          checkCancellation(signal, 0)
 
           for (let attempt = 1; attempt <= 5; attempt++) {
-            checkCancellation(signal, attempt - 1, metadata)
+            checkCancellation(signal, attempt - 1)
 
             const result = await pollFn(attempt)
             if (result.isComplete) {
@@ -241,12 +223,7 @@ describe('Poller', () => {
             }
           }
 
-          throw new PollingError(
-            'Polling timeout after 5 attempts',
-            PollingFailureCause.TIMEOUT,
-            5,
-            metadata,
-          )
+          throw new PollingError('Polling timeout after 5 attempts', PollingFailureCause.TIMEOUT, 5)
         },
       }
 
@@ -258,7 +235,6 @@ describe('Poller', () => {
 
       await expect(
         poller.poll<string>(async () => ({ isComplete: false }), {
-          metadata: { test: 'pre-cancelled' },
           signal: controller1.signal,
         }),
       ).rejects.toMatchObject({
@@ -312,7 +288,6 @@ describe('Poller', () => {
               options.hooks?.onAttempt?.({
                 attempt,
                 isComplete: result.isComplete,
-                metadata: options.metadata,
               })
 
               if (result.isComplete) {
@@ -348,8 +323,10 @@ describe('Poller', () => {
         ])
       })
 
-      it('should pass metadata to onAttempt hook', async () => {
-        let receivedMetadata: Record<string, unknown> | undefined
+      it('should work with hooks capturing context via closures', async () => {
+        const jobId = 'job-123'
+        const userId = 'user-456'
+        let capturedContext: { jobId: string; userId: string; attempt: number } | undefined
 
         const strategy: PollingStrategy = {
           async execute<T>(
@@ -360,7 +337,6 @@ describe('Poller', () => {
             options.hooks?.onAttempt?.({
               attempt: 1,
               isComplete: result.isComplete,
-              metadata: options.metadata,
             })
             if (result.isComplete) {
               return result.value
@@ -370,18 +346,17 @@ describe('Poller', () => {
         }
 
         const poller = new Poller(strategy)
-        const metadata = { jobId: 'job-123', userId: 'user-456' }
 
         await poller.poll<string>(async () => ({ isComplete: true, value: 'success' }), {
-          metadata,
           hooks: {
-            onAttempt: (ctx) => {
-              receivedMetadata = ctx.metadata
+            onAttempt: ({ attempt }) => {
+              // Capture context from closure
+              capturedContext = { jobId, userId, attempt }
             },
           },
         })
 
-        expect(receivedMetadata).toEqual(metadata)
+        expect(capturedContext).toEqual({ jobId: 'job-123', userId: 'user-456', attempt: 1 })
       })
     })
 
@@ -405,7 +380,6 @@ describe('Poller', () => {
               options.hooks?.onWait?.({
                 attempt,
                 waitMs,
-                metadata: options.metadata,
               })
             }
             throw new Error('Max attempts')
@@ -452,7 +426,6 @@ describe('Poller', () => {
               if (result.isComplete) {
                 options.hooks?.onSuccess?.({
                   totalAttempts: attempt,
-                  metadata: options.metadata,
                 })
                 return result.value
               }
@@ -471,7 +444,6 @@ describe('Poller', () => {
             return Promise.resolve({ isComplete: false })
           },
           {
-            metadata: { testId: 'success-test' },
             hooks: {
               onSuccess: (ctx) => {
                 successCalled = true
@@ -498,7 +470,6 @@ describe('Poller', () => {
               if (result.isComplete) {
                 options.hooks?.onSuccess?.({
                   totalAttempts: attempt,
-                  metadata: options.metadata,
                 })
                 return result.value
               }
@@ -545,7 +516,6 @@ describe('Poller', () => {
             options.hooks?.onFailure?.({
               cause: PollingFailureCause.TIMEOUT,
               attemptsMade: maxAttempts,
-              metadata: options.metadata,
             })
 
             throw new PollingError('Timeout', PollingFailureCause.TIMEOUT, maxAttempts)
@@ -584,7 +554,6 @@ describe('Poller', () => {
               options.hooks?.onFailure?.({
                 cause: PollingFailureCause.CANCELLED,
                 attemptsMade: 0,
-                metadata: options.metadata,
               })
               throw new PollingError('Cancelled', PollingFailureCause.CANCELLED, 0)
             }
@@ -633,13 +602,11 @@ describe('Poller', () => {
               options.hooks?.onAttempt?.({
                 attempt,
                 isComplete: result.isComplete,
-                metadata: options.metadata,
               })
 
               if (result.isComplete) {
                 options.hooks?.onSuccess?.({
                   totalAttempts: attempt,
-                  metadata: options.metadata,
                 })
                 return result.value
               }
@@ -647,7 +614,6 @@ describe('Poller', () => {
               options.hooks?.onWait?.({
                 attempt,
                 waitMs: 100,
-                metadata: options.metadata,
               })
             }
             throw new Error('Max attempts')
