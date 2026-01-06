@@ -35,8 +35,6 @@
         "build": "rimraf dist && tsc --project tsconfig.build.json",
         "lint": "biome check . && tsc",
         "lint:fix": "biome check --write",
-        "test": "vitest run",
-        "test:ci": "vitest run --coverage",
         "prepublishOnly": "npm run build",
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
@@ -53,9 +51,7 @@
         "@biomejs/biome": "^2.3.7",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "~1.2.0",
-        "@vitest/coverage-v8": "^3.2.4",
         "rimraf": "^6.1.2",
-        "typescript": "5.9.3",
-        "vitest": "^3.2.4"
+        "typescript": "5.9.3"
     }
 }
