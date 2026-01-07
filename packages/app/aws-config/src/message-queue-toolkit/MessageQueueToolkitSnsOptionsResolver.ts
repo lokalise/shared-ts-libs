@@ -94,7 +94,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
             ),
             allowedSourceOwner: params.awsConfig.allowedSourceOwner,
             updateAttributesIfExists: params.updateAttributesIfExists ?? true,
-            forceTagUpdate: params.forceTagUpdate,
+            forceTagUpdate: params.forceTagUpdate ?? this.isDevelopmentEnvironment(),
           }
         : undefined,
       ...this.commonPublisherOptions(params),
@@ -148,7 +148,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
         ),
         allowedSourceOwner: params.awsConfig.allowedSourceOwner,
         updateAttributesIfExists: params.updateAttributesIfExists ?? true,
-        forceTagUpdate: params.forceTagUpdate,
+        forceTagUpdate: params.forceTagUpdate ?? this.isDevelopmentEnvironment(),
       },
       subscriptionConfig: {
         updateAttributesIfExists: params.updateAttributesIfExists ?? true,

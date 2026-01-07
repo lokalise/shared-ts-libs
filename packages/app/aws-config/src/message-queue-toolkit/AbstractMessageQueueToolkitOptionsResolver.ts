@@ -140,8 +140,12 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
         },
         policyConfig,
         updateAttributesIfExists: updateAttributesIfExists ?? true,
-        forceTagUpdate: forceTagUpdate,
+        forceTagUpdate: forceTagUpdate ?? this.isDevelopmentEnvironment(),
       },
     }
+  }
+
+  protected isDevelopmentEnvironment(): boolean {
+    return this.config.appEnv === 'development'
   }
 }
