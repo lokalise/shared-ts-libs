@@ -175,6 +175,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
       return {
         locatorConfig: {
           topicName: applyAwsResourcePrefix(topicConfig.topicName, params.awsConfig),
+          startupResourcePolling: this.resolveStartupResourcePolling(),
         },
       }
     }
