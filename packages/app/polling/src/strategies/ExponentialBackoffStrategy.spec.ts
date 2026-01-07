@@ -1,24 +1,10 @@
-import { setTimeout } from 'node:timers/promises'
 import { describe, expect, it } from 'vitest'
-import type { RequestContext } from '../Poller.ts'
 import { PollingError, PollingFailureCause } from '../PollingError.ts'
+import { delay } from '../utils/delay.ts'
 import {
   ExponentialBackoffStrategy,
   STANDARD_EXPONENTIAL_BACKOFF_CONFIG,
 } from './ExponentialBackoffStrategy.ts'
-
-// Test helper to create a minimal request context
-function createTestContext(): RequestContext {
-  return {
-    logger: {
-      debug: () => {},
-      info: () => {},
-      warn: () => {},
-      error: () => {},
-    },
-    reqId: 'test-req-id',
-  } as unknown as RequestContext
-}
 
 describe('ExponentialBackoffStrategy', () => {
   describe('configuration validation', () => {
@@ -210,7 +196,7 @@ describe('ExponentialBackoffStrategy', () => {
       const result = await strategy.execute<string>((attempt) => {
         attemptCount = attempt
         return Promise.resolve({ isComplete: true, value: 'success' })
-      }, createTestContext())
+      }, {})
 
       expect(result).toBe('success')
       expect(attemptCount).toBe(1)
@@ -234,7 +220,7 @@ describe('ExponentialBackoffStrategy', () => {
           return Promise.resolve({ isComplete: false })
         }
         return Promise.resolve({ isComplete: true, value: `completed-after-${attempt}` })
-      }, createTestContext())
+      }, {})
 
       const elapsed = Date.now() - startTime
 
@@ -262,7 +248,7 @@ describe('ExponentialBackoffStrategy', () => {
           return Promise.resolve({ isComplete: true, value: 42 })
         }
         return Promise.resolve({ isComplete: false })
-      }, createTestContext())
+      }, {})
 
       expect(result).toBe(42)
       expect(attempts).toEqual([1, 2, 3, 4, 5])
@@ -285,7 +271,7 @@ describe('ExponentialBackoffStrategy', () => {
           return Promise.resolve({ isComplete: true, value: undefined })
         }
         return Promise.resolve({ isComplete: false })
-      }, createTestContext())
+      }, {})
 
       expect(receivedAttempts).toEqual([1, 2, 3])
     })
@@ -302,27 +288,18 @@ describe('ExponentialBackoffStrategy', () => {
       })
 
       await expect(
-        strategy.execute<string>(
-          () => {
-            return Promise.resolve({ isComplete: false })
-          },
-          createTestContext(),
-          { testId: 'test-123' },
-        ),
+        strategy.execute<string>(() => {
+          return Promise.resolve({ isComplete: false })
+        }, {}),
       ).rejects.toMatchObject({
         name: 'PollingError',
         failureCause: PollingFailureCause.TIMEOUT,
         attemptsMade: 3,
         errorCode: 'POLLING_TIMEOUT',
-        details: {
-          failureCause: PollingFailureCause.TIMEOUT,
-          attemptsMade: 3,
-          testId: 'test-123',
-        },
       })
     })
 
-    it('should include metadata in timeout error', async () => {
+    it('should throw PollingError on timeout with correct properties', async () => {
       const strategy = new ExponentialBackoffStrategy({
         initialDelayMs: 50,
         maxDelayMs: 200,
@@ -332,23 +309,13 @@ describe('ExponentialBackoffStrategy', () => {
       })
 
       try {
-        await strategy.execute<string>(
-          () => Promise.resolve({ isComplete: false }),
-          createTestContext(),
-          {
-            jobId: 'job-456',
-            userId: 'user-789',
-          },
-        )
+        await strategy.execute<string>(() => Promise.resolve({ isComplete: false }), {})
         expect.fail('Should have thrown PollingError')
       } catch (error) {
         expect(error).toBeInstanceOf(PollingError)
         const pollingError = error as PollingError
-        expect(pollingError.details).toMatchObject({
-          jobId: 'job-456',
-          userId: 'user-789',
-          attemptsMade: 2,
-        })
+        expect(pollingError.attemptsMade).toBe(2)
+        expect(pollingError.failureCause).toBe(PollingFailureCause.TIMEOUT)
       }
     })
   })
@@ -370,18 +337,15 @@ describe('ExponentialBackoffStrategy', () => {
           () => {
             return Promise.resolve({ isComplete: false })
           },
-          createTestContext(),
-          { testId: 'abort-test' },
-          controller.signal,
+          {
+            signal: controller.signal,
+          },
         ),
       ).rejects.toMatchObject({
         name: 'PollingError',
         failureCause: PollingFailureCause.CANCELLED,
         attemptsMade: 0,
         errorCode: 'POLLING_CANCELLED',
-        details: {
-          testId: 'abort-test',
-        },
       })
     })
 
@@ -398,7 +362,7 @@ describe('ExponentialBackoffStrategy', () => {
       const attempts: number[] = []
 
       // Abort after 250ms (should be during second wait)
-      setTimeout(250).then(() => controller.abort())
+      delay(250).then(() => controller.abort())
 
       try {
         await strategy.execute<string>(
@@ -406,9 +370,9 @@ describe('ExponentialBackoffStrategy', () => {
             attempts.push(attempt)
             return Promise.resolve({ isComplete: false })
           },
-          createTestContext(),
-          { testId: 'abort-during' },
-          controller.signal,
+          {
+            signal: controller.signal,
+          },
         )
         expect.fail('Should have thrown PollingError')
       } catch (error) {
@@ -433,7 +397,7 @@ describe('ExponentialBackoffStrategy', () => {
       const controller = new AbortController()
 
       // Abort after 500ms (polling will complete first)
-      setTimeout(500).then(() => controller.abort())
+      delay(500).then(() => controller.abort())
 
       const result = await strategy.execute<string>(
         (attempt) => {
@@ -442,9 +406,9 @@ describe('ExponentialBackoffStrategy', () => {
           }
           return Promise.resolve({ isComplete: false })
         },
-        createTestContext(),
-        undefined,
-        controller.signal,
+        {
+          signal: controller.signal,
+        },
       )
 
       expect(result).toBe('success')
@@ -473,7 +437,7 @@ describe('ExponentialBackoffStrategy', () => {
             throw new CustomError('Operation failed permanently')
           }
           return Promise.resolve({ isComplete: false })
-        }, createTestContext()),
+        }, {}),
       ).rejects.toThrow(CustomError)
     })
 
@@ -495,7 +459,7 @@ describe('ExponentialBackoffStrategy', () => {
             throw new Error('Terminal error')
           }
           return Promise.resolve({ isComplete: false })
-        }, createTestContext()),
+        }, {}),
       ).rejects.toThrow('Terminal error')
 
       // Should have stopped immediately after error on attempt 3
@@ -526,7 +490,7 @@ describe('ExponentialBackoffStrategy', () => {
           }
           lastTime = now
           return Promise.resolve({ isComplete: false })
-        }, createTestContext())
+        }, {})
       } catch (_error) {
         // Expected timeout
       }
@@ -552,7 +516,7 @@ describe('ExponentialBackoffStrategy', () => {
         await strategy.execute<string>(() => {
           timestamps.push(Date.now())
           return Promise.resolve({ isComplete: false })
-        }, createTestContext())
+        }, {})
       } catch (_error) {
         // Expected timeout
       }
@@ -582,10 +546,7 @@ describe('ExponentialBackoffStrategy', () => {
       const startTime = Date.now()
 
       try {
-        await strategy.execute<string>(
-          () => Promise.resolve({ isComplete: false }),
-          createTestContext(),
-        )
+        await strategy.execute<string>(() => Promise.resolve({ isComplete: false }), {})
       } catch (_error) {
         // Expected timeout
       }
@@ -616,7 +577,7 @@ describe('ExponentialBackoffStrategy', () => {
           return Promise.resolve({ isComplete: true, value: 100 })
         }
         return Promise.resolve({ isComplete: false })
-      }, createTestContext())
+      }, {})
 
       expect(result).toBe(100)
     })
@@ -634,7 +595,7 @@ describe('ExponentialBackoffStrategy', () => {
 
       // Simulate a database record that becomes ready after some time
       let recordStatus = 'pending'
-      setTimeout(150).then(() => {
+      delay(150).then(() => {
         recordStatus = 'ready'
       })
 
@@ -646,7 +607,7 @@ describe('ExponentialBackoffStrategy', () => {
           })
         }
         return Promise.resolve({ isComplete: false })
-      }, createTestContext())
+      }, {})
 
       expect(result).toEqual({ status: 'ready', data: 'result-data' })
     })
@@ -681,7 +642,7 @@ describe('ExponentialBackoffStrategy', () => {
           })
         }
         return Promise.resolve({ isComplete: false })
-      }, createTestContext())
+      }, {})
 
       clearInterval(processInterval)
       expect(result.complete).toBe(true)
@@ -699,7 +660,7 @@ describe('ExponentialBackoffStrategy', () => {
 
       // Simulate a job that fails permanently after some attempts
       let jobStatus = 'processing'
-      setTimeout(150).then(() => {
+      delay(150).then(() => {
         jobStatus = 'failed'
       })
 
@@ -712,8 +673,295 @@ describe('ExponentialBackoffStrategy', () => {
             return Promise.resolve({ isComplete: true, value: 'job-result' })
           }
           return Promise.resolve({ isComplete: false })
-        }, createTestContext()),
+        }, {}),
       ).rejects.toThrow('Job processing failed permanently')
+    })
+  })
+
+  describe('hooks integration', () => {
+    it('should call onAttempt hook after each polling attempt', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 50,
+        maxDelayMs: 200,
+        backoffMultiplier: 2,
+        maxAttempts: 5,
+        jitterFactor: 0,
+      })
+
+      const attemptCalls: Array<{ attempt: number; isComplete: boolean }> = []
+
+      await strategy.execute<string>(
+        (attempt) => {
+          if (attempt === 3) {
+            return Promise.resolve({ isComplete: true, value: 'success' })
+          }
+          return Promise.resolve({ isComplete: false })
+        },
+        {
+          hooks: {
+            onAttempt: (ctx) => {
+              attemptCalls.push({ attempt: ctx.attempt, isComplete: ctx.isComplete })
+            },
+          },
+        },
+      )
+
+      expect(attemptCalls).toEqual([
+        { attempt: 1, isComplete: false },
+        { attempt: 2, isComplete: false },
+        { attempt: 3, isComplete: true },
+      ])
+    })
+
+    it('should work without any options', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 50,
+        maxDelayMs: 200,
+        backoffMultiplier: 2,
+        maxAttempts: 3,
+        jitterFactor: 0,
+      })
+
+      const result = await strategy.execute<string>((attempt) => {
+        if (attempt === 2) {
+          return Promise.resolve({ isComplete: true, value: 'success' })
+        }
+        return Promise.resolve({ isComplete: false })
+      })
+
+      expect(result).toBe('success')
+    })
+
+    it('should call onWait hook before each delay', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 50,
+        maxDelayMs: 200,
+        backoffMultiplier: 2,
+        maxAttempts: 5,
+        jitterFactor: 0,
+      })
+
+      const waitCalls: Array<{ attempt: number; waitMs: number }> = []
+
+      await strategy.execute<string>(
+        (attempt) => {
+          if (attempt === 3) {
+            return Promise.resolve({ isComplete: true, value: 'success' })
+          }
+          return Promise.resolve({ isComplete: false })
+        },
+        {
+          hooks: {
+            onWait: (ctx) => {
+              waitCalls.push({ attempt: ctx.attempt, waitMs: ctx.waitMs })
+            },
+          },
+        },
+      )
+
+      // Should wait before attempt 2 and 3
+      expect(waitCalls).toEqual([
+        { attempt: 1, waitMs: 50 },
+        { attempt: 2, waitMs: 100 },
+      ])
+    })
+
+    it('should call onSuccess hook when polling completes', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 50,
+        maxDelayMs: 200,
+        backoffMultiplier: 2,
+        maxAttempts: 5,
+        jitterFactor: 0,
+      })
+
+      let successCalled = false
+      let totalAttempts = 0
+
+      await strategy.execute<string>(
+        (attempt) => {
+          if (attempt === 3) {
+            return Promise.resolve({ isComplete: true, value: 'success' })
+          }
+          return Promise.resolve({ isComplete: false })
+        },
+        {
+          hooks: {
+            onSuccess: (ctx) => {
+              successCalled = true
+              totalAttempts = ctx.totalAttempts
+            },
+          },
+        },
+      )
+
+      expect(successCalled).toBe(true)
+      expect(totalAttempts).toBe(3)
+    })
+
+    it('should call onFailure hook when timeout occurs', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 10,
+        maxDelayMs: 50,
+        backoffMultiplier: 2,
+        maxAttempts: 3,
+        jitterFactor: 0,
+      })
+
+      let failureCalled = false
+      let failureCause: string | undefined
+      let attemptsMade = 0
+
+      try {
+        await strategy.execute<string>(() => Promise.resolve({ isComplete: false }), {
+          hooks: {
+            onFailure: (ctx) => {
+              failureCalled = true
+              failureCause = ctx.cause
+              attemptsMade = ctx.attemptsMade
+            },
+          },
+        })
+        expect.fail('Should have thrown PollingError')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.failureCause).toBe(PollingFailureCause.TIMEOUT)
+      }
+
+      expect(failureCalled).toBe(true)
+      expect(failureCause).toBe(PollingFailureCause.TIMEOUT)
+      expect(attemptsMade).toBe(3)
+    })
+
+    it('should call onFailure when cancelled during delay', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 100,
+        maxDelayMs: 1000,
+        backoffMultiplier: 2,
+        maxAttempts: 10,
+        jitterFactor: 0,
+      })
+
+      const controller = new AbortController()
+      let failureCalled = false
+      let failureCause: string | undefined
+      let attemptsMade = 0
+
+      // Abort after 150ms (during second wait)
+      delay(150).then(() => controller.abort())
+
+      try {
+        await strategy.execute<string>(() => Promise.resolve({ isComplete: false }), {
+          signal: controller.signal,
+          hooks: {
+            onFailure: (ctx) => {
+              failureCalled = true
+              failureCause = ctx.cause
+              attemptsMade = ctx.attemptsMade
+            },
+          },
+        })
+        expect.fail('Should have thrown PollingError')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.failureCause).toBe(PollingFailureCause.CANCELLED)
+      }
+
+      expect(failureCalled).toBe(true)
+      expect(failureCause).toBe(PollingFailureCause.CANCELLED)
+      expect(attemptsMade).toBeGreaterThanOrEqual(1)
+      expect(attemptsMade).toBeLessThanOrEqual(2)
+    })
+
+    it('should call onFailure when signal is already aborted before polling starts', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 100,
+        maxDelayMs: 1000,
+        backoffMultiplier: 2,
+        maxAttempts: 10,
+        jitterFactor: 0,
+      })
+
+      const controller = new AbortController()
+      controller.abort() // Abort before starting
+
+      let failureCalled = false
+      let failureCause: string | undefined
+      let attemptsMade = 0
+
+      try {
+        await strategy.execute<string>(() => Promise.resolve({ isComplete: false }), {
+          signal: controller.signal,
+          hooks: {
+            onFailure: (ctx) => {
+              failureCalled = true
+              failureCause = ctx.cause
+              attemptsMade = ctx.attemptsMade
+            },
+          },
+        })
+        expect.fail('Should have thrown PollingError')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.failureCause).toBe(PollingFailureCause.CANCELLED)
+        expect(pollingError.attemptsMade).toBe(0)
+      }
+
+      expect(failureCalled).toBe(true)
+      expect(failureCause).toBe(PollingFailureCause.CANCELLED)
+      expect(attemptsMade).toBe(0)
+    })
+
+    it('should call onFailure when signal is aborted between attempts', async () => {
+      const strategy = new ExponentialBackoffStrategy({
+        initialDelayMs: 0,
+        maxDelayMs: 0,
+        backoffMultiplier: 1,
+        maxAttempts: 10,
+        jitterFactor: 0,
+      })
+
+      const controller = new AbortController()
+      let attemptCount = 0
+      let failureCalled = false
+      let failureCause: string | undefined
+      let attemptsMade = 0
+
+      try {
+        await strategy.execute<string>(
+          () => {
+            attemptCount++
+            // Abort after first attempt
+            if (attemptCount === 1) {
+              controller.abort()
+            }
+            return Promise.resolve({ isComplete: false })
+          },
+          {
+            signal: controller.signal,
+            hooks: {
+              onFailure: (ctx) => {
+                failureCalled = true
+                failureCause = ctx.cause
+                attemptsMade = ctx.attemptsMade
+              },
+            },
+          },
+        )
+        expect.fail('Should have thrown PollingError')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        const pollingError = error as PollingError
+        expect(pollingError.failureCause).toBe(PollingFailureCause.CANCELLED)
+        expect(pollingError.attemptsMade).toBe(1)
+      }
+
+      expect(failureCalled).toBe(true)
+      expect(failureCause).toBe(PollingFailureCause.CANCELLED)
+      expect(attemptsMade).toBe(1)
     })
   })
 })

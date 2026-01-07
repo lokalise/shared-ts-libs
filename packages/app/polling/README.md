@@ -8,8 +8,10 @@ A flexible, production-ready polling library with configurable retry strategies 
 - ⏱️ **Exponential Backoff** - Built-in exponential backoff with jitter to prevent thundering herd
 - 🎯 **Type-Safe** - Full TypeScript support with discriminated unions
 - 🚫 **Cancellable** - Support for AbortSignal to cancel polling operations
-- 📊 **Observable** - Integrated logging with request context
+- 🪝 **Observable** - Lifecycle hooks for logging, metrics, and monitoring
+- 🌍 **Universal** - Works in Node.js, browsers, Deno, Bun, and React Native
 - ⚡ **Production-Ready** - Input validation, error handling, and configurable timeouts
+- 🪶 **Zero Dependencies** - No external runtime dependencies
 
 ## Installation
 
@@ -27,6 +29,8 @@ const strategy = new ExponentialBackoffStrategy(STANDARD_EXPONENTIAL_BACKOFF_CON
 const poller = new Poller(strategy)
 
 // Poll until complete
+const jobId = 'job-123' // Your domain context
+
 const result = await poller.poll(
   async (attempt) => {
     const status = await checkJobStatus(jobId)
@@ -37,8 +41,12 @@ const result = await poller.poll(
     
     return { isComplete: false }
   },
-  reqContext,
-  { jobId } // metadata for logging
+  {
+    hooks: {
+      onAttempt: ({ attempt, isComplete }) => 
+        console.log(`[${jobId}] Attempt ${attempt}: ${isComplete ? 'Complete' : 'Continuing'}`),
+    },
+  },
 )
 ```
 
@@ -182,13 +190,17 @@ const result = await poller.poll(
       ? { isComplete: true, value: data.result }
       : { isComplete: false }
   },
-  reqContext
 )
 ```
 
-### With Metadata for Logging
+### With Lifecycle Hooks
+
+Use hooks to observe polling lifecycle events for logging, metrics, or monitoring:
 
 ```typescript
+const jobId = 'job-123'
+const userId = 'user-456'
+
 const result = await poller.poll(
   async (attempt) => {
     const status = await checkJobStatus(jobId)
@@ -196,8 +208,22 @@ const result = await poller.poll(
       ? { isComplete: true, value: await getResult(jobId) }
       : { isComplete: false }
   },
-  reqContext,
-  { jobId, userId } // Included in all log messages
+  {
+    hooks: {
+      onAttempt: ({ attempt, isComplete }) => {
+        console.log(`[${jobId}] Attempt ${attempt}: ${isComplete ? 'Complete' : 'Pending'}`)
+      },
+      onWait: ({ attempt, waitMs }) => {
+        console.log(`[${jobId}] Waiting ${waitMs}ms before attempt ${attempt + 1}`)
+      },
+      onSuccess: ({ totalAttempts }) => {
+        console.log(`[${jobId}] Succeeded after ${totalAttempts} attempts`)
+      },
+      onFailure: ({ cause, attemptsMade }) => {
+        console.error(`[${jobId}] Failed: ${cause} after ${attemptsMade} attempts`)
+      },
+    },
+  },
 )
 ```
 
@@ -217,12 +243,12 @@ try {
         ? { isComplete: true, value: status.data }
         : { isComplete: false }
     },
-    reqContext,
-    { operation: 'data-sync' },
-    controller.signal  // Pass the signal
+    {
+      signal: controller.signal,  // Pass the signal
+    },
   )
 } catch (error) {
-  if (error instanceof PollingError && error.failureCause === 'CANCELLED') {
+  if (PollingError.isPollingError(error) && error.failureCause === 'CANCELLED') {
     console.log('Polling was cancelled')
   }
 }
@@ -243,13 +269,14 @@ const result = await poller.poll(
       ? { isComplete: true, value: status.data }
       : { isComplete: false }
   },
-  reqContext
 )
 ```
 
 ### Handling Terminal Errors
 
 ```typescript
+const jobId = 'job-123'
+
 try {
   const result = await poller.poll(
     async (attempt) => {
@@ -268,16 +295,24 @@ try {
       // Still processing
       return { isComplete: false }
     },
-    reqContext,
-    { jobId }
   )
 } catch (error) {
   if (error instanceof PollingError) {
-    // Timeout or cancellation
+    // Timeout or cancellation from polling library
     console.log(`Polling failed: ${error.failureCause} after ${error.attemptsMade} attempts`)
+    
+    // Convert to domain error with context
+    throw new JobProcessingError(
+      `Job ${jobId} polling timed out`,
+      { jobId, cause: error }
+    )
   } else {
     // Domain-specific error (job failed, network error, etc.)
     console.log('Operation failed:', error)
+    throw new JobProcessingError(
+      `Job ${jobId} failed`,
+      { jobId, cause: error }
+    )
   }
 }
 ```
@@ -287,8 +322,27 @@ try {
 Implement the `PollingStrategy` interface to create your own strategy:
 
 ```typescript
-import type { PollingStrategy, PollResult } from '@lokalise/polling'
-import type { RequestContext } from '@lokalise/fastify-extras'
+import type { PollingStrategy, PollResult, PollingOptions } from '@lokalise/polling'
+import { PollingError, PollingFailureCause } from '@lokalise/polling'
+
+// Simple delay helper (or use a library like `p-timeout`)
+function delay(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new Error('Aborted'))
+      return
+    }
+    
+    const timeoutId = setTimeout(resolve, ms)
+    
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        clearTimeout(timeoutId)
+        reject(new Error('Aborted'))
+      }, { once: true })
+    }
+  })
+}
 
 class FixedIntervalStrategy implements PollingStrategy {
   constructor(
@@ -298,37 +352,65 @@ class FixedIntervalStrategy implements PollingStrategy {
 
   async execute<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    reqContext: RequestContext,
-    metadata?: Record<string, unknown>,
-    signal?: AbortSignal,
+    options?: PollingOptions,
   ): Promise<T> {
+    const { hooks, signal } = options ?? {}
+    
     for (let attempt = 1; attempt <= this.maxAttempts; attempt++) {
       if (signal?.aborted) {
-        throw new PollingError(
+        const error = new PollingError(
           `Polling cancelled after ${attempt - 1} attempts`,
           PollingFailureCause.CANCELLED,
           attempt - 1,
-          metadata,
         )
+        hooks?.onFailure?.({
+          cause: PollingFailureCause.CANCELLED,
+          attemptsMade: attempt - 1,
+        })
+        throw error
       }
 
       const result = await pollFn(attempt)
       
+      hooks?.onAttempt?.({
+        attempt,
+        isComplete: result.isComplete,
+      })
+      
       if (result.isComplete) {
+        hooks?.onSuccess?.({ totalAttempts: attempt })
         return result.value
       }
 
       if (attempt < this.maxAttempts) {
-        await setTimeout(this.intervalMs, undefined, { signal })
+        hooks?.onWait?.({ attempt, waitMs: this.intervalMs })
+        try {
+          await delay(this.intervalMs, signal)
+        } catch {
+          const error = new PollingError(
+            `Polling cancelled after ${attempt} attempts`,
+            PollingFailureCause.CANCELLED,
+            attempt,
+          )
+          hooks?.onFailure?.({
+            cause: PollingFailureCause.CANCELLED,
+            attemptsMade: attempt,
+          })
+          throw error
+        }
       }
     }
 
-    throw new PollingError(
+    const error = new PollingError(
       `Polling timeout after ${this.maxAttempts} attempts`,
       PollingFailureCause.TIMEOUT,
       this.maxAttempts,
-      metadata,
     )
+    hooks?.onFailure?.({
+      cause: PollingFailureCause.TIMEOUT,
+      attemptsMade: this.maxAttempts,
+    })
+    throw error
   }
 }
 
@@ -341,22 +423,23 @@ const poller = new Poller(strategy)
 
 ### PollingError
 
-The library throws `PollingError` (extends `InternalError` from `@lokalise/node-core`) for polling-specific failures:
+The library throws `PollingError` (extends `Error`) for polling-specific failures:
 
 ```typescript
-class PollingError extends InternalError {
+class PollingError extends Error {
   readonly failureCause: 'TIMEOUT' | 'CANCELLED' | 'INVALID_CONFIG'
   readonly attemptsMade: number
   readonly errorCode: 'POLLING_TIMEOUT' | 'POLLING_CANCELLED' | 'POLLING_INVALID_CONFIG'
-  readonly details: Record<string, unknown>
   
   constructor(
     message: string,
     failureCause: PollingFailureCause,
     attemptsMade: number,
-    details?: Record<string, unknown>,
     originalError?: Error,
   )
+
+  // Type guard for error checking
+  static isPollingError(error: unknown): error is PollingError
 }
 ```
 
@@ -369,24 +452,24 @@ class PollingError extends InternalError {
 - `failureCause` - Discriminator: `'TIMEOUT'`, `'CANCELLED'`, or `'INVALID_CONFIG'`
 - `attemptsMade` - Number of attempts completed before failure
 - `errorCode` - Structured error code (e.g., `'POLLING_TIMEOUT'`)
-- `details` - Structured metadata including `failureCause`, `attemptsMade`, and any custom metadata you provide
 
 ### Error Handling Pattern
 
 ```typescript
 import { PollingError, PollingFailureCause } from '@lokalise/polling'
-import { isInternalError } from '@lokalise/node-core'
+
+const jobId = 'job-123'
 
 try {
-  const result = await poller.poll(pollFn, reqContext, { jobId: '123' })
+  const result = await poller.poll(pollFn)
 } catch (error) {
-  if (error instanceof PollingError) {
+  if (PollingError.isPollingError(error)) {
     switch (error.failureCause) {
       case PollingFailureCause.TIMEOUT:
         console.log(`Timed out after ${error.attemptsMade} attempts`)
         console.log('Error code:', error.errorCode) // 'POLLING_TIMEOUT'
-        console.log('Details:', error.details) // { failureCause: 'TIMEOUT', attemptsMade: 20, jobId: '123' }
-        break
+        // Convert to domain error
+        throw new JobTimeoutError(`Job ${jobId} timed out`, { jobId, cause: error })
       case PollingFailureCause.CANCELLED:
         console.log(`Cancelled after ${error.attemptsMade} attempts`)
         console.log('Error code:', error.errorCode) // 'POLLING_CANCELLED'
@@ -396,9 +479,6 @@ try {
         console.log('Error code:', error.errorCode) // 'POLLING_INVALID_CONFIG'
         break
     }
-  } else if (isInternalError(error)) {
-    // Other InternalError types
-    console.log('Internal error:', error.errorCode, error.details)
   } else {
     // Domain-specific error from pollFn
     console.log('Operation failed:', error)
@@ -406,30 +486,55 @@ try {
 }
 ```
 
-## Logging
+## Observability
 
-The library logs polling progress automatically using the provided `RequestContext`:
+### Lifecycle Hooks
+
+The library provides lifecycle hooks for observing polling events. This is ideal for integrating with your logging, metrics, or monitoring systems:
 
 ```typescript
-// Success (debug level)
-// { attempt: 3, totalAttempts: 20, jobId: '123' }
-// "Polling completed successfully"
+const jobId = 'job-123'
+const userId = 'user-456'
 
-// Retry (debug level)
-// { attempt: 1, nextDelayMs: 2134, jobId: '123' }
-// "Polling not complete, waiting before retry"
+const result = await poller.poll(pollFn, {
+  hooks: {
+    // Called after each attempt
+    onAttempt: ({ attempt, isComplete }) => {
+      logger.debug({ attempt, isComplete, jobId, userId }, 'Poll attempt completed')
+    },
+    
+    // Called before waiting between attempts
+    onWait: ({ attempt, waitMs }) => {
+      logger.debug({ attempt, waitMs, jobId }, 'Waiting before next attempt')
+    },
+    
+    // Called when polling succeeds
+    onSuccess: ({ totalAttempts }) => {
+      logger.info({ totalAttempts, jobId }, 'Polling completed successfully')
+      metrics.increment('polling.success', { job: jobId })
+    },
+    
+    // Called when polling fails
+    onFailure: ({ cause, attemptsMade }) => {
+      logger.error({ cause, attemptsMade, jobId }, 'Polling failed')
+      metrics.increment('polling.failure', { cause, job: jobId })
+    },
+  },
+})
 ```
 
-All metadata you provide is included in log messages for better observability.
+All hooks are optional - provide only the ones you need. Domain context (like `jobId`, `userId`) is captured via closures from your surrounding scope.
 
 ## Best Practices
 
 1. **Choose appropriate timeouts**: Consider your operation's typical duration and set `maxAttempts` accordingly
-2. **Use metadata**: Include identifiers (job ID, user ID, etc.) for easier debugging
-3. **Handle terminal errors**: Throw errors from `pollFn` for failures that shouldn't retry
-4. **Enable jitter**: Keep `jitterFactor` enabled (default 0.2) to prevent request clustering
-5. **Support cancellation**: Pass `AbortSignal` for long-running operations that users might cancel
-6. **Monitor attempts**: Use the attempt number to implement progressive behavior or additional logging
+2. **Capture context via closures**: Use closures to capture domain context (jobId, userId, etc.) rather than passing it through the API
+3. **Convert errors at boundaries**: Convert `PollingError` to your domain errors where you have context
+4. **Implement hooks**: Use lifecycle hooks for logging, metrics, and monitoring
+5. **Handle terminal errors**: Throw errors from `pollFn` for failures that shouldn't retry
+6. **Enable jitter**: Keep `jitterFactor` enabled (default 0.2) to prevent request clustering
+7. **Support cancellation**: Pass `AbortSignal` for long-running operations that users might cancel
+8. **Use type guards**: Prefer `PollingError.isPollingError()` over `instanceof` for better cross-realm compatibility
 
 ## API Reference
 
@@ -441,9 +546,7 @@ class Poller {
   
   poll<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    reqContext: RequestContext,
-    metadata?: Record<string, unknown>,
-    signal?: AbortSignal,
+    options?: PollingOptions,
   ): Promise<T>
 }
 ```
@@ -456,9 +559,7 @@ class ExponentialBackoffStrategy implements PollingStrategy {
   
   execute<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    reqContext: RequestContext,
-    metadata?: Record<string, unknown>,
-    signal?: AbortSignal,
+    options?: PollingOptions,
   ): Promise<T>
 }
 ```
@@ -469,6 +570,38 @@ class ExponentialBackoffStrategy implements PollingStrategy {
 type PollResult<T> = 
   | { isComplete: true; value: T }
   | { isComplete: false }
+
+interface PollingOptions {
+  /** Optional lifecycle hooks for observability */
+  hooks?: PollingHooks
+  /** Optional AbortSignal to cancel polling */
+  signal?: AbortSignal
+}
+
+interface PollingHooks {
+  /** Called after each poll attempt completes (regardless of result) */
+  onAttempt?: (context: {
+    attempt: number
+    isComplete: boolean
+  }) => void
+
+  /** Called before waiting/delaying between attempts */
+  onWait?: (context: {
+    attempt: number
+    waitMs: number
+  }) => void
+
+  /** Called when polling completes successfully */
+  onSuccess?: (context: { 
+    totalAttempts: number
+  }) => void
+
+  /** Called when polling fails (timeout or cancellation) */
+  onFailure?: (context: {
+    cause: PollingFailureCause
+    attemptsMade: number
+  }) => void
+}
 
 interface ExponentialBackoffConfig {
   initialDelayMs: number
@@ -481,9 +614,7 @@ interface ExponentialBackoffConfig {
 interface PollingStrategy {
   execute<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    reqContext: RequestContext,
-    metadata?: Record<string, unknown>,
-    signal?: AbortSignal,
+    options?: PollingOptions,
   ): Promise<T>
 }
 ```
