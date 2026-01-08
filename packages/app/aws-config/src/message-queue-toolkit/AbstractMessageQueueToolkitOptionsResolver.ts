@@ -130,7 +130,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
       return {
         locatorConfig: {
           queueName: applyAwsResourcePrefix(queueConfig.queueName, awsConfig),
-          startupResourcePolling: this.resolveStartupResourcePolling(),
+          startupResourcePolling: this.resolveStartupResourcePolling(params),
         },
       }
     }
@@ -156,10 +156,12 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
     return this.config.appEnv === 'development'
   }
 
-  protected resolveStartupResourcePolling(): StartupResourcePollingConfig {
+  protected resolveStartupResourcePolling(params: {
+    isTest?: boolean
+  }): StartupResourcePollingConfig {
     const isDevelopment = this.isDevelopmentEnvironment()
     return {
-      enabled: true,
+      enabled: !params.isTest, // Disable polling in test mode
       throwOnTimeout: false,
       nonBlocking: true,
       pollingIntervalMs: isDevelopment
