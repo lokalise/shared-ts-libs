@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/aws-config",
-    "version": "6.1.0",
+    "version": "7.0.0",
     "files": [
         "dist",
         "LICENSE.md",
