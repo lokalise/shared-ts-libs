@@ -380,6 +380,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "creationConfig": undefined,
             "handlerSpy": true,
             "locatorConfig": {
+              "startupResourcePolling": {
+                "enabled": false,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
               "topicName": "prefix_test-project-second_entity",
             },
             "logMessages": true,
@@ -402,6 +409,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "creationConfig": undefined,
             "handlerSpy": undefined,
             "locatorConfig": {
+              "startupResourcePolling": {
+                "enabled": true,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
               "topicName": "test-project-second_entity",
             },
             "logMessages": undefined,
@@ -411,6 +425,30 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             },
           }
         `)
+      })
+
+      it.each([
+        'production',
+        'staging',
+      ] as const)('should use %s startupResourcePolling config', (appEnv) => {
+        const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = nonDevResolver.resolvePublisherOptions(topicName, {
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+        })
+
+        expect(result.locatorConfig?.startupResourcePolling).toEqual({
+          enabled: true,
+          nonBlocking: true,
+          pollingIntervalMs: 30000,
+          throwOnTimeout: false,
+          timeoutMs: 300000,
+        })
       })
     })
 
@@ -801,6 +839,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "handlerSpy": true,
             "handlers": [],
             "locatorConfig": {
+              "startupResourcePolling": {
+                "enabled": false,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
               "topicName": "prefix_test-project-second_entity",
             },
             "logMessages": true,
@@ -885,6 +930,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "handlerSpy": undefined,
             "handlers": [],
             "locatorConfig": {
+              "startupResourcePolling": {
+                "enabled": true,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
               "topicName": "test-project-second_entity",
             },
             "logMessages": undefined,
@@ -901,6 +953,31 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             },
           }
         `)
+      })
+
+      it.each([
+        'production',
+        'staging',
+      ] as const)('should use %s startupResourcePolling config', (appEnv) => {
+        const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = nonDevResolver.resolveConsumerOptions(topicName, queueName, {
+          logger,
+          handlers: [],
+          awsConfig: buildAwsConfig(),
+        })
+
+        expect(result.locatorConfig?.startupResourcePolling).toEqual({
+          enabled: true,
+          nonBlocking: true,
+          pollingIntervalMs: 30000,
+          throwOnTimeout: false,
+          timeoutMs: 300000,
+        })
       })
     })
 

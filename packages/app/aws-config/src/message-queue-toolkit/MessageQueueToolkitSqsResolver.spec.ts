@@ -362,6 +362,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "handlerSpy": true,
             "locatorConfig": {
               "queueName": "prefix_test-project-mqt_queue-second_service",
+              "startupResourcePolling": {
+                "enabled": false,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
             },
             "logMessages": true,
             "messageSchemas": [],
@@ -384,6 +391,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "handlerSpy": undefined,
             "locatorConfig": {
               "queueName": "test-project-mqt_queue-second_service",
+              "startupResourcePolling": {
+                "enabled": true,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
             },
             "logMessages": undefined,
             "messageSchemas": [],
@@ -392,6 +406,30 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
           }
         `)
+      })
+
+      it.each([
+        'production',
+        'staging',
+      ] as const)('should use %s startupResourcePolling config', (appEnv) => {
+        const nonDevResolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = nonDevResolver.resolvePublisherOptions(queueName, {
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+        })
+
+        expect(result.locatorConfig?.startupResourcePolling).toEqual({
+          enabled: true,
+          nonBlocking: true,
+          pollingIntervalMs: 30000,
+          throwOnTimeout: false,
+          timeoutMs: 300000,
+        })
       })
     })
 
@@ -814,6 +852,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "handlers": [],
             "locatorConfig": {
               "queueName": "prefix_test-project-mqt_queue-second_service",
+              "startupResourcePolling": {
+                "enabled": false,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
             },
             "logMessages": true,
             "maxRetryDuration": 172800,
@@ -847,6 +892,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "handlers": [],
             "locatorConfig": {
               "queueName": "test-project-mqt_queue-second_service",
+              "startupResourcePolling": {
+                "enabled": true,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
             },
             "logMessages": undefined,
             "maxRetryDuration": 172800,
@@ -855,6 +907,31 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
           }
         `)
+      })
+
+      it.each([
+        'production',
+        'staging',
+      ] as const)('should use %s startupResourcePolling config', (appEnv) => {
+        const nonDevResolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = nonDevResolver.resolveConsumerOptions(queueName, {
+          logger,
+          handlers: [],
+          awsConfig: buildAwsConfig(),
+        })
+
+        expect(result.locatorConfig?.startupResourcePolling).toEqual({
+          enabled: true,
+          nonBlocking: true,
+          pollingIntervalMs: 30000,
+          throwOnTimeout: false,
+          timeoutMs: 300000,
+        })
       })
     })
 
