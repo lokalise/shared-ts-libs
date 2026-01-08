@@ -27,7 +27,14 @@ type BaseParams = {
   isTest?: boolean
   /** Update resources attributes if they exists (default: true)*/
   updateAttributesIfExists?: boolean
-  /** In case of existing resources with different tags, update them (default: false)*/
+  /**
+   * Force update of resource tags if they differ from expected values.
+   *
+   * When `true`, existing resources with mismatched tags will be updated to match the configured tags.
+   * When `false`, tag updates are skipped for existing resources.
+   *
+   * @default true in development environments, false in all other environments
+   */
   forceTagUpdate?: boolean
 } & Pick<CommonQueueOptions, 'logMessages'>
 

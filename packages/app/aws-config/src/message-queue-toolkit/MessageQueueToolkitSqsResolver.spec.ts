@@ -201,7 +201,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
         expect(result).toMatchInlineSnapshot(`
           {
             "creationConfig": {
-              "forceTagUpdate": undefined,
+              "forceTagUpdate": true,
               "policyConfig": {
                 "resource": Symbol(current_queue),
                 "statements": {
@@ -251,7 +251,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
         expect(result).toMatchInlineSnapshot(`
           {
             "creationConfig": {
-              "forceTagUpdate": undefined,
+              "forceTagUpdate": true,
               "policyConfig": {
                 "resource": Symbol(current_queue),
                 "statements": {
@@ -301,7 +301,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
         expect(result).toMatchInlineSnapshot(`
           {
             "creationConfig": {
-              "forceTagUpdate": undefined,
+              "forceTagUpdate": true,
               "policyConfig": {
                 "resource": Symbol(current_queue),
                 "statements": {
@@ -362,6 +362,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "handlerSpy": true,
             "locatorConfig": {
               "queueName": "prefix_test-project-mqt_queue-second_service",
+              "startupResourcePolling": {
+                "enabled": false,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
             },
             "logMessages": true,
             "messageSchemas": [],
@@ -384,6 +391,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "handlerSpy": undefined,
             "locatorConfig": {
               "queueName": "test-project-mqt_queue-second_service",
+              "startupResourcePolling": {
+                "enabled": true,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
             },
             "logMessages": undefined,
             "messageSchemas": [],
@@ -392,6 +406,85 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
           }
         `)
+      })
+
+      it.each([
+        'production',
+        'staging',
+      ] as const)('should use %s startupResourcePolling config', (appEnv) => {
+        const nonDevResolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = nonDevResolver.resolvePublisherOptions(queueName, {
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+        })
+
+        expect(result.locatorConfig?.startupResourcePolling).toEqual({
+          enabled: true,
+          nonBlocking: true,
+          pollingIntervalMs: 30000,
+          throwOnTimeout: false,
+          timeoutMs: 300000,
+        })
+      })
+    })
+
+    describe('forceTagUpdate behavior', () => {
+      const queueName = config.queue1.queueName
+
+      it.each([
+        'development',
+        'staging',
+        'production',
+      ] as const)('should default to true in development environment and false for others, env: %s', (appEnv) => {
+        const resolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = resolver.resolvePublisherOptions(queueName, {
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(appEnv === 'development')
+      })
+
+      it('should respect explicit true value regardless of environment', () => {
+        const resolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+          system: 'my-system',
+          project,
+          appEnv: 'production',
+        })
+
+        const result = resolver.resolvePublisherOptions(queueName, {
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+          forceTagUpdate: true,
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(true)
+      })
+
+      it('should respect explicit false value regardless of environment', () => {
+        const resolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+          system: 'my-system',
+          project,
+          appEnv: 'development',
+        })
+
+        const result = resolver.resolvePublisherOptions(queueName, {
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+          forceTagUpdate: false,
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(false)
       })
     })
   })
@@ -492,7 +585,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
               "heartbeatInterval": 20,
             },
             "creationConfig": {
-              "forceTagUpdate": undefined,
+              "forceTagUpdate": true,
               "policyConfig": {
                 "resource": Symbol(current_queue),
                 "statements": {
@@ -575,7 +668,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
               "heartbeatInterval": 20,
             },
             "creationConfig": {
-              "forceTagUpdate": undefined,
+              "forceTagUpdate": true,
               "policyConfig": {
                 "resource": Symbol(current_queue),
                 "statements": {
@@ -658,7 +751,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
               "heartbeatInterval": 20,
             },
             "creationConfig": {
-              "forceTagUpdate": undefined,
+              "forceTagUpdate": true,
               "policyConfig": {
                 "resource": Symbol(current_queue),
                 "statements": {
@@ -759,6 +852,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "handlers": [],
             "locatorConfig": {
               "queueName": "prefix_test-project-mqt_queue-second_service",
+              "startupResourcePolling": {
+                "enabled": false,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
             },
             "logMessages": true,
             "maxRetryDuration": 172800,
@@ -792,6 +892,13 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             "handlers": [],
             "locatorConfig": {
               "queueName": "test-project-mqt_queue-second_service",
+              "startupResourcePolling": {
+                "enabled": true,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
             },
             "logMessages": undefined,
             "maxRetryDuration": 172800,
@@ -800,6 +907,89 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
           }
         `)
+      })
+
+      it.each([
+        'production',
+        'staging',
+      ] as const)('should use %s startupResourcePolling config', (appEnv) => {
+        const nonDevResolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = nonDevResolver.resolveConsumerOptions(queueName, {
+          logger,
+          handlers: [],
+          awsConfig: buildAwsConfig(),
+        })
+
+        expect(result.locatorConfig?.startupResourcePolling).toEqual({
+          enabled: true,
+          nonBlocking: true,
+          pollingIntervalMs: 30000,
+          throwOnTimeout: false,
+          timeoutMs: 300000,
+        })
+      })
+    })
+
+    describe('forceTagUpdate behavior', () => {
+      const queueName = config.queue1.queueName
+
+      it.each([
+        'development',
+        'staging',
+        'production',
+      ] as const)('should default to true in development environment and false for others, env: %s', (appEnv) => {
+        const resolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = resolver.resolveConsumerOptions(queueName, {
+          logger,
+          awsConfig: buildAwsConfig(),
+          handlers: [],
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(appEnv === 'development')
+      })
+
+      it('should respect explicit true value regardless of environment', () => {
+        const resolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+          system: 'my-system',
+          project,
+          appEnv: 'production',
+        })
+
+        const result = resolver.resolveConsumerOptions(queueName, {
+          logger,
+          awsConfig: buildAwsConfig(),
+          handlers: [],
+          forceTagUpdate: true,
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(true)
+      })
+
+      it('should respect explicit false value regardless of environment', () => {
+        const resolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+          system: 'my-system',
+          project,
+          appEnv: 'development',
+        })
+
+        const result = resolver.resolveConsumerOptions(queueName, {
+          logger,
+          awsConfig: buildAwsConfig(),
+          handlers: [],
+          forceTagUpdate: false,
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(false)
       })
     })
   })

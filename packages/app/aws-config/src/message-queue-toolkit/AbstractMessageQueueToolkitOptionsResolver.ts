@@ -1,5 +1,9 @@
 import type { CreateQueueRequest } from '@aws-sdk/client-sqs'
-import type { ConsumerBaseMessageType } from '@message-queue-toolkit/core'
+import {
+  type ConsumerBaseMessageType,
+  NO_TIMEOUT,
+  type StartupResourcePollingConfig,
+} from '@message-queue-toolkit/core'
 import type {
   SQSCreationConfig,
   SQSPolicyConfig,
@@ -124,7 +128,10 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
 
     if (queueConfig.isExternal) {
       return {
-        locatorConfig: { queueName: applyAwsResourcePrefix(queueConfig.queueName, awsConfig) },
+        locatorConfig: {
+          queueName: applyAwsResourcePrefix(queueConfig.queueName, awsConfig),
+          startupResourcePolling: this.resolveStartupResourcePolling(params),
+        },
       }
     }
 
@@ -140,8 +147,27 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
         },
         policyConfig,
         updateAttributesIfExists: updateAttributesIfExists ?? true,
-        forceTagUpdate: forceTagUpdate,
+        forceTagUpdate: forceTagUpdate ?? this.isDevelopmentEnvironment(),
       },
+    }
+  }
+
+  protected isDevelopmentEnvironment(): boolean {
+    return this.config.appEnv === 'development'
+  }
+
+  protected resolveStartupResourcePolling(params: {
+    isTest?: boolean
+  }): StartupResourcePollingConfig {
+    const isDevelopment = this.isDevelopmentEnvironment()
+    return {
+      enabled: !params.isTest, // Disable polling in test mode
+      throwOnTimeout: false,
+      nonBlocking: true,
+      pollingIntervalMs: isDevelopment
+        ? 5000 // 5 seconds
+        : 30000, // 30 seconds
+      timeoutMs: isDevelopment ? NO_TIMEOUT : 300000, // 5 minutes,
     }
   }
 }

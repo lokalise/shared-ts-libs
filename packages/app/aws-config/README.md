@@ -283,7 +283,8 @@ Both `MessageQueueToolkitSnsOptionsResolver` and `MessageQueueToolkitSqsOptionsR
 - **Default message type field**: `'type'`, used for filtering and routing messages.
 - **Publisher**:
   - `updateAttributesIfExists`: `true` (updates tags and config on existing resources).
-  - `forceTagUpdate`: `false`.
+  - `forceTagUpdate`: Defaults to `true` in development environments, `false` in all other environments. When enabled,
+    existing resources with mismatched tags will be updated to match the configured tags.
   - Applies standardized tags, see tags section above.
 - **Consumer**:
   - Dead-letter queue automatically created with suffix `-dlq`, `redrivePolicy.maxReceiveCount = 5`, retention = 7 days.

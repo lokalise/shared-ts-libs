@@ -312,7 +312,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           {
             "creationConfig": {
               "allowedSourceOwner": "test allowedSourceOwner",
-              "forceTagUpdate": undefined,
+              "forceTagUpdate": true,
               "queueUrlsWithSubscribePermissionsPrefix": [
                 "arn:aws:sqs:*:*:test-project-*",
               ],
@@ -380,6 +380,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "creationConfig": undefined,
             "handlerSpy": true,
             "locatorConfig": {
+              "startupResourcePolling": {
+                "enabled": false,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
               "topicName": "prefix_test-project-second_entity",
             },
             "logMessages": true,
@@ -402,6 +409,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "creationConfig": undefined,
             "handlerSpy": undefined,
             "locatorConfig": {
+              "startupResourcePolling": {
+                "enabled": true,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
               "topicName": "test-project-second_entity",
             },
             "logMessages": undefined,
@@ -411,6 +425,85 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             },
           }
         `)
+      })
+
+      it.each([
+        'production',
+        'staging',
+      ] as const)('should use %s startupResourcePolling config', (appEnv) => {
+        const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = nonDevResolver.resolvePublisherOptions(topicName, {
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+        })
+
+        expect(result.locatorConfig?.startupResourcePolling).toEqual({
+          enabled: true,
+          nonBlocking: true,
+          pollingIntervalMs: 30000,
+          throwOnTimeout: false,
+          timeoutMs: 300000,
+        })
+      })
+    })
+
+    describe('forceTagUpdate behavior', () => {
+      const topicName = EventRouting.topic1.topicName
+
+      it.each([
+        'development',
+        'production',
+        'staging',
+      ] as const)('should default to true for development, and false in other envs. env: %s', (appEnv) => {
+        const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = resolver.resolvePublisherOptions(topicName, {
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(appEnv === 'development')
+      })
+
+      it('should respect explicit true value regardless of environment', () => {
+        const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv: 'production',
+        })
+
+        const result = resolver.resolvePublisherOptions(topicName, {
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+          forceTagUpdate: true,
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(true)
+      })
+
+      it('should respect explicit false value regardless of environment', () => {
+        const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv: 'development',
+        })
+
+        const result = resolver.resolvePublisherOptions(topicName, {
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+          forceTagUpdate: false,
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(false)
       })
     })
   })
@@ -592,7 +685,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             },
             "creationConfig": {
               "allowedSourceOwner": "test allowedSourceOwner",
-              "forceTagUpdate": undefined,
+              "forceTagUpdate": true,
               "queue": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
@@ -746,6 +839,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "handlerSpy": true,
             "handlers": [],
             "locatorConfig": {
+              "startupResourcePolling": {
+                "enabled": false,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
               "topicName": "prefix_test-project-second_entity",
             },
             "logMessages": true,
@@ -780,7 +880,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             },
             "creationConfig": {
               "allowedSourceOwner": "test allowedSourceOwner",
-              "forceTagUpdate": undefined,
+              "forceTagUpdate": true,
               "queue": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
@@ -830,6 +930,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "handlerSpy": undefined,
             "handlers": [],
             "locatorConfig": {
+              "startupResourcePolling": {
+                "enabled": true,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
               "topicName": "test-project-second_entity",
             },
             "logMessages": undefined,
@@ -846,6 +953,90 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             },
           }
         `)
+      })
+
+      it.each([
+        'production',
+        'staging',
+      ] as const)('should use %s startupResourcePolling config', (appEnv) => {
+        const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = nonDevResolver.resolveConsumerOptions(topicName, queueName, {
+          logger,
+          handlers: [],
+          awsConfig: buildAwsConfig(),
+        })
+
+        expect(result.locatorConfig?.startupResourcePolling).toEqual({
+          enabled: true,
+          nonBlocking: true,
+          pollingIntervalMs: 30000,
+          throwOnTimeout: false,
+          timeoutMs: 300000,
+        })
+      })
+    })
+
+    describe('forceTagUpdate behavior', () => {
+      const topicName = EventRouting.topic1.topicName
+      const queueName = EventRouting.topic1.queues.topic1Queue1.queueName
+
+      it.each([
+        'development',
+        'production',
+        'staging',
+      ] as const)('should default to true for development, and false in other envs. env: %s', (appEnv) => {
+        const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = resolver.resolveConsumerOptions(topicName, queueName, {
+          logger,
+          handlers: [],
+          awsConfig: buildAwsConfig(),
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(appEnv === 'development')
+      })
+
+      it('should respect explicit true value regardless of environment', () => {
+        const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv: 'production',
+        })
+
+        const result = resolver.resolveConsumerOptions(topicName, queueName, {
+          logger,
+          handlers: [],
+          awsConfig: buildAwsConfig(),
+          forceTagUpdate: true,
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(true)
+      })
+
+      it('should respect explicit false value regardless of environment', () => {
+        const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv: 'development',
+        })
+
+        const result = resolver.resolveConsumerOptions(topicName, queueName, {
+          logger,
+          handlers: [],
+          awsConfig: buildAwsConfig(),
+          forceTagUpdate: false,
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(false)
       })
     })
   })
