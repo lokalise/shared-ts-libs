@@ -101,7 +101,7 @@ describe('paginationUtils', () => {
         })
       })
 
-      it('cursor using single number prop is converted to string without encoding', () => {
+      it('cursor using single number prop is encoded', () => {
         const mockedArray = [
           { id: '1', sequenceNumber: 100 },
           { id: '2', sequenceNumber: 200 },
@@ -112,7 +112,7 @@ describe('paginationUtils', () => {
           data: mockedArray,
           meta: {
             count: 3,
-            cursor: '300', // Number converted to string, not encoded
+            cursor: encodeCursor(300), // Number is encoded
             hasMore: false,
           },
         })

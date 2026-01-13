@@ -1,5 +1,3 @@
-import { isObject } from '@lokalise/universal-ts-utils/type/isObject'
-
 type Left<T> = {
   error: T
   result?: never
@@ -43,22 +41,19 @@ export const stringToBase64url = (value: string, mode: ConversionMode): string =
  * Encodes JSON object to base64url
  * Compatible with both browser and node envs
  */
-export const encodeCursor = (object: Record<string, unknown>): string => {
-  return stringToBase64url(JSON.stringify(object), resolveConversionMode())
-}
+export const encodeCursor = (cursor: Record<string, unknown> | number): string =>
+  stringToBase64url(JSON.stringify(cursor), resolveConversionMode())
 
 /**
  * Decodes base64url to JSON object
  * Compatible with both browser and node envs
  */
-export const decodeCursor = (value: string): Either<Error, Record<string, unknown>> => {
+export const decodeCursor = (value: string): Either<Error, Record<string, unknown> | number> => {
   let error: unknown
   try {
     const result: unknown = JSON.parse(base64urlToString(value, resolveConversionMode()))
 
-    if (result && isObject(result)) {
-      return { result }
-    }
+    if (result && isObjectOrNumber(result)) return { result }
   } catch (e) {
     error = e
   }
@@ -67,3 +62,6 @@ export const decodeCursor = (value: string): Either<Error, Record<string, unknow
   return { error: error instanceof Error ? error : new Error('Invalid cursor') }
   /* v8 ignore stop */
 }
+
+const isObjectOrNumber = (value: unknown): value is Record<string, unknown> | number =>
+  typeof value === 'object' || typeof value === 'number'

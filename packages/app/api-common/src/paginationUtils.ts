@@ -40,12 +40,9 @@ const getMetaForNextPage = <T extends Record<string, unknown>, K extends keyof T
   if (!cursorKeys) {
     cursor = (lastElement as unknown as { id: string }).id
   } else if (cursorKeys.length === 1) {
-    // biome-ignore lint/style/noNonNullAssertion: checked above
+    // biome-ignore lint/style/noNonNullAssertion: Can't be empty
     const value = lastElement[cursorKeys[0]!]
-    cursor =
-      typeof value === 'string' || typeof value === 'number'
-        ? value.toString()
-        : encodeCursor(value as Record<string, unknown>)
+    cursor = typeof value === 'string' ? value : encodeCursor(value as number)
   } else {
     cursor = encodeCursor(pick(lastElement, cursorKeys))
   }
@@ -65,10 +62,10 @@ const getMetaForNextPage = <T extends Record<string, unknown>, K extends keyof T
  * 	- If page length is less than or equal to pageLimit, hasMore will be set to false (no more items to fetch).
  * 	- If page length is greater than pageLimit, the data will be sliced to pageLimit and hasMore will be set to true.
  * @param cursorKeys - An optional array of keys that determine the formation of the cursor. By default, uses the 'id' property.
- *  - If not provided, the cursor will use the 'id' property of the last element in 'data'.
- *  - If a single key is provided and its value is a string or number, the cursor will be that value converted to string (not encoded).
- *  - If a single key is provided but its value is neither string nor number, or if multiple keys are provided,
- *    the cursor will be an encoded string incorporating the values.
+ *  - If not provided, the cursor will use the 'id' property of the last element in 'data' (not encoded).
+ *  - If a single key is provided and its value is a string, the cursor will use that value directly (not encoded).
+ *  - If a single key is provided and its value is a number or other type, or if multiple keys are provided,
+ *    the cursor will be an encoded base64url string incorporating the values.
  *  - Empty arrays will throw an error.
  *
  * @returns PaginatedResponse - An object containing the paginated data and metadata with cursor and hasMore flag.

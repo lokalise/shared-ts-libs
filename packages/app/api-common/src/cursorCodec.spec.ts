@@ -9,7 +9,7 @@ import {
 
 describe('cursorCodec', () => {
   describe('encode and decode', () => {
-    it('encode and decode works', () => {
+    it('encode and decode works for objects', () => {
       const testValue = {
         id: '1',
         name: 'apple',
@@ -17,6 +17,11 @@ describe('cursorCodec', () => {
         array1: ['1', '2'],
         array2: [{ name: 'hello' }, { name: 'world' }],
       }
+      expect(decodeCursor(encodeCursor(testValue))).toEqual({ result: testValue })
+    })
+
+    it('encode and decode works for numbers', () => {
+      const testValue = 42
       expect(decodeCursor(encodeCursor(testValue))).toEqual({ result: testValue })
     })
 
