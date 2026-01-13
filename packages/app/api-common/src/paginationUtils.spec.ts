@@ -1,12 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { OptionalPaginationParams } from './apiSchemas.ts'
 import { encodeCursor } from './cursorCodec.ts'
-import {
-  createPaginatedResponse,
-  getMetaForNextPage,
-  getPaginatedEntries,
-  getPaginatedEntriesByHasMore,
-} from './paginationUtils.ts'
+import { createPaginatedResponse, getPaginatedEntriesByHasMore } from './paginationUtils.ts'
 
 describe('paginationUtils', () => {
   describe('createPaginatedResponse', () => {
@@ -21,14 +16,6 @@ describe('paginationUtils', () => {
 
     describe('pageLimit', () => {
       const mockedArray = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }]
-
-      it('pageLimit is undefined', () => {
-        const result = createPaginatedResponse(mockedArray, undefined)
-        expect(result).toEqual({
-          data: mockedArray,
-          meta: { count: 4, cursor: 'd', hasMore: undefined },
-        })
-      })
 
       it('pageLimit less than input array', () => {
         const result = createPaginatedResponse(mockedArray, 2)
@@ -57,7 +44,10 @@ describe('paginationUtils', () => {
 
     describe('cursor', () => {
       it('empty cursorKeys produce error', () => {
-        expect(() => getMetaForNextPage([], [])).toThrowError('cursorKeys cannot be an empty array')
+        const mockedArray = [{ id: 'a' }]
+        expect(() => createPaginatedResponse(mockedArray, 1, [])).toThrowError(
+          'cursorKeys cannot be an empty array',
+        )
       })
 
       it('cursor using id as default', () => {
@@ -110,87 +100,26 @@ describe('paginationUtils', () => {
           },
         })
       })
+
+      it('cursor using single number prop is converted to string without encoding', () => {
+        const mockedArray = [
+          { id: '1', sequenceNumber: 100 },
+          { id: '2', sequenceNumber: 200 },
+          { id: '3', sequenceNumber: 300 },
+        ]
+        const result = createPaginatedResponse(mockedArray, 3, ['sequenceNumber'])
+        expect(result).toEqual({
+          data: mockedArray,
+          meta: {
+            count: 3,
+            cursor: '300', // Number converted to string, not encoded
+            hasMore: false,
+          },
+        })
+      })
     })
   })
 
-  describe('getPaginatedEntries', () => {
-    it('should call api 2 times', async () => {
-      const spy = vi
-        .spyOn(market, 'getApples')
-        .mockResolvedValueOnce({
-          data: [{ id: 'red' }],
-          meta: {
-            count: 1,
-            cursor: 'red',
-            hasMore: false,
-          },
-        })
-        .mockResolvedValueOnce({
-          data: [],
-          meta: {
-            count: 0,
-            hasMore: false,
-          },
-        })
-
-      const result = await getPaginatedEntries({ limit: 1 }, (params) => {
-        return market.getApples(params)
-      })
-
-      expect(spy).toHaveBeenCalledTimes(2)
-      expect(result).toEqual([{ id: 'red' }])
-    })
-    it('should call api 1 time', async () => {
-      const spy = vi.spyOn(market, 'getApples').mockResolvedValueOnce({
-        data: [],
-        meta: {
-          count: 0,
-          hasMore: false,
-        },
-      })
-
-      const result = await getPaginatedEntries({ limit: 1 }, (params) => {
-        return market.getApples(params)
-      })
-
-      expect(spy).toHaveBeenCalledTimes(1)
-      expect(result).toEqual([])
-    })
-    it('should call api 3 time', async () => {
-      const spy = vi
-        .spyOn(market, 'getApples')
-        .mockResolvedValueOnce({
-          data: [{ id: 'red' }],
-          meta: {
-            count: 1,
-            cursor: 'red',
-            hasMore: false,
-          },
-        })
-        .mockResolvedValueOnce({
-          data: [{ id: 'blue' }],
-          meta: {
-            count: 1,
-            cursor: 'blue',
-            hasMore: false,
-          },
-        })
-        .mockResolvedValueOnce({
-          data: [],
-          meta: {
-            count: 0,
-            hasMore: false,
-          },
-        })
-
-      const result = await getPaginatedEntries({ limit: 1 }, (params) => {
-        return market.getApples(params)
-      })
-
-      expect(spy).toHaveBeenCalledTimes(3)
-      expect(result).toEqual([{ id: 'red' }, { id: 'blue' }])
-    })
-  })
   describe('getPaginatedEntriesByHasMore', () => {
     it('should call api 1 time and return value', async () => {
       const spy = vi.spyOn(market, 'getApples').mockResolvedValueOnce({

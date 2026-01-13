@@ -27,6 +27,10 @@ const getMetaForNextPage = <T extends Record<string, unknown>, K extends keyof T
   pageLimit: number,
   cursorKeys: K[] | undefined,
 ): PaginationMeta => {
+  if (cursorKeys && cursorKeys.length === 0) {
+    throw new Error('cursorKeys cannot be an empty array')
+  }
+
   if (currentPageData.length === 0) return { count: 0, hasMore: false }
 
   const count = Math.min(currentPageData.length, pageLimit)
@@ -35,13 +39,15 @@ const getMetaForNextPage = <T extends Record<string, unknown>, K extends keyof T
   let cursor: string
   if (!cursorKeys) {
     cursor = (lastElement as unknown as { id: string }).id
-  } else {
-    // biome-ignore lint/style/noNonNullAssertion: It can't be empty
-    const firstKey = cursorKeys[0]!
+  } else if (cursorKeys.length === 1) {
+    // biome-ignore lint/style/noNonNullAssertion: checked above
+    const value = lastElement[cursorKeys[0]!]
     cursor =
-      cursorKeys.length === 1 && typeof lastElement[firstKey] === 'string'
-        ? (lastElement[firstKey] as string)
-        : encodeCursor(pick(lastElement, cursorKeys))
+      typeof value === 'string' || typeof value === 'number'
+        ? value.toString()
+        : encodeCursor(value as Record<string, unknown>)
+  } else {
+    cursor = encodeCursor(pick(lastElement, cursorKeys))
   }
 
   return {
@@ -60,9 +66,9 @@ const getMetaForNextPage = <T extends Record<string, unknown>, K extends keyof T
  * 	- If page length is greater than pageLimit, the data will be sliced to pageLimit and hasMore will be set to true.
  * @param cursorKeys - An optional array of keys that determine the formation of the cursor. By default, uses the 'id' property.
  *  - If not provided, the cursor will use the 'id' property of the last element in 'data'.
- *  - If a single key is provided and its value is a string, the cursor will be that value directly.
- *  - If a single key is provided but its value is not a string, or if multiple keys are provided,
- *    the cursor will be an encoded string incorporating the values of these keys.
+ *  - If a single key is provided and its value is a string or number, the cursor will be that value converted to string (not encoded).
+ *  - If a single key is provided but its value is neither string nor number, or if multiple keys are provided,
+ *    the cursor will be an encoded string incorporating the values.
  *  - Empty arrays will throw an error.
  *
  * @returns PaginatedResponse - An object containing the paginated data and metadata with cursor and hasMore flag.
@@ -82,10 +88,6 @@ export function createPaginatedResponse<T extends Record<string, unknown>, K ext
   pageLimit: number,
   cursorKeys?: K[],
 ): PaginatedResponse<T> {
-  if (cursorKeys && cursorKeys.length === 0) {
-    throw new Error('cursorKeys cannot be an empty array')
-  }
-
   return {
     data: page.slice(0, pageLimit),
     meta: getMetaForNextPage(page, pageLimit, cursorKeys),

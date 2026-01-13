@@ -16,7 +16,7 @@ export type ConversionMode = 'buffer' | 'atob-btoa'
 const resolveConversionMode = (): ConversionMode =>
   typeof Buffer !== 'undefined' ? 'buffer' : 'atob-btoa'
 
-export const base64urlToString = (base64url: string, mode: ConversionMode = 'buffer'): string => {
+export const base64urlToString = (base64url: string, mode: ConversionMode): string => {
   if (mode === 'buffer') {
     return Buffer.from(base64url, 'base64url').toString('utf-8')
   }
@@ -28,7 +28,7 @@ export const base64urlToString = (base64url: string, mode: ConversionMode = 'buf
   return atob(paddedBase64)
 }
 
-export const stringToBase64url = (value: string, mode: ConversionMode = 'buffer'): string => {
+export const stringToBase64url = (value: string, mode: ConversionMode): string => {
   if (mode === 'buffer') {
     return Buffer.from(value).toString('base64url')
   }
