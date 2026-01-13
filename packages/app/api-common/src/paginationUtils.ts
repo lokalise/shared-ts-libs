@@ -24,11 +24,10 @@ const pick = <T, K extends string | number | symbol>(
  * Constructs a PaginationMeta object encapsulating the total count and the cursor for fetching the next page.
  *
  * The resultant cursor can be either a simple string or an encoded string based on the 'cursorKeys' parameter.
- * 	- If 'cursorKeys' is undefined, the cursor will default to the 'id' property of the last element in 'data'.
- * 	- If 'cursorKeys' contains a single key, the cursor will correspond to the value of that key from the last element
- * 		in 'data'.
- * 	- If 'cursorKeys' features multiple keys, the cursor will be an encoded string incorporating the values of these
- * 		keys from the last element in 'data'.
+ * 	- If 'cursorKeys' is undefined or an empty array, the cursor will default to the 'id' property of the last element in 'data'.
+ * 	- If 'cursorKeys' contains a single key and the value is a string, the cursor will correspond to that value directly.
+ * 	- If 'cursorKeys' contains a single key but the value is not a string, or if it contains multiple keys,
+ * 		the cursor will be an encoded string incorporating the values of these keys from the last element in 'data'.
  *
  * @param currentPageData - A generic array of objects, each object expected to extend { id: string }.
  * @param cursorKeys - An optional array of keys that determine the formation of the cursor. By default, this uses
@@ -68,11 +67,11 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
 
   const lastElement = currentPageData[count - 1] as T
   let cursor: string
-  if (!cursorKeys) {
+  if (!cursorKeys || !cursorKeys.length) {
     cursor = lastElement.id as string
   } else {
     cursor =
-      cursorKeys.length === 1
+      cursorKeys.length === 1 && typeof lastElement[cursorKeys[0] as K] === 'string'
         ? (lastElement[cursorKeys[0] as K] as string)
         : encodeCursor(pick(lastElement, cursorKeys))
   }
@@ -95,11 +94,10 @@ export function getMetaForNextPage<T extends Record<string, unknown>, K extends 
  * 	- If the parameter is not provided, hasMore flag will be undefined.
  * @param cursorKeys - An optional array of keys that determine the formation of the cursor. By default, this uses
  *    the 'id' property.
- *  - If 'cursorKeys' is undefined, the cursor will default to the 'id' property of the last element in 'data'.
- *  - If 'cursorKeys' contains a single key, the cursor will correspond to the value of that key from the last element
- *    in 'data'.
- *  - If 'cursorKeys' features multiple keys, the cursor will be an encoded string incorporating the values of these
- *    keys from the last element in 'data'.
+ *  - If 'cursorKeys' is undefined or an empty array, the cursor will default to the 'id' property of the last element in 'data'.
+ *  - If 'cursorKeys' contains a single key and the value is a string, the cursor will correspond to that value directly.
+ *  - If 'cursorKeys' contains a single key but the value is not a string, or if it contains multiple keys,
+ *    the cursor will be an encoded string incorporating the values of these keys from the last element in 'data'.
  *
  * @returns PageResponse
  *
