@@ -40,8 +40,5 @@
         "typescript": "5.9.3",
         "vitest": "^4.0.15",
         "zod": "~4.1.13"
-    },
-    "dependencies": {
-        "@lokalise/universal-ts-utils": "^4.2.3"
     }
 }

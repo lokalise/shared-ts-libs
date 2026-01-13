@@ -22,18 +22,19 @@ export type AfterPaginationParams = z.infer<typeof AFTER_PAGINATION_CONFIG_SCHEM
 const decodeCursorHook = (value: string | undefined, ctx: RefinementCtx) => {
   if (!value) return undefined
 
+  // Try to decode as base64 (for encoded numbers/objects)
   const result = decodeCursor(value)
   if (result.result) return result.result
 
   ctx.addIssue({
     message: 'Invalid cursor',
-    code: z.ZodIssueCode.custom,
-    params: { message: result.error.message },
+    code: 'custom',
+    params: { message: result.error?.message },
   })
 }
 
 export const encodedCursorMandatoryPaginationSchema = <
-  CursorType extends z.ZodSchema<unknown, Record<string, unknown> | undefined>,
+  CursorType extends z.ZodSchema<unknown, Record<string, unknown> | number | undefined>,
 >(
   cursorType: CursorType,
 ) => {
@@ -45,7 +46,7 @@ export const encodedCursorMandatoryPaginationSchema = <
   })
 }
 export const encodedCursorOptionalPaginationSchema = <
-  CursorType extends z.ZodSchema<unknown, Record<string, unknown> | undefined>,
+  CursorType extends z.ZodSchema<unknown, Record<string, unknown> | number | undefined>,
 >(
   cursorType: CursorType,
 ) => encodedCursorMandatoryPaginationSchema(cursorType).partial({ limit: true })
