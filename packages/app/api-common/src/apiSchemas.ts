@@ -32,7 +32,7 @@ const decodeCursorHook = (value: string | undefined, ctx: RefinementCtx) => {
   })
 }
 
-export const multiCursorMandatoryPaginationSchema = <
+export const encodedCursorMandatoryPaginationSchema = <
   CursorType extends z.ZodSchema<unknown, Record<string, unknown> | undefined>,
 >(
   cursorType: CursorType,
@@ -44,11 +44,11 @@ export const multiCursorMandatoryPaginationSchema = <
     after: cursor,
   })
 }
-export const multiCursorOptionalPaginationSchema = <
+export const encodedCursorOptionalPaginationSchema = <
   CursorType extends z.ZodSchema<unknown, Record<string, unknown> | undefined>,
 >(
   cursorType: CursorType,
-) => multiCursorMandatoryPaginationSchema(cursorType).partial({ limit: true })
+) => encodedCursorMandatoryPaginationSchema(cursorType).partial({ limit: true })
 
 export const zMeta = z.object({
   count: z.number(),
