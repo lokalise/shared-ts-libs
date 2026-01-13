@@ -127,13 +127,13 @@ describe('apiSchemas', () => {
             {
               "origin": "string",
               "code": "invalid_format",
-              "format": "uuid",
-              "pattern": "/^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/",
+              "format": "guid",
+              "pattern": "/^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/",
               "path": [
                 "after",
                 "id"
               ],
-              "message": "Invalid UUID"
+              "message": "Invalid GUID"
             }
           ]]
         `)
