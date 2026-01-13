@@ -22,18 +22,19 @@ export type AfterPaginationParams = z.infer<typeof AFTER_PAGINATION_CONFIG_SCHEM
 const decodeCursorHook = (value: string | undefined, ctx: RefinementCtx) => {
   if (!value) return undefined
 
+  // Try to decode as base64 (for encoded numbers/objects)
   const result = decodeCursor(value)
   if (result.result) return result.result
 
   ctx.addIssue({
     message: 'Invalid cursor',
-    code: z.ZodIssueCode.custom,
-    params: { message: result.error.message },
+    code: 'custom',
+    params: { message: result.error?.message },
   })
 }
 
-export const multiCursorMandatoryPaginationSchema = <
-  CursorType extends z.ZodSchema<unknown, Record<string, unknown> | undefined>,
+export const encodedCursorMandatoryPaginationSchema = <
+  CursorType extends z.ZodSchema<unknown, Record<string, unknown> | number | undefined>,
 >(
   cursorType: CursorType,
 ) => {
@@ -44,16 +45,16 @@ export const multiCursorMandatoryPaginationSchema = <
     after: cursor,
   })
 }
-export const multiCursorOptionalPaginationSchema = <
-  CursorType extends z.ZodSchema<unknown, Record<string, unknown> | undefined>,
+export const encodedCursorOptionalPaginationSchema = <
+  CursorType extends z.ZodSchema<unknown, Record<string, unknown> | number | undefined>,
 >(
   cursorType: CursorType,
-) => multiCursorMandatoryPaginationSchema(cursorType).partial({ limit: true })
+) => encodedCursorMandatoryPaginationSchema(cursorType).partial({ limit: true })
 
 export const zMeta = z.object({
   count: z.number(),
   cursor: z.string().optional().describe('Pagination cursor, a last item id from this result set'),
-  hasMore: z.boolean().optional().describe('Whether there are more items to fetch'),
+  hasMore: z.boolean().describe('Whether there are more items to fetch'),
 })
 
 export type PaginationMeta = z.infer<typeof zMeta>

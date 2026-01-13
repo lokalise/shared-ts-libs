@@ -1,23 +1,23 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod/v4'
 import {
-  multiCursorMandatoryPaginationSchema,
-  multiCursorOptionalPaginationSchema,
+  encodedCursorMandatoryPaginationSchema,
+  encodedCursorOptionalPaginationSchema,
   paginatedResponseSchema,
 } from './apiSchemas.ts'
 import { encodeCursor } from './cursorCodec.ts'
 
 describe('apiSchemas', () => {
-  describe('multi cursor pagination schemas', () => {
+  describe('encoded cursor pagination schemas', () => {
     const uuid = '00000000-0000-0000-0000-000000000000'
     const cursorSchema = z.object({
-      id: z.string().uuid(),
+      id: z.guid(),
       name: z.string(),
     })
     type cursorType = z.infer<typeof cursorSchema>
 
-    describe('multiCursorMandatoryPaginationSchema', () => {
-      const schema = multiCursorMandatoryPaginationSchema(cursorSchema)
+    describe('encodedCursorMandatoryPaginationSchema', () => {
+      const schema = encodedCursorMandatoryPaginationSchema(cursorSchema)
       type schemaType = z.infer<typeof schema>
       type schemaTypeInput = z.input<typeof schema>
 
@@ -32,6 +32,19 @@ describe('apiSchemas', () => {
           limit: 1,
           before: { id: uuid, name: 'apple' },
         } satisfies schemaType)
+      })
+
+      it('should decode encoded number cursor and return correct type', () => {
+        const numberSchema = encodedCursorMandatoryPaginationSchema(z.number())
+        const result = numberSchema.parse({
+          limit: 10,
+          after: encodeCursor(300),
+        } satisfies z.input<typeof numberSchema>)
+
+        expect(result).toEqual({
+          limit: 10,
+          after: 300,
+        } satisfies z.infer<typeof numberSchema>)
       })
 
       it('should ignore undefined cursor', () => {
@@ -61,7 +74,6 @@ describe('apiSchemas', () => {
       })
 
       it('wrong cursor type should produce error', () => {
-        const schema = multiCursorMandatoryPaginationSchema(cursorSchema)
         const result = schema.safeParse({ limit: 10, after: {} })
         expect(result.success).toBe(false)
         expect(result.error).toBeDefined()
@@ -80,7 +92,6 @@ describe('apiSchemas', () => {
       })
 
       it('wrong cursor string should produce error', () => {
-        const schema = multiCursorMandatoryPaginationSchema(cursorSchema)
         const result = schema.safeParse({
           limit: 10,
           after: 'heyo',
@@ -101,7 +112,7 @@ describe('apiSchemas', () => {
       })
 
       it('wrong cursor object should produce error', () => {
-        const schema = multiCursorMandatoryPaginationSchema(cursorSchema)
+        const schema = encodedCursorMandatoryPaginationSchema(cursorSchema)
         const result = schema.safeParse({
           limit: 10,
           after: encodeCursor({
@@ -116,21 +127,44 @@ describe('apiSchemas', () => {
             {
               "origin": "string",
               "code": "invalid_format",
-              "format": "uuid",
-              "pattern": "/^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/",
+              "format": "guid",
+              "pattern": "/^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/",
               "path": [
                 "after",
                 "id"
               ],
-              "message": "Invalid UUID"
+              "message": "Invalid GUID"
+            }
+          ]]
+        `)
+      })
+
+      it('should fail if encoded number does not match schema', () => {
+        const positiveNumberSchema = encodedCursorMandatoryPaginationSchema(z.number().positive())
+        const result = positiveNumberSchema.safeParse({
+          limit: 10,
+          after: encodeCursor(-5),
+        })
+        expect(result.success).toBe(false)
+        expect(result.error).toMatchInlineSnapshot(`
+          [ZodError: [
+            {
+              "origin": "number",
+              "code": "too_small",
+              "minimum": 0,
+              "inclusive": false,
+              "path": [
+                "after"
+              ],
+              "message": "Too small: expected number to be >0"
             }
           ]]
         `)
       })
     })
 
-    describe('multiCursorOptionalPaginationSchema', () => {
-      const schema = multiCursorOptionalPaginationSchema(cursorSchema)
+    describe('encodedCursorOptionalPaginationSchema', () => {
+      const schema = encodedCursorOptionalPaginationSchema(cursorSchema)
       type schemaType = z.infer<typeof schema>
       type schemaTypeInput = z.input<typeof schema>
 
