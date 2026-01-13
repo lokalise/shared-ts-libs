@@ -11,7 +11,7 @@ describe('apiSchemas', () => {
   describe('encoded cursor pagination schemas', () => {
     const uuid = '00000000-0000-0000-0000-000000000000'
     const cursorSchema = z.object({
-      id: z.string().uuid(),
+      id: z.guid(),
       name: z.string(),
     })
     type cursorType = z.infer<typeof cursorSchema>
