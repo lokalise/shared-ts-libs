@@ -15,6 +15,7 @@ const pick = <T, K extends string | number | symbol>(
     }
     idx += 1
   }
+
   return result
 }
 
@@ -57,12 +58,12 @@ const getMetaForNextPage = <T extends Record<string, unknown>, K extends keyof T
  * @param pageLimit - The maximum number of items to include in the current page.
  * 	- If page length is less than or equal to pageLimit, hasMore will be set to false (no more items to fetch).
  * 	- If page length is greater than pageLimit, the data will be sliced to pageLimit and hasMore will be set to true.
- * @param cursorKeys - An optional array of keys that determine the formation of the cursor. By default, this uses
- *    the 'id' property.
- *  - If 'cursorKeys' is undefined or an empty array, the cursor will default to the 'id' property of the last element in 'data'.
- *  - If 'cursorKeys' contains a single key and the value is a string, the cursor will correspond to that value directly.
- *  - If 'cursorKeys' contains a single key but the value is not a string, or if it contains multiple keys,
- *    the cursor will be an encoded string incorporating the values of these keys from the last element in 'data'.
+ * @param cursorKeys - An optional array of keys that determine the formation of the cursor. By default, uses the 'id' property.
+ *  - If not provided, the cursor will use the 'id' property of the last element in 'data'.
+ *  - If a single key is provided and its value is a string, the cursor will be that value directly.
+ *  - If a single key is provided but its value is not a string, or if multiple keys are provided,
+ *    the cursor will be an encoded string incorporating the values of these keys.
+ *  - Empty arrays will throw an error.
  *
  * @returns PaginatedResponse - An object containing the paginated data and metadata with cursor and hasMore flag.
  */
@@ -87,8 +88,7 @@ export function createPaginatedResponse<T extends Record<string, unknown>, K ext
 
   return {
     data: page.slice(0, pageLimit),
-    // @ts-expect-error -> on next major version, we can simplify getMetaForNextPage signature and remove ts-ignore
-    meta: getMetaForNextPage(page, cursorKeys, pageLimit),
+    meta: getMetaForNextPage(page, pageLimit, cursorKeys),
   }
 }
 
