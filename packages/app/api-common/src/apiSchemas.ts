@@ -53,7 +53,7 @@ export const encodedCursorOptionalPaginationSchema = <
 export const zMeta = z.object({
   count: z.number(),
   cursor: z.string().optional().describe('Pagination cursor, a last item id from this result set'),
-  hasMore: z.boolean().optional().describe('Whether there are more items to fetch'),
+  hasMore: z.boolean().describe('Whether there are more items to fetch'),
 })
 
 export type PaginationMeta = z.infer<typeof zMeta>
