@@ -45,7 +45,8 @@
         "@fastify/otel": ">=0.16.0",
         "@opentelemetry/auto-instrumentations-node": ">=0.67.3",
         "@opentelemetry/exporter-trace-otlp-grpc": ">=0.208.0",
-        "@opentelemetry/sdk-node": ">=0.208.0"
+        "@opentelemetry/sdk-node": ">=0.208.0",
+        "@opentelemetry/sdk-trace-base": ">=0.208.0"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.3.7",
