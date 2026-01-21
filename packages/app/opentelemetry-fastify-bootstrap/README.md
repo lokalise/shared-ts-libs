@@ -46,8 +46,8 @@ initOpenTelemetry()
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `NODE_ENV` | When set to `test`, OpenTelemetry is disabled | - |
-| `OPEN_TELEMETRY_ENABLED` | Set to `true` to enable OpenTelemetry | `false` |
-| `OPEN_TELEMETRY_EXPORTER_URL` | OTLP gRPC exporter URL | `grpc://localhost:4317` |
+| `OTEL_ENABLED` | Set to `true` to enable OpenTelemetry | `false` |
+| `OTEL_EXPORTER_URL` | OTLP gRPC exporter URL | `grpc://localhost:4317` |
 
 ### Options
 
