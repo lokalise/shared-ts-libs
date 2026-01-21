@@ -96,12 +96,12 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
   logger.info('[OTEL] initOpenTelemetry called')
 
   const isOpenTelemetryEnabled =
-    process.env.NODE_ENV !== 'test' && process.env.OPEN_TELEMETRY_ENABLED?.toLowerCase() === 'true'
+    process.env.NODE_ENV !== 'test' && process.env.OTEL_ENABLED?.toLowerCase() === 'true'
 
   logger.info(
     {
       nodeEnv: process.env.NODE_ENV,
-      openTelemetryEnabled: process.env.OPEN_TELEMETRY_ENABLED,
+      openTelemetryEnabled: process.env.OTEL_ENABLED,
       isOpenTelemetryEnabled,
       skippedPaths,
       consoleSpans,
@@ -112,7 +112,7 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
   if (isOpenTelemetryEnabled && !isInstrumentationRegistered) {
     logger.info('[OTEL] Initializing OpenTelemetry SDK...')
     // Configure the OTLP trace exporter
-    const exporterUrl = process.env.OPEN_TELEMETRY_EXPORTER_URL || 'grpc://localhost:4317'
+    const exporterUrl = process.env.OTEL_EXPORTER_URL || 'grpc://localhost:4317'
     logger.info({ exporterUrl }, '[OTEL] Configuring trace exporter')
 
     const traceExporter = new OTLPTraceExporterGrpc({
