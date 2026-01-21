@@ -45,7 +45,7 @@
         "@opentelemetry/auto-instrumentations-node": "^0.68.0",
         "@opentelemetry/exporter-trace-otlp-grpc": "^0.210.0",
         "@opentelemetry/sdk-node": "^0.210.0",
-        "@opentelemetry/sdk-trace-base": "^2.210.0",
+        "@opentelemetry/sdk-trace-base": "^2.4.0",
         "fastify": "^5.0.0"
     },
     "devDependencies": {
@@ -55,7 +55,7 @@
         "@opentelemetry/auto-instrumentations-node": "^0.68.0",
         "@opentelemetry/exporter-trace-otlp-grpc": "^0.210.0",
         "@opentelemetry/sdk-node": "^0.210.0",
-        "@opentelemetry/sdk-trace-base": "^2.210.0",
+        "@opentelemetry/sdk-trace-base": "^2.4.0",
         "@fastify/otel": "^0.16.0",
         "rimraf": "^6.1.2",
         "typescript": "5.9.3"
