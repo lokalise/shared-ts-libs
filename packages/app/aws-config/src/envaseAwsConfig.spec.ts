@@ -44,7 +44,7 @@ describe('envaseAwsConfig', () => {
       const schema = getEnvaseAwsConfig(env)
       const config = parseEnv(env, schema)
 
-      expect(config).toEqual({
+      expect(config).toMatchObject({
         region: DEFAULT_REGION,
         kmsKeyId: KMS_KEY_ID_LITERAL,
         allowedSourceOwner: AWS_ALLOWED_SOURCE_OWNER_LITERAL,
@@ -55,6 +55,9 @@ describe('envaseAwsConfig', () => {
           secretAccessKey: 'secret-access-key',
         },
       })
+      // Verify documentation-only fields are also present at runtime
+      expect(config).toHaveProperty('accessKeyId', 'access-key-id')
+      expect(config).toHaveProperty('secretAccessKey', 'secret-access-key')
     })
 
     it('applies default values for optional fields with credential chain', () => {
@@ -222,6 +225,48 @@ describe('envaseAwsConfig', () => {
       expect(config.appName).toBe('my-app')
       expect(config.port).toBe(9000)
     })
+
+    it('excludes accessKeyId and secretAccessKey from inferred type', () => {
+      const schema = getEnvaseAwsConfig()
+      type Config = InferEnv<typeof schema>
+
+      // Valid config without the excluded fields
+      const config: Config = {
+        region: 'eu-west-1',
+        kmsKeyId: '',
+        allowedSourceOwner: undefined,
+        endpoint: undefined,
+        resourcePrefix: undefined,
+        credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
+      }
+
+      // Verify accessKeyId is not in the inferred type by trying to access it
+      // @ts-expect-error accessKeyId should not be in the inferred type
+      const _accessKeyId: string = config.accessKeyId
+
+      // @ts-expect-error secretAccessKey should not be in the inferred type
+      const _secretAccessKey: string = config.secretAccessKey
+
+      expect(config.credentials).toBeDefined()
+    })
+
+    it('includes accessKeyId and secretAccessKey in runtime schema for documentation', () => {
+      const schema = getEnvaseAwsConfig()
+
+      // Runtime schema should include these fields for documentation generation
+      // We access them via type assertion since they're excluded from the public type
+      const runtimeSchema = schema as Record<string, unknown>
+
+      expect(runtimeSchema).toHaveProperty('accessKeyId')
+      expect(runtimeSchema).toHaveProperty('secretAccessKey')
+
+      // Verify they are proper envvar entries (tuple of [envVarName, zodSchema])
+      const accessKeyIdEntry = runtimeSchema.accessKeyId as [string, unknown]
+      const secretAccessKeyEntry = runtimeSchema.secretAccessKey as [string, unknown]
+
+      expect(accessKeyIdEntry[0]).toBe('AWS_ACCESS_KEY_ID')
+      expect(secretAccessKeyEntry[0]).toBe('AWS_SECRET_ACCESS_KEY')
+    })
   })
 
   describe('getEnvaseAwsConfig with custom env', () => {
@@ -245,7 +290,7 @@ describe('envaseAwsConfig', () => {
       const schema = getEnvaseAwsConfig(customEnv)
       const config = parseEnv(customEnv, schema)
 
-      expect(config).toEqual({
+      expect(config).toMatchObject({
         region: DEFAULT_REGION,
         kmsKeyId: KMS_KEY_ID_LITERAL,
         allowedSourceOwner: AWS_ALLOWED_SOURCE_OWNER_LITERAL,
@@ -256,6 +301,9 @@ describe('envaseAwsConfig', () => {
           secretAccessKey: 'secret-access-key',
         },
       })
+      // Documentation-only fields are present at runtime
+      expect(config).toHaveProperty('accessKeyId', 'access-key-id')
+      expect(config).toHaveProperty('secretAccessKey', 'secret-access-key')
     })
 
     it('returns config with credential chain when credentials missing from custom env', () => {

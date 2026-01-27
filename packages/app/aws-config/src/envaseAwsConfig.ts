@@ -20,6 +20,9 @@ type EnvaseConfigEntry<T> = [string, T]
  * Type representing the envase-compatible AWS configuration schema for type inference.
  * The `credentials` field is automatically resolved via a Zod transform when `parseEnv()` is called.
  * Uses `z.ZodType` for credentials since `ZodEffects` is internal in Zod v4.
+ *
+ * Note: `accessKeyId` and `secretAccessKey` are intentionally excluded from this type.
+ * They exist at runtime for documentation generation but are not part of the parsed output type.
  */
 export type EnvaseAwsConfigSchema = {
   region: EnvaseConfigEntry<z.ZodString>
@@ -28,6 +31,15 @@ export type EnvaseAwsConfigSchema = {
   endpoint: EnvaseConfigEntry<z.ZodOptional<z.ZodURL>>
   resourcePrefix: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
   credentials: EnvaseConfigEntry<z.ZodType<AwsCredentialIdentity | Provider<AwsCredentialIdentity>>>
+}
+
+/**
+ * Internal runtime schema type that includes documentation-only fields.
+ * These fields are excluded from the public type to keep the parsed output clean.
+ */
+type EnvaseAwsConfigSchemaRuntime = EnvaseAwsConfigSchema & {
+  accessKeyId: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
+  secretAccessKey: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
 }
 
 /**
@@ -54,7 +66,7 @@ const resolveCredentialsFromEnv = (
   return createCredentialChain(fromTokenFile(), fromInstanceMetadata(), fromEnv(), fromIni())
 }
 
-let envaseAwsConfigSchema: EnvaseAwsConfigSchema | undefined
+let envaseAwsConfigSchema: EnvaseAwsConfigSchemaRuntime | undefined
 
 /**
  * Retrieves the envase-compatible AWS configuration schema (singleton).
@@ -93,17 +105,18 @@ export const getEnvaseAwsConfig = (
 ): EnvaseAwsConfigSchema => {
   // Return cached singleton if available
   /* v8 ignore start */
-  if (envaseAwsConfigSchema) return envaseAwsConfigSchema
+  if (envaseAwsConfigSchema) return envaseAwsConfigSchema as EnvaseAwsConfigSchema
   /* v8 ignore stop */
 
   // Generate and cache the schema
   envaseAwsConfigSchema = generateEnvaseAwsConfig(env)
-  return envaseAwsConfigSchema
+  // Cast to public type, excluding documentation-only fields from type inference
+  return envaseAwsConfigSchema as EnvaseAwsConfigSchema
 }
 
 const generateEnvaseAwsConfig = (
   env?: Record<string, string | undefined>,
-): EnvaseAwsConfigSchema => {
+): EnvaseAwsConfigSchemaRuntime => {
   const resolvedEnv = env ?? (process.env as Record<string, string | undefined>)
   return {
     region: envvar(
@@ -137,14 +150,28 @@ const generateEnvaseAwsConfig = (
         .describe('Prefix for AWS resource names (max 10 chars)'),
     ),
 
-    // Credentials field - uses ACCESS_KEY_ID as trigger, transform reads both credentials from env
+    // Documentation-only fields for env var documentation generation
+    // These are excluded from the public type (EnvaseAwsConfigSchema)
+    accessKeyId: envvar(
+      AWS_CONFIG_ENV_VARS.ACCESS_KEY_ID,
+      z.string().optional().describe('AWS access key ID for programmatic access'),
+    ),
+
+    secretAccessKey: envvar(
+      AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY,
+      z.string().optional().describe('AWS secret access key for programmatic access'),
+    ),
+
+    // Credentials field - transform reads both credentials from env and resolves them
     credentials: envvar(
       AWS_CONFIG_ENV_VARS.ACCESS_KEY_ID,
       z
         .string()
         .optional()
         .transform(() => resolveCredentialsFromEnv(resolvedEnv))
-        .describe('AWS credentials (resolved from ACCESS_KEY_ID and SECRET_ACCESS_KEY)'),
+        .describe(
+          'Resolved AWS credentials (from ACCESS_KEY_ID and SECRET_ACCESS_KEY, or credential chain)',
+        ),
     ),
   }
 }
