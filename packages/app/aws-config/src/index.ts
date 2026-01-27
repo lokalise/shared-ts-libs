@@ -3,6 +3,7 @@ export {
   AWS_CONFIG_ENV_VARS,
   type AwsConfig,
   type EnvaseAwsConfig,
+  type EnvaseAwsConfigSchema,
   generateEnvaseAwsConfig,
   getAwsConfig,
 } from './awsConfig.ts'

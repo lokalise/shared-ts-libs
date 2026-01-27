@@ -102,7 +102,7 @@ const generateAwsConfig = (configScope: ConfigScope): AwsConfig => {
  *
  * @returns An envase-compatible configuration schema for AWS settings
  */
-export const generateEnvaseAwsConfig = () => {
+export const generateEnvaseAwsConfig = (): EnvaseAwsConfigSchema => {
   return {
     region: envvar(
       AWS_CONFIG_ENV_VARS.REGION,
@@ -144,7 +144,27 @@ export const generateEnvaseAwsConfig = () => {
       AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY,
       z.string().optional().describe('AWS secret access key for authentication'),
     ),
-  }
+  } as EnvaseAwsConfigSchema
+}
+
+/**
+ * Envase configuration entry type - a tuple of [envVarName, zodSchema].
+ * This mirrors envase's internal EnvvarEntry type to avoid referencing internal paths.
+ */
+type EnvaseConfigEntry<T> = [string, T]
+
+/**
+ * Type representing the envase-compatible AWS configuration schema.
+ * Each property is a tuple of [envVarName, zodSchema] that can be passed to parseEnv().
+ */
+export type EnvaseAwsConfigSchema = {
+  region: EnvaseConfigEntry<z.ZodString>
+  kmsKeyId: EnvaseConfigEntry<z.ZodDefault<z.ZodOptional<z.ZodString>>>
+  allowedSourceOwner: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
+  endpoint: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
+  resourcePrefix: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
+  accessKeyId: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
+  secretAccessKey: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
 }
 
 /**
