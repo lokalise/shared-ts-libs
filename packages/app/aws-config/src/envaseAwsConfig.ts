@@ -162,15 +162,15 @@ const generateEnvaseAwsConfig = (
       z.string().optional().describe('AWS secret access key for programmatic access'),
     ),
 
-    // Credentials field - transform reads both credentials from env and resolves them
+    // Credentials field - auto-resolved, no env var configuration needed
+    // Uses a pseudo-key to indicate this is an internal computed field
     credentials: envvar(
-      AWS_CONFIG_ENV_VARS.ACCESS_KEY_ID,
+      '_AWS_CREDENTIALS_RESOLVED',
       z
-        .string()
-        .optional()
+        .undefined()
         .transform(() => resolveCredentialsFromEnv(resolvedEnv))
         .describe(
-          'Resolved AWS credentials (from ACCESS_KEY_ID and SECRET_ACCESS_KEY, or credential chain)',
+          'Auto-resolved from AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY. Do not configure directly.',
         ),
     ),
   }

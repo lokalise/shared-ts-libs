@@ -58,6 +58,13 @@ When `parseEnv()` is called, credentials are automatically resolved:
 
 This happens transparently - no additional function calls are needed.
 
+##### Documentation Generation
+
+The schema includes `accessKeyId` and `secretAccessKey` fields at runtime to ensure proper environment
+variable documentation is generated. These fields are intentionally excluded from the TypeScript type -
+only `credentials` appears in `InferEnv<typeof schema>`. At runtime, all three fields are present in the
+parsed output, but you should use `credentials` for accessing resolved AWS credentials.
+
 ##### Composing with Other Schemas
 
 When composing `getEnvaseAwsConfig()` with other envase schemas, credentials are automatically
