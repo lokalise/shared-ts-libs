@@ -7,13 +7,134 @@ and integration with @message-queue-toolkit/sns and @message-queue-toolkit/sqs.
 
 ### AWS Configuration
 
-Read AWS configuration from environment variables:
+Read AWS configuration from environment variables using ConfigScope:
 
 ```ts
 import { getAwsConfig } from '@lokalise/aws-config';
 
 const awsConfig = getAwsConfig();
 ```
+
+#### Using with envase
+
+For applications using the [envase](https://github.com/CatchMe2/envase) library for configuration management,
+use `getEnvaseAwsConfig()` to get a cached envase-compatible schema:
+
+```ts
+import { parseEnv } from 'envase';
+import { getEnvaseAwsConfig } from '@lokalise/aws-config';
+
+// Get the envase schema for AWS configuration (singleton, cached on first call)
+const awsEnvSchema = getEnvaseAwsConfig();
+
+// Combine with your application's configuration schema
+const appEnvSchema = {
+  aws: awsEnvSchema,
+  // ... other configuration
+};
+
+// Parse and validate environment variables
+const config = parseEnv(process.env, appEnvSchema);
+
+// Access typed configuration
+console.log(config.aws.region); // string
+console.log(config.aws.endpoint); // string | undefined
+```
+
+The envase schema includes Zod validation with:
+- Required `region` field (must be non-empty string)
+- Optional `kmsKeyId` field (defaults to empty string)
+- Optional `allowedSourceOwner` field
+- Optional `endpoint` field with URL validation
+- Optional `resourcePrefix` with max length validation (10 characters)
+- **Automatic `credentials` resolution** via Zod transform (see below)
+
+##### Credentials Resolution
+
+When `parseEnv()` is called, credentials are automatically resolved:
+- If both `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are set:
+  `credentials` is `{ accessKeyId: '...', secretAccessKey: '...' }`
+- Otherwise: `credentials` is a credential provider chain (token file, instance metadata, env, INI)
+
+This happens transparently - no additional function calls are needed.
+
+##### Documentation Generation
+
+The schema includes `accessKeyId` and `secretAccessKey` fields at runtime to ensure proper environment
+variable documentation is generated. These fields are intentionally excluded from the TypeScript type -
+only `credentials` appears in `InferEnv<typeof schema>`. At runtime, all three fields are present in the
+parsed output, but you should use `credentials` for accessing resolved AWS credentials.
+
+##### Composing with Other Schemas
+
+When composing `getEnvaseAwsConfig()` with other envase schemas, credentials are automatically
+resolved via a Zod transform:
+
+```ts
+import { InferEnv, parseEnv, envvar } from 'envase';
+import { z } from 'zod';
+import { getEnvaseAwsConfig } from '@lokalise/aws-config';
+
+const envSchema = {
+  aws: getEnvaseAwsConfig(),
+  appName: envvar('APP_NAME', z.string()),
+};
+
+// InferEnv correctly infers credentials
+type Config = InferEnv<typeof envSchema>;
+// Result: { aws: { region: string, credentials: ..., ... }; appName: string }
+
+// Parse - credentials are automatically resolved
+const config = parseEnv(process.env, envSchema);
+// config.aws.credentials is ready to use
+```
+
+**Important:** `getEnvaseAwsConfig()` returns a singleton schema. The `env` parameter is only used on the
+first call - subsequent calls return the cached schema. For testing with custom env, reset the cache first
+using `testResetEnvaseAwsConfig()`:
+
+```ts
+import { getEnvaseAwsConfig, testResetEnvaseAwsConfig } from '@lokalise/aws-config';
+
+// In test setup
+beforeEach(() => {
+  testResetEnvaseAwsConfig(); // Reset the cached schema
+});
+
+it('uses custom env', () => {
+  const testEnv = {
+    AWS_REGION: 'us-east-1',
+    AWS_ACCESS_KEY_ID: 'test-key',
+    AWS_SECRET_ACCESS_KEY: 'test-secret',
+    APP_NAME: 'test-app',
+  };
+
+  const envSchema = {
+    aws: getEnvaseAwsConfig(testEnv), // Uses testEnv since cache was reset
+    appName: envvar('APP_NAME', z.string()),
+  };
+
+  const config = parseEnv(testEnv, envSchema);
+});
+```
+
+#### Environment Variable Constants
+
+For consistency, you can use the exported environment variable name constants:
+
+```ts
+import { AWS_CONFIG_ENV_VARS } from '@lokalise/aws-config';
+
+// AWS_CONFIG_ENV_VARS.REGION === 'AWS_REGION'
+// AWS_CONFIG_ENV_VARS.KMS_KEY_ID === 'AWS_KMS_KEY_ID'
+// AWS_CONFIG_ENV_VARS.ALLOWED_SOURCE_OWNER === 'AWS_ALLOWED_SOURCE_OWNER'
+// AWS_CONFIG_ENV_VARS.ENDPOINT === 'AWS_ENDPOINT'
+// AWS_CONFIG_ENV_VARS.RESOURCE_PREFIX === 'AWS_RESOURCE_PREFIX'
+// AWS_CONFIG_ENV_VARS.ACCESS_KEY_ID === 'AWS_ACCESS_KEY_ID'
+// AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY === 'AWS_SECRET_ACCESS_KEY'
+```
+
+#### Environment Variables
 
 Set the following environment variables:
 

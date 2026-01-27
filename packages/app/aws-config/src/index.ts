@@ -1,5 +1,10 @@
 export * from './applyAwsResourcePrefix.ts'
-export { type AwsConfig, getAwsConfig } from './awsConfig.ts'
+export { AWS_CONFIG_ENV_VARS, type AwsConfig, getAwsConfig } from './awsConfig.ts'
+export {
+  type EnvaseAwsConfig,
+  type EnvaseAwsConfigSchema,
+  getEnvaseAwsConfig,
+} from './envaseAwsConfig.ts'
 export type {
   CommandConfig,
   EventRoutingConfig,

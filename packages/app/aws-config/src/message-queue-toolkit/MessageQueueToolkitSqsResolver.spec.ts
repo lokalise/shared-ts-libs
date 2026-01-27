@@ -21,6 +21,7 @@ const buildAwsConfig = (awsConfig?: Partial<AwsConfig>): AwsConfig => ({
   kmsKeyId: 'test kmsKeyId',
   allowedSourceOwner: '123456',
   region: 'test region',
+  credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
   ...awsConfig,
 })
 
