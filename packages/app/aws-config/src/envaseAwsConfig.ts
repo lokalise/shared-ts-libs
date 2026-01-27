@@ -19,6 +19,7 @@ type EnvaseConfigEntry<T> = [string, T]
 /**
  * Type representing the envase-compatible AWS configuration schema for type inference.
  * The `credentials` field is automatically resolved via a Zod transform when `parseEnv()` is called.
+ * Uses `z.ZodType` for credentials since `ZodEffects` is internal in Zod v4.
  */
 export type EnvaseAwsConfigSchema = {
   region: EnvaseConfigEntry<z.ZodString>
@@ -26,20 +27,6 @@ export type EnvaseAwsConfigSchema = {
   allowedSourceOwner: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
   endpoint: EnvaseConfigEntry<z.ZodOptional<z.ZodURL>>
   resourcePrefix: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
-  credentials: EnvaseConfigEntry<z.ZodType<AwsCredentialIdentity | Provider<AwsCredentialIdentity>>>
-}
-
-/**
- * Internal type representing the actual runtime schema structure.
- * The credentials field uses a transform to resolve from env.
- */
-type EnvaseAwsConfigSchemaRuntime = {
-  region: EnvaseConfigEntry<z.ZodString>
-  kmsKeyId: EnvaseConfigEntry<z.ZodDefault<z.ZodOptional<z.ZodString>>>
-  allowedSourceOwner: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
-  endpoint: EnvaseConfigEntry<z.ZodOptional<z.ZodURL>>
-  resourcePrefix: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
-  // Use z.ZodType for the transform output since ZodEffects is internal in Zod v4
   credentials: EnvaseConfigEntry<z.ZodType<AwsCredentialIdentity | Provider<AwsCredentialIdentity>>>
 }
 
@@ -67,17 +54,20 @@ const resolveCredentialsFromEnv = (
   return createCredentialChain(fromTokenFile(), fromInstanceMetadata(), fromEnv(), fromIni())
 }
 
-let envaseAwsConfigSchema: EnvaseAwsConfigSchemaRuntime | undefined
+let envaseAwsConfigSchema: EnvaseAwsConfigSchema | undefined
 
 /**
- * Retrieves the envase-compatible AWS configuration schema.
+ * Retrieves the envase-compatible AWS configuration schema (singleton).
  *
  * This function returns a configuration schema for use with envase's `parseEnv()`.
  * The schema includes a `credentials` field that is automatically resolved via a transform
  * when `parseEnv()` is called.
  *
- * @param env - Optional environment variables to use for credential resolution.
- *              If not provided, uses `process.env`. When provided, the schema is not cached.
+ * The schema is cached after the first call. To reset the cache (e.g., in tests),
+ * use `testResetEnvaseAwsConfig()`.
+ *
+ * @param env - Optional environment variables to use for credential resolution on first call.
+ *              If not provided, uses `process.env`. Ignored if schema is already cached.
  *
  * @example
  * ```typescript
@@ -101,23 +91,20 @@ let envaseAwsConfigSchema: EnvaseAwsConfigSchemaRuntime | undefined
 export const getEnvaseAwsConfig = (
   env?: Record<string, string | undefined>,
 ): EnvaseAwsConfigSchema => {
-  // If custom env provided, always generate fresh (no caching)
-  if (env) {
-    return generateEnvaseAwsConfig(env) as unknown as EnvaseAwsConfigSchema
-  }
-
-  // Otherwise use cached singleton with process.env
+  // Return cached singleton if available
   /* v8 ignore start */
-  if (envaseAwsConfigSchema) return envaseAwsConfigSchema as unknown as EnvaseAwsConfigSchema
+  if (envaseAwsConfigSchema) return envaseAwsConfigSchema
   /* v8 ignore stop */
 
-  envaseAwsConfigSchema = generateEnvaseAwsConfig()
-  return envaseAwsConfigSchema as unknown as EnvaseAwsConfigSchema
+  // Generate and cache the schema
+  envaseAwsConfigSchema = generateEnvaseAwsConfig(env)
+  return envaseAwsConfigSchema
 }
 
 const generateEnvaseAwsConfig = (
-  env: Record<string, string | undefined> = process.env as Record<string, string | undefined>,
-): EnvaseAwsConfigSchemaRuntime => {
+  env?: Record<string, string | undefined>,
+): EnvaseAwsConfigSchema => {
+  const resolvedEnv = env ?? (process.env as Record<string, string | undefined>)
   return {
     region: envvar(
       AWS_CONFIG_ENV_VARS.REGION,
@@ -156,7 +143,7 @@ const generateEnvaseAwsConfig = (
       z
         .string()
         .optional()
-        .transform(() => resolveCredentialsFromEnv(env))
+        .transform(() => resolveCredentialsFromEnv(resolvedEnv))
         .describe('AWS credentials (resolved from ACCESS_KEY_ID and SECRET_ACCESS_KEY)'),
     ),
   }

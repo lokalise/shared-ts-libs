@@ -118,6 +118,10 @@ describe('envaseAwsConfig', () => {
   })
 
   describe('EnvaseAwsConfigSchema type inference', () => {
+    beforeEach(() => {
+      testResetEnvaseAwsConfig()
+    })
+
     it('InferEnv correctly infers credentials field for standalone schema', () => {
       const schema = getEnvaseAwsConfig()
 

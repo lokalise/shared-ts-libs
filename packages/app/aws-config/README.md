@@ -43,30 +43,20 @@ console.log(config.aws.endpoint); // string | undefined
 
 The envase schema includes Zod validation with:
 - Required `region` field (must be non-empty string)
+- Optional `kmsKeyId` field (defaults to empty string)
+- Optional `allowedSourceOwner` field
 - Optional `endpoint` field with URL validation
 - Optional `resourcePrefix` with max length validation (10 characters)
-- Optional credentials (`accessKeyId`, `secretAccessKey`)
+- **Automatic `credentials` resolution** via Zod transform (see below)
 
-##### Complete Configuration with Credentials
+##### Credentials Resolution
 
-For a complete configuration that matches `getAwsConfig()` output (including resolved credentials),
-use `parseEnvaseAwsConfig()`:
-
-```ts
-import { parseEnvaseAwsConfig } from '@lokalise/aws-config';
-
-// Parse env vars and get config with credentials in one step
-const config = parseEnvaseAwsConfig(process.env);
-
-// config.region - string
-// config.kmsKeyId - string
-// config.credentials - AwsCredentialIdentity | Provider<AwsCredentialIdentity>
-```
-
-This function uses Zod transform internally to resolve credentials:
-- If both `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are provided:
+When `parseEnv()` is called, credentials are automatically resolved:
+- If both `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are set:
   `credentials` is `{ accessKeyId: '...', secretAccessKey: '...' }`
 - Otherwise: `credentials` is a credential provider chain (token file, instance metadata, env, INI)
+
+This happens transparently - no additional function calls are needed.
 
 ##### Composing with Other Schemas
 
@@ -92,22 +82,33 @@ const config = parseEnv(process.env, envSchema);
 // config.aws.credentials is ready to use
 ```
 
-For testing or custom env sources, pass the env object to `getEnvaseAwsConfig()`:
+**Important:** `getEnvaseAwsConfig()` returns a singleton schema. The `env` parameter is only used on the
+first call - subsequent calls return the cached schema. For testing with custom env, reset the cache first
+using `testResetEnvaseAwsConfig()`:
 
 ```ts
-const testEnv = {
-  AWS_REGION: 'us-east-1',
-  AWS_ACCESS_KEY_ID: 'test-key',
-  AWS_SECRET_ACCESS_KEY: 'test-secret',
-  APP_NAME: 'test-app',
-};
+import { getEnvaseAwsConfig, testResetEnvaseAwsConfig } from '@lokalise/aws-config';
 
-const envSchema = {
-  aws: getEnvaseAwsConfig(testEnv), // Use custom env instead of process.env
-  appName: envvar('APP_NAME', z.string()),
-};
+// In test setup
+beforeEach(() => {
+  testResetEnvaseAwsConfig(); // Reset the cached schema
+});
 
-const config = parseEnv(testEnv, envSchema);
+it('uses custom env', () => {
+  const testEnv = {
+    AWS_REGION: 'us-east-1',
+    AWS_ACCESS_KEY_ID: 'test-key',
+    AWS_SECRET_ACCESS_KEY: 'test-secret',
+    APP_NAME: 'test-app',
+  };
+
+  const envSchema = {
+    aws: getEnvaseAwsConfig(testEnv), // Uses testEnv since cache was reset
+    appName: envvar('APP_NAME', z.string()),
+  };
+
+  const config = parseEnv(testEnv, envSchema);
+});
 ```
 
 #### Environment Variable Constants
