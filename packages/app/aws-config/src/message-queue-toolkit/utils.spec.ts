@@ -89,7 +89,7 @@ describe('utils', () => {
         {
           topicName: 'my-project-module',
           queues: {
-            queue1: { queueName: 'my-project-bad' } as QueueConfig,
+            queue1: { queueName: 'my-project-BadName' } as QueueConfig,
           },
           service: '',
           owner: '',
@@ -97,7 +97,7 @@ describe('utils', () => {
       ]
 
       expect(() => validateTopicsConfig(topics, project)).toThrow(
-        'Invalid queue name: my-project-bad',
+        'Invalid queue name: my-project-BadName',
       )
     })
   })
@@ -107,11 +107,13 @@ describe('utils', () => {
 
     it('should validate valid queue names', () => {
       const validQueues = [
+        { queueName: 'my-project_flow' },
         { queueName: 'my-project-flow-service' },
         { queueName: 'my-project-flow_name-service_name' },
         { queueName: 'my-project-user_service-handler' },
         { queueName: 'my-project-flow-service-module' },
         { queueName: 'my-project-user_service-handler-processor' },
+        { queueName: 'my-project_legacy-service' },
         { queueName: 'my-project_legacy-service' },
       ] as QueueConfig[]
 
@@ -145,8 +147,7 @@ describe('utils', () => {
     })
 
     it.each([
-      'my-project-flow', // missing service segment
-      'my-project', // missing segments
+      'my-project', // missing pieces
       'my-projectflow', // missing separators
       'my-project-Flow-service', // uppercase is not allowed
       'my-project-flow-Service', // uppercase is not allowed
