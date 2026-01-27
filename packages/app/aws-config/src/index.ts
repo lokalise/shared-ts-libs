@@ -4,8 +4,8 @@ export {
   type AwsConfig,
   type EnvaseAwsConfig,
   type EnvaseAwsConfigSchema,
-  generateEnvaseAwsConfig,
   getAwsConfig,
+  getEnvaseAwsConfig,
 } from './awsConfig.ts'
 export type {
   CommandConfig,

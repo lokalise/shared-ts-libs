@@ -53,6 +53,7 @@ export type AwsConfig = {
 }
 
 let awsConfig: AwsConfig | undefined
+let envaseAwsConfigSchema: EnvaseAwsConfigSchema | undefined
 
 /**
  * Retrieves the AWS configuration settings from the environment variables.
@@ -69,6 +70,35 @@ export const getAwsConfig = (configScope?: ConfigScope): AwsConfig => {
   return awsConfig
 }
 
+/**
+ * Retrieves the envase-compatible AWS configuration schema.
+ *
+ * This function returns a cached configuration schema where each field is defined using
+ * `envvar()` from envase, pairing environment variable names with Zod validation schemas.
+ * The resulting schema can be passed to `parseEnv()` to validate and parse environment variables.
+ *
+ * @example
+ * ```typescript
+ * import { parseEnv } from 'envase'
+ * import { getEnvaseAwsConfig } from '@lokalise/aws-config'
+ *
+ * const awsEnvSchema = getEnvaseAwsConfig()
+ * const config = parseEnv(process.env, awsEnvSchema)
+ * // config.region is typed as string
+ * // config.endpoint is typed as string | undefined
+ * ```
+ *
+ * @returns An envase-compatible configuration schema for AWS settings
+ */
+export const getEnvaseAwsConfig = (): EnvaseAwsConfigSchema => {
+  /* v8 ignore start */
+  if (envaseAwsConfigSchema) return envaseAwsConfigSchema
+  /* v8 ignore stop */
+
+  envaseAwsConfigSchema = generateEnvaseAwsConfig()
+  return envaseAwsConfigSchema
+}
+
 const generateAwsConfig = (configScope: ConfigScope): AwsConfig => {
   return {
     region: configScope.getMandatory(AWS_CONFIG_ENV_VARS.REGION),
@@ -83,26 +113,7 @@ const generateAwsConfig = (configScope: ConfigScope): AwsConfig => {
   }
 }
 
-/**
- * Generates an AWS configuration schema compatible with the envase library.
- *
- * This function returns a configuration object where each field is defined using
- * `envvar()` from envase, pairing environment variable names with Zod validation schemas.
- * The resulting schema can be passed to `parseEnv()` to validate and parse environment variables.
- *
- * @example
- * ```typescript
- * import { parseEnv } from 'envase'
- *
- * const awsEnvSchema = generateEnvaseAwsConfig()
- * const config = parseEnv(process.env, awsEnvSchema)
- * // config.region is typed as string
- * // config.endpoint is typed as string | undefined
- * ```
- *
- * @returns An envase-compatible configuration schema for AWS settings
- */
-export const generateEnvaseAwsConfig = (): EnvaseAwsConfigSchema => {
+const generateEnvaseAwsConfig = (): EnvaseAwsConfigSchema => {
   return {
     region: envvar(
       AWS_CONFIG_ENV_VARS.REGION,
@@ -216,4 +227,5 @@ const resolveCredentials = (
  */
 export const testResetAwsConfig = () => {
   awsConfig = undefined
+  envaseAwsConfigSchema = undefined
 }

@@ -18,14 +18,14 @@ const awsConfig = getAwsConfig();
 #### Using with envase
 
 For applications using the [envase](https://github.com/CatchMe2/envase) library for configuration management,
-use `generateEnvaseAwsConfig()` to get an envase-compatible schema:
+use `getEnvaseAwsConfig()` to get a cached envase-compatible schema:
 
 ```ts
 import { parseEnv } from 'envase';
-import { generateEnvaseAwsConfig } from '@lokalise/aws-config';
+import { getEnvaseAwsConfig } from '@lokalise/aws-config';
 
-// Generate the envase schema for AWS configuration
-const awsEnvSchema = generateEnvaseAwsConfig();
+// Get the envase schema for AWS configuration (singleton, cached on first call)
+const awsEnvSchema = getEnvaseAwsConfig();
 
 // Combine with your application's configuration schema
 const appEnvSchema = {

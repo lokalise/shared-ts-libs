@@ -1,6 +1,6 @@
 import { ConfigScope } from '@lokalise/node-core'
 import { parseEnv } from 'envase'
-import { generateEnvaseAwsConfig, getAwsConfig, testResetAwsConfig } from './awsConfig.ts'
+import { getAwsConfig, getEnvaseAwsConfig, testResetAwsConfig } from './awsConfig.ts'
 
 const AWS_ALLOWED_SOURCE_OWNER_LITERAL = 'allowed-source-owner'
 const AWS_RESOURCE_PREFIX_LITERAL = 'aws-prefix'
@@ -121,9 +121,9 @@ describe('awsConfig', () => {
     })
   })
 
-  describe('generateEnvaseAwsConfig', () => {
+  describe('getEnvaseAwsConfig', () => {
     it('generates envase-compatible schema', () => {
-      const schema = generateEnvaseAwsConfig()
+      const schema = getEnvaseAwsConfig()
 
       expect(schema).toHaveProperty('region')
       expect(schema).toHaveProperty('kmsKeyId')
@@ -135,7 +135,7 @@ describe('awsConfig', () => {
     })
 
     it('parses valid environment variables', () => {
-      const schema = generateEnvaseAwsConfig()
+      const schema = getEnvaseAwsConfig()
       const endpointUrl = 'http://localhost:4566'
       const env = {
         AWS_REGION: DEFAULT_REGION,
@@ -161,7 +161,7 @@ describe('awsConfig', () => {
     })
 
     it('applies default values for optional fields', () => {
-      const schema = generateEnvaseAwsConfig()
+      const schema = getEnvaseAwsConfig()
       const env = {
         AWS_REGION: DEFAULT_REGION,
       }
@@ -180,14 +180,14 @@ describe('awsConfig', () => {
     })
 
     it('throws error when mandatory region is missing', () => {
-      const schema = generateEnvaseAwsConfig()
+      const schema = getEnvaseAwsConfig()
       const env = {}
 
       expect(() => parseEnv(env, schema)).toThrow()
     })
 
     it('throws error when resource prefix exceeds maximum length', () => {
-      const schema = generateEnvaseAwsConfig()
+      const schema = getEnvaseAwsConfig()
       const env = {
         AWS_REGION: DEFAULT_REGION,
         AWS_RESOURCE_PREFIX: 'aws-resource-prefix-too-long',
@@ -199,7 +199,7 @@ describe('awsConfig', () => {
     })
 
     it('throws error when endpoint is not a valid URL', () => {
-      const schema = generateEnvaseAwsConfig()
+      const schema = getEnvaseAwsConfig()
       const env = {
         AWS_REGION: DEFAULT_REGION,
         AWS_ENDPOINT: 'not-a-valid-url',
@@ -209,7 +209,7 @@ describe('awsConfig', () => {
     })
 
     it('accepts valid endpoint URL', () => {
-      const schema = generateEnvaseAwsConfig()
+      const schema = getEnvaseAwsConfig()
       const env = {
         AWS_REGION: DEFAULT_REGION,
         AWS_ENDPOINT: 'http://localhost:4566',
