@@ -2,6 +2,7 @@ import { FastifyOtelInstrumentation } from '@fastify/otel'
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node'
 import { OTLPTraceExporter as OTLPTraceExporterGrpc } from '@opentelemetry/exporter-trace-otlp-grpc'
 import { NodeSDK } from '@opentelemetry/sdk-node'
+import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
 
 // This needs to be imported and run before any other code in your app
 
@@ -61,6 +62,13 @@ export interface OpenTelemetryOptions {
    * @default ['/health', '/metrics', '/']
    */
   skippedPaths?: string[]
+
+  /**
+   * Enable console span exporter for debugging purposes.
+   * When enabled, spans will be printed to the console in addition to the OTLP exporter.
+   * @default false
+   */
+  consoleSpans?: boolean
 }
 
 let isInstrumentationRegistered = false
@@ -83,19 +91,20 @@ let sdk: NodeSDK | undefined
  * ```
  */
 export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
-  const { skippedPaths = DEFAULT_SKIPPED_PATHS } = options
+  const { skippedPaths = DEFAULT_SKIPPED_PATHS, consoleSpans = false } = options
 
   logger.info('[OTEL] initOpenTelemetry called')
 
   const isOpenTelemetryEnabled =
-    process.env.NODE_ENV !== 'test' && process.env.OPEN_TELEMETRY_ENABLED?.toLowerCase() === 'true'
+    process.env.NODE_ENV !== 'test' && process.env.OTEL_ENABLED?.toLowerCase() === 'true'
 
   logger.info(
     {
       nodeEnv: process.env.NODE_ENV,
-      openTelemetryEnabled: process.env.OPEN_TELEMETRY_ENABLED,
+      openTelemetryEnabled: process.env.OTEL_ENABLED,
       isOpenTelemetryEnabled,
       skippedPaths,
+      consoleSpans,
     },
     '[OTEL] Configuration',
   )
@@ -103,7 +112,7 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
   if (isOpenTelemetryEnabled && !isInstrumentationRegistered) {
     logger.info('[OTEL] Initializing OpenTelemetry SDK...')
     // Configure the OTLP trace exporter
-    const exporterUrl = process.env.OPEN_TELEMETRY_EXPORTER_URL || 'grpc://localhost:4317'
+    const exporterUrl = process.env.OTEL_EXPORTER_URL || 'grpc://localhost:4317'
     logger.info({ exporterUrl }, '[OTEL] Configuring trace exporter')
 
     const traceExporter = new OTLPTraceExporterGrpc({
@@ -115,6 +124,10 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
     // Setup SDK
     sdk = new NodeSDK({
       traceExporter,
+      // Add console span exporter for debugging when enabled
+      spanProcessors: consoleSpans
+        ? [new SimpleSpanProcessor(new ConsoleSpanExporter())]
+        : undefined,
       instrumentations: [
         getNodeAutoInstrumentations({
           '@opentelemetry/instrumentation-fastify': {
@@ -135,6 +148,9 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
 
     sdk.start()
     isInstrumentationRegistered = true
+    if (consoleSpans) {
+      logger.info('[OTEL] Console span exporter enabled for debugging')
+    }
     logger.info('[OTEL] SDK started successfully - ready to send traces')
   } else {
     logger.info('[OTEL] OpenTelemetry is disabled or already registered')

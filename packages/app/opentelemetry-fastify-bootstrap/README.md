@@ -46,14 +46,28 @@ initOpenTelemetry()
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `NODE_ENV` | When set to `test`, OpenTelemetry is disabled | - |
-| `OPEN_TELEMETRY_ENABLED` | Set to `true` to enable OpenTelemetry | `false` |
-| `OPEN_TELEMETRY_EXPORTER_URL` | OTLP gRPC exporter URL | `grpc://localhost:4317` |
+| `OTEL_ENABLED` | Set to `true` to enable OpenTelemetry | `false` |
+| `OTEL_EXPORTER_URL` | OTLP gRPC exporter URL | `grpc://localhost:4317` |
 
 ### Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `skippedPaths` | `string[]` | `['/health', '/metrics', '/']` | Paths to exclude from tracing |
+| `consoleSpans` | `boolean` | `false` | Enable console span exporter for debugging |
+
+### Debugging with Console Spans
+
+For local development and debugging, you can enable console span output to see traces printed directly to the console:
+
+```ts
+const { initOpenTelemetry } = await import('@lokalise/opentelemetry-fastify-bootstrap')
+initOpenTelemetry({
+  consoleSpans: true, // Prints spans to console for debugging
+})
+```
+
+When enabled, spans are printed to the console in addition to being sent to the OTLP exporter. This is useful for verifying that instrumentation is working correctly without needing to run a full observability stack.
 
 ## Features
 
@@ -61,6 +75,7 @@ initOpenTelemetry()
 - Fastify-specific instrumentation via `@fastify/otel`
 - OTLP gRPC trace exporter
 - Configurable path filtering
+- Optional console span exporter for debugging
 - Graceful shutdown support
 
 ## Graceful Shutdown

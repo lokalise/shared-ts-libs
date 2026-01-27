@@ -167,7 +167,15 @@ export function buildFastifyNoPayloadRoute<
     ...mergedMetadata,
     method: apiContract.method,
     url: mapRouteToPath(apiContract),
-    handler,
+    // Type assertion needed due to Fastify's RouteHandlerMethod having incompatible
+    // conditional type branches (any vs never) for Reply type in different contexts
+    handler: handler as RouteType<
+      BuildResponseType<ResponseBodySchema, ResponseSchemasByStatusCode>,
+      undefined,
+      InferredOptionalSchema<PathParams>,
+      InferredOptionalSchema<RequestQuerySchema>,
+      InferredOptionalSchema<RequestHeaderSchema>
+    >['handler'],
     schema: copyWithoutUndefined({
       params: apiContract.requestPathParamsSchema,
       querystring: apiContract.requestQuerySchema,
@@ -278,7 +286,15 @@ export function buildFastifyPayloadRoute<
     ...mergedMetadata,
     method: apiContract.method,
     url: mapRouteToPath(apiContract),
-    handler,
+    // Type assertion needed due to Fastify's RouteHandlerMethod having incompatible
+    // conditional type branches (any vs never) for Reply type in different contexts
+    handler: handler as RouteType<
+      BuildResponseType<ResponseBodySchema, ResponseSchemasByStatusCode>,
+      InferredOptionalSchema<RequestBodySchema>,
+      InferredOptionalSchema<PathParams>,
+      InferredOptionalSchema<RequestQuerySchema>,
+      InferredOptionalSchema<RequestHeaderSchema>
+    >['handler'],
     schema: copyWithoutUndefined({
       body: apiContract.requestBodySchema,
       params: apiContract.requestPathParamsSchema,
