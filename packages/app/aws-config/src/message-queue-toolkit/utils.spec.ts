@@ -22,6 +22,7 @@ const buildAwsConfig = (resourcePrefix?: string): AwsConfig => ({
   kmsKeyId: '',
   allowedSourceOwner: '',
   region: '',
+  credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
 })
 
 describe('utils', () => {

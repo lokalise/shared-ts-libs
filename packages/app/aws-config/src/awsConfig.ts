@@ -7,11 +7,9 @@ import {
 } from '@aws-sdk/credential-providers'
 import { ConfigScope } from '@lokalise/node-core'
 import type { AwsCredentialIdentity, Provider } from '@smithy/types'
-import { envvar } from 'envase'
-import { z } from 'zod'
 
 /** Maximum allowed length for AWS resource prefix, to ensure it doesn't exceed AWS limits when concatenated with resource names. */
-const MAX_AWS_RESOURCE_PREFIX_LENGTH = 10
+export const MAX_AWS_RESOURCE_PREFIX_LENGTH = 10
 
 /**
  * Environment variable names used for AWS configuration.
@@ -49,11 +47,10 @@ export type AwsConfig = {
   /** String to prefix AWS resource names */
   resourcePrefix?: string
   /** AWS credentials or a provider function that returns credentials */
-  credentials?: AwsCredentialIdentity | Provider<AwsCredentialIdentity>
+  credentials: AwsCredentialIdentity | Provider<AwsCredentialIdentity>
 }
 
 let awsConfig: AwsConfig | undefined
-let envaseAwsConfigSchema: EnvaseAwsConfigSchema | undefined
 
 /**
  * Retrieves the AWS configuration settings from the environment variables.
@@ -70,35 +67,6 @@ export const getAwsConfig = (configScope?: ConfigScope): AwsConfig => {
   return awsConfig
 }
 
-/**
- * Retrieves the envase-compatible AWS configuration schema.
- *
- * This function returns a cached configuration schema where each field is defined using
- * `envvar()` from envase, pairing environment variable names with Zod validation schemas.
- * The resulting schema can be passed to `parseEnv()` to validate and parse environment variables.
- *
- * @example
- * ```typescript
- * import { parseEnv } from 'envase'
- * import { getEnvaseAwsConfig } from '@lokalise/aws-config'
- *
- * const awsEnvSchema = getEnvaseAwsConfig()
- * const config = parseEnv(process.env, awsEnvSchema)
- * // config.region is typed as string
- * // config.endpoint is typed as string | undefined
- * ```
- *
- * @returns An envase-compatible configuration schema for AWS settings
- */
-export const getEnvaseAwsConfig = (): EnvaseAwsConfigSchema => {
-  /* v8 ignore start */
-  if (envaseAwsConfigSchema) return envaseAwsConfigSchema
-  /* v8 ignore stop */
-
-  envaseAwsConfigSchema = generateEnvaseAwsConfig()
-  return envaseAwsConfigSchema
-}
-
 const generateAwsConfig = (configScope: ConfigScope): AwsConfig => {
   return {
     region: configScope.getMandatory(AWS_CONFIG_ENV_VARS.REGION),
@@ -111,85 +79,6 @@ const generateAwsConfig = (configScope: ConfigScope): AwsConfig => {
     resourcePrefix: configScope.getOptionalNullable(AWS_CONFIG_ENV_VARS.RESOURCE_PREFIX, undefined),
     credentials: resolveCredentials(configScope),
   }
-}
-
-const generateEnvaseAwsConfig = (): EnvaseAwsConfigSchema => {
-  return {
-    region: envvar(
-      AWS_CONFIG_ENV_VARS.REGION,
-      z.string().min(1).describe('AWS region for resource management'),
-    ),
-
-    kmsKeyId: envvar(
-      AWS_CONFIG_ENV_VARS.KMS_KEY_ID,
-      z.string().optional().default('').describe('KMS key ID for encryption/decryption'),
-    ),
-
-    allowedSourceOwner: envvar(
-      AWS_CONFIG_ENV_VARS.ALLOWED_SOURCE_OWNER,
-      z.string().optional().describe('AWS account ID for permitted request source'),
-    ),
-
-    endpoint: envvar(
-      AWS_CONFIG_ENV_VARS.ENDPOINT,
-      z.string().url().optional().describe('Custom AWS service endpoint URL'),
-    ),
-
-    resourcePrefix: envvar(
-      AWS_CONFIG_ENV_VARS.RESOURCE_PREFIX,
-      z
-        .string()
-        .max(MAX_AWS_RESOURCE_PREFIX_LENGTH, {
-          message: `AWS resource prefix exceeds maximum length of ${MAX_AWS_RESOURCE_PREFIX_LENGTH} characters`,
-        })
-        .optional()
-        .describe('Prefix for AWS resource names (max 10 chars)'),
-    ),
-
-    accessKeyId: envvar(
-      AWS_CONFIG_ENV_VARS.ACCESS_KEY_ID,
-      z.string().optional().describe('AWS access key ID for authentication'),
-    ),
-
-    secretAccessKey: envvar(
-      AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY,
-      z.string().optional().describe('AWS secret access key for authentication'),
-    ),
-  } as EnvaseAwsConfigSchema
-}
-
-/**
- * Envase configuration entry type - a tuple of [envVarName, zodSchema].
- * This mirrors envase's internal EnvvarEntry type to avoid referencing internal paths.
- */
-type EnvaseConfigEntry<T> = [string, T]
-
-/**
- * Type representing the envase-compatible AWS configuration schema.
- * Each property is a tuple of [envVarName, zodSchema] that can be passed to parseEnv().
- */
-export type EnvaseAwsConfigSchema = {
-  region: EnvaseConfigEntry<z.ZodString>
-  kmsKeyId: EnvaseConfigEntry<z.ZodDefault<z.ZodOptional<z.ZodString>>>
-  allowedSourceOwner: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
-  endpoint: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
-  resourcePrefix: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
-  accessKeyId: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
-  secretAccessKey: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
-}
-
-/**
- * Type representing the parsed result of the envase AWS configuration schema.
- * Use this with `InferEnv` from envase or directly for type annotations.
- */
-export type EnvaseAwsConfig = {
-  region: string
-  kmsKeyId: string
-  allowedSourceOwner?: string
-  endpoint?: string
-  resourcePrefix?: string
-  accessKeyId?: string
-  secretAccessKey?: string
 }
 
 const validateAwsConfig = (config: AwsConfig): void => {
@@ -227,5 +116,4 @@ const resolveCredentials = (
  */
 export const testResetAwsConfig = () => {
   awsConfig = undefined
-  envaseAwsConfigSchema = undefined
 }

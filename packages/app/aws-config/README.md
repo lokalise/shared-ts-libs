@@ -47,6 +47,69 @@ The envase schema includes Zod validation with:
 - Optional `resourcePrefix` with max length validation (10 characters)
 - Optional credentials (`accessKeyId`, `secretAccessKey`)
 
+##### Complete Configuration with Credentials
+
+For a complete configuration that matches `getAwsConfig()` output (including resolved credentials),
+use `parseEnvaseAwsConfig()`:
+
+```ts
+import { parseEnvaseAwsConfig } from '@lokalise/aws-config';
+
+// Parse env vars and get config with credentials in one step
+const config = parseEnvaseAwsConfig(process.env);
+
+// config.region - string
+// config.kmsKeyId - string
+// config.credentials - AwsCredentialIdentity | Provider<AwsCredentialIdentity>
+```
+
+This function uses Zod transform internally to resolve credentials:
+- If both `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are provided:
+  `credentials` is `{ accessKeyId: '...', secretAccessKey: '...' }`
+- Otherwise: `credentials` is a credential provider chain (token file, instance metadata, env, INI)
+
+##### Composing with Other Schemas
+
+When composing `getEnvaseAwsConfig()` with other envase schemas, credentials are automatically
+resolved via a Zod transform:
+
+```ts
+import { InferEnv, parseEnv, envvar } from 'envase';
+import { z } from 'zod';
+import { getEnvaseAwsConfig } from '@lokalise/aws-config';
+
+const envSchema = {
+  aws: getEnvaseAwsConfig(),
+  appName: envvar('APP_NAME', z.string()),
+};
+
+// InferEnv correctly infers credentials
+type Config = InferEnv<typeof envSchema>;
+// Result: { aws: { region: string, credentials: ..., ... }; appName: string }
+
+// Parse - credentials are automatically resolved
+const config = parseEnv(process.env, envSchema);
+// config.aws.credentials is ready to use
+```
+
+For testing or custom env sources, pass the env object to `getEnvaseAwsConfig()`:
+
+```ts
+const testEnv = {
+  AWS_REGION: 'us-east-1',
+  AWS_ACCESS_KEY_ID: 'test-key',
+  AWS_SECRET_ACCESS_KEY: 'test-secret',
+  APP_NAME: 'test-app',
+};
+
+const envSchema = {
+  aws: getEnvaseAwsConfig(testEnv), // Use custom env instead of process.env
+  appName: envvar('APP_NAME', z.string()),
+};
+
+const config = parseEnv(testEnv, envSchema);
+```
+
 #### Environment Variable Constants
 
 For consistency, you can use the exported environment variable name constants:
