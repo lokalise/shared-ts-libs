@@ -7,13 +7,63 @@ and integration with @message-queue-toolkit/sns and @message-queue-toolkit/sqs.
 
 ### AWS Configuration
 
-Read AWS configuration from environment variables:
+Read AWS configuration from environment variables using ConfigScope:
 
 ```ts
 import { getAwsConfig } from '@lokalise/aws-config';
 
 const awsConfig = getAwsConfig();
 ```
+
+#### Using with envase
+
+For applications using the [envase](https://github.com/CatchMe2/envase) library for configuration management,
+use `generateEnvaseAwsConfig()` to get an envase-compatible schema:
+
+```ts
+import { parseEnv } from 'envase';
+import { generateEnvaseAwsConfig } from '@lokalise/aws-config';
+
+// Generate the envase schema for AWS configuration
+const awsEnvSchema = generateEnvaseAwsConfig();
+
+// Combine with your application's configuration schema
+const appEnvSchema = {
+  aws: awsEnvSchema,
+  // ... other configuration
+};
+
+// Parse and validate environment variables
+const config = parseEnv(process.env, appEnvSchema);
+
+// Access typed configuration
+console.log(config.aws.region); // string
+console.log(config.aws.endpoint); // string | undefined
+```
+
+The envase schema includes Zod validation with:
+- Required `region` field (must be non-empty string)
+- Optional `endpoint` field with URL validation
+- Optional `resourcePrefix` with max length validation (10 characters)
+- Optional credentials (`accessKeyId`, `secretAccessKey`)
+
+#### Environment Variable Constants
+
+For consistency, you can use the exported environment variable name constants:
+
+```ts
+import { AWS_CONFIG_ENV_VARS } from '@lokalise/aws-config';
+
+// AWS_CONFIG_ENV_VARS.REGION === 'AWS_REGION'
+// AWS_CONFIG_ENV_VARS.KMS_KEY_ID === 'AWS_KMS_KEY_ID'
+// AWS_CONFIG_ENV_VARS.ALLOWED_SOURCE_OWNER === 'AWS_ALLOWED_SOURCE_OWNER'
+// AWS_CONFIG_ENV_VARS.ENDPOINT === 'AWS_ENDPOINT'
+// AWS_CONFIG_ENV_VARS.RESOURCE_PREFIX === 'AWS_RESOURCE_PREFIX'
+// AWS_CONFIG_ENV_VARS.ACCESS_KEY_ID === 'AWS_ACCESS_KEY_ID'
+// AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY === 'AWS_SECRET_ACCESS_KEY'
+```
+
+#### Environment Variables
 
 Set the following environment variables:
 

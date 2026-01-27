@@ -7,9 +7,32 @@ import {
 } from '@aws-sdk/credential-providers'
 import { ConfigScope } from '@lokalise/node-core'
 import type { AwsCredentialIdentity, Provider } from '@smithy/types'
+import { envvar } from 'envase'
+import { z } from 'zod'
 
 /** Maximum allowed length for AWS resource prefix, to ensure it doesn't exceed AWS limits when concatenated with resource names. */
 const MAX_AWS_RESOURCE_PREFIX_LENGTH = 10
+
+/**
+ * Environment variable names used for AWS configuration.
+ * These constants ensure consistency between ConfigScope and envase-based configuration.
+ */
+export const AWS_CONFIG_ENV_VARS = {
+  /** AWS region where resources will be created and requests are sent */
+  REGION: 'AWS_REGION',
+  /** ID or ARN of the AWS KMS key used for encryption */
+  KMS_KEY_ID: 'AWS_KMS_KEY_ID',
+  /** AWS account ID permitted as the source owner for cross-account access */
+  ALLOWED_SOURCE_OWNER: 'AWS_ALLOWED_SOURCE_OWNER',
+  /** Custom endpoint URL for AWS services (e.g., LocalStack) */
+  ENDPOINT: 'AWS_ENDPOINT',
+  /** Prefix applied to all AWS resource names */
+  RESOURCE_PREFIX: 'AWS_RESOURCE_PREFIX',
+  /** AWS access key ID for authentication */
+  ACCESS_KEY_ID: 'AWS_ACCESS_KEY_ID',
+  /** AWS secret access key for authentication */
+  SECRET_ACCESS_KEY: 'AWS_SECRET_ACCESS_KEY',
+} as const
 
 /**
  * Configuration settings for AWS integration.
@@ -48,13 +71,94 @@ export const getAwsConfig = (configScope?: ConfigScope): AwsConfig => {
 
 const generateAwsConfig = (configScope: ConfigScope): AwsConfig => {
   return {
-    region: configScope.getMandatory('AWS_REGION'),
-    kmsKeyId: configScope.getOptionalNullable('AWS_KMS_KEY_ID', ''),
-    allowedSourceOwner: configScope.getOptionalNullable('AWS_ALLOWED_SOURCE_OWNER', undefined),
-    endpoint: configScope.getOptionalNullable('AWS_ENDPOINT', undefined),
-    resourcePrefix: configScope.getOptionalNullable('AWS_RESOURCE_PREFIX', undefined),
+    region: configScope.getMandatory(AWS_CONFIG_ENV_VARS.REGION),
+    kmsKeyId: configScope.getOptionalNullable(AWS_CONFIG_ENV_VARS.KMS_KEY_ID, ''),
+    allowedSourceOwner: configScope.getOptionalNullable(
+      AWS_CONFIG_ENV_VARS.ALLOWED_SOURCE_OWNER,
+      undefined,
+    ),
+    endpoint: configScope.getOptionalNullable(AWS_CONFIG_ENV_VARS.ENDPOINT, undefined),
+    resourcePrefix: configScope.getOptionalNullable(AWS_CONFIG_ENV_VARS.RESOURCE_PREFIX, undefined),
     credentials: resolveCredentials(configScope),
   }
+}
+
+/**
+ * Generates an AWS configuration schema compatible with the envase library.
+ *
+ * This function returns a configuration object where each field is defined using
+ * `envvar()` from envase, pairing environment variable names with Zod validation schemas.
+ * The resulting schema can be passed to `parseEnv()` to validate and parse environment variables.
+ *
+ * @example
+ * ```typescript
+ * import { parseEnv } from 'envase'
+ *
+ * const awsEnvSchema = generateEnvaseAwsConfig()
+ * const config = parseEnv(process.env, awsEnvSchema)
+ * // config.region is typed as string
+ * // config.endpoint is typed as string | undefined
+ * ```
+ *
+ * @returns An envase-compatible configuration schema for AWS settings
+ */
+export const generateEnvaseAwsConfig = () => {
+  return {
+    region: envvar(
+      AWS_CONFIG_ENV_VARS.REGION,
+      z.string().min(1).describe('AWS region for resource management'),
+    ),
+
+    kmsKeyId: envvar(
+      AWS_CONFIG_ENV_VARS.KMS_KEY_ID,
+      z.string().optional().default('').describe('KMS key ID for encryption/decryption'),
+    ),
+
+    allowedSourceOwner: envvar(
+      AWS_CONFIG_ENV_VARS.ALLOWED_SOURCE_OWNER,
+      z.string().optional().describe('AWS account ID for permitted request source'),
+    ),
+
+    endpoint: envvar(
+      AWS_CONFIG_ENV_VARS.ENDPOINT,
+      z.string().url().optional().describe('Custom AWS service endpoint URL'),
+    ),
+
+    resourcePrefix: envvar(
+      AWS_CONFIG_ENV_VARS.RESOURCE_PREFIX,
+      z
+        .string()
+        .max(MAX_AWS_RESOURCE_PREFIX_LENGTH, {
+          message: `AWS resource prefix exceeds maximum length of ${MAX_AWS_RESOURCE_PREFIX_LENGTH} characters`,
+        })
+        .optional()
+        .describe('Prefix for AWS resource names (max 10 chars)'),
+    ),
+
+    accessKeyId: envvar(
+      AWS_CONFIG_ENV_VARS.ACCESS_KEY_ID,
+      z.string().optional().describe('AWS access key ID for authentication'),
+    ),
+
+    secretAccessKey: envvar(
+      AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY,
+      z.string().optional().describe('AWS secret access key for authentication'),
+    ),
+  }
+}
+
+/**
+ * Type representing the parsed result of the envase AWS configuration schema.
+ * Use this with `InferEnv` from envase or directly for type annotations.
+ */
+export type EnvaseAwsConfig = {
+  region: string
+  kmsKeyId: string
+  allowedSourceOwner?: string
+  endpoint?: string
+  resourcePrefix?: string
+  accessKeyId?: string
+  secretAccessKey?: string
 }
 
 const validateAwsConfig = (config: AwsConfig): void => {
@@ -68,8 +172,11 @@ const validateAwsConfig = (config: AwsConfig): void => {
 const resolveCredentials = (
   configScope: ConfigScope,
 ): AwsCredentialIdentity | Provider<AwsCredentialIdentity> => {
-  const accessKeyId = configScope.getOptionalNullable('AWS_ACCESS_KEY_ID', undefined)
-  const secretAccessKey = configScope.getOptionalNullable('AWS_SECRET_ACCESS_KEY', undefined)
+  const accessKeyId = configScope.getOptionalNullable(AWS_CONFIG_ENV_VARS.ACCESS_KEY_ID, undefined)
+  const secretAccessKey = configScope.getOptionalNullable(
+    AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY,
+    undefined,
+  )
 
   if (accessKeyId && secretAccessKey) return { accessKeyId, secretAccessKey }
 
