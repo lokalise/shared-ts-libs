@@ -11,10 +11,30 @@ import { z } from 'zod'
 import { AWS_CONFIG_ENV_VARS, MAX_AWS_RESOURCE_PREFIX_LENGTH } from './awsConfig.ts'
 
 /**
+ * Envase schema entry type - a tuple of [envVarName, zodSchema].
+ * Used to provide explicit type annotation for the schema to ensure portable type declarations.
+ */
+type EnvvarEntry<T> = [string, T]
+
+/**
+ * Type definition for the AWS configuration schema.
+ * Explicitly defined to ensure portable TypeScript declarations.
+ */
+type EnvaseAwsConfigSchemaType = {
+  region: EnvvarEntry<z.ZodString>
+  kmsKeyId: EnvvarEntry<z.ZodDefault<z.ZodOptional<z.ZodString>>>
+  allowedSourceOwner: EnvvarEntry<z.ZodOptional<z.ZodString>>
+  endpoint: EnvvarEntry<z.ZodOptional<z.ZodURL>>
+  resourcePrefix: EnvvarEntry<z.ZodOptional<z.ZodString>>
+  accessKeyId: EnvvarEntry<z.ZodOptional<z.ZodString>>
+  secretAccessKey: EnvvarEntry<z.ZodOptional<z.ZodString>>
+}
+
+/**
  * The raw AWS configuration schema for parsing environment variables.
  * This schema is used with envase's `createConfig()` to parse and validate AWS-related env vars.
  */
-export const envaseAwsConfigSchema = {
+export const envaseAwsConfigSchema: EnvaseAwsConfigSchemaType = {
   region: envvar(
     AWS_CONFIG_ENV_VARS.REGION,
     z.string().min(1).describe('AWS region for resource management'),
