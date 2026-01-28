@@ -46,7 +46,7 @@
         "@message-queue-toolkit/core": ">=25.1.0",
         "@message-queue-toolkit/sns": ">=24.1.0",
         "@message-queue-toolkit/sqs": ">=24.1.0",
-        "envase": ">=1.2.2",
+        "envase": ">=1.3.0",
         "zod": ">=4.0.0"
     },
     "devDependencies": {
@@ -64,7 +64,7 @@
         "@message-queue-toolkit/sqs": "^24.1.0",
         "@types/node": "^25.0.3",
         "@vitest/coverage-v8": "^4.0.18",
-        "envase": "^1.2.2",
+        "envase": "^1.3.0",
         "rimraf": "^6.1.2",
         "typescript": "5.9.3",
         "vitest": "^4.0.18",
