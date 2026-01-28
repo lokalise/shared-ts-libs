@@ -6,7 +6,7 @@ import {
   fromTokenFile,
 } from '@aws-sdk/credential-providers'
 import type { AwsCredentialIdentity, Provider } from '@smithy/types'
-import { createConfig, envvar, type InferConfig, type InferEnv } from 'envase'
+import { envvar } from 'envase'
 import { z } from 'zod'
 import { AWS_CONFIG_ENV_VARS, MAX_AWS_RESOURCE_PREFIX_LENGTH } from './awsConfig.ts'
 
@@ -20,7 +20,7 @@ type EnvvarEntry<T> = [string, T]
  * Type definition for the AWS configuration schema.
  * Explicitly defined to ensure portable TypeScript declarations.
  */
-type EnvaseAwsConfigSchemaType = {
+export type EnvaseAwsConfigSchemaType = {
   region: EnvvarEntry<z.ZodString>
   kmsKeyId: EnvvarEntry<z.ZodDefault<z.ZodOptional<z.ZodString>>>
   allowedSourceOwner: EnvvarEntry<z.ZodOptional<z.ZodString>>
@@ -31,10 +31,28 @@ type EnvaseAwsConfigSchemaType = {
 }
 
 /**
- * The raw AWS configuration schema for parsing environment variables.
- * This schema is used with envase's `createConfig()` to parse and validate AWS-related env vars.
+ * Type for the computed credentials resolver function.
  */
-export const envaseAwsConfigSchema: EnvaseAwsConfigSchemaType = {
+export type EnvaseAwsConfigComputedType = {
+  credentials: (raw: {
+    accessKeyId?: string
+    secretAccessKey?: string
+  }) => AwsCredentialIdentity | Provider<AwsCredentialIdentity>
+}
+
+/**
+ * Return type of `getEnvaseAwsConfig()`.
+ * Contains schema and computed fragments to spread into `createConfig()`.
+ */
+export type EnvaseAwsConfigFragments = {
+  schema: EnvaseAwsConfigSchemaType
+  computed: EnvaseAwsConfigComputedType
+}
+
+/**
+ * The raw AWS configuration schema for parsing environment variables.
+ */
+const envaseAwsConfigSchema: EnvaseAwsConfigSchemaType = {
   region: envvar(
     AWS_CONFIG_ENV_VARS.REGION,
     z.string().min(1).describe('AWS region for resource management'),
@@ -75,13 +93,13 @@ export const envaseAwsConfigSchema: EnvaseAwsConfigSchemaType = {
     AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY,
     z.string().optional().describe('AWS secret access key for programmatic access'),
   ),
-} as const
+}
 
 /**
  * Computed values configuration for AWS config.
  * Derives `credentials` from the parsed `accessKeyId` and `secretAccessKey`.
  */
-const envaseAwsConfigComputed = {
+const envaseAwsConfigComputed: EnvaseAwsConfigComputedType = {
   credentials: (raw: {
     accessKeyId?: string
     secretAccessKey?: string
@@ -94,89 +112,47 @@ const envaseAwsConfigComputed = {
 }
 
 /**
- * Type representing the parsed and computed AWS configuration.
- * Includes both the raw parsed values and the computed `credentials` field.
- */
-export type EnvaseAwsConfig = InferConfig<
-  InferEnv<typeof envaseAwsConfigSchema>,
-  typeof envaseAwsConfigComputed
->
-
-/**
- * Type alias for the schema, for backwards compatibility.
- * @deprecated Use `typeof envaseAwsConfigSchema` directly for schema type.
- */
-export type EnvaseAwsConfigSchema = typeof envaseAwsConfigSchema
-
-let envaseAwsConfig: EnvaseAwsConfig | undefined
-
-/**
- * Retrieves the AWS configuration from environment variables (singleton).
+ * Returns AWS configuration fragments for use with envase's `createConfig()`.
  *
- * This function uses envase's `createConfig()` to parse and validate AWS-related
- * environment variables, then computes the `credentials` field from the parsed values.
- *
- * The result is cached after the first call. To reset the cache (e.g., in tests),
- * use `testResetEnvaseAwsConfig()`.
- *
- * @param env - Optional environment variables to use on first call.
- *              If not provided, uses `process.env`. Ignored if config is already cached.
+ * This function returns schema and computed fragments that can be spread into
+ * your application's configuration. This allows composing AWS config with other
+ * application-specific configuration.
  *
  * @example
  * ```typescript
- * import { getEnvaseAwsConfig, envaseAwsConfigSchema } from '@lokalise/aws-config'
- *
- * // Get AWS config from environment
- * const awsConfig = getEnvaseAwsConfig()
- * // awsConfig.credentials is automatically resolved
- * // awsConfig.region, awsConfig.kmsKeyId, etc. are available
- *
- * // For composed schemas, use createConfig directly:
  * import { createConfig, envvar } from 'envase'
+ * import { z } from 'zod'
+ * import { getEnvaseAwsConfig } from '@lokalise/aws-config'
+ *
+ * const awsConfig = getEnvaseAwsConfig()
+ *
  * const config = createConfig(process.env, {
  *   schema: {
- *     aws: envaseAwsConfigSchema,
+ *     aws: awsConfig.schema,
  *     appName: envvar('APP_NAME', z.string()),
  *   },
  *   computed: {
- *     aws: {
- *       credentials: (raw) => {
- *         if (raw.aws.accessKeyId && raw.aws.secretAccessKey) {
- *           return { accessKeyId: raw.aws.accessKeyId, secretAccessKey: raw.aws.secretAccessKey }
- *         }
- *         return createCredentialChain(...)
- *       },
- *     },
+ *     aws: awsConfig.computed,
+ *   },
+ * })
+ *
+ * // Or spread directly at root level:
+ * const config = createConfig(process.env, {
+ *   schema: {
+ *     ...awsConfig.schema,
+ *     appName: envvar('APP_NAME', z.string()),
+ *   },
+ *   computed: {
+ *     ...awsConfig.computed,
  *   },
  * })
  * ```
  *
- * @returns The parsed and computed AWS configuration
+ * @returns Schema and computed fragments for AWS configuration
  */
-export const getEnvaseAwsConfig = (env?: Record<string, string | undefined>): EnvaseAwsConfig => {
-  /* v8 ignore start */
-  if (envaseAwsConfig) return envaseAwsConfig
-  /* v8 ignore stop */
-
-  const resolvedEnv = env ?? (process.env as Record<string, string | undefined>)
-  envaseAwsConfig = createConfig(resolvedEnv, {
+export const getEnvaseAwsConfig = (): EnvaseAwsConfigFragments => {
+  return {
     schema: envaseAwsConfigSchema,
     computed: envaseAwsConfigComputed,
-  })
-  return envaseAwsConfig
-}
-
-/**
- * Resets the cached envase AWS configuration.
- *
- * This method is intended **only for testing purposes.**
- * It allows tests to reset the singleton state between runs
- * to ensure test isolation and prevent cross-test contamination.
- *
- * WARNING:
- * Do NOT export or expose this method from your package's public API.
- * This method is not part of the package's contract and should be used internally for testing ONLY.
- */
-export const testResetEnvaseAwsConfig = () => {
-  envaseAwsConfig = undefined
+  }
 }

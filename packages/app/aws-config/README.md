@@ -18,64 +18,59 @@ const awsConfig = getAwsConfig();
 #### Using with envase
 
 For applications using the [envase](https://github.com/CatchMe2/envase) library for configuration management,
-use `getEnvaseAwsConfig()` for standalone AWS configuration or compose `envaseAwsConfigSchema` with
-`createConfig()` for combined configurations:
-
-##### Standalone Usage
+use `getEnvaseAwsConfig()` to get schema and computed fragments that can be composed into your application's
+`createConfig()` call:
 
 ```ts
+import { createConfig, envvar } from 'envase';
+import { z } from 'zod';
 import { getEnvaseAwsConfig } from '@lokalise/aws-config';
 
-// Parse and validate AWS environment variables with computed credentials
-const awsConfig = getEnvaseAwsConfig(process.env);
+const awsConfig = getEnvaseAwsConfig();
+
+// Spread fragments into your config (flat structure)
+const config = createConfig(process.env, {
+  schema: {
+    ...awsConfig.schema,
+    appName: envvar('APP_NAME', z.string()),
+    port: envvar('PORT', z.coerce.number().default(3000)),
+  },
+  computed: {
+    ...awsConfig.computed,
+  },
+});
 
 // Access typed configuration
-console.log(awsConfig.region); // string
-console.log(awsConfig.endpoint); // string | undefined
-console.log(awsConfig.credentials); // AwsCredentialIdentity | Provider<AwsCredentialIdentity>
+console.log(config.region); // string
+console.log(config.credentials); // AwsCredentialIdentity | Provider<AwsCredentialIdentity>
+console.log(config.appName); // string
 ```
 
-##### Composing with Other Schemas
+##### Nested AWS Namespace
 
-When combining AWS config with other application configuration, use `createConfig()` with computed values:
+When nesting AWS config under a namespace, wrap the computed resolver to access nested raw values:
 
 ```ts
-import { createConfig, envvar, type InferConfig, type InferEnv } from 'envase';
-import { createCredentialChain, fromTokenFile, fromInstanceMetadata, fromEnv, fromIni } from '@aws-sdk/credential-providers';
-import { z } from 'zod';
-import { envaseAwsConfigSchema } from '@lokalise/aws-config';
+const awsConfig = getEnvaseAwsConfig();
 
-const composedSchema = {
-  aws: envaseAwsConfigSchema,
-  appName: envvar('APP_NAME', z.string()),
-  port: envvar('PORT', z.coerce.number().default(3000)),
-};
-
-const computed = {
-  aws: {
-    credentials: (raw: { aws: { accessKeyId?: string; secretAccessKey?: string } }) => {
-      if (raw.aws.accessKeyId && raw.aws.secretAccessKey) {
-        return { accessKeyId: raw.aws.accessKeyId, secretAccessKey: raw.aws.secretAccessKey };
-      }
-      return createCredentialChain(fromTokenFile(), fromInstanceMetadata(), fromEnv(), fromIni());
+const config = createConfig(process.env, {
+  schema: {
+    aws: awsConfig.schema,
+    appName: envvar('APP_NAME', z.string()),
+  },
+  computed: {
+    aws: {
+      credentials: (raw: { aws: { accessKeyId?: string; secretAccessKey?: string } }) =>
+        awsConfig.computed.credentials(raw.aws),
     },
   },
-};
+});
 
-// Infer the combined type
-type AppConfig = InferConfig<InferEnv<typeof composedSchema>, typeof computed>;
-
-// Parse and validate
-const config = createConfig(process.env, { schema: composedSchema, computed });
-
-// Access typed configuration
 console.log(config.aws.region); // string
 console.log(config.aws.credentials); // resolved credentials
-console.log(config.appName); // string
-console.log(config.port); // number
 ```
 
-The envase schema includes Zod validation with:
+The schema includes Zod validation with:
 - Required `region` field (must be non-empty string)
 - Optional `kmsKeyId` field (defaults to empty string)
 - Optional `allowedSourceOwner` field
@@ -85,13 +80,9 @@ The envase schema includes Zod validation with:
 
 ##### Credentials Resolution
 
-When using `getEnvaseAwsConfig()` or defining computed values, credentials are resolved as follows:
-- If both `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are set:
-  `credentials` is `{ accessKeyId: '...', secretAccessKey: '...' }`
-- Otherwise: `credentials` is a credential provider chain (token file, instance metadata, env, INI)
-
-The raw `accessKeyId` and `secretAccessKey` fields remain available in the parsed output for documentation
-generation and introspection, but you should use the computed `credentials` field for AWS SDK operations
+The `computed.credentials` resolver handles credential resolution:
+- If both `accessKeyId` and `secretAccessKey` are present: returns static credentials
+- Otherwise: returns a credential provider chain (token file, instance metadata, env, INI)
 
 #### Environment Variable Constants
 
