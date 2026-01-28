@@ -1,9 +1,21 @@
+import {
+  createCredentialChain,
+  fromEnv,
+  fromIni,
+  fromInstanceMetadata,
+  fromTokenFile,
+} from '@aws-sdk/credential-providers'
 import { ConfigScope } from '@lokalise/node-core'
 import type { AwsCredentialIdentity, Provider } from '@smithy/types'
-import { envvar, type InferEnv, parseEnv } from 'envase'
+import { createConfig, envvar, type InferConfig, type InferEnv } from 'envase'
 import { z } from 'zod'
 import { getAwsConfig, testResetAwsConfig } from './awsConfig.ts'
-import { getEnvaseAwsConfig, testResetEnvaseAwsConfig } from './envaseAwsConfig.ts'
+import {
+  type EnvaseAwsConfig,
+  envaseAwsConfigSchema,
+  getEnvaseAwsConfig,
+  testResetEnvaseAwsConfig,
+} from './envaseAwsConfig.ts'
 
 const AWS_ALLOWED_SOURCE_OWNER_LITERAL = 'allowed-source-owner'
 const AWS_RESOURCE_PREFIX_LITERAL = 'aws-prefix'
@@ -11,21 +23,22 @@ const KMS_KEY_ID_LITERAL = 'kms-key-id'
 const DEFAULT_REGION = 'eu-west-1'
 
 describe('envaseAwsConfig', () => {
+  describe('envaseAwsConfigSchema', () => {
+    it('has all expected fields', () => {
+      expect(envaseAwsConfigSchema).toHaveProperty('region')
+      expect(envaseAwsConfigSchema).toHaveProperty('kmsKeyId')
+      expect(envaseAwsConfigSchema).toHaveProperty('allowedSourceOwner')
+      expect(envaseAwsConfigSchema).toHaveProperty('endpoint')
+      expect(envaseAwsConfigSchema).toHaveProperty('resourcePrefix')
+      expect(envaseAwsConfigSchema).toHaveProperty('accessKeyId')
+      expect(envaseAwsConfigSchema).toHaveProperty('secretAccessKey')
+    })
+  })
+
   describe('getEnvaseAwsConfig', () => {
     beforeEach(() => {
       process.env = {}
       testResetEnvaseAwsConfig()
-    })
-
-    it('generates envase-compatible schema', () => {
-      const schema = getEnvaseAwsConfig()
-
-      expect(schema).toHaveProperty('region')
-      expect(schema).toHaveProperty('kmsKeyId')
-      expect(schema).toHaveProperty('allowedSourceOwner')
-      expect(schema).toHaveProperty('endpoint')
-      expect(schema).toHaveProperty('resourcePrefix')
-      // credentials are resolved separately from process.env, not parsed through envase
     })
 
     it('parses valid environment variables with credentials', () => {
@@ -40,9 +53,7 @@ describe('envaseAwsConfig', () => {
         AWS_SECRET_ACCESS_KEY: 'secret-access-key',
       }
 
-      // Pass env to getEnvaseAwsConfig to get schema with correct credential resolution
-      const schema = getEnvaseAwsConfig(env)
-      const config = parseEnv(env, schema)
+      const config = getEnvaseAwsConfig(env)
 
       expect(config).toMatchObject({
         region: DEFAULT_REGION,
@@ -55,7 +66,7 @@ describe('envaseAwsConfig', () => {
           secretAccessKey: 'secret-access-key',
         },
       })
-      // Verify documentation-only fields are also present at runtime
+      // Raw fields are also present
       expect(config).toHaveProperty('accessKeyId', 'access-key-id')
       expect(config).toHaveProperty('secretAccessKey', 'secret-access-key')
     })
@@ -65,9 +76,7 @@ describe('envaseAwsConfig', () => {
         AWS_REGION: DEFAULT_REGION,
       }
 
-      // Pass env to getEnvaseAwsConfig to get schema with correct credential resolution
-      const schema = getEnvaseAwsConfig(env)
-      const config = parseEnv(env, schema)
+      const config = getEnvaseAwsConfig(env)
 
       expect(config.region).toBe(DEFAULT_REGION)
       expect(config.kmsKeyId).toBe('')
@@ -79,76 +88,71 @@ describe('envaseAwsConfig', () => {
     })
 
     it('throws error when mandatory region is missing', () => {
-      const schema = getEnvaseAwsConfig()
       const env = {}
 
-      expect(() => parseEnv(env, schema)).toThrow()
+      expect(() => getEnvaseAwsConfig(env)).toThrow()
     })
 
     it('throws error when resource prefix exceeds maximum length', () => {
-      const schema = getEnvaseAwsConfig()
       const env = {
         AWS_REGION: DEFAULT_REGION,
         AWS_RESOURCE_PREFIX: 'aws-resource-prefix-too-long',
       }
 
-      expect(() => parseEnv(env, schema)).toThrow(
+      expect(() => getEnvaseAwsConfig(env)).toThrow(
         'AWS resource prefix exceeds maximum length of 10 characters',
       )
     })
 
     it('throws error when endpoint is not a valid URL', () => {
-      const schema = getEnvaseAwsConfig()
       const env = {
         AWS_REGION: DEFAULT_REGION,
         AWS_ENDPOINT: 'not-a-valid-url',
       }
 
-      expect(() => parseEnv(env, schema)).toThrow()
+      expect(() => getEnvaseAwsConfig(env)).toThrow()
     })
 
     it('accepts valid endpoint URL', () => {
-      const schema = getEnvaseAwsConfig()
       const env = {
         AWS_REGION: DEFAULT_REGION,
         AWS_ENDPOINT: 'http://localhost:4566',
       }
 
-      const config = parseEnv(env, schema)
+      const config = getEnvaseAwsConfig(env)
 
       expect(config.endpoint).toBe('http://localhost:4566')
     })
   })
 
-  describe('EnvaseAwsConfigSchema type inference', () => {
+  describe('EnvaseAwsConfig type inference', () => {
     beforeEach(() => {
       testResetEnvaseAwsConfig()
     })
 
-    it('InferEnv correctly infers credentials field for standalone schema', () => {
-      const schema = getEnvaseAwsConfig()
-
-      // InferEnv should infer credentials (not accessKeyId/secretAccessKey)
-      type Config = InferEnv<typeof schema>
-
-      // The type should have credentials
-      const typeCheck: Config = {
+    it('EnvaseAwsConfig has correct type structure', () => {
+      // The type should have credentials as a computed value
+      const config: EnvaseAwsConfig = {
         region: 'eu-west-1',
         kmsKeyId: '',
         allowedSourceOwner: undefined,
         endpoint: undefined,
         resourcePrefix: undefined,
+        accessKeyId: undefined,
+        secretAccessKey: undefined,
         credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
       }
-      expect(typeCheck.credentials).toBeDefined()
+      expect(config.credentials).toBeDefined()
 
       // Credentials can also be a provider function
-      const withProviderCredentials: Config = {
+      const withProviderCredentials: EnvaseAwsConfig = {
         region: 'eu-west-1',
         kmsKeyId: '',
         allowedSourceOwner: undefined,
         endpoint: undefined,
         resourcePrefix: undefined,
+        accessKeyId: undefined,
+        secretAccessKey: undefined,
         credentials: (() =>
           Promise.resolve({
             accessKeyId: 'a',
@@ -158,50 +162,30 @@ describe('envaseAwsConfig', () => {
       expect(withProviderCredentials.credentials).toEqual(expect.any(Function))
     })
 
-    it('InferEnv correctly infers credentials in composed schema', () => {
-      // Compose AWS config with other fields
-      const envSchema = {
-        aws: getEnvaseAwsConfig(),
-        appName: envvar('APP_NAME', z.string()),
-        port: envvar('PORT', z.coerce.number().default(3000)),
+    it('getEnvaseAwsConfig returns correct credentials', () => {
+      const env = {
+        AWS_REGION: DEFAULT_REGION,
+        AWS_ACCESS_KEY_ID: 'access-key-id',
+        AWS_SECRET_ACCESS_KEY: 'secret-access-key',
       }
 
-      type ComposedConfig = InferEnv<typeof envSchema>
+      const config = getEnvaseAwsConfig(env)
 
-      // Verify the composed type has aws.credentials
-      const config: ComposedConfig = {
-        aws: {
-          region: 'eu-west-1',
-          kmsKeyId: '',
-          allowedSourceOwner: undefined,
-          endpoint: undefined,
-          resourcePrefix: undefined,
-          credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
-        },
-        appName: 'test-app',
-        port: 8080,
-      }
+      expect(config.credentials).toEqual({
+        accessKeyId: 'access-key-id',
+        secretAccessKey: 'secret-access-key',
+      })
+    })
+  })
 
-      // Verify the composed type requires aws.credentials
-      const _config2: ComposedConfig = {
-        // @ts-expect-error Missing mandatory field
-        aws: {
-          region: 'eu-west-1',
-          kmsKeyId: '',
-          allowedSourceOwner: undefined,
-          endpoint: undefined,
-          resourcePrefix: undefined,
-        },
-        appName: 'test-app',
-        port: 8080,
-      }
-
-      expect(config.aws.credentials).toBeDefined()
-      expect(config.appName).toBe('test-app')
-      expect(config.port).toBe(8080)
+  describe('composed schema with createConfig', () => {
+    beforeEach(() => {
+      process.env = {}
+      testResetAwsConfig()
+      testResetEnvaseAwsConfig()
     })
 
-    it('parseEnv with composed schema returns correct credentials', () => {
+    it('works with composed schema using createConfig', () => {
       const env = {
         AWS_REGION: DEFAULT_REGION,
         AWS_ACCESS_KEY_ID: 'access-key-id',
@@ -210,13 +194,34 @@ describe('envaseAwsConfig', () => {
         PORT: '9000',
       }
 
-      const envSchema = {
-        aws: getEnvaseAwsConfig(env),
+      const composedSchema = {
+        aws: envaseAwsConfigSchema,
         appName: envvar('APP_NAME', z.string()),
         port: envvar('PORT', z.coerce.number().default(3000)),
       }
 
-      const config = parseEnv(env, envSchema)
+      const computed = {
+        aws: {
+          credentials: (raw: {
+            aws: { accessKeyId?: string; secretAccessKey?: string }
+          }): AwsCredentialIdentity | Provider<AwsCredentialIdentity> => {
+            if (raw.aws.accessKeyId && raw.aws.secretAccessKey) {
+              return { accessKeyId: raw.aws.accessKeyId, secretAccessKey: raw.aws.secretAccessKey }
+            }
+            return createCredentialChain(
+              fromTokenFile(),
+              fromInstanceMetadata(),
+              fromEnv(),
+              fromIni(),
+            )
+          },
+        },
+      }
+
+      const config = createConfig(env, {
+        schema: composedSchema,
+        computed,
+      })
 
       expect(config.aws.credentials).toEqual({
         accessKeyId: 'access-key-id',
@@ -226,98 +231,63 @@ describe('envaseAwsConfig', () => {
       expect(config.port).toBe(9000)
     })
 
-    it('excludes accessKeyId and secretAccessKey from inferred type', () => {
-      const schema = getEnvaseAwsConfig()
-      type Config = InferEnv<typeof schema>
-
-      // Valid config without the excluded fields
-      const config: Config = {
-        region: 'eu-west-1',
-        kmsKeyId: '',
-        allowedSourceOwner: undefined,
-        endpoint: undefined,
-        resourcePrefix: undefined,
-        credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
+    it('type inference works correctly with composed schema', () => {
+      const composedSchema = {
+        aws: envaseAwsConfigSchema,
+        appName: envvar('APP_NAME', z.string()),
+        port: envvar('PORT', z.coerce.number().default(3000)),
       }
 
-      // Verify accessKeyId is not in the inferred type by trying to access it
-      // @ts-expect-error accessKeyId should not be in the inferred type
-      const _accessKeyId: string = config.accessKeyId
+      const computed = {
+        aws: {
+          credentials: (raw: {
+            aws: { accessKeyId?: string; secretAccessKey?: string }
+          }): AwsCredentialIdentity | Provider<AwsCredentialIdentity> => {
+            if (raw.aws.accessKeyId && raw.aws.secretAccessKey) {
+              return { accessKeyId: raw.aws.accessKeyId, secretAccessKey: raw.aws.secretAccessKey }
+            }
+            return createCredentialChain(
+              fromTokenFile(),
+              fromInstanceMetadata(),
+              fromEnv(),
+              fromIni(),
+            )
+          },
+        },
+      }
 
-      // @ts-expect-error secretAccessKey should not be in the inferred type
-      const _secretAccessKey: string = config.secretAccessKey
+      type ComposedConfig = InferConfig<InferEnv<typeof composedSchema>, typeof computed>
 
-      expect(config.credentials).toBeDefined()
-    })
+      // Verify the composed type has aws.credentials
+      const config: ComposedConfig = {
+        aws: {
+          region: 'eu-west-1',
+          kmsKeyId: '',
+          allowedSourceOwner: undefined,
+          endpoint: undefined,
+          resourcePrefix: undefined,
+          accessKeyId: undefined,
+          secretAccessKey: undefined,
+          credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
+        },
+        appName: 'test-app',
+        port: 8080,
+      }
 
-    it('includes accessKeyId and secretAccessKey in runtime schema for documentation', () => {
-      const schema = getEnvaseAwsConfig()
-
-      // Runtime schema should include these fields for documentation generation
-      // We access them via type assertion since they're excluded from the public type
-      const runtimeSchema = schema as Record<string, unknown>
-
-      expect(runtimeSchema).toHaveProperty('accessKeyId')
-      expect(runtimeSchema).toHaveProperty('secretAccessKey')
-
-      // Verify they are proper envvar entries (tuple of [envVarName, zodSchema])
-      const accessKeyIdEntry = runtimeSchema.accessKeyId as [string, unknown]
-      const secretAccessKeyEntry = runtimeSchema.secretAccessKey as [string, unknown]
-
-      expect(accessKeyIdEntry[0]).toBe('AWS_ACCESS_KEY_ID')
-      expect(secretAccessKeyEntry[0]).toBe('AWS_SECRET_ACCESS_KEY')
+      expect(config.aws.credentials).toBeDefined()
+      expect(config.appName).toBe('test-app')
+      expect(config.port).toBe(8080)
     })
   })
 
-  describe('getEnvaseAwsConfig with custom env', () => {
+  describe('getEnvaseAwsConfig matches getAwsConfig output structure', () => {
     beforeEach(() => {
       process.env = {}
       testResetAwsConfig()
       testResetEnvaseAwsConfig()
     })
 
-    it('returns config with static credentials when custom env provided', () => {
-      const customEnv = {
-        AWS_REGION: DEFAULT_REGION,
-        AWS_KMS_KEY_ID: KMS_KEY_ID_LITERAL,
-        AWS_ENDPOINT: 'http://localhost:4566',
-        AWS_ALLOWED_SOURCE_OWNER: AWS_ALLOWED_SOURCE_OWNER_LITERAL,
-        AWS_RESOURCE_PREFIX: AWS_RESOURCE_PREFIX_LITERAL,
-        AWS_ACCESS_KEY_ID: 'access-key-id',
-        AWS_SECRET_ACCESS_KEY: 'secret-access-key',
-      }
-
-      const schema = getEnvaseAwsConfig(customEnv)
-      const config = parseEnv(customEnv, schema)
-
-      expect(config).toMatchObject({
-        region: DEFAULT_REGION,
-        kmsKeyId: KMS_KEY_ID_LITERAL,
-        allowedSourceOwner: AWS_ALLOWED_SOURCE_OWNER_LITERAL,
-        endpoint: 'http://localhost:4566',
-        resourcePrefix: AWS_RESOURCE_PREFIX_LITERAL,
-        credentials: {
-          accessKeyId: 'access-key-id',
-          secretAccessKey: 'secret-access-key',
-        },
-      })
-      // Documentation-only fields are present at runtime
-      expect(config).toHaveProperty('accessKeyId', 'access-key-id')
-      expect(config).toHaveProperty('secretAccessKey', 'secret-access-key')
-    })
-
-    it('returns config with credential chain when credentials missing from custom env', () => {
-      const customEnv = {
-        AWS_REGION: DEFAULT_REGION,
-      }
-
-      const schema = getEnvaseAwsConfig(customEnv)
-      const config = parseEnv(customEnv, schema)
-
-      expect(config.credentials).toEqual(expect.any(Function))
-    })
-
-    it('matches getAwsConfig output structure', () => {
+    it('returns config with static credentials matching ConfigScope implementation', () => {
       const envVars = {
         AWS_REGION: DEFAULT_REGION,
         AWS_KMS_KEY_ID: KMS_KEY_ID_LITERAL,
@@ -327,8 +297,7 @@ describe('envaseAwsConfig', () => {
         AWS_SECRET_ACCESS_KEY: 'secret-access-key',
       }
 
-      const schema = getEnvaseAwsConfig(envVars)
-      const envaseConfig = parseEnv(envVars, schema)
+      const envaseConfig = getEnvaseAwsConfig(envVars)
       const configScopeConfig = getAwsConfig(new ConfigScope(envVars))
 
       expect(envaseConfig.region).toBe(configScopeConfig.region)
@@ -336,6 +305,53 @@ describe('envaseAwsConfig', () => {
       expect(envaseConfig.allowedSourceOwner).toBe(configScopeConfig.allowedSourceOwner)
       expect(envaseConfig.resourcePrefix).toBe(configScopeConfig.resourcePrefix)
       expect(envaseConfig.credentials).toEqual(configScopeConfig.credentials)
+    })
+
+    it('returns config with credential chain when credentials missing', () => {
+      const envVars = {
+        AWS_REGION: DEFAULT_REGION,
+      }
+
+      const config = getEnvaseAwsConfig(envVars)
+
+      expect(config.credentials).toEqual(expect.any(Function))
+    })
+  })
+
+  describe('getEnvaseAwsConfig caching', () => {
+    beforeEach(() => {
+      process.env = {}
+      testResetEnvaseAwsConfig()
+    })
+
+    it('returns cached config on subsequent calls', () => {
+      const env = {
+        AWS_REGION: DEFAULT_REGION,
+        AWS_ACCESS_KEY_ID: 'access-key-id',
+        AWS_SECRET_ACCESS_KEY: 'secret-access-key',
+      }
+
+      const config1 = getEnvaseAwsConfig(env)
+      const config2 = getEnvaseAwsConfig({ AWS_REGION: 'different-region' }) // Different env, but should return cached
+
+      expect(config1).toBe(config2)
+      expect(config2.region).toBe(DEFAULT_REGION) // Uses first call's env
+    })
+
+    it('returns fresh config after reset', () => {
+      const env1 = {
+        AWS_REGION: 'eu-west-1',
+      }
+      const env2 = {
+        AWS_REGION: 'us-east-1',
+      }
+
+      const config1 = getEnvaseAwsConfig(env1)
+      testResetEnvaseAwsConfig()
+      const config2 = getEnvaseAwsConfig(env2)
+
+      expect(config1.region).toBe('eu-west-1')
+      expect(config2.region).toBe('us-east-1')
     })
   })
 })

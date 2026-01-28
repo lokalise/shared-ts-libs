@@ -18,27 +18,61 @@ const awsConfig = getAwsConfig();
 #### Using with envase
 
 For applications using the [envase](https://github.com/CatchMe2/envase) library for configuration management,
-use `getEnvaseAwsConfig()` to get a cached envase-compatible schema:
+use `getEnvaseAwsConfig()` for standalone AWS configuration or compose `envaseAwsConfigSchema` with
+`createConfig()` for combined configurations:
+
+##### Standalone Usage
 
 ```ts
-import { parseEnv } from 'envase';
 import { getEnvaseAwsConfig } from '@lokalise/aws-config';
 
-// Get the envase schema for AWS configuration (singleton, cached on first call)
-const awsEnvSchema = getEnvaseAwsConfig();
+// Parse and validate AWS environment variables with computed credentials
+const awsConfig = getEnvaseAwsConfig(process.env);
 
-// Combine with your application's configuration schema
-const appEnvSchema = {
-  aws: awsEnvSchema,
-  // ... other configuration
+// Access typed configuration
+console.log(awsConfig.region); // string
+console.log(awsConfig.endpoint); // string | undefined
+console.log(awsConfig.credentials); // AwsCredentialIdentity | Provider<AwsCredentialIdentity>
+```
+
+##### Composing with Other Schemas
+
+When combining AWS config with other application configuration, use `createConfig()` with computed values:
+
+```ts
+import { createConfig, envvar, type InferConfig, type InferEnv } from 'envase';
+import { createCredentialChain, fromTokenFile, fromInstanceMetadata, fromEnv, fromIni } from '@aws-sdk/credential-providers';
+import { z } from 'zod';
+import { envaseAwsConfigSchema } from '@lokalise/aws-config';
+
+const composedSchema = {
+  aws: envaseAwsConfigSchema,
+  appName: envvar('APP_NAME', z.string()),
+  port: envvar('PORT', z.coerce.number().default(3000)),
 };
 
-// Parse and validate environment variables
-const config = parseEnv(process.env, appEnvSchema);
+const computed = {
+  aws: {
+    credentials: (raw: { aws: { accessKeyId?: string; secretAccessKey?: string } }) => {
+      if (raw.aws.accessKeyId && raw.aws.secretAccessKey) {
+        return { accessKeyId: raw.aws.accessKeyId, secretAccessKey: raw.aws.secretAccessKey };
+      }
+      return createCredentialChain(fromTokenFile(), fromInstanceMetadata(), fromEnv(), fromIni());
+    },
+  },
+};
+
+// Infer the combined type
+type AppConfig = InferConfig<InferEnv<typeof composedSchema>, typeof computed>;
+
+// Parse and validate
+const config = createConfig(process.env, { schema: composedSchema, computed });
 
 // Access typed configuration
 console.log(config.aws.region); // string
-console.log(config.aws.endpoint); // string | undefined
+console.log(config.aws.credentials); // resolved credentials
+console.log(config.appName); // string
+console.log(config.port); // number
 ```
 
 The envase schema includes Zod validation with:
@@ -47,76 +81,17 @@ The envase schema includes Zod validation with:
 - Optional `allowedSourceOwner` field
 - Optional `endpoint` field with URL validation
 - Optional `resourcePrefix` with max length validation (10 characters)
-- **Automatic `credentials` resolution** via Zod transform (see below)
+- Optional `accessKeyId` and `secretAccessKey` fields for credential resolution
 
 ##### Credentials Resolution
 
-When `parseEnv()` is called, credentials are automatically resolved:
+When using `getEnvaseAwsConfig()` or defining computed values, credentials are resolved as follows:
 - If both `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are set:
   `credentials` is `{ accessKeyId: '...', secretAccessKey: '...' }`
 - Otherwise: `credentials` is a credential provider chain (token file, instance metadata, env, INI)
 
-This happens transparently - no additional function calls are needed.
-
-##### Documentation Generation
-
-The schema includes `accessKeyId` and `secretAccessKey` fields at runtime to ensure proper environment
-variable documentation is generated. These fields are intentionally excluded from the TypeScript type -
-only `credentials` appears in `InferEnv<typeof schema>`. At runtime, all three fields are present in the
-parsed output, but you should use `credentials` for accessing resolved AWS credentials.
-
-##### Composing with Other Schemas
-
-When composing `getEnvaseAwsConfig()` with other envase schemas, credentials are automatically
-resolved via a Zod transform:
-
-```ts
-import { InferEnv, parseEnv, envvar } from 'envase';
-import { z } from 'zod';
-import { getEnvaseAwsConfig } from '@lokalise/aws-config';
-
-const envSchema = {
-  aws: getEnvaseAwsConfig(),
-  appName: envvar('APP_NAME', z.string()),
-};
-
-// InferEnv correctly infers credentials
-type Config = InferEnv<typeof envSchema>;
-// Result: { aws: { region: string, credentials: ..., ... }; appName: string }
-
-// Parse - credentials are automatically resolved
-const config = parseEnv(process.env, envSchema);
-// config.aws.credentials is ready to use
-```
-
-**Important:** `getEnvaseAwsConfig()` returns a singleton schema. The `env` parameter is only used on the
-first call - subsequent calls return the cached schema. For testing with custom env, reset the cache first
-using `testResetEnvaseAwsConfig()`:
-
-```ts
-import { getEnvaseAwsConfig, testResetEnvaseAwsConfig } from '@lokalise/aws-config';
-
-// In test setup
-beforeEach(() => {
-  testResetEnvaseAwsConfig(); // Reset the cached schema
-});
-
-it('uses custom env', () => {
-  const testEnv = {
-    AWS_REGION: 'us-east-1',
-    AWS_ACCESS_KEY_ID: 'test-key',
-    AWS_SECRET_ACCESS_KEY: 'test-secret',
-    APP_NAME: 'test-app',
-  };
-
-  const envSchema = {
-    aws: getEnvaseAwsConfig(testEnv), // Uses testEnv since cache was reset
-    appName: envvar('APP_NAME', z.string()),
-  };
-
-  const config = parseEnv(testEnv, envSchema);
-});
-```
+The raw `accessKeyId` and `secretAccessKey` fields remain available in the parsed output for documentation
+generation and introspection, but you should use the computed `credentials` field for AWS SDK operations
 
 #### Environment Variable Constants
 

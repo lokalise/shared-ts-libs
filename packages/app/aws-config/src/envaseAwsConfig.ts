@@ -6,187 +6,157 @@ import {
   fromTokenFile,
 } from '@aws-sdk/credential-providers'
 import type { AwsCredentialIdentity, Provider } from '@smithy/types'
-import { envvar } from 'envase'
+import { createConfig, envvar, type InferConfig, type InferEnv } from 'envase'
 import { z } from 'zod'
-import { AWS_CONFIG_ENV_VARS, type AwsConfig, MAX_AWS_RESOURCE_PREFIX_LENGTH } from './awsConfig.ts'
+import { AWS_CONFIG_ENV_VARS, MAX_AWS_RESOURCE_PREFIX_LENGTH } from './awsConfig.ts'
 
 /**
- * Envase configuration entry type - a tuple of [envVarName, zodSchema].
- * This mirrors envase's internal EnvvarEntry type to avoid referencing internal paths.
+ * The raw AWS configuration schema for parsing environment variables.
+ * This schema is used with envase's `createConfig()` to parse and validate AWS-related env vars.
  */
-type EnvaseConfigEntry<T> = [string, T]
+export const envaseAwsConfigSchema = {
+  region: envvar(
+    AWS_CONFIG_ENV_VARS.REGION,
+    z.string().min(1).describe('AWS region for resource management'),
+  ),
+
+  kmsKeyId: envvar(
+    AWS_CONFIG_ENV_VARS.KMS_KEY_ID,
+    z.string().optional().default('').describe('KMS key ID for encryption/decryption'),
+  ),
+
+  allowedSourceOwner: envvar(
+    AWS_CONFIG_ENV_VARS.ALLOWED_SOURCE_OWNER,
+    z.string().optional().describe('AWS account ID for permitted request source'),
+  ),
+
+  endpoint: envvar(
+    AWS_CONFIG_ENV_VARS.ENDPOINT,
+    z.url().optional().describe('Custom AWS service endpoint URL'),
+  ),
+
+  resourcePrefix: envvar(
+    AWS_CONFIG_ENV_VARS.RESOURCE_PREFIX,
+    z
+      .string()
+      .max(MAX_AWS_RESOURCE_PREFIX_LENGTH, {
+        message: `AWS resource prefix exceeds maximum length of ${MAX_AWS_RESOURCE_PREFIX_LENGTH} characters`,
+      })
+      .optional()
+      .describe('Prefix for AWS resource names (max 10 chars)'),
+  ),
+
+  accessKeyId: envvar(
+    AWS_CONFIG_ENV_VARS.ACCESS_KEY_ID,
+    z.string().optional().describe('AWS access key ID for programmatic access'),
+  ),
+
+  secretAccessKey: envvar(
+    AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY,
+    z.string().optional().describe('AWS secret access key for programmatic access'),
+  ),
+} as const
 
 /**
- * Type representing the envase-compatible AWS configuration schema for type inference.
- * The `credentials` field is automatically resolved via a Zod transform when `parseEnv()` is called.
- * Uses `z.ZodType` for credentials since `ZodEffects` is internal in Zod v4.
- *
- * Note: `accessKeyId` and `secretAccessKey` are intentionally excluded from this type.
- * They exist at runtime for documentation generation but are not part of the parsed output type.
+ * Computed values configuration for AWS config.
+ * Derives `credentials` from the parsed `accessKeyId` and `secretAccessKey`.
  */
-export type EnvaseAwsConfigSchema = {
-  region: EnvaseConfigEntry<z.ZodString>
-  kmsKeyId: EnvaseConfigEntry<z.ZodDefault<z.ZodOptional<z.ZodString>>>
-  allowedSourceOwner: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
-  endpoint: EnvaseConfigEntry<z.ZodOptional<z.ZodURL>>
-  resourcePrefix: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
-  credentials: EnvaseConfigEntry<z.ZodType<AwsCredentialIdentity | Provider<AwsCredentialIdentity>>>
+const envaseAwsConfigComputed = {
+  credentials: (raw: {
+    accessKeyId?: string
+    secretAccessKey?: string
+  }): AwsCredentialIdentity | Provider<AwsCredentialIdentity> => {
+    if (raw.accessKeyId && raw.secretAccessKey) {
+      return { accessKeyId: raw.accessKeyId, secretAccessKey: raw.secretAccessKey }
+    }
+    return createCredentialChain(fromTokenFile(), fromInstanceMetadata(), fromEnv(), fromIni())
+  },
 }
 
 /**
- * Internal runtime schema type that includes documentation-only fields.
- * These fields are excluded from the public type to keep the parsed output clean.
+ * Type representing the parsed and computed AWS configuration.
+ * Includes both the raw parsed values and the computed `credentials` field.
  */
-type EnvaseAwsConfigSchemaRuntime = EnvaseAwsConfigSchema & {
-  accessKeyId: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
-  secretAccessKey: EnvaseConfigEntry<z.ZodOptional<z.ZodString>>
-}
+export type EnvaseAwsConfig = InferConfig<
+  InferEnv<typeof envaseAwsConfigSchema>,
+  typeof envaseAwsConfigComputed
+>
 
 /**
- * Type alias for `AwsConfig` used with envase-based configuration.
- * This ensures consistency between ConfigScope and envase implementations.
+ * Type alias for the schema, for backwards compatibility.
+ * @deprecated Use `typeof envaseAwsConfigSchema` directly for schema type.
  */
-export type EnvaseAwsConfig = AwsConfig
+export type EnvaseAwsConfigSchema = typeof envaseAwsConfigSchema
+
+let envaseAwsConfig: EnvaseAwsConfig | undefined
 
 /**
- * Resolves AWS credentials from environment variables.
- * If both `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are provided,
- * returns static credentials. Otherwise, returns a credential provider chain.
- */
-const resolveCredentialsFromEnv = (
-  env: Record<string, string | undefined>,
-): AwsCredentialIdentity | Provider<AwsCredentialIdentity> => {
-  const accessKeyId = env[AWS_CONFIG_ENV_VARS.ACCESS_KEY_ID]
-  const secretAccessKey = env[AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY]
-
-  if (accessKeyId && secretAccessKey) {
-    return { accessKeyId, secretAccessKey }
-  }
-
-  return createCredentialChain(fromTokenFile(), fromInstanceMetadata(), fromEnv(), fromIni())
-}
-
-let envaseAwsConfigSchema: EnvaseAwsConfigSchemaRuntime | undefined
-
-/**
- * Retrieves the envase-compatible AWS configuration schema (singleton).
+ * Retrieves the AWS configuration from environment variables (singleton).
  *
- * This function returns a configuration schema for use with envase's `parseEnv()`.
- * The schema includes a `credentials` field that is automatically resolved via a transform
- * when `parseEnv()` is called.
+ * This function uses envase's `createConfig()` to parse and validate AWS-related
+ * environment variables, then computes the `credentials` field from the parsed values.
  *
- * The schema is cached after the first call. To reset the cache (e.g., in tests),
+ * The result is cached after the first call. To reset the cache (e.g., in tests),
  * use `testResetEnvaseAwsConfig()`.
  *
- * @param env - Optional environment variables to use for credential resolution on first call.
- *              If not provided, uses `process.env`. Ignored if schema is already cached.
+ * @param env - Optional environment variables to use on first call.
+ *              If not provided, uses `process.env`. Ignored if config is already cached.
  *
  * @example
  * ```typescript
- * import { InferEnv, parseEnv, envvar } from 'envase'
- * import { getEnvaseAwsConfig } from '@lokalise/aws-config'
+ * import { getEnvaseAwsConfig, envaseAwsConfigSchema } from '@lokalise/aws-config'
  *
- * const envSchema = {
- *   aws: getEnvaseAwsConfig(),
- *   appName: envvar('APP_NAME', z.string()),
- * }
+ * // Get AWS config from environment
+ * const awsConfig = getEnvaseAwsConfig()
+ * // awsConfig.credentials is automatically resolved
+ * // awsConfig.region, awsConfig.kmsKeyId, etc. are available
  *
- * type Config = InferEnv<typeof envSchema>
- * // Config.aws.credentials is correctly typed
- *
- * const config = parseEnv(process.env, envSchema)
- * // config.aws.credentials is automatically resolved
+ * // For composed schemas, use createConfig directly:
+ * import { createConfig, envvar } from 'envase'
+ * const config = createConfig(process.env, {
+ *   schema: {
+ *     aws: envaseAwsConfigSchema,
+ *     appName: envvar('APP_NAME', z.string()),
+ *   },
+ *   computed: {
+ *     aws: {
+ *       credentials: (raw) => {
+ *         if (raw.aws.accessKeyId && raw.aws.secretAccessKey) {
+ *           return { accessKeyId: raw.aws.accessKeyId, secretAccessKey: raw.aws.secretAccessKey }
+ *         }
+ *         return createCredentialChain(...)
+ *       },
+ *     },
+ *   },
+ * })
  * ```
  *
- * @returns An envase-compatible configuration schema for AWS settings
+ * @returns The parsed and computed AWS configuration
  */
-export const getEnvaseAwsConfig = (
-  env?: Record<string, string | undefined>,
-): EnvaseAwsConfigSchema => {
-  // Return cached singleton if available
+export const getEnvaseAwsConfig = (env?: Record<string, string | undefined>): EnvaseAwsConfig => {
   /* v8 ignore start */
-  if (envaseAwsConfigSchema) return envaseAwsConfigSchema as EnvaseAwsConfigSchema
+  if (envaseAwsConfig) return envaseAwsConfig
   /* v8 ignore stop */
 
-  // Generate and cache the schema
-  envaseAwsConfigSchema = generateEnvaseAwsConfig(env)
-  // Cast to public type, excluding documentation-only fields from type inference
-  return envaseAwsConfigSchema as EnvaseAwsConfigSchema
-}
-
-const generateEnvaseAwsConfig = (
-  env?: Record<string, string | undefined>,
-): EnvaseAwsConfigSchemaRuntime => {
   const resolvedEnv = env ?? (process.env as Record<string, string | undefined>)
-  return {
-    region: envvar(
-      AWS_CONFIG_ENV_VARS.REGION,
-      z.string().min(1).describe('AWS region for resource management'),
-    ),
-
-    kmsKeyId: envvar(
-      AWS_CONFIG_ENV_VARS.KMS_KEY_ID,
-      z.string().optional().default('').describe('KMS key ID for encryption/decryption'),
-    ),
-
-    allowedSourceOwner: envvar(
-      AWS_CONFIG_ENV_VARS.ALLOWED_SOURCE_OWNER,
-      z.string().optional().describe('AWS account ID for permitted request source'),
-    ),
-
-    endpoint: envvar(
-      AWS_CONFIG_ENV_VARS.ENDPOINT,
-      z.url().optional().describe('Custom AWS service endpoint URL'),
-    ),
-
-    resourcePrefix: envvar(
-      AWS_CONFIG_ENV_VARS.RESOURCE_PREFIX,
-      z
-        .string()
-        .max(MAX_AWS_RESOURCE_PREFIX_LENGTH, {
-          message: `AWS resource prefix exceeds maximum length of ${MAX_AWS_RESOURCE_PREFIX_LENGTH} characters`,
-        })
-        .optional()
-        .describe('Prefix for AWS resource names (max 10 chars)'),
-    ),
-
-    // Documentation-only fields for env var documentation generation
-    // These are excluded from the public type (EnvaseAwsConfigSchema)
-    accessKeyId: envvar(
-      AWS_CONFIG_ENV_VARS.ACCESS_KEY_ID,
-      z.string().optional().describe('AWS access key ID for programmatic access'),
-    ),
-
-    secretAccessKey: envvar(
-      AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY,
-      z.string().optional().describe('AWS secret access key for programmatic access'),
-    ),
-
-    // Credentials field - auto-resolved, no env var configuration needed
-    // Uses a pseudo-key to indicate this is an internal computed field
-    credentials: envvar(
-      '_AWS_CREDENTIALS_RESOLVED',
-      z
-        .undefined()
-        .transform(() => resolveCredentialsFromEnv(resolvedEnv))
-        .describe(
-          'Auto-resolved from AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY. Do not configure directly.',
-        ),
-    ),
-  }
+  envaseAwsConfig = createConfig(resolvedEnv, {
+    schema: envaseAwsConfigSchema,
+    computed: envaseAwsConfigComputed,
+  })
+  return envaseAwsConfig
 }
 
 /**
- * Resets the cached envase AWS configuration schema.
+ * Resets the cached envase AWS configuration.
  *
  * This method is intended **only for testing purposes.**
  * It allows tests to reset the singleton state between runs
  * to ensure test isolation and prevent cross-test contamination.
  *
  * WARNING:
- * Do NOT export or expose this method from your package's public API
+ * Do NOT export or expose this method from your package's public API.
  * This method is not part of the package's contract and should be used internally for testing ONLY.
  */
 export const testResetEnvaseAwsConfig = () => {
-  envaseAwsConfigSchema = undefined
+  envaseAwsConfig = undefined
 }
