@@ -14,13 +14,53 @@ jobs:
       issues: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Check AI assistance selection
+        id: check_selection
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          # Check which checkboxes are selected
+          YES_SELECTED=false
+          NO_SELECTED=false
 
-      - name: Validate AI assistance and manage label
-        uses: ./.github/actions/ai-assistance-tracking
+          if echo "$PR_BODY" | grep -q "\- \[x\] \*\*Yes, AI assisted with this PR\*\*"; then
+            YES_SELECTED=true
+          fi
+
+          if echo "$PR_BODY" | grep -q "\- \[x\] \*\*No, AI did not assist with this PR\*\*"; then
+            NO_SELECTED=true
+          fi
+
+          # Validation logic
+          if [ "$YES_SELECTED" = "true" ] && [ "$NO_SELECTED" = "false" ]; then
+            echo "ai_assisted=true" >> $GITHUB_OUTPUT
+            echo "✅ AI assistance marked: Yes"
+          elif [ "$YES_SELECTED" = "false" ] && [ "$NO_SELECTED" = "true" ]; then
+            echo "ai_assisted=false" >> $GITHUB_OUTPUT
+            echo "✅ AI assistance marked: No"
+          elif [ "$YES_SELECTED" = "false" ] && [ "$NO_SELECTED" = "false" ]; then
+            echo "❌ Error: Please select one of the AI assistance options"
+            echo "ℹ️ Check the pull request template (.github/pull_request_template.md) if you're not sure how to select an option"
+            exit 1
+          else
+            echo "❌ Error: Please select exactly one AI assistance option"
+            exit 1
+          fi
+
+      - name: Add AI label
+        if: steps.check_selection.outputs.ai_assisted == 'true'
+        uses: actions-ecosystem/action-add-labels@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          pr_body: ${{ github.event.pull_request.body }}
-          pr_number: ${{ github.event.pull_request.number }}
-          repository: ${{ github.repository }}
+          number: ${{ github.event.pull_request.number }}
+          repo: ${{ github.repository }}
+          labels: ai-assisted
+
+      - name: Remove AI label
+        if: steps.check_selection.outputs.ai_assisted == 'false'
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          number: ${{ github.event.pull_request.number }}
+          repo: ${{ github.repository }}
+          labels: ai-assisted
