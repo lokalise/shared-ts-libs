@@ -2,6 +2,7 @@
 
 // array
 export * from './public/array/areStringArraysEqual.ts'
+export * from './public/array/arrayToEnum.ts'
 export * from './public/array/callChunked.ts'
 export * from './public/array/chunk.ts'
 export * from './public/array/defineNonEmptyArray.ts'
