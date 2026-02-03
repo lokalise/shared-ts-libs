@@ -41,6 +41,19 @@ import { chunk } from '@lokalise/universal-ts-utils/node';
 
 This section describes utility functions to work with arrays efficiently and elegantly.
 
+#### `arrayToEnum`
+
+Converts an array of strings into an enum-like object where keys and values are the same. This is useful for creating 
+type-safe enums from string arrays, similar to TypeScript's const enums. The function preserves type information,
+making it perfect for use with literal types.
+
+```typescript
+const fruits = ['apple', 'banana', 'orange'] as const
+const FruitEnum = arrayToEnum(fruits)
+// Returns: { apple: 'apple', banana: 'banana', orange: 'orange' }
+// Type: { apple: 'apple', banana: 'banana', orange: 'orange' }
+```
+
 #### `callChunked`
 
 A utility method to process an array in chunks asynchronously.
