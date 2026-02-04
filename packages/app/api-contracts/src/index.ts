@@ -1,6 +1,7 @@
 export * from './apiContracts.ts'
 export * from './HttpStatusCodes.ts'
 export * from './pathUtils.ts'
+export * from './rest/restContractBuilder.ts'
 // Dual-mode (hybrid) contracts
 export * from './sse/dualModeContracts.ts'
 // Contract builders
