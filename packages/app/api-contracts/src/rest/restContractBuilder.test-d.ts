@@ -298,32 +298,109 @@ describe('buildRestContract type inference', () => {
   })
 
   describe('boolean flag types', () => {
-    it('correctly types isNonJSONResponseExpected', () => {
-      const contractWithNonJson = buildRestContract({
-        successResponseBodySchema: z.string(),
-        pathResolver: () => '/api/file',
-        isNonJSONResponseExpected: true,
+    describe('isEmptyResponseExpected', () => {
+      it('defaults to false type for GET routes', () => {
+        const contract = buildRestContract({
+          successResponseBodySchema: z.object({}),
+          pathResolver: () => '/api/data',
+        })
+
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false | undefined>()
       })
 
-      expectTypeOf(contractWithNonJson.isNonJSONResponseExpected).toEqualTypeOf<true | undefined>()
+      it('defaults to false type for POST routes', () => {
+        const contract = buildRestContract({
+          method: 'post',
+          requestBodySchema: z.object({}),
+          successResponseBodySchema: z.object({}),
+          pathResolver: () => '/api/data',
+        })
 
-      const contractWithJson = buildRestContract({
-        successResponseBodySchema: z.object({}),
-        pathResolver: () => '/api/data',
-        isNonJSONResponseExpected: false,
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false | undefined>()
       })
 
-      expectTypeOf(contractWithJson.isNonJSONResponseExpected).toEqualTypeOf<false | undefined>()
+      it('defaults to true type for DELETE routes', () => {
+        const contract = buildRestContract({
+          method: 'delete',
+          successResponseBodySchema: z.undefined(),
+          pathResolver: () => '/api/resource',
+        })
+
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true | undefined>()
+      })
+
+      it('reflects explicit true value in type for GET', () => {
+        const contract = buildRestContract({
+          successResponseBodySchema: z.undefined(),
+          pathResolver: () => '/api/void',
+          isEmptyResponseExpected: true,
+        })
+
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true | undefined>()
+      })
+
+      it('reflects explicit false value in type for DELETE', () => {
+        const contract = buildRestContract({
+          method: 'delete',
+          successResponseBodySchema: z.object({ deleted: z.boolean() }),
+          pathResolver: () => '/api/resource',
+          isEmptyResponseExpected: false,
+        })
+
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false | undefined>()
+      })
     })
 
-    it('correctly types isEmptyResponseExpected', () => {
-      const contractEmpty = buildRestContract({
-        successResponseBodySchema: z.undefined(),
-        pathResolver: () => '/api/void',
-        isEmptyResponseExpected: true,
+    describe('isNonJSONResponseExpected', () => {
+      it('defaults to false type for GET routes', () => {
+        const contract = buildRestContract({
+          successResponseBodySchema: z.object({}),
+          pathResolver: () => '/api/data',
+        })
+
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false | undefined>()
       })
 
-      expectTypeOf(contractEmpty.isEmptyResponseExpected).toEqualTypeOf<true | undefined>()
+      it('defaults to false type for POST routes', () => {
+        const contract = buildRestContract({
+          method: 'post',
+          requestBodySchema: z.object({}),
+          successResponseBodySchema: z.object({}),
+          pathResolver: () => '/api/data',
+        })
+
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false | undefined>()
+      })
+
+      it('defaults to false type for DELETE routes', () => {
+        const contract = buildRestContract({
+          method: 'delete',
+          successResponseBodySchema: z.undefined(),
+          pathResolver: () => '/api/resource',
+        })
+
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false | undefined>()
+      })
+
+      it('reflects explicit true value in type', () => {
+        const contract = buildRestContract({
+          successResponseBodySchema: z.string(),
+          pathResolver: () => '/api/file',
+          isNonJSONResponseExpected: true,
+        })
+
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<true | undefined>()
+      })
+
+      it('reflects explicit false value in type', () => {
+        const contract = buildRestContract({
+          successResponseBodySchema: z.object({}),
+          pathResolver: () => '/api/data',
+          isNonJSONResponseExpected: false,
+        })
+
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false | undefined>()
+      })
     })
   })
 })

@@ -60,6 +60,28 @@ describe('buildRestContract', () => {
 
       expect(contract.method).toBe('patch')
     })
+
+    it('defaults isEmptyResponseExpected to false for POST', () => {
+      const contract = buildRestContract({
+        successResponseBodySchema: BODY_SCHEMA,
+        requestBodySchema: BODY_SCHEMA,
+        method: 'post',
+        pathResolver: () => '/api/users',
+      })
+
+      expect(contract.isEmptyResponseExpected).toBe(false)
+    })
+
+    it('defaults isNonJSONResponseExpected to false for POST', () => {
+      const contract = buildRestContract({
+        successResponseBodySchema: BODY_SCHEMA,
+        requestBodySchema: BODY_SCHEMA,
+        method: 'post',
+        pathResolver: () => '/api/users',
+      })
+
+      expect(contract.isNonJSONResponseExpected).toBe(false)
+    })
   })
 
   describe('GET route', () => {
@@ -95,6 +117,24 @@ describe('buildRestContract', () => {
       })
 
       expect(contract.method).toBe('get')
+    })
+
+    it('defaults isEmptyResponseExpected to false for GET', () => {
+      const contract = buildRestContract({
+        successResponseBodySchema: BODY_SCHEMA,
+        pathResolver: () => '/api/users',
+      })
+
+      expect(contract.isEmptyResponseExpected).toBe(false)
+    })
+
+    it('defaults isNonJSONResponseExpected to false for GET', () => {
+      const contract = buildRestContract({
+        successResponseBodySchema: BODY_SCHEMA,
+        pathResolver: () => '/api/users',
+      })
+
+      expect(contract.isNonJSONResponseExpected).toBe(false)
     })
   })
 
