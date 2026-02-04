@@ -230,6 +230,22 @@ const processStream = buildSseContract({
     },
 })
 // Result: isSSE: true
+
+// SSE endpoint with error schemas (for errors before streaming starts)
+const channelStream = buildSseContract({
+    pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
+    params: z.object({ channelId: z.string() }),
+    query: z.object({}),
+    requestHeaders: z.object({ authorization: z.string() }),
+    sseEvents: {
+        message: z.object({ text: z.string() }),
+    },
+    // Errors returned before streaming begins
+    responseSchemasByStatusCode: {
+        401: z.object({ error: z.literal('Unauthorized') }),
+        404: z.object({ error: z.literal('Channel not found') }),
+    },
+})
 ```
 
 ### Dual-Mode (Hybrid) Contracts
@@ -284,9 +300,9 @@ const jobStatus = buildSseContract({
 // Result: isDualMode: true
 ```
 
-### Response Schemas by Status Code (Dual-Mode)
+### Response Schemas by Status Code
 
-Dual-mode contracts support `responseSchemasByStatusCode` for defining different response shapes for error cases:
+Both SSE-only and dual-mode contracts support `responseSchemasByStatusCode` for defining different response shapes for errors that occur **before streaming starts** (e.g., authentication failures, validation errors, resource not found):
 
 ```ts
 const chatCompletion = buildSseContract({

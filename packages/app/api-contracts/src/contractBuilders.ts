@@ -13,12 +13,29 @@ export type SSEGetContractConfig<
   Query extends z.ZodTypeAny,
   RequestHeaders extends z.ZodTypeAny,
   Events extends SSEEventSchemas,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
+    | undefined = undefined,
 > = {
   pathResolver: SSEPathResolver<z.infer<Params>>
   params: Params
   query: Query
   requestHeaders: RequestHeaders
   sseEvents: Events
+  /**
+   * Error response schemas by HTTP status code.
+   * Used to define response shapes for errors that occur before streaming starts
+   * (e.g., authentication failures, validation errors, not found).
+   *
+   * @example
+   * ```ts
+   * responseSchemasByStatusCode: {
+   *   401: z.object({ error: z.literal('Unauthorized') }),
+   *   404: z.object({ error: z.string() }),
+   * }
+   * ```
+   */
+  responseSchemasByStatusCode?: ResponseSchemasByStatusCode
   requestBody?: never
   syncResponseBody?: never
 }
@@ -33,6 +50,9 @@ export type SSEPayloadContractConfig<
   RequestHeaders extends z.ZodTypeAny,
   Body extends z.ZodTypeAny,
   Events extends SSEEventSchemas,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
+    | undefined = undefined,
 > = {
   method?: 'POST' | 'PUT' | 'PATCH'
   pathResolver: SSEPathResolver<z.infer<Params>>
@@ -41,6 +61,20 @@ export type SSEPayloadContractConfig<
   requestHeaders: RequestHeaders
   requestBody: Body
   sseEvents: Events
+  /**
+   * Error response schemas by HTTP status code.
+   * Used to define response shapes for errors that occur before streaming starts
+   * (e.g., authentication failures, validation errors, not found).
+   *
+   * @example
+   * ```ts
+   * responseSchemasByStatusCode: {
+   *   401: z.object({ error: z.literal('Unauthorized') }),
+   *   404: z.object({ error: z.string() }),
+   * }
+   * ```
+   */
+  responseSchemasByStatusCode?: ResponseSchemasByStatusCode
   syncResponseBody?: never
 }
 
@@ -296,9 +330,27 @@ export function buildSseContract<
   RequestHeaders extends z.ZodTypeAny,
   Body extends z.ZodTypeAny,
   Events extends SSEEventSchemas,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
+    | undefined = undefined,
 >(
-  config: SSEPayloadContractConfig<Params, Query, RequestHeaders, Body, Events>,
-): SSEContractDefinition<'POST' | 'PUT' | 'PATCH', Params, Query, RequestHeaders, Body, Events>
+  config: SSEPayloadContractConfig<
+    Params,
+    Query,
+    RequestHeaders,
+    Body,
+    Events,
+    ResponseSchemasByStatusCode
+  >,
+): SSEContractDefinition<
+  'POST' | 'PUT' | 'PATCH',
+  Params,
+  Query,
+  RequestHeaders,
+  Body,
+  Events,
+  ResponseSchemasByStatusCode
+>
 
 // Overload 4: SSE GET (no requestBody, no response configs)
 export function buildSseContract<
@@ -306,9 +358,20 @@ export function buildSseContract<
   Query extends z.ZodTypeAny,
   RequestHeaders extends z.ZodTypeAny,
   Events extends SSEEventSchemas,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
+    | undefined = undefined,
 >(
-  config: SSEGetContractConfig<Params, Query, RequestHeaders, Events>,
-): SSEContractDefinition<'GET', Params, Query, RequestHeaders, undefined, Events>
+  config: SSEGetContractConfig<Params, Query, RequestHeaders, Events, ResponseSchemasByStatusCode>,
+): SSEContractDefinition<
+  'GET',
+  Params,
+  Query,
+  RequestHeaders,
+  undefined,
+  Events,
+  ResponseSchemasByStatusCode
+>
 
 // Implementation
 export function buildSseContract(
@@ -317,9 +380,9 @@ export function buildSseContract(
     // biome-ignore lint/suspicious/noExplicitAny: Union of all config types
     | DualModeGetContractConfig<any, any, any, any, any, any, any>
     // biome-ignore lint/suspicious/noExplicitAny: Union of all config types
-    | SSEPayloadContractConfig<any, any, any, any, any>
+    | SSEPayloadContractConfig<any, any, any, any, any, any>
     // biome-ignore lint/suspicious/noExplicitAny: Union of all config types
-    | SSEGetContractConfig<any, any, any, any>,
+    | SSEGetContractConfig<any, any, any, any, any>,
   // biome-ignore lint/suspicious/noExplicitAny: Return type depends on overload
 ): any {
   const hasSyncResponseBody = 'syncResponseBody' in config && config.syncResponseBody !== undefined
@@ -344,6 +407,8 @@ export function buildSseContract(
   return {
     ...base,
     method: determineMethod(config as { method?: string }, hasBody, 'POST'),
+    responseSchemasByStatusCode: (config as { responseSchemasByStatusCode?: unknown })
+      .responseSchemasByStatusCode,
     isSSE: true,
   }
 }

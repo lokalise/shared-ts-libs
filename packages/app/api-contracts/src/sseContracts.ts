@@ -1,4 +1,5 @@
 import type { z } from 'zod/v4'
+import type { HttpStatusCode } from './HttpStatusCodes.ts'
 import type { SSEEventSchemas } from './sseTypes.ts'
 
 /**
@@ -31,6 +32,7 @@ export type SSEPathResolver<Params> = (params: Params) => string
  * @template RequestHeaders - Request headers schema
  * @template Body - Request requestBody schema (for POST/PUT/PATCH)
  * @template Events - Map of event name to event data schema
+ * @template ResponseSchemasByStatusCode - Error response schemas by HTTP status code
  */
 export type SSEContractDefinition<
   Method extends SSEMethod = SSEMethod,
@@ -39,6 +41,9 @@ export type SSEContractDefinition<
   RequestHeaders extends z.ZodTypeAny = z.ZodTypeAny,
   Body extends z.ZodTypeAny | undefined = undefined,
   Events extends SSEEventSchemas = SSEEventSchemas,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
+    | undefined = undefined,
 > = {
   method: Method
   /**
@@ -51,6 +56,20 @@ export type SSEContractDefinition<
   requestHeaders: RequestHeaders
   requestBody: Body
   sseEvents: Events
+  /**
+   * Error response schemas by HTTP status code.
+   * Used to define response shapes for errors that occur before streaming starts
+   * (e.g., authentication failures, validation errors, not found).
+   *
+   * @example
+   * ```ts
+   * responseSchemasByStatusCode: {
+   *   401: z.object({ error: z.literal('Unauthorized') }),
+   *   404: z.object({ error: z.string() }),
+   * }
+   * ```
+   */
+  responseSchemasByStatusCode?: ResponseSchemasByStatusCode
   isSSE: true
 }
 
@@ -67,5 +86,6 @@ export type AnySSEContractDefinition = {
   requestHeaders: z.ZodTypeAny
   requestBody: z.ZodTypeAny | undefined
   sseEvents: SSEEventSchemas
+  responseSchemasByStatusCode?: Partial<Record<HttpStatusCode, z.ZodTypeAny>>
   isSSE: true
 }

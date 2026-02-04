@@ -59,6 +59,55 @@ describe('contractBuilders', () => {
       expect(route.isSSE).toBe(true)
       expect(route.requestBody).toBeUndefined()
     })
+
+    it('includes responseSchemasByStatusCode for SSE GET', () => {
+      const route = buildSseContract({
+        pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
+        params: z.object({ channelId: z.string() }),
+        query: z.object({}),
+        requestHeaders: z.object({ authorization: z.string() }),
+        sseEvents: {
+          message: z.object({ text: z.string() }),
+        },
+        responseSchemasByStatusCode: {
+          401: z.object({ error: z.literal('Unauthorized') }),
+          404: z.object({ error: z.literal('Channel not found') }),
+        },
+      })
+
+      expect(route.isSSE).toBe(true)
+      expect(route.responseSchemasByStatusCode).toBeDefined()
+      expect(route.responseSchemasByStatusCode?.[401]).toBeDefined()
+      expect(route.responseSchemasByStatusCode?.[404]).toBeDefined()
+    })
+  })
+
+  describe('buildSseContract (SSE POST with responseSchemasByStatusCode)', () => {
+    it('includes responseSchemasByStatusCode for SSE POST', () => {
+      const route = buildSseContract({
+        method: 'POST',
+        pathResolver: () => '/api/process/stream',
+        params: z.object({}),
+        query: z.object({}),
+        requestHeaders: z.object({ authorization: z.string() }),
+        requestBody: z.object({ fileId: z.string() }),
+        sseEvents: {
+          progress: z.object({ percent: z.number() }),
+          done: z.object({ result: z.string() }),
+        },
+        responseSchemasByStatusCode: {
+          400: z.object({ error: z.string(), details: z.array(z.string()) }),
+          401: z.object({ error: z.literal('Unauthorized') }),
+          404: z.object({ error: z.literal('File not found') }),
+        },
+      })
+
+      expect(route.isSSE).toBe(true)
+      expect(route.responseSchemasByStatusCode).toBeDefined()
+      expect(route.responseSchemasByStatusCode?.[400]).toBeDefined()
+      expect(route.responseSchemasByStatusCode?.[401]).toBeDefined()
+      expect(route.responseSchemasByStatusCode?.[404]).toBeDefined()
+    })
   })
 
   describe('buildSseContract (Dual-mode with body)', () => {
