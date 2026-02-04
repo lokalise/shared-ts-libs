@@ -5,7 +5,7 @@ export * from './pathUtils.ts'
 export * from './sse/dualModeContracts.ts'
 export * from './sse/dualModeTypes.ts'
 // Contract builders
-export * from './sse/seeContractBuilders.ts'
+export * from './sse/sseContractBuilders.ts'
 // SSE contracts
 export * from './sse/sseContracts.ts'
 export * from './sse/sseTypes.ts'

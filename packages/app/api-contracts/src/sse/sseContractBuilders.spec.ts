@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod/v4'
-import { buildSseContract } from './seeContractBuilders.ts'
+import { buildSseContract } from './sseContractBuilders.ts'
 
 describe('contractBuilders', () => {
   describe('buildSseContract (SSE with body)', () => {
