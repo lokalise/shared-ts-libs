@@ -1,8 +1,7 @@
 import { setTimeout } from 'node:timers/promises'
 import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import { getLocal, type Mockttp } from 'mockttp'
-import type { Interceptable } from 'undici'
-import { Client, MockAgent, setGlobalDispatcher } from 'undici'
+import { Client } from 'undici'
 import { createDefaultRetryResolver } from 'undici-retry'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod/v4'
@@ -32,7 +31,6 @@ const TEXT_HEADERS = {
   'content-type': 'text/plain',
 }
 
-const baseUrl = 'https://fakestoreapi.com'
 const reqContext: HttpRequestContext = {
   reqId: 'dummyId',
 }
@@ -48,19 +46,27 @@ async function streamToString(stream: ReadableStream | NodeJS.ReadableStream): P
 }
 
 describe('httpClient', () => {
-  let mockAgent: MockAgent
-  let client: Client & Interceptable
-  beforeEach(() => {
-    mockAgent = new MockAgent()
-    mockAgent.disableNetConnect()
-    setGlobalDispatcher(mockAgent)
-    client = mockAgent.get(baseUrl) as unknown as Client & Interceptable
+  let mockServer: Mockttp
+  let client: Client
+
+  beforeAll(async () => {
+    mockServer = getLocal()
+    await mockServer.start()
+  })
+
+  beforeEach(async () => {
+    await mockServer.reset()
+    client = buildClient(mockServer.url)
+  })
+
+  afterAll(async () => {
+    await mockServer.stop()
   })
 
   describe('buildClient', () => {
     it('creates a client', () => {
-      const client = buildClient(baseUrl)
-      expect(client).toBeInstanceOf(Client)
+      const testClient = buildClient(mockServer.url)
+      expect(testClient).toBeInstanceOf(Client)
     })
   })
 
@@ -70,12 +76,7 @@ describe('httpClient', () => {
         id: z.string(),
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       await expect(
         sendGet(client, '/products/1', {
@@ -112,12 +113,7 @@ describe('httpClient', () => {
         title: z.string(),
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       const result = await sendGet(client, '/products/1', {
         responseSchema: schema,
@@ -133,12 +129,7 @@ describe('httpClient', () => {
         id: z.string(),
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       const result = await sendGet(client, '/products/1', {
         responseSchema: schema,
@@ -150,12 +141,7 @@ describe('httpClient', () => {
     })
 
     it('unexpected 204, with validation', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(204)
+      await mockServer.forGet('/products/1').thenReply(204)
 
       await expect(
         sendGet(client, '/products/1', {
@@ -176,12 +162,7 @@ describe('httpClient', () => {
     })
 
     it('unexpected 204, without validation', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(204)
+      await mockServer.forGet('/products/1').thenReply(204)
 
       const result = await sendGet(client, '/products/1', {
         responseSchema: z.number(),
@@ -194,12 +175,7 @@ describe('httpClient', () => {
     })
 
     it('expected 204', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(204)
+      await mockServer.forGet('/products/1').thenReply(204)
 
       const result = await sendGet(client, '/products/1', {
         responseSchema: z.number(),
@@ -214,12 +190,7 @@ describe('httpClient', () => {
 
     it('returns original payload when breaking during parsing and throw on error is true', async () => {
       expect.assertions(1)
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, 'this is not a real json', { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenReply(200, 'this is not a real json', JSON_HEADERS)
 
       try {
         await sendGet(client, '/products/1', {
@@ -244,12 +215,7 @@ describe('httpClient', () => {
 
     it('does not throw if broken during parsing but throwOnError is false', async () => {
       expect.assertions(1)
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, 'this is not a real json', { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenReply(200, 'this is not a real json', JSON_HEADERS)
 
       const result = await sendGet(client, '/products/1', {
         responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -269,12 +235,7 @@ describe('httpClient', () => {
     })
 
     it('GET without queryParams', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       const result = await sendGet(client, '/products/1', {
         responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -285,14 +246,7 @@ describe('httpClient', () => {
     })
 
     it('GET returning text', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, 'just text', {
-          headers: TEXT_HEADERS,
-        })
+      await mockServer.forGet('/products/1').thenReply(200, 'just text', TEXT_HEADERS)
 
       const result = await sendGet(client, '/products/1', {
         responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -303,12 +257,7 @@ describe('httpClient', () => {
     })
 
     it('GET returning text without content type', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, 'just text', {})
+      await mockServer.forGet('/products/1').thenReply(200, 'just text')
 
       const result = await sendGet(client, '/products/1', {
         responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -323,13 +272,10 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'GET',
-          query,
-        })
-        .reply(200, mockProductsLimit3, { headers: JSON_HEADERS })
+      await mockServer
+        .forGet('/products')
+        .withQuery({ limit: '3' })
+        .thenJson(200, mockProductsLimit3, JSON_HEADERS)
 
       const result = await sendGet(client, '/products', {
         query,
@@ -345,13 +291,7 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'GET',
-          query,
-        })
-        .replyWithError(new Error('connection error'))
+      await mockServer.forGet('/products').withQuery({ limit: '3' }).thenCloseConnection()
 
       const result = await sendGet(client, '/products', {
         query,
@@ -370,13 +310,7 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'GET',
-          query,
-        })
-        .replyWithError(new Error('connection error'))
+      await mockServer.forGet('/products').withQuery({ limit: '3' }).thenCloseConnection()
 
       await expect(
         sendGet(client, '/products', {
@@ -385,7 +319,7 @@ describe('httpClient', () => {
           requestLabel: 'dummy',
         }),
       ).rejects.toMatchObject({
-        message: 'connection error',
+        message: expect.stringContaining('other side closed'),
       })
     })
 
@@ -417,13 +351,10 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'GET',
-          query,
-        })
-        .reply(400, 'Invalid request')
+      await mockServer
+        .forGet('/products')
+        .withQuery({ limit: '3' })
+        .thenReply(400, 'Invalid request')
 
       await expect(
         sendGet(client, '/products', {
@@ -453,20 +384,17 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'GET',
-          query,
+      let requestCount = 0
+      await mockServer
+        .forGet('/products')
+        .withQuery({ limit: '3' })
+        .thenCallback(() => {
+          requestCount++
+          if (requestCount === 1) {
+            return { statusCode: 500, body: 'Invalid request' }
+          }
+          return { statusCode: 200, body: 'OK' }
         })
-        .reply(500, 'Invalid request')
-      client
-        .intercept({
-          path: '/products',
-          method: 'GET',
-          query,
-        })
-        .reply(200, 'OK')
 
       const response = await sendGet(client, '/products', {
         query,
@@ -498,12 +426,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       await expect(
         sendByGetRoute(
@@ -549,12 +472,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       const result = await sendByGetRoute(
         client,
@@ -581,12 +499,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       const result = await sendByGetRoute(
         client,
@@ -610,12 +523,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(204)
+      await mockServer.forGet('/products/1').thenReply(204)
 
       await expect(
         sendByGetRoute(
@@ -646,12 +554,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(204)
+      await mockServer.forGet('/products/1').thenReply(204)
 
       await expect(
         sendByGetRoute(
@@ -676,12 +579,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(204)
+      await mockServer.forGet('/products/1').thenReply(204)
 
       const result = await sendByGetRoute(
         client,
@@ -717,12 +615,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: 'resources/products/1',
-          method: 'GET',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forGet('/resources/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       const result = await sendByGetRoute(
         client,
@@ -744,12 +637,7 @@ describe('httpClient', () => {
 
   describe('DELETE', () => {
     it('DELETE without queryParams', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'DELETE',
-        })
-        .reply(200)
+      await mockServer.forDelete('/products/1').thenReply(200)
 
       const result = await sendDelete(client, '/products/1', {
         reqContext,
@@ -767,13 +655,7 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'DELETE',
-          query,
-        })
-        .reply(200)
+      await mockServer.forDelete('/products').withQuery({ limit: '3' }).thenReply(200)
 
       const result = await sendDelete(client, '/products', {
         query,
@@ -791,13 +673,7 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'DELETE',
-          query,
-        })
-        .replyWithError(new Error('connection error'))
+      await mockServer.forDelete('/products').withQuery({ limit: '3' }).thenCloseConnection()
 
       await expect(
         sendDelete(client, '/products', {
@@ -806,17 +682,12 @@ describe('httpClient', () => {
           requestLabel: 'dummy',
         }),
       ).rejects.toMatchObject({
-        message: 'connection error',
+        message: expect.stringContaining('other side closed'),
       })
     })
 
     it('unexpected 204, with validation', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'DELETE',
-        })
-        .reply(204)
+      await mockServer.forDelete('/products/1').thenReply(204)
 
       await expect(
         sendDelete(client, '/products/1', {
@@ -838,12 +709,7 @@ describe('httpClient', () => {
     })
 
     it('unexpected 204, without validation', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'DELETE',
-        })
-        .reply(204)
+      await mockServer.forDelete('/products/1').thenReply(204)
 
       const result = await sendDelete(client, '/products/1', {
         responseSchema: z.number(),
@@ -857,12 +723,7 @@ describe('httpClient', () => {
     })
 
     it('expected 204', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'DELETE',
-        })
-        .reply(204)
+      await mockServer.forDelete('/products/1').thenReply(204)
 
       const result = await sendDelete(client, '/products/1', {
         responseSchema: z.number(),
@@ -886,12 +747,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'DELETE',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forDelete('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       await expect(
         sendByDeleteRoute(
@@ -937,12 +793,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'DELETE',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forDelete('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       const result = await sendByDeleteRoute(
         client,
@@ -969,12 +820,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'DELETE',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forDelete('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       const result = await sendByDeleteRoute(
         client,
@@ -998,12 +844,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'DELETE',
-        })
-        .reply(204)
+      await mockServer.forDelete('/products/1').thenReply(204)
 
       const result = await sendByDeleteRoute(
         client,
@@ -1027,12 +868,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'DELETE',
-        })
-        .reply(204)
+      await mockServer.forDelete('/products/1').thenReply(204)
 
       await expect(
         sendByDeleteRoute(
@@ -1067,12 +903,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: 'resources/products/1',
-          method: 'DELETE',
-        })
-        .reply(200, { id: 1 }, { headers: JSON_HEADERS })
+      await mockServer.forDelete('/resources/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
 
       const result = await sendByDeleteRoute(
         client,
@@ -1105,12 +936,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forPost('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       await expect(
         sendByPayloadRoute(
@@ -1158,12 +984,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forPost('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       const result = await sendByPayloadRoute(
         client,
@@ -1192,12 +1013,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forPost('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       const result = await sendByPayloadRoute(
         client,
@@ -1227,12 +1043,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: 'resources/products/1',
-          method: 'POST',
-        })
-        .reply(200, { id: 1 }, { headers: JSON_HEADERS })
+      await mockServer.forPost('/resources/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
 
       const result = await sendByPayloadRoute(
         client,
@@ -1258,12 +1069,7 @@ describe('httpClient', () => {
         id: z.string(),
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forPost('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       await expect(
         sendPost(
@@ -1304,12 +1110,7 @@ describe('httpClient', () => {
         title: z.string(),
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forPost('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       const result = await sendPost(
         client,
@@ -1331,12 +1132,7 @@ describe('httpClient', () => {
         id: z.string(),
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forPost('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       const result = await sendPost(
         client,
@@ -1353,12 +1149,7 @@ describe('httpClient', () => {
     })
 
     it('unexpected 204, with validation', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(204)
+      await mockServer.forPost('/products/1').thenReply(204)
 
       await expect(
         sendPost(
@@ -1384,12 +1175,7 @@ describe('httpClient', () => {
     })
 
     it('unexpected 204, without validation', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(204)
+      await mockServer.forPost('/products/1').thenReply(204)
 
       const result = await sendPost(
         client,
@@ -1407,12 +1193,7 @@ describe('httpClient', () => {
     })
 
     it('expected 204', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(204)
+      await mockServer.forPost('/products/1').thenReply(204)
 
       const result = await sendPost(
         client,
@@ -1431,12 +1212,7 @@ describe('httpClient', () => {
     })
 
     it('POST without queryParams', async () => {
-      client
-        .intercept({
-          path: '/products',
-          method: 'POST',
-        })
-        .reply(200, { id: 21 }, { headers: JSON_HEADERS })
+      await mockServer.forPost('/products').thenJson(200, { id: 21 }, JSON_HEADERS)
 
       const result = await sendPost(client, '/products', mockProduct1, {
         responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -1447,12 +1223,7 @@ describe('httpClient', () => {
     })
 
     it('POST without body', async () => {
-      client
-        .intercept({
-          path: '/products',
-          method: 'POST',
-        })
-        .reply(200, { id: 21 }, { headers: JSON_HEADERS })
+      await mockServer.forPost('/products').thenJson(200, { id: 21 }, JSON_HEADERS)
 
       const result = await sendPost(client, '/products', undefined, {
         responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -1467,13 +1238,10 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'POST',
-          query,
-        })
-        .reply(200, { id: 21 }, { headers: JSON_HEADERS })
+      await mockServer
+        .forPost('/products')
+        .withQuery({ limit: '3' })
+        .thenJson(200, { id: 21 }, JSON_HEADERS)
 
       const result = await sendPost(client, '/products', mockProduct1, {
         query,
@@ -1485,12 +1253,7 @@ describe('httpClient', () => {
     })
 
     it('POST that returns 400 throws an error', async () => {
-      client
-        .intercept({
-          path: '/products',
-          method: 'POST',
-        })
-        .reply(400, { errorCode: 'err' }, { headers: JSON_HEADERS })
+      await mockServer.forPost('/products').thenJson(400, { errorCode: 'err' }, JSON_HEADERS)
 
       await expect(
         sendPost(client, '/products', mockProduct1, {
@@ -1506,13 +1269,7 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'POST',
-          query,
-        })
-        .replyWithError(new Error('connection error'))
+      await mockServer.forPost('/products').withQuery({ limit: '3' }).thenCloseConnection()
 
       await expect(
         sendPost(client, '/products', undefined, {
@@ -1521,7 +1278,7 @@ describe('httpClient', () => {
           requestLabel: 'dummy',
         }),
       ).rejects.toMatchObject({
-        message: 'connection error',
+        message: expect.stringContaining('other side closed'),
       })
     })
   })
@@ -1532,12 +1289,7 @@ describe('httpClient', () => {
         id: z.string(),
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forPost('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       await expect(
         sendPostBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
@@ -1573,12 +1325,7 @@ describe('httpClient', () => {
         title: z.string(),
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forPost('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       const result = await sendPostBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
         responseSchema: schema,
@@ -1595,12 +1342,7 @@ describe('httpClient', () => {
         id: z.string(),
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(200, mockProduct1, { headers: JSON_HEADERS })
+      await mockServer.forPost('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       const result = await sendPostBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
         responseSchema: schema,
@@ -1612,12 +1354,7 @@ describe('httpClient', () => {
     })
 
     it('unexpected 204, with validation', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(204)
+      await mockServer.forPost('/products/1').thenReply(204)
 
       await expect(
         sendPostBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
@@ -1638,12 +1375,7 @@ describe('httpClient', () => {
     })
 
     it('unexpected 204, without validation', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(204)
+      await mockServer.forPost('/products/1').thenReply(204)
 
       const result = await sendPostBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
         responseSchema: z.number(),
@@ -1656,12 +1388,7 @@ describe('httpClient', () => {
     })
 
     it('expected 204', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'POST',
-        })
-        .reply(204)
+      await mockServer.forPost('/products/1').thenReply(204)
 
       const result = await sendPostBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
         responseSchema: z.number(),
@@ -1675,12 +1402,7 @@ describe('httpClient', () => {
     })
 
     it('POST without queryParams', async () => {
-      client
-        .intercept({
-          path: '/products',
-          method: 'POST',
-        })
-        .reply(200, { id: 21 }, { headers: JSON_HEADERS })
+      await mockServer.forPost('/products').thenJson(200, { id: 21 }, JSON_HEADERS)
 
       const result = await sendPostBinary(
         client,
@@ -1700,13 +1422,10 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'POST',
-          query,
-        })
-        .reply(200, { id: 21 }, { headers: JSON_HEADERS })
+      await mockServer
+        .forPost('/products')
+        .withQuery({ limit: '3' })
+        .thenJson(200, { id: 21 }, JSON_HEADERS)
 
       const result = await sendPostBinary(
         client,
@@ -1723,12 +1442,7 @@ describe('httpClient', () => {
     })
 
     it('POST that returns 400 throws an error', async () => {
-      client
-        .intercept({
-          path: '/products',
-          method: 'POST',
-        })
-        .reply(400, { errorCode: 'err' }, { headers: JSON_HEADERS })
+      await mockServer.forPost('/products').thenJson(400, { errorCode: 'err' }, JSON_HEADERS)
 
       await expect(
         sendPostBinary(client, '/products', Buffer.from(JSON.stringify(mockProduct1)), {
@@ -1744,13 +1458,7 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'POST',
-          query,
-        })
-        .replyWithError(new Error('connection error'))
+      await mockServer.forPost('/products').withQuery({ limit: '3' }).thenCloseConnection()
 
       await expect(
         sendPostBinary(client, '/products', Buffer.from(JSON.stringify({})), {
@@ -1759,19 +1467,14 @@ describe('httpClient', () => {
           requestLabel: 'dummy',
         }),
       ).rejects.toMatchObject({
-        message: 'connection error',
+        message: expect.stringContaining('other side closed'),
       })
     })
   })
 
   describe('PUT', () => {
     it('PUT without queryParams', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PUT',
-        })
-        .reply(200, { id: 21 }, { headers: JSON_HEADERS })
+      await mockServer.forPut('/products/1').thenJson(200, { id: 21 }, JSON_HEADERS)
 
       const result = await sendPut(client, '/products/1', mockProduct1, {
         reqContext,
@@ -1783,12 +1486,7 @@ describe('httpClient', () => {
     })
 
     it('PUT without body', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PUT',
-        })
-        .reply(200, { id: 21 }, { headers: JSON_HEADERS })
+      await mockServer.forPut('/products/1').thenJson(200, { id: 21 }, JSON_HEADERS)
 
       const result = await sendPut(client, '/products/1', undefined, {
         responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -1803,13 +1501,10 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PUT',
-          query,
-        })
-        .reply(200, { id: 21 }, { headers: JSON_HEADERS })
+      await mockServer
+        .forPut('/products/1')
+        .withQuery({ limit: '3' })
+        .thenJson(200, { id: 21 }, JSON_HEADERS)
 
       const result = await sendPut(client, '/products/1', mockProduct1, {
         query,
@@ -1821,12 +1516,7 @@ describe('httpClient', () => {
     })
 
     it('PUT that returns 400 throws an error', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PUT',
-        })
-        .reply(400, { errorCode: 'err' }, { headers: JSON_HEADERS })
+      await mockServer.forPut('/products/1').thenJson(400, { errorCode: 'err' }, JSON_HEADERS)
 
       await expect(
         sendPut(client, '/products/1', mockProduct1, {
@@ -1842,13 +1532,7 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'PUT',
-          query,
-        })
-        .replyWithError(new Error('connection error'))
+      await mockServer.forPut('/products').withQuery({ limit: '3' }).thenCloseConnection()
 
       await expect(
         sendPut(client, '/products', undefined, {
@@ -1857,17 +1541,12 @@ describe('httpClient', () => {
           requestLabel: 'dummy',
         }),
       ).rejects.toMatchObject({
-        message: 'connection error',
+        message: expect.stringContaining('other side closed'),
       })
     })
 
     it('unexpected 204, with validation', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PUT',
-        })
-        .reply(204)
+      await mockServer.forPut('/products/1').thenReply(204)
 
       await expect(
         sendPut(
@@ -1893,12 +1572,7 @@ describe('httpClient', () => {
     })
 
     it('unexpected 204, without validation', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PUT',
-        })
-        .reply(204)
+      await mockServer.forPut('/products/1').thenReply(204)
 
       const result = await sendPut(
         client,
@@ -1916,12 +1590,7 @@ describe('httpClient', () => {
     })
 
     it('expected 204', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PUT',
-        })
-        .reply(204)
+      await mockServer.forPut('/products/1').thenReply(204)
 
       const result = await sendPut(
         client,
@@ -1942,12 +1611,7 @@ describe('httpClient', () => {
 
   describe('PUT binary', () => {
     it('PUT without queryParams', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PUT',
-        })
-        .reply(200, { id: 21 }, { headers: JSON_HEADERS })
+      await mockServer.forPut('/products/1').thenJson(200, { id: 21 }, JSON_HEADERS)
 
       const result = await sendPutBinary(client, '/products/1', Buffer.from('text'), {
         reqContext,
@@ -1963,13 +1627,10 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PUT',
-          query,
-        })
-        .reply(200, { id: 21 }, { headers: JSON_HEADERS })
+      await mockServer
+        .forPut('/products/1')
+        .withQuery({ limit: '3' })
+        .thenJson(200, { id: 21 }, JSON_HEADERS)
 
       const result = await sendPutBinary(client, '/products/1', Buffer.from('text'), {
         query,
@@ -1981,12 +1642,7 @@ describe('httpClient', () => {
     })
 
     it('PUT that returns 400 throws an error', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PUT',
-        })
-        .reply(400, { errorCode: 'err' }, { headers: JSON_HEADERS })
+      await mockServer.forPut('/products/1').thenJson(400, { errorCode: 'err' }, JSON_HEADERS)
 
       await expect(
         sendPutBinary(client, '/products/1', Buffer.from('text'), {
@@ -2002,13 +1658,7 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'PUT',
-          query,
-        })
-        .replyWithError(new Error('connection error'))
+      await mockServer.forPut('/products').withQuery({ limit: '3' }).thenCloseConnection()
 
       await expect(
         sendPutBinary(client, '/products', null, {
@@ -2017,17 +1667,12 @@ describe('httpClient', () => {
           requestLabel: 'dummy',
         }),
       ).rejects.toMatchObject({
-        message: 'connection error',
+        message: expect.stringContaining('other side closed'),
       })
     })
 
     it('unexpected 204, with validation', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PUT',
-        })
-        .reply(204)
+      await mockServer.forPut('/products/1').thenReply(204)
 
       await expect(
         sendPutBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
@@ -2048,12 +1693,7 @@ describe('httpClient', () => {
     })
 
     it('unexpected 204, without validation', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PUT',
-        })
-        .reply(204)
+      await mockServer.forPut('/products/1').thenReply(204)
 
       const result = await sendPutBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
         responseSchema: z.number(),
@@ -2066,12 +1706,7 @@ describe('httpClient', () => {
     })
 
     it('expected 204', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PUT',
-        })
-        .reply(204)
+      await mockServer.forPut('/products/1').thenReply(204)
 
       const result = await sendPutBinary(client, '/products/1', Buffer.from(JSON.stringify({})), {
         responseSchema: z.number(),
@@ -2087,12 +1722,7 @@ describe('httpClient', () => {
 
   describe('PATCH', () => {
     it('PATCH without queryParams', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PATCH',
-        })
-        .reply(200, { id: 21 }, { headers: JSON_HEADERS })
+      await mockServer.forPatch('/products/1').thenJson(200, { id: 21 }, JSON_HEADERS)
 
       const result = await sendPatch(client, '/products/1', mockProduct1, {
         responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -2103,12 +1733,7 @@ describe('httpClient', () => {
     })
 
     it('PATCH without body', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PATCH',
-        })
-        .reply(200, { id: 21 }, { headers: JSON_HEADERS })
+      await mockServer.forPatch('/products/1').thenJson(200, { id: 21 }, JSON_HEADERS)
 
       const result = await sendPatch(client, '/products/1', undefined, {
         responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -2123,13 +1748,10 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PATCH',
-          query,
-        })
-        .reply(200, { id: 21 }, { headers: JSON_HEADERS })
+      await mockServer
+        .forPatch('/products/1')
+        .withQuery({ limit: '3' })
+        .thenJson(200, { id: 21 }, JSON_HEADERS)
 
       const result = await sendPatch(client, '/products/1', mockProduct1, {
         query,
@@ -2142,12 +1764,7 @@ describe('httpClient', () => {
     })
 
     it('PATCH that returns 400 throws an error', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PATCH',
-        })
-        .reply(400, { errorCode: 'err' }, { headers: JSON_HEADERS })
+      await mockServer.forPatch('/products/1').thenJson(400, { errorCode: 'err' }, JSON_HEADERS)
 
       await expect(
         sendPatch(client, '/products/1', mockProduct1, {
@@ -2163,13 +1780,7 @@ describe('httpClient', () => {
         limit: 3,
       }
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'PATCH',
-          query,
-        })
-        .replyWithError(new Error('connection error'))
+      await mockServer.forPatch('/products').withQuery({ limit: '3' }).thenCloseConnection()
 
       await expect(
         sendPatch(client, '/products', undefined, {
@@ -2178,17 +1789,12 @@ describe('httpClient', () => {
           requestLabel: 'dummy',
         }),
       ).rejects.toMatchObject({
-        message: 'connection error',
+        message: expect.stringContaining('other side closed'),
       })
     })
 
     it('unexpected 204, with validation', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PATCH',
-        })
-        .reply(204)
+      await mockServer.forPatch('/products/1').thenReply(204)
 
       await expect(
         sendPatch(
@@ -2214,12 +1820,7 @@ describe('httpClient', () => {
     })
 
     it('unexpected 204, without validation', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PATCH',
-        })
-        .reply(204)
+      await mockServer.forPatch('/products/1').thenReply(204)
 
       const result = await sendPatch(
         client,
@@ -2237,12 +1838,7 @@ describe('httpClient', () => {
     })
 
     it('expected 204', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'PATCH',
-        })
-        .reply(204)
+      await mockServer.forPatch('/products/1').thenReply(204)
 
       const result = await sendPatch(
         client,
@@ -2265,12 +1861,7 @@ describe('httpClient', () => {
     it('returns streamed response body', async () => {
       const responseData = JSON.stringify(mockProduct1)
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, responseData, { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenReply(200, responseData, JSON_HEADERS)
 
       const result = await sendGetWithStreamedResponse(client, '/products/1', {
         requestLabel: 'dummy',
@@ -2291,13 +1882,10 @@ describe('httpClient', () => {
       }
       const responseData = JSON.stringify(mockProductsLimit3)
 
-      client
-        .intercept({
-          path: '/products',
-          method: 'GET',
-          query,
-        })
-        .reply(200, responseData, { headers: JSON_HEADERS })
+      await mockServer
+        .forGet('/products')
+        .withQuery({ limit: '3' })
+        .thenReply(200, responseData, JSON_HEADERS)
 
       const result = await sendGetWithStreamedResponse(client, '/products', {
         query,
@@ -2315,12 +1903,9 @@ describe('httpClient', () => {
     it('throws an error when throwOnError is true and request fails', async () => {
       expect.assertions(1)
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(500, { error: 'Internal Server Error' }, { headers: JSON_HEADERS })
+      await mockServer
+        .forGet('/products/1')
+        .thenJson(500, { error: 'Internal Server Error' }, JSON_HEADERS)
 
       await expect(
         sendGetWithStreamedResponse(client, '/products/1', {
@@ -2334,12 +1919,9 @@ describe('httpClient', () => {
     })
 
     it('returns error when throwOnError is false and request fails', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(500, { error: 'Internal Server Error' }, { headers: JSON_HEADERS })
+      await mockServer
+        .forGet('/products/1')
+        .thenJson(500, { error: 'Internal Server Error' }, JSON_HEADERS)
 
       const result = await sendGetWithStreamedResponse(client, '/products/1', {
         requestLabel: 'dummy',
@@ -2351,12 +1933,7 @@ describe('httpClient', () => {
     })
 
     it('returns internal error when connection fails with throwOnError false', async () => {
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .replyWithError(new Error('connection error'))
+      await mockServer.forGet('/products/1').thenCloseConnection()
 
       const result = await sendGetWithStreamedResponse(client, '/products/1', {
         requestLabel: 'dummy',
@@ -2370,12 +1947,7 @@ describe('httpClient', () => {
     it('throws on internal error when throwOnError is true', async () => {
       expect.assertions(1)
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .replyWithError(new Error('connection error'))
+      await mockServer.forGet('/products/1').thenCloseConnection()
 
       await expect(
         sendGetWithStreamedResponse(client, '/products/1', {
@@ -2383,7 +1955,7 @@ describe('httpClient', () => {
           throwOnError: true,
         }),
       ).rejects.toMatchObject({
-        message: 'connection error',
+        message: expect.stringContaining('other side closed'),
       })
     })
   })
@@ -2397,12 +1969,7 @@ describe('httpClient', () => {
       })
       const responseData = JSON.stringify(mockProduct1)
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, responseData, { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenReply(200, responseData, JSON_HEADERS)
 
       const result = await sendByGetRouteWithStreamedResponse(
         client,
@@ -2437,13 +2004,10 @@ describe('httpClient', () => {
       })
       const responseData = JSON.stringify(mockProduct1)
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-          query: { limit: 3 },
-        })
-        .reply(200, responseData, { headers: JSON_HEADERS })
+      await mockServer
+        .forGet('/products/1')
+        .withQuery({ limit: '3' })
+        .thenReply(200, responseData, JSON_HEADERS)
 
       const result = await sendByGetRouteWithStreamedResponse(
         client,
@@ -2473,12 +2037,9 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(500, { error: 'Internal Server Error' }, { headers: JSON_HEADERS })
+      await mockServer
+        .forGet('/products/1')
+        .thenJson(500, { error: 'Internal Server Error' }, JSON_HEADERS)
 
       await expect(
         sendByGetRouteWithStreamedResponse(
@@ -2503,12 +2064,9 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(500, { error: 'Internal Server Error' }, { headers: JSON_HEADERS })
+      await mockServer
+        .forGet('/products/1')
+        .thenJson(500, { error: 'Internal Server Error' }, JSON_HEADERS)
 
       const result = await sendByGetRouteWithStreamedResponse(
         client,
@@ -2531,12 +2089,7 @@ describe('httpClient', () => {
         pathResolver: () => '/products/1',
       })
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .replyWithError(new Error('connection error'))
+      await mockServer.forGet('/products/1').thenCloseConnection()
 
       const result = await sendByGetRouteWithStreamedResponse(
         client,
@@ -2560,21 +2113,18 @@ describe('httpClient', () => {
       })
       const responseData = JSON.stringify(mockProduct1)
 
-      // First call fails with 500
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(500, { error: 'Internal Server Error' }, { headers: JSON_HEADERS })
-
-      // Second call succeeds
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, responseData, { headers: JSON_HEADERS })
+      let requestCount = 0
+      await mockServer.forGet('/products/1').thenCallback(() => {
+        requestCount++
+        if (requestCount === 1) {
+          return {
+            statusCode: 500,
+            body: JSON.stringify({ error: 'Internal Server Error' }),
+            headers: JSON_HEADERS,
+          }
+        }
+        return { statusCode: 200, body: responseData, headers: JSON_HEADERS }
+      })
 
       const result = await sendByGetRouteWithStreamedResponse(
         client,
@@ -2605,12 +2155,7 @@ describe('httpClient', () => {
     it('sendGetWithStreamedResponse with timeout', async () => {
       const responseData = JSON.stringify(mockProduct1)
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, responseData, { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenReply(200, responseData, JSON_HEADERS)
 
       const result = await sendGetWithStreamedResponse(client, '/products/1', {
         requestLabel: 'dummy',
@@ -2625,12 +2170,7 @@ describe('httpClient', () => {
     it('sendGetWithStreamedResponse with disableKeepAlive', async () => {
       const responseData = JSON.stringify(mockProduct1)
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, responseData, { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenReply(200, responseData, JSON_HEADERS)
 
       const result = await sendGetWithStreamedResponse(client, '/products/1', {
         requestLabel: 'dummy',
@@ -2645,12 +2185,7 @@ describe('httpClient', () => {
     it('sendGetWithStreamedResponse without throwOnError uses default', async () => {
       const responseData = JSON.stringify(mockProduct1)
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, responseData, { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenReply(200, responseData, JSON_HEADERS)
 
       const result = await sendGetWithStreamedResponse(client, '/products/1', {
         requestLabel: 'dummy',
@@ -2664,12 +2199,7 @@ describe('httpClient', () => {
     it('sendGetWithStreamedResponse without reqContext', async () => {
       const responseData = JSON.stringify(mockProduct1)
 
-      client
-        .intercept({
-          path: '/products/1',
-          method: 'GET',
-        })
-        .reply(200, responseData, { headers: JSON_HEADERS })
+      await mockServer.forGet('/products/1').thenReply(200, responseData, JSON_HEADERS)
 
       const result = await sendGetWithStreamedResponse(client, '/products/1', {
         requestLabel: 'dummy',
@@ -2685,12 +2215,7 @@ describe('httpClient', () => {
   describe('Coverage for optional parameters', () => {
     describe('timeout options', () => {
       it('GET with explicit timeout', async () => {
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'GET',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendGet(client, '/products/1', {
           responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -2702,12 +2227,7 @@ describe('httpClient', () => {
       })
 
       it('GET with null timeout', async () => {
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'GET',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendGet(client, '/products/1', {
           responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -2719,12 +2239,7 @@ describe('httpClient', () => {
       })
 
       it('DELETE with explicit timeout', async () => {
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'DELETE',
-          })
-          .reply(204)
+        await mockServer.forDelete('/products/1').thenReply(204)
 
         const result = await sendDelete(client, '/products/1', {
           responseSchema: z.number(),
@@ -2737,12 +2252,7 @@ describe('httpClient', () => {
       })
 
       it('POST with explicit timeout', async () => {
-        client
-          .intercept({
-            path: '/products',
-            method: 'POST',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forPost('/products').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendPost(client, '/products', mockProduct1, {
           responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -2754,12 +2264,7 @@ describe('httpClient', () => {
       })
 
       it('PUT with explicit timeout', async () => {
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'PUT',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forPut('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendPut(client, '/products/1', mockProduct1, {
           responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -2771,12 +2276,7 @@ describe('httpClient', () => {
       })
 
       it('PATCH with explicit timeout', async () => {
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'PATCH',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forPatch('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendPatch(client, '/products/1', mockProduct1, {
           responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -2788,12 +2288,7 @@ describe('httpClient', () => {
       })
 
       it('POST binary with explicit timeout', async () => {
-        client
-          .intercept({
-            path: '/products',
-            method: 'POST',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forPost('/products').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendPostBinary(client, '/products', Buffer.from('test'), {
           responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -2805,12 +2300,7 @@ describe('httpClient', () => {
       })
 
       it('PUT binary with explicit timeout', async () => {
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'PUT',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forPut('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendPutBinary(client, '/products/1', Buffer.from('test'), {
           responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -2824,12 +2314,7 @@ describe('httpClient', () => {
 
     describe('disableKeepAlive option', () => {
       it('GET with disableKeepAlive true', async () => {
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'GET',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendGet(client, '/products/1', {
           responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -2841,12 +2326,7 @@ describe('httpClient', () => {
       })
 
       it('DELETE with disableKeepAlive true', async () => {
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'DELETE',
-          })
-          .reply(204)
+        await mockServer.forDelete('/products/1').thenReply(204)
 
         const result = await sendDelete(client, '/products/1', {
           responseSchema: z.number(),
@@ -2859,12 +2339,7 @@ describe('httpClient', () => {
       })
 
       it('POST with disableKeepAlive true', async () => {
-        client
-          .intercept({
-            path: '/products',
-            method: 'POST',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forPost('/products').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendPost(client, '/products', mockProduct1, {
           responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -2876,12 +2351,7 @@ describe('httpClient', () => {
       })
 
       it('PUT with disableKeepAlive true', async () => {
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'PUT',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forPut('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendPut(client, '/products/1', mockProduct1, {
           responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -2893,12 +2363,7 @@ describe('httpClient', () => {
       })
 
       it('PATCH with disableKeepAlive true', async () => {
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'PATCH',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forPatch('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendPatch(client, '/products/1', mockProduct1, {
           responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -2912,12 +2377,7 @@ describe('httpClient', () => {
 
     describe('validateResponse default behavior', () => {
       it('POST without validateResponse set uses default', async () => {
-        client
-          .intercept({
-            path: '/products',
-            method: 'POST',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forPost('/products').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendPost(client, '/products', mockProduct1, {
           responseSchema: UNKNOWN_RESPONSE_SCHEMA,
@@ -2937,12 +2397,7 @@ describe('httpClient', () => {
           isEmptyResponseExpected: true,
         })
 
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'GET',
-          })
-          .reply(204)
+        await mockServer.forGet('/products/1').thenReply(204)
 
         const result = await sendByGetRoute(
           client,
@@ -2964,12 +2419,7 @@ describe('httpClient', () => {
           pathResolver: () => '/products/1',
         })
 
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'GET',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendByGetRoute(
           client,
@@ -2992,12 +2442,7 @@ describe('httpClient', () => {
           isEmptyResponseExpected: false,
         })
 
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'DELETE',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forDelete('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendByDeleteRoute(
           client,
@@ -3019,12 +2464,7 @@ describe('httpClient', () => {
           pathResolver: () => '/products/1',
         })
 
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'DELETE',
-          })
-          .reply(204)
+        await mockServer.forDelete('/products/1').thenReply(204)
 
         const result = await sendByDeleteRoute(
           client,
@@ -3046,12 +2486,7 @@ describe('httpClient', () => {
           pathResolver: () => '/products/1',
         })
 
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'GET',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendByGetRoute(
           client,
@@ -3074,12 +2509,7 @@ describe('httpClient', () => {
           pathResolver: () => '/products/1',
         })
 
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'DELETE',
-          })
-          .reply(204)
+        await mockServer.forDelete('/products/1').thenReply(204)
 
         const result = await sendByDeleteRoute(
           client,
@@ -3102,12 +2532,7 @@ describe('httpClient', () => {
           pathResolver: () => '/products/1',
         })
 
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'GET',
-          })
-          .reply(200, mockProduct1, { headers: JSON_HEADERS })
+        await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
         const result = await sendByGetRoute(
           client,
@@ -3128,12 +2553,7 @@ describe('httpClient', () => {
           pathResolver: () => '/products/1',
         })
 
-        client
-          .intercept({
-            path: '/products/1',
-            method: 'DELETE',
-          })
-          .reply(204)
+        await mockServer.forDelete('/products/1').thenReply(204)
 
         const result = await sendByDeleteRoute(
           client,
@@ -3149,23 +2569,8 @@ describe('httpClient', () => {
     })
 
     describe('Client-level and request-level timeout configuration', () => {
-      let mockServer: Mockttp
-
-      beforeAll(async () => {
-        mockServer = getLocal()
-        await mockServer.start()
-      })
-
-      beforeEach(() => {
-        mockServer.reset()
-      })
-
-      afterAll(async () => {
-        await mockServer.stop()
-      })
-
       it('buildClient accepts custom bodyTimeout and headersTimeout', () => {
-        const clientWithCustomTimeout = buildClient(baseUrl, {
+        const clientWithCustomTimeout = buildClient(mockServer.url, {
           bodyTimeout: 100,
           headersTimeout: 100,
         })
@@ -3202,16 +2607,7 @@ describe('httpClient', () => {
           headersTimeout: 100,
         })
 
-        await mockServer.forGet('/timeout-client-level-custom').thenCallback(async () => {
-          // Simulate a delay longer than the custom timeout (100ms)
-          await setTimeout(1000)
-
-          return {
-            statusCode: 200,
-            headers: JSON_HEADERS,
-            body: JSON.stringify(mockProduct1),
-          }
-        })
+        await mockServer.forGet('/timeout-client-level-custom').thenTimeout()
 
         await expect(
           sendGet(clientWithCustomTimeout, '/timeout-client-level-custom', {
@@ -3233,16 +2629,7 @@ describe('httpClient', () => {
         })
 
         it('Request-level timeout works with GET requests', async () => {
-          await mockServer.forGet('/timeout-request-level-get').thenCallback(async () => {
-            // Simulate a delay longer than the request-level timeout (100ms)
-            await setTimeout(1000)
-
-            return {
-              statusCode: 200,
-              headers: JSON_HEADERS,
-              body: JSON.stringify(mockProduct1),
-            }
-          })
+          await mockServer.forGet('/timeout-request-level-get').thenTimeout()
 
           await expect(
             sendGet(clientWithCustomTimeout, '/timeout-request-level-get', {
@@ -3255,16 +2642,7 @@ describe('httpClient', () => {
         })
 
         it('Request-level timeout works with POST requests', async () => {
-          await mockServer.forPost('/timeout-request-level-post').thenCallback(async () => {
-            // Simulate a delay longer than the request-level timeout (100ms)
-            await setTimeout(1000)
-
-            return {
-              statusCode: 200,
-              headers: JSON_HEADERS,
-              body: JSON.stringify(mockProduct1),
-            }
-          })
+          await mockServer.forPost('/timeout-request-level-post').thenTimeout()
 
           await expect(
             sendPost(clientWithCustomTimeout, '/timeout-request-level-post', mockProduct1, {
@@ -3277,16 +2655,7 @@ describe('httpClient', () => {
         })
 
         it('Request-level timeout works with DELETE requests', async () => {
-          await mockServer.forDelete('/timeout-request-level-delete').thenCallback(async () => {
-            // Simulate a delay longer than the request-level timeout (100ms)
-            await setTimeout(1000)
-
-            return {
-              statusCode: 200,
-              headers: JSON_HEADERS,
-              body: JSON.stringify(mockProduct1),
-            }
-          })
+          await mockServer.forDelete('/timeout-request-level-delete').thenTimeout()
 
           await expect(
             sendDelete(clientWithCustomTimeout, '/timeout-request-level-delete', {
@@ -3299,16 +2668,7 @@ describe('httpClient', () => {
         })
 
         it('Request-level timeout works with PUT requests', async () => {
-          await mockServer.forPut('/timeout-request-level-put').thenCallback(async () => {
-            // Simulate a delay longer than the request-level timeout (100ms)
-            await setTimeout(1000)
-
-            return {
-              statusCode: 200,
-              headers: JSON_HEADERS,
-              body: JSON.stringify(mockProduct1),
-            }
-          })
+          await mockServer.forPut('/timeout-request-level-put').thenTimeout()
 
           await expect(
             sendPut(clientWithCustomTimeout, '/timeout-request-level-put', mockProduct1, {
@@ -3321,16 +2681,7 @@ describe('httpClient', () => {
         })
 
         it('Request-level timeout works with PATCH requests', async () => {
-          await mockServer.forPatch('/timeout-request-level-patch').thenCallback(async () => {
-            // Simulate a delay longer than the request-level timeout (100ms)
-            await setTimeout(1000)
-
-            return {
-              statusCode: 200,
-              headers: JSON_HEADERS,
-              body: JSON.stringify(mockProduct1),
-            }
-          })
+          await mockServer.forPatch('/timeout-request-level-patch').thenTimeout()
 
           await expect(
             sendPatch(clientWithCustomTimeout, '/timeout-request-level-patch', mockProduct1, {
@@ -3343,16 +2694,7 @@ describe('httpClient', () => {
         })
 
         it('Request-level timeout works with binary POST requests', async () => {
-          await mockServer.forPost('/timeout-request-level-binary-post').thenCallback(async () => {
-            // Simulate a delay longer than the request-level timeout (100ms)
-            await setTimeout(1000)
-
-            return {
-              statusCode: 200,
-              headers: JSON_HEADERS,
-              body: JSON.stringify(mockProduct1),
-            }
-          })
+          await mockServer.forPost('/timeout-request-level-binary-post').thenTimeout()
 
           await expect(
             sendPostBinary(
@@ -3370,16 +2712,7 @@ describe('httpClient', () => {
         })
 
         it('Request-level timeout works with binary PUT requests', async () => {
-          await mockServer.forPut('/timeout-request-level-binary-put').thenCallback(async () => {
-            // Simulate a delay longer than the request-level timeout (100ms)
-            await setTimeout(1000)
-
-            return {
-              statusCode: 200,
-              headers: JSON_HEADERS,
-              body: JSON.stringify(mockProduct1),
-            }
-          })
+          await mockServer.forPut('/timeout-request-level-binary-put').thenTimeout()
 
           await expect(
             sendPutBinary(
@@ -3397,16 +2730,7 @@ describe('httpClient', () => {
         })
 
         it('Request-level timeout works with streamed GET requests', async () => {
-          await mockServer.forGet('/timeout-request-level-streamed-get').thenCallback(async () => {
-            // Simulate a delay longer than the request-level timeout (100ms)
-            await setTimeout(1000)
-
-            return {
-              statusCode: 200,
-              headers: JSON_HEADERS,
-              body: JSON.stringify(mockProduct1),
-            }
-          })
+          await mockServer.forGet('/timeout-request-level-streamed-get').thenTimeout()
 
           await expect(
             sendGetWithStreamedResponse(
