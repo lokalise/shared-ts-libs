@@ -18,7 +18,7 @@ describe('contractBuilders', () => {
     it('defaults method to POST when not specified', () => {
       const route = buildSseContract(baseConfig)
 
-      expect(route.method).toBe('POST')
+      expect(route.method).toBe('post')
       expect(route.pathResolver({})).toBe('/api/test')
       expect(route.isSSE).toBe(true)
     })
@@ -26,19 +26,19 @@ describe('contractBuilders', () => {
     it('uses specified method when provided', () => {
       const route = buildSseContract({
         ...baseConfig,
-        method: 'PUT',
+        method: 'put',
       })
 
-      expect(route.method).toBe('PUT')
+      expect(route.method).toBe('put')
     })
 
     it('supports PATCH method', () => {
       const route = buildSseContract({
         ...baseConfig,
-        method: 'PATCH',
+        method: 'patch',
       })
 
-      expect(route.method).toBe('PATCH')
+      expect(route.method).toBe('patch')
     })
   })
 
@@ -54,7 +54,7 @@ describe('contractBuilders', () => {
         },
       })
 
-      expect(route.method).toBe('GET')
+      expect(route.method).toBe('get')
       expect(route.pathResolver({})).toBe('/api/stream')
       expect(route.isSSE).toBe(true)
       expect(route.requestBody).toBeUndefined()
@@ -85,7 +85,7 @@ describe('contractBuilders', () => {
   describe('buildSseContract (SSE POST with responseSchemasByStatusCode)', () => {
     it('includes responseSchemasByStatusCode for SSE POST', () => {
       const route = buildSseContract({
-        method: 'POST',
+        method: 'post',
         pathResolver: () => '/api/process/stream',
         params: z.object({}),
         query: z.object({}),
@@ -130,7 +130,7 @@ describe('contractBuilders', () => {
     it('defaults method to POST when not specified', () => {
       const route = buildSseContract(baseConfig)
 
-      expect(route.method).toBe('POST')
+      expect(route.method).toBe('post')
       expect(route.pathResolver({})).toBe('/api/chat/completions')
       expect(route.isDualMode).toBe(true)
       expect(route.isSimplified).toBe(true)
@@ -139,19 +139,19 @@ describe('contractBuilders', () => {
     it('uses specified method when provided', () => {
       const route = buildSseContract({
         ...baseConfig,
-        method: 'PUT',
+        method: 'put',
       })
 
-      expect(route.method).toBe('PUT')
+      expect(route.method).toBe('put')
     })
 
     it('supports PATCH method', () => {
       const route = buildSseContract({
         ...baseConfig,
-        method: 'PATCH',
+        method: 'patch',
       })
 
-      expect(route.method).toBe('PATCH')
+      expect(route.method).toBe('patch')
     })
 
     it('includes responseHeaders when provided', () => {
@@ -201,7 +201,7 @@ describe('contractBuilders', () => {
         },
       })
 
-      expect(route.method).toBe('GET')
+      expect(route.method).toBe('get')
       expect(route.pathResolver({ jobId: '123' })).toBe('/api/jobs/123/status')
       expect(route.isDualMode).toBe(true)
       expect(route.requestBody).toBeUndefined()
@@ -248,7 +248,7 @@ describe('contractBuilders', () => {
 
     it('types request body correctly', () => {
       const route = buildSseContract({
-        method: 'POST',
+        method: 'post',
         pathResolver: () => '/api/test',
         params: z.object({}),
         query: z.object({}),
@@ -284,7 +284,7 @@ describe('contractBuilders', () => {
 
     it('types sync response correctly for dual-mode', () => {
       const route = buildSseContract({
-        method: 'POST',
+        method: 'post',
         pathResolver: () => '/api/chat',
         params: z.object({}),
         query: z.object({}),

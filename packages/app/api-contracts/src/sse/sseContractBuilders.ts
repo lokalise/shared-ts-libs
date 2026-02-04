@@ -1,7 +1,8 @@
 import type { z } from 'zod/v4'
+import type { RoutePathResolver } from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
-import type { PathResolver, SimplifiedDualModeContractDefinition } from './dualModeContracts.ts'
-import type { SSEContractDefinition, SSEPathResolver } from './sseContracts.ts'
+import type { SimplifiedDualModeContractDefinition } from './dualModeContracts.ts'
+import type { SSEContractDefinition } from './sseContracts.ts'
 import type { SSEEventSchemas } from './sseTypes.ts'
 
 /**
@@ -17,7 +18,7 @@ export type SSEGetContractConfig<
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
 > = {
-  pathResolver: SSEPathResolver<z.infer<Params>>
+  pathResolver: RoutePathResolver<z.infer<Params>>
   params: Params
   query: Query
   requestHeaders: RequestHeaders
@@ -54,8 +55,8 @@ export type SSEPayloadContractConfig<
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
 > = {
-  method?: 'POST' | 'PUT' | 'PATCH'
-  pathResolver: SSEPathResolver<z.infer<Params>>
+  method?: 'post' | 'put' | 'patch'
+  pathResolver: RoutePathResolver<z.infer<Params>>
   params: Params
   query: Query
   requestHeaders: RequestHeaders
@@ -93,7 +94,7 @@ export type DualModeGetContractConfig<
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
 > = {
-  pathResolver: PathResolver<z.infer<Params>>
+  pathResolver: RoutePathResolver<z.infer<Params>>
   params: Params
   query: Query
   requestHeaders: RequestHeaders
@@ -145,8 +146,8 @@ export type DualModePayloadContractConfig<
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
 > = {
-  method?: 'POST' | 'PUT' | 'PATCH'
-  pathResolver: PathResolver<z.infer<Params>>
+  method?: 'post' | 'put' | 'patch'
+  pathResolver: RoutePathResolver<z.infer<Params>>
   params: Params
   query: Query
   requestHeaders: RequestHeaders
@@ -252,7 +253,7 @@ function buildBaseFields(config: any, hasBody: boolean) {
 
 // Helper to determine method
 function determineMethod(config: { method?: string }, hasBody: boolean, defaultMethod: string) {
-  return hasBody ? (config.method ?? defaultMethod) : 'GET'
+  return hasBody ? (config.method ?? defaultMethod) : 'get'
 }
 
 // Overload 1: Dual-mode with requestBody (has syncResponseBody + requestBody)
@@ -279,7 +280,7 @@ export function buildSseContract<
     ResponseSchemasByStatusCode
   >,
 ): SimplifiedDualModeContractDefinition<
-  'POST' | 'PUT' | 'PATCH',
+  'post' | 'put' | 'patch',
   Params,
   Query,
   RequestHeaders,
@@ -312,7 +313,7 @@ export function buildSseContract<
     ResponseSchemasByStatusCode
   >,
 ): SimplifiedDualModeContractDefinition<
-  'GET',
+  'get',
   Params,
   Query,
   RequestHeaders,
@@ -343,7 +344,7 @@ export function buildSseContract<
     ResponseSchemasByStatusCode
   >,
 ): SSEContractDefinition<
-  'POST' | 'PUT' | 'PATCH',
+  'post' | 'put' | 'patch',
   Params,
   Query,
   RequestHeaders,
@@ -364,7 +365,7 @@ export function buildSseContract<
 >(
   config: SSEGetContractConfig<Params, Query, RequestHeaders, Events, ResponseSchemasByStatusCode>,
 ): SSEContractDefinition<
-  'GET',
+  'get',
   Params,
   Query,
   RequestHeaders,
@@ -393,7 +394,7 @@ export function buildSseContract(
     // Dual-mode contract
     return {
       ...base,
-      method: determineMethod(config as { method?: string }, hasBody, 'POST'),
+      method: determineMethod(config as { method?: string }, hasBody, 'post'),
       syncResponseBody: (config as { syncResponseBody: unknown }).syncResponseBody,
       responseHeaders: (config as { responseHeaders?: unknown }).responseHeaders,
       responseSchemasByStatusCode: (config as { responseSchemasByStatusCode?: unknown })
@@ -406,7 +407,7 @@ export function buildSseContract(
   // SSE-only contract
   return {
     ...base,
-    method: determineMethod(config as { method?: string }, hasBody, 'POST'),
+    method: determineMethod(config as { method?: string }, hasBody, 'post'),
     responseSchemasByStatusCode: (config as { responseSchemasByStatusCode?: unknown })
       .responseSchemasByStatusCode,
     isSSE: true,

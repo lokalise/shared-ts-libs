@@ -3,7 +3,6 @@ export * from './HttpStatusCodes.ts'
 export * from './pathUtils.ts'
 // Dual-mode (hybrid) contracts
 export * from './sse/dualModeContracts.ts'
-export * from './sse/dualModeTypes.ts'
 // Contract builders
 export * from './sse/sseContractBuilders.ts'
 // SSE contracts

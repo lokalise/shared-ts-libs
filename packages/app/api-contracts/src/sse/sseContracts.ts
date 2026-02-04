@@ -1,4 +1,5 @@
 import type { z } from 'zod/v4'
+import type { RoutePathResolver } from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 import type { SSEEventSchemas } from './sseTypes.ts'
 
@@ -7,21 +8,7 @@ import type { SSEEventSchemas } from './sseTypes.ts'
  * While traditional SSE uses GET, modern APIs (e.g., OpenAI) use POST
  * to send request parameters in the body while streaming responses.
  */
-export type SSEMethod = 'GET' | 'POST' | 'PUT' | 'PATCH'
-
-/**
- * Path resolver type - receives typed params, returns path string.
- * This provides type-safe path construction where TypeScript enforces
- * that all required path parameters are provided.
- *
- * @example
- * ```typescript
- * // TypeScript ensures params.channelId exists and is string
- * const resolver: SSEPathResolver<{ channelId: string }> = (params) =>
- *   `/api/channels/${params.channelId}/stream`
- * ```
- */
-export type SSEPathResolver<Params> = (params: Params) => string
+export type SSEMethod = 'get' | 'post' | 'put' | 'patch'
 
 /**
  * Definition for an SSE route with type-safe contracts.
@@ -50,7 +37,7 @@ export type SSEContractDefinition<
    * Type-safe path resolver function.
    * Receives typed params and returns the URL path string.
    */
-  pathResolver: SSEPathResolver<z.infer<Params>>
+  pathResolver: RoutePathResolver<z.infer<Params>>
   params: Params
   query: Query
   requestHeaders: RequestHeaders
@@ -80,7 +67,7 @@ export type SSEContractDefinition<
 export type AnySSEContractDefinition = {
   method: SSEMethod
   // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with all param types
-  pathResolver: SSEPathResolver<any>
+  pathResolver: RoutePathResolver<any>
   params: z.ZodTypeAny
   query: z.ZodTypeAny
   requestHeaders: z.ZodTypeAny

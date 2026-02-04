@@ -218,7 +218,7 @@ const notificationsStream = buildSseContract({
 
 // POST SSE endpoint (e.g., streaming file processing)
 const processStream = buildSseContract({
-    method: 'POST',
+    method: 'post',
     pathResolver: () => '/api/process/stream',
     params: z.object({}),
     query: z.object({}),
@@ -264,7 +264,7 @@ import { z } from 'zod'
 // - Accept: application/json → returns { reply, usage } immediately
 // - Accept: text/event-stream → streams chunk events, then done event
 const chatCompletion = buildSseContract({
-    method: 'POST',
+    method: 'post',
     pathResolver: () => '/api/chat/completions',
     params: z.object({}),
     query: z.object({}),
@@ -306,7 +306,7 @@ Both SSE-only and dual-mode contracts support `responseSchemasByStatusCode` for 
 
 ```ts
 const chatCompletion = buildSseContract({
-    method: 'POST',
+    method: 'post',
     pathResolver: () => '/api/chat/completions',
     params: z.object({}),
     query: z.object({}),
