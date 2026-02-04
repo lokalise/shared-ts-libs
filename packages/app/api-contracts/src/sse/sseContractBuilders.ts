@@ -400,7 +400,6 @@ export function buildSseContract(
       responseSchemasByStatusCode: (config as { responseSchemasByStatusCode?: unknown })
         .responseSchemasByStatusCode,
       isDualMode: true,
-      isSimplified: true,
     }
   }
 

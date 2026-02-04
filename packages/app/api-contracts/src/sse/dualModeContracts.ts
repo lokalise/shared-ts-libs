@@ -55,7 +55,6 @@ export type SimplifiedDualModeContractDefinition<
   responseSchemasByStatusCode?: ResponseSchemasByStatusCode
   sseEvents: Events
   isDualMode: true
-  isSimplified: true
 }
 
 /**

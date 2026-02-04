@@ -133,7 +133,6 @@ describe('contractBuilders', () => {
       expect(route.method).toBe('post')
       expect(route.pathResolver({})).toBe('/api/chat/completions')
       expect(route.isDualMode).toBe(true)
-      expect(route.isSimplified).toBe(true)
     })
 
     it('uses specified method when provided', () => {
