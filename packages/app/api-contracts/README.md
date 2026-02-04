@@ -191,3 +191,130 @@ This function is particularly useful for:
 - Generating documentation or route summaries
 - Error messages that need to reference specific endpoints
 - Test descriptions and assertions
+
+## SSE and Dual-Mode Contracts
+
+Use `buildSseContract` for endpoints that support Server-Sent Events (SSE) streaming. This builder supports two contract types:
+
+### SSE-Only Contracts
+
+Pure streaming endpoints that only return SSE events. Use these for real-time notifications, live feeds, or any endpoint that only streams data.
+
+```ts
+import { buildSseContract } from '@lokalise/api-contracts'
+import { z } from 'zod'
+
+// GET SSE endpoint for live notifications
+const notificationsStream = buildSseContract({
+    pathResolver: () => '/api/notifications/stream',
+    params: z.object({}),
+    query: z.object({ userId: z.string().optional() }),
+    requestHeaders: z.object({}),
+    sseEvents: {
+        notification: z.object({ id: z.string(), message: z.string() }),
+    },
+})
+// Result: isSSE: true
+
+// POST SSE endpoint (e.g., streaming file processing)
+const processStream = buildSseContract({
+    method: 'POST',
+    pathResolver: () => '/api/process/stream',
+    params: z.object({}),
+    query: z.object({}),
+    requestHeaders: z.object({}),
+    requestBody: z.object({ fileId: z.string() }),
+    sseEvents: {
+        progress: z.object({ percent: z.number() }),
+        done: z.object({ result: z.string() }),
+    },
+})
+// Result: isSSE: true
+```
+
+### Dual-Mode (Hybrid) Contracts
+
+Hybrid endpoints that support **both** synchronous JSON responses **and** SSE streaming from the same URL. The response mode is determined by the client's `Accept` header:
+- `Accept: application/json` → Synchronous JSON response
+- `Accept: text/event-stream` → SSE streaming
+
+This pattern is ideal for AI/LLM APIs (like OpenAI's Chat Completions API) where clients can choose between getting the full response at once or streaming it token-by-token.
+
+```ts
+import { buildSseContract } from '@lokalise/api-contracts'
+import { z } from 'zod'
+
+// OpenAI-style chat completion endpoint
+// - Accept: application/json → returns { reply, usage } immediately
+// - Accept: text/event-stream → streams chunk events, then done event
+const chatCompletion = buildSseContract({
+    method: 'POST',
+    pathResolver: () => '/api/chat/completions',
+    params: z.object({}),
+    query: z.object({}),
+    requestHeaders: z.object({}),
+    requestBody: z.object({ message: z.string() }),
+    // Adding syncResponseBody makes it dual-mode
+    syncResponseBody: z.object({
+        reply: z.string(),
+        usage: z.object({ tokens: z.number() }),
+    }),
+    sseEvents: {
+        chunk: z.object({ delta: z.string() }),
+        done: z.object({ usage: z.object({ totalTokens: z.number() }) }),
+    },
+})
+// Result: isDualMode: true
+
+// GET dual-mode endpoint for job status (poll or stream)
+const jobStatus = buildSseContract({
+    pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
+    params: z.object({ jobId: z.string().uuid() }),
+    query: z.object({ verbose: z.string().optional() }),
+    requestHeaders: z.object({}),
+    syncResponseBody: z.object({
+        status: z.enum(['pending', 'running', 'completed', 'failed']),
+        progress: z.number(),
+    }),
+    sseEvents: {
+        progress: z.object({ percent: z.number() }),
+        done: z.object({ result: z.string() }),
+    },
+})
+// Result: isDualMode: true
+```
+
+### Response Schemas by Status Code (Dual-Mode)
+
+Dual-mode contracts support `responseSchemasByStatusCode` for defining different response shapes for error cases:
+
+```ts
+const chatCompletion = buildSseContract({
+    method: 'POST',
+    pathResolver: () => '/api/chat/completions',
+    params: z.object({}),
+    query: z.object({}),
+    requestHeaders: z.object({ authorization: z.string() }),
+    requestBody: z.object({ message: z.string() }),
+    syncResponseBody: z.object({ reply: z.string() }),
+    sseEvents: {
+        chunk: z.object({ delta: z.string() }),
+    },
+    responseSchemasByStatusCode: {
+        400: z.object({ error: z.string(), details: z.array(z.string()) }),
+        401: z.object({ error: z.literal('Unauthorized') }),
+        429: z.object({ error: z.string(), retryAfter: z.number() }),
+    },
+})
+```
+
+### Contract Type Detection
+
+`buildSseContract` automatically determines the contract type based on the presence of `syncResponseBody`:
+
+| `syncResponseBody` | `requestBody` | Result |
+|-------------------|---------------|--------|
+| ❌ | ❌ | SSE-only GET |
+| ❌ | ✅ | SSE-only POST/PUT/PATCH |
+| ✅ | ❌ | Dual-mode GET |
+| ✅ | ✅ | Dual-mode POST/PUT/PATCH |
