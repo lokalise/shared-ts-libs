@@ -1,6 +1,6 @@
 import type { z } from 'zod/v4'
+import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 import type { PathResolver, SimplifiedDualModeContractDefinition } from './dualModeContracts.ts'
-import type { HttpStatusCode } from './HttpStatusCodes.ts'
 import type { SSEContractDefinition, SSEPathResolver } from './sseContracts.ts'
 import type { SSEEventSchemas } from './sseTypes.ts'
 

@@ -1,5 +1,5 @@
 import type { z } from 'zod/v4'
-import type { HttpStatusCode } from './HttpStatusCodes.ts'
+import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 import type { SSEEventSchemas } from './sseTypes.ts'
 
 /**

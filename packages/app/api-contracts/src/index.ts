@@ -1,11 +1,11 @@
 export * from './apiContracts.ts'
-// Contract builders
-export * from './contractBuilders.ts'
-// Dual-mode (hybrid) contracts
-export * from './dualModeContracts.ts'
-export * from './dualModeTypes.ts'
 export * from './HttpStatusCodes.ts'
 export * from './pathUtils.ts'
+// Dual-mode (hybrid) contracts
+export * from './sse/dualModeContracts.ts'
+export * from './sse/dualModeTypes.ts'
+// Contract builders
+export * from './sse/seeContractBuilders.ts'
 // SSE contracts
-export * from './sseContracts.ts'
-export * from './sseTypes.ts'
+export * from './sse/sseContracts.ts'
+export * from './sse/sseTypes.ts'
