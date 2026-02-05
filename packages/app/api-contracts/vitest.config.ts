@@ -10,7 +10,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/index.ts', 'src/**/*.test-d.ts'],
+      exclude: ['src/index.ts'],
       thresholds: {
         lines: 100,
         functions: 100,
@@ -20,7 +20,7 @@ export default defineConfig({
     },
     typecheck: {
       enabled: true,
-      include: ['src/**/*.test-d.ts'],
+      include: ['src/**/*.spec.ts'],
     },
   },
 })
