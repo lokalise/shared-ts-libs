@@ -18,7 +18,7 @@ import type { SSEEventSchemas } from './sseTypes.ts'
  * @template ResponseHeaders - Response headers schema (for sync mode)
  * @template ResponseSchemasByStatusCode - Alternative response schemas by HTTP status code
  */
-export type SimplifiedDualModeContractDefinition<
+export type DualModeContractDefinition<
   Method extends SSEMethod = SSEMethod,
   Params extends z.ZodTypeAny = z.ZodTypeAny,
   Query extends z.ZodTypeAny = z.ZodTypeAny,
