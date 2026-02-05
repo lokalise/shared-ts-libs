@@ -1,7 +1,7 @@
 import type { z } from 'zod/v4'
 import type { RoutePathResolver } from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
-import type { SimplifiedDualModeContractDefinition } from './dualModeContracts.ts'
+import type { DualModeContractDefinition } from './dualModeContracts.ts'
 import type { SSEContractDefinition } from './sseContracts.ts'
 import type { SSEEventSchemas } from './sseTypes.ts'
 
@@ -256,7 +256,61 @@ function determineMethod(config: { method?: string }, hasBody: boolean, defaultM
   return hasBody ? (config.method ?? defaultMethod) : 'get'
 }
 
-// Overload 1: Dual-mode with requestBody (has syncResponseBody + requestBody)
+// Overload 1: Dual-mode GET (has syncResponseBody, no requestBody)
+export function buildSseContract<
+  Params extends z.ZodTypeAny,
+  Query extends z.ZodTypeAny,
+  RequestHeaders extends z.ZodTypeAny,
+  JsonResponse extends z.ZodTypeAny,
+  Events extends SSEEventSchemas,
+  ResponseHeaders extends z.ZodTypeAny | undefined = undefined,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
+    | undefined = undefined,
+>(
+  config: DualModeGetContractConfig<
+    Params,
+    Query,
+    RequestHeaders,
+    JsonResponse,
+    Events,
+    ResponseHeaders,
+    ResponseSchemasByStatusCode
+  >,
+): DualModeContractDefinition<
+  'get',
+  Params,
+  Query,
+  RequestHeaders,
+  undefined,
+  JsonResponse,
+  Events,
+  ResponseHeaders,
+  ResponseSchemasByStatusCode
+>
+
+// Overload 2: SSE GET (no requestBody, no syncResponseBody)
+export function buildSseContract<
+  Params extends z.ZodTypeAny,
+  Query extends z.ZodTypeAny,
+  RequestHeaders extends z.ZodTypeAny,
+  Events extends SSEEventSchemas,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
+    | undefined = undefined,
+>(
+  config: SSEGetContractConfig<Params, Query, RequestHeaders, Events, ResponseSchemasByStatusCode>,
+): SSEContractDefinition<
+  'get',
+  Params,
+  Query,
+  RequestHeaders,
+  undefined,
+  Events,
+  ResponseSchemasByStatusCode
+>
+
+// Overload 3: Dual-mode with requestBody (has syncResponseBody + requestBody)
 export function buildSseContract<
   Params extends z.ZodTypeAny,
   Query extends z.ZodTypeAny,
@@ -279,7 +333,7 @@ export function buildSseContract<
     ResponseHeaders,
     ResponseSchemasByStatusCode
   >,
-): SimplifiedDualModeContractDefinition<
+): DualModeContractDefinition<
   'post' | 'put' | 'patch',
   Params,
   Query,
@@ -291,40 +345,7 @@ export function buildSseContract<
   ResponseSchemasByStatusCode
 >
 
-// Overload 2: Dual-mode GET (has syncResponseBody, requestBody?: never)
-export function buildSseContract<
-  Params extends z.ZodTypeAny,
-  Query extends z.ZodTypeAny,
-  RequestHeaders extends z.ZodTypeAny,
-  JsonResponse extends z.ZodTypeAny,
-  Events extends SSEEventSchemas,
-  ResponseHeaders extends z.ZodTypeAny | undefined = undefined,
-  ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
-    | undefined = undefined,
->(
-  config: DualModeGetContractConfig<
-    Params,
-    Query,
-    RequestHeaders,
-    JsonResponse,
-    Events,
-    ResponseHeaders,
-    ResponseSchemasByStatusCode
-  >,
-): SimplifiedDualModeContractDefinition<
-  'get',
-  Params,
-  Query,
-  RequestHeaders,
-  undefined,
-  JsonResponse,
-  Events,
-  ResponseHeaders,
-  ResponseSchemasByStatusCode
->
-
-// Overload 3: SSE with requestBody (has requestBody, no response configs)
+// Overload 4: SSE with requestBody (has requestBody, no syncResponseBody)
 export function buildSseContract<
   Params extends z.ZodTypeAny,
   Query extends z.ZodTypeAny,
@@ -349,27 +370,6 @@ export function buildSseContract<
   Query,
   RequestHeaders,
   Body,
-  Events,
-  ResponseSchemasByStatusCode
->
-
-// Overload 4: SSE GET (no requestBody, no response configs)
-export function buildSseContract<
-  Params extends z.ZodTypeAny,
-  Query extends z.ZodTypeAny,
-  RequestHeaders extends z.ZodTypeAny,
-  Events extends SSEEventSchemas,
-  ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
-    | undefined = undefined,
->(
-  config: SSEGetContractConfig<Params, Query, RequestHeaders, Events, ResponseSchemasByStatusCode>,
-): SSEContractDefinition<
-  'get',
-  Params,
-  Query,
-  RequestHeaders,
-  undefined,
   Events,
   ResponseSchemasByStatusCode
 >
