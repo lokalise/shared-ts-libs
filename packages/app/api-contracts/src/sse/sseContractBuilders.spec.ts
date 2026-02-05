@@ -15,6 +15,20 @@ describe('contractBuilders', () => {
       },
     }
 
+    it('requires sseEvents - missing sseEvents produces clear error', () => {
+      // @ts-expect-error - sseEvents is required for SSE contracts
+      const _postChatStreamByIdContractMalformed = buildSseContract({
+        method: 'post',
+        pathResolver: () => '/',
+        params: z.object({
+          id: z.string(),
+        }),
+        query: z.object({}),
+        requestHeaders: z.object({}),
+        requestBody: z.object({}),
+      })
+    })
+
     it('defaults method to POST when not specified', () => {
       const route = buildSseContract(baseConfig)
 
@@ -229,6 +243,21 @@ describe('contractBuilders', () => {
   })
 
   describe('type safety', () => {
+    it('cannot use method GET with requestBody', () => {
+      buildSseContract({
+        // @ts-expect-error - GET method is not allowed when requestBody is provided
+        method: 'get',
+        pathResolver: () => '/api/test',
+        params: z.object({}),
+        query: z.object({}),
+        requestHeaders: z.object({}),
+        requestBody: z.object({ data: z.string() }),
+        sseEvents: {
+          data: z.object({ value: z.string() }),
+        },
+      })
+    })
+
     it('types path params correctly', () => {
       const route = buildSseContract({
         pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
