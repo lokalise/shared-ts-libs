@@ -1,4 +1,6 @@
 export * from './apiContracts.ts'
+// Universal contract builder
+export * from './contractBuilder.ts'
 export * from './HttpStatusCodes.ts'
 export * from './pathUtils.ts'
 export * from './rest/restContractBuilder.ts'

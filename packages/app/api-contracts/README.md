@@ -8,6 +8,69 @@ This reduces amount of assumptions FE needs to make about the behaviour of BE, r
 written on FE, and makes the code more type-safe (as path parameter setting is handled by logic exposed by BE, in a
 type-safe way).
 
+## Universal Contract Builder
+
+Use `buildContract` as a single entry point for creating any type of API contract. It automatically delegates to the appropriate specialized builder based on the configuration:
+
+| `sseEvents` | Contract Type |
+|-------------|---------------|
+| ❌ | REST contract (GET, POST, PUT, PATCH, DELETE) |
+| ✅ | SSE or Dual-mode contract |
+
+```ts
+import { buildContract } from '@lokalise/api-contracts'
+import { z } from 'zod'
+
+// REST GET route
+const getUsers = buildContract({
+    successResponseBodySchema: z.array(userSchema),
+    pathResolver: () => '/api/users',
+})
+
+// REST POST route
+const createUser = buildContract({
+    method: 'post',
+    requestBodySchema: createUserSchema,
+    successResponseBodySchema: userSchema,
+    pathResolver: () => '/api/users',
+})
+
+// REST DELETE route
+const deleteUser = buildContract({
+    method: 'delete',
+    requestPathParamsSchema: z.object({ userId: z.string() }),
+    pathResolver: (params) => `/api/users/${params.userId}`,
+})
+
+// SSE-only streaming endpoint
+const notifications = buildContract({
+    pathResolver: () => '/api/notifications/stream',
+    params: z.object({}),
+    query: z.object({}),
+    requestHeaders: z.object({}),
+    sseEvents: {
+        notification: z.object({ id: z.string(), message: z.string() }),
+    },
+})
+
+// Dual-mode endpoint (supports both JSON and SSE)
+const chatCompletion = buildContract({
+    method: 'post',
+    pathResolver: () => '/api/chat/completions',
+    params: z.object({}),
+    query: z.object({}),
+    requestHeaders: z.object({}),
+    requestBody: z.object({ message: z.string() }),
+    syncResponseBody: z.object({ reply: z.string() }),
+    sseEvents: {
+        chunk: z.object({ delta: z.string() }),
+        done: z.object({ usage: z.object({ tokens: z.number() }) }),
+    },
+})
+```
+
+You can also use the specialized builders directly (`buildRestContract`, `buildSseContract`) if you prefer explicit control over contract types.
+
 ## REST Contracts
 
 Use `buildRestContract` to create REST API contracts. The contract type is automatically determined based on the configuration:
