@@ -8,12 +8,23 @@ This reduces amount of assumptions FE needs to make about the behaviour of BE, r
 written on FE, and makes the code more type-safe (as path parameter setting is handled by logic exposed by BE, in a
 type-safe way).
 
+## REST Contracts
+
+Use `buildRestContract` to create REST API contracts. The contract type is automatically determined based on the configuration:
+
+| `method` | `requestBodySchema` | Result |
+|----------|---------------------|--------|
+| omitted/undefined | ❌ | GET route |
+| `'delete'` | ❌ | DELETE route |
+| `'post'`/`'put'`/`'patch'` | ✅ | Payload route |
+
 Usage examples:
 
 ```ts
-import { buildGetRoute, buildDeleteRoute, buildPayloadRoute } from '@lokalise/api-contracts'
+import { buildRestContract } from '@lokalise/api-contracts'
 
-const getContract = buildGetRoute({
+// GET route - method is inferred automatically
+const getContract = buildRestContract({
     successResponseBodySchema: RESPONSE_BODY_SCHEMA,
     requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
     requestQuerySchema: REQUEST_QUERY_SCHEMA,
@@ -24,8 +35,9 @@ const getContract = buildGetRoute({
     metadata: { allowedRoles: ['admin'] },
 })
 
-const postContract = buildPayloadRoute({
-    method: 'post', // can also be 'patch' or 'post'
+// POST route - requires method and requestBodySchema
+const postContract = buildRestContract({
+    method: 'post', // can also be 'put' or 'patch'
     successResponseBodySchema: RESPONSE_BODY_SCHEMA,
     requestBodySchema: REQUEST_BODY_SCHEMA,
     pathResolver: () => '/',
@@ -33,11 +45,33 @@ const postContract = buildPayloadRoute({
     metadata: { allowedPermission: ['edit'] },
 })
 
-const deleteContract = buildDeleteRoute({
+// DELETE route - method is 'delete', no body, defaults isEmptyResponseExpected to true
+const deleteContract = buildRestContract({
+    method: 'delete',
     successResponseBodySchema: RESPONSE_BODY_SCHEMA,
     requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
     pathResolver: (pathParams) => `/users/${pathParams.userId}`,
 })
+```
+
+### Deprecated Builders
+
+The individual builders `buildGetRoute`, `buildPayloadRoute`, and `buildDeleteRoute` are deprecated. Use `buildRestContract` instead:
+
+```ts
+// Before (deprecated):
+import { buildGetRoute, buildPayloadRoute, buildDeleteRoute } from '@lokalise/api-contracts'
+
+const getContract = buildGetRoute({ ... })
+const postContract = buildPayloadRoute({ method: 'post', ... })
+const deleteContract = buildDeleteRoute({ ... })
+
+// After (recommended):
+import { buildRestContract } from '@lokalise/api-contracts'
+
+const getContract = buildRestContract({ ... })  // method inferred as 'get'
+const postContract = buildRestContract({ method: 'post', ... })
+const deleteContract = buildRestContract({ method: 'delete', ... })
 ```
 
 In the previous example, the `metadata` property is an optional, free-form field that allows you to store any additional
@@ -72,10 +106,10 @@ In case you are using fastify on the backend, you can also use `@lokalise/fastif
 Use `requestHeaderSchema` to define and validate headers that the client must send with the request. This is useful for authentication headers, API keys, content negotiation, and other request-specific headers.
 
 ```ts
-import { buildGetRoute } from '@lokalise/api-contracts'
+import { buildRestContract } from '@lokalise/api-contracts'
 import { z } from 'zod'
 
-const contract = buildGetRoute({
+const contract = buildRestContract({
     successResponseBodySchema: DATA_SCHEMA,
     requestHeaderSchema: z.object({
         'authorization': z.string(),
@@ -95,10 +129,10 @@ Use `responseHeaderSchema` to define and validate headers that the server will s
 - Custom API metadata headers
 
 ```ts
-import { buildGetRoute } from '@lokalise/api-contracts'
+import { buildRestContract } from '@lokalise/api-contracts'
 import { z } from 'zod'
 
-const contract = buildGetRoute({
+const contract = buildRestContract({
     successResponseBodySchema: DATA_SCHEMA,
     responseHeaderSchema: z.object({
         'x-ratelimit-limit': z.string(),
@@ -113,7 +147,7 @@ const contract = buildGetRoute({
 Both header schemas can be used together in a single contract:
 
 ```ts
-const contract = buildGetRoute({
+const contract = buildRestContract({
     successResponseBodySchema: DATA_SCHEMA,
     requestHeaderSchema: z.object({
         'authorization': z.string(),
@@ -139,9 +173,9 @@ These header schemas are primarily used for:
 Converts a route definition to its corresponding path pattern with parameter placeholders.
 
 ```ts
-import { mapRouteToPath, buildGetRoute } from '@lokalise/api-contracts'
+import { mapRouteToPath, buildRestContract } from '@lokalise/api-contracts'
 
-const userContract = buildGetRoute({
+const userContract = buildRestContract({
     requestPathParamsSchema: z.object({ userId: z.string() }),
     successResponseBodySchema: USER_SCHEMA,
     pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -163,19 +197,19 @@ The function replaces actual path parameters with placeholder syntax (`:paramNam
 Generates a human-readable description of a route contract, combining the HTTP method with the route path.
 
 ```ts
-import { describeContract, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
+import { describeContract, buildRestContract } from '@lokalise/api-contracts'
 
-const getContract = buildGetRoute({
+const getContract = buildRestContract({
     requestPathParamsSchema: z.object({ userId: z.string() }),
     successResponseBodySchema: USER_SCHEMA,
     pathResolver: (pathParams) => `/users/${pathParams.userId}`,
 })
 
-const postContract = buildPayloadRoute({
+const postContract = buildRestContract({
     method: 'post',
-    requestPathParamsSchema: z.object({ 
+    requestPathParamsSchema: z.object({
         orgId: z.string(),
-        userId: z.string() 
+        userId: z.string()
     }),
     requestBodySchema: CREATE_USER_SCHEMA,
     successResponseBodySchema: USER_SCHEMA,

@@ -159,6 +159,27 @@ export type DeleteRouteDefinition<
   method: 'delete'
 }
 
+/**
+ * @deprecated Use `buildRestContract` instead. This function will be removed in a future version.
+ * @example
+ * ```typescript
+ * // Before (deprecated):
+ * const route = buildPayloadRoute({
+ *   method: 'post',
+ *   requestBodySchema: bodySchema,
+ *   successResponseBodySchema: responseSchema,
+ *   pathResolver: () => '/api/users',
+ * })
+ *
+ * // After (recommended):
+ * const route = buildRestContract({
+ *   method: 'post',
+ *   requestBodySchema: bodySchema,
+ *   successResponseBodySchema: responseSchema,
+ *   pathResolver: () => '/api/users',
+ * })
+ * ```
+ */
 export function buildPayloadRoute<
   RequestBodySchema extends z.Schema | undefined = undefined,
   SuccessResponseBodySchema extends z.Schema | undefined = undefined,
@@ -214,6 +235,23 @@ export function buildPayloadRoute<
   }
 }
 
+/**
+ * @deprecated Use `buildRestContract` instead. This function will be removed in a future version.
+ * @example
+ * ```typescript
+ * // Before (deprecated):
+ * const route = buildGetRoute({
+ *   successResponseBodySchema: responseSchema,
+ *   pathResolver: () => '/api/users',
+ * })
+ *
+ * // After (recommended):
+ * const route = buildRestContract({
+ *   successResponseBodySchema: responseSchema,
+ *   pathResolver: () => '/api/users',
+ * })
+ * ```
+ */
 export function buildGetRoute<
   SuccessResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
@@ -268,6 +306,24 @@ export function buildGetRoute<
   }
 }
 
+/**
+ * @deprecated Use `buildRestContract` instead. This function will be removed in a future version.
+ * @example
+ * ```typescript
+ * // Before (deprecated):
+ * const route = buildDeleteRoute({
+ *   successResponseBodySchema: responseSchema,
+ *   pathResolver: () => '/api/users/123',
+ * })
+ *
+ * // After (recommended):
+ * const route = buildRestContract({
+ *   method: 'delete',
+ *   successResponseBodySchema: responseSchema,
+ *   pathResolver: () => '/api/users/123',
+ * })
+ * ```
+ */
 export function buildDeleteRoute<
   SuccessResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
