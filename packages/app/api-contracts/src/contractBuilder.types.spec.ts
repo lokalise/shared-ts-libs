@@ -353,6 +353,16 @@ describe('buildContract type inference', () => {
 
         expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<true | undefined>()
       })
+
+      it('reflects explicit false value in type', () => {
+        const contract = buildContract({
+          successResponseBodySchema: z.object({}),
+          pathResolver: () => '/api/data',
+          isNonJSONResponseExpected: false,
+        })
+
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false | undefined>()
+      })
     })
   })
 
