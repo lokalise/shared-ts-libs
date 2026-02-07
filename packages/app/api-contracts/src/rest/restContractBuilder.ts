@@ -42,7 +42,7 @@ export type GetContractConfig<
   method?: never
   requestBodySchema?: never
   /** Discriminator to distinguish from SSE contracts in buildContract */
-  sseEvents?: never
+  serverSentEvents?: never
 }
 
 /**
@@ -76,7 +76,7 @@ export type DeleteContractConfig<
   method: 'delete'
   requestBodySchema?: never
   /** Discriminator to distinguish from SSE contracts in buildContract */
-  sseEvents?: never
+  serverSentEvents?: never
 }
 
 /**
@@ -108,7 +108,7 @@ export type PayloadContractConfig<
   method: 'post' | 'put' | 'patch'
   requestBodySchema: RequestBodySchema
   /** Discriminator to distinguish from SSE contracts in buildContract */
-  sseEvents?: never
+  serverSentEvents?: never
 }
 
 // ============================================================================

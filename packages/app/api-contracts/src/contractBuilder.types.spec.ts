@@ -374,10 +374,10 @@ describe('buildContract type inference', () => {
     it('returns SSEContractDefinition for SSE GET routes', () => {
       const contract = buildContract({
         pathResolver: () => '/api/stream',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        serverSentEvents: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -392,15 +392,15 @@ describe('buildContract type inference', () => {
 
       const contract = buildContract({
         pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
-        params: paramsSchema,
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        sseEvents: {
+        requestPathParamsSchema: paramsSchema,
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        serverSentEvents: {
           message: z.object({ text: z.string() }),
         },
       })
 
-      expectTypeOf(contract.params).toEqualTypeOf(paramsSchema)
+      expectTypeOf(contract.requestPathParamsSchema).toEqualTypeOf(paramsSchema)
     })
 
     it('infers query type from schema', () => {
@@ -408,34 +408,34 @@ describe('buildContract type inference', () => {
 
       const contract = buildContract({
         pathResolver: () => '/api/stream',
-        params: z.object({}),
-        query: querySchema,
-        requestHeaders: z.object({}),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: querySchema,
+        requestHeaderSchema: z.object({}),
+        serverSentEvents: {
           message: z.object({ text: z.string() }),
         },
       })
 
-      expectTypeOf(contract.query).toEqualTypeOf(querySchema)
+      expectTypeOf(contract.requestQuerySchema).toEqualTypeOf(querySchema)
     })
 
-    it('infers requestHeaders type from schema', () => {
+    it('infers requestHeaderSchema type from schema', () => {
       const headersSchema = z.object({ authorization: z.string() })
 
       const contract = buildContract({
         pathResolver: () => '/api/stream',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: headersSchema,
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: headersSchema,
+        serverSentEvents: {
           message: z.object({ text: z.string() }),
         },
       })
 
-      expectTypeOf(contract.requestHeaders).toEqualTypeOf(headersSchema)
+      expectTypeOf(contract.requestHeaderSchema).toEqualTypeOf(headersSchema)
     })
 
-    it('infers sseEvents types', () => {
+    it('infers serverSentEvents types', () => {
       const events = {
         chunk: z.object({ content: z.string() }),
         done: z.object({ totalTokens: z.number() }),
@@ -443,27 +443,27 @@ describe('buildContract type inference', () => {
 
       const contract = buildContract({
         pathResolver: () => '/api/stream',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        sseEvents: events,
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        serverSentEvents: events,
       })
 
-      expectTypeOf(contract.sseEvents).toEqualTypeOf(events)
+      expectTypeOf(contract.serverSentEvents).toEqualTypeOf(events)
     })
 
     it('has undefined requestBody for GET routes', () => {
       const contract = buildContract({
         pathResolver: () => '/api/stream',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        serverSentEvents: {
           message: z.object({ text: z.string() }),
         },
       })
 
-      expectTypeOf(contract.requestBody).toEqualTypeOf<undefined>()
+      expectTypeOf(contract.requestBodySchema).toEqualTypeOf<undefined>()
     })
   })
 
@@ -471,11 +471,11 @@ describe('buildContract type inference', () => {
     it('returns SSEContractDefinition for SSE POST routes', () => {
       const contract = buildContract({
         pathResolver: () => '/api/process',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        requestBody: z.object({ data: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        requestBodySchema: z.object({ data: z.string() }),
+        serverSentEvents: {
           progress: z.object({ percent: z.number() }),
         },
       })
@@ -483,8 +483,8 @@ describe('buildContract type inference', () => {
       // Verify key properties that identify this as an SSE contract
       expectTypeOf(contract.method).toEqualTypeOf<'post' | 'put' | 'patch'>()
       expectTypeOf(contract.isSSE).toEqualTypeOf<true>()
-      expectTypeOf(contract).toHaveProperty('sseEvents')
-      expectTypeOf(contract).toHaveProperty('requestBody')
+      expectTypeOf(contract).toHaveProperty('serverSentEvents')
+      expectTypeOf(contract).toHaveProperty('requestBodySchema')
     })
 
     it('infers requestBody type from schema', () => {
@@ -492,27 +492,27 @@ describe('buildContract type inference', () => {
 
       const contract = buildContract({
         pathResolver: () => '/api/process',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        requestBody: bodySchema,
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        requestBodySchema: bodySchema,
+        serverSentEvents: {
           progress: z.object({ percent: z.number() }),
         },
       })
 
-      expectTypeOf(contract.requestBody).toEqualTypeOf(bodySchema)
+      expectTypeOf(contract.requestBodySchema).toEqualTypeOf(bodySchema)
     })
 
     it('allows explicit method specification', () => {
       const contract = buildContract({
         method: 'put',
         pathResolver: () => '/api/process',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        requestBody: z.object({ data: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        requestBodySchema: z.object({ data: z.string() }),
+        serverSentEvents: {
           progress: z.object({ percent: z.number() }),
         },
       })
@@ -521,23 +521,23 @@ describe('buildContract type inference', () => {
     })
   })
 
-  describe('SSE responseSchemasByStatusCode types', () => {
+  describe('SSE responseBodySchemasByStatusCode types', () => {
     it('infers status code response types for SSE routes', () => {
       const contract = buildContract({
         pathResolver: () => '/api/stream',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        serverSentEvents: {
           message: z.object({ text: z.string() }),
         },
-        responseSchemasByStatusCode: {
+        responseBodySchemasByStatusCode: {
           401: z.object({ error: z.literal('Unauthorized') }),
           404: z.object({ error: z.literal('Not found') }),
         },
       })
 
-      expectTypeOf(contract.responseSchemasByStatusCode).not.toBeUndefined()
+      expectTypeOf(contract.responseBodySchemasByStatusCode).not.toBeUndefined()
     })
   })
 
@@ -549,11 +549,11 @@ describe('buildContract type inference', () => {
     it('returns DualModeContractDefinition for dual-mode GET routes', () => {
       const contract = buildContract({
         pathResolver: () => '/api/status',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        syncResponseBody: z.object({ status: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEvents: {
           update: z.object({ progress: z.number() }),
         },
       })
@@ -563,7 +563,7 @@ describe('buildContract type inference', () => {
       expectTypeOf(contract.isDualMode).toEqualTypeOf<true>()
     })
 
-    it('infers syncResponseBody type from schema', () => {
+    it('infers successResponseBodySchema type from schema', () => {
       const syncResponseSchema = z.object({
         status: z.enum(['pending', 'running', 'completed']),
         progress: z.number(),
@@ -571,19 +571,19 @@ describe('buildContract type inference', () => {
 
       const contract = buildContract({
         pathResolver: () => '/api/status',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        syncResponseBody: syncResponseSchema,
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        successResponseBodySchema: syncResponseSchema,
+        serverSentEvents: {
           update: z.object({ progress: z.number() }),
         },
       })
 
-      expectTypeOf(contract.syncResponseBody).toEqualTypeOf(syncResponseSchema)
+      expectTypeOf(contract.successResponseBodySchema).toEqualTypeOf(syncResponseSchema)
     })
 
-    it('infers responseHeaders type from schema', () => {
+    it('infers responseHeaderSchema type from schema', () => {
       const responseHeadersSchema = z.object({
         'x-ratelimit-limit': z.string(),
         'x-ratelimit-remaining': z.string(),
@@ -591,17 +591,17 @@ describe('buildContract type inference', () => {
 
       const contract = buildContract({
         pathResolver: () => '/api/status',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        syncResponseBody: z.object({ status: z.string() }),
-        responseHeaders: responseHeadersSchema,
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        successResponseBodySchema: z.object({ status: z.string() }),
+        responseHeaderSchema: responseHeadersSchema,
+        serverSentEvents: {
           update: z.object({ progress: z.number() }),
         },
       })
 
-      expectTypeOf(contract.responseHeaders).toEqualTypeOf<
+      expectTypeOf(contract.responseHeaderSchema).toEqualTypeOf<
         typeof responseHeadersSchema | undefined
       >()
     })
@@ -609,16 +609,16 @@ describe('buildContract type inference', () => {
     it('has undefined requestBody for GET routes', () => {
       const contract = buildContract({
         pathResolver: () => '/api/status',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        syncResponseBody: z.object({ status: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEvents: {
           update: z.object({ progress: z.number() }),
         },
       })
 
-      expectTypeOf(contract.requestBody).toEqualTypeOf<undefined>()
+      expectTypeOf(contract.requestBodySchema).toEqualTypeOf<undefined>()
     })
   })
 
@@ -626,12 +626,12 @@ describe('buildContract type inference', () => {
     it('returns DualModeContractDefinition for dual-mode POST routes', () => {
       const contract = buildContract({
         pathResolver: () => '/api/chat/completions',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        requestBody: z.object({ message: z.string() }),
-        syncResponseBody: z.object({ reply: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        requestBodySchema: z.object({ message: z.string() }),
+        successResponseBodySchema: z.object({ reply: z.string() }),
+        serverSentEvents: {
           chunk: z.object({ delta: z.string() }),
         },
       })
@@ -639,9 +639,9 @@ describe('buildContract type inference', () => {
       // Verify key properties that identify this as a dual-mode contract
       expectTypeOf(contract.method).toEqualTypeOf<'post' | 'put' | 'patch'>()
       expectTypeOf(contract.isDualMode).toEqualTypeOf<true>()
-      expectTypeOf(contract).toHaveProperty('syncResponseBody')
-      expectTypeOf(contract).toHaveProperty('sseEvents')
-      expectTypeOf(contract).toHaveProperty('requestBody')
+      expectTypeOf(contract).toHaveProperty('successResponseBodySchema')
+      expectTypeOf(contract).toHaveProperty('serverSentEvents')
+      expectTypeOf(contract).toHaveProperty('requestBodySchema')
     })
 
     it('infers requestBody type from schema', () => {
@@ -652,20 +652,20 @@ describe('buildContract type inference', () => {
 
       const contract = buildContract({
         pathResolver: () => '/api/chat/completions',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        requestBody: bodySchema,
-        syncResponseBody: z.object({ reply: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        requestBodySchema: bodySchema,
+        successResponseBodySchema: z.object({ reply: z.string() }),
+        serverSentEvents: {
           chunk: z.object({ delta: z.string() }),
         },
       })
 
-      expectTypeOf(contract.requestBody).toEqualTypeOf(bodySchema)
+      expectTypeOf(contract.requestBodySchema).toEqualTypeOf(bodySchema)
     })
 
-    it('infers syncResponseBody type from schema', () => {
+    it('infers successResponseBodySchema type from schema', () => {
       const syncResponseSchema = z.object({
         reply: z.string(),
         usage: z.object({ tokens: z.number() }),
@@ -673,29 +673,29 @@ describe('buildContract type inference', () => {
 
       const contract = buildContract({
         pathResolver: () => '/api/chat/completions',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        requestBody: z.object({ message: z.string() }),
-        syncResponseBody: syncResponseSchema,
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        requestBodySchema: z.object({ message: z.string() }),
+        successResponseBodySchema: syncResponseSchema,
+        serverSentEvents: {
           chunk: z.object({ delta: z.string() }),
         },
       })
 
-      expectTypeOf(contract.syncResponseBody).toEqualTypeOf(syncResponseSchema)
+      expectTypeOf(contract.successResponseBodySchema).toEqualTypeOf(syncResponseSchema)
     })
 
     it('allows explicit method specification', () => {
       const contract = buildContract({
         method: 'put',
         pathResolver: () => '/api/chat/completions',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        requestBody: z.object({ message: z.string() }),
-        syncResponseBody: z.object({ reply: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        requestBodySchema: z.object({ message: z.string() }),
+        successResponseBodySchema: z.object({ reply: z.string() }),
+        serverSentEvents: {
           chunk: z.object({ delta: z.string() }),
         },
       })
@@ -704,25 +704,25 @@ describe('buildContract type inference', () => {
     })
   })
 
-  describe('Dual-mode responseSchemasByStatusCode types', () => {
+  describe('Dual-mode responseBodySchemasByStatusCode types', () => {
     it('infers status code response types for dual-mode routes', () => {
       const contract = buildContract({
         pathResolver: () => '/api/chat/completions',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        requestBody: z.object({ message: z.string() }),
-        syncResponseBody: z.object({ reply: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        requestBodySchema: z.object({ message: z.string() }),
+        successResponseBodySchema: z.object({ reply: z.string() }),
+        serverSentEvents: {
           chunk: z.object({ delta: z.string() }),
         },
-        responseSchemasByStatusCode: {
+        responseBodySchemasByStatusCode: {
           400: z.object({ error: z.string(), details: z.array(z.string()) }),
           401: z.object({ error: z.literal('Unauthorized') }),
         },
       })
 
-      expectTypeOf(contract.responseSchemasByStatusCode).not.toBeUndefined()
+      expectTypeOf(contract.responseBodySchemasByStatusCode).not.toBeUndefined()
     })
   })
 
@@ -754,10 +754,10 @@ describe('buildContract type inference', () => {
     it('SSE contracts have isSSE: true', () => {
       const contract = buildContract({
         pathResolver: () => '/api/stream',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        serverSentEvents: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -768,10 +768,10 @@ describe('buildContract type inference', () => {
     it('SSE contracts do not have isDualMode property', () => {
       const contract = buildContract({
         pathResolver: () => '/api/stream',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        serverSentEvents: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -783,11 +783,11 @@ describe('buildContract type inference', () => {
     it('Dual-mode contracts have isDualMode: true', () => {
       const contract = buildContract({
         pathResolver: () => '/api/status',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        syncResponseBody: z.object({ status: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEvents: {
           update: z.object({ progress: z.number() }),
         },
       })
@@ -798,11 +798,11 @@ describe('buildContract type inference', () => {
     it('Dual-mode contracts do not have isSSE property', () => {
       const contract = buildContract({
         pathResolver: () => '/api/status',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        syncResponseBody: z.object({ status: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEvents: {
           update: z.object({ progress: z.number() }),
         },
       })
@@ -832,10 +832,10 @@ describe('buildContract type inference', () => {
 
       buildContract({
         pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
-        params: paramsSchema,
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        sseEvents: {
+        requestPathParamsSchema: paramsSchema,
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        serverSentEvents: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -846,11 +846,11 @@ describe('buildContract type inference', () => {
 
       buildContract({
         pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
-        params: paramsSchema,
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        syncResponseBody: z.object({ status: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: paramsSchema,
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEvents: {
           update: z.object({ progress: z.number() }),
         },
       })

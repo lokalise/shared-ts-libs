@@ -17,7 +17,7 @@ export type SSEMethod = 'get' | 'post' | 'put' | 'patch'
  * @template Params - Path parameters schema
  * @template Query - Query string parameters schema
  * @template RequestHeaders - Request headers schema
- * @template Body - Request requestBody schema (for POST/PUT/PATCH)
+ * @template Body - Request body schema (for POST/PUT/PATCH)
  * @template Events - Map of event name to event data schema
  * @template ResponseSchemasByStatusCode - Error response schemas by HTTP status code
  */
@@ -38,11 +38,11 @@ export type SSEContractDefinition<
    * Receives typed params and returns the URL path string.
    */
   pathResolver: RoutePathResolver<z.infer<Params>>
-  params: Params
-  query: Query
-  requestHeaders: RequestHeaders
-  requestBody: Body
-  sseEvents: Events
+  requestPathParamsSchema: Params
+  requestQuerySchema: Query
+  requestHeaderSchema: RequestHeaders
+  requestBodySchema: Body
+  serverSentEvents: Events
   /**
    * Error response schemas by HTTP status code.
    * Used to define response shapes for errors that occur before streaming starts
@@ -50,13 +50,13 @@ export type SSEContractDefinition<
    *
    * @example
    * ```ts
-   * responseSchemasByStatusCode: {
+   * responseBodySchemasByStatusCode: {
    *   401: z.object({ error: z.literal('Unauthorized') }),
    *   404: z.object({ error: z.string() }),
    * }
    * ```
    */
-  responseSchemasByStatusCode?: ResponseSchemasByStatusCode
+  responseBodySchemasByStatusCode?: ResponseSchemasByStatusCode
   isSSE: true
 }
 
@@ -68,11 +68,11 @@ export type AnySSEContractDefinition = {
   method: SSEMethod
   // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with all param types
   pathResolver: RoutePathResolver<any>
-  params: z.ZodTypeAny
-  query: z.ZodTypeAny
-  requestHeaders: z.ZodTypeAny
-  requestBody: z.ZodTypeAny | undefined
-  sseEvents: SSEEventSchemas
-  responseSchemasByStatusCode?: Partial<Record<HttpStatusCode, z.ZodTypeAny>>
+  requestPathParamsSchema: z.ZodTypeAny
+  requestQuerySchema: z.ZodTypeAny
+  requestHeaderSchema: z.ZodTypeAny
+  requestBodySchema: z.ZodTypeAny | undefined
+  serverSentEvents: SSEEventSchemas
+  responseBodySchemasByStatusCode?: Partial<Record<HttpStatusCode, z.ZodTypeAny>>
   isSSE: true
 }
