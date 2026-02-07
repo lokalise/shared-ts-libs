@@ -30,13 +30,13 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
  * Universal contract builder that creates either REST or SSE contracts based on configuration.
  *
  * This is a unified entry point that delegates to:
- * - `buildRestContract` when no `sseEvents` is provided
- * - `buildSseContract` when `sseEvents` is provided
+ * - `buildRestContract` when no `serverSentEvents` is provided
+ * - `buildSseContract` when `serverSentEvents` is provided
  *
  * ## Contract Type Detection
  *
- * | `sseEvents` | `syncResponseBody` | `requestBody`/`requestBodySchema` | Result |
- * |-------------|-------------------|-----------------------------------|--------|
+ * | `serverSentEvents` | `successResponseBodySchema` | `requestBodySchema` | Result |
+ * |--------------------|----------------------------|---------------------|--------|
  * | ❌ | - | ❌ | REST GET |
  * | ❌ | - | ✅ (method: post/put/patch) | REST Payload |
  * | ❌ | - | ❌ (method: delete) | REST DELETE |
@@ -71,10 +71,10 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
  * // SSE-only streaming endpoint
  * const notifications = buildContract({
  *   pathResolver: () => '/api/notifications/stream',
- *   params: z.object({}),
- *   query: z.object({}),
- *   requestHeaders: z.object({}),
- *   sseEvents: {
+ *   requestPathParamsSchema: z.object({}),
+ *   requestQuerySchema: z.object({}),
+ *   requestHeaderSchema: z.object({}),
+ *   serverSentEvents: {
  *     notification: z.object({ id: z.string(), message: z.string() }),
  *   },
  * })
@@ -83,12 +83,12 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
  * const chatCompletion = buildContract({
  *   method: 'post',
  *   pathResolver: () => '/api/chat/completions',
- *   params: z.object({}),
- *   query: z.object({}),
- *   requestHeaders: z.object({}),
- *   requestBody: z.object({ message: z.string() }),
- *   syncResponseBody: z.object({ reply: z.string() }),
- *   sseEvents: {
+ *   requestPathParamsSchema: z.object({}),
+ *   requestQuerySchema: z.object({}),
+ *   requestHeaderSchema: z.object({}),
+ *   requestBodySchema: z.object({ message: z.string() }),
+ *   successResponseBodySchema: z.object({ reply: z.string() }),
+ *   serverSentEvents: {
  *     chunk: z.object({ delta: z.string() }),
  *     done: z.object({ usage: z.object({ tokens: z.number() }) }),
  *   },
@@ -97,10 +97,10 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
  */
 
 // ============================================================================
-// REST Overloads (config types already include sseEvents?: never)
+// REST Overloads (config types already include serverSentEvents?: never)
 // ============================================================================
 
-// Overload 1: REST GET route (no method, no requestBodySchema, no sseEvents)
+// Overload 1: REST GET route (no method, no requestBodySchema, no serverSentEvents)
 export function buildContract<
   SuccessResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
@@ -134,7 +134,7 @@ export function buildContract<
   ResponseSchemasByStatusCode
 >
 
-// Overload 2: REST DELETE route (method: 'delete', no requestBodySchema, no sseEvents)
+// Overload 2: REST DELETE route (method: 'delete', no requestBodySchema, no serverSentEvents)
 export function buildContract<
   SuccessResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
@@ -168,7 +168,7 @@ export function buildContract<
   ResponseSchemasByStatusCode
 >
 
-// Overload 3: REST Payload route (method: 'post'|'put'|'patch', has requestBodySchema, no sseEvents)
+// Overload 3: REST Payload route (method: 'post'|'put'|'patch', has requestBodySchema, no serverSentEvents)
 export function buildContract<
   RequestBodySchema extends z.Schema | undefined = undefined,
   SuccessResponseBodySchema extends z.Schema | undefined = undefined,
@@ -209,7 +209,7 @@ export function buildContract<
 // SSE Overloads
 // ============================================================================
 
-// Overload 4: Dual-mode GET (has syncResponseBody + sseEvents, no requestBody)
+// Overload 4: Dual-mode GET (has successResponseBodySchema + serverSentEvents, no requestBodySchema)
 export function buildContract<
   Params extends z.ZodTypeAny,
   Query extends z.ZodTypeAny,
@@ -242,7 +242,7 @@ export function buildContract<
   ResponseSchemasByStatusCode
 >
 
-// Overload 5: SSE GET (has sseEvents, no requestBody, no syncResponseBody)
+// Overload 5: SSE GET (has serverSentEvents, no requestBodySchema, no successResponseBodySchema)
 export function buildContract<
   Params extends z.ZodTypeAny,
   Query extends z.ZodTypeAny,
@@ -263,7 +263,7 @@ export function buildContract<
   ResponseSchemasByStatusCode
 >
 
-// Overload 6: Dual-mode with requestBody (has syncResponseBody + sseEvents + requestBody)
+// Overload 6: Dual-mode with body (has successResponseBodySchema + serverSentEvents + requestBodySchema)
 export function buildContract<
   Params extends z.ZodTypeAny,
   Query extends z.ZodTypeAny,
@@ -298,7 +298,7 @@ export function buildContract<
   ResponseSchemasByStatusCode
 >
 
-// Overload 7: SSE with requestBody (has sseEvents + requestBody, no syncResponseBody)
+// Overload 7: SSE with body (has serverSentEvents + requestBodySchema, no successResponseBodySchema)
 export function buildContract<
   Params extends z.ZodTypeAny,
   Query extends z.ZodTypeAny,
@@ -336,7 +336,7 @@ export function buildContract(
   config: any,
   // biome-ignore lint/suspicious/noExplicitAny: Return type depends on overload
 ): any {
-  const hasSseEvents = 'sseEvents' in config && config.sseEvents !== undefined
+  const hasSseEvents = 'serverSentEvents' in config && config.serverSentEvents !== undefined
 
   if (hasSseEvents) {
     // Delegate to SSE contract builder

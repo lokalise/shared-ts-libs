@@ -13,14 +13,14 @@ export type SSEEventSchemas = Record<string, z.ZodTypeAny>
  * @example
  * ```typescript
  * type Contracts = {
- *   notifications: { sseEvents: { alert: z.ZodObject<...> } }
- *   chat: { sseEvents: { message: z.ZodObject<...>, done: z.ZodObject<...> } }
+ *   notifications: { serverSentEvents: { alert: z.ZodObject<...> } }
+ *   chat: { serverSentEvents: { message: z.ZodObject<...>, done: z.ZodObject<...> } }
  * }
  * // AllContractEventNames<Contracts> = 'alert' | 'message' | 'done'
  * ```
  */
 export type AllContractEventNames<Contracts extends Record<string, AnySSEContractDefinition>> =
-  Contracts[keyof Contracts]['sseEvents'] extends infer E
+  Contracts[keyof Contracts]['serverSentEvents'] extends infer E
     ? E extends SSEEventSchemas
       ? keyof E & string
       : never
@@ -34,8 +34,8 @@ export type ExtractEventSchema<
   Contracts extends Record<string, AnySSEContractDefinition>,
   EventName extends string,
 > = {
-  [K in keyof Contracts]: EventName extends keyof Contracts[K]['sseEvents']
-    ? Contracts[K]['sseEvents'][EventName]
+  [K in keyof Contracts]: EventName extends keyof Contracts[K]['serverSentEvents']
+    ? Contracts[K]['serverSentEvents'][EventName]
     : never
 }[keyof Contracts]
 

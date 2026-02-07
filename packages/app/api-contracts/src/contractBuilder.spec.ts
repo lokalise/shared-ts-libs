@@ -4,7 +4,7 @@ import { buildContract } from './contractBuilder.ts'
 
 describe('buildContract', () => {
   describe('REST contracts', () => {
-    it('creates REST GET contract when no sseEvents is provided', () => {
+    it('creates REST GET contract when no serverSentEvents is provided', () => {
       const contract = buildContract({
         successResponseBodySchema: z.object({ id: z.string() }),
         pathResolver: () => '/api/users',
@@ -44,13 +44,13 @@ describe('buildContract', () => {
   })
 
   describe('SSE contracts', () => {
-    it('creates SSE GET contract when sseEvents is provided without requestBody', () => {
+    it('creates SSE GET contract when serverSentEvents is provided without requestBodySchema', () => {
       const contract = buildContract({
         pathResolver: () => '/api/stream',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        serverSentEvents: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -58,17 +58,17 @@ describe('buildContract', () => {
       expect(contract.method).toBe('get')
       expect(contract.isSSE).toBe(true)
       expect('isDualMode' in contract).toBe(false)
-      expect(contract.sseEvents).toBeDefined()
+      expect(contract.serverSentEvents).toBeDefined()
     })
 
-    it('creates SSE POST contract when sseEvents and requestBody are provided', () => {
+    it('creates SSE POST contract when serverSentEvents and requestBodySchema are provided', () => {
       const contract = buildContract({
         pathResolver: () => '/api/process',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        requestBody: z.object({ data: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        requestBodySchema: z.object({ data: z.string() }),
+        serverSentEvents: {
           progress: z.object({ percent: z.number() }),
         },
       })
@@ -76,19 +76,19 @@ describe('buildContract', () => {
       expect(contract.method).toBe('post')
       expect(contract.isSSE).toBe(true)
       expect('isDualMode' in contract).toBe(false)
-      expect(contract.requestBody).toBeDefined()
+      expect(contract.requestBodySchema).toBeDefined()
     })
   })
 
   describe('Dual-mode contracts', () => {
-    it('creates dual-mode GET contract when sseEvents and syncResponseBody are provided', () => {
+    it('creates dual-mode GET contract when serverSentEvents and successResponseBodySchema are provided', () => {
       const contract = buildContract({
         pathResolver: () => '/api/status',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        syncResponseBody: z.object({ status: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEvents: {
           update: z.object({ progress: z.number() }),
         },
       })
@@ -96,19 +96,19 @@ describe('buildContract', () => {
       expect(contract.method).toBe('get')
       expect(contract.isDualMode).toBe(true)
       expect('isSSE' in contract).toBe(false)
-      expect(contract.syncResponseBody).toBeDefined()
-      expect(contract.sseEvents).toBeDefined()
+      expect(contract.successResponseBodySchema).toBeDefined()
+      expect(contract.serverSentEvents).toBeDefined()
     })
 
-    it('creates dual-mode POST contract when sseEvents, syncResponseBody, and requestBody are provided', () => {
+    it('creates dual-mode POST contract when serverSentEvents, successResponseBodySchema, and requestBodySchema are provided', () => {
       const contract = buildContract({
         pathResolver: () => '/api/chat/completions',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        requestBody: z.object({ message: z.string() }),
-        syncResponseBody: z.object({ reply: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        requestBodySchema: z.object({ message: z.string() }),
+        successResponseBodySchema: z.object({ reply: z.string() }),
+        serverSentEvents: {
           chunk: z.object({ delta: z.string() }),
         },
       })
@@ -116,8 +116,8 @@ describe('buildContract', () => {
       expect(contract.method).toBe('post')
       expect(contract.isDualMode).toBe(true)
       expect('isSSE' in contract).toBe(false)
-      expect(contract.requestBody).toBeDefined()
-      expect(contract.syncResponseBody).toBeDefined()
+      expect(contract.requestBodySchema).toBeDefined()
+      expect(contract.successResponseBodySchema).toBeDefined()
     })
   })
 })
