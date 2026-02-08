@@ -49,6 +49,7 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
  * ```typescript
  * // REST GET route
  * const getUsers = buildContract({
+ *   method: 'get',
  *   successResponseBodySchema: z.array(userSchema),
  *   pathResolver: () => '/api/users',
  * })
@@ -70,6 +71,7 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
  *
  * // SSE-only streaming endpoint
  * const notifications = buildContract({
+ *   method: 'get',
  *   pathResolver: () => '/api/notifications/stream',
  *   requestPathParamsSchema: z.object({}),
  *   requestQuerySchema: z.object({}),

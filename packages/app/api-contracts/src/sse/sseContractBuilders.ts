@@ -18,6 +18,7 @@ export type SSEGetContractConfig<
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
 > = {
+  method: 'get'
   pathResolver: RoutePathResolver<z.infer<Params>>
   requestPathParamsSchema: Params
   requestQuerySchema: Query
@@ -55,7 +56,7 @@ export type SSEPayloadContractConfig<
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
 > = {
-  method?: 'post' | 'put' | 'patch'
+  method: 'post' | 'put' | 'patch'
   pathResolver: RoutePathResolver<z.infer<Params>>
   requestPathParamsSchema: Params
   requestQuerySchema: Query
@@ -94,6 +95,7 @@ export type DualModeGetContractConfig<
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
 > = {
+  method: 'get'
   pathResolver: RoutePathResolver<z.infer<Params>>
   requestPathParamsSchema: Params
   requestQuerySchema: Query
@@ -146,7 +148,7 @@ export type DualModePayloadContractConfig<
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
 > = {
-  method?: 'post' | 'put' | 'patch'
+  method: 'post' | 'put' | 'patch'
   pathResolver: RoutePathResolver<z.infer<Params>>
   requestPathParamsSchema: Params
   requestQuerySchema: Query
@@ -252,8 +254,8 @@ function buildBaseFields(config: any, hasBody: boolean) {
 }
 
 // Helper to determine method
-function determineMethod(config: { method?: string }, hasBody: boolean, defaultMethod: string) {
-  return hasBody ? (config.method ?? defaultMethod) : 'get'
+function determineMethod(config: { method: string }) {
+  return config.method
 }
 
 // Overload 1: Dual-mode GET (has successResponseBodySchema, no requestBodySchema)
@@ -395,7 +397,7 @@ export function buildSseContract(
     // Dual-mode contract
     return {
       ...base,
-      method: determineMethod(config as { method?: string }, hasBody, 'post'),
+      method: determineMethod(config as { method: string }),
       successResponseBodySchema: (config as { successResponseBodySchema: unknown })
         .successResponseBodySchema,
       responseHeaderSchema: (config as { responseHeaderSchema?: unknown }).responseHeaderSchema,
@@ -408,7 +410,7 @@ export function buildSseContract(
   // SSE-only contract
   return {
     ...base,
-    method: determineMethod(config as { method?: string }, hasBody, 'post'),
+    method: determineMethod(config as { method: string }),
     responseBodySchemasByStatusCode: (config as { responseBodySchemasByStatusCode?: unknown })
       .responseBodySchemasByStatusCode,
     isSSE: true,

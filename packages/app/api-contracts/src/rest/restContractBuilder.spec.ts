@@ -87,6 +87,7 @@ describe('buildRestContract', () => {
   describe('GET route', () => {
     it('sets default get route values', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
         responseSchemasByStatusCode: {
@@ -102,6 +103,7 @@ describe('buildRestContract', () => {
 
     it('resolves path params', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -110,8 +112,9 @@ describe('buildRestContract', () => {
       expect(contract).toMatchSnapshot()
     })
 
-    it('infers method as get when no method specified', () => {
+    it('sets method to get when method is get', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/api/users',
       })
@@ -121,6 +124,7 @@ describe('buildRestContract', () => {
 
     it('defaults isEmptyResponseExpected to false for GET', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/api/users',
       })
@@ -130,6 +134,7 @@ describe('buildRestContract', () => {
 
     it('defaults isNonJSONResponseExpected to false for GET', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/api/users',
       })
@@ -175,6 +180,7 @@ describe('buildRestContract', () => {
   describe('mapRouteToPath compatibility', () => {
     it('returns path without params', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
       })
@@ -185,6 +191,7 @@ describe('buildRestContract', () => {
 
     it('returns path with one param', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -196,6 +203,7 @@ describe('buildRestContract', () => {
 
     it('returns path with multiple params', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_MULTI_SCHEMA,
         pathResolver: (pathParams) => `/orgs/${pathParams.orgId}/users/${pathParams.userId}`,
@@ -209,6 +217,7 @@ describe('buildRestContract', () => {
   describe('describeContract compatibility', () => {
     it('returns path without params', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
       })
@@ -218,6 +227,7 @@ describe('buildRestContract', () => {
 
     it('returns path with one param', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -284,6 +294,7 @@ describe('buildRestContract', () => {
     describe('GET route', () => {
       it('includes responseHeaderSchema in the contract', () => {
         const contract = buildRestContract({
+          method: 'get',
           successResponseBodySchema: BODY_SCHEMA,
           pathResolver: () => '/api/data',
           responseHeaderSchema: RESPONSE_HEADER_SCHEMA,
@@ -295,6 +306,7 @@ describe('buildRestContract', () => {
 
       it('works with both request and response header schemas', () => {
         const contract = buildRestContract({
+          method: 'get',
           successResponseBodySchema: BODY_SCHEMA,
           pathResolver: () => '/api/data',
           requestHeaderSchema: REQUEST_HEADER_SCHEMA,
@@ -309,6 +321,7 @@ describe('buildRestContract', () => {
 
       it('validates response header schema with path params', () => {
         const contract = buildRestContract({
+          method: 'get',
           successResponseBodySchema: BODY_SCHEMA,
           requestPathParamsSchema: PATH_PARAMS_SCHEMA,
           pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -354,6 +367,7 @@ describe('buildRestContract', () => {
   describe('optional fields', () => {
     it('supports summary field', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/api/users',
         summary: 'Get all users',
@@ -364,6 +378,7 @@ describe('buildRestContract', () => {
 
     it('supports tags field', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/api/users',
         tags: ['users', 'api'],
@@ -379,6 +394,7 @@ describe('buildRestContract', () => {
       })
 
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/api/users',
         requestQuerySchema: querySchema,
@@ -389,6 +405,7 @@ describe('buildRestContract', () => {
 
     it('supports isNonJSONResponseExpected', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: z.string(),
         pathResolver: () => '/api/file',
         isNonJSONResponseExpected: true,

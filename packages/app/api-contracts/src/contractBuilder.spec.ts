@@ -6,6 +6,7 @@ describe('buildContract', () => {
   describe('REST contracts', () => {
     it('creates REST GET contract when no serverSentEventSchemas is provided', () => {
       const contract = buildContract({
+        method: 'get',
         successResponseBodySchema: z.object({ id: z.string() }),
         pathResolver: () => '/api/users',
       })
@@ -46,6 +47,7 @@ describe('buildContract', () => {
   describe('SSE contracts', () => {
     it('creates SSE GET contract when serverSentEventSchemas is provided without requestBodySchema', () => {
       const contract = buildContract({
+        method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
@@ -63,6 +65,7 @@ describe('buildContract', () => {
 
     it('creates SSE POST contract when serverSentEventSchemas and requestBodySchema are provided', () => {
       const contract = buildContract({
+        method: 'post',
         pathResolver: () => '/api/process',
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
@@ -83,6 +86,7 @@ describe('buildContract', () => {
   describe('Dual-mode contracts', () => {
     it('creates dual-mode GET contract when serverSentEventSchemas and successResponseBodySchema are provided', () => {
       const contract = buildContract({
+        method: 'get',
         pathResolver: () => '/api/status',
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
@@ -102,6 +106,7 @@ describe('buildContract', () => {
 
     it('creates dual-mode POST contract when serverSentEventSchemas, successResponseBodySchema, and requestBodySchema are provided', () => {
       const contract = buildContract({
+        method: 'post',
         pathResolver: () => '/api/chat/completions',
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
