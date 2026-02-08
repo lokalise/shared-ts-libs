@@ -32,7 +32,8 @@ const postContract = buildRestContract({
     method: 'post',
     successResponseBodySchema: RESPONSE_BODY_SCHEMA,
     requestBodySchema: REQUEST_BODY_SCHEMA,
-    pathResolver: () => '/',
+    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
+    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
 })
 
 // DELETE route
@@ -76,15 +77,15 @@ await app.ready()
 
 // used in tests, you can use '@lokalise/frontend-http-client' in production code
 const postResponse = await injectPost(app, postContract, {
-    pathParams: { userId: '1'},
+    pathParams: { userId: '1' },
     body: { id: '2' },
-    headers: { authorization: 'some-value'} // can be passed directly
+    headers: { authorization: 'some-value' } // can be passed directly
 })
 
 // used in tests, you can use '@lokalise/frontend-http-client' in production code
 const getResponse = await injectGet(app, getContract, {
     pathParams: { userId: '1' },
-    headers: async () => { authorization: 'some-value'} // headers producing function (sync or async) can be passed as well
+    headers: async () => ({ authorization: 'some-value' }) // headers producing function (sync or async) can be passed as well
 })
 ```
 
