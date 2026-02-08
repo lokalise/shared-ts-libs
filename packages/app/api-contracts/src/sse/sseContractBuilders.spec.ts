@@ -5,6 +5,7 @@ import { buildSseContract } from './sseContractBuilders.ts'
 describe('contractBuilders', () => {
   describe('buildSseContract (SSE with body)', () => {
     const baseConfig = {
+      method: 'post' as const,
       pathResolver: () => '/api/test',
       requestPathParamsSchema: z.object({}),
       requestQuerySchema: z.object({}),
@@ -29,7 +30,7 @@ describe('contractBuilders', () => {
       })
     })
 
-    it('defaults method to POST when not specified', () => {
+    it('uses POST method', () => {
       const route = buildSseContract(baseConfig)
 
       expect(route.method).toBe('post')
@@ -59,6 +60,7 @@ describe('contractBuilders', () => {
   describe('buildSseContract (SSE GET)', () => {
     it('creates GET SSE route', () => {
       const route = buildSseContract({
+        method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({ userId: z.string() }),
@@ -76,6 +78,7 @@ describe('contractBuilders', () => {
 
     it('includes responseBodySchemasByStatusCode for SSE GET', () => {
       const route = buildSseContract({
+        method: 'get',
         pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
         requestPathParamsSchema: z.object({ channelId: z.string() }),
         requestQuerySchema: z.object({}),
@@ -126,6 +129,7 @@ describe('contractBuilders', () => {
 
   describe('buildSseContract (Dual-mode with body)', () => {
     const baseConfig = {
+      method: 'post' as const,
       pathResolver: () => '/api/chat/completions',
       requestPathParamsSchema: z.object({}),
       requestQuerySchema: z.object({}),
@@ -141,7 +145,7 @@ describe('contractBuilders', () => {
       },
     }
 
-    it('defaults method to POST when not specified', () => {
+    it('uses POST method', () => {
       const route = buildSseContract(baseConfig)
 
       expect(route.method).toBe('post')
@@ -199,6 +203,7 @@ describe('contractBuilders', () => {
   describe('buildSseContract (Dual-mode GET)', () => {
     it('creates GET dual-mode route', () => {
       const route = buildSseContract({
+        method: 'get',
         pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
         requestPathParamsSchema: z.object({ jobId: z.string().uuid() }),
         requestQuerySchema: z.object({ verbose: z.string().optional() }),
@@ -222,6 +227,7 @@ describe('contractBuilders', () => {
 
     it('includes responseBodySchemasByStatusCode for GET dual-mode', () => {
       const route = buildSseContract({
+        method: 'get',
         pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
         requestPathParamsSchema: z.object({ jobId: z.string().uuid() }),
         requestQuerySchema: z.object({}),
@@ -260,6 +266,7 @@ describe('contractBuilders', () => {
 
     it('types path params correctly', () => {
       const route = buildSseContract({
+        method: 'get',
         pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
         requestPathParamsSchema: z.object({ channelId: z.string() }),
         requestQuerySchema: z.object({}),
@@ -295,6 +302,7 @@ describe('contractBuilders', () => {
 
     it('types SSE events correctly', () => {
       const route = buildSseContract({
+        method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),

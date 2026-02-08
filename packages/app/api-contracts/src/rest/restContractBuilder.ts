@@ -13,7 +13,7 @@ import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 
 /**
  * Configuration for building a GET route.
- * GET routes have no request body and the method is inferred automatically.
+ * GET routes have no request body and require method: 'get'.
  */
 export type GetContractConfig<
   SuccessResponseBodySchema extends z.Schema | undefined = undefined,
@@ -39,7 +39,7 @@ export type GetContractConfig<
   >,
   'method'
 > & {
-  method?: never
+  method: 'get'
   requestBodySchema?: never
   /** Discriminator to distinguish from SSE contracts in buildContract */
   serverSentEventSchemas?: never
@@ -125,20 +125,22 @@ export type PayloadContractConfig<
  *
  * | `method` | `requestBodySchema` | Result |
  * |----------|---------------------|--------|
- * | omitted/undefined | ❌ | GET route |
+ * | `'get'` | ❌ | GET route |
  * | `'delete'` | ❌ | DELETE route |
  * | `'post'`/`'put'`/`'patch'` | ✅ | Payload route |
  *
  * @example
  * ```typescript
- * // GET route - method is inferred automatically
+ * // GET route - method: 'get' is required
  * const getUsers = buildRestContract({
+ *   method: 'get',
  *   pathResolver: () => '/api/users',
  *   successResponseBodySchema: z.array(userSchema),
  * })
  *
  * // GET route with path params
  * const getUser = buildRestContract({
+ *   method: 'get',
  *   pathResolver: (params) => `/api/users/${params.userId}`,
  *   requestPathParamsSchema: z.object({ userId: z.string() }),
  *   successResponseBodySchema: userSchema,
@@ -336,7 +338,7 @@ export function buildRestContract(
     }
   }
 
-  // GET route (default)
+  // GET route
   return {
     ...baseFields,
     method: 'get' as const,

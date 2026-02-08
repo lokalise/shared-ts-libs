@@ -17,6 +17,7 @@ describe('buildRestContract metadata augmentation', () => {
   describe('GET route', () => {
     it('should respect metadata type and reflect it on contract', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: SCHEMA,
         pathResolver: () => '/',
         metadata: {

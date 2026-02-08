@@ -7,6 +7,7 @@ describe('buildRestContract type inference', () => {
   describe('GET route types', () => {
     it('returns GetRouteDefinition for GET routes', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: z.object({ id: z.string() }),
         pathResolver: () => '/api/users',
       })
@@ -22,6 +23,7 @@ describe('buildRestContract type inference', () => {
       })
 
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: z.object({ id: z.string() }),
         requestPathParamsSchema: pathParamsSchema,
         pathResolver: (params) => `/orgs/${params.orgId}/users/${params.userId}`,
@@ -40,6 +42,7 @@ describe('buildRestContract type inference', () => {
       })
 
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: z.object({ items: z.array(z.string()) }),
         requestQuerySchema: querySchema,
         pathResolver: () => '/api/items',
@@ -56,6 +59,7 @@ describe('buildRestContract type inference', () => {
       })
 
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: responseSchema,
         pathResolver: () => '/api/users',
       })
@@ -71,6 +75,7 @@ describe('buildRestContract type inference', () => {
       })
 
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: z.object({}),
         requestHeaderSchema: headerSchema,
         pathResolver: () => '/api/protected',
@@ -87,6 +92,7 @@ describe('buildRestContract type inference', () => {
       })
 
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: z.object({}),
         responseHeaderSchema: responseHeaderSchema,
         pathResolver: () => '/api/data',
@@ -244,6 +250,7 @@ describe('buildRestContract type inference', () => {
   describe('responseSchemasByStatusCode types', () => {
     it('infers status code response types', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: z.object({ data: z.string() }),
         pathResolver: () => '/api/data',
         responseSchemasByStatusCode: {
@@ -266,6 +273,7 @@ describe('buildRestContract type inference', () => {
 
       // This should compile without errors
       buildRestContract({
+        method: 'get',
         successResponseBodySchema: z.object({}),
         requestPathParamsSchema: pathParamsSchema,
         pathResolver: (params) => {
@@ -279,6 +287,7 @@ describe('buildRestContract type inference', () => {
     it('allows empty params when no path params schema', () => {
       // This should compile without errors
       buildRestContract({
+        method: 'get',
         successResponseBodySchema: z.object({}),
         pathResolver: () => '/api/users',
       })
@@ -288,6 +297,7 @@ describe('buildRestContract type inference', () => {
   describe('metadata type augmentation', () => {
     it('preserves metadata type', () => {
       const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: z.object({}),
         pathResolver: () => '/api/data',
         metadata: { customField: 'value', anotherField: 123 },
@@ -301,6 +311,7 @@ describe('buildRestContract type inference', () => {
     describe('isEmptyResponseExpected', () => {
       it('defaults to false type for GET routes', () => {
         const contract = buildRestContract({
+          method: 'get',
           successResponseBodySchema: z.object({}),
           pathResolver: () => '/api/data',
         })
@@ -331,6 +342,7 @@ describe('buildRestContract type inference', () => {
 
       it('reflects explicit true value in type for GET', () => {
         const contract = buildRestContract({
+          method: 'get',
           successResponseBodySchema: z.undefined(),
           pathResolver: () => '/api/void',
           isEmptyResponseExpected: true,
@@ -354,6 +366,7 @@ describe('buildRestContract type inference', () => {
     describe('isNonJSONResponseExpected', () => {
       it('defaults to false type for GET routes', () => {
         const contract = buildRestContract({
+          method: 'get',
           successResponseBodySchema: z.object({}),
           pathResolver: () => '/api/data',
         })
@@ -384,6 +397,7 @@ describe('buildRestContract type inference', () => {
 
       it('reflects explicit true value in type', () => {
         const contract = buildRestContract({
+          method: 'get',
           successResponseBodySchema: z.string(),
           pathResolver: () => '/api/file',
           isNonJSONResponseExpected: true,
@@ -394,6 +408,7 @@ describe('buildRestContract type inference', () => {
 
       it('reflects explicit false value in type', () => {
         const contract = buildRestContract({
+          method: 'get',
           successResponseBodySchema: z.object({}),
           pathResolver: () => '/api/data',
           isNonJSONResponseExpected: false,
