@@ -42,7 +42,7 @@ export type SSEContractDefinition<
   requestQuerySchema: Query
   requestHeaderSchema: RequestHeaders
   requestBodySchema: Body
-  serverSentEvents: Events
+  serverSentEventSchemas: Events
   /**
    * Error response schemas by HTTP status code.
    * Used to define response shapes for errors that occur before streaming starts
@@ -72,7 +72,7 @@ export type AnySSEContractDefinition = {
   requestQuerySchema: z.ZodTypeAny
   requestHeaderSchema: z.ZodTypeAny
   requestBodySchema: z.ZodTypeAny | undefined
-  serverSentEvents: SSEEventSchemas
+  serverSentEventSchemas: SSEEventSchemas
   responseBodySchemasByStatusCode?: Partial<Record<HttpStatusCode, z.ZodTypeAny>>
   isSSE: true
 }

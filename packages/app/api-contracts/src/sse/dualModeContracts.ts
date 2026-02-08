@@ -53,7 +53,7 @@ export type DualModeContractDefinition<
    * ```
    */
   responseBodySchemasByStatusCode?: ResponseSchemasByStatusCode
-  serverSentEvents: Events
+  serverSentEventSchemas: Events
   isDualMode: true
 }
 
@@ -73,6 +73,6 @@ export type AnyDualModeContractDefinition = {
   successResponseBodySchema: z.ZodTypeAny
   responseHeaderSchema?: z.ZodTypeAny
   responseBodySchemasByStatusCode?: Partial<Record<HttpStatusCode, z.ZodTypeAny>>
-  serverSentEvents: SSEEventSchemas
+  serverSentEventSchemas: SSEEventSchemas
   isDualMode: true
 }

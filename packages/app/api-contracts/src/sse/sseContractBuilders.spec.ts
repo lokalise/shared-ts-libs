@@ -10,13 +10,13 @@ describe('contractBuilders', () => {
       requestQuerySchema: z.object({}),
       requestHeaderSchema: z.object({}),
       requestBodySchema: z.object({ message: z.string() }),
-      serverSentEvents: {
+      serverSentEventSchemas: {
         data: z.object({ value: z.string() }),
       },
     }
 
-    it('requires serverSentEvents - missing serverSentEvents produces clear error', () => {
-      // @ts-expect-error - serverSentEvents is required for SSE contracts
+    it('requires serverSentEventSchemas - missing serverSentEventSchemas produces clear error', () => {
+      // @ts-expect-error - serverSentEventSchemas is required for SSE contracts
       const _postChatStreamByIdContractMalformed = buildSseContract({
         method: 'post',
         pathResolver: () => '/',
@@ -63,7 +63,7 @@ describe('contractBuilders', () => {
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({ userId: z.string() }),
         requestHeaderSchema: z.object({}),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -80,7 +80,7 @@ describe('contractBuilders', () => {
         requestPathParamsSchema: z.object({ channelId: z.string() }),
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({ authorization: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
         responseBodySchemasByStatusCode: {
@@ -105,7 +105,7 @@ describe('contractBuilders', () => {
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({ authorization: z.string() }),
         requestBodySchema: z.object({ fileId: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           progress: z.object({ percent: z.number() }),
           done: z.object({ result: z.string() }),
         },
@@ -135,7 +135,7 @@ describe('contractBuilders', () => {
         reply: z.string(),
         usage: z.object({ tokens: z.number() }),
       }),
-      serverSentEvents: {
+      serverSentEventSchemas: {
         chunk: z.object({ content: z.string() }),
         done: z.object({ usage: z.object({ totalTokens: z.number() }) }),
       },
@@ -208,7 +208,7 @@ describe('contractBuilders', () => {
           progress: z.number(),
           result: z.string().optional(),
         }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           progress: z.object({ percent: z.number(), message: z.string().optional() }),
           done: z.object({ result: z.string() }),
         },
@@ -229,7 +229,7 @@ describe('contractBuilders', () => {
         successResponseBodySchema: z.object({
           status: z.string(),
         }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           done: z.object({ result: z.string() }),
         },
         responseBodySchemasByStatusCode: {
@@ -252,7 +252,7 @@ describe('contractBuilders', () => {
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
         requestBodySchema: z.object({ data: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           data: z.object({ value: z.string() }),
         },
       })
@@ -264,7 +264,7 @@ describe('contractBuilders', () => {
         requestPathParamsSchema: z.object({ channelId: z.string() }),
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -282,7 +282,7 @@ describe('contractBuilders', () => {
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
         requestBodySchema: z.object({ message: z.string(), count: z.number() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           chunk: z.object({ content: z.string() }),
         },
       })
@@ -299,15 +299,15 @@ describe('contractBuilders', () => {
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           chunk: z.object({ content: z.string() }),
           done: z.object({ totalTokens: z.number() }),
         },
       })
 
       // Verify event schemas
-      expect(route.serverSentEvents.chunk).toBeDefined()
-      expect(route.serverSentEvents.done).toBeDefined()
+      expect(route.serverSentEventSchemas.chunk).toBeDefined()
+      expect(route.serverSentEventSchemas.done).toBeDefined()
     })
 
     it('types sync response correctly for dual-mode', () => {
@@ -322,7 +322,7 @@ describe('contractBuilders', () => {
           reply: z.string(),
           usage: z.object({ tokens: z.number() }),
         }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           chunk: z.object({ delta: z.string() }),
         },
       })

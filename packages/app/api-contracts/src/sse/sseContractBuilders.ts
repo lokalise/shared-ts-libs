@@ -22,7 +22,7 @@ export type SSEGetContractConfig<
   requestPathParamsSchema: Params
   requestQuerySchema: Query
   requestHeaderSchema: RequestHeaders
-  serverSentEvents: Events
+  serverSentEventSchemas: Events
   /**
    * Error response schemas by HTTP status code.
    * Used to define response shapes for errors that occur before streaming starts
@@ -61,7 +61,7 @@ export type SSEPayloadContractConfig<
   requestQuerySchema: Query
   requestHeaderSchema: RequestHeaders
   requestBodySchema: Body
-  serverSentEvents: Events
+  serverSentEventSchemas: Events
   /**
    * Error response schemas by HTTP status code.
    * Used to define response shapes for errors that occur before streaming starts
@@ -126,7 +126,7 @@ export type DualModeGetContractConfig<
    * ```
    */
   responseBodySchemasByStatusCode?: ResponseSchemasByStatusCode
-  serverSentEvents: Events
+  serverSentEventSchemas: Events
   requestBodySchema?: never
 }
 
@@ -180,7 +180,7 @@ export type DualModePayloadContractConfig<
    * ```
    */
   responseBodySchemasByStatusCode?: ResponseSchemasByStatusCode
-  serverSentEvents: Events
+  serverSentEventSchemas: Events
 }
 
 /**
@@ -214,7 +214,7 @@ export type DualModePayloadContractConfig<
  *   requestPathParamsSchema: z.object({}),
  *   requestQuerySchema: z.object({ userId: z.string().optional() }),
  *   requestHeaderSchema: z.object({}),
- *   serverSentEvents: {
+ *   serverSentEventSchemas: {
  *     notification: z.object({ id: z.string(), message: z.string() }),
  *   },
  * })
@@ -230,7 +230,7 @@ export type DualModePayloadContractConfig<
  *   requestHeaderSchema: z.object({}),
  *   requestBodySchema: z.object({ message: z.string() }),
  *   successResponseBodySchema: z.object({ reply: z.string(), usage: z.object({ tokens: z.number() }) }),
- *   serverSentEvents: {
+ *   serverSentEventSchemas: {
  *     chunk: z.object({ delta: z.string() }),
  *     done: z.object({ usage: z.object({ total: z.number() }) }),
  *   },
@@ -247,7 +247,7 @@ function buildBaseFields(config: any, hasBody: boolean) {
     requestQuerySchema: config.requestQuerySchema,
     requestHeaderSchema: config.requestHeaderSchema,
     requestBodySchema: hasBody ? config.requestBodySchema : undefined,
-    serverSentEvents: config.serverSentEvents,
+    serverSentEventSchemas: config.serverSentEventSchemas,
   }
 }
 

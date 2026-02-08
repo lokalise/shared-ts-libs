@@ -4,7 +4,7 @@ import { buildContract } from './contractBuilder.ts'
 
 describe('buildContract', () => {
   describe('REST contracts', () => {
-    it('creates REST GET contract when no serverSentEvents is provided', () => {
+    it('creates REST GET contract when no serverSentEventSchemas is provided', () => {
       const contract = buildContract({
         successResponseBodySchema: z.object({ id: z.string() }),
         pathResolver: () => '/api/users',
@@ -44,13 +44,13 @@ describe('buildContract', () => {
   })
 
   describe('SSE contracts', () => {
-    it('creates SSE GET contract when serverSentEvents is provided without requestBodySchema', () => {
+    it('creates SSE GET contract when serverSentEventSchemas is provided without requestBodySchema', () => {
       const contract = buildContract({
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -58,17 +58,17 @@ describe('buildContract', () => {
       expect(contract.method).toBe('get')
       expect(contract.isSSE).toBe(true)
       expect('isDualMode' in contract).toBe(false)
-      expect(contract.serverSentEvents).toBeDefined()
+      expect(contract.serverSentEventSchemas).toBeDefined()
     })
 
-    it('creates SSE POST contract when serverSentEvents and requestBodySchema are provided', () => {
+    it('creates SSE POST contract when serverSentEventSchemas and requestBodySchema are provided', () => {
       const contract = buildContract({
         pathResolver: () => '/api/process',
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
         requestBodySchema: z.object({ data: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           progress: z.object({ percent: z.number() }),
         },
       })
@@ -81,14 +81,14 @@ describe('buildContract', () => {
   })
 
   describe('Dual-mode contracts', () => {
-    it('creates dual-mode GET contract when serverSentEvents and successResponseBodySchema are provided', () => {
+    it('creates dual-mode GET contract when serverSentEventSchemas and successResponseBodySchema are provided', () => {
       const contract = buildContract({
         pathResolver: () => '/api/status',
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
         successResponseBodySchema: z.object({ status: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           update: z.object({ progress: z.number() }),
         },
       })
@@ -97,10 +97,10 @@ describe('buildContract', () => {
       expect(contract.isDualMode).toBe(true)
       expect('isSSE' in contract).toBe(false)
       expect(contract.successResponseBodySchema).toBeDefined()
-      expect(contract.serverSentEvents).toBeDefined()
+      expect(contract.serverSentEventSchemas).toBeDefined()
     })
 
-    it('creates dual-mode POST contract when serverSentEvents, successResponseBodySchema, and requestBodySchema are provided', () => {
+    it('creates dual-mode POST contract when serverSentEventSchemas, successResponseBodySchema, and requestBodySchema are provided', () => {
       const contract = buildContract({
         pathResolver: () => '/api/chat/completions',
         requestPathParamsSchema: z.object({}),
@@ -108,7 +108,7 @@ describe('buildContract', () => {
         requestHeaderSchema: z.object({}),
         requestBodySchema: z.object({ message: z.string() }),
         successResponseBodySchema: z.object({ reply: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           chunk: z.object({ delta: z.string() }),
         },
       })

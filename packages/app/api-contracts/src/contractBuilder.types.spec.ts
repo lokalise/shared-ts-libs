@@ -377,7 +377,7 @@ describe('buildContract type inference', () => {
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -395,7 +395,7 @@ describe('buildContract type inference', () => {
         requestPathParamsSchema: paramsSchema,
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -411,7 +411,7 @@ describe('buildContract type inference', () => {
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: querySchema,
         requestHeaderSchema: z.object({}),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -427,7 +427,7 @@ describe('buildContract type inference', () => {
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
         requestHeaderSchema: headersSchema,
-        serverSentEvents: {
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -435,7 +435,7 @@ describe('buildContract type inference', () => {
       expectTypeOf(contract.requestHeaderSchema).toEqualTypeOf(headersSchema)
     })
 
-    it('infers serverSentEvents types', () => {
+    it('infers serverSentEventSchemas types', () => {
       const events = {
         chunk: z.object({ content: z.string() }),
         done: z.object({ totalTokens: z.number() }),
@@ -446,10 +446,10 @@ describe('buildContract type inference', () => {
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
-        serverSentEvents: events,
+        serverSentEventSchemas: events,
       })
 
-      expectTypeOf(contract.serverSentEvents).toEqualTypeOf(events)
+      expectTypeOf(contract.serverSentEventSchemas).toEqualTypeOf(events)
     })
 
     it('has undefined requestBody for GET routes', () => {
@@ -458,7 +458,7 @@ describe('buildContract type inference', () => {
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -475,7 +475,7 @@ describe('buildContract type inference', () => {
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
         requestBodySchema: z.object({ data: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           progress: z.object({ percent: z.number() }),
         },
       })
@@ -483,7 +483,7 @@ describe('buildContract type inference', () => {
       // Verify key properties that identify this as an SSE contract
       expectTypeOf(contract.method).toEqualTypeOf<'post' | 'put' | 'patch'>()
       expectTypeOf(contract.isSSE).toEqualTypeOf<true>()
-      expectTypeOf(contract).toHaveProperty('serverSentEvents')
+      expectTypeOf(contract).toHaveProperty('serverSentEventSchemas')
       expectTypeOf(contract).toHaveProperty('requestBodySchema')
     })
 
@@ -496,7 +496,7 @@ describe('buildContract type inference', () => {
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
         requestBodySchema: bodySchema,
-        serverSentEvents: {
+        serverSentEventSchemas: {
           progress: z.object({ percent: z.number() }),
         },
       })
@@ -512,7 +512,7 @@ describe('buildContract type inference', () => {
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
         requestBodySchema: z.object({ data: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           progress: z.object({ percent: z.number() }),
         },
       })
@@ -528,7 +528,7 @@ describe('buildContract type inference', () => {
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
         responseBodySchemasByStatusCode: {
@@ -553,7 +553,7 @@ describe('buildContract type inference', () => {
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
         successResponseBodySchema: z.object({ status: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           update: z.object({ progress: z.number() }),
         },
       })
@@ -575,7 +575,7 @@ describe('buildContract type inference', () => {
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
         successResponseBodySchema: syncResponseSchema,
-        serverSentEvents: {
+        serverSentEventSchemas: {
           update: z.object({ progress: z.number() }),
         },
       })
@@ -596,7 +596,7 @@ describe('buildContract type inference', () => {
         requestHeaderSchema: z.object({}),
         successResponseBodySchema: z.object({ status: z.string() }),
         responseHeaderSchema: responseHeadersSchema,
-        serverSentEvents: {
+        serverSentEventSchemas: {
           update: z.object({ progress: z.number() }),
         },
       })
@@ -613,7 +613,7 @@ describe('buildContract type inference', () => {
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
         successResponseBodySchema: z.object({ status: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           update: z.object({ progress: z.number() }),
         },
       })
@@ -631,7 +631,7 @@ describe('buildContract type inference', () => {
         requestHeaderSchema: z.object({}),
         requestBodySchema: z.object({ message: z.string() }),
         successResponseBodySchema: z.object({ reply: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           chunk: z.object({ delta: z.string() }),
         },
       })
@@ -640,7 +640,7 @@ describe('buildContract type inference', () => {
       expectTypeOf(contract.method).toEqualTypeOf<'post' | 'put' | 'patch'>()
       expectTypeOf(contract.isDualMode).toEqualTypeOf<true>()
       expectTypeOf(contract).toHaveProperty('successResponseBodySchema')
-      expectTypeOf(contract).toHaveProperty('serverSentEvents')
+      expectTypeOf(contract).toHaveProperty('serverSentEventSchemas')
       expectTypeOf(contract).toHaveProperty('requestBodySchema')
     })
 
@@ -657,7 +657,7 @@ describe('buildContract type inference', () => {
         requestHeaderSchema: z.object({}),
         requestBodySchema: bodySchema,
         successResponseBodySchema: z.object({ reply: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           chunk: z.object({ delta: z.string() }),
         },
       })
@@ -678,7 +678,7 @@ describe('buildContract type inference', () => {
         requestHeaderSchema: z.object({}),
         requestBodySchema: z.object({ message: z.string() }),
         successResponseBodySchema: syncResponseSchema,
-        serverSentEvents: {
+        serverSentEventSchemas: {
           chunk: z.object({ delta: z.string() }),
         },
       })
@@ -695,7 +695,7 @@ describe('buildContract type inference', () => {
         requestHeaderSchema: z.object({}),
         requestBodySchema: z.object({ message: z.string() }),
         successResponseBodySchema: z.object({ reply: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           chunk: z.object({ delta: z.string() }),
         },
       })
@@ -713,7 +713,7 @@ describe('buildContract type inference', () => {
         requestHeaderSchema: z.object({}),
         requestBodySchema: z.object({ message: z.string() }),
         successResponseBodySchema: z.object({ reply: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           chunk: z.object({ delta: z.string() }),
         },
         responseBodySchemasByStatusCode: {
@@ -757,7 +757,7 @@ describe('buildContract type inference', () => {
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -771,7 +771,7 @@ describe('buildContract type inference', () => {
         requestPathParamsSchema: z.object({}),
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -787,7 +787,7 @@ describe('buildContract type inference', () => {
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
         successResponseBodySchema: z.object({ status: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           update: z.object({ progress: z.number() }),
         },
       })
@@ -802,7 +802,7 @@ describe('buildContract type inference', () => {
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
         successResponseBodySchema: z.object({ status: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           update: z.object({ progress: z.number() }),
         },
       })
@@ -835,7 +835,7 @@ describe('buildContract type inference', () => {
         requestPathParamsSchema: paramsSchema,
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -850,7 +850,7 @@ describe('buildContract type inference', () => {
         requestQuerySchema: z.object({}),
         requestHeaderSchema: z.object({}),
         successResponseBodySchema: z.object({ status: z.string() }),
-        serverSentEvents: {
+        serverSentEventSchemas: {
           update: z.object({ progress: z.number() }),
         },
       })
