@@ -7,7 +7,7 @@ import type { SSEEventSchemas } from './sseTypes.ts'
 
 /**
  * Configuration for building a GET SSE route.
- * Forbids requestBody for GET variants.
+ * Forbids requestBodySchema for GET variants.
  */
 export type SSEGetContractConfig<
   Params extends z.ZodTypeAny,
@@ -19,10 +19,10 @@ export type SSEGetContractConfig<
     | undefined = undefined,
 > = {
   pathResolver: RoutePathResolver<z.infer<Params>>
-  params: Params
-  query: Query
-  requestHeaders: RequestHeaders
-  sseEvents: Events
+  requestPathParamsSchema: Params
+  requestQuerySchema: Query
+  requestHeaderSchema: RequestHeaders
+  serverSentEventSchemas: Events
   /**
    * Error response schemas by HTTP status code.
    * Used to define response shapes for errors that occur before streaming starts
@@ -30,20 +30,20 @@ export type SSEGetContractConfig<
    *
    * @example
    * ```ts
-   * responseSchemasByStatusCode: {
+   * responseBodySchemasByStatusCode: {
    *   401: z.object({ error: z.literal('Unauthorized') }),
    *   404: z.object({ error: z.string() }),
    * }
    * ```
    */
-  responseSchemasByStatusCode?: ResponseSchemasByStatusCode
-  requestBody?: never
-  syncResponseBody?: never
+  responseBodySchemasByStatusCode?: ResponseSchemasByStatusCode
+  requestBodySchema?: never
+  successResponseBodySchema?: never
 }
 
 /**
- * Configuration for building a POST/PUT/PATCH SSE route with request requestBody.
- * Requires requestBody for payload variants.
+ * Configuration for building a POST/PUT/PATCH SSE route with request body.
+ * Requires requestBodySchema for payload variants.
  */
 export type SSEPayloadContractConfig<
   Params extends z.ZodTypeAny,
@@ -57,11 +57,11 @@ export type SSEPayloadContractConfig<
 > = {
   method?: 'post' | 'put' | 'patch'
   pathResolver: RoutePathResolver<z.infer<Params>>
-  params: Params
-  query: Query
-  requestHeaders: RequestHeaders
-  requestBody: Body
-  sseEvents: Events
+  requestPathParamsSchema: Params
+  requestQuerySchema: Query
+  requestHeaderSchema: RequestHeaders
+  requestBodySchema: Body
+  serverSentEventSchemas: Events
   /**
    * Error response schemas by HTTP status code.
    * Used to define response shapes for errors that occur before streaming starts
@@ -69,19 +69,19 @@ export type SSEPayloadContractConfig<
    *
    * @example
    * ```ts
-   * responseSchemasByStatusCode: {
+   * responseBodySchemasByStatusCode: {
    *   401: z.object({ error: z.literal('Unauthorized') }),
    *   404: z.object({ error: z.string() }),
    * }
    * ```
    */
-  responseSchemasByStatusCode?: ResponseSchemasByStatusCode
-  syncResponseBody?: never
+  responseBodySchemasByStatusCode?: ResponseSchemasByStatusCode
+  successResponseBodySchema?: never
 }
 
 /**
  * Configuration for building a GET dual-mode route.
- * Requires syncResponseBody, forbids requestBody.
+ * Requires successResponseBodySchema, forbids requestBodySchema.
  */
 export type DualModeGetContractConfig<
   Params extends z.ZodTypeAny,
@@ -95,44 +95,44 @@ export type DualModeGetContractConfig<
     | undefined = undefined,
 > = {
   pathResolver: RoutePathResolver<z.infer<Params>>
-  params: Params
-  query: Query
-  requestHeaders: RequestHeaders
+  requestPathParamsSchema: Params
+  requestQuerySchema: Query
+  requestHeaderSchema: RequestHeaders
   /** Single sync response schema */
-  syncResponseBody: JsonResponse
+  successResponseBodySchema: JsonResponse
   /**
    * Schema for validating response headers (sync mode only).
    * Used to define and validate headers that the server will send in the response.
    *
    * @example
    * ```ts
-   * responseHeaders: z.object({
+   * responseHeaderSchema: z.object({
    *   'x-ratelimit-limit': z.string(),
    *   'x-ratelimit-remaining': z.string(),
    * })
    * ```
    */
-  responseHeaders?: ResponseHeaders
+  responseHeaderSchema?: ResponseHeaders
   /**
    * Alternative response schemas by HTTP status code.
    * Used to define different response shapes for error cases.
    *
    * @example
    * ```ts
-   * responseSchemasByStatusCode: {
+   * responseBodySchemasByStatusCode: {
    *   400: z.object({ error: z.string(), details: z.array(z.string()) }),
    *   404: z.object({ error: z.string() }),
    * }
    * ```
    */
-  responseSchemasByStatusCode?: ResponseSchemasByStatusCode
-  sseEvents: Events
-  requestBody?: never
+  responseBodySchemasByStatusCode?: ResponseSchemasByStatusCode
+  serverSentEventSchemas: Events
+  requestBodySchema?: never
 }
 
 /**
- * Configuration for building a POST/PUT/PATCH dual-mode route with request requestBody.
- * Requires both requestBody and syncResponseBody.
+ * Configuration for building a POST/PUT/PATCH dual-mode route with request body.
+ * Requires both requestBodySchema and successResponseBodySchema.
  */
 export type DualModePayloadContractConfig<
   Params extends z.ZodTypeAny,
@@ -148,39 +148,39 @@ export type DualModePayloadContractConfig<
 > = {
   method?: 'post' | 'put' | 'patch'
   pathResolver: RoutePathResolver<z.infer<Params>>
-  params: Params
-  query: Query
-  requestHeaders: RequestHeaders
-  requestBody: Body
+  requestPathParamsSchema: Params
+  requestQuerySchema: Query
+  requestHeaderSchema: RequestHeaders
+  requestBodySchema: Body
   /** Single sync response schema */
-  syncResponseBody: JsonResponse
+  successResponseBodySchema: JsonResponse
   /**
    * Schema for validating response headers (sync mode only).
    * Used to define and validate headers that the server will send in the response.
    *
    * @example
    * ```ts
-   * responseHeaders: z.object({
+   * responseHeaderSchema: z.object({
    *   'x-ratelimit-limit': z.string(),
    *   'x-ratelimit-remaining': z.string(),
    * })
    * ```
    */
-  responseHeaders?: ResponseHeaders
+  responseHeaderSchema?: ResponseHeaders
   /**
    * Alternative response schemas by HTTP status code.
    * Used to define different response shapes for error cases.
    *
    * @example
    * ```ts
-   * responseSchemasByStatusCode: {
+   * responseBodySchemasByStatusCode: {
    *   400: z.object({ error: z.string(), details: z.array(z.string()) }),
    *   404: z.object({ error: z.string() }),
    * }
    * ```
    */
-  responseSchemasByStatusCode?: ResponseSchemasByStatusCode
-  sseEvents: Events
+  responseBodySchemasByStatusCode?: ResponseSchemasByStatusCode
+  serverSentEventSchemas: Events
 }
 
 /**
@@ -197,10 +197,10 @@ export type DualModePayloadContractConfig<
  * This is ideal for AI/LLM APIs (like OpenAI) where clients can choose between
  * getting the full response at once or streaming it token-by-token.
  *
- * The contract type is automatically determined based on the presence of `syncResponseBody`:
+ * The contract type is automatically determined based on the presence of `successResponseBodySchema`:
  *
- * | `syncResponseBody` | `requestBody` | Result |
- * |--------------------|---------------|--------|
+ * | `successResponseBodySchema` | `requestBodySchema` | Result |
+ * |----------------------------|---------------------|--------|
  * | ❌ | ❌ | SSE-only GET |
  * | ❌ | ✅ | SSE-only POST/PUT/PATCH |
  * | ✅ | ❌ | Dual-mode GET |
@@ -211,10 +211,10 @@ export type DualModePayloadContractConfig<
  * // SSE-only: Pure streaming endpoint (e.g., live notifications)
  * const notificationsStream = buildSseContract({
  *   pathResolver: () => '/api/notifications/stream',
- *   params: z.object({}),
- *   query: z.object({ userId: z.string().optional() }),
- *   requestHeaders: z.object({}),
- *   sseEvents: {
+ *   requestPathParamsSchema: z.object({}),
+ *   requestQuerySchema: z.object({ userId: z.string().optional() }),
+ *   requestHeaderSchema: z.object({}),
+ *   serverSentEventSchemas: {
  *     notification: z.object({ id: z.string(), message: z.string() }),
  *   },
  * })
@@ -225,12 +225,12 @@ export type DualModePayloadContractConfig<
  * const chatCompletion = buildSseContract({
  *   method: 'POST',
  *   pathResolver: () => '/api/chat/completions',
- *   params: z.object({}),
- *   query: z.object({}),
- *   requestHeaders: z.object({}),
- *   requestBody: z.object({ message: z.string() }),
- *   syncResponseBody: z.object({ reply: z.string(), usage: z.object({ tokens: z.number() }) }),
- *   sseEvents: {
+ *   requestPathParamsSchema: z.object({}),
+ *   requestQuerySchema: z.object({}),
+ *   requestHeaderSchema: z.object({}),
+ *   requestBodySchema: z.object({ message: z.string() }),
+ *   successResponseBodySchema: z.object({ reply: z.string(), usage: z.object({ tokens: z.number() }) }),
+ *   serverSentEventSchemas: {
  *     chunk: z.object({ delta: z.string() }),
  *     done: z.object({ usage: z.object({ total: z.number() }) }),
  *   },
@@ -243,11 +243,11 @@ export type DualModePayloadContractConfig<
 function buildBaseFields(config: any, hasBody: boolean) {
   return {
     pathResolver: config.pathResolver,
-    params: config.params,
-    query: config.query,
-    requestHeaders: config.requestHeaders,
-    requestBody: hasBody ? config.requestBody : undefined,
-    sseEvents: config.sseEvents,
+    requestPathParamsSchema: config.requestPathParamsSchema,
+    requestQuerySchema: config.requestQuerySchema,
+    requestHeaderSchema: config.requestHeaderSchema,
+    requestBodySchema: hasBody ? config.requestBodySchema : undefined,
+    serverSentEventSchemas: config.serverSentEventSchemas,
   }
 }
 
@@ -256,7 +256,7 @@ function determineMethod(config: { method?: string }, hasBody: boolean, defaultM
   return hasBody ? (config.method ?? defaultMethod) : 'get'
 }
 
-// Overload 1: Dual-mode GET (has syncResponseBody, no requestBody)
+// Overload 1: Dual-mode GET (has successResponseBodySchema, no requestBodySchema)
 export function buildSseContract<
   Params extends z.ZodTypeAny,
   Query extends z.ZodTypeAny,
@@ -289,7 +289,7 @@ export function buildSseContract<
   ResponseSchemasByStatusCode
 >
 
-// Overload 2: SSE GET (no requestBody, no syncResponseBody)
+// Overload 2: SSE GET (no requestBodySchema, no successResponseBodySchema)
 export function buildSseContract<
   Params extends z.ZodTypeAny,
   Query extends z.ZodTypeAny,
@@ -310,7 +310,7 @@ export function buildSseContract<
   ResponseSchemasByStatusCode
 >
 
-// Overload 3: Dual-mode with requestBody (has syncResponseBody + requestBody)
+// Overload 3: Dual-mode with body (has successResponseBodySchema + requestBodySchema)
 export function buildSseContract<
   Params extends z.ZodTypeAny,
   Query extends z.ZodTypeAny,
@@ -345,7 +345,7 @@ export function buildSseContract<
   ResponseSchemasByStatusCode
 >
 
-// Overload 4: SSE with requestBody (has requestBody, no syncResponseBody)
+// Overload 4: SSE with body (has requestBodySchema, no successResponseBodySchema)
 export function buildSseContract<
   Params extends z.ZodTypeAny,
   Query extends z.ZodTypeAny,
@@ -386,8 +386,9 @@ export function buildSseContract(
     | SSEGetContractConfig<any, any, any, any, any>,
   // biome-ignore lint/suspicious/noExplicitAny: Return type depends on overload
 ): any {
-  const hasSyncResponseBody = 'syncResponseBody' in config && config.syncResponseBody !== undefined
-  const hasBody = 'requestBody' in config && config.requestBody !== undefined
+  const hasSyncResponseBody =
+    'successResponseBodySchema' in config && config.successResponseBodySchema !== undefined
+  const hasBody = 'requestBodySchema' in config && config.requestBodySchema !== undefined
   const base = buildBaseFields(config, hasBody)
 
   if (hasSyncResponseBody) {
@@ -395,10 +396,11 @@ export function buildSseContract(
     return {
       ...base,
       method: determineMethod(config as { method?: string }, hasBody, 'post'),
-      syncResponseBody: (config as { syncResponseBody: unknown }).syncResponseBody,
-      responseHeaders: (config as { responseHeaders?: unknown }).responseHeaders,
-      responseSchemasByStatusCode: (config as { responseSchemasByStatusCode?: unknown })
-        .responseSchemasByStatusCode,
+      successResponseBodySchema: (config as { successResponseBodySchema: unknown })
+        .successResponseBodySchema,
+      responseHeaderSchema: (config as { responseHeaderSchema?: unknown }).responseHeaderSchema,
+      responseBodySchemasByStatusCode: (config as { responseBodySchemasByStatusCode?: unknown })
+        .responseBodySchemasByStatusCode,
       isDualMode: true,
     }
   }
@@ -407,8 +409,8 @@ export function buildSseContract(
   return {
     ...base,
     method: determineMethod(config as { method?: string }, hasBody, 'post'),
-    responseSchemasByStatusCode: (config as { responseSchemasByStatusCode?: unknown })
-      .responseSchemasByStatusCode,
+    responseBodySchemasByStatusCode: (config as { responseBodySchemasByStatusCode?: unknown })
+      .responseBodySchemasByStatusCode,
     isSSE: true,
   }
 }

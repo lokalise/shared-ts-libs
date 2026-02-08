@@ -6,26 +6,26 @@ describe('contractBuilders', () => {
   describe('buildSseContract (SSE with body)', () => {
     const baseConfig = {
       pathResolver: () => '/api/test',
-      params: z.object({}),
-      query: z.object({}),
-      requestHeaders: z.object({}),
-      requestBody: z.object({ message: z.string() }),
-      sseEvents: {
+      requestPathParamsSchema: z.object({}),
+      requestQuerySchema: z.object({}),
+      requestHeaderSchema: z.object({}),
+      requestBodySchema: z.object({ message: z.string() }),
+      serverSentEventSchemas: {
         data: z.object({ value: z.string() }),
       },
     }
 
-    it('requires sseEvents - missing sseEvents produces clear error', () => {
-      // @ts-expect-error - sseEvents is required for SSE contracts
+    it('requires serverSentEventSchemas - missing serverSentEventSchemas produces clear error', () => {
+      // @ts-expect-error - serverSentEventSchemas is required for SSE contracts
       const _postChatStreamByIdContractMalformed = buildSseContract({
         method: 'post',
         pathResolver: () => '/',
-        params: z.object({
+        requestPathParamsSchema: z.object({
           id: z.string(),
         }),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        requestBody: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        requestBodySchema: z.object({}),
       })
     })
 
@@ -60,10 +60,10 @@ describe('contractBuilders', () => {
     it('creates GET SSE route', () => {
       const route = buildSseContract({
         pathResolver: () => '/api/stream',
-        params: z.object({}),
-        query: z.object({ userId: z.string() }),
-        requestHeaders: z.object({}),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({ userId: z.string() }),
+        requestHeaderSchema: z.object({}),
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -71,45 +71,45 @@ describe('contractBuilders', () => {
       expect(route.method).toBe('get')
       expect(route.pathResolver({})).toBe('/api/stream')
       expect(route.isSSE).toBe(true)
-      expect(route.requestBody).toBeUndefined()
+      expect(route.requestBodySchema).toBeUndefined()
     })
 
-    it('includes responseSchemasByStatusCode for SSE GET', () => {
+    it('includes responseBodySchemasByStatusCode for SSE GET', () => {
       const route = buildSseContract({
         pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
-        params: z.object({ channelId: z.string() }),
-        query: z.object({}),
-        requestHeaders: z.object({ authorization: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({ channelId: z.string() }),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({ authorization: z.string() }),
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
-        responseSchemasByStatusCode: {
+        responseBodySchemasByStatusCode: {
           401: z.object({ error: z.literal('Unauthorized') }),
           404: z.object({ error: z.literal('Channel not found') }),
         },
       })
 
       expect(route.isSSE).toBe(true)
-      expect(route.responseSchemasByStatusCode).toBeDefined()
-      expect(route.responseSchemasByStatusCode?.[401]).toBeDefined()
-      expect(route.responseSchemasByStatusCode?.[404]).toBeDefined()
+      expect(route.responseBodySchemasByStatusCode).toBeDefined()
+      expect(route.responseBodySchemasByStatusCode?.[401]).toBeDefined()
+      expect(route.responseBodySchemasByStatusCode?.[404]).toBeDefined()
     })
   })
 
-  describe('buildSseContract (SSE POST with responseSchemasByStatusCode)', () => {
-    it('includes responseSchemasByStatusCode for SSE POST', () => {
+  describe('buildSseContract (SSE POST with responseBodySchemasByStatusCode)', () => {
+    it('includes responseBodySchemasByStatusCode for SSE POST', () => {
       const route = buildSseContract({
         method: 'post',
         pathResolver: () => '/api/process/stream',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({ authorization: z.string() }),
-        requestBody: z.object({ fileId: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({ authorization: z.string() }),
+        requestBodySchema: z.object({ fileId: z.string() }),
+        serverSentEventSchemas: {
           progress: z.object({ percent: z.number() }),
           done: z.object({ result: z.string() }),
         },
-        responseSchemasByStatusCode: {
+        responseBodySchemasByStatusCode: {
           400: z.object({ error: z.string(), details: z.array(z.string()) }),
           401: z.object({ error: z.literal('Unauthorized') }),
           404: z.object({ error: z.literal('File not found') }),
@@ -117,25 +117,25 @@ describe('contractBuilders', () => {
       })
 
       expect(route.isSSE).toBe(true)
-      expect(route.responseSchemasByStatusCode).toBeDefined()
-      expect(route.responseSchemasByStatusCode?.[400]).toBeDefined()
-      expect(route.responseSchemasByStatusCode?.[401]).toBeDefined()
-      expect(route.responseSchemasByStatusCode?.[404]).toBeDefined()
+      expect(route.responseBodySchemasByStatusCode).toBeDefined()
+      expect(route.responseBodySchemasByStatusCode?.[400]).toBeDefined()
+      expect(route.responseBodySchemasByStatusCode?.[401]).toBeDefined()
+      expect(route.responseBodySchemasByStatusCode?.[404]).toBeDefined()
     })
   })
 
   describe('buildSseContract (Dual-mode with body)', () => {
     const baseConfig = {
       pathResolver: () => '/api/chat/completions',
-      params: z.object({}),
-      query: z.object({}),
-      requestHeaders: z.object({}),
-      requestBody: z.object({ message: z.string() }),
-      syncResponseBody: z.object({
+      requestPathParamsSchema: z.object({}),
+      requestQuerySchema: z.object({}),
+      requestHeaderSchema: z.object({}),
+      requestBodySchema: z.object({ message: z.string() }),
+      successResponseBodySchema: z.object({
         reply: z.string(),
         usage: z.object({ tokens: z.number() }),
       }),
-      sseEvents: {
+      serverSentEventSchemas: {
         chunk: z.object({ content: z.string() }),
         done: z.object({ usage: z.object({ totalTokens: z.number() }) }),
       },
@@ -167,32 +167,32 @@ describe('contractBuilders', () => {
       expect(route.method).toBe('patch')
     })
 
-    it('includes responseHeaders when provided', () => {
+    it('includes responseHeaderSchema when provided', () => {
       const route = buildSseContract({
         ...baseConfig,
-        responseHeaders: z.object({
+        responseHeaderSchema: z.object({
           'x-ratelimit-limit': z.string(),
           'x-ratelimit-remaining': z.string(),
         }),
       })
 
-      expect(route.responseHeaders).toBeDefined()
+      expect(route.responseHeaderSchema).toBeDefined()
     })
 
-    it('includes responseSchemasByStatusCode when provided', () => {
+    it('includes responseBodySchemasByStatusCode when provided', () => {
       const route = buildSseContract({
         ...baseConfig,
-        responseSchemasByStatusCode: {
+        responseBodySchemasByStatusCode: {
           400: z.object({ error: z.string(), details: z.array(z.string()) }),
           404: z.object({ error: z.string() }),
           500: z.object({ error: z.string(), stack: z.string().optional() }),
         },
       })
 
-      expect(route.responseSchemasByStatusCode).toBeDefined()
-      expect(route.responseSchemasByStatusCode?.[400]).toBeDefined()
-      expect(route.responseSchemasByStatusCode?.[404]).toBeDefined()
-      expect(route.responseSchemasByStatusCode?.[500]).toBeDefined()
+      expect(route.responseBodySchemasByStatusCode).toBeDefined()
+      expect(route.responseBodySchemasByStatusCode?.[400]).toBeDefined()
+      expect(route.responseBodySchemasByStatusCode?.[404]).toBeDefined()
+      expect(route.responseBodySchemasByStatusCode?.[500]).toBeDefined()
     })
   })
 
@@ -200,15 +200,15 @@ describe('contractBuilders', () => {
     it('creates GET dual-mode route', () => {
       const route = buildSseContract({
         pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
-        params: z.object({ jobId: z.string().uuid() }),
-        query: z.object({ verbose: z.string().optional() }),
-        requestHeaders: z.object({}),
-        syncResponseBody: z.object({
+        requestPathParamsSchema: z.object({ jobId: z.string().uuid() }),
+        requestQuerySchema: z.object({ verbose: z.string().optional() }),
+        requestHeaderSchema: z.object({}),
+        successResponseBodySchema: z.object({
           status: z.enum(['pending', 'running', 'completed', 'failed']),
           progress: z.number(),
           result: z.string().optional(),
         }),
-        sseEvents: {
+        serverSentEventSchemas: {
           progress: z.object({ percent: z.number(), message: z.string().optional() }),
           done: z.object({ result: z.string() }),
         },
@@ -217,42 +217,42 @@ describe('contractBuilders', () => {
       expect(route.method).toBe('get')
       expect(route.pathResolver({ jobId: '123' })).toBe('/api/jobs/123/status')
       expect(route.isDualMode).toBe(true)
-      expect(route.requestBody).toBeUndefined()
+      expect(route.requestBodySchema).toBeUndefined()
     })
 
-    it('includes responseSchemasByStatusCode for GET dual-mode', () => {
+    it('includes responseBodySchemasByStatusCode for GET dual-mode', () => {
       const route = buildSseContract({
         pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
-        params: z.object({ jobId: z.string().uuid() }),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        syncResponseBody: z.object({
+        requestPathParamsSchema: z.object({ jobId: z.string().uuid() }),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        successResponseBodySchema: z.object({
           status: z.string(),
         }),
-        sseEvents: {
+        serverSentEventSchemas: {
           done: z.object({ result: z.string() }),
         },
-        responseSchemasByStatusCode: {
+        responseBodySchemasByStatusCode: {
           404: z.object({ error: z.literal('Job not found') }),
         },
       })
 
-      expect(route.responseSchemasByStatusCode).toBeDefined()
-      expect(route.responseSchemasByStatusCode?.[404]).toBeDefined()
+      expect(route.responseBodySchemasByStatusCode).toBeDefined()
+      expect(route.responseBodySchemasByStatusCode?.[404]).toBeDefined()
     })
   })
 
   describe('type safety', () => {
-    it('cannot use method GET with requestBody', () => {
+    it('cannot use method GET with requestBodySchema', () => {
       buildSseContract({
-        // @ts-expect-error - GET method is not allowed when requestBody is provided
+        // @ts-expect-error - GET method is not allowed when requestBodySchema is provided
         method: 'get',
         pathResolver: () => '/api/test',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        requestBody: z.object({ data: z.string() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        requestBodySchema: z.object({ data: z.string() }),
+        serverSentEventSchemas: {
           data: z.object({ value: z.string() }),
         },
       })
@@ -261,10 +261,10 @@ describe('contractBuilders', () => {
     it('types path params correctly', () => {
       const route = buildSseContract({
         pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
-        params: z.object({ channelId: z.string() }),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        sseEvents: {
+        requestPathParamsSchema: z.object({ channelId: z.string() }),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        serverSentEventSchemas: {
           message: z.object({ text: z.string() }),
         },
       })
@@ -278,58 +278,58 @@ describe('contractBuilders', () => {
       const route = buildSseContract({
         method: 'post',
         pathResolver: () => '/api/test',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        requestBody: z.object({ message: z.string(), count: z.number() }),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        requestBodySchema: z.object({ message: z.string(), count: z.number() }),
+        serverSentEventSchemas: {
           chunk: z.object({ content: z.string() }),
         },
       })
 
       // Verify request body schema shape
-      expect(route.requestBody).toBeDefined()
-      expect(route.requestBody?.shape.message).toBeDefined()
-      expect(route.requestBody?.shape.count).toBeDefined()
+      expect(route.requestBodySchema).toBeDefined()
+      expect(route.requestBodySchema?.shape.message).toBeDefined()
+      expect(route.requestBodySchema?.shape.count).toBeDefined()
     })
 
     it('types SSE events correctly', () => {
       const route = buildSseContract({
         pathResolver: () => '/api/stream',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        sseEvents: {
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        serverSentEventSchemas: {
           chunk: z.object({ content: z.string() }),
           done: z.object({ totalTokens: z.number() }),
         },
       })
 
       // Verify event schemas
-      expect(route.sseEvents.chunk).toBeDefined()
-      expect(route.sseEvents.done).toBeDefined()
+      expect(route.serverSentEventSchemas.chunk).toBeDefined()
+      expect(route.serverSentEventSchemas.done).toBeDefined()
     })
 
     it('types sync response correctly for dual-mode', () => {
       const route = buildSseContract({
         method: 'post',
         pathResolver: () => '/api/chat',
-        params: z.object({}),
-        query: z.object({}),
-        requestHeaders: z.object({}),
-        requestBody: z.object({ message: z.string() }),
-        syncResponseBody: z.object({
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        requestBodySchema: z.object({ message: z.string() }),
+        successResponseBodySchema: z.object({
           reply: z.string(),
           usage: z.object({ tokens: z.number() }),
         }),
-        sseEvents: {
+        serverSentEventSchemas: {
           chunk: z.object({ delta: z.string() }),
         },
       })
 
       // Verify sync response schema shape
-      expect(route.syncResponseBody.shape.reply).toBeDefined()
-      expect(route.syncResponseBody.shape.usage).toBeDefined()
+      expect(route.successResponseBodySchema.shape.reply).toBeDefined()
+      expect(route.successResponseBodySchema.shape.usage).toBeDefined()
     })
   })
 })
