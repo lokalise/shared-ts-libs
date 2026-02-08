@@ -1,7 +1,7 @@
 import { buildRestContract } from '@lokalise/api-contracts'
 import { fastify } from 'fastify'
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, onTestFinished } from 'vitest'
 import { z } from 'zod/v4'
 import {
   buildFastifyNoPayloadRoute,
@@ -56,6 +56,7 @@ async function initApp<Route extends RouteType>(route: Route) {
 
   app.route(route)
   await app.ready()
+  onTestFinished(() => app.close())
   return app
 }
 

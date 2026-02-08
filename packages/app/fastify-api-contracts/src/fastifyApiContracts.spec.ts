@@ -5,7 +5,7 @@ import {
   validatorCompiler,
   type ZodTypeProvider,
 } from 'fastify-type-provider-zod'
-import { describe, expect, expectTypeOf, it } from 'vitest'
+import { describe, expect, expectTypeOf, it, onTestFinished } from 'vitest'
 import { z } from 'zod/v4'
 import {
   buildFastifyNoPayloadRoute,
@@ -50,6 +50,7 @@ async function initApp<Route extends RouteType>(route: Route) {
 
   app.withTypeProvider<ZodTypeProvider>().route(route)
   await app.ready()
+  onTestFinished(() => app.close())
   return app
 }
 
