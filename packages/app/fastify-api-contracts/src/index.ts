@@ -3,8 +3,6 @@ export {
   buildFastifyNoPayloadRouteHandler,
   buildFastifyPayloadRoute,
   buildFastifyPayloadRouteHandler,
-  buildFastifyRoute,
-  buildFastifyRouteHandler,
 } from './fastifyApiContracts.ts'
 export {
   injectDelete,
@@ -13,4 +11,5 @@ export {
   injectPost,
   injectPut,
 } from './fastifyApiRequestInjector.ts'
+export { buildFastifyRoute, buildFastifyRouteHandler } from './fastifyRouteBuilder.ts'
 export * from './types.ts'

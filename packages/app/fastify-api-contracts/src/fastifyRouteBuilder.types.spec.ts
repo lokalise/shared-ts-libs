@@ -1,7 +1,7 @@
 import { buildRestContract } from '@lokalise/api-contracts'
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import { buildFastifyRoute, buildFastifyRouteHandler } from './fastifyApiContracts.ts'
+import { buildFastifyRoute, buildFastifyRouteHandler } from './fastifyRouteBuilder.ts'
 import type { RouteType } from './types.ts'
 
 describe('buildFastifyRouteHandler type inference', () => {

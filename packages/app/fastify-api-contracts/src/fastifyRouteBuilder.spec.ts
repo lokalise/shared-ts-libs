@@ -7,7 +7,6 @@ import {
 } from 'fastify-type-provider-zod'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import { buildFastifyRoute, buildFastifyRouteHandler } from './fastifyApiContracts.ts'
 import {
   injectDelete,
   injectGet,
@@ -15,6 +14,7 @@ import {
   injectPost,
   injectPut,
 } from './fastifyApiRequestInjector.ts'
+import { buildFastifyRoute, buildFastifyRouteHandler } from './fastifyRouteBuilder.ts'
 import type { RouteType } from './types.ts'
 
 const REQUEST_BODY_SCHEMA = z.object({
@@ -48,7 +48,7 @@ async function initApp<Route extends RouteType>(route: Route) {
   return app
 }
 
-describe('unified buildFastifyRouteHandler', () => {
+describe('buildFastifyRouteHandler', () => {
   it('builds a GET handler', () => {
     const contract = buildRestContract({
       method: 'get',
@@ -88,7 +88,7 @@ describe('unified buildFastifyRouteHandler', () => {
   })
 })
 
-describe('unified buildFastifyRoute', () => {
+describe('buildFastifyRoute', () => {
   describe('GET routes', () => {
     it('builds valid GET route in fastify app', async () => {
       expect.assertions(6)
