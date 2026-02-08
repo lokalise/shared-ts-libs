@@ -23,6 +23,7 @@ const ValidationErrorSchema = z.object({
 })
 
 const getRouteWithMultipleResponses = buildRestContract({
+  method: 'get',
   pathResolver: () => '/test',
   successResponseBodySchema: SuccessResponseSchema,
   requestQuerySchema: z.object({
@@ -36,6 +37,7 @@ const getRouteWithMultipleResponses = buildRestContract({
 })
 
 const getRouteWithSingleResponse = buildRestContract({
+  method: 'get',
   pathResolver: () => '/test',
   successResponseBodySchema: SuccessResponseSchema,
   requestQuerySchema: z.object({

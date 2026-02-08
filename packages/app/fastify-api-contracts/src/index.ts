@@ -3,6 +3,8 @@ export {
   buildFastifyNoPayloadRouteHandler,
   buildFastifyPayloadRoute,
   buildFastifyPayloadRouteHandler,
+  buildFastifyRoute,
+  buildFastifyRouteHandler,
 } from './fastifyApiContracts.ts'
 export {
   injectDelete,

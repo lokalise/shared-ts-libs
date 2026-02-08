@@ -7,12 +7,7 @@ import {
 } from 'fastify-type-provider-zod'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import {
-  buildFastifyNoPayloadRoute,
-  buildFastifyNoPayloadRouteHandler,
-  buildFastifyPayloadRoute,
-  buildFastifyPayloadRouteHandler,
-} from './fastifyApiContracts.ts'
+import { buildFastifyRoute, buildFastifyRouteHandler } from './fastifyApiContracts.ts'
 import {
   injectDelete,
   injectGet,
@@ -53,37 +48,49 @@ async function initApp<Route extends RouteType>(route: Route) {
   return app
 }
 
-describe('fastifyApiContracts', () => {
-  describe('buildFastifyNoPayloadRouteHandler', () => {
-    it('builds a GET handler', () => {
-      const contract = buildRestContract({
-        method: 'get',
-        successResponseBodySchema: BODY_SCHEMA,
-        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
-        requestQuerySchema: REQUEST_QUERY_SCHEMA,
-        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-      })
-
-      const handler = buildFastifyNoPayloadRouteHandler(contract, () => Promise.resolve())
-      expect(handler).toBeTypeOf('function')
+describe('unified buildFastifyRouteHandler', () => {
+  it('builds a GET handler', () => {
+    const contract = buildRestContract({
+      method: 'get',
+      successResponseBodySchema: BODY_SCHEMA,
+      requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+      requestQuerySchema: REQUEST_QUERY_SCHEMA,
+      pathResolver: (pathParams) => `/users/${pathParams.userId}`,
     })
 
-    it('builds a GET handler with empty response', () => {
-      const contract = buildRestContract({
-        method: 'get',
-        successResponseBodySchema: BODY_SCHEMA,
-        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
-        requestQuerySchema: REQUEST_QUERY_SCHEMA,
-        isEmptyResponseExpected: true,
-        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-      })
-
-      const handler = buildFastifyNoPayloadRouteHandler(contract, () => Promise.resolve())
-      expect(handler).toBeTypeOf('function')
-    })
+    const handler = buildFastifyRouteHandler(contract, () => Promise.resolve())
+    expect(handler).toBeTypeOf('function')
   })
-  describe('buildFastifyNoPayloadRoute', () => {
-    it('uses API spec to build valid GET route in fastify app', async () => {
+
+  it('builds a DELETE handler', () => {
+    const contract = buildRestContract({
+      method: 'delete',
+      successResponseBodySchema: BODY_SCHEMA,
+      requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+      pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+    })
+
+    const handler = buildFastifyRouteHandler(contract, () => Promise.resolve())
+    expect(handler).toBeTypeOf('function')
+  })
+
+  it('builds a POST handler', () => {
+    const contract = buildRestContract({
+      method: 'post',
+      requestBodySchema: REQUEST_BODY_SCHEMA,
+      successResponseBodySchema: BODY_SCHEMA,
+      requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+      pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+    })
+
+    const handler = buildFastifyRouteHandler(contract, () => Promise.resolve())
+    expect(handler).toBeTypeOf('function')
+  })
+})
+
+describe('unified buildFastifyRoute', () => {
+  describe('GET routes', () => {
+    it('builds valid GET route in fastify app', async () => {
       expect.assertions(6)
       const contract = buildRestContract({
         method: 'get',
@@ -93,10 +100,9 @@ describe('fastifyApiContracts', () => {
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
-      const route = buildFastifyNoPayloadRoute(contract, (req) => {
+      const route = buildFastifyRoute(contract, (req) => {
         expect(req.routeOptions.config.apiContract).toBe(contract)
         expect(req.params.userId).toEqual('1')
-        // satisfies checks if type is inferred properly in route
         expect(req.query.testIds satisfies string[] | undefined).toBeUndefined()
         return Promise.resolve({})
       })
@@ -122,7 +128,7 @@ describe('fastifyApiContracts', () => {
       expect(response.body).toMatchInlineSnapshot(`"{}"`)
     })
 
-    it('uses API spec to build valid GET route with header factory in fastify app', async () => {
+    it('builds GET route with headers', async () => {
       expect.assertions(3)
       const contract = buildRestContract({
         method: 'get',
@@ -133,14 +139,13 @@ describe('fastifyApiContracts', () => {
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
-      const handler = buildFastifyNoPayloadRouteHandler(contract, (req) => {
+      const handler = buildFastifyRouteHandler(contract, (req) => {
         expect(req.params.userId).toEqual('1')
-        // satisfies checks if type is inferred properly in handler
         expect(req.query.testIds satisfies string[] | undefined).toEqual(['test-id'])
         return Promise.resolve()
       })
 
-      const route = buildFastifyNoPayloadRoute(contract, handler)
+      const route = buildFastifyRoute(contract, handler)
 
       expectTypeOf(route).toEqualTypeOf<
         RouteType<
@@ -162,7 +167,7 @@ describe('fastifyApiContracts', () => {
       expect(response.statusCode).toBe(200)
     })
 
-    it('uses API spec to build valid GET route with potentially empty response in fastify app', async () => {
+    it('builds GET route with empty response', async () => {
       expect.assertions(4)
       const contract = buildRestContract({
         method: 'get',
@@ -173,22 +178,11 @@ describe('fastifyApiContracts', () => {
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
-      const route = buildFastifyNoPayloadRoute(contract, (req) => {
+      const route = buildFastifyRoute(contract, (req) => {
         expect(req.params.userId).toEqual('1')
-        // satisfies checks if type is inferred properly in route
         expect(req.query.testIds satisfies string[] | undefined).toBeUndefined()
         return Promise.resolve()
       })
-
-      expectTypeOf(route).toEqualTypeOf<
-        RouteType<
-          z.infer<typeof BODY_SCHEMA>,
-          undefined,
-          z.infer<typeof PATH_PARAMS_SCHEMA>,
-          z.infer<typeof REQUEST_QUERY_SCHEMA>,
-          undefined
-        >
-      >()
 
       const app = await initApp(route)
       const response = await injectGet(app, contract, {
@@ -199,8 +193,10 @@ describe('fastifyApiContracts', () => {
       expect(response.statusCode).toBe(200)
       expect(response.body).toBe('')
     })
+  })
 
-    it('uses API spec to build valid DELETE route in fastify app', async () => {
+  describe('DELETE routes', () => {
+    it('builds valid DELETE route in fastify app', async () => {
       expect.assertions(2)
       const contract = buildRestContract({
         method: 'delete',
@@ -209,7 +205,7 @@ describe('fastifyApiContracts', () => {
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
-      const route = buildFastifyNoPayloadRoute(contract, (req) => {
+      const route = buildFastifyRoute(contract, (req) => {
         expect(req.params.userId).toEqual('1')
         return Promise.resolve()
       })
@@ -232,7 +228,7 @@ describe('fastifyApiContracts', () => {
       expect(response.statusCode).toBe(200)
     })
 
-    it('uses API spec to build valid DELETE route with header in fastify app', async () => {
+    it('builds DELETE route with headers', async () => {
       expect.assertions(4)
       const contract = buildRestContract({
         method: 'delete',
@@ -242,7 +238,7 @@ describe('fastifyApiContracts', () => {
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
-      const route = buildFastifyNoPayloadRoute(contract, (req) => {
+      const route = buildFastifyRoute(contract, (req) => {
         expect(req.params.userId).toEqual('1')
         return Promise.resolve()
       })
@@ -258,7 +254,6 @@ describe('fastifyApiContracts', () => {
       >()
 
       const app = await initApp(route)
-      // using headers directly
       const response = await injectDelete(app, contract, {
         headers: { authorization: 'dummy' },
         pathParams: { userId: '1' },
@@ -266,7 +261,6 @@ describe('fastifyApiContracts', () => {
 
       expect(response.statusCode).toBe(200)
 
-      // using headers factory
       const response2 = await injectDelete(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
         pathParams: { userId: '1' },
@@ -276,22 +270,8 @@ describe('fastifyApiContracts', () => {
     })
   })
 
-  describe('buildFastifyPayloadRouteHandler', () => {
-    it('builds a POST handler', () => {
-      const contract = buildRestContract({
-        method: 'post',
-        requestBodySchema: REQUEST_BODY_SCHEMA,
-        successResponseBodySchema: BODY_SCHEMA,
-        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
-        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-      })
-
-      const handler = buildFastifyPayloadRouteHandler(contract, () => Promise.resolve())
-      expect(handler).toBeTypeOf('function')
-    })
-  })
-  describe('buildFastifyPayloadRoute', () => {
-    it('uses API spec to build valid POST route in fastify app', async () => {
+  describe('POST routes', () => {
+    it('builds valid POST route in fastify app', async () => {
       expect.assertions(5)
       const contract = buildRestContract({
         method: 'post',
@@ -301,7 +281,7 @@ describe('fastifyApiContracts', () => {
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
-      const route = buildFastifyPayloadRoute(contract, (req) => {
+      const route = buildFastifyRoute(contract, (req) => {
         expect(req.routeOptions.config.apiContract).toBe(contract)
         expect(req.params.userId).toEqual('1')
         expect(req.body.id).toEqual('2')
@@ -328,7 +308,7 @@ describe('fastifyApiContracts', () => {
       expect(response.statusCode).toBe(200)
     })
 
-    it('uses API spec to build valid POST route with header factory in fastify app', async () => {
+    it('builds POST route with headers', async () => {
       expect.assertions(4)
       const contract = buildRestContract({
         method: 'post',
@@ -339,14 +319,14 @@ describe('fastifyApiContracts', () => {
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
-      const handler = buildFastifyPayloadRouteHandler(contract, (req) => {
+      const handler = buildFastifyRouteHandler(contract, (req) => {
         expect(req.params.userId).toEqual('1')
         expect(req.body.id).toEqual('2')
         expect(req.headers.authorization).toEqual('dummy')
         return Promise.resolve()
       })
 
-      const route = buildFastifyPayloadRoute(contract, handler)
+      const route = buildFastifyRoute(contract, handler)
 
       expectTypeOf(route).toEqualTypeOf<
         RouteType<
@@ -367,8 +347,10 @@ describe('fastifyApiContracts', () => {
 
       expect(response.statusCode).toBe(200)
     })
+  })
 
-    it('uses API spec to build valid PATCH route in fastify app', async () => {
+  describe('PATCH routes', () => {
+    it('builds valid PATCH route in fastify app', async () => {
       expect.assertions(3)
       const contract = buildRestContract({
         method: 'patch',
@@ -378,7 +360,7 @@ describe('fastifyApiContracts', () => {
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
-      const route = buildFastifyPayloadRoute(contract, (req) => {
+      const route = buildFastifyRoute(contract, (req) => {
         expect(req.params.userId).toEqual('1')
         expect(req.body.id).toEqual('2')
         return Promise.resolve()
@@ -392,36 +374,10 @@ describe('fastifyApiContracts', () => {
 
       expect(response.statusCode).toBe(200)
     })
+  })
 
-    it('uses API spec to build valid PATCH route with header factory in fastify app', async () => {
-      expect.assertions(4)
-      const contract = buildRestContract({
-        method: 'patch',
-        requestBodySchema: REQUEST_BODY_SCHEMA,
-        successResponseBodySchema: BODY_SCHEMA,
-        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
-        requestHeaderSchema: HEADERS_SCHEMA,
-        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-      })
-
-      const route = buildFastifyPayloadRoute(contract, (req) => {
-        expect(req.params.userId).toEqual('1')
-        expect(req.body.id).toEqual('2')
-        expect(req.headers.authorization).toEqual('dummy')
-        return Promise.resolve()
-      })
-
-      const app = await initApp(route)
-      const response = await injectPatch(app, contract, {
-        headers: () => ({ authorization: 'dummy' }),
-        pathParams: { userId: '1' },
-        body: { id: '2' },
-      })
-
-      expect(response.statusCode).toBe(200)
-    })
-
-    it('uses API spec to build valid PUT route in fastify app', async () => {
+  describe('PUT routes', () => {
+    it('builds valid PUT route in fastify app', async () => {
       expect.assertions(3)
       const contract = buildRestContract({
         method: 'put',
@@ -431,7 +387,7 @@ describe('fastifyApiContracts', () => {
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
-      const route = buildFastifyPayloadRoute(contract, (req) => {
+      const route = buildFastifyRoute(contract, (req) => {
         expect(req.params.userId).toEqual('1')
         expect(req.body.id).toEqual('2')
         return Promise.resolve()
@@ -446,7 +402,7 @@ describe('fastifyApiContracts', () => {
       expect(response.statusCode).toBe(200)
     })
 
-    it('uses API spec to build valid PUT route with header in fastify app', async () => {
+    it('builds PUT route with headers', async () => {
       expect.assertions(8)
       const contract = buildRestContract({
         method: 'put',
@@ -457,7 +413,7 @@ describe('fastifyApiContracts', () => {
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
-      const route = buildFastifyPayloadRoute(contract, (req) => {
+      const route = buildFastifyRoute(contract, (req) => {
         expect(req.params.userId).toEqual('1')
         expect(req.body.id).toEqual('2')
         expect(req.headers.authorization).toEqual('dummy')
@@ -465,7 +421,6 @@ describe('fastifyApiContracts', () => {
       })
 
       const app = await initApp(route)
-      // using headers directly
       const response = await injectPut(app, contract, {
         headers: { authorization: 'dummy' },
         pathParams: { userId: '1' },
@@ -474,7 +429,6 @@ describe('fastifyApiContracts', () => {
 
       expect(response.statusCode).toBe(200)
 
-      // using headers factory
       const response2 = await injectPut(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
         pathParams: { userId: '1' },
@@ -484,7 +438,7 @@ describe('fastifyApiContracts', () => {
       expect(response2.statusCode).toBe(200)
     })
 
-    it('supports isNonJSONResponseExpected and isEmptyResponseExpected parameters', async () => {
+    it('supports isNonJSONResponseExpected and isEmptyResponseExpected', async () => {
       expect.assertions(4)
       const contract = buildRestContract({
         method: 'post',
@@ -497,14 +451,14 @@ describe('fastifyApiContracts', () => {
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
-      const handler = buildFastifyPayloadRouteHandler(contract, (req) => {
+      const handler = buildFastifyRouteHandler(contract, (req) => {
         expect(req.params.userId).toEqual('1')
         expect(req.body.id).toEqual('2')
         expect(req.headers.authorization).toEqual('dummy')
         return Promise.resolve()
       })
 
-      const route = buildFastifyPayloadRoute(contract, handler)
+      const route = buildFastifyRoute(contract, handler)
 
       const app = await initApp(route)
       const response = await injectPost(app, contract, {
@@ -514,6 +468,67 @@ describe('fastifyApiContracts', () => {
       })
 
       expect(response.statusCode).toBe(200)
+    })
+  })
+
+  describe('metadata mapper', () => {
+    it('uses metadata mapper for GET route', () => {
+      const SCHEMA = z.object({ id: z.string() })
+
+      const contract = buildRestContract({
+        method: 'get',
+        successResponseBodySchema: SCHEMA,
+        requestPathParamsSchema: SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.id}`,
+        metadata: {
+          myProp: ['test1', 'test2'],
+        },
+      })
+
+      const route = buildFastifyRoute(
+        contract,
+        () => Promise.resolve(),
+        (metadata) =>
+          metadata?.myProp
+            ? {
+                config: {
+                  myProp: (metadata.myProp as string[]).join('-'),
+                },
+              }
+            : {},
+      )
+
+      expect(route.config).toEqual({
+        myProp: 'test1-test2',
+        apiContract: expect.any(Object),
+      })
+    })
+
+    it('uses metadata mapper for POST route', () => {
+      const SCHEMA = z.object({ id: z.string() })
+
+      const contract = buildRestContract({
+        method: 'post',
+        requestBodySchema: SCHEMA,
+        successResponseBodySchema: SCHEMA,
+        requestPathParamsSchema: SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.id}`,
+        metadata: {
+          myProp: ['test3', 'test4'],
+        },
+      })
+
+      const route = buildFastifyRoute(
+        contract,
+        () => Promise.resolve(),
+        (metadata) =>
+          metadata?.myProp ? { config: { myProp: (metadata.myProp as string[]).join('-') } } : {},
+      )
+
+      expect(route.config).toEqual({
+        myProp: 'test3-test4',
+        apiContract: expect.any(Object),
+      })
     })
   })
 })
