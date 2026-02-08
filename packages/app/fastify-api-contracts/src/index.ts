@@ -11,4 +11,5 @@ export {
   injectPost,
   injectPut,
 } from './fastifyApiRequestInjector.ts'
+export { buildFastifyRoute, buildFastifyRouteHandler } from './fastifyRouteBuilder.ts'
 export * from './types.ts'
