@@ -44,20 +44,20 @@
     "dependencies": {},
     "peerDependencies": {
         "@lokalise/node-core": ">=13.5.0",
-        "@lokalise/api-contracts": ">=6.0.0",
+        "@lokalise/api-contracts": ">=6.5.1",
         "fastify": ">=5.0.0",
         "zod": ">=3.25.56"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.3.7",
-        "@lokalise/api-contracts": "^6.0.0",
+        "@lokalise/api-contracts": "^6.5.1",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "^3.1.0",
-        "@vitest/coverage-v8": "^4.0.15",
-        "fastify-type-provider-zod": "^6.0.0",
-        "rimraf": "^6.0.1",
+        "@vitest/coverage-v8": "^4.0.18",
+        "fastify-type-provider-zod": "^6.1.0",
+        "rimraf": "^6.1.2",
         "typescript": "5.9.3",
-        "vitest": "^4.0.15",
+        "vitest": "^4.0.18",
         "zod": "^4.3.6"
     }
 }

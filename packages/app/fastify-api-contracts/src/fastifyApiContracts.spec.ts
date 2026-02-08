@@ -1,4 +1,4 @@
-import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
+import { buildRestContract } from '@lokalise/api-contracts'
 import { fastify } from 'fastify'
 import {
   serializerCompiler,
@@ -56,7 +56,7 @@ async function initApp<Route extends RouteType>(route: Route) {
 describe('fastifyApiContracts', () => {
   describe('buildFastifyNoPayloadRouteHandler', () => {
     it('builds a GET handler', () => {
-      const contract = buildGetRoute({
+      const contract = buildRestContract({
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         requestQuerySchema: REQUEST_QUERY_SCHEMA,
@@ -68,7 +68,7 @@ describe('fastifyApiContracts', () => {
     })
 
     it('builds a GET handler with empty response', () => {
-      const contract = buildGetRoute({
+      const contract = buildRestContract({
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         requestQuerySchema: REQUEST_QUERY_SCHEMA,
@@ -83,7 +83,7 @@ describe('fastifyApiContracts', () => {
   describe('buildFastifyNoPayloadRoute', () => {
     it('uses API spec to build valid GET route in fastify app', async () => {
       expect.assertions(6)
-      const contract = buildGetRoute({
+      const contract = buildRestContract({
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         requestQuerySchema: REQUEST_QUERY_SCHEMA,
@@ -121,7 +121,7 @@ describe('fastifyApiContracts', () => {
 
     it('uses API spec to build valid GET route with header factory in fastify app', async () => {
       expect.assertions(3)
-      const contract = buildGetRoute({
+      const contract = buildRestContract({
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         requestHeaderSchema: HEADERS_SCHEMA,
@@ -160,7 +160,7 @@ describe('fastifyApiContracts', () => {
 
     it('uses API spec to build valid GET route with potentially empty response in fastify app', async () => {
       expect.assertions(4)
-      const contract = buildGetRoute({
+      const contract = buildRestContract({
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         requestQuerySchema: REQUEST_QUERY_SCHEMA,
@@ -197,7 +197,8 @@ describe('fastifyApiContracts', () => {
 
     it('uses API spec to build valid DELETE route in fastify app', async () => {
       expect.assertions(2)
-      const contract = buildDeleteRoute({
+      const contract = buildRestContract({
+        method: 'delete',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -228,7 +229,8 @@ describe('fastifyApiContracts', () => {
 
     it('uses API spec to build valid DELETE route with header in fastify app', async () => {
       expect.assertions(4)
-      const contract = buildDeleteRoute({
+      const contract = buildRestContract({
+        method: 'delete',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         requestHeaderSchema: HEADERS_SCHEMA,
@@ -271,7 +273,7 @@ describe('fastifyApiContracts', () => {
 
   describe('buildFastifyPayloadRouteHandler', () => {
     it('builds a POST handler', () => {
-      const contract = buildPayloadRoute({
+      const contract = buildRestContract({
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: BODY_SCHEMA,
@@ -286,7 +288,7 @@ describe('fastifyApiContracts', () => {
   describe('buildFastifyPayloadRoute', () => {
     it('uses API spec to build valid POST route in fastify app', async () => {
       expect.assertions(5)
-      const contract = buildPayloadRoute({
+      const contract = buildRestContract({
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: BODY_SCHEMA,
@@ -323,7 +325,7 @@ describe('fastifyApiContracts', () => {
 
     it('uses API spec to build valid POST route with header factory in fastify app', async () => {
       expect.assertions(4)
-      const contract = buildPayloadRoute({
+      const contract = buildRestContract({
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: BODY_SCHEMA,
@@ -363,7 +365,7 @@ describe('fastifyApiContracts', () => {
 
     it('uses API spec to build valid PATCH route in fastify app', async () => {
       expect.assertions(3)
-      const contract = buildPayloadRoute({
+      const contract = buildRestContract({
         method: 'patch',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: BODY_SCHEMA,
@@ -388,7 +390,7 @@ describe('fastifyApiContracts', () => {
 
     it('uses API spec to build valid PATCH route with header factory in fastify app', async () => {
       expect.assertions(4)
-      const contract = buildPayloadRoute({
+      const contract = buildRestContract({
         method: 'patch',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: BODY_SCHEMA,
@@ -416,7 +418,7 @@ describe('fastifyApiContracts', () => {
 
     it('uses API spec to build valid PUT route in fastify app', async () => {
       expect.assertions(3)
-      const contract = buildPayloadRoute({
+      const contract = buildRestContract({
         method: 'put',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: BODY_SCHEMA,
@@ -441,7 +443,7 @@ describe('fastifyApiContracts', () => {
 
     it('uses API spec to build valid PUT route with header in fastify app', async () => {
       expect.assertions(8)
-      const contract = buildPayloadRoute({
+      const contract = buildRestContract({
         method: 'put',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: BODY_SCHEMA,
@@ -479,7 +481,7 @@ describe('fastifyApiContracts', () => {
 
     it('supports isNonJSONResponseExpected and isEmptyResponseExpected parameters', async () => {
       expect.assertions(4)
-      const contract = buildPayloadRoute({
+      const contract = buildRestContract({
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: z.undefined(),
