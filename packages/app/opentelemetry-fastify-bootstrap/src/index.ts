@@ -2,7 +2,11 @@ import { FastifyOtelInstrumentation } from '@fastify/otel'
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node'
 import { OTLPTraceExporter as OTLPTraceExporterGrpc } from '@opentelemetry/exporter-trace-otlp-grpc'
 import { NodeSDK } from '@opentelemetry/sdk-node'
-import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
+import {
+  ConsoleSpanExporter,
+  SimpleSpanProcessor,
+  type SpanProcessor,
+} from '@opentelemetry/sdk-trace-base'
 
 // This needs to be imported and run before any other code in your app
 
@@ -69,6 +73,11 @@ export interface OpenTelemetryOptions {
    * @default false
    */
   consoleSpans?: boolean
+
+  /**
+   * Additional span processors to register with the OpenTelemetry SDK.
+   */
+  spanProcessors?: SpanProcessor[]
 }
 
 let isInstrumentationRegistered = false
@@ -91,7 +100,11 @@ let sdk: NodeSDK | undefined
  * ```
  */
 export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
-  const { skippedPaths = DEFAULT_SKIPPED_PATHS, consoleSpans = false } = options
+  const {
+    skippedPaths = DEFAULT_SKIPPED_PATHS,
+    consoleSpans = false,
+    spanProcessors = [],
+  } = options
 
   logger.info('[OTEL] initOpenTelemetry called')
 
@@ -105,6 +118,7 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
       isOpenTelemetryEnabled,
       skippedPaths,
       consoleSpans,
+      additionalSpanProcessorsCount: spanProcessors.length,
     },
     '[OTEL] Configuration',
   )
@@ -121,13 +135,16 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
       url: exporterUrl,
     })
 
+    // Collect all span processors
+    const allSpanProcessors: SpanProcessor[] = [...spanProcessors]
+    if (consoleSpans) {
+      allSpanProcessors.push(new SimpleSpanProcessor(new ConsoleSpanExporter()))
+    }
+
     // Setup SDK
     sdk = new NodeSDK({
       traceExporter,
-      // Add console span exporter for debugging when enabled
-      spanProcessors: consoleSpans
-        ? [new SimpleSpanProcessor(new ConsoleSpanExporter())]
-        : undefined,
+      spanProcessors: allSpanProcessors.length > 0 ? allSpanProcessors : undefined,
       instrumentations: [
         getNodeAutoInstrumentations({
           '@opentelemetry/instrumentation-fastify': {
@@ -150,6 +167,12 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
     isInstrumentationRegistered = true
     if (consoleSpans) {
       logger.info('[OTEL] Console span exporter enabled for debugging')
+    }
+    if (spanProcessors.length > 0) {
+      logger.info(
+        { count: spanProcessors.length },
+        '[OTEL] Additional span processors registered',
+      )
     }
     logger.info('[OTEL] SDK started successfully - ready to send traces')
   } else {
