@@ -55,6 +55,7 @@ initOpenTelemetry()
 |--------|------|---------|-------------|
 | `skippedPaths` | `string[]` | `['/health', '/metrics', '/']` | Paths to exclude from tracing |
 | `consoleSpans` | `boolean` | `false` | Enable console span exporter for debugging |
+| `spanProcessors` | `SpanProcessor[]` | `[]` | Additional span processors to register |
 
 ### Debugging with Console Spans
 
@@ -69,6 +70,24 @@ initOpenTelemetry({
 
 When enabled, spans are printed to the console in addition to being sent to the OTLP exporter. This is useful for verifying that instrumentation is working correctly without needing to run a full observability stack.
 
+### Adding Custom Span Processors
+
+You can integrate additional span processors to send telemetry data to multiple destinations or add custom processing logic.
+
+Multiple span processors work alongside the OTLP exporter and optional console span exporter:
+
+```ts
+import { MyCustomSpanProcessor } from './custom-processor'
+
+const { initOpenTelemetry } = await import('@lokalise/opentelemetry-fastify-bootstrap')
+initOpenTelemetry({
+  consoleSpans: true, // Enable console debugging
+  spanProcessors: [
+    new MyCustomSpanProcessor({ /* config */ }),
+  ],
+})
+```
+
 ## Features
 
 - Automatic instrumentation for Node.js applications via `@opentelemetry/auto-instrumentations-node`
@@ -76,6 +95,7 @@ When enabled, spans are printed to the console in addition to being sent to the 
 - OTLP gRPC trace exporter
 - Configurable path filtering
 - Optional console span exporter for debugging
+- Support for custom span processors
 - Graceful shutdown support
 
 ## Graceful Shutdown
