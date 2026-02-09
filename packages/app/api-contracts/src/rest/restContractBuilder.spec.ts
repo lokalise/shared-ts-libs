@@ -61,6 +61,28 @@ describe('buildRestContract', () => {
       expect(contract.method).toBe('patch')
     })
 
+    it('preserves method when requestBodySchema is undefined', () => {
+      const contract = buildRestContract({
+        successResponseBodySchema: BODY_SCHEMA,
+        requestBodySchema: undefined,
+        method: 'post',
+        pathResolver: () => '/api/actions/run',
+      })
+
+      expect(contract.method).toBe('post')
+    })
+
+    it('preserves PATCH method when requestBodySchema is undefined', () => {
+      const contract = buildRestContract({
+        successResponseBodySchema: BODY_SCHEMA,
+        requestBodySchema: undefined,
+        method: 'patch',
+        pathResolver: () => '/api/actions/pause',
+      })
+
+      expect(contract.method).toBe('patch')
+    })
+
     it('defaults isEmptyResponseExpected to false for POST', () => {
       const contract = buildRestContract({
         successResponseBodySchema: BODY_SCHEMA,
