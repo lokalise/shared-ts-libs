@@ -169,10 +169,7 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
       logger.info('[OTEL] Console span exporter enabled for debugging')
     }
     if (spanProcessors.length > 0) {
-      logger.info(
-        { count: spanProcessors.length },
-        '[OTEL] Additional span processors registered',
-      )
+      logger.info({ count: spanProcessors.length }, '[OTEL] Additional span processors registered')
     }
     logger.info('[OTEL] SDK started successfully - ready to send traces')
   } else {
