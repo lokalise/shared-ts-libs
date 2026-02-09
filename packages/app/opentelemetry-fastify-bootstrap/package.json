@@ -26,8 +26,7 @@
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
-        "url": "git://github.com/lokalise/shared-ts-libs.git",
-        "directory": "packages/app/opentelemetry-fastify-bootstrap"
+        "url": "git://github.com/lokalise/shared-ts-libs.git"
     },
     "publishConfig": {
         "access": "public"
