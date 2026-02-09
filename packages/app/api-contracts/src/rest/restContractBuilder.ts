@@ -300,7 +300,7 @@ export function buildRestContract(
   const { method } = config
 
   const baseFields = {
-    isEmptyResponseExpected: config.isEmptyResponseExpected ?? (method === 'delete'),
+    isEmptyResponseExpected: config.isEmptyResponseExpected ?? method === 'delete',
     isNonJSONResponseExpected: config.isNonJSONResponseExpected ?? false,
     pathResolver: config.pathResolver,
     requestHeaderSchema: config.requestHeaderSchema,
