@@ -245,6 +245,45 @@ describe('buildRestContract type inference', () => {
       expectTypeOf(contract.requestBodySchema).not.toBeUndefined()
       expectTypeOf(contract.requestBodySchema).toEqualTypeOf(bodySchema)
     })
+
+    it('returns PayloadRouteDefinition for POST with undefined requestBodySchema', () => {
+      const contract = buildRestContract({
+        method: 'post',
+        requestBodySchema: undefined,
+        successResponseBodySchema: z.object({ id: z.string() }),
+        pathResolver: () => '/api/actions/run',
+      })
+
+      expectTypeOf(contract.method).toEqualTypeOf<'post' | 'put' | 'patch'>()
+      expectTypeOf(contract).toHaveProperty('requestBodySchema')
+      expectTypeOf(contract.requestBodySchema).toEqualTypeOf<undefined>()
+    })
+
+    it('returns PayloadRouteDefinition for PATCH with undefined requestBodySchema', () => {
+      const contract = buildRestContract({
+        method: 'patch',
+        requestBodySchema: undefined,
+        successResponseBodySchema: z.object({ ok: z.boolean() }),
+        pathResolver: () => '/api/actions/pause',
+      })
+
+      expectTypeOf(contract.method).toEqualTypeOf<'post' | 'put' | 'patch'>()
+      expectTypeOf(contract).toHaveProperty('requestBodySchema')
+      expectTypeOf(contract.requestBodySchema).toEqualTypeOf<undefined>()
+    })
+
+    it('returns PayloadRouteDefinition for PUT with undefined requestBodySchema', () => {
+      const contract = buildRestContract({
+        method: 'put',
+        requestBodySchema: undefined,
+        successResponseBodySchema: z.object({ updated: z.boolean() }),
+        pathResolver: () => '/api/resource',
+      })
+
+      expectTypeOf(contract.method).toEqualTypeOf<'post' | 'put' | 'patch'>()
+      expectTypeOf(contract).toHaveProperty('requestBodySchema')
+      expectTypeOf(contract.requestBodySchema).toEqualTypeOf<undefined>()
+    })
   })
 
   describe('responseSchemasByStatusCode types', () => {

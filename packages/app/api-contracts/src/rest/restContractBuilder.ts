@@ -297,15 +297,10 @@ export function buildRestContract(
     | PayloadContractConfig<any, any, any, any, any, any, any, any, any>,
   // biome-ignore lint/suspicious/noExplicitAny: Return type depends on overload
 ): any {
-  const method = config.method
-  const hasBody = 'requestBodySchema' in config && config.requestBodySchema !== undefined
-
-  // Determine default for isEmptyResponseExpected based on route type
-  const isDeleteRoute = method === 'delete'
-  const defaultIsEmptyResponseExpected = isDeleteRoute
+  const { method } = config
 
   const baseFields = {
-    isEmptyResponseExpected: config.isEmptyResponseExpected ?? defaultIsEmptyResponseExpected,
+    isEmptyResponseExpected: config.isEmptyResponseExpected ?? method === 'delete',
     isNonJSONResponseExpected: config.isNonJSONResponseExpected ?? false,
     pathResolver: config.pathResolver,
     requestHeaderSchema: config.requestHeaderSchema,
@@ -320,27 +315,17 @@ export function buildRestContract(
     tags: config.tags,
   }
 
-  if (hasBody) {
-    // Payload route (POST/PUT/PATCH)
+  if (method === 'post' || method === 'put' || method === 'patch') {
     return {
       ...baseFields,
-      method: method as 'post' | 'put' | 'patch',
+      method,
       // biome-ignore lint/suspicious/noExplicitAny: Type assertion needed for config union
       requestBodySchema: (config as PayloadContractConfig<any>).requestBodySchema,
     }
   }
 
-  if (isDeleteRoute) {
-    // DELETE route
-    return {
-      ...baseFields,
-      method: 'delete' as const,
-    }
-  }
-
-  // GET route
   return {
     ...baseFields,
-    method: 'get' as const,
+    method,
   }
 }
