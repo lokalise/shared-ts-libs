@@ -1,0 +1,274 @@
+// dd-trace must be loaded via `--import dd-trace/initialize.mjs` at process start.
+// That flag registers the ESM loader hook and creates the singleton tracer.
+// We import the singleton here to reconfigure it with user options.
+import tracer from 'dd-trace'
+
+type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error'
+
+interface LogEntry {
+  level: string
+  time: number
+  msg: string
+  [key: string]: unknown
+}
+
+function createLogEntry(level: LogLevel, msg: string, data?: Record<string, unknown>): LogEntry {
+  return {
+    level,
+    time: Date.now(),
+    ...data,
+    msg,
+  }
+}
+
+function log(level: LogLevel, msgOrData: string | Record<string, unknown>, msg?: string): void {
+  let logEntry: LogEntry
+  if (typeof msgOrData === 'string') {
+    logEntry = createLogEntry(level, msgOrData)
+  } else {
+    logEntry = createLogEntry(level, msg ?? '', msgOrData)
+  }
+
+  const output = JSON.stringify(logEntry)
+  if (level === 'error') {
+    // biome-ignore lint/suspicious/noConsole: this is the logger implementation
+    console.error(output)
+  } else if (level === 'warn') {
+    // biome-ignore lint/suspicious/noConsole: this is the logger implementation
+    console.warn(output)
+  } else {
+    // biome-ignore lint/suspicious/noConsole: this is the logger implementation
+    console.log(output)
+  }
+}
+
+const logger = {
+  info: (msgOrData: string | Record<string, unknown>, msg?: string) => log('info', msgOrData, msg),
+  error: (msgOrData: string | Record<string, unknown>, msg?: string) =>
+    log('error', msgOrData, msg),
+  warn: (msgOrData: string | Record<string, unknown>, msg?: string) => log('warn', msgOrData, msg),
+  debug: (msgOrData: string | Record<string, unknown>, msg?: string) =>
+    log('debug', msgOrData, msg),
+}
+
+const DEFAULT_SKIPPED_PATHS = ['/health', '/metrics', '/']
+
+export interface DatadogOptions {
+  /** Service name reported to Datadog. Maps to DD_SERVICE. */
+  service?: string
+  /** Environment name (e.g. prod, staging). Maps to DD_ENV. */
+  env?: string
+  /** Application version. Maps to DD_VERSION. */
+  version?: string
+  /**
+   * Full URL of the Datadog Agent (e.g. `http://dd-agent:8126`).
+   * Takes priority over `agentHost` and `agentPort`.
+   * Maps to DD_TRACE_AGENT_URL, with OTEL_EXPORTER_URL as fallback.
+   */
+  url?: string
+  /**
+   * Datadog Agent hostname. Ignored when `url` is set.
+   * @default '127.0.0.1'
+   */
+  agentHost?: string
+  /**
+   * Datadog Agent trace port. Ignored when `url` is set.
+   * @default 8126
+   */
+  agentPort?: number
+  /**
+   * Paths to exclude from tracing.
+   * @default ['/health', '/metrics', '/']
+   */
+  skippedPaths?: string[]
+  /**
+   * Enable runtime metrics collection. Maps to DD_RUNTIME_METRICS_ENABLED.
+   * @default false
+   */
+  runtimeMetrics?: boolean
+  /**
+   * Enable continuous profiling. Maps to DD_PROFILING_ENABLED.
+   * @default false
+   */
+  profiling?: boolean
+  /**
+   * Enable trace ID injection into logs. Maps to DD_LOGS_INJECTION.
+   * @default false
+   */
+  logInjection?: boolean
+  /**
+   * Global trace sample rate (0 to 1). Maps to DD_TRACE_SAMPLE_RATE.
+   */
+  sampleRate?: number
+  /**
+   * Enable debug logging from dd-trace. Maps to DD_TRACE_DEBUG.
+   * @default false
+   */
+  debug?: boolean
+  /**
+   * Enable dd-trace startup logs.
+   * @default true
+   */
+  startupLogs?: boolean
+  /** Additional tags applied to every span and metric. */
+  tags?: Record<string, string>
+}
+
+let isInitialized = false
+
+/**
+ * Initialize Datadog tracing via dd-trace.
+ *
+ * IMPORTANT: This function must be called BEFORE importing any other modules
+ * that you want to instrument (fastify, http, etc.).
+ *
+ * @example
+ * ```ts
+ * // At the very top of your entry point
+ * const { initDatadog } = await import('@lokalise/datadog-fastify-bootstrap')
+ * initDatadog({ service: 'my-api', env: 'production' })
+ *
+ * // Only import other modules AFTER initialization
+ * const server = await import('./server.ts')
+ * await server.start()
+ * ```
+ */
+export function initDatadog(options: DatadogOptions = {}): void {
+  const {
+    service,
+    env,
+    version,
+    url,
+    agentHost,
+    agentPort,
+    skippedPaths = DEFAULT_SKIPPED_PATHS,
+    runtimeMetrics = false,
+    profiling = false,
+    logInjection = false,
+    sampleRate,
+    debug = false,
+    startupLogs = true,
+    tags,
+  } = options
+
+  // Resolve agent URL: explicit url option > DD_TRACE_AGENT_URL > OTEL_EXPORTER_URL.
+  // Only fall back to env vars when neither url nor agentHost/agentPort are explicitly set,
+  // to avoid env vars silently overriding explicit connection options.
+  const hasExplicitConnection =
+    url !== undefined || agentHost !== undefined || agentPort !== undefined
+  const resolvedUrl =
+    url ??
+    (hasExplicitConnection
+      ? undefined
+      : (process.env.DD_TRACE_AGENT_URL ?? process.env.OTEL_EXPORTER_URL))
+
+  logger.info('[DD] initDatadog called')
+
+  // Support DD_TRACE_ENABLED with OTEL_ENABLED as fallback for migration compatibility
+  const enabledEnvVar =
+    process.env.DD_TRACE_ENABLED?.toLowerCase() ?? process.env.OTEL_ENABLED?.toLowerCase()
+  const isDatadogEnabled = process.env.NODE_ENV !== 'test' && enabledEnvVar === 'true'
+
+  logger.info(
+    {
+      nodeEnv: process.env.NODE_ENV,
+      ddTraceEnabled: process.env.DD_TRACE_ENABLED,
+      otelEnabled: process.env.OTEL_ENABLED,
+      isDatadogEnabled,
+      service,
+      env,
+      resolvedUrl,
+      runtimeMetrics,
+      profiling,
+      logInjection,
+      skippedPaths,
+    },
+    '[DD] Configuration',
+  )
+
+  if (isDatadogEnabled && !isInitialized) {
+    logger.info('[DD] Initializing dd-trace...')
+
+    // dd-trace reads DD_TRACE_DEBUG from env; set it before init if requested
+    if (debug) {
+      process.env.DD_TRACE_DEBUG = 'true'
+    }
+
+    tracer.init({
+      service,
+      env,
+      version,
+      url: resolvedUrl,
+      hostname: agentHost,
+      port: agentPort,
+      runtimeMetrics,
+      profiling,
+      logInjection,
+      sampleRate,
+      startupLogs,
+      tags,
+      plugins: true,
+    })
+
+    tracer.use('http', {
+      server: {
+        blocklist: skippedPaths,
+      },
+    })
+
+    isInitialized = true
+    logger.info('[DD] dd-trace initialized successfully — ready to send traces')
+  } else {
+    logger.info('[DD] Datadog tracing is disabled or already initialized')
+  }
+}
+
+/**
+ * Gracefully flush pending traces and shut down the tracer.
+ *
+ * Call this before process exit (e.g. on SIGTERM) to avoid losing in-flight spans.
+ */
+export async function gracefulDatadogShutdown(): Promise<void> {
+  logger.info('[DD] Shutdown requested')
+  if (!isInitialized) {
+    logger.info('[DD] Tracer was not initialized, nothing to shutdown')
+    return
+  }
+
+  try {
+    // Flush pending traces through the internal exporter
+    const internalTracer = (tracer as unknown as Record<string, unknown>)._tracer as
+      | { _exporter?: { flush?: (done: () => void) => void } }
+      | undefined
+
+    const flushFn = internalTracer?._exporter?.flush
+    if (flushFn) {
+      await new Promise<void>((resolve) => {
+        flushFn.call(internalTracer._exporter, () => {
+          resolve()
+        })
+      })
+    }
+
+    isInitialized = false
+    logger.info('[DD] Tracer shutdown completed successfully')
+  } catch (error) {
+    logger.error({ error }, '[DD] Error during tracer shutdown')
+  }
+}
+
+/**
+ * Returns the active dd-trace Tracer instance, or `undefined` if not initialized.
+ *
+ * Use this to create custom spans:
+ * @example
+ * ```ts
+ * const tracer = getTracer()
+ * const span = tracer?.startSpan('my.custom.operation')
+ * // ... do work ...
+ * span?.finish()
+ * ```
+ */
+export function getTracer(): typeof tracer | undefined {
+  return isInitialized ? tracer : undefined
+}

@@ -1,0 +1,54 @@
+{
+    "name": "@lokalise/datadog-fastify-bootstrap",
+    "version": "1.0.0",
+    "type": "module",
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE.md"
+    ],
+    "license": "Apache-2.0",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": "./dist/index.js",
+        "./package.json": "./package.json"
+    },
+    "keywords": [
+        "datadog",
+        "dd-trace",
+        "fastify",
+        "tracing",
+        "apm",
+        "bootstrap"
+    ],
+    "homepage": "https://github.com/lokalise/shared-ts-libs",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/lokalise/shared-ts-libs.git"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "build": "rimraf dist && tsc --project tsconfig.build.json",
+        "lint": "biome check . && tsc",
+        "lint:fix": "biome check --write",
+        "prepublishOnly": "npm run build",
+        "package-version": "echo $npm_package_version",
+        "postversion": "biome check --write package.json"
+    },
+    "dependencies": {},
+    "peerDependencies": {
+        "dd-trace": ">=5.0.0"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.3.7",
+        "@lokalise/biome-config": "^3.1.0",
+        "@lokalise/tsconfig": "~3.1.0",
+        "dd-trace": "^5.85.0",
+        "rimraf": "^6.1.2",
+        "typescript": "5.9.3"
+    }
+}
