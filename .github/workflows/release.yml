@@ -527,3 +527,20 @@ jobs:
     with:
       working_directory: 'packages/app/opentelemetry-fastify-bootstrap'
       package_name: '@lokalise/opentelemetry-fastify-bootstrap'
+
+  datadog-fastify-bootstrap:
+    name: Release datadog-fastify-bootstrap
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/datadog-fastify-bootstrap/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+      - opentelemetry-fastify-bootstrap
+    uses: ./.github/workflows/release.package.yml
+    with:
+      working_directory: 'packages/app/datadog-fastify-bootstrap'
+      package_name: '@lokalise/datadog-fastify-bootstrap'
