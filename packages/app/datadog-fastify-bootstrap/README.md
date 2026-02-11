@@ -115,3 +115,33 @@ process.on('SIGTERM', async () => {
   process.exit(0)
 })
 ```
+
+## Debugging in Docker
+
+To troubleshoot tracing issues in a Docker environment, enable debug logging via the `debug` option or the `DD_TRACE_DEBUG` environment variable. This makes `dd-trace` emit verbose internal logs showing agent connectivity, span submission, and instrumentation status.
+
+### docker-compose example
+
+```yaml
+services:
+  app:
+    build: .
+    environment:
+      DD_TRACE_ENABLED: 'true'
+      DD_TRACE_AGENT_URL: 'http://datadog-agent:8126'
+      DD_TRACE_DEBUG: 'true'   # verbose dd-trace logs
+    command: ['node', '--import', 'dd-trace/initialize.mjs', 'dist/index.js']
+
+  datadog-agent:
+    image: datadog/agent:latest
+    environment:
+      DD_API_KEY: ${DD_API_KEY}
+      DD_APM_ENABLED: 'true'
+```
+
+### What to look for
+
+- **`Agent not reachable`** — the app cannot connect to the DD Agent. Verify `DD_TRACE_AGENT_URL` points to the correct host/port and that the agent container is running.
+- **`Encoding traces`** / **`Flushing traces`** — traces are being sent successfully.
+- **`Instrumentation applied`** — modules (http, fastify, etc.) were patched correctly.
+- **No dd-trace logs at all** — the `--import dd-trace/initialize.mjs` flag is missing from the node command.
