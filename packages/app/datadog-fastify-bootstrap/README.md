@@ -54,6 +54,7 @@ initDatadog()
 | `OTEL_ENABLED` | Fallback for `DD_TRACE_ENABLED` (for migration from OTEL package) | `false` |
 | `DD_TRACE_AGENT_URL` | Full URL of the Datadog Agent (e.g. `http://dd-agent:8126`) | - |
 | `OTEL_EXPORTER_URL` | Fallback for `DD_TRACE_AGENT_URL` (for migration from OTEL package) | - |
+| `DD_TRACE_DEBUG` | Enable verbose dd-trace internal logging (see [Debugging in Docker](#debugging-in-docker)) | `false` |
 | `DD_SERVICE` | Service name (can also be set via options) | inferred from package.json |
 | `DD_ENV` | Environment name (can also be set via options) | - |
 | `DD_VERSION` | Application version (can also be set via options) | inferred from package.json |
