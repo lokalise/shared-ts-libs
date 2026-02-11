@@ -2,8 +2,6 @@
 
 This package provides a pre-configured Datadog APM setup for Fastify applications using the native `dd-trace` library, with support for auto-instrumentation, runtime metrics, profiling, and log injection.
 
-**Important:** `dd-trace` must be initialized before importing any modules you want to instrument (fastify, http, etc.), because it works by patching module exports at import time. This requires using dynamic imports to control the loading order.
-
 ## Installation
 
 ```bash
@@ -12,42 +10,36 @@ npm install @lokalise/datadog-fastify-bootstrap dd-trace
 
 ## ESM Loader Requirement
 
-When running an ESM application (`"type": "module"`), Node.js requires the `dd-trace` loader to be registered via the `--import` flag:
+The `dd-trace` ESM loader hook **must** be registered at process start via the `--import` flag:
 
 ```bash
 node --import dd-trace/initialize.mjs app.js
 ```
 
-Without this flag, `dd-trace` cannot hook into ESM module loading and auto-instrumentation will not work.
+This flag registers the ESM loader hook and creates the tracer singleton before any application code runs. Without it, `dd-trace` cannot hook into ESM module loading and auto-instrumentation will not work.
 
 ## Usage
 
-Your application entry point must use dynamic `await import()` to ensure `dd-trace` initializes before other modules are loaded:
+Since `--import dd-trace/initialize.mjs` handles early initialization, you can use regular static imports — no dynamic `await import()` needed:
 
 ```ts
 // index.ts (entry point)
+import { initDatadog } from '@lokalise/datadog-fastify-bootstrap'
 
-// This MUST be first - initializes dd-trace before anything else
-const { initDatadog } = await import('@lokalise/datadog-fastify-bootstrap')
 initDatadog({
   service: 'my-api',
   env: 'production',
   skippedPaths: ['/health', '/ready', '/live', '/metrics', '/'],
 })
-
-// Now dynamically import your actual server code
-const server = await import('./server.ts')
-await server.start()
 ```
-
-**Why dynamic imports?** Static imports in ESM are hoisted and resolved together before any code executes. Dynamic `await import()` ensures sequential loading — the tracer fully initializes before server.ts is even parsed.
 
 ### Using defaults
 
 If you don't need custom configuration:
 
 ```ts
-const { initDatadog } = await import('@lokalise/datadog-fastify-bootstrap')
+import { initDatadog } from '@lokalise/datadog-fastify-bootstrap'
+
 initDatadog()
 ```
 

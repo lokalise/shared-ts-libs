@@ -117,20 +117,17 @@ export interface DatadogOptions {
 let isInitialized = false
 
 /**
- * Initialize Datadog tracing via dd-trace.
+ * Reconfigure the dd-trace singleton with application-specific options.
  *
- * IMPORTANT: This function must be called BEFORE importing any other modules
- * that you want to instrument (fastify, http, etc.).
+ * Requires `node --import dd-trace/initialize.mjs` to be set at process start,
+ * which registers the ESM loader hook and creates the tracer before any
+ * application code runs. This function then reconfigures that tracer.
  *
  * @example
  * ```ts
- * // At the very top of your entry point
- * const { initDatadog } = await import('@lokalise/datadog-fastify-bootstrap')
- * initDatadog({ service: 'my-api', env: 'production' })
+ * import { initDatadog } from '@lokalise/datadog-fastify-bootstrap'
  *
- * // Only import other modules AFTER initialization
- * const server = await import('./server.ts')
- * await server.start()
+ * initDatadog({ service: 'my-api', env: 'production' })
  * ```
  */
 export function initDatadog(options: DatadogOptions = {}): void {
