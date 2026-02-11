@@ -232,26 +232,71 @@ export async function gracefulDatadogShutdown(): Promise<void> {
     return
   }
 
-  try {
-    // Flush pending traces through the internal exporter
-    const internalTracer = (tracer as unknown as Record<string, unknown>)._tracer as
-      | { _exporter?: { flush?: (done: () => void) => void } }
-      | undefined
+  const FLUSH_TIMEOUT_MS = 5000
+  // Fallback wait matching dd-trace's default flushInterval, used when the
+  // internal exporter is unavailable so background exports can still complete.
+  const FALLBACK_WAIT_MS = 2000
 
-    const flushFn = internalTracer?._exporter?.flush
+  let flushed = false
+
+  try {
+    // Access the internal exporter defensively — this is an undocumented API
+    // that may change across dd-trace versions.
+    const internalTracer = (tracer as unknown as Record<string, unknown>)._tracer as
+      | Record<string, unknown>
+      | undefined
+    const exporter = internalTracer?._exporter as { flush?: (done: () => void) => void } | undefined
+    const flushFn =
+      typeof exporter?.flush === 'function' ? exporter.flush.bind(exporter) : undefined
+
     if (flushFn) {
+      flushed = true
       await new Promise<void>((resolve) => {
-        flushFn.call(internalTracer._exporter, () => {
-          resolve()
-        })
+        let settled = false
+
+        const timer = setTimeout(() => {
+          if (!settled) {
+            settled = true
+            logger.warn(
+              `[DD] Flush timed out after ${FLUSH_TIMEOUT_MS}ms, proceeding with shutdown`,
+            )
+            resolve()
+          }
+        }, FLUSH_TIMEOUT_MS).unref()
+
+        try {
+          flushFn(() => {
+            if (!settled) {
+              settled = true
+              clearTimeout(timer)
+              resolve()
+            }
+          })
+        } catch (flushError) {
+          if (!settled) {
+            settled = true
+            clearTimeout(timer)
+            logger.error({ error: flushError }, '[DD] Flush call threw, proceeding with shutdown')
+            resolve()
+          }
+        }
       })
     }
-
-    isInitialized = false
-    logger.info('[DD] Tracer shutdown completed successfully')
   } catch (error) {
-    logger.error({ error }, '[DD] Error during tracer shutdown')
+    logger.error({ error }, '[DD] Error accessing internal exporter for flush')
   }
+
+  if (!flushed) {
+    logger.info(
+      `[DD] Internal exporter not available, waiting ${FALLBACK_WAIT_MS}ms for pending exports`,
+    )
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, FALLBACK_WAIT_MS).unref()
+    })
+  }
+
+  isInitialized = false
+  logger.info('[DD] Tracer shutdown completed successfully')
 }
 
 /**
