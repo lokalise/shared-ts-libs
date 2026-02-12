@@ -561,5 +561,3 @@ jobs:
     with:
       working_directory: 'packages/app/odata-mapper'
       package_name: '@lokalise/odata-mapper'
-    secrets:
-      npm_token: ${{ secrets.NPM_TOKEN }}
