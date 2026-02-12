@@ -45,7 +45,7 @@ export function getFiltersForField(
 
 /**
  * Extracts a single equality value for a field.
- * Returns undefined if field is not filtered by equality or has multiple values.
+ * Returns the first `eq` match, or undefined if no equality filter exists for the field.
  */
 export function extractEqualityValue<T extends FilterValue = FilterValue>(
   filter: TransformedFilter,

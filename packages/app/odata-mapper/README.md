@@ -222,7 +222,7 @@ Universal extraction that works for both equality and `in` filters. Always retur
 const values = extractFieldValues<string>(filter, 'status')
 ```
 
-#### `extractComparison(filter, fieldName, operator?)`
+#### `extractComparison(filter, fieldName, operator)`
 
 Extracts a comparison filter for any operator.
 
@@ -337,6 +337,8 @@ const orFilters = collectOrFilters(filter)    // Filters where any can match
 - `startswith(field, 'prefix')`
 - `endswith(field, 'suffix')`
 - `substringof('value', field)`
+- `tolower(field)`
+- `toupper(field)`
 
 ### Collection Operator
 
@@ -345,6 +347,33 @@ const orFilters = collectOrFilters(filter)    // Filters where any can match
 ### Nested Properties
 
 Supports nested property access: `address/city eq 'NYC'`
+
+### Low-Level Utilities
+
+These utilities are exported for advanced use cases such as building custom transformers or working directly with the balena parser AST.
+
+#### Bind Resolution
+
+```typescript
+import {
+  resolveBind,           // Resolve a single bind reference to its value
+  resolveBinds,          // Resolve multiple bind references
+  isBindReference,       // Type guard for bind references
+  getBindKey,            // Get the key from a bind reference
+  extractBindTupleValue, // Extract value from a [type, value] bind tuple
+  extractBindTupleValues,// Extract values from an array of bind tuples
+} from '@lokalise/odata-mapper'
+```
+
+#### AST Utilities
+
+```typescript
+import {
+  isFieldReference,      // Type guard for field references
+  getFieldPath,          // Get dot/slash path from nested field reference
+  transformFilterNode,   // Transform a single AST node (lower-level than transformFilter)
+} from '@lokalise/odata-mapper'
+```
 
 ## Types
 
@@ -367,5 +396,22 @@ import type {
   ComparisonOperator,
   LogicalOperator,
   StringFunction,
+
+  // AST node types (for custom transformer logic)
+  FilterTreeNode,
+  ComparisonNode,
+  LogicalNode,
+  InNode,
+  NotNode,
+  FunctionCallNode,
+  FieldReference,
+
+  // Utility types
+  TransformOptions,
+  RawBindValue,
+  FieldFilterResult,
+  ParsedFilter,
 } from '@lokalise/odata-mapper'
 ```
+
+Re-exported types from `@balena/odata-parser` are also available: `BindKey`, `BindReference`, `ODataBinds`, `ODataOptions`, `ODataQuery`, `PropertyPath`, `TextBind`, `NumberBind`, `BooleanBind`, `DateBind`, `FilterOption`.

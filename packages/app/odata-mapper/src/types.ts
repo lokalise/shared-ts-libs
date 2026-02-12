@@ -25,13 +25,13 @@ export interface FieldReference {
   property?: FieldReference
 }
 
-// Comparison operators
+/** OData comparison operators */
 export type ComparisonOperator = 'eq' | 'ne' | 'gt' | 'ge' | 'lt' | 'le'
 
-// Logical operators
+/** OData logical operators */
 export type LogicalOperator = 'and' | 'or'
 
-// String functions
+/** OData string functions supported by the transformer */
 export type StringFunction =
   | 'contains'
   | 'startswith'
@@ -53,20 +53,22 @@ export type FilterTreeNode =
   | FieldReference
   | BindReference
 
-// [operator, left, right] - e.g., ['eq', { name: 'id' }, { bind: 0 }]
+/** Comparison AST node: `[operator, left, right]` - e.g., `['eq', { name: 'id' }, { bind: 0 }]` */
 export type ComparisonNode = [ComparisonOperator, FilterTreeNode, FilterTreeNode]
 
-// [operator, left, right] - e.g., ['and', [...], [...]]
+/** Logical AST node: `[operator, left, right]` - e.g., `['and', [...], [...]]` */
 export type LogicalNode = [LogicalOperator, FilterTreeNode, FilterTreeNode]
 
-// ['in' | 'eqany', { name: 'field' }, [{ bind: 0 }, { bind: 1 }, ...] | { bind: 0 }]
-// balena parser uses 'eqany' instead of 'in', and may return single bind ref for array values
+/**
+ * In AST node: `['in' | 'eqany', fieldRef, bindRefs]`.
+ * The balena parser uses `'eqany'` instead of `'in'`, and may return a single bind ref for array values.
+ */
 export type InNode = ['in' | 'eqany', FieldReference, BindReference[] | BindReference]
 
-// ['not', expression]
+/** Not AST node: `['not', expression]` */
 export type NotNode = ['not', FilterTreeNode]
 
-// Function calls like ['contains', { name: 'field' }, { bind: 0 }]
+/** Function call AST node: `[functionName, arg1, arg2]` - e.g., `['contains', { name: 'field' }, { bind: 0 }]` */
 export type FunctionCallNode = [StringFunction, FilterTreeNode, FilterTreeNode]
 
 /**
@@ -92,6 +94,7 @@ export type FilterValue = string | number | boolean | Date | null
  */
 export type RawBindValue = FilterValue | unknown[]
 
+/** A comparison filter (e.g., `status eq 'active'`, `price gt 100`) */
 export interface ComparisonFilter {
   type: 'comparison'
   field: string
@@ -99,18 +102,24 @@ export interface ComparisonFilter {
   value: FilterValue
 }
 
+/** An `in` filter (e.g., `status in ('a', 'b', 'c')`) */
 export interface InFilter {
   type: 'in'
   field: string
   values: FilterValue[]
 }
 
+/**
+ * A `not in` filter. Not produced by the transformer (which yields `NotFilter` wrapping `InFilter`),
+ * but supported by extraction utilities for manual construction.
+ */
 export interface NotInFilter {
   type: 'not-in'
   field: string
   values: FilterValue[]
 }
 
+/** A string function filter (e.g., `contains(name, 'test')`) */
 export interface StringFunctionFilter {
   type: 'string-function'
   function: StringFunction
@@ -118,12 +127,14 @@ export interface StringFunctionFilter {
   value: string
 }
 
+/** A logical filter combining sub-filters with `and` or `or` */
 export interface LogicalFilter {
   type: 'logical'
   operator: LogicalOperator
   filters: TransformedFilter[]
 }
 
+/** A negation filter wrapping another filter (e.g., `not (status eq 'active')`) */
 export interface NotFilter {
   type: 'not'
   filter: TransformedFilter
@@ -146,7 +157,8 @@ export interface TransformOptions {
 }
 
 /**
- * Result of extracting a specific field filter
+ * Utility type for representing the result of a field filter extraction.
+ * Can be used by consumers to build typed extraction results.
  */
 export interface FieldFilterResult<T = FilterValue> {
   found: boolean
