@@ -7,7 +7,7 @@ Reusable testing utilities that are potentially relevant for both backend and fr
 ### Basic usage
 
 ```ts
-import { buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
+import { buildRestContract } from '@lokalise/api-contracts'
 import { sendByGetRoute, sendByPayloadRoute } from '@lokalise/frontend-http-client'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -25,7 +25,7 @@ const PATH_PARAMS_SCHEMA = z.object({
     userId: z.string(),
 })
 
-const postContractWithPathParams = buildPayloadRoute({
+const postContractWithPathParams = buildRestContract({
     successResponseBodySchema: RESPONSE_BODY_SCHEMA,
     requestBodySchema: REQUEST_BODY_SCHEMA,
     requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -165,12 +165,12 @@ Resolves path to be mocked based on the contract and passed path params, and aut
 ### Basic usage
 
 ```ts
-import { buildPayloadRoute } from '@lokalise/api-contracts'
-import { sendByPayloadRoute } from '@lokalise/frontend-http-client'
+import { buildRestContract } from '@lokalise/api-contracts'
+import { sendByGetRoute, sendByPayloadRoute } from '@lokalise/frontend-http-client'
 import { getLocal } from 'mockttp'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch, { type Wretch } from 'wretch'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { MockttpHelper } from '@lokalise/universal-testing-utils'
 
 const REQUEST_BODY_SCHEMA = z.object({
@@ -182,12 +182,47 @@ const RESPONSE_BODY_SCHEMA = z.object({
 const PATH_PARAMS_SCHEMA = z.object({
   userId: z.string(),
 })
+const QUERY_PARAMS_SCHEMA = z.object({
+  yearFrom: z.coerce.number(),
+})
 
-const contractWithPathParams = buildPayloadRoute({
+const postContract = buildRestContract({
+  successResponseBodySchema: RESPONSE_BODY_SCHEMA,
+  requestBodySchema: REQUEST_BODY_SCHEMA,
+  method: 'post',
+  description: 'some description',
+  responseSchemasByStatusCode: {
+    200: RESPONSE_BODY_SCHEMA,
+  },
+  pathResolver: () => '/',
+})
+
+const contractWithPathParams = buildRestContract({
   successResponseBodySchema: RESPONSE_BODY_SCHEMA,
   requestBodySchema: REQUEST_BODY_SCHEMA,
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
   method: 'post',
+  description: 'some description',
+  responseSchemasByStatusCode: {
+    200: RESPONSE_BODY_SCHEMA,
+  },
+  pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+})
+
+const getContractWithQueryParams = buildRestContract({
+  successResponseBodySchema: RESPONSE_BODY_SCHEMA,
+  requestQuerySchema: QUERY_PARAMS_SCHEMA,
+  description: 'some description',
+  responseSchemasByStatusCode: {
+    200: RESPONSE_BODY_SCHEMA,
+  },
+  pathResolver: () => '/items',
+})
+
+const getContractWithPathAndQueryParams = buildRestContract({
+  successResponseBodySchema: RESPONSE_BODY_SCHEMA,
+  requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+  requestQuerySchema: QUERY_PARAMS_SCHEMA,
   description: 'some description',
   responseSchemasByStatusCode: {
     200: RESPONSE_BODY_SCHEMA,
@@ -206,7 +241,7 @@ describe('mockttpUtils', () => {
     })
     afterEach(() => mockServer.stop())
 
-    describe('mockValidPayloadResponse', () => {
+    describe('mockValidResponse', () => {
         it('mocks POST request without path params', async () => {
             await mockttpHelper.mockValidResponse(postContract, {
                 responseBody: {id: '1'},
@@ -222,6 +257,42 @@ describe('mockttpUtils', () => {
               }
             `)
         })
+
+        it('mocks GET request with query params', async () => {
+            await mockttpHelper.mockValidResponse(getContractWithQueryParams, {
+                queryParams: { yearFrom: 2020 },
+                responseBody: { id: '1' },
+            })
+
+            const response = await sendByGetRoute(wretchClient, getContractWithQueryParams, {
+                queryParams: { yearFrom: 2020 },
+            })
+
+            expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "1",
+              }
+            `)
+        })
+
+        it('mocks GET request with path params and query params', async () => {
+            await mockttpHelper.mockValidResponse(getContractWithPathAndQueryParams, {
+                pathParams: { userId: '3' },
+                queryParams: { yearFrom: 2020 },
+                responseBody: { id: '2' },
+            })
+
+            const response = await sendByGetRoute(wretchClient, getContractWithPathAndQueryParams, {
+                pathParams: { userId: '3' },
+                queryParams: { yearFrom: 2020 },
+            })
+
+            expect(response).toMatchInlineSnapshot(`
+              {
+                "id": "2",
+              }
+            `)
+        })
     })
 
     describe('mockAnyResponse', () => {
@@ -233,11 +304,10 @@ describe('mockttpUtils', () => {
                 responseCode: 500
             })
 
-            const response = await sendByPayloadRoute(wretchClient, postContract, {
-                body: {name: 'test'},
-            })
+            const response = await wretchClient
+                .post({ name: 'test' }, '/')
+                .json()
 
-            // Response will contain the error structure, not the expected schema
             expect(response).toMatchInlineSnapshot(`
               {
                 "error": "Internal Server Error",
@@ -245,26 +315,13 @@ describe('mockttpUtils', () => {
               }
             `)
         })
-
-        it('mocks response with invalid schema for testing error handling', async () => {
-            await mockttpHelper.mockAnyResponse(postContract, {
-                responseBody: { unexpectedField: 'value', wrongType: 123 }
-            })
-
-            const response = await sendByPayloadRoute(wretchClient, postContract, {
-                body: {name: 'test'},
-            })
-
-            expect(response).toMatchInlineSnapshot(`
-              {
-                "unexpectedField": "value",
-                "wrongType": 123
-              }
-            `)
-        })
     })
 })
 ```
+
+### Query params support
+
+Both `mockValidResponse` and `mockAnyResponse` support `queryParams`. When provided, the mock server will only match requests that include the specified query parameters. The `queryParams` type is inferred from the contract's `requestQuerySchema`, so you pass the same values as you would to `frontend-http-client` (strings, numbers, etc.).
 
 ### mockAnyResponse
 

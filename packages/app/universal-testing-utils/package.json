@@ -45,18 +45,18 @@
     },
     "peerDependencies": {
         "@lokalise/api-contracts": ">=6.0.0",
-        "mockttp": ">=3.17.0",
+        "mockttp": ">=4.2.1",
         "msw": ">=2.7.0",
         "zod": ">=3.25.56"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.3.7",
-        "@lokalise/api-contracts": "^6.0.0",
+        "@lokalise/api-contracts": "^6.5.2",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/frontend-http-client": "*",
         "@lokalise/tsconfig": "^3.1.0",
         "@vitest/coverage-v8": "^4.0.15",
-        "mockttp": "^4.1.0",
+        "mockttp": "^4.2.1",
         "msw": "^2.11.1",
         "rimraf": "^6.0.1",
         "typescript": "5.9.3",
