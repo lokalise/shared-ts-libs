@@ -415,3 +415,7 @@ import type {
 ```
 
 Re-exported types from `@balena/odata-parser` are also available: `BindKey`, `BindReference`, `ODataBinds`, `ODataOptions`, `ODataQuery`, `PropertyPath`, `TextBind`, `NumberBind`, `BooleanBind`, `DateBind`, `FilterOption`.
+
+## License
+
+[Apache-2.0](./LICENSE.md)
