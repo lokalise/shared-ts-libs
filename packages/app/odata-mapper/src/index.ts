@@ -21,6 +21,12 @@ export {
   resolveBind,
   resolveBinds,
 } from './bindResolver.ts'
+// Export errors
+export {
+  type FilterErrorParams,
+  FilterNotSupportedError,
+  isFilterNotSupportedError,
+} from './errors.ts'
 // Export filter extractor utilities
 export {
   collectAndFilters,
@@ -47,12 +53,6 @@ export {
   transformFilter,
   transformFilterNode,
 } from './filterTransformer.ts'
-// Export errors
-export {
-  FilterNotSupportedError,
-  type FilterErrorParams,
-  isFilterNotSupportedError,
-} from './errors.ts'
 export type { ParsedODataFilter } from './parser.ts'
 // Export parser utilities
 export { ODataParseError, parseAndTransformFilter, parseODataFilter } from './parser.ts'
