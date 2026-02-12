@@ -38,12 +38,12 @@
     "devDependencies": {
         "@balena/odata-parser": "^4.2.10",
         "@biomejs/biome": "^2.3.8",
-        "@lokalise/node-core": "^14.6.1",
+        "@lokalise/node-core": "^14.7.4",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "^3.0.0",
-        "@vitest/coverage-v8": "^4.0.15",
+        "@vitest/coverage-v8": "^4.0.18",
         "rimraf": "^6.1.2",
         "typescript": "^5.9.3",
-        "vitest": "^4.0.15"
+        "vitest": "^4.0.18"
     }
 }
