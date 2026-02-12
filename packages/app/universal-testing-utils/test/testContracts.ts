@@ -1,4 +1,4 @@
-import { buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
+import { buildRestContract } from '@lokalise/api-contracts'
 import { z } from 'zod/v4'
 
 const REQUEST_BODY_SCHEMA = z.object({
@@ -14,10 +14,10 @@ const QUERY_PARAMS_SCHEMA = z.object({
   yearFrom: z.coerce.number(),
 })
 
-export const postContract = buildPayloadRoute({
+export const postContract = buildRestContract({
+  method: 'post',
   successResponseBodySchema: RESPONSE_BODY_SCHEMA,
   requestBodySchema: REQUEST_BODY_SCHEMA,
-  method: 'post',
   description: 'some description',
   responseSchemasByStatusCode: {
     200: RESPONSE_BODY_SCHEMA,
@@ -25,7 +25,8 @@ export const postContract = buildPayloadRoute({
   pathResolver: () => '/',
 })
 
-export const getContract = buildGetRoute({
+export const getContract = buildRestContract({
+  method: 'get',
   successResponseBodySchema: RESPONSE_BODY_SCHEMA,
   description: 'some description',
   responseSchemasByStatusCode: {
@@ -34,7 +35,8 @@ export const getContract = buildGetRoute({
   pathResolver: () => '/',
 })
 
-export const getContractWithQueryParams = buildGetRoute({
+export const getContractWithQueryParams = buildRestContract({
+  method: 'get',
   successResponseBodySchema: RESPONSE_BODY_SCHEMA,
   description: 'some description',
   requestQuerySchema: QUERY_PARAMS_SCHEMA,
@@ -44,11 +46,11 @@ export const getContractWithQueryParams = buildGetRoute({
   pathResolver: () => '/',
 })
 
-export const postContractWithPathParams = buildPayloadRoute({
+export const postContractWithPathParams = buildRestContract({
+  method: 'post',
   successResponseBodySchema: RESPONSE_BODY_SCHEMA,
   requestBodySchema: REQUEST_BODY_SCHEMA,
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
-  method: 'post',
   description: 'some description',
   responseSchemasByStatusCode: {
     200: RESPONSE_BODY_SCHEMA,
@@ -56,9 +58,22 @@ export const postContractWithPathParams = buildPayloadRoute({
   pathResolver: (pathParams) => `/users/${pathParams.userId}`,
 })
 
-export const getContractWithPathParams = buildGetRoute({
+export const getContractWithPathParams = buildRestContract({
+  method: 'get',
   successResponseBodySchema: RESPONSE_BODY_SCHEMA,
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+  description: 'some description',
+  responseSchemasByStatusCode: {
+    200: RESPONSE_BODY_SCHEMA,
+  },
+  pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+})
+
+export const getContractWithPathAndQueryParams = buildRestContract({
+  method: 'get',
+  successResponseBodySchema: RESPONSE_BODY_SCHEMA,
+  requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+  requestQuerySchema: QUERY_PARAMS_SCHEMA,
   description: 'some description',
   responseSchemasByStatusCode: {
     200: RESPONSE_BODY_SCHEMA,

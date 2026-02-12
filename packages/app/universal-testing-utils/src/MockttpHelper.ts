@@ -8,16 +8,16 @@ import {
 import type { Mockttp, RequestRuleBuilder } from 'mockttp'
 import type { z } from 'zod/v4'
 
-export type PayloadMockParams<PathParams, ResponseBody> = {
+export type PayloadMockParams<PathParams, QueryParams, ResponseBody> = {
   pathParams: PathParams
   responseCode?: number
   responseBody: ResponseBody
-}
+} & (QueryParams extends undefined ? { queryParams?: undefined } : { queryParams?: QueryParams })
 
-export type PayloadMockParamsNoPath<ResponseBody> = {
+export type PayloadMockParamsNoPath<QueryParams, ResponseBody> = {
   responseCode?: number
   responseBody: ResponseBody
-}
+} & (QueryParams extends undefined ? { queryParams?: undefined } : { queryParams?: QueryParams })
 
 type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
 
@@ -31,12 +31,13 @@ export class MockttpHelper {
   mockAnyResponse<
     ResponseBodySchema extends z.Schema,
     PathParamsSchema extends z.Schema | undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
     contract:
       | CommonRouteDefinition<
           ResponseBodySchema,
           PathParamsSchema,
-          z.Schema | undefined,
+          RequestQuerySchema,
           z.Schema | undefined,
           z.Schema | undefined,
           boolean,
@@ -47,7 +48,7 @@ export class MockttpHelper {
           z.Schema | undefined,
           ResponseBodySchema,
           PathParamsSchema,
-          z.Schema | undefined,
+          RequestQuerySchema,
           z.Schema | undefined,
           z.Schema | undefined,
           boolean,
@@ -55,8 +56,12 @@ export class MockttpHelper {
           any // ResponseSchemasByStatusCode - not used in mocking
         >,
     params: PathParamsSchema extends undefined
-      ? PayloadMockParamsNoPath<any>
-      : PayloadMockParams<InferSchemaInput<PathParamsSchema>, any>,
+      ? PayloadMockParamsNoPath<InferSchemaInput<RequestQuerySchema>, any>
+      : PayloadMockParams<
+          InferSchemaInput<PathParamsSchema>,
+          InferSchemaInput<RequestQuerySchema>,
+          any
+        >,
   ): Promise<void> {
     return this.mockValidResponse(contract, params)
   }
@@ -64,12 +69,13 @@ export class MockttpHelper {
   async mockValidResponse<
     ResponseBodySchema extends z.Schema,
     PathParamsSchema extends z.Schema | undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
     contract:
       | CommonRouteDefinition<
           ResponseBodySchema,
           PathParamsSchema,
-          z.Schema | undefined,
+          RequestQuerySchema,
           z.Schema | undefined,
           z.Schema | undefined,
           boolean,
@@ -80,7 +86,7 @@ export class MockttpHelper {
           z.Schema | undefined,
           ResponseBodySchema,
           PathParamsSchema,
-          z.Schema | undefined,
+          RequestQuerySchema,
           z.Schema | undefined,
           z.Schema | undefined,
           boolean,
@@ -88,8 +94,15 @@ export class MockttpHelper {
           any // ResponseSchemasByStatusCode - not used in mocking
         >,
     params: PathParamsSchema extends undefined
-      ? PayloadMockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
-      : PayloadMockParams<InferSchemaInput<PathParamsSchema>, InferSchemaInput<ResponseBodySchema>>,
+      ? PayloadMockParamsNoPath<
+          InferSchemaInput<RequestQuerySchema>,
+          InferSchemaInput<ResponseBodySchema>
+        >
+      : PayloadMockParams<
+          InferSchemaInput<PathParamsSchema>,
+          InferSchemaInput<RequestQuerySchema>,
+          InferSchemaInput<ResponseBodySchema>
+        >,
   ): Promise<void> {
     // @ts-expect-error this is safe
     const pathParams = params.pathParams
@@ -120,6 +133,12 @@ export class MockttpHelper {
         break
       default:
         throw new Error(`Unsupported method ${method}`)
+    }
+
+    const queryParams = params.queryParams
+    if (queryParams) {
+      // @ts-expect-error this is safe
+      mockttp = mockttp.withQuery(queryParams)
     }
 
     await mockttp.thenJson(params.responseCode ?? 200, params.responseBody as object)
