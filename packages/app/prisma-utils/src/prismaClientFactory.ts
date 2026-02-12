@@ -1,23 +1,16 @@
 import type * as RuntimePrisma from '@prisma/client/runtime/client'
 import type { PrismaClient } from '../test/db-client/client.ts'
-import type { PrismaClientFactoryOptions } from './types.ts'
-
-const defaultOptions: PrismaClientFactoryOptions = {
-  transactionOptions: { isolationLevel: 'ReadCommitted' },
-}
-
-type PrismaClientConstructor<P extends PrismaClient> = new (
-  options: RuntimePrisma.PrismaClientOptions,
-) => P
+import type { PrismaClientConstructor } from '../test/db-client/internal/class.ts'
 
 export const prismaClientFactory = <P extends PrismaClient>(
-  PrismaClient: PrismaClientConstructor<P>,
-  options: PrismaClientFactoryOptions = {},
+  PrismaClient: PrismaClientConstructor,
+  options: RuntimePrisma.PrismaClientOptions,
 ): P => {
   options.transactionOptions = {
-    ...defaultOptions.transactionOptions,
+    isolationLevel: 'ReadCommitted',
     ...options.transactionOptions,
   }
 
+  // @ts-expect-error
   return new PrismaClient(options)
 }

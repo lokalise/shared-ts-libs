@@ -1,4 +1,5 @@
 import type { Either } from '@lokalise/node-core'
+import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanTables, DB_MODEL } from '../test/DbCleaner.ts'
@@ -32,7 +33,7 @@ describe('prismaTransaction', () => {
 
   beforeAll(() => {
     prisma = new PrismaClient({
-      datasourceUrl: getDatasourceUrl(),
+      adapter: new PrismaPg({ connectionString: getDatasourceUrl() }),
     })
   })
 

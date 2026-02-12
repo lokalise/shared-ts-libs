@@ -46,32 +46,3 @@ export type PrismaTransactionReturnType<T> = Either<
   unknown,
   T | RuntimePrisma.Types.Utils.UnwrapTuple<RuntimePrisma.PrismaPromise<unknown>[]>
 >
-
-//----------------------------------------
-// Prisma client factory types
-//----------------------------------------
-
-/**
- * If we try to use `Omit<Prisma.PrismaClientOptions['transactionOptions'], 'isolationLevel'>` to override isolationLevel
- * we start to get lint errors about maxWait and timeout not being part of the transactionOptions type.
- *
- * for that reason, and as this is a temporal solution in the meantime Prisma includes ReadCommitted as a valid isolation
- * level for CockroachDB, we are using this type to override the transactionOptions which is basically a copy of
- * Prisma.PrismaClientOptions['transactionOptions']
- */
-type PrismaClientTransactionOptions = {
-  isolationLevel?: CockroachDbIsolationLevel
-  maxWait?: number
-  timeout?: number
-}
-
-/**
- * this is a temporal solution in the meantime Prisma includes ReadCommitted as a valid isolation level for CockroachDB
- */
-export type PrismaClientFactoryOptions = Omit<
-  RuntimePrisma.PrismaClientOptions,
-  'transactionOptions'
-> & {
-  dbDriver?: DbDriver // default: CockroachDb
-  transactionOptions?: PrismaClientTransactionOptions
-}
