@@ -1,6 +1,11 @@
 import type { ODataBinds } from '@balena/odata-parser'
-import { parse } from '@balena/odata-parser'
-import type { FilterTreeNode } from './types.ts'
+// @balena/odata-parser is CJS — use default import for ESM compatibility
+import odataParser from '@balena/odata-parser'
+
+const { parse } = odataParser
+
+import { transformFilter } from './filterTransformer.ts'
+import type { FilterTreeNode, TransformedFilter } from './types.ts'
 
 /**
  * Custom error for OData parsing failures.
@@ -83,4 +88,31 @@ export function parseODataFilter(filter: string | undefined): ParsedODataFilter 
       error instanceof Error ? error : undefined,
     )
   }
+}
+
+/**
+ * Parse and transform an OData $filter expression in one step.
+ *
+ * Combines `parseODataFilter` + `transformFilter`, eliminating the
+ * null-check boilerplate that every consumer needs.
+ *
+ * @param filter - The OData $filter string (must be non-empty)
+ * @returns High-level TransformedFilter ready for extraction
+ * @throws ODataParseError if the filter is empty, invalid, or produces no tree
+ *
+ * @example
+ * ```typescript
+ * const filter = parseAndTransformFilter("status eq 'active' and price ge 100")
+ * const status = extractEqualityValue(filter, 'status')   // 'active'
+ * const range = extractRange(filter, 'price')              // { min: 100, minInclusive: true }
+ * ```
+ */
+export function parseAndTransformFilter(filter: string): TransformedFilter {
+  const parsed = parseODataFilter(filter)
+
+  if (!parsed.tree) {
+    throw new ODataParseError('Empty filter expression', filter)
+  }
+
+  return transformFilter(parsed.tree, parsed.binds)
 }

@@ -1,4 +1,7 @@
-import { parse } from '@balena/odata-parser'
+import odataParser from '@balena/odata-parser'
+
+const { parse } = odataParser
+
 import { describe, expect, it } from 'vitest'
 import {
   collectAndFilters,

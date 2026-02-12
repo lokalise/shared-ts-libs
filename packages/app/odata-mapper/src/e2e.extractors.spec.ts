@@ -1,4 +1,7 @@
-import { parse } from '@balena/odata-parser'
+import odataParser from '@balena/odata-parser'
+
+const { parse } = odataParser
+
 import { describe, expect, it } from 'vitest'
 import {
   createFilterMap,
@@ -6,6 +9,7 @@ import {
   extractComparison,
   extractEqualityValue,
   extractRange,
+  findUnsupportedField,
   getFilteredFieldNames,
   getFiltersForField,
   transformFilter,
@@ -75,6 +79,83 @@ describe('e2e: filter extractors', () => {
       const fieldNames = getFilteredFieldNames(transformed)
 
       expect(fieldNames.sort()).toEqual(['name', 'price', 'status'])
+    })
+  })
+
+  describe('findUnsupportedField', () => {
+    it('returns undefined when all fields are supported (Set)', () => {
+      const result = parse(
+        "$filter=status eq 'active' and price gt 100 and contains(name, 'test')",
+        { startRule: 'ProcessRule', rule: 'QueryOptions' },
+      )
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+
+      expect(
+        findUnsupportedField(transformed, new Set(['status', 'price', 'name'])),
+      ).toBeUndefined()
+    })
+
+    it('returns undefined when all fields are supported (array)', () => {
+      const result = parse("$filter=status eq 'active' and price gt 100", {
+        startRule: 'ProcessRule',
+        rule: 'QueryOptions',
+      })
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+
+      expect(findUnsupportedField(transformed, ['status', 'price'])).toBeUndefined()
+    })
+
+    it('returns first unsupported field name', () => {
+      const result = parse("$filter=status eq 'active' and priority gt 5", {
+        startRule: 'ProcessRule',
+        rule: 'QueryOptions',
+      })
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+
+      expect(findUnsupportedField(transformed, new Set(['status']))).toBe('priority')
+    })
+
+    it('returns unsupported field from string function', () => {
+      const result = parse("$filter=contains(description, 'test')", {
+        startRule: 'ProcessRule',
+        rule: 'QueryOptions',
+      })
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+
+      expect(findUnsupportedField(transformed, new Set(['name']))).toBe('description')
+    })
+
+    it('detects unsupported field in "in" operator', () => {
+      const result = parse("$filter=category in ('a', 'b')", {
+        startRule: 'ProcessRule',
+        rule: 'QueryOptions',
+      })
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+
+      expect(findUnsupportedField(transformed, new Set(['status']))).toBe('category')
+    })
+
+    it('returns undefined for single supported field', () => {
+      const result = parse("$filter=status eq 'active'", {
+        startRule: 'ProcessRule',
+        rule: 'QueryOptions',
+      })
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+
+      expect(findUnsupportedField(transformed, new Set(['status']))).toBeUndefined()
+    })
+
+    it('detects unsupported field in nested logical filter', () => {
+      const result = parse(
+        "$filter=(status eq 'active' or priority gt 5) and category eq 'books'",
+        {
+          startRule: 'ProcessRule',
+          rule: 'QueryOptions',
+        },
+      )
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+
+      expect(findUnsupportedField(transformed, new Set(['status', 'category']))).toBe('priority')
     })
   })
 
