@@ -20,9 +20,9 @@ export type SSEGetContractConfig<
 > = {
   method: 'get'
   pathResolver: RoutePathResolver<z.infer<Params>>
-  requestPathParamsSchema: Params
-  requestQuerySchema: Query
-  requestHeaderSchema: RequestHeaders
+  requestPathParamsSchema?: Params
+  requestQuerySchema?: Query
+  requestHeaderSchema?: RequestHeaders
   serverSentEventSchemas: Events
   /**
    * Error response schemas by HTTP status code.
@@ -58,9 +58,9 @@ export type SSEPayloadContractConfig<
 > = {
   method: 'post' | 'put' | 'patch'
   pathResolver: RoutePathResolver<z.infer<Params>>
-  requestPathParamsSchema: Params
-  requestQuerySchema: Query
-  requestHeaderSchema: RequestHeaders
+  requestPathParamsSchema?: Params
+  requestQuerySchema?: Query
+  requestHeaderSchema?: RequestHeaders
   requestBodySchema: Body
   serverSentEventSchemas: Events
   /**
@@ -97,9 +97,9 @@ export type DualModeGetContractConfig<
 > = {
   method: 'get'
   pathResolver: RoutePathResolver<z.infer<Params>>
-  requestPathParamsSchema: Params
-  requestQuerySchema: Query
-  requestHeaderSchema: RequestHeaders
+  requestPathParamsSchema?: Params
+  requestQuerySchema?: Query
+  requestHeaderSchema?: RequestHeaders
   /** Single sync response schema */
   successResponseBodySchema: JsonResponse
   /**
@@ -150,9 +150,9 @@ export type DualModePayloadContractConfig<
 > = {
   method: 'post' | 'put' | 'patch'
   pathResolver: RoutePathResolver<z.infer<Params>>
-  requestPathParamsSchema: Params
-  requestQuerySchema: Query
-  requestHeaderSchema: RequestHeaders
+  requestPathParamsSchema?: Params
+  requestQuerySchema?: Query
+  requestHeaderSchema?: RequestHeaders
   requestBodySchema: Body
   /** Single sync response schema */
   successResponseBodySchema: JsonResponse

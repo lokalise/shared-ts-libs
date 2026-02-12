@@ -7,9 +7,6 @@ describe('contractBuilders', () => {
     const baseConfig = {
       method: 'post' as const,
       pathResolver: () => '/api/test',
-      requestPathParamsSchema: z.object({}),
-      requestQuerySchema: z.object({}),
-      requestHeaderSchema: z.object({}),
       requestBodySchema: z.object({ message: z.string() }),
       serverSentEventSchemas: {
         data: z.object({ value: z.string() }),
@@ -55,6 +52,23 @@ describe('contractBuilders', () => {
 
       expect(route.method).toBe('patch')
     })
+
+    it('allows omitting requestPathParamsSchema, requestQuerySchema, requestHeaderSchema', () => {
+      const route = buildSseContract({
+        method: 'post' as const,
+        pathResolver: () => '/api/test',
+        requestBodySchema: z.object({ message: z.string() }),
+        serverSentEventSchemas: {
+          data: z.object({ value: z.string() }),
+        },
+      })
+
+      expect(route.method).toBe('post')
+      expect(route.isSSE).toBe(true)
+      expect(route.requestPathParamsSchema).toBeUndefined()
+      expect(route.requestQuerySchema).toBeUndefined()
+      expect(route.requestHeaderSchema).toBeUndefined()
+    })
   })
 
   describe('buildSseContract (SSE GET)', () => {
@@ -96,6 +110,24 @@ describe('contractBuilders', () => {
       expect(route.responseBodySchemasByStatusCode).toBeDefined()
       expect(route.responseBodySchemasByStatusCode?.[401]).toBeDefined()
       expect(route.responseBodySchemasByStatusCode?.[404]).toBeDefined()
+    })
+  })
+
+  describe('buildSseContract (SSE GET without optional schemas)', () => {
+    it('allows omitting requestPathParamsSchema, requestQuerySchema, requestHeaderSchema for GET', () => {
+      const route = buildSseContract({
+        method: 'get' as const,
+        pathResolver: () => '/api/stream',
+        serverSentEventSchemas: {
+          message: z.object({ text: z.string() }),
+        },
+      })
+
+      expect(route.method).toBe('get')
+      expect(route.isSSE).toBe(true)
+      expect(route.requestPathParamsSchema).toBeUndefined()
+      expect(route.requestQuerySchema).toBeUndefined()
+      expect(route.requestHeaderSchema).toBeUndefined()
     })
   })
 
@@ -181,6 +213,24 @@ describe('contractBuilders', () => {
       })
 
       expect(route.responseHeaderSchema).toBeDefined()
+    })
+
+    it('allows omitting requestPathParamsSchema, requestQuerySchema, requestHeaderSchema', () => {
+      const route = buildSseContract({
+        method: 'post' as const,
+        pathResolver: () => '/api/chat/completions',
+        requestBodySchema: z.object({ message: z.string() }),
+        successResponseBodySchema: z.object({ reply: z.string() }),
+        serverSentEventSchemas: {
+          chunk: z.object({ content: z.string() }),
+        },
+      })
+
+      expect(route.method).toBe('post')
+      expect(route.isDualMode).toBe(true)
+      expect(route.requestPathParamsSchema).toBeUndefined()
+      expect(route.requestQuerySchema).toBeUndefined()
+      expect(route.requestHeaderSchema).toBeUndefined()
     })
 
     it('includes responseBodySchemasByStatusCode when provided', () => {
