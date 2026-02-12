@@ -1,4 +1,4 @@
-import type { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+import type { PrismaClientKnownRequestError } from '@prisma/client/runtime/client'
 
 /**
  * https://www.cockroachlabs.com/docs/stable/transaction-retry-error-reference#:~:text=To%20indicate%20that%20a%20transaction,the%20string%20%22restart%20transaction%22%20.

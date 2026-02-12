@@ -1,5 +1,5 @@
 import { isError } from '@lokalise/node-core'
-import type { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+import type { PrismaClientKnownRequestError } from '@prisma/client/runtime/client'
 
 /**
  * What is checked?
