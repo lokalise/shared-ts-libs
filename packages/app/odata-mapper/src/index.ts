@@ -30,6 +30,7 @@ export {
   extractComparison,
   extractEqualityValue,
   extractFieldValues,
+  extractInclusiveRange,
   extractInValues,
   extractRange,
   extractStringFunction,
@@ -48,7 +49,12 @@ export {
 } from './filterTransformer.ts'
 export type { ParsedODataFilter } from './parser.ts'
 // Export parser utilities
-export { ODataParseError, parseAndTransformFilter, parseODataFilter } from './parser.ts'
+export {
+  ODataParseError,
+  parseAndTransformFilter,
+  parseODataFilter,
+  safeParseAndTransformFilter,
+} from './parser.ts'
 // Export our types
 export type {
   ComparisonFilter,
