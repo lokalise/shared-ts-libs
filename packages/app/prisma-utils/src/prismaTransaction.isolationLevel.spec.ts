@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { PrismaClient } from '../test/db-client/client.ts'
 import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
 import { prismaTransaction } from './prismaTransaction.ts'
 

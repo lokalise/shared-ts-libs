@@ -1,4 +1,5 @@
-import type { Prisma, PrismaClient } from '@prisma/client'
+import type * as RuntimePrisma from '@prisma/client/runtime/client'
+import type { PrismaClient } from '../test/db-client/client.ts'
 import type { PrismaClientFactoryOptions } from './types.ts'
 
 const defaultOptions: PrismaClientFactoryOptions = {
@@ -6,7 +7,7 @@ const defaultOptions: PrismaClientFactoryOptions = {
 }
 
 type PrismaClientConstructor<P extends PrismaClient> = new (
-  options: Prisma.PrismaClientOptions,
+  options: RuntimePrisma.PrismaClientOptions,
 ) => P
 
 export const prismaClientFactory = <P extends PrismaClient>(

@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client'
-import type { Metrics } from '@prisma/client/runtime/library'
+import type { Metrics } from '@prisma/client/runtime/client'
 import type { FastifyBaseLogger } from 'fastify'
 import * as prometheus from 'prom-client'
 

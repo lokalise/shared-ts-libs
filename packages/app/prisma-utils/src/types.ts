@@ -1,6 +1,5 @@
 import type { Either } from '@lokalise/node-core'
-import type { Prisma } from '@prisma/client'
-import type * as runtime from '@prisma/client/runtime/library'
+import type * as RuntimePrisma from '@prisma/client/runtime/client'
 import type { CockroachDbIsolationLevel } from './isolation_level/isolationLevel.ts'
 
 type ObjectValues<T> = T[keyof T]
@@ -39,13 +38,13 @@ export type PrismaTransactionBasicOptions = Omit<
   'maxWait' | 'timeout' | 'maxTimeout'
 >
 
-export type PrismaTransactionClient<P> = Omit<P, runtime.ITXClientDenyList>
+export type PrismaTransactionClient<P> = Omit<P, RuntimePrisma.ITXClientDenyList>
 
 export type PrismaTransactionFn<T, P> = (prisma: PrismaTransactionClient<P>) => Promise<T>
 
 export type PrismaTransactionReturnType<T> = Either<
   unknown,
-  T | runtime.Types.Utils.UnwrapTuple<Prisma.PrismaPromise<unknown>[]>
+  T | RuntimePrisma.Types.Utils.UnwrapTuple<RuntimePrisma.PrismaPromise<unknown>[]>
 >
 
 //----------------------------------------
@@ -69,7 +68,10 @@ type PrismaClientTransactionOptions = {
 /**
  * this is a temporal solution in the meantime Prisma includes ReadCommitted as a valid isolation level for CockroachDB
  */
-export type PrismaClientFactoryOptions = Omit<Prisma.PrismaClientOptions, 'transactionOptions'> & {
+export type PrismaClientFactoryOptions = Omit<
+  RuntimePrisma.PrismaClientOptions,
+  'transactionOptions'
+> & {
   dbDriver?: DbDriver // default: CockroachDb
   transactionOptions?: PrismaClientTransactionOptions
 }

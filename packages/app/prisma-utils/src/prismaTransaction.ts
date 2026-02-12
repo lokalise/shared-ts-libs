@@ -1,8 +1,8 @@
 import { setTimeout } from 'node:timers/promises'
 import type { Either } from '@lokalise/node-core'
 import { deepClone } from '@lokalise/node-core'
-import type { Prisma, PrismaClient } from '@prisma/client'
-import type * as runtime from '@prisma/client/runtime/library'
+import type * as RuntimePrisma from '@prisma/client/runtime/client'
+import type { PrismaClient } from '../test/db-client/client.ts'
 import { isCockroachDBRetryTransaction } from './errors/cockroachdbError.ts'
 import {
   isPrismaClientKnownRequestError,
@@ -10,7 +10,7 @@ import {
   PRISMA_SERIALIZATION_ERROR,
   PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
   PRISMA_TRANSACTION_ERROR,
-} from './errors/prismaError.ts'
+} from './errors/index.ts'
 import type {
   DbDriver,
   PrismaTransactionBasicOptions,
@@ -39,7 +39,7 @@ const DEFAULT_OPTIONS = {
  */
 export const prismaTransaction = (async <T, P extends PrismaClient>(
   prisma: P,
-  arg: PrismaTransactionFn<T, P> | Prisma.PrismaPromise<unknown>[],
+  arg: PrismaTransactionFn<T, P> | RuntimePrisma.PrismaPromise<unknown>[],
   options?: PrismaTransactionOptions | PrismaTransactionBasicOptions,
 ): Promise<PrismaTransactionReturnType<T>> => {
   let optionsWithDefaults = { ...DEFAULT_OPTIONS, ...options }
@@ -81,16 +81,16 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
     fn: PrismaTransactionFn<T, P>,
     options?: PrismaTransactionOptions,
   ): Promise<Either<unknown, T>>
-  <T extends Prisma.PrismaPromise<unknown>[], P extends PrismaClient>(
+  <T extends RuntimePrisma.PrismaPromise<unknown>[], P extends PrismaClient>(
     prisma: P,
     args: [...T],
     options?: PrismaTransactionBasicOptions,
-  ): Promise<Either<unknown, runtime.Types.Utils.UnwrapTuple<T>>>
+  ): Promise<Either<unknown, RuntimePrisma.Types.Utils.UnwrapTuple<T>>>
 }
 
 const executeTransactionTry = async <T, P extends PrismaClient>(
   prisma: P,
-  arg: PrismaTransactionFn<T, P> | Prisma.PrismaPromise<unknown>[],
+  arg: PrismaTransactionFn<T, P> | RuntimePrisma.PrismaPromise<unknown>[],
   options?: PrismaTransactionOptions,
 ): Promise<PrismaTransactionReturnType<T>> => {
   try {
