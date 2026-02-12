@@ -452,9 +452,7 @@ describe('buildContract type inference', () => {
         },
       })
 
-      expectTypeOf(contract.requestHeaderSchema).toEqualTypeOf<
-        typeof headersSchema | undefined
-      >()
+      expectTypeOf(contract.requestHeaderSchema).toEqualTypeOf<typeof headersSchema | undefined>()
     })
 
     it('infers serverSentEventSchemas types', () => {
