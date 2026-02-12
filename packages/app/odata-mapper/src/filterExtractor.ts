@@ -265,6 +265,51 @@ export function findUnsupportedField(
 }
 
 /**
+ * Extracts an inclusive range (ge/le only) for a field.
+ * Returns undefined if no range operators are found for the field.
+ * Throws if non-inclusive operators (gt/lt) are used.
+ *
+ * @example
+ * ```typescript
+ * // From: price ge 100 and price le 500
+ * const range = extractInclusiveRange(filter, 'price')
+ * // { min: 100, max: 500 }
+ *
+ * // From: price gt 100 — throws Error
+ * ```
+ */
+export function extractInclusiveRange(
+  filter: TransformedFilter,
+  fieldName: string,
+): { min?: FilterValue; max?: FilterValue } | undefined {
+  const range = extractRange(filter, fieldName)
+  if (!range) {
+    return undefined
+  }
+
+  if (range.min !== undefined && !range.minInclusive) {
+    throw new Error(
+      `Field '${fieldName}' uses 'gt' operator, but only 'ge' (inclusive) is supported`,
+    )
+  }
+
+  if (range.max !== undefined && !range.maxInclusive) {
+    throw new Error(
+      `Field '${fieldName}' uses 'lt' operator, but only 'le' (inclusive) is supported`,
+    )
+  }
+
+  const result: { min?: FilterValue; max?: FilterValue } = {}
+  if (range.min !== undefined) {
+    result.min = range.min
+  }
+  if (range.max !== undefined) {
+    result.max = range.max
+  }
+  return result
+}
+
+/**
  * High-level convenience function that transforms and extracts filter values in one call.
  * Takes raw balena parser output and returns a simple field-to-values map.
  */

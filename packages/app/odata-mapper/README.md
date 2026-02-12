@@ -190,6 +190,22 @@ const status = extractEqualityValue<string>(filter, 'status') // 'active'
 
 Throws `ODataParseError` for empty, whitespace-only, or syntactically invalid filters.
 
+#### `safeParseAndTransformFilter(filter, mapError)`
+
+Like `parseAndTransformFilter`, but catches `ODataParseError` and lets you map it to your own error type. Non-`ODataParseError` errors are re-thrown as-is.
+
+```typescript
+import { safeParseAndTransformFilter } from '@lokalise/odata-mapper'
+
+const filter = safeParseAndTransformFilter(
+  queryString,
+  (e) => new FilterNotSupportedError({
+    message: `Invalid filter: ${e.message}`,
+    details: { filter: e.filter },
+  }),
+)
+```
+
 #### `ODataParseError`
 
 Custom error class thrown when parsing fails. Includes the original filter string and cause.
@@ -260,6 +276,18 @@ Extracts range filters from combined `gt/ge` and `lt/le` operators.
 // From: price ge 100 and price le 500
 const range = extractRange(filter, 'price')
 // { min: 100, minInclusive: true, max: 500, maxInclusive: true }
+```
+
+#### `extractInclusiveRange(filter, fieldName)`
+
+Like `extractRange`, but enforces that only inclusive operators (`ge`/`le`) are used. Returns a simplified `{ min?, max? }` without inclusivity flags. Throws if `gt` or `lt` operators are found.
+
+```typescript
+// From: price ge 100 and price le 500
+const range = extractInclusiveRange(filter, 'price')
+// { min: 100, max: 500 }
+
+// From: price gt 100 — throws Error
 ```
 
 #### `extractStringFunction(filter, fieldName, functionName?)`

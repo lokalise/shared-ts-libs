@@ -8,6 +8,7 @@ import {
   extractAllFieldValues,
   extractComparison,
   extractEqualityValue,
+  extractInclusiveRange,
   extractRange,
   findUnsupportedField,
   getFilteredFieldNames,
@@ -226,6 +227,101 @@ describe('e2e: filter extractors', () => {
 
       expect(range?.min).toBeUndefined()
       expect(range?.max).toBe(500)
+    })
+  })
+
+  describe('extractInclusiveRange', () => {
+    it('returns undefined when no range operators found', () => {
+      const result = parse("$filter=status eq 'active'", {
+        startRule: 'ProcessRule',
+        rule: 'QueryOptions',
+      })
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+
+      expect(extractInclusiveRange(transformed, 'status')).toBeUndefined()
+    })
+
+    it('extracts inclusive range with ge and le', () => {
+      const result = parse('$filter=price ge 100 and price le 500', {
+        startRule: 'ProcessRule',
+        rule: 'QueryOptions',
+      })
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+      const range = extractInclusiveRange(transformed, 'price')
+
+      expect(range).toEqual({ min: 100, max: 500 })
+    })
+
+    it('extracts partial inclusive range (only min)', () => {
+      const result = parse('$filter=price ge 100', {
+        startRule: 'ProcessRule',
+        rule: 'QueryOptions',
+      })
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+      const range = extractInclusiveRange(transformed, 'price')
+
+      expect(range).toEqual({ min: 100 })
+    })
+
+    it('extracts partial inclusive range (only max)', () => {
+      const result = parse('$filter=price le 500', {
+        startRule: 'ProcessRule',
+        rule: 'QueryOptions',
+      })
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+      const range = extractInclusiveRange(transformed, 'price')
+
+      expect(range).toEqual({ max: 500 })
+    })
+
+    it('throws for gt operator', () => {
+      const result = parse('$filter=price gt 100', {
+        startRule: 'ProcessRule',
+        rule: 'QueryOptions',
+      })
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+
+      expect(() => extractInclusiveRange(transformed, 'price')).toThrow(
+        "Field 'price' uses 'gt' operator, but only 'ge' (inclusive) is supported",
+      )
+    })
+
+    it('throws for lt operator', () => {
+      const result = parse('$filter=price lt 500', {
+        startRule: 'ProcessRule',
+        rule: 'QueryOptions',
+      })
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+
+      expect(() => extractInclusiveRange(transformed, 'price')).toThrow(
+        "Field 'price' uses 'lt' operator, but only 'le' (inclusive) is supported",
+      )
+    })
+
+    it('throws for mixed inclusive/exclusive operators', () => {
+      const result = parse('$filter=price ge 100 and price lt 500', {
+        startRule: 'ProcessRule',
+        rule: 'QueryOptions',
+      })
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+
+      expect(() => extractInclusiveRange(transformed, 'price')).toThrow(
+        "Field 'price' uses 'lt' operator, but only 'le' (inclusive) is supported",
+      )
+    })
+
+    it('works with string date values', () => {
+      const result = parse(
+        "$filter=lastModifiedAt ge '2024-01-01' and lastModifiedAt le '2024-12-31'",
+        {
+          startRule: 'ProcessRule',
+          rule: 'QueryOptions',
+        },
+      )
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+      const range = extractInclusiveRange(transformed, 'lastModifiedAt')
+
+      expect(range).toEqual({ min: '2024-01-01', max: '2024-12-31' })
     })
   })
 

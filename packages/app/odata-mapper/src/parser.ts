@@ -116,3 +116,38 @@ export function parseAndTransformFilter(filter: string): TransformedFilter {
 
   return transformFilter(parsed.tree, parsed.binds)
 }
+
+/**
+ * Parse and transform with custom error mapping.
+ *
+ * Like `parseAndTransformFilter`, but catches `ODataParseError` and lets
+ * you convert it to your own error type (e.g., a domain-specific HTTP error).
+ *
+ * @param filter - The OData $filter string (must be non-empty)
+ * @param mapError - Callback that receives the `ODataParseError` and returns the error to throw
+ * @returns High-level TransformedFilter ready for extraction
+ *
+ * @example
+ * ```typescript
+ * const filter = safeParseAndTransformFilter(
+ *   queryString,
+ *   (e) => new FilterNotSupportedError({
+ *     message: `Invalid filter: ${e.message}`,
+ *     details: { filter: e.filter },
+ *   }),
+ * )
+ * ```
+ */
+export function safeParseAndTransformFilter(
+  filter: string,
+  mapError: (error: ODataParseError) => Error,
+): TransformedFilter {
+  try {
+    return parseAndTransformFilter(filter)
+  } catch (error) {
+    if (error instanceof ODataParseError) {
+      throw mapError(error)
+    }
+    throw error
+  }
+}
