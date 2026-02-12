@@ -12,8 +12,8 @@ type-safe way).
 
 Use `buildContract` as a single entry point for creating any type of API contract. It automatically delegates to the appropriate specialized builder based on the configuration:
 
-| `sseEvents` | Contract Type |
-|-------------|---------------|
+| `serverSentEventSchemas` | Contract Type |
+|--------------------------|---------------|
 | ❌ | REST contract (GET, POST, PUT, PATCH, DELETE) |
 | ✅ | SSE or Dual-mode contract |
 
@@ -44,11 +44,9 @@ const deleteUser = buildContract({
 
 // SSE-only streaming endpoint
 const notifications = buildContract({
+    method: 'get',
     pathResolver: () => '/api/notifications/stream',
-    params: z.object({}),
-    query: z.object({}),
-    requestHeaders: z.object({}),
-    sseEvents: {
+    serverSentEventSchemas: {
         notification: z.object({ id: z.string(), message: z.string() }),
     },
 })
@@ -57,12 +55,9 @@ const notifications = buildContract({
 const chatCompletion = buildContract({
     method: 'post',
     pathResolver: () => '/api/chat/completions',
-    params: z.object({}),
-    query: z.object({}),
-    requestHeaders: z.object({}),
-    requestBody: z.object({ message: z.string() }),
-    syncResponseBody: z.object({ reply: z.string() }),
-    sseEvents: {
+    requestBodySchema: z.object({ message: z.string() }),
+    successResponseBodySchema: z.object({ reply: z.string() }),
+    serverSentEventSchemas: {
         chunk: z.object({ delta: z.string() }),
         done: z.object({ usage: z.object({ tokens: z.number() }) }),
     },
@@ -302,12 +297,12 @@ import { buildSseContract } from '@lokalise/api-contracts'
 import { z } from 'zod'
 
 // GET SSE endpoint for live notifications
+// requestPathParamsSchema, requestQuerySchema, requestHeaderSchema are optional
 const notificationsStream = buildSseContract({
+    method: 'get',
     pathResolver: () => '/api/notifications/stream',
-    params: z.object({}),
-    query: z.object({ userId: z.string().optional() }),
-    requestHeaders: z.object({}),
-    sseEvents: {
+    requestQuerySchema: z.object({ userId: z.string().optional() }),
+    serverSentEventSchemas: {
         notification: z.object({ id: z.string(), message: z.string() }),
     },
 })
@@ -317,11 +312,8 @@ const notificationsStream = buildSseContract({
 const processStream = buildSseContract({
     method: 'post',
     pathResolver: () => '/api/process/stream',
-    params: z.object({}),
-    query: z.object({}),
-    requestHeaders: z.object({}),
-    requestBody: z.object({ fileId: z.string() }),
-    sseEvents: {
+    requestBodySchema: z.object({ fileId: z.string() }),
+    serverSentEventSchemas: {
         progress: z.object({ percent: z.number() }),
         done: z.object({ result: z.string() }),
     },
@@ -330,15 +322,15 @@ const processStream = buildSseContract({
 
 // SSE endpoint with error schemas (for errors before streaming starts)
 const channelStream = buildSseContract({
+    method: 'get',
     pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
-    params: z.object({ channelId: z.string() }),
-    query: z.object({}),
-    requestHeaders: z.object({ authorization: z.string() }),
-    sseEvents: {
+    requestPathParamsSchema: z.object({ channelId: z.string() }),
+    requestHeaderSchema: z.object({ authorization: z.string() }),
+    serverSentEventSchemas: {
         message: z.object({ text: z.string() }),
     },
     // Errors returned before streaming begins
-    responseSchemasByStatusCode: {
+    responseBodySchemasByStatusCode: {
         401: z.object({ error: z.literal('Unauthorized') }),
         404: z.object({ error: z.literal('Channel not found') }),
     },
@@ -363,16 +355,13 @@ import { z } from 'zod'
 const chatCompletion = buildSseContract({
     method: 'post',
     pathResolver: () => '/api/chat/completions',
-    params: z.object({}),
-    query: z.object({}),
-    requestHeaders: z.object({}),
-    requestBody: z.object({ message: z.string() }),
-    // Adding syncResponseBody makes it dual-mode
-    syncResponseBody: z.object({
+    requestBodySchema: z.object({ message: z.string() }),
+    // Adding successResponseBodySchema makes it dual-mode
+    successResponseBodySchema: z.object({
         reply: z.string(),
         usage: z.object({ tokens: z.number() }),
     }),
-    sseEvents: {
+    serverSentEventSchemas: {
         chunk: z.object({ delta: z.string() }),
         done: z.object({ usage: z.object({ totalTokens: z.number() }) }),
     },
@@ -381,15 +370,15 @@ const chatCompletion = buildSseContract({
 
 // GET dual-mode endpoint for job status (poll or stream)
 const jobStatus = buildSseContract({
+    method: 'get',
     pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
-    params: z.object({ jobId: z.string().uuid() }),
-    query: z.object({ verbose: z.string().optional() }),
-    requestHeaders: z.object({}),
-    syncResponseBody: z.object({
+    requestPathParamsSchema: z.object({ jobId: z.string().uuid() }),
+    requestQuerySchema: z.object({ verbose: z.string().optional() }),
+    successResponseBodySchema: z.object({
         status: z.enum(['pending', 'running', 'completed', 'failed']),
         progress: z.number(),
     }),
-    sseEvents: {
+    serverSentEventSchemas: {
         progress: z.object({ percent: z.number() }),
         done: z.object({ result: z.string() }),
     },
@@ -399,21 +388,19 @@ const jobStatus = buildSseContract({
 
 ### Response Schemas by Status Code
 
-Both SSE-only and dual-mode contracts support `responseSchemasByStatusCode` for defining different response shapes for errors that occur **before streaming starts** (e.g., authentication failures, validation errors, resource not found):
+Both SSE-only and dual-mode contracts support `responseBodySchemasByStatusCode` for defining different response shapes for errors that occur **before streaming starts** (e.g., authentication failures, validation errors, resource not found):
 
 ```ts
 const chatCompletion = buildSseContract({
     method: 'post',
     pathResolver: () => '/api/chat/completions',
-    params: z.object({}),
-    query: z.object({}),
-    requestHeaders: z.object({ authorization: z.string() }),
-    requestBody: z.object({ message: z.string() }),
-    syncResponseBody: z.object({ reply: z.string() }),
-    sseEvents: {
+    requestHeaderSchema: z.object({ authorization: z.string() }),
+    requestBodySchema: z.object({ message: z.string() }),
+    successResponseBodySchema: z.object({ reply: z.string() }),
+    serverSentEventSchemas: {
         chunk: z.object({ delta: z.string() }),
     },
-    responseSchemasByStatusCode: {
+    responseBodySchemasByStatusCode: {
         400: z.object({ error: z.string(), details: z.array(z.string()) }),
         401: z.object({ error: z.literal('Unauthorized') }),
         429: z.object({ error: z.string(), retryAfter: z.number() }),
@@ -423,10 +410,10 @@ const chatCompletion = buildSseContract({
 
 ### Contract Type Detection
 
-`buildSseContract` automatically determines the contract type based on the presence of `syncResponseBody`:
+`buildSseContract` automatically determines the contract type based on the presence of `successResponseBodySchema`:
 
-| `syncResponseBody` | `requestBody` | Result |
-|-------------------|---------------|--------|
+| `successResponseBodySchema` | `requestBodySchema` | Result |
+|----------------------------|---------------------|--------|
 | ❌ | ❌ | SSE-only GET |
 | ❌ | ✅ | SSE-only POST/PUT/PATCH |
 | ✅ | ❌ | Dual-mode GET |

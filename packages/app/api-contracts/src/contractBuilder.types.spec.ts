@@ -416,7 +416,9 @@ describe('buildContract type inference', () => {
         },
       })
 
-      expectTypeOf(contract.requestPathParamsSchema).toEqualTypeOf(paramsSchema)
+      expectTypeOf(contract.requestPathParamsSchema).toEqualTypeOf<
+        typeof paramsSchema | undefined
+      >()
     })
 
     it('infers query type from schema', () => {
@@ -433,7 +435,7 @@ describe('buildContract type inference', () => {
         },
       })
 
-      expectTypeOf(contract.requestQuerySchema).toEqualTypeOf(querySchema)
+      expectTypeOf(contract.requestQuerySchema).toEqualTypeOf<typeof querySchema | undefined>()
     })
 
     it('infers requestHeaderSchema type from schema', () => {
@@ -450,7 +452,7 @@ describe('buildContract type inference', () => {
         },
       })
 
-      expectTypeOf(contract.requestHeaderSchema).toEqualTypeOf(headersSchema)
+      expectTypeOf(contract.requestHeaderSchema).toEqualTypeOf<typeof headersSchema | undefined>()
     })
 
     it('infers serverSentEventSchemas types', () => {
@@ -484,6 +486,22 @@ describe('buildContract type inference', () => {
       })
 
       expectTypeOf(contract.requestBodySchema).toEqualTypeOf<undefined>()
+    })
+
+    it('allows omitting requestPathParamsSchema, requestQuerySchema, requestHeaderSchema', () => {
+      const contract = buildContract({
+        method: 'get' as const,
+        pathResolver: () => '/api/stream',
+        serverSentEventSchemas: {
+          message: z.object({ text: z.string() }),
+        },
+      })
+
+      expectTypeOf(contract.isSSE).toEqualTypeOf<true>()
+      // When omitted, these are optional and accept undefined
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestPathParamsSchema>()
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestQuerySchema>()
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestHeaderSchema>()
     })
   })
 
@@ -524,6 +542,47 @@ describe('buildContract type inference', () => {
       })
 
       expectTypeOf(contract.requestBodySchema).toEqualTypeOf(bodySchema)
+    })
+
+    it('infers params, query, and headers types from schema', () => {
+      const paramsSchema = z.object({ projectId: z.string() })
+      const querySchema = z.object({ verbose: z.string().optional() })
+      const headersSchema = z.object({ authorization: z.string() })
+
+      const contract = buildContract({
+        method: 'post',
+        pathResolver: (params) => `/api/projects/${params.projectId}/process`,
+        requestPathParamsSchema: paramsSchema,
+        requestQuerySchema: querySchema,
+        requestHeaderSchema: headersSchema,
+        requestBodySchema: z.object({ data: z.string() }),
+        serverSentEventSchemas: {
+          progress: z.object({ percent: z.number() }),
+        },
+      })
+
+      expectTypeOf(contract.requestPathParamsSchema).toEqualTypeOf<
+        typeof paramsSchema | undefined
+      >()
+      expectTypeOf(contract.requestQuerySchema).toEqualTypeOf<typeof querySchema | undefined>()
+      expectTypeOf(contract.requestHeaderSchema).toEqualTypeOf<typeof headersSchema | undefined>()
+    })
+
+    it('allows omitting requestPathParamsSchema, requestQuerySchema, requestHeaderSchema', () => {
+      const contract = buildContract({
+        method: 'post' as const,
+        pathResolver: () => '/api/process',
+        requestBodySchema: z.object({ data: z.string() }),
+        serverSentEventSchemas: {
+          progress: z.object({ percent: z.number() }),
+        },
+      })
+
+      expectTypeOf(contract.isSSE).toEqualTypeOf<true>()
+      // When omitted, these are optional and accept undefined
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestPathParamsSchema>()
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestQuerySchema>()
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestHeaderSchema>()
     })
 
     it('allows explicit method specification', () => {
@@ -632,6 +691,46 @@ describe('buildContract type inference', () => {
       >()
     })
 
+    it('infers params, query, and headers types from schema', () => {
+      const paramsSchema = z.object({ jobId: z.string() })
+      const querySchema = z.object({ verbose: z.string().optional() })
+      const headersSchema = z.object({ authorization: z.string() })
+
+      const contract = buildContract({
+        method: 'get',
+        pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
+        requestPathParamsSchema: paramsSchema,
+        requestQuerySchema: querySchema,
+        requestHeaderSchema: headersSchema,
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEventSchemas: {
+          update: z.object({ progress: z.number() }),
+        },
+      })
+
+      expectTypeOf(contract.requestPathParamsSchema).toEqualTypeOf<
+        typeof paramsSchema | undefined
+      >()
+      expectTypeOf(contract.requestQuerySchema).toEqualTypeOf<typeof querySchema | undefined>()
+      expectTypeOf(contract.requestHeaderSchema).toEqualTypeOf<typeof headersSchema | undefined>()
+    })
+
+    it('allows omitting requestPathParamsSchema, requestQuerySchema, requestHeaderSchema', () => {
+      const contract = buildContract({
+        method: 'get' as const,
+        pathResolver: () => '/api/status',
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEventSchemas: {
+          update: z.object({ progress: z.number() }),
+        },
+      })
+
+      expectTypeOf(contract.isDualMode).toEqualTypeOf<true>()
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestPathParamsSchema>()
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestQuerySchema>()
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestHeaderSchema>()
+    })
+
     it('has undefined requestBody for GET routes', () => {
       const contract = buildContract({
         method: 'get',
@@ -714,6 +813,48 @@ describe('buildContract type inference', () => {
       })
 
       expectTypeOf(contract.successResponseBodySchema).toEqualTypeOf(syncResponseSchema)
+    })
+
+    it('infers params, query, and headers types from schema', () => {
+      const paramsSchema = z.object({ chatId: z.string() })
+      const querySchema = z.object({ model: z.string().optional() })
+      const headersSchema = z.object({ authorization: z.string() })
+
+      const contract = buildContract({
+        method: 'post',
+        pathResolver: (params) => `/api/chats/${params.chatId}/completions`,
+        requestPathParamsSchema: paramsSchema,
+        requestQuerySchema: querySchema,
+        requestHeaderSchema: headersSchema,
+        requestBodySchema: z.object({ message: z.string() }),
+        successResponseBodySchema: z.object({ reply: z.string() }),
+        serverSentEventSchemas: {
+          chunk: z.object({ delta: z.string() }),
+        },
+      })
+
+      expectTypeOf(contract.requestPathParamsSchema).toEqualTypeOf<
+        typeof paramsSchema | undefined
+      >()
+      expectTypeOf(contract.requestQuerySchema).toEqualTypeOf<typeof querySchema | undefined>()
+      expectTypeOf(contract.requestHeaderSchema).toEqualTypeOf<typeof headersSchema | undefined>()
+    })
+
+    it('allows omitting requestPathParamsSchema, requestQuerySchema, requestHeaderSchema', () => {
+      const contract = buildContract({
+        method: 'post' as const,
+        pathResolver: () => '/api/chat/completions',
+        requestBodySchema: z.object({ message: z.string() }),
+        successResponseBodySchema: z.object({ reply: z.string() }),
+        serverSentEventSchemas: {
+          chunk: z.object({ delta: z.string() }),
+        },
+      })
+
+      expectTypeOf(contract.isDualMode).toEqualTypeOf<true>()
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestPathParamsSchema>()
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestQuerySchema>()
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestHeaderSchema>()
     })
 
     it('allows explicit method specification', () => {

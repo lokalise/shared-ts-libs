@@ -38,9 +38,9 @@ export type SSEContractDefinition<
    * Receives typed params and returns the URL path string.
    */
   pathResolver: RoutePathResolver<z.infer<Params>>
-  requestPathParamsSchema: Params
-  requestQuerySchema: Query
-  requestHeaderSchema: RequestHeaders
+  requestPathParamsSchema?: Params
+  requestQuerySchema?: Query
+  requestHeaderSchema?: RequestHeaders
   requestBodySchema: Body
   serverSentEventSchemas: Events
   /**
@@ -68,9 +68,9 @@ export type AnySSEContractDefinition = {
   method: SSEMethod
   // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with all param types
   pathResolver: RoutePathResolver<any>
-  requestPathParamsSchema: z.ZodTypeAny
-  requestQuerySchema: z.ZodTypeAny
-  requestHeaderSchema: z.ZodTypeAny
+  requestPathParamsSchema?: z.ZodTypeAny
+  requestQuerySchema?: z.ZodTypeAny
+  requestHeaderSchema?: z.ZodTypeAny
   requestBodySchema: z.ZodTypeAny | undefined
   serverSentEventSchemas: SSEEventSchemas
   responseBodySchemasByStatusCode?: Partial<Record<HttpStatusCode, z.ZodTypeAny>>

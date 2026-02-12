@@ -33,9 +33,9 @@ export type DualModeContractDefinition<
 > = {
   method: Method
   pathResolver: RoutePathResolver<z.infer<Params>>
-  requestPathParamsSchema: Params
-  requestQuerySchema: Query
-  requestHeaderSchema: RequestHeaders
+  requestPathParamsSchema?: Params
+  requestQuerySchema?: Query
+  requestHeaderSchema?: RequestHeaders
   requestBodySchema: Body
   /** Sync response schema - use with `sync` handler */
   successResponseBodySchema: SyncResponse
@@ -65,9 +65,9 @@ export type AnyDualModeContractDefinition = {
   method: SSEMethod
   // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with all param types
   pathResolver: RoutePathResolver<any>
-  requestPathParamsSchema: z.ZodTypeAny
-  requestQuerySchema: z.ZodTypeAny
-  requestHeaderSchema: z.ZodTypeAny
+  requestPathParamsSchema?: z.ZodTypeAny
+  requestQuerySchema?: z.ZodTypeAny
+  requestHeaderSchema?: z.ZodTypeAny
   requestBodySchema: z.ZodTypeAny | undefined
   /** Sync response schema - use with `sync` handler */
   successResponseBodySchema: z.ZodTypeAny
