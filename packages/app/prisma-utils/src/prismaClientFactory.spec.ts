@@ -1,3 +1,4 @@
+import { PrismaPg } from '@prisma/adapter-pg'
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import { PrismaClient } from '../test/db-client/client.ts'
 import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
@@ -13,7 +14,7 @@ describe('prismaClientFactory', () => {
 
     it('with default value', async () => {
       prisma = prismaClientFactory(PrismaClient, {
-        datasourceUrl: getDatasourceUrl(),
+        adapter: new PrismaPg({ connectionString: getDatasourceUrl() }),
       })
 
       expect(prisma).toBeDefined()
@@ -22,7 +23,7 @@ describe('prismaClientFactory', () => {
 
     it('overriding some options', async () => {
       prisma = prismaClientFactory(PrismaClient, {
-        datasourceUrl: getDatasourceUrl(),
+        adapter: new PrismaPg({ connectionString: getDatasourceUrl() }),
         transactionOptions: {
           isolationLevel: 'Serializable',
           timeout: 1000,
@@ -43,15 +44,17 @@ describe('prismaClientFactory', () => {
     })
 
     it('default options', () => {
-      prismaClientFactory(mockPrismaClient)
+      prismaClientFactory(mockPrismaClient, { adapter: new PrismaPg({ connectionString: '' }) })
 
       expect(mockPrismaClient).toHaveBeenCalledWith({
+        adapter: expect.any(PrismaPg),
         transactionOptions: { isolationLevel: 'ReadCommitted' },
       })
     })
 
     it('changing transaction options but not isolation level', () => {
       prismaClientFactory(mockPrismaClient, {
+        adapter: new PrismaPg({ connectionString: '' }),
         transactionOptions: {
           maxWait: 1000,
           timeout: 1000,
@@ -59,6 +62,7 @@ describe('prismaClientFactory', () => {
       })
 
       expect(mockPrismaClient).toHaveBeenCalledWith({
+        adapter: expect.any(PrismaPg),
         transactionOptions: {
           isolationLevel: 'ReadCommitted',
           maxWait: 1000,
@@ -69,14 +73,14 @@ describe('prismaClientFactory', () => {
 
     it('setting other options', () => {
       prismaClientFactory(mockPrismaClient, {
-        datasourceUrl: getDatasourceUrl(),
+        adapter: new PrismaPg({ connectionString: '' }),
         errorFormat: 'colorless',
         log: ['query'],
       })
 
       expect(mockPrismaClient).toHaveBeenCalledWith({
+        adapter: expect.any(PrismaPg),
         transactionOptions: { isolationLevel: 'ReadCommitted' },
-        datasourceUrl: getDatasourceUrl(),
         errorFormat: 'colorless',
         log: ['query'],
       })
