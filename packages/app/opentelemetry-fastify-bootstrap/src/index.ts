@@ -3,6 +3,7 @@ import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentation
 import { OTLPTraceExporter as OTLPTraceExporterGrpc } from '@opentelemetry/exporter-trace-otlp-grpc'
 import { NodeSDK } from '@opentelemetry/sdk-node'
 import {
+  BatchSpanProcessor,
   ConsoleSpanExporter,
   SimpleSpanProcessor,
   type SpanProcessor,
@@ -135,16 +136,18 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
       url: exporterUrl,
     })
 
-    // Collect all span processors
-    const allSpanProcessors: SpanProcessor[] = [...spanProcessors]
+    const allSpanProcessors: SpanProcessor[] = [
+      new BatchSpanProcessor(traceExporter),
+      ...spanProcessors,
+    ]
+
     if (consoleSpans) {
       allSpanProcessors.push(new SimpleSpanProcessor(new ConsoleSpanExporter()))
     }
 
     // Setup SDK
     sdk = new NodeSDK({
-      traceExporter,
-      spanProcessors: allSpanProcessors.length > 0 ? allSpanProcessors : undefined,
+      spanProcessors: allSpanProcessors,
       instrumentations: [
         getNodeAutoInstrumentations({
           '@opentelemetry/instrumentation-fastify': {
