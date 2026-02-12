@@ -5,30 +5,31 @@ import type { AwsConfig } from '../awsConfig.ts'
 import type { EventRoutingConfig } from './../event-routing/eventRoutingConfig.ts'
 import { MessageQueueToolkitSnsOptionsResolver } from './MessageQueueToolkitSnsOptionsResolver.ts'
 
+const project = 'test-project'
 const EventRouting = {
   topic1: {
-    topicName: 'test-first_entity',
+    topicName: 'test-project-first_entity',
     owner: 'team 1',
     service: 'service 1',
     queues: {
       topic1Queue1: {
-        queueName: 'test-first_entity-first_service',
+        queueName: 'test-project-first_entity-first_service',
         owner: 'team 1',
         service: 'service 1',
       },
       topic1Queue2: {
-        queueName: 'test-first_entity-second_service',
+        queueName: 'test-project-first_entity-second_service',
         owner: 'team 2',
         service: 'service 2',
       },
     },
   },
   topic2: {
-    topicName: 'test-second_entity',
+    topicName: 'test-project-second_entity',
     isExternal: true,
     queues: {
       topic2Queue1: {
-        queueName: 'test-second_entity-service',
+        queueName: 'test-project-second_entity-service',
         owner: 'team 1',
         service: 'service 2',
       },
@@ -40,6 +41,7 @@ const buildAwsConfig = (awsConfig?: Partial<AwsConfig>): AwsConfig => ({
   kmsKeyId: 'test kmsKeyId',
   allowedSourceOwner: 'test allowedSourceOwner',
   region: 'test region',
+  credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
   ...awsConfig,
 })
 
@@ -51,7 +53,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
   beforeAll(() => {
     resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
       system: 'my-system',
-      project: 'my-project',
+      project,
       appEnv: 'development',
     })
   })
@@ -64,7 +66,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           validateNamePatterns: true,
           appEnv: 'development',
           system: 'test system',
-          project: 'test project',
+          project,
         },
       )
       expect(resolver).toBeInstanceOf(MessageQueueToolkitSnsOptionsResolver)
@@ -74,7 +76,8 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       const config = {
         invalid: {
           topicName: 'invalid',
-          isExternal: true,
+          owner: 'test',
+          service: 'test',
           queues: {},
         },
       } satisfies EventRoutingConfig
@@ -85,16 +88,18 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             validateNamePatterns: true,
             appEnv: 'development',
             system: 'test system',
-            project: 'test project',
+            project,
           }),
-      ).toThrowErrorMatchingInlineSnapshot('[Error: Invalid topic name: invalid]')
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Error: Topic name must start with project name 'test-project': invalid]`,
+      )
 
       expect(
         () =>
           new MessageQueueToolkitSnsOptionsResolver(config, {
             appEnv: 'development',
             system: 'test system',
-            project: 'test project',
+            project,
           }),
       ).not.toThrowError()
     })
@@ -102,7 +107,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
     it('should throw an error if queue name pattern is invalid', () => {
       const config = {
         valid: {
-          topicName: 'valid-topic',
+          topicName: 'valid', // name check skipped as it is external
           isExternal: true,
           queues: {
             invalid: {
@@ -120,21 +125,23 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             validateNamePatterns: true,
             appEnv: 'development',
             system: 'test system',
-            project: 'test project',
+            project,
           }),
-      ).toThrowErrorMatchingInlineSnapshot('[Error: Invalid queue name: invalid]')
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Error: Queue name must start with project name 'test-project': invalid]`,
+      )
       expect(
         () =>
           new MessageQueueToolkitSnsOptionsResolver(config, {
             appEnv: 'development',
             system: 'test system',
-            project: 'test project',
+            project,
           }),
       ).not.toThrowError()
     })
 
     it('should throw an error if queue name is too long', () => {
-      const longQueueName = `long-queue_name-${'a'.repeat(49)}` // 65 characters long
+      const longQueueName = `${project}-${'a'.repeat(30)}-${'a'.repeat(30)}`
       const config = {
         valid: {
           topicName: 'valid-topic',
@@ -155,17 +162,17 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             validateNamePatterns: true,
             appEnv: 'development',
             system: 'test system',
-            project: 'test project',
+            project,
           }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Error: Queue name too long: ${longQueueName}. Max allowed length is 64, received ${longQueueName.length}]`,
+        `[Error: Queue name too long: test-project-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa. Max allowed length is 64, received 74]`,
       )
       expect(
         () =>
           new MessageQueueToolkitSnsOptionsResolver(config, {
             appEnv: 'development',
             system: 'test system',
-            project: 'test project',
+            project,
           }),
       ).not.toThrowError()
     })
@@ -192,7 +199,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             validateNamePatterns: true,
             appEnv: 'development',
             system: 'test system',
-            project: 'test project',
+            project,
           }),
       ).toThrowErrorMatchingInlineSnapshot(
         `[Error: Topic name too long: ${longTopicName}. Max allowed length is 246, received ${longTopicName.length}]`,
@@ -202,7 +209,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           new MessageQueueToolkitSnsOptionsResolver(config, {
             appEnv: 'development',
             system: 'test system',
-            project: 'test project',
+            project,
           }),
       ).not.toThrowError()
     })
@@ -214,7 +221,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             validateNamePatterns: true,
             appEnv: 'development',
             system: 'test system',
-            project: 'test project',
+            project,
           }),
       ).not.toThrowError()
     })
@@ -249,13 +256,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               "allowedSourceOwner": "test allowedSourceOwner",
               "forceTagUpdate": true,
               "queueUrlsWithSubscribePermissionsPrefix": [
-                "arn:aws:sqs:*:*:prefix_test-*",
+                "arn:aws:sqs:*:*:prefix_test-project-*",
               ],
               "topic": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
                 },
-                "Name": "prefix_test-first_entity",
+                "Name": "prefix_test-project-first_entity",
                 "Tags": [
                   {
                     "Key": "env",
@@ -263,7 +270,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   },
                   {
                     "Key": "project",
-                    "Value": "my-project",
+                    "Value": "test-project",
                   },
                   {
                     "Key": "service",
@@ -289,7 +296,9 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "locatorConfig": undefined,
             "logMessages": true,
             "messageSchemas": [],
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
@@ -304,15 +313,15 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           {
             "creationConfig": {
               "allowedSourceOwner": "test allowedSourceOwner",
-              "forceTagUpdate": undefined,
+              "forceTagUpdate": true,
               "queueUrlsWithSubscribePermissionsPrefix": [
-                "arn:aws:sqs:*:*:test-*",
+                "arn:aws:sqs:*:*:test-project-*",
               ],
               "topic": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
                 },
-                "Name": "test-first_entity",
+                "Name": "test-project-first_entity",
                 "Tags": [
                   {
                     "Key": "env",
@@ -320,7 +329,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   },
                   {
                     "Key": "project",
-                    "Value": "my-project",
+                    "Value": "test-project",
                   },
                   {
                     "Key": "service",
@@ -346,7 +355,9 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "locatorConfig": undefined,
             "logMessages": undefined,
             "messageSchemas": [],
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
@@ -370,11 +381,20 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "creationConfig": undefined,
             "handlerSpy": true,
             "locatorConfig": {
-              "topicName": "prefix_test-second_entity",
+              "startupResourcePolling": {
+                "enabled": false,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
+              "topicName": "prefix_test-project-second_entity",
             },
             "logMessages": true,
             "messageSchemas": [],
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
       })
@@ -390,13 +410,101 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "creationConfig": undefined,
             "handlerSpy": undefined,
             "locatorConfig": {
-              "topicName": "test-second_entity",
+              "startupResourcePolling": {
+                "enabled": true,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
+              "topicName": "test-project-second_entity",
             },
             "logMessages": undefined,
             "messageSchemas": [],
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
           }
         `)
+      })
+
+      it.each([
+        'production',
+        'staging',
+      ] as const)('should use %s startupResourcePolling config', (appEnv) => {
+        const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = nonDevResolver.resolvePublisherOptions(topicName, {
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+        })
+
+        expect(result.locatorConfig?.startupResourcePolling).toEqual({
+          enabled: true,
+          nonBlocking: true,
+          pollingIntervalMs: 30000,
+          throwOnTimeout: false,
+          timeoutMs: 300000,
+        })
+      })
+    })
+
+    describe('forceTagUpdate behavior', () => {
+      const topicName = EventRouting.topic1.topicName
+
+      it.each([
+        'development',
+        'production',
+        'staging',
+      ] as const)('should default to true for development, and false in other envs. env: %s', (appEnv) => {
+        const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = resolver.resolvePublisherOptions(topicName, {
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(appEnv === 'development')
+      })
+
+      it('should respect explicit true value regardless of environment', () => {
+        const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv: 'production',
+        })
+
+        const result = resolver.resolvePublisherOptions(topicName, {
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+          forceTagUpdate: true,
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(true)
+      })
+
+      it('should respect explicit false value regardless of environment', () => {
+        const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv: 'development',
+        })
+
+        const result = resolver.resolvePublisherOptions(topicName, {
+          awsConfig: buildAwsConfig(),
+          messageSchemas: [],
+          forceTagUpdate: false,
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(false)
       })
     })
   })
@@ -423,7 +531,9 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             handlers: [],
           },
         ),
-      ).toThrowErrorMatchingInlineSnapshot('[Error: Queue test-second_entity-service not found]')
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Error: Queue test-project-second_entity-service not found]`,
+      )
     })
 
     it('should properly use handlers', () => {
@@ -489,24 +599,24 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "prefix_test-first_entity-first_service",
+                "QueueName": "prefix_test-project-first_entity-first_service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
                   "lok-cost-system": "my-system",
                   "lok-owner": "team 1",
-                  "project": "my-project",
+                  "project": "test-project",
                   "service": "sqs",
                 },
               },
               "queueUrlsWithSubscribePermissionsPrefix": [
-                "arn:aws:sqs:*:*:prefix_test-*",
+                "arn:aws:sqs:*:*:prefix_test-project-*",
               ],
               "topic": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
                 },
-                "Name": "prefix_test-first_entity",
+                "Name": "prefix_test-project-first_entity",
                 "Tags": [
                   {
                     "Key": "env",
@@ -514,7 +624,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   },
                   {
                     "Key": "project",
-                    "Value": "my-project",
+                    "Value": "test-project",
                   },
                   {
                     "Key": "service",
@@ -534,7 +644,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   },
                 ],
               },
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-*",
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-project-first_entity*",
               "updateAttributesIfExists": true,
             },
             "deadLetterQueue": undefined,
@@ -546,7 +656,9 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "locatorConfig": undefined,
             "logMessages": true,
             "maxRetryDuration": 172800,
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
             "subscriptionConfig": {
               "Attributes": {
                 "FilterPolicy": "{"type":[]}",
@@ -574,30 +686,30 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             },
             "creationConfig": {
               "allowedSourceOwner": "test allowedSourceOwner",
-              "forceTagUpdate": undefined,
+              "forceTagUpdate": true,
               "queue": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "test-first_entity-first_service",
+                "QueueName": "test-project-first_entity-first_service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 1",
                   "lok-cost-system": "my-system",
                   "lok-owner": "team 1",
-                  "project": "my-project",
+                  "project": "test-project",
                   "service": "sqs",
                 },
               },
               "queueUrlsWithSubscribePermissionsPrefix": [
-                "arn:aws:sqs:*:*:test-*",
+                "arn:aws:sqs:*:*:test-project-*",
               ],
               "topic": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
                 },
-                "Name": "test-first_entity",
+                "Name": "test-project-first_entity",
                 "Tags": [
                   {
                     "Key": "env",
@@ -605,7 +717,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   },
                   {
                     "Key": "project",
-                    "Value": "my-project",
+                    "Value": "test-project",
                   },
                   {
                     "Key": "service",
@@ -625,7 +737,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   },
                 ],
               },
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:test-*",
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:test-project-first_entity*",
               "updateAttributesIfExists": true,
             },
             "deadLetterQueue": {
@@ -635,13 +747,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                     "KmsMasterKeyId": "test kmsKeyId",
                     "MessageRetentionPeriod": "604800",
                   },
-                  "QueueName": "test-first_entity-first_service-dlq",
+                  "QueueName": "test-project-first_entity-first_service-dlq",
                   "tags": {
                     "env": "dev",
                     "lok-cost-service": "service 1",
                     "lok-cost-system": "my-system",
                     "lok-owner": "team 1",
-                    "project": "my-project",
+                    "project": "test-project",
                     "service": "sqs",
                   },
                 },
@@ -659,7 +771,9 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "locatorConfig": undefined,
             "logMessages": undefined,
             "maxRetryDuration": 172800,
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
             "subscriptionConfig": {
               "Attributes": {
                 "FilterPolicy": "{"type":[]}",
@@ -704,19 +818,19 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "prefix_test-second_entity-service",
+                "QueueName": "prefix_test-project-second_entity-service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 2",
                   "lok-cost-system": "my-system",
                   "lok-owner": "team 1",
-                  "project": "my-project",
+                  "project": "test-project",
                   "service": "sqs",
                 },
               },
               "queueUrlsWithSubscribePermissionsPrefix": undefined,
               "topic": undefined,
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-*",
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-project-second_entity*",
               "updateAttributesIfExists": true,
             },
             "deadLetterQueue": undefined,
@@ -726,11 +840,20 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "handlerSpy": true,
             "handlers": [],
             "locatorConfig": {
-              "topicName": "prefix_test-second_entity",
+              "startupResourcePolling": {
+                "enabled": false,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
+              "topicName": "prefix_test-project-second_entity",
             },
             "logMessages": true,
             "maxRetryDuration": 172800,
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
             "subscriptionConfig": {
               "Attributes": {
                 "FilterPolicy": "{"type":[]}",
@@ -758,25 +881,25 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             },
             "creationConfig": {
               "allowedSourceOwner": "test allowedSourceOwner",
-              "forceTagUpdate": undefined,
+              "forceTagUpdate": true,
               "queue": {
                 "Attributes": {
                   "KmsMasterKeyId": "test kmsKeyId",
                   "VisibilityTimeout": "60",
                 },
-                "QueueName": "test-second_entity-service",
+                "QueueName": "test-project-second_entity-service",
                 "tags": {
                   "env": "dev",
                   "lok-cost-service": "service 2",
                   "lok-cost-system": "my-system",
                   "lok-owner": "team 1",
-                  "project": "my-project",
+                  "project": "test-project",
                   "service": "sqs",
                 },
               },
               "queueUrlsWithSubscribePermissionsPrefix": undefined,
               "topic": undefined,
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:test-*",
+              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:test-project-second_entity*",
               "updateAttributesIfExists": true,
             },
             "deadLetterQueue": {
@@ -786,13 +909,13 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                     "KmsMasterKeyId": "test kmsKeyId",
                     "MessageRetentionPeriod": "604800",
                   },
-                  "QueueName": "test-second_entity-service-dlq",
+                  "QueueName": "test-project-second_entity-service-dlq",
                   "tags": {
                     "env": "dev",
                     "lok-cost-service": "service 2",
                     "lok-cost-system": "my-system",
                     "lok-owner": "team 1",
-                    "project": "my-project",
+                    "project": "test-project",
                     "service": "sqs",
                   },
                 },
@@ -808,11 +931,20 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "handlerSpy": undefined,
             "handlers": [],
             "locatorConfig": {
-              "topicName": "test-second_entity",
+              "startupResourcePolling": {
+                "enabled": true,
+                "nonBlocking": true,
+                "pollingIntervalMs": 5000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
+              "topicName": "test-project-second_entity",
             },
             "logMessages": undefined,
             "maxRetryDuration": 172800,
-            "messageTypeField": "type",
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
             "subscriptionConfig": {
               "Attributes": {
                 "FilterPolicy": "{"type":[]}",
@@ -822,6 +954,90 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             },
           }
         `)
+      })
+
+      it.each([
+        'production',
+        'staging',
+      ] as const)('should use %s startupResourcePolling config', (appEnv) => {
+        const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = nonDevResolver.resolveConsumerOptions(topicName, queueName, {
+          logger,
+          handlers: [],
+          awsConfig: buildAwsConfig(),
+        })
+
+        expect(result.locatorConfig?.startupResourcePolling).toEqual({
+          enabled: true,
+          nonBlocking: true,
+          pollingIntervalMs: 30000,
+          throwOnTimeout: false,
+          timeoutMs: 300000,
+        })
+      })
+    })
+
+    describe('forceTagUpdate behavior', () => {
+      const topicName = EventRouting.topic1.topicName
+      const queueName = EventRouting.topic1.queues.topic1Queue1.queueName
+
+      it.each([
+        'development',
+        'production',
+        'staging',
+      ] as const)('should default to true for development, and false in other envs. env: %s', (appEnv) => {
+        const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv,
+        })
+
+        const result = resolver.resolveConsumerOptions(topicName, queueName, {
+          logger,
+          handlers: [],
+          awsConfig: buildAwsConfig(),
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(appEnv === 'development')
+      })
+
+      it('should respect explicit true value regardless of environment', () => {
+        const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv: 'production',
+        })
+
+        const result = resolver.resolveConsumerOptions(topicName, queueName, {
+          logger,
+          handlers: [],
+          awsConfig: buildAwsConfig(),
+          forceTagUpdate: true,
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(true)
+      })
+
+      it('should respect explicit false value regardless of environment', () => {
+        const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+          system: 'my-system',
+          project,
+          appEnv: 'development',
+        })
+
+        const result = resolver.resolveConsumerOptions(topicName, queueName, {
+          logger,
+          handlers: [],
+          awsConfig: buildAwsConfig(),
+          forceTagUpdate: false,
+        })
+
+        expect(result.creationConfig?.forceTagUpdate).toBe(false)
       })
     })
   })

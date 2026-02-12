@@ -1,5 +1,9 @@
 import type { CreateQueueRequest } from '@aws-sdk/client-sqs'
-import type { ConsumerBaseMessageType } from '@message-queue-toolkit/core'
+import {
+  type ConsumerBaseMessageType,
+  NO_TIMEOUT,
+  type StartupResourcePollingConfig,
+} from '@message-queue-toolkit/core'
 import type {
   SQSCreationConfig,
   SQSPolicyConfig,
@@ -13,9 +17,8 @@ import {
   DLQ_MESSAGE_RETENTION_PERIOD,
   DLQ_SUFFIX,
   HEARTBEAT_INTERVAL,
-  MAX_QUEUE_NAME_LENGTH,
   MAX_RETRY_DURATION,
-  MESSAGE_TYPE_FIELD,
+  MESSAGE_TYPE_PATH,
   VISIBILITY_TIMEOUT,
 } from './constants.ts'
 import { createRequestContextPreHandler } from './prehandlers/createRequestContextPreHandler.ts'
@@ -26,7 +29,6 @@ import type {
   ResolvedPublisherOptions,
   ResolvePublisherOptionsParams,
 } from './types.ts'
-import { QUEUE_NAME_REGEX } from './utils.ts'
 
 type ResolvedQueueResult =
   | {
@@ -45,21 +47,6 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
     this.config = config
   }
 
-  protected validateQueueNames(queueNames: string[]): void {
-    if (!this.config.validateNamePatterns) return
-
-    for (const queueName of queueNames) {
-      if (queueName.length > MAX_QUEUE_NAME_LENGTH) {
-        throw new Error(
-          `Queue name too long: ${queueName}. Max allowed length is ${MAX_QUEUE_NAME_LENGTH}, received ${queueName.length}`,
-        )
-      }
-      if (!QUEUE_NAME_REGEX.test(queueName)) {
-        throw new Error(`Invalid queue name: ${queueName}`)
-      }
-    }
-  }
-
   protected commonPublisherOptions<MessagePayload extends ConsumerBaseMessageType>(
     params: ResolvePublisherOptionsParams<MessagePayload>,
   ): Omit<
@@ -68,7 +55,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
   > {
     return {
       handlerSpy: params.isTest,
-      messageTypeField: MESSAGE_TYPE_FIELD,
+      messageTypeResolver: { messageTypePath: MESSAGE_TYPE_PATH },
       logMessages: params.logMessages,
       messageSchemas: params.messageSchemas,
     }
@@ -88,7 +75,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
     }
 
     return {
-      messageTypeField: MESSAGE_TYPE_FIELD,
+      messageTypeResolver: { messageTypePath: MESSAGE_TYPE_PATH },
       deletionConfig: { deleteIfExists: params.isTest },
       handlers: handlerConfigs,
       logMessages: params.logMessages,
@@ -141,7 +128,10 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
 
     if (queueConfig.isExternal) {
       return {
-        locatorConfig: { queueName: applyAwsResourcePrefix(queueConfig.queueName, awsConfig) },
+        locatorConfig: {
+          queueName: applyAwsResourcePrefix(queueConfig.queueName, awsConfig),
+          startupResourcePolling: this.resolveStartupResourcePolling(params),
+        },
       }
     }
 
@@ -157,8 +147,27 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
         },
         policyConfig,
         updateAttributesIfExists: updateAttributesIfExists ?? true,
-        forceTagUpdate: forceTagUpdate,
+        forceTagUpdate: forceTagUpdate ?? this.isDevelopmentEnvironment(),
       },
+    }
+  }
+
+  protected isDevelopmentEnvironment(): boolean {
+    return this.config.appEnv === 'development'
+  }
+
+  protected resolveStartupResourcePolling(params: {
+    isTest?: boolean
+  }): StartupResourcePollingConfig {
+    const isDevelopment = this.isDevelopmentEnvironment()
+    return {
+      enabled: !params.isTest, // Disable polling in test mode
+      throwOnTimeout: false,
+      nonBlocking: true,
+      pollingIntervalMs: isDevelopment
+        ? 5000 // 5 seconds
+        : 30000, // 30 seconds
+      timeoutMs: isDevelopment ? NO_TIMEOUT : 300000, // 5 minutes,
     }
   }
 }

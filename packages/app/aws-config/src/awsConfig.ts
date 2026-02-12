@@ -9,7 +9,28 @@ import { ConfigScope } from '@lokalise/node-core'
 import type { AwsCredentialIdentity, Provider } from '@smithy/types'
 
 /** Maximum allowed length for AWS resource prefix, to ensure it doesn't exceed AWS limits when concatenated with resource names. */
-const MAX_AWS_RESOURCE_PREFIX_LENGTH = 10
+export const MAX_AWS_RESOURCE_PREFIX_LENGTH = 10
+
+/**
+ * Environment variable names used for AWS configuration.
+ * These constants ensure consistency between ConfigScope and envase-based configuration.
+ */
+export const AWS_CONFIG_ENV_VARS = {
+  /** AWS region where resources will be created and requests are sent */
+  REGION: 'AWS_REGION',
+  /** ID or ARN of the AWS KMS key used for encryption */
+  KMS_KEY_ID: 'AWS_KMS_KEY_ID',
+  /** AWS account ID permitted as the source owner for cross-account access */
+  ALLOWED_SOURCE_OWNER: 'AWS_ALLOWED_SOURCE_OWNER',
+  /** Custom endpoint URL for AWS services (e.g., LocalStack) */
+  ENDPOINT: 'AWS_ENDPOINT',
+  /** Prefix applied to all AWS resource names */
+  RESOURCE_PREFIX: 'AWS_RESOURCE_PREFIX',
+  /** AWS access key ID for authentication */
+  ACCESS_KEY_ID: 'AWS_ACCESS_KEY_ID',
+  /** AWS secret access key for authentication */
+  SECRET_ACCESS_KEY: 'AWS_SECRET_ACCESS_KEY',
+} as const
 
 /**
  * Configuration settings for AWS integration.
@@ -26,7 +47,7 @@ export type AwsConfig = {
   /** String to prefix AWS resource names */
   resourcePrefix?: string
   /** AWS credentials or a provider function that returns credentials */
-  credentials?: AwsCredentialIdentity | Provider<AwsCredentialIdentity>
+  credentials: AwsCredentialIdentity | Provider<AwsCredentialIdentity>
 }
 
 let awsConfig: AwsConfig | undefined
@@ -35,8 +56,9 @@ let awsConfig: AwsConfig | undefined
  * Retrieves the AWS configuration settings from the environment variables.
  */
 export const getAwsConfig = (configScope?: ConfigScope): AwsConfig => {
-  /* v8 ignore next */
+  /* v8 ignore start */
   if (awsConfig) return awsConfig
+  /* v8 ignore stop */
 
   const resolvedConfigScope = configScope ?? new ConfigScope()
   awsConfig = generateAwsConfig(resolvedConfigScope)
@@ -47,11 +69,14 @@ export const getAwsConfig = (configScope?: ConfigScope): AwsConfig => {
 
 const generateAwsConfig = (configScope: ConfigScope): AwsConfig => {
   return {
-    region: configScope.getMandatory('AWS_REGION'),
-    kmsKeyId: configScope.getOptionalNullable('AWS_KMS_KEY_ID', ''),
-    allowedSourceOwner: configScope.getOptionalNullable('AWS_ALLOWED_SOURCE_OWNER', undefined),
-    endpoint: configScope.getOptionalNullable('AWS_ENDPOINT', undefined),
-    resourcePrefix: configScope.getOptionalNullable('AWS_RESOURCE_PREFIX', undefined),
+    region: configScope.getMandatory(AWS_CONFIG_ENV_VARS.REGION),
+    kmsKeyId: configScope.getOptionalNullable(AWS_CONFIG_ENV_VARS.KMS_KEY_ID, ''),
+    allowedSourceOwner: configScope.getOptionalNullable(
+      AWS_CONFIG_ENV_VARS.ALLOWED_SOURCE_OWNER,
+      undefined,
+    ),
+    endpoint: configScope.getOptionalNullable(AWS_CONFIG_ENV_VARS.ENDPOINT, undefined),
+    resourcePrefix: configScope.getOptionalNullable(AWS_CONFIG_ENV_VARS.RESOURCE_PREFIX, undefined),
     credentials: resolveCredentials(configScope),
   }
 }
@@ -67,8 +92,11 @@ const validateAwsConfig = (config: AwsConfig): void => {
 const resolveCredentials = (
   configScope: ConfigScope,
 ): AwsCredentialIdentity | Provider<AwsCredentialIdentity> => {
-  const accessKeyId = configScope.getOptionalNullable('AWS_ACCESS_KEY_ID', undefined)
-  const secretAccessKey = configScope.getOptionalNullable('AWS_SECRET_ACCESS_KEY', undefined)
+  const accessKeyId = configScope.getOptionalNullable(AWS_CONFIG_ENV_VARS.ACCESS_KEY_ID, undefined)
+  const secretAccessKey = configScope.getOptionalNullable(
+    AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY,
+    undefined,
+  )
 
   if (accessKeyId && secretAccessKey) return { accessKeyId, secretAccessKey }
 

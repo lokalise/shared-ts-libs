@@ -25,14 +25,19 @@ describe('AbstractCounterMetric', () => {
 
   beforeEach(() => {
     incMock = vi.fn()
-    labelsMock = vi.fn().mockImplementation(() => ({ inc: incMock }))
-    counterMock = vi.fn().mockImplementation(() => ({ labels: labelsMock }))
+    // biome-ignore lint/complexity/useArrowFunction: required for vitest
+    labelsMock = vi.fn().mockImplementation(function () {
+      return { inc: incMock }
+    })
+    // biome-ignore lint/complexity/useArrowFunction: required for vitest
+    counterMock = vi.fn().mockImplementation(function () {
+      return { labels: labelsMock }
+    })
+
     getSingleMetricMock = vi.fn()
     client = {
       Counter: counterMock,
-      register: {
-        getSingleMetric: getSingleMetricMock,
-      },
+      register: { getSingleMetric: getSingleMetricMock },
     } as any as typeof promClient
   })
 

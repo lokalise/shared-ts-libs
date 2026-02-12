@@ -66,11 +66,12 @@ class TestHealthcheck2 extends AbstractHealthcheck<SupportedHealthchecks> implem
 }
 
 const transactionObservabilityManager: TransactionObservabilityManager = {
-  /* v8 ignore next 4 */
+  /* v8 ignore start */
   start: () => {},
   startWithGroup: () => {},
   stop: () => {},
   addCustomAttributes: () => {},
+  /* v8 ignore stop */
 }
 
 let store: HealthcheckResultsStore<SupportedHealthchecks>

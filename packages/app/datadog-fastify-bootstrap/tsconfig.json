@@ -1,0 +1,7 @@
+{
+    "extends": "@lokalise/tsconfig/tsc",
+    "include": ["src/**/*"],
+    "compilerOptions": {
+        "types": ["node"]
+    }
+}

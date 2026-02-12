@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     watch: false,
-    restoreMocks: true,
+    mockReset: true,
     pool: 'threads',
     coverage: {
       provider: 'v8',
@@ -17,6 +17,10 @@ export default defineConfig({
         branches: 100,
         statements: 100,
       },
+    },
+    typecheck: {
+      enabled: true,
+      include: ['src/**/*.spec.ts'],
     },
   },
 })

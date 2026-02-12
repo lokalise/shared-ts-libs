@@ -19,8 +19,9 @@ export const upsertEnvValue = (
   envContents: string,
   parsedEnv: Record<string, string>,
 ) => {
-  /* c8 ignore next */
+  /* c8 ignore start */
   const formattedValue = value.includes('\n') ? `"${value.trim()}"` : value
+  /* v8 ignore stop */
 
   // Append to the end
   if (!Object.keys(parsedEnv).includes(key)) {

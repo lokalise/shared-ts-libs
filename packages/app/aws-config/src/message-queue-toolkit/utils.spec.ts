@@ -1,14 +1,14 @@
 import type { AwsConfig } from '../awsConfig.ts'
-import type { TopicConfig } from '../event-routing/eventRoutingConfig.ts'
+import type { QueueConfig, TopicConfig } from '../event-routing/eventRoutingConfig.ts'
 import {
   buildQueueUrlsWithSubscribePermissionsPrefix,
   buildTopicArnsWithPublishPermissionsPrefix,
-  QUEUE_NAME_REGEX,
-  TOPIC_NAME_REGEX,
+  validateQueueConfig,
+  validateTopicsConfig,
 } from './utils.ts'
 
 const buildTopicConfig = (
-  config: Pick<TopicConfig, 'topicName' | 'isExternal' | 'externalAppsWithSubscribePermissions'>,
+  config?: Pick<TopicConfig, 'topicName' | 'isExternal' | 'externalAppsWithSubscribePermissions'>,
 ): TopicConfig =>
   ({
     ...config,
@@ -22,174 +22,191 @@ const buildAwsConfig = (resourcePrefix?: string): AwsConfig => ({
   kmsKeyId: '',
   allowedSourceOwner: '',
   region: '',
+  credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
 })
 
 describe('utils', () => {
-  describe('TOPIC_NAME_REGEX', () => {
-    it.each(['foo-bar', 'one_two-three_four', 'foo-bar-baz'])('should match regex (%s)', (name) => {
-      expect(TOPIC_NAME_REGEX.test(name)).toBe(true)
+  describe('validateTopicsConfig', () => {
+    const project = 'my-project'
+
+    it('should validate valid topic names', () => {
+      const validTopics = [
+        { topicName: 'my-project-module', queues: {} },
+        { topicName: 'my-project-module_name', queues: {} },
+        { topicName: 'my-project-user_service', queues: {} },
+        { topicName: 'my-project_legacy', queues: {} }, // underscore allowed for backwards compatibility
+      ] as TopicConfig[]
+
+      expect(() => validateTopicsConfig(validTopics, project)).not.toThrow()
+    })
+
+    it('should throw error for topic name that is too long', () => {
+      const longName = `my-project-${'a'.repeat(250)}`
+      const topics: TopicConfig[] = [
+        { topicName: longName, queues: {} },
+        { topicName: longName, isExternal: true, queues: {} },
+      ] as TopicConfig[]
+
+      expect(() => validateTopicsConfig(topics, project)).toThrow(
+        `Topic name too long: ${longName}. Max allowed length is 246`,
+      )
+    })
+
+    it('should throw error for topic name that does not start with project', () => {
+      const topics: TopicConfig[] = [{ topicName: 'wrong-module', queues: {} } as TopicConfig]
+
+      expect(() => validateTopicsConfig(topics, project)).toThrow(
+        `Topic name must start with project name 'my-project': wrong-module`,
+      )
+    })
+
+    it('should not validate external topics', () => {
+      const topics: TopicConfig[] = [
+        { topicName: 'wrong-module', isExternal: true, queues: {} } as TopicConfig,
+      ]
+
+      expect(() => validateTopicsConfig(topics, project)).not.toThrow()
     })
 
     it.each([
-      // Numbers not allowed
-      'foo1-bar',
-      'foo-bar1',
+      'my-project', // missing entity/flow
+      'my-projectmodule', // missing separator
+      'my-project-Module', // uppercase is not allowed
+      'my-project-module-name', // hyphen instead of underscore
+      'my-project-module1', // number is not allowed
+      'my-project-_module', // underscore at start of module
+      'my-project-module_', // trailing underscore
+      'my-project-module__name', // double underscore
+    ])('should throw error for invalid topic name pattern: %s', (topicName) => {
+      const topicConfig = { topicName, queues: {} } as TopicConfig
 
-      // Underscore placement errors
-      'foo-_bar', // underscore at start of second part
-      '_foo-bar', // leading underscore in first part
-      'foo_-bar', // trailing underscore in first part
-      'foo-bar_', // trailing underscore in second part
-      'foo_bar-', // second part empty with underscore
-      'foo-bar_baz_', // trailing underscore in second part
-      '_foo_bar-baz', // leading underscore in first part with multi-underscore
-      'foo-bar-_baz', // leading underscore in second part
+      expect(() => validateTopicsConfig([topicConfig], project)).toThrow(
+        `Invalid topic name: ${topicName}`,
+      )
+    })
 
-      // Double underscores (consecutive underscores not allowed)
-      'foo__bar-baz', // double underscore in first part
-      'foo-bar__baz', // double underscore in second part
+    it('should validate queues when topic is valid', () => {
+      const topics: TopicConfig[] = [
+        {
+          topicName: 'my-project-module',
+          queues: {
+            queue1: { queueName: 'my-project-BadName' } as QueueConfig,
+          },
+          service: '',
+          owner: '',
+        } as TopicConfig,
+      ]
 
-      // Hyphen issues (only one hyphen allowed between two sections)
-      'foo--bar', // double hyphen
-      'foo-', // second part empty
-      '-bar', // first part missing
-      'foo-', // second part empty
-
-      // Spaces not allowed
-      'foo bar-baz',
-      'foo-bar baz',
-      'foo -bar',
-      'foo- bar',
-
-      // Uppercase not allowed
-      'Foo-bar',
-      'foo-Bar',
-      'FOO-bar',
-      'foo-BAR',
-    ])('should not match regex (%s)', (name) => {
-      expect(TOPIC_NAME_REGEX.test(name)).toBe(false)
+      expect(() => validateTopicsConfig(topics, project)).toThrow(
+        'Invalid queue name: my-project-BadName',
+      )
     })
   })
 
-  describe('QUEUE_NAME_REGEX', () => {
-    it.each([
-      // 2 section (valid)
-      'system-flow',
-      // 3 sections (valid)
-      'system-flow-service',
-      'my_system-main_flow-main_service',
-      'a-b-c',
-      'sys_name-flow_name-service_name',
-      'one_two-three_four-five_six',
-      // 4 sections
-      'system-flow-service-module',
-      'my_system-main_flow-main_service-module_name',
-      'a-b-c-d',
-      'one_two-three_four-five_six-seven_eight',
-    ])('should match regex (%s)', (name) => {
-      expect(QUEUE_NAME_REGEX.test(name)).toBe(true)
+  describe('validateQueueConfig', () => {
+    const project = 'my-project'
+
+    it('should validate valid queue names', () => {
+      const validQueues = [
+        { queueName: 'my-project_flow' },
+        { queueName: 'my-project-flow-service' },
+        { queueName: 'my-project-flow_name-service_name' },
+        { queueName: 'my-project-user_service-handler' },
+        { queueName: 'my-project-flow-service-module' },
+        { queueName: 'my-project-user_service-handler-processor' },
+        { queueName: 'my-project_legacy-service' },
+        { queueName: 'my-project_legacy-service' },
+      ] as QueueConfig[]
+
+      expect(() => validateQueueConfig(validQueues, project)).not.toThrow()
+    })
+
+    it('should throw error for queue name that is too long', () => {
+      const longName = `my-project-${'a'.repeat(70)}`
+      const queues = [
+        { queueName: longName },
+        { queueName: longName, isExternal: true },
+      ] as QueueConfig[]
+
+      expect(() => validateQueueConfig(queues, project)).toThrow(
+        `Queue name too long: ${longName}. Max allowed length is 64`,
+      )
+    })
+
+    it('should throw error for queue name that does not start with project', () => {
+      const queues = [{ queueName: 'wrong-flow-service' }] as QueueConfig[]
+
+      expect(() => validateQueueConfig(queues, project)).toThrow(
+        `Queue name must start with project name 'my-project': wrong-flow-service`,
+      )
+    })
+
+    it('should skip validation for external queues', () => {
+      const queues = [{ queueName: 'wrong-flow-service', isExternal: true }] as QueueConfig[]
+
+      expect(() => validateQueueConfig(queues, project)).not.toThrow()
     })
 
     it.each([
-      // too few sections
-      'queue',
-      // too many sections (> 4)
-      'a-b-c-d-e',
-      'foo-bar-baz-qux-fifth',
-      // invalid characters
-      'system1-flow-service', // number in first section
-      'system-flow1-service', // number in second section
-      'system-flow-service1', // number in third section
-      'system-flow-service-module1', // number in fourth section
-      'System-flow-service', // uppercase
-      'system-Flow-service', // uppercase
-      'system-flow-Queue', // uppercase
-      // invalid underscores
-      '_system-flow-service', // leading underscore in first
-      'system_-flow-service', // trailing underscore in first
-      'system-flow-_service', // leading underscore in third
-      'system-flow-service_', // trailing underscore in third
-      'system__name-flow-service', // double underscore in first part
-      'system-flow__name-service', // double underscore in second part
-      'system-flow-service__name', // double underscore in third part
-      'system-flow-service__name-module_name', // double underscore in third when 4 sections
-      // spaces and invalid hyphens
-      'system flow-service-name', // space
-      'system--flow-service', // double hyphen
-      'system-flow--service', // double hyphen
-      'system-flow-service--module', // double hyphen in 4th part
-    ])('should not match regex (%s)', (name) => {
-      expect(QUEUE_NAME_REGEX.test(name)).toBe(false)
+      'my-project', // missing pieces
+      'my-projectflow', // missing separators
+      'my-project-Flow-service', // uppercase is not allowed
+      'my-project-flow-Service', // uppercase is not allowed
+      'my-project-flow1-service', // number is not allowed
+      'my-project-flow-service1', // number is not allowed
+      'my-project-_flow-service', // underscore at start
+      'my-project-flow_-service', // trailing underscore
+      'my-project-flow-_service', // underscore at start
+      'my-project-flow-service_', // trailing underscore
+      'my-project-flow__name-service', // double underscore
+      'my-project-flow-service__name', // double underscore
+      'my-project-flow-service-module-extra', // too many segments
+    ])('should throw error for invalid queue name pattern: %s', (queueName) => {
+      const queueConfig = { queueName } as QueueConfig
+
+      expect(() => validateQueueConfig([queueConfig], project)).toThrow(
+        `Invalid queue name: ${queueName}`,
+      )
     })
   })
 
   describe('buildTopicArnsWithPublishPermissionsPrefix', () => {
-    it('should throw an error if app name cannot be extracted', () => {
-      expect(() =>
-        buildTopicArnsWithPublishPermissionsPrefix(
-          buildTopicConfig({ topicName: '   ' }),
-          buildAwsConfig(),
-        ),
-      ).toThrowErrorMatchingInlineSnapshot('[Error: Invalid topic name    ]')
-    })
-
-    it('correctly composes ARN for typical valid topic', () => {
-      const result = buildTopicArnsWithPublishPermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app-' }),
-        buildAwsConfig(),
-      )
-      expect(result).toMatchInlineSnapshot(`"arn:aws:sns:*:*:my_app-*"`)
-    })
-
-    it('ensures wildcard is always present', () => {
+    it('correctly composes ARN', () => {
       const result = buildTopicArnsWithPublishPermissionsPrefix(
         buildTopicConfig({ topicName: 'my_app' }),
         buildAwsConfig(),
       )
-      expect(result).toMatchInlineSnapshot(`"arn:aws:sns:*:*:my_app-*"`)
+      expect(result).toMatchInlineSnapshot(`"arn:aws:sns:*:*:my_app*"`)
     })
 
     it('should use prefix from awsConfig', () => {
       const resourcePrefix = 'dev'
       const result1 = buildTopicArnsWithPublishPermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app-' }),
-        buildAwsConfig(resourcePrefix),
-      )
-      expect(result1).toMatchInlineSnapshot(`"arn:aws:sns:*:*:dev_my_app-*"`)
-
-      const result2 = buildTopicArnsWithPublishPermissionsPrefix(
         buildTopicConfig({ topicName: 'my_app' }),
         buildAwsConfig(resourcePrefix),
       )
-      expect(result2).toMatchInlineSnapshot(`"arn:aws:sns:*:*:dev_my_app-*"`)
+      expect(result1).toMatchInlineSnapshot(`"arn:aws:sns:*:*:dev_my_app*"`)
     })
   })
 
   describe('buildQueueUrlsWithSubscribePermissionsPrefix', () => {
-    it('should throw an error if app name cannot be extracted', () => {
-      expect(() =>
-        buildQueueUrlsWithSubscribePermissionsPrefix(
-          buildTopicConfig({ topicName: '   ' }),
-          buildAwsConfig(),
-        ),
-      ).toThrowErrorMatchingInlineSnapshot('[Error: Invalid topic name    ]')
-    })
-
     it('correctly composes ARN for typical valid topic', () => {
       const result = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app-' }),
+        buildTopicConfig(),
+        'my-app',
         buildAwsConfig(),
       )
       expect(result).toMatchInlineSnapshot(`
         [
-          "arn:aws:sqs:*:*:my_app-*",
+          "arn:aws:sqs:*:*:my-app-*",
         ]
       `)
     })
 
     it('should be undefined for external topics', () => {
       const result = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app-', isExternal: true }),
+        buildTopicConfig({ topicName: 'test', isExternal: true }),
+        'app',
         buildAwsConfig(),
       )
       expect(result).toBeUndefined()
@@ -197,65 +214,45 @@ describe('utils', () => {
 
     it('ensures wildcard is always present', () => {
       const result = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app' }),
+        buildTopicConfig(),
+        'my-app',
         buildAwsConfig(),
       )
       expect(result).toMatchInlineSnapshot(`
         [
-          "arn:aws:sqs:*:*:my_app-*",
+          "arn:aws:sqs:*:*:my-app-*",
         ]
       `)
     })
 
     it('should use prefix awsConfig', () => {
       const resourcePrefix = 'dev'
-      const result1 = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app-' }),
+      const result = buildQueueUrlsWithSubscribePermissionsPrefix(
+        buildTopicConfig(),
+        'my-app',
         buildAwsConfig(resourcePrefix),
       )
-      expect(result1).toMatchInlineSnapshot(`
+      expect(result).toMatchInlineSnapshot(`
         [
-          "arn:aws:sqs:*:*:dev_my_app-*",
-        ]
-      `)
-
-      const result2 = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app' }),
-        buildAwsConfig(resourcePrefix),
-      )
-      expect(result2).toMatchInlineSnapshot(`
-        [
-          "arn:aws:sqs:*:*:dev_my_app-*",
+          "arn:aws:sqs:*:*:dev_my-app-*",
         ]
       `)
     })
 
     it('should use externalAppsWithSubscribePermissions', () => {
       const resourcePrefix = 'dev'
-      const externalAppsWithSubscribePermissions = ['my_test1', 'my_test2-', 'my_test3-*']
-      const result1 = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app-', externalAppsWithSubscribePermissions }),
+      const externalAppsWithSubscribePermissions = ['my-test1', 'my-test2-', 'my-test3-*']
+      const result = buildQueueUrlsWithSubscribePermissionsPrefix(
+        buildTopicConfig({ topicName: 'test', externalAppsWithSubscribePermissions }),
+        'my-app-',
         buildAwsConfig(resourcePrefix),
       )
-      expect(result1).toMatchInlineSnapshot(`
+      expect(result).toMatchInlineSnapshot(`
         [
-          "arn:aws:sqs:*:*:dev_my_app-*",
-          "arn:aws:sqs:*:*:dev_my_test1-*",
-          "arn:aws:sqs:*:*:dev_my_test2-*",
-          "arn:aws:sqs:*:*:dev_my_test3-*",
-        ]
-      `)
-
-      const result2 = buildQueueUrlsWithSubscribePermissionsPrefix(
-        buildTopicConfig({ topicName: 'my_app', externalAppsWithSubscribePermissions }),
-        buildAwsConfig(resourcePrefix),
-      )
-      expect(result2).toMatchInlineSnapshot(`
-        [
-          "arn:aws:sqs:*:*:dev_my_app-*",
-          "arn:aws:sqs:*:*:dev_my_test1-*",
-          "arn:aws:sqs:*:*:dev_my_test2-*",
-          "arn:aws:sqs:*:*:dev_my_test3-*",
+          "arn:aws:sqs:*:*:dev_my-app-*",
+          "arn:aws:sqs:*:*:dev_my-test1-*",
+          "arn:aws:sqs:*:*:dev_my-test2-*",
+          "arn:aws:sqs:*:*:dev_my-test3-*",
         ]
       `)
     })

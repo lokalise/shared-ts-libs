@@ -145,7 +145,6 @@ export const lokaliseSupportedLanguagesAndLocales = [
   'wa',
   'wo',
   'xh',
-  'yi',
   'yo',
   'za',
   'gn',

@@ -1,4 +1,4 @@
-import { buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
+import { buildRestContract } from '@lokalise/api-contracts'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod/v4'
 import { buildFastifyNoPayloadRoute, buildFastifyPayloadRoute } from './fastifyApiContracts.ts'
@@ -16,7 +16,8 @@ declare module '@lokalise/api-contracts' {
 describe('fastifyApiContracts - api contract metadata mapper', () => {
   describe('buildFastifyNoPayloadRoute', () => {
     it('should use metadata mapper to build the route', () => {
-      const contract = buildGetRoute({
+      const contract = buildRestContract({
+        method: 'get',
         successResponseBodySchema: SCHEMA,
         requestPathParamsSchema: SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.id}`,
@@ -47,7 +48,7 @@ describe('fastifyApiContracts - api contract metadata mapper', () => {
 
   describe('buildFastifyPayloadRoute', () => {
     it('should use metadata mapper to build the route', () => {
-      const contract = buildPayloadRoute({
+      const contract = buildRestContract({
         method: 'post',
         requestBodySchema: SCHEMA,
         successResponseBodySchema: SCHEMA,

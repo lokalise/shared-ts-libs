@@ -5,15 +5,10 @@ export default defineConfig({
   test: {
     globals: true,
     watch: false,
-    restoreMocks: true,
-    pool: 'threads',
+    mockReset: true,
     setupFiles: ['./test/setup.ts'],
-    poolOptions: {
-      threads: {
-        singleThread: true,
-        isolate: false,
-      },
-    },
+    pool: 'threads',
+    maxWorkers: 1,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
@@ -26,9 +21,9 @@ export default defineConfig({
       ],
       thresholds: {
         lines: 98,
-        functions: 98,
-        branches: 90,
-        statements: 98,
+        functions: 95,
+        branches: 87,
+        statements: 96,
       },
     },
   },

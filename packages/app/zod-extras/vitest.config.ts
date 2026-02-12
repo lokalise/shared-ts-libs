@@ -7,13 +7,12 @@ export default defineConfig({
     globals: true,
     watch: false,
     environment: 'node',
-    restoreMocks: true,
+    mockReset: true,
     reporters: ['default'],
     coverage: {
       include: ['src/**/*.ts'],
       exclude: ['src/**/*.test.ts', 'src/index.ts'],
       reporter: ['text'],
-      all: true,
       thresholds: {
         lines: 100,
         functions: 100,

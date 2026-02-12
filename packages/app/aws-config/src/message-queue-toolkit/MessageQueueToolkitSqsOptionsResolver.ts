@@ -16,6 +16,7 @@ import type {
   ResolvedPublisherOptions,
   ResolvePublisherOptionsParams,
 } from './types.ts'
+import { validateQueueConfig } from './utils.ts'
 
 /**
  * Options resolver for MQT SQS lib.
@@ -25,9 +26,11 @@ export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueT
 
   constructor(commandConfig: CommandConfig, config: MessageQueueToolkitOptionsResolverConfig) {
     super(config)
-    this.commandConfig = groupByUnique(Object.values(commandConfig), 'queueName')
+    if (config.validateNamePatterns) {
+      validateQueueConfig(Object.values(commandConfig), config.project)
+    }
 
-    this.validateQueueNames(Object.values(this.commandConfig).flatMap((queue) => queue.queueName))
+    this.commandConfig = groupByUnique(Object.values(commandConfig), 'queueName')
   }
 
   /**

@@ -8,12 +8,86 @@ This reduces amount of assumptions FE needs to make about the behaviour of BE, r
 written on FE, and makes the code more type-safe (as path parameter setting is handled by logic exposed by BE, in a
 type-safe way).
 
+## Universal Contract Builder
+
+Use `buildContract` as a single entry point for creating any type of API contract. It automatically delegates to the appropriate specialized builder based on the configuration:
+
+| `sseEvents` | Contract Type |
+|-------------|---------------|
+| ❌ | REST contract (GET, POST, PUT, PATCH, DELETE) |
+| ✅ | SSE or Dual-mode contract |
+
+```ts
+import { buildContract } from '@lokalise/api-contracts'
+import { z } from 'zod'
+
+// REST GET route
+const getUsers = buildContract({
+    successResponseBodySchema: z.array(userSchema),
+    pathResolver: () => '/api/users',
+})
+
+// REST POST route
+const createUser = buildContract({
+    method: 'post',
+    requestBodySchema: createUserSchema,
+    successResponseBodySchema: userSchema,
+    pathResolver: () => '/api/users',
+})
+
+// REST DELETE route
+const deleteUser = buildContract({
+    method: 'delete',
+    requestPathParamsSchema: z.object({ userId: z.string() }),
+    pathResolver: (params) => `/api/users/${params.userId}`,
+})
+
+// SSE-only streaming endpoint
+const notifications = buildContract({
+    pathResolver: () => '/api/notifications/stream',
+    params: z.object({}),
+    query: z.object({}),
+    requestHeaders: z.object({}),
+    sseEvents: {
+        notification: z.object({ id: z.string(), message: z.string() }),
+    },
+})
+
+// Dual-mode endpoint (supports both JSON and SSE)
+const chatCompletion = buildContract({
+    method: 'post',
+    pathResolver: () => '/api/chat/completions',
+    params: z.object({}),
+    query: z.object({}),
+    requestHeaders: z.object({}),
+    requestBody: z.object({ message: z.string() }),
+    syncResponseBody: z.object({ reply: z.string() }),
+    sseEvents: {
+        chunk: z.object({ delta: z.string() }),
+        done: z.object({ usage: z.object({ tokens: z.number() }) }),
+    },
+})
+```
+
+You can also use the specialized builders directly (`buildRestContract`, `buildSseContract`) if you prefer explicit control over contract types.
+
+## REST Contracts
+
+Use `buildRestContract` to create REST API contracts. The contract type is automatically determined based on the configuration:
+
+| `method` | `requestBodySchema` | Result |
+|----------|---------------------|--------|
+| omitted/undefined | ❌ | GET route |
+| `'delete'` | ❌ | DELETE route |
+| `'post'`/`'put'`/`'patch'` | ✅ | Payload route |
+
 Usage examples:
 
 ```ts
-import { buildGetRoute, buildDeleteRoute, buildPayloadRoute } from '@lokalise/api-contracts'
+import { buildRestContract } from '@lokalise/api-contracts'
 
-const getContract = buildGetRoute({
+// GET route - method is inferred automatically
+const getContract = buildRestContract({
     successResponseBodySchema: RESPONSE_BODY_SCHEMA,
     requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
     requestQuerySchema: REQUEST_QUERY_SCHEMA,
@@ -24,8 +98,9 @@ const getContract = buildGetRoute({
     metadata: { allowedRoles: ['admin'] },
 })
 
-const postContract = buildPayloadRoute({
-    method: 'post', // can also be 'patch' or 'post'
+// POST route - requires method and requestBodySchema
+const postContract = buildRestContract({
+    method: 'post', // can also be 'put' or 'patch'
     successResponseBodySchema: RESPONSE_BODY_SCHEMA,
     requestBodySchema: REQUEST_BODY_SCHEMA,
     pathResolver: () => '/',
@@ -33,11 +108,33 @@ const postContract = buildPayloadRoute({
     metadata: { allowedPermission: ['edit'] },
 })
 
-const deleteContract = buildDeleteRoute({
+// DELETE route - method is 'delete', no body, defaults isEmptyResponseExpected to true
+const deleteContract = buildRestContract({
+    method: 'delete',
     successResponseBodySchema: RESPONSE_BODY_SCHEMA,
     requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
     pathResolver: (pathParams) => `/users/${pathParams.userId}`,
 })
+```
+
+### Deprecated Builders
+
+The individual builders `buildGetRoute`, `buildPayloadRoute`, and `buildDeleteRoute` are deprecated. Use `buildRestContract` instead:
+
+```ts
+// Before (deprecated):
+import { buildGetRoute, buildPayloadRoute, buildDeleteRoute } from '@lokalise/api-contracts'
+
+const getContract = buildGetRoute({ ... })
+const postContract = buildPayloadRoute({ method: 'post', ... })
+const deleteContract = buildDeleteRoute({ ... })
+
+// After (recommended):
+import { buildRestContract } from '@lokalise/api-contracts'
+
+const getContract = buildRestContract({ ... })  // method inferred as 'get'
+const postContract = buildRestContract({ method: 'post', ... })
+const deleteContract = buildRestContract({ method: 'delete', ... })
 ```
 
 In the previous example, the `metadata` property is an optional, free-form field that allows you to store any additional
@@ -72,10 +169,10 @@ In case you are using fastify on the backend, you can also use `@lokalise/fastif
 Use `requestHeaderSchema` to define and validate headers that the client must send with the request. This is useful for authentication headers, API keys, content negotiation, and other request-specific headers.
 
 ```ts
-import { buildGetRoute } from '@lokalise/api-contracts'
+import { buildRestContract } from '@lokalise/api-contracts'
 import { z } from 'zod'
 
-const contract = buildGetRoute({
+const contract = buildRestContract({
     successResponseBodySchema: DATA_SCHEMA,
     requestHeaderSchema: z.object({
         'authorization': z.string(),
@@ -95,10 +192,10 @@ Use `responseHeaderSchema` to define and validate headers that the server will s
 - Custom API metadata headers
 
 ```ts
-import { buildGetRoute } from '@lokalise/api-contracts'
+import { buildRestContract } from '@lokalise/api-contracts'
 import { z } from 'zod'
 
-const contract = buildGetRoute({
+const contract = buildRestContract({
     successResponseBodySchema: DATA_SCHEMA,
     responseHeaderSchema: z.object({
         'x-ratelimit-limit': z.string(),
@@ -113,7 +210,7 @@ const contract = buildGetRoute({
 Both header schemas can be used together in a single contract:
 
 ```ts
-const contract = buildGetRoute({
+const contract = buildRestContract({
     successResponseBodySchema: DATA_SCHEMA,
     requestHeaderSchema: z.object({
         'authorization': z.string(),
@@ -139,9 +236,9 @@ These header schemas are primarily used for:
 Converts a route definition to its corresponding path pattern with parameter placeholders.
 
 ```ts
-import { mapRouteToPath, buildGetRoute } from '@lokalise/api-contracts'
+import { mapRouteToPath, buildRestContract } from '@lokalise/api-contracts'
 
-const userContract = buildGetRoute({
+const userContract = buildRestContract({
     requestPathParamsSchema: z.object({ userId: z.string() }),
     successResponseBodySchema: USER_SCHEMA,
     pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -163,19 +260,19 @@ The function replaces actual path parameters with placeholder syntax (`:paramNam
 Generates a human-readable description of a route contract, combining the HTTP method with the route path.
 
 ```ts
-import { describeContract, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
+import { describeContract, buildRestContract } from '@lokalise/api-contracts'
 
-const getContract = buildGetRoute({
+const getContract = buildRestContract({
     requestPathParamsSchema: z.object({ userId: z.string() }),
     successResponseBodySchema: USER_SCHEMA,
     pathResolver: (pathParams) => `/users/${pathParams.userId}`,
 })
 
-const postContract = buildPayloadRoute({
+const postContract = buildRestContract({
     method: 'post',
-    requestPathParamsSchema: z.object({ 
+    requestPathParamsSchema: z.object({
         orgId: z.string(),
-        userId: z.string() 
+        userId: z.string()
     }),
     requestBodySchema: CREATE_USER_SCHEMA,
     successResponseBodySchema: USER_SCHEMA,
@@ -191,3 +288,146 @@ This function is particularly useful for:
 - Generating documentation or route summaries
 - Error messages that need to reference specific endpoints
 - Test descriptions and assertions
+
+## SSE and Dual-Mode Contracts
+
+Use `buildSseContract` for endpoints that support Server-Sent Events (SSE) streaming. This builder supports two contract types:
+
+### SSE-Only Contracts
+
+Pure streaming endpoints that only return SSE events. Use these for real-time notifications, live feeds, or any endpoint that only streams data.
+
+```ts
+import { buildSseContract } from '@lokalise/api-contracts'
+import { z } from 'zod'
+
+// GET SSE endpoint for live notifications
+const notificationsStream = buildSseContract({
+    pathResolver: () => '/api/notifications/stream',
+    params: z.object({}),
+    query: z.object({ userId: z.string().optional() }),
+    requestHeaders: z.object({}),
+    sseEvents: {
+        notification: z.object({ id: z.string(), message: z.string() }),
+    },
+})
+// Result: isSSE: true
+
+// POST SSE endpoint (e.g., streaming file processing)
+const processStream = buildSseContract({
+    method: 'post',
+    pathResolver: () => '/api/process/stream',
+    params: z.object({}),
+    query: z.object({}),
+    requestHeaders: z.object({}),
+    requestBody: z.object({ fileId: z.string() }),
+    sseEvents: {
+        progress: z.object({ percent: z.number() }),
+        done: z.object({ result: z.string() }),
+    },
+})
+// Result: isSSE: true
+
+// SSE endpoint with error schemas (for errors before streaming starts)
+const channelStream = buildSseContract({
+    pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
+    params: z.object({ channelId: z.string() }),
+    query: z.object({}),
+    requestHeaders: z.object({ authorization: z.string() }),
+    sseEvents: {
+        message: z.object({ text: z.string() }),
+    },
+    // Errors returned before streaming begins
+    responseSchemasByStatusCode: {
+        401: z.object({ error: z.literal('Unauthorized') }),
+        404: z.object({ error: z.literal('Channel not found') }),
+    },
+})
+```
+
+### Dual-Mode (Hybrid) Contracts
+
+Hybrid endpoints that support **both** synchronous JSON responses **and** SSE streaming from the same URL. The response mode is determined by the client's `Accept` header:
+- `Accept: application/json` → Synchronous JSON response
+- `Accept: text/event-stream` → SSE streaming
+
+This pattern is ideal for AI/LLM APIs (like OpenAI's Chat Completions API) where clients can choose between getting the full response at once or streaming it token-by-token.
+
+```ts
+import { buildSseContract } from '@lokalise/api-contracts'
+import { z } from 'zod'
+
+// OpenAI-style chat completion endpoint
+// - Accept: application/json → returns { reply, usage } immediately
+// - Accept: text/event-stream → streams chunk events, then done event
+const chatCompletion = buildSseContract({
+    method: 'post',
+    pathResolver: () => '/api/chat/completions',
+    params: z.object({}),
+    query: z.object({}),
+    requestHeaders: z.object({}),
+    requestBody: z.object({ message: z.string() }),
+    // Adding syncResponseBody makes it dual-mode
+    syncResponseBody: z.object({
+        reply: z.string(),
+        usage: z.object({ tokens: z.number() }),
+    }),
+    sseEvents: {
+        chunk: z.object({ delta: z.string() }),
+        done: z.object({ usage: z.object({ totalTokens: z.number() }) }),
+    },
+})
+// Result: isDualMode: true
+
+// GET dual-mode endpoint for job status (poll or stream)
+const jobStatus = buildSseContract({
+    pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
+    params: z.object({ jobId: z.string().uuid() }),
+    query: z.object({ verbose: z.string().optional() }),
+    requestHeaders: z.object({}),
+    syncResponseBody: z.object({
+        status: z.enum(['pending', 'running', 'completed', 'failed']),
+        progress: z.number(),
+    }),
+    sseEvents: {
+        progress: z.object({ percent: z.number() }),
+        done: z.object({ result: z.string() }),
+    },
+})
+// Result: isDualMode: true
+```
+
+### Response Schemas by Status Code
+
+Both SSE-only and dual-mode contracts support `responseSchemasByStatusCode` for defining different response shapes for errors that occur **before streaming starts** (e.g., authentication failures, validation errors, resource not found):
+
+```ts
+const chatCompletion = buildSseContract({
+    method: 'post',
+    pathResolver: () => '/api/chat/completions',
+    params: z.object({}),
+    query: z.object({}),
+    requestHeaders: z.object({ authorization: z.string() }),
+    requestBody: z.object({ message: z.string() }),
+    syncResponseBody: z.object({ reply: z.string() }),
+    sseEvents: {
+        chunk: z.object({ delta: z.string() }),
+    },
+    responseSchemasByStatusCode: {
+        400: z.object({ error: z.string(), details: z.array(z.string()) }),
+        401: z.object({ error: z.literal('Unauthorized') }),
+        429: z.object({ error: z.string(), retryAfter: z.number() }),
+    },
+})
+```
+
+### Contract Type Detection
+
+`buildSseContract` automatically determines the contract type based on the presence of `syncResponseBody`:
+
+| `syncResponseBody` | `requestBody` | Result |
+|-------------------|---------------|--------|
+| ❌ | ❌ | SSE-only GET |
+| ❌ | ✅ | SSE-only POST/PUT/PATCH |
+| ✅ | ❌ | Dual-mode GET |
+| ✅ | ✅ | Dual-mode POST/PUT/PATCH |

@@ -24,11 +24,12 @@ export class TestBasicBackgroundJobProcessor<
     super(
       {
         transactionObservabilityManager: {
-          /* v8 ignore next 4 */
+          /* v8 ignore start */
           start: () => {},
           startWithGroup: () => {},
           stop: () => {},
           addCustomAttributes: () => {},
+          /* v8 ignore stop */
         },
         logger: dependencies.logger,
         errorReporter: dependencies.errorReporter,

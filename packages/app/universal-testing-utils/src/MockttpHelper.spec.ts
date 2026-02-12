@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch, { type Wretch } from 'wretch'
 import {
   getContract,
+  getContractWithPathAndQueryParams,
   getContractWithPathParams,
+  getContractWithQueryParams,
   postContract,
   postContractWithPathParams,
 } from '../test/testContracts.ts'
@@ -106,6 +108,42 @@ describe('MockttpHelper', () => {
                 "id": "2",
               }
             `)
+    })
+
+    it('mocks GET request with query params', async () => {
+      await mockttpHelper.mockValidResponse(getContractWithQueryParams, {
+        queryParams: { yearFrom: 2020 },
+        responseBody: { id: '1' },
+      })
+
+      const response = await sendByGetRoute(wretchClient, getContractWithQueryParams, {
+        queryParams: { yearFrom: 2020 },
+      })
+
+      expect(response).toMatchInlineSnapshot(`
+        {
+          "id": "1",
+        }
+      `)
+    })
+
+    it('mocks GET request with path params and query params', async () => {
+      await mockttpHelper.mockValidResponse(getContractWithPathAndQueryParams, {
+        pathParams: { userId: '3' },
+        queryParams: { yearFrom: 2020 },
+        responseBody: { id: '2' },
+      })
+
+      const response = await sendByGetRoute(wretchClient, getContractWithPathAndQueryParams, {
+        pathParams: { userId: '3' },
+        queryParams: { yearFrom: 2020 },
+      })
+
+      expect(response).toMatchInlineSnapshot(`
+        {
+          "id": "2",
+        }
+      `)
     })
   })
 

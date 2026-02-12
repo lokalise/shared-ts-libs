@@ -14,7 +14,8 @@
         "erasableSyntaxOnly": true,
         "noImplicitOverride": true,
         "noUncheckedIndexedAccess": true,
-        "noUncheckedSideEffectImports": true
+        "noUncheckedSideEffectImports": true,
+        "types": ["node", "vitest/globals"]
     },
     "include": [],
     "exclude": []

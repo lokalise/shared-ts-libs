@@ -1,6 +1,6 @@
-import { setTimeout } from 'node:timers/promises'
-import type { PollingStrategy, PollResult, RequestContext } from '../Poller.ts'
+import type { PollingHooks, PollingOptions, PollingStrategy, PollResult } from '../Poller.ts'
 import { PollingError, PollingFailureCause } from '../PollingError.ts'
+import { delay } from '../utils/delay.ts'
 
 /**
  * Configuration for exponential backoff polling strategy.
@@ -91,83 +91,94 @@ export class ExponentialBackoffStrategy implements PollingStrategy {
 
   async execute<T>(
     pollFn: (attempt: number) => Promise<PollResult<T>>,
-    reqContext: RequestContext,
-    metadata?: Record<string, unknown>,
-    signal?: AbortSignal,
+    options?: PollingOptions,
   ): Promise<T> {
-    this.checkAborted(signal, 0, metadata)
+    const { hooks, signal } = options ?? {}
+
+    this.checkAborted(signal, 0, hooks)
 
     for (let attempt = 1; attempt <= this.config.maxAttempts; attempt++) {
-      this.checkAborted(signal, attempt - 1, metadata)
+      this.checkAborted(signal, attempt - 1, hooks)
 
       const result = await pollFn(attempt)
 
+      hooks?.onAttempt?.({
+        attempt,
+        isComplete: result.isComplete,
+      })
+
       if (result.isComplete) {
-        this.logSuccess(reqContext, attempt, metadata)
+        hooks?.onSuccess?.({
+          totalAttempts: attempt,
+        })
         return result.value
       }
 
       if (attempt < this.config.maxAttempts) {
-        await this.waitBeforeRetry(attempt, reqContext, metadata, signal)
+        await this.waitBeforeRetry(attempt, options)
       }
     }
 
-    throw new PollingError(
+    const error = new PollingError(
       `Polling timeout after ${this.config.maxAttempts} attempts`,
       PollingFailureCause.TIMEOUT,
       this.config.maxAttempts,
-      metadata,
     )
+
+    hooks?.onFailure?.({
+      cause: PollingFailureCause.TIMEOUT,
+      attemptsMade: this.config.maxAttempts,
+    })
+
+    throw error
   }
 
   private checkAborted(
     signal: AbortSignal | undefined,
     attemptsMade: number,
-    metadata?: Record<string, unknown>,
+    hooks?: PollingHooks,
   ): void {
     if (signal?.aborted) {
-      throw new PollingError(
+      const error = new PollingError(
         `Polling cancelled after ${attemptsMade} attempts`,
         PollingFailureCause.CANCELLED,
         attemptsMade,
-        metadata,
       )
+
+      hooks?.onFailure?.({
+        cause: PollingFailureCause.CANCELLED,
+        attemptsMade,
+      })
+
+      throw error
     }
   }
 
-  private logSuccess(
-    reqContext: RequestContext,
-    attempt: number,
-    metadata?: Record<string, unknown>,
-  ): void {
-    reqContext.logger.debug(
-      { attempt, totalAttempts: this.config.maxAttempts, ...metadata },
-      'Polling completed successfully',
-    )
-  }
-
-  private async waitBeforeRetry(
-    attempt: number,
-    reqContext: RequestContext,
-    metadata: Record<string, unknown> | undefined,
-    signal: AbortSignal | undefined,
-  ): Promise<void> {
+  private async waitBeforeRetry(attempt: number, options?: PollingOptions): Promise<void> {
+    const { hooks, signal } = options ?? {}
     const delayMs = this.calculateDelay(attempt - 1)
-    reqContext.logger.debug(
-      { attempt, nextDelayMs: delayMs, ...metadata },
-      'Polling not complete, waiting before retry',
-    )
+
+    hooks?.onWait?.({
+      attempt,
+      waitMs: delayMs,
+    })
 
     try {
-      await setTimeout(delayMs, undefined, { signal })
+      await delay(delayMs, signal)
     } catch {
-      // setTimeout with signal only throws when the signal is aborted
-      throw new PollingError(
+      // delay with signal only throws when the signal is aborted
+      const error = new PollingError(
         `Polling cancelled after ${attempt} attempts`,
         PollingFailureCause.CANCELLED,
         attempt,
-        metadata,
       )
+
+      hooks?.onFailure?.({
+        cause: PollingFailureCause.CANCELLED,
+        attemptsMade: attempt,
+      })
+
+      throw error
     }
   }
 

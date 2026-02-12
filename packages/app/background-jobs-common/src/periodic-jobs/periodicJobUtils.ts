@@ -18,7 +18,7 @@ export function createTask(logger: CommonLogger, job: AbstractPeriodicJob): Asyn
     () => {
       return job.process(executorId)
     },
-    /* v8 ignore next 9 */
+    /* v8 ignore start */
     (error) => {
       logger.error(
         stdSerializers.err({
@@ -28,5 +28,6 @@ export function createTask(logger: CommonLogger, job: AbstractPeriodicJob): Asyn
         }),
       )
     },
+    /* v8 ignore stop */
   )
 }

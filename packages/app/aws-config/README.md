@@ -7,13 +7,100 @@ and integration with @message-queue-toolkit/sns and @message-queue-toolkit/sqs.
 
 ### AWS Configuration
 
-Read AWS configuration from environment variables:
+Read AWS configuration from environment variables using ConfigScope:
 
 ```ts
 import { getAwsConfig } from '@lokalise/aws-config';
 
 const awsConfig = getAwsConfig();
 ```
+
+#### Using with envase
+
+For applications using the [envase](https://github.com/CatchMe2/envase) library for configuration management,
+use `getEnvaseAwsConfig()` to get schema and computed fragments that can be composed into your application's
+`createConfig()` call:
+
+```ts
+import { createConfig, envvar } from 'envase';
+import { z } from 'zod';
+import { getEnvaseAwsConfig } from '@lokalise/aws-config';
+
+const awsConfig = getEnvaseAwsConfig();
+
+// Spread fragments into your config (flat structure)
+const config = createConfig(process.env, {
+  schema: {
+    ...awsConfig.schema,
+    appName: envvar('APP_NAME', z.string()),
+    port: envvar('PORT', z.coerce.number().default(3000)),
+  },
+  computed: {
+    ...awsConfig.computed,
+  },
+});
+
+// Access typed configuration
+console.log(config.region); // string
+console.log(config.credentials); // AwsCredentialIdentity | Provider<AwsCredentialIdentity>
+console.log(config.appName); // string
+```
+
+##### Nested AWS Namespace
+
+When nesting AWS config under a namespace, wrap the computed resolver to access nested raw values:
+
+```ts
+const awsConfig = getEnvaseAwsConfig();
+
+const config = createConfig(process.env, {
+  schema: {
+    aws: awsConfig.schema,
+    appName: envvar('APP_NAME', z.string()),
+  },
+  computed: {
+    aws: {
+      credentials: (raw: { aws: { accessKeyId?: string; secretAccessKey?: string } }) =>
+        awsConfig.computed.credentials(raw.aws),
+    },
+  },
+});
+
+console.log(config.aws.region); // string
+console.log(config.aws.credentials); // resolved credentials
+```
+
+The schema includes Zod validation with:
+- Required `region` field (must be non-empty string)
+- Optional `kmsKeyId` field (defaults to empty string)
+- Optional `allowedSourceOwner` field
+- Optional `endpoint` field with URL validation
+- Optional `resourcePrefix` with max length validation (10 characters)
+- Optional `accessKeyId` and `secretAccessKey` fields for credential resolution
+
+##### Credentials Resolution
+
+The `computed.credentials` resolver handles credential resolution:
+- If both `accessKeyId` and `secretAccessKey` are present: returns static credentials
+- Otherwise: returns a credential provider chain (token file, instance metadata, env, INI)
+
+#### Environment Variable Constants
+
+For consistency, you can use the exported environment variable name constants:
+
+```ts
+import { AWS_CONFIG_ENV_VARS } from '@lokalise/aws-config';
+
+// AWS_CONFIG_ENV_VARS.REGION === 'AWS_REGION'
+// AWS_CONFIG_ENV_VARS.KMS_KEY_ID === 'AWS_KMS_KEY_ID'
+// AWS_CONFIG_ENV_VARS.ALLOWED_SOURCE_OWNER === 'AWS_ALLOWED_SOURCE_OWNER'
+// AWS_CONFIG_ENV_VARS.ENDPOINT === 'AWS_ENDPOINT'
+// AWS_CONFIG_ENV_VARS.RESOURCE_PREFIX === 'AWS_RESOURCE_PREFIX'
+// AWS_CONFIG_ENV_VARS.ACCESS_KEY_ID === 'AWS_ACCESS_KEY_ID'
+// AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY === 'AWS_SECRET_ACCESS_KEY'
+```
+
+#### Environment Variables
 
 Set the following environment variables:
 
@@ -52,7 +139,8 @@ This helps:
 - Prevent naming collisions across environments, accounts, or tenants  
 - Support multi-tenancy by isolating each tenant's resources  
 
-If no prefix is provided, the original resource name is returned unchanged. Note that the prefix contributes to the total resource name length, which must comply with AWS service limits.
+If no prefix is provided, the original resource name is returned unchanged. Note that the prefix contributes to the
+total resource name length, which must comply with AWS service limits.
 
 ### Tagging AWS Resources
 
@@ -107,15 +195,16 @@ const routingConfig: EventRoutingConfig = {
 - **Internal Topics** (default)
   - You own and manage the SNS topic.
   - `TopicConfig` must include `owner`, `service`, and optionally `externalAppsWithSubscribePermissions`.
-  - At runtime, the `MessageQueueToolkitSnsOptionsResolver` will resolve consumer/publisher options with a **CreateTopic** command 
-   (with name prefixing, tags, KMS settings) and set up subscriptions for your queues and any external apps.
+  - At runtime, the `MessageQueueToolkitSnsOptionsResolver` will resolve consumer/publisher options with a
+   **CreateTopic** command (with name prefixing, tags, KMS settings) and set up subscriptions for your queues and
+   any external apps.
 
 - **External Topics** (`isExternal: true`)
   - The SNS topic is pre‑existing and managed outside your application.
   - `TopicConfig` includes `topicName`, `isExternal: true`, and your `queues`, but **must omit** `owner`, `service`, 
    and `externalAppsWithSubscribePermissions`.
-  - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing topic by name 
-   and subscribe your queues. **No topic creation or tagging** is attempted.
+  - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing topic by 
+   name and subscribe your queues. **No topic creation or tagging** is attempted.
 
 Under the hood, the TypeScript union enforces this shape.
 
@@ -151,13 +240,14 @@ const commandConfig: CommandConfig = {
 - **Internal Queues** (default)
   - You own and manage the SQS queue.
   - `QueueConfig` must include `owner` and `service`.
-  - At runtime, the `MessageQueueToolkitSqsOptionsResolver` will resolve consumer/publisher options with a **CreateQueue** command 
-   (with name prefixing, tags, KMS settings, DLQ configuration).
+  - At runtime, the `MessageQueueToolkitSqsOptionsResolver` will resolve consumer/publisher options with a
+   **CreateQueue** command (with name prefixing, tags, KMS settings, DLQ configuration).
 
 - **External Queues** (`isExternal: true`)
   - The SQS queue is pre‑existing and managed outside your application.
   - `QueueConfig` includes `queueName` and `isExternal: true`, but **must omit** `owner` and `service`.
-  - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing queue by name.
+  - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing queue by 
+   name.
   - **No queue creation or tagging** is attempted.
 
 ### Message Queue Toolkit SNS Resolver
@@ -233,12 +323,45 @@ const consumeOpts = resolver.resolveConsumerOptions('processOrder', {
 
 #### Request Context Pre-handler
 
-When processing messages, both resolvers automatically inject a **request context pre-handler** to each handler. This pre-handler populates a `requestContext` object with:
+When processing messages, both resolvers automatically inject a **request context pre-handler** to each handler.
+This pre-handler populates a `requestContext` object with:
 - `reqId`: the message metadata correlation ID
 - `logger`: a child logger instance scoped with the correlation ID (under `x-request-id`)
 
 Please refer to `@message-queue-toolkit` documentation for more details on how to use the pre-handler output in your
 event handlers.
+
+#### Resource Name Validation
+
+Both resolvers support optional resource name validation via the `validateNamePatterns` configuration option. 
+When enabled, it validates that your topic and queue names follow Lokalise naming conventions:
+
+```ts
+const resolver = new MessageQueueToolkitSnsOptionsResolver(routingConfig, {
+  appEnv: 'production',
+  system: 'backend',
+  project: 'my-project',
+  validateNamePatterns: true, // Enable validation
+});
+```
+
+**Naming Conventions:**
+
+- **Topics**: Must follow the pattern `<project>-<moduleOrFlowName>`
+  - Valid examples: `my-project-user_service`, `my-project-orders`
+  - Module/flow names must be lowercase with optional underscores as separators
+  - Maximum length: 246 characters
+  - Note: `<project>_<moduleOrFlowName>` is temporarily allowed for backwards compatibility
+
+- **Queues**: Must follow the pattern `<project>-<flow>-<service>(-<module>)?`
+  - Valid examples: `my-project-orders-processor`, `my-project-user_service-handler-validator`
+  - Requires at least 2 segments after project: flow and service
+  - Optional third segment for module name
+  - All segments must be lowercase with optional underscores as separators
+  - Maximum length: 64 characters
+
+When validation is enabled, the resolver will throw descriptive errors during construction if any resource names don't 
+match these patterns. This helps catch naming issues early and ensures consistency across your AWS resources.
 
 #### Opinionated Defaults
 
@@ -247,7 +370,8 @@ Both `MessageQueueToolkitSnsOptionsResolver` and `MessageQueueToolkitSqsOptionsR
 - **Default message type field**: `'type'`, used for filtering and routing messages.
 - **Publisher**:
   - `updateAttributesIfExists`: `true` (updates tags and config on existing resources).
-  - `forceTagUpdate`: `false`.
+  - `forceTagUpdate`: Defaults to `true` in development environments, `false` in all other environments. When enabled,
+    existing resources with mismatched tags will be updated to match the configured tags.
   - Applies standardized tags, see tags section above.
 - **Consumer**:
   - Dead-letter queue automatically created with suffix `-dlq`, `redrivePolicy.maxReceiveCount = 5`, retention = 7 days.

@@ -1,7 +1,7 @@
-import { buildGetRoute } from '@lokalise/api-contracts'
+import { buildRestContract } from '@lokalise/api-contracts'
 import { fastify } from 'fastify'
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, onTestFinished } from 'vitest'
 import { z } from 'zod/v4'
 import {
   buildFastifyNoPayloadRoute,
@@ -22,7 +22,8 @@ const ValidationErrorSchema = z.object({
   errors: z.array(z.string()),
 })
 
-const getRouteWithMultipleResponses = buildGetRoute({
+const getRouteWithMultipleResponses = buildRestContract({
+  method: 'get',
   pathResolver: () => '/test',
   successResponseBodySchema: SuccessResponseSchema,
   requestQuerySchema: z.object({
@@ -35,7 +36,8 @@ const getRouteWithMultipleResponses = buildGetRoute({
   },
 })
 
-const getRouteWithSingleResponse = buildGetRoute({
+const getRouteWithSingleResponse = buildRestContract({
+  method: 'get',
   pathResolver: () => '/test',
   successResponseBodySchema: SuccessResponseSchema,
   requestQuerySchema: z.object({
@@ -54,6 +56,7 @@ async function initApp<Route extends RouteType>(route: Route) {
 
   app.route(route)
   await app.ready()
+  onTestFinished(() => app.close())
   return app
 }
 

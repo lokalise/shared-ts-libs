@@ -1,52 +1,28 @@
-import { InternalError } from '@lokalise/node-core'
 import { describe, expect, it } from 'vitest'
 import { PollingError, PollingFailureCause } from './PollingError.ts'
 
 describe('PollingError', () => {
   describe('construction', () => {
     it('should create error with all properties', () => {
-      const error = new PollingError('Test error message', PollingFailureCause.TIMEOUT, 5, {
-        jobId: 'job-123',
-      })
+      const error = new PollingError('Test error message', PollingFailureCause.TIMEOUT, 5)
 
       expect(error).toBeInstanceOf(Error)
-      expect(error).toBeInstanceOf(InternalError)
       expect(error).toBeInstanceOf(PollingError)
       expect(error.name).toBe('PollingError')
       expect(error.message).toBe('Test error message')
       expect(error.failureCause).toBe(PollingFailureCause.TIMEOUT)
       expect(error.attemptsMade).toBe(5)
       expect(error.errorCode).toBe('POLLING_TIMEOUT')
-      expect(error.details).toEqual({
-        failureCause: PollingFailureCause.TIMEOUT,
-        attemptsMade: 5,
-        jobId: 'job-123',
-      })
     })
 
-    it('should merge metadata into details', () => {
-      const error = new PollingError('Test', PollingFailureCause.CANCELLED, 3, {
-        userId: 'user-456',
-        sessionId: 'session-789',
-        extraData: { nested: 'value' },
-      })
+    it('should create error with different failure causes', () => {
+      const timeoutError = new PollingError('Timeout', PollingFailureCause.TIMEOUT, 10)
+      expect(timeoutError.failureCause).toBe(PollingFailureCause.TIMEOUT)
+      expect(timeoutError.errorCode).toBe('POLLING_TIMEOUT')
 
-      expect(error.details).toEqual({
-        failureCause: PollingFailureCause.CANCELLED,
-        attemptsMade: 3,
-        userId: 'user-456',
-        sessionId: 'session-789',
-        extraData: { nested: 'value' },
-      })
-    })
-
-    it('should work without metadata', () => {
-      const error = new PollingError('Test', PollingFailureCause.TIMEOUT, 10)
-
-      expect(error.details).toEqual({
-        failureCause: PollingFailureCause.TIMEOUT,
-        attemptsMade: 10,
-      })
+      const cancelledError = new PollingError('Cancelled', PollingFailureCause.CANCELLED, 3)
+      expect(cancelledError.failureCause).toBe(PollingFailureCause.CANCELLED)
+      expect(cancelledError.errorCode).toBe('POLLING_CANCELLED')
     })
 
     it('should preserve original error as cause', () => {
@@ -55,7 +31,6 @@ describe('PollingError', () => {
         'Polling failed',
         PollingFailureCause.TIMEOUT,
         5,
-        undefined,
         originalError,
       )
 
@@ -76,25 +51,6 @@ describe('PollingError', () => {
       expect(error.failureCause).toBe(PollingFailureCause.TIMEOUT)
       expect(error.attemptsMade).toBe(10)
       expect(error.errorCode).toBe('POLLING_TIMEOUT')
-    })
-
-    it('should include metadata when provided', () => {
-      const error = new PollingError(
-        'Polling timeout after 5 attempts',
-        PollingFailureCause.TIMEOUT,
-        5,
-        {
-          jobId: 'job-123',
-          reason: 'slow-service',
-        },
-      )
-
-      expect(error.details).toEqual({
-        failureCause: PollingFailureCause.TIMEOUT,
-        attemptsMade: 5,
-        jobId: 'job-123',
-        reason: 'slow-service',
-      })
     })
 
     it('should work with zero attempts', () => {
@@ -133,25 +89,6 @@ describe('PollingError', () => {
       expect(error.failureCause).toBe(PollingFailureCause.CANCELLED)
       expect(error.attemptsMade).toBe(3)
       expect(error.errorCode).toBe('POLLING_CANCELLED')
-    })
-
-    it('should include metadata when provided', () => {
-      const error = new PollingError(
-        'Polling cancelled after 7 attempts',
-        PollingFailureCause.CANCELLED,
-        7,
-        {
-          userId: 'user-456',
-          reason: 'user-action',
-        },
-      )
-
-      expect(error.details).toEqual({
-        failureCause: PollingFailureCause.CANCELLED,
-        attemptsMade: 7,
-        userId: 'user-456',
-        reason: 'user-action',
-      })
     })
 
     it('should work when cancelled before any attempts', () => {
@@ -223,8 +160,124 @@ describe('PollingError', () => {
     })
   })
 
+  describe('isPollingError type guard', () => {
+    it('should return true for PollingError instances', () => {
+      const error = new PollingError('Test', PollingFailureCause.TIMEOUT, 5)
+      expect(PollingError.isPollingError(error)).toBe(true)
+    })
+
+    it('should return false for regular Error', () => {
+      const error = new Error('Regular error')
+      expect(PollingError.isPollingError(error)).toBe(false)
+    })
+
+    it('should return false for non-error objects', () => {
+      expect(PollingError.isPollingError({})).toBe(false)
+      expect(PollingError.isPollingError({ message: 'test' })).toBe(false)
+      expect(PollingError.isPollingError(null)).toBe(false)
+      expect(PollingError.isPollingError(undefined)).toBe(false)
+      expect(PollingError.isPollingError('string')).toBe(false)
+      expect(PollingError.isPollingError(123)).toBe(false)
+    })
+
+    it('should return true for error-like objects with correct properties', () => {
+      const errorLike = {
+        name: 'PollingError',
+        message: 'Test',
+        failureCause: 'TIMEOUT',
+        attemptsMade: 5,
+        errorCode: 'POLLING_TIMEOUT',
+      }
+      expect(PollingError.isPollingError(errorLike)).toBe(true)
+    })
+
+    it('should return false for objects missing required properties', () => {
+      expect(PollingError.isPollingError({ name: 'PollingError' })).toBe(false)
+      expect(
+        PollingError.isPollingError({
+          name: 'PollingError',
+          failureCause: 'TIMEOUT',
+        }),
+      ).toBe(false)
+      expect(
+        PollingError.isPollingError({
+          name: 'PollingError',
+          failureCause: 'TIMEOUT',
+          attemptsMade: 5,
+        }),
+      ).toBe(false)
+    })
+
+    it('should return false for objects with invalid failureCause', () => {
+      const invalidError = {
+        name: 'PollingError',
+        message: 'Test',
+        failureCause: 'INVALID_CAUSE', // Not a valid PollingFailureCause
+        attemptsMade: 5,
+        errorCode: 'POLLING_INVALID_CAUSE',
+      }
+      expect(PollingError.isPollingError(invalidError)).toBe(false)
+    })
+
+    it('should only accept valid PollingFailureCause enum values', () => {
+      // Valid causes should return true
+      const validTimeoutError = {
+        name: 'PollingError',
+        message: 'Test',
+        failureCause: 'TIMEOUT',
+        attemptsMade: 5,
+        errorCode: 'POLLING_TIMEOUT',
+      }
+      expect(PollingError.isPollingError(validTimeoutError)).toBe(true)
+
+      const validCancelledError = {
+        name: 'PollingError',
+        message: 'Test',
+        failureCause: 'CANCELLED',
+        attemptsMade: 3,
+        errorCode: 'POLLING_CANCELLED',
+      }
+      expect(PollingError.isPollingError(validCancelledError)).toBe(true)
+
+      const validConfigError = {
+        name: 'PollingError',
+        message: 'Test',
+        failureCause: 'INVALID_CONFIG',
+        attemptsMade: 0,
+        errorCode: 'POLLING_INVALID_CONFIG',
+      }
+      expect(PollingError.isPollingError(validConfigError)).toBe(true)
+
+      // Invalid causes should return false
+      const invalidCauses = ['UNKNOWN', 'ERROR', 'FAILED', '', 'timeout', 'Timeout']
+      for (const invalidCause of invalidCauses) {
+        const invalidError = {
+          name: 'PollingError',
+          message: 'Test',
+          failureCause: invalidCause,
+          attemptsMade: 5,
+          errorCode: 'POLLING_ERROR',
+        }
+        expect(PollingError.isPollingError(invalidError)).toBe(false)
+      }
+    })
+
+    it('should provide proper type narrowing in TypeScript', () => {
+      const error: unknown = new PollingError('Test', PollingFailureCause.TIMEOUT, 5)
+
+      if (PollingError.isPollingError(error)) {
+        // TypeScript should know error is PollingError here
+        expect(error.failureCause).toBe('TIMEOUT')
+        expect(error.attemptsMade).toBe(5)
+        expect(error.errorCode).toBe('POLLING_TIMEOUT')
+      } else {
+        expect.fail('Should have been a PollingError')
+      }
+    })
+  })
+
   describe('error handling patterns', () => {
-    it('should be catchable as PollingError', () => {
+    it('should be catchable as PollingError using type guard (recommended)', () => {
       function mayThrowPollingError(): void {
         throw new PollingError('Polling timeout after 5 attempts', PollingFailureCause.TIMEOUT, 5)
       }
@@ -233,20 +286,19 @@ describe('PollingError', () => {
         mayThrowPollingError()
         expect.fail('Should have thrown')
       } catch (error) {
-        expect(error).toBeInstanceOf(PollingError)
-        if (error instanceof PollingError) {
+        expect(PollingError.isPollingError(error)).toBe(true)
+        if (PollingError.isPollingError(error)) {
           expect(error.attemptsMade).toBe(5)
         }
       }
     })
 
-    it('should be catchable as InternalError', () => {
+    it('should be catchable using isPollingError type guard', () => {
       function mayThrowPollingError(): void {
         throw new PollingError(
           'Polling cancelled after 3 attempts',
           PollingFailureCause.CANCELLED,
           3,
-          { reason: 'test' },
         )
       }
 
@@ -254,10 +306,25 @@ describe('PollingError', () => {
         mayThrowPollingError()
         expect.fail('Should have thrown')
       } catch (error) {
-        expect(error).toBeInstanceOf(InternalError)
-        if (error instanceof InternalError) {
+        expect(PollingError.isPollingError(error)).toBe(true)
+        if (PollingError.isPollingError(error)) {
           expect(error.errorCode).toBe('POLLING_CANCELLED')
-          expect(error.details).toMatchObject({ reason: 'test' })
+        }
+      }
+    })
+
+    it('should be catchable using instanceof', () => {
+      function mayThrowPollingError(): void {
+        throw new PollingError('Polling timeout', PollingFailureCause.TIMEOUT, 10)
+      }
+
+      try {
+        mayThrowPollingError()
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollingError)
+        if (error instanceof PollingError) {
+          expect(error.errorCode).toBe('POLLING_TIMEOUT')
         }
       }
     })
@@ -270,13 +337,46 @@ describe('PollingError', () => {
       ]
 
       const results = errors.map((error) => {
-        if (error instanceof PollingError) {
+        if (PollingError.isPollingError(error)) {
           return `polling:${error.failureCause}`
         }
         return 'other'
       })
 
       expect(results).toEqual(['polling:TIMEOUT', 'polling:CANCELLED', 'other'])
+    })
+  })
+
+  describe('stack trace capture', () => {
+    it('should work when Error.captureStackTrace is not available', () => {
+      // Save the original function
+      const originalCaptureStackTrace = Error.captureStackTrace
+
+      try {
+        // Temporarily remove Error.captureStackTrace to simulate non-V8 environment
+        // @ts-expect-error - Intentionally deleting to test fallback
+        delete Error.captureStackTrace
+
+        const error = new PollingError('Test error', PollingFailureCause.TIMEOUT, 5)
+
+        expect(error).toBeInstanceOf(Error)
+        expect(error).toBeInstanceOf(PollingError)
+        expect(error.message).toBe('Test error')
+        expect(error.stack).toBeDefined() // Stack should still be available from Error constructor
+      } finally {
+        // Restore the original function
+        if (originalCaptureStackTrace) {
+          Error.captureStackTrace = originalCaptureStackTrace
+        }
+      }
+    })
+
+    it('should capture stack trace when Error.captureStackTrace is available', () => {
+      // This test runs in V8 (Node.js/Vitest) where Error.captureStackTrace exists
+      const error = new PollingError('Test error', PollingFailureCause.TIMEOUT, 5)
+
+      expect(error.stack).toBeDefined()
+      expect(error.stack).toContain('PollingError')
     })
   })
 })
