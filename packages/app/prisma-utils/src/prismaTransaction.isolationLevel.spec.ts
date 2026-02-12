@@ -1,3 +1,4 @@
+import { PrismaPg } from '@prisma/adapter-pg'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { PrismaClient } from '../test/db-client/client.ts'
 import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
@@ -10,7 +11,7 @@ describe('prismaTransaction - isolation level', () => {
 
   beforeAll(() => {
     prisma = new PrismaClient({
-      datasourceUrl: getDatasourceUrl(),
+      adapter: new PrismaPg({ connectionString: getDatasourceUrl() }),
     })
   })
 

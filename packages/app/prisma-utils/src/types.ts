@@ -2,6 +2,7 @@ import type { Either } from '@lokalise/node-core'
 import type * as RuntimePrisma from '@prisma/client/runtime/client'
 
 type ObjectValues<T> = T[keyof T]
+type InternalTransactionOptions = RuntimePrisma.PrismaClientOptions['transactionOptions']
 
 export const DbDriverEnum = {
   COCKROACHDB: 'CockroachDb',
@@ -18,24 +19,7 @@ export type PrismaTransactionOptions = {
   baseRetryDelayMs?: number
   maxRetryDelayMs?: number
   maxTimeout?: number
-
-  // Prisma $transaction options
-  maxWait?: number
-  timeout?: number
-  /*
-    For now library only supports CockroachDB, when we add support for other databases we need to update this to
-    use union types and depending on DbDriver allow different isolation levels
-
-    Also, this is a temporal solution in the meantime Prisma includes ReadCommitted as a valid isolation level for CockroachDB
-   */
-  isolationLevel?: undefined // TODO
-}
-
-// Prisma $transaction with array does not support maxWait and timeout options
-export type PrismaTransactionBasicOptions = Omit<
-  PrismaTransactionOptions,
-  'maxWait' | 'timeout' | 'maxTimeout'
->
+} & InternalTransactionOptions
 
 export type PrismaTransactionClient<P> = Omit<P, RuntimePrisma.ITXClientDenyList>
 

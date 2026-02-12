@@ -13,7 +13,6 @@ import {
 } from './errors/index.ts'
 import type {
   DbDriver,
-  PrismaTransactionBasicOptions,
   PrismaTransactionFn,
   PrismaTransactionOptions,
   PrismaTransactionReturnType,
@@ -33,14 +32,14 @@ const DEFAULT_OPTIONS = {
  *
  * @template T | T extends Prisma.PrismaPromise<unknown>[]
  * @param {PrismaClient} prisma
- * @param {PrismaTransactionFn<T> | Prisma.PrismaPromise<unknown>[]} arg	 operation to perform into the transaction
- * @param {PrismaTransactionOptions | PrismaTransactionBasicOptions} options transaction configuration
+ * @param {PrismaTransactionFn<T> | RuntimePrisma.PrismaPromise<unknown>[]} arg	 operation to perform into the transaction
+ * @param {PrismaTransactionOptions} options transaction configuration
  * @return {Promise<PrismaTransactionReturnType<T>>}
  */
 export const prismaTransaction = (async <T, P extends PrismaClient>(
   prisma: P,
   arg: PrismaTransactionFn<T, P> | RuntimePrisma.PrismaPromise<unknown>[],
-  options?: PrismaTransactionOptions | PrismaTransactionBasicOptions,
+  options?: PrismaTransactionOptions,
 ): Promise<PrismaTransactionReturnType<T>> => {
   let optionsWithDefaults = { ...DEFAULT_OPTIONS, ...options }
   let result: PrismaTransactionReturnType<T> | undefined
@@ -84,7 +83,7 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
   <T extends RuntimePrisma.PrismaPromise<unknown>[], P extends PrismaClient>(
     prisma: P,
     args: [...T],
-    options?: PrismaTransactionBasicOptions,
+    options?: PrismaTransactionOptions,
   ): Promise<Either<unknown, RuntimePrisma.Types.Utils.UnwrapTuple<T>>>
 }
 
