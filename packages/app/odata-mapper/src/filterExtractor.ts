@@ -242,6 +242,29 @@ export function createFilterMap(filter: TransformedFilter): Map<string, Transfor
 }
 
 /**
+ * Finds the first field name in the filter that is not in the allowed set.
+ * Returns undefined if all fields are allowed.
+ *
+ * Useful for validating that a filter only references supported fields
+ * before extracting values.
+ *
+ * @example
+ * ```typescript
+ * const unsupported = findUnsupportedField(filter, ['path', 'owner', 'lastModifiedAt'])
+ * if (unsupported) {
+ *   throw new Error(`Unsupported field: ${unsupported}`)
+ * }
+ * ```
+ */
+export function findUnsupportedField(
+  filter: TransformedFilter,
+  supportedFields: ReadonlySet<string> | readonly string[],
+): string | undefined {
+  const allowed = supportedFields instanceof Set ? supportedFields : new Set(supportedFields)
+  return getFilteredFieldNames(filter).find((f) => !allowed.has(f))
+}
+
+/**
  * High-level convenience function that transforms and extracts filter values in one call.
  * Takes raw balena parser output and returns a simple field-to-values map.
  */

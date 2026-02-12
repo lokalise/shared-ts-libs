@@ -11,16 +11,25 @@ npm install @lokalise/odata-mapper @balena/odata-parser
 ## Quick Start
 
 ```typescript
-import { parseODataFilter, transformFilter, extractEqualityValue, extractInValues } from '@lokalise/odata-mapper'
+import { parseAndTransformFilter, extractEqualityValue, extractInValues } from '@lokalise/odata-mapper'
 
-// Parse and transform in one go
-const parsed = parseODataFilter("status eq 'active' and parentId in ('root', 'parent-123')")
+// Parse and transform in one step
+const filter = parseAndTransformFilter("status eq 'active' and parentId in ('root', 'parent-123')")
+
+const status = extractEqualityValue<string>(filter, 'status')     // 'active'
+const parentIds = extractInValues<string>(filter, 'parentId')     // ['root', 'parent-123']
+```
+
+For more control (e.g. handling optional filters), use the two-step approach:
+
+```typescript
+import { parseODataFilter, transformFilter, extractEqualityValue } from '@lokalise/odata-mapper'
+
+const parsed = parseODataFilter(queryString) // returns { tree: null, ... } for empty input
 
 if (parsed.tree) {
   const filter = transformFilter(parsed.tree, parsed.binds)
-
-  const status = extractEqualityValue<string>(filter, 'status')     // 'active'
-  const parentIds = extractInValues<string>(filter, 'parentId')     // ['root', 'parent-123']
+  const status = extractEqualityValue<string>(filter, 'status')
 }
 ```
 
@@ -85,53 +94,52 @@ When you know the specific fields your service supports:
 
 ```typescript
 import {
-  parseODataFilter,
-  transformFilter,
+  parseAndTransformFilter,
   extractEqualityValue,
   extractInValues,
   extractRange,
   extractStringFunction,
+  findUnsupportedField,
 } from '@lokalise/odata-mapper'
 
-const parsed = parseODataFilter(queryString)
+const filter = parseAndTransformFilter(queryString)
 
-if (parsed.tree) {
-  const filter = transformFilter(parsed.tree, parsed.binds)
-
-  // Extract only the fields you support (undefined if not present)
-  const filters = {
-    status: extractEqualityValue<string>(filter, 'status'),
-    categoryIds: extractInValues<number>(filter, 'categoryId'),
-    priceRange: extractRange(filter, 'price'),
-    nameSearch: extractStringFunction(filter, 'name', 'contains')?.value,
-  }
-
-  // Build your query conditionally
-  const query = db.select().from('products')
-  if (filters.status) query.where('status', filters.status)
-  if (filters.categoryIds) query.whereIn('categoryId', filters.categoryIds)
-  if (filters.priceRange?.min) query.where('price', '>=', filters.priceRange.min)
-  if (filters.priceRange?.max) query.where('price', '<=', filters.priceRange.max)
-  if (filters.nameSearch) query.whereLike('name', `%${filters.nameSearch}%`)
+// Validate that only allowed fields are used
+const SUPPORTED = new Set(['status', 'categoryId', 'price', 'name'])
+const unsupported = findUnsupportedField(filter, SUPPORTED)
+if (unsupported) {
+  throw new Error(`Unsupported filter field: ${unsupported}`)
 }
+
+// Extract only the fields you support (undefined if not present)
+const filters = {
+  status: extractEqualityValue<string>(filter, 'status'),
+  categoryIds: extractInValues<number>(filter, 'categoryId'),
+  priceRange: extractRange(filter, 'price'),
+  nameSearch: extractStringFunction(filter, 'name', 'contains')?.value,
+}
+
+// Build your query conditionally
+const query = db.select().from('products')
+if (filters.status) query.where('status', filters.status)
+if (filters.categoryIds) query.whereIn('categoryId', filters.categoryIds)
+if (filters.priceRange?.min) query.where('price', '>=', filters.priceRange.min)
+if (filters.priceRange?.max) query.where('price', '<=', filters.priceRange.max)
+if (filters.nameSearch) query.whereLike('name', `%${filters.nameSearch}%`)
 ```
 
 ### Parent Filter Use Case
 
 ```typescript
-import { parseODataFilter, transformFilter, extractInValues } from '@lokalise/odata-mapper'
+import { parseAndTransformFilter, extractInValues } from '@lokalise/odata-mapper'
 
 // Parse: $filter=parentId in ('root', 'parent-123', 'parent-456')
-const parsed = parseODataFilter(queryString)
+const filter = parseAndTransformFilter(queryString)
+const parentIds = extractInValues<string>(filter, 'parentId')
+// ['root', 'parent-123', 'parent-456']
 
-if (parsed.tree) {
-  const filter = transformFilter(parsed.tree, parsed.binds)
-  const parentIds = extractInValues<string>(filter, 'parentId')
-  // ['root', 'parent-123', 'parent-456']
-
-  // Use directly in your service
-  const files = await fileService.getFilesForParents(parentIds)
-}
+// Use directly in your service
+const files = await fileService.getFilesForParents(parentIds)
 ```
 
 ### Error Handling
@@ -168,6 +176,19 @@ const parsed = parseODataFilter("status eq 'active'")
 const empty = parseODataFilter(undefined)
 // { tree: null, binds: [], originalFilter: undefined }
 ```
+
+#### `parseAndTransformFilter(filter)`
+
+Convenience function that combines `parseODataFilter` + `transformFilter` in one step. Throws if the filter is empty or invalid, so the result is always a ready-to-use `TransformedFilter`.
+
+```typescript
+import { parseAndTransformFilter, extractEqualityValue } from '@lokalise/odata-mapper'
+
+const filter = parseAndTransformFilter("status eq 'active'")
+const status = extractEqualityValue<string>(filter, 'status') // 'active'
+```
+
+Throws `ODataParseError` for empty, whitespace-only, or syntactically invalid filters.
 
 #### `ODataParseError`
 
@@ -278,6 +299,22 @@ Returns all filters for a specific field (useful when a field appears multiple t
 ```typescript
 const priceFilters = getFiltersForField(filter, 'price')
 // Could return multiple filters: [{ operator: 'ge', ... }, { operator: 'le', ... }]
+```
+
+#### `findUnsupportedField(filter, supportedFields)`
+
+Returns the first field name that is not in the supported set, or `undefined` if all fields are supported. Accepts a `Set<string>` or `string[]`.
+
+```typescript
+import { parseAndTransformFilter, findUnsupportedField } from '@lokalise/odata-mapper'
+
+const filter = parseAndTransformFilter("status eq 'active' and priority gt 5")
+
+const unsupported = findUnsupportedField(filter, new Set(['status']))
+// 'priority'
+
+const allGood = findUnsupportedField(filter, new Set(['status', 'priority']))
+// undefined
 ```
 
 ### Bulk Extraction
