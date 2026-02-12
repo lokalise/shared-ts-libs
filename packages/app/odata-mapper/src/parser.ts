@@ -4,6 +4,7 @@ import odataParser from '@balena/odata-parser'
 
 const { parse } = odataParser
 
+import { FilterNotSupportedError } from './errors.ts'
 import { transformFilter } from './filterTransformer.ts'
 import type { FilterTreeNode, TransformedFilter } from './types.ts'
 
@@ -96,9 +97,12 @@ export function parseODataFilter(filter: string | undefined): ParsedODataFilter 
  * Combines `parseODataFilter` + `transformFilter`, eliminating the
  * null-check boilerplate that every consumer needs.
  *
+ * Throws `FilterNotSupportedError` (HTTP 400) for empty, invalid, or
+ * unparseable filters. Unknown errors are re-thrown as-is.
+ *
  * @param filter - The OData $filter string (must be non-empty)
  * @returns High-level TransformedFilter ready for extraction
- * @throws ODataParseError if the filter is empty, invalid, or produces no tree
+ * @throws FilterNotSupportedError if the filter is empty or invalid
  *
  * @example
  * ```typescript
@@ -108,45 +112,20 @@ export function parseODataFilter(filter: string | undefined): ParsedODataFilter 
  * ```
  */
 export function parseAndTransformFilter(filter: string): TransformedFilter {
-  const parsed = parseODataFilter(filter)
-
-  if (!parsed.tree) {
-    throw new ODataParseError('Empty filter expression', filter)
-  }
-
-  return transformFilter(parsed.tree, parsed.binds)
-}
-
-/**
- * Parse and transform with custom error mapping.
- *
- * Like `parseAndTransformFilter`, but catches `ODataParseError` and lets
- * you convert it to your own error type (e.g., a domain-specific HTTP error).
- *
- * @param filter - The OData $filter string (must be non-empty)
- * @param mapError - Callback that receives the `ODataParseError` and returns the error to throw
- * @returns High-level TransformedFilter ready for extraction
- *
- * @example
- * ```typescript
- * const filter = safeParseAndTransformFilter(
- *   queryString,
- *   (e) => new FilterNotSupportedError({
- *     message: `Invalid filter: ${e.message}`,
- *     details: { filter: e.filter },
- *   }),
- * )
- * ```
- */
-export function safeParseAndTransformFilter(
-  filter: string,
-  mapError: (error: ODataParseError) => Error,
-): TransformedFilter {
   try {
-    return parseAndTransformFilter(filter)
+    const parsed = parseODataFilter(filter)
+
+    if (!parsed.tree) {
+      throw new ODataParseError('Empty filter expression', filter)
+    }
+
+    return transformFilter(parsed.tree, parsed.binds)
   } catch (error) {
     if (error instanceof ODataParseError) {
-      throw mapError(error)
+      throw new FilterNotSupportedError({
+        message: `Invalid OData $filter expression: ${error.message}`,
+        details: { filter: error.filter },
+      })
     }
     throw error
   }

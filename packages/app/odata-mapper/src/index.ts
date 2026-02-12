@@ -47,14 +47,15 @@ export {
   transformFilter,
   transformFilterNode,
 } from './filterTransformer.ts'
+// Export errors
+export {
+  FilterNotSupportedError,
+  type FilterErrorParams,
+  isFilterNotSupportedError,
+} from './errors.ts'
 export type { ParsedODataFilter } from './parser.ts'
 // Export parser utilities
-export {
-  ODataParseError,
-  parseAndTransformFilter,
-  parseODataFilter,
-  safeParseAndTransformFilter,
-} from './parser.ts'
+export { ODataParseError, parseAndTransformFilter, parseODataFilter } from './parser.ts'
 // Export our types
 export type {
   ComparisonFilter,

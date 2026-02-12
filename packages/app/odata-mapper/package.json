@@ -33,12 +33,12 @@
         "postversion": "biome check --write package.json"
     },
     "peerDependencies": {
-        "@balena/odata-parser": ">=4.2.10"
+        "@balena/odata-parser": ">=4.2.10",
+        "@lokalise/node-core": ">=14.0.0"
     },
     "devDependencies": {
         "@balena/odata-parser": "^4.2.10",
         "@biomejs/biome": "^2.3.8",
-        "@lokalise/node-core": "^14.7.4",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "^3.0.0",
         "@vitest/coverage-v8": "^4.0.18",
