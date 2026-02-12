@@ -144,17 +144,19 @@ const files = await fileService.getFilesForParents(parentIds)
 
 ### Error Handling
 
+`parseAndTransformFilter` throws `FilterNotSupportedError` (HTTP 400) for invalid filters — no manual error mapping needed:
+
 ```typescript
-import { parseODataFilter, ODataParseError } from '@lokalise/odata-mapper'
+import { parseAndTransformFilter, isFilterNotSupportedError } from '@lokalise/odata-mapper'
 
 try {
-  const parsed = parseODataFilter(userInput)
-  // ... use parsed result
+  const filter = parseAndTransformFilter(userInput)
+  // ... use filter
 } catch (error) {
-  if (error instanceof ODataParseError) {
-    console.error(`Invalid filter: ${error.filter}`)
-    console.error(`Cause: ${error.cause?.message}`)
-    // Return 400 Bad Request to user
+  if (isFilterNotSupportedError(error)) {
+    // Already an HTTP 400 error with FILTER_NOT_SUPPORTED code
+    console.error(`Invalid filter: ${error.message}`)
+    console.error(`Details: ${JSON.stringify(error.details)}`)
   }
   throw error
 }
@@ -179,7 +181,7 @@ const empty = parseODataFilter(undefined)
 
 #### `parseAndTransformFilter(filter)`
 
-Convenience function that combines `parseODataFilter` + `transformFilter` in one step. Throws if the filter is empty or invalid, so the result is always a ready-to-use `TransformedFilter`.
+Convenience function that combines `parseODataFilter` + `transformFilter` in one step. Throws `FilterNotSupportedError` (HTTP 400) for empty, whitespace-only, or syntactically invalid filters. Unknown errors are re-thrown as-is.
 
 ```typescript
 import { parseAndTransformFilter, extractEqualityValue } from '@lokalise/odata-mapper'
@@ -188,27 +190,24 @@ const filter = parseAndTransformFilter("status eq 'active'")
 const status = extractEqualityValue<string>(filter, 'status') // 'active'
 ```
 
-Throws `ODataParseError` for empty, whitespace-only, or syntactically invalid filters.
+#### `FilterNotSupportedError`
 
-#### `safeParseAndTransformFilter(filter, mapError)`
-
-Like `parseAndTransformFilter`, but catches `ODataParseError` and lets you map it to your own error type. Non-`ODataParseError` errors are re-thrown as-is.
+Error thrown when a filter expression is invalid or unsupported. Extends `PublicNonRecoverableError` from `@lokalise/node-core` with HTTP 400 status and `FILTER_NOT_SUPPORTED` error code.
 
 ```typescript
-import { safeParseAndTransformFilter } from '@lokalise/odata-mapper'
+import { FilterNotSupportedError } from '@lokalise/odata-mapper'
 
-const filter = safeParseAndTransformFilter(
-  queryString,
-  (e) => new FilterNotSupportedError({
-    message: `Invalid filter: ${e.message}`,
-    details: { filter: e.filter },
-  }),
-)
+// Thrown automatically by parseAndTransformFilter
+// Can also be used directly for domain-specific validation:
+throw new FilterNotSupportedError({
+  message: 'Only driveId filters are supported',
+  details: { filter },
+})
 ```
 
 #### `ODataParseError`
 
-Custom error class thrown when parsing fails. Includes the original filter string and cause.
+Low-level error thrown by `parseODataFilter`. Most consumers should use `parseAndTransformFilter` instead, which converts this to `FilterNotSupportedError` automatically.
 
 ```typescript
 class ODataParseError extends Error {

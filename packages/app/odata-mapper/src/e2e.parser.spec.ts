@@ -3,10 +3,11 @@ import {
   extractEqualityValue,
   extractInValues,
   extractRange,
+  FilterNotSupportedError,
+  isFilterNotSupportedError,
   ODataParseError,
   parseAndTransformFilter,
   parseODataFilter,
-  safeParseAndTransformFilter,
   transformFilter,
 } from './index.ts'
 
@@ -234,95 +235,58 @@ describe('parseAndTransformFilter', () => {
   })
 
   describe('error handling', () => {
-    it('throws ODataParseError for empty string', () => {
-      expect(() => parseAndTransformFilter('')).toThrow(ODataParseError)
+    it('throws FilterNotSupportedError for empty string', () => {
+      expect(() => parseAndTransformFilter('')).toThrow(FilterNotSupportedError)
     })
 
-    it('throws ODataParseError for whitespace-only string', () => {
-      expect(() => parseAndTransformFilter('   ')).toThrow(ODataParseError)
+    it('throws FilterNotSupportedError for whitespace-only string', () => {
+      expect(() => parseAndTransformFilter('   ')).toThrow(FilterNotSupportedError)
     })
 
-    it('throws ODataParseError for invalid syntax', () => {
-      expect(() => parseAndTransformFilter('invalid !@#')).toThrow(ODataParseError)
+    it('throws FilterNotSupportedError for invalid syntax', () => {
+      expect(() => parseAndTransformFilter('invalid !@#')).toThrow(FilterNotSupportedError)
     })
 
-    it('includes filter string in error for empty input', () => {
+    it('includes filter string in error details', () => {
       try {
         parseAndTransformFilter('')
         expect.fail('Should have thrown')
       } catch (error) {
-        expect(error).toBeInstanceOf(ODataParseError)
-        expect((error as ODataParseError).filter).toBe('')
+        expect(error).toBeInstanceOf(FilterNotSupportedError)
+        expect((error as FilterNotSupportedError).details).toEqual({ filter: '' })
       }
     })
 
-    it('includes filter string in error for invalid input', () => {
+    it('includes filter string in error details for invalid input', () => {
       const badFilter = 'not a valid filter !@#$'
       try {
         parseAndTransformFilter(badFilter)
         expect.fail('Should have thrown')
       } catch (error) {
-        expect(error).toBeInstanceOf(ODataParseError)
-        expect((error as ODataParseError).filter).toBe(badFilter)
+        expect(error).toBeInstanceOf(FilterNotSupportedError)
+        expect((error as FilterNotSupportedError).details).toEqual({ filter: badFilter })
       }
     })
 
-    it('error is instanceof Error', () => {
+    it('has FILTER_NOT_SUPPORTED error code', () => {
+      try {
+        parseAndTransformFilter('')
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(FilterNotSupportedError)
+        expect((error as FilterNotSupportedError).errorCode).toBe('FILTER_NOT_SUPPORTED')
+      }
+    })
+
+    it('is instanceof Error', () => {
       try {
         parseAndTransformFilter('')
         expect.fail('Should have thrown')
       } catch (error) {
         expect(error).toBeInstanceOf(Error)
-        expect(error).toBeInstanceOf(ODataParseError)
+        expect(error).toBeInstanceOf(FilterNotSupportedError)
       }
     })
-  })
-})
-
-describe('safeParseAndTransformFilter', () => {
-  class CustomError extends Error {
-    filter: string
-    constructor(message: string, filter: string) {
-      super(message)
-      this.filter = filter
-    }
-  }
-
-  const mapError = (e: ODataParseError) => new CustomError(`Wrapped: ${e.message}`, e.filter)
-
-  it('parses and transforms a valid filter', () => {
-    const filter = safeParseAndTransformFilter("status eq 'active'", mapError)
-
-    expect(filter.type).toBe('comparison')
-    expect(extractEqualityValue<string>(filter, 'status')).toBe('active')
-  })
-
-  it('maps ODataParseError to custom error for empty input', () => {
-    expect(() => safeParseAndTransformFilter('', mapError)).toThrow(CustomError)
-    expect(() => safeParseAndTransformFilter('', mapError)).not.toThrow(ODataParseError)
-  })
-
-  it('maps ODataParseError to custom error for invalid syntax', () => {
-    expect(() => safeParseAndTransformFilter('invalid !@#', mapError)).toThrow(CustomError)
-  })
-
-  it('passes filter string to mapError callback', () => {
-    try {
-      safeParseAndTransformFilter('bad filter', mapError)
-      expect.fail('Should have thrown')
-    } catch (error) {
-      expect(error).toBeInstanceOf(CustomError)
-      expect((error as CustomError).filter).toBe('bad filter')
-      expect((error as CustomError).message).toContain('Wrapped:')
-    }
-  })
-
-  it('re-throws non-ODataParseError errors without mapping', () => {
-    // Force a non-ODataParseError by passing a filter that would cause an unexpected error
-    // In practice, ODataParseError covers all parse failures, so we verify the pass-through
-    // by confirming valid filters work correctly
-    const filter = safeParseAndTransformFilter('count gt 42', mapError)
-    expect(filter.type).toBe('comparison')
   })
 })
 
@@ -348,5 +312,42 @@ describe('ODataParseError', () => {
 
     expect(error).toBeInstanceOf(Error)
     expect(error).toBeInstanceOf(ODataParseError)
+  })
+})
+
+describe('FilterNotSupportedError', () => {
+  it('can be constructed with message and details', () => {
+    const error = new FilterNotSupportedError({
+      message: 'Test message',
+      details: { filter: 'test' },
+    })
+
+    expect(error.message).toBe('Test message')
+    expect(error.details).toEqual({ filter: 'test' })
+    expect(error.errorCode).toBe('FILTER_NOT_SUPPORTED')
+    expect(error.httpStatusCode).toBe(400)
+  })
+
+  it('can be constructed without details', () => {
+    const error = new FilterNotSupportedError({ message: 'No details' })
+
+    expect(error.message).toBe('No details')
+    expect(error.details).toBeUndefined()
+  })
+
+  it('is instanceof Error', () => {
+    const error = new FilterNotSupportedError({ message: 'Test' })
+
+    expect(error).toBeInstanceOf(Error)
+    expect(error).toBeInstanceOf(FilterNotSupportedError)
+  })
+
+  it('is detected by isFilterNotSupportedError typeguard', () => {
+    const error = new FilterNotSupportedError({ message: 'Test' })
+
+    expect(isFilterNotSupportedError(error)).toBe(true)
+    expect(isFilterNotSupportedError(new Error('not this'))).toBe(false)
+    expect(isFilterNotSupportedError(null)).toBe(false)
+    expect(isFilterNotSupportedError('string')).toBe(false)
   })
 })
