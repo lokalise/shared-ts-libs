@@ -1,6 +1,5 @@
 import type { Either } from '@lokalise/node-core'
 import type * as RuntimePrisma from '@prisma/client/runtime/client'
-import type { CockroachDbIsolationLevel } from './isolation_level/isolationLevel.ts'
 
 type ObjectValues<T> = T[keyof T]
 
@@ -29,7 +28,7 @@ export type PrismaTransactionOptions = {
 
     Also, this is a temporal solution in the meantime Prisma includes ReadCommitted as a valid isolation level for CockroachDB
    */
-  isolationLevel?: CockroachDbIsolationLevel
+  isolationLevel?: undefined // TODO
 }
 
 // Prisma $transaction with array does not support maxWait and timeout options
