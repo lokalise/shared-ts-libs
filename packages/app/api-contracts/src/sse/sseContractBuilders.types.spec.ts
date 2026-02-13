@@ -517,30 +517,26 @@ describe('buildSseContract type inference', () => {
       expectTypeOf<Query>().toEqualTypeOf<{ limit: number }>()
     })
 
-    it('conditional z.infer pattern resolves to unknown when schema is undefined', () => {
-      const contract = buildSseContract({
+    it('bare conditional z.infer always resolves to unknown for optional properties', () => {
+      // Without NonNullable, the conditional pattern always gives unknown
+      // because `ZodObject | undefined` does not extend `ZodTypeAny`
+      const contractWithSchemas = buildSseContract({
         method: 'get' as const,
-        pathResolver: () => '/api/stream',
+        pathResolver: (params) => `/api/items/${params.id}/stream`,
+        requestPathParamsSchema: z.object({ id: z.string() }),
         serverSentEventSchemas: { data: z.object({ value: z.string() }) },
       })
 
-      // This is the pattern used in opinionated-machine's fastifyRouteTypes.ts
-      type SafeParams = (typeof contract)['requestPathParamsSchema'] extends z.ZodTypeAny
-        ? z.infer<(typeof contract)['requestPathParamsSchema']>
-        : unknown
-      type SafeQuery = (typeof contract)['requestQuerySchema'] extends z.ZodTypeAny
-        ? z.infer<(typeof contract)['requestQuerySchema']>
-        : unknown
-      type SafeHeaders = (typeof contract)['requestHeaderSchema'] extends z.ZodTypeAny
-        ? z.infer<(typeof contract)['requestHeaderSchema']>
+      type BareParams = (typeof contractWithSchemas)['requestPathParamsSchema'] extends z.ZodTypeAny
+        ? z.infer<(typeof contractWithSchemas)['requestPathParamsSchema']>
         : unknown
 
-      expectTypeOf<SafeParams>().toBeUnknown()
-      expectTypeOf<SafeQuery>().toBeUnknown()
-      expectTypeOf<SafeHeaders>().toBeUnknown()
+      // This resolves to unknown even though the schema IS provided — this is expected
+      // because the property type is `ZodObject | undefined`, not `ZodObject`
+      expectTypeOf<BareParams>().toBeUnknown()
     })
 
-    it('conditional z.infer pattern resolves to correct type when schema is provided', () => {
+    it('NonNullable + conditional z.infer pattern resolves correctly when schema is provided', () => {
       const contract = buildSseContract({
         method: 'get' as const,
         pathResolver: (params) => `/api/items/${params.id}/stream`,
@@ -550,19 +546,52 @@ describe('buildSseContract type inference', () => {
         serverSentEventSchemas: { data: z.object({ value: z.string() }) },
       })
 
-      type SafeParams = (typeof contract)['requestPathParamsSchema'] extends z.ZodTypeAny
-        ? z.infer<(typeof contract)['requestPathParamsSchema']>
-        : unknown
-      type SafeQuery = (typeof contract)['requestQuerySchema'] extends z.ZodTypeAny
-        ? z.infer<(typeof contract)['requestQuerySchema']>
-        : unknown
-      type SafeHeaders = (typeof contract)['requestHeaderSchema'] extends z.ZodTypeAny
-        ? z.infer<(typeof contract)['requestHeaderSchema']>
-        : unknown
+      // Since properties are optional (Schema | undefined), consumers must use NonNullable
+      // before the extends check. Bare `Contract['schema'] extends z.ZodTypeAny` fails
+      // because `ZodObject | undefined` does not extend `z.ZodTypeAny`.
+      type SafeParams =
+        NonNullable<(typeof contract)['requestPathParamsSchema']> extends z.ZodTypeAny
+          ? z.infer<NonNullable<(typeof contract)['requestPathParamsSchema']>>
+          : unknown
+      type SafeQuery =
+        NonNullable<(typeof contract)['requestQuerySchema']> extends z.ZodTypeAny
+          ? z.infer<NonNullable<(typeof contract)['requestQuerySchema']>>
+          : unknown
+      type SafeHeaders =
+        NonNullable<(typeof contract)['requestHeaderSchema']> extends z.ZodTypeAny
+          ? z.infer<NonNullable<(typeof contract)['requestHeaderSchema']>>
+          : unknown
 
       expectTypeOf<SafeParams>().toEqualTypeOf<{ id: string }>()
       expectTypeOf<SafeQuery>().toEqualTypeOf<{ limit: number }>()
       expectTypeOf<SafeHeaders>().toEqualTypeOf<{ authorization: string }>()
+    })
+
+    it('NonNullable + conditional z.infer resolves to unknown when schema is omitted', () => {
+      const contract = buildSseContract({
+        method: 'get' as const,
+        pathResolver: () => '/api/stream',
+        serverSentEventSchemas: { data: z.object({ value: z.string() }) },
+      })
+
+      // When omitted, NonNullable strips undefined, leaving ZodTypeAny.
+      // z.infer<ZodTypeAny> = unknown — which is the correct fallback.
+      type SafeParams =
+        NonNullable<(typeof contract)['requestPathParamsSchema']> extends z.ZodTypeAny
+          ? z.infer<NonNullable<(typeof contract)['requestPathParamsSchema']>>
+          : unknown
+      type SafeQuery =
+        NonNullable<(typeof contract)['requestQuerySchema']> extends z.ZodTypeAny
+          ? z.infer<NonNullable<(typeof contract)['requestQuerySchema']>>
+          : unknown
+      type SafeHeaders =
+        NonNullable<(typeof contract)['requestHeaderSchema']> extends z.ZodTypeAny
+          ? z.infer<NonNullable<(typeof contract)['requestHeaderSchema']>>
+          : unknown
+
+      expectTypeOf<SafeParams>().toBeUnknown()
+      expectTypeOf<SafeQuery>().toBeUnknown()
+      expectTypeOf<SafeHeaders>().toBeUnknown()
     })
   })
 
