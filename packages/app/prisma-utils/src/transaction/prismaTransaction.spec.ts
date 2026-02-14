@@ -82,17 +82,13 @@ describe('prismaTransaction', () => {
       const callsTimestamps: number[] = []
 
       // When
-      const result = await prismaTransaction(
-        prisma,
-        { dbDriver: 'CockroachDb' },
-        () => {
-          callsTimestamps.push(Date.now())
-          throw new PrismaClientKnownRequestError('test', {
-            code: prismaErrorCode,
-            clientVersion: '1',
-          })
-        },
-      )
+      const result = await prismaTransaction(prisma, { dbDriver: 'CockroachDb' }, () => {
+        callsTimestamps.push(Date.now())
+        throw new PrismaClientKnownRequestError('test', {
+          code: prismaErrorCode,
+          clientVersion: '1',
+        })
+      })
 
       // Then
       expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
@@ -113,18 +109,14 @@ describe('prismaTransaction', () => {
       let callsCount = 0
 
       // When
-      const result = await prismaTransaction(
-        prisma,
-        { dbDriver: 'CockroachDb' },
-        () => {
-          callsCount++
-          throw new PrismaClientKnownRequestError('test', {
-            code: 'P100',
-            clientVersion: '1',
-            meta: { code: '40001' },
-          })
-        },
-      )
+      const result = await prismaTransaction(prisma, { dbDriver: 'CockroachDb' }, () => {
+        callsCount++
+        throw new PrismaClientKnownRequestError('test', {
+          code: 'P100',
+          clientVersion: '1',
+          meta: { code: '40001' },
+        })
+      })
 
       // Then
       expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
@@ -139,17 +131,13 @@ describe('prismaTransaction', () => {
       let callsCount = 0
 
       // When
-      const result = await prismaTransaction(
-        prisma,
-        { dbDriver: 'CockroachDb' },
-        () => {
-          callsCount++
-          throw new PrismaClientKnownRequestError('test', {
-            code: PRISMA_NOT_FOUND_ERROR,
-            clientVersion: '1',
-          })
-        },
-      )
+      const result = await prismaTransaction(prisma, { dbDriver: 'CockroachDb' }, () => {
+        callsCount++
+        throw new PrismaClientKnownRequestError('test', {
+          code: PRISMA_NOT_FOUND_ERROR,
+          clientVersion: '1',
+        })
+      })
 
       // Then
       expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
@@ -286,11 +274,10 @@ describe('prismaTransaction', () => {
 
     it('should return proper types', async () => {
       // When
-      const result = await prismaTransaction(
-        prisma,
-        { dbDriver: 'CockroachDb' },
-        [prisma.item1.create({ data: TEST_ITEM_1 }), prisma.item2.create({ data: TEST_ITEM_2 })],
-      )
+      const result = await prismaTransaction(prisma, { dbDriver: 'CockroachDb' }, [
+        prisma.item1.create({ data: TEST_ITEM_1 }),
+        prisma.item2.create({ data: TEST_ITEM_2 }),
+      ])
 
       // Then
       expect(result.result).toMatchObject([TEST_ITEM_1, TEST_ITEM_2])

@@ -32,11 +32,9 @@ describe('prismaTransaction - isolation level', () => {
       { dbDriver: 'CockroachDb' },
       async (client) => client.$queryRaw`SHOW transaction_isolation`,
     )
-    const res2 = await prismaTransaction(
-      prisma,
-      { dbDriver: 'CockroachDb' },
-      [prisma.$queryRaw`SHOW transaction_isolation`],
-    )
+    const res2 = await prismaTransaction(prisma, { dbDriver: 'CockroachDb' }, [
+      prisma.$queryRaw`SHOW transaction_isolation`,
+    ])
 
     const result = [res1.result, res2.result].map(extractIsolationLevel)
     expect(result).toEqual(['serializable', 'serializable'])
@@ -74,11 +72,9 @@ describe('prismaTransaction - isolation level', () => {
       { isolationLevel: 'ReadCommitted', dbDriver: 'CockroachDb' },
       async () => undefined,
     )
-    await prismaTransaction(
-      prisma,
-      { isolationLevel: 'ReadCommitted', dbDriver: 'CockroachDb' },
-      [prisma.$queryRaw`SELECT 1`],
-    )
+    await prismaTransaction(prisma, { isolationLevel: 'ReadCommitted', dbDriver: 'CockroachDb' }, [
+      prisma.$queryRaw`SELECT 1`,
+    ])
 
     expect(transactionSpy).toHaveBeenCalledTimes(2)
     expect(transactionSpy.mock.calls.map(([, options]) => options)).toMatchObject([
