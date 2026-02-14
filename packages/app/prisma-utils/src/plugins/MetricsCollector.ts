@@ -1,7 +1,7 @@
-import type { PrismaClient } from '@prisma/client'
 import type { Metrics } from '@prisma/client/runtime/client'
 import type { FastifyBaseLogger } from 'fastify'
 import * as prometheus from 'prom-client'
+import type { PrismaClient } from '../../test/db-client/client.ts'
 
 export type PrometheusMetricsDefinitions = {
   counters: Record<string, prometheus.Counter<'prisma' | 'connection-pool'>>
