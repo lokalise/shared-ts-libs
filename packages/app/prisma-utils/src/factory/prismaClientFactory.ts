@@ -1,6 +1,6 @@
 import type * as RuntimePrisma from '@prisma/client/runtime/client'
-import type { PrismaClient } from '../test/db-client/client.ts'
-import type { PrismaClientConstructor } from '../test/db-client/internal/class.ts'
+import type { PrismaClient } from '../../test/db-client/client.ts'
+import type { PrismaClientConstructor } from '../../test/db-client/internal/class.ts'
 
 export const prismaClientFactory = <P extends PrismaClient>(
   PrismaClient: PrismaClientConstructor,

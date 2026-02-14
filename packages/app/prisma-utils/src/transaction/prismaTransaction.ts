@@ -11,12 +11,12 @@ import {
   PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
   PRISMA_TRANSACTION_ERROR,
 } from '../errors/index.ts'
+import type { DbDriver } from '../types.ts'
 import type {
-  DbDriver,
   PrismaTransactionFn,
   PrismaTransactionOptions,
   PrismaTransactionReturnType,
-} from '../types.ts'
+} from './types.ts'
 
 const DEFAULT_OPTIONS = {
   retriesAllowed: 2, // first try + 2 retries = 3 tries
