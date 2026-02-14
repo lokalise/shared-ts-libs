@@ -5,7 +5,7 @@ import type { DbDriver } from '../types.ts'
 type InternalTransactionOptions = RuntimePrisma.PrismaClientOptions['transactionOptions']
 
 export type PrismaTransactionOptions = {
-  dbDriver?: DbDriver // default: CockroachDb
+  dbDriver: DbDriver
   retriesAllowed?: number
   baseRetryDelayMs?: number
   maxRetryDelayMs?: number

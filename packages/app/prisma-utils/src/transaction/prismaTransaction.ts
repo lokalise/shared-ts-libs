@@ -20,7 +20,6 @@ import type {
 
 const DEFAULT_OPTIONS = {
   retriesAllowed: 2, // first try + 2 retries = 3 tries
-  dbDriver: 'CockroachDb',
   baseRetryDelayMs: 100,
   maxRetryDelayMs: 30000, // 30s
   timeout: 5000, // 5s
@@ -38,8 +37,8 @@ const DEFAULT_OPTIONS = {
  */
 export const prismaTransaction = (async <T, P extends PrismaClient>(
   prisma: P,
+  options: PrismaTransactionOptions,
   arg: PrismaTransactionFn<T, P> | RuntimePrisma.PrismaPromise<unknown>[],
-  options?: PrismaTransactionOptions,
 ): Promise<PrismaTransactionReturnType<T>> => {
   let optionsWithDefaults = { ...DEFAULT_OPTIONS, ...options }
   let result: PrismaTransactionReturnType<T> | undefined
@@ -77,13 +76,13 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 }) as {
   <T, P extends PrismaClient>(
     prisma: P,
+    options: PrismaTransactionOptions,
     fn: PrismaTransactionFn<T, P>,
-    options?: PrismaTransactionOptions,
   ): Promise<Either<unknown, T>>
   <T extends RuntimePrisma.PrismaPromise<unknown>[], P extends PrismaClient>(
     prisma: P,
+    options: PrismaTransactionOptions,
     args: [...T],
-    options?: PrismaTransactionOptions,
   ): Promise<Either<unknown, RuntimePrisma.Types.Utils.UnwrapTuple<T>>>
 }
 
