@@ -466,6 +466,20 @@ describe('buildFastifyRoute', () => {
     })
   })
 
+  describe('injectByContract', () => {
+    it('throws on unsupported HTTP method', async () => {
+      const fakeContract = {
+        method: 'options',
+        pathResolver: () => '/test',
+      }
+
+      await expect(
+        // @ts-expect-error testing unsupported method
+        injectByContract({} as Parameters<typeof injectByContract>[0], fakeContract, {}),
+      ).rejects.toThrow('Unsupported HTTP method: options')
+    })
+  })
+
   describe('metadata mapper', () => {
     it('uses metadata mapper for GET route', () => {
       const SCHEMA = z.object({ id: z.string() })
