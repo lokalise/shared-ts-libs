@@ -1,7 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { PrismaClient } from '../test/db-client/client.ts'
-import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
+import { PrismaClient } from '../../test/db-client/client.ts'
+import { getDatasourceUrl } from '../../test/getDatasourceUrl.ts'
 import { prismaTransaction } from './prismaTransaction.ts'
 
 const transactionIsolationKey = 'transaction_isolation'

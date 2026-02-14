@@ -2,21 +2,21 @@ import { setTimeout } from 'node:timers/promises'
 import type { Either } from '@lokalise/node-core'
 import { deepClone } from '@lokalise/node-core'
 import type * as RuntimePrisma from '@prisma/client/runtime/client'
-import type { PrismaClient } from '../test/db-client/client.ts'
-import { isCockroachDBRetryTransaction } from './errors/cockroachdbError.ts'
+import type { PrismaClient } from '../../test/db-client/client.ts'
+import { isCockroachDBRetryTransaction } from '../errors/cockroachdbError.ts'
 import {
   isPrismaClientKnownRequestError,
   isPrismaTransactionClosedError,
   PRISMA_SERIALIZATION_ERROR,
   PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
   PRISMA_TRANSACTION_ERROR,
-} from './errors/index.ts'
+} from '../errors/index.ts'
 import type {
   DbDriver,
   PrismaTransactionFn,
   PrismaTransactionOptions,
   PrismaTransactionReturnType,
-} from './types.ts'
+} from '../types.ts'
 
 const DEFAULT_OPTIONS = {
   retriesAllowed: 2, // first try + 2 retries = 3 tries

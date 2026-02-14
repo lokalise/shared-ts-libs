@@ -2,15 +2,15 @@ import type { Either } from '@lokalise/node-core'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanTables, DB_MODEL } from '../test/DbCleaner.ts'
-import { PrismaClient } from '../test/db-client/client.ts'
-import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
+import { cleanTables, DB_MODEL } from '../../test/DbCleaner.ts'
+import { PrismaClient } from '../../test/db-client/client.ts'
+import { getDatasourceUrl } from '../../test/getDatasourceUrl.ts'
 import {
   PRISMA_NOT_FOUND_ERROR,
   PRISMA_SERIALIZATION_ERROR,
   PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
   PRISMA_TRANSACTION_ERROR,
-} from './errors/index.ts'
+} from '../errors/index.ts'
 import { prismaTransaction } from './prismaTransaction.ts'
 
 type Item1 = {
