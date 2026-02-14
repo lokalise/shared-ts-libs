@@ -13,13 +13,7 @@ import {
   buildFastifyPayloadRoute,
   buildFastifyPayloadRouteHandler,
 } from './fastifyApiContracts.ts'
-import {
-  injectDelete,
-  injectGet,
-  injectPatch,
-  injectPost,
-  injectPut,
-} from './fastifyApiRequestInjector.ts'
+import { injectByContract } from './injectByContract.ts'
 import type { RouteType } from './types.ts'
 
 const REQUEST_BODY_SCHEMA = z.object({
@@ -114,7 +108,7 @@ describe('fastifyApiContracts', () => {
       >()
 
       const app = await initApp(route)
-      const response = await injectGet(app, contract, {
+      const response = await injectByContract(app, contract, {
         pathParams: { userId: '1' },
         queryParams: { limit: 10 },
       })
@@ -154,7 +148,7 @@ describe('fastifyApiContracts', () => {
       >()
 
       const app = await initApp(route)
-      const response = await injectGet(app, contract, {
+      const response = await injectByContract(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
         pathParams: { userId: '1' },
         queryParams: { testIds: ['test-id'] },
@@ -192,7 +186,7 @@ describe('fastifyApiContracts', () => {
       >()
 
       const app = await initApp(route)
-      const response = await injectGet(app, contract, {
+      const response = await injectByContract(app, contract, {
         pathParams: { userId: '1' },
         queryParams: { limit: 10 },
       })
@@ -226,7 +220,7 @@ describe('fastifyApiContracts', () => {
       >()
 
       const app = await initApp(route)
-      const response = await injectDelete(app, contract, {
+      const response = await injectByContract(app, contract, {
         pathParams: { userId: '1' },
       })
 
@@ -260,7 +254,7 @@ describe('fastifyApiContracts', () => {
 
       const app = await initApp(route)
       // using headers directly
-      const response = await injectDelete(app, contract, {
+      const response = await injectByContract(app, contract, {
         headers: { authorization: 'dummy' },
         pathParams: { userId: '1' },
       })
@@ -268,7 +262,7 @@ describe('fastifyApiContracts', () => {
       expect(response.statusCode).toBe(200)
 
       // using headers factory
-      const response2 = await injectDelete(app, contract, {
+      const response2 = await injectByContract(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
         pathParams: { userId: '1' },
       })
@@ -321,7 +315,7 @@ describe('fastifyApiContracts', () => {
       >()
 
       const app = await initApp(route)
-      const response = await injectPost(app, contract, {
+      const response = await injectByContract(app, contract, {
         pathParams: { userId: '1' },
         body: { id: '2' },
       })
@@ -360,7 +354,7 @@ describe('fastifyApiContracts', () => {
       >()
 
       const app = await initApp(route)
-      const response = await injectPost(app, contract, {
+      const response = await injectByContract(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
         pathParams: { userId: '1' },
         body: { id: '2' },
@@ -386,7 +380,7 @@ describe('fastifyApiContracts', () => {
       })
 
       const app = await initApp(route)
-      const response = await injectPatch(app, contract, {
+      const response = await injectByContract(app, contract, {
         pathParams: { userId: '1' },
         body: { id: '2' },
       })
@@ -413,7 +407,7 @@ describe('fastifyApiContracts', () => {
       })
 
       const app = await initApp(route)
-      const response = await injectPatch(app, contract, {
+      const response = await injectByContract(app, contract, {
         headers: () => ({ authorization: 'dummy' }),
         pathParams: { userId: '1' },
         body: { id: '2' },
@@ -439,7 +433,7 @@ describe('fastifyApiContracts', () => {
       })
 
       const app = await initApp(route)
-      const response = await injectPut(app, contract, {
+      const response = await injectByContract(app, contract, {
         pathParams: { userId: '1' },
         body: { id: '2' },
       })
@@ -467,7 +461,7 @@ describe('fastifyApiContracts', () => {
 
       const app = await initApp(route)
       // using headers directly
-      const response = await injectPut(app, contract, {
+      const response = await injectByContract(app, contract, {
         headers: { authorization: 'dummy' },
         pathParams: { userId: '1' },
         body: { id: '2' },
@@ -476,7 +470,7 @@ describe('fastifyApiContracts', () => {
       expect(response.statusCode).toBe(200)
 
       // using headers factory
-      const response2 = await injectPut(app, contract, {
+      const response2 = await injectByContract(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
         pathParams: { userId: '1' },
         body: { id: '2' },
@@ -508,7 +502,7 @@ describe('fastifyApiContracts', () => {
       const route = buildFastifyPayloadRoute(contract, handler)
 
       const app = await initApp(route)
-      const response = await injectPost(app, contract, {
+      const response = await injectByContract(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
         pathParams: { userId: '1' },
         body: { id: '2' },

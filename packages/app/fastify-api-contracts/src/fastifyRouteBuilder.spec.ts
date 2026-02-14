@@ -7,14 +7,8 @@ import {
 } from 'fastify-type-provider-zod'
 import { describe, expect, expectTypeOf, it, onTestFinished } from 'vitest'
 import { z } from 'zod/v4'
-import {
-  injectDelete,
-  injectGet,
-  injectPatch,
-  injectPost,
-  injectPut,
-} from './fastifyApiRequestInjector.ts'
 import { buildFastifyRoute, buildFastifyRouteHandler } from './fastifyRouteBuilder.ts'
+import { injectByContract } from './injectByContract.ts'
 import type { RouteType } from './types.ts'
 
 const REQUEST_BODY_SCHEMA = z.object({
@@ -120,7 +114,7 @@ describe('buildFastifyRoute', () => {
       >()
 
       const app = await initApp(route)
-      const response = await injectGet(app, contract, {
+      const response = await injectByContract(app, contract, {
         pathParams: { userId: '1' },
         queryParams: { limit: 10 },
       })
@@ -159,7 +153,7 @@ describe('buildFastifyRoute', () => {
       >()
 
       const app = await initApp(route)
-      const response = await injectGet(app, contract, {
+      const response = await injectByContract(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
         pathParams: { userId: '1' },
         queryParams: { testIds: ['test-id'] },
@@ -186,7 +180,7 @@ describe('buildFastifyRoute', () => {
       })
 
       const app = await initApp(route)
-      const response = await injectGet(app, contract, {
+      const response = await injectByContract(app, contract, {
         pathParams: { userId: '1' },
         queryParams: { limit: 10 },
       })
@@ -222,7 +216,7 @@ describe('buildFastifyRoute', () => {
       >()
 
       const app = await initApp(route)
-      const response = await injectDelete(app, contract, {
+      const response = await injectByContract(app, contract, {
         pathParams: { userId: '1' },
       })
 
@@ -255,14 +249,14 @@ describe('buildFastifyRoute', () => {
       >()
 
       const app = await initApp(route)
-      const response = await injectDelete(app, contract, {
+      const response = await injectByContract(app, contract, {
         headers: { authorization: 'dummy' },
         pathParams: { userId: '1' },
       })
 
       expect(response.statusCode).toBe(200)
 
-      const response2 = await injectDelete(app, contract, {
+      const response2 = await injectByContract(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
         pathParams: { userId: '1' },
       })
@@ -301,7 +295,7 @@ describe('buildFastifyRoute', () => {
       >()
 
       const app = await initApp(route)
-      const response = await injectPost(app, contract, {
+      const response = await injectByContract(app, contract, {
         pathParams: { userId: '1' },
         body: { id: '2' },
       })
@@ -340,7 +334,7 @@ describe('buildFastifyRoute', () => {
       >()
 
       const app = await initApp(route)
-      const response = await injectPost(app, contract, {
+      const response = await injectByContract(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
         pathParams: { userId: '1' },
         body: { id: '2' },
@@ -372,7 +366,7 @@ describe('buildFastifyRoute', () => {
       const route = buildFastifyRoute(contract, handler)
 
       const app = await initApp(route)
-      const response = await injectPost(app, contract, {
+      const response = await injectByContract(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
         pathParams: { userId: '1' },
         body: { id: '2' },
@@ -400,7 +394,7 @@ describe('buildFastifyRoute', () => {
       })
 
       const app = await initApp(route)
-      const response = await injectPatch(app, contract, {
+      const response = await injectByContract(app, contract, {
         pathParams: { userId: '1' },
         body: { id: '2' },
       })
@@ -427,7 +421,7 @@ describe('buildFastifyRoute', () => {
       })
 
       const app = await initApp(route)
-      const response = await injectPut(app, contract, {
+      const response = await injectByContract(app, contract, {
         pathParams: { userId: '1' },
         body: { id: '2' },
       })
@@ -454,7 +448,7 @@ describe('buildFastifyRoute', () => {
       })
 
       const app = await initApp(route)
-      const response = await injectPut(app, contract, {
+      const response = await injectByContract(app, contract, {
         headers: { authorization: 'dummy' },
         pathParams: { userId: '1' },
         body: { id: '2' },
@@ -462,13 +456,27 @@ describe('buildFastifyRoute', () => {
 
       expect(response.statusCode).toBe(200)
 
-      const response2 = await injectPut(app, contract, {
+      const response2 = await injectByContract(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
         pathParams: { userId: '1' },
         body: { id: '2' },
       })
 
       expect(response2.statusCode).toBe(200)
+    })
+  })
+
+  describe('injectByContract', () => {
+    it('throws on unsupported HTTP method', async () => {
+      const fakeContract = {
+        method: 'options',
+        pathResolver: () => '/test',
+      }
+
+      await expect(
+        // @ts-expect-error testing unsupported method
+        injectByContract({} as Parameters<typeof injectByContract>[0], fakeContract, {}),
+      ).rejects.toThrow('Unsupported HTTP method: options')
     })
   })
 
