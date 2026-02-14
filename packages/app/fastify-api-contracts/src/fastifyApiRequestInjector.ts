@@ -46,6 +46,9 @@ export type PayloadRouteRequestParams<
     }
   : never
 
+/**
+ * @deprecated Use `injectByContract` instead. This function will be removed in a future version.
+ */
 export async function injectGet<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
@@ -91,6 +94,9 @@ export async function injectGet<
   )
 }
 
+/**
+ * @deprecated Use `injectByContract` instead. This function will be removed in a future version.
+ */
 export async function injectDelete<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
@@ -136,6 +142,9 @@ export async function injectDelete<
   )
 }
 
+/**
+ * @deprecated Use `injectByContract` instead. This function will be removed in a future version.
+ */
 export async function injectPost<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   RequestBodySchema extends z.Schema | undefined = undefined,
@@ -186,6 +195,9 @@ export async function injectPost<
   )
 }
 
+/**
+ * @deprecated Use `injectByContract` instead. This function will be removed in a future version.
+ */
 export async function injectPut<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   RequestBodySchema extends z.Schema | undefined = undefined,
@@ -236,6 +248,9 @@ export async function injectPut<
   )
 }
 
+/**
+ * @deprecated Use `injectByContract` instead. This function will be removed in a future version.
+ */
 export async function injectPatch<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   RequestBodySchema extends z.Schema | undefined = undefined,
