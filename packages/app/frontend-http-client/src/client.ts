@@ -392,6 +392,9 @@ export async function sendDelete<
   >
 }
 
+/**
+ * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ */
 export function sendByPayloadRoute<
   T extends WretchInstance,
   RequestBodySchema extends z.Schema | undefined,
@@ -452,6 +455,9 @@ export function sendByPayloadRoute<
   })
 }
 
+/**
+ * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ */
 export function sendByGetRoute<
   T extends WretchInstance,
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -505,6 +511,9 @@ export function sendByGetRoute<
   })
 }
 
+/**
+ * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ */
 export function sendByDeleteRoute<
   T extends WretchInstance,
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -556,4 +565,147 @@ export function sendByDeleteRoute<
     // @ts-expect-error FIXME
     headersSchema: params.headersSchema,
   })
+}
+
+// Overload 1: GET route
+export function sendByContract<
+  T extends WretchInstance,
+  ResponseBodySchema extends z.Schema | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
+>(
+  wretch: T,
+  routeDefinition: GetRouteDefinition<
+    ResponseBodySchema,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    ResponseHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
+  >,
+  params: RouteRequestParams<
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
+  >,
+): Promise<
+  RequestResultType<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
+  >
+>
+
+// Overload 2: Payload route (POST/PUT/PATCH)
+export function sendByContract<
+  T extends WretchInstance,
+  RequestBodySchema extends z.Schema | undefined,
+  ResponseBodySchema extends z.Schema | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
+>(
+  wretch: T,
+  routeDefinition: PayloadRouteDefinition<
+    RequestBodySchema,
+    ResponseBodySchema,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    ResponseHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
+  >,
+  params: PayloadRouteRequestParams<
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestBodySchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
+  >,
+): Promise<
+  RequestResultType<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
+  >
+>
+
+// Overload 3: DELETE route
+export function sendByContract<
+  T extends WretchInstance,
+  ResponseBodySchema extends z.Schema | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = true,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
+>(
+  wretch: T,
+  routeDefinition: DeleteRouteDefinition<
+    ResponseBodySchema,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    ResponseHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
+  >,
+  params: RouteRequestParams<
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
+  >,
+): Promise<
+  RequestResultType<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
+  >
+>
+
+// Implementation
+export function sendByContract(
+  wretch: WretchInstance,
+  // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
+  routeDefinition:
+    | GetRouteDefinition<any, any, any, any, any, any, any, any>
+    | PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>
+    | DeleteRouteDefinition<any, any, any, any, any, any, any, any>,
+  // biome-ignore lint/suspicious/noExplicitAny: params type depends on overload
+  params: any,
+  // biome-ignore lint/suspicious/noExplicitAny: return type depends on overload
+): Promise<any> {
+  const method = routeDefinition.method
+  if (method === 'get') {
+    return sendByGetRoute(wretch, routeDefinition, params)
+  }
+  if (method === 'delete') {
+    return sendByDeleteRoute(wretch, routeDefinition, params)
+  }
+  return sendByPayloadRoute(
+    wretch,
+    routeDefinition as PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>,
+    params,
+  )
 }

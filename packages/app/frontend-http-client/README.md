@@ -67,16 +67,17 @@ if non-JSON responses are expected, the library will return null, if not, it wil
 
 `frontend-http-client` supports using API contracts, created with `@lokalise/api-contracts` in order to make fully type-safe HTTP requests.
 
-Usage example:
+The unified `sendByContract` method accepts any route definition (GET, POST, PUT, PATCH, DELETE) and automatically dispatches based on the contract's `method` field:
 
 ```ts
-import { somePostRouteDefinition, someGetRouteDefinition } from 'some-service-api-contracts'
-import { sendByPayloadRoute } from '@lokalise/frontend-http-client'
+import { somePostRouteDefinition, someGetRouteDefinition, someDeleteRouteDefinition } from 'some-service-api-contracts'
+import { sendByContract } from '@lokalise/frontend-http-client'
 import wretch from 'wretch'
 
 const client = wretch(BASE_URL)
 
-const responseBody1 = await sendByPayloadRoute(client, somePostRouteDefinition, {
+// POST/PUT/PATCH request - body is required by the contract type
+const responseBody1 = await sendByContract(client, somePostRouteDefinition, {
     pathParams: {
         userId: 1,
     },
@@ -85,7 +86,8 @@ const responseBody1 = await sendByPayloadRoute(client, somePostRouteDefinition, 
     },
 })
 
-const responseBody2 = await sendByGetRoute(client, someGetRouteDefinition, {
+// GET request - no body needed
+const responseBody2 = await sendByContract(client, someGetRouteDefinition, {
     pathParams: {
         userId: 1,
     },
@@ -93,14 +95,23 @@ const responseBody2 = await sendByGetRoute(client, someGetRouteDefinition, {
         id: 'testId',
     },
 })
+
+// DELETE request
+const responseBody3 = await sendByContract(client, someDeleteRouteDefinition, {
+    pathParams: {
+        userId: 1,
+    },
+})
 ```
 
 The following parameters can be specified when sending API contract-based requests:
-- `body` - request body (only applicable for `sendByPayloadRoute`, type needs to match with contract definition)
+- `body` - request body (only applicable for payload routes, type needs to match with contract definition)
 - `queryParams` - query parameters (type needs to match with contract definition)
 - `headers` - custom headers to be sent with the request (type needs to match with contract definition)
 - `pathParams` – parameters used for path resolver (type needs to match with contract definition)
 - `pathPrefix` - optional prefix to be prepended to the path resolved by the contract's path resolver
+
+> **Note:** The individual `sendByPayloadRoute`, `sendByGetRoute`, and `sendByDeleteRoute` methods are deprecated in favor of `sendByContract`.
 
 ### Tracking request progress
 Tracking requests progress is especially useful while uploading files. 

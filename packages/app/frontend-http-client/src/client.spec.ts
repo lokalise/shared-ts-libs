@@ -5,6 +5,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import wretch from 'wretch'
 import { z } from 'zod/v4'
 import {
+  sendByContract,
   sendByDeleteRoute,
   sendByGetRoute,
   sendByPayloadRoute,
@@ -2056,6 +2057,372 @@ describe('frontend-http-client', () => {
       ).rejects.toThrowErrorMatchingInlineSnapshot(
         '[Error: Request to / has returned an unexpected non-JSON response.]',
       )
+    })
+  })
+
+  describe('sendByContract', () => {
+    it('sends GET request via contract', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildGetRoute({
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+      })
+
+      expect(responseBody).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+
+    it('sends GET request with query params via contract', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const querySchema = z.object({
+        id: z.string(),
+      })
+
+      const routeDefinition = buildGetRoute({
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestQuerySchema: querySchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        queryParams: {
+          id: 'frfr',
+        },
+      })
+
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+
+    it('sends POST request via contract', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPost('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const requestBodySchema = z.object({
+        isActive: z.boolean(),
+      })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildPayloadRoute({
+        method: 'post',
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestBodySchema: requestBodySchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        body: {
+          isActive: true,
+        },
+      })
+
+      expect(responseBody).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+
+    it('sends PUT request via contract', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPut('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const requestBodySchema = z.object({
+        isActive: z.boolean(),
+      })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildPayloadRoute({
+        method: 'put',
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestBodySchema: requestBodySchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        body: {
+          isActive: true,
+        },
+      })
+
+      expect(responseBody).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+
+    it('sends PATCH request via contract', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPatch('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const requestBodySchema = z.object({
+        isActive: z.boolean(),
+      })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildPayloadRoute({
+        method: 'patch',
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestBodySchema: requestBodySchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        body: {
+          isActive: true,
+        },
+      })
+
+      expect(responseBody).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+
+    it('sends DELETE request via contract', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forDelete('/users/1').thenReply(204)
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildDeleteRoute({
+        isEmptyResponseExpected: true,
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: pathSchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+      })
+
+      expect(responseBody).toBeNull()
+    })
+
+    it('supports passing headers factory for a POST request', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPost('/users/1').thenCallback((req) => {
+        return {
+          statusCode: 200,
+          headers: JSON_HEADERS,
+          body: JSON.stringify({
+            headers: req.headers.authorization,
+          }),
+        }
+      })
+
+      const responseBodySchema = z.any()
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const requestBodySchema = z.object({
+        isActive: z.boolean(),
+      })
+
+      const routeDefinition = buildPayloadRoute({
+        method: 'post',
+        requestBodySchema,
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestHeaderSchema: HEADERS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        body: {
+          isActive: true,
+        },
+        pathParams: {
+          userId: 1,
+        },
+        headers: () => Promise.resolve({ authorization: 'dummy' }),
+      })
+
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toMatchInlineSnapshot(`
+        {
+          "headers": "dummy",
+        }
+      `)
+    })
+
+    it('works with path prefix for GET routes', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/v1/users/1').thenJson(200, { id: 1 })
+
+      const responseBodySchema = z.object({
+        id: z.number(),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildGetRoute({
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        pathPrefix: 'v1',
+      })
+
+      expect(responseBody).toEqual({ id: 1 })
+    })
+
+    it('works with path prefix for POST routes', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPost('/v1/users/1').thenJson(200, { id: 1 })
+
+      const responseBodySchema = z.object({
+        id: z.number(),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildPayloadRoute({
+        method: 'post',
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestBodySchema: undefined,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        pathPrefix: 'v1',
+      })
+
+      expect(responseBody).toEqual({ id: 1 })
+    })
+
+    it('works with path prefix for DELETE routes', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forDelete('/v1/users/1').thenReply(204)
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildDeleteRoute({
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: pathSchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        pathPrefix: 'v1',
+      })
+
+      expect(responseBody).toBeNull()
     })
   })
 })
