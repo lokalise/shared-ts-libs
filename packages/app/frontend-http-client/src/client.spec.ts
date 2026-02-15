@@ -1,7 +1,7 @@
 import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import { newServer } from 'mock-xmlhttprequest'
 import { getLocal, type Mockttp } from 'mockttp'
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import wretch from 'wretch'
 import { z } from 'zod/v4'
 import {
@@ -80,6 +80,7 @@ describe('frontend-http-client', () => {
         },
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -116,6 +117,7 @@ describe('frontend-http-client', () => {
         },
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -165,6 +167,7 @@ describe('frontend-http-client', () => {
       })
 
       // satisfies verifies that responseBody type is inferred properly
+      expectTypeOf(responseBody).toEqualTypeOf<z.output<typeof responseBodySchema>>()
       expect(responseBody satisfies z.infer<typeof responseBodySchema>).toEqual({
         data: {
           code: 99,
@@ -227,6 +230,7 @@ describe('frontend-http-client', () => {
       })
 
       // satisfies verifies that responseBody type is inferred properly
+      expectTypeOf(responseBody).toEqualTypeOf<z.output<typeof responseBodySchema>>()
       expect(responseBody satisfies z.infer<typeof responseBodySchema>).toEqual({
         data: {
           code: 99,
@@ -263,6 +267,7 @@ describe('frontend-http-client', () => {
         },
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -376,6 +381,7 @@ describe('frontend-http-client', () => {
         },
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<null>()
       expect(responseBody).toBeNull()
     })
 
@@ -494,6 +500,7 @@ describe('frontend-http-client', () => {
 
       const responseBody = await sendByPayloadRoute(client, routeDefinition, {})
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -527,6 +534,7 @@ describe('frontend-http-client', () => {
         pathPrefix: 'v1',
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ id: number }>()
       expect(responseBody).toEqual({ id: 1 })
     })
 
@@ -558,6 +566,7 @@ describe('frontend-http-client', () => {
         pathPrefix: 'v1',
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ id: number }>()
       expect(responseBody).toEqual({ id: 1 })
     })
 
@@ -583,6 +592,7 @@ describe('frontend-http-client', () => {
         pathPrefix: 'v1',
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<null>()
       expect(responseBody).toBeNull()
     })
   })
@@ -604,6 +614,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -803,6 +814,7 @@ describe('frontend-http-client', () => {
         requestBodySchema: undefined,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
 
@@ -830,6 +842,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
 
@@ -853,6 +866,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
 
@@ -879,6 +893,7 @@ describe('frontend-http-client', () => {
         requestBodySchema: schema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
   })
@@ -1187,6 +1202,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -1389,6 +1405,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
 
@@ -1412,6 +1429,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
   })
@@ -1433,6 +1451,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -1635,6 +1654,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
 
@@ -1658,6 +1678,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
   })
@@ -1679,6 +1700,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -1729,6 +1751,7 @@ describe('frontend-http-client', () => {
         isEmptyResponseExpected: true,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ id: string } | null>()
       if (response) {
         // @ts-expect-error WretchResponse has this field, null does not
         expect(response.ok).toBe(true)
@@ -1861,6 +1884,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ data: { code: number } }>()
       expect(response?.data.code).toBe(99)
     })
 
@@ -1884,6 +1908,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ data: { code: number } }>()
       expect(response?.data.code).toBe(99)
     })
 
@@ -1910,6 +1935,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -1969,6 +1995,7 @@ describe('frontend-http-client', () => {
         }),
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ string: string } | null>()
       expect(response).toMatchInlineSnapshot(`
 				{
 				  "string": "1",
@@ -2088,6 +2115,7 @@ describe('frontend-http-client', () => {
         },
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -2130,6 +2158,7 @@ describe('frontend-http-client', () => {
         },
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody satisfies z.infer<typeof responseBodySchema>).toEqual({
         data: {
           code: 99,
@@ -2173,6 +2202,7 @@ describe('frontend-http-client', () => {
         },
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -2216,6 +2246,7 @@ describe('frontend-http-client', () => {
         },
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -2259,6 +2290,7 @@ describe('frontend-http-client', () => {
         },
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -2288,6 +2320,7 @@ describe('frontend-http-client', () => {
         },
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<null>()
       expect(responseBody).toBeNull()
     })
 
@@ -2366,6 +2399,7 @@ describe('frontend-http-client', () => {
         pathPrefix: 'v1',
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ id: number }>()
       expect(responseBody).toEqual({ id: 1 })
     })
 
@@ -2397,6 +2431,7 @@ describe('frontend-http-client', () => {
         pathPrefix: 'v1',
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ id: number }>()
       expect(responseBody).toEqual({ id: 1 })
     })
 
@@ -2422,6 +2457,7 @@ describe('frontend-http-client', () => {
         pathPrefix: 'v1',
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<null>()
       expect(responseBody).toBeNull()
     })
   })

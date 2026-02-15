@@ -687,10 +687,11 @@ export function sendByContract<
 // Implementation
 export function sendByContract(
   wretch: WretchInstance,
-  // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
-  routeDefinition:
+  routeDefinition: // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
     | GetRouteDefinition<any, any, any, any, any, any, any, any>
+    // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
     | PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>
+    // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
     | DeleteRouteDefinition<any, any, any, any, any, any, any, any>,
   // biome-ignore lint/suspicious/noExplicitAny: params type depends on overload
   params: any,
@@ -705,6 +706,7 @@ export function sendByContract(
   }
   return sendByPayloadRoute(
     wretch,
+    // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
     routeDefinition as PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>,
     params,
   )

@@ -1,3 +1,4 @@
+import type { Readable } from 'node:stream'
 import { setTimeout } from 'node:timers/promises'
 import {
   buildDeleteRoute,
@@ -8,7 +9,7 @@ import {
 import { getLocal, type Mockttp } from 'mockttp'
 import { Client } from 'undici'
 import { createDefaultRetryResolver } from 'undici-retry'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import { JSON_HEADERS } from './constants.ts'
 import {
@@ -128,6 +129,7 @@ describe('httpClient', () => {
         validateResponse: true,
       })
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -144,6 +146,7 @@ describe('httpClient', () => {
         validateResponse: false,
       })
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: string }>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -493,6 +496,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -520,6 +524,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: string }>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -599,6 +604,7 @@ describe('httpClient', () => {
       )
 
       expect(result.result.statusCode).toBe(204)
+      expectTypeOf(result.result.body).toEqualTypeOf<undefined | null>()
       expect(result.result.body).toBeNull()
     })
 
@@ -638,6 +644,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
       expect(result.result.body).toEqual(mockProduct1)
     })
   })
@@ -814,6 +821,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema> | null>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -841,6 +849,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: string } | null>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -864,6 +873,7 @@ describe('httpClient', () => {
       )
 
       expect(result.result.statusCode).toBe(204)
+      expectTypeOf(result.result.body).toEqualTypeOf<undefined | null>()
       expect(result.result.body).toBeNull()
     })
 
@@ -926,6 +936,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: number } | null>()
       expect(result.result.body).toEqual({ id: 1 })
     })
   })
@@ -1005,6 +1016,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -1034,6 +1046,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: string }>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -1066,6 +1079,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: number }>()
       expect(result.result.body).toEqual({ id: 1 })
     })
   })
@@ -1131,6 +1145,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -1152,6 +1167,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: string }>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -1341,6 +1357,7 @@ describe('httpClient', () => {
         reqContext,
       })
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -1357,6 +1374,7 @@ describe('httpClient', () => {
         validateResponse: false,
       })
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: string }>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -1876,6 +1894,7 @@ describe('httpClient', () => {
 
       expect(result.result).toBeDefined()
       expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       expect(result.result.body).toBeDefined()
 
       // Read the stream to verify content
@@ -1903,6 +1922,7 @@ describe('httpClient', () => {
       expect(result.result.statusCode).toBe(200)
 
       // Read the stream to verify content
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProductsLimit3)
     })
@@ -1989,6 +2009,7 @@ describe('httpClient', () => {
 
       expect(result.result).toBeDefined()
       expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       expect(result.result.body).toBeDefined()
 
       // Read the stream to verify content
@@ -2032,6 +2053,7 @@ describe('httpClient', () => {
       expect(result.result.statusCode).toBe(200)
 
       // Read the stream to verify content
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
@@ -2155,6 +2177,7 @@ describe('httpClient', () => {
       expect(result.result.statusCode).toBe(200)
 
       // Read the stream to verify content
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
@@ -2170,6 +2193,7 @@ describe('httpClient', () => {
       })
 
       expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
@@ -2185,6 +2209,7 @@ describe('httpClient', () => {
       })
 
       expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
@@ -2199,6 +2224,7 @@ describe('httpClient', () => {
       })
 
       expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
@@ -2214,6 +2240,7 @@ describe('httpClient', () => {
       })
 
       expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
@@ -2790,6 +2817,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -2826,6 +2854,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: number }>()
       expect(result.result.body).toEqual({ id: 21 })
     })
 
@@ -2861,6 +2890,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: number }>()
       expect(result.result.body).toEqual({ id: 1 })
     })
 
@@ -2896,6 +2926,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: number }>()
       expect(result.result.body).toEqual({ id: 1 })
     })
 
@@ -2919,6 +2950,7 @@ describe('httpClient', () => {
       )
 
       expect(result.result.statusCode).toBe(204)
+      expectTypeOf(result.result.body).toEqualTypeOf<undefined | null>()
       expect(result.result.body).toBeNull()
     })
 
@@ -3031,6 +3063,7 @@ describe('httpClient', () => {
 
       expect(result.result).toBeDefined()
       expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       expect(result.result.body).toBeDefined()
 
       const body = await streamToString(result.result.body)
@@ -3072,6 +3105,7 @@ describe('httpClient', () => {
       expect(result.result).toBeDefined()
       expect(result.result.statusCode).toBe(200)
 
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
@@ -3156,6 +3190,7 @@ describe('httpClient', () => {
       expect(result.result).toBeDefined()
       expect(result.result.statusCode).toBe(200)
 
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
