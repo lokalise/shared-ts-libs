@@ -1,13 +1,21 @@
+import type { Readable } from 'node:stream'
 import { setTimeout } from 'node:timers/promises'
-import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
+import {
+  buildDeleteRoute,
+  buildGetRoute,
+  buildPayloadRoute,
+  buildRestContract,
+} from '@lokalise/api-contracts'
 import { getLocal, type Mockttp } from 'mockttp'
 import { Client } from 'undici'
 import { createDefaultRetryResolver } from 'undici-retry'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import { JSON_HEADERS } from './constants.ts'
 import {
   buildClient,
+  sendByContract,
+  sendByContractWithStreamedResponse,
   sendByDeleteRoute,
   sendByGetRoute,
   sendByGetRouteWithStreamedResponse,
@@ -121,6 +129,7 @@ describe('httpClient', () => {
         validateResponse: true,
       })
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -137,6 +146,7 @@ describe('httpClient', () => {
         validateResponse: false,
       })
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: string }>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -486,6 +496,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -513,6 +524,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: string }>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -592,6 +604,7 @@ describe('httpClient', () => {
       )
 
       expect(result.result.statusCode).toBe(204)
+      expectTypeOf(result.result.body).toEqualTypeOf<undefined | null>()
       expect(result.result.body).toBeNull()
     })
 
@@ -631,6 +644,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
       expect(result.result.body).toEqual(mockProduct1)
     })
   })
@@ -807,6 +821,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema> | null>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -834,6 +849,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: string } | null>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -857,6 +873,7 @@ describe('httpClient', () => {
       )
 
       expect(result.result.statusCode).toBe(204)
+      expectTypeOf(result.result.body).toEqualTypeOf<undefined | null>()
       expect(result.result.body).toBeNull()
     })
 
@@ -919,6 +936,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: number } | null>()
       expect(result.result.body).toEqual({ id: 1 })
     })
   })
@@ -998,6 +1016,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -1027,6 +1046,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: string }>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -1059,6 +1079,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: number }>()
       expect(result.result.body).toEqual({ id: 1 })
     })
   })
@@ -1124,6 +1145,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -1145,6 +1167,7 @@ describe('httpClient', () => {
         },
       )
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: string }>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -1334,6 +1357,7 @@ describe('httpClient', () => {
         reqContext,
       })
 
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -1350,6 +1374,7 @@ describe('httpClient', () => {
         validateResponse: false,
       })
 
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: string }>()
       expect(result.result.body).toEqual(mockProduct1)
     })
 
@@ -1869,6 +1894,7 @@ describe('httpClient', () => {
 
       expect(result.result).toBeDefined()
       expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       expect(result.result.body).toBeDefined()
 
       // Read the stream to verify content
@@ -1896,6 +1922,7 @@ describe('httpClient', () => {
       expect(result.result.statusCode).toBe(200)
 
       // Read the stream to verify content
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProductsLimit3)
     })
@@ -1982,6 +2009,7 @@ describe('httpClient', () => {
 
       expect(result.result).toBeDefined()
       expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       expect(result.result.body).toBeDefined()
 
       // Read the stream to verify content
@@ -2025,6 +2053,7 @@ describe('httpClient', () => {
       expect(result.result.statusCode).toBe(200)
 
       // Read the stream to verify content
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
@@ -2148,6 +2177,7 @@ describe('httpClient', () => {
       expect(result.result.statusCode).toBe(200)
 
       // Read the stream to verify content
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
@@ -2163,6 +2193,7 @@ describe('httpClient', () => {
       })
 
       expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
@@ -2178,6 +2209,7 @@ describe('httpClient', () => {
       })
 
       expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
@@ -2192,6 +2224,7 @@ describe('httpClient', () => {
       })
 
       expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
@@ -2207,6 +2240,7 @@ describe('httpClient', () => {
       })
 
       expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
@@ -2745,6 +2779,420 @@ describe('httpClient', () => {
           ).rejects.toThrow(/Timeout Error/)
         })
       })
+    })
+  })
+
+  describe('sendByContract', () => {
+    it('sends GET request via contract', async () => {
+      const schema = z.object({
+        category: z.string(),
+        description: z.string(),
+        id: z.number(),
+        image: z.string(),
+        price: z.number(),
+        rating: z.object({
+          count: z.number(),
+          rate: z.number(),
+        }),
+        title: z.string(),
+      })
+
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
+
+      const result = await sendByContract(
+        client,
+        apiContract,
+        {},
+        {
+          validateResponse: true,
+          throwOnError: true,
+          requestLabel: 'dummy',
+          reqContext,
+        },
+      )
+
+      expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
+      expect(result.result.body).toEqual(mockProduct1)
+    })
+
+    it('sends POST request via contract', async () => {
+      const responseSchema = z.object({
+        id: z.number(),
+      })
+
+      const requestBodySchema = z.object({
+        name: z.string(),
+      })
+
+      const apiContract = buildPayloadRoute({
+        successResponseBodySchema: responseSchema,
+        requestPathParamsSchema: z.undefined(),
+        method: 'post',
+        requestBodySchema,
+        pathResolver: () => '/products',
+      })
+
+      await mockServer.forPost('/products').thenJson(200, { id: 21 }, JSON_HEADERS)
+
+      const result = await sendByContract(
+        client,
+        apiContract,
+        {
+          body: { name: 'test' },
+        },
+        {
+          validateResponse: true,
+          throwOnError: true,
+          requestLabel: 'dummy',
+          reqContext,
+        },
+      )
+
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: number }>()
+      expect(result.result.body).toEqual({ id: 21 })
+    })
+
+    it('sends PUT request via contract', async () => {
+      const responseSchema = z.object({
+        id: z.number(),
+      })
+
+      const requestBodySchema = z.object({
+        name: z.string(),
+      })
+
+      const apiContract = buildPayloadRoute({
+        successResponseBodySchema: responseSchema,
+        requestPathParamsSchema: z.undefined(),
+        method: 'put',
+        requestBodySchema,
+        pathResolver: () => '/products/1',
+      })
+
+      await mockServer.forPut('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const result = await sendByContract(
+        client,
+        apiContract,
+        {
+          body: { name: 'updated' },
+        },
+        {
+          validateResponse: true,
+          throwOnError: true,
+          requestLabel: 'dummy',
+        },
+      )
+
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: number }>()
+      expect(result.result.body).toEqual({ id: 1 })
+    })
+
+    it('sends PATCH request via contract', async () => {
+      const responseSchema = z.object({
+        id: z.number(),
+      })
+
+      const requestBodySchema = z.object({
+        name: z.string(),
+      })
+
+      const apiContract = buildPayloadRoute({
+        successResponseBodySchema: responseSchema,
+        requestPathParamsSchema: z.undefined(),
+        method: 'patch',
+        requestBodySchema,
+        pathResolver: () => '/products/1',
+      })
+
+      await mockServer.forPatch('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const result = await sendByContract(
+        client,
+        apiContract,
+        {
+          body: { name: 'patched' },
+        },
+        {
+          validateResponse: true,
+          throwOnError: true,
+          requestLabel: 'dummy',
+        },
+      )
+
+      expectTypeOf(result.result.body).toEqualTypeOf<{ id: number }>()
+      expect(result.result.body).toEqual({ id: 1 })
+    })
+
+    it('sends DELETE request via contract', async () => {
+      const apiContract = buildDeleteRoute({
+        successResponseBodySchema: z.undefined(),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      await mockServer.forDelete('/products/1').thenReply(204)
+
+      const result = await sendByContract(
+        client,
+        apiContract,
+        {},
+        {
+          requestLabel: 'dummy',
+          validateResponse: true,
+        },
+      )
+
+      expect(result.result.statusCode).toBe(204)
+      expectTypeOf(result.result.body).toEqualTypeOf<undefined | null>()
+      expect(result.result.body).toBeNull()
+    })
+
+    it('works with path params and query params for GET', async () => {
+      const pathParamsSchema = z.object({
+        productId: z.number(),
+      })
+      const queryParamsSchema = z.object({
+        limit: z.number(),
+      })
+
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: UNKNOWN_RESPONSE_SCHEMA,
+        requestPathParamsSchema: pathParamsSchema,
+        requestQuerySchema: queryParamsSchema,
+        pathResolver: (params) => `/products/${params.productId}`,
+      })
+
+      await mockServer
+        .forGet('/products/1')
+        .withQuery({ limit: '3' })
+        .thenJson(200, mockProduct1, JSON_HEADERS)
+
+      const result = await sendByContract(
+        client,
+        apiContract,
+        {
+          pathParams: { productId: 1 },
+          queryParams: { limit: 3 },
+        },
+        {
+          requestLabel: 'dummy',
+        },
+      )
+
+      expect(result.result.body).toEqual(mockProduct1)
+    })
+
+    it('works with path prefix', async () => {
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: UNKNOWN_RESPONSE_SCHEMA,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      await mockServer.forGet('/resources/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
+
+      const result = await sendByContract(
+        client,
+        apiContract,
+        {
+          pathPrefix: 'resources',
+        },
+        {
+          validateResponse: true,
+          throwOnError: true,
+          requestLabel: 'dummy',
+        },
+      )
+
+      expect(result.result.body).toEqual(mockProduct1)
+    })
+
+    it('validates response structure and throws an error', async () => {
+      const schema = z.object({
+        id: z.string(),
+      })
+
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: schema,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
+
+      await expect(
+        sendByContract(
+          client,
+          apiContract,
+          {},
+          {
+            validateResponse: true,
+            requestLabel: 'Test request',
+          },
+        ),
+      ).rejects.toThrow()
+    })
+  })
+
+  describe('sendByContractWithStreamedResponse', () => {
+    it('returns streamed response body', async () => {
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+      const responseData = JSON.stringify(mockProduct1)
+
+      await mockServer.forGet('/products/1').thenReply(200, responseData, JSON_HEADERS)
+
+      const result = await sendByContractWithStreamedResponse(
+        client,
+        apiContract,
+        {},
+        {
+          requestLabel: 'dummy',
+        },
+      )
+
+      expect(result.result).toBeDefined()
+      expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
+      expect(result.result.body).toBeDefined()
+
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('returns streamed response with path and query params', async () => {
+      const pathParamsSchema = z.object({
+        productId: z.number(),
+      })
+      const queryParamsSchema = z.object({
+        limit: z.number(),
+      })
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: pathParamsSchema,
+        requestQuerySchema: queryParamsSchema,
+        pathResolver: (params) => `/products/${params.productId}`,
+      })
+      const responseData = JSON.stringify(mockProduct1)
+
+      await mockServer
+        .forGet('/products/1')
+        .withQuery({ limit: '3' })
+        .thenReply(200, responseData, JSON_HEADERS)
+
+      const result = await sendByContractWithStreamedResponse(
+        client,
+        apiContract,
+        {
+          pathParams: { productId: 1 },
+          queryParams: { limit: 3 },
+        },
+        {
+          requestLabel: 'dummy',
+        },
+      )
+
+      expect(result.result).toBeDefined()
+      expect(result.result.statusCode).toBe(200)
+
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('throws an error when throwOnError is true and request fails', async () => {
+      expect.assertions(1)
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      await mockServer
+        .forGet('/products/1')
+        .thenJson(500, { error: 'Internal Server Error' }, JSON_HEADERS)
+
+      await expect(
+        sendByContractWithStreamedResponse(
+          client,
+          apiContract,
+          {},
+          {
+            requestLabel: 'Test request',
+            throwOnError: true,
+          },
+        ),
+      ).rejects.toMatchObject({
+        message: 'Response status code 500',
+        errorCode: 'REQUEST_ERROR',
+      })
+    })
+
+    it('returns error when throwOnError is false and request fails', async () => {
+      const apiContract = buildGetRoute({
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      await mockServer
+        .forGet('/products/1')
+        .thenJson(500, { error: 'Internal Server Error' }, JSON_HEADERS)
+
+      const result = await sendByContractWithStreamedResponse(
+        client,
+        apiContract,
+        {},
+        {
+          requestLabel: 'dummy',
+          throwOnError: false,
+        },
+      )
+
+      expect(result.error).toBeDefined()
+      expect(result.result).toBeUndefined()
+    })
+
+    it('accepts contracts with responseSchemasByStatusCode', async () => {
+      const apiContract = buildRestContract({
+        method: 'get',
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+        responseSchemasByStatusCode: {
+          401: z.object({ error: z.string() }),
+          404: z.object({ message: z.string() }),
+        },
+      })
+      const responseData = JSON.stringify(mockProduct1)
+
+      await mockServer.forGet('/products/1').thenReply(200, responseData, JSON_HEADERS)
+
+      const result = await sendByContractWithStreamedResponse(
+        client,
+        apiContract,
+        {},
+        {
+          requestLabel: 'dummy',
+        },
+      )
+
+      expect(result.result).toBeDefined()
+      expect(result.result.statusCode).toBe(200)
+
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
     })
   })
 })

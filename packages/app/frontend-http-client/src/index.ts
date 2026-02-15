@@ -1,4 +1,5 @@
 export {
+  sendByContract,
   sendByDeleteRoute,
   sendByGetRoute,
   sendByPayloadRoute,

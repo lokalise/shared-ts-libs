@@ -10,6 +10,8 @@ export {
 export {
   buildClient,
   httpClient,
+  sendByContract,
+  sendByContractWithStreamedResponse,
   sendByDeleteRoute,
   sendByGetRoute,
   sendByGetRouteWithStreamedResponse,

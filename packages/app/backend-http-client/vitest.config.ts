@@ -18,5 +18,9 @@ export default defineConfig({
         statements: 100,
       },
     },
+    typecheck: {
+      enabled: true,
+      include: ['src/**/*.spec.ts'],
+    },
   },
 })

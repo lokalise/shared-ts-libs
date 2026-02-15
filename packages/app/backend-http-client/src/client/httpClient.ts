@@ -506,6 +506,9 @@ function handleRequestResultSuccess<T extends ZodSchema | undefined>(
   return result
 }
 
+/**
+ * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ */
 export function sendByPayloadRoute<
   RequestBodySchema extends z.Schema | undefined,
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -569,6 +572,9 @@ export function sendByPayloadRoute<
   )
 }
 
+/**
+ * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ */
 export function sendByGetRoute<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
@@ -627,6 +633,9 @@ export function sendByGetRoute<
   )
 }
 
+/**
+ * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ */
 export function sendByDeleteRoute<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
@@ -685,11 +694,17 @@ export function sendByDeleteRoute<
   )
 }
 
+/**
+ * @deprecated Use `sendByContractWithStreamedResponse` instead. This function will be removed in a future version.
+ */
 export function sendByGetRouteWithStreamedResponse<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   client: Client,
   routeDefinition: GetRouteDefinition<
@@ -700,7 +715,7 @@ export function sendByGetRouteWithStreamedResponse<
     undefined,
     false,
     false,
-    undefined
+    ResponseSchemasByStatusCode
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -731,6 +746,206 @@ export function sendByGetRouteWithStreamedResponse<
       ...options,
     },
   )
+}
+
+// Overload 1: GET route
+export function sendByContract<
+  ResponseBodySchema extends z.Schema | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
+>(
+  client: Client,
+  routeDefinition: GetRouteDefinition<
+    ResponseBodySchema,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    ResponseHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
+  >,
+  params: RouteRequestParams<
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
+  >,
+  options: Omit<
+    RequestOptions<ResponseBodySchema, IsEmptyResponseExpected, DoThrowOnError>,
+    'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
+  >,
+): Promise<
+  RequestResultDefinitiveEither<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsEmptyResponseExpected,
+    DoThrowOnError
+  >
+>
+
+// Overload 2: Payload route (POST/PUT/PATCH)
+export function sendByContract<
+  RequestBodySchema extends z.Schema | undefined,
+  ResponseBodySchema extends z.Schema | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
+>(
+  client: Client,
+  routeDefinition: PayloadRouteDefinition<
+    RequestBodySchema,
+    ResponseBodySchema,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    ResponseHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
+  >,
+  params: PayloadRouteRequestParams<
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestBodySchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
+  >,
+  options: Omit<
+    RequestOptions<ResponseBodySchema, IsEmptyResponseExpected, DoThrowOnError>,
+    'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
+  >,
+): Promise<
+  RequestResultDefinitiveEither<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsEmptyResponseExpected,
+    DoThrowOnError
+  >
+>
+
+// Overload 3: DELETE route
+export function sendByContract<
+  ResponseBodySchema extends z.Schema | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  ResponseHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = true,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
+>(
+  client: Client,
+  routeDefinition: DeleteRouteDefinition<
+    ResponseBodySchema,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    ResponseHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
+  >,
+  params: RouteRequestParams<
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
+  >,
+  options: Omit<
+    RequestOptions<ResponseBodySchema, IsEmptyResponseExpected, DoThrowOnError>,
+    'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
+  >,
+): Promise<
+  RequestResultDefinitiveEither<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsEmptyResponseExpected,
+    DoThrowOnError
+  >
+>
+
+// Implementation
+export function sendByContract(
+  client: Client,
+  routeDefinition: // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
+    | GetRouteDefinition<any, any, any, any, any, any, any, any>
+    // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
+    | PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>
+    // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
+    | DeleteRouteDefinition<any, any, any, any, any, any, any, any>,
+  // biome-ignore lint/suspicious/noExplicitAny: params type depends on overload
+  params: any,
+  // biome-ignore lint/suspicious/noExplicitAny: options type depends on overload
+  options: any,
+  // biome-ignore lint/suspicious/noExplicitAny: return type depends on overload
+): Promise<any> {
+  const method = routeDefinition.method
+  if (method === 'get') {
+    return sendByGetRoute(client, routeDefinition, params, options)
+  }
+  if (method === 'delete') {
+    return sendByDeleteRoute(client, routeDefinition, params, options)
+  }
+  return sendByPayloadRoute(
+    client,
+    // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
+    routeDefinition as PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>,
+    params,
+    options,
+  )
+}
+
+export function sendByContractWithStreamedResponse<
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
+>(
+  client: Client,
+  routeDefinition: GetRouteDefinition<
+    undefined,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    undefined,
+    false,
+    false,
+    ResponseSchemasByStatusCode
+  >,
+  params: RouteRequestParams<
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
+  >,
+  options: Omit<
+    RequestOptions<undefined, false, DoThrowOnError>,
+    | 'body'
+    | 'headers'
+    | 'query'
+    | 'responseSchema'
+    | 'isEmptyResponseExpected'
+    | 'validateResponse'
+    | 'safeParseJson'
+    | 'blobResponseBody'
+  >,
+): Promise<RequestResultDefinitiveEither<Readable, false, DoThrowOnError>> {
+  return sendByGetRouteWithStreamedResponse(client, routeDefinition, params, options)
 }
 
 export const httpClient = {

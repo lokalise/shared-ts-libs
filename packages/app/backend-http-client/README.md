@@ -13,6 +13,8 @@ The library provides methods to implement the client side of HTTP protocols. Pub
     keepAliveMaxTimeout: 300_000,
     keepAliveTimeout: 4000,
     ```
+- `sendByContract()`, a unified method that accepts any route definition (GET, POST, PUT, PATCH, DELETE) and dispatches based on the contract's `method` field;
+- `sendByContractWithStreamedResponse()`, a streaming variant of `sendByContract()` for GET contracts;
 - `sendGet()`;
 - `sendGetWithStreamedResponse()`;
 - `sendPost()`;
@@ -81,17 +83,17 @@ Additionally, `DefiniteEither` is also provided. It is a variation of the aforem
 
 `backend-http-client` supports using API contracts, created with `@lokalise/api-contracts` in order to make fully type-safe HTTP requests.
 
-Usage example:
+The unified `sendByContract` method accepts any route definition (GET, POST, PUT, PATCH, DELETE) and automatically dispatches based on the contract's `method` field:
 
 ```ts
-import { somePostRouteDefinition, someGetRouteDefinition } from 'some-service-api-contracts'
-import { sendByPayloadRoute, buildClient } from '@lokalise/backend-http-client'
+import { somePostRouteDefinition, someGetRouteDefinition, someDeleteRouteDefinition } from 'some-service-api-contracts'
+import { sendByContract, buildClient } from '@lokalise/backend-http-client'
 
 const MY_BASE_URL = 'http://localhost:8080'
 const client = buildClient(MY_BASE_URL)
 
-const responseBodyPost = await sendByPayloadRoute(client, somePostRouteDefinition, 
-// pass contract-defined request params, such as body, query and headers here
+// POST/PUT/PATCH request - body is required by the contract type
+const responseBodyPost = await sendByContract(client, somePostRouteDefinition,
     {
         pathParams: {
             userId: 1,
@@ -99,47 +101,63 @@ const responseBodyPost = await sendByPayloadRoute(client, somePostRouteDefinitio
         body: {
             isActive: true,
         },
-    }, 
-// pass backend-http-client options here        
+    },
     {
         validateResponse: false,
         requestLabel: 'Create user',
     }
 )
 
-const responseBodyGet = await sendByGetRoute(client, someGetRouteDefinition,
-// pass contract-defined request params, such as query and headers here
-        {
-          pathParams: {
+// GET request - no body needed
+const responseBodyGet = await sendByContract(client, someGetRouteDefinition,
+    {
+        pathParams: {
             userId: 1,
-          },
-          queryParams: {
-            withMetadata: true,
-          },
         },
-// pass backend-http-client options here        
-        {
-          validateResponse: false,
-          requestLabel: 'Retrieve user',
-        }
+        queryParams: {
+            withMetadata: true,
+        },
+    },
+    {
+        validateResponse: false,
+        requestLabel: 'Retrieve user',
+    }
+)
+
+// DELETE request
+const responseBodyDelete = await sendByContract(client, someDeleteRouteDefinition,
+    {
+        pathParams: {
+            userId: 1,
+        },
+    },
+    {
+        requestLabel: 'Delete user',
+    }
 )
 ```
 
 The following parameters can be specified when sending API contract-based requests:
-- `body` - request body (only applicable for `sendByPayloadRoute`, type needs to match with contract definition)
+- `body` - request body (only applicable for payload routes, type needs to match with contract definition)
 - `queryParams` - query parameters (type needs to match with contract definition)
 - `headers` - custom headers to be sent with the request (type needs to match with contract definition)
 - `pathParams` – parameters used for path resolver (type needs to match with contract definition)
 - `pathPrefix` - optional prefix to be prepended to the path resolved by the contract's path resolver
+
+> **Note:** The individual `sendByPayloadRoute`, `sendByGetRoute`, and `sendByDeleteRoute` methods are deprecated in favor of `sendByContract`.
 
 ### Streaming responses
 
 For scenarios where you need to process large response bodies without loading them entirely into memory (e.g., downloading large files, processing data incrementally), use the streaming variants:
 
 - `sendGetWithStreamedResponse()` - for direct path-based requests
-- `sendByGetRouteWithStreamedResponse()` - for API contract-based requests
+- `sendByContractWithStreamedResponse()` - for API contract-based requests
+
+> **Note:** `sendByGetRouteWithStreamedResponse` is deprecated in favor of `sendByContractWithStreamedResponse`.
 
 These methods return a `Readable` stream instead of parsing the entire response body, allowing for memory-efficient processing.
+
+**Note:** `sendByContractWithStreamedResponse()` supports contracts with `responseSchemasByStatusCode` for typing pre-stream error responses (e.g., 401, 404). This allows using contracts that define error response shapes for non-streaming error cases.
 
 **Important limitations:**
 - Response validation (`validateResponse`) is not supported for streamed responses
@@ -174,13 +192,13 @@ const { headers } = result.result
 Usage example:
 
 ```ts
-import { sendByGetRouteWithStreamedResponse, buildClient } from '@lokalise/backend-http-client'
+import { sendByContractWithStreamedResponse, buildClient } from '@lokalise/backend-http-client'
 import { createWriteStream } from 'node:fs'
 
 const client = buildClient('https://api.example.com')
 
 // Using contract-based request
-const result = await sendByGetRouteWithStreamedResponse(
+const result = await sendByContractWithStreamedResponse(
   client,
   downloadFileRouteDefinition,
   {
