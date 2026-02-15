@@ -7,6 +7,6 @@
         "@lokalise/biome-config/configs/biome-package.jsonc"
     ],
     "files": {
-        "includes": ["**", "!**/dist", "!**/coverage"]
+        "includes": ["**", "!**/dist", "!**/coverage", "!packages/app/prisma-utils/test/db-client"]
     }
 }
