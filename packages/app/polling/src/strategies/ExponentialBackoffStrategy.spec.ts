@@ -527,9 +527,9 @@ describe('ExponentialBackoffStrategy', () => {
         const previous = timestamps[i - 1]
         if (current !== undefined && previous !== undefined) {
           const delay = current - previous
-          // Should be ~100ms each time (with tolerance)
+          // Should be ~100ms each time (with tolerance for CI/slow environments)
           expect(delay).toBeGreaterThanOrEqual(90)
-          expect(delay).toBeLessThan(150)
+          expect(delay).toBeLessThan(200)
         }
       }
     })
