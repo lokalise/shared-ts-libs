@@ -2,10 +2,10 @@ import type { Either } from '@lokalise/node-core'
 import type Prometheus from 'prom-client'
 import type { PrismaClient } from '../../test/db-client/client.ts'
 
-export const extendPrismaClientWithMetrics = (
-  prisma: PrismaClient,
+export const extendPrismaClientWithMetrics = <Client extends PrismaClient>(
+  prisma: Client,
   promClient: typeof Prometheus,
-): PrismaClient => createExtendedClient(prisma, registerMetricsIfNeeded(promClient)) as PrismaClient
+): Client => createExtendedClient(prisma, registerMetricsIfNeeded(promClient)) as Client
 
 type CommonLabels = 'model' | 'operation'
 type QueryMetrics = {
