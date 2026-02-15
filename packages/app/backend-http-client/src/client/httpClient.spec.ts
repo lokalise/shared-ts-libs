@@ -1,5 +1,10 @@
 import { setTimeout } from 'node:timers/promises'
-import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
+import {
+  buildDeleteRoute,
+  buildGetRoute,
+  buildPayloadRoute,
+  buildRestContract,
+} from '@lokalise/api-contracts'
 import { getLocal, type Mockttp } from 'mockttp'
 import { Client } from 'undici'
 import { createDefaultRetryResolver } from 'undici-retry'
@@ -3122,6 +3127,37 @@ describe('httpClient', () => {
 
       expect(result.error).toBeDefined()
       expect(result.result).toBeUndefined()
+    })
+
+    it('accepts contracts with responseSchemasByStatusCode', async () => {
+      const apiContract = buildRestContract({
+        method: 'get',
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+        responseSchemasByStatusCode: {
+          401: z.object({ error: z.string() }),
+          404: z.object({ message: z.string() }),
+        },
+      })
+      const responseData = JSON.stringify(mockProduct1)
+
+      await mockServer.forGet('/products/1').thenReply(200, responseData, JSON_HEADERS)
+
+      const result = await sendByContractWithStreamedResponse(
+        client,
+        apiContract,
+        {},
+        {
+          requestLabel: 'dummy',
+        },
+      )
+
+      expect(result.result).toBeDefined()
+      expect(result.result.statusCode).toBe(200)
+
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
     })
   })
 })

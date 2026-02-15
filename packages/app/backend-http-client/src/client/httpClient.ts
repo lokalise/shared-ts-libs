@@ -702,6 +702,9 @@ export function sendByGetRouteWithStreamedResponse<
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   client: Client,
   routeDefinition: GetRouteDefinition<
@@ -712,7 +715,7 @@ export function sendByGetRouteWithStreamedResponse<
     undefined,
     false,
     false,
-    undefined
+    ResponseSchemasByStatusCode
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -877,10 +880,11 @@ export function sendByContract<
 // Implementation
 export function sendByContract(
   client: Client,
-  // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
-  routeDefinition:
+  routeDefinition: // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
     | GetRouteDefinition<any, any, any, any, any, any, any, any>
+    // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
     | PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>
+    // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
     | DeleteRouteDefinition<any, any, any, any, any, any, any, any>,
   // biome-ignore lint/suspicious/noExplicitAny: params type depends on overload
   params: any,
@@ -897,6 +901,7 @@ export function sendByContract(
   }
   return sendByPayloadRoute(
     client,
+    // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
     routeDefinition as PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>,
     params,
     options,
@@ -908,6 +913,9 @@ export function sendByContractWithStreamedResponse<
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
 >(
   client: Client,
   routeDefinition: GetRouteDefinition<
@@ -918,7 +926,7 @@ export function sendByContractWithStreamedResponse<
     undefined,
     false,
     false,
-    undefined
+    ResponseSchemasByStatusCode
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,

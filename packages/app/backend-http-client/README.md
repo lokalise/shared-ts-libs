@@ -157,6 +157,8 @@ For scenarios where you need to process large response bodies without loading th
 
 These methods return a `Readable` stream instead of parsing the entire response body, allowing for memory-efficient processing.
 
+**Note:** `sendByContractWithStreamedResponse()` supports contracts with `responseSchemasByStatusCode` for typing pre-stream error responses (e.g., 401, 404). This allows using contracts that define error response shapes for non-streaming error cases.
+
 **Important limitations:**
 - Response validation (`validateResponse`) is not supported for streamed responses
 - Schema-based parsing (`responseSchema`) is not part of the options (the response is always a `Readable` stream)
