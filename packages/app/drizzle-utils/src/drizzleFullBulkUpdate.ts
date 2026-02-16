@@ -20,7 +20,7 @@ const getColumns = (table: PgTable, columnNames: string[]): Column[] => {
   return columnNames.map((columnName) => {
     const tableColumn = tableColumns[columnName]
     if (!tableColumn) {
-      throw new Error(`Column "${columnName}" could not be mapped with table"`)
+      throw new Error(`Column "${columnName}" could not be mapped to table "${tableConfig.name}"`)
     }
 
     const type =
