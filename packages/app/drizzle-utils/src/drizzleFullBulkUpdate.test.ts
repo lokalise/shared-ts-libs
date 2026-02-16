@@ -1,10 +1,12 @@
 import { jsonb, pgTable, smallint } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
-import { afterEach, beforeAll, describe, expect, it } from 'vitest'
+import postgres from 'postgres'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { getDatabaseUrl } from '../test/getDatabaseUrl.ts'
 import { drizzleFullBulkUpdate } from './drizzleFullBulkUpdate.ts'
 
-const db = drizzle(getDatabaseUrl())
+const sql = postgres(getDatabaseUrl())
+const db = drizzle(sql)
 
 describe('drizzleFullBulkUpdate', () => {
   const surrogateTableName = 'updates'
@@ -50,6 +52,10 @@ describe('drizzleFullBulkUpdate', () => {
       db.delete(surrogateJsonTable),
       db.delete(compositeTable),
     ])
+  })
+
+  afterAll(async () => {
+    await sql.end()
   })
 
   it('throws an error if entries array is empty', async () => {

@@ -19,13 +19,13 @@ Performs efficient bulk updates using a single SQL query with a `VALUES` clause.
 ```typescript
 import { drizzleFullBulkUpdate } from '@lokalise/drizzle-utils'
 import { drizzle } from 'drizzle-orm/postgres-js'
-import { pgTable, smallint } from 'drizzle-orm/pg-core'
+import { pgTable, smallint, text } from 'drizzle-orm/pg-core'
 
 const db = drizzle(connectionString)
 
 const users = pgTable('users', {
   id: smallint('id').primaryKey(),
-  name: smallint('name'),
+  name: text('name'),
   age: smallint('age'),
 })
 
