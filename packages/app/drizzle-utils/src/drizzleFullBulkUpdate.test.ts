@@ -1,4 +1,4 @@
-import { jsonb, pgTable, smallint } from 'drizzle-orm/pg-core'
+import {jsonb, pgSchema, pgTable, smallint} from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
@@ -30,10 +30,24 @@ describe('drizzleFullBulkUpdate', () => {
     col2: smallint(),
   })
 
+  const enumSchema = 'enum_schema'
+  const enumName = 'statuss'
+  const statusEnum = pgSchema(enumSchema).enum(enumName, ['active', 'inactive'])
+
+  const enumTableName = 'test_enum'
+  const enumTable = pgTable(enumTableName, {
+    id: smallint(),
+    status: statusEnum(),
+  })
+
   beforeAll(async () => {
     await db.execute(
-      `DROP TABLE IF EXISTS ${surrogateTableName}, ${surrogateJsonTableName}, ${compositeTableName}`,
+      `DROP TABLE IF EXISTS ${surrogateTableName}, ${surrogateJsonTableName}, ${compositeTableName}, ${enumTableName}`,
     )
+    await db.execute(`DROP TYPE IF EXISTS ${enumSchema}.${enumName}`)
+
+    await db.execute(`CREATE SCHEMA IF NOT EXISTS ${enumSchema}`)
+    await db.execute(`CREATE TYPE ${enumSchema}.${enumName} AS ENUM ('active', 'inactive')`)
 
     await Promise.all([
       db.execute(
@@ -43,6 +57,7 @@ describe('drizzleFullBulkUpdate', () => {
       db.execute(
         `CREATE TABLE ${compositeTableName} (id1 smallint, id2 smallint, col1 smallint, col2 smallint)`,
       ),
+      db.execute(`CREATE TABLE ${enumTableName} (id smallint, status ${enumSchema}.${enumName})`),
     ])
   })
 
@@ -51,6 +66,7 @@ describe('drizzleFullBulkUpdate', () => {
       db.delete(surrogateTable),
       db.delete(surrogateJsonTable),
       db.delete(compositeTable),
+      db.delete(enumTable),
     ])
   })
 
@@ -110,6 +126,16 @@ describe('drizzleFullBulkUpdate', () => {
         { where: { id1: 2 }, data: { col2: 2 } },
       ]),
     ).rejects.toThrowError(`Mismatch in 'data' columns. Expected [col1], got [col2]`)
+  })
+
+  it('throws an error if column does not exist in table', async () => {
+    await expect(() =>
+      drizzleFullBulkUpdate(db, surrogateTable, [
+        { where: { nonexistent_column: 1 } as any, data: { col1: 5 } },
+      ]),
+    ).rejects.toThrowError(
+      `Column "nonexistent_column" could not be mapped to table "${surrogateTableName}"`,
+    )
   })
 
   it('partially updates rows with surrogate key', async () => {
@@ -220,6 +246,24 @@ describe('drizzleFullBulkUpdate', () => {
         { id: 1, json_data: [{ some: 'val' }] },
         { id: 2, json_data: [{ some: 'val2' }] },
         { id: 3, json_data: { some: 'val' } },
+      ]),
+    )
+  })
+
+  it('handles enum columns correctly', async () => {
+    await db.execute(`INSERT INTO ${enumTableName} (id, status) VALUES (1, 'active'), (2, 'active')`)
+
+    await drizzleFullBulkUpdate(db, enumTable, [
+      { where: { id: 1 }, data: { status: 'inactive' } },
+      { where: { id: 2 }, data: { status: 'inactive' } },
+    ])
+
+    const updatedData = await db.execute(`SELECT * FROM ${enumTableName}`)
+
+    expect(updatedData).toEqual(
+      expect.arrayContaining([
+        { id: 1, status: 'inactive' },
+        { id: 2, status: 'inactive' },
       ]),
     )
   })

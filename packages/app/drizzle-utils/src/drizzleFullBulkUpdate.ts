@@ -1,5 +1,5 @@
-import { getTableColumns, sql } from 'drizzle-orm'
-import { getTableConfig, type PgTable, type PgUpdateSetSource } from 'drizzle-orm/pg-core'
+import { getTableColumns, sql, is } from 'drizzle-orm'
+import { getTableConfig, isPgEnum, type PgTable, type PgUpdateSetSource, PgEnumColumn } from 'drizzle-orm/pg-core'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 
 type Column = {
@@ -24,8 +24,8 @@ const getColumns = (table: PgTable, columnNames: string[]): Column[] => {
     }
 
     const type =
-      tableColumn.columnType === 'PgEnumColumn' || tableColumn.columnType === 'PgEnumObjectColumn'
-        ? `"${tableConfig.schema ?? 'public'}".${tableColumn.getSQLType()}`
+        is(tableColumn, PgEnumColumn)
+        ? `"${tableColumn.enum.schema ?? 'public'}".${tableColumn.enum.enumName}`
         : tableColumn.getSQLType()
 
     return { key: columnName, name: tableColumn.name, type }
