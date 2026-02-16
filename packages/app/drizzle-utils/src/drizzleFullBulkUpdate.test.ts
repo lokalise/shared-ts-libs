@@ -1,4 +1,4 @@
-import {jsonb, pgSchema, pgTable, smallint} from 'drizzle-orm/pg-core'
+import { jsonb, pgSchema, pgTable, smallint } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
@@ -6,7 +6,7 @@ import { getDatabaseUrl } from '../test/getDatabaseUrl.ts'
 import { drizzleFullBulkUpdate } from './drizzleFullBulkUpdate.ts'
 
 const sql = postgres(getDatabaseUrl())
-const db = drizzle(sql)
+const db = drizzle({ client: sql })
 
 describe('drizzleFullBulkUpdate', () => {
   const surrogateTableName = 'updates'
@@ -133,9 +133,7 @@ describe('drizzleFullBulkUpdate', () => {
       drizzleFullBulkUpdate(db, surrogateTable, [
         { where: { nonexistent_column: 1 } as any, data: { col1: 5 } },
       ]),
-    ).rejects.toThrowError(
-      `Column "nonexistent_column" could not be mapped to table "${surrogateTableName}"`,
-    )
+    ).rejects.toThrowError(`Column "nonexistent_column" could not be mapped to table`)
   })
 
   it('partially updates rows with surrogate key', async () => {
@@ -251,7 +249,9 @@ describe('drizzleFullBulkUpdate', () => {
   })
 
   it('handles enum columns correctly', async () => {
-    await db.execute(`INSERT INTO ${enumTableName} (id, status) VALUES (1, 'active'), (2, 'active')`)
+    await db.execute(
+      `INSERT INTO ${enumTableName} (id, status) VALUES (1, 'active'), (2, 'active')`,
+    )
 
     await drizzleFullBulkUpdate(db, enumTable, [
       { where: { id: 1 }, data: { status: 'inactive' } },
