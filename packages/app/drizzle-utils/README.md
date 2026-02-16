@@ -8,7 +8,7 @@ This package provides reusable helpers for Drizzle ORM.
 npm install @lokalise/drizzle-utils
 ```
 
-Peer dependency: `drizzle-orm` (<1.0.0)
+Peer dependency: `drizzle-orm` (<2.0.0)
 
 ## Usage
 
