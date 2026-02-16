@@ -1,5 +1,5 @@
 import { getTableColumns, sql, is } from 'drizzle-orm'
-import { getTableConfig, isPgEnum, type PgTable, type PgUpdateSetSource, PgEnumColumn } from 'drizzle-orm/pg-core'
+import { getTableConfig, type PgTable, type PgUpdateSetSource, PgEnumColumn } from 'drizzle-orm/pg-core'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 
 type Column = {
@@ -14,13 +14,13 @@ export type BulkUpdateEntry<T> = {
 }
 
 const getColumns = (table: PgTable, columnNames: string[]): Column[] => {
-  const tableConfig = getTableConfig(table)
   const tableColumns = getTableColumns(table)
 
   return columnNames.map((columnName) => {
     const tableColumn = tableColumns[columnName]
+
     if (!tableColumn) {
-      throw new Error(`Column "${columnName}" could not be mapped to table "${tableConfig.name}"`)
+      throw new Error(`Column "${columnName}" could not be mapped to table`)
     }
 
     const type =
