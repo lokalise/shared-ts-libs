@@ -1,0 +1,49 @@
+{
+    "name": "@lokalise/drizzle-utils",
+    "version": "0.0.0",
+    "type": "module",
+    "license": "Apache-2.0",
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE.md"
+    ],
+    "main": "./dist/index.js",
+    "exports": {
+        ".": "./dist/index.js",
+        "./package.json": "./package.json"
+    },
+    "homepage": "https://github.com/lokalise/shared-ts-libs",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/lokalise/shared-ts-libs.git"
+    },
+    "scripts": {
+        "build": "npm run clean && tsc --project tsconfig.build.json",
+        "clean": "rimraf dist",
+        "lint": "biome check . && tsc",
+        "lint:fix": "biome check --write",
+        "test": "vitest run",
+        "pretest:ci": "docker compose up -d --wait",
+        "test:ci": "npm run test -- --coverage",
+        "test:ci:teardown": "docker compose down",
+        "prepublishOnly": "npm run build",
+        "package-version": "echo $npm_package_version",
+        "postversion": "biome check --write package.json"
+    },
+    "peerDependencies": {
+        "drizzle-orm": "<1.0.0"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.3.7",
+        "@lokalise/biome-config": "^3.1.0",
+        "@lokalise/tsconfig": "^3.1.0",
+        "@vitest/coverage-v8": "^4.0.15",
+        "cross-env": "^10.0.0",
+        "drizzle-orm": "^0.45.1",
+        "postgres": "^3.4.8",
+        "rimraf": "^6.0.1",
+        "typescript": "5.9.3",
+        "vitest": "^4.0.15"
+    }
+}
