@@ -3,23 +3,24 @@ import { defineConfig } from 'vitest/config'
 // biome-ignore lint/style/noDefaultExport: vite expects default export
 export default defineConfig({
   test: {
-    globals: true,
     watch: false,
     mockReset: true,
-    pool: 'threads',
-    maxWorkers: 1,
+    restoreMocks: true,
+    fileParallelism: false,
+    pool: 'forks',
+    environment: 'node',
     setupFiles: ['test/envSetupHook.ts'],
-    hookTimeout: 30000,
-    teardownTimeout: 10000,
+    include: ['src/**/*.test.ts'],
+    exclude: [],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
       exclude: ['src/**/index.ts'],
       thresholds: {
-        lines: 45,
-        functions: 42,
-        branches: 80,
-        statements: 45,
+        lines: 90,
+        functions: 90,
+        branches: 90,
+        statements: 90,
       },
     },
   },

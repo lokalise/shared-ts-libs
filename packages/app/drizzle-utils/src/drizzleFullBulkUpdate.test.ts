@@ -1,3 +1,4 @@
+import { describe, beforeAll, afterEach, it, expect } from "vitest";
 import { jsonb, pgTable, smallint } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { getDatabaseUrl } from '../test/getDatabaseUrl.ts'

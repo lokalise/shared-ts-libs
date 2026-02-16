@@ -1,1 +1,1 @@
-export { drizzleFullBulkUpdate } from './drizzleFullBulkUpdate.ts'
+export { drizzleFullBulkUpdate, type BulkUpdateEntry } from './drizzleFullBulkUpdate.ts'

@@ -8,7 +8,7 @@ type Column = {
   type: string // SQL column type
 }
 
-type BulkUpdateEntry<T> = {
+export type BulkUpdateEntry<T> = {
   where: T
   data: T
 }
