@@ -75,10 +75,7 @@ const prepareSqlValuesExpressions = (
         )
       }
 
-      if (
-        Array.isArray(setExpressionValue) ||
-        (typeof setExpressionValue === 'object' && setExpressionValue !== null)
-      ) {
+      if (setExpressionColumn.type === 'json' || setExpressionColumn.type === 'jsonb') {
         return sql`${JSON.stringify(setExpressionValue)}::${sql.raw(setExpressionColumn.type)}`
       }
 
