@@ -66,6 +66,15 @@ WHERE tbl."id" = updates."id"::smallint
 - All `data` objects must have the same set of keys
 - Both `where` and `data` objects must not be empty
 
+#### Concurrency Behavior
+
+**Best Practice**: Use unique columns (primary keys, unique constraints) in the `where` clause to ensure each entry targets a different row. This avoids race conditions and provides predictable behavior.
+
+When multiple bulk updates target the same rows concurrently, behavior depends on PostgreSQL's isolation level:
+
+- **READ COMMITTED (default)**: Concurrent updates to different columns on the same row will succeed. Updates to the same column may result in lost updates (one overwrites the other).
+- **REPEATABLE READ / SERIALIZABLE**: Concurrent updates may fail with serialization errors and require retry logic.
+
 #### Composite Key Example
 
 ```typescript
