@@ -8,6 +8,9 @@
         "README.md",
         "LICENSE.md"
     ],
+    "publishConfig": {
+        "access": "public"
+    },
     "main": "./dist/index.js",
     "exports": {
         ".": "./dist/index.js",
