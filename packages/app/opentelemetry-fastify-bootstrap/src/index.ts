@@ -9,7 +9,8 @@ import {
   type SpanProcessor,
 } from '@opentelemetry/sdk-trace-base'
 
-// This needs to be imported and run before any other code in your app
+// Call initOpenTelemetry() before starting the server.
+// The application must be started with --import=@opentelemetry/instrumentation/hook.mjs
 
 type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error'
 
@@ -87,17 +88,19 @@ let sdk: NodeSDK | undefined
 /**
  * Initialize OpenTelemetry instrumentation.
  *
- * IMPORTANT: This function must be called BEFORE importing any other modules
- * that you want to instrument (fastify, http, etc.).
+ * The application must be started with the `--import=@opentelemetry/instrumentation/hook.mjs`
+ * Node.js flag to enable automatic module patching. When using this flag, strict import
+ * sequencing is not required — regular static imports are recommended for better performance.
+ *
+ * Call this function before starting the server.
  *
  * @example
  * ```ts
- * // At the very top of your entry point
  * import { initOpenTelemetry } from '@lokalise/opentelemetry-fastify-bootstrap'
- * initOpenTelemetry({ skippedPaths: ['/health', '/ready', '/live'] })
+ * import { startServer } from './serverInternal.ts'
  *
- * // Only import other modules AFTER initialization
- * import fastify from 'fastify'
+ * initOpenTelemetry({ skippedPaths: ['/health', '/ready', '/live'] })
+ * await startServer()
  * ```
  */
 export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {

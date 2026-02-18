@@ -2,7 +2,17 @@
 
 This package provides a pre-configured OpenTelemetry setup for Fastify applications with automatic instrumentation.
 
-**Important:** OpenTelemetry must be initialized before importing any modules you want to instrument (fastify, http, etc.), because it works by patching module exports at import time. This requires using dynamic imports to control the loading order.
+## Prerequisites
+
+Your application **must** be started with the `--import=@opentelemetry/instrumentation/hook.mjs` Node.js flag. This flag registers the OpenTelemetry instrumentation hook before any application code runs, enabling automatic patching of all imported modules.
+
+In your Dockerfile:
+
+```dockerfile
+CMD ["dumb-init", "node", "--import=@opentelemetry/instrumentation/hook.mjs", "/home/node/app/server.js"]
+```
+
+When the `--import` hook is used, strict import sequencing is **not** required — you can use regular static imports in your application code. This is the recommended approach for performance reasons, as dynamic imports can cause significantly slower module loading (synchronous module resolution can add 20+ seconds to startup in large applications).
 
 ## Installation
 
@@ -12,30 +22,30 @@ npm install @lokalise/opentelemetry-fastify-bootstrap
 
 ## Usage
 
-Your application entry point must use dynamic `await import()` to ensure OpenTelemetry initializes before other modules are loaded:
+With the `--import` hook in place, use regular static imports and call `initOpenTelemetry` before starting your server:
 
 ```ts
-// index.ts (entry point)
+// server.ts (entry point)
+import { initOpenTelemetry } from '@lokalise/opentelemetry-fastify-bootstrap'
+import { startServer } from './serverInternal.ts'
 
-// This MUST be first - initializes OpenTelemetry before anything else
-const { initOpenTelemetry } = await import('@lokalise/opentelemetry-fastify-bootstrap')
-initOpenTelemetry({
-  skippedPaths: ['/health', '/ready', '/live', '/metrics', '/'],
-})
+// Call this before starting the server
+if (process.env.OTEL_ENABLED !== 'false') {
+  initOpenTelemetry({
+    skippedPaths: ['/health', '/ready', '/live', '/metrics', '/'],
+  })
+}
 
-// Now dynamically import your actual server code
-const server = await import('./server.ts')
-await server.start()
+await startServer()
 ```
-
-**Why dynamic imports?** Static imports in ESM are hoisted and resolved together before any code executes. Dynamic `await import()` ensures sequential loading - the package fully initializes before server.ts is even parsed.
 
 ### Using defaults
 
 If you don't need custom skipped paths:
 
 ```ts
-const { initOpenTelemetry } = await import('@lokalise/opentelemetry-fastify-bootstrap')
+import { initOpenTelemetry } from '@lokalise/opentelemetry-fastify-bootstrap'
+
 initOpenTelemetry()
 ```
 
@@ -62,7 +72,8 @@ initOpenTelemetry()
 For local development and debugging, you can enable console span output to see traces printed directly to the console:
 
 ```ts
-const { initOpenTelemetry } = await import('@lokalise/opentelemetry-fastify-bootstrap')
+import { initOpenTelemetry } from '@lokalise/opentelemetry-fastify-bootstrap'
+
 initOpenTelemetry({
   consoleSpans: true, // Prints spans to console for debugging
 })
@@ -78,8 +89,8 @@ Multiple span processors work alongside the OTLP exporter and optional console s
 
 ```ts
 import { MyCustomSpanProcessor } from './custom-processor'
+import { initOpenTelemetry } from '@lokalise/opentelemetry-fastify-bootstrap'
 
-const { initOpenTelemetry } = await import('@lokalise/opentelemetry-fastify-bootstrap')
 initOpenTelemetry({
   consoleSpans: true, // Enable console debugging
   spanProcessors: [
