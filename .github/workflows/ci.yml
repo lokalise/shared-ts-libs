@@ -61,7 +61,7 @@ jobs:
 
           PACKAGES=()
           for path in "${!PATH_TO_NAME[@]}"; do
-            if echo "$ALL_CHANGED_FILES" | grep -q "$path"; then
+            if echo "$ALL_CHANGED_FILES" | grep -q "$path/"; then
               PACKAGES+=("\"${PATH_TO_NAME[$path]}\"")
             fi
           done
@@ -89,6 +89,7 @@ jobs:
 
   automerge:
     needs: general
+    if: always() && (needs.general.result == 'success' || needs.general.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
