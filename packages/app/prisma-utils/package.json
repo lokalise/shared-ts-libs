@@ -35,10 +35,8 @@
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
     },
-    "dependencies": {
-        "@lokalise/node-core": "^14.7.4"
-    },
     "peerDependencies": {
+        "@lokalise/node-core": ">=14.7.4",
         "@prisma/client": "^7.0.0",
         "prisma": "^7.0.0",
         "prom-client": ">=15.0.0"
