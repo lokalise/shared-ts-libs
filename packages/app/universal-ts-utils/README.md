@@ -522,6 +522,25 @@ const config1: StrictConfig = { host: "localhost" }
 const config2: StrictConfig = { host: "localhost", secure: true }
 ```
 
+#### `MakeNonNullish`
+
+Utility type that makes specified keys required and non-nullable in a type, while keeping the rest of the keys as they are.
+Removes both the optional modifier (`?`) and `null`/`undefined` from the specified keys.
+
+```typescript
+type Config = {
+    host?: string | null
+    port?: number
+    secure?: boolean
+}
+type StrictConfig = MakeNonNullish<Config, 'host'>
+
+const config1: StrictConfig = { host: "localhost" } // ✓
+const config2: StrictConfig = { host: "localhost", secure: true } // ✓
+const config3: StrictConfig = { host: null } // ✗ Error: null is not allowed
+const config4: StrictConfig = { host: undefined } // ✗ Error: undefined is not allowed
+```
+
 #### `MayOmit`
 
 Utility type to makes specified keys in a type optional, while keeping the rest of the keys as they are.
