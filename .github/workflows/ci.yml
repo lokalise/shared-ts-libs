@@ -7,44 +7,122 @@ on:
   pull_request:
 
 jobs:
+  changed-files-job:
+    name: Get changed files
+    runs-on: ubuntu-latest
+    outputs:
+      all_changed_files: ${{ steps.changed-files.outputs.all_changed_files }}
+    steps:
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46
+        with:
+          files: packages/**
+
   general:
+    needs: [changed-files-job]
+    if: contains(needs.changed-files-job.outputs.all_changed_files, matrix.package_path)
     strategy:
       matrix:
         node-version: [22.x, 24.x]
-        package-name: [
-          "@lokalise/api-common",
-          "@lokalise/api-contracts",
-          "@lokalise/auth",
-          "@lokalise/aws-config",
-          "@lokalise/backend-http-client",
-          "@lokalise/background-jobs-common",
-          "@lokalise/context-fastify-plugins",
-          "@lokalise/datadog-fastify-bootstrap",
-          "@lokalise/drizzle-utils",
-          "@lokalise/error-utils",
-          "@lokalise/fastify-api-contracts",
-          "@lokalise/fastify-bullboard-plugin",
-          "@lokalise/frontend-http-client",
-          "@lokalise/healthcheck-utils",
-          "@lokalise/id-utils",
-          "@lokalise/metrics-utils",
-          "@lokalise/non-translatable-markup",
-          "@lokalise/odata-mapper",
-          "@lokalise/opentelemetry-fastify-bootstrap",
-          "@lokalise/polling",
-          "@lokalise/prisma-utils",
-          "@lokalise/script-utils",
-          "@lokalise/supported-languages",
-          "@lokalise/universal-testing-utils",
-          "@lokalise/universal-ts-utils",
-          "@lokalise/websockets-common",
-          "@lokalise/zod-extras",
-          "@lokalise/biome-config",
-          "@lokalise/eslint-config",
-          "@lokalise/package-vite-config",
-          "@lokalise/prettier-config",
-          "@lokalise/tsconfig"
-        ]
+        package-name:
+          - "@lokalise/api-common"
+          - "@lokalise/api-contracts"
+          - "@lokalise/auth"
+          - "@lokalise/aws-config"
+          - "@lokalise/backend-http-client"
+          - "@lokalise/background-jobs-common"
+          - "@lokalise/context-fastify-plugins"
+          - "@lokalise/datadog-fastify-bootstrap"
+          - "@lokalise/drizzle-utils"
+          - "@lokalise/error-utils"
+          - "@lokalise/fastify-api-contracts"
+          - "@lokalise/fastify-bullboard-plugin"
+          - "@lokalise/frontend-http-client"
+          - "@lokalise/healthcheck-utils"
+          - "@lokalise/id-utils"
+          - "@lokalise/metrics-utils"
+          - "@lokalise/non-translatable-markup"
+          - "@lokalise/odata-mapper"
+          - "@lokalise/opentelemetry-fastify-bootstrap"
+          - "@lokalise/polling"
+          - "@lokalise/prisma-utils"
+          - "@lokalise/script-utils"
+          - "@lokalise/supported-languages"
+          - "@lokalise/universal-testing-utils"
+          - "@lokalise/universal-ts-utils"
+          - "@lokalise/websockets-common"
+          - "@lokalise/zod-extras"
+          - "@lokalise/biome-config"
+          - "@lokalise/eslint-config"
+          - "@lokalise/package-vite-config"
+          - "@lokalise/prettier-config"
+          - "@lokalise/tsconfig"
+        include:
+          - package-name: "@lokalise/api-common"
+            package_path: "packages/app/api-common"
+          - package-name: "@lokalise/api-contracts"
+            package_path: "packages/app/api-contracts"
+          - package-name: "@lokalise/auth"
+            package_path: "packages/app/auth"
+          - package-name: "@lokalise/aws-config"
+            package_path: "packages/app/aws-config"
+          - package-name: "@lokalise/backend-http-client"
+            package_path: "packages/app/backend-http-client"
+          - package-name: "@lokalise/background-jobs-common"
+            package_path: "packages/app/background-jobs-common"
+          - package-name: "@lokalise/context-fastify-plugins"
+            package_path: "packages/app/context-fastify-plugins"
+          - package-name: "@lokalise/datadog-fastify-bootstrap"
+            package_path: "packages/app/datadog-fastify-bootstrap"
+          - package-name: "@lokalise/drizzle-utils"
+            package_path: "packages/app/drizzle-utils"
+          - package-name: "@lokalise/error-utils"
+            package_path: "packages/app/error-utils"
+          - package-name: "@lokalise/fastify-api-contracts"
+            package_path: "packages/app/fastify-api-contracts"
+          - package-name: "@lokalise/fastify-bullboard-plugin"
+            package_path: "packages/app/fastify-bullboard-plugin"
+          - package-name: "@lokalise/frontend-http-client"
+            package_path: "packages/app/frontend-http-client"
+          - package-name: "@lokalise/healthcheck-utils"
+            package_path: "packages/app/healthcheck-utils"
+          - package-name: "@lokalise/id-utils"
+            package_path: "packages/app/id-utils"
+          - package-name: "@lokalise/metrics-utils"
+            package_path: "packages/app/metrics-utils"
+          - package-name: "@lokalise/non-translatable-markup"
+            package_path: "packages/app/non-translatable-markup"
+          - package-name: "@lokalise/odata-mapper"
+            package_path: "packages/app/odata-mapper"
+          - package-name: "@lokalise/opentelemetry-fastify-bootstrap"
+            package_path: "packages/app/opentelemetry-fastify-bootstrap"
+          - package-name: "@lokalise/polling"
+            package_path: "packages/app/polling"
+          - package-name: "@lokalise/prisma-utils"
+            package_path: "packages/app/prisma-utils"
+          - package-name: "@lokalise/script-utils"
+            package_path: "packages/app/script-utils"
+          - package-name: "@lokalise/supported-languages"
+            package_path: "packages/app/supported-languages"
+          - package-name: "@lokalise/universal-testing-utils"
+            package_path: "packages/app/universal-testing-utils"
+          - package-name: "@lokalise/universal-ts-utils"
+            package_path: "packages/app/universal-ts-utils"
+          - package-name: "@lokalise/websockets-common"
+            package_path: "packages/app/websockets-common"
+          - package-name: "@lokalise/zod-extras"
+            package_path: "packages/app/zod-extras"
+          - package-name: "@lokalise/biome-config"
+            package_path: "packages/dev/biome-config"
+          - package-name: "@lokalise/eslint-config"
+            package_path: "packages/dev/eslint-config"
+          - package-name: "@lokalise/package-vite-config"
+            package_path: "packages/dev/package-vite-config"
+          - package-name: "@lokalise/prettier-config"
+            package_path: "packages/dev/prettier-config"
+          - package-name: "@lokalise/tsconfig"
+            package_path: "packages/dev/tsconfig"
     uses: ./.github/workflows/ci.package.yml
     with:
       node_version: ${{ matrix.node-version }}
