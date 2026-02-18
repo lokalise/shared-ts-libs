@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, it } from 'vitest'
-import type { MakeRequired } from './MakeRequired.ts' // Adjust the import path as necessary
+import type { MakeRequired } from './MakeRequired.ts'
 
 describe('MakeRequired', () => {
   it('should make specified keys required', () => {
