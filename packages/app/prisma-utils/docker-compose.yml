@@ -10,4 +10,10 @@ services:
       - COCKROACH_PASSWORD=pass
       - COCKROACH_USER=testuser
       - COCKROACH_DATABASE=test
+    healthcheck:
+      test: [ "CMD-SHELL", "cockroach sql --host=127.0.0.1:26257 --certs-dir=certs -e 'SELECT 1;' || exit 1" ]
+      interval: 3s   # run check every 3 seconds
+      timeout: 5s    # fail if longer than 5s
+      retries: 10    # require 10 consecutive failures before unhealthy
+      start_period: 10s # grace period for initialization
     restart: on-failure
