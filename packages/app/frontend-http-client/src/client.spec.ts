@@ -1,10 +1,11 @@
 import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from '@lokalise/api-contracts'
 import { newServer } from 'mock-xmlhttprequest'
 import { getLocal, type Mockttp } from 'mockttp'
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import wretch from 'wretch'
 import { z } from 'zod/v4'
 import {
+  sendByContract,
   sendByDeleteRoute,
   sendByGetRoute,
   sendByPayloadRoute,
@@ -79,6 +80,7 @@ describe('frontend-http-client', () => {
         },
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -115,6 +117,7 @@ describe('frontend-http-client', () => {
         },
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -164,6 +167,7 @@ describe('frontend-http-client', () => {
       })
 
       // satisfies verifies that responseBody type is inferred properly
+      expectTypeOf(responseBody).toEqualTypeOf<z.output<typeof responseBodySchema>>()
       expect(responseBody satisfies z.infer<typeof responseBodySchema>).toEqual({
         data: {
           code: 99,
@@ -226,6 +230,7 @@ describe('frontend-http-client', () => {
       })
 
       // satisfies verifies that responseBody type is inferred properly
+      expectTypeOf(responseBody).toEqualTypeOf<z.output<typeof responseBodySchema>>()
       expect(responseBody satisfies z.infer<typeof responseBodySchema>).toEqual({
         data: {
           code: 99,
@@ -262,6 +267,7 @@ describe('frontend-http-client', () => {
         },
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -375,6 +381,7 @@ describe('frontend-http-client', () => {
         },
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<null>()
       expect(responseBody).toBeNull()
     })
 
@@ -493,6 +500,7 @@ describe('frontend-http-client', () => {
 
       const responseBody = await sendByPayloadRoute(client, routeDefinition, {})
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -526,6 +534,7 @@ describe('frontend-http-client', () => {
         pathPrefix: 'v1',
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ id: number }>()
       expect(responseBody).toEqual({ id: 1 })
     })
 
@@ -557,6 +566,7 @@ describe('frontend-http-client', () => {
         pathPrefix: 'v1',
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ id: number }>()
       expect(responseBody).toEqual({ id: 1 })
     })
 
@@ -582,6 +592,7 @@ describe('frontend-http-client', () => {
         pathPrefix: 'v1',
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<null>()
       expect(responseBody).toBeNull()
     })
   })
@@ -603,6 +614,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -802,6 +814,7 @@ describe('frontend-http-client', () => {
         requestBodySchema: undefined,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
 
@@ -829,6 +842,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
 
@@ -852,6 +866,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
 
@@ -878,6 +893,7 @@ describe('frontend-http-client', () => {
         requestBodySchema: schema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
   })
@@ -1186,6 +1202,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -1388,6 +1405,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
 
@@ -1411,6 +1429,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
   })
@@ -1432,6 +1451,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -1634,6 +1654,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
 
@@ -1657,6 +1678,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ success: boolean }>()
       expect(response).toEqual({ success: true })
     })
   })
@@ -1678,6 +1700,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -1728,6 +1751,7 @@ describe('frontend-http-client', () => {
         isEmptyResponseExpected: true,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ id: string } | null>()
       if (response) {
         // @ts-expect-error WretchResponse has this field, null does not
         expect(response.ok).toBe(true)
@@ -1860,6 +1884,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ data: { code: number } }>()
       expect(response?.data.code).toBe(99)
     })
 
@@ -1883,6 +1908,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ data: { code: number } }>()
       expect(response?.data.code).toBe(99)
     })
 
@@ -1909,6 +1935,7 @@ describe('frontend-http-client', () => {
         responseBodySchema: responseSchema,
       })
 
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
       expect(responseBody).toEqual({
         data: {
           code: 99,
@@ -1968,6 +1995,7 @@ describe('frontend-http-client', () => {
         }),
       })
 
+      expectTypeOf(response).toEqualTypeOf<{ string: string } | null>()
       expect(response).toMatchInlineSnapshot(`
 				{
 				  "string": "1",
@@ -2056,6 +2084,381 @@ describe('frontend-http-client', () => {
       ).rejects.toThrowErrorMatchingInlineSnapshot(
         '[Error: Request to / has returned an unexpected non-JSON response.]',
       )
+    })
+  })
+
+  describe('sendByContract', () => {
+    it('sends GET request via contract', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildGetRoute({
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+      })
+
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
+      expect(responseBody).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+
+    it('sends GET request with query params via contract', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const querySchema = z.object({
+        id: z.string(),
+      })
+
+      const routeDefinition = buildGetRoute({
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestQuerySchema: querySchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        queryParams: {
+          id: 'frfr',
+        },
+      })
+
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+
+    it('sends POST request via contract', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPost('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const requestBodySchema = z.object({
+        isActive: z.boolean(),
+      })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildPayloadRoute({
+        method: 'post',
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestBodySchema: requestBodySchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        body: {
+          isActive: true,
+        },
+      })
+
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
+      expect(responseBody).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+
+    it('sends PUT request via contract', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPut('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const requestBodySchema = z.object({
+        isActive: z.boolean(),
+      })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildPayloadRoute({
+        method: 'put',
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestBodySchema: requestBodySchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        body: {
+          isActive: true,
+        },
+      })
+
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
+      expect(responseBody).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+
+    it('sends PATCH request via contract', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPatch('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const requestBodySchema = z.object({
+        isActive: z.boolean(),
+      })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildPayloadRoute({
+        method: 'patch',
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestBodySchema: requestBodySchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        body: {
+          isActive: true,
+        },
+      })
+
+      expectTypeOf(responseBody).toEqualTypeOf<{ data: { code: number } }>()
+      expect(responseBody).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+
+    it('sends DELETE request via contract', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forDelete('/users/1').thenReply(204)
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildDeleteRoute({
+        isEmptyResponseExpected: true,
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: pathSchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+      })
+
+      expectTypeOf(responseBody).toEqualTypeOf<null>()
+      expect(responseBody).toBeNull()
+    })
+
+    it('supports passing headers factory for a POST request', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPost('/users/1').thenCallback((req) => {
+        return {
+          statusCode: 200,
+          headers: JSON_HEADERS,
+          body: JSON.stringify({
+            headers: req.headers.authorization,
+          }),
+        }
+      })
+
+      const responseBodySchema = z.any()
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const requestBodySchema = z.object({
+        isActive: z.boolean(),
+      })
+
+      const routeDefinition = buildPayloadRoute({
+        method: 'post',
+        requestBodySchema,
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestHeaderSchema: HEADERS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        body: {
+          isActive: true,
+        },
+        pathParams: {
+          userId: 1,
+        },
+        headers: () => Promise.resolve({ authorization: 'dummy' }),
+      })
+
+      expect(responseBody satisfies z.infer<typeof responseBodySchema>).toMatchInlineSnapshot(`
+        {
+          "headers": "dummy",
+        }
+      `)
+    })
+
+    it('works with path prefix for GET routes', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/v1/users/1').thenJson(200, { id: 1 })
+
+      const responseBodySchema = z.object({
+        id: z.number(),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildGetRoute({
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        pathPrefix: 'v1',
+      })
+
+      expectTypeOf(responseBody).toEqualTypeOf<{ id: number }>()
+      expect(responseBody).toEqual({ id: 1 })
+    })
+
+    it('works with path prefix for POST routes', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPost('/v1/users/1').thenJson(200, { id: 1 })
+
+      const responseBodySchema = z.object({
+        id: z.number(),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildPayloadRoute({
+        method: 'post',
+        successResponseBodySchema: responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestBodySchema: undefined,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        pathPrefix: 'v1',
+      })
+
+      expectTypeOf(responseBody).toEqualTypeOf<{ id: number }>()
+      expect(responseBody).toEqual({ id: 1 })
+    })
+
+    it('works with path prefix for DELETE routes', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forDelete('/v1/users/1').thenReply(204)
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildDeleteRoute({
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: pathSchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        pathPrefix: 'v1',
+      })
+
+      expectTypeOf(responseBody).toEqualTypeOf<null>()
+      expect(responseBody).toBeNull()
     })
   })
 })

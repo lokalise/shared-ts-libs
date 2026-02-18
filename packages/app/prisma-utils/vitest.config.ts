@@ -12,6 +12,7 @@ export default defineConfig({
     hookTimeout: 30000,
     teardownTimeout: 10000,
     coverage: {
+      enabled: false,
       provider: 'v8',
       include: ['src/**/*.ts'],
       exclude: ['src/**/index.ts'],

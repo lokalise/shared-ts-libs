@@ -544,3 +544,20 @@ jobs:
     with:
       working_directory: 'packages/app/datadog-fastify-bootstrap'
       package_name: '@lokalise/datadog-fastify-bootstrap'
+
+  odata-mapper:
+    name: Release odata-mapper
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/odata-mapper/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+      - polling
+    uses: ./.github/workflows/release.package.yml
+    with:
+      working_directory: 'packages/app/odata-mapper'
+      package_name: '@lokalise/odata-mapper'

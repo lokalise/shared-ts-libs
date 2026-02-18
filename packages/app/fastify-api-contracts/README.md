@@ -9,7 +9,7 @@ This module requires `fastify-type-provider-zod` type provider to work and is ES
 Basic usage pattern using the unified `buildFastifyRoute` builder:
 
 ```ts
-import { buildFastifyRoute, buildFastifyRouteHandler, injectPost, injectGet } from '@lokalise/fastify-api-contracts'
+import { buildFastifyRoute, buildFastifyRouteHandler, injectByContract } from '@lokalise/fastify-api-contracts'
 import { buildRestContract } from '@lokalise/api-contracts'
 import {
     type ZodTypeProvider,
@@ -76,14 +76,15 @@ app.withTypeProvider<ZodTypeProvider>().route(deleteRoute)
 await app.ready()
 
 // used in tests, you can use '@lokalise/frontend-http-client' in production code
-const postResponse = await injectPost(app, postContract, {
+// injectByContract automatically determines the HTTP method from the contract
+const postResponse = await injectByContract(app, postContract, {
     pathParams: { userId: '1' },
     body: { id: '2' },
     headers: { authorization: 'some-value' } // can be passed directly
 })
 
 // used in tests, you can use '@lokalise/frontend-http-client' in production code
-const getResponse = await injectGet(app, getContract, {
+const getResponse = await injectByContract(app, getContract, {
     pathParams: { userId: '1' },
     headers: async () => ({ authorization: 'some-value' }) // headers producing function (sync or async) can be passed as well
 })
@@ -129,9 +130,9 @@ const route = buildFastifyRoute(contract, (req) => {
 })
 ```
 
-## Deprecated builders
+## Deprecated APIs
 
-The following functions are deprecated and will be removed in a future version. Use the unified builders instead:
+The following functions are deprecated and will be removed in a future version. Use the unified replacements instead:
 
 | Deprecated | Replacement |
 |---|---|
@@ -139,3 +140,8 @@ The following functions are deprecated and will be removed in a future version. 
 | `buildFastifyNoPayloadRouteHandler` | `buildFastifyRouteHandler` |
 | `buildFastifyPayloadRoute` | `buildFastifyRoute` |
 | `buildFastifyPayloadRouteHandler` | `buildFastifyRouteHandler` |
+| `injectGet` | `injectByContract` |
+| `injectDelete` | `injectByContract` |
+| `injectPost` | `injectByContract` |
+| `injectPut` | `injectByContract` |
+| `injectPatch` | `injectByContract` |
