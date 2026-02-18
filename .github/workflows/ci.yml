@@ -1,4 +1,4 @@
-name: ci
+name: CI
 
 on:
   push:
@@ -7,44 +7,46 @@ on:
   pull_request:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
+  general:
     strategy:
       matrix:
         node-version: [22.x, 24.x]
+        package-name: [
+          "@lokalise/api-common",
+          "@lokalise/api-contracts",
+          "@lokalise/auth",
+          "@lokalise/aws-config",
+          "@lokalise/backend-http-client",
+          "@lokalise/background-jobs-common",
+          "@lokalise/context-fastify-plugins",
+          "@lokalise/datadog-fastify-bootstrap",
+          "@lokalise/drizzle-utils",
+          "@lokalise/error-utils",
+          "@lokalise/fastify-api-contracts",
+          "@lokalise/fastify-bullboard-plugin",
+          "@lokalise/frontend-http-client",
+          "@lokalise/healthcheck-utils",
+          "@lokalise/id-utils",
+          "@lokalise/metrics-utils",
+          "@lokalise/non-translatable-markup",
+          "@lokalise/odata-mapper",
+          "@lokalise/opentelemetry-fastify-bootstrap",
+          "@lokalise/polling",
+          "@lokalise/prisma-utils",
+          "@lokalise/script-utils",
+          "@lokalise/supported-languages",
+          "@lokalise/universal-testing-utils",
+          "@lokalise/universal-ts-utils",
+          "@lokalise/websockets-common",
+          "@lokalise/zod-extras",
+          "@lokalise/biome-config",
+          "@lokalise/eslint-config",
+          "@lokalise/package-vite-config",
+          "@lokalise/prettier-config",
+          "@lokalise/tsconfig"
+        ]
+    uses: ./.github/workflows/ci.package.yml
+    with:
+      node_version: ${{ matrix.node-version }}
+      package_name: ${{ matrix.package-name }}
 
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup Node ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Install
-        run: |
-          npm install --ignore-scripts        
-
-      - name: Build TS
-        run: |
-          npm run build
-
-      - name: Lint
-        run: |
-          npm run lint          
-
-      - name: Run Tests
-        run: |
-          npm run test:ci        
-
-  automerge:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
-    steps:
-      - uses: fastify/github-action-merge-dependabot@v3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
