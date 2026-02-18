@@ -23,11 +23,10 @@
         "clean": "rimraf dist",
         "lint": "biome check . && tsc",
         "lint:fix": "biome check --write",
-        "docker:start:ci": "docker compose up -d --quiet-pull redis",
         "test": "vitest run",
-        "pretest:ci": "npm run docker:start:ci",
+        "pretest:ci": "docker compose up -d",
         "test:ci": "vitest run --coverage",
-        "test:ci:teardown": "docker compose down",
+        "posttest:ci": "docker compose down",
         "prepublishOnly": "npm run build",
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
