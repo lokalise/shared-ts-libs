@@ -68,8 +68,11 @@ jobs:
 
           if [ ${#PACKAGES[@]} -eq 0 ]; then
             echo 'packages=[]' >> $GITHUB_OUTPUT
+            echo "No packages changed"
           else
-            echo "packages=[$(IFS=,; echo "${PACKAGES[*]}")]" >> $GITHUB_OUTPUT
+            JSON="[$(IFS=,; echo "${PACKAGES[*]}")]"
+            echo "packages=$JSON" >> $GITHUB_OUTPUT
+            echo "Changed packages: $JSON"
           fi
 
   general:
