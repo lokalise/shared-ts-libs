@@ -1,4 +1,4 @@
-name: ci
+name: CI
 
 on:
   push:
@@ -7,39 +7,89 @@ on:
   pull_request:
 
 jobs:
-  build:
+  changed-files-job:
+    name: Get changed packages
     runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.detect.outputs.packages }}
+    steps:
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46
+        with:
+          files: packages/**
 
+      - name: Detect changed packages
+        id: detect
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          declare -A PATH_TO_NAME=(
+            ["packages/app/api-common"]="@lokalise/api-common"
+            ["packages/app/api-contracts"]="@lokalise/api-contracts"
+            ["packages/app/auth"]="@lokalise/auth"
+            ["packages/app/aws-config"]="@lokalise/aws-config"
+            ["packages/app/backend-http-client"]="@lokalise/backend-http-client"
+            ["packages/app/background-jobs-common"]="@lokalise/background-jobs-common"
+            ["packages/app/context-fastify-plugins"]="@lokalise/context-fastify-plugins"
+            ["packages/app/datadog-fastify-bootstrap"]="@lokalise/datadog-fastify-bootstrap"
+            ["packages/app/drizzle-utils"]="@lokalise/drizzle-utils"
+            ["packages/app/error-utils"]="@lokalise/error-utils"
+            ["packages/app/fastify-api-contracts"]="@lokalise/fastify-api-contracts"
+            ["packages/app/fastify-bullboard-plugin"]="@lokalise/fastify-bullboard-plugin"
+            ["packages/app/frontend-http-client"]="@lokalise/frontend-http-client"
+            ["packages/app/healthcheck-utils"]="@lokalise/healthcheck-utils"
+            ["packages/app/id-utils"]="@lokalise/id-utils"
+            ["packages/app/metrics-utils"]="@lokalise/metrics-utils"
+            ["packages/app/non-translatable-markup"]="@lokalise/non-translatable-markup"
+            ["packages/app/odata-mapper"]="@lokalise/odata-mapper"
+            ["packages/app/opentelemetry-fastify-bootstrap"]="@lokalise/opentelemetry-fastify-bootstrap"
+            ["packages/app/polling"]="@lokalise/polling"
+            ["packages/app/prisma-utils"]="@lokalise/prisma-utils"
+            ["packages/app/script-utils"]="@lokalise/script-utils"
+            ["packages/app/supported-languages"]="@lokalise/supported-languages"
+            ["packages/app/universal-testing-utils"]="@lokalise/universal-testing-utils"
+            ["packages/app/universal-ts-utils"]="@lokalise/universal-ts-utils"
+            ["packages/app/websockets-common"]="@lokalise/websockets-common"
+            ["packages/app/zod-extras"]="@lokalise/zod-extras"
+            ["packages/dev/biome-config"]="@lokalise/biome-config"
+            ["packages/dev/eslint-config"]="@lokalise/eslint-config"
+            ["packages/dev/package-vite-config"]="@lokalise/package-vite-config"
+            ["packages/dev/prettier-config"]="@lokalise/prettier-config"
+            ["packages/dev/tsconfig"]="@lokalise/tsconfig"
+          )
+
+          PACKAGES=()
+          for path in "${!PATH_TO_NAME[@]}"; do
+            if echo "$ALL_CHANGED_FILES" | grep -q "$path/"; then
+              PACKAGES+=("\"${PATH_TO_NAME[$path]}\"")
+            fi
+          done
+
+          if [ ${#PACKAGES[@]} -eq 0 ]; then
+            echo 'packages=[]' >> $GITHUB_OUTPUT
+            echo "No packages changed"
+          else
+            JSON="[$(IFS=,; echo "${PACKAGES[*]}")]"
+            echo "packages=$JSON" >> $GITHUB_OUTPUT
+            echo "Changed packages: $JSON"
+          fi
+
+  general:
+    needs: [changed-files-job]
+    if: needs.changed-files-job.outputs.packages != '[]'
     strategy:
       matrix:
         node-version: [22.x, 24.x]
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup Node ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Install
-        run: |
-          npm install --ignore-scripts        
-
-      - name: Build TS
-        run: |
-          npm run build
-
-      - name: Lint
-        run: |
-          npm run lint          
-
-      - name: Run Tests
-        run: |
-          npm run test:ci        
+        package-name: ${{ fromJson(needs.changed-files-job.outputs.packages) }}
+    uses: ./.github/workflows/ci.package.yml
+    with:
+      node_version: ${{ matrix.node-version }}
+      package_name: ${{ matrix.package-name }}
 
   automerge:
-    needs: build
+    needs: general
+    if: always() && (needs.general.result == 'success' || needs.general.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write

@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:18.2-alpine
+    command: '-c full_page_writes=off -c fsync=off -c synchronous_commit=off'
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=testuser
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=test
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h localhost -p 5432']
+      interval: 1s
+      timeout: 5s
+      retries: 10
