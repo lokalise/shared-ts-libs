@@ -31,7 +31,6 @@
         "pretest:ci": "docker compose up -d && npm run db:wait && npm run test:migrate",
         "test:ci": "npm run test",
         "posttest:ci": "docker compose down",
-        "test:ci:teardown": "docker compose down",
         "prepublishOnly": "npm run build",
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
