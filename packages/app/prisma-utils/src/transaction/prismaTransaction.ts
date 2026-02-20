@@ -1,19 +1,18 @@
 import { setTimeout } from 'node:timers/promises'
 import type { Either } from '@lokalise/node-core'
 import { deepClone } from '@lokalise/node-core'
-import type { Prisma, PrismaClient } from '@prisma/client'
-import type * as runtime from '@prisma/client/runtime/library'
-import { isCockroachDBRetryTransaction } from './errors/cockroachdbError.ts'
+import type * as RuntimePrisma from '@prisma/client/runtime/client'
+import type { PrismaClient } from '../../test/db-client/client.ts'
+import { isCockroachDBRetryTransaction } from '../errors/cockroachdbError.ts'
 import {
   isPrismaClientKnownRequestError,
   isPrismaTransactionClosedError,
   PRISMA_SERIALIZATION_ERROR,
   PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
   PRISMA_TRANSACTION_ERROR,
-} from './errors/prismaError.ts'
+} from '../errors/index.ts'
+import type { DbDriver } from '../types.ts'
 import type {
-  DbDriver,
-  PrismaTransactionBasicOptions,
   PrismaTransactionFn,
   PrismaTransactionOptions,
   PrismaTransactionReturnType,
@@ -21,7 +20,6 @@ import type {
 
 const DEFAULT_OPTIONS = {
   retriesAllowed: 2, // first try + 2 retries = 3 tries
-  dbDriver: 'CockroachDb',
   baseRetryDelayMs: 100,
   maxRetryDelayMs: 30000, // 30s
   timeout: 5000, // 5s
@@ -33,14 +31,14 @@ const DEFAULT_OPTIONS = {
  *
  * @template T | T extends Prisma.PrismaPromise<unknown>[]
  * @param {PrismaClient} prisma
- * @param {PrismaTransactionFn<T> | Prisma.PrismaPromise<unknown>[]} arg	 operation to perform into the transaction
- * @param {PrismaTransactionOptions | PrismaTransactionBasicOptions} options transaction configuration
+ * @param {PrismaTransactionFn<T> | RuntimePrisma.PrismaPromise<unknown>[]} arg	 operation to perform into the transaction
+ * @param {PrismaTransactionOptions} options transaction configuration
  * @return {Promise<PrismaTransactionReturnType<T>>}
  */
 export const prismaTransaction = (async <T, P extends PrismaClient>(
   prisma: P,
-  arg: PrismaTransactionFn<T, P> | Prisma.PrismaPromise<unknown>[],
-  options?: PrismaTransactionOptions | PrismaTransactionBasicOptions,
+  options: PrismaTransactionOptions,
+  arg: PrismaTransactionFn<T, P> | RuntimePrisma.PrismaPromise<unknown>[],
 ): Promise<PrismaTransactionReturnType<T>> => {
   let optionsWithDefaults = { ...DEFAULT_OPTIONS, ...options }
   let result: PrismaTransactionReturnType<T> | undefined
@@ -78,19 +76,19 @@ export const prismaTransaction = (async <T, P extends PrismaClient>(
 }) as {
   <T, P extends PrismaClient>(
     prisma: P,
+    options: PrismaTransactionOptions,
     fn: PrismaTransactionFn<T, P>,
-    options?: PrismaTransactionOptions,
   ): Promise<Either<unknown, T>>
-  <T extends Prisma.PrismaPromise<unknown>[], P extends PrismaClient>(
+  <T extends RuntimePrisma.PrismaPromise<unknown>[], P extends PrismaClient>(
     prisma: P,
+    options: PrismaTransactionOptions,
     args: [...T],
-    options?: PrismaTransactionBasicOptions,
-  ): Promise<Either<unknown, runtime.Types.Utils.UnwrapTuple<T>>>
+  ): Promise<Either<unknown, RuntimePrisma.Types.Utils.UnwrapTuple<T>>>
 }
 
 const executeTransactionTry = async <T, P extends PrismaClient>(
   prisma: P,
-  arg: PrismaTransactionFn<T, P> | Prisma.PrismaPromise<unknown>[],
+  arg: PrismaTransactionFn<T, P> | RuntimePrisma.PrismaPromise<unknown>[],
   options?: PrismaTransactionOptions,
 ): Promise<PrismaTransactionReturnType<T>> => {
   try {

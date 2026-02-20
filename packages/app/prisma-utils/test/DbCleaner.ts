@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client'
+import type { PrismaClient } from './db-client/client.ts'
 
 export const DB_MODEL = {
   item1: 'item1',

@@ -1,15 +1,16 @@
 import type { Either } from '@lokalise/node-core'
-import { PrismaClient } from '@prisma/client'
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanTables, DB_MODEL } from '../test/DbCleaner.ts'
-import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
+import { cleanTables, DB_MODEL } from '../../test/DbCleaner.ts'
+import { PrismaClient } from '../../test/db-client/client.ts'
+import { getDatasourceUrl } from '../../test/getDatasourceUrl.ts'
 import {
   PRISMA_NOT_FOUND_ERROR,
   PRISMA_SERIALIZATION_ERROR,
   PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
   PRISMA_TRANSACTION_ERROR,
-} from './errors/index.ts'
+} from '../errors/index.ts'
 import { prismaTransaction } from './prismaTransaction.ts'
 
 type Item1 = {
@@ -32,7 +33,7 @@ describe('prismaTransaction', () => {
 
   beforeAll(() => {
     prisma = new PrismaClient({
-      datasourceUrl: getDatasourceUrl(),
+      adapter: new PrismaPg({ connectionString: getDatasourceUrl() }),
     })
   })
 
@@ -47,8 +48,10 @@ describe('prismaTransaction', () => {
   describe('with function callback', () => {
     it('works in the first try', async () => {
       // When
-      const result: Either<unknown, Item1> = await prismaTransaction(prisma, (client) =>
-        client.item1.create({ data: TEST_ITEM_1 }),
+      const result: Either<unknown, Item1> = await prismaTransaction(
+        prisma,
+        { dbDriver: 'CockroachDb' },
+        (client) => client.item1.create({ data: TEST_ITEM_1 }),
       )
 
       // Then
@@ -57,9 +60,13 @@ describe('prismaTransaction', () => {
 
     it('returns correct types for interactive transaction ', async () => {
       // When
-      const result = await prismaTransaction(prisma, async (client) => {
-        return await client.item1.create({ data: TEST_ITEM_1 })
-      })
+      const result = await prismaTransaction(
+        prisma,
+        { dbDriver: 'CockroachDb' },
+        async (client) => {
+          return await client.item1.create({ data: TEST_ITEM_1 })
+        },
+      )
 
       // Then
       expect(result.result?.value).toBe(TEST_ITEM_1.value)
@@ -75,7 +82,7 @@ describe('prismaTransaction', () => {
       const callsTimestamps: number[] = []
 
       // When
-      const result = await prismaTransaction(prisma, () => {
+      const result = await prismaTransaction(prisma, { dbDriver: 'CockroachDb' }, () => {
         callsTimestamps.push(Date.now())
         throw new PrismaClientKnownRequestError('test', {
           code: prismaErrorCode,
@@ -102,18 +109,14 @@ describe('prismaTransaction', () => {
       let callsCount = 0
 
       // When
-      const result = await prismaTransaction(
-        prisma,
-        () => {
-          callsCount++
-          throw new PrismaClientKnownRequestError('test', {
-            code: 'P100',
-            clientVersion: '1',
-            meta: { code: '40001' },
-          })
-        },
-        { dbDriver: 'CockroachDb' },
-      )
+      const result = await prismaTransaction(prisma, { dbDriver: 'CockroachDb' }, () => {
+        callsCount++
+        throw new PrismaClientKnownRequestError('test', {
+          code: 'P100',
+          clientVersion: '1',
+          meta: { code: '40001' },
+        })
+      })
 
       // Then
       expect(result.error).toBeInstanceOf(PrismaClientKnownRequestError)
@@ -128,7 +131,7 @@ describe('prismaTransaction', () => {
       let callsCount = 0
 
       // When
-      const result = await prismaTransaction(prisma, () => {
+      const result = await prismaTransaction(prisma, { dbDriver: 'CockroachDb' }, () => {
         callsCount++
         throw new PrismaClientKnownRequestError('test', {
           code: PRISMA_NOT_FOUND_ERROR,
@@ -152,6 +155,7 @@ describe('prismaTransaction', () => {
       // When
       const result = await prismaTransaction(
         prisma,
+        { retriesAllowed, baseRetryDelayMs, dbDriver: 'CockroachDb' },
         () => {
           callsTimestamps.push(Date.now())
           throw new PrismaClientKnownRequestError('test', {
@@ -159,7 +163,6 @@ describe('prismaTransaction', () => {
             clientVersion: '1',
           })
         },
-        { retriesAllowed, baseRetryDelayMs },
       )
 
       // Then
@@ -184,6 +187,7 @@ describe('prismaTransaction', () => {
       // When
       const result = await prismaTransaction(
         prisma,
+        { maxRetryDelayMs, baseRetryDelayMs, dbDriver: 'CockroachDb' },
         () => {
           callsTimestamps.push(Date.now())
           throw new PrismaClientKnownRequestError('test', {
@@ -191,7 +195,6 @@ describe('prismaTransaction', () => {
             clientVersion: '1',
           })
         },
-        { maxRetryDelayMs, baseRetryDelayMs },
       )
 
       // Then
@@ -222,16 +225,19 @@ describe('prismaTransaction', () => {
       )
 
       // When
-      const resultWithDefaults = await prismaTransaction(fakePrismaClient, () =>
-        Promise.resolve(null),
+      const resultWithDefaults = await prismaTransaction(
+        fakePrismaClient,
+        { dbDriver: 'CockroachDb' },
+        () => Promise.resolve(null),
       )
       const resultWithCustomTimeout = await prismaTransaction(
         fakePrismaClient,
-        () => Promise.resolve(null),
         {
           timeout: 1000,
           maxTimeout: 2000,
+          dbDriver: 'CockroachDb',
         },
+        () => Promise.resolve(null),
       )
 
       // Then
@@ -256,10 +262,11 @@ describe('prismaTransaction', () => {
   describe('with array', () => {
     it('works', async () => {
       // When
-      const result: Either<unknown, [Item1, Item2]> = await prismaTransaction(prisma, [
-        prisma.item1.create({ data: TEST_ITEM_1 }),
-        prisma.item2.create({ data: TEST_ITEM_2 }),
-      ])
+      const result: Either<unknown, [Item1, Item2]> = await prismaTransaction(
+        prisma,
+        { dbDriver: 'CockroachDb' },
+        [prisma.item1.create({ data: TEST_ITEM_1 }), prisma.item2.create({ data: TEST_ITEM_2 })],
+      )
 
       // Then
       expect(result.result).toMatchObject([TEST_ITEM_1, TEST_ITEM_2])
@@ -267,7 +274,7 @@ describe('prismaTransaction', () => {
 
     it('should return proper types', async () => {
       // When
-      const result = await prismaTransaction(prisma, [
+      const result = await prismaTransaction(prisma, { dbDriver: 'CockroachDb' }, [
         prisma.item1.create({ data: TEST_ITEM_1 }),
         prisma.item2.create({ data: TEST_ITEM_2 }),
       ])

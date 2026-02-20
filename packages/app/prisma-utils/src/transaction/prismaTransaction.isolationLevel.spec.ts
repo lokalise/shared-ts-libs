@@ -1,6 +1,7 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
+import { PrismaClient } from '../../test/db-client/client.ts'
+import { getDatasourceUrl } from '../../test/getDatasourceUrl.ts'
 import { prismaTransaction } from './prismaTransaction.ts'
 
 const transactionIsolationKey = 'transaction_isolation'
@@ -10,7 +11,7 @@ describe('prismaTransaction - isolation level', () => {
 
   beforeAll(() => {
     prisma = new PrismaClient({
-      datasourceUrl: getDatasourceUrl(),
+      adapter: new PrismaPg({ connectionString: getDatasourceUrl() }),
     })
   })
 
@@ -28,9 +29,12 @@ describe('prismaTransaction - isolation level', () => {
   it('should have serializable as default', async () => {
     const res1 = await prismaTransaction(
       prisma,
+      { dbDriver: 'CockroachDb' },
       async (client) => client.$queryRaw`SHOW transaction_isolation`,
     )
-    const res2 = await prismaTransaction(prisma, [prisma.$queryRaw`SHOW transaction_isolation`])
+    const res2 = await prismaTransaction(prisma, { dbDriver: 'CockroachDb' }, [
+      prisma.$queryRaw`SHOW transaction_isolation`,
+    ])
 
     const result = [res1.result, res2.result].map(extractIsolationLevel)
     expect(result).toEqual(['serializable', 'serializable'])
@@ -39,12 +43,14 @@ describe('prismaTransaction - isolation level', () => {
   it('should use serializable if specified', async () => {
     const res1 = await prismaTransaction(
       prisma,
+      { isolationLevel: 'Serializable', dbDriver: 'CockroachDb' },
       async (client) => client.$queryRaw`SHOW transaction_isolation`,
-      { isolationLevel: 'Serializable' },
     )
-    const res2 = await prismaTransaction(prisma, [prisma.$queryRaw`SHOW transaction_isolation`], {
-      isolationLevel: 'Serializable',
-    })
+    const res2 = await prismaTransaction(
+      prisma,
+      { isolationLevel: 'Serializable', dbDriver: 'CockroachDb' },
+      [prisma.$queryRaw`SHOW transaction_isolation`],
+    )
 
     const result = [res1.result, res2.result].map(extractIsolationLevel)
     expect(result).toEqual(['serializable', 'serializable'])
@@ -61,10 +67,14 @@ describe('prismaTransaction - isolation level', () => {
       $queryRaw: () => Promise.resolve(1) as any,
     } as unknown as PrismaClient
 
-    await prismaTransaction(prisma, async () => undefined, { isolationLevel: 'ReadCommitted' })
-    await prismaTransaction(prisma, [prisma.$queryRaw`SELECT 1`], {
-      isolationLevel: 'ReadCommitted',
-    })
+    await prismaTransaction(
+      prisma,
+      { isolationLevel: 'ReadCommitted', dbDriver: 'CockroachDb' },
+      async () => undefined,
+    )
+    await prismaTransaction(prisma, { isolationLevel: 'ReadCommitted', dbDriver: 'CockroachDb' }, [
+      prisma.$queryRaw`SELECT 1`,
+    ])
 
     expect(transactionSpy).toHaveBeenCalledTimes(2)
     expect(transactionSpy.mock.calls.map(([, options]) => options)).toMatchObject([

@@ -1,8 +1,4 @@
 export * from './errors/index.ts'
-export {
-  type PrismaMetricsPluginOptions,
-  prismaMetricsPlugin,
-} from './plugins/prismaMetricsPlugin.ts'
-export { prismaClientFactory } from './prismaClientFactory.ts'
-export { prismaTransaction } from './prismaTransaction.ts'
+export * from './factory/index.ts'
+export * from './transaction/index.ts'
 export type * from './types.ts'

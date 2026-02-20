@@ -1,4 +1,4 @@
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client'
 import { describe, expect, it } from 'vitest'
 import { isCockroachDBRetryTransaction } from './cockroachdbError.ts'
 import { PRISMA_SERIALIZATION_ERROR } from './prismaError.ts'
