@@ -1,6 +1,6 @@
 import type { Either } from '@lokalise/node-core'
+import type { PrismaClient } from 'db-client/client.ts'
 import type Prometheus from 'prom-client'
-import type { PrismaClient } from '../../test/db-client/client.ts'
 
 export const extendPrismaClientWithMetrics = <Client extends PrismaClient>(
   prisma: Client,

@@ -1,9 +1,9 @@
 import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from 'db-client/client.ts'
 import type * as Prometheus from 'prom-client'
 import * as promClient from 'prom-client'
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import { cleanTables, DB_MODEL } from '../../test/DbCleaner.ts'
-import { PrismaClient } from '../../test/db-client/client.ts'
 import { getDatasourceUrl } from '../../test/getDatasourceUrl.ts'
 import { prismaClientFactory } from './prismaClientFactory.ts'
 
