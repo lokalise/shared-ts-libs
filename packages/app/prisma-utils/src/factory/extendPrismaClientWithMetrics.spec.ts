@@ -1,6 +1,6 @@
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClientKnownRequestError } from 'prisma/client//internal/prismaNamespace.ts'
-import { PrismaClient } from 'prisma/client/client.ts'
+import { PrismaClient } from 'db-client/client.ts'
+import { PrismaClientKnownRequestError } from 'db-client/internal/prismaNamespace.ts'
 import type * as Prometheus from 'prom-client'
 import * as promClient from 'prom-client'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'

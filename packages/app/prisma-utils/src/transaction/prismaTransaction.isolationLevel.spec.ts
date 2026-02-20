@@ -1,5 +1,5 @@
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from 'prisma/client/client.ts'
+import { PrismaClient } from 'db-client/client.ts'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { getDatasourceUrl } from '../../test/getDatasourceUrl.ts'
 import { prismaTransaction } from './prismaTransaction.ts'

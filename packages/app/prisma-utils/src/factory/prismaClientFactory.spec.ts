@@ -1,5 +1,5 @@
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from 'prisma/client/client.ts'
+import { PrismaClient } from 'db-client/client.ts'
 import type * as Prometheus from 'prom-client'
 import * as promClient from 'prom-client'
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
