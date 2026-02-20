@@ -2,7 +2,7 @@ import { setTimeout } from 'node:timers/promises'
 import type { Either } from '@lokalise/node-core'
 import { deepClone } from '@lokalise/node-core'
 import type * as RuntimePrisma from '@prisma/client/runtime/client'
-import type { PrismaClient } from '../../test/db-client/client.ts'
+import type { PrismaClient } from 'prisma/client/client.ts'
 import { isCockroachDBRetryTransaction } from '../errors/cockroachdbError.ts'
 import {
   isPrismaClientKnownRequestError,

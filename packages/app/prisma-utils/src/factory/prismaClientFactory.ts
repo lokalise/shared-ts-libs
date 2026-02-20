@@ -1,7 +1,7 @@
 import type * as RuntimePrisma from '@prisma/client/runtime/client'
+import type { PrismaClient } from 'prisma/client/client.ts'
+import type { PrismaClientConstructor } from 'prisma/client/internal/class.ts'
 import type Prometheus from 'prom-client'
-import type { PrismaClient } from '../../test/db-client/client.ts'
-import type { PrismaClientConstructor } from '../../test/db-client/internal/class.ts'
 import { extendPrismaClientWithMetrics } from './extendPrismaClientWithMetrics.ts'
 
 export type prismaClientFactoryOptions = {
