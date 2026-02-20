@@ -8,7 +8,7 @@ datasource db {
 
 generator client {
   provider = "prisma-client"
-  output   = "../test/db-client"
+  output   = "../node_modules/prisma/client"
 }
 
 model Item1 {
