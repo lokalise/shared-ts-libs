@@ -2,6 +2,7 @@ import { getTableColumns, is, sql } from 'drizzle-orm'
 import {
   getTableConfig,
   PgEnumColumn,
+  PgEnumObjectColumn,
   type PgTable,
   type PgUpdateSetSource,
 } from 'drizzle-orm/pg-core'
@@ -28,8 +29,8 @@ const getColumns = (table: PgTable, columnNames: string[]): Column[] => {
       throw new Error(`Column "${columnName}" could not be mapped to table`)
     }
 
-    const type = is(tableColumn, PgEnumColumn)
-      ? `"${tableColumn.enum.schema ?? 'public'}".${tableColumn.enum.enumName}`
+    const type = is(tableColumn, PgEnumColumn)  || is(tableColumn, PgEnumObjectColumn)
+        ? `"${tableColumn.enum.schema ?? 'public'}".${tableColumn.enum.enumName}`
       : tableColumn.getSQLType()
 
     return { key: columnName, name: tableColumn.name, type }

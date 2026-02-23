@@ -1,4 +1,4 @@
-import { jsonb, pgSchema, pgTable, smallint } from 'drizzle-orm/pg-core'
+import { jsonb, pgEnum, pgSchema, pgTable, smallint } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
@@ -31,23 +31,40 @@ describe('drizzleFullBulkUpdate', () => {
   })
 
   const enumSchema = 'enum_schema'
-  const enumName = 'statuss'
-  const statusEnum = pgSchema(enumSchema).enum(enumName, ['active', 'inactive'])
 
-  const enumTableName = 'test_enum'
-  const enumTable = pgTable(enumTableName, {
+  const standardStatusEnumName = 'standard_status'
+  const standardStatusEnum = pgSchema(enumSchema).enum(standardStatusEnumName, ['active', 'inactive'])
+
+  const standardEnumTableName = 'test_standard_enum'
+  const standardEnumTable = pgTable(standardEnumTableName, {
     id: smallint(),
-    status: statusEnum(),
+    status: standardStatusEnum(),
+  })
+
+  const ObjectStatusEnum = { ACTIVE: 'active', INACTIVE: 'inactive' } as const
+  const objectStatusEnumName = 'object_status'
+  const objectStatusDbEnum = pgSchema(enumSchema).enum(objectStatusEnumName, ObjectStatusEnum)
+
+  const objectEnumTableName = 'test_object_enum'
+  const objectEnumTable = pgTable(objectEnumTableName, {
+    id: smallint(),
+    status: objectStatusDbEnum(),
   })
 
   beforeAll(async () => {
     await db.execute(
-      `DROP TABLE IF EXISTS ${surrogateTableName}, ${surrogateJsonTableName}, ${compositeTableName}, ${enumTableName}`,
+      `DROP TABLE IF EXISTS ${surrogateTableName}, ${surrogateJsonTableName}, ${compositeTableName}, ${standardEnumTableName}, ${objectEnumTableName}`,
     )
-    await db.execute(`DROP TYPE IF EXISTS ${enumSchema}.${enumName}`)
+    await db.execute(`DROP TYPE IF EXISTS ${enumSchema}.${standardStatusEnumName}`)
+    await db.execute(`DROP TYPE IF EXISTS ${enumSchema}.${objectStatusEnumName}`)
 
     await db.execute(`CREATE SCHEMA IF NOT EXISTS ${enumSchema}`)
-    await db.execute(`CREATE TYPE ${enumSchema}.${enumName} AS ENUM ('active', 'inactive')`)
+    await db.execute(
+      `CREATE TYPE ${enumSchema}.${standardStatusEnumName} AS ENUM ('active', 'inactive')`,
+    )
+    await db.execute(
+      `CREATE TYPE ${enumSchema}.${objectStatusEnumName} AS ENUM ('active', 'inactive')`,
+    )
 
     await Promise.all([
       db.execute(
@@ -57,7 +74,12 @@ describe('drizzleFullBulkUpdate', () => {
       db.execute(
         `CREATE TABLE ${compositeTableName} (id1 smallint, id2 smallint, col1 smallint, col2 smallint)`,
       ),
-      db.execute(`CREATE TABLE ${enumTableName} (id smallint, status ${enumSchema}.${enumName})`),
+      db.execute(
+        `CREATE TABLE ${standardEnumTableName} (id smallint, status ${enumSchema}.${standardStatusEnumName})`,
+      ),
+      db.execute(
+        `CREATE TABLE ${objectEnumTableName} (id smallint, status ${enumSchema}.${objectStatusEnumName})`,
+      ),
     ])
   })
 
@@ -66,7 +88,8 @@ describe('drizzleFullBulkUpdate', () => {
       db.delete(surrogateTable),
       db.delete(surrogateJsonTable),
       db.delete(compositeTable),
-      db.delete(enumTable),
+      db.delete(standardEnumTable),
+      db.delete(objectEnumTable),
     ])
   })
 
@@ -250,19 +273,58 @@ describe('drizzleFullBulkUpdate', () => {
 
   it('handles enum columns correctly', async () => {
     await db.execute(
-      `INSERT INTO ${enumTableName} (id, status) VALUES (1, 'active'), (2, 'active')`,
+      `INSERT INTO ${standardEnumTableName} (id, status) VALUES (1, 'active'), (2, 'active')`,
     )
 
-    await drizzleFullBulkUpdate(db, enumTable, [
+    await drizzleFullBulkUpdate(db, standardEnumTable, [
       { where: { id: 1 }, data: { status: 'inactive' } },
       { where: { id: 2 }, data: { status: 'inactive' } },
     ])
 
-    const updatedData = await db.execute(`SELECT * FROM ${enumTableName}`)
+    const updatedData = await db.execute(`SELECT * FROM ${standardEnumTableName}`)
 
     expect(updatedData).toEqual(
       expect.arrayContaining([
         { id: 1, status: 'inactive' },
+        { id: 2, status: 'inactive' },
+      ]),
+    )
+  })
+
+  it('handles object enum columns correctly', async () => {
+    await db.execute(
+      `INSERT INTO ${objectEnumTableName} (id, status) VALUES (1, 'active'), (2, 'active')`,
+    )
+
+    await drizzleFullBulkUpdate(db, objectEnumTable, [
+      { where: { id: 1 }, data: { status: ObjectStatusEnum.INACTIVE } },
+      { where: { id: 2 }, data: { status: ObjectStatusEnum.INACTIVE } },
+    ])
+
+    const updatedData = await db.execute(`SELECT * FROM ${objectEnumTableName}`)
+
+    expect(updatedData).toEqual(
+      expect.arrayContaining([
+        { id: 1, status: 'inactive' },
+        { id: 2, status: 'inactive' },
+      ]),
+    )
+  })
+
+  it('handles object enum in where condition correctly', async () => {
+    await db.execute(
+      `INSERT INTO ${objectEnumTableName} (id, status) VALUES (1, 'active'), (2, 'inactive')`,
+    )
+
+    await drizzleFullBulkUpdate(db, objectEnumTable, [
+      { where: { status: ObjectStatusEnum.ACTIVE }, data: { id: 10 } },
+    ])
+
+    const updatedData = await db.execute(`SELECT * FROM ${objectEnumTableName}`)
+
+    expect(updatedData).toEqual(
+      expect.arrayContaining([
+        { id: 10, status: 'active' },
         { id: 2, status: 'inactive' },
       ]),
     )
