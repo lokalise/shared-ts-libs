@@ -42,20 +42,20 @@
     "dependencies": {},
     "peerDependencies": {
         "@fastify/otel": "^0.16.0",
-        "@opentelemetry/auto-instrumentations-node": "^0.68.0",
-        "@opentelemetry/exporter-trace-otlp-grpc": "^0.210.0",
-        "@opentelemetry/sdk-node": "^0.210.0",
-        "@opentelemetry/sdk-trace-base": "^2.4.0",
+        "@opentelemetry/auto-instrumentations-node": "^0.70.0",
+        "@opentelemetry/exporter-trace-otlp-grpc": "^0.212.0",
+        "@opentelemetry/sdk-node": "^0.212.0",
+        "@opentelemetry/sdk-trace-base": "^2.5.1",
         "fastify": "^5.0.0"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.3.7",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "~1.2.0",
-        "@opentelemetry/auto-instrumentations-node": "^0.68.0",
-        "@opentelemetry/exporter-trace-otlp-grpc": "^0.210.0",
-        "@opentelemetry/sdk-node": "^0.210.0",
-        "@opentelemetry/sdk-trace-base": "^2.4.0",
+        "@opentelemetry/auto-instrumentations-node": "^0.70.0",
+        "@opentelemetry/exporter-trace-otlp-grpc": "^0.212.0",
+        "@opentelemetry/sdk-node": "^0.212.0",
+        "@opentelemetry/sdk-trace-base": "^2.5.1",
         "@fastify/otel": "^0.16.0",
         "rimraf": "^6.1.2",
         "typescript": "5.9.3"
