@@ -1,4 +1,4 @@
-import { jsonb, pgEnum, pgSchema, pgTable, smallint } from 'drizzle-orm/pg-core'
+import { jsonb, pgSchema, pgTable, smallint } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
@@ -33,7 +33,10 @@ describe('drizzleFullBulkUpdate', () => {
   const enumSchema = 'enum_schema'
 
   const standardStatusEnumName = 'standard_status'
-  const standardStatusEnum = pgSchema(enumSchema).enum(standardStatusEnumName, ['active', 'inactive'])
+  const standardStatusEnum = pgSchema(enumSchema).enum(standardStatusEnumName, [
+    'active',
+    'inactive',
+  ])
 
   const standardEnumTableName = 'test_standard_enum'
   const standardEnumTable = pgTable(standardEnumTableName, {
