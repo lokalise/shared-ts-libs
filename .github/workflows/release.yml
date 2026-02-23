@@ -249,6 +249,22 @@ jobs:
       working_directory: 'packages/app/context-fastify-plugins'
       package_name: '@lokalise/context-fastify-plugins'
 
+  drizzle-utils:
+    name: Release drizzle-utils
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/drizzle-utils/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: ./.github/workflows/release.package.yml
+    with:
+      working_directory: 'packages/app/drizzle-utils'
+      package_name: '@lokalise/drizzle-utils'
+
   error-utils:
     name: Release error-utils
     if: |
