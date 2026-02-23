@@ -250,7 +250,7 @@ jobs:
       package_name: '@lokalise/context-fastify-plugins'
 
   drizzle-utils:
-    name: Release error-utils
+    name: Release drizzle-utils
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&
