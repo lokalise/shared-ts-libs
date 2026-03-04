@@ -1,5 +1,5 @@
 import type { z } from 'zod/v4'
-import type { RoutePathResolver } from '../apiContracts.ts'
+import type { CommonRouteDefinitionMetadata, RoutePathResolver } from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 import type { DualModeContractDefinition } from './dualModeContracts.ts'
 import type { SSEContractDefinition } from './sseContracts.ts'
@@ -40,6 +40,10 @@ export type SSEGetContractConfig<
   responseBodySchemasByStatusCode?: ResponseSchemasByStatusCode
   requestBodySchema?: never
   successResponseBodySchema?: never
+  metadata?: CommonRouteDefinitionMetadata
+  description?: string
+  summary?: string
+  tags?: readonly string[]
 }
 
 /**
@@ -78,6 +82,10 @@ export type SSEPayloadContractConfig<
    */
   responseBodySchemasByStatusCode?: ResponseSchemasByStatusCode
   successResponseBodySchema?: never
+  metadata?: CommonRouteDefinitionMetadata
+  description?: string
+  summary?: string
+  tags?: readonly string[]
 }
 
 /**
@@ -130,6 +138,10 @@ export type DualModeGetContractConfig<
   responseBodySchemasByStatusCode?: ResponseSchemasByStatusCode
   serverSentEventSchemas: Events
   requestBodySchema?: never
+  metadata?: CommonRouteDefinitionMetadata
+  description?: string
+  summary?: string
+  tags?: readonly string[]
 }
 
 /**
@@ -183,6 +195,10 @@ export type DualModePayloadContractConfig<
    */
   responseBodySchemasByStatusCode?: ResponseSchemasByStatusCode
   serverSentEventSchemas: Events
+  metadata?: CommonRouteDefinitionMetadata
+  description?: string
+  summary?: string
+  tags?: readonly string[]
 }
 
 /**
@@ -250,6 +266,10 @@ function buildBaseFields(config: any, hasBody: boolean) {
     requestHeaderSchema: config.requestHeaderSchema,
     requestBodySchema: hasBody ? config.requestBodySchema : undefined,
     serverSentEventSchemas: config.serverSentEventSchemas,
+    metadata: config.metadata,
+    description: config.description,
+    summary: config.summary,
+    tags: config.tags,
   }
 }
 

@@ -1,5 +1,5 @@
 import type { z } from 'zod/v4'
-import type { RoutePathResolver } from '../apiContracts.ts'
+import type { CommonRouteDefinitionMetadata, RoutePathResolver } from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 import type { SSEEventSchemas } from './sseTypes.ts'
 
@@ -58,6 +58,10 @@ export type SSEContractDefinition<
    */
   responseBodySchemasByStatusCode?: ResponseSchemasByStatusCode
   isSSE: true
+  metadata?: CommonRouteDefinitionMetadata
+  description?: string
+  summary?: string
+  tags?: readonly string[]
 }
 
 /**
@@ -75,4 +79,8 @@ export type AnySSEContractDefinition = {
   serverSentEventSchemas: SSEEventSchemas
   responseBodySchemasByStatusCode?: Partial<Record<HttpStatusCode, z.ZodTypeAny>>
   isSSE: true
+  metadata?: CommonRouteDefinitionMetadata
+  description?: string
+  summary?: string
+  tags?: readonly string[]
 }
