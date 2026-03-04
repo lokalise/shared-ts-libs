@@ -1,5 +1,5 @@
 import type { z } from 'zod/v4'
-import type { RoutePathResolver } from '../apiContracts.ts'
+import type { CommonRouteDefinitionMetadata, RoutePathResolver } from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 import type { SSEMethod } from './sseContracts.ts'
 import type { SSEEventSchemas } from './sseTypes.ts'
@@ -55,6 +55,10 @@ export type DualModeContractDefinition<
   responseBodySchemasByStatusCode?: ResponseSchemasByStatusCode
   serverSentEventSchemas: Events
   isDualMode: true
+  metadata?: CommonRouteDefinitionMetadata
+  description?: string
+  summary?: string
+  tags?: readonly string[]
 }
 
 /**
@@ -75,4 +79,8 @@ export type AnyDualModeContractDefinition = {
   responseBodySchemasByStatusCode?: Partial<Record<HttpStatusCode, z.ZodTypeAny>>
   serverSentEventSchemas: SSEEventSchemas
   isDualMode: true
+  metadata?: CommonRouteDefinitionMetadata
+  description?: string
+  summary?: string
+  tags?: readonly string[]
 }
