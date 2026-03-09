@@ -92,7 +92,7 @@ export type ApiContractMetadataToRouteMapper = <
 >(
   metadata: ApiContract['metadata'],
 ) => Pick<
-  RouteType,
+  RouteOptions,
   | 'config'
   | 'bodyLimit'
   | 'preParsing'
