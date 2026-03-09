@@ -92,7 +92,14 @@ export type ApiContractMetadataToRouteMapper = <
 >(
   metadata: ApiContract['metadata'],
 ) => Pick<
-  RouteOptions,
+  RouteOptions<
+    RawServerDefault,
+    RawRequestDefaultExpression,
+    RawReplyDefaultExpression,
+    RouteGenericInterface,
+    // biome-ignore lint/suspicious/noExplicitAny: Needed to be compatible with other libs
+    any
+  >,
   | 'config'
   | 'bodyLimit'
   | 'preParsing'
