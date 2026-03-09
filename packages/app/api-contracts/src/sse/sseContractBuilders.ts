@@ -1,5 +1,9 @@
 import type { z } from 'zod/v4'
-import type { BaseContractDefinition, RoutePathResolver } from '../apiContracts.ts'
+import type {
+  BaseContractDefinition,
+  CommonRouteDefinitionMetadata,
+  RoutePathResolver,
+} from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 import type { DualModeContractDefinition } from './dualModeContracts.ts'
 import type { SSEContractDefinition } from './sseContracts.ts'
