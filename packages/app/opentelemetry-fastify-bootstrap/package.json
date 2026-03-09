@@ -41,7 +41,7 @@
     },
     "dependencies": {},
     "peerDependencies": {
-        "@fastify/otel": "^0.16.0",
+        "@fastify/otel": "^0.17.1",
         "@opentelemetry/auto-instrumentations-node": "^0.68.0",
         "@opentelemetry/exporter-trace-otlp-grpc": "^0.210.0",
         "@opentelemetry/sdk-node": "^0.210.0",
@@ -56,7 +56,7 @@
         "@opentelemetry/exporter-trace-otlp-grpc": "^0.210.0",
         "@opentelemetry/sdk-node": "^0.210.0",
         "@opentelemetry/sdk-trace-base": "^2.4.0",
-        "@fastify/otel": "^0.16.0",
+        "@fastify/otel": "^0.17.1",
         "rimraf": "^6.1.2",
         "typescript": "5.9.3"
     }
