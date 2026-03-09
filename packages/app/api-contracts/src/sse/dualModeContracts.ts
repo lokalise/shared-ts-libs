@@ -1,5 +1,5 @@
 import type { z } from 'zod/v4'
-import type { RoutePathResolver } from '../apiContracts.ts'
+import type { BaseContractDefinition, RoutePathResolver } from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 import type { SSEMethod } from './sseContracts.ts'
 import type { SSEEventSchemas } from './sseTypes.ts'
@@ -30,7 +30,7 @@ export type DualModeContractDefinition<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
-> = {
+> = BaseContractDefinition & {
   method: Method
   pathResolver: RoutePathResolver<z.infer<Params>>
   requestPathParamsSchema?: Params
@@ -61,7 +61,7 @@ export type DualModeContractDefinition<
  * Type representing any dual-mode route definition (for use in generic constraints).
  * Uses a manually defined type to avoid pathResolver type incompatibilities.
  */
-export type AnyDualModeContractDefinition = {
+export type AnyDualModeContractDefinition = BaseContractDefinition & {
   method: SSEMethod
   // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with all param types
   pathResolver: RoutePathResolver<any>

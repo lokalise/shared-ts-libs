@@ -1,5 +1,5 @@
 import type { z } from 'zod/v4'
-import type { RoutePathResolver } from '../apiContracts.ts'
+import type { BaseContractDefinition, RoutePathResolver } from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 import type { SSEEventSchemas } from './sseTypes.ts'
 
@@ -31,7 +31,7 @@ export type SSEContractDefinition<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
-> = {
+> = BaseContractDefinition & {
   method: Method
   /**
    * Type-safe path resolver function.
@@ -64,7 +64,7 @@ export type SSEContractDefinition<
  * Type representing any SSE route definition (for use in generic constraints).
  * Uses a manually defined type to avoid pathResolver type incompatibilities.
  */
-export type AnySSEContractDefinition = {
+export type AnySSEContractDefinition = BaseContractDefinition & {
   method: SSEMethod
   // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with all param types
   pathResolver: RoutePathResolver<any>

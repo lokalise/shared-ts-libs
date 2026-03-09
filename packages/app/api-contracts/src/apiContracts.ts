@@ -19,6 +19,28 @@ export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
 
 export interface CommonRouteDefinitionMetadata extends Record<string, unknown> {}
 
+/**
+ * Shared annotation fields present in all contract definitions.
+ * Provides a common base for metadata and OpenAPI documentation fields
+ * that are independent of schema types.
+ */
+export type BaseContractDefinition = {
+  metadata?: CommonRouteDefinitionMetadata
+  /*
+  The following fields are primarily consumed by OpenAPI generators,
+  but can be utilized for other purposes as well
+   */
+  // Human-readable route description
+  description?: string
+  // Route name (used as a title)
+  summary?: string
+  // Used for organizing endpoints into groups
+  tags?: readonly string[]
+  /*
+  The end of primarily OpenAPI fields
+   */
+}
+
 export type CommonRouteDefinition<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
@@ -30,7 +52,7 @@ export type CommonRouteDefinition<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
-> = {
+> = BaseContractDefinition & {
   isNonJSONResponseExpected?: IsNonJSONResponseExpected
   isEmptyResponseExpected?: IsEmptyResponseExpected
   successResponseBodySchema: ResponseBodySchema
@@ -68,21 +90,6 @@ export type CommonRouteDefinition<
   responseHeaderSchema?: ResponseHeaderSchema
   pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
   responseSchemasByStatusCode?: ResponseSchemasByStatusCode
-  metadata?: CommonRouteDefinitionMetadata
-
-  /*
-  The following fields are primarily consumed by OpenAPI generators,
-  but can be utilized for other purposes as well
-   */
-  // Human-readable route description
-  description?: string
-  // Route name (used as a title)
-  summary?: string
-  // Used for organizing endpoints into groups
-  tags?: readonly string[]
-  /*
-  The end of primarily OpenAPI fields
-   */
 }
 
 export type PayloadRouteDefinition<

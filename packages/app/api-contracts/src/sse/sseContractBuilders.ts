@@ -1,5 +1,5 @@
 import type { z } from 'zod/v4'
-import type { RoutePathResolver } from '../apiContracts.ts'
+import type { BaseContractDefinition, RoutePathResolver } from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 import type { DualModeContractDefinition } from './dualModeContracts.ts'
 import type { SSEContractDefinition } from './sseContracts.ts'
@@ -17,7 +17,7 @@ export type SSEGetContractConfig<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
-> = {
+> = BaseContractDefinition & {
   method: 'get'
   pathResolver: RoutePathResolver<z.infer<Params>>
   requestPathParamsSchema?: Params
@@ -55,7 +55,7 @@ export type SSEPayloadContractConfig<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
-> = {
+> = BaseContractDefinition & {
   method: 'post' | 'put' | 'patch'
   pathResolver: RoutePathResolver<z.infer<Params>>
   requestPathParamsSchema?: Params
@@ -94,7 +94,7 @@ export type DualModeGetContractConfig<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
-> = {
+> = BaseContractDefinition & {
   method: 'get'
   pathResolver: RoutePathResolver<z.infer<Params>>
   requestPathParamsSchema?: Params
@@ -147,7 +147,7 @@ export type DualModePayloadContractConfig<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
-> = {
+> = BaseContractDefinition & {
   method: 'post' | 'put' | 'patch'
   pathResolver: RoutePathResolver<z.infer<Params>>
   requestPathParamsSchema?: Params
