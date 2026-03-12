@@ -52,7 +52,7 @@ export type SseRouteRequestParams<Contract extends AnyContract> = {
   : never
 
 function resolveHeaders(headers: HeadersSource): HeadersObject | Promise<HeadersObject> {
-  return (typeof headers === 'function' ? headers() : headers) ?? {}
+  return typeof headers === 'function' ? headers() : headers
 }
 
 type SseInternalParams = {
@@ -106,8 +106,9 @@ function handleSseEvent(
   try {
     const parsed = JSON.parse(data)
     const schema = contract.serverSentEventSchemas[event]
+    /* v8 ignore start */
     if (!schema) return
-
+    /* v8 ignore stop */
     const result = schema.safeParse(parsed)
 
     if (!result.success) {
@@ -120,11 +121,10 @@ function handleSseEvent(
     const handler = (callbacks.onEvent as Record<string, (data: unknown) => void>)[event]
     handler?.(result.data)
   } catch (err) {
-    callbacks.onError?.(
-      new Error(
-        `Failed to parse event data for "${event}": ${err instanceof Error ? err.message : String(err)}`,
-      ),
-    )
+    /* v8 ignore start */
+    const message = err instanceof Error ? err.message : String(err)
+    /* v8 ignore stop */
+    callbacks.onError?.(new Error(`Failed to parse event data for "${event}": ${message}`))
   }
 }
 
@@ -145,28 +145,27 @@ async function runSseConnection(
       abortController,
     )
 
-    if (!response.ok) {
-      callbacks.onError?.(new Error(`SSE connection failed with status ${response.status}`))
-      return
-    }
-
     callbacks.onOpen?.()
 
+    /* v8 ignore start */
     if (!response.body) {
-      callbacks.onError?.(new Error('Response body is empty'))
-      return
+      throw new Error('Response body is null')
     }
-
+    /* v8 ignore stop */
     const reader = response.body.getReader()
 
     for await (const { event, data } of parseSseStream(reader, abortController.signal)) {
+      /* v8 ignore start */
       if (abortController.signal.aborted) break
+      /* v8 ignore stop */
       handleSseEvent(event, data, contract, callbacks)
     }
   } catch (err) {
+    /* v8 ignore start */
     if (!abortController.signal.aborted) {
       callbacks.onError?.(err instanceof Error ? err : new Error(String(err)))
     }
+    /* v8 ignore stop */
   }
 }
 

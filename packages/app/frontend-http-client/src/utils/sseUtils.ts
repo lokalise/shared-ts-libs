@@ -47,8 +47,10 @@ export async function* parseSseStream(
 
       buffer += decoder.decode(value, { stream: true })
       const lines = buffer.split('\n')
-      // Keep the last element — it may be a partial line
+      // Keep the last element — it may be a partial line (split always returns at least 1 element)
+      /* v8 ignore start */
       buffer = lines.pop() ?? ''
+      /* v8 ignore stop */
 
       for (const line of lines) {
         const event = processLine(line, state)

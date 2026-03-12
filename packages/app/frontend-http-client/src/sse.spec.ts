@@ -438,6 +438,195 @@ describe('connectSseByContract', () => {
     connection.close()
   })
 
+  it('calls onError when query params fail validation', () => {
+    const strictQueryContract = buildSseContract({
+      method: 'get',
+      pathResolver: () => '/events/stream',
+      requestQuerySchema: z.object({ limit: z.number().min(1) }),
+      serverSentEventSchemas: {
+        'item.updated': itemUpdatedSchema,
+      },
+    })
+
+    const onError = vi.fn()
+
+    const client = wretch(mockServer.url)
+    const connection = connectSseByContract(
+      client,
+      strictQueryContract,
+      // @ts-expect-error intentionally passing invalid query params
+      { queryParams: { limit: 'not-a-number' } },
+      {
+        onEvent: {
+          'item.updated': vi.fn(),
+        },
+        onError,
+      },
+    )
+
+    expect(onError).toHaveBeenCalledOnce()
+    expect(onError.mock.calls[0]![0].message).toContain('Query params validation failed')
+    connection.close()
+  })
+
+  it('calls onError when request body fails validation', () => {
+    const onError = vi.fn()
+
+    const client = wretch(mockServer.url)
+    const connection = connectSseByContract(
+      client,
+      postSseContract,
+      // @ts-expect-error intentionally passing invalid body
+      { body: { input: 12345 } },
+      {
+        onEvent: {
+          'item.updated': vi.fn(),
+          done: vi.fn(),
+        },
+        onError,
+      },
+    )
+
+    expect(onError).toHaveBeenCalledOnce()
+    expect(onError.mock.calls[0]![0].message).toContain('Request body validation failed')
+    connection.close()
+  })
+
+  it('handles multi-line SSE data fields', async () => {
+    const multiLineData = JSON.stringify({ items: [{ id: '1' }] })
+    // Manually construct SSE with data split across two data: lines
+    const firstHalf = multiLineData.slice(0, 10)
+    const secondHalf = multiLineData.slice(10)
+    await mockServer.forGet('/events/stream').thenCallback(() => ({
+      statusCode: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+      body: `event: item.updated\ndata: ${firstHalf}\ndata: ${secondHalf}\n\nevent: done\ndata: ${JSON.stringify({ total: 1 })}\n\n`,
+    }))
+
+    const onItemUpdated = vi.fn()
+    const onDone = vi.fn()
+
+    const client = wretch(mockServer.url)
+    const connection = connectSseByContract(
+      client,
+      getSseContract,
+      {},
+      {
+        onEvent: {
+          'item.updated': onItemUpdated,
+          done: onDone,
+        },
+      },
+    )
+
+    await waitFor(() => onDone.mock.calls.length > 0)
+
+    // Multi-line data is joined with \n
+    expect(onItemUpdated).toHaveBeenCalledOnce()
+    expect(onDone).toHaveBeenCalledWith({ total: 1 })
+    connection.close()
+  })
+
+  it('ignores SSE comment lines and unrecognised fields', async () => {
+    await mockServer.forGet('/events/stream').thenCallback(() => ({
+      statusCode: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+      // Include a colon-prefixed comment and an unknown field
+      body: `: this is a keepalive comment\nretry: 3000\nevent: done\ndata: ${JSON.stringify({ total: 0 })}\n\n`,
+    }))
+
+    const onDone = vi.fn()
+    const onError = vi.fn()
+
+    const client = wretch(mockServer.url)
+    const connection = connectSseByContract(
+      client,
+      getSseContract,
+      {},
+      {
+        onEvent: {
+          'item.updated': vi.fn(),
+          done: onDone,
+        },
+        onError,
+      },
+    )
+
+    await waitFor(() => onDone.mock.calls.length > 0)
+
+    expect(onDone).toHaveBeenCalledWith({ total: 0 })
+    expect(onError).not.toHaveBeenCalled()
+    connection.close()
+  })
+
+  it('resolves headers from a function', async () => {
+    await mockServer.forGet('/events/stream').thenCallback((_req) => ({
+      statusCode: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+      body: sseResponse([{ event: 'done', data: JSON.stringify({ total: 0 }) }]),
+    }))
+
+    const onDone = vi.fn()
+    const headersFn = () => ({ 'x-custom': 'test-value' })
+
+    const headerContract = buildSseContract({
+      method: 'get',
+      pathResolver: () => '/events/stream',
+      requestHeaderSchema: z.object({ 'x-custom': z.string() }),
+      serverSentEventSchemas: {
+        done: doneSchema,
+      },
+    })
+
+    const client = wretch(mockServer.url)
+    const connection = connectSseByContract(
+      client,
+      headerContract,
+      { headers: headersFn },
+      {
+        onEvent: { done: onDone },
+      },
+    )
+
+    await waitFor(() => onDone.mock.calls.length > 0)
+    expect(onDone).toHaveBeenCalledOnce()
+    connection.close()
+  })
+
+  it('resolves headers from an async function', async () => {
+    await mockServer.forGet('/events/stream').thenCallback(() => ({
+      statusCode: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+      body: sseResponse([{ event: 'done', data: JSON.stringify({ total: 0 }) }]),
+    }))
+
+    const onDone = vi.fn()
+    const asyncHeadersFn = async () => ({ 'x-custom': 'async-value' })
+
+    const headerContract = buildSseContract({
+      method: 'get',
+      pathResolver: () => '/events/stream',
+      requestHeaderSchema: z.object({ 'x-custom': z.string() }),
+      serverSentEventSchemas: {
+        done: doneSchema,
+      },
+    })
+
+    const client = wretch(mockServer.url)
+    const connection = connectSseByContract(
+      client,
+      headerContract,
+      { headers: asyncHeadersFn },
+      {
+        onEvent: { done: onDone },
+      },
+    )
+
+    await waitFor(() => onDone.mock.calls.length > 0)
+    expect(onDone).toHaveBeenCalledOnce()
+    connection.close()
+  })
+
   it('serialises query params correctly', async () => {
     await mockServer
       .forGet('/events/stream')
