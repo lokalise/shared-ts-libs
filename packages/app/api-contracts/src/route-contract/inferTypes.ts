@@ -13,14 +13,21 @@ export type InferSchemaOutput<T extends z.ZodSchema | undefined> = T extends z.Z
     ? undefined
     : never
 
-type ExtractPathParams<T extends `/${string}`> =
+type Prettify<T> = {
+    [K in keyof T]: T[K];
+} & {};
+
+export type ExtractPathParams<T extends `/${string}`> = Prettify<
     T extends `/${infer Current}/${infer Rest}`
         ? Current extends `:${infer Param}`
             ? { [key in Param]: string } & ExtractPathParams<`/${Rest}`>
             : ExtractPathParams<`/${Rest}`>
         : T extends `/:${infer Param}`
             ? { [key in Param]: string }
-            : Record<never, never>;
+            : Record<never, never>
+>;
+
+export type ValueOf<ObjectType, ValueType extends keyof ObjectType = keyof ObjectType> = ObjectType[ValueType];
 
 /**
  * Infers the union of all success response schemas from a responseSchemaByStatusCode map.
@@ -29,7 +36,16 @@ export type InferSuccessSchema<
   ResponseSchemasByStatusCode extends Partial<Record<HttpStatusCode, z.Schema>> | undefined,
 > =
   ResponseSchemasByStatusCode extends Partial<Record<HttpStatusCode, z.Schema>>
-    ? ResponseSchemasByStatusCode[SuccessfulHttpStatusCode]
+    ? ValueOf<ResponseSchemasByStatusCode, Extract<keyof ResponseSchemasByStatusCode, SuccessfulHttpStatusCode>>
     : undefined
 
 
+type Responses = {
+    200: z.ZodString
+    201: z.ZodObject<any>
+    404: z.ZodNumber
+}
+
+type Result = InferSuccessSchema<Responses>;
+
+const k: z.infer<Result> = '22'

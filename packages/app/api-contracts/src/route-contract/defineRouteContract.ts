@@ -1,5 +1,6 @@
 import { z } from 'zod/v4'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
+import type {InferSuccessSchema} from "./inferTypes.ts";
 
 type CommonRouteConfig = {
     path: `/${string}`
@@ -40,19 +41,6 @@ export type PayloadRouteConfig = CommonRouteConfig & {
   requestBodySchema: z.Schema
 }
 
-const defineRouteContract = <
+export const defineRouteContract = <
     const T extends GetRouteConfig | DeleteRouteConfig | PayloadRouteConfig
 >(route: T): T => route
-
-const myRoute = defineRouteContract({
-    method: 'get',
-    path: '/',
-    requestPathParamsSchema: z.object({
-       id: z.uuid(),
-    }),
-    responseSchemasByStatusCode: {
-        200: z.object({
-            name: z.string(),
-        }),
-    },
-})
