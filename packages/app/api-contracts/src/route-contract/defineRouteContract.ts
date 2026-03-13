@@ -1,6 +1,5 @@
 import { z } from 'zod/v4'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
-import type {InferSuccessSchema} from "./inferTypes.ts";
 
 type CommonRouteConfig = {
     path: `/${string}`
