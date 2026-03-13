@@ -62,3 +62,5 @@ export type HttpStatusCode =
   | 508
   | 510
   | 511
+
+export type SuccessfulHttpStatusCode = 200 | 201 | 202 | 203 | 204 | 205 | 206 | 207 | 208 | 226
