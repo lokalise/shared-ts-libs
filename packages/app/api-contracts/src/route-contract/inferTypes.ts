@@ -38,14 +38,3 @@ export type InferSuccessSchema<
   ResponseSchemasByStatusCode extends Partial<Record<HttpStatusCode, z.Schema>>
     ? ValueOf<ResponseSchemasByStatusCode, Extract<keyof ResponseSchemasByStatusCode, SuccessfulHttpStatusCode>>
     : undefined
-
-
-type Responses = {
-    200: z.ZodString
-    201: z.ZodObject<any>
-    404: z.ZodNumber
-}
-
-type Result = InferSuccessSchema<Responses>;
-
-const k: z.infer<Result> = '22'
