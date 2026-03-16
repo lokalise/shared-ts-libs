@@ -1,9 +1,13 @@
 import type { z } from 'zod/v4'
-import type { HttpStatusCode, SuccessfulHttpStatusCode } from '../HttpStatusCodes.ts'
+import type { SuccessfulHttpStatusCode } from '../HttpStatusCodes.ts'
+import type { ResponseSchemasByStatusCode } from './defineRouteContract.ts'
 
 type InferSchemaOutput<T extends z.ZodSchema | undefined> = T extends z.ZodSchema
   ? z.output<T>
   : undefined
+
+/** Maps ContractNoBodyType to undefined, preserving z.Schema as-is. */
+type ToZodSchema<T> = T extends z.Schema ? T : undefined
 
 type ValueOf<
   ObjectType,
@@ -11,16 +15,14 @@ type ValueOf<
 > = ObjectType[ValueType]
 
 /**
- * Infers the union of all success response schemas from a responseSchemaByStatusCode map.
+ * Infers the union of all success response Zod schemas from a responseSchemaByStatusCode map.
+ * ContractNoBody entries are mapped to undefined.
  */
 export type InferSuccessSchema<
-  ResponseSchemasByStatusCode extends Partial<Record<HttpStatusCode, z.Schema>> | undefined,
+  T extends ResponseSchemasByStatusCode | undefined,
 > =
-  ResponseSchemasByStatusCode extends Partial<Record<HttpStatusCode, z.Schema>>
-    ? ValueOf<
-        ResponseSchemasByStatusCode,
-        Extract<keyof ResponseSchemasByStatusCode, SuccessfulHttpStatusCode>
-      >
+  T extends ResponseSchemasByStatusCode
+    ? ToZodSchema<ValueOf<T, Extract<keyof T, SuccessfulHttpStatusCode>>>
     : undefined
 
 /**
@@ -28,5 +30,5 @@ export type InferSuccessSchema<
  * from a responseSchemasByStatusCode map.
  */
 export type InferSuccessResponse<
-  ResponseSchemasByStatusCode extends Partial<Record<HttpStatusCode, z.Schema>> | undefined,
-> = InferSchemaOutput<InferSuccessSchema<ResponseSchemasByStatusCode>>
+  T extends ResponseSchemasByStatusCode | undefined,
+> = InferSchemaOutput<InferSuccessSchema<T>>

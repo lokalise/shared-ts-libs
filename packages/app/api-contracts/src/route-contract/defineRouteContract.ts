@@ -2,13 +2,22 @@ import type { z } from 'zod/v4'
 import type { InferSchemaOutput, RoutePathResolver } from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 
+export const ContractNoBody = Symbol.for('ContractNoBody');
+export type ContractNoBodyType = typeof ContractNoBody;
+
+export type RouteContractResponse = ContractNoBodyType | z.Schema
+
+export type ResponseSchemasByStatusCode = Partial<
+    Record<HttpStatusCode, RouteContractResponse>
+>;
+
 type CommonRouteContract<PathParamsSchema extends z.Schema | undefined> = {
   pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
   requestPathParamsSchema?: z.Schema
   requestQuerySchema?: z.Schema
   requestHeaderSchema?: z.Schema
   responseHeaderSchema?: z.Schema
-  responseSchemasByStatusCode?: Partial<Record<HttpStatusCode, z.Schema>>
+  responseSchemasByStatusCode?: ResponseSchemasByStatusCode
 
   isNonJSONResponseExpected?: boolean
   isEmptyResponseExpected?: boolean
