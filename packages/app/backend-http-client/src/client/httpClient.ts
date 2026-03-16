@@ -1,17 +1,18 @@
 import type { Readable } from 'node:stream'
 import {
-    defineRouteContract,
-    type DeleteRouteDefinition,
-    type GetRouteDefinition,
-    type HttpStatusCode,
-    type InferSchemaInput,
-    type InferSchemaOutput,
-    type InferSuccessSchema,
-    type PayloadRouteContract,
-    type PayloadRouteDefinition,
-    type RouteContract,
+  buildRequestPath,
+  type DeleteRouteDefinition,
+  defineRouteContract,
+  type GetRouteDefinition,
+  type HttpStatusCode,
+  type InferSchemaInput,
+  type InferSchemaOutput,
+  type InferSuccessResponse,
+  type InferSuccessSchema,
+  type PayloadRouteContract,
+  type PayloadRouteDefinition,
+  type RouteContract,
 } from '@lokalise/api-contracts'
-import { buildRequestPath } from '@lokalise/api-contracts'
 import { copyWithoutUndefined } from '@lokalise/node-core'
 import type { FormData } from 'undici'
 import { Client } from 'undici'
@@ -952,44 +953,50 @@ export function sendByContractWithStreamedResponse<
   return sendByGetRouteWithStreamedResponse(client, routeDefinition, params, options)
 }
 
-
 type ExtractRequestBody<T> = T extends { requestBodySchema: z.Schema }
-    ? T['requestBodySchema']
-    : undefined
+  ? T['requestBodySchema']
+  : undefined
 
 export function sendByRouteContract<
-    PathParamsSchema extends z.Schema | undefined,
-    const Contract extends RouteContract<PathParamsSchema>,
-    DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  PathParamsSchema extends z.Schema | undefined,
+  const Contract extends RouteContract<PathParamsSchema>,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
   client: Client,
   routeConfig: Contract & { requestPathParamsSchema?: PathParamsSchema },
   params: PayloadRouteRequestParams<
-      InferSchemaInput<PathParamsSchema>,
-      InferSchemaInput<ExtractRequestBody<Contract>>,
-      InferSchemaInput<Contract["requestQuerySchema"]>,
-      InferSchemaInput<Contract["responseHeaderSchema"]>
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<ExtractRequestBody<Contract>>,
+    InferSchemaInput<Contract['requestQuerySchema']>,
+    InferSchemaInput<Contract['requestHeaderSchema']>
   >,
   options: Omit<
-      RequestOptions<any, Contract["isEmptyResponseExpected"] extends true ? true : false, DoThrowOnError>,
-      'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
+    RequestOptions<
+      InferSuccessSchema<Contract['responseSchemasByStatusCode']>,
+      Contract['isEmptyResponseExpected'] extends true ? true : false,
+      DoThrowOnError
+    >,
+    'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
   >,
 ): Promise<
-    RequestResultDefinitiveEither<
-        InferSchemaOutput<ExtractRequestBody<Contract>>,
-        Contract["isEmptyResponseExpected"] extends true ? true : false,
-        DoThrowOnError
-    >
+  RequestResultDefinitiveEither<
+    InferSuccessResponse<Contract['responseSchemasByStatusCode']>,
+    Contract['isEmptyResponseExpected'] extends true ? true : false,
+    DoThrowOnError
+  >
 > {
   // biome-ignore lint/suspicious/noExplicitAny: pathParams key may not be present in params
-  const path = buildRequestPath(routeConfig.pathResolver((params as any).pathParams), params.pathPrefix)
+  const path = buildRequestPath(
+    routeConfig.pathResolver((params as any).pathParams),
+    params.pathPrefix,
+  )
 
   const responseSchema =
     // biome-ignore lint/suspicious/noExplicitAny: status code index access
     (routeConfig.responseSchemasByStatusCode as any)?.[200] ?? z.unknown()
 
   const isEmptyResponseExpected =
-    routeConfig.isEmptyResponseExpected ?? (routeConfig.method === 'delete')
+    routeConfig.isEmptyResponseExpected ?? routeConfig.method === 'delete'
 
   const method = routeConfig.method
 
@@ -999,13 +1006,13 @@ export function sendByRouteContract<
       // @ts-expect-error TS loses exact string type during uppercasing
       method.toUpperCase(),
       path,
-        // @ts-expect-error FixMe
+      // @ts-expect-error FixMe
       params.body,
       {
         isEmptyResponseExpected,
-          // @ts-expect-error FixMe
+        // @ts-expect-error FixMe
         headers: params.headers,
-          // @ts-expect-error FixMe
+        // @ts-expect-error FixMe
         query: params.queryParams,
         responseSchema,
         ...options,
@@ -1015,9 +1022,9 @@ export function sendByRouteContract<
 
   return sendNonPayload(client, method.toUpperCase() as NonPayloadMethods, path, {
     isEmptyResponseExpected,
-      // @ts-expect-error FixMe
+    // @ts-expect-error FixMe
     headers: params.headers,
-      // @ts-expect-error FixMe
+    // @ts-expect-error FixMe
     query: params.queryParams,
     responseSchema,
     ...options,
@@ -1025,34 +1032,49 @@ export function sendByRouteContract<
 }
 
 const postContract = defineRouteContract({
-    method: 'post',
-    requestPathParamsSchema: z.object({
-        userId: z.uuid(),
-    }),
-    pathResolver: ({ userId }) => `/users/${userId}`,
-    requestQuerySchema: z.object({
-        testQuery: z.string(),
-    }),
-    requestHeaderSchema: z.object({
-        testHeader: z.string(),
-    }),
-    requestBodySchema: z.object({ val: z.number() }),
-    responseSchemasByStatusCode: {
-        200: z.object({ resVal: z.string() }),
-    },
+  method: 'post',
+  requestPathParamsSchema: z.object({
+    userId: z.uuid(),
+  }),
+  pathResolver: ({ userId }) => `/users/${userId}`,
+  requestQuerySchema: z.object({
+    testQuery: z.string(),
+  }),
+  requestHeaderSchema: z.object({
+    reqHeader: z.string(),
+  }),
+  responseHeaderSchema: z.object({
+    resHeader: z.string(),
+  }),
+  requestBodySchema: z.object({ val: z.number() }),
+  responseSchemasByStatusCode: {
+    200: z.object({ resVal: z.string() }),
+  },
 })
 
-sendByRouteContract({} as any, postContract, {
+const res = await sendByRouteContract(
+  {} as any,
+  postContract,
+  {
+    headers: {
+      reqHeader: 'string',
+    },
     body: {
-        val: 123
+      val: 123,
     },
     queryParams: {
-        testQuery: 'string'
+      testQuery: 'string',
     },
     pathParams: {
-        userId: 'string'
+      userId: 'string',
     },
-}, { requestLabel: 'test' })
+  },
+  { requestLabel: 'test' },
+)
+
+if (res.result) {
+  res.result.body.resVal // string
+}
 
 export const httpClient = {
   get: sendGet,
