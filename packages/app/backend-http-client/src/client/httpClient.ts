@@ -3,6 +3,8 @@ import {
   buildRequestPath,
   type DeleteRouteDefinition,
   defineRouteContract,
+    getSuccessResponseSchema,
+    getIsEmptyResponseExpected,
   type GetRouteDefinition,
   type HttpStatusCode,
   type InferSchemaInput,
@@ -973,7 +975,7 @@ export function sendByRouteContract<
   options: Omit<
     RequestOptions<
       InferSuccessSchema<Contract['responseSchemasByStatusCode']>,
-      Contract['isEmptyResponseExpected'] extends true ? true : false,
+      InferSuccessResponse<Contract['responseSchemasByStatusCode']> extends undefined ? true : false,
       DoThrowOnError
     >,
     'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
@@ -981,7 +983,7 @@ export function sendByRouteContract<
 ): Promise<
   RequestResultDefinitiveEither<
     InferSuccessResponse<Contract['responseSchemasByStatusCode']>,
-    Contract['isEmptyResponseExpected'] extends true ? true : false,
+    InferSuccessResponse<Contract['responseSchemasByStatusCode']> extends undefined ? true : false,
     DoThrowOnError
   >
 > {
@@ -991,16 +993,14 @@ export function sendByRouteContract<
     params.pathPrefix,
   )
 
-  const responseSchema =
-    // biome-ignore lint/suspicious/noExplicitAny: status code index access
-    (routeConfig.responseSchemasByStatusCode as any)?.[200] ?? z.unknown()
+  const responseSchema = getSuccessResponseSchema(routeConfig) ?? z.unknown()
 
-  const isEmptyResponseExpected =
-    routeConfig.isEmptyResponseExpected ?? routeConfig.method === 'delete'
+  const isEmptyResponseExpected = getIsEmptyResponseExpected(routeConfig)
 
   const method = routeConfig.method
 
   if (method === 'post' || method === 'put' || method === 'patch') {
+      // @ts-expect-error FixMe
     return sendResourceChange(
       client,
       // @ts-expect-error TS loses exact string type during uppercasing
@@ -1019,7 +1019,7 @@ export function sendByRouteContract<
       },
     )
   }
-
+// @ts-expect-error FixMe
   return sendNonPayload(client, method.toUpperCase() as NonPayloadMethods, path, {
     isEmptyResponseExpected,
     // @ts-expect-error FixMe

@@ -6,7 +6,7 @@ type InferSchemaOutput<T extends z.ZodSchema | undefined> = T extends z.ZodSchem
   ? z.output<T>
   : undefined
 
-/** Maps ContractNoBodyType to undefined, preserving z.Schema as-is. */
+/** Maps ContractNoBodyType and ContractNonJsonResponseType to undefined, preserving z.Schema as-is. */
 type ToZodSchema<T> = T extends z.Schema ? T : undefined
 
 type ValueOf<

@@ -1,11 +1,14 @@
-import type { z } from 'zod/v4'
+import { z } from 'zod/v4'
 import type { InferSchemaOutput, RoutePathResolver } from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 
 export const ContractNoBody = Symbol.for('ContractNoBody');
 export type ContractNoBodyType = typeof ContractNoBody;
 
-export type RouteContractResponse = ContractNoBodyType | z.Schema
+export const ContractNonJsonResponse = Symbol.for('ContractNonJsonResponse');
+export type ContractNonJsonResponseType = typeof ContractNonJsonResponse;
+
+export type RouteContractResponse = ContractNoBodyType | ContractNonJsonResponseType | z.Schema
 
 export type ResponseSchemasByStatusCode = Partial<
     Record<HttpStatusCode, RouteContractResponse>
@@ -18,9 +21,6 @@ type CommonRouteContract<PathParamsSchema extends z.Schema | undefined> = {
   requestHeaderSchema?: z.Schema
   responseHeaderSchema?: z.Schema
   responseSchemasByStatusCode?: ResponseSchemasByStatusCode
-
-  isNonJSONResponseExpected?: boolean
-  isEmptyResponseExpected?: boolean
 
   metadata?: Record<string, unknown>
   summary?: string
@@ -52,7 +52,7 @@ export type DeleteRouteContract<PathParamsSchema extends z.Schema | undefined> =
 export type PayloadRouteContract<PathParamsSchema extends z.Schema | undefined> =
   CommonRouteContract<PathParamsSchema> & {
     method: 'post' | 'put' | 'patch'
-    requestBodySchema: z.Schema
+    requestBodySchema: z.Schema| ContractNoBodyType
   }
 
 export type RouteContract<PathParamsSchema extends z.Schema | undefined> =
@@ -93,4 +93,58 @@ export const mapRouteContractToPath = (routeConfig: RouteContract<any>): string 
 
 export const describeRouteContract = (routeConfig: RouteContract<any>): string => {
   return `${routeConfig.method.toUpperCase()} ${mapRouteContractToPath(routeConfig)}`
+}
+
+const SUCCESSFUL_STATUS_CODES = [200, 201, 202, 203, 204, 205, 206, 207, 208, 226] as const
+
+export const getSuccessResponseSchema = (routeConfig: RouteContract<any>): z.Schema | null => {
+  const { responseSchemasByStatusCode } = routeConfig
+  if (!responseSchemasByStatusCode) {
+      return null
+  }
+
+  const schemas: z.Schema[] = []
+
+  for (const code of SUCCESSFUL_STATUS_CODES) {
+    const value = responseSchemasByStatusCode[code]
+
+      if (!value) {
+          continue
+      }
+
+      if (typeof value === 'symbol') {
+          schemas.push(z.never())
+      } else {
+          schemas.push(value)
+      }
+  }
+
+  if (schemas.length === 0) {
+      return null
+  }
+  if (schemas.length > 1) {
+      return z.union(schemas)
+  }
+  return schemas.at(0) ?? null
+}
+
+
+export const getIsEmptyResponseExpected = (routeConfig: RouteContract<any>): boolean => {
+    const { responseSchemasByStatusCode } = routeConfig
+    if (!responseSchemasByStatusCode) {
+        return true
+    }
+
+    let isEmptyResponseExpected = true
+
+    for (const code of SUCCESSFUL_STATUS_CODES) {
+        const value = responseSchemasByStatusCode[code]
+
+        if (value && typeof value !== 'symbol') {
+            isEmptyResponseExpected = false
+            break
+        }
+    }
+
+    return isEmptyResponseExpected
 }
