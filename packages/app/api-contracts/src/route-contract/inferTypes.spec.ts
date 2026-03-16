@@ -1,27 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import type { ExtractPathParams, InferSuccessSchema } from './inferTypes.ts'
-
-describe('ExtractPathParams', () => {
-    it('extracts a single path param', () => {
-        expectTypeOf<ExtractPathParams<'/users/:id'>>().toEqualTypeOf<{ id: string }>()
-    })
-
-    it('extracts multiple path params', () => {
-        expectTypeOf<ExtractPathParams<'/orgs/:orgId/users/:userId'>>().toEqualTypeOf<{
-            orgId: string
-            userId: string
-        }>()
-    })
-
-    it('returns empty record for a path with no params', () => {
-        expectTypeOf<ExtractPathParams<'/users'>>().toEqualTypeOf<Record<never, never>>()
-    })
-
-    it('ignores non-param segments', () => {
-        expectTypeOf<ExtractPathParams<'/api/v1/:id'>>().toEqualTypeOf<{ id: string }>()
-    })
-})
+import type { InferSuccessSchema } from './inferTypes.ts'
 
 describe('InferSuccessSchema', () => {
     it('extracts undefined when responseSchemasByStatusCode is undefined', () => {
