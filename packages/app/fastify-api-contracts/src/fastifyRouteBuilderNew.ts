@@ -2,7 +2,7 @@ import {
   defineRouteContract,
   type InferSuccessSchema,
   mapRouteContractToPath,
-  type RouteConfig,
+  type RouteContract,
 } from '@lokalise/api-contracts'
 import { copyWithoutUndefined } from '@lokalise/node-core'
 import { z } from 'zod/v4'
@@ -20,7 +20,7 @@ type ExtractRequestBody<T> = T extends { requestBodySchema: z.Schema }
 
 const buildFastifyRouteNew = <
   PathParamsSchema extends z.Schema | undefined,
-  T extends RouteConfig<PathParamsSchema>,
+  T extends RouteContract<PathParamsSchema>,
 >(
   routeConfig: T & { requestPathParamsSchema?: PathParamsSchema },
   handler: FastifyPayloadHandlerFn<

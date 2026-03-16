@@ -46,7 +46,7 @@ export type PayloadRouteContract<PathParamsSchema extends z.Schema | undefined> 
     requestBodySchema: z.Schema
   }
 
-export type RouteConfig<PathParamsSchema extends z.Schema | undefined> =
+export type RouteContract<PathParamsSchema extends z.Schema | undefined> =
   | GetRouteContract<PathParamsSchema>
   | DeleteRouteContract<PathParamsSchema>
   | PayloadRouteContract<PathParamsSchema>
@@ -60,14 +60,14 @@ type Exactly<T, U> = T & {
 
 export const defineRouteContract = <
   PathParamsSchema extends z.Schema | undefined,
-  const Contract extends RouteConfig<PathParamsSchema>,
+  const Contract extends RouteContract<PathParamsSchema>,
 >(
-  route: Exactly<Contract, RouteConfig<PathParamsSchema>> & {
+  route: Exactly<Contract, RouteContract<PathParamsSchema>> & {
     requestPathParamsSchema?: PathParamsSchema
   },
 ): Contract => route
 
-export const mapRouteContractToPath = (routeConfig: RouteConfig<any>): string => {
+export const mapRouteContractToPath = (routeConfig: RouteContract<any>): string => {
   if (!routeConfig.requestPathParamsSchema) {
     return routeConfig.pathResolver(undefined)
   }
@@ -82,6 +82,6 @@ export const mapRouteContractToPath = (routeConfig: RouteConfig<any>): string =>
   return routeConfig.pathResolver(resolverParams)
 }
 
-export const describeRouteContract = (routeConfig: RouteConfig<any>): string => {
+export const describeRouteContract = (routeConfig: RouteContract<any>): string => {
   return `${routeConfig.method.toUpperCase()} ${mapRouteContractToPath(routeConfig)}`
 }

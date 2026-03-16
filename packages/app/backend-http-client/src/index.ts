@@ -12,6 +12,7 @@ export {
   httpClient,
   sendByContract,
   sendByContractWithStreamedResponse,
+  sendByRouteContract,
   sendByDeleteRoute,
   sendByGetRoute,
   sendByGetRouteWithStreamedResponse,
