@@ -18,9 +18,7 @@ type ValueOf<
  * Infers the union of all success response Zod schemas from a responseSchemaByStatusCode map.
  * ContractNoBody entries are mapped to undefined.
  */
-export type InferSuccessSchema<
-  T extends ResponseSchemasByStatusCode | undefined,
-> =
+export type InferSuccessSchema<T extends ResponseSchemasByStatusCode | undefined> =
   T extends ResponseSchemasByStatusCode
     ? ToZodSchema<ValueOf<T, Extract<keyof T, SuccessfulHttpStatusCode>>>
     : undefined
@@ -29,6 +27,5 @@ export type InferSuccessSchema<
  * Infers the union of TypeScript output types of all success response schemas
  * from a responseSchemasByStatusCode map.
  */
-export type InferSuccessResponse<
-  T extends ResponseSchemasByStatusCode | undefined,
-> = InferSchemaOutput<InferSuccessSchema<T>>
+export type InferSuccessResponse<T extends ResponseSchemasByStatusCode | undefined> =
+  InferSchemaOutput<InferSuccessSchema<T>>

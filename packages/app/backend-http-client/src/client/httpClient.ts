@@ -3,9 +3,9 @@ import {
   buildRequestPath,
   type DeleteRouteDefinition,
   defineRouteContract,
-    getSuccessResponseSchema,
-    getIsEmptyResponseExpected,
   type GetRouteDefinition,
+  getIsEmptyResponseExpected,
+  getSuccessResponseSchema,
   type HttpStatusCode,
   type InferSchemaInput,
   type InferSchemaOutput,
@@ -960,14 +960,13 @@ type ExtractRequestBody<T> = T extends { requestBodySchema: z.Schema }
   : undefined
 
 export function sendByRouteContract<
-  PathParamsSchema extends z.Schema | undefined,
-  const Contract extends RouteContract<PathParamsSchema>,
+  const Contract extends RouteContract,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
   client: Client,
-  routeConfig: Contract & { requestPathParamsSchema?: PathParamsSchema },
+  routeConfig: Contract,
   params: PayloadRouteRequestParams<
-    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<Contract['requestPathParamsSchema']>,
     InferSchemaInput<ExtractRequestBody<Contract>>,
     InferSchemaInput<Contract['requestQuerySchema']>,
     InferSchemaInput<Contract['requestHeaderSchema']>
@@ -975,7 +974,9 @@ export function sendByRouteContract<
   options: Omit<
     RequestOptions<
       InferSuccessSchema<Contract['responseSchemasByStatusCode']>,
-      InferSuccessResponse<Contract['responseSchemasByStatusCode']> extends undefined ? true : false,
+      InferSuccessResponse<Contract['responseSchemasByStatusCode']> extends undefined
+        ? true
+        : false,
       DoThrowOnError
     >,
     'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
@@ -1000,7 +1001,7 @@ export function sendByRouteContract<
   const method = routeConfig.method
 
   if (method === 'post' || method === 'put' || method === 'patch') {
-      // @ts-expect-error FixMe
+    // @ts-expect-error FixMe
     return sendResourceChange(
       client,
       // @ts-expect-error TS loses exact string type during uppercasing
@@ -1019,7 +1020,7 @@ export function sendByRouteContract<
       },
     )
   }
-// @ts-expect-error FixMe
+  // @ts-expect-error FixMe
   return sendNonPayload(client, method.toUpperCase() as NonPayloadMethods, path, {
     isEmptyResponseExpected,
     // @ts-expect-error FixMe

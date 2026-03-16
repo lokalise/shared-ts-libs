@@ -18,11 +18,8 @@ type ExtractRequestBody<T> = T extends { requestBodySchema: z.Schema }
   ? T['requestBodySchema']
   : undefined
 
-const buildFastifyRouteNew = <
-  PathParamsSchema extends z.Schema | undefined,
-  T extends RouteContract<PathParamsSchema>,
->(
-  routeConfig: T & { requestPathParamsSchema?: PathParamsSchema },
+const buildFastifyRouteNew = <T extends RouteContract>(
+  routeConfig: T,
   handler: FastifyPayloadHandlerFn<
     InferredOptionalSchema<InferSuccessSchema<T['responseSchemasByStatusCode']>>,
     InferredOptionalSchema<ExtractRequestBody<T>>,
