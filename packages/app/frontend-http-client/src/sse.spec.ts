@@ -9,18 +9,6 @@ function sseResponse(events: Array<{ event: string; data: string }>): string {
   return events.map((e) => `event: ${e.event}\ndata: ${e.data}\n\n`).join('')
 }
 
-function waitFor(fn: () => boolean, timeout = 2000): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const start = Date.now()
-    const check = () => {
-      if (fn()) return resolve()
-      if (Date.now() - start > timeout) return reject(new Error('waitFor timed out'))
-      setTimeout(check, 10)
-    }
-    check()
-  })
-}
-
 describe('connectSseByContract', () => {
   let mockServer: Mockttp
 
@@ -122,7 +110,7 @@ describe('connectSseByContract', () => {
       },
     )
 
-    await waitFor(() => onDone.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
 
     expect(onOpen).toHaveBeenCalledOnce()
     expect(onItemUpdated).toHaveBeenCalledWith({ items: [{ id: '1' }] })
@@ -157,7 +145,7 @@ describe('connectSseByContract', () => {
       },
     )
 
-    await waitFor(() => onDone.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
 
     expect(onItemUpdated).toHaveBeenCalledWith({ items: [{ id: '2' }] })
     expect(onDone).toHaveBeenCalledWith({ total: 1 })
@@ -193,7 +181,7 @@ describe('connectSseByContract', () => {
       },
     )
 
-    await waitFor(() => onDone.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
 
     expect(onItemUpdated).toHaveBeenCalledWith({ items: [{ id: '3' }] })
     connection.close()
@@ -227,7 +215,7 @@ describe('connectSseByContract', () => {
       },
     )
 
-    await waitFor(() => onDone.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
 
     expect(onItemUpdated).not.toHaveBeenCalled()
     expect(onError).not.toHaveBeenCalled()
@@ -262,7 +250,7 @@ describe('connectSseByContract', () => {
       },
     )
 
-    await waitFor(() => onDone.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
 
     expect(onItemUpdated).not.toHaveBeenCalled()
     expect(onError).toHaveBeenCalledOnce()
@@ -300,7 +288,7 @@ describe('connectSseByContract', () => {
       },
     )
 
-    await waitFor(() => onDone.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
 
     expect(onItemUpdated).not.toHaveBeenCalled()
     expect(onError).toHaveBeenCalledOnce()
@@ -338,7 +326,7 @@ describe('connectSseByContract', () => {
     )
 
     // Wait for connection to open, then immediately close
-    await waitFor(() => onOpen.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onOpen).toHaveBeenCalled())
     connection.close()
 
     // Give a small window for any lingering callbacks
@@ -372,7 +360,7 @@ describe('connectSseByContract', () => {
       },
     )
 
-    await waitFor(() => onDone.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
 
     expect(onOpen).toHaveBeenCalledOnce()
     connection.close()
@@ -402,7 +390,7 @@ describe('connectSseByContract', () => {
       },
     )
 
-    await waitFor(() => onError.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onError).toHaveBeenCalled())
 
     expect(onOpen).not.toHaveBeenCalled()
     expect(onError).toHaveBeenCalledOnce()
@@ -432,7 +420,7 @@ describe('connectSseByContract', () => {
       },
     )
 
-    await waitFor(() => onItemUpdated.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onItemUpdated).toHaveBeenCalled())
 
     expect(onItemUpdated).toHaveBeenCalledWith({ items: [{ id: '1' }] })
     connection.close()
@@ -519,7 +507,7 @@ describe('connectSseByContract', () => {
       },
     )
 
-    await waitFor(() => onDone.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
 
     // Multi-line data is joined with \n
     expect(onItemUpdated).toHaveBeenCalledOnce()
@@ -552,7 +540,7 @@ describe('connectSseByContract', () => {
       },
     )
 
-    await waitFor(() => onDone.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
 
     expect(onDone).toHaveBeenCalledWith({ total: 0 })
     expect(onError).not.toHaveBeenCalled()
@@ -588,7 +576,7 @@ describe('connectSseByContract', () => {
       },
     )
 
-    await waitFor(() => onDone.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
     expect(onDone).toHaveBeenCalledOnce()
     connection.close()
   })
@@ -622,7 +610,7 @@ describe('connectSseByContract', () => {
       },
     )
 
-    await waitFor(() => onDone.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
     expect(onDone).toHaveBeenCalledOnce()
     connection.close()
   })
@@ -653,7 +641,7 @@ describe('connectSseByContract', () => {
       },
     )
 
-    await waitFor(() => onItemUpdated.mock.calls.length > 0)
+    await vi.waitFor(() => expect(onItemUpdated).toHaveBeenCalled())
 
     expect(onItemUpdated).toHaveBeenCalledWith({ items: [{ id: '1' }] })
     connection.close()
