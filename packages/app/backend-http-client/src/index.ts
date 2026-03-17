@@ -16,7 +16,6 @@ export {
   sendByGetRoute,
   sendByGetRouteWithStreamedResponse,
   sendByPayloadRoute,
-  sendByRouteContract,
   sendDelete,
   sendGet,
   sendGetWithStreamedResponse,
@@ -26,6 +25,7 @@ export {
   sendPut,
   sendPutBinary,
 } from './client/httpClient.ts'
+export { sendByRouteContract, sendByRouteContractWithStreamedResponse } from './client/sendByRouteContract.ts'
 export type {
   HttpRequestContext,
   RequestOptions,
