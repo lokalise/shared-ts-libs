@@ -8,6 +8,7 @@ import type { z } from 'zod/v4'
 import type { HeadersObject, HeadersSource, WretchInstance } from './types.ts'
 import { parseRequestBody } from './utils/bodyUtils.ts'
 import { isFailure } from './utils/either.ts'
+import { isError } from './utils/errorUtils.ts'
 import { parseQueryParams } from './utils/queryUtils.ts'
 import { parseSseStream } from './utils/sseUtils.ts'
 
@@ -122,7 +123,7 @@ function handleSseEvent(
     handler?.(result.data)
   } catch (err) {
     /* v8 ignore start */
-    const message = err instanceof Error ? err.message : String(err)
+    const message = isError(err) ? err.message : String(err)
     /* v8 ignore stop */
     callbacks.onError?.(new Error(`Failed to parse event data for "${event}": ${message}`))
   }
@@ -168,7 +169,7 @@ async function runSseConnection(
   } catch (err) {
     /* v8 ignore start */
     if (!abortController.signal.aborted) {
-      callbacks.onError?.(err instanceof Error ? err : new Error(String(err)))
+      callbacks.onError?.(isError(err) ? err : new Error(String(err)))
     }
     /* v8 ignore stop */
   }
