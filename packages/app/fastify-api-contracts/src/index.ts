@@ -14,4 +14,5 @@ export {
 export { buildFastifyRoute, buildFastifyRouteHandler } from './fastifyRouteBuilder.ts'
 export { defineFastifyRoute, defineFastifyRouteHandler } from './defineFastifyRoute.ts'
 export { injectByContract } from './injectByContract.ts'
+export { injectByRouteContract } from './injectByRouteContract.ts'
 export * from './types.ts'
