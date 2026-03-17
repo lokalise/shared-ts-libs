@@ -135,15 +135,15 @@ describe('buildSseContract type inference', () => {
     })
 
     it('omitted schemas accept undefined', () => {
-      const contract = buildSseContract({
+      const _contract = buildSseContract({
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         serverSentEventSchemas: { message: z.object({ text: z.string() }) },
       })
 
-      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestPathParamsSchema>()
-      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestQuerySchema>()
-      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestHeaderSchema>()
+      expectTypeOf<undefined>().toExtend<typeof _contract.requestPathParamsSchema>()
+      expectTypeOf<undefined>().toExtend<typeof _contract.requestQuerySchema>()
+      expectTypeOf<undefined>().toExtend<typeof _contract.requestHeaderSchema>()
     })
 
     it('satisfies AnySSEContractDefinition when schemas are omitted', () => {
@@ -481,7 +481,7 @@ describe('buildSseContract type inference', () => {
 
   describe('z.infer on optional schema properties', () => {
     it('z.infer resolves correctly when params schema is provided', () => {
-      const contract = buildSseContract({
+      const _contract = buildSseContract({
         method: 'get' as const,
         pathResolver: (params) => `/api/items/${params.id}/stream`,
         requestPathParamsSchema: z.object({ id: z.string() }),
@@ -489,33 +489,33 @@ describe('buildSseContract type inference', () => {
       })
 
       // When provided, z.infer should resolve to the correct type
-      type ParamsSchema = NonNullable<typeof contract.requestPathParamsSchema>
+      type ParamsSchema = NonNullable<typeof _contract.requestPathParamsSchema>
       type Params = z.infer<ParamsSchema>
       expectTypeOf<Params>().toEqualTypeOf<{ id: string }>()
     })
 
     it('z.infer resolves correctly when header schema is provided', () => {
-      const contract = buildSseContract({
+      const _contract = buildSseContract({
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         requestHeaderSchema: z.object({ authorization: z.string() }),
         serverSentEventSchemas: { data: z.object({ value: z.string() }) },
       })
 
-      type HeaderSchema = NonNullable<typeof contract.requestHeaderSchema>
+      type HeaderSchema = NonNullable<typeof _contract.requestHeaderSchema>
       type Headers = z.infer<HeaderSchema>
       expectTypeOf<Headers>().toEqualTypeOf<{ authorization: string }>()
     })
 
     it('z.infer resolves correctly when query schema is provided', () => {
-      const contract = buildSseContract({
+      const _contract = buildSseContract({
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         requestQuerySchema: z.object({ limit: z.number() }),
         serverSentEventSchemas: { data: z.object({ value: z.string() }) },
       })
 
-      type QuerySchema = NonNullable<typeof contract.requestQuerySchema>
+      type QuerySchema = NonNullable<typeof _contract.requestQuerySchema>
       type Query = z.infer<QuerySchema>
       expectTypeOf<Query>().toEqualTypeOf<{ limit: number }>()
     })
@@ -523,16 +523,17 @@ describe('buildSseContract type inference', () => {
     it('bare conditional z.infer always resolves to unknown for optional properties', () => {
       // Without NonNullable, the conditional pattern always gives unknown
       // because `ZodObject | undefined` does not extend `ZodTypeAny`
-      const contractWithSchemas = buildSseContract({
+      const _contractWithSchemas = buildSseContract({
         method: 'get' as const,
         pathResolver: (params) => `/api/items/${params.id}/stream`,
         requestPathParamsSchema: z.object({ id: z.string() }),
         serverSentEventSchemas: { data: z.object({ value: z.string() }) },
       })
 
-      type BareParams = (typeof contractWithSchemas)['requestPathParamsSchema'] extends z.ZodTypeAny
-        ? z.infer<(typeof contractWithSchemas)['requestPathParamsSchema']>
-        : unknown
+      type BareParams =
+        (typeof _contractWithSchemas)['requestPathParamsSchema'] extends z.ZodTypeAny
+          ? z.infer<(typeof _contractWithSchemas)['requestPathParamsSchema']>
+          : unknown
 
       // This resolves to unknown even though the schema IS provided — this is expected
       // because the property type is `ZodObject | undefined`, not `ZodObject`
@@ -540,7 +541,7 @@ describe('buildSseContract type inference', () => {
     })
 
     it('NonNullable + conditional z.infer pattern resolves correctly when schema is provided', () => {
-      const contract = buildSseContract({
+      const _contract = buildSseContract({
         method: 'get' as const,
         pathResolver: (params) => `/api/items/${params.id}/stream`,
         requestPathParamsSchema: z.object({ id: z.string() }),
@@ -553,16 +554,16 @@ describe('buildSseContract type inference', () => {
       // before the extends check. Bare `Contract['schema'] extends z.ZodTypeAny` fails
       // because `ZodObject | undefined` does not extend `z.ZodTypeAny`.
       type SafeParams =
-        NonNullable<(typeof contract)['requestPathParamsSchema']> extends z.ZodTypeAny
-          ? z.infer<NonNullable<(typeof contract)['requestPathParamsSchema']>>
+        NonNullable<(typeof _contract)['requestPathParamsSchema']> extends z.ZodTypeAny
+          ? z.infer<NonNullable<(typeof _contract)['requestPathParamsSchema']>>
           : unknown
       type SafeQuery =
-        NonNullable<(typeof contract)['requestQuerySchema']> extends z.ZodTypeAny
-          ? z.infer<NonNullable<(typeof contract)['requestQuerySchema']>>
+        NonNullable<(typeof _contract)['requestQuerySchema']> extends z.ZodTypeAny
+          ? z.infer<NonNullable<(typeof _contract)['requestQuerySchema']>>
           : unknown
       type SafeHeaders =
-        NonNullable<(typeof contract)['requestHeaderSchema']> extends z.ZodTypeAny
-          ? z.infer<NonNullable<(typeof contract)['requestHeaderSchema']>>
+        NonNullable<(typeof _contract)['requestHeaderSchema']> extends z.ZodTypeAny
+          ? z.infer<NonNullable<(typeof _contract)['requestHeaderSchema']>>
           : unknown
 
       expectTypeOf<SafeParams>().toEqualTypeOf<{ id: string }>()
@@ -571,7 +572,7 @@ describe('buildSseContract type inference', () => {
     })
 
     it('NonNullable + conditional z.infer resolves to never when schema is omitted', () => {
-      const contract = buildSseContract({
+      const _contract = buildSseContract({
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         serverSentEventSchemas: { data: z.object({ value: z.string() }) },
@@ -581,16 +582,16 @@ describe('buildSseContract type inference', () => {
       // NonNullable<undefined> = never, and never extends z.ZodTypeAny (vacuously),
       // so z.infer<never> = never — which is the correct fallback for omitted schemas.
       type SafeParams =
-        NonNullable<(typeof contract)['requestPathParamsSchema']> extends z.ZodTypeAny
-          ? z.infer<NonNullable<(typeof contract)['requestPathParamsSchema']>>
+        NonNullable<(typeof _contract)['requestPathParamsSchema']> extends z.ZodTypeAny
+          ? z.infer<NonNullable<(typeof _contract)['requestPathParamsSchema']>>
           : unknown
       type SafeQuery =
-        NonNullable<(typeof contract)['requestQuerySchema']> extends z.ZodTypeAny
-          ? z.infer<NonNullable<(typeof contract)['requestQuerySchema']>>
+        NonNullable<(typeof _contract)['requestQuerySchema']> extends z.ZodTypeAny
+          ? z.infer<NonNullable<(typeof _contract)['requestQuerySchema']>>
           : unknown
       type SafeHeaders =
-        NonNullable<(typeof contract)['requestHeaderSchema']> extends z.ZodTypeAny
-          ? z.infer<NonNullable<(typeof contract)['requestHeaderSchema']>>
+        NonNullable<(typeof _contract)['requestHeaderSchema']> extends z.ZodTypeAny
+          ? z.infer<NonNullable<(typeof _contract)['requestHeaderSchema']>>
           : unknown
 
       expectTypeOf<SafeParams>().toBeNever()
@@ -709,13 +710,13 @@ describe('buildSseContract type inference', () => {
     })
 
     it('contract without path params accepts undefined for requestPathParamsSchema', () => {
-      const contract = buildSseContract({
+      const _contract = buildSseContract({
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         serverSentEventSchemas: { message: z.object({ text: z.string() }) },
       })
 
-      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestPathParamsSchema>()
+      expectTypeOf<undefined>().toExtend<typeof _contract.requestPathParamsSchema>()
     })
 
     it('contract with path params infers the schema type', () => {
@@ -733,13 +734,13 @@ describe('buildSseContract type inference', () => {
     })
 
     it('contract without query params accepts undefined for requestQuerySchema', () => {
-      const contract = buildSseContract({
+      const _contract = buildSseContract({
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         serverSentEventSchemas: { message: z.object({ text: z.string() }) },
       })
 
-      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestQuerySchema>()
+      expectTypeOf<undefined>().toExtend<typeof _contract.requestQuerySchema>()
     })
 
     it('contract with query params infers the schema type', () => {
@@ -764,14 +765,14 @@ describe('buildSseContract type inference', () => {
     })
 
     it('dual-mode contract without path params accepts undefined for requestPathParamsSchema', () => {
-      const contract = buildSseContract({
+      const _contract = buildSseContract({
         method: 'get' as const,
         pathResolver: () => '/api/status',
         successResponseBodySchema: z.object({ status: z.string() }),
         serverSentEventSchemas: { update: z.object({ progress: z.number() }) },
       })
 
-      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestPathParamsSchema>()
+      expectTypeOf<undefined>().toExtend<typeof _contract.requestPathParamsSchema>()
     })
 
     it('dual-mode contract with path params infers the schema type', () => {
