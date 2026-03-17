@@ -1,5 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
+import { ContractNoBody, ContractNonJsonResponse } from './defineRouteContract.ts'
 import type { InferSuccessResponse, InferSuccessSchema } from './inferTypes.ts'
 
 describe('InferSuccessSchema', () => {
@@ -33,6 +34,28 @@ describe('InferSuccessSchema', () => {
 
     expectTypeOf<Result>().toEqualTypeOf<typeof schema200 | typeof schema201>()
   })
+
+  it('maps ContractNoBody sentinel to undefined', () => {
+    const schemaByStatusCode = { 204: ContractNoBody } as const
+    type Result = InferSuccessSchema<typeof schemaByStatusCode>
+
+    expectTypeOf<Result>().toEqualTypeOf<undefined>()
+  })
+
+  it('maps ContractNonJsonResponse sentinel to undefined', () => {
+    const schemaByStatusCode = { 200: ContractNonJsonResponse } as const
+    type Result = InferSuccessSchema<typeof schemaByStatusCode>
+
+    expectTypeOf<Result>().toEqualTypeOf<undefined>()
+  })
+
+  it('excludes sentinels from union when mixed with schemas', () => {
+    const schema200 = z.object({ id: z.string() })
+    const schemaByStatusCode = { 200: schema200, 204: ContractNoBody } as const
+    type Result = InferSuccessSchema<typeof schemaByStatusCode>
+
+    expectTypeOf<Result>().toEqualTypeOf<typeof schema200 | undefined>()
+  })
 })
 
 describe('InferSuccessResponse', () => {
@@ -65,5 +88,27 @@ describe('InferSuccessResponse', () => {
     type Result = InferSuccessResponse<typeof schemaByStatusCode>
 
     expectTypeOf<Result>().toEqualTypeOf<{ name: string } | { id: string }>()
+  })
+
+  it('maps ContractNoBody sentinel to undefined', () => {
+    const schemaByStatusCode = { 204: ContractNoBody } as const
+    type Result = InferSuccessResponse<typeof schemaByStatusCode>
+
+    expectTypeOf<Result>().toEqualTypeOf<undefined>()
+  })
+
+  it('maps ContractNonJsonResponse sentinel to undefined', () => {
+    const schemaByStatusCode = { 200: ContractNonJsonResponse } as const
+    type Result = InferSuccessResponse<typeof schemaByStatusCode>
+
+    expectTypeOf<Result>().toEqualTypeOf<undefined>()
+  })
+
+  it('excludes sentinels from union when mixed with schemas', () => {
+    const schema200 = z.object({ id: z.string() })
+    const schemaByStatusCode = { 200: schema200, 204: ContractNoBody } as const
+    type Result = InferSuccessResponse<typeof schemaByStatusCode>
+
+    expectTypeOf<Result>().toEqualTypeOf<{ id: string } | undefined>()
   })
 })

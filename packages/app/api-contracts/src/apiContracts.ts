@@ -15,7 +15,7 @@ export type InferSchemaOutput<T extends ZodSchema | undefined> = T extends ZodSc
     ? undefined
     : never
 
-export type RoutePathResolver<PathParams> = (pathParams: PathParams) => `/${string}`
+export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
 
 export interface CommonRouteDefinitionMetadata extends Record<string, unknown> {}
 
