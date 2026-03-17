@@ -11,7 +11,10 @@ import type {
   FastifyHandlerMethod,
   RouteType,
 } from './types.ts'
-import type { RouteOptions } from "fastify";
+import type {
+  RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault,
+  RouteGenericInterface, RouteOptions
+} from "fastify";
 
 type ExtractRequestBody<T> = T extends { requestBodySchema: z.ZodType }
   ? T['requestBodySchema']
@@ -39,7 +42,14 @@ export const defineFastifyRouteHandler = <T extends RouteContract>(
 ): typeof handler => handler
 
 type AllowedRouteOptions = Pick<
-    RouteOptions,
+    RouteOptions<
+        RawServerDefault,
+        RawRequestDefaultExpression,
+        RawReplyDefaultExpression,
+        RouteGenericInterface,
+        // biome-ignore lint/suspicious/noExplicitAny: Needed to be compatible with other libs
+        any
+    >,
     | 'config'
     | 'bodyLimit'
     | 'preParsing'
