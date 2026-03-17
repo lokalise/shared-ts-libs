@@ -332,3 +332,113 @@ The `mockAnyResponse` method allows you to mock API responses with any response 
 - Simulating malformed responses to test error handling
 
 Unlike `mockValidResponse` which enforces schema validation, `mockAnyResponse` accepts any response body structure, making it ideal for testing how your application handles unexpected API responses.
+
+## SSE mock support
+
+Both `MswHelper` and `MockttpHelper` support mocking SSE (Server-Sent Events) endpoints via `mockSseResponse`. This method works with `SSEContractDefinition` and `DualModeContractDefinition` contracts built using `buildSseContract` from `@lokalise/api-contracts`.
+
+Event names and data shapes are fully type-safe — typing `event: 'item.updated'` narrows the `data` field to the matching schema's input type.
+
+### mockttp SSE example
+
+```ts
+import { buildSseContract } from '@lokalise/api-contracts'
+import { getLocal } from 'mockttp'
+import { z } from 'zod/v4'
+import { MockttpHelper } from '@lokalise/universal-testing-utils'
+
+const sseContract = buildSseContract({
+  method: 'get',
+  pathResolver: () => '/events/stream',
+  serverSentEventSchemas: {
+    'item.updated': z.object({ items: z.array(z.object({ id: z.string() })) }),
+    completed: z.object({ totalCount: z.number() }),
+  },
+})
+
+const sseContractWithPathParams = buildSseContract({
+  method: 'get',
+  requestPathParamsSchema: z.object({ userId: z.string() }),
+  pathResolver: (params) => `/users/${params.userId}/events`,
+  serverSentEventSchemas: {
+    'item.updated': z.object({ items: z.array(z.object({ id: z.string() })) }),
+    completed: z.object({ totalCount: z.number() }),
+  },
+})
+
+const mockServer = getLocal()
+const mockttpHelper = new MockttpHelper(mockServer)
+
+// No path params — pathParams is not required
+await mockttpHelper.mockSseResponse(sseContract, {
+  events: [
+    { event: 'item.updated', data: { items: [{ id: '1' }] } }, // fully typed
+    { event: 'completed', data: { totalCount: 1 } },
+  ],
+})
+
+// With path params — pathParams is required and typed
+await mockttpHelper.mockSseResponse(sseContractWithPathParams, {
+  pathParams: { userId: '42' },
+  events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
+})
+
+// Custom response code
+await mockttpHelper.mockSseResponse(sseContract, {
+  responseCode: 201,
+  events: [{ event: 'completed', data: { totalCount: 0 } }],
+})
+```
+
+### MSW SSE example
+
+```ts
+import { setupServer } from 'msw/node'
+import { MswHelper } from '@lokalise/universal-testing-utils'
+
+const server = setupServer()
+const mswHelper = new MswHelper('http://localhost:8080')
+
+// Same contract definitions as above
+mswHelper.mockSseResponse(sseContract, server, {
+  events: [
+    { event: 'item.updated', data: { items: [{ id: '1' }] } },
+    { event: 'completed', data: { totalCount: 1 } },
+  ],
+})
+```
+
+### Dual-mode contracts
+
+`mockSseResponse` also works with dual-mode contracts (built with `successResponseBodySchema`), which support both JSON and SSE responses:
+
+```ts
+const dualModeContract = buildSseContract({
+  method: 'post',
+  pathResolver: () => '/events/dual',
+  requestBodySchema: z.object({ name: z.string() }),
+  successResponseBodySchema: z.object({ id: z.string() }),
+  serverSentEventSchemas: {
+    'item.updated': z.object({ items: z.array(z.object({ id: z.string() })) }),
+  },
+})
+
+// Mock the SSE response mode
+await mockttpHelper.mockSseResponse(dualModeContract, {
+  events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
+})
+```
+
+### `formatSseResponse`
+
+A standalone helper is also exported for manual SSE response formatting:
+
+```ts
+import { formatSseResponse } from '@lokalise/universal-testing-utils'
+
+const body = formatSseResponse([
+  { event: 'item.updated', data: { items: [{ id: '1' }] } },
+  { event: 'completed', data: { totalCount: 1 } },
+])
+// "event: item.updated\ndata: {\"items\":[{\"id\":\"1\"}]}\n\nevent: completed\ndata: {\"totalCount\":1}\n"
+```

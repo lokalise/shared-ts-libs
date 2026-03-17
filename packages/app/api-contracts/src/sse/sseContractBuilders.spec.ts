@@ -31,7 +31,7 @@ describe('contractBuilders', () => {
       const route = buildSseContract(baseConfig)
 
       expect(route.method).toBe('post')
-      expect(route.pathResolver({})).toBe('/api/test')
+      expect(route.pathResolver()).toBe('/api/test')
       expect(route.isSSE).toBe(true)
     })
 

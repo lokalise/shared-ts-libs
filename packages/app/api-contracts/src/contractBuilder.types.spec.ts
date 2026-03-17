@@ -2,8 +2,6 @@ import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import type { GetRouteDefinition } from './apiContracts.ts'
 import { buildContract } from './contractBuilder.ts'
-import type { DualModeContractDefinition } from './sse/dualModeContracts.ts'
-import type { SSEContractDefinition } from './sse/sseContracts.ts'
 
 describe('buildContract type inference', () => {
   // ============================================================================
@@ -397,7 +395,6 @@ describe('buildContract type inference', () => {
         },
       })
 
-      expectTypeOf(contract).toMatchTypeOf<SSEContractDefinition<'get'>>()
       expectTypeOf(contract.method).toEqualTypeOf<'get'>()
       expectTypeOf(contract.isSSE).toEqualTypeOf<true>()
     })
@@ -641,7 +638,6 @@ describe('buildContract type inference', () => {
         },
       })
 
-      expectTypeOf(contract).toMatchTypeOf<DualModeContractDefinition<'get'>>()
       expectTypeOf(contract.method).toEqualTypeOf<'get'>()
       expectTypeOf(contract.isDualMode).toEqualTypeOf<true>()
     })

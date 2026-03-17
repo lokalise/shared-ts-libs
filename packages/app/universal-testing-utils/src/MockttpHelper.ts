@@ -1,9 +1,12 @@
 // biome-ignore-all lint/suspicious/noExplicitAny: Expected for mocking
 import {
   type CommonRouteDefinition,
+  type DualModeContractDefinition,
   type InferSchemaInput,
   mapRouteToPath,
   type PayloadRouteDefinition,
+  type SSEContractDefinition,
+  type SSEEventSchemas,
 } from '@lokalise/api-contracts'
 import type { Mockttp, RequestRuleBuilder } from 'mockttp'
 import type { z } from 'zod/v4'
@@ -19,7 +22,27 @@ export type PayloadMockParamsNoPath<QueryParams, ResponseBody> = {
   responseBody: ResponseBody
 } & (QueryParams extends undefined ? { queryParams?: undefined } : { queryParams?: QueryParams })
 
+export type SseMockEvent<Events extends SSEEventSchemas> = {
+  [K in keyof Events & string]: { event: K; data: z.input<Events[K]> }
+}[keyof Events & string]
+
+export type SseMockParams<PathParams, QueryParams, Events extends SSEEventSchemas> = {
+  pathParams: PathParams
+  responseCode?: number
+  events: SseMockEvent<Events>[]
+} & (QueryParams extends undefined ? { queryParams?: undefined } : { queryParams?: QueryParams })
+
+export type SseMockParamsNoPath<QueryParams, Events extends SSEEventSchemas> = {
+  responseCode?: number
+  events: SseMockEvent<Events>[]
+} & (QueryParams extends undefined ? { queryParams?: undefined } : { queryParams?: QueryParams })
+
+export function formatSseResponse(events: { event: string; data: unknown }[]): string {
+  return events.map((e) => `event: ${e.event}\ndata: ${JSON.stringify(e.data)}\n`).join('\n')
+}
+
 type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
+type SseHttpMethod = 'get' | 'post' | 'patch' | 'put'
 
 export class MockttpHelper {
   private readonly mockServer: Mockttp
@@ -142,5 +165,73 @@ export class MockttpHelper {
     }
 
     await mockttp.thenJson(params.responseCode ?? 200, params.responseBody as object)
+  }
+
+  async mockSseResponse<
+    Events extends SSEEventSchemas,
+    PathParamsSchema extends z.Schema | undefined = undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
+  >(
+    contract:
+      | SSEContractDefinition<any, PathParamsSchema, RequestQuerySchema, any, any, Events, any>
+      | DualModeContractDefinition<
+          any,
+          PathParamsSchema,
+          RequestQuerySchema,
+          any,
+          any,
+          any,
+          Events,
+          any,
+          any
+        >,
+    params: PathParamsSchema extends z.Schema
+      ? SseMockParams<
+          InferSchemaInput<PathParamsSchema>,
+          InferSchemaInput<RequestQuerySchema>,
+          Events
+        >
+      : SseMockParamsNoPath<InferSchemaInput<RequestQuerySchema>, Events>,
+  ): Promise<void> {
+    // @ts-expect-error this is safe
+    const pathParams = params.pathParams
+
+    const path = contract.requestPathParamsSchema
+      ? contract.pathResolver(pathParams)
+      : contract.pathResolver({} as any)
+
+    let mockttp: RequestRuleBuilder
+    const method = contract.method as SseHttpMethod
+
+    switch (method) {
+      case 'get':
+        mockttp = this.mockServer.forGet(path)
+        break
+      case 'post':
+        mockttp = this.mockServer.forPost(path)
+        break
+      case 'patch':
+        mockttp = this.mockServer.forPatch(path)
+        break
+      case 'put':
+        mockttp = this.mockServer.forPut(path)
+        break
+      default:
+        throw new Error(`Unsupported method ${method}`)
+    }
+
+    const queryParams = params.queryParams
+    if (queryParams) {
+      // @ts-expect-error this is safe
+      mockttp = mockttp.withQuery(queryParams)
+    }
+
+    const body = formatSseResponse(params.events)
+
+    await mockttp.thenCallback(() => ({
+      statusCode: params.responseCode ?? 200,
+      headers: { 'content-type': 'text/event-stream' },
+      body,
+    }))
   }
 }

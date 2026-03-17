@@ -10,16 +10,16 @@ import type { SSEEventSchemas } from './sseTypes.ts'
  * Forbids requestBodySchema for GET variants.
  */
 export type SSEGetContractConfig<
-  Params extends z.ZodTypeAny,
-  Query extends z.ZodTypeAny,
-  RequestHeaders extends z.ZodTypeAny,
-  Events extends SSEEventSchemas,
+  Params extends z.ZodTypeAny | undefined = undefined,
+  Query extends z.ZodTypeAny | undefined = undefined,
+  RequestHeaders extends z.ZodTypeAny | undefined = undefined,
+  Events extends SSEEventSchemas = SSEEventSchemas,
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
 > = {
   method: 'get'
-  pathResolver: RoutePathResolver<z.infer<Params>>
+  pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
   requestPathParamsSchema?: Params
   requestQuerySchema?: Query
   requestHeaderSchema?: RequestHeaders
@@ -51,17 +51,17 @@ export type SSEGetContractConfig<
  * Requires requestBodySchema for payload variants.
  */
 export type SSEPayloadContractConfig<
-  Params extends z.ZodTypeAny,
-  Query extends z.ZodTypeAny,
-  RequestHeaders extends z.ZodTypeAny,
-  Body extends z.ZodTypeAny,
-  Events extends SSEEventSchemas,
+  Params extends z.ZodTypeAny | undefined = undefined,
+  Query extends z.ZodTypeAny | undefined = undefined,
+  RequestHeaders extends z.ZodTypeAny | undefined = undefined,
+  Body extends z.ZodTypeAny = z.ZodTypeAny,
+  Events extends SSEEventSchemas = SSEEventSchemas,
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
 > = {
   method: 'post' | 'put' | 'patch'
-  pathResolver: RoutePathResolver<z.infer<Params>>
+  pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
   requestPathParamsSchema?: Params
   requestQuerySchema?: Query
   requestHeaderSchema?: RequestHeaders
@@ -93,18 +93,18 @@ export type SSEPayloadContractConfig<
  * Requires successResponseBodySchema, forbids requestBodySchema.
  */
 export type DualModeGetContractConfig<
-  Params extends z.ZodTypeAny,
-  Query extends z.ZodTypeAny,
-  RequestHeaders extends z.ZodTypeAny,
-  JsonResponse extends z.ZodTypeAny,
-  Events extends SSEEventSchemas,
+  Params extends z.ZodTypeAny | undefined = undefined,
+  Query extends z.ZodTypeAny | undefined = undefined,
+  RequestHeaders extends z.ZodTypeAny | undefined = undefined,
+  JsonResponse extends z.ZodTypeAny = z.ZodTypeAny,
+  Events extends SSEEventSchemas = SSEEventSchemas,
   ResponseHeaders extends z.ZodTypeAny | undefined = undefined,
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
 > = {
   method: 'get'
-  pathResolver: RoutePathResolver<z.infer<Params>>
+  pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
   requestPathParamsSchema?: Params
   requestQuerySchema?: Query
   requestHeaderSchema?: RequestHeaders
@@ -149,19 +149,19 @@ export type DualModeGetContractConfig<
  * Requires both requestBodySchema and successResponseBodySchema.
  */
 export type DualModePayloadContractConfig<
-  Params extends z.ZodTypeAny,
-  Query extends z.ZodTypeAny,
-  RequestHeaders extends z.ZodTypeAny,
-  Body extends z.ZodTypeAny,
-  JsonResponse extends z.ZodTypeAny,
-  Events extends SSEEventSchemas,
+  Params extends z.ZodTypeAny | undefined = undefined,
+  Query extends z.ZodTypeAny | undefined = undefined,
+  RequestHeaders extends z.ZodTypeAny | undefined = undefined,
+  Body extends z.ZodTypeAny = z.ZodTypeAny,
+  JsonResponse extends z.ZodTypeAny = z.ZodTypeAny,
+  Events extends SSEEventSchemas = SSEEventSchemas,
   ResponseHeaders extends z.ZodTypeAny | undefined = undefined,
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
 > = {
   method: 'post' | 'put' | 'patch'
-  pathResolver: RoutePathResolver<z.infer<Params>>
+  pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
   requestPathParamsSchema?: Params
   requestQuerySchema?: Query
   requestHeaderSchema?: RequestHeaders
@@ -280,11 +280,11 @@ function determineMethod(config: { method: string }) {
 
 // Overload 1: Dual-mode GET (has successResponseBodySchema, no requestBodySchema)
 export function buildSseContract<
-  Params extends z.ZodTypeAny,
-  Query extends z.ZodTypeAny,
-  RequestHeaders extends z.ZodTypeAny,
-  JsonResponse extends z.ZodTypeAny,
-  Events extends SSEEventSchemas,
+  Params extends z.ZodTypeAny | undefined = undefined,
+  Query extends z.ZodTypeAny | undefined = undefined,
+  RequestHeaders extends z.ZodTypeAny | undefined = undefined,
+  JsonResponse extends z.ZodTypeAny = z.ZodTypeAny,
+  Events extends SSEEventSchemas = SSEEventSchemas,
   ResponseHeaders extends z.ZodTypeAny | undefined = undefined,
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
@@ -313,10 +313,10 @@ export function buildSseContract<
 
 // Overload 2: SSE GET (no requestBodySchema, no successResponseBodySchema)
 export function buildSseContract<
-  Params extends z.ZodTypeAny,
-  Query extends z.ZodTypeAny,
-  RequestHeaders extends z.ZodTypeAny,
-  Events extends SSEEventSchemas,
+  Params extends z.ZodTypeAny | undefined = undefined,
+  Query extends z.ZodTypeAny | undefined = undefined,
+  RequestHeaders extends z.ZodTypeAny | undefined = undefined,
+  Events extends SSEEventSchemas = SSEEventSchemas,
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
@@ -334,12 +334,12 @@ export function buildSseContract<
 
 // Overload 3: Dual-mode with body (has successResponseBodySchema + requestBodySchema)
 export function buildSseContract<
-  Params extends z.ZodTypeAny,
-  Query extends z.ZodTypeAny,
-  RequestHeaders extends z.ZodTypeAny,
-  Body extends z.ZodTypeAny,
-  JsonResponse extends z.ZodTypeAny,
-  Events extends SSEEventSchemas,
+  Params extends z.ZodTypeAny | undefined = undefined,
+  Query extends z.ZodTypeAny | undefined = undefined,
+  RequestHeaders extends z.ZodTypeAny | undefined = undefined,
+  Body extends z.ZodTypeAny = z.ZodTypeAny,
+  JsonResponse extends z.ZodTypeAny = z.ZodTypeAny,
+  Events extends SSEEventSchemas = SSEEventSchemas,
   ResponseHeaders extends z.ZodTypeAny | undefined = undefined,
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
@@ -369,11 +369,11 @@ export function buildSseContract<
 
 // Overload 4: SSE with body (has requestBodySchema, no successResponseBodySchema)
 export function buildSseContract<
-  Params extends z.ZodTypeAny,
-  Query extends z.ZodTypeAny,
-  RequestHeaders extends z.ZodTypeAny,
-  Body extends z.ZodTypeAny,
-  Events extends SSEEventSchemas,
+  Params extends z.ZodTypeAny | undefined = undefined,
+  Query extends z.ZodTypeAny | undefined = undefined,
+  RequestHeaders extends z.ZodTypeAny | undefined = undefined,
+  Body extends z.ZodTypeAny = z.ZodTypeAny,
+  Events extends SSEEventSchemas = SSEEventSchemas,
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,

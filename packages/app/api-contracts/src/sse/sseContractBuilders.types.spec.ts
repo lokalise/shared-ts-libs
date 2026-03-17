@@ -1,8 +1,11 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import type { AnyDualModeContractDefinition } from './dualModeContracts.ts'
+import type {
+  AnyDualModeContractDefinition,
+  DualModeContractDefinition,
+} from './dualModeContracts.ts'
 import { buildSseContract } from './sseContractBuilders.ts'
-import type { AnySSEContractDefinition } from './sseContracts.ts'
+import type { AnySSEContractDefinition, SSEContractDefinition } from './sseContracts.ts'
 
 describe('buildSseContract type inference', () => {
   // ============================================================================
@@ -567,15 +570,16 @@ describe('buildSseContract type inference', () => {
       expectTypeOf<SafeHeaders>().toEqualTypeOf<{ authorization: string }>()
     })
 
-    it('NonNullable + conditional z.infer resolves to unknown when schema is omitted', () => {
+    it('NonNullable + conditional z.infer resolves to never when schema is omitted', () => {
       const contract = buildSseContract({
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         serverSentEventSchemas: { data: z.object({ value: z.string() }) },
       })
 
-      // When omitted, NonNullable strips undefined, leaving ZodTypeAny.
-      // z.infer<ZodTypeAny> = unknown — which is the correct fallback.
+      // When omitted, the generic defaults to undefined.
+      // NonNullable<undefined> = never, and never extends z.ZodTypeAny (vacuously),
+      // so z.infer<never> = never — which is the correct fallback for omitted schemas.
       type SafeParams =
         NonNullable<(typeof contract)['requestPathParamsSchema']> extends z.ZodTypeAny
           ? z.infer<NonNullable<(typeof contract)['requestPathParamsSchema']>>
@@ -589,9 +593,9 @@ describe('buildSseContract type inference', () => {
           ? z.infer<NonNullable<(typeof contract)['requestHeaderSchema']>>
           : unknown
 
-      expectTypeOf<SafeParams>().toBeUnknown()
-      expectTypeOf<SafeQuery>().toBeUnknown()
-      expectTypeOf<SafeHeaders>().toBeUnknown()
+      expectTypeOf<SafeParams>().toBeNever()
+      expectTypeOf<SafeQuery>().toBeNever()
+      expectTypeOf<SafeHeaders>().toBeNever()
     })
   })
 
@@ -689,6 +693,100 @@ describe('buildSseContract type inference', () => {
       })
 
       expectTypeOf(contract.isDualMode).toEqualTypeOf<true>()
+    })
+  })
+
+  // ============================================================================
+  // Generic defaults: Params/Query/Headers default to undefined (like REST)
+  // ============================================================================
+
+  describe('SSEContractDefinition generic defaults match REST pattern', () => {
+    it('SSEContractDefinition defaults Params/Query/Headers to undefined', () => {
+      type DefaultSSE = SSEContractDefinition<'get'>
+      expectTypeOf<DefaultSSE['requestPathParamsSchema']>().toEqualTypeOf<undefined>()
+      expectTypeOf<DefaultSSE['requestQuerySchema']>().toEqualTypeOf<undefined>()
+      expectTypeOf<DefaultSSE['requestHeaderSchema']>().toEqualTypeOf<undefined>()
+    })
+
+    it('contract without path params accepts undefined for requestPathParamsSchema', () => {
+      const contract = buildSseContract({
+        method: 'get' as const,
+        pathResolver: () => '/api/stream',
+        serverSentEventSchemas: { message: z.object({ text: z.string() }) },
+      })
+
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestPathParamsSchema>()
+    })
+
+    it('contract with path params infers the schema type', () => {
+      const paramsSchema = z.object({ userId: z.string() })
+      const contract = buildSseContract({
+        method: 'get' as const,
+        pathResolver: (params) => `/users/${params.userId}/stream`,
+        requestPathParamsSchema: paramsSchema,
+        serverSentEventSchemas: { message: z.object({ text: z.string() }) },
+      })
+
+      expectTypeOf(contract.requestPathParamsSchema).toEqualTypeOf<
+        typeof paramsSchema | undefined
+      >()
+    })
+
+    it('contract without query params accepts undefined for requestQuerySchema', () => {
+      const contract = buildSseContract({
+        method: 'get' as const,
+        pathResolver: () => '/api/stream',
+        serverSentEventSchemas: { message: z.object({ text: z.string() }) },
+      })
+
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestQuerySchema>()
+    })
+
+    it('contract with query params infers the schema type', () => {
+      const querySchema = z.object({ limit: z.number() })
+      const contract = buildSseContract({
+        method: 'get' as const,
+        pathResolver: () => '/api/stream',
+        requestQuerySchema: querySchema,
+        serverSentEventSchemas: { message: z.object({ text: z.string() }) },
+      })
+
+      expectTypeOf(contract.requestQuerySchema).toEqualTypeOf<typeof querySchema | undefined>()
+    })
+  })
+
+  describe('DualModeContractDefinition generic defaults match REST pattern', () => {
+    it('DualModeContractDefinition defaults Params/Query/Headers to undefined', () => {
+      type DefaultDual = DualModeContractDefinition<'get'>
+      expectTypeOf<DefaultDual['requestPathParamsSchema']>().toEqualTypeOf<undefined>()
+      expectTypeOf<DefaultDual['requestQuerySchema']>().toEqualTypeOf<undefined>()
+      expectTypeOf<DefaultDual['requestHeaderSchema']>().toEqualTypeOf<undefined>()
+    })
+
+    it('dual-mode contract without path params accepts undefined for requestPathParamsSchema', () => {
+      const contract = buildSseContract({
+        method: 'get' as const,
+        pathResolver: () => '/api/status',
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEventSchemas: { update: z.object({ progress: z.number() }) },
+      })
+
+      expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestPathParamsSchema>()
+    })
+
+    it('dual-mode contract with path params infers the schema type', () => {
+      const paramsSchema = z.object({ id: z.string() })
+      const contract = buildSseContract({
+        method: 'get' as const,
+        pathResolver: (params) => `/api/items/${params.id}/status`,
+        requestPathParamsSchema: paramsSchema,
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEventSchemas: { update: z.object({ progress: z.number() }) },
+      })
+
+      expectTypeOf(contract.requestPathParamsSchema).toEqualTypeOf<
+        typeof paramsSchema | undefined
+      >()
     })
   })
 })
