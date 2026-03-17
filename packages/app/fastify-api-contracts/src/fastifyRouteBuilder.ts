@@ -21,6 +21,8 @@ import type {
 } from './types.ts'
 
 /**
+ * @deprecated Use `defineFastifyRouteHandler` from `@lokalise/fastify-api-contracts` instead.
+ *
  * Infers handler request type automatically from the contract.
  * Unified builder that replaces both `buildFastifyNoPayloadRouteHandler`
  * and `buildFastifyPayloadRouteHandler`.
@@ -134,6 +136,8 @@ export function buildFastifyRouteHandler(
 }
 
 /**
+ * @deprecated Use `defineFastifyRoute` from `@lokalise/fastify-api-contracts` instead.
+ *
  * Builds a complete Fastify route definition from an API contract.
  * Unified builder that replaces both `buildFastifyNoPayloadRoute`
  * and `buildFastifyPayloadRoute`.
