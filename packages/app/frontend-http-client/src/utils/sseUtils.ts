@@ -3,33 +3,33 @@ export type SseEvent = {
   data: string
 }
 
-type SseParserState = {
-  currentEvent: string
-  currentData: string
-}
+class SseParser {
+  private currentEvent = 'message'
+  private currentData = ''
 
-function processLine(line: string, state: SseParserState): SseEvent | undefined {
-  if (line.startsWith('event:')) {
-    state.currentEvent = line.slice(6).trim()
-    return undefined
-  }
-
-  if (line.startsWith('data:')) {
-    if (state.currentData) {
-      state.currentData += '\n'
+  processLine(line: string): SseEvent | undefined {
+    if (line.startsWith('event:')) {
+      this.currentEvent = line.slice(6).trim()
+      return undefined
     }
-    state.currentData += line.slice(5).trim()
+
+    if (line.startsWith('data:')) {
+      if (this.currentData) {
+        this.currentData += '\n'
+      }
+      this.currentData += line.slice(5).trim()
+      return undefined
+    }
+
+    if (line === '' && this.currentData) {
+      const event: SseEvent = { event: this.currentEvent, data: this.currentData }
+      this.currentEvent = 'message'
+      this.currentData = ''
+      return event
+    }
+
     return undefined
   }
-
-  if (line === '' && state.currentData) {
-    const event: SseEvent = { event: state.currentEvent, data: state.currentData }
-    state.currentEvent = 'message'
-    state.currentData = ''
-    return event
-  }
-
-  return undefined
 }
 
 export async function* parseSseStream(
@@ -38,7 +38,7 @@ export async function* parseSseStream(
 ): AsyncGenerator<SseEvent> {
   const decoder = new TextDecoder()
   let buffer = ''
-  const state: SseParserState = { currentEvent: 'message', currentData: '' }
+  const parser = new SseParser()
 
   try {
     while (!signal.aborted) {
@@ -53,7 +53,7 @@ export async function* parseSseStream(
       /* v8 ignore stop */
 
       for (const line of lines) {
-        const event = processLine(line, state)
+        const event = parser.processLine(line)
         if (event) {
           yield event
         }
