@@ -278,6 +278,9 @@ function determineMethod(config: { method: string }) {
   return config.method
 }
 
+/**
+ * @deprecated Use `defineRouteContract` instead. This builder will be removed in a future version.
+ */
 // Overload 1: Dual-mode GET (has successResponseBodySchema, no requestBodySchema)
 export function buildSseContract<
   Params extends z.ZodTypeAny,

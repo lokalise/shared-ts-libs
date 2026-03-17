@@ -27,6 +27,8 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
 // ============================================================================
 
 /**
+ * @deprecated Use `defineRouteContract` instead. This builder will be removed in a future version.
+ *
  * Universal contract builder that creates either REST or SSE contracts based on configuration.
  *
  * This is a unified entry point that delegates to:

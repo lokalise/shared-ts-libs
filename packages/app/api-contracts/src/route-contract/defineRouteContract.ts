@@ -8,18 +8,19 @@ export type ContractNoBodyType = typeof ContractNoBody
 export const ContractNonJsonResponse = Symbol.for('ContractNonJsonResponse')
 export type ContractNonJsonResponseType = typeof ContractNonJsonResponse
 
-export type RouteContractResponse = ContractNoBodyType | ContractNonJsonResponseType | z.Schema
+export type RouteContractResponse = ContractNoBodyType | ContractNonJsonResponseType | z.ZodType
 
 export type ResponseSchemasByStatusCode = Partial<Record<HttpStatusCode, RouteContractResponse>>
 
 export type CommonRouteContract = {
   // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with generics
   pathResolver: RoutePathResolver<any>
-  requestPathParamsSchema?: z.Schema
-  requestQuerySchema?: z.Schema
-  requestHeaderSchema?: z.Schema
-  responseHeaderSchema?: z.Schema
+  requestPathParamsSchema?: z.ZodType
+  requestQuerySchema?: z.ZodType
+  requestHeaderSchema?: z.ZodType
+  responseHeaderSchema?: z.ZodType
   responseSchemasByStatusCode?: ResponseSchemasByStatusCode
+  serverSentEventSchemas?: Record<string, z.ZodType>
 
   metadata?: Record<string, unknown>
   summary?: string
@@ -48,25 +49,25 @@ export type DeleteRouteContract = CommonRouteContract & {
  */
 export type PayloadRouteContract = CommonRouteContract & {
   method: 'post' | 'put' | 'patch'
-  requestBodySchema: ContractNoBodyType | z.Schema
+  requestBodySchema: ContractNoBodyType | z.ZodType
 }
 
 export type RouteContract = GetRouteContract | DeleteRouteContract | PayloadRouteContract
 
-/** * Helper to prevent extra keys.
- * If T has keys not in U, it forces an error.
+/**
+ * Helper to prevent extra keys. If T has keys not in U, it forces an error.
  */
 type Exactly<T, U> = T & {
   [K in keyof T]: K extends keyof U ? T[K] : never
 }
 
-type TypedPath<T extends z.Schema | undefined> = {
+type TypedPath<T extends z.ZodType | undefined> = {
   requestPathParamsSchema?: T
   pathResolver: RoutePathResolver<InferSchemaOutput<T>>
 }
 
 export const defineRouteContract = <
-  PathParamsSchema extends z.Schema | undefined,
+  PathParamsSchema extends z.ZodType | undefined,
   TypedPathContract extends Omit<RouteContract, 'pathResolver'> & TypedPath<PathParamsSchema>,
   const Contract extends TypedPathContract,
 >(
@@ -94,13 +95,13 @@ export const describeRouteContract = (routeConfig: RouteContract): string => {
 
 const SUCCESSFUL_STATUS_CODES = [200, 201, 202, 203, 204, 205, 206, 207, 208, 226] as const
 
-export const getSuccessResponseSchema = (routeConfig: RouteContract): z.Schema | null => {
+export const getSuccessResponseSchema = (routeConfig: RouteContract): z.ZodType | null => {
   const { responseSchemasByStatusCode } = routeConfig
   if (!responseSchemasByStatusCode) {
     return null
   }
 
-  const schemas: z.Schema[] = []
+  const schemas: z.ZodType[] = []
 
   for (const code of SUCCESSFUL_STATUS_CODES) {
     const value = responseSchemasByStatusCode[code]
