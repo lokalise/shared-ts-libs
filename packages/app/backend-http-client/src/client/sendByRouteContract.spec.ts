@@ -1,14 +1,17 @@
 import type { Readable } from 'node:stream'
 import { ContractNoBody, defineRouteContract } from '@lokalise/api-contracts'
 import { getLocal, type Mockttp } from 'mockttp'
-import { Client } from 'undici'
+import type { Client } from 'undici'
 import { afterAll, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import { buildClient } from './httpClient.ts'
 import { JSON_HEADERS } from './constants.ts'
-import { sendByRouteContract, sendByRouteContractWithStreamedResponse } from './sendByRouteContract.ts'
+import { buildClient } from './httpClient.ts'
 // @ts-expect-error
 import mockProduct1 from './mock-data/mockProduct1.json'
+import {
+  sendByRouteContract,
+  sendByRouteContractWithStreamedResponse,
+} from './sendByRouteContract.ts'
 
 async function streamToString(stream: ReadableStream | NodeJS.ReadableStream): Promise<string> {
   const chunks: Buffer[] = []
@@ -46,9 +49,16 @@ describe('sendByRouteContract', () => {
         responseSchemasByStatusCode: { 200: responseSchema },
       })
 
-      await mockServer.forGet('/products/1').thenJson(200, { id: 1, title: 'Backpack' }, JSON_HEADERS)
+      await mockServer
+        .forGet('/products/1')
+        .thenJson(200, { id: 1, title: 'Backpack' }, JSON_HEADERS)
 
-      const result = await sendByRouteContract(client, contract, {}, { requestLabel: 'test', validateResponse: true, throwOnError: true })
+      const result = await sendByRouteContract(
+        client,
+        contract,
+        {},
+        { requestLabel: 'test', validateResponse: true, throwOnError: true },
+      )
 
       expectTypeOf(result.result.body).toEqualTypeOf<{ id: number; title: string }>()
       expect(result.result.body).toEqual({ id: 1, title: 'Backpack' })
@@ -361,7 +371,12 @@ describe('sendByRouteContractWithStreamedResponse', () => {
     await mockServer.forGet('/products/1').thenJson(500, { error: 'fail' }, JSON_HEADERS)
 
     await expect(
-      sendByRouteContractWithStreamedResponse(client, contract, {}, { requestLabel: 'test', throwOnError: true }),
+      sendByRouteContractWithStreamedResponse(
+        client,
+        contract,
+        {},
+        { requestLabel: 'test', throwOnError: true },
+      ),
     ).rejects.toMatchObject({ message: 'Response status code 500' })
   })
 })

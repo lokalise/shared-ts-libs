@@ -311,8 +311,7 @@ describe('defineFastifyRoute', () => {
       const route = defineFastifyRoute(
         contract,
         () => Promise.resolve(),
-        (metadata) =>
-          metadata?.roles ? { config: { roles: metadata.roles } } : {},
+        (metadata) => (metadata?.roles ? { config: { roles: metadata.roles } } : {}),
       )
 
       expect(route.config).toEqual({
@@ -327,7 +326,11 @@ describe('defineFastifyRoute', () => {
         pathResolver: () => '/users',
       })
 
-      const route = defineFastifyRoute(contract, () => Promise.resolve(), () => ({}))
+      const route = defineFastifyRoute(
+        contract,
+        () => Promise.resolve(),
+        () => ({}),
+      )
 
       expect(route.config).toEqual({ apiContract: contract })
     })

@@ -20,12 +20,12 @@ interface FastifyContractRouteInterface<ReplyType, BodyType, ParamsType, QueryTy
 }
 
 export type FastifyHandlerMethod<ReplyType, BodyType, ParamsType, QueryType, HeadersType> =
-    RouteHandlerMethod<
-        RawServerDefault,
-        RawRequestDefaultExpression,
-        RawReplyDefaultExpression,
-        FastifyContractRouteInterface<ReplyType, BodyType, ParamsType, QueryType, HeadersType>
-    >
+  RouteHandlerMethod<
+    RawServerDefault,
+    RawRequestDefaultExpression,
+    RawReplyDefaultExpression,
+    FastifyContractRouteInterface<ReplyType, BodyType, ParamsType, QueryType, HeadersType>
+  >
 
 /**
  * Default fastify fields + fastify-swagger fields

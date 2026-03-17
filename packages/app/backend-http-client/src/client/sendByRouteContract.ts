@@ -1,20 +1,20 @@
 import type { Readable } from 'node:stream'
 import {
   buildRequestPath,
+  type GetRouteContract,
   getIsEmptyResponseExpected,
   getSuccessResponseSchema,
-  type GetRouteContract,
   type InferSchemaInput,
   type InferSuccessResponse,
   type InferSuccessSchema,
   type RouteContract,
 } from '@lokalise/api-contracts'
-import { Client } from 'undici'
+import type { Client } from 'undici'
 import { z } from 'zod/v4'
-import { DEFAULT_OPTIONS } from './constants.ts'
+import type { PayloadRouteRequestParams } from './apiContractTypes.ts'
+import type { DEFAULT_OPTIONS } from './constants.ts'
 import { sendGetWithStreamedResponse, sendNonPayload, sendResourceChange } from './httpClient.ts'
 import type { RequestOptions, RequestResultDefinitiveEither } from './types.ts'
-import type { PayloadRouteRequestParams } from './apiContractTypes.ts'
 
 type DEFAULT_THROW_ON_ERROR = typeof DEFAULT_OPTIONS.throwOnError
 
@@ -37,7 +37,9 @@ export function sendByRouteContract<
   options: Omit<
     RequestOptions<
       InferSuccessSchema<Contract['responseSchemasByStatusCode']>,
-      InferSuccessResponse<Contract['responseSchemasByStatusCode']> extends undefined ? true : false,
+      InferSuccessResponse<Contract['responseSchemasByStatusCode']> extends undefined
+        ? true
+        : false,
       DoThrowOnError
     >,
     'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
@@ -50,7 +52,10 @@ export function sendByRouteContract<
   >
 > {
   // biome-ignore lint/suspicious/noExplicitAny: pathParams key may not be present in params
-  const path = buildRequestPath(routeContract.pathResolver((params as any).pathParams), params.pathPrefix)
+  const path = buildRequestPath(
+    routeContract.pathResolver((params as any).pathParams),
+    params.pathPrefix,
+  )
   const responseSchema = getSuccessResponseSchema(routeContract) ?? z.unknown()
   const isEmptyResponseExpected = getIsEmptyResponseExpected(routeContract)
   const method = routeContract.method
@@ -105,7 +110,10 @@ export function sendByRouteContractWithStreamedResponse<
   >,
 ): Promise<RequestResultDefinitiveEither<Readable, false, DoThrowOnError>> {
   // biome-ignore lint/suspicious/noExplicitAny: pathParams key may not be present in params
-  const path = buildRequestPath(routeContract.pathResolver((params as any).pathParams), params.pathPrefix)
+  const path = buildRequestPath(
+    routeContract.pathResolver((params as any).pathParams),
+    params.pathPrefix,
+  )
 
   return sendGetWithStreamedResponse(client, path, {
     // @ts-expect-error FixMe

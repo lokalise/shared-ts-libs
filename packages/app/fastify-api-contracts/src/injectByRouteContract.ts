@@ -1,8 +1,4 @@
-import type {
-  InferSchemaInput,
-  InferSchemaOutput,
-  RouteContract,
-} from '@lokalise/api-contracts'
+import type { InferSchemaInput, InferSchemaOutput, RouteContract } from '@lokalise/api-contracts'
 import type { FastifyInstance } from 'fastify'
 import type { Response as LightMyRequestResponse } from 'light-my-request'
 import type { z } from 'zod/v4'
@@ -25,13 +21,15 @@ export async function injectByRouteContract<const Contract extends RouteContract
 ): Promise<LightMyRequestResponse> {
   const anyParams = params as any
   const resolvedHeaders =
-    typeof anyParams.headers === 'function'
-      ? await anyParams.headers()
-      : anyParams.headers
+    typeof anyParams.headers === 'function' ? await anyParams.headers() : anyParams.headers
 
   const path = routeContract.pathResolver(anyParams.pathParams)
 
-  const injection = app.inject()[routeContract.method](path).headers(resolvedHeaders).query(anyParams.query)
+  const injection = app
+    .inject()
+    [routeContract.method](path)
+    .headers(resolvedHeaders)
+    .query(anyParams.query)
 
   if (anyParams.body) {
     return injection.body(anyParams.body).end()
