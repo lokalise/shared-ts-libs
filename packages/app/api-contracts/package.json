@@ -45,7 +45,7 @@
         "zod": ">=3.25.56"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.3.7",
+        "@biomejs/biome": "^2.4.7",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "^3.1.0",
         "@vitest/coverage-v8": "^4.0.18",

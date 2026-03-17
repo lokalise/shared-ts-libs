@@ -23,9 +23,9 @@ export type SSEMethod = 'get' | 'post' | 'put' | 'patch'
  */
 export type SSEContractDefinition<
   Method extends SSEMethod = SSEMethod,
-  Params extends z.ZodTypeAny = z.ZodTypeAny,
-  Query extends z.ZodTypeAny = z.ZodTypeAny,
-  RequestHeaders extends z.ZodTypeAny = z.ZodTypeAny,
+  Params extends z.ZodTypeAny | undefined = undefined,
+  Query extends z.ZodTypeAny | undefined = undefined,
+  RequestHeaders extends z.ZodTypeAny | undefined = undefined,
   Body extends z.ZodTypeAny | undefined = undefined,
   Events extends SSEEventSchemas = SSEEventSchemas,
   ResponseSchemasByStatusCode extends
@@ -37,7 +37,7 @@ export type SSEContractDefinition<
    * Type-safe path resolver function.
    * Receives typed params and returns the URL path string.
    */
-  pathResolver: RoutePathResolver<z.infer<Params>>
+  pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
   requestPathParamsSchema?: Params
   requestQuerySchema?: Query
   requestHeaderSchema?: RequestHeaders

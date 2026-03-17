@@ -1,10 +1,13 @@
 // biome-ignore-all lint/suspicious/noExplicitAny: expected here
 import {
   type CommonRouteDefinition,
+  type DualModeContractDefinition,
   type InferSchemaInput,
   type InferSchemaOutput,
   mapRouteToPath,
   type PayloadRouteDefinition,
+  type SSEContractDefinition,
+  type SSEEventSchemas,
 } from '@lokalise/api-contracts'
 import {
   type DefaultBodyType,
@@ -16,6 +19,7 @@ import {
 } from 'msw'
 import type { SetupServerApi } from 'msw/node'
 import type { ZodObject, z } from 'zod/v4'
+import { formatSseResponse, type SseMockEvent } from './MockttpHelper.ts'
 
 export type CommonMockParams = {
   responseCode?: number
@@ -48,7 +52,19 @@ export type MockWithImplementationParams<
   pathParams: Params
 } & MockWithImplementationParamsNoPath<Params, RequestBody, ResponseBody>
 
+export type MswSseMockParams<PathParams, Events extends SSEEventSchemas> = {
+  pathParams: PathParams
+  responseCode?: number
+  events: SseMockEvent<Events>[]
+}
+
+export type MswSseMockParamsNoPath<Events extends SSEEventSchemas> = {
+  responseCode?: number
+  events: SseMockEvent<Events>[]
+}
+
 type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
+type SseHttpMethod = 'get' | 'post' | 'patch' | 'put'
 
 function joinURL(base: string, path: string): string {
   return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
@@ -254,5 +270,39 @@ export class MswHelper {
       responseCode: params.responseCode ?? 200,
       validateResponse: false,
     })
+  }
+
+  mockSseResponse<
+    Events extends SSEEventSchemas,
+    PathParamsSchema extends z.Schema | undefined = undefined,
+  >(
+    contract:
+      | SSEContractDefinition<any, PathParamsSchema, any, any, any, Events, any>
+      | DualModeContractDefinition<any, PathParamsSchema, any, any, any, any, Events, any, any>,
+    server: SetupServerApi,
+    params: PathParamsSchema extends z.Schema
+      ? MswSseMockParams<InferSchemaInput<PathParamsSchema>, Events>
+      : MswSseMockParamsNoPath<Events>,
+  ): void {
+    // @ts-expect-error this is safe
+    const pathParams = params.pathParams
+
+    const path = contract.requestPathParamsSchema
+      ? contract.pathResolver(pathParams)
+      : contract.pathResolver({} as any)
+
+    const resolvedPath = joinURL(this.baseUrl, path)
+    const method = contract.method as SseHttpMethod
+
+    const body = formatSseResponse(params.events)
+
+    server.use(
+      http[method](resolvedPath, () => {
+        return new HttpResponse(body, {
+          status: params.responseCode ?? 200,
+          headers: { 'content-type': 'text/event-stream' },
+        })
+      }),
+    )
   }
 }
