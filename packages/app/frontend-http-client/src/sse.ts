@@ -128,6 +128,11 @@ function handleSseEvent(
   }
 }
 
+/**
+ * Opens the SSE connection, reads the stream, and dispatches events to callbacks.
+ * Runs until the server closes the stream, the abort signal fires, or an error occurs.
+ * Does not reconnect — callers are responsible for reconnection if required.
+ */
 async function runSseConnection(
   wretch: WretchInstance,
   contract: AnyContract,
@@ -202,6 +207,8 @@ export function connectSseByContract<
 ): SseConnection {
   const abortController = new AbortController()
 
+  // Cast needed: SseRouteRequestParams strips never keys via conditional types, which TypeScript
+  // can't reverse — the runtime shape is identical to SseInternalParams
   const sseParams = params as SseInternalParams
 
   // Validate query params
