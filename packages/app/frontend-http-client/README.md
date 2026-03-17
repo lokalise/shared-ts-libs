@@ -113,6 +113,55 @@ The following parameters can be specified when sending API contract-based reques
 
 > **Note:** The individual `sendByPayloadRoute`, `sendByGetRoute`, and `sendByDeleteRoute` methods are deprecated in favor of `sendByContract`.
 
+### Server-sent events (SSE)
+
+`connectSseByContract` opens an SSE stream defined by a contract and dispatches typed, schema-validated events to callbacks.
+
+The connection starts immediately and runs in the background until the server closes the stream or you call `close()`. There is no automatic reconnection — if you need that, call `connectSseByContract` again from `onError` or after `onDone`.
+
+```ts
+import { buildSseContract } from '@lokalise/api-contracts'
+import { connectSseByContract } from '@lokalise/frontend-http-client'
+import wretch from 'wretch'
+import { z } from 'zod/v4'
+
+const exportContract = buildSseContract({
+    method: 'get',
+    pathResolver: (params: { projectId: string }) => `/projects/${params.projectId}/export`,
+    requestPathParamsSchema: z.object({ projectId: z.string() }),
+    serverSentEventSchemas: {
+        'item.exported': z.object({ id: z.string(), name: z.string() }),
+        done: z.object({ total: z.number() }),
+    },
+})
+
+const client = wretch('http://localhost:8000')
+
+const connection = connectSseByContract(
+    client,
+    exportContract,
+    { pathParams: { projectId: 'proj_123' } },
+    {
+        onEvent: {
+            'item.exported': (data) => console.log('exported item:', data.id),
+            done: (data) => console.log('finished, total:', data.total),
+        },
+        onOpen: () => console.log('stream opened'),
+        onError: (err) => console.error('stream error:', err),
+    },
+)
+
+// Stop the stream early if needed (e.g. user navigates away)
+connection.close()
+```
+
+The following parameters can be specified:
+- `pathParams` – path parameters used by the contract's path resolver
+- `queryParams` – query parameters (type must match the contract definition)
+- `body` – request body for POST/PUT/PATCH SSE endpoints
+- `headers` – custom headers, or a (optionally async) function returning headers (useful for auth tokens)
+- `pathPrefix` – optional prefix prepended to the resolved path
+
 ### Tracking request progress
 Tracking requests progress is especially useful while uploading files. 
 
