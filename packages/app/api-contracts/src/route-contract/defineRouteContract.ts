@@ -28,25 +28,16 @@ export type CommonRouteContract = {
   tags?: readonly string[]
 }
 
-/**
- * Contract for building a GET route.
- */
 export type GetRouteContract = CommonRouteContract & {
   method: 'get'
   requestBodySchema?: never
 }
 
-/**
- * Contract for building a DELETE route.
- */
 export type DeleteRouteContract = CommonRouteContract & {
   method: 'delete'
   requestBodySchema?: never
 }
 
-/**
- * Contract for building a payload route (POST, PUT, PATCH).
- */
 export type PayloadRouteContract = CommonRouteContract & {
   method: 'post' | 'put' | 'patch'
   requestBodySchema: ContractNoBodyType | z.ZodType
