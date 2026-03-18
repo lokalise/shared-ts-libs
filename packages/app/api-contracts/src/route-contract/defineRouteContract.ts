@@ -1,6 +1,6 @@
 import { z } from 'zod/v4'
 import type { InferSchemaOutput, RoutePathResolver } from '../apiContracts.ts'
-import type { HttpStatusCode } from '../HttpStatusCodes.ts'
+import { type HttpStatusCode, SUCCESSFUL_HTTP_STATUS_CODES } from '../HttpStatusCodes.ts'
 
 export const ContractNoBody = Symbol.for('ContractNoBody')
 export type ContractNoBodyType = typeof ContractNoBody
@@ -15,7 +15,7 @@ export type ResponseSchemasByStatusCode = Partial<Record<HttpStatusCode, RouteCo
 export type CommonRouteContract = {
   // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with generics
   pathResolver: RoutePathResolver<any>
-  requestPathParamsSchema?: z.ZodType
+  requestPathParamsSchema?: z.ZodObject
   requestQuerySchema?: z.ZodType
   requestHeaderSchema?: z.ZodType
   responseHeaderSchema?: z.ZodType
@@ -79,12 +79,13 @@ export const mapRouteContractToPath = (routeConfig: RouteContract): string => {
     return routeConfig.pathResolver(undefined)
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: cannot infer zod object with typed shape here
-  const shape = (routeConfig.requestPathParamsSchema as any).shape
-  const resolverParams: Record<string, string> = {}
-  for (const key of Object.keys(shape)) {
-    resolverParams[key] = `:${key}`
-  }
+  const resolverParams = Object.keys(routeConfig.requestPathParamsSchema.shape).reduce<
+    Record<string, string>
+  >((acc, key) => {
+    acc[key] = `:${key}`
+
+    return acc
+  }, {})
 
   return routeConfig.pathResolver(resolverParams)
 }
@@ -92,8 +93,6 @@ export const mapRouteContractToPath = (routeConfig: RouteContract): string => {
 export const describeRouteContract = (routeConfig: RouteContract): string => {
   return `${routeConfig.method.toUpperCase()} ${mapRouteContractToPath(routeConfig)}`
 }
-
-const SUCCESSFUL_STATUS_CODES = [200, 201, 202, 203, 204, 205, 206, 207, 208, 226] as const
 
 export const getSuccessResponseSchema = (routeConfig: RouteContract): z.ZodType | null => {
   const { responseSchemasByStatusCode } = routeConfig
@@ -103,7 +102,7 @@ export const getSuccessResponseSchema = (routeConfig: RouteContract): z.ZodType 
 
   const schemas: z.ZodType[] = []
 
-  for (const code of SUCCESSFUL_STATUS_CODES) {
+  for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
     const value = responseSchemasByStatusCode[code]
 
     if (!value) {
@@ -134,7 +133,7 @@ export const getIsEmptyResponseExpected = (routeConfig: RouteContract): boolean 
 
   let isEmptyResponseExpected = true
 
-  for (const code of SUCCESSFUL_STATUS_CODES) {
+  for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
     const value = responseSchemasByStatusCode[code]
 
     if (value && typeof value !== 'symbol') {
@@ -152,7 +151,7 @@ export const getIsNonJsonResponseExpected = (routeConfig: RouteContract): boolea
     return false
   }
 
-  for (const code of SUCCESSFUL_STATUS_CODES) {
+  for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
     if (responseSchemasByStatusCode[code] === ContractNonJsonResponse) {
       return true
     }
