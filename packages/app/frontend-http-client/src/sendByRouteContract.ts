@@ -1,20 +1,20 @@
 import {
   buildRequestPath,
-  getIsEmptyResponseExpected,
-  getIsNonJsonResponseExpected,
-  getSuccessResponseSchema,
+  ContractNoBody,
+  ContractNonJsonResponse,
   type HasAnyNonJsonSuccessResponse,
+  type HttpStatusCode,
   type InferSchemaInput,
   type InferSuccessResponse,
   type RouteContract,
 } from '@lokalise/api-contracts'
-import type { WretchResponse } from 'wretch'
-import { z } from 'zod/v4'
-import { handleBodyParseError, resolveHeaders, UNKNOWN_SCHEMA } from './client.ts'
-import type { PayloadRouteRequestParams, WretchInstance } from './types.ts'
-import { parseRequestBody, tryToResolveJsonBody } from './utils/bodyUtils.ts'
-import { isFailure } from './utils/either.ts'
-import { parseQueryParams } from './utils/queryUtils.ts'
+import type {WretchResponse} from 'wretch'
+import {z} from 'zod/v4'
+import { resolveHeaders} from './client.ts'
+import type {PayloadRouteRequestParams, WretchInstance} from './types.ts'
+import {parseRequestBody, parseResponseBody} from './utils/bodyUtils.ts'
+import {isFailure} from './utils/either.ts'
+import {parseQueryParams} from './utils/queryUtils.ts'
 
 type ExtractBodyInput<T> = T extends { requestBodySchema: z.ZodType }
   ? T['requestBodySchema']
@@ -40,10 +40,6 @@ export async function sendByRouteContract<const Contract extends RouteContract>(
     routeContract.pathResolver(anyParams.pathParams),
     anyParams.pathPrefix,
   )
-  const responseBodySchema = getSuccessResponseSchema(routeContract) ?? UNKNOWN_SCHEMA
-  const isEmptyResponseExpected = getIsEmptyResponseExpected(routeContract)
-  const isNonJSONResponseExpected = getIsNonJsonResponseExpected(routeContract)
-  const method = routeContract.method
 
   const queryParamsResult = parseQueryParams({
     queryParams: anyParams.queryParams,
@@ -72,19 +68,27 @@ export async function sendByRouteContract<const Contract extends RouteContract>(
   }
 
   const handleResponse = async (response: WretchResponse) => {
-    const bodyParseResult = await tryToResolveJsonBody(
-      response,
-      path,
-      responseBodySchema,
-      isEmptyResponseExpected,
-    )
-    if (bodyParseResult.error) {
-      return handleBodyParseError(
-        bodyParseResult,
-        { path, isEmptyResponseExpected, isNonJSONResponseExpected },
-        response,
-      )
+    const responseSchema = routeContract.responseSchemasByStatusCode?.[response.status as HttpStatusCode]
+
+    if (!responseSchema || responseSchema === ContractNonJsonResponse) {
+      return response
     }
+    if (responseSchema === ContractNoBody) {
+      return null
+    }
+
+    const responseBody = await response.json()
+
+    const bodyParseResult = parseResponseBody({
+      response: responseBody,
+      responseBodySchema: responseSchema,
+      path,
+    })
+
+    if (isFailure(bodyParseResult)) {
+      return Promise.reject(bodyParseResult.error)
+    }
+
     return bodyParseResult.result
   }
 
@@ -94,7 +98,7 @@ export async function sendByRouteContract<const Contract extends RouteContract>(
       .url(fullPath)
       .headers(resolvedHeaders)
       // @ts-expect-error body can be available on payload contracts
-      [method](bodyResult ? bodyResult.result : undefined)
+      [routeContract.method](bodyResult ? bodyResult.result : undefined)
       .res(handleResponse)
   )
 }
