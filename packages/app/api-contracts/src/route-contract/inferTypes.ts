@@ -1,6 +1,9 @@
 import type { z } from 'zod/v4'
 import type { SuccessfulHttpStatusCode } from '../HttpStatusCodes.ts'
-import type { ResponseSchemasByStatusCode } from './defineRouteContract.ts'
+import type {
+  ContractNonJsonResponseType,
+  ResponseSchemasByStatusCode,
+} from './defineRouteContract.ts'
 
 type InferSchemaOutput<T extends z.ZodSchema | undefined> = T extends z.ZodSchema
   ? z.output<T>
@@ -29,3 +32,13 @@ export type InferSuccessSchema<T extends ResponseSchemasByStatusCode | undefined
  */
 export type InferSuccessResponse<T extends ResponseSchemasByStatusCode | undefined> =
   InferSchemaOutput<InferSuccessSchema<T>>
+
+/**
+ * Returns true if any success status code entry is ContractNonJsonResponse.
+ */
+export type HasAnyNonJsonSuccessResponse<T extends ResponseSchemasByStatusCode | undefined> =
+  T extends ResponseSchemasByStatusCode
+    ? ContractNonJsonResponseType extends ValueOf<T, Extract<keyof T, SuccessfulHttpStatusCode>>
+      ? true
+      : false
+    : false

@@ -63,55 +63,69 @@ const response = await sendGet(client, {
 
 if non-JSON responses are expected, the library will return null, if not, it will throw an error.
 
-### API contract-based requests
+### Contract-based requests
 
-`frontend-http-client` supports using API contracts, created with `@lokalise/api-contracts` in order to make fully type-safe HTTP requests.
-
-The unified `sendByContract` method accepts any route definition (GET, POST, PUT, PATCH, DELETE) and automatically dispatches based on the contract's `method` field:
+Use `sendByRouteContract` with contracts defined via `defineRouteContract` from `@lokalise/api-contracts`. All request and response types are inferred from the contract.
 
 ```ts
-import { somePostRouteDefinition, someGetRouteDefinition, someDeleteRouteDefinition } from 'some-service-api-contracts'
-import { sendByContract } from '@lokalise/frontend-http-client'
+import { defineRouteContract, ContractNoBody } from '@lokalise/api-contracts'
+import { sendByRouteContract } from '@lokalise/frontend-http-client'
 import wretch from 'wretch'
+import { z } from 'zod/v4'
 
-const client = wretch(BASE_URL)
-
-// POST/PUT/PATCH request - body is required by the contract type
-const responseBody1 = await sendByContract(client, somePostRouteDefinition, {
-    pathParams: {
-        userId: 1,
-    },
-    body: {
-        isActive: true,
-    },
+const getUser = defineRouteContract({
+  method: 'get',
+  requestPathParamsSchema: z.object({ userId: z.string() }),
+  pathResolver: ({ userId }) => `/users/${userId}`,
+  responseSchemasByStatusCode: { 200: z.object({ id: z.string(), name: z.string() }) },
 })
 
-// GET request - no body needed
-const responseBody2 = await sendByContract(client, someGetRouteDefinition, {
-    pathParams: {
-        userId: 1,
-    },
-    queryParams: {
-        id: 'testId',
-    },
+const createUser = defineRouteContract({
+  method: 'post',
+  pathResolver: () => '/users',
+  requestBodySchema: z.object({ name: z.string() }),
+  responseSchemasByStatusCode: { 201: z.object({ id: z.string(), name: z.string() }) },
 })
 
-// DELETE request
-const responseBody3 = await sendByContract(client, someDeleteRouteDefinition, {
-    pathParams: {
-        userId: 1,
-    },
+const deleteUser = defineRouteContract({
+  method: 'delete',
+  requestPathParamsSchema: z.object({ userId: z.string() }),
+  pathResolver: ({ userId }) => `/users/${userId}`,
+  responseSchemasByStatusCode: { 204: ContractNoBody },
 })
+
+const client = wretch('https://api.example.com')
+
+// GET — body absent from params, response typed from contract
+const user = await sendByRouteContract(client, getUser, { pathParams: { userId: '1' } })
+// user: { id: string; name: string }
+
+// POST — body required by contract type
+const created = await sendByRouteContract(client, createUser, { body: { name: 'Alice' } })
+
+// DELETE — returns null on 204
+const result = await sendByRouteContract(client, deleteUser, { pathParams: { userId: '1' } })
+// result: null
 ```
 
-The following parameters can be specified when sending API contract-based requests:
-- `body` - request body (only applicable for payload routes, type needs to match with contract definition)
-- `queryParams` - query parameters (type needs to match with contract definition)
-- `headers` - custom headers to be sent with the request (type needs to match with contract definition)
-- `pathParams` – parameters used for path resolver (type needs to match with contract definition)
-- `pathPrefix` - optional prefix to be prepended to the path resolved by the contract's path resolver
+#### Params
 
-> **Note:** The individual `sendByPayloadRoute`, `sendByGetRoute`, and `sendByDeleteRoute` methods are deprecated in favor of `sendByContract`.
+| Field | Description |
+|---|---|
+| `pathParams` | Path parameters — type inferred from `requestPathParamsSchema` |
+| `body` | Request body — present only for POST/PUT/PATCH; type inferred from `requestBodySchema` |
+| `queryParams` | Query parameters — type inferred from `requestQuerySchema` |
+| `headers` | Request headers — type inferred from `requestHeaderSchema`; can be a plain object, `() => Headers`, or `() => Promise<Headers>` |
+| `pathPrefix` | Optional prefix prepended to the resolved path (e.g. `'api/v2'`) |
+
+### Deprecated API
+
+| Deprecated | Replacement |
+|---|---|
+| `sendByContract` | `sendByRouteContract` |
+| `sendByGetRoute` | `sendByRouteContract` |
+| `sendByPayloadRoute` | `sendByRouteContract` |
+| `sendByDeleteRoute` | `sendByRouteContract` |
 
 ### Tracking request progress
 Tracking requests progress is especially useful while uploading files. 

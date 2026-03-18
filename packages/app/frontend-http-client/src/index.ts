@@ -11,3 +11,4 @@ export {
   sendPut,
   UNKNOWN_SCHEMA,
 } from './client.ts'
+export { sendByRouteContract } from './sendByRouteContract.ts'

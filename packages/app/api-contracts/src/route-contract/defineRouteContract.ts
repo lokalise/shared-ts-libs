@@ -145,3 +145,18 @@ export const getIsEmptyResponseExpected = (routeConfig: RouteContract): boolean 
 
   return isEmptyResponseExpected
 }
+
+export const getIsNonJsonResponseExpected = (routeConfig: RouteContract): boolean => {
+  const { responseSchemasByStatusCode } = routeConfig
+  if (!responseSchemasByStatusCode) {
+    return false
+  }
+
+  for (const code of SUCCESSFUL_STATUS_CODES) {
+    if (responseSchemasByStatusCode[code] === ContractNonJsonResponse) {
+      return true
+    }
+  }
+
+  return false
+}
