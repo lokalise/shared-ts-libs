@@ -20,9 +20,9 @@ import type { SSEEventSchemas } from './sseTypes.ts'
  */
 export type DualModeContractDefinition<
   Method extends SSEMethod = SSEMethod,
-  Params extends z.ZodTypeAny = z.ZodTypeAny,
-  Query extends z.ZodTypeAny = z.ZodTypeAny,
-  RequestHeaders extends z.ZodTypeAny = z.ZodTypeAny,
+  Params extends z.ZodTypeAny | undefined = undefined,
+  Query extends z.ZodTypeAny | undefined = undefined,
+  RequestHeaders extends z.ZodTypeAny | undefined = undefined,
   Body extends z.ZodTypeAny | undefined = undefined,
   SyncResponse extends z.ZodTypeAny = z.ZodTypeAny,
   Events extends SSEEventSchemas = SSEEventSchemas,
@@ -32,7 +32,7 @@ export type DualModeContractDefinition<
     | undefined = undefined,
 > = {
   method: Method
-  pathResolver: RoutePathResolver<z.infer<Params>>
+  pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
   requestPathParamsSchema?: Params
   requestQuerySchema?: Query
   requestHeaderSchema?: RequestHeaders

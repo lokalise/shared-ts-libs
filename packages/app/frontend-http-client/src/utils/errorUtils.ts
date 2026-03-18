@@ -1,6 +1,14 @@
 import type { WretchResponse } from 'wretch'
 import { WretchError } from 'wretch/resolver'
 
+export function isError(maybeError: unknown): maybeError is Error {
+  /* v8 ignore start */
+  return (
+    maybeError instanceof Error || Object.prototype.toString.call(maybeError) === '[object Error]'
+  )
+  /* v8 ignore stop */
+}
+
 export function buildWretchError(message: string, response: WretchResponse): WretchError {
   const error = new WretchError(message)
   error.response = response
