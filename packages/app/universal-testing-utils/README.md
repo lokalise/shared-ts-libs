@@ -153,11 +153,23 @@ mswHelper.mockAnyResponse(postContract, server, {
 
 ### mockValidResponseWithAnyPath
 
-Wildcards all path params so the mock matches any path param values. REST contracts only.
+Wildcards all path params so the mock matches any path param values. Works with all contract types — the same overloads as `mockValidResponse` apply (REST requires `responseBody`, SSE requires `events`, dual-mode requires both), but `pathParams` is never needed.
 
 ```ts
+// REST
 mswHelper.mockValidResponseWithAnyPath(postContractWithPathParams, server, {
     responseBody: { id: '2' },
+})
+
+// SSE — matches any userId
+mswHelper.mockValidResponseWithAnyPath(sseContractWithPathParams, server, {
+    events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
+})
+
+// Dual-mode — matches any userId
+mswHelper.mockValidResponseWithAnyPath(dualModeContractWithPathParams, server, {
+    responseBody: { id: '1' },
+    events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
 })
 ```
 
