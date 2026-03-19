@@ -41,7 +41,10 @@ export type MockWithImplementationParamsNoPath<
 > = {
   handleRequest: (
     requestInfo: Parameters<HttpResponseResolver<Params, RequestBody, ResponseBody>>[0],
-  ) => ResponseBody | Promise<ResponseBody>
+  ) =>
+    | ResponseBody
+    | MockResponseWrapper<ResponseBody>
+    | Promise<ResponseBody | MockResponseWrapper<ResponseBody>>
 } & CommonMockParams
 
 export type MockWithImplementationParams<
@@ -108,11 +111,30 @@ export type SseEventController<Events extends SSEEventSchemas> = {
   close(): void
 }
 
+const RESPONSE_BRAND = Symbol('MswHelperResponse')
+
+export type MockResponseWrapper<T> = {
+  readonly [RESPONSE_BRAND]: true
+  readonly body: T
+  readonly status?: number
+}
+
 export class MswHelper {
   private readonly baseUrl: string
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl
+  }
+
+  static response<T>(body: T, options?: { status?: number }): MockResponseWrapper<T> {
+    return { [RESPONSE_BRAND]: true, body, status: options?.status }
+  }
+
+  private static unwrapResponse(result: any): { body: any; status?: number } {
+    if (result && typeof result === 'object' && RESPONSE_BRAND in result) {
+      return { body: result.body, status: result.status }
+    }
+    return { body: result }
   }
 
   private resolveParams<PathParamsSchema extends z.Schema | undefined>(
@@ -478,8 +500,10 @@ export class MswHelper {
             })
           }
 
-          return HttpResponse.json(await params.handleRequest({ request, ...rest }), {
-            status: params.responseCode ?? 200,
+          const result = await params.handleRequest({ request, ...rest })
+          const { body, status } = MswHelper.unwrapResponse(result)
+          return HttpResponse.json(body, {
+            status: status ?? params.responseCode ?? 200,
           })
         }),
       )
@@ -488,8 +512,10 @@ export class MswHelper {
 
       server.use(
         http[method](resolvedPath, async (requestInfo) => {
-          return HttpResponse.json(await params.handleRequest(requestInfo), {
-            status: params.responseCode,
+          const result = await params.handleRequest(requestInfo)
+          const { body, status } = MswHelper.unwrapResponse(result)
+          return HttpResponse.json(body, {
+            status: status ?? params.responseCode,
           })
         }),
       )

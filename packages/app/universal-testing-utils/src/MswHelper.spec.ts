@@ -490,6 +490,83 @@ describe('MswHelper', () => {
         .res()
       expect(sseResponse.status).toBe(201)
     })
+
+    it('supports per-call status code via MswHelper.response()', async () => {
+      let callCount = 0
+
+      mswHelper.mockValidResponseWithImplementation(postContract, server, {
+        handleRequest: () => {
+          callCount++
+          if (callCount === 1) {
+            return MswHelper.response({ id: 'error' }, { status: 500 })
+          }
+          return { id: 'success' }
+        },
+      })
+
+      const first = await fetch(`${BASE_URL}/`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'test' }),
+      })
+      expect(first.status).toBe(500)
+      expect(await first.json()).toEqual({ id: 'error' })
+
+      const second = await fetch(`${BASE_URL}/`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'test' }),
+      })
+      expect(second.status).toBe(200)
+      expect(await second.json()).toEqual({ id: 'success' })
+    })
+
+    it('MswHelper.response() works with dual-mode handleRequest', async () => {
+      mswHelper.mockValidResponseWithImplementation(sseDualModeContract, server, {
+        handleRequest: () => {
+          return MswHelper.response({ id: 'created' }, { status: 201 })
+        },
+        events: [{ event: 'completed', data: { totalCount: 1 } }],
+      })
+
+      const response = await wretchClient
+        .headers({ accept: 'application/json' })
+        .url('/events/dual')
+        .post({ name: 'test' })
+        .res()
+
+      expect(response.status).toBe(201)
+      expect(await response.json()).toEqual({ id: 'created' })
+    })
+
+    it('MswHelper.response() status takes precedence over params.responseCode', async () => {
+      mswHelper.mockValidResponseWithImplementation(postContract, server, {
+        responseCode: 200,
+        handleRequest: () => {
+          return MswHelper.response({ id: 'error' }, { status: 503 })
+        },
+      })
+
+      const response = await fetch(`${BASE_URL}/`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'test' }),
+      })
+      expect(response.status).toBe(503)
+    })
+
+    it('falls back to params.responseCode when MswHelper.response() has no status', async () => {
+      mswHelper.mockValidResponseWithImplementation(postContract, server, {
+        responseCode: 201,
+        handleRequest: () => {
+          return MswHelper.response({ id: 'created' })
+        },
+      })
+
+      const response = await wretchClient.url('/').post({ name: 'test' }).res()
+      expect(response.status).toBe(201)
+      expect(await response.json()).toEqual({ id: 'created' })
+    })
   })
 
   describe('mockValidResponse — SSE contracts', () => {

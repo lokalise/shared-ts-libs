@@ -13,6 +13,7 @@ export {
   type CommonMockParams,
   type MockParams,
   type MockParamsNoPath,
+  type MockResponseWrapper,
   type MswDualModeMockParams,
   type MswDualModeMockParamsNoPath,
   MswHelper,
