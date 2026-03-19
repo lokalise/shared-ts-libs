@@ -144,3 +144,16 @@ export const sseDualModeContract = buildSseContract({
     completed: SSE_COMPLETED_SCHEMA,
   },
 })
+
+export const sseDualModeContractWithPathParams = buildSseContract({
+  method: 'post',
+  description: 'Dual mode SSE contract with path params',
+  requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+  pathResolver: (pathParams) => `/users/${pathParams.userId}/events/dual`,
+  requestBodySchema: REQUEST_BODY_SCHEMA,
+  successResponseBodySchema: RESPONSE_BODY_SCHEMA,
+  serverSentEventSchemas: {
+    'item.updated': SSE_ITEM_UPDATED_SCHEMA,
+    completed: SSE_COMPLETED_SCHEMA,
+  },
+})
