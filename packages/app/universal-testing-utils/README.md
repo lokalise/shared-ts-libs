@@ -2,6 +2,20 @@
 
 Reusable testing utilities that are potentially relevant for both backend and frontend
 
+## Table of contents
+
+- [msw integration with API contracts](#msw-integration-with-api-contracts)
+  - [Basic usage](#basic-usage)
+  - [mockAnyResponse](#msw-mockanresponse)
+  - [SSE mock support](#msw-sse-mock-support)
+- [mockttp integration with API contracts](#mockttp-integration-with-api-contracts)
+  - [Basic usage](#basic-usage-1)
+  - [Query params support](#query-params-support)
+  - [mockAnyResponse](#mockttp-mockanresponse)
+  - [SSE mock support](#mockttp-sse-mock-support)
+- [Dual-mode contracts](#dual-mode-contracts)
+- [`formatSseResponse`](#formatSseResponse)
+
 ## msw integration with API contracts
 
 ### Basic usage
@@ -137,23 +151,102 @@ describe('MswHelper', () => {
             `);
         });
     })
+})
+```
 
-    describe('mockAnyResponse', () => {
-        it('mocks POST request without path params', async () => {
-            mswHelper.mockAnyResponse(postContract, server, {
-                // you can specify any response, regardless of what contract expects
-                responseBody: { wrongId: '1' },
-            })
+### msw mockAnyResponse
 
-            const response = await wretchClient.post({ name: 'frf' }, mapRouteToPath(postContract))
+The `mockAnyResponse` method allows you to mock API responses with any response body, bypassing contract schema validation. This is particularly useful for:
 
-            expect(await response.json()).toMatchInlineSnapshot(`
-              {
-                "wrongId": "1",
-              }
-            `)
-        })
-    })
+- Testing error responses (4xx, 5xx status codes)
+- Testing edge cases where the response doesn't match the expected schema
+- Simulating malformed responses to test error handling
+
+Unlike `mockValidResponse` which enforces schema validation, `mockAnyResponse` accepts any response body structure, making it ideal for testing how your application handles unexpected API responses.
+
+```ts
+mswHelper.mockAnyResponse(postContract, server, {
+    // you can specify any response, regardless of what contract expects
+    responseBody: { wrongId: '1' },
+})
+
+const response = await wretchClient.post({ name: 'frf' }, mapRouteToPath(postContract))
+
+expect(await response.json()).toMatchInlineSnapshot(`
+  {
+    "wrongId": "1",
+  }
+`)
+```
+
+### msw SSE mock support
+
+`MswHelper` supports mocking SSE (Server-Sent Events) endpoints via `mockSseResponse`. This method works with `SSEContractDefinition` and `DualModeContractDefinition` contracts built using `buildSseContract` from `@lokalise/api-contracts`.
+
+Event names and data shapes are fully type-safe — typing `event: 'item.updated'` narrows the `data` field to the matching schema's input type.
+
+```ts
+import { buildSseContract } from '@lokalise/api-contracts'
+import { setupServer } from 'msw/node'
+import { z } from 'zod/v4'
+import { MswHelper } from '@lokalise/universal-testing-utils'
+
+const sseContract = buildSseContract({
+  method: 'get',
+  pathResolver: () => '/events/stream',
+  serverSentEventSchemas: {
+    'item.updated': z.object({ items: z.array(z.object({ id: z.string() })) }),
+    completed: z.object({ totalCount: z.number() }),
+  },
+})
+
+const sseContractWithPathParams = buildSseContract({
+  method: 'get',
+  requestPathParamsSchema: z.object({ userId: z.string() }),
+  pathResolver: (params) => `/users/${params.userId}/events`,
+  serverSentEventSchemas: {
+    'item.updated': z.object({ items: z.array(z.object({ id: z.string() })) }),
+    completed: z.object({ totalCount: z.number() }),
+  },
+})
+
+const sseContractWithQueryParams = buildSseContract({
+  method: 'get',
+  pathResolver: () => '/events/stream',
+  requestQuerySchema: z.object({ yearFrom: z.coerce.number() }),
+  serverSentEventSchemas: {
+    'item.updated': z.object({ items: z.array(z.object({ id: z.string() })) }),
+    completed: z.object({ totalCount: z.number() }),
+  },
+})
+
+const server = setupServer()
+const mswHelper = new MswHelper('http://localhost:8080')
+
+// No path params
+mswHelper.mockSseResponse(sseContract, server, {
+  events: [
+    { event: 'item.updated', data: { items: [{ id: '1' }] } },
+    { event: 'completed', data: { totalCount: 1 } },
+  ],
+})
+
+// With path params
+mswHelper.mockSseResponse(sseContractWithPathParams, server, {
+  pathParams: { userId: '42' },
+  events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
+})
+
+// With query params
+mswHelper.mockSseResponse(sseContractWithQueryParams, server, {
+  queryParams: { yearFrom: 2020 },
+  events: [{ event: 'completed', data: { totalCount: 5 } }],
+})
+
+// Custom response code
+mswHelper.mockSseResponse(sseContract, server, {
+  responseCode: 201,
+  events: [{ event: 'completed', data: { totalCount: 0 } }],
 })
 ```
 
@@ -294,28 +387,6 @@ describe('mockttpUtils', () => {
             `)
         })
     })
-
-    describe('mockAnyResponse', () => {
-        it('mocks error response with non-matching schema', async () => {
-            // mockAnyResponse allows any response body, bypassing schema validation
-            // Useful for testing error responses or edge cases
-            await mockttpHelper.mockAnyResponse(postContract, {
-                responseBody: { error: 'Internal Server Error', code: 'ERR_500' },
-                responseCode: 500
-            })
-
-            const response = await wretchClient
-                .post({ name: 'test' }, '/')
-                .json()
-
-            expect(response).toMatchInlineSnapshot(`
-              {
-                "error": "Internal Server Error",
-                "code": "ERR_500"
-              }
-            `)
-        })
-    })
 })
 ```
 
@@ -323,7 +394,7 @@ describe('mockttpUtils', () => {
 
 Both `mockValidResponse` and `mockAnyResponse` support `queryParams`. When provided, the mock server will only match requests that include the specified query parameters. The `queryParams` type is inferred from the contract's `requestQuerySchema`, so you pass the same values as you would to `frontend-http-client` (strings, numbers, etc.).
 
-### mockAnyResponse
+### mockttp mockAnyResponse
 
 The `mockAnyResponse` method allows you to mock API responses with any response body, bypassing contract schema validation. This is particularly useful for:
 
@@ -333,13 +404,29 @@ The `mockAnyResponse` method allows you to mock API responses with any response 
 
 Unlike `mockValidResponse` which enforces schema validation, `mockAnyResponse` accepts any response body structure, making it ideal for testing how your application handles unexpected API responses.
 
-## SSE mock support
+```ts
+await mockttpHelper.mockAnyResponse(postContract, {
+    responseBody: { error: 'Internal Server Error', code: 'ERR_500' },
+    responseCode: 500
+})
 
-Both `MswHelper` and `MockttpHelper` support mocking SSE (Server-Sent Events) endpoints via `mockSseResponse`. This method works with `SSEContractDefinition` and `DualModeContractDefinition` contracts built using `buildSseContract` from `@lokalise/api-contracts`.
+const response = await wretchClient
+    .post({ name: 'test' }, '/')
+    .json()
+
+expect(response).toMatchInlineSnapshot(`
+  {
+    "error": "Internal Server Error",
+    "code": "ERR_500"
+  }
+`)
+```
+
+### mockttp SSE mock support
+
+`MockttpHelper` supports mocking SSE (Server-Sent Events) endpoints via `mockSseResponse`. This method works with `SSEContractDefinition` and `DualModeContractDefinition` contracts built using `buildSseContract` from `@lokalise/api-contracts`.
 
 Event names and data shapes are fully type-safe — typing `event: 'item.updated'` narrows the `data` field to the matching schema's input type.
-
-### mockttp SSE example
 
 ```ts
 import { buildSseContract } from '@lokalise/api-contracts'
@@ -390,45 +477,7 @@ await mockttpHelper.mockSseResponse(sseContract, {
 })
 ```
 
-### MSW SSE example
-
-```ts
-import { setupServer } from 'msw/node'
-import { MswHelper } from '@lokalise/universal-testing-utils'
-
-const server = setupServer()
-const mswHelper = new MswHelper('http://localhost:8080')
-
-// Same contract definitions as above
-
-// No path params
-mswHelper.mockSseResponse(sseContract, server, {
-  events: [
-    { event: 'item.updated', data: { items: [{ id: '1' }] } },
-    { event: 'completed', data: { totalCount: 1 } },
-  ],
-})
-
-// With path params
-mswHelper.mockSseResponse(sseContractWithPathParams, server, {
-  pathParams: { userId: '42' },
-  events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
-})
-
-// With query params
-mswHelper.mockSseResponse(sseContractWithQueryParams, server, {
-  queryParams: { yearFrom: 2020 },
-  events: [{ event: 'completed', data: { totalCount: 5 } }],
-})
-
-// Custom response code
-mswHelper.mockSseResponse(sseContract, server, {
-  responseCode: 201,
-  events: [{ event: 'completed', data: { totalCount: 0 } }],
-})
-```
-
-### Dual-mode contracts
+## Dual-mode contracts
 
 `mockSseResponse` also works with dual-mode contracts (built with `successResponseBodySchema`), which support both JSON and SSE responses:
 
@@ -449,7 +498,7 @@ await mockttpHelper.mockSseResponse(dualModeContract, {
 })
 ```
 
-### `formatSseResponse`
+## `formatSseResponse`
 
 A standalone helper is also exported for manual SSE response formatting:
 
