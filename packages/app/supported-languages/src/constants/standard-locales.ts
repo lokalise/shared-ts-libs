@@ -219,7 +219,7 @@ export const standardLocales = [
   'zh-SG', // Chinese - Singapore
   'zh-TW', // Chinese - Taiwan
   'zu-ZA', // Zulu
-] as const
+]
 
 export type StandardLocale = (typeof standardLocales)[number]
 

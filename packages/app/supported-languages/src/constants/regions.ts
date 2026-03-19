@@ -304,7 +304,7 @@ export const regions = [
   'ZM', // Zambia
   'ZW', // Zimbabwe
   'ZZ', // Unknown Region
-] as const
+]
 
 export const regionsSet: ReadonlySet<string> = new Set(regions)
 
