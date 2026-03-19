@@ -1,5 +1,5 @@
 import { mapRouteToPath } from '@lokalise/api-contracts'
-import { sendByGetRoute, sendByPayloadRoute } from '@lokalise/frontend-http-client'
+import { sendByContract } from '@lokalise/frontend-http-client'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch from 'wretch'
@@ -12,6 +12,7 @@ import {
   sseDualModeContract,
   sseGetContract,
   sseGetContractWithPathParams,
+  sseGetContractWithQueryParams,
   ssePostContract,
 } from '../test/testContracts.ts'
 import { MswHelper } from './MswHelper.ts'
@@ -39,7 +40,7 @@ describe('MswHelper', () => {
         responseBody: { id: '1' },
       })
 
-      const response = await sendByPayloadRoute(wretchClient, postContract, {
+      const response = await sendByContract(wretchClient, postContract, {
         body: { name: 'frf' },
       })
 
@@ -56,7 +57,7 @@ describe('MswHelper', () => {
         responseBody: { id: '2' },
       })
 
-      const response = await sendByPayloadRoute(wretchClient, postContractWithPathParams, {
+      const response = await sendByContract(wretchClient, postContractWithPathParams, {
         pathParams: {
           userId: '3',
         },
@@ -78,7 +79,7 @@ describe('MswHelper', () => {
         responseBody: { id: '2', invalidField: 'frfr' },
       })
 
-      const response = await sendByPayloadRoute(wretchClient, postContractWithPathParams, {
+      const response = await sendByContract(wretchClient, postContractWithPathParams, {
         pathParams: {
           userId: '3',
         },
@@ -97,7 +98,7 @@ describe('MswHelper', () => {
         responseBody: { id: '1' },
       })
 
-      const response = await sendByGetRoute(wretchClient, getContract, {})
+      const response = await sendByContract(wretchClient, getContract, {})
 
       expect(response).toMatchInlineSnapshot(`
               {
@@ -112,7 +113,7 @@ describe('MswHelper', () => {
         responseBody: { id: '2' },
       })
 
-      const response = await sendByGetRoute(wretchClient, getContractWithPathParams, {
+      const response = await sendByContract(wretchClient, getContractWithPathParams, {
         pathParams: {
           userId: '3',
         },
@@ -132,7 +133,7 @@ describe('MswHelper', () => {
         responseBody: { id: '1' },
       })
 
-      const response = await sendByPayloadRoute(wretchClient, postContract, {
+      const response = await sendByContract(wretchClient, postContract, {
         body: { name: 'frf' },
       })
 
@@ -148,7 +149,7 @@ describe('MswHelper', () => {
         responseBody: { id: '2' },
       })
 
-      const response = await sendByPayloadRoute(wretchClient, postContractWithPathParams, {
+      const response = await sendByContract(wretchClient, postContractWithPathParams, {
         pathParams: {
           userId: '9',
         },
@@ -167,7 +168,7 @@ describe('MswHelper', () => {
         responseBody: { id: '1' },
       })
 
-      const response = await sendByGetRoute(wretchClient, getContract, {})
+      const response = await sendByContract(wretchClient, getContract, {})
 
       expect(response).toMatchInlineSnapshot(`
               {
@@ -181,7 +182,7 @@ describe('MswHelper', () => {
         responseBody: { id: '2' },
       })
 
-      const response = await sendByGetRoute(wretchClient, getContractWithPathParams, {
+      const response = await sendByContract(wretchClient, getContractWithPathParams, {
         pathParams: {
           userId: '11',
         },
@@ -252,7 +253,7 @@ describe('MswHelper', () => {
         },
       })
 
-      const response = await sendByGetRoute(wretchClient, getContractWithQueryParams, {
+      const response = await sendByContract(wretchClient, getContractWithQueryParams, {
         queryParams: { yearFrom: 2000 },
       })
 
@@ -277,7 +278,7 @@ describe('MswHelper', () => {
         },
       })
 
-      const response = await sendByPayloadRoute(wretchClient, postContract, {
+      const response = await sendByContract(wretchClient, postContract, {
         body: { name: 'test-name' },
       })
 
@@ -303,7 +304,7 @@ describe('MswHelper', () => {
         },
       })
 
-      const response = await sendByPayloadRoute(wretchClient, postContractWithPathParams, {
+      const response = await sendByContract(wretchClient, postContractWithPathParams, {
         pathParams: {
           userId: '3',
         },
@@ -360,6 +361,21 @@ describe('MswHelper', () => {
 
       expect(response.status).toBe(200)
       expect(response.headers.get('content-type')).toBe('text/event-stream')
+    })
+
+    it('mocks GET SSE with query params', async () => {
+      mswHelper.mockSseResponse(sseGetContractWithQueryParams, server, {
+        queryParams: { yearFrom: 2020 },
+        events: [{ event: 'completed', data: { totalCount: 5 } }],
+      })
+
+      const response = await wretchClient.get('/events/stream?yearFrom=2020').res()
+
+      expect(response.status).toBe(200)
+      expect(response.headers.get('content-type')).toBe('text/event-stream')
+
+      const body = await response.text()
+      expect(body).toBe('event: completed\ndata: {"totalCount":5}\n')
     })
 
     it('mocks dual-mode contract', async () => {

@@ -8,7 +8,7 @@ Reusable testing utilities that are potentially relevant for both backend and fr
 
 ```ts
 import { buildRestContract } from '@lokalise/api-contracts'
-import { sendByGetRoute, sendByPayloadRoute } from '@lokalise/frontend-http-client'
+import { sendByContract } from '@lokalise/frontend-http-client'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch, { type Wretch } from 'wretch'
@@ -61,7 +61,7 @@ describe('MswHelper', () => {
                 responseBody: { id: '2' },
             })
 
-            const response = await sendByPayloadRoute(wretchClient, postContractWithPathParams, {
+            const response = await sendByContract(wretchClient, postContractWithPathParams, {
                 pathParams: {
                     userId: '3',
                 },
@@ -78,12 +78,12 @@ describe('MswHelper', () => {
 
     describe('mockValidResponseWithAnyPath', () => {
         it('mocks POST request with path params', async () => {
-            // you don't need specify any path params, they automatically are set to * 
+            // you don't need specify any path params, they automatically are set to *
             mswHelper.mockValidResponseWithAnyPath(postContractWithPathParams, server, {
                 responseBody: { id: '2' },
             })
 
-            const response = await sendByPayloadRoute(wretchClient, postContractWithPathParams, {
+            const response = await sendByContract(wretchClient, postContractWithPathParams, {
                 pathParams: {
                     userId: '9',
                 },
@@ -116,7 +116,7 @@ describe('MswHelper', () => {
                 },
             })
 
-            const response = await sendByPayloadRoute(
+            const response = await sendByContract(
                 wretchClient,
                 postContractWithPathParams,
                 {
@@ -166,7 +166,7 @@ Resolves path to be mocked based on the contract and passed path params, and aut
 
 ```ts
 import { buildRestContract } from '@lokalise/api-contracts'
-import { sendByGetRoute, sendByPayloadRoute } from '@lokalise/frontend-http-client'
+import { sendByContract } from '@lokalise/frontend-http-client'
 import { getLocal } from 'mockttp'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch, { type Wretch } from 'wretch'
@@ -247,7 +247,7 @@ describe('mockttpUtils', () => {
                 responseBody: {id: '1'},
             })
 
-            const response = await sendByPayloadRoute(wretchClient, postContract, {
+            const response = await sendByContract(wretchClient, postContract, {
                 body: {name: 'frf'},
             })
 
@@ -264,7 +264,7 @@ describe('mockttpUtils', () => {
                 responseBody: { id: '1' },
             })
 
-            const response = await sendByGetRoute(wretchClient, getContractWithQueryParams, {
+            const response = await sendByContract(wretchClient, getContractWithQueryParams, {
                 queryParams: { yearFrom: 2020 },
             })
 
@@ -282,7 +282,7 @@ describe('mockttpUtils', () => {
                 responseBody: { id: '2' },
             })
 
-            const response = await sendByGetRoute(wretchClient, getContractWithPathAndQueryParams, {
+            const response = await sendByContract(wretchClient, getContractWithPathAndQueryParams, {
                 pathParams: { userId: '3' },
                 queryParams: { yearFrom: 2020 },
             })
@@ -400,11 +400,31 @@ const server = setupServer()
 const mswHelper = new MswHelper('http://localhost:8080')
 
 // Same contract definitions as above
+
+// No path params
 mswHelper.mockSseResponse(sseContract, server, {
   events: [
     { event: 'item.updated', data: { items: [{ id: '1' }] } },
     { event: 'completed', data: { totalCount: 1 } },
   ],
+})
+
+// With path params
+mswHelper.mockSseResponse(sseContractWithPathParams, server, {
+  pathParams: { userId: '42' },
+  events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
+})
+
+// With query params
+mswHelper.mockSseResponse(sseContractWithQueryParams, server, {
+  queryParams: { yearFrom: 2020 },
+  events: [{ event: 'completed', data: { totalCount: 5 } }],
+})
+
+// Custom response code
+mswHelper.mockSseResponse(sseContract, server, {
+  responseCode: 201,
+  events: [{ event: 'completed', data: { totalCount: 0 } }],
 })
 ```
 
