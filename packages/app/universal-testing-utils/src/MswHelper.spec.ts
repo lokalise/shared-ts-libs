@@ -387,6 +387,186 @@ describe('MswHelper', () => {
               }
             `)
     })
+
+    it('mocks dual-mode contract — returns JSON via handleRequest', async () => {
+      mswHelper.mockValidResponseWithImplementation(sseDualModeContract, server, {
+        handleRequest: async (requestInfo) => {
+          const body = await requestInfo.request.json()
+          return { id: `impl-${body.name}` }
+        },
+        events: [{ event: 'completed', data: { totalCount: 7 } }],
+      })
+
+      const response = await wretchClient
+        .headers({ accept: 'application/json' })
+        .url('/events/dual')
+        .post({ name: 'test' })
+        .res()
+
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual({ id: 'impl-test' })
+    })
+
+    it('mocks dual-mode contract — returns SSE when Accept is text/event-stream', async () => {
+      mswHelper.mockValidResponseWithImplementation(sseDualModeContract, server, {
+        handleRequest: async () => ({ id: 'unused' }),
+        events: [
+          { event: 'item.updated', data: { items: [{ id: '1' }] } },
+          { event: 'completed', data: { totalCount: 3 } },
+        ],
+      })
+
+      const response = await wretchClient
+        .headers({ accept: 'text/event-stream' })
+        .url('/events/dual')
+        .post({ name: 'test' })
+        .res()
+
+      expect(response.status).toBe(200)
+      expect(response.headers.get('content-type')).toBe('text/event-stream')
+      expect(await response.text()).toBe(
+        'event: item.updated\ndata: {"items":[{"id":"1"}]}\n\nevent: completed\ndata: {"totalCount":3}\n',
+      )
+    })
+
+    it('mocks dual-mode contract with path params', async () => {
+      mswHelper.mockValidResponseWithImplementation(sseDualModeContractWithPathParams, server, {
+        pathParams: { userId: ':userId' },
+        handleRequest: async (requestInfo) => ({
+          id: `user-${requestInfo.params.userId}`,
+        }),
+        events: [{ event: 'completed', data: { totalCount: 42 } }],
+      })
+
+      const jsonResponse = await wretchClient
+        .headers({ accept: 'application/json' })
+        .url('/users/55/events/dual')
+        .post({ name: 'test' })
+        .res()
+      expect(await jsonResponse.json()).toEqual({ id: 'user-55' })
+
+      const sseResponse = await wretchClient
+        .headers({ accept: 'text/event-stream' })
+        .url('/users/55/events/dual')
+        .post({ name: 'test' })
+        .res()
+      expect(sseResponse.headers.get('content-type')).toBe('text/event-stream')
+    })
+
+    it('enforces dual-mode event name type safety', () => {
+      // @ts-expect-error invalid event name
+      mswHelper.mockValidResponseWithImplementation(sseDualModeContract, server, {
+        handleRequest: async () => ({ id: '1' }),
+        events: [{ event: 'nonexistent.event', data: { items: [{ id: '1' }] } }],
+      })
+    })
+
+    it('enforces dual-mode event data type safety', () => {
+      // @ts-expect-error wrong data shape for completed
+      mswHelper.mockValidResponseWithImplementation(sseDualModeContract, server, {
+        handleRequest: async () => ({ id: '1' }),
+        events: [{ event: 'completed', data: { wrongField: 'value' } }],
+      })
+    })
+
+    it('mocks dual-mode contract with custom response code', async () => {
+      mswHelper.mockValidResponseWithImplementation(sseDualModeContract, server, {
+        responseCode: 201,
+        handleRequest: async () => ({ id: 'created' }),
+        events: [{ event: 'completed', data: { totalCount: 1 } }],
+      })
+
+      const jsonResponse = await wretchClient
+        .headers({ accept: 'application/json' })
+        .url('/events/dual')
+        .post({ name: 'test' })
+        .res()
+      expect(jsonResponse.status).toBe(201)
+
+      const sseResponse = await wretchClient
+        .headers({ accept: 'text/event-stream' })
+        .url('/events/dual')
+        .post({ name: 'test' })
+        .res()
+      expect(sseResponse.status).toBe(201)
+    })
+
+    it('supports per-call status code via MswHelper.response()', async () => {
+      let callCount = 0
+
+      mswHelper.mockValidResponseWithImplementation(postContract, server, {
+        handleRequest: () => {
+          callCount++
+          if (callCount === 1) {
+            return MswHelper.response({ id: 'error' }, { status: 500 })
+          }
+          return { id: 'success' }
+        },
+      })
+
+      const first = await fetch(`${BASE_URL}/`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'test' }),
+      })
+      expect(first.status).toBe(500)
+      expect(await first.json()).toEqual({ id: 'error' })
+
+      const second = await fetch(`${BASE_URL}/`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'test' }),
+      })
+      expect(second.status).toBe(200)
+      expect(await second.json()).toEqual({ id: 'success' })
+    })
+
+    it('MswHelper.response() works with dual-mode handleRequest', async () => {
+      mswHelper.mockValidResponseWithImplementation(sseDualModeContract, server, {
+        handleRequest: () => {
+          return MswHelper.response({ id: 'created' }, { status: 201 })
+        },
+        events: [{ event: 'completed', data: { totalCount: 1 } }],
+      })
+
+      const response = await wretchClient
+        .headers({ accept: 'application/json' })
+        .url('/events/dual')
+        .post({ name: 'test' })
+        .res()
+
+      expect(response.status).toBe(201)
+      expect(await response.json()).toEqual({ id: 'created' })
+    })
+
+    it('MswHelper.response() status takes precedence over params.responseCode', async () => {
+      mswHelper.mockValidResponseWithImplementation(postContract, server, {
+        responseCode: 200,
+        handleRequest: () => {
+          return MswHelper.response({ id: 'error' }, { status: 503 })
+        },
+      })
+
+      const response = await fetch(`${BASE_URL}/`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'test' }),
+      })
+      expect(response.status).toBe(503)
+    })
+
+    it('falls back to params.responseCode when MswHelper.response() has no status', async () => {
+      mswHelper.mockValidResponseWithImplementation(postContract, server, {
+        responseCode: 201,
+        handleRequest: () => {
+          return MswHelper.response({ id: 'created' })
+        },
+      })
+
+      const response = await wretchClient.url('/').post({ name: 'test' }).res()
+      expect(response.status).toBe(201)
+      expect(await response.json()).toEqual({ id: 'created' })
+    })
   })
 
   describe('mockValidResponse — SSE contracts', () => {
@@ -589,6 +769,182 @@ describe('MswHelper', () => {
         responseBody: { id: '1' },
         events: [{ event: 'nonexistent.event', data: { items: [{ id: '1' }] } }],
       })
+    })
+  })
+
+  describe('mockSseStream', () => {
+    it('emits SSE events on demand for SSE contract', async () => {
+      const controller = mswHelper.mockSseStream(sseGetContract, server)
+
+      const response = await wretchClient.get('/events/stream').res()
+
+      expect(response.status).toBe(200)
+      expect(response.headers.get('content-type')).toBe('text/event-stream')
+
+      controller.emit({ event: 'item.updated', data: { items: [{ id: '1' }] } })
+      controller.emit({ event: 'completed', data: { totalCount: 1 } })
+      controller.close()
+
+      const body = await response.text()
+      expect(body).toBe(
+        'event: item.updated\ndata: {"items":[{"id":"1"}]}\n\nevent: completed\ndata: {"totalCount":1}\n\n',
+      )
+    })
+
+    it('works with SSE contract with path params', async () => {
+      const controller = mswHelper.mockSseStream(sseGetContractWithPathParams, server, {
+        pathParams: { userId: '42' },
+      })
+
+      const response = await wretchClient.get('/users/42/events').res()
+
+      expect(response.status).toBe(200)
+      expect(response.headers.get('content-type')).toBe('text/event-stream')
+
+      controller.emit({ event: 'completed', data: { totalCount: 5 } })
+      controller.close()
+
+      const body = await response.text()
+      expect(body).toBe('event: completed\ndata: {"totalCount":5}\n\n')
+    })
+
+    it('works with SSE POST contract', async () => {
+      const controller = mswHelper.mockSseStream(ssePostContract, server)
+
+      const response = await wretchClient.url('/events/stream').post({ name: 'test' }).res()
+
+      expect(response.status).toBe(200)
+
+      controller.emit({ event: 'item.updated', data: { items: [{ id: '2' }] } })
+      controller.close()
+
+      const body = await response.text()
+      expect(body).toBe('event: item.updated\ndata: {"items":[{"id":"2"}]}\n\n')
+    })
+
+    it('dual-mode returns JSON for non-SSE Accept header', async () => {
+      const controller = mswHelper.mockSseStream(sseDualModeContract, server, {
+        responseBody: { id: 'json-stream' },
+      })
+
+      const response = await wretchClient
+        .headers({ accept: 'application/json' })
+        .url('/events/dual')
+        .post({ name: 'test' })
+        .res()
+
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual({ id: 'json-stream' })
+
+      controller.close()
+    })
+
+    it('dual-mode streams SSE events on demand', async () => {
+      const controller = mswHelper.mockSseStream(sseDualModeContract, server, {
+        responseBody: { id: 'unused' },
+      })
+
+      const response = await wretchClient
+        .headers({ accept: 'text/event-stream' })
+        .url('/events/dual')
+        .post({ name: 'test' })
+        .res()
+
+      expect(response.status).toBe(200)
+      expect(response.headers.get('content-type')).toBe('text/event-stream')
+
+      controller.emit({ event: 'item.updated', data: { items: [{ id: '1' }] } })
+      controller.emit({ event: 'completed', data: { totalCount: 42 } })
+      controller.close()
+
+      const body = await response.text()
+      expect(body).toBe(
+        'event: item.updated\ndata: {"items":[{"id":"1"}]}\n\nevent: completed\ndata: {"totalCount":42}\n\n',
+      )
+    })
+
+    it('dual-mode with path params streams SSE events', async () => {
+      const controller = mswHelper.mockSseStream(sseDualModeContractWithPathParams, server, {
+        pathParams: { userId: '99' },
+        responseBody: { id: 'json-99' },
+      })
+
+      const sseResponse = await wretchClient
+        .headers({ accept: 'text/event-stream' })
+        .url('/users/99/events/dual')
+        .post({ name: 'test' })
+        .res()
+
+      controller.emit({ event: 'completed', data: { totalCount: 7 } })
+      controller.close()
+
+      expect(sseResponse.headers.get('content-type')).toBe('text/event-stream')
+      expect(await sseResponse.text()).toBe('event: completed\ndata: {"totalCount":7}\n\n')
+    })
+
+    it('works with SSE contract with query params', async () => {
+      const controller = mswHelper.mockSseStream(sseGetContractWithQueryParams, server, {
+        queryParams: { yearFrom: 2020 },
+      })
+
+      const response = await wretchClient.get('/events/stream?yearFrom=2020').res()
+
+      expect(response.status).toBe(200)
+      expect(response.headers.get('content-type')).toBe('text/event-stream')
+
+      controller.emit({ event: 'completed', data: { totalCount: 10 } })
+      controller.close()
+
+      const body = await response.text()
+      expect(body).toBe('event: completed\ndata: {"totalCount":10}\n\n')
+    })
+
+    it('dual-mode enforces responseBody type safety', () => {
+      // @ts-expect-error wrong response body shape
+      mswHelper.mockSseStream(sseDualModeContract, server, {
+        responseBody: { wrongField: 'value' },
+      })
+    })
+
+    it('supports custom response code', async () => {
+      const controller = mswHelper.mockSseStream(sseGetContract, server, {
+        responseCode: 201,
+      })
+
+      const response = await wretchClient.get('/events/stream').res()
+
+      expect(response.status).toBe(201)
+
+      controller.close()
+    })
+
+    it('enforces event name type safety on controller', () => {
+      const controller = mswHelper.mockSseStream(sseGetContract, server)
+
+      // @ts-expect-error invalid event name
+      controller.emit({ event: 'nonexistent.event', data: { items: [{ id: '1' }] } })
+
+      controller.close()
+    })
+
+    it('enforces event data type safety on controller', () => {
+      const controller = mswHelper.mockSseStream(sseGetContract, server)
+
+      // @ts-expect-error wrong data shape for item.updated
+      controller.emit({ event: 'item.updated', data: { wrongField: 'value' } })
+
+      controller.close()
+    })
+
+    it('enforces dual-mode controller event type safety', () => {
+      const controller = mswHelper.mockSseStream(sseDualModeContract, server, {
+        responseBody: { id: '1' },
+      })
+
+      // @ts-expect-error invalid event name
+      controller.emit({ event: 'nonexistent', data: {} })
+
+      controller.close()
     })
   })
 })

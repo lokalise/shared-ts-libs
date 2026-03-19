@@ -13,9 +13,11 @@ export {
   type CommonMockParams,
   type MockParams,
   type MockParamsNoPath,
+  type MockResponseWrapper,
   type MswDualModeMockParams,
   type MswDualModeMockParamsNoPath,
   MswHelper,
   type MswSseMockParams,
   type MswSseMockParamsNoPath,
+  type SseEventController,
 } from './MswHelper.ts'
