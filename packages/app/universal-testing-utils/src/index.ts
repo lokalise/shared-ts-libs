@@ -1,4 +1,6 @@
 export {
+  type DualModeMockParams,
+  type DualModeMockParamsNoPath,
   formatSseResponse,
   MockttpHelper,
   type PayloadMockParams,
@@ -11,6 +13,8 @@ export {
   type CommonMockParams,
   type MockParams,
   type MockParamsNoPath,
+  type MswDualModeMockParams,
+  type MswDualModeMockParamsNoPath,
   MswHelper,
   type MswSseMockParams,
   type MswSseMockParamsNoPath,
