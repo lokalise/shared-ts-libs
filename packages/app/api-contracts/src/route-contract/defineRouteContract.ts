@@ -52,18 +52,22 @@ type Exactly<T, U> = T & {
   [K in keyof T]: K extends keyof U ? T[K] : never
 }
 
-type TypedPath<T extends z.ZodType | undefined> = {
-  requestPathParamsSchema?: T
+type TypedPathRouteContract<T extends z.ZodType | undefined> = Omit<
+  RouteContract,
+  'pathResolver' | 'requestPathParamsSchema'
+> & {
   pathResolver: RoutePathResolver<InferSchemaOutput<T>>
+  requestPathParamsSchema?: T
 }
 
 export const defineRouteContract = <
   PathParamsSchema extends z.ZodType | undefined,
-  TypedPathContract extends Omit<RouteContract, 'pathResolver'> & TypedPath<PathParamsSchema>,
-  const Contract extends TypedPathContract,
+  const Contract extends TypedPathRouteContract<PathParamsSchema>,
 >(
-  route: Exactly<Contract, TypedPathContract> & TypedPath<PathParamsSchema>,
-): Contract => route
+  contract: Exactly<Contract, TypedPathRouteContract<PathParamsSchema>> & {
+    requestPathParamsSchema?: PathParamsSchema
+  },
+): Contract => contract
 
 export const mapRouteContractToPath = (routeConfig: RouteContract): string => {
   if (!routeConfig.requestPathParamsSchema) {
