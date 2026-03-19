@@ -87,7 +87,9 @@ export const normalizeLocale = (tag: Locale) => {
 
 export const getLocaleDirection = (tag: Locale): LanguageDirection | null => {
   try {
-    return new Intl.Locale(tag).getTextInfo().direction
+    const locale = new Intl.Locale(tag)
+    const info = 'textInfo' in locale && locale.textInfo ? locale.textInfo : locale.getTextInfo()
+    return info.direction
   } catch (_) {
     return null
   }
