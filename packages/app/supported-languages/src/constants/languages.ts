@@ -649,7 +649,7 @@ export const languages = [
   'zun', // Zuni
   'zxx', // No linguistic content
   'zza', // Zaza
-]
+] as const
 
 export const languagesSet: ReadonlySet<string> = new Set(languages)
 

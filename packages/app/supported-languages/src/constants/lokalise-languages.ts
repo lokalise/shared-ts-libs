@@ -382,4 +382,4 @@ export const lokaliseSupportedLanguagesAndLocales = [
   'fil-PH',
   'bs-Latn-BA',
   'ca-ES',
-]
+] as const

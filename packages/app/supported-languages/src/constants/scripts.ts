@@ -211,7 +211,7 @@ export const scripts = [
   'Zxxx', // Unwritten
   'Zyyy', // Common
   'Zzzz', // Unknown Script
-]
+] as const
 
 export const scriptsSet: ReadonlySet<string> = new Set(scripts)
 
