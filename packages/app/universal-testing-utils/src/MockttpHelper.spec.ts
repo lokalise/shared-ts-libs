@@ -1,4 +1,4 @@
-import { sendByGetRoute, sendByPayloadRoute } from '@lokalise/frontend-http-client'
+import { sendByContract } from '@lokalise/frontend-http-client'
 import { getLocal } from 'mockttp'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch, { type Wretch } from 'wretch'
@@ -34,7 +34,7 @@ describe('MockttpHelper', () => {
         responseBody: { id: '1' },
       })
 
-      const response = await sendByPayloadRoute(wretchClient, postContract, {
+      const response = await sendByContract(wretchClient, postContract, {
         body: { name: 'frf' },
       })
 
@@ -51,7 +51,7 @@ describe('MockttpHelper', () => {
         responseBody: { id: '1', wrong: 'wrong' },
       })
 
-      const response = await sendByPayloadRoute(wretchClient, postContract, {
+      const response = await sendByContract(wretchClient, postContract, {
         body: { name: 'frf' },
       })
 
@@ -68,7 +68,7 @@ describe('MockttpHelper', () => {
         responseBody: { id: '2' },
       })
 
-      const response = await sendByPayloadRoute(wretchClient, postContractWithPathParams, {
+      const response = await sendByContract(wretchClient, postContractWithPathParams, {
         pathParams: {
           userId: '3',
         },
@@ -87,7 +87,7 @@ describe('MockttpHelper', () => {
         responseBody: { id: '1' },
       })
 
-      const response = await sendByGetRoute(wretchClient, getContract, {})
+      const response = await sendByContract(wretchClient, getContract, {})
 
       expect(response).toMatchInlineSnapshot(`
               {
@@ -102,7 +102,7 @@ describe('MockttpHelper', () => {
         responseBody: { id: '2' },
       })
 
-      const response = await sendByGetRoute(wretchClient, getContractWithPathParams, {
+      const response = await sendByContract(wretchClient, getContractWithPathParams, {
         pathParams: {
           userId: '3',
         },
@@ -121,7 +121,7 @@ describe('MockttpHelper', () => {
         responseBody: { id: '1' },
       })
 
-      const response = await sendByGetRoute(wretchClient, getContractWithQueryParams, {
+      const response = await sendByContract(wretchClient, getContractWithQueryParams, {
         queryParams: { yearFrom: 2020 },
       })
 
@@ -139,7 +139,7 @@ describe('MockttpHelper', () => {
         responseBody: { id: '2' },
       })
 
-      const response = await sendByGetRoute(wretchClient, getContractWithPathAndQueryParams, {
+      const response = await sendByContract(wretchClient, getContractWithPathAndQueryParams, {
         pathParams: { userId: '3' },
         queryParams: { yearFrom: 2020 },
       })
@@ -158,7 +158,7 @@ describe('MockttpHelper', () => {
         responseBody: { id: '1' },
       })
 
-      const response = await sendByPayloadRoute(wretchClient, postContract, {
+      const response = await sendByContract(wretchClient, postContract, {
         body: { name: 'frf' },
       })
 
@@ -176,7 +176,7 @@ describe('MockttpHelper', () => {
       })
 
       await expect(
-        sendByPayloadRoute(wretchClient, postContract, {
+        sendByContract(wretchClient, postContract, {
           body: { name: 'frf' },
         }),
       ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: {"id":"1","wrong":"wrong"}]`)
@@ -188,7 +188,7 @@ describe('MockttpHelper', () => {
         responseBody: { id: '2' },
       })
 
-      const response = await sendByPayloadRoute(wretchClient, postContractWithPathParams, {
+      const response = await sendByContract(wretchClient, postContractWithPathParams, {
         pathParams: {
           userId: '3',
         },
@@ -207,7 +207,7 @@ describe('MockttpHelper', () => {
         responseBody: { id: '1' },
       })
 
-      const response = await sendByGetRoute(wretchClient, getContract, {})
+      const response = await sendByContract(wretchClient, getContract, {})
 
       expect(response).toMatchInlineSnapshot(`
               {
@@ -222,7 +222,7 @@ describe('MockttpHelper', () => {
         responseBody: { id: '2' },
       })
 
-      const response = await sendByGetRoute(wretchClient, getContractWithPathParams, {
+      const response = await sendByContract(wretchClient, getContractWithPathParams, {
         pathParams: {
           userId: '3',
         },

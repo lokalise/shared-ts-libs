@@ -52,16 +52,16 @@ export type MockWithImplementationParams<
   pathParams: Params
 } & MockWithImplementationParamsNoPath<Params, RequestBody, ResponseBody>
 
-export type MswSseMockParams<PathParams, Events extends SSEEventSchemas> = {
+export type MswSseMockParams<PathParams, QueryParams, Events extends SSEEventSchemas> = {
   pathParams: PathParams
   responseCode?: number
   events: SseMockEvent<Events>[]
-}
+} & (QueryParams extends undefined ? { queryParams?: undefined } : { queryParams?: QueryParams })
 
-export type MswSseMockParamsNoPath<Events extends SSEEventSchemas> = {
+export type MswSseMockParamsNoPath<QueryParams, Events extends SSEEventSchemas> = {
   responseCode?: number
   events: SseMockEvent<Events>[]
-}
+} & (QueryParams extends undefined ? { queryParams?: undefined } : { queryParams?: QueryParams })
 
 type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
 type SseHttpMethod = 'get' | 'post' | 'patch' | 'put'
@@ -275,14 +275,29 @@ export class MswHelper {
   mockSseResponse<
     Events extends SSEEventSchemas,
     PathParamsSchema extends z.Schema | undefined = undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
     contract:
-      | SSEContractDefinition<any, PathParamsSchema, any, any, any, Events, any>
-      | DualModeContractDefinition<any, PathParamsSchema, any, any, any, any, Events, any, any>,
+      | SSEContractDefinition<any, PathParamsSchema, RequestQuerySchema, any, any, Events, any>
+      | DualModeContractDefinition<
+          any,
+          PathParamsSchema,
+          RequestQuerySchema,
+          any,
+          any,
+          any,
+          Events,
+          any,
+          any
+        >,
     server: SetupServerApi,
     params: PathParamsSchema extends z.Schema
-      ? MswSseMockParams<InferSchemaInput<PathParamsSchema>, Events>
-      : MswSseMockParamsNoPath<Events>,
+      ? MswSseMockParams<
+          InferSchemaInput<PathParamsSchema>,
+          InferSchemaInput<RequestQuerySchema>,
+          Events
+        >
+      : MswSseMockParamsNoPath<InferSchemaInput<RequestQuerySchema>, Events>,
   ): void {
     // @ts-expect-error this is safe
     const pathParams = params.pathParams
@@ -297,7 +312,17 @@ export class MswHelper {
     const body = formatSseResponse(params.events)
 
     server.use(
-      http[method](resolvedPath, () => {
+      http[method](resolvedPath, ({ request }) => {
+        const queryParams = params.queryParams
+        if (queryParams) {
+          const url = new URL(request.url)
+          for (const [key, value] of Object.entries(queryParams as Record<string, unknown>)) {
+            if (url.searchParams.get(key) !== String(value)) {
+              return
+            }
+          }
+        }
+
         return new HttpResponse(body, {
           status: params.responseCode ?? 200,
           headers: { 'content-type': 'text/event-stream' },
