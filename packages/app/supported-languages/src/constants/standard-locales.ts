@@ -1,5 +1,5 @@
 // Locales supported as default
-export const standardLocales = [
+export const standardLocales = new Set([
   'af-ZA', // Afrikaans - South Africa
   'am-ET', // Amharic - Ethiopia
   'ar-AE', // Arabic - U.A.E.
@@ -219,8 +219,4 @@ export const standardLocales = [
   'zh-SG', // Chinese - Singapore
   'zh-TW', // Chinese - Taiwan
   'zu-ZA', // Zulu
-]
-
-export type StandardLocale = (typeof standardLocales)[number]
-
-export const standardLocalesSet: ReadonlySet<string> = new Set(standardLocales)
+])

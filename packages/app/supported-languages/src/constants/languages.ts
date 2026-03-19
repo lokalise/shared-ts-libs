@@ -12,7 +12,7 @@
  *
  * @link https://cldr.unicode.org/index
  */
-export const languages = [
+export const languages = new Set([
   'aa', // Afar
   'ab', // Abkhazian
   'ace', // Achinese
@@ -649,8 +649,4 @@ export const languages = [
   'zun', // Zuni
   'zxx', // No linguistic content
   'zza', // Zaza
-]
-
-export const languagesSet: ReadonlySet<string> = new Set(languages)
-
-export type Language = (typeof languages)[number]
+])

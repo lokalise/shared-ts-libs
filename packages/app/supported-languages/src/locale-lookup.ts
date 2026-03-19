@@ -1,12 +1,10 @@
-import type { Language } from './constants/index.ts'
-import type { Region } from './constants/regions.ts'
 import { standardLocales } from './constants/standard-locales.ts'
 
 /**
  * Get common regions for a language, based on our standard locales.
  */
 export const getCommonRegionsForLanguage = (() => {
-  const cache: Record<Language, Array<Region>> = {}
+  const cache: Record<string, Array<string>> = {}
 
   // Create a mapping of languages to common regions up front
   for (const locale of standardLocales) {
@@ -21,7 +19,7 @@ export const getCommonRegionsForLanguage = (() => {
     cache[language] = current
   }
 
-  return (language: string): Array<Region> => {
+  return (language: string): Array<string> => {
     return cache[language] ?? []
   }
 })()
@@ -30,7 +28,7 @@ export const getCommonRegionsForLanguage = (() => {
  * Get common languages for a region, based on our standard locales.
  */
 export const getCommonLanguagesForRegion = (() => {
-  const cache: Record<Region, Array<Language>> = {}
+  const cache: Record<string, Array<string>> = {}
 
   // Create a mapping of languages to common regions up front
   for (const locale of standardLocales) {
@@ -45,7 +43,7 @@ export const getCommonLanguagesForRegion = (() => {
     cache[region] = current
   }
 
-  return (region: string): Array<Language> => {
+  return (region: string): Array<string> => {
     return cache[region] ?? []
   }
 })()

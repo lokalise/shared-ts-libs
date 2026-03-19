@@ -1,5 +1,5 @@
 // Subset of CLDR43 languages and standard locales that are supported by Lokalise
-export const lokaliseSupportedLanguagesAndLocales = [
+export const lokaliseSupportedLanguagesAndLocales = new Set([
   // Subset of CLDR43 languages that are supported by Lokalise
   'ru',
   'en',
@@ -382,4 +382,4 @@ export const lokaliseSupportedLanguagesAndLocales = [
   'fil-PH',
   'bs-Latn-BA',
   'ca-ES',
-] as const
+])

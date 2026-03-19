@@ -8,7 +8,7 @@
  *
  * @link https://cldr.unicode.org/index
  */
-export const regions = [
+export const regions = new Set([
   '001', // World
   '002', // Africa
   '003', // North America
@@ -304,8 +304,4 @@ export const regions = [
   'ZM', // Zambia
   'ZW', // Zimbabwe
   'ZZ', // Unknown Region
-]
-
-export const regionsSet: ReadonlySet<string> = new Set(regions)
-
-export type Region = (typeof regions)[number]
+])

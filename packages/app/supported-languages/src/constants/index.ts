@@ -1,5 +1,12 @@
-export * from './getters.ts'
-export type { Language } from './languages.ts'
-export type { Region } from './regions.ts'
-export type { Script } from './scripts.ts'
-export type { StandardLocale } from './standard-locales.ts'
+import { languages } from './languages.ts'
+import { lokaliseSupportedLanguagesAndLocales } from './lokalise-languages.ts'
+import { regions } from './regions.ts'
+import { scripts } from './scripts.ts'
+import { standardLocales } from './standard-locales.ts'
+
+export const getAllLanguages = () => Array.from(languages)
+export const getAllRegions = () => Array.from(regions)
+export const getAllScripts = () => Array.from(scripts)
+export const getStandardLocales = () => Array.from(standardLocales)
+export const getLokaliseSupportedLanguagesAndLocales = () =>
+  Array.from(lokaliseSupportedLanguagesAndLocales)
