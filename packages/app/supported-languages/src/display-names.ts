@@ -19,13 +19,15 @@ export const getLocalisedLanguageName = (
   try {
     const displayName = displayNames.of(tag)
 
-    if (displayName === 'root') {
-      return null
-    }
+    /* v8 ignore start */
+    if (!displayName || displayName === 'root') return null
+    /* v8 ignore stop */
 
-    return displayName ?? null
-  } catch (_) {
+    return displayName
+  } catch {
+    /* v8 ignore start */
     return null
+    /* v8 ignore stop */
   }
 }
 

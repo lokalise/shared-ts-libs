@@ -148,6 +148,10 @@ describe('normalizeLocale', () => {
     expect(normalizeLocale('und')).toBeNull()
   })
 
+  it('returns null for invalid locale', () => {
+    expect(normalizeLocale('not a locale')).toBeNull()
+  })
+
   it('normalizes language only', () => {
     expect(normalizeLocale('en')).toBe('en')
   })
