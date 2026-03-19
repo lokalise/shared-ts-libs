@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  getLocaleDirection,
   isStandardLocale,
   isSupportedLocale,
   normalizeLocale,
@@ -115,6 +116,30 @@ describe('parseLocale', () => {
 
   it('returns error for an unsupported locale', () => {
     expect(parseLocale('abc-AB').error).toBe('Locale tag abc-AB is not supported')
+  })
+})
+
+describe('getLocaleDirection', () => {
+  it('returns ltr for LTR languages', () => {
+    expect(getLocaleDirection('en')).toBe('ltr')
+    expect(getLocaleDirection('fr')).toBe('ltr')
+    expect(getLocaleDirection('zh')).toBe('ltr')
+  })
+
+  it('returns rtl for RTL languages', () => {
+    expect(getLocaleDirection('ar')).toBe('rtl')
+    expect(getLocaleDirection('he')).toBe('rtl')
+    expect(getLocaleDirection('fa')).toBe('rtl')
+    expect(getLocaleDirection('ur')).toBe('rtl')
+  })
+
+  it('works with language-region locales', () => {
+    expect(getLocaleDirection('ar-SA')).toBe('rtl')
+    expect(getLocaleDirection('en-US')).toBe('ltr')
+  })
+
+  it('returns null for invalid tags', () => {
+    expect(getLocaleDirection('not-a-valid-!!!-locale')).toBeNull()
   })
 })
 

@@ -25,6 +25,8 @@ export type LocaleObject = {
   region?: string
 }
 
+export type LanguageDirection = 'ltr' | 'rtl'
+
 /**
  * Verify that `tag` is a valid locale code and all parts of it is in our lists of supported values.
  */
@@ -81,6 +83,14 @@ export const normalizeLocale = (tag: string) => {
 
   try {
     return stringifyLocale(new Intl.Locale(tag))
+  } catch {
+    return null
+  }
+}
+
+export const getLocaleDirection = (tag: string): LanguageDirection | null => {
+  try {
+    return new Intl.Locale(tag).getTextInfo().direction
   } catch (_) {
     return null
   }
