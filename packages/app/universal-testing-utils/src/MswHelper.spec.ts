@@ -35,7 +35,7 @@ describe('MswHelper', () => {
     server.close()
   })
 
-  describe('mockValidPayloadResponse', () => {
+  describe('mockValidResponse — REST contracts', () => {
     it('mocks POST request without path params', async () => {
       mswHelper.mockValidResponse(postContract, server, {
         responseBody: { id: '1' },
@@ -73,10 +73,9 @@ describe('MswHelper', () => {
     })
 
     it('enforces POST request with path params contract', async () => {
+      // @ts-expect-error this should fail - wrong properties
       mswHelper.mockValidResponse(postContractWithPathParams, server, {
-        // @ts-expect-error this should fail - wrong property
         pathParams: { userId: '3', invalid: 'invalid' },
-        // @ts-expect-error this should fail - wrong property
         responseBody: { id: '2', invalidField: 'frfr' },
       })
 
@@ -321,9 +320,9 @@ describe('MswHelper', () => {
     })
   })
 
-  describe('mockSseResponse', () => {
+  describe('mockValidResponse — SSE contracts', () => {
     it('mocks GET SSE without path params', async () => {
-      mswHelper.mockSseResponse(sseGetContract, server, {
+      mswHelper.mockValidResponse(sseGetContract, server, {
         events: [
           { event: 'item.updated', data: { items: [{ id: '1' }] } },
           { event: 'completed', data: { totalCount: 1 } },
@@ -342,7 +341,7 @@ describe('MswHelper', () => {
     })
 
     it('mocks POST SSE', async () => {
-      mswHelper.mockSseResponse(ssePostContract, server, {
+      mswHelper.mockValidResponse(ssePostContract, server, {
         events: [{ event: 'item.updated', data: { items: [{ id: '2' }] } }],
       })
 
@@ -353,7 +352,7 @@ describe('MswHelper', () => {
     })
 
     it('mocks GET SSE with path params', async () => {
-      mswHelper.mockSseResponse(sseGetContractWithPathParams, server, {
+      mswHelper.mockValidResponse(sseGetContractWithPathParams, server, {
         pathParams: { userId: '42' },
         events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
       })
@@ -365,7 +364,7 @@ describe('MswHelper', () => {
     })
 
     it('mocks GET SSE with query params', async () => {
-      mswHelper.mockSseResponse(sseGetContractWithQueryParams, server, {
+      mswHelper.mockValidResponse(sseGetContractWithQueryParams, server, {
         queryParams: { yearFrom: 2020 },
         events: [{ event: 'completed', data: { totalCount: 5 } }],
       })
@@ -379,23 +378,8 @@ describe('MswHelper', () => {
       expect(body).toBe('event: completed\ndata: {"totalCount":5}\n')
     })
 
-    it('mocks dual-mode contract', async () => {
-      mswHelper.mockSseResponse(sseDualModeContract, server, {
-        events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
-      })
-
-      const response = await wretchClient
-        .headers({ accept: 'text/event-stream' })
-        .url('/events/dual')
-        .post({ name: 'test' })
-        .res()
-
-      expect(response.status).toBe(200)
-      expect(response.headers.get('content-type')).toBe('text/event-stream')
-    })
-
     it('supports custom response code', async () => {
-      mswHelper.mockSseResponse(sseGetContract, server, {
+      mswHelper.mockValidResponse(sseGetContract, server, {
         responseCode: 201,
         events: [{ event: 'completed', data: { totalCount: 0 } }],
       })
@@ -406,44 +390,41 @@ describe('MswHelper', () => {
     })
 
     it('enforces pathParams required for contracts with path params', () => {
-      mswHelper.mockSseResponse(sseGetContractWithPathParams, server, {
-        // @ts-expect-error pathParams should require userId
+      // @ts-expect-error pathParams should require userId
+      mswHelper.mockValidResponse(sseGetContractWithPathParams, server, {
         pathParams: { wrongParam: '1' },
         events: [{ event: 'completed', data: { totalCount: 0 } }],
       })
     })
 
     it('enforces pathParams not allowed for contracts without path params', () => {
-      mswHelper.mockSseResponse(sseGetContract, server, {
-        // @ts-expect-error pathParams should not be allowed
+      // @ts-expect-error pathParams should not be allowed
+      mswHelper.mockValidResponse(sseGetContract, server, {
         pathParams: { userId: '1' },
         events: [{ event: 'completed', data: { totalCount: 0 } }],
       })
     })
 
     it('enforces event name type safety', () => {
-      mswHelper.mockSseResponse(sseGetContract, server, {
-        events: [
-          // @ts-expect-error invalid event name
-          { event: 'nonexistent.event', data: { items: [{ id: '1' }] } },
-        ],
+      // @ts-expect-error invalid event name
+      mswHelper.mockValidResponse(sseGetContract, server, {
+        events: [{ event: 'nonexistent.event', data: { items: [{ id: '1' }] } }],
       })
     })
 
     it('enforces event data type safety', () => {
-      mswHelper.mockSseResponse(sseGetContract, server, {
-        events: [
-          // @ts-expect-error wrong data shape for item.updated
-          { event: 'item.updated', data: { wrongField: 'value' } },
-        ],
+      // @ts-expect-error wrong data shape for item.updated
+      mswHelper.mockValidResponse(sseGetContract, server, {
+        events: [{ event: 'item.updated', data: { wrongField: 'value' } }],
       })
     })
   })
 
-  describe('dual-mode contract Accept header routing', () => {
-    it('mockValidResponse returns JSON for dual-mode contract without Accept: text/event-stream', async () => {
+  describe('mockValidResponse — dual-mode contracts', () => {
+    it('returns JSON when Accept is application/json', async () => {
       mswHelper.mockValidResponse(sseDualModeContract, server, {
         responseBody: { id: 'json-1' },
+        events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
       })
 
       const response = await wretchClient
@@ -456,26 +437,9 @@ describe('MswHelper', () => {
       expect(await response.json()).toEqual({ id: 'json-1' })
     })
 
-    it('mockValidResponse passes through for dual-mode contract with Accept: text/event-stream', async () => {
+    it('returns SSE when Accept is text/event-stream', async () => {
       mswHelper.mockValidResponse(sseDualModeContract, server, {
         responseBody: { id: 'json-1' },
-      })
-      mswHelper.mockSseResponse(sseDualModeContract, server, {
-        events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
-      })
-
-      const response = await wretchClient
-        .headers({ accept: 'text/event-stream' })
-        .url('/events/dual')
-        .post({ name: 'test' })
-        .res()
-
-      expect(response.status).toBe(200)
-      expect(response.headers.get('content-type')).toBe('text/event-stream')
-    })
-
-    it('mockSseResponse returns SSE for dual-mode contract with Accept: text/event-stream', async () => {
-      mswHelper.mockSseResponse(sseDualModeContract, server, {
         events: [
           { event: 'item.updated', data: { items: [{ id: '1' }] } },
           { event: 'completed', data: { totalCount: 1 } },
@@ -490,38 +454,15 @@ describe('MswHelper', () => {
 
       expect(response.status).toBe(200)
       expect(response.headers.get('content-type')).toBe('text/event-stream')
-
-      const body = await response.text()
-      expect(body).toBe(
+      expect(await response.text()).toBe(
         'event: item.updated\ndata: {"items":[{"id":"1"}]}\n\nevent: completed\ndata: {"totalCount":1}\n',
       )
     })
 
-    it('mockSseResponse passes through for dual-mode contract without Accept: text/event-stream', async () => {
-      mswHelper.mockSseResponse(sseDualModeContract, server, {
-        events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
-      })
-      mswHelper.mockValidResponse(sseDualModeContract, server, {
-        responseBody: { id: 'json-1' },
-      })
-
-      const response = await wretchClient
-        .headers({ accept: 'application/json' })
-        .url('/events/dual')
-        .post({ name: 'test' })
-        .res()
-
-      expect(response.status).toBe(200)
-      expect(await response.json()).toEqual({ id: 'json-1' })
-    })
-
-    it('both mocks coexist on dual-mode contract with path params', async () => {
+    it('works with path params', async () => {
       mswHelper.mockValidResponse(sseDualModeContractWithPathParams, server, {
         pathParams: { userId: '42' },
         responseBody: { id: 'json-42' },
-      })
-      mswHelper.mockSseResponse(sseDualModeContractWithPathParams, server, {
-        pathParams: { userId: '42' },
         events: [{ event: 'completed', data: { totalCount: 99 } }],
       })
 
@@ -530,7 +471,6 @@ describe('MswHelper', () => {
         .url('/users/42/events/dual')
         .post({ name: 'test' })
         .res()
-      expect(jsonResponse.status).toBe(200)
       expect(await jsonResponse.json()).toEqual({ id: 'json-42' })
 
       const sseResponse = await wretchClient
@@ -538,9 +478,48 @@ describe('MswHelper', () => {
         .url('/users/42/events/dual')
         .post({ name: 'test' })
         .res()
-      expect(sseResponse.status).toBe(200)
       expect(sseResponse.headers.get('content-type')).toBe('text/event-stream')
       expect(await sseResponse.text()).toBe('event: completed\ndata: {"totalCount":99}\n')
+    })
+
+    it('validates response body against schema', () => {
+      expect(() =>
+        // @ts-expect-error wrong response body shape
+        mswHelper.mockValidResponse(sseDualModeContract, server, {
+          responseBody: { wrongField: 'value' },
+          events: [],
+        }),
+      ).toThrow()
+    })
+
+    it('supports custom response code', async () => {
+      mswHelper.mockValidResponse(sseDualModeContract, server, {
+        responseCode: 201,
+        responseBody: { id: '1' },
+        events: [{ event: 'completed', data: { totalCount: 0 } }],
+      })
+
+      const jsonResponse = await wretchClient
+        .headers({ accept: 'application/json' })
+        .url('/events/dual')
+        .post({ name: 'test' })
+        .res()
+      expect(jsonResponse.status).toBe(201)
+
+      const sseResponse = await wretchClient
+        .headers({ accept: 'text/event-stream' })
+        .url('/events/dual')
+        .post({ name: 'test' })
+        .res()
+      expect(sseResponse.status).toBe(201)
+    })
+
+    it('enforces event type safety', () => {
+      // @ts-expect-error invalid event name
+      mswHelper.mockValidResponse(sseDualModeContract, server, {
+        responseBody: { id: '1' },
+        events: [{ event: 'nonexistent.event', data: { items: [{ id: '1' }] } }],
+      })
     })
   })
 })
