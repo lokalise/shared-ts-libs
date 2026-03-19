@@ -8,13 +8,13 @@ import {
   type InferSuccessResponse,
   type RouteContract,
 } from '@lokalise/api-contracts'
-import type {WretchResponse} from 'wretch'
-import {z} from 'zod/v4'
-import { resolveHeaders} from './client.ts'
-import type {PayloadRouteRequestParams, WretchInstance} from './types.ts'
-import {parseRequestBody, parseResponseBody} from './utils/bodyUtils.ts'
-import {isFailure} from './utils/either.ts'
-import {parseQueryParams} from './utils/queryUtils.ts'
+import type { WretchResponse } from 'wretch'
+import { z } from 'zod/v4'
+import { resolveHeaders } from './client.ts'
+import type { PayloadRouteRequestParams, WretchInstance } from './types.ts'
+import { parseRequestBody, parseResponseBody } from './utils/bodyUtils.ts'
+import { isFailure } from './utils/either.ts'
+import { parseQueryParams } from './utils/queryUtils.ts'
 
 type ExtractBodyInput<T> = T extends { requestBodySchema: z.ZodType }
   ? T['requestBodySchema']
@@ -68,7 +68,8 @@ export async function sendByRouteContract<const Contract extends RouteContract>(
   }
 
   const handleResponse = async (response: WretchResponse) => {
-    const responseSchema = routeContract.responseSchemasByStatusCode?.[response.status as HttpStatusCode]
+    const responseSchema =
+      routeContract.responseSchemasByStatusCode?.[response.status as HttpStatusCode]
 
     if (!responseSchema || responseSchema === ContractNonJsonResponse) {
       return response
@@ -93,12 +94,12 @@ export async function sendByRouteContract<const Contract extends RouteContract>(
   }
 
   // @ts-expect-error result is typed as unknown
-  return (
-    wretch
-      .url(fullPath)
-      .headers(resolvedHeaders)
+  return wretch
+    .url(fullPath)
+    .headers(resolvedHeaders)
+    [
       // @ts-expect-error body can be available on payload contracts
-      [routeContract.method](bodyResult ? bodyResult.result : undefined)
-      .res(handleResponse)
-  )
+      routeContract.method
+    ](bodyResult ? bodyResult.result : undefined)
+    .res(handleResponse)
 }
