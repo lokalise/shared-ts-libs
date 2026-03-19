@@ -143,11 +143,20 @@ mswHelper.mockValidResponse(dualModeContract, server, {
 
 ### msw mockAnyResponse
 
-Mocks API responses with any response body, bypassing contract schema validation. Useful for testing error responses or edge cases. REST contracts only.
+Mocks API responses with any response body, bypassing contract schema validation. Useful for testing error responses or edge cases. Works with REST and dual-mode contracts.
 
 ```ts
+// REST — any response shape, no schema validation
 mswHelper.mockAnyResponse(postContract, server, {
-    responseBody: { wrongId: '1' },
+    responseBody: { error: 'Internal Server Error' },
+    responseCode: 500,
+})
+
+// Dual-mode — unvalidated responseBody + typed events, routes on Accept header
+mswHelper.mockAnyResponse(dualModeContract, server, {
+    responseBody: { error: 'Something went wrong' },
+    responseCode: 500,
+    events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
 })
 ```
 
@@ -259,12 +268,20 @@ await mockttpHelper.mockValidResponse(dualModeContract, {
 
 ### mockttp mockAnyResponse
 
-Mocks API responses with any response body, bypassing contract schema validation. REST contracts only.
+Mocks API responses with any response body, bypassing contract schema validation. Works with REST and dual-mode contracts.
 
 ```ts
+// REST — any response shape
 await mockttpHelper.mockAnyResponse(postContract, {
     responseBody: { error: 'Internal Server Error' },
     responseCode: 500,
+})
+
+// Dual-mode — unvalidated responseBody + typed events, routes on Accept header
+await mockttpHelper.mockAnyResponse(dualModeContract, {
+    responseBody: { error: 'Something went wrong' },
+    responseCode: 500,
+    events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
 })
 ```
 

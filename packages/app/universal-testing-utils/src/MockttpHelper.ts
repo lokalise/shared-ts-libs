@@ -86,6 +86,34 @@ export class MockttpHelper {
     }
   }
 
+  // Overload: Dual-mode contract — requires both responseBody and events, no validation
+  mockAnyResponse<
+    Events extends SSEEventSchemas,
+    PathParamsSchema extends z.Schema | undefined = undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
+  >(
+    contract: DualModeContractDefinition<
+      any,
+      PathParamsSchema,
+      RequestQuerySchema,
+      any,
+      any,
+      any,
+      Events,
+      any,
+      any
+    >,
+    params: PathParamsSchema extends z.Schema
+      ? DualModeMockParams<
+          InferSchemaInput<PathParamsSchema>,
+          InferSchemaInput<RequestQuerySchema>,
+          any,
+          Events
+        >
+      : DualModeMockParamsNoPath<InferSchemaInput<RequestQuerySchema>, any, Events>,
+  ): Promise<void>
+
+  // Overload: REST contract — requires responseBody, no validation
   mockAnyResponse<
     ResponseBodySchema extends z.Schema,
     PathParamsSchema extends z.Schema | undefined,
@@ -120,8 +148,45 @@ export class MockttpHelper {
           InferSchemaInput<RequestQuerySchema>,
           any
         >,
-  ): Promise<void> {
-    return this.mockRestResponse(contract, params)
+  ): Promise<void>
+
+  // Implementation
+  async mockAnyResponse(contract: any, params: any): Promise<void> {
+    if ('isDualMode' in contract && contract.isDualMode) {
+      const pathParams = params.pathParams
+
+      const path = contract.requestPathParamsSchema
+        ? contract.pathResolver(pathParams)
+        : contract.pathResolver({} as any)
+
+      const method = contract.method as SseHttpMethod
+      let mockttp = this.resolveMethodBuilder(method, path)
+
+      if (params.queryParams) {
+        mockttp = mockttp.withQuery(params.queryParams)
+      }
+
+      const sseBody = formatSseResponse(params.events)
+
+      await mockttp.thenCallback((request) => {
+        const accept = request.headers.accept ?? ''
+        if (accept.includes('text/event-stream')) {
+          return {
+            statusCode: params.responseCode ?? 200,
+            headers: { 'content-type': 'text/event-stream' },
+            body: sseBody,
+          }
+        }
+
+        return {
+          statusCode: params.responseCode ?? 200,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(params.responseBody),
+        }
+      })
+    } else {
+      await this.mockRestResponse(contract, params)
+    }
   }
 
   private async mockRestResponse(contract: any, params: any): Promise<void> {

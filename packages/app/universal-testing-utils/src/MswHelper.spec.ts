@@ -271,6 +271,43 @@ describe('MswHelper', () => {
               }
             `)
     })
+
+    it('mocks dual-mode contract with unvalidated response body', async () => {
+      mswHelper.mockAnyResponse(sseDualModeContract, server, {
+        responseBody: { error: 'Internal Server Error', code: 'ERR_500' },
+        responseCode: 500,
+        events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
+      })
+
+      const jsonResponse = await fetch(`${BASE_URL}/events/dual`, {
+        method: 'POST',
+        headers: { accept: 'application/json', 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'test' }),
+      })
+
+      expect(jsonResponse.status).toBe(500)
+      expect(await jsonResponse.json()).toEqual({
+        error: 'Internal Server Error',
+        code: 'ERR_500',
+      })
+    })
+
+    it('mocks dual-mode contract SSE side via mockAnyResponse', async () => {
+      mswHelper.mockAnyResponse(sseDualModeContract, server, {
+        responseBody: { error: 'fail' },
+        events: [{ event: 'completed', data: { totalCount: 42 } }],
+      })
+
+      const sseResponse = await wretchClient
+        .headers({ accept: 'text/event-stream' })
+        .url('/events/dual')
+        .post({ name: 'test' })
+        .res()
+
+      expect(sseResponse.status).toBe(200)
+      expect(sseResponse.headers.get('content-type')).toBe('text/event-stream')
+      expect(await sseResponse.text()).toBe('event: completed\ndata: {"totalCount":42}\n')
+    })
   })
 
   describe('mockValidResponseWithImplementation', () => {

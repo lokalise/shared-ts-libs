@@ -437,6 +437,35 @@ export class MswHelper {
     )
   }
 
+  // Overload: Dual-mode contract — requires both responseBody and events, no validation
+  mockAnyResponse<
+    Events extends SSEEventSchemas,
+    PathParamsSchema extends z.Schema | undefined = undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
+  >(
+    contract: DualModeContractDefinition<
+      any,
+      PathParamsSchema,
+      RequestQuerySchema,
+      any,
+      any,
+      any,
+      Events,
+      any,
+      any
+    >,
+    server: SetupServerApi,
+    params: PathParamsSchema extends z.Schema
+      ? MswDualModeMockParams<
+          InferSchemaInput<PathParamsSchema>,
+          InferSchemaInput<RequestQuerySchema>,
+          any,
+          Events
+        >
+      : MswDualModeMockParamsNoPath<InferSchemaInput<RequestQuerySchema>, any, Events>,
+  ): void
+
+  // Overload: REST contract — requires responseBody, no validation
   mockAnyResponse<PathParamsSchema extends z.Schema | undefined>(
     contract:
       | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any, any>
@@ -445,15 +474,38 @@ export class MswHelper {
     params: PathParamsSchema extends undefined
       ? MockParamsNoPath<InferSchemaInput<any>>
       : MockParams<InferSchemaInput<PathParamsSchema>, InferSchemaInput<any>>,
-  ): void {
-    this.registerEndpointMock({
-      responseBody: params.responseBody,
-      contract,
-      server,
-      // @ts-expect-error this is safe
-      pathParams: params.pathParams,
-      responseCode: params.responseCode ?? 200,
-      validateResponse: false,
-    })
+  ): void
+
+  // Implementation
+  mockAnyResponse(contract: any, server: SetupServerApi, params: any): void {
+    if ('isDualMode' in contract && contract.isDualMode) {
+      const { resolvedPath, method } = this.resolveStreamingPath(contract, params.pathParams)
+      const sseBody = formatSseResponse(params.events)
+
+      server.use(
+        http[method](resolvedPath, ({ request }) => {
+          if (!MswHelper.matchesQueryParams(request, params.queryParams)) return
+
+          const accept = request.headers.get('accept') ?? ''
+          if (accept.includes('text/event-stream')) {
+            return new HttpResponse(sseBody, {
+              status: params.responseCode ?? 200,
+              headers: { 'content-type': 'text/event-stream' },
+            })
+          }
+
+          return HttpResponse.json(params.responseBody, { status: params.responseCode ?? 200 })
+        }),
+      )
+    } else {
+      this.registerEndpointMock({
+        responseBody: params.responseBody,
+        contract,
+        server,
+        pathParams: params.pathParams,
+        responseCode: params.responseCode ?? 200,
+        validateResponse: false,
+      })
+    }
   }
 }
