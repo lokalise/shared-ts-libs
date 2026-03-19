@@ -79,6 +79,7 @@ export type MockEndpointParams<PathParamsSchema extends z.Schema | undefined> = 
   responseBody: any
   responseCode: number
   validateResponse: boolean
+  isDualMode?: boolean
 }
 
 export class MswHelper {
@@ -109,7 +110,14 @@ export class MswHelper {
   ) {
     const { method, resolvedPath } = this.resolveParams(params.contract, params.pathParams)
     params.server.use(
-      http[method](resolvedPath, () => {
+      http[method](resolvedPath, ({ request }) => {
+        if (params.isDualMode) {
+          const accept = request.headers.get('accept') ?? ''
+          if (accept.includes('text/event-stream')) {
+            return
+          }
+        }
+
         const resolvedResponse = params.validateResponse
           ? params.contract.successResponseBodySchema.parse(params.responseBody)
           : params.responseBody
@@ -145,6 +153,17 @@ export class MswHelper {
           boolean,
           boolean,
           any // ResponseSchemasByStatusCode - not used in mocking
+        >
+      | DualModeContractDefinition<
+          any,
+          PathParamsSchema,
+          any,
+          any,
+          any,
+          ResponseBodySchema,
+          any,
+          any,
+          any
         >,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
@@ -153,12 +172,13 @@ export class MswHelper {
   ): void {
     this.registerEndpointMock({
       responseBody: params.responseBody,
-      contract,
+      contract: contract as any,
       server,
       // @ts-expect-error this is safe
       pathParams: params.pathParams,
       responseCode: params.responseCode ?? 200,
       validateResponse: true,
+      isDualMode: 'isDualMode' in contract && contract.isDualMode === true,
     })
   }
 
@@ -255,7 +275,8 @@ export class MswHelper {
   mockAnyResponse<PathParamsSchema extends z.Schema | undefined>(
     contract:
       | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any, any>
-      | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any, any>,
+      | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any, any>
+      | DualModeContractDefinition<any, PathParamsSchema, any, any, any, any, any, any, any>,
     server: SetupServerApi,
     params: PathParamsSchema extends undefined
       ? MockParamsNoPath<InferSchemaInput<any>>
@@ -263,12 +284,13 @@ export class MswHelper {
   ): void {
     this.registerEndpointMock({
       responseBody: params.responseBody,
-      contract,
+      contract: contract as any,
       server,
       // @ts-expect-error this is safe
       pathParams: params.pathParams,
       responseCode: params.responseCode ?? 200,
       validateResponse: false,
+      isDualMode: 'isDualMode' in contract && contract.isDualMode === true,
     })
   }
 
@@ -311,8 +333,17 @@ export class MswHelper {
 
     const body = formatSseResponse(params.events)
 
+    const isDualMode = 'isDualMode' in contract && contract.isDualMode === true
+
     server.use(
       http[method](resolvedPath, ({ request }) => {
+        if (isDualMode) {
+          const accept = request.headers.get('accept') ?? ''
+          if (!accept.includes('text/event-stream')) {
+            return
+          }
+        }
+
         const queryParams = params.queryParams
         if (queryParams) {
           const url = new URL(request.url)

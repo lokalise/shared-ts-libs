@@ -185,6 +185,8 @@ expect(await response.json()).toMatchInlineSnapshot(`
 
 Event names and data shapes are fully type-safe — typing `event: 'item.updated'` narrows the `data` field to the matching schema's input type.
 
+> **Note:** When used with a dual-mode contract, `mockSseResponse` only responds to requests with `Accept: text/event-stream`. Requests without this header will pass through to other handlers. See [Dual-mode contracts](#dual-mode-contracts) for details.
+
 ```ts
 import { buildSseContract } from '@lokalise/api-contracts'
 import { setupServer } from 'msw/node'
@@ -428,6 +430,8 @@ expect(response).toMatchInlineSnapshot(`
 
 Event names and data shapes are fully type-safe — typing `event: 'item.updated'` narrows the `data` field to the matching schema's input type.
 
+> **Note:** When used with a dual-mode contract, `mockSseResponse` only responds to requests with `Accept: text/event-stream`. Similarly, `mockValidResponse` only responds when Accept does **not** include `text/event-stream`. See [Dual-mode contracts](#dual-mode-contracts) for details.
+
 ```ts
 import { buildSseContract } from '@lokalise/api-contracts'
 import { getLocal } from 'mockttp'
@@ -479,7 +483,14 @@ await mockttpHelper.mockSseResponse(sseContract, {
 
 ## Dual-mode contracts
 
-`mockSseResponse` also works with dual-mode contracts (built with `successResponseBodySchema`), which support both JSON and SSE responses:
+Dual-mode contracts (built with `successResponseBodySchema`) support both JSON and SSE responses from the same endpoint. The response mode is determined by the client's `Accept` header.
+
+When a dual-mode contract is used with `mockValidResponse` or `mockSseResponse`, the handlers automatically check the `Accept` header:
+
+- `mockValidResponse` responds only when Accept does **not** include `text/event-stream`
+- `mockSseResponse` responds only when Accept includes `text/event-stream`
+
+This means both mocks can coexist on the same endpoint — each test only needs to mock the mode it's testing.
 
 ```ts
 const dualModeContract = buildSseContract({
@@ -492,11 +503,40 @@ const dualModeContract = buildSseContract({
   },
 })
 
-// Mock the SSE response mode
+// Mock only the JSON mode — requests with Accept: text/event-stream will pass through
+mswHelper.mockValidResponse(dualModeContract, server, {
+  responseBody: { id: '1' },
+})
+
+// Mock only the SSE mode — requests without Accept: text/event-stream will pass through
+mswHelper.mockSseResponse(dualModeContract, server, {
+  events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
+})
+
+// Or mock both modes simultaneously
+mswHelper.mockValidResponse(dualModeContract, server, {
+  responseBody: { id: '1' },
+})
+mswHelper.mockSseResponse(dualModeContract, server, {
+  events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
+})
+```
+
+The same behavior applies to `MockttpHelper`:
+
+```ts
+// Mock only JSON mode
+await mockttpHelper.mockValidResponse(dualModeContract, {
+  responseBody: { id: '1' },
+})
+
+// Mock only SSE mode
 await mockttpHelper.mockSseResponse(dualModeContract, {
   events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
 })
 ```
+
+For non-dual-mode contracts (regular REST or SSE-only), the `Accept` header is not checked — the handler always responds regardless of the header.
 
 ## `formatSseResponse`
 

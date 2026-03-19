@@ -10,6 +10,7 @@ import {
   postContract,
   postContractWithPathParams,
   sseDualModeContract,
+  sseDualModeContractWithPathParams,
   sseGetContract,
   sseGetContractWithPathParams,
   sseGetContractWithQueryParams,
@@ -297,7 +298,11 @@ describe('MockttpHelper', () => {
         events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
       })
 
-      const response = await wretchClient.url('/events/dual').post({ name: 'test' }).res()
+      const response = await wretchClient
+        .headers({ accept: 'text/event-stream' })
+        .url('/events/dual')
+        .post({ name: 'test' })
+        .res()
 
       expect(response.status).toBe(200)
       expect(response.headers.get('content-type')).toBe('text/event-stream')
@@ -346,6 +351,102 @@ describe('MockttpHelper', () => {
           { event: 'item.updated', data: { wrongField: 'value' } },
         ],
       })
+    })
+  })
+
+  describe('dual-mode contract Accept header routing', () => {
+    it('mockValidResponse returns JSON for dual-mode contract without Accept: text/event-stream', async () => {
+      await mockttpHelper.mockValidResponse(sseDualModeContract, {
+        responseBody: { id: 'json-1' },
+      })
+
+      const response = await wretchClient
+        .headers({ accept: 'application/json' })
+        .url('/events/dual')
+        .post({ name: 'test' })
+        .res()
+
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual({ id: 'json-1' })
+    })
+
+    it('mockValidResponse returns 503 for dual-mode contract with Accept: text/event-stream', async () => {
+      await mockttpHelper.mockValidResponse(sseDualModeContract, {
+        responseBody: { id: 'json-1' },
+      })
+
+      const response = await fetch(`${mockServer.url}/events/dual`, {
+        method: 'POST',
+        headers: { accept: 'text/event-stream', 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'test' }),
+      })
+
+      expect(response.status).toBe(503)
+    })
+
+    it('mockSseResponse returns SSE for dual-mode contract with Accept: text/event-stream', async () => {
+      await mockttpHelper.mockSseResponse(sseDualModeContract, {
+        events: [
+          { event: 'item.updated', data: { items: [{ id: '1' }] } },
+          { event: 'completed', data: { totalCount: 1 } },
+        ],
+      })
+
+      const response = await wretchClient
+        .headers({ accept: 'text/event-stream' })
+        .url('/events/dual')
+        .post({ name: 'test' })
+        .res()
+
+      expect(response.status).toBe(200)
+      expect(response.headers.get('content-type')).toBe('text/event-stream')
+
+      const body = await response.text()
+      expect(body).toBe(
+        'event: item.updated\ndata: {"items":[{"id":"1"}]}\n\nevent: completed\ndata: {"totalCount":1}\n',
+      )
+    })
+
+    it('mockSseResponse returns 503 for dual-mode contract without Accept: text/event-stream', async () => {
+      await mockttpHelper.mockSseResponse(sseDualModeContract, {
+        events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
+      })
+
+      const response = await fetch(`${mockServer.url}/events/dual`, {
+        method: 'POST',
+        headers: { accept: 'application/json', 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'test' }),
+      })
+
+      expect(response.status).toBe(503)
+    })
+
+    it('both mocks coexist on dual-mode contract with path params', async () => {
+      await mockttpHelper.mockValidResponse(sseDualModeContractWithPathParams, {
+        pathParams: { userId: '42' },
+        responseBody: { id: 'json-42' },
+      })
+      await mockttpHelper.mockSseResponse(sseDualModeContractWithPathParams, {
+        pathParams: { userId: '42' },
+        events: [{ event: 'completed', data: { totalCount: 99 } }],
+      })
+
+      const jsonResponse = await wretchClient
+        .headers({ accept: 'application/json' })
+        .url('/users/42/events/dual')
+        .post({ name: 'test' })
+        .res()
+      expect(jsonResponse.status).toBe(200)
+      expect(await jsonResponse.json()).toEqual({ id: 'json-42' })
+
+      const sseResponse = await wretchClient
+        .headers({ accept: 'text/event-stream' })
+        .url('/users/42/events/dual')
+        .post({ name: 'test' })
+        .res()
+      expect(sseResponse.status).toBe(200)
+      expect(sseResponse.headers.get('content-type')).toBe('text/event-stream')
+      expect(await sseResponse.text()).toBe('event: completed\ndata: {"totalCount":99}\n')
     })
   })
 })

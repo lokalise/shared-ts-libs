@@ -77,6 +77,17 @@ export class MockttpHelper {
           boolean,
           boolean,
           any // ResponseSchemasByStatusCode - not used in mocking
+        >
+      | DualModeContractDefinition<
+          any,
+          PathParamsSchema,
+          RequestQuerySchema,
+          any,
+          any,
+          ResponseBodySchema,
+          any,
+          any,
+          any
         >,
     params: PathParamsSchema extends undefined
       ? PayloadMockParamsNoPath<InferSchemaInput<RequestQuerySchema>, any>
@@ -86,7 +97,7 @@ export class MockttpHelper {
           any
         >,
   ): Promise<void> {
-    return this.mockValidResponse(contract, params)
+    return this.mockValidResponse(contract as any, params)
   }
 
   async mockValidResponse<
@@ -115,6 +126,17 @@ export class MockttpHelper {
           boolean,
           boolean,
           any // ResponseSchemasByStatusCode - not used in mocking
+        >
+      | DualModeContractDefinition<
+          any,
+          PathParamsSchema,
+          RequestQuerySchema,
+          any,
+          any,
+          ResponseBodySchema,
+          any,
+          any,
+          any
         >,
     params: PathParamsSchema extends undefined
       ? PayloadMockParamsNoPath<
@@ -164,7 +186,23 @@ export class MockttpHelper {
       mockttp = mockttp.withQuery(queryParams)
     }
 
-    await mockttp.thenJson(params.responseCode ?? 200, params.responseBody as object)
+    const isDualMode = 'isDualMode' in contract && contract.isDualMode === true
+
+    if (isDualMode) {
+      await mockttp.thenCallback((request) => {
+        const accept = request.headers['accept'] ?? ''
+        if (accept.includes('text/event-stream')) {
+          return { statusCode: 503 }
+        }
+        return {
+          statusCode: params.responseCode ?? 200,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(params.responseBody),
+        }
+      })
+    } else {
+      await mockttp.thenJson(params.responseCode ?? 200, params.responseBody as object)
+    }
   }
 
   async mockSseResponse<
@@ -227,11 +265,21 @@ export class MockttpHelper {
     }
 
     const body = formatSseResponse(params.events)
+    const isDualMode = 'isDualMode' in contract && contract.isDualMode === true
 
-    await mockttp.thenCallback(() => ({
-      statusCode: params.responseCode ?? 200,
-      headers: { 'content-type': 'text/event-stream' },
-      body,
-    }))
+    await mockttp.thenCallback((request) => {
+      if (isDualMode) {
+        const accept = request.headers['accept'] ?? ''
+        if (!accept.includes('text/event-stream')) {
+          return { statusCode: 503 }
+        }
+      }
+
+      return {
+        statusCode: params.responseCode ?? 200,
+        headers: { 'content-type': 'text/event-stream' },
+        body,
+      }
+    })
   }
 }
