@@ -1,4 +1,4 @@
-// Intentionally, we only export types. Constants have their own getters
+export * from './getters.ts'
 export type { Language } from './languages.ts'
 export type { Region } from './regions.ts'
 export type { Script } from './scripts.ts'
