@@ -11,6 +11,7 @@ Reusable testing utilities that are potentially relevant for both backend and fr
   - [mockAnyResponse](#msw-mockanresponse)
   - [mockValidResponseWithAnyPath](#mockvalidresponsewithanypath)
   - [mockValidResponseWithImplementation](#mockvalidresponsewithimplementation)
+  - [mockSseStream](#mockssestream)
 - [mockttp integration with API contracts](#mockttp-integration-with-api-contracts)
   - [Basic usage](#basic-usage-1)
   - [Query params support](#query-params-support)
@@ -184,16 +185,61 @@ mswHelper.mockValidResponseWithAnyPath(dualModeContractWithPathParams, server, {
 
 ### mockValidResponseWithImplementation
 
-Custom handler for complex logic. REST contracts only.
+Custom handler for complex logic. Works with REST and dual-mode contracts.
 
 ```ts
+// REST contract
 mswHelper.mockValidResponseWithImplementation(postContractWithPathParams, server, {
     pathParams: { userId: ':userId' },
     handleRequest: async (requestInfo) => ({
         id: `id-${requestInfo.params.userId}`,
     }),
 })
+
+// Dual-mode contract — handleRequest for JSON, events for SSE
+mswHelper.mockValidResponseWithImplementation(dualModeContract, server, {
+    handleRequest: async (requestInfo) => {
+        const body = await requestInfo.request.json()
+        return { id: `impl-${body.name}` }
+    },
+    events: [{ event: 'completed', data: { totalCount: 1 } }],
+})
 ```
+
+### mockSseStream
+
+Returns an `SseEventController` that lets you emit SSE events on demand during tests, instead of returning all events immediately. Works with SSE and dual-mode contracts.
+
+```ts
+// SSE contract — emit events on demand
+const controller = mswHelper.mockSseStream(sseContract, server)
+
+const response = await fetch('/events/stream')
+
+controller.emit({ event: 'item.updated', data: { items: [{ id: '1' }] } })
+controller.emit({ event: 'completed', data: { totalCount: 1 } })
+controller.close()
+
+// With path params
+const controller = mswHelper.mockSseStream(sseContractWithPathParams, server, {
+    pathParams: { userId: '42' },
+})
+
+// Dual-mode contract — SSE side streams on demand, JSON side uses responseBody
+const controller = mswHelper.mockSseStream(dualModeContract, server, {
+    responseBody: { id: '1' },
+})
+
+// JSON requests get immediate response
+const jsonRes = await fetch('/events/dual', { headers: { accept: 'application/json' } })
+
+// SSE requests get streaming response
+const sseRes = await fetch('/events/dual', { headers: { accept: 'text/event-stream' } })
+controller.emit({ event: 'completed', data: { totalCount: 42 } })
+controller.close()
+```
+
+The controller is fully type-safe — event names and data shapes are inferred from the contract's `serverSentEventSchemas`.
 
 ## mockttp integration with API contracts
 

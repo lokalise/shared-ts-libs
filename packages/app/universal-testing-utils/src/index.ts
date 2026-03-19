@@ -18,4 +18,5 @@ export {
   MswHelper,
   type MswSseMockParams,
   type MswSseMockParamsNoPath,
+  type SseEventController,
 } from './MswHelper.ts'

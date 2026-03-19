@@ -103,6 +103,11 @@ export type MockEndpointParams<PathParamsSchema extends z.Schema | undefined> = 
   validateResponse: boolean
 }
 
+export type SseEventController<Events extends SSEEventSchemas> = {
+  emit(event: SseMockEvent<Events>): void
+  close(): void
+}
+
 export class MswHelper {
   private readonly baseUrl: string
 
@@ -393,6 +398,35 @@ export class MswHelper {
     this.mockValidResponse(contract, server, { ...params, pathParams })
   }
 
+  // Overload: Dual-mode contract — handleRequest for JSON, events for SSE
+  mockValidResponseWithImplementation<
+    ResponseBodySchema extends z.Schema,
+    Events extends SSEEventSchemas,
+    PathParamsSchema extends z.Schema | undefined = undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
+  >(
+    contract: DualModeContractDefinition<
+      any,
+      PathParamsSchema,
+      RequestQuerySchema,
+      any,
+      any,
+      ResponseBodySchema,
+      Events,
+      any,
+      any
+    >,
+    server: SetupServerApi,
+    params: (PathParamsSchema extends z.Schema
+      ? MockWithImplementationParams<any, any, any>
+      : MockWithImplementationParamsNoPath<any, any, any>) & {
+      events: SseMockEvent<Events>[]
+    } & (RequestQuerySchema extends z.Schema
+        ? { queryParams?: InferSchemaInput<RequestQuerySchema> }
+        : { queryParams?: undefined }),
+  ): void
+
+  // Overload: REST contract
   mockValidResponseWithImplementation<
     ResponseBodySchema extends z.Schema,
     PathParamsSchema extends z.Schema | undefined,
@@ -424,17 +458,42 @@ export class MswHelper {
     params: PathParamsSchema extends undefined
       ? MockWithImplementationParamsNoPath<any, any, any>
       : MockWithImplementationParams<any, any, any>,
-  ): void {
-    // @ts-expect-error pathParams might not exist
-    const { method, resolvedPath } = this.resolveParams(contract, params.pathParams)
+  ): void
 
-    server.use(
-      http[method](resolvedPath, async (requestInfo) => {
-        return HttpResponse.json(await params.handleRequest(requestInfo), {
-          status: params.responseCode,
-        })
-      }),
-    )
+  // Implementation
+  mockValidResponseWithImplementation(contract: any, server: SetupServerApi, params: any): void {
+    if ('isDualMode' in contract && contract.isDualMode) {
+      const { resolvedPath, method } = this.resolveStreamingPath(contract, params.pathParams)
+      const sseBody = formatSseResponse(params.events)
+
+      server.use(
+        http[method](resolvedPath, async ({ request, ...rest }) => {
+          if (!MswHelper.matchesQueryParams(request, params.queryParams)) return
+
+          const accept = request.headers.get('accept') ?? ''
+          if (accept.includes('text/event-stream')) {
+            return new HttpResponse(sseBody, {
+              status: params.responseCode ?? 200,
+              headers: { 'content-type': 'text/event-stream' },
+            })
+          }
+
+          return HttpResponse.json(await params.handleRequest({ request, ...rest }), {
+            status: params.responseCode ?? 200,
+          })
+        }),
+      )
+    } else {
+      const { method, resolvedPath } = this.resolveParams(contract, params.pathParams)
+
+      server.use(
+        http[method](resolvedPath, async (requestInfo) => {
+          return HttpResponse.json(await params.handleRequest(requestInfo), {
+            status: params.responseCode,
+          })
+        }),
+      )
+    }
   }
 
   // Overload: Dual-mode contract — requires both responseBody and events, no validation
@@ -506,6 +565,105 @@ export class MswHelper {
         responseCode: params.responseCode ?? 200,
         validateResponse: false,
       })
+    }
+  }
+
+  // Overload: Dual-mode contract — streaming SSE + JSON responseBody
+  mockSseStream<
+    ResponseBodySchema extends z.Schema<JsonBodyType>,
+    Events extends SSEEventSchemas,
+    PathParamsSchema extends z.Schema | undefined = undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
+  >(
+    contract: DualModeContractDefinition<
+      any,
+      PathParamsSchema,
+      RequestQuerySchema,
+      any,
+      any,
+      ResponseBodySchema,
+      Events,
+      any,
+      any
+    >,
+    server: SetupServerApi,
+    params: (PathParamsSchema extends z.Schema
+      ? { pathParams: InferSchemaInput<PathParamsSchema> }
+      : { pathParams?: undefined }) & {
+      responseBody: InferSchemaInput<ResponseBodySchema>
+    } & CommonMockParams &
+      (RequestQuerySchema extends z.Schema
+        ? { queryParams?: InferSchemaInput<RequestQuerySchema> }
+        : { queryParams?: undefined }),
+  ): SseEventController<Events>
+
+  // Overload: SSE contract — streaming SSE only
+  mockSseStream<
+    Events extends SSEEventSchemas,
+    PathParamsSchema extends z.Schema | undefined = undefined,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
+  >(
+    contract: SSEContractDefinition<
+      any,
+      PathParamsSchema,
+      RequestQuerySchema,
+      any,
+      any,
+      Events,
+      any
+    >,
+    server: SetupServerApi,
+    params?: (PathParamsSchema extends z.Schema
+      ? { pathParams: InferSchemaInput<PathParamsSchema> }
+      : { pathParams?: undefined }) &
+      CommonMockParams &
+      (RequestQuerySchema extends z.Schema
+        ? { queryParams?: InferSchemaInput<RequestQuerySchema> }
+        : { queryParams?: undefined }),
+  ): SseEventController<Events>
+
+  // Implementation
+  mockSseStream(contract: any, server: SetupServerApi, params?: any): SseEventController<any> {
+    const pathParams = params?.pathParams
+    const { resolvedPath, method } = this.resolveStreamingPath(contract, pathParams)
+    const encoder = new TextEncoder()
+
+    let streamController: ReadableStreamDefaultController<Uint8Array>
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        streamController = controller
+      },
+    })
+
+    const isDualMode = 'isDualMode' in contract && contract.isDualMode
+
+    server.use(
+      http[method](resolvedPath, ({ request }) => {
+        if (!MswHelper.matchesQueryParams(request, params?.queryParams)) return
+
+        if (isDualMode) {
+          const accept = request.headers.get('accept') ?? ''
+          if (!accept.includes('text/event-stream')) {
+            const jsonBody = contract.successResponseBodySchema.parse(params?.responseBody)
+            return HttpResponse.json(jsonBody, { status: params?.responseCode ?? 200 })
+          }
+        }
+
+        return new HttpResponse(stream, {
+          status: params?.responseCode ?? 200,
+          headers: { 'content-type': 'text/event-stream' },
+        })
+      }),
+    )
+
+    return {
+      emit(event: SseMockEvent<any>) {
+        const chunk = `event: ${event.event}\ndata: ${JSON.stringify(event.data)}\n\n`
+        streamController.enqueue(encoder.encode(chunk))
+      },
+      close() {
+        streamController.close()
+      },
     }
   }
 }
