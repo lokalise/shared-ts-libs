@@ -307,6 +307,50 @@ export class MswHelper {
     }
   }
 
+  // Overload: Dual-mode contract
+  mockValidResponseWithAnyPath<
+    ResponseBodySchema extends z.Schema<JsonBodyType>,
+    Events extends SSEEventSchemas,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
+  >(
+    contract: DualModeContractDefinition<
+      any,
+      z.Schema | undefined,
+      RequestQuerySchema,
+      any,
+      any,
+      ResponseBodySchema,
+      Events,
+      any,
+      any
+    >,
+    server: SetupServerApi,
+    params: MswDualModeMockParamsNoPath<
+      InferSchemaInput<RequestQuerySchema>,
+      InferSchemaInput<ResponseBodySchema>,
+      Events
+    >,
+  ): void
+
+  // Overload: SSE contract
+  mockValidResponseWithAnyPath<
+    Events extends SSEEventSchemas,
+    RequestQuerySchema extends z.Schema | undefined = undefined,
+  >(
+    contract: SSEContractDefinition<
+      any,
+      z.Schema | undefined,
+      RequestQuerySchema,
+      any,
+      any,
+      Events,
+      any
+    >,
+    server: SetupServerApi,
+    params: MswSseMockParamsNoPath<InferSchemaInput<RequestQuerySchema>, Events>,
+  ): void
+
+  // Overload: REST contract
   mockValidResponseWithAnyPath<ResponseBodySchema extends z.Schema<JsonBodyType>>(
     contract:
       | CommonRouteDefinition<
@@ -332,7 +376,10 @@ export class MswHelper {
         >,
     server: SetupServerApi,
     params: MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>,
-  ): void {
+  ): void
+
+  // Implementation
+  mockValidResponseWithAnyPath(contract: any, server: SetupServerApi, params: any): void {
     const pathParams = contract.requestPathParamsSchema
       ? Object.keys((contract.requestPathParamsSchema as ZodObject<any>).shape).reduce(
           (acc, value) => {
@@ -343,14 +390,7 @@ export class MswHelper {
         )
       : {}
 
-    this.registerEndpointMock({
-      responseBody: params.responseBody,
-      contract,
-      server,
-      pathParams: pathParams as any,
-      responseCode: params.responseCode ?? 200,
-      validateResponse: true,
-    })
+    this.mockValidResponse(contract, server, { ...params, pathParams })
   }
 
   mockValidResponseWithImplementation<

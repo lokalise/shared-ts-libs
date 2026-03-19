@@ -194,6 +194,38 @@ describe('MswHelper', () => {
               }
             `)
     })
+
+    it('mocks SSE contract with any path params', async () => {
+      mswHelper.mockValidResponseWithAnyPath(sseGetContractWithPathParams, server, {
+        events: [{ event: 'item.updated', data: { items: [{ id: '1' }] } }],
+      })
+
+      const response = await wretchClient.get('/users/any-user/events').res()
+
+      expect(response.status).toBe(200)
+      expect(response.headers.get('content-type')).toBe('text/event-stream')
+    })
+
+    it('mocks dual-mode contract with any path params', async () => {
+      mswHelper.mockValidResponseWithAnyPath(sseDualModeContractWithPathParams, server, {
+        responseBody: { id: 'json-any' },
+        events: [{ event: 'completed', data: { totalCount: 1 } }],
+      })
+
+      const jsonResponse = await wretchClient
+        .headers({ accept: 'application/json' })
+        .url('/users/any-user/events/dual')
+        .post({ name: 'test' })
+        .res()
+      expect(await jsonResponse.json()).toEqual({ id: 'json-any' })
+
+      const sseResponse = await wretchClient
+        .headers({ accept: 'text/event-stream' })
+        .url('/users/other-user/events/dual')
+        .post({ name: 'test' })
+        .res()
+      expect(sseResponse.headers.get('content-type')).toBe('text/event-stream')
+    })
   })
 
   describe('mockAnyResponse', () => {
