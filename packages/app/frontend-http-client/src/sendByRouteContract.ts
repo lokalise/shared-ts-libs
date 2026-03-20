@@ -97,9 +97,9 @@ export async function sendByRouteContract<const Contract extends RouteContract>(
   return wretch
     .url(fullPath)
     .headers(resolvedHeaders)
-    [
+    [routeContract.method](
       // @ts-expect-error body can be available on payload contracts
-      routeContract.method
-    ](bodyResult ? bodyResult.result : undefined)
+      bodyResult ? bodyResult.result : undefined,
+    )
     .res(handleResponse)
 }

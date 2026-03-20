@@ -12,10 +12,12 @@ export type RouteContractResponse = ContractNoBodyType | ContractNonJsonResponse
 
 export type ResponseSchemasByStatusCode = Partial<Record<HttpStatusCode, RouteContractResponse>>
 
+export type RequestPathParamsSchema = z.ZodObject
+
 export type CommonRouteContract = {
   // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with generics
   pathResolver: RoutePathResolver<any>
-  requestPathParamsSchema?: z.ZodObject
+  requestPathParamsSchema?: RequestPathParamsSchema
   requestQuerySchema?: z.ZodType
   requestHeaderSchema?: z.ZodType
   responseHeaderSchema?: z.ZodType
@@ -52,7 +54,7 @@ type Exactly<T, U> = T & {
   [K in keyof T]: K extends keyof U ? T[K] : never
 }
 
-type TypedPathRouteContract<T extends z.ZodType | undefined> = Omit<
+type TypedPathRouteContract<T extends RequestPathParamsSchema> = Omit<
   RouteContract,
   'pathResolver' | 'requestPathParamsSchema'
 > & {
@@ -61,7 +63,7 @@ type TypedPathRouteContract<T extends z.ZodType | undefined> = Omit<
 }
 
 export const defineRouteContract = <
-  PathParamsSchema extends z.ZodType | undefined,
+  PathParamsSchema extends RequestPathParamsSchema,
   const Contract extends TypedPathRouteContract<PathParamsSchema>,
 >(
   contract: Exactly<Contract, TypedPathRouteContract<PathParamsSchema>> & {
