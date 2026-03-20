@@ -16,6 +16,8 @@ import type { PayloadRouteRequestParams, RouteRequestParams } from './fastifyApi
 type AnyFastifyInstance = FastifyInstance<any, any, any, any>
 
 /**
+ * @deprecated Use `injectByRouteContract` from `@lokalise/fastify-api-contracts` instead.
+ *
  * Unified request injector that automatically determines the HTTP method from the contract.
  * Replaces `injectGet`, `injectDelete`, `injectPost`, `injectPut`, and `injectPatch`.
  *

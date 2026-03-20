@@ -1,244 +1,180 @@
-# backend-http-client 🧬
+# backend-http-client
 
-Opinionated HTTP client for the Node.js backend
+Opinionated HTTP client for the Node.js backend, built on [undici](https://undici.nodejs.org/).
 
-## Overview
-
-The library provides methods to implement the client side of HTTP protocols. Public methods available are:
-
-- `buildClient()`, which returns a [Client](https://undici.nodejs.org/#/docs/api/Client) instance and should be called before any of the following methods with parameters:
-  - `baseUrl`;
-  - `clientOptions` – set of [ClientOptions](https://undici.nodejs.org/#/docs/api/Client?id=parameter-clientoptions) (optional). If none are provided, the following default options will be used to instantiate the client:
-    ```
-    keepAliveMaxTimeout: 300_000,
-    keepAliveTimeout: 4000,
-    ```
-- `sendByContract()`, a unified method that accepts any route definition (GET, POST, PUT, PATCH, DELETE) and dispatches based on the contract's `method` field;
-- `sendByContractWithStreamedResponse()`, a streaming variant of `sendByContract()` for GET contracts;
-- `sendGet()`;
-- `sendGetWithStreamedResponse()`;
-- `sendPost()`;
-- `sendPut()`;
-- `sendPutBinary()`;
-- `sendDelete()`;
-- `sendPatch()`.
-
-All _send_ methods accept a type parameter and the following arguments:
-
-- `client`, the return value of `buildClient()`;
-- `path`;
-- `options` – (optional). Possible values are:
-
-  - `headers`;
-  - `query`, query string params to be embedded in the request URL;
-  - `timeout`, the timeout after which a request will time out, in milliseconds. Default is 30 seconds. Pass `undefined` if you prefer to have no timeout;
-  - `throwOnError`;`
-  - `reqContext`;
-  - `safeParseJson`, used when the response content-type is `application/json`. If `true`, the response body will be parsed as JSON and a `ResponseError` will be thrown in case of syntax errors. If `false`, errors are not handled;
-  - `blobResponseBody`, used when the response body should be returned as Blob;
-  - `requestLabel`, this string will be returned together with any thrown or returned Error to provide additional context about what request was being executed when the error has happened;
-  - `disableKeepAlive`;`
-  - `retryConfig`, defined by:
-    - `maxAttempts`, the maximum number of times a request should be retried;
-    - `delayResolver?`, an optional function that calculates retry delay: `(response, attemptNumber, statusCodesToRetry) => number | undefined`;
-    - `statusCodesToRetry?`, the status codes that trigger a retry;
-    - `retryOnTimeout`, whether to retry on timeout;
-  - `clientOptions`;
-  - `responseSchema`, used both for inferring the response type of the call, and also (if `validateResponse` is `true`) for validating the response structure;
-  - `validateResponse`;
-  - `isEmptyResponseExpected`, used to specify if a 204 response should be treated as an error or not. when `true` the response body type is adjusted to include potential `null`
-
-  The following options are applied by default:
-
-  ```
-  validateResponse: true,
-  throwOnError: true,
-  timeout: 30000,
-  retryConfig: {
-      maxAttempts: 1,
-      statusCodesToRetry: [],
-      retryOnTimeout: false,
-  }
-  ```
-  For `sendDelete()` `isEmptyResponseExpected` by default is set to `true`, for all other methods it is `false`.
-
-Additionally, `sendPost()`, `sendPut()`, `sendPutBinary()`, and `sendPatch()` also accept a `body` parameter.
-
-The response of any _send_ method will be resolved to always have `result` set, but only have `error` set in case something went wrong. See [Either](#either) for more information.
-
-## Either
-
-The library provides the type `Either` for error handling in the functional paradigm. The two possible values are:
-
-- `result` is defined, `error` is undefined;
-- `error` is defined, `result` is undefined.
-
-It's up to the caller of the function to handle the received error or throw an error.
-
-Read [this article](https://antman-does-software.com/stop-catching-errors-in-typescript-use-the-either-type-to-make-your-code-predictable) for more information on how `Either` works and its benefits.
-
-Additionally, `DefiniteEither` is also provided. It is a variation of the aforementioned `Either`, which may or may not have `error` set, but always has `result`.
-
-### API contract-based requests
-
-`backend-http-client` supports using API contracts, created with `@lokalise/api-contracts` in order to make fully type-safe HTTP requests.
-
-The unified `sendByContract` method accepts any route definition (GET, POST, PUT, PATCH, DELETE) and automatically dispatches based on the contract's `method` field:
+## Building a client
 
 ```ts
-import { somePostRouteDefinition, someGetRouteDefinition, someDeleteRouteDefinition } from 'some-service-api-contracts'
-import { sendByContract, buildClient } from '@lokalise/backend-http-client'
+import { buildClient } from '@lokalise/backend-http-client'
 
-const MY_BASE_URL = 'http://localhost:8080'
-const client = buildClient(MY_BASE_URL)
-
-// POST/PUT/PATCH request - body is required by the contract type
-const responseBodyPost = await sendByContract(client, somePostRouteDefinition,
-    {
-        pathParams: {
-            userId: 1,
-        },
-        body: {
-            isActive: true,
-        },
-    },
-    {
-        validateResponse: false,
-        requestLabel: 'Create user',
-    }
-)
-
-// GET request - no body needed
-const responseBodyGet = await sendByContract(client, someGetRouteDefinition,
-    {
-        pathParams: {
-            userId: 1,
-        },
-        queryParams: {
-            withMetadata: true,
-        },
-    },
-    {
-        validateResponse: false,
-        requestLabel: 'Retrieve user',
-    }
-)
-
-// DELETE request
-const responseBodyDelete = await sendByContract(client, someDeleteRouteDefinition,
-    {
-        pathParams: {
-            userId: 1,
-        },
-    },
-    {
-        requestLabel: 'Delete user',
-    }
-)
+const client = buildClient('https://api.example.com', {
+  // optional undici ClientOptions
+})
 ```
 
-The following parameters can be specified when sending API contract-based requests:
-- `body` - request body (only applicable for payload routes, type needs to match with contract definition)
-- `queryParams` - query parameters (type needs to match with contract definition)
-- `headers` - custom headers to be sent with the request (type needs to match with contract definition)
-- `pathParams` – parameters used for path resolver (type needs to match with contract definition)
-- `pathPrefix` - optional prefix to be prepended to the path resolved by the contract's path resolver
+Default client options: `keepAliveMaxTimeout: 300_000`, `keepAliveTimeout: 4000`.
 
-> **Note:** The individual `sendByPayloadRoute`, `sendByGetRoute`, and `sendByDeleteRoute` methods are deprecated in favor of `sendByContract`.
+## Contract-based requests
 
-### Streaming responses
-
-For scenarios where you need to process large response bodies without loading them entirely into memory (e.g., downloading large files, processing data incrementally), use the streaming variants:
-
-- `sendGetWithStreamedResponse()` - for direct path-based requests
-- `sendByContractWithStreamedResponse()` - for API contract-based requests
-
-> **Note:** `sendByGetRouteWithStreamedResponse` is deprecated in favor of `sendByContractWithStreamedResponse`.
-
-These methods return a `Readable` stream instead of parsing the entire response body, allowing for memory-efficient processing.
-
-**Note:** `sendByContractWithStreamedResponse()` supports contracts with `responseSchemasByStatusCode` for typing pre-stream error responses (e.g., 401, 404). This allows using contracts that define error response shapes for non-streaming error cases.
-
-**Important limitations:**
-- Response validation (`validateResponse`) is not supported for streamed responses
-- Schema-based parsing (`responseSchema`) is not part of the options (the response is always a `Readable` stream)
-- **The response body MUST be fully consumed or explicitly dumped** - Failing to do so can lead to connection leaks and performance issues
-
-**Critical: Body consumption requirement**
-
-According to the undici documentation, garbage collection in Node.js is less aggressive and deterministic compared to browsers, which means leaving the release of connection resources to the garbage collector can lead to excessive connection usage, reduced performance (due to less connection re-use), and even stalls or deadlocks when running out of connections.
-
-Therefore, when using streaming response methods, you **must** either:
-1. Fully consume the response body by reading all chunks
-2. Explicitly cancel/dump the body if you don't need it
+Use `sendByRouteContract` with contracts defined via `defineRouteContract` from `@lokalise/api-contracts`. All request and response types are inferred from the contract.
 
 ```ts
-// ✓ GOOD - Consume the entire stream
-for await (const chunk of result.result.body) {
-  processChunk(chunk)
-}
+import { defineRouteContract, ContractNoBody } from '@lokalise/api-contracts'
+import { sendByRouteContract, buildClient } from '@lokalise/backend-http-client'
+import { z } from 'zod/v4'
 
-// ✓ GOOD - Pipe to another stream (consumes it)
-result.result.body.pipe(writeStream)
+const getUser = defineRouteContract({
+  method: 'get',
+  requestPathParamsSchema: z.object({ userId: z.string() }),
+  pathResolver: ({ userId }) => `/users/${userId}`,
+  responseSchemasByStatusCode: { 200: z.object({ id: z.string(), name: z.string() }) },
+})
 
-// ✓ GOOD - Dump the body if not needed
-await result.result.body.dump()
+const createUser = defineRouteContract({
+  method: 'post',
+  pathResolver: () => '/users',
+  requestBodySchema: z.object({ name: z.string() }),
+  responseSchemasByStatusCode: { 201: z.object({ id: z.string(), name: z.string() }) },
+})
 
-// ✗ BAD - Never do this (causes connection leaks)
-const { headers } = result.result
-// body is never consumed - CONNECTION LEAK!
-```
-
-Usage example:
-
-```ts
-import { sendByContractWithStreamedResponse, buildClient } from '@lokalise/backend-http-client'
-import { createWriteStream } from 'node:fs'
+const deleteUser = defineRouteContract({
+  method: 'delete',
+  requestPathParamsSchema: z.object({ userId: z.string() }),
+  pathResolver: ({ userId }) => `/users/${userId}`,
+  responseSchemasByStatusCode: { 204: ContractNoBody },
+})
 
 const client = buildClient('https://api.example.com')
 
-// Using contract-based request
-const result = await sendByContractWithStreamedResponse(
+// GET — body absent from params, typed from contract
+const getResult = await sendByRouteContract(
   client,
-  downloadFileRouteDefinition,
-  {
-    pathParams: { fileId: '12345' },
-  },
-  {
-    requestLabel: 'Download large file',
-    retryConfig: {
-      maxAttempts: 3,
-      statusCodesToRetry: [500, 502, 503],
-      retryOnTimeout: true,
-    },
-  }
+  getUser,
+  { pathParams: { userId: '1' } },
+  { requestLabel: 'get-user' },
+)
+// getResult.result.body: { id: string; name: string }
+
+// POST — body required by contract type
+const createResult = await sendByRouteContract(
+  client,
+  createUser,
+  { body: { name: 'Alice' } },
+  { requestLabel: 'create-user' },
 )
 
-if (result.result) {
-  // Stream the response to a file
-  const writeStream = createWriteStream('/path/to/file')
-  result.result.body.pipe(writeStream)
-
-  // Or process chunks manually
-  for await (const chunk of result.result.body) {
-    // Process chunk
-    console.log('Received chunk:', chunk.length)
-  }
-}
-
-// Using direct path-based request
-const streamResult = await sendGetWithStreamedResponse(
+// DELETE — returns null on 204
+const deleteResult = await sendByRouteContract(
   client,
-  '/api/files/12345',
-  {
-    requestLabel: 'Download file',
-  }
+  deleteUser,
+  { pathParams: { userId: '1' } },
+  { requestLabel: 'delete-user' },
+)
+```
+
+### Params
+
+| Field | Description |
+|---|---|
+| `pathParams` | Path parameters — type inferred from `requestPathParamsSchema` |
+| `body` | Request body — present only for POST/PUT/PATCH; type inferred from `requestBodySchema` |
+| `queryParams` | Query parameters — type inferred from `requestQuerySchema` |
+| `headers` | Request headers — type inferred from `requestHeaderSchema` |
+| `pathPrefix` | Optional prefix prepended to the resolved path (e.g. `'api/v2'`) |
+
+### Options
+
+| Field | Default | Description |
+|---|---|---|
+| `requestLabel` | — | Included in errors for context |
+| `validateResponse` | `true` | Validate response body against the contract schema |
+| `throwOnError` | `true` | Throw on non-2xx responses instead of returning `error` |
+| `timeout` | `30000` | Request timeout in ms (`undefined` = no timeout) |
+| `retryConfig` | no retry | `{ maxAttempts, statusCodesToRetry?, delayResolver?, retryOnTimeout }` |
+| `reqContext` | — | Request context object (e.g. `{ reqId }`) |
+| `safeParseJson` | `false` | Catch JSON parse errors instead of throwing |
+| `blobResponseBody` | `false` | Return response body as Blob |
+| `disableKeepAlive` | `false` | Disable keep-alive for this request |
+
+### Streaming responses
+
+Use `sendByRouteContractWithStreamedResponse` for large response bodies that should not be loaded into memory:
+
+```ts
+import { sendByRouteContractWithStreamedResponse, buildClient } from '@lokalise/backend-http-client'
+import { createWriteStream } from 'node:fs'
+
+const exportCsv = defineRouteContract({
+  method: 'get',
+  requestPathParamsSchema: z.object({ reportId: z.string() }),
+  pathResolver: ({ reportId }) => `/reports/${reportId}/export`,
+})
+
+const result = await sendByRouteContractWithStreamedResponse(
+  client,
+  exportCsv,
+  { pathParams: { reportId: '42' } },
+  { requestLabel: 'export-report' },
 )
 
-if (streamResult.result) {
-  // Process the stream
-  for await (const chunk of streamResult.result.body) {
-    // Handle chunk
-  }
+// Pipe to file
+result.result.body.pipe(createWriteStream('/tmp/report.csv'))
+
+// Or consume manually
+for await (const chunk of result.result.body) {
+  process(chunk)
 }
 ```
+
+> **Important:** The response body **must** be fully consumed or explicitly dumped. Leaving it unconsumed causes connection leaks.
+>
+> ```ts
+> // Dump if you don't need the body
+> await result.result.body.dump()
+> ```
+
+## Low-level methods
+
+For cases where you don't have a contract, the following path-based methods are available:
+
+| Method | Description |
+|---|---|
+| `sendGet(client, path, options)` | GET request |
+| `sendPost(client, path, body, options)` | POST request |
+| `sendPut(client, path, body, options)` | PUT request |
+| `sendPutBinary(client, path, body, options)` | PUT with binary body |
+| `sendPatch(client, path, body, options)` | PATCH request |
+| `sendDelete(client, path, options)` | DELETE request |
+| `sendGetWithStreamedResponse(client, path, options)` | GET returning a `Readable` stream |
+
+## Either
+
+All send methods return `Either<Error, Result>`:
+
+- `result` is always defined on success
+- `error` is defined (and `result` undefined) on failure when `throwOnError: false`
+
+```ts
+const { result, error } = await sendByRouteContract(client, contract, params, { throwOnError: false, requestLabel: 'test' })
+
+if (error) {
+  // handle error
+} else {
+  console.log(result.body)
+}
+```
+
+---
+
+## Deprecated API
+
+> The functions below are **deprecated**. Use `sendByRouteContract` and `sendByRouteContractWithStreamedResponse` instead.
+
+| Deprecated | Replacement |
+|---|---|
+| `sendByContract` | `sendByRouteContract` |
+| `sendByContractWithStreamedResponse` | `sendByRouteContractWithStreamedResponse` |
+| `sendByGetRoute` | `sendByRouteContract` |
+| `sendByDeleteRoute` | `sendByRouteContract` |
+| `sendByPayloadRoute` | `sendByRouteContract` |
+| `sendByGetRouteWithStreamedResponse` | `sendByRouteContractWithStreamedResponse` |

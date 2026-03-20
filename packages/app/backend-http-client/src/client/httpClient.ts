@@ -1,13 +1,13 @@
 import type { Readable } from 'node:stream'
-import type {
-  DeleteRouteDefinition,
-  GetRouteDefinition,
-  HttpStatusCode,
-  InferSchemaInput,
-  InferSchemaOutput,
-  PayloadRouteDefinition,
+import {
+  buildRequestPath,
+  type DeleteRouteDefinition,
+  type GetRouteDefinition,
+  type HttpStatusCode,
+  type InferSchemaInput,
+  type InferSchemaOutput,
+  type PayloadRouteDefinition,
 } from '@lokalise/api-contracts'
-import { buildRequestPath } from '@lokalise/api-contracts'
 import { copyWithoutUndefined } from '@lokalise/node-core'
 import type { FormData } from 'undici'
 import { Client } from 'undici'
@@ -186,7 +186,7 @@ export async function sendDelete<
   )
 }
 
-async function sendResourceChange<
+export async function sendResourceChange<
   ResponseBodySchema extends ZodSchema | undefined,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
@@ -236,7 +236,7 @@ async function sendResourceChange<
   )
 }
 
-async function sendNonPayload<
+export async function sendNonPayload<
   T extends ZodSchema | undefined,
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
@@ -748,6 +748,9 @@ export function sendByGetRouteWithStreamedResponse<
   )
 }
 
+/**
+ * @deprecated Use `sendByRouteContract` instead. This function will be removed in a future version.
+ */
 // Overload 1: GET route
 export function sendByContract<
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -908,6 +911,9 @@ export function sendByContract(
   )
 }
 
+/**
+ * @deprecated Use `sendByRouteContract` instead. This function will be removed in a future version.
+ */
 export function sendByContractWithStreamedResponse<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,

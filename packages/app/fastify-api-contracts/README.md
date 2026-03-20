@@ -1,147 +1,149 @@
-# API contract support for fastify
+# fastify-api-contracts
 
-This package adds support for generating fastify routes using universal API contracts, created with `@lokalise/api-contracts`
+Fastify route definitions and test helpers built from `@lokalise/api-contracts` contracts. Requires `fastify-type-provider-zod` and is ESM-only.
 
-This module requires `fastify-type-provider-zod` type provider to work and is ESM-only.
+## Defining routes
 
-## Usage
-
-Basic usage pattern using the unified `buildFastifyRoute` builder:
+Use `defineFastifyRoute` to build a complete Fastify route from a `defineRouteContract` contract. All request and response types are inferred automatically.
 
 ```ts
-import { buildFastifyRoute, buildFastifyRouteHandler, injectByContract } from '@lokalise/fastify-api-contracts'
-import { buildRestContract } from '@lokalise/api-contracts'
-import {
-    type ZodTypeProvider,
-    serializerCompiler,
-    validatorCompiler,
-} from 'fastify-type-provider-zod'
+import { defineRouteContract, ContractNoBody } from '@lokalise/api-contracts'
+import { defineFastifyRoute } from '@lokalise/fastify-api-contracts'
+import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod'
+import { z } from 'zod/v4'
 
-// GET route
-const getContract = buildRestContract({
-    method: 'get',
-    successResponseBodySchema: RESPONSE_BODY_SCHEMA,
-    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
-    requestQuerySchema: REQUEST_QUERY_SCHEMA,
-    requestHeaderSchema: REQUEST_HEADER_SCHEMA,
-    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+const getUser = defineRouteContract({
+  method: 'get',
+  requestPathParamsSchema: z.object({ userId: z.string() }),
+  pathResolver: ({ userId }) => `/users/${userId}`,
+  responseSchemasByStatusCode: { 200: z.object({ id: z.string(), name: z.string() }) },
 })
 
-// POST route
-const postContract = buildRestContract({
-    method: 'post',
-    successResponseBodySchema: RESPONSE_BODY_SCHEMA,
-    requestBodySchema: REQUEST_BODY_SCHEMA,
-    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
-    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+const createUser = defineRouteContract({
+  method: 'post',
+  pathResolver: () => '/users',
+  requestBodySchema: z.object({ name: z.string() }),
+  responseSchemasByStatusCode: { 201: z.object({ id: z.string(), name: z.string() }) },
 })
 
-// DELETE route
-const deleteContract = buildRestContract({
-    method: 'delete',
-    successResponseBodySchema: z.undefined(),
-    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
-    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+const deleteUser = defineRouteContract({
+  method: 'delete',
+  requestPathParamsSchema: z.object({ userId: z.string() }),
+  pathResolver: ({ userId }) => `/users/${userId}`,
+  responseSchemasByStatusCode: { 204: ContractNoBody },
 })
 
-// buildFastifyRoute automatically infers the correct handler type from the contract:
-// - GET/DELETE contracts -> handler without req.body
-// - POST/PUT/PATCH contracts -> handler with req.body
-const getRoute = buildFastifyRoute(getContract, (req) => {
-    // req.query, req.params and req.headers are typed from the contract
-}, (contractMetadata) => {
-    // Optionally, use this callback to dynamically add extra Fastify route options
-    // (like config, preHandler, etc.) using contract metadata.
+const getUserRoute = defineFastifyRoute(getUser, (req) => {
+  // req.params.userId is typed as string
+  return Promise.resolve({ id: req.params.userId, name: 'Alice' })
 })
 
-const postRoute = buildFastifyRoute(postContract, (req) => {
-    // req.body, req.query, req.params and req.headers are typed from the contract
+const createUserRoute = defineFastifyRoute(createUser, (req) => {
+  // req.body.name is typed as string
+  return Promise.resolve({ id: '1', name: req.body.name })
 })
 
-const deleteRoute = buildFastifyRoute(deleteContract, (req) => {
-    // req.params is typed from the contract, no req.body
+const deleteUserRoute = defineFastifyRoute(deleteUser, (req) => {
+  // req.params.userId is typed as string, no body
+  return Promise.resolve()
 })
 
-const app = fastify({
-    // app params
-})
-
+const app = fastify()
 app.setValidatorCompiler(validatorCompiler)
 app.setSerializerCompiler(serializerCompiler)
 
-app.withTypeProvider<ZodTypeProvider>().route(getRoute)
-app.withTypeProvider<ZodTypeProvider>().route(postRoute)
-app.withTypeProvider<ZodTypeProvider>().route(deleteRoute)
+app.withTypeProvider<ZodTypeProvider>().route(getUserRoute)
+app.withTypeProvider<ZodTypeProvider>().route(createUserRoute)
+app.withTypeProvider<ZodTypeProvider>().route(deleteUserRoute)
 
 await app.ready()
-
-// used in tests, you can use '@lokalise/frontend-http-client' in production code
-// injectByContract automatically determines the HTTP method from the contract
-const postResponse = await injectByContract(app, postContract, {
-    pathParams: { userId: '1' },
-    body: { id: '2' },
-    headers: { authorization: 'some-value' } // can be passed directly
-})
-
-// used in tests, you can use '@lokalise/frontend-http-client' in production code
-const getResponse = await injectByContract(app, getContract, {
-    pathParams: { userId: '1' },
-    headers: async () => ({ authorization: 'some-value' }) // headers producing function (sync or async) can be passed as well
-})
 ```
 
-### Separating handler from route definition
+## Separating handler from route definition
 
-Use `buildFastifyRouteHandler` to define the handler separately from the route. It works with any contract type (GET, DELETE, POST, PUT, PATCH):
+Use `defineFastifyRouteHandler` when you need to define the handler separately from the route registration — for example, to split handler logic from route setup.
 
 ```ts
-import {
-    buildFastifyRoute,
-    buildFastifyRouteHandler
-} from '@lokalise/fastify-api-contracts'
-import { buildRestContract } from '@lokalise/api-contracts'
+import { defineFastifyRoute, defineFastifyRouteHandler } from '@lokalise/fastify-api-contracts'
 
-const contract = buildRestContract({
-    method: 'post',
-    requestBodySchema: REQUEST_BODY_SCHEMA,
-    successResponseBodySchema: BODY_SCHEMA,
-    requestPathParamsSchema: PATH_PARAMS_SCHEMA,
-    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+const handler = defineFastifyRouteHandler(createUser, async (req) => {
+  return { id: '1', name: req.body.name }
 })
 
-const handler = buildFastifyRouteHandler(contract,
-    async (req, reply) => {
-        // handler definition here, req and reply will be correctly typed based on the contract
-    }
+const route = defineFastifyRoute(createUser, handler)
+```
+
+## Metadata mapper
+
+Pass an optional third argument to map contract metadata to Fastify route options (hooks, config, `bodyLimit`, etc.):
+
+```ts
+const route = defineFastifyRoute(
+  createUser,
+  handler,
+  (metadata) => ({
+    config: { roles: metadata?.roles },
+    preHandler: [authHook],
+  }),
 )
-
-const routes = [
-    buildFastifyRoute(contract, handler),
-]
 ```
 
-## Accessing the contract
+## Accessing the contract in a handler or hook
 
-In case you need some of the contract data within your lifecycle hook or a handler, it is exposed as a part of a route config, and can be accessed like this:
+The contract is available on `req.routeOptions.config.apiContract`:
 
 ```ts
-const route = buildFastifyRoute(contract, (req) => {
-    const { apiContract } = req.routeOptions.config
+const route = defineFastifyRoute(contract, (req) => {
+  const { apiContract } = req.routeOptions.config
 })
 ```
 
-## Deprecated APIs
+## Testing with `injectByRouteContract`
 
-The following functions are deprecated and will be removed in a future version. Use the unified replacements instead:
+`injectByRouteContract` injects requests into a Fastify app in tests. The `params` type is inferred from the contract — `body` is only present for POST/PUT/PATCH.
+
+```ts
+import { injectByRouteContract } from '@lokalise/fastify-api-contracts'
+
+// GET
+const getResponse = await injectByRouteContract(app, getUser, {
+  pathParams: { userId: '1' },
+})
+
+// POST
+const createResponse = await injectByRouteContract(app, createUser, {
+  body: { name: 'Alice' },
+})
+
+// DELETE
+const deleteResponse = await injectByRouteContract(app, deleteUser, {
+  pathParams: { userId: '1' },
+})
+
+// headers can be a plain object, a sync function, or an async function
+const response = await injectByRouteContract(app, getUser, {
+  pathParams: { userId: '1' },
+  headers: async () => ({ authorization: await getToken() }),
+})
+```
+
+---
+
+## Deprecated API
+
+> The functions below are **deprecated** and will be removed in a future version. Use `defineFastifyRoute`, `defineFastifyRouteHandler`, and `injectByRouteContract` instead.
 
 | Deprecated | Replacement |
 |---|---|
-| `buildFastifyNoPayloadRoute` | `buildFastifyRoute` |
-| `buildFastifyNoPayloadRouteHandler` | `buildFastifyRouteHandler` |
-| `buildFastifyPayloadRoute` | `buildFastifyRoute` |
-| `buildFastifyPayloadRouteHandler` | `buildFastifyRouteHandler` |
-| `injectGet` | `injectByContract` |
-| `injectDelete` | `injectByContract` |
-| `injectPost` | `injectByContract` |
-| `injectPut` | `injectByContract` |
-| `injectPatch` | `injectByContract` |
+| `buildFastifyRoute` | `defineFastifyRoute` |
+| `buildFastifyRouteHandler` | `defineFastifyRouteHandler` |
+| `injectByContract` | `injectByRouteContract` |
+| `buildFastifyNoPayloadRoute` | `defineFastifyRoute` |
+| `buildFastifyNoPayloadRouteHandler` | `defineFastifyRouteHandler` |
+| `buildFastifyPayloadRoute` | `defineFastifyRoute` |
+| `buildFastifyPayloadRouteHandler` | `defineFastifyRouteHandler` |
+| `injectGet` | `injectByRouteContract` |
+| `injectDelete` | `injectByRouteContract` |
+| `injectPost` | `injectByRouteContract` |
+| `injectPut` | `injectByRouteContract` |
+| `injectPatch` | `injectByRouteContract` |

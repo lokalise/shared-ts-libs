@@ -4,6 +4,8 @@ export * from './contractBuilder.ts'
 export * from './HttpStatusCodes.ts'
 export * from './pathUtils.ts'
 export * from './rest/restContractBuilder.ts'
+export * from './route-contract/defineRouteContract.ts'
+export * from './route-contract/inferTypes.ts'
 // Dual-mode (hybrid) contracts
 export * from './sse/dualModeContracts.ts'
 // Contract builders

@@ -62,3 +62,9 @@ export type HttpStatusCode =
   | 508
   | 510
   | 511
+
+export const SUCCESSFUL_HTTP_STATUS_CODES = [
+  200, 201, 202, 203, 204, 205, 206, 207, 208, 226,
+] as const
+
+export type SuccessfulHttpStatusCode = (typeof SUCCESSFUL_HTTP_STATUS_CODES)[number]

@@ -116,6 +116,8 @@ export type PayloadContractConfig<
 // ============================================================================
 
 /**
+ * @deprecated Use `defineRouteContract` instead. This builder will be removed in a future version.
+ *
  * Builds REST API contracts with automatic type inference.
  *
  * This unified builder replaces the individual `buildGetRoute`, `buildPayloadRoute`,

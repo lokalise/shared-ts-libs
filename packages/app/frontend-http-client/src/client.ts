@@ -35,11 +35,11 @@ import { parseQueryParams } from './utils/queryUtils.ts'
 
 export const UNKNOWN_SCHEMA = z.unknown()
 
-function resolveHeaders(headers: HeadersSource): HeadersObject | Promise<HeadersObject> {
+export function resolveHeaders(headers: HeadersSource): HeadersObject | Promise<HeadersObject> {
   return (typeof headers === 'function' ? headers() : headers) ?? {}
 }
 
-function handleBodyParseError<RequestBodySchema extends z.ZodSchema>(
+export function handleBodyParseError<RequestBodySchema extends z.ZodSchema>(
   bodyParseResult: BodyParseResult<RequestBodySchema>,
   params: {
     isNonJSONResponseExpected?: boolean
@@ -567,6 +567,9 @@ export function sendByDeleteRoute<
   })
 }
 
+/**
+ * @deprecated Use `sendByRouteContract` instead.
+ */
 // Overload 1: GET route
 export function sendByContract<
   T extends WretchInstance,
