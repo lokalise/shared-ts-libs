@@ -29,7 +29,7 @@ export async function injectByRouteContract<const Contract extends RouteContract
     .inject()
     [routeContract.method](path)
     .headers(resolvedHeaders)
-    .query(anyParams.query)
+    .query(anyParams.queryParams)
 
   if (anyParams.body) {
     return injection.body(anyParams.body).end()
