@@ -2,7 +2,7 @@ import type { Readable } from 'node:stream'
 import { ContractNoBody, defineRouteContract } from '@lokalise/api-contracts'
 import { getLocal, type Mockttp } from 'mockttp'
 import type { Client } from 'undici'
-import { afterAll, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import { JSON_HEADERS } from './constants.ts'
 import { buildClient } from './httpClient.ts'
@@ -33,6 +33,10 @@ describe('sendByRouteContract', () => {
   beforeEach(async () => {
     await mockServer.reset()
     client = buildClient(mockServer.url)
+  })
+
+  afterEach(async () => {
+    await client.close()
   })
 
   afterAll(async () => {
@@ -309,6 +313,10 @@ describe('sendByRouteContractWithStreamedResponse', () => {
   beforeEach(async () => {
     await mockServer.reset()
     client = buildClient(mockServer.url)
+  })
+
+  afterEach(async () => {
+    await client.close()
   })
 
   afterAll(async () => {
