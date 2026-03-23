@@ -144,8 +144,8 @@ describe('sendByRouteContract', () => {
       })
 
       const client = wretch(mockServer.url)
-      // @ts-expect-error intentionally passing invalid query params
       await expect(
+        // @ts-expect-error intentionally passing invalid query params
         sendByRouteContract(client, contract, { queryParams: { limit: 'not-a-number' } }),
       ).rejects.toThrow()
     })
