@@ -78,25 +78,41 @@ const chatCompletion = defineRouteContract({
 })
 ```
 
-### Response sentinels
+### Non-JSON and empty responses
 
-Use sentinels in `responseSchemasByStatusCode` when a status code carries no JSON body:
+Use `ContractNoBody` for responses with no body (e.g. 204), and `defineNonJsonResponse` for responses with a non-JSON body (CSV, binary, plain text, etc.).
 
-| Sentinel | Meaning |
-|---|---|
-| `ContractNoBody` | No body (e.g. 204 No Content) |
-| `ContractNonJsonResponse` | Non-JSON body (binary, octet-stream, etc.) |
+`defineNonJsonResponse` carries both the content type and a Zod schema that describes the body type. This flows through `InferSuccessResponse` so the client gets a typed result instead of `unknown`.
 
 ```ts
-import { defineRouteContract, ContractNonJsonResponse } from '@lokalise/api-contracts'
+import { defineRouteContract, ContractNoBody, defineNonJsonResponse } from '@lokalise/api-contracts'
+import { z } from 'zod/v4'
 
+// Non-JSON response with explicit content type and body schema
 const exportCsv = defineRouteContract({
   method: 'get',
   pathResolver: () => '/export.csv',
   responseSchemasByStatusCode: {
-    200: ContractNonJsonResponse,
+    200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
   },
 })
+
+// No body
+const deleteUser = defineRouteContract({
+  method: 'delete',
+  requestPathParamsSchema: z.object({ userId: z.uuid() }),
+  pathResolver: ({ userId }) => `/users/${userId}`,
+  responseSchemasByStatusCode: {
+    204: ContractNoBody,
+  },
+})
+```
+
+`InferSuccessResponse` resolves the body type from `defineNonJsonResponse`:
+
+```ts
+type CsvBody = InferSuccessResponse<typeof exportCsv['responseSchemasByStatusCode']>
+// string
 ```
 
 ### All fields
@@ -116,7 +132,7 @@ defineRouteContract({
   requestHeaderSchema: z.ZodType,
 
   // Response
-  responseSchemasByStatusCode: { [statusCode]: z.ZodType | ContractNoBody | ContractNonJsonResponse },
+  responseSchemasByStatusCode: { [statusCode]: z.ZodType | ContractNoBody | TypedNonJsonResponse },
   responseHeaderSchema: z.ZodType,
   serverSentEventSchemas: { [eventName]: z.ZodType },
 
@@ -159,7 +175,7 @@ type UserResponse = InferSuccessResponse<typeof getUser['responseSchemasByStatus
 // { id: string; name: string }
 ```
 
-**`InferSuccessSchema<T>`** — union of Zod schema types for all 2xx entries (symbol sentinels map to `undefined`). Used by HTTP client implementations.
+**`InferSuccessSchema<T>`** — union of Zod schema types for all 2xx entries. `ContractNoBody` maps to `undefined`; `TypedNonJsonResponse<S>` maps to its inner schema `S`. Used by HTTP client implementations.
 
 ### Utility functions
 
@@ -245,7 +261,7 @@ defineRouteContract({
 })
 ```
 
-**`isNonJSONResponseExpected: true` → `ContractNonJsonResponse`**
+**`isNonJSONResponseExpected: true` → `defineNonJsonResponse`**
 
 ```ts
 // Before:
@@ -259,7 +275,9 @@ buildRestContract({
 defineRouteContract({
   method: 'get',
   pathResolver: () => '/export.csv',
-  responseSchemasByStatusCode: { 200: ContractNonJsonResponse },
+  responseSchemasByStatusCode: {
+    200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+  },
 })
 ```
 

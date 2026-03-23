@@ -1,11 +1,11 @@
 import {
   buildRequestPath,
   ContractNoBody,
-  ContractNonJsonResponse,
   type HasAnyNonJsonSuccessResponse,
   type HttpStatusCode,
   type InferSchemaInput,
   type InferSuccessResponse,
+  isTypedNonJsonResponse,
   type RouteContract,
 } from '@lokalise/api-contracts'
 import type { WretchResponse } from 'wretch'
@@ -71,7 +71,7 @@ export async function sendByRouteContract<const Contract extends RouteContract>(
     const responseSchema =
       routeContract.responseSchemasByStatusCode?.[response.status as HttpStatusCode]
 
-    if (!responseSchema || responseSchema === ContractNonJsonResponse) {
+    if (!responseSchema || isTypedNonJsonResponse(responseSchema)) {
       return response
     }
     if (responseSchema === ContractNoBody) {

@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import { ContractNoBody, ContractNonJsonResponse } from './defineRouteContract.ts'
+import { ContractNoBody, defineNonJsonResponse } from './defineRouteContract.ts'
 import type {
   HasAnyNonJsonSuccessResponse,
   InferSuccessResponse,
@@ -46,11 +46,14 @@ describe('InferSuccessSchema', () => {
     expectTypeOf<Result>().toEqualTypeOf<undefined>()
   })
 
-  it('maps ContractNonJsonResponse sentinel to undefined', () => {
-    const schemaByStatusCode = { 200: ContractNonJsonResponse } as const
+  it('extracts the inner schema from TypedNonJsonResponse', () => {
+    const schema = z.string()
+    const schemaByStatusCode = {
+      200: defineNonJsonResponse({ contentType: 'text/csv', schema }),
+    } as const
     type Result = InferSuccessSchema<typeof schemaByStatusCode>
 
-    expectTypeOf<Result>().toEqualTypeOf<undefined>()
+    expectTypeOf<Result>().toEqualTypeOf<typeof schema>()
   })
 
   it('excludes sentinels from union when mixed with schemas', () => {
@@ -101,11 +104,13 @@ describe('InferSuccessResponse', () => {
     expectTypeOf<Result>().toEqualTypeOf<undefined>()
   })
 
-  it('maps ContractNonJsonResponse sentinel to undefined', () => {
-    const schemaByStatusCode = { 200: ContractNonJsonResponse } as const
+  it('infers the output type from TypedNonJsonResponse inner schema', () => {
+    const schemaByStatusCode = {
+      200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+    } as const
     type Result = InferSuccessResponse<typeof schemaByStatusCode>
 
-    expectTypeOf<Result>().toEqualTypeOf<undefined>()
+    expectTypeOf<Result>().toEqualTypeOf<string>()
   })
 
   it('excludes sentinels from union when mixed with schemas', () => {
@@ -135,23 +140,27 @@ describe('HasAnyNonJsonSuccessResponse', () => {
     expectTypeOf<Result>().toEqualTypeOf<false>()
   })
 
-  it('returns true when a success schema is ContractNonJsonResponse', () => {
-    const schemaByStatusCode = { 200: ContractNonJsonResponse } as const
-    type Result = HasAnyNonJsonSuccessResponse<typeof schemaByStatusCode>
-    expectTypeOf<Result>().toEqualTypeOf<true>()
-  })
-
-  it('returns true when ContractNonJsonResponse is mixed with other schemas', () => {
+  it('returns true when a success schema is TypedNonJsonResponse', () => {
     const schemaByStatusCode = {
-      200: z.object({ id: z.string() }),
-      201: ContractNonJsonResponse,
+      200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
     } as const
     type Result = HasAnyNonJsonSuccessResponse<typeof schemaByStatusCode>
     expectTypeOf<Result>().toEqualTypeOf<true>()
   })
 
-  it('returns false for error-only status codes with ContractNonJsonResponse', () => {
-    const schemaByStatusCode = { 400: ContractNonJsonResponse } as const
+  it('returns true when TypedNonJsonResponse is mixed with other schemas', () => {
+    const schemaByStatusCode = {
+      200: z.object({ id: z.string() }),
+      201: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+    } as const
+    type Result = HasAnyNonJsonSuccessResponse<typeof schemaByStatusCode>
+    expectTypeOf<Result>().toEqualTypeOf<true>()
+  })
+
+  it('returns false for error-only status codes with TypedNonJsonResponse', () => {
+    const schemaByStatusCode = {
+      400: defineNonJsonResponse({ contentType: 'text/plain', schema: z.string() }),
+    } as const
     type Result = HasAnyNonJsonSuccessResponse<typeof schemaByStatusCode>
     expectTypeOf<Result>().toEqualTypeOf<false>()
   })

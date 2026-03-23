@@ -1,16 +1,19 @@
 import type { z } from 'zod/v4'
 import type { SuccessfulHttpStatusCode } from '../HttpStatusCodes.ts'
-import type {
-  ContractNonJsonResponseType,
-  ResponseSchemasByStatusCode,
-} from './defineRouteContract.ts'
+import type { ResponseSchemasByStatusCode, TypedNonJsonResponse } from './defineRouteContract.ts'
 
 type InferSchemaOutput<T extends z.ZodSchema | undefined> = T extends z.ZodSchema
   ? z.output<T>
   : undefined
 
-/** Maps ContractNoBodyType and ContractNonJsonResponseType to undefined, preserving z.Schema as-is. */
-type ToZodSchema<T> = T extends z.Schema ? T : undefined
+/**
+ * Maps sentinels to their effective Zod schema:
+ * - TypedNonJsonResponse<S> → S (the inner schema)
+ * - ContractNoBodyType / ContractNonJsonResponseType → undefined
+ * - z.Schema → preserved as-is
+ */
+type ToZodSchema<T> =
+  T extends TypedNonJsonResponse<infer S> ? S : T extends z.Schema ? T : undefined
 
 type ValueOf<
   ObjectType,
@@ -33,12 +36,14 @@ export type InferSuccessSchema<T extends ResponseSchemasByStatusCode | undefined
 export type InferSuccessResponse<T extends ResponseSchemasByStatusCode | undefined> =
   InferSchemaOutput<InferSuccessSchema<T>>
 
+type IsNonJsonResponseValue<T> = T extends TypedNonJsonResponse ? true : false
+
 /**
- * Returns true if any success status code entry is ContractNonJsonResponse.
+ * Returns true if any success status code entry is ContractNonJsonResponse or TypedNonJsonResponse.
  */
 export type HasAnyNonJsonSuccessResponse<T extends ResponseSchemasByStatusCode | undefined> =
   T extends ResponseSchemasByStatusCode
-    ? ContractNonJsonResponseType extends ValueOf<T, Extract<keyof T, SuccessfulHttpStatusCode>>
+    ? true extends IsNonJsonResponseValue<ValueOf<T, Extract<keyof T, SuccessfulHttpStatusCode>>>
       ? true
       : false
     : false

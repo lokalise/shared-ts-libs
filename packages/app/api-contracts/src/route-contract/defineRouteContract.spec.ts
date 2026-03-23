@@ -2,10 +2,11 @@ import { describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import {
   ContractNoBody,
-  ContractNonJsonResponse,
+  defineNonJsonResponse,
   defineRouteContract,
   describeRouteContract,
   getIsEmptyResponseExpected,
+  getIsNonJsonResponseExpected,
   getSuccessResponseSchema,
   mapRouteContractToPath,
 } from './defineRouteContract.ts'
@@ -67,15 +68,18 @@ describe('defineRouteContract', () => {
       expectTypeOf(route.responseSchemasByStatusCode['204']).toEqualTypeOf<typeof ContractNoBody>()
     })
 
-    it('preserves ContractNonJsonResponse sentinel in responseSchemasByStatusCode', () => {
+    it('preserves TypedNonJsonResponse in responseSchemasByStatusCode', () => {
+      const schema = z.string()
       const route = defineRouteContract({
         method: 'get',
         pathResolver: () => '/export.csv',
-        responseSchemasByStatusCode: { 200: ContractNonJsonResponse },
+        responseSchemasByStatusCode: {
+          200: defineNonJsonResponse({ contentType: 'text/csv', schema }),
+        },
       })
 
       expectTypeOf(route.responseSchemasByStatusCode['200']).toEqualTypeOf<
-        typeof ContractNonJsonResponse
+        ReturnType<typeof defineNonJsonResponse<typeof schema>>
       >()
     })
 
@@ -204,6 +208,20 @@ describe('getSuccessResponseSchema', () => {
     expect(result!.parse({ name: 'x' })).toEqual({ name: 'x' })
   })
 
+  it('returns z.never() for TypedNonJsonResponse entries', () => {
+    const route = defineRouteContract({
+      method: 'get',
+      pathResolver: () => '/export.csv',
+      responseSchemasByStatusCode: {
+        200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+      },
+    })
+
+    const result = getSuccessResponseSchema(route)
+    expect(result).not.toBeNull()
+    expect(result!.safeParse('anything').success).toBe(false)
+  })
+
   it('contributes z.never() for sentinel entries in a mixed map', () => {
     const schema200 = z.object({ id: z.string() })
     const route = defineRouteContract({
@@ -271,5 +289,72 @@ describe('getIsEmptyResponseExpected', () => {
     })
 
     expect(getIsEmptyResponseExpected(route)).toBe(false)
+  })
+
+  it('returns false when a TypedNonJsonResponse is present', () => {
+    const route = defineRouteContract({
+      method: 'get',
+      pathResolver: () => '/export.csv',
+      responseSchemasByStatusCode: {
+        200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+      },
+    })
+
+    expect(getIsEmptyResponseExpected(route)).toBe(false)
+  })
+})
+
+describe('getIsNonJsonResponseExpected', () => {
+  it('returns false when responseSchemasByStatusCode is not defined', () => {
+    const route = defineRouteContract({
+      method: 'get',
+      pathResolver: () => '/users',
+    })
+
+    expect(getIsNonJsonResponseExpected(route)).toBe(false)
+  })
+
+  it('returns false for JSON schema responses', () => {
+    const route = defineRouteContract({
+      method: 'get',
+      pathResolver: () => '/users',
+      responseSchemasByStatusCode: { 200: z.object({ id: z.string() }) },
+    })
+
+    expect(getIsNonJsonResponseExpected(route)).toBe(false)
+  })
+
+  it('returns false for ContractNoBody', () => {
+    const route = defineRouteContract({
+      method: 'delete',
+      pathResolver: () => '/users/1',
+      responseSchemasByStatusCode: { 204: ContractNoBody },
+    })
+
+    expect(getIsNonJsonResponseExpected(route)).toBe(false)
+  })
+
+  it('returns true for TypedNonJsonResponse', () => {
+    const route = defineRouteContract({
+      method: 'get',
+      pathResolver: () => '/export.csv',
+      responseSchemasByStatusCode: {
+        200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+      },
+    })
+
+    expect(getIsNonJsonResponseExpected(route)).toBe(true)
+  })
+
+  it('returns false when TypedNonJsonResponse is on an error status code', () => {
+    const route = defineRouteContract({
+      method: 'get',
+      pathResolver: () => '/users',
+      responseSchemasByStatusCode: {
+        400: defineNonJsonResponse({ contentType: 'text/plain', schema: z.string() }),
+      },
+    })
+
+    expect(getIsNonJsonResponseExpected(route)).toBe(false)
   })
 })
