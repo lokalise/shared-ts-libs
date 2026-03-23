@@ -5,10 +5,11 @@ import type {
 } from '@lokalise/api-contracts'
 import { buildRequestPath } from '@lokalise/api-contracts'
 import type { z } from 'zod/v4'
-import type { HeadersObject, HeadersSource, WretchInstance } from './types.ts'
+import type { HeadersSource, WretchInstance } from './types.ts'
 import { parseRequestBody } from './utils/bodyUtils.ts'
 import { isFailure } from './utils/either.ts'
 import { isError } from './utils/errorUtils.ts'
+import { resolveHeaders } from './utils/headersUtils.ts'
 import { parseQueryParams } from './utils/queryUtils.ts'
 import { parseSseStream } from './utils/sseUtils.ts'
 
@@ -51,10 +52,6 @@ export type SseRouteRequestParams<Contract extends AnyContract> = {
 } extends infer Mandatory
   ? { [K in keyof Mandatory as Mandatory[K] extends never ? never : K]: Mandatory[K] }
   : never
-
-function resolveHeaders(headers: HeadersSource): HeadersObject | Promise<HeadersObject> {
-  return typeof headers === 'function' ? headers() : headers
-}
 
 type SseInternalParams = {
   pathParams?: unknown

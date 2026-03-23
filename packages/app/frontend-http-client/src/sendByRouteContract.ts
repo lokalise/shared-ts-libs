@@ -10,10 +10,10 @@ import {
 } from '@lokalise/api-contracts'
 import type { WretchResponse } from 'wretch'
 import { z } from 'zod/v4'
-import { resolveHeaders } from './client.ts'
 import type { PayloadRouteRequestParams, WretchInstance } from './types.ts'
 import { parseRequestBody, parseResponseBody } from './utils/bodyUtils.ts'
 import { isFailure } from './utils/either.ts'
+import { resolveHeaders } from './utils/headersUtils.ts'
 import { parseQueryParams } from './utils/queryUtils.ts'
 
 type ExtractBodyInput<T> = T extends { requestBodySchema: z.ZodType }

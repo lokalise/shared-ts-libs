@@ -14,9 +14,7 @@ import type {
   FreeDeleteParams,
   FreeHeadersParams,
   GetParamsWrapper,
-  HeadersObject,
   HeadersParams,
-  HeadersSource,
   PayloadRequestParamsWrapper,
   PayloadRouteRequestParams,
   RequestResultType,
@@ -31,15 +29,12 @@ import {
 } from './utils/bodyUtils.ts'
 import { isFailure } from './utils/either.ts'
 import { buildWretchError, XmlHttpRequestError } from './utils/errorUtils.ts'
+import { resolveHeaders } from './utils/headersUtils.ts'
 import { parseQueryParams } from './utils/queryUtils.ts'
 
 export const UNKNOWN_SCHEMA = z.unknown()
 
-export function resolveHeaders(headers: HeadersSource): HeadersObject | Promise<HeadersObject> {
-  return (typeof headers === 'function' ? headers() : headers) ?? {}
-}
-
-export function handleBodyParseError<RequestBodySchema extends z.ZodSchema>(
+function handleBodyParseError<RequestBodySchema extends z.ZodSchema>(
   bodyParseResult: BodyParseResult<RequestBodySchema>,
   params: {
     isNonJSONResponseExpected?: boolean
