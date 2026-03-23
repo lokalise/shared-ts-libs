@@ -302,7 +302,7 @@ describe('sendByRouteContract', () => {
   })
 
   describe('DELETE', () => {
-    it('sends DELETE with ContractNoBody and returns undefined on 204', async () => {
+    it('sends DELETE with ContractNoBody and returns wretch response on 204', async () => {
       const contract = defineRouteContract({
         method: 'delete',
         requestPathParamsSchema: z.object({ id: z.string() }),
@@ -315,8 +315,7 @@ describe('sendByRouteContract', () => {
       const client = wretch(mockServer.url)
       const result = await sendByRouteContract(client, contract, { pathParams: { id: '1' } })
 
-      expectTypeOf(result).toEqualTypeOf<undefined>()
-      expect(result).toBeNull()
+      expect((result as unknown as Response).status).toBe(204)
     })
 
     it('body is absent from params type for DELETE contract', () => {
