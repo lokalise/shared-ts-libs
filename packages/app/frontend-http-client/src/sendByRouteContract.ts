@@ -71,11 +71,12 @@ export async function sendByRouteContract<const Contract extends RouteContract>(
     const responseSchema =
       routeContract.responseSchemasByStatusCode?.[response.status as HttpStatusCode]
 
-    if (!responseSchema || isTypedNonJsonResponse(responseSchema)) {
+    if (
+      !responseSchema ||
+      isTypedNonJsonResponse(responseSchema) ||
+      responseSchema === ContractNoBody
+    ) {
       return response
-    }
-    if (responseSchema === ContractNoBody) {
-      return null
     }
 
     const responseBody = await response.json()
