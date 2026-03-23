@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import { ContractNoBody, defineNonJsonResponse } from './defineRouteContract.ts'
+import { ContractNoBody, nonJsonResponse } from './defineRouteContract.ts'
 import type {
   HasAnyNonJsonSuccessResponse,
   InferSuccessResponse,
@@ -49,7 +49,7 @@ describe('InferSuccessSchema', () => {
   it('extracts the inner schema from TypedNonJsonResponse', () => {
     const schema = z.string()
     const schemaByStatusCode = {
-      200: defineNonJsonResponse({ contentType: 'text/csv', schema }),
+      200: nonJsonResponse({ contentType: 'text/csv', schema }),
     } as const
     type Result = InferSuccessSchema<typeof schemaByStatusCode>
 
@@ -106,7 +106,7 @@ describe('InferSuccessResponse', () => {
 
   it('infers the output type from TypedNonJsonResponse inner schema', () => {
     const schemaByStatusCode = {
-      200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+      200: nonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
     } as const
     type Result = InferSuccessResponse<typeof schemaByStatusCode>
 
@@ -142,7 +142,7 @@ describe('HasAnyNonJsonSuccessResponse', () => {
 
   it('returns true when a success schema is TypedNonJsonResponse', () => {
     const schemaByStatusCode = {
-      200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+      200: nonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
     } as const
     type Result = HasAnyNonJsonSuccessResponse<typeof schemaByStatusCode>
     expectTypeOf<Result>().toEqualTypeOf<true>()
@@ -151,7 +151,7 @@ describe('HasAnyNonJsonSuccessResponse', () => {
   it('returns true when TypedNonJsonResponse is mixed with other schemas', () => {
     const schemaByStatusCode = {
       200: z.object({ id: z.string() }),
-      201: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+      201: nonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
     } as const
     type Result = HasAnyNonJsonSuccessResponse<typeof schemaByStatusCode>
     expectTypeOf<Result>().toEqualTypeOf<true>()
@@ -159,7 +159,7 @@ describe('HasAnyNonJsonSuccessResponse', () => {
 
   it('returns false for error-only status codes with TypedNonJsonResponse', () => {
     const schemaByStatusCode = {
-      400: defineNonJsonResponse({ contentType: 'text/plain', schema: z.string() }),
+      400: nonJsonResponse({ contentType: 'text/plain', schema: z.string() }),
     } as const
     type Result = HasAnyNonJsonSuccessResponse<typeof schemaByStatusCode>
     expectTypeOf<Result>().toEqualTypeOf<false>()

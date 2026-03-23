@@ -2,13 +2,13 @@ import { describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import {
   ContractNoBody,
-  defineNonJsonResponse,
   defineRouteContract,
   describeRouteContract,
   getIsEmptyResponseExpected,
   getIsNonJsonResponseExpected,
   getSuccessResponseSchema,
   mapRouteContractToPath,
+  nonJsonResponse,
 } from './defineRouteContract.ts'
 import type { InferSuccessSchema } from './inferTypes.ts'
 
@@ -74,12 +74,12 @@ describe('defineRouteContract', () => {
         method: 'get',
         pathResolver: () => '/export.csv',
         responseSchemasByStatusCode: {
-          200: defineNonJsonResponse({ contentType: 'text/csv', schema }),
+          200: nonJsonResponse({ contentType: 'text/csv', schema }),
         },
       })
 
       expectTypeOf(route.responseSchemasByStatusCode['200']).toEqualTypeOf<
-        ReturnType<typeof defineNonJsonResponse<typeof schema>>
+        ReturnType<typeof nonJsonResponse<typeof schema>>
       >()
     })
 
@@ -213,7 +213,7 @@ describe('getSuccessResponseSchema', () => {
       method: 'get',
       pathResolver: () => '/export.csv',
       responseSchemasByStatusCode: {
-        200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+        200: nonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
       },
     })
 
@@ -296,7 +296,7 @@ describe('getIsEmptyResponseExpected', () => {
       method: 'get',
       pathResolver: () => '/export.csv',
       responseSchemasByStatusCode: {
-        200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+        200: nonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
       },
     })
 
@@ -339,7 +339,7 @@ describe('getIsNonJsonResponseExpected', () => {
       method: 'get',
       pathResolver: () => '/export.csv',
       responseSchemasByStatusCode: {
-        200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+        200: nonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
       },
     })
 
@@ -351,7 +351,7 @@ describe('getIsNonJsonResponseExpected', () => {
       method: 'get',
       pathResolver: () => '/users',
       responseSchemasByStatusCode: {
-        400: defineNonJsonResponse({ contentType: 'text/plain', schema: z.string() }),
+        400: nonJsonResponse({ contentType: 'text/plain', schema: z.string() }),
       },
     })
 

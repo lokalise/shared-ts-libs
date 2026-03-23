@@ -11,7 +11,7 @@ export type TypedNonJsonResponse<T extends z.ZodType = z.ZodType> = {
   readonly schema: T
 }
 
-export const defineNonJsonResponse = <T extends z.ZodType>(options: {
+export const nonJsonResponse = <T extends z.ZodType>(options: {
   contentType: string
   schema: T
 }): TypedNonJsonResponse<T> => ({
@@ -20,9 +20,7 @@ export const defineNonJsonResponse = <T extends z.ZodType>(options: {
   schema: options.schema,
 })
 
-export const isTypedNonJsonResponse = (
-  value: RouteContractResponse,
-): value is TypedNonJsonResponse =>
+export const isNonJsonResponse = (value: RouteContractResponse): value is TypedNonJsonResponse =>
   typeof value === 'object' && value !== null && '_tag' in value && value._tag === 'NonJsonResponse'
 
 export type RouteContractResponse = ContractNoBodyType | TypedNonJsonResponse | z.ZodType
@@ -123,7 +121,7 @@ export const getSuccessResponseSchema = (routeConfig: RouteContract): z.ZodType 
       continue
     }
 
-    if (typeof value === 'symbol' || isTypedNonJsonResponse(value)) {
+    if (typeof value === 'symbol' || isNonJsonResponse(value)) {
       schemas.push(z.never())
     } else {
       schemas.push(value)
@@ -167,7 +165,7 @@ export const getIsNonJsonResponseExpected = (routeConfig: RouteContract): boolea
 
   for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
     const value = responseSchemasByStatusCode[code]
-    if (value !== undefined && isTypedNonJsonResponse(value)) {
+    if (value !== undefined && isNonJsonResponse(value)) {
       return true
     }
   }

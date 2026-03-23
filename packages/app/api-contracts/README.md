@@ -80,12 +80,12 @@ const chatCompletion = defineRouteContract({
 
 ### Non-JSON and empty responses
 
-Use `ContractNoBody` for responses with no body (e.g. 204), and `defineNonJsonResponse` for responses with a non-JSON body (CSV, binary, plain text, etc.).
+Use `ContractNoBody` for responses with no body (e.g. 204), and `nonJsonResponse` for responses with a non-JSON body (CSV, binary, plain text, etc.).
 
-`defineNonJsonResponse` carries both the content type and a Zod schema that describes the body type. This flows through `InferSuccessResponse` so the client gets a typed result instead of `unknown`.
+`nonJsonResponse` carries both the content type and a Zod schema that describes the body type. This flows through `InferSuccessResponse` so the client gets a typed result instead of `unknown`.
 
 ```ts
-import { defineRouteContract, ContractNoBody, defineNonJsonResponse } from '@lokalise/api-contracts'
+import { defineRouteContract, ContractNoBody, nonJsonResponse } from '@lokalise/api-contracts'
 import { z } from 'zod/v4'
 
 // Non-JSON response with explicit content type and body schema
@@ -93,7 +93,7 @@ const exportCsv = defineRouteContract({
   method: 'get',
   pathResolver: () => '/export.csv',
   responseSchemasByStatusCode: {
-    200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+    200: nonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
   },
 })
 
@@ -108,7 +108,7 @@ const deleteUser = defineRouteContract({
 })
 ```
 
-`InferSuccessResponse` resolves the body type from `defineNonJsonResponse`:
+`InferSuccessResponse` resolves the body type from `nonJsonResponse`:
 
 ```ts
 type CsvBody = InferSuccessResponse<typeof exportCsv['responseSchemasByStatusCode']>
@@ -261,7 +261,7 @@ defineRouteContract({
 })
 ```
 
-**`isNonJSONResponseExpected: true` → `defineNonJsonResponse`**
+**`isNonJSONResponseExpected: true` → `nonJsonResponse`**
 
 ```ts
 // Before:
@@ -276,7 +276,7 @@ defineRouteContract({
   method: 'get',
   pathResolver: () => '/export.csv',
   responseSchemasByStatusCode: {
-    200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+    200: nonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
   },
 })
 ```

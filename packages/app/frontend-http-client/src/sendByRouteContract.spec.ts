@@ -1,4 +1,4 @@
-import { ContractNoBody, defineNonJsonResponse, defineRouteContract } from '@lokalise/api-contracts'
+import { ContractNoBody, defineRouteContract, nonJsonResponse } from '@lokalise/api-contracts'
 import { getLocal } from 'mockttp'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import wretch from 'wretch'
@@ -155,7 +155,7 @@ describe('sendByRouteContract', () => {
         method: 'get',
         pathResolver: () => '/export.csv',
         responseSchemasByStatusCode: {
-          200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+          200: nonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
         },
       })
 
