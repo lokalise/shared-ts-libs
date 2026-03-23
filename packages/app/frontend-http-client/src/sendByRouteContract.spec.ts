@@ -1,4 +1,4 @@
-import { ContractNoBody, defineRouteContract } from '@lokalise/api-contracts'
+import { ContractNoBody, defineNonJsonResponse, defineRouteContract } from '@lokalise/api-contracts'
 import { getLocal } from 'mockttp'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import wretch from 'wretch'
@@ -135,6 +135,41 @@ describe('sendByRouteContract', () => {
       expect(result).toEqual({ id: 1 })
     })
 
+    it('rejects when query params fail validation', async () => {
+      const contract = defineRouteContract({
+        method: 'get',
+        pathResolver: () => '/products',
+        requestQuerySchema: z.object({ limit: z.number() }),
+        responseSchemasByStatusCode: { 200: z.array(z.unknown()) },
+      })
+
+      const client = wretch(mockServer.url)
+      // @ts-expect-error intentionally passing invalid query params
+      await expect(
+        sendByRouteContract(client, contract, { queryParams: { limit: 'not-a-number' } }),
+      ).rejects.toThrow()
+    })
+
+    it('returns raw response for TypedNonJsonResponse contract', async () => {
+      const contract = defineRouteContract({
+        method: 'get',
+        pathResolver: () => '/export.csv',
+        responseSchemasByStatusCode: {
+          200: defineNonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+        },
+      })
+
+      await mockServer
+        .forGet('/export.csv')
+        .thenReply(200, 'id,name\n1,Widget', { 'Content-Type': 'text/csv' })
+
+      const client = wretch(mockServer.url)
+      const result = await sendByRouteContract(client, contract, {})
+
+      expect(result).toBeDefined()
+      expect((result as Response).status).toBe(200)
+    })
+
     it('body is absent from params type for GET contract', () => {
       const contract = defineRouteContract({
         method: 'get',
@@ -147,6 +182,34 @@ describe('sendByRouteContract', () => {
         sendByRouteContract(wretch('http://localhost'), contract, { body: {} })
       }
       void _typeCheck
+    })
+  })
+
+  describe('error paths', () => {
+    it('rejects when request body fails validation', async () => {
+      const contract = defineRouteContract({
+        method: 'post',
+        pathResolver: () => '/products',
+        requestBodySchema: z.object({ name: z.string() }),
+        responseSchemasByStatusCode: { 201: z.object({ id: z.number() }) },
+      })
+
+      const client = wretch(mockServer.url)
+      // @ts-expect-error intentionally passing invalid body
+      await expect(sendByRouteContract(client, contract, { body: { name: 123 } })).rejects.toThrow()
+    })
+
+    it('rejects when response body fails validation', async () => {
+      const contract = defineRouteContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responseSchemasByStatusCode: { 200: z.object({ id: z.number() }) },
+      })
+
+      await mockServer.forGet('/products/1').thenJson(200, { id: 'not-a-number' }, JSON_HEADERS)
+
+      const client = wretch(mockServer.url)
+      await expect(sendByRouteContract(client, contract, {})).rejects.toThrow()
     })
   })
 
