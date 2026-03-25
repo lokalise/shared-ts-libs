@@ -43,23 +43,46 @@ const deleteUser = defineRouteContract({
 })
 ```
 
-### SSE and dual-mode routes
+### Non-JSON responses
 
-Add `serverSentEventSchemas` to define SSE event types. The presence of both `responseSchemasByStatusCode` (2xx) and `serverSentEventSchemas` makes the contract dual-mode.
-
-| `responseSchemasByStatusCode` (2xx) | `serverSentEventSchemas` | Mode |
-|---|---|---|
-| ✅ | absent | REST |
-| absent / symbols only | ✅ | SSE-only |
-| ✅ | ✅ | Dual-mode (JSON + SSE) |
+Use `textResponse` for plain-text or CSV responses, and `blobResponse` for binary responses (images, PDFs, etc.). Both carry the content type.
 
 ```ts
+import { defineRouteContract, textResponse, blobResponse } from '@lokalise/api-contracts'
+
+const exportCsv = defineRouteContract({
+  method: 'get',
+  pathResolver: () => '/export.csv',
+  responseSchemasByStatusCode: {
+    200: textResponse('text/csv'),
+  },
+})
+
+const downloadPhoto = defineRouteContract({
+  method: 'get',
+  pathResolver: () => '/photo.png',
+  responseSchemasByStatusCode: {
+    200: blobResponse('image/png'),
+  },
+})
+```
+
+### SSE and dual-mode routes
+
+Use `sseResponse()` inside `responseSchemasByStatusCode` to define SSE event schemas. For endpoints that can respond with either JSON or an SSE stream depending on the `Accept` header, use `anyOfResponses()` to declare both options on the same status code.
+
+```ts
+import { defineRouteContract, sseResponse, anyOfResponses } from '@lokalise/api-contracts'
+import { z } from 'zod/v4'
+
 // SSE-only
 const notifications = defineRouteContract({
   method: 'get',
   pathResolver: () => '/notifications/stream',
-  serverSentEventSchemas: {
-    notification: z.object({ id: z.string(), message: z.string() }),
+  responseSchemasByStatusCode: {
+    200: sseResponse({
+      notification: z.object({ id: z.string(), message: z.string() }),
+    }),
   },
 })
 
@@ -69,50 +92,27 @@ const chatCompletion = defineRouteContract({
   pathResolver: () => '/chat/completions',
   requestBodySchema: z.object({ message: z.string() }),
   responseSchemasByStatusCode: {
-    200: z.object({ text: z.string() }),
-  },
-  serverSentEventSchemas: {
-    chunk: z.object({ delta: z.string() }),
-    done: z.object({ finish_reason: z.string() }),
-  },
-})
-```
-
-### Non-JSON and empty responses
-
-Use `ContractNoBody` for responses with no body (e.g. 204), and `nonJsonResponse` for responses with a non-JSON body (CSV, binary, plain text, etc.).
-
-`nonJsonResponse` carries both the content type and a Zod schema that describes the body type. This flows through `InferSuccessResponse` so the client gets a typed result instead of `unknown`.
-
-```ts
-import { defineRouteContract, ContractNoBody, nonJsonResponse } from '@lokalise/api-contracts'
-import { z } from 'zod/v4'
-
-// Non-JSON response with explicit content type and body schema
-const exportCsv = defineRouteContract({
-  method: 'get',
-  pathResolver: () => '/export.csv',
-  responseSchemasByStatusCode: {
-    200: nonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
-  },
-})
-
-// No body
-const deleteUser = defineRouteContract({
-  method: 'delete',
-  requestPathParamsSchema: z.object({ userId: z.uuid() }),
-  pathResolver: ({ userId }) => `/users/${userId}`,
-  responseSchemasByStatusCode: {
-    204: ContractNoBody,
+    200: anyOfResponses([
+      sseResponse({
+        chunk: z.object({ delta: z.string() }),
+        done: z.object({ finish_reason: z.string() }),
+      }),
+      z.object({ text: z.string() }),
+    ]),
   },
 })
 ```
 
-`InferSuccessResponse` resolves the body type from `nonJsonResponse`:
+`getSseSchemaByEventName(contract)` extracts SSE event schemas from a contract:
 
 ```ts
-type CsvBody = InferSuccessResponse<typeof exportCsv['responseSchemasByStatusCode']>
-// string
+import { getSseSchemaByEventName } from '@lokalise/api-contracts'
+
+getSseSchemaByEventName(notifications)
+// { notification: ZodObject<...> }
+
+getSseSchemaByEventName(chatCompletion)
+// { chunk: ZodObject<...>, done: ZodObject<...> }
 ```
 
 ### All fields
@@ -122,6 +122,9 @@ defineRouteContract({
   // Required
   method: 'get' | 'post' | 'put' | 'patch' | 'delete',
   pathResolver: (pathParams) => string,
+  responseSchemasByStatusCode: {
+    [statusCode]: z.ZodType | ContractNoBody | TypedTextResponse | TypedBlobResponse | TypedSseResponse | AnyOfResponses
+  },
 
   // Path params — links pathResolver parameter type to the schema
   requestPathParamsSchema: z.ZodType,
@@ -132,9 +135,7 @@ defineRouteContract({
   requestHeaderSchema: z.ZodType,
 
   // Response
-  responseSchemasByStatusCode: { [statusCode]: z.ZodType | ContractNoBody | TypedNonJsonResponse },
   responseHeaderSchema: z.ZodType,
-  serverSentEventSchemas: { [eventName]: z.ZodType },
 
   // Documentation
   summary: string,
@@ -166,16 +167,27 @@ const contract = defineRouteContract({
 
 ### Type utilities
 
-**`InferSuccessResponse<T>`** — TypeScript output type of all 2xx response schemas.
+**`InferNonSseSuccessResponses<T>`** — TypeScript output type of all non-SSE 2xx responses. JSON schemas → `z.output<T>`, `textResponse` → `string`, `blobResponse` → `Blob`, `ContractNoBody` → `undefined`, `sseResponse` → `never` (excluded). `anyOfResponses` entries are unpacked before mapping.
 
 ```ts
-import type { InferSuccessResponse } from '@lokalise/api-contracts'
+import type { InferNonSseSuccessResponses } from '@lokalise/api-contracts'
 
-type UserResponse = InferSuccessResponse<typeof getUser['responseSchemasByStatusCode']>
+type UserResponse = InferNonSseSuccessResponses<typeof getUser['responseSchemasByStatusCode']>
 // { id: string; name: string }
+
+type CsvResponse = InferNonSseSuccessResponses<typeof exportCsv['responseSchemasByStatusCode']>
+// string
 ```
 
-**`InferSuccessSchema<T>`** — union of Zod schema types for all 2xx entries. `ContractNoBody` maps to `undefined`; `TypedNonJsonResponse<S>` maps to its inner schema `S`. Used by HTTP client implementations.
+**`InferJsonSuccessResponses<T>`** — union of Zod schema types for all JSON 2xx entries. Text, Blob, SSE, and `ContractNoBody` entries are excluded.
+
+**`InferSseSuccessResponses<T>`** — extracts the SSE event schema map type from a `responseSchemasByStatusCode` map. Returns `never` when no SSE schemas are present.
+
+**`HasAnySseSuccessResponse<T>`** — `true` if any 2xx entry is a `TypedSseResponse` or an `AnyOfResponses` containing one.
+
+**`HasAnyJsonSuccessResponse<T>`** — `true` if any 2xx entry is a JSON Zod schema or an `AnyOfResponses` containing one.
+
+**`IsNoBodySuccessResponse<T>`** — `true` when all 2xx entries are `ContractNoBody` or no 2xx status codes are defined.
 
 ### Utility functions
 
@@ -195,7 +207,7 @@ import { describeRouteContract } from '@lokalise/api-contracts'
 describeRouteContract(getUser) // "GET /users/:userId"
 ```
 
-**`getSuccessResponseSchema`** — merged Zod schema from all 2xx entries. Symbol sentinels contribute `z.never()`. Returns `null` when no schema is present.
+**`getSuccessResponseSchema`** — merged Zod schema from all 2xx JSON entries. `ContractNoBody` and non-JSON entries are excluded. Returns `null` when no schema is present.
 
 ```ts
 import { getSuccessResponseSchema } from '@lokalise/api-contracts'
@@ -211,6 +223,15 @@ import { getIsEmptyResponseExpected } from '@lokalise/api-contracts'
 
 getIsEmptyResponseExpected(deleteUser) // true
 getIsEmptyResponseExpected(getUser)    // false
+```
+
+**`getSseSchemaByEventName`** — extracts SSE event schemas from a contract. Returns `null` when no SSE schemas are present.
+
+```ts
+import { getSseSchemaByEventName } from '@lokalise/api-contracts'
+
+getSseSchemaByEventName(notifications) // { notification: ZodObject<...> }
+getSseSchemaByEventName(getUser)       // null
 ```
 
 ---
@@ -261,7 +282,7 @@ defineRouteContract({
 })
 ```
 
-**`isNonJSONResponseExpected: true` → `nonJsonResponse`**
+**`isNonJSONResponseExpected: true` → `textResponse` / `blobResponse`**
 
 ```ts
 // Before:
@@ -276,7 +297,7 @@ defineRouteContract({
   method: 'get',
   pathResolver: () => '/export.csv',
   responseSchemasByStatusCode: {
-    200: nonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+    200: textResponse('text/csv'),
   },
 })
 ```
@@ -287,7 +308,7 @@ Universal builder that delegated to `buildRestContract` or `buildSseContract`. U
 
 ### `buildSseContract` (deprecated)
 
-SSE/dual-mode builder. Use `defineRouteContract` with `serverSentEventSchemas` instead.
+SSE/dual-mode builder. Use `defineRouteContract` with `sseResponse()` or `anyOfResponses()` inside `responseSchemasByStatusCode` instead.
 
 ### `buildGetRoute`, `buildPayloadRoute`, `buildDeleteRoute` (deprecated)
 

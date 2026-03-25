@@ -1,4 +1,9 @@
-import { ContractNoBody, defineRouteContract, nonJsonResponse } from '@lokalise/api-contracts'
+import {
+  blobResponse,
+  ContractNoBody,
+  defineRouteContract,
+  textResponse,
+} from '@lokalise/api-contracts'
 import { getLocal } from 'mockttp'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import wretch from 'wretch'
@@ -150,12 +155,12 @@ describe('sendByRouteContract', () => {
       ).rejects.toThrow()
     })
 
-    it('returns raw response for TypedNonJsonResponse contract', async () => {
+    it('returns string for textResponse contract', async () => {
       const contract = defineRouteContract({
         method: 'get',
         pathResolver: () => '/export.csv',
         responseSchemasByStatusCode: {
-          200: nonJsonResponse({ contentType: 'text/csv', schema: z.string() }),
+          200: textResponse('text/csv'),
         },
       })
 
@@ -166,8 +171,26 @@ describe('sendByRouteContract', () => {
       const client = wretch(mockServer.url)
       const result = await sendByRouteContract(client, contract, {})
 
-      expect(result).toBeDefined()
-      expect((result as Response).status).toBe(200)
+      expect(result).toBe('id,name\n1,Widget')
+    })
+
+    it('returns Blob for blobResponse contract', async () => {
+      const contract = defineRouteContract({
+        method: 'get',
+        pathResolver: () => '/photo.png',
+        responseSchemasByStatusCode: {
+          200: blobResponse('image/png'),
+        },
+      })
+
+      await mockServer
+        .forGet('/photo.png')
+        .thenReply(200, Buffer.from('PNG_DATA'), { 'Content-Type': 'image/png' })
+
+      const client = wretch(mockServer.url)
+      const result = await sendByRouteContract(client, contract, {})
+
+      expect(result).toBeInstanceOf(Blob)
     })
 
     it('body is absent from params type for GET contract', () => {

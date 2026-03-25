@@ -1,11 +1,13 @@
 import {
   buildRequestPath,
   ContractNoBody,
-  type HasAnyNonJsonSuccessResponse,
   type HttpStatusCode,
+  type InferNonSseSuccessResponses,
   type InferSchemaInput,
-  type InferSuccessResponse,
-  isNonJsonResponse,
+  isAnyOfResponses,
+  isBlobResponse,
+  isSseResponse,
+  isTextResponse,
   type RouteContract,
 } from '@lokalise/api-contracts'
 import type { WretchResponse } from 'wretch'
@@ -29,11 +31,7 @@ export async function sendByRouteContract<const Contract extends RouteContract>(
     InferSchemaInput<Contract['requestQuerySchema']>,
     InferSchemaInput<Contract['requestHeaderSchema']>
   >,
-): Promise<
-  HasAnyNonJsonSuccessResponse<Contract['responseSchemasByStatusCode']> extends true
-    ? WretchResponse
-    : InferSuccessResponse<Contract['responseSchemasByStatusCode']>
-> {
+): Promise<InferNonSseSuccessResponses<Contract['responseSchemasByStatusCode']>> {
   // biome-ignore lint/suspicious/noExplicitAny: pathParams key may not be present in params
   const anyParams = params as any
   const path = buildRequestPath(
@@ -71,7 +69,19 @@ export async function sendByRouteContract<const Contract extends RouteContract>(
     const responseSchema =
       routeContract.responseSchemasByStatusCode?.[response.status as HttpStatusCode]
 
-    if (!responseSchema || isNonJsonResponse(responseSchema) || responseSchema === ContractNoBody) {
+    if (!responseSchema || responseSchema === ContractNoBody) {
+      return response
+    }
+
+    if (isTextResponse(responseSchema)) {
+      return response.text()
+    }
+
+    if (isBlobResponse(responseSchema)) {
+      return response.blob()
+    }
+
+    if (isSseResponse(responseSchema) || isAnyOfResponses(responseSchema)) {
       return response
     }
 

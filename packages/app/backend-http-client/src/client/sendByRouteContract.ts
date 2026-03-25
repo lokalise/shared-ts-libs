@@ -4,9 +4,9 @@ import {
   type GetRouteContract,
   getIsEmptyResponseExpected,
   getSuccessResponseSchema,
+  type InferNonSseSuccessResponses,
   type InferSchemaInput,
-  type InferSuccessResponse,
-  type InferSuccessSchema,
+  type IsNoBodySuccessResponse,
   type RouteContract,
 } from '@lokalise/api-contracts'
 import type { Client } from 'undici'
@@ -14,7 +14,11 @@ import { z } from 'zod/v4'
 import type { PayloadRouteRequestParams } from './apiContractTypes.ts'
 import type { DEFAULT_OPTIONS } from './constants.ts'
 import { sendGetWithStreamedResponse, sendNonPayload, sendResourceChange } from './httpClient.ts'
-import type { RequestOptions, RequestResultDefinitiveEither } from './types.ts'
+import type {
+  ContractRequestOptions,
+  RequestOptions,
+  RequestResultDefinitiveEither,
+} from './types.ts'
 
 type DEFAULT_THROW_ON_ERROR = typeof DEFAULT_OPTIONS.throwOnError
 
@@ -34,20 +38,14 @@ export function sendByRouteContract<
     InferSchemaInput<Contract['requestQuerySchema']>,
     InferSchemaInput<Contract['requestHeaderSchema']>
   >,
-  options: Omit<
-    RequestOptions<
-      InferSuccessSchema<Contract['responseSchemasByStatusCode']>,
-      InferSuccessResponse<Contract['responseSchemasByStatusCode']> extends undefined
-        ? true
-        : false,
-      DoThrowOnError
-    >,
-    'body' | 'headers' | 'query' | 'isEmptyResponseExpected' | 'responseSchema'
+  options: ContractRequestOptions<
+    IsNoBodySuccessResponse<Contract['responseSchemasByStatusCode']>,
+    DoThrowOnError
   >,
 ): Promise<
   RequestResultDefinitiveEither<
-    InferSuccessResponse<Contract['responseSchemasByStatusCode']>,
-    InferSuccessResponse<Contract['responseSchemasByStatusCode']> extends undefined ? true : false,
+    InferNonSseSuccessResponses<Contract['responseSchemasByStatusCode']>,
+    IsNoBodySuccessResponse<Contract['responseSchemasByStatusCode']>,
     DoThrowOnError
   >
 > {
@@ -85,41 +83,41 @@ export function sendByRouteContract<
   })
 }
 
-export function sendByRouteContractWithStreamedResponse<
-  const Contract extends GetRouteContract,
-  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
->(
-  client: Client,
-  routeContract: Contract,
-  params: PayloadRouteRequestParams<
-    InferSchemaInput<Contract['requestPathParamsSchema']>,
-    undefined,
-    InferSchemaInput<Contract['requestQuerySchema']>,
-    InferSchemaInput<Contract['requestHeaderSchema']>
-  >,
-  options: Omit<
-    RequestOptions<undefined, false, DoThrowOnError>,
-    | 'body'
-    | 'headers'
-    | 'query'
-    | 'responseSchema'
-    | 'isEmptyResponseExpected'
-    | 'validateResponse'
-    | 'safeParseJson'
-    | 'blobResponseBody'
-  >,
-): Promise<RequestResultDefinitiveEither<Readable, false, DoThrowOnError>> {
-  // biome-ignore lint/suspicious/noExplicitAny: pathParams key may not be present in params
-  const path = buildRequestPath(
-    routeContract.pathResolver((params as any).pathParams),
-    params.pathPrefix,
-  )
-
-  return sendGetWithStreamedResponse(client, path, {
-    // @ts-expect-error FixMe
-    headers: params.headers,
-    // @ts-expect-error FixMe
-    query: params.queryParams,
-    ...options,
-  })
-}
+// export function sendByRouteContractWithStreamedResponse<
+//   const Contract extends GetRouteContract,
+//   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+// >(
+//   client: Client,
+//   routeContract: Contract,
+//   params: PayloadRouteRequestParams<
+//     InferSchemaInput<Contract['requestPathParamsSchema']>,
+//     undefined,
+//     InferSchemaInput<Contract['requestQuerySchema']>,
+//     InferSchemaInput<Contract['requestHeaderSchema']>
+//   >,
+//   options: Omit<
+//     RequestOptions<undefined, false, DoThrowOnError>,
+//     | 'body'
+//     | 'headers'
+//     | 'query'
+//     | 'responseSchema'
+//     | 'isEmptyResponseExpected'
+//     | 'validateResponse'
+//     | 'safeParseJson'
+//     | 'blobResponseBody'
+//   >,
+// ): Promise<RequestResultDefinitiveEither<Readable, false, DoThrowOnError>> {
+//   // biome-ignore lint/suspicious/noExplicitAny: pathParams key may not be present in params
+//   const path = buildRequestPath(
+//     routeContract.pathResolver((params as any).pathParams),
+//     params.pathPrefix,
+//   )
+//
+//   return sendGetWithStreamedResponse(client, path, {
+//     // @ts-expect-error FixMe
+//     headers: params.headers,
+//     // @ts-expect-error FixMe
+//     query: params.queryParams,
+//     ...options,
+//   })
+// }

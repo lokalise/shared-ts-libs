@@ -40,6 +40,14 @@ export type RequestOptions<
   throwOnError?: DoThrowOnError
 }
 
+export type ContractRequestOptions<
+  IsEmptyResponseExpected extends boolean,
+  DoThrowOnError extends boolean,
+> = Omit<
+  RequestOptions<ZodSchema | undefined, IsEmptyResponseExpected, DoThrowOnError>,
+  'headers' | 'query' | 'responseSchema' | 'isEmptyResponseExpected'
+>
+
 export type RequestResultDefinitiveEither<
   T,
   IsEmptyResponseExpected extends boolean,

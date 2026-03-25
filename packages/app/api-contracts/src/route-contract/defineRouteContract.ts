@@ -1,31 +1,16 @@
 import { z } from 'zod/v4'
 import type { InferSchemaOutput, RoutePathResolver } from '../apiContracts.ts'
-import { type HttpStatusCode, SUCCESSFUL_HTTP_STATUS_CODES } from '../HttpStatusCodes.ts'
-
-export const ContractNoBody = Symbol.for('ContractNoBody')
-export type ContractNoBodyType = typeof ContractNoBody
-
-export type TypedNonJsonResponse<T extends z.ZodType = z.ZodType> = {
-  readonly _tag: 'NonJsonResponse'
-  readonly contentType: string
-  readonly schema: T
-}
-
-export const nonJsonResponse = <T extends z.ZodType>(options: {
-  contentType: string
-  schema: T
-}): TypedNonJsonResponse<T> => ({
-  _tag: 'NonJsonResponse',
-  contentType: options.contentType,
-  schema: options.schema,
-})
-
-export const isNonJsonResponse = (value: RouteContractResponse): value is TypedNonJsonResponse =>
-  typeof value === 'object' && value !== null && '_tag' in value && value._tag === 'NonJsonResponse'
-
-export type RouteContractResponse = ContractNoBodyType | TypedNonJsonResponse | z.ZodType
-
-export type ResponseSchemasByStatusCode = Partial<Record<HttpStatusCode, RouteContractResponse>>
+import { SUCCESSFUL_HTTP_STATUS_CODES } from '../HttpStatusCodes.ts'
+import type { Exactly } from '../typeUtils.ts'
+import { ContractNoBody, type ContractNoBodyType } from './constants.ts'
+import {
+  isAnyOfResponses,
+  isBlobResponse,
+  isSseResponse,
+  isTextResponse,
+  type ResponseSchemasByStatusCode,
+  type SseSchemaByEventName,
+} from './contractResponse.ts'
 
 export type RequestPathParamsSchema = z.ZodObject
 
@@ -36,8 +21,7 @@ export type CommonRouteContract = {
   requestQuerySchema?: z.ZodType
   requestHeaderSchema?: z.ZodType
   responseHeaderSchema?: z.ZodType
-  responseSchemasByStatusCode?: ResponseSchemasByStatusCode
-  serverSentEventSchemas?: Record<string, z.ZodType>
+  responseSchemasByStatusCode: ResponseSchemasByStatusCode
 
   metadata?: Record<string, unknown>
   summary?: string
@@ -61,13 +45,6 @@ export type PayloadRouteContract = CommonRouteContract & {
 }
 
 export type RouteContract = GetRouteContract | DeleteRouteContract | PayloadRouteContract
-
-/**
- * Helper to prevent extra keys. If T has keys not in U, it forces an error.
- */
-type Exactly<T, U> = T & {
-  [K in keyof T]: K extends keyof U ? T[K] : never
-}
 
 type TypedPathRouteContract<T extends RequestPathParamsSchema> = Omit<
   RouteContract,
@@ -106,24 +83,49 @@ export const describeRouteContract = (routeConfig: RouteContract): string => {
   return `${routeConfig.method.toUpperCase()} ${mapRouteContractToPath(routeConfig)}`
 }
 
-export const getSuccessResponseSchema = (routeConfig: RouteContract): z.ZodType | null => {
-  const { responseSchemasByStatusCode } = routeConfig
-  if (!responseSchemasByStatusCode) {
-    return null
+export const getSseSchemaByEventName = (
+  routeConfig: RouteContract,
+): SseSchemaByEventName | null => {
+  const result: SseSchemaByEventName = {}
+
+  for (const value of Object.values(routeConfig.responseSchemasByStatusCode)) {
+    if (isSseResponse(value)) {
+      Object.assign(result, value.schemaByEventName)
+    } else if (isAnyOfResponses(value)) {
+      for (const response of value.responses) {
+        if (isSseResponse(response)) {
+          Object.assign(result, response.schemaByEventName)
+        }
+      }
+    }
   }
 
+  return Object.keys(result).length > 0 ? result : null
+}
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it is acceptable
+export const getSuccessResponseSchema = (routeConfig: RouteContract): z.ZodType | null => {
   const schemas: z.ZodType[] = []
 
   for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
-    const value = responseSchemasByStatusCode[code]
+    const value = routeConfig.responseSchemasByStatusCode[code]
 
     if (!value) {
       continue
     }
 
-    if (typeof value === 'symbol' || isNonJsonResponse(value)) {
-      schemas.push(z.never())
-    } else {
+    if (isAnyOfResponses(value)) {
+      for (const response of value.responses) {
+        if (!isSseResponse(response) && !isTextResponse(response) && !isBlobResponse(response)) {
+          schemas.push(response)
+        }
+      }
+    } else if (
+      value !== ContractNoBody &&
+      !isSseResponse(value) &&
+      !isTextResponse(value) &&
+      !isBlobResponse(value)
+    ) {
       schemas.push(value)
     }
   }
@@ -138,37 +140,16 @@ export const getSuccessResponseSchema = (routeConfig: RouteContract): z.ZodType 
 }
 
 export const getIsEmptyResponseExpected = (routeConfig: RouteContract): boolean => {
-  const { responseSchemasByStatusCode } = routeConfig
-  if (!responseSchemasByStatusCode) {
-    return true
-  }
-
   let isEmptyResponseExpected = true
 
   for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
-    const value = responseSchemasByStatusCode[code]
+    const value = routeConfig.responseSchemasByStatusCode[code]
 
-    if (value && typeof value !== 'symbol') {
+    if (value && value !== ContractNoBody) {
       isEmptyResponseExpected = false
       break
     }
   }
 
   return isEmptyResponseExpected
-}
-
-export const getIsNonJsonResponseExpected = (routeConfig: RouteContract): boolean => {
-  const { responseSchemasByStatusCode } = routeConfig
-  if (!responseSchemasByStatusCode) {
-    return false
-  }
-
-  for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
-    const value = responseSchemasByStatusCode[code]
-    if (value !== undefined && isNonJsonResponse(value)) {
-      return true
-    }
-  }
-
-  return false
 }

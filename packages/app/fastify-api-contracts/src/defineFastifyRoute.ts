@@ -1,5 +1,5 @@
 import {
-  type InferSuccessResponse,
+  type InferNonSseSuccessResponses,
   mapRouteContractToPath,
   type RouteContract,
 } from '@lokalise/api-contracts'
@@ -19,7 +19,9 @@ type ExtractRequestBody<T> = T extends { requestBodySchema: z.ZodType }
   ? T['requestBodySchema']
   : undefined
 
-type RouteReply<T extends RouteContract> = InferSuccessResponse<T['responseSchemasByStatusCode']>
+type RouteReply<T extends RouteContract> = InferNonSseSuccessResponses<
+  T['responseSchemasByStatusCode']
+>
 type RouteBody<T extends RouteContract> = InferredOptionalSchema<ExtractRequestBody<T>>
 type RouteParams<T extends RouteContract> = InferredOptionalSchema<T['requestPathParamsSchema']>
 type RouteQuery<T extends RouteContract> = InferredOptionalSchema<T['requestQuerySchema']>
