@@ -25,10 +25,7 @@ export {
   sendPut,
   sendPutBinary,
 } from './client/httpClient.ts'
-export {
-  sendByRouteContract,
-  sendByRouteContractWithStreamedResponse,
-} from './client/sendByRouteContract.ts'
+export { sendByRouteContract } from './client/sendByRouteContract.ts'
 export type {
   HttpRequestContext,
   RequestOptions,

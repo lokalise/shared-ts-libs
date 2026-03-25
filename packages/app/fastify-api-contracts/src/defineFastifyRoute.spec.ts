@@ -51,10 +51,12 @@ describe('defineFastifyRouteHandler', () => {
       method: 'get',
       pathResolver: () => '/users',
       requestQuerySchema: z.object({ limit: z.number() }),
+      responseSchemasByStatusCode: { 200: z.object({ results: z.array(z.string()) }) },
     })
 
     defineFastifyRouteHandler(contract, (req) => {
       expectTypeOf(req.query).toEqualTypeOf<{ limit: number }>()
+      return Promise.resolve({ results: [] })
     })
   })
 
@@ -76,10 +78,12 @@ describe('defineFastifyRouteHandler', () => {
       method: 'get',
       pathResolver: () => '/users',
       requestHeaderSchema: z.object({ authorization: z.string() }),
+      responseSchemasByStatusCode: { 200: z.object({ ok: z.boolean() }) },
     })
 
     defineFastifyRouteHandler(contract, (req) => {
       expectTypeOf(req.headers).toHaveProperty('authorization')
+      return Promise.resolve({ ok: true })
     })
   })
 })
@@ -112,9 +116,10 @@ describe('defineFastifyRoute', () => {
         method: 'get',
         requestPathParamsSchema: z.object({ id: z.string() }),
         pathResolver: ({ id }) => `/items/${id}`,
+        responseSchemasByStatusCode: { 200: z.object({ id: z.string() }) },
       })
 
-      const route = defineFastifyRoute(contract, () => Promise.resolve())
+      const route = defineFastifyRoute(contract, () => Promise.resolve({ id: '1' }))
 
       expect(route.method).toBe('get')
       expect(route.url).toBe('/items/:id')
@@ -124,9 +129,10 @@ describe('defineFastifyRoute', () => {
       const contract = defineRouteContract({
         method: 'get',
         pathResolver: () => '/users',
+        responseSchemasByStatusCode: { 200: z.object({ id: z.string() }) },
       })
 
-      const route = defineFastifyRoute(contract, () => Promise.resolve())
+      const route = defineFastifyRoute(contract, () => Promise.resolve({ id: '1' }))
 
       expect(route.config.apiContract).toBe(contract)
     })
@@ -138,11 +144,14 @@ describe('defineFastifyRoute', () => {
         method: 'get',
         pathResolver: () => '/search',
         requestQuerySchema: z.object({ q: z.string() }),
+        responseSchemasByStatusCode: {
+          200: z.object({ id: z.string() }),
+        },
       })
 
       const route = defineFastifyRoute(contract, (req) => {
         expect(req.query.q).toBe('hello')
-        return Promise.resolve()
+        return Promise.resolve({ id: 'search-result' })
       })
 
       const app = await initApp(route)
@@ -158,11 +167,12 @@ describe('defineFastifyRoute', () => {
         method: 'get',
         pathResolver: () => '/protected',
         requestHeaderSchema: z.object({ authorization: z.string() }),
+        responseSchemasByStatusCode: { 200: z.object({ ok: z.boolean() }) },
       })
 
       const route = defineFastifyRoute(contract, (req) => {
         expect(req.headers.authorization).toBe('Bearer token')
-        return Promise.resolve()
+        return Promise.resolve({ ok: true })
       })
 
       const app = await initApp(route)
@@ -306,11 +316,12 @@ describe('defineFastifyRoute', () => {
         method: 'get',
         pathResolver: () => '/users',
         metadata: { roles: ['admin'] },
+        responseSchemasByStatusCode: { 200: z.object({ id: z.string() }) },
       })
 
       const route = defineFastifyRoute(
         contract,
-        () => Promise.resolve(),
+        () => Promise.resolve({ id: '1' }),
         (metadata) => (metadata?.roles ? { config: { roles: metadata.roles } } : {}),
       )
 
@@ -324,11 +335,12 @@ describe('defineFastifyRoute', () => {
       const contract = defineRouteContract({
         method: 'get',
         pathResolver: () => '/users',
+        responseSchemasByStatusCode: { 200: z.object({ id: z.string() }) },
       })
 
       const route = defineFastifyRoute(
         contract,
-        () => Promise.resolve(),
+        () => Promise.resolve({ id: '1' }),
         () => ({}),
       )
 
@@ -346,12 +358,13 @@ describe('injectByRouteContract', () => {
       requestPathParamsSchema: z.object({ userId: z.string() }),
       pathResolver: ({ userId }) => `/users/${userId}`,
       requestQuerySchema: z.object({ verbose: z.string().optional() }),
+      responseSchemasByStatusCode: { 200: z.object({ userId: z.string() }) },
     })
 
     const route = defineFastifyRoute(contract, (req) => {
       expect(req.params.userId).toBe('7')
       expect(req.query.verbose).toBe('true')
-      return Promise.resolve()
+      return Promise.resolve({ userId: req.params.userId })
     })
 
     const app = await initApp(route)
@@ -370,11 +383,12 @@ describe('injectByRouteContract', () => {
       method: 'get',
       pathResolver: () => '/secure',
       requestHeaderSchema: z.object({ authorization: z.string() }),
+      responseSchemasByStatusCode: { 200: z.object({ ok: z.boolean() }) },
     })
 
     const route = defineFastifyRoute(contract, (req) => {
       expect(req.headers.authorization).toBe('Bearer async-token')
-      return Promise.resolve()
+      return Promise.resolve({ ok: true })
     })
 
     const app = await initApp(route)
@@ -440,11 +454,12 @@ describe('injectByRouteContract', () => {
       requestPathParamsSchema: z.object({ id: z.string() }),
       pathResolver: ({ id }) => `/items/${id}`,
       requestBodySchema: z.object({ name: z.string() }),
+      responseSchemasByStatusCode: { 200: z.object({ id: z.string() }) },
     })
 
     const route = defineFastifyRoute(contract, (req) => {
       expect(req.body.name).toBe('updated')
-      return Promise.resolve()
+      return Promise.resolve({ id: req.params.id })
     })
 
     const app = await initApp(route)

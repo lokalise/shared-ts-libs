@@ -78,3 +78,23 @@ type NonSseBodyOf<T> = T extends { _tag: 'SseResponse' }
 export type InferNonSseSuccessResponses<T extends ResponseSchemasByStatusCode> = NonSseBodyOf<
   FlatSuccessResponses<T>
 >
+
+/**
+ * Discriminated union of SSE events inferred from a schemaByEventName map.
+ * Each event is `{ event: EventName, data: z.output<Schema> }`.
+ */
+export type SseEventOf<S> = {
+  [K in keyof S]: K extends string
+    ? { event: K; data: S[K] extends z.ZodType ? z.output<S[K]> : never }
+    : never
+}[keyof S]
+
+/**
+ * Union of response mode literals available for a given responseSchemasByStatusCode map.
+ */
+export type AvailableResponseModes<T extends ResponseSchemasByStatusCode> =
+  | (HasAnyJsonSuccessResponse<T> extends true ? 'json' : never)
+  | (HasAnySseSuccessResponse<T> extends true ? 'sse' : never)
+  | (Extract<FlatSuccessResponses<T>, { _tag: 'BlobResponse' }> extends never ? never : 'blob')
+  | (Extract<FlatSuccessResponses<T>, { _tag: 'TextResponse' }> extends never ? never : 'text')
+  | (Extract<FlatSuccessResponses<T>, ContractNoBodyType> extends never ? never : 'noContent')
