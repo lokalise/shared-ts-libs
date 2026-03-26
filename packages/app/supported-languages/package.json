@@ -23,8 +23,6 @@
     },
     "scripts": {
         "build": "rimraf dist && tsc --project tsconfig.build.json",
-        "dev": "tsc --watch",
-        "clean": "rimraf dist .eslintcache",
         "lint": "biome check . && tsc",
         "lint:fix": "biome check --write",
         "test": "vitest run",
@@ -36,9 +34,7 @@
     "devDependencies": {
         "@biomejs/biome": "^2.3.7",
         "@lokalise/biome-config": "^3.1.0",
-        "@lokalise/node-core": "^14.0.0",
         "@lokalise/tsconfig": "^3.1.0",
-        "@rollup/plugin-typescript": "^12.1.0",
         "@vitest/coverage-v8": "^4.0.15",
         "rimraf": "^6.0.1",
         "typescript": "5.9.3",

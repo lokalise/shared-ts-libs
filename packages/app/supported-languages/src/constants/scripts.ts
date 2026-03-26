@@ -8,7 +8,7 @@
  *
  * @link https://cldr.unicode.org/index
  */
-export const scripts = [
+export const scripts = new Set([
   'Adlm', // Adlam
   'Afak', // Afaka
   'Aghb', // Caucasian Albanian
@@ -211,8 +211,4 @@ export const scripts = [
   'Zxxx', // Unwritten
   'Zyyy', // Common
   'Zzzz', // Unknown Script
-]
-
-export const scriptsSet: ReadonlySet<string> = new Set(scripts)
-
-export type Script = (typeof scripts)[number]
+])
