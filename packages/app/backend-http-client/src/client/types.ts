@@ -40,13 +40,16 @@ export type RequestOptions<
   throwOnError?: DoThrowOnError
 }
 
-export type ContractRequestOptions<
-  IsEmptyResponseExpected extends boolean,
-  DoThrowOnError extends boolean,
-> = Omit<
-  RequestOptions<ZodSchema | undefined, IsEmptyResponseExpected, DoThrowOnError>,
-  'headers' | 'query' | 'responseSchema' | 'isEmptyResponseExpected'
->
+export type ContractRequestOptions<DoThrowOnError extends boolean> = {
+  timeout?: number | null
+  reqContext?: HttpRequestContext
+  requestLabel: string
+  disableKeepAlive?: boolean
+  retryConfig?: RetryConfig
+  validateResponse?: boolean
+  throwOnError?: DoThrowOnError
+  signal?: AbortSignal
+}
 
 export type RequestResultDefinitiveEither<
   T,

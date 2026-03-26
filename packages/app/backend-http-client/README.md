@@ -191,6 +191,7 @@ Each field is only present in the params type when the corresponding schema is d
 | `retryConfig` | no retry | `{ maxAttempts, statusCodesToRetry?, delayResolver?, retryOnTimeout }` |
 | `reqContext` | — | Request context object (e.g. `{ reqId }`) |
 | `disableKeepAlive` | `false` | Disable keep-alive for this request |
+| `signal` | — | `AbortSignal` to cancel the request; for SSE streams, aborts the underlying connection and terminates the async iterator |
 
 ## Either
 

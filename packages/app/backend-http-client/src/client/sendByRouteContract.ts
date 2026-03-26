@@ -132,7 +132,7 @@ const resolveHeaders = <T>(headers: HedersParam<T>): T | Promise<T> => {
 async function buildBaseRequest(
   routeContract: RouteContract,
   params: AnyRequestParams,
-  options: ContractRequestOptions<false, boolean>,
+  options: ContractRequestOptions<boolean>,
 ) {
   const resolvedHeaders = (await resolveHeaders(params.headers)) ?? {}
 
@@ -147,6 +147,7 @@ async function buildBaseRequest(
       ...resolvedHeaders,
     }),
     reset: options.disableKeepAlive ?? false,
+    signal: options.signal,
     ...(Object.hasOwn(options, 'timeout') && {
       bodyTimeout: options.timeout,
       headersTimeout: options.timeout,
@@ -195,7 +196,7 @@ export async function sendByRouteContract<
     InferSchemaInput<Contract['requestHeaderSchema']>
   > &
     StreamingParam<Contract['responseSchemasByStatusCode'], IsStreaming>,
-  options: ContractRequestOptions<false, DoThrowOnError>,
+  options: ContractRequestOptions<DoThrowOnError>,
 ): Promise<
   ReturnTypeForContract<Contract['responseSchemasByStatusCode'], IsStreaming, DoThrowOnError>
 > {
