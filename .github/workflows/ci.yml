@@ -29,6 +29,7 @@ jobs:
             ["packages/app/api-contracts"]="@lokalise/api-contracts"
             ["packages/app/auth"]="@lokalise/auth"
             ["packages/app/aws-config"]="@lokalise/aws-config"
+            ["packages/app/aws-event-routing-types"]="@lokalise/aws-event-routing-types"
             ["packages/app/backend-http-client"]="@lokalise/backend-http-client"
             ["packages/app/background-jobs-common"]="@lokalise/background-jobs-common"
             ["packages/app/context-fastify-plugins"]="@lokalise/context-fastify-plugins"

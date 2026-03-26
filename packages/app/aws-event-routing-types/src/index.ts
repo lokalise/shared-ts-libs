@@ -1,3 +1,4 @@
+export type { AwsTagsParams } from './awsTagsParams.ts'
 export type {
   CommandConfig,
   EventRoutingConfig,
@@ -5,4 +6,4 @@ export type {
   InternalQueueConfig,
   QueueConfig,
   TopicConfig,
-} from '@lokalise/aws-event-routing-types'
+} from './eventRoutingConfig.ts'

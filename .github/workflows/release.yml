@@ -162,6 +162,22 @@ jobs:
       working_directory: 'packages/app/api-contracts'
       package_name: '@lokalise/api-contracts'
 
+  aws-event-routing-types:
+    name: Release aws-event-routing-types
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.changed-files-job.outputs.all_changed_files, 'packages/app/aws-event-routing-types/')
+    needs:
+      - changed-files-job
+      - biome-config
+      - tsconfig
+    uses: ./.github/workflows/release.package.yml
+    with:
+      working_directory: 'packages/app/aws-event-routing-types'
+      package_name: '@lokalise/aws-event-routing-types'
+
   aws-config:
     name: Release aws-config
     if: |
@@ -175,6 +191,7 @@ jobs:
       - tsconfig
       - universal-ts-utils
       - api-contracts
+      - aws-event-routing-types
     uses: ./.github/workflows/release.package.yml
     with:
       working_directory: 'packages/app/aws-config'

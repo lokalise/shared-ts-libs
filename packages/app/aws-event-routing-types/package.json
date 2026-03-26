@@ -1,6 +1,6 @@
 {
-    "name": "@lokalise/aws-config",
-    "version": "8.0.0",
+    "name": "@lokalise/aws-event-routing-types",
+    "version": "1.0.0",
     "files": [
         "dist",
         "LICENSE.md",
@@ -36,41 +36,13 @@
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
     },
-    "dependencies": {
-        "@lokalise/aws-event-routing-types": "^1.0.0"
-    },
-    "peerDependencies": {
-        "@aws-sdk/client-sns": "^3.750.0",
-        "@aws-sdk/client-sqs": "^3.750.0",
-        "@aws-sdk/credential-providers": "^3.750.0",
-        "@lokalise/fastify-extras": ">=30.0.0",
-        "@lokalise/node-core": ">=13.0.0",
-        "@lokalise/universal-ts-utils": ">=4.0.0",
-        "@message-queue-toolkit/core": ">=25.1.0",
-        "@message-queue-toolkit/sns": ">=24.1.0",
-        "@message-queue-toolkit/sqs": ">=24.1.0",
-        "envase": ">=1.3.0",
-        "zod": ">=4.0.0"
-    },
     "devDependencies": {
-        "@aws-sdk/client-sns": "^3.750.0",
-        "@aws-sdk/client-sqs": "^3.750.0",
-        "@aws-sdk/credential-providers": "^3.750.0",
         "@biomejs/biome": "^2.3.7",
         "@lokalise/biome-config": "^3.1.0",
-        "@lokalise/fastify-extras": "^30.7.0",
-        "@lokalise/node-core": "^14.0.0",
         "@lokalise/tsconfig": "^3.1.0",
-        "@lokalise/universal-ts-utils": "^4.5.1",
-        "@message-queue-toolkit/core": "^25.1.0",
-        "@message-queue-toolkit/sns": "^24.1.0",
-        "@message-queue-toolkit/sqs": "^24.1.0",
-        "@types/node": "^25.0.3",
         "@vitest/coverage-v8": "^4.0.18",
-        "envase": "^1.3.0",
         "rimraf": "^6.1.2",
         "typescript": "5.9.3",
-        "vitest": "^4.0.18",
-        "zod": "^4.3.6"
+        "vitest": "^4.0.18"
     }
 }
