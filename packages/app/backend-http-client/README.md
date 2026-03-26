@@ -115,14 +115,14 @@ const notifications = defineRouteContract({
   },
 })
 
-const stream = await sendByRouteContract(
+const { result } = await sendByRouteContract(
   client,
   notifications,
   {},
   { requestLabel: 'notifications' },
 )
 
-for await (const event of stream) {
+for await (const event of result.body) {
   // event: { event: 'notification'; data: { id: string; message: string } }
   console.log(event.data.message)
 }
@@ -147,13 +147,16 @@ const chatCompletion = defineRouteContract({
   },
 })
 
-// Streaming — returns AsyncIterable
-const stream = await sendByRouteContract(
+// Streaming — result.body is AsyncIterable; result also carries statusCode and headers
+const { result: stream } = await sendByRouteContract(
   client,
   chatCompletion,
   { body: { message: 'hi' }, streaming: true },
   { requestLabel: 'chat' },
 )
+for await (const event of stream.body) {
+  // event: { event: 'chunk'; data: { delta: string } }
+}
 
 // JSON — returns typed result
 const { result } = await sendByRouteContract(
@@ -166,14 +169,16 @@ const { result } = await sendByRouteContract(
 
 ### Params
 
+Each field is only present in the params type when the corresponding schema is defined on the contract — TypeScript will reject the field if it has no schema.
+
 | Field | Description |
 |---|---|
 | `pathParams` | Path parameters — type inferred from `requestPathParamsSchema` |
-| `body` | Request body — present only for POST/PUT/PATCH; type inferred from `requestBodySchema` |
+| `body` | Request body — type inferred from `requestBodySchema` |
 | `queryParams` | Query parameters — type inferred from `requestQuerySchema` |
-| `headers` | Request headers — type inferred from `requestHeaderSchema` |
+| `headers` | Request headers — type inferred from `requestHeaderSchema`; accepts a plain value, `() => Headers`, or `() => Promise<Headers>` (useful for dynamic auth tokens) |
 | `pathPrefix` | Optional prefix prepended to the resolved path (e.g. `'api/v2'`) |
-| `streaming` | Required (boolean) only for dual-mode contracts (`anyOfResponses` with SSE + JSON) |
+| `streaming` | Required (boolean) only for dual-mode contracts |
 
 ### Options
 
