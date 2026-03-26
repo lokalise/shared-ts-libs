@@ -1,5 +1,6 @@
 import { languages } from './constants/languages.ts'
 import { regions } from './constants/regions.ts'
+import { rtlLanguages } from './constants/rtl-languages.ts'
 import { scripts } from './constants/scripts.ts'
 import { standardLocales } from './constants/standard-locales.ts'
 import type { Either } from './either.ts'
@@ -86,11 +87,11 @@ export const normalizeLocale = (tag: Locale) => {
 }
 
 export const getLocaleDirection = (tag: Locale): LanguageDirection | null => {
-  try {
-    const locale = new Intl.Locale(tag)
-    const info = locale.getTextInfo?.() ?? locale.textInfo
-    return info?.direction ?? null
-  } catch (_) {
-    return null
-  }
+  const parsedLocale = parseLocale(tag)
+
+  return parsedLocale.result
+    ? rtlLanguages.has(parsedLocale.result?.language)
+      ? 'rtl'
+      : 'ltr'
+    : null
 }

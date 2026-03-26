@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { rtlLanguages } from './constants/rtl-languages.ts'
+import { languages } from './constants/languages.ts'
 import {
   getLocaleDirection,
   isStandardLocale,
@@ -120,26 +122,17 @@ describe('parseLocale', () => {
 })
 
 describe('getLocaleDirection', () => {
-  it('returns ltr for LTR languages', () => {
-    expect(getLocaleDirection('en')).toBe('ltr')
-    expect(getLocaleDirection('fr')).toBe('ltr')
-    expect(getLocaleDirection('zh')).toBe('ltr')
-  })
-
-  it('returns rtl for RTL languages', () => {
-    expect(getLocaleDirection('ar')).toBe('rtl')
-    expect(getLocaleDirection('he')).toBe('rtl')
-    expect(getLocaleDirection('fa')).toBe('rtl')
-    expect(getLocaleDirection('ur')).toBe('rtl')
-  })
-
-  it('works with language-region locales', () => {
-    expect(getLocaleDirection('ar-SA')).toBe('rtl')
-    expect(getLocaleDirection('en-US')).toBe('ltr')
-  })
-
-  it('returns null for invalid tags', () => {
-    expect(getLocaleDirection('not-a-valid-!!!-locale')).toBeNull()
+  it.each([
+    ...Array.from(rtlLanguages).map((lang) => [lang, 'rtl'] as [string, 'rtl']),
+    ...Array.from(languages)
+      .filter((lang) => !rtlLanguages.has(lang))
+      .map((lang) => [lang, 'ltr'] as [string, 'ltr']),
+    ['ar-SA', 'rtl'],
+    ['en-US', 'ltr'],
+    ['not-a-valid-!!!-locale', null],
+    ['abc', null],
+  ])('getLocaleDirection(%s) → %s', (tag, expected) => {
+    expect(getLocaleDirection(tag)).toBe(expected)
   })
 })
 
