@@ -41,8 +41,8 @@ describe('readMigrationJournal', () => {
     const journal = readMigrationJournal(PG_MIGRATIONS_DIR)
     expect(journal.dialect).toBe('postgresql')
     expect(journal.entries).toHaveLength(2)
-    expect(journal.entries[0].tag).toBe('0000_init')
-    expect(journal.entries[1].tag).toBe('0001_add_users')
+    expect(journal.entries[0]!.tag).toBe('0000_init')
+    expect(journal.entries[1]!.tag).toBe('0001_add_users')
   })
 
   it('throws when journal does not exist', () => {
@@ -58,9 +58,9 @@ describe('readMigrationEntries', () => {
     const initSql = readFileSync(join(PG_MIGRATIONS_DIR, '0000_init.sql'), 'utf-8')
     const expectedHash = createHash('sha256').update(initSql).digest('hex')
 
-    expect(entries[0].tag).toBe('0000_init')
-    expect(entries[0].hash).toBe(expectedHash)
-    expect(entries[0].createdAt).toBe(1700000000000)
+    expect(entries[0]!.tag).toBe('0000_init')
+    expect(entries[0]!.hash).toBe(expectedHash)
+    expect(entries[0]!.createdAt).toBe(1700000000000)
   })
 })
 
@@ -111,7 +111,7 @@ describe('markMigrationsApplied (PostgreSQL)', () => {
       `SELECT hash, created_at FROM "${testSchema}"."${testTable}" ORDER BY id`,
     )
     expect(rows).toHaveLength(2)
-    expect(rows[0].created_at).toBe('1700000000000') // bigint comes as string
+    expect(rows[0]!.created_at).toBe('1700000000000') // bigint comes as string
   })
 
   it('is idempotent — skips already tracked migrations', async () => {
