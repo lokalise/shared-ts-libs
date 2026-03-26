@@ -1,25 +1,20 @@
 import type { Readable } from 'node:stream'
 import {
-  type AvailableResponseModes,
   buildRequestPath,
-  ContractNoBody,
   getSseSchemaByEventName,
   type HasAnySseSuccessResponse,
   type HttpStatusCode,
   type InferNonSseSuccessResponses,
   type InferSchemaInput,
   type InferSseSuccessResponses,
+  type IsDualModeSse,
   type IsNoBodySuccessResponse,
-  isAnyOfResponses,
-  isBlobResponse,
-  isSseResponse,
-  isTextResponse,
+  type ResponseKind,
   type ResponseSchemasByStatusCode,
   type RouteContract,
-  type RouteContractResponse,
+  resolveContractResponse,
   type SseEventOf,
   type SseSchemaByEventName,
-  type TypedRouteContractResponse,
 } from '@lokalise/api-contracts'
 import { copyWithoutUndefined } from '@lokalise/node-core'
 import type { Client, Dispatcher } from 'undici'
@@ -41,19 +36,6 @@ type ExtractRequestBody<T> = T extends { requestBodySchema: z.ZodType }
   ? T['requestBodySchema']
   : undefined
 
-// true when T is a union with more than one member
-type IsUnion<T, U = T> = (T extends unknown ? ([U] extends [T] ? 0 : 1) : never) extends 0
-  ? false
-  : true
-
-// true when the contract has both SSE and non-SSE success responses (dual-mode)
-type IsDualModeSse<T extends ResponseSchemasByStatusCode> =
-  HasAnySseSuccessResponse<T> extends true
-    ? IsUnion<AvailableResponseModes<T>> extends true
-      ? true
-      : false
-    : false
-
 // streaming: boolean is required only for dual-mode contracts; absent otherwise
 type StreamingParam<T extends ResponseSchemasByStatusCode, IsStreaming extends boolean> =
   IsDualModeSse<T> extends true ? { streaming: IsStreaming } : { streaming?: never }
@@ -63,6 +45,12 @@ type NonStreamingResult<T extends ResponseSchemasByStatusCode, DoThrowOnError ex
     ? RequestResultDefinitiveEither<null, true, DoThrowOnError>
     : RequestResultDefinitiveEither<InferNonSseSuccessResponses<T>, false, DoThrowOnError>
 
+type SseResult<T extends ResponseSchemasByStatusCode> = RequestResultDefinitiveEither<
+  AsyncIterable<SseEventOf<InferSseSuccessResponses<T>>>,
+  false,
+  true
+>
+
 type ReturnTypeForContract<
   T extends ResponseSchemasByStatusCode,
   IsStreaming extends boolean,
@@ -71,9 +59,9 @@ type ReturnTypeForContract<
   HasAnySseSuccessResponse<T> extends true
     ? IsDualModeSse<T> extends true
       ? IsStreaming extends true
-        ? AsyncIterable<SseEventOf<InferSseSuccessResponses<T>>>
+        ? SseResult<T>
         : NonStreamingResult<T, DoThrowOnError>
-      : AsyncIterable<SseEventOf<InferSseSuccessResponses<T>>>
+      : SseResult<T>
     : NonStreamingResult<T, DoThrowOnError>
 
 function parseSseBlock<T>(block: string, schemaByEventName: SseSchemaByEventName | null): T | null {
@@ -112,77 +100,6 @@ async function* parseSseStream<T>(
   }
 }
 
-// ---------------------------------------------------------------------------
-// Response resolution: status code + content-type → how to parse the body
-// ---------------------------------------------------------------------------
-
-type ResolvedEntry =
-  | { kind: 'noContent' }
-  | { kind: 'text' }
-  | { kind: 'blob' }
-  | { kind: 'json'; schema: z.ZodType }
-  | { kind: 'sse'; schemaByEventName: SseSchemaByEventName }
-
-function matchTypedResponse(
-  entry: TypedRouteContractResponse,
-  contentType: string,
-): ResolvedEntry | null {
-  if (isTextResponse(entry)) {
-    return contentType.includes(entry.contentType) ? { kind: 'text' } : null
-  }
-
-  if (isBlobResponse(entry)) {
-    return contentType.includes(entry.contentType) ? { kind: 'blob' } : null
-  }
-
-  if (isSseResponse(entry)) {
-    return contentType.includes('text/event-stream')
-      ? { kind: 'sse', schemaByEventName: entry.schemaByEventName }
-      : null
-  }
-
-  if (contentType.includes('application/json')) {
-    return { kind: 'json', schema: entry }
-  }
-
-  return null
-}
-
-function resolveEntry(
-  schemaEntry: RouteContractResponse,
-  contentType: string | undefined,
-): ResolvedEntry | null {
-  if (schemaEntry === ContractNoBody) {
-    return { kind: 'noContent' }
-  }
-
-  if (!contentType) {
-    return null
-  }
-
-  if (isAnyOfResponses(schemaEntry)) {
-    for (const item of schemaEntry.responses) {
-      const resolvedEntry = matchTypedResponse(item, contentType)
-
-      if (resolvedEntry) {
-        return resolvedEntry
-      }
-    }
-  } else {
-    const resolvedEntry = matchTypedResponse(schemaEntry, contentType)
-
-    if (resolvedEntry) {
-      return resolvedEntry
-    }
-  }
-
-  return null
-}
-
-// ---------------------------------------------------------------------------
-// Request helpers
-// ---------------------------------------------------------------------------
-
 function buildBaseRequest(
   routeContract: RouteContract,
   // biome-ignore lint/suspicious/noExplicitAny: params shape depends on contract
@@ -210,7 +127,7 @@ function buildBaseRequest(
 
 async function parseBody(
   result: RequestResult<Dispatcher.ResponseData['body']>,
-  resolvedEntry: ResolvedEntry,
+  resolvedEntry: ResponseKind,
   validateResponse: boolean,
 ) {
   switch (resolvedEntry.kind) {
@@ -292,7 +209,7 @@ export async function sendByRouteContract<
   const rawContentType = sendOutput.result.headers['content-type']
   const contentType = Array.isArray(rawContentType) ? rawContentType[0] : rawContentType
 
-  const resolvedEntry = resolveEntry(responseSchemas, contentType)
+  const resolvedEntry = resolveContractResponse(responseSchemas, contentType)
 
   if (!resolvedEntry) {
     await sendOutput.result.body.dump()

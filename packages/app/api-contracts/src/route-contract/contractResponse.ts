@@ -1,6 +1,6 @@
 import type { z } from 'zod/v4'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
-import type { ContractNoBodyType } from './constants.ts'
+import { ContractNoBody, type ContractNoBodyType } from './constants.ts'
 
 export type TypedTextResponse = {
   readonly _tag: 'TextResponse'
@@ -71,3 +71,58 @@ export const isAnyOfResponses = (value: RouteContractResponse): value is AnyOfRe
 export type RouteContractResponse = ContractNoBodyType | TypedRouteContractResponse | AnyOfResponses
 
 export type ResponseSchemasByStatusCode = Partial<Record<HttpStatusCode, RouteContractResponse>>
+
+export type ResponseKind =
+  | { kind: 'noContent' }
+  | { kind: 'text' }
+  | { kind: 'blob' }
+  | { kind: 'json'; schema: z.ZodType }
+  | { kind: 'sse'; schemaByEventName: SseSchemaByEventName }
+
+const matchTypedResponse = (
+  entry: TypedRouteContractResponse,
+  contentType: string,
+): ResponseKind | null => {
+  if (isTextResponse(entry)) {
+    return contentType.includes(entry.contentType) ? { kind: 'text' } : null
+  }
+
+  if (isBlobResponse(entry)) {
+    return contentType.includes(entry.contentType) ? { kind: 'blob' } : null
+  }
+
+  if (isSseResponse(entry)) {
+    return contentType.includes('text/event-stream')
+      ? { kind: 'sse', schemaByEventName: entry.schemaByEventName }
+      : null
+  }
+
+  if (contentType.includes('application/json')) {
+    return { kind: 'json', schema: entry }
+  }
+
+  return null
+}
+
+export const resolveContractResponse = (
+  schemaEntry: RouteContractResponse,
+  contentType: string | undefined,
+): ResponseKind | null => {
+  if (schemaEntry === ContractNoBody) {
+    return { kind: 'noContent' }
+  }
+
+  if (!contentType) {
+    return null
+  }
+
+  if (isAnyOfResponses(schemaEntry)) {
+    for (const item of schemaEntry.responses) {
+      const resolved = matchTypedResponse(item, contentType)
+      if (resolved) return resolved
+    }
+    return null
+  }
+
+  return matchTypedResponse(schemaEntry as TypedRouteContractResponse, contentType)
+}

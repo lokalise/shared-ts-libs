@@ -1,6 +1,6 @@
 import type { z } from 'zod/v4'
 import type { SuccessfulHttpStatusCode } from '../HttpStatusCodes.ts'
-import type { ValueOf } from '../typeUtils.ts'
+import type { IsUnion, ValueOf } from '../typeUtils.ts'
 import type { ContractNoBodyType } from './constants.ts'
 import type { ResponseSchemasByStatusCode } from './contractResponse.ts'
 
@@ -88,6 +88,16 @@ export type SseEventOf<S> = {
     ? { event: K; data: S[K] extends z.ZodType ? z.output<S[K]> : never }
     : never
 }[keyof S]
+
+/**
+ * True when the contract has both SSE and non-SSE success responses (dual-mode).
+ */
+export type IsDualModeSse<T extends ResponseSchemasByStatusCode> =
+  HasAnySseSuccessResponse<T> extends true
+    ? IsUnion<AvailableResponseModes<T>> extends true
+      ? true
+      : false
+    : false
 
 /**
  * Union of response mode literals available for a given responseSchemasByStatusCode map.

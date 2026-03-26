@@ -305,12 +305,14 @@ describe('sendByRouteContract', () => {
         .withHeaders({ accept: 'text/event-stream' })
         .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
 
-      const stream = await sendByRouteContract(client, contract, {}, { requestLabel: 'test' })
+      const { result } = await sendByRouteContract(client, contract, {}, { requestLabel: 'test' })
 
-      expectTypeOf(stream).toEqualTypeOf<AsyncIterable<{ event: 'update'; data: { id: string } }>>()
+      expectTypeOf(result.body).toEqualTypeOf<
+        AsyncIterable<{ event: 'update'; data: { id: string } }>
+      >()
 
       const events: { event: string; data: { id: string } }[] = []
-      for await (const event of stream) {
+      for await (const event of result.body) {
         events.push(event)
       }
 
@@ -337,10 +339,10 @@ describe('sendByRouteContract', () => {
         .withHeaders({ accept: 'text/event-stream' })
         .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
 
-      const stream = await sendByRouteContract(client, contract, {}, { requestLabel: 'test' })
+      const { result } = await sendByRouteContract(client, contract, {}, { requestLabel: 'test' })
 
       const events: { event: string; data: { count: number } }[] = []
-      for await (const event of stream) {
+      for await (const event of result.body) {
         events.push(event)
       }
 
@@ -366,7 +368,7 @@ describe('sendByRouteContract', () => {
         ReturnType<() => ReturnType<typeof sendByRouteContract<typeof contract, false>>>
       >
 
-      expectTypeOf<SseResult>().toEqualTypeOf<
+      expectTypeOf<SseResult['result']['body']>().toEqualTypeOf<
         AsyncIterable<{ event: 'update'; data: { id: string } }>
       >()
       expectTypeOf<JsonResult['result']['body']>().toEqualTypeOf<{ latest: string }>()
@@ -388,10 +390,10 @@ describe('sendByRouteContract', () => {
         .withHeaders({ accept: 'text/event-stream' })
         .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
 
-      const stream = await sendByRouteContract(client, contract, {}, { requestLabel: 'test' })
+      const { result } = await sendByRouteContract(client, contract, {}, { requestLabel: 'test' })
 
       await expect(async () => {
-        for await (const _ of stream) {
+        for await (const _ of result.body) {
           // consume
         }
       }).rejects.toThrow()

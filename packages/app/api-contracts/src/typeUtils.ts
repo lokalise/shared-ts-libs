@@ -1,4 +1,11 @@
 /**
+ * Returns true when T is a union with more than one member.
+ */
+export type IsUnion<T, U = T> = (T extends unknown ? ([U] extends [T] ? 0 : 1) : never) extends 0
+  ? false
+  : true
+
+/**
  * Helper to prevent extra keys. If T has keys not in U, it forces an error.
  */
 export type Exactly<T, U> = T & {
