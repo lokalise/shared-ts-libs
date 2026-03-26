@@ -4,26 +4,29 @@ import {
   buildRequestPath,
   ContractNoBody,
   getSseSchemaByEventName,
-  getSuccessResponseSchema,
   type HasAnySseSuccessResponse,
+  type HttpStatusCode,
   type InferNonSseSuccessResponses,
   type InferSchemaInput,
   type InferSseSuccessResponses,
   type IsNoBodySuccessResponse,
+  isAnyOfResponses,
   isBlobResponse,
+  isSseResponse,
   isTextResponse,
   type ResponseSchemasByStatusCode,
   type RouteContract,
+  type RouteContractResponse,
   type SseEventOf,
   type SseSchemaByEventName,
+  type TypedRouteContractResponse,
 } from '@lokalise/api-contracts'
 import { copyWithoutUndefined } from '@lokalise/node-core'
-import type { Client } from 'undici'
+import type { Client, Dispatcher } from 'undici'
 import {
   isRequestResult,
   NO_RETRY_CONFIG,
-  type RetryConfig,
-  sendWithRetry,
+  type RequestResult,
   sendWithRetryReturnStream,
 } from 'undici-retry'
 import type { z } from 'zod/v4'
@@ -77,8 +80,11 @@ function parseSseBlock<T>(block: string, schemaByEventName: SseSchemaByEventName
   let event = 'message'
   let data = ''
   for (const line of block.split('\n')) {
-    if (line.startsWith('event:')) event = line.slice(6).trim()
-    else if (line.startsWith('data:')) data = line.slice(5).trim()
+    if (line.startsWith('event:')) {
+      event = line.slice(6).trim()
+    } else if (line.startsWith('data:')) {
+      data = line.slice(5).trim()
+    }
   }
   if (!data) return null
   const parsed = JSON.parse(data)
@@ -106,19 +112,76 @@ async function* parseSseStream<T>(
   }
 }
 
-function deriveNonSseMode(routeContract: RouteContract): string {
-  const successSchemas = Object.entries(routeContract.responseSchemasByStatusCode)
-    .filter(([code]) => Number(code) >= 200 && Number(code) < 300)
-    .map(([, schema]) => schema)
+// ---------------------------------------------------------------------------
+// Response resolution: status code + content-type → how to parse the body
+// ---------------------------------------------------------------------------
 
-  if (successSchemas.length === 0) return 'json'
-  if (successSchemas.every((s) => s === ContractNoBody)) return 'noContent'
-  if (successSchemas.some(isBlobResponse)) return 'blob'
-  if (successSchemas.some(isTextResponse)) return 'text'
-  return 'json'
+type ResolvedEntry =
+  | { kind: 'noContent' }
+  | { kind: 'text' }
+  | { kind: 'blob' }
+  | { kind: 'json'; schema: z.ZodType }
+  | { kind: 'sse'; schemaByEventName: SseSchemaByEventName }
+
+function matchTypedResponse(
+  entry: TypedRouteContractResponse,
+  contentType: string,
+): ResolvedEntry | null {
+  if (isTextResponse(entry)) {
+    return contentType.includes(entry.contentType) ? { kind: 'text' } : null
+  }
+
+  if (isBlobResponse(entry)) {
+    return contentType.includes(entry.contentType) ? { kind: 'blob' } : null
+  }
+
+  if (isSseResponse(entry)) {
+    return contentType.includes('text/event-stream')
+      ? { kind: 'sse', schemaByEventName: entry.schemaByEventName }
+      : null
+  }
+
+  if (contentType.includes('application/json')) {
+    return { kind: 'json', schema: entry }
+  }
+
+  return null
 }
 
-type BaseRequest = ReturnType<typeof buildBaseRequest>
+function resolveEntry(
+  schemaEntry: RouteContractResponse,
+  contentType: string | undefined,
+): ResolvedEntry | null {
+  if (schemaEntry === ContractNoBody) {
+    return { kind: 'noContent' }
+  }
+
+  if (!contentType) {
+    return null
+  }
+
+  if (isAnyOfResponses(schemaEntry)) {
+    for (const item of schemaEntry.responses) {
+      const resolvedEntry = matchTypedResponse(item, contentType)
+
+      if (resolvedEntry) {
+        return resolvedEntry
+      }
+    }
+  } else {
+    const resolvedEntry = matchTypedResponse(schemaEntry, contentType)
+
+    if (resolvedEntry) {
+      return resolvedEntry
+    }
+  }
+
+  return null
+}
+
+// ---------------------------------------------------------------------------
+// Request helpers
+// ---------------------------------------------------------------------------
 
 function buildBaseRequest(
   routeContract: RouteContract,
@@ -145,69 +208,33 @@ function buildBaseRequest(
   }
 }
 
-async function sendSseRequest(
-  client: Client,
-  baseRequest: BaseRequest,
-  routeContract: RouteContract,
-  retryConfig: RetryConfig,
-  requestLabel: string,
+async function parseBody(
+  result: RequestResult<Dispatcher.ResponseData['body']>,
+  resolvedEntry: ResolvedEntry,
+  validateResponse: boolean,
 ) {
-  const result = await sendWithRetryReturnStream(
-    client,
-    { ...baseRequest, headers: { ...baseRequest.headers, accept: 'text/event-stream' } },
-    retryConfig,
-    { throwOnInternalError: false, requestLabel },
-  )
-  if (result.error) {
-    throw isRequestResult(result.error)
-      ? new ResponseStatusError(result.error, requestLabel)
-      : result.error
-  }
-  return parseSseStream(result.result.body, getSseSchemaByEventName(routeContract))
-}
-
-async function sendNonSseRequest(
-  client: Client,
-  baseRequest: BaseRequest,
-  routeContract: RouteContract,
-  nonSseMode: string,
-  retryConfig: RetryConfig,
-  options: ContractRequestOptions<false, boolean>,
-) {
-  const throwOnError = options.throwOnError ?? DEFAULT_OPTIONS.throwOnError
-
-  const result = await sendWithRetry(client, baseRequest, retryConfig, {
-    safeParseJson: nonSseMode === 'text',
-    blobBody: nonSseMode === 'blob',
-    throwOnInternalError: false,
-    requestLabel: options.requestLabel,
-  })
-
-  if (result.error && throwOnError) {
-    throw isRequestResult(result.error)
-      ? new ResponseStatusError(result.error, options.requestLabel)
-      : result.error
-  }
-
-  if (result.result) {
-    if (nonSseMode === 'noContent') {
-      // biome-ignore lint/suspicious/noExplicitAny: null body for 204
-      ;(result.result as any).body = null
-    } else if (
-      nonSseMode === 'json' &&
-      (options.validateResponse ?? DEFAULT_OPTIONS.validateResponse)
-    ) {
-      const responseSchema = getSuccessResponseSchema(routeContract)
-      if (responseSchema) {
-        result.result.body = responseSchema.parse(result.result.body)
-      }
+  switch (resolvedEntry.kind) {
+    case 'noContent': {
+      await result.body.dump()
+      return null
+    }
+    case 'text': {
+      return await result.body.text()
+    }
+    case 'blob': {
+      return await result.body.blob()
+    }
+    case 'json': {
+      const json = await result.body.json()
+      return validateResponse ? resolvedEntry.schema.parse(json) : json
+    }
+    case 'sse': {
+      return parseSseStream(result.body, resolvedEntry.schemaByEventName)
     }
   }
-
-  return result
 }
 
-export function sendByRouteContract<
+export async function sendByRouteContract<
   const Contract extends RouteContract,
   IsStreaming extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
@@ -229,27 +256,56 @@ export function sendByRouteContract<
   const anyParams = params as any
   const useStreaming: boolean =
     anyParams.streaming ?? getSseSchemaByEventName(routeContract) !== null
+
+  const throwOnError = (options.throwOnError ?? DEFAULT_OPTIONS.throwOnError) || useStreaming
   const retryConfig = options.retryConfig ?? NO_RETRY_CONFIG
+
   const baseRequest = buildBaseRequest(routeContract, anyParams, options)
 
-  if (useStreaming) {
-    // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from IsStreaming
-    return sendSseRequest(
-      client,
-      baseRequest,
-      routeContract,
-      retryConfig,
-      options.requestLabel,
-    ) as any
+  const request = useStreaming
+    ? { ...baseRequest, headers: { ...baseRequest.headers, accept: 'text/event-stream' } }
+    : baseRequest
+
+  const sendOutput = await sendWithRetryReturnStream(client, request, retryConfig, {
+    throwOnInternalError: false,
+    requestLabel: options.requestLabel,
+  })
+
+  if (sendOutput.error) {
+    if (throwOnError) {
+      throw isRequestResult(sendOutput.error)
+        ? new ResponseStatusError(sendOutput.error, options.requestLabel)
+        : sendOutput.error
+    }
+    // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from DoThrowOnError
+    return sendOutput as any
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from IsStreaming
-  return sendNonSseRequest(
-    client,
-    baseRequest,
-    routeContract,
-    deriveNonSseMode(routeContract),
-    retryConfig,
-    options,
-  ) as any
+  const responseSchemas =
+    routeContract.responseSchemasByStatusCode[sendOutput.result.statusCode as HttpStatusCode]
+
+  if (!responseSchemas) {
+    await sendOutput.result.body.dump()
+    throw new Error('Could not map response statusCode')
+  }
+
+  const rawContentType = sendOutput.result.headers['content-type']
+  const contentType = Array.isArray(rawContentType) ? rawContentType[0] : rawContentType
+
+  const resolvedEntry = resolveEntry(responseSchemas, contentType)
+
+  if (!resolvedEntry) {
+    await sendOutput.result.body.dump()
+    throw new Error(`Could not resolver response contentType "${contentType}"`)
+  }
+
+  const body = await parseBody(sendOutput.result, resolvedEntry, request.validateResponse)
+
+  return {
+    result: {
+      ...sendOutput.result,
+      body,
+    },
+    // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from IsStreaming
+  } as any
 }

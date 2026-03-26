@@ -45,20 +45,20 @@ export const sseResponse = <T extends SseSchemaByEventName>(
 export const isSseResponse = (value: RouteContractResponse): value is TypedSseResponse =>
   typeof value === 'object' && value !== null && '_tag' in value && value._tag === 'SseResponse'
 
-export type AnyOfResponses<
-  T extends z.ZodType | TypedTextResponse | TypedBlobResponse | TypedSseResponse =
-    | z.ZodType
-    | TypedTextResponse
-    | TypedBlobResponse
-    | TypedSseResponse,
-> = {
+export type TypedJsonResponse = z.ZodType
+
+export type TypedRouteContractResponse =
+  | TypedJsonResponse
+  | TypedTextResponse
+  | TypedBlobResponse
+  | TypedSseResponse
+
+export type AnyOfResponses<T extends TypedRouteContractResponse = TypedRouteContractResponse> = {
   readonly _tag: 'AnyOfResponses'
   readonly responses: T[]
 }
 
-export const anyOfResponses = <
-  T extends z.ZodType | TypedTextResponse | TypedBlobResponse | TypedSseResponse,
->(
+export const anyOfResponses = <T extends TypedRouteContractResponse>(
   responses: T[],
 ): AnyOfResponses<T> => ({
   _tag: 'AnyOfResponses',
@@ -68,12 +68,6 @@ export const anyOfResponses = <
 export const isAnyOfResponses = (value: RouteContractResponse): value is AnyOfResponses =>
   typeof value === 'object' && value !== null && '_tag' in value && value._tag === 'AnyOfResponses'
 
-export type RouteContractResponse =
-  | ContractNoBodyType
-  | TypedTextResponse
-  | TypedBlobResponse
-  | TypedSseResponse
-  | AnyOfResponses
-  | z.ZodType
+export type RouteContractResponse = ContractNoBodyType | TypedRouteContractResponse | AnyOfResponses
 
 export type ResponseSchemasByStatusCode = Partial<Record<HttpStatusCode, RouteContractResponse>>

@@ -181,7 +181,7 @@ describe('sendByRouteContract', () => {
         responseSchemasByStatusCode: { 201: responseSchema },
       })
 
-      await mockServer.forPost('/products').thenJson(200, { id: 21 }, JSON_HEADERS)
+      await mockServer.forPost('/products').thenJson(201, { id: 21 }, JSON_HEADERS)
 
       const result = await sendByRouteContract(
         client,
@@ -203,7 +203,7 @@ describe('sendByRouteContract', () => {
         responseSchemasByStatusCode: { 201: z.object({ id: z.string() }) },
       })
 
-      await mockServer.forPost('/orgs/acme/members').thenJson(200, { id: '1' }, JSON_HEADERS)
+      await mockServer.forPost('/orgs/acme/members').thenJson(201, { id: '1' }, JSON_HEADERS)
 
       const result = await sendByRouteContract(
         client,
