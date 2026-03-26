@@ -64,9 +64,10 @@ type ReturnTypeForContract<
       : SseResult<T>
     : NonStreamingResult<T, DoThrowOnError>
 
-function parseSseBlock<T>(block: string, schemaByEventName: SseSchemaByEventName | null): T | null {
+function parseSseBlock(block: string, schemaByEventName: SseSchemaByEventName) {
   let event = 'message'
   let data = ''
+
   for (const line of block.split('\n')) {
     if (line.startsWith('event:')) {
       event = line.slice(6).trim()
@@ -74,16 +75,22 @@ function parseSseBlock<T>(block: string, schemaByEventName: SseSchemaByEventName
       data = line.slice(5).trim()
     }
   }
-  if (!data) return null
+
+  const schema = schemaByEventName[event]
+
+  if (!schema) {
+    throw new Error(`Schema for event "${event}" not found.`)
+  }
+
   const parsed = JSON.parse(data)
-  const schema = schemaByEventName?.[event]
-  return { event, data: schema ? schema.parse(parsed) : parsed } as T
+
+  return { event, data: schema.parse(parsed) }
 }
 
-async function* parseSseStream<T>(
+async function* parseSseStream(
   stream: Readable,
-  schemaByEventName: SseSchemaByEventName | null,
-): AsyncGenerator<T> {
+  schemaByEventName: SseSchemaByEventName,
+): AsyncGenerator {
   let buffer = ''
   for await (const chunk of stream) {
     buffer += (chunk as Buffer).toString('utf8')
@@ -92,7 +99,7 @@ async function* parseSseStream<T>(
       const block = buffer.slice(0, boundary)
       buffer = buffer.slice(boundary + 2)
       if (block.trim()) {
-        const item = parseSseBlock<T>(block, schemaByEventName)
+        const item = parseSseBlock(block, schemaByEventName)
         if (item !== null) yield item
       }
       boundary = buffer.indexOf('\n\n')
