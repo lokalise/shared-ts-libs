@@ -270,28 +270,23 @@ describe('markMigrationsApplied (MySQL SQL generation)', () => {
 
 describe('markMigrationsApplied (MySQL integration)', () => {
   const testTable = '__drizzle_migrations_test'
-  let connection: mysql.Connection
+  const pool = mysql.createPool(getMysqlDatabaseUrl())
 
-  const createExecutor = (conn: mysql.Connection): SqlExecutor => ({
-    run: (query: string) => conn.execute(query).then(() => {}),
-    all: (query: string) => conn.execute(query).then(([rows]) => rows as Record<string, unknown>[]),
-  })
+  const executor: SqlExecutor = {
+    run: (query: string) => pool.execute(query).then(() => {}),
+    all: (query: string) => pool.execute(query).then(([rows]) => rows as Record<string, unknown>[]),
+  }
 
   beforeEach(async () => {
-    connection = await mysql.createConnection(getMysqlDatabaseUrl())
-    await connection.execute(`DROP TABLE IF EXISTS \`${testTable}\``)
+    await pool.execute(`DROP TABLE IF EXISTS \`${testTable}\``)
   })
 
   afterAll(async () => {
-    // Clean up - connection may have been closed by a test, create fresh one
-    const conn = await mysql.createConnection(getMysqlDatabaseUrl())
-    await conn.execute(`DROP TABLE IF EXISTS \`${testTable}\``)
-    await conn.end()
+    await pool.execute(`DROP TABLE IF EXISTS \`${testTable}\``)
+    await pool.end()
   })
 
   it('creates table and inserts all migrations', async () => {
-    const executor = createExecutor(connection)
-
     const result = await markMigrationsApplied({
       migrationsFolder: MYSQL_MIGRATIONS_DIR,
       executor,
@@ -305,15 +300,11 @@ describe('markMigrationsApplied (MySQL integration)', () => {
     expect(result.entries).toEqual([{ tag: '0000_init', status: 'applied' }])
 
     // Verify rows in database
-    const [rows] = await connection.execute(`SELECT hash, created_at FROM \`${testTable}\``)
+    const [rows] = await pool.execute(`SELECT hash, created_at FROM \`${testTable}\``)
     expect(rows).toHaveLength(1)
-
-    await connection.end()
   })
 
   it('is idempotent — skips already tracked migrations', async () => {
-    const executor = createExecutor(connection)
-
     await markMigrationsApplied({
       migrationsFolder: MYSQL_MIGRATIONS_DIR,
       executor,
@@ -333,9 +324,7 @@ describe('markMigrationsApplied (MySQL integration)', () => {
     expect(result.skipped).toBe(1)
 
     // Still only 1 row
-    const [rows] = await connection.execute(`SELECT * FROM \`${testTable}\``)
+    const [rows] = await pool.execute(`SELECT * FROM \`${testTable}\``)
     expect(rows).toHaveLength(1)
-
-    await connection.end()
   })
 })
