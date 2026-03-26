@@ -12,6 +12,119 @@ Peer dependency: `drizzle-orm` (<2.0.0)
 
 ## Usage
 
+### markMigrationsApplied
+
+Sets the Drizzle migration baseline for an existing database.
+
+#### Problem
+
+When migrating from another ORM (e.g. Prisma, TypeORM, Sequelize, or raw SQL migrations) to Drizzle, you face a chicken-and-egg problem:
+
+1. Your database already has the correct schema — tables, columns, indexes, etc. are all in place, created and maintained by the previous ORM.
+2. You generate Drizzle migration files from your new Drizzle schema (`drizzle-kit generate`), but these migrations describe creating tables that already exist.
+3. Running `drizzle-kit migrate` would fail, because it tries to execute `CREATE TABLE` statements against tables that are already there.
+
+You need a way to tell Drizzle: "these migrations are already reflected in the database — don't run them, just record them as done."
+
+#### Solution
+
+`markMigrationsApplied` populates Drizzle's internal `__drizzle_migrations` tracking table with records for all existing migration files, so that `drizzle-kit migrate` treats them as already applied. This establishes a baseline — from this point forward, only new migrations will be executed.
+
+The function:
+- Reads the migration journal (`meta/_journal.json`) and SQL files from your migrations folder
+- Computes the SHA-256 hash for each migration (matching Drizzle's internal algorithm)
+- Inserts tracking records into the `__drizzle_migrations` table
+- Is **idempotent** — safe to run multiple times; already-tracked migrations are skipped
+- Supports both **PostgreSQL** and **MySQL**, with auto-detection from the journal
+
+#### PostgreSQL example (postgres.js)
+
+```typescript
+import { markMigrationsApplied } from '@lokalise/drizzle-utils'
+import postgres from 'postgres'
+
+const sql = postgres(DATABASE_URL)
+
+const result = await markMigrationsApplied({
+  migrationsFolder: './drizzle/migrations',
+  executor: {
+    run: (query) => sql.unsafe(query).then(() => {}),
+    all: (query) => sql.unsafe(query) as Promise<Record<string, unknown>[]>,
+  },
+})
+
+console.log(`Applied: ${result.applied}, Skipped: ${result.skipped}`)
+await sql.end()
+```
+
+#### MySQL example (mysql2)
+
+```typescript
+import { markMigrationsApplied } from '@lokalise/drizzle-utils'
+import mysql from 'mysql2/promise'
+
+const connection = await mysql.createConnection(DATABASE_URL)
+
+const result = await markMigrationsApplied({
+  migrationsFolder: './drizzle/migrations',
+  executor: {
+    run: (query) => connection.execute(query).then(() => {}),
+    all: (query) => connection.execute(query).then(([rows]) => rows as Record<string, unknown>[]),
+  },
+})
+
+console.log(`Applied: ${result.applied}, Skipped: ${result.skipped}`)
+await connection.end()
+```
+
+#### Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `migrationsFolder` | `string` | *(required)* | Path to the Drizzle migrations folder (containing `meta/_journal.json`) |
+| `executor` | `SqlExecutor` | *(required)* | Object with `run(sql)` and `all(sql)` methods for executing raw SQL |
+| `dialect` | `'postgresql' \| 'mysql'` | *(auto-detected)* | Database dialect. Auto-detected from the journal's `dialect` field if omitted |
+| `migrationsTable` | `string` | `'__drizzle_migrations'` | Name of the migrations tracking table |
+| `migrationsSchema` | `string` | `'drizzle'` | Schema for the migrations table (PostgreSQL only) |
+
+#### Typical ORM migration workflow
+
+Assuming you are migrating from Prisma (the same approach applies to any ORM):
+
+```
+1. npm install drizzle-orm drizzle-kit
+
+2. Create your Drizzle schema
+   - Either rewrite manually, use drizzle-kit introspect, or convert from Prisma schema
+
+3. npx drizzle-kit generate
+   - Generates SQL migration files that describe your full schema (CREATE TABLE, etc.)
+   - These describe the *target state*, which your database already has
+
+4. Run markMigrationsApplied(...)
+   - Establishes the baseline: tells Drizzle all generated migrations are already in the DB
+   - Run this once per environment (local, staging, production)
+
+5. npx drizzle-kit migrate
+   - No-op — all migrations are already tracked, nothing to execute
+   - Confirms everything is wired up correctly
+
+6. Remove the old ORM and deploy
+   - From this point, all new migrations go through drizzle-kit migrate as usual
+```
+
+This should be a one-time operation per environment. After the baseline is set, your normal Drizzle migration workflow takes over.
+
+#### Helper functions
+
+`readMigrationJournal(migrationsFolder)` — reads and parses `meta/_journal.json`.
+
+`readMigrationEntries(migrationsFolder)` — reads all migration entries with their computed SHA-256 hashes.
+
+`computeMigrationHash(sqlContent)` — computes the SHA-256 hash of a migration SQL string, matching Drizzle's internal algorithm.
+
+---
+
 ### drizzleFullBulkUpdate
 
 Performs efficient bulk updates using a single SQL query with a `VALUES` clause. This is more efficient than executing multiple individual UPDATE statements and more effective than INSERT ON CONFLICT UPDATE (UPSERT) for update-only operations.
