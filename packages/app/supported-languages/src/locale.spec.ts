@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { rtlLanguages } from './constants/rtl-languages.ts'
 import { languages } from './constants/languages.ts'
+import { rtlLanguages } from './constants/rtl-languages.ts'
 import {
   getLocaleDirection,
   isStandardLocale,
