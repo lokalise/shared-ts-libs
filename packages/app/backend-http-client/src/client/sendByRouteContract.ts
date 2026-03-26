@@ -26,11 +26,29 @@ import {
 } from 'undici-retry'
 import type { z } from 'zod/v4'
 import { ResponseStatusError } from '../errors/ResponseStatusError.ts'
-import type { PayloadRouteRequestParams } from './apiContractTypes.ts'
 import { DEFAULT_OPTIONS } from './constants.ts'
 import type { ContractRequestOptions, RequestResultDefinitiveEither } from './types.ts'
 
 type DEFAULT_THROW_ON_ERROR = typeof DEFAULT_OPTIONS.throwOnError
+
+type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}
+
+type CondKey<T, Key extends string, Extra = T> = [T] extends [undefined]
+  ? { [K in Key]?: undefined }
+  : { [K in Key]: Extra }
+
+type HedersParam<T> = T | (() => T) | (() => Promise<T>)
+
+type RequestParams<PathParams, Body, QueryParams, Headers> = Prettify<
+  { pathPrefix?: string } & CondKey<PathParams, 'pathParams'> &
+    CondKey<Body, 'body', Body> &
+    CondKey<QueryParams, 'queryParams'> &
+    CondKey<Headers, 'headers', HedersParam<Headers>>
+>
+
+type AnyRequestParams = RequestParams<any, any, any, any>
 
 type ExtractRequestBody<T> = T extends { requestBodySchema: z.ZodType }
   ? T['requestBodySchema']
@@ -107,21 +125,26 @@ async function* parseSseStream(
   }
 }
 
-function buildBaseRequest(
+const resolveHeaders = <T>(headers: HedersParam<T>): T | Promise<T> => {
+  return typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
+}
+
+async function buildBaseRequest(
   routeContract: RouteContract,
-  // biome-ignore lint/suspicious/noExplicitAny: params shape depends on contract
-  anyParams: any,
+  params: AnyRequestParams,
   options: ContractRequestOptions<false, boolean>,
 ) {
+  const resolvedHeaders = (await resolveHeaders(params.headers)) ?? {}
+
   return {
     ...DEFAULT_OPTIONS,
-    path: buildRequestPath(routeContract.pathResolver(anyParams.pathParams), anyParams.pathPrefix),
+    path: buildRequestPath(routeContract.pathResolver(params.pathParams), params.pathPrefix),
     method: routeContract.method.toUpperCase(),
-    body: anyParams.body ? JSON.stringify(anyParams.body) : undefined,
-    query: anyParams.queryParams,
+    body: params.body ? JSON.stringify(params.body) : undefined,
+    query: params.queryParams,
     headers: copyWithoutUndefined({
       'x-request-id': options.reqContext?.reqId,
-      ...anyParams.headers,
+      ...resolvedHeaders,
     }),
     reset: options.disableKeepAlive ?? false,
     ...(Object.hasOwn(options, 'timeout') && {
@@ -165,7 +188,7 @@ export async function sendByRouteContract<
 >(
   client: Client,
   routeContract: Contract,
-  params: PayloadRouteRequestParams<
+  params: RequestParams<
     InferSchemaInput<Contract['requestPathParamsSchema']>,
     InferSchemaInput<ExtractRequestBody<Contract>>,
     InferSchemaInput<Contract['requestQuerySchema']>,
@@ -176,15 +199,12 @@ export async function sendByRouteContract<
 ): Promise<
   ReturnTypeForContract<Contract['responseSchemasByStatusCode'], IsStreaming, DoThrowOnError>
 > {
-  // biome-ignore lint/suspicious/noExplicitAny: params shape depends on contract
-  const anyParams = params as any
-  const useStreaming: boolean =
-    anyParams.streaming ?? getSseSchemaByEventName(routeContract) !== null
+  const useStreaming: boolean = params.streaming ?? getSseSchemaByEventName(routeContract) !== null
 
   const throwOnError = (options.throwOnError ?? DEFAULT_OPTIONS.throwOnError) || useStreaming
   const retryConfig = options.retryConfig ?? NO_RETRY_CONFIG
 
-  const baseRequest = buildBaseRequest(routeContract, anyParams, options)
+  const baseRequest = await buildBaseRequest(routeContract, params as AnyRequestParams, options)
 
   const request = useStreaming
     ? { ...baseRequest, headers: { ...baseRequest.headers, accept: 'text/event-stream' } }
