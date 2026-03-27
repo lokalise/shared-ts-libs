@@ -131,8 +131,16 @@ async function main() {
   log(`Dialect: ${dialect}`)
   log(`Migrations folder: ${migrationsFolder}`)
 
-  const { executor, close } =
-    dialect === 'postgresql' ? await createPostgresExecutor(url) : await createMysqlExecutor(url)
+  const createExecutor = {
+    postgresql: createPostgresExecutor,
+    mysql: createMysqlExecutor,
+  }[dialect]
+
+  if (!createExecutor) {
+    throw new Error(`No executor available for dialect "${dialect}"`)
+  }
+
+  const { executor, close } = await createExecutor(url)
 
   try {
     const result = await markMigrationsApplied({
