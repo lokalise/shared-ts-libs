@@ -81,36 +81,51 @@ async function createMysqlExecutor(
   }
 }
 
+function printUsage(configPath: string | undefined): never {
+  const isHelp = configPath === '--help' || configPath === '-h'
+  const out = isHelp ? log : logError
+  out('Usage: npx @lokalise/drizzle-utils mark-migrations-applied <path-to-drizzle.config.ts>')
+  out()
+  out('Reads your drizzle config to establish a migration baseline.')
+  out('All existing migrations are marked as applied without executing them.')
+  out()
+  out('Options:')
+  out('  --help, -h  Show this help message')
+  process.exit(isHelp ? 0 : 1)
+}
+
+function validateConfig(config: DrizzleConfig): {
+  dialect: Dialect
+  dbCredentials: DrizzleDbCredentials
+} {
+  const { dialect, dbCredentials } = config
+
+  if (!dialect || !SUPPORTED_DIALECTS.has(dialect)) {
+    logError(`Unsupported or missing dialect: "${dialect}". Supported: postgresql, mysql`)
+    process.exit(1)
+  }
+
+  if (!dbCredentials) {
+    logError('Missing dbCredentials in drizzle config')
+    process.exit(1)
+  }
+
+  return { dialect: dialect as Dialect, dbCredentials }
+}
+
 async function main() {
   const configPath = process.argv[2]
 
   if (!configPath || configPath === '--help' || configPath === '-h') {
-    log('Usage: npx @lokalise/drizzle-utils mark-migrations-applied <path-to-drizzle.config.ts>')
-    log()
-    log('Reads your drizzle config to establish a migration baseline.')
-    log('All existing migrations are marked as applied without executing them.')
-    log()
-    log('Options:')
-    log('  --help, -h  Show this help message')
-    process.exit(configPath ? 0 : 1)
+    printUsage(configPath)
   }
 
   const absolutePath = resolve(configPath)
   log(`Loading config from ${absolutePath}`)
   const config = await loadConfig(absolutePath)
 
-  const dialect = config.dialect
-  if (!dialect || !SUPPORTED_DIALECTS.has(dialect)) {
-    logError(`Unsupported or missing dialect: "${dialect}". Supported: postgresql, mysql`)
-    process.exit(1)
-  }
-
-  if (!config.dbCredentials) {
-    logError('Missing dbCredentials in drizzle config')
-    process.exit(1)
-  }
-
-  const url = buildConnectionUrl(config.dbCredentials, dialect)
+  const { dialect, dbCredentials } = validateConfig(config)
+  const url = buildConnectionUrl(dbCredentials, dialect)
   const migrationsFolder = resolve(config.out ?? './drizzle')
 
   log(`Dialect: ${dialect}`)
@@ -123,7 +138,7 @@ async function main() {
     const result = await markMigrationsApplied({
       migrationsFolder,
       executor,
-      dialect: dialect as Dialect,
+      dialect,
     })
 
     log()
