@@ -37,6 +37,16 @@ The function:
 - Is **idempotent** — safe to run multiple times; already-tracked migrations are skipped
 - Supports both **PostgreSQL** and **MySQL**, with auto-detection from the journal
 
+#### CLI
+
+If you already have a `drizzle.config.ts` with `dbCredentials`, you can run the baseline directly:
+
+```bash
+npx @lokalise/drizzle-utils mark-migrations-applied ./drizzle.config.ts
+```
+
+For a full step-by-step migration guide, see [Migrating from Prisma to Drizzle](docs/migrating-from-prisma.md).
+
 #### PostgreSQL example (postgres.js)
 
 ```typescript
@@ -86,34 +96,6 @@ await connection.end()
 | `dialect` | `'postgresql' \| 'mysql'` | *(auto-detected)* | Database dialect. Auto-detected from the journal's `dialect` field if omitted |
 | `migrationsTable` | `string` | `'__drizzle_migrations'` | Name of the migrations tracking table |
 | `migrationsSchema` | `string` | `'drizzle'` | Schema for the migrations table (PostgreSQL only) |
-
-#### Typical ORM migration workflow
-
-Assuming you are migrating from Prisma (the same approach applies to any ORM):
-
-```
-1. npm install drizzle-orm drizzle-kit
-
-2. Create your Drizzle schema
-   - Either rewrite manually, use drizzle-kit introspect, or convert from Prisma schema
-
-3. npx drizzle-kit generate
-   - Generates SQL migration files that describe your full schema (CREATE TABLE, etc.)
-   - These describe the *target state*, which your database already has
-
-4. Run markMigrationsApplied(...)
-   - Establishes the baseline: tells Drizzle all generated migrations are already in the DB
-   - Run this once per environment (local, staging, production)
-
-5. npx drizzle-kit migrate
-   - No-op — all migrations are already tracked, nothing to execute
-   - Confirms everything is wired up correctly
-
-6. Remove the old ORM and deploy
-   - From this point, all new migrations go through drizzle-kit migrate as usual
-```
-
-This should be a one-time operation per environment. After the baseline is set, your normal Drizzle migration workflow takes over.
 
 #### Helper functions
 

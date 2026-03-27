@@ -8,6 +8,9 @@
         "README.md",
         "LICENSE.md"
     ],
+    "bin": {
+        "mark-migrations-applied": "./dist/cli/markMigrationsApplied.js"
+    },
     "publishConfig": {
         "access": "public"
     },
@@ -35,7 +38,17 @@
         "postversion": "biome check --write package.json"
     },
     "peerDependencies": {
-        "drizzle-orm": "<2.0.0"
+        "drizzle-orm": "<2.0.0",
+        "postgres": ">=3.0.0",
+        "mysql2": ">=3.0.0"
+    },
+    "peerDependenciesMeta": {
+        "postgres": {
+            "optional": true
+        },
+        "mysql2": {
+            "optional": true
+        }
     },
     "devDependencies": {
         "@biomejs/biome": "^2.3.7",
