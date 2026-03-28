@@ -38,6 +38,12 @@ npx drizzle-kit generate
 
 This produces SQL migration files that describe your full schema (`CREATE TABLE`, etc.). These describe the *target state*, which your database already has — they must NOT be executed directly.
 
+The output format depends on your drizzle-kit version:
+- **drizzle-kit 0.x (stable)**: flat SQL files with a `meta/_journal.json` index
+- **drizzle-kit 1.0.0-beta**: folder-per-migration (`<timestamp>_<name>/migration.sql`)
+
+Both formats are fully supported by `markMigrationsApplied`.
+
 Review the generated SQL to verify it matches your existing database. If there are differences, fix your Drizzle schema and regenerate.
 
 ## Step 5: Mark migrations as applied (the baseline)
