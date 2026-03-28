@@ -1,0 +1,110 @@
+{
+    "version": "6",
+    "dialect": "mysql",
+    "id": "4883e037-b439-4dd4-8823-9cea12210c3d",
+    "prevIds": ["05aa0f1f-bfb3-431f-8d5e-fec66a5d0edd"],
+    "ddl": [
+        {
+            "name": "projects",
+            "entityType": "tables"
+        },
+        {
+            "name": "users",
+            "entityType": "tables"
+        },
+        {
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": true,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "name": "id",
+            "entityType": "columns",
+            "table": "projects"
+        },
+        {
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "name": "name",
+            "entityType": "columns",
+            "table": "projects"
+        },
+        {
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": true,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "name": "id",
+            "entityType": "columns",
+            "table": "users"
+        },
+        {
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "name": "name",
+            "entityType": "columns",
+            "table": "users"
+        },
+        {
+            "type": "int",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "name": "project_id",
+            "entityType": "columns",
+            "table": "users"
+        },
+        {
+            "columns": ["id"],
+            "name": "PRIMARY",
+            "table": "projects",
+            "entityType": "pks"
+        },
+        {
+            "columns": ["id"],
+            "name": "PRIMARY",
+            "table": "users",
+            "entityType": "pks"
+        },
+        {
+            "columns": ["project_id"],
+            "tableTo": "projects",
+            "columnsTo": ["id"],
+            "onUpdate": "NO ACTION",
+            "onDelete": "NO ACTION",
+            "nameExplicit": false,
+            "name": "users_project_id_projects_id_fkey",
+            "entityType": "fks",
+            "table": "users"
+        }
+    ],
+    "renames": []
+}

@@ -1,0 +1,47 @@
+{
+    "version": "6",
+    "dialect": "mysql",
+    "id": "05aa0f1f-bfb3-431f-8d5e-fec66a5d0edd",
+    "prevIds": ["00000000-0000-0000-0000-000000000000"],
+    "ddl": [
+        {
+            "name": "projects",
+            "entityType": "tables"
+        },
+        {
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": true,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "name": "id",
+            "entityType": "columns",
+            "table": "projects"
+        },
+        {
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "name": "name",
+            "entityType": "columns",
+            "table": "projects"
+        },
+        {
+            "columns": ["id"],
+            "name": "PRIMARY",
+            "table": "projects",
+            "entityType": "pks"
+        }
+    ],
+    "renames": []
+}

@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 export type Dialect = 'postgresql' | 'mysql' | 'cockroachdb'
+
+export type MigrationFormat = 'journal' | 'folder'
 
 export interface MigrationJournalEntry {
   idx: number
@@ -56,12 +58,16 @@ export interface SqlExecutor {
 }
 
 export interface MarkMigrationsAppliedOptions {
-  /** Path to the Drizzle migrations folder (containing meta/_journal.json). */
+  /**
+   * Path to the Drizzle migrations folder.
+   * Supports both the legacy journal format (meta/_journal.json with flat SQL files)
+   * and the new folder-per-migration format (drizzle-kit 1.0.0-beta).
+   */
   migrationsFolder: string
   /** SQL executor for running queries against the database. */
   executor: SqlExecutor
   /**
-   * Database dialect. If omitted, auto-detected from the journal's `dialect` field.
+   * Database dialect. If omitted, auto-detected from the journal or snapshot files.
    * Must be 'postgresql', 'mysql', or 'cockroachdb'.
    */
   dialect?: Dialect
@@ -93,6 +99,15 @@ export interface MarkMigrationsAppliedResult {
 
 const SUPPORTED_DIALECTS = new Set<string>(['postgresql', 'mysql', 'cockroachdb'])
 
+const DIALECT_ALIASES: Record<string, string> = {
+  pg: 'postgresql',
+  postgres: 'postgresql',
+}
+
+function normalizeDialect(dialect: string): string {
+  return DIALECT_ALIASES[dialect] ?? dialect
+}
+
 function isPgLike(dialect: Dialect): boolean {
   return dialect === 'postgresql' || dialect === 'cockroachdb'
 }
@@ -116,34 +131,90 @@ export function computeMigrationHash(sqlContent: string): string {
   return createHash('sha256').update(sqlContent).digest('hex')
 }
 
-/** Read and parse the Drizzle migration journal from a migrations folder. */
+/** Detect whether a migrations folder uses the legacy journal format or the new folder-per-migration format. */
+export function detectMigrationFormat(migrationsFolder: string): MigrationFormat {
+  const journalPath = join(resolve(migrationsFolder), 'meta', '_journal.json')
+  return existsSync(journalPath) ? 'journal' : 'folder'
+}
+
+/** Read and parse the Drizzle migration journal from a migrations folder (legacy format only). */
 export function readMigrationJournal(migrationsFolder: string): MigrationJournal {
   const journalPath = join(resolve(migrationsFolder), 'meta', '_journal.json')
   const content = readFileSync(journalPath, 'utf-8')
   return JSON.parse(content) as MigrationJournal
 }
 
+function parseFolderTimestamp(folderName: string): number {
+  const match = folderName.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/)
+  if (!match) return 0
+  const [, y, m, d, h, min, s] = match
+  return Date.UTC(Number(y), Number(m) - 1, Number(d), Number(h), Number(min), Number(s))
+}
+
+function readNewFormatMigrations(folder: string): { entries: MigrationEntry[]; dialect: string } {
+  const items = readdirSync(folder, { withFileTypes: true })
+
+  const migrationDirs = items
+    .filter((item) => item.isDirectory() && existsSync(join(folder, item.name, 'migration.sql')))
+    .map((item) => item.name)
+    .sort()
+
+  let dialect: string | undefined
+  const entries: MigrationEntry[] = []
+
+  for (const dir of migrationDirs) {
+    const sqlPath = join(folder, dir, 'migration.sql')
+    const snapshotPath = join(folder, dir, 'snapshot.json')
+    const sqlContent = readFileSync(sqlPath, 'utf-8')
+
+    if (!dialect && existsSync(snapshotPath)) {
+      const snapshot = JSON.parse(readFileSync(snapshotPath, 'utf-8'))
+      if (snapshot.dialect) {
+        dialect = normalizeDialect(snapshot.dialect as string)
+      }
+    }
+
+    entries.push({
+      tag: dir,
+      hash: computeMigrationHash(sqlContent),
+      createdAt: parseFolderTimestamp(dir),
+    })
+  }
+
+  return { entries, dialect: dialect ?? 'postgresql' }
+}
+
+function readMigrationsWithDialect(folder: string): { entries: MigrationEntry[]; dialect: string } {
+  const format = detectMigrationFormat(folder)
+
+  if (format === 'journal') {
+    const journal = readMigrationJournal(folder)
+    const entries = journal.entries.map((entry) => {
+      const sqlPath = join(folder, `${entry.tag}.sql`)
+      const sqlContent = readFileSync(sqlPath, 'utf-8')
+      return {
+        tag: entry.tag,
+        hash: computeMigrationHash(sqlContent),
+        createdAt: entry.when,
+      }
+    })
+    return { entries, dialect: journal.dialect }
+  }
+
+  return readNewFormatMigrations(folder)
+}
+
 /**
  * Read all migration entries from a Drizzle migrations folder,
  * computing the SHA-256 hash for each migration SQL file.
+ * Supports both the legacy journal format and the new folder-per-migration format.
  */
 export function readMigrationEntries(migrationsFolder: string): MigrationEntry[] {
-  const folder = resolve(migrationsFolder)
-  const journal = readMigrationJournal(folder)
-
-  return journal.entries.map((entry) => {
-    const sqlPath = join(folder, `${entry.tag}.sql`)
-    const sqlContent = readFileSync(sqlPath, 'utf-8')
-    return {
-      tag: entry.tag,
-      hash: computeMigrationHash(sqlContent),
-      createdAt: entry.when,
-    }
-  })
+  return readMigrationsWithDialect(resolve(migrationsFolder)).entries
 }
 
-function resolveDialect(journal: MigrationJournal, explicit?: Dialect): Dialect {
-  const dialect = explicit ?? journal.dialect
+function resolveDialect(detectedDialect: string, explicit?: Dialect): Dialect {
+  const dialect = explicit ?? normalizeDialect(detectedDialect)
 
   if (!SUPPORTED_DIALECTS.has(dialect)) {
     throw new Error(
@@ -166,6 +237,9 @@ function resolveDialect(journal: MigrationJournal, explicit?: Dialect): Dialect 
  *
  * The function is idempotent — safe to run multiple times.
  * Run once per environment (local, staging, production) during the ORM transition.
+ *
+ * Supports both the legacy journal format (drizzle-kit 0.x) and the new
+ * folder-per-migration format (drizzle-kit 1.0.0-beta).
  */
 export async function markMigrationsApplied(
   options: MarkMigrationsAppliedOptions,
@@ -178,9 +252,8 @@ export async function markMigrationsApplied(
   } = options
 
   const folder = resolve(migrationsFolder)
-  const journal = readMigrationJournal(folder)
-  const dialect = resolveDialect(journal, options.dialect)
-  const entries = readMigrationEntries(folder)
+  const { entries, dialect: detectedDialect } = readMigrationsWithDialect(folder)
+  const dialect = resolveDialect(detectedDialect, options.dialect)
 
   if (entries.length === 0) {
     return { total: 0, applied: 0, skipped: 0, entries: [] }
@@ -216,7 +289,17 @@ export async function markMigrationsApplied(
       continue
     }
 
-    // Hash is a hex string, createdAt is a number — safe to interpolate
+    if (!/^[0-9a-f]{64}$/.test(entry.hash)) {
+      throw new Error(
+        `Migration "${entry.tag}" has invalid hash "${entry.hash}" — expected a 64-character lowercase hex string from computeMigrationHash`,
+      )
+    }
+    if (!Number.isFinite(entry.createdAt)) {
+      throw new Error(
+        `Migration "${entry.tag}" has invalid createdAt "${entry.createdAt}" — expected a finite number`,
+      )
+    }
+
     await executor.run(
       `INSERT INTO ${tableName} (hash, created_at) VALUES ('${entry.hash}', ${entry.createdAt})`,
     )

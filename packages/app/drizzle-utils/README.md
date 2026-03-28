@@ -31,11 +31,11 @@ You need a way to tell Drizzle: "these migrations are already reflected in the d
 `markMigrationsApplied` populates Drizzle's internal `__drizzle_migrations` tracking table with records for all existing migration files, so that `drizzle-kit migrate` treats them as already applied. This establishes a baseline — from this point forward, only new migrations will be executed.
 
 The function:
-- Reads the migration journal (`meta/_journal.json`) and SQL files from your migrations folder
+- Reads migration files from your migrations folder — supports both the legacy journal format (`meta/_journal.json` with flat SQL files, from drizzle-kit 0.x) and the new folder-per-migration format (`<timestamp>_<name>/migration.sql`, from drizzle-kit 1.0.0-beta)
 - Computes the SHA-256 hash for each migration (matching Drizzle's internal algorithm)
 - Inserts tracking records into the `__drizzle_migrations` table
 - Is **idempotent** — safe to run multiple times; already-tracked migrations are skipped
-- Supports **PostgreSQL**, **MySQL**, and **CockroachDB**, with auto-detection from the journal
+- Supports **PostgreSQL**, **MySQL**, and **CockroachDB**, with auto-detection from the journal or snapshot files
 
 #### CLI
 
@@ -115,17 +115,19 @@ await sql.end()
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `migrationsFolder` | `string` | *(required)* | Path to the Drizzle migrations folder (containing `meta/_journal.json`) |
+| `migrationsFolder` | `string` | *(required)* | Path to the Drizzle migrations folder. Supports both legacy format (with `meta/_journal.json`) and new folder-per-migration format (drizzle-kit 1.0.0-beta) |
 | `executor` | `SqlExecutor` | *(required)* | Object with `run(sql)` and `all(sql)` methods for executing raw SQL |
-| `dialect` | `'postgresql' \| 'mysql' \| 'cockroachdb'` | *(auto-detected)* | Database dialect. Auto-detected from the journal's `dialect` field if omitted |
+| `dialect` | `'postgresql' \| 'mysql' \| 'cockroachdb'` | *(auto-detected)* | Database dialect. Auto-detected from the journal or snapshot files if omitted |
 | `migrationsTable` | `string` | `'__drizzle_migrations'` | Name of the migrations tracking table |
 | `migrationsSchema` | `string` | `'drizzle'` | Schema for the migrations table (PostgreSQL and CockroachDB only) |
 
 #### Helper functions
 
-`readMigrationJournal(migrationsFolder)` — reads and parses `meta/_journal.json`.
+`detectMigrationFormat(migrationsFolder)` — returns `'journal'` (legacy format with `meta/_journal.json`) or `'folder'` (new folder-per-migration format).
 
-`readMigrationEntries(migrationsFolder)` — reads all migration entries with their computed SHA-256 hashes.
+`readMigrationJournal(migrationsFolder)` — reads and parses `meta/_journal.json` (legacy format only).
+
+`readMigrationEntries(migrationsFolder)` — reads all migration entries with their computed SHA-256 hashes. Automatically detects and handles both legacy and new formats.
 
 `computeMigrationHash(sqlContent)` — computes the SHA-256 hash of a migration SQL string, matching Drizzle's internal algorithm.
 
