@@ -289,7 +289,17 @@ export async function markMigrationsApplied(
       continue
     }
 
-    // Hash is a hex string, createdAt is a number — safe to interpolate
+    if (!/^[0-9a-f]{64}$/.test(entry.hash)) {
+      throw new Error(
+        `Migration "${entry.tag}" has invalid hash "${entry.hash}" — expected a 64-character lowercase hex string from computeMigrationHash`,
+      )
+    }
+    if (!Number.isFinite(entry.createdAt)) {
+      throw new Error(
+        `Migration "${entry.tag}" has invalid createdAt "${entry.createdAt}" — expected a finite number`,
+      )
+    }
+
     await executor.run(
       `INSERT INTO ${tableName} (hash, created_at) VALUES ('${entry.hash}', ${entry.createdAt})`,
     )

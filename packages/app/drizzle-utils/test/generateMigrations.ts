@@ -99,10 +99,16 @@ export function generateNewFormatMigrations(dialect: 'postgresql' | 'mysql'): st
   } finally {
     try {
       unlinkSync(schemaPath)
-    } catch {}
+    } catch (err) {
+      // biome-ignore lint/suspicious/noConsole: test infrastructure — warn on cleanup failure to aid debugging flaky tests
+      console.warn(`Failed to clean up schema file ${schemaPath}:`, err)
+    }
     try {
       unlinkSync(configPath)
-    } catch {}
+    } catch (err) {
+      // biome-ignore lint/suspicious/noConsole: test infrastructure — warn on cleanup failure to aid debugging flaky tests
+      console.warn(`Failed to clean up config file ${configPath}:`, err)
+    }
   }
 
   return outDir
