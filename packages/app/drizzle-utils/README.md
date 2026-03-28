@@ -42,7 +42,11 @@ The function:
 If you already have a `drizzle.config.ts` with `dbCredentials`, you can run the baseline directly:
 
 ```bash
-npx @lokalise/drizzle-utils mark-migrations-applied ./drizzle.config.ts
+# If @lokalise/drizzle-utils is a project dependency:
+npx mark-migrations-applied ./drizzle.config.ts
+
+# Without installing as a dependency:
+npx -p @lokalise/drizzle-utils mark-migrations-applied ./drizzle.config.ts
 ```
 
 For a full step-by-step migration guide, see [Migrating from Prisma to Drizzle](docs/migrating-from-prisma.md).

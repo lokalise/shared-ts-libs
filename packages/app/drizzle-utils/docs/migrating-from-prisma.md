@@ -51,7 +51,11 @@ Review the generated SQL to verify it matches your existing database. If there a
 Since your `drizzle.config.ts` already has the connection details and migrations folder, just run the CLI:
 
 ```bash
-npx @lokalise/drizzle-utils mark-migrations-applied ./drizzle.config.ts
+# If @lokalise/drizzle-utils is a project dependency:
+npx mark-migrations-applied ./drizzle.config.ts
+
+# Without installing as a dependency:
+npx -p @lokalise/drizzle-utils mark-migrations-applied ./drizzle.config.ts
 ```
 
 The CLI reads `dialect`, `dbCredentials`, and `out` from your config, connects to the database, and marks all existing migrations as applied.
