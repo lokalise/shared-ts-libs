@@ -13,3 +13,32 @@ services:
       interval: 1s
       timeout: 5s
       retries: 10
+
+  cockroachdb:
+    image: cockroachdb/cockroach:latest-v26.1
+    command: start-single-node --insecure
+    ports:
+      - '26257:26257'
+    environment:
+      - COCKROACH_DATABASE=test
+    healthcheck:
+      test: ['CMD', 'cockroach', 'sql', '--insecure', '-e', 'SELECT 1']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  mysql:
+    image: mysql:8.0.40
+    command: '--default-authentication-plugin=mysql_native_password'
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./test/fixtures/mysql-init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - MYSQL_ROOT_PASSWORD=pass
+      - MYSQL_DATABASE=test
+    healthcheck:
+      test: ['CMD', 'mysql', '-h', '127.0.0.1', '-u', 'root', '-ppass', '-e', 'SELECT 1']
+      interval: 2s
+      timeout: 5s
+      retries: 30
