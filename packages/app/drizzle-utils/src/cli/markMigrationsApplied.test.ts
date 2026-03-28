@@ -27,6 +27,25 @@ describe('mark-migrations-applied CLI', () => {
     })
   })
 
+  describe('npx invocation (extra positional arg)', () => {
+    it('ignores leading bin name and uses last positional as config path', async () => {
+      // Simulates: npx @lokalise/drizzle-utils mark-migrations-applied ./drizzle.config.ts
+      // where npx passes the bin name as an extra positional argument
+      await execCommand(
+        `${CLI} mark-migrations-applied ${FIXTURES_DIR}/drizzle-invalid-dialect.config.ts`,
+        {
+          expectedErrorMessage: 'Unsupported or missing dialect',
+        },
+      )
+    })
+
+    it('still works with a single positional arg', async () => {
+      await execCommand(`${CLI} ${FIXTURES_DIR}/drizzle-invalid-dialect.config.ts`, {
+        expectedErrorMessage: 'Unsupported or missing dialect',
+      })
+    })
+  })
+
   describe('config validation', () => {
     it('exits with error for unsupported dialect', async () => {
       await execCommand(`${CLI} ${FIXTURES_DIR}/drizzle-invalid-dialect.config.ts`, {

@@ -84,7 +84,8 @@ async function createMysqlExecutor(
 
 function printUsage(exitCode: number): never {
   const out = exitCode === 0 ? log : logError
-  out('Usage: npx @lokalise/drizzle-utils mark-migrations-applied <path-to-drizzle.config.ts>')
+  out('Usage: npx mark-migrations-applied <path-to-drizzle.config.ts>')
+  out('       npx -p @lokalise/drizzle-utils mark-migrations-applied <path-to-drizzle.config.ts>')
   out()
   out('Reads your drizzle config to establish a migration baseline.')
   out('All existing migrations are marked as applied without executing them.')
@@ -108,7 +109,9 @@ function parseCliArgs(): { configPath: string } {
     printUsage(0)
   }
 
-  const configPath = positionals[0]
+  // When invoked via `npx @lokalise/drizzle-utils mark-migrations-applied ./config.ts`,
+  // npx passes the bin name as a positional arg too. Use the last positional to be resilient.
+  const configPath = positionals.at(-1)
   if (!configPath) {
     printUsage(1)
   }
