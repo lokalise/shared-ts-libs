@@ -100,6 +100,55 @@ npx drizzle-kit generate   # generates a new migration
 npx drizzle-kit migrate    # applies only the new migration
 ```
 
+## Prisma `@updatedAt` columns
+
+Prisma's `@updatedAt` directive sets the timestamp at the **ORM level**, not the database level — the database has no trigger or default to update the column automatically. This means:
+
+- Raw SQL updates (e.g. via `sql.unsafe(...)` or bulk operations) will **not** update the `updated_at` column.
+- Other tools or services that write directly to the database will also skip it.
+
+When migrating to Drizzle, you have two options:
+
+### Option 1: ORM-level (matches Prisma behavior)
+
+Use Drizzle's `.$onUpdate()` to set the timestamp when using the Drizzle query builder:
+
+```typescript
+import { timestamp } from 'drizzle-orm/pg-core'
+
+const myTable = pgTable('my_table', {
+  // ...
+  updatedAt: timestamp('updated_at', { withTimezone: true }).$onUpdate(() => new Date()),
+})
+```
+
+This has the same limitation as Prisma — raw SQL updates won't trigger it.
+
+### Option 2: Database-level trigger (recommended)
+
+Add a trigger so the database updates the column automatically, regardless of how the write happens:
+
+```sql
+-- Create the trigger function (once per database)
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Attach to each table that has an updated_at column
+CREATE TRIGGER trg_set_updated_at
+    BEFORE UPDATE ON my_table
+    FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at();
+```
+
+This is the safer option — it works for Drizzle queries, raw SQL, and any other database client.
+
+You can add the trigger as a new Drizzle migration after the baseline is established.
+
 ## Important notes
 
 - **Run the baseline before `drizzle-kit migrate`**: If you run `migrate` first, Drizzle will attempt to execute `CREATE TABLE` statements and fail.
