@@ -2,6 +2,7 @@
 
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { parseArgs } from 'node:util'
 import type { Dialect, SqlExecutor } from '../markMigrationsApplied.ts'
 import { markMigrationsApplied } from '../markMigrationsApplied.ts'
 
@@ -81,9 +82,8 @@ async function createMysqlExecutor(
   }
 }
 
-function printUsage(configPath: string | undefined): never {
-  const isHelp = configPath === '--help' || configPath === '-h'
-  const out = isHelp ? log : logError
+function printUsage(exitCode: number): never {
+  const out = exitCode === 0 ? log : logError
   out('Usage: npx @lokalise/drizzle-utils mark-migrations-applied <path-to-drizzle.config.ts>')
   out()
   out('Reads your drizzle config to establish a migration baseline.')
@@ -91,7 +91,29 @@ function printUsage(configPath: string | undefined): never {
   out()
   out('Options:')
   out('  --help, -h  Show this help message')
-  process.exit(isHelp ? 0 : 1)
+  process.exit(exitCode)
+}
+
+function parseCliArgs(): { configPath: string } {
+  const { values, positionals } = parseArgs({
+    args: process.argv.slice(2),
+    options: {
+      help: { type: 'boolean', short: 'h' },
+    },
+    allowPositionals: true,
+    strict: false,
+  })
+
+  if (values.help) {
+    printUsage(0)
+  }
+
+  const configPath = positionals[0]
+  if (!configPath) {
+    printUsage(1)
+  }
+
+  return { configPath }
 }
 
 function validateConfig(config: DrizzleConfig): {
@@ -116,11 +138,7 @@ function validateConfig(config: DrizzleConfig): {
 }
 
 async function main() {
-  const configPath = process.argv[2]
-
-  if (!configPath || configPath === '--help' || configPath === '-h') {
-    printUsage(configPath)
-  }
+  const { configPath } = parseCliArgs()
 
   const absolutePath = resolve(configPath)
   log(`Loading config from ${absolutePath}`)
