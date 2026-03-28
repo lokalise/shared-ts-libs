@@ -20,7 +20,7 @@ interface DrizzleConfig {
   dbCredentials?: DrizzleDbCredentials
 }
 
-const SUPPORTED_DIALECTS = new Set(['postgresql', 'mysql'])
+const SUPPORTED_DIALECTS = new Set(['postgresql', 'mysql', 'cockroachdb'])
 
 // biome-ignore lint/suspicious/noConsole: CLI script — console is the intended output channel
 const log = console.log
@@ -101,7 +101,9 @@ function validateConfig(config: DrizzleConfig): {
   const { dialect, dbCredentials } = config
 
   if (!dialect || !SUPPORTED_DIALECTS.has(dialect)) {
-    logError(`Unsupported or missing dialect: "${dialect}". Supported: postgresql, mysql`)
+    logError(
+      `Unsupported or missing dialect: "${dialect}". Supported: postgresql, mysql, cockroachdb`,
+    )
     process.exit(1)
   }
 
@@ -133,6 +135,7 @@ async function main() {
 
   const createExecutor = {
     postgresql: createPostgresExecutor,
+    cockroachdb: createPostgresExecutor,
     mysql: createMysqlExecutor,
   }[dialect]
 

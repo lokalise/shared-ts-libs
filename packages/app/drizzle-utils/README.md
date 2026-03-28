@@ -35,7 +35,7 @@ The function:
 - Computes the SHA-256 hash for each migration (matching Drizzle's internal algorithm)
 - Inserts tracking records into the `__drizzle_migrations` table
 - Is **idempotent** — safe to run multiple times; already-tracked migrations are skipped
-- Supports both **PostgreSQL** and **MySQL**, with auto-detection from the journal
+- Supports **PostgreSQL**, **MySQL**, and **CockroachDB**, with auto-detection from the journal
 
 #### CLI
 
@@ -87,15 +87,39 @@ console.log(`Applied: ${result.applied}, Skipped: ${result.skipped}`)
 await connection.end()
 ```
 
+#### CockroachDB example (postgres.js)
+
+CockroachDB uses the PostgreSQL wire protocol, so you use the same `postgres` driver:
+
+```typescript
+import { markMigrationsApplied } from '@lokalise/drizzle-utils'
+import postgres from 'postgres'
+
+const sql = postgres(COCKROACHDB_URL)
+
+const result = await markMigrationsApplied({
+  migrationsFolder: './drizzle/migrations',
+  executor: {
+    run: (query) => sql.unsafe(query).then(() => {}),
+    all: (query) => sql.unsafe(query) as Promise<Record<string, unknown>[]>,
+  },
+  // dialect is auto-detected from the journal, or set explicitly:
+  // dialect: 'cockroachdb',
+})
+
+console.log(`Applied: ${result.applied}, Skipped: ${result.skipped}`)
+await sql.end()
+```
+
 #### Options
 
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `migrationsFolder` | `string` | *(required)* | Path to the Drizzle migrations folder (containing `meta/_journal.json`) |
 | `executor` | `SqlExecutor` | *(required)* | Object with `run(sql)` and `all(sql)` methods for executing raw SQL |
-| `dialect` | `'postgresql' \| 'mysql'` | *(auto-detected)* | Database dialect. Auto-detected from the journal's `dialect` field if omitted |
+| `dialect` | `'postgresql' \| 'mysql' \| 'cockroachdb'` | *(auto-detected)* | Database dialect. Auto-detected from the journal's `dialect` field if omitted |
 | `migrationsTable` | `string` | `'__drizzle_migrations'` | Name of the migrations tracking table |
-| `migrationsSchema` | `string` | `'drizzle'` | Schema for the migrations table (PostgreSQL only) |
+| `migrationsSchema` | `string` | `'drizzle'` | Schema for the migrations table (PostgreSQL and CockroachDB only) |
 
 #### Helper functions
 

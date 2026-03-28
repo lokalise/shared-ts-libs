@@ -63,6 +63,22 @@ describe('mark-migrations-applied CLI', () => {
     })
   })
 
+  describe('CockroachDB integration', () => {
+    it('marks migrations as applied', async () => {
+      await execCommand(`${CLI} ${FIXTURES_DIR}/drizzle-cockroachdb-url.config.ts`, {
+        expectedOutput: ['Dialect: cockroachdb', 'Done', '0000_init'],
+        env: { COCKROACHDB_DATABASE_URL: process.env.COCKROACHDB_DATABASE_URL },
+      })
+    })
+
+    it('is idempotent — skips already applied migrations on second run', async () => {
+      await execCommand(`${CLI} ${FIXTURES_DIR}/drizzle-cockroachdb-url.config.ts`, {
+        expectedOutput: ['Skipped: 1'],
+        env: { COCKROACHDB_DATABASE_URL: process.env.COCKROACHDB_DATABASE_URL },
+      })
+    })
+  })
+
   describe('MySQL integration', () => {
     it('marks migrations as applied', async () => {
       await execCommand(`${CLI} ${FIXTURES_DIR}/drizzle-mysql-url.config.ts`, {

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-export type Dialect = 'postgresql' | 'mysql'
+export type Dialect = 'postgresql' | 'mysql' | 'cockroachdb'
 
 export interface MigrationJournalEntry {
   idx: number
@@ -62,7 +62,7 @@ export interface MarkMigrationsAppliedOptions {
   executor: SqlExecutor
   /**
    * Database dialect. If omitted, auto-detected from the journal's `dialect` field.
-   * Must be 'postgresql' or 'mysql'.
+   * Must be 'postgresql', 'mysql', or 'cockroachdb'.
    */
   dialect?: Dialect
   /**
@@ -71,7 +71,7 @@ export interface MarkMigrationsAppliedOptions {
    */
   migrationsTable?: string
   /**
-   * Schema for the migrations table (PostgreSQL only).
+   * Schema for the migrations table (PostgreSQL and CockroachDB only).
    * @default 'drizzle'
    */
   migrationsSchema?: string
@@ -91,7 +91,11 @@ export interface MarkMigrationsAppliedResult {
   }>
 }
 
-const SUPPORTED_DIALECTS = new Set<string>(['postgresql', 'mysql'])
+const SUPPORTED_DIALECTS = new Set<string>(['postgresql', 'mysql', 'cockroachdb'])
+
+function isPgLike(dialect: Dialect): boolean {
+  return dialect === 'postgresql' || dialect === 'cockroachdb'
+}
 
 function quoteIdentifier(name: string, dialect: Dialect): string {
   if (dialect === 'mysql') {
@@ -101,7 +105,7 @@ function quoteIdentifier(name: string, dialect: Dialect): string {
 }
 
 function qualifiedTableName(table: string, schema: string | undefined, dialect: Dialect): string {
-  if (dialect === 'postgresql' && schema) {
+  if (isPgLike(dialect) && schema) {
     return `${quoteIdentifier(schema, dialect)}.${quoteIdentifier(table, dialect)}`
   }
   return quoteIdentifier(table, dialect)
@@ -182,8 +186,8 @@ export async function markMigrationsApplied(
     return { total: 0, applied: 0, skipped: 0, entries: [] }
   }
 
-  // Create schema (PostgreSQL only) and migrations table
-  if (dialect === 'postgresql') {
+  // Create schema (PostgreSQL/CockroachDB only) and migrations table
+  if (isPgLike(dialect)) {
     await executor.run(`CREATE SCHEMA IF NOT EXISTS ${quoteIdentifier(migrationsSchema, dialect)}`)
   }
 

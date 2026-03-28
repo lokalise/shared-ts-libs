@@ -14,6 +14,19 @@ services:
       timeout: 5s
       retries: 10
 
+  cockroachdb:
+    image: cockroachdb/cockroach:latest-v26.1
+    command: start-single-node --insecure
+    ports:
+      - '26257:26257'
+    environment:
+      - COCKROACH_DATABASE=test
+    healthcheck:
+      test: ['CMD', 'cockroach', 'sql', '--insecure', '-e', 'SELECT 1']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
   mysql:
     image: mysql:8.0.40
     command: '--default-authentication-plugin=mysql_native_password'

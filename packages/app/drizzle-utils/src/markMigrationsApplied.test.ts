@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import mysql from 'mysql2/promise'
 import postgres from 'postgres'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { getCockroachdbDatabaseUrl } from '../test/getCockroachdbDatabaseUrl.ts'
 import { getDatabaseUrl } from '../test/getDatabaseUrl.ts'
 import { getMysqlDatabaseUrl } from '../test/getMysqlDatabaseUrl.ts'
 import {
@@ -17,6 +18,7 @@ import {
 
 const FIXTURES_DIR = resolve(__dirname, '../test/fixtures')
 const PG_MIGRATIONS_DIR = join(FIXTURES_DIR, 'migrations')
+const COCKROACHDB_MIGRATIONS_DIR = join(FIXTURES_DIR, 'migrations-cockroachdb')
 const MYSQL_MIGRATIONS_DIR = join(FIXTURES_DIR, 'migrations-mysql')
 
 // ─── Pure function tests (no database) ───
@@ -190,6 +192,131 @@ describe('markMigrationsApplied (PostgreSQL)', () => {
         dialect: 'sqlite' as any,
       }),
     ).rejects.toThrow('Unsupported dialect "sqlite"')
+  })
+})
+
+// ─── CockroachDB SQL generation tests (mock executor) ───
+
+describe('markMigrationsApplied (CockroachDB SQL generation)', () => {
+  it('generates PostgreSQL-compatible SQL with double-quote quoting', async () => {
+    const executedQueries: string[] = []
+    const mockExecutor: SqlExecutor = {
+      run: (query: string) => {
+        executedQueries.push(query)
+        return Promise.resolve()
+      },
+      all: () => Promise.resolve([]),
+    }
+
+    await markMigrationsApplied({
+      migrationsFolder: COCKROACHDB_MIGRATIONS_DIR,
+      executor: mockExecutor,
+      dialect: 'cockroachdb',
+    })
+
+    // Should create a schema (like PostgreSQL)
+    expect(executedQueries.some((q) => q.includes('CREATE SCHEMA'))).toBe(true)
+
+    // Should use double-quote quoting for table name
+    const createTable = executedQueries.find((q) => q.includes('CREATE TABLE'))
+    expect(createTable).toContain('"__drizzle_migrations"')
+    expect(createTable).not.toContain('`__drizzle_migrations`')
+
+    // Should insert migration record
+    const insert = executedQueries.find((q) => q.includes('INSERT'))
+    expect(insert).toContain('"__drizzle_migrations"')
+  })
+
+  it('auto-detects cockroachdb dialect from journal', async () => {
+    const executedQueries: string[] = []
+    const mockExecutor: SqlExecutor = {
+      run: (query: string) => {
+        executedQueries.push(query)
+        return Promise.resolve()
+      },
+      all: () => Promise.resolve([]),
+    }
+
+    await markMigrationsApplied({
+      migrationsFolder: COCKROACHDB_MIGRATIONS_DIR,
+      executor: mockExecutor,
+    })
+
+    // Should auto-detect and use PG-style quoting
+    const createTable = executedQueries.find((q) => q.includes('CREATE TABLE'))
+    expect(createTable).toContain('"__drizzle_migrations"')
+  })
+})
+
+// ─── CockroachDB integration tests (real database) ───
+
+describe('markMigrationsApplied (CockroachDB integration)', () => {
+  const sql = postgres(getCockroachdbDatabaseUrl())
+
+  const testSchema = 'drizzle_test'
+  const testTable = '__drizzle_migrations_test'
+
+  const executor: SqlExecutor = {
+    run: (query: string) => sql.unsafe(query).then(() => {}),
+    all: (query: string) => sql.unsafe(query) as Promise<Record<string, unknown>[]>,
+  }
+
+  beforeEach(async () => {
+    await sql.unsafe(`DROP TABLE IF EXISTS "${testSchema}"."${testTable}"`)
+    await sql.unsafe(`DROP SCHEMA IF EXISTS "${testSchema}" CASCADE`)
+  })
+
+  afterAll(async () => {
+    await sql.unsafe(`DROP TABLE IF EXISTS "${testSchema}"."${testTable}"`)
+    await sql.unsafe(`DROP SCHEMA IF EXISTS "${testSchema}" CASCADE`)
+    await sql.end()
+  })
+
+  it('creates schema, table, and inserts all migrations', async () => {
+    const result = await markMigrationsApplied({
+      migrationsFolder: COCKROACHDB_MIGRATIONS_DIR,
+      executor,
+      dialect: 'cockroachdb',
+      migrationsTable: testTable,
+      migrationsSchema: testSchema,
+    })
+
+    expect(result.total).toBe(1)
+    expect(result.applied).toBe(1)
+    expect(result.skipped).toBe(0)
+    expect(result.entries).toEqual([{ tag: '0000_init', status: 'applied' }])
+
+    // Verify rows in database
+    const rows = await sql.unsafe(
+      `SELECT hash, created_at FROM "${testSchema}"."${testTable}" ORDER BY id`,
+    )
+    expect(rows).toHaveLength(1)
+  })
+
+  it('is idempotent — skips already tracked migrations', async () => {
+    await markMigrationsApplied({
+      migrationsFolder: COCKROACHDB_MIGRATIONS_DIR,
+      executor,
+      dialect: 'cockroachdb',
+      migrationsTable: testTable,
+      migrationsSchema: testSchema,
+    })
+
+    const result = await markMigrationsApplied({
+      migrationsFolder: COCKROACHDB_MIGRATIONS_DIR,
+      executor,
+      dialect: 'cockroachdb',
+      migrationsTable: testTable,
+      migrationsSchema: testSchema,
+    })
+
+    expect(result.total).toBe(1)
+    expect(result.applied).toBe(0)
+    expect(result.skipped).toBe(1)
+
+    // Still only 1 row
+    const rows = await sql.unsafe(`SELECT * FROM "${testSchema}"."${testTable}"`)
+    expect(rows).toHaveLength(1)
   })
 })
 

@@ -26,7 +26,7 @@ import { defineConfig } from 'drizzle-kit'
 export default defineConfig({
   schema: './src/db/schema.ts',
   out: './drizzle/migrations',
-  dialect: 'postgresql', // or 'mysql'
+  dialect: 'postgresql', // or 'mysql', 'cockroachdb'
 })
 ```
 
