@@ -2,9 +2,11 @@ export { type BulkUpdateEntry, drizzleFullBulkUpdate } from './drizzleFullBulkUp
 export {
   computeMigrationHash,
   type Dialect,
+  detectMigrationFormat,
   type MarkMigrationsAppliedOptions,
   type MarkMigrationsAppliedResult,
   type MigrationEntry,
+  type MigrationFormat,
   type MigrationJournal,
   type MigrationJournalEntry,
   markMigrationsApplied,
