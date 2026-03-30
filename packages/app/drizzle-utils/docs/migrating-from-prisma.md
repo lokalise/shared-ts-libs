@@ -197,7 +197,8 @@ import { relations } from './relations.js'
 import * as schema from './schema.js'
 
 export function createDbClient(databaseUrl: string) {
-  const pool = mysql.createPool({ uri: databaseUrl })
+  // timezone: 'Z' is critical — see "mysql2 DATE columns and timezone" gotcha below
+  const pool = mysql.createPool({ uri: databaseUrl, timezone: 'Z' })
   return drizzle({ client: pool, schema, relations })
 }
 
@@ -348,8 +349,8 @@ db.select({
 
 ```typescript
 // Prisma: prisma.$queryRaw`SELECT ... WHERE id IN (${Prisma.join(ids)})`
-// Drizzle:
-db.execute(sql`SELECT ... WHERE id IN (${sql.join(ids.map(id => sql`${id}`), sql`, `)})`)
+// Drizzle — db.execute() returns [rows, fields], not just rows:
+const [rows] = await db.execute(sql`SELECT ... WHERE id IN (${sql.join(ids.map(id => sql`${id}`), sql`, `)})`)
 
 // Prisma: prisma.$executeRaw`INSERT ... ON DUPLICATE KEY UPDATE ...`
 // Drizzle (MySQL — native support):
@@ -419,9 +420,74 @@ export const BundleStatus = {
 } as const
 ```
 
+#### mysql2 DATE columns and timezone
+
+Prisma handles all date serialization in UTC internally. When you switch to Drizzle with mysql2, date serialization is delegated to the mysql2 driver, which by default uses the **local timezone**. This silently breaks `DATE` column comparisons.
+
+The problem: `new Date('2023-01-20')` is UTC midnight (`2023-01-20T00:00:00.000Z`). In a UTC+3 environment, mysql2 serializes it as `'2023-01-20 03:00:00'`. MySQL then promotes the stored `DATE '2023-01-20'` to `'2023-01-20 00:00:00'` for comparison, and `'2023-01-20 00:00:00' >= '2023-01-20 03:00:00'` evaluates to **false**. Inserts appear to work (MySQL truncates to the date part), but subsequent queries silently return fewer rows.
+
+The fix: pass `timezone: 'Z'` when creating the mysql2 pool. This makes mysql2 serialize dates in UTC, matching Prisma's behavior:
+
+```typescript
+const pool = mysql.createPool({ uri: databaseUrl, timezone: 'Z' })
+```
+
+This affects any column using Drizzle's `date()` type. Without this setting, tests may pass on UTC machines but fail in any other timezone.
+
 #### Drizzle's `date()` column returns a string, not a Date
 
 Drizzle's `date()` type returns a `string` (`'2024-01-15'`) by default, while Prisma returns `Date` objects. If your application logic or tests compare dates with `instanceof Date` or call `.getTime()`, you will need to adjust. Use `date({ mode: 'date' })` in your schema to get `Date` objects instead.
+
+#### `db.execute()` returns `[rows, fields]`, not rows
+
+For mysql2, `db.execute(sql`...`)` returns the raw mysql2 result: a `[rows, fields]` tuple. If you cast the result directly to a row array, you get the tuple (length 2) instead of the actual rows. Destructure first:
+
+```typescript
+// Wrong — result is [rows, fields], not rows:
+const result = await db.execute(sql`SELECT ...`)
+return result as { id: number }[]  // always has length 2!
+
+// Correct:
+const [rows] = await db.execute(sql`SELECT ...`)
+return rows as { id: number }[]
+```
+
+The return type is typed as `[ResultSetHeader, FieldPacket[]]` regardless of query type, so a cast is unavoidable for SELECT results. A typed helper can centralize this:
+
+```typescript
+import type { SQLWrapper } from 'drizzle-orm'
+
+export async function executeRawQuery<T>(db: DbClient, query: SQLWrapper): Promise<T[]> {
+  const [rows] = await db.execute(query)
+  return rows as T[]
+}
+
+// Usage:
+const tokens = await executeRawQuery<{ token: string }>(db, sql`SELECT ...`)
+```
+
+This does not apply to `prisma.$queryRaw`, which returns rows directly.
+
+#### Test infrastructure: DI container `dispose()` closes all singleton pools
+
+When using awilix (or similar DI containers) with a `dispose` function on the DB singleton, calling `diContainer.dispose()` closes the database connection pool. This is a common pattern when re-registering mocks in tests:
+
+```typescript
+// This closes the DB pool along with everything else!
+const registerMock = async (app) => {
+  await app.diContainer.dispose()
+  app.diContainer.register('fileStorageClient', asClass(MockedClient, SINGLETON_CONFIG))
+}
+```
+
+Any variable that captured a reference to `db` or a repository before the dispose now points to a closed pool. Subsequent queries fail with "Pool is closed".
+
+Mitigations:
+- **Refresh cached references** after dispose: `db = diContainer.cradle.db`
+- **Assign `db` after mock registration**, not before, in `beforeAll`/`beforeEach`
+- **Use `diContainer.cradle.db` in `afterEach` cleanup** instead of a cached `db` variable, since the cached reference may be stale
+
+This was not an issue with Prisma because `PrismaClient` manages its own connection lifecycle and is not typically registered with a container-level dispose hook.
 
 #### DI container rename: `prisma` → `db`
 
