@@ -104,6 +104,7 @@ export const getSseSchemaByEventName = (routeConfig: ApiContract): SseSchemaByEv
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it is acceptable
 export const getSuccessResponseSchema = (routeConfig: ApiContract): z.ZodType | null => {
   const schemas: z.ZodType[] = []
+  let hasDirectNonJsonEntry = false
 
   for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
     const value = routeConfig.responseSchemasByStatusCode[code]
@@ -119,22 +120,24 @@ export const getSuccessResponseSchema = (routeConfig: ApiContract): z.ZodType | 
         }
       }
     } else if (
-      value !== ContractNoBody &&
-      !isSseResponse(value) &&
-      !isTextResponse(value) &&
-      !isBlobResponse(value)
+      value === ContractNoBody ||
+      isSseResponse(value) ||
+      isTextResponse(value) ||
+      isBlobResponse(value)
     ) {
+      hasDirectNonJsonEntry = true
+    } else {
       schemas.push(value)
     }
   }
 
-  if (schemas.length === 0) {
-    return null
-  }
   if (schemas.length > 1) {
     return z.union(schemas)
   }
-  return schemas.at(0) ?? null
+  if (schemas.length === 1) {
+    return schemas[0]!
+  }
+  return hasDirectNonJsonEntry ? z.never() : null
 }
 
 export const getIsEmptyResponseExpected = (routeConfig: ApiContract): boolean => {
