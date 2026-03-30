@@ -127,7 +127,7 @@ defineApiContract({
   },
 
   // Path params — links pathResolver parameter type to the schema
-  requestPathParamsSchema: z.ZodType,
+  requestPathParamsSchema: z.ZodObject,
 
   // Request
   requestBodySchema: z.ZodType | ContractNoBody, // POST / PUT / PATCH only
