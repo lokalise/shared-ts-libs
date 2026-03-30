@@ -83,9 +83,7 @@ export const describeApiContract = (routeConfig: ApiContract): string => {
   return `${routeConfig.method.toUpperCase()} ${mapApiContractToPath(routeConfig)}`
 }
 
-export const getSseSchemaByEventName = (
-  routeConfig: ApiContract,
-): SseSchemaByEventName | null => {
+export const getSseSchemaByEventName = (routeConfig: ApiContract): SseSchemaByEventName | null => {
   const result: SseSchemaByEventName = {}
 
   for (const value of Object.values(routeConfig.responseSchemasByStatusCode)) {
