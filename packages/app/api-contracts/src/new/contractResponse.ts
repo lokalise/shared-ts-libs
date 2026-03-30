@@ -119,10 +119,13 @@ export const resolveContractResponse = (
   if (isAnyOfResponses(schemaEntry)) {
     for (const item of schemaEntry.responses) {
       const resolved = matchTypedResponse(item, contentType)
-      if (resolved) return resolved
+
+      if (resolved) {
+        return resolved
+      }
     }
     return null
   }
 
-  return matchTypedResponse(schemaEntry as TypedApiContractResponse, contentType)
+  return matchTypedResponse(schemaEntry, contentType)
 }
