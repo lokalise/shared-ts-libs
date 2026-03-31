@@ -1,5 +1,9 @@
 import { z } from 'zod/v4'
-import type { InferSchemaOutput, RoutePathResolver } from '../apiContracts.ts'
+import type {
+  CommonRouteDefinitionMetadata,
+  InferSchemaOutput,
+  RoutePathResolver,
+} from '../apiContracts.ts'
 import { SUCCESSFUL_HTTP_STATUS_CODES } from '../HttpStatusCodes.ts'
 import type { Exactly } from '../typeUtils.ts'
 import { ContractNoBody } from './constants.ts'
@@ -23,7 +27,7 @@ export type CommonApiContract = {
   responseHeaderSchema?: z.ZodType
   responseSchemasByStatusCode: ResponseSchemasByStatusCode
 
-  metadata?: Record<string, unknown>
+  metadata?: CommonRouteDefinitionMetadata
   summary?: string
   description?: string
   tags?: readonly string[]
