@@ -17,7 +17,7 @@ const getUser = defineApiContract({
   method: 'get',
   requestPathParamsSchema: z.object({ userId: z.uuid() }),
   pathResolver: ({ userId }) => `/users/${userId}`,
-  responseSchemasByStatusCode: {
+  responsesByStatusCode: {
     200: z.object({ id: z.string(), name: z.string() }),
   },
 })
@@ -27,7 +27,7 @@ const createUser = defineApiContract({
   method: 'post',
   pathResolver: () => '/users',
   requestBodySchema: z.object({ name: z.string() }),
-  responseSchemasByStatusCode: {
+  responsesByStatusCode: {
     201: z.object({ id: z.string(), name: z.string() }),
   },
 })
@@ -37,7 +37,7 @@ const deleteUser = defineApiContract({
   method: 'delete',
   requestPathParamsSchema: z.object({ userId: z.uuid() }),
   pathResolver: ({ userId }) => `/users/${userId}`,
-  responseSchemasByStatusCode: {
+  responsesByStatusCode: {
     204: ContractNoBody,
   },
 })
@@ -53,7 +53,7 @@ import { defineApiContract, textResponse, blobResponse } from '@lokalise/api-con
 const exportCsv = defineApiContract({
   method: 'get',
   pathResolver: () => '/export.csv',
-  responseSchemasByStatusCode: {
+  responsesByStatusCode: {
     200: textResponse('text/csv'),
   },
 })
@@ -61,7 +61,7 @@ const exportCsv = defineApiContract({
 const downloadPhoto = defineApiContract({
   method: 'get',
   pathResolver: () => '/photo.png',
-  responseSchemasByStatusCode: {
+  responsesByStatusCode: {
     200: blobResponse('image/png'),
   },
 })
@@ -69,7 +69,7 @@ const downloadPhoto = defineApiContract({
 
 ### SSE and dual-mode routes
 
-Use `sseResponse()` inside `responseSchemasByStatusCode` to define SSE event schemas. For endpoints that can respond with either JSON or an SSE stream depending on the `Accept` header, use `anyOfResponses()` to declare both options on the same status code.
+Use `sseResponse()` inside `responsesByStatusCode` to define SSE event schemas. For endpoints that can respond with either JSON or an SSE stream depending on the `Accept` header, use `anyOfResponses()` to declare both options on the same status code.
 
 ```ts
 import { defineApiContract, sseResponse, anyOfResponses } from '@lokalise/api-contracts'
@@ -79,7 +79,7 @@ import { z } from 'zod/v4'
 const notifications = defineApiContract({
   method: 'get',
   pathResolver: () => '/notifications/stream',
-  responseSchemasByStatusCode: {
+  responsesByStatusCode: {
     200: sseResponse({
       notification: z.object({ id: z.string(), message: z.string() }),
     }),
@@ -91,7 +91,7 @@ const chatCompletion = defineApiContract({
   method: 'post',
   pathResolver: () => '/chat/completions',
   requestBodySchema: z.object({ message: z.string() }),
-  responseSchemasByStatusCode: {
+  responsesByStatusCode: {
     200: anyOfResponses([
       sseResponse({
         chunk: z.object({ delta: z.string() }),
@@ -122,7 +122,7 @@ defineApiContract({
   // Required
   method: 'get' | 'post' | 'put' | 'patch' | 'delete',
   pathResolver: (pathParams) => string,
-  responseSchemasByStatusCode: {
+  responsesByStatusCode: {
     [statusCode]: z.ZodType | ContractNoBody | TypedTextResponse | TypedBlobResponse | TypedSseResponse | AnyOfResponses
   },
 
@@ -159,7 +159,7 @@ const contract = defineApiContract({
     'x-ratelimit-remaining': z.string(),
     'cache-control': z.string(),
   }),
-  responseSchemasByStatusCode: {
+  responsesByStatusCode: {
     200: dataSchema,
   },
 })
@@ -172,16 +172,16 @@ const contract = defineApiContract({
 ```ts
 import type { InferNonSseSuccessResponses } from '@lokalise/api-contracts'
 
-type UserResponse = InferNonSseSuccessResponses<typeof getUser['responseSchemasByStatusCode']>
+type UserResponse = InferNonSseSuccessResponses<typeof getUser['responsesByStatusCode']>
 // { id: string; name: string }
 
-type CsvResponse = InferNonSseSuccessResponses<typeof exportCsv['responseSchemasByStatusCode']>
+type CsvResponse = InferNonSseSuccessResponses<typeof exportCsv['responsesByStatusCode']>
 // string
 ```
 
 **`InferJsonSuccessResponses<T>`** — union of Zod schema types for all JSON 2xx entries. Text, Blob, SSE, and `ContractNoBody` entries are excluded.
 
-**`InferSseSuccessResponses<T>`** — extracts the SSE event schema map type from a `responseSchemasByStatusCode` map. Returns `never` when no SSE schemas are present.
+**`InferSseSuccessResponses<T>`** — extracts the SSE event schema map type from a `responsesByStatusCode` map. Returns `never` when no SSE schemas are present.
 
 **`HasAnySseSuccessResponse<T>`** — `true` if any 2xx entry is a `TypedSseResponse` or an `AnyOfResponses` containing one.
 

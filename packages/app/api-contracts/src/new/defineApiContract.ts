@@ -12,7 +12,7 @@ import {
   isBlobResponse,
   isSseResponse,
   isTextResponse,
-  type ResponseSchemasByStatusCode,
+  type ResponsesByStatusCode,
   type SseSchemaByEventName,
 } from './contractResponse.ts'
 
@@ -25,7 +25,7 @@ export type CommonApiContract = {
   requestQuerySchema?: z.ZodType
   requestHeaderSchema?: z.ZodType
   responseHeaderSchema?: z.ZodType
-  responseSchemasByStatusCode: ResponseSchemasByStatusCode
+  responsesByStatusCode: ResponsesByStatusCode
 
   metadata?: CommonRouteDefinitionMetadata
   summary?: string
@@ -90,7 +90,7 @@ export const describeApiContract = (routeConfig: ApiContract): string => {
 export const getSseSchemaByEventName = (routeConfig: ApiContract): SseSchemaByEventName | null => {
   const result: SseSchemaByEventName = {}
 
-  for (const value of Object.values(routeConfig.responseSchemasByStatusCode)) {
+  for (const value of Object.values(routeConfig.responsesByStatusCode)) {
     if (isSseResponse(value)) {
       Object.assign(result, value.schemaByEventName)
     } else if (isAnyOfResponses(value)) {
@@ -111,7 +111,7 @@ export const getSuccessResponseSchema = (routeConfig: ApiContract): z.ZodType | 
   let hasDirectNonJsonEntry = false
 
   for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
-    const value = routeConfig.responseSchemasByStatusCode[code]
+    const value = routeConfig.responsesByStatusCode[code]
 
     if (!value) {
       continue
@@ -148,7 +148,7 @@ export const getIsEmptyResponseExpected = (routeConfig: ApiContract): boolean =>
   let isEmptyResponseExpected = true
 
   for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
-    const value = routeConfig.responseSchemasByStatusCode[code]
+    const value = routeConfig.responsesByStatusCode[code]
 
     if (value && value !== ContractNoBody) {
       isEmptyResponseExpected = false

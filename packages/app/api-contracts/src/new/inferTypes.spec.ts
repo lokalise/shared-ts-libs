@@ -15,9 +15,9 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: { 404: z.object({ message: z.string() }) },
+        responsesByStatusCode: { 404: z.object({ message: z.string() }) },
       })
-      type Result = InferJsonSuccessResponses<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = InferJsonSuccessResponses<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<never>()
     })
 
@@ -27,13 +27,13 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: {
+        responsesByStatusCode: {
           200: schema200,
           201: schema201,
           404: z.object({ message: z.string() }),
         },
       })
-      type Result = InferJsonSuccessResponses<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = InferJsonSuccessResponses<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<typeof schema200 | typeof schema201>()
     })
 
@@ -41,9 +41,9 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'delete',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: { 204: ContractNoBody },
+        responsesByStatusCode: { 204: ContractNoBody },
       })
-      type Result = InferJsonSuccessResponses<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = InferJsonSuccessResponses<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<never>()
     })
 
@@ -51,9 +51,9 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: { 200: textResponse('text/csv') },
+        responsesByStatusCode: { 200: textResponse('text/csv') },
       })
-      type Result = InferJsonSuccessResponses<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = InferJsonSuccessResponses<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<never>()
     })
 
@@ -61,9 +61,9 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: { 200: blobResponse('image/png') },
+        responsesByStatusCode: { 200: blobResponse('image/png') },
       })
-      type Result = InferJsonSuccessResponses<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = InferJsonSuccessResponses<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<never>()
     })
 
@@ -71,11 +71,11 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: {
+        responsesByStatusCode: {
           200: sseResponse({ chunk: z.object({ delta: z.string() }) }),
         },
       })
-      type Result = InferJsonSuccessResponses<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = InferJsonSuccessResponses<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<never>()
     })
 
@@ -84,14 +84,14 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: {
+        responsesByStatusCode: {
           200: anyOfResponses([
             sseResponse({ chunk: z.object({ delta: z.string() }) }),
             jsonSchema,
           ]),
         },
       })
-      type Result = InferJsonSuccessResponses<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = InferJsonSuccessResponses<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<typeof jsonSchema>()
     })
   })
@@ -101,9 +101,9 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: { 200: z.object({ id: z.string() }) },
+        responsesByStatusCode: { 200: z.object({ id: z.string() }) },
       })
-      type Result = HasAnySseSuccessResponse<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = HasAnySseSuccessResponse<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<false>()
     })
 
@@ -111,9 +111,9 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'delete',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: { 204: ContractNoBody },
+        responsesByStatusCode: { 204: ContractNoBody },
       })
-      type Result = HasAnySseSuccessResponse<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = HasAnySseSuccessResponse<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<false>()
     })
 
@@ -121,11 +121,11 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: {
+        responsesByStatusCode: {
           200: sseResponse({ chunk: z.object({ delta: z.string() }) }),
         },
       })
-      type Result = HasAnySseSuccessResponse<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = HasAnySseSuccessResponse<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<true>()
     })
 
@@ -133,14 +133,14 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: {
+        responsesByStatusCode: {
           200: anyOfResponses([
             sseResponse({ chunk: z.object({ delta: z.string() }) }),
             z.object({ id: z.string() }),
           ]),
         },
       })
-      type Result = HasAnySseSuccessResponse<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = HasAnySseSuccessResponse<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<true>()
     })
 
@@ -148,9 +148,9 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: { 200: anyOfResponses([z.object({ id: z.string() })]) },
+        responsesByStatusCode: { 200: anyOfResponses([z.object({ id: z.string() })]) },
       })
-      type Result = HasAnySseSuccessResponse<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = HasAnySseSuccessResponse<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<false>()
     })
 
@@ -158,11 +158,11 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: {
+        responsesByStatusCode: {
           400: sseResponse({ chunk: z.object({ delta: z.string() }) }),
         },
       })
-      type Result = HasAnySseSuccessResponse<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = HasAnySseSuccessResponse<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<false>()
     })
   })
@@ -172,9 +172,9 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: { 200: z.object({ id: z.string() }) },
+        responsesByStatusCode: { 200: z.object({ id: z.string() }) },
       })
-      type Result = InferSseSuccessResponses<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<never>()
     })
 
@@ -184,11 +184,11 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: {
+        responsesByStatusCode: {
           200: sseResponse({ chunk: chunkSchema, done: doneSchema }),
         },
       })
-      type Result = InferSseSuccessResponses<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<keyof Result>().toEqualTypeOf<'chunk' | 'done'>()
     })
 
@@ -197,11 +197,11 @@ describe('inferTypes', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
-        responseSchemasByStatusCode: {
+        responsesByStatusCode: {
           200: anyOfResponses([sseResponse({ chunk: chunkSchema }), z.object({ id: z.string() })]),
         },
       })
-      type Result = InferSseSuccessResponses<(typeof contract)['responseSchemasByStatusCode']>
+      type Result = InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<keyof Result>().toEqualTypeOf<'chunk'>()
     })
   })

@@ -25,15 +25,15 @@ import type { InferJsonSuccessResponses } from './inferTypes.ts'
 
 describe('defineApiContract', () => {
   describe('type inference', () => {
-    it('preserves responseSchemasByStatusCode for success schema inference', () => {
+    it('preserves responsesByStatusCode for success schema inference', () => {
       const schema = z.object({ name: z.string() })
       const route = defineApiContract({
         method: 'get',
         pathResolver: () => '/users',
-        responseSchemasByStatusCode: { 200: schema },
+        responsesByStatusCode: { 200: schema },
       })
 
-      type Result = InferJsonSuccessResponses<typeof route.responseSchemasByStatusCode>
+      type Result = InferJsonSuccessResponses<typeof route.responsesByStatusCode>
       expectTypeOf<Result>().toEqualTypeOf<typeof schema>()
     })
 
@@ -46,7 +46,7 @@ describe('defineApiContract', () => {
           expectTypeOf(orgId).toEqualTypeOf<string>()
           return `/orgs/${orgId}/users/${userId}`
         },
-        responseSchemasByStatusCode: {},
+        responsesByStatusCode: {},
       })
     })
 
@@ -54,7 +54,7 @@ describe('defineApiContract', () => {
       const route = defineApiContract({
         method: 'get',
         pathResolver: () => '/users',
-        responseSchemasByStatusCode: {},
+        responsesByStatusCode: {},
       })
 
       expect(mapApiContractToPath(route)).toBe('/users')
@@ -65,45 +65,45 @@ describe('defineApiContract', () => {
         method: 'post',
         pathResolver: () => '/users',
         requestBodySchema: z.object({ name: z.string() }),
-        responseSchemasByStatusCode: {},
+        responsesByStatusCode: {},
       })
 
       expectTypeOf(route.method).toEqualTypeOf<'post'>()
     })
 
-    it('preserves ContractNoBody sentinel in responseSchemasByStatusCode', () => {
+    it('preserves ContractNoBody sentinel in responsesByStatusCode', () => {
       const route = defineApiContract({
         method: 'delete',
         requestPathParamsSchema: z.object({ userId: z.string() }),
         pathResolver: ({ userId }) => `/users/${userId}`,
-        responseSchemasByStatusCode: { 204: ContractNoBody },
+        responsesByStatusCode: { 204: ContractNoBody },
       })
 
-      expectTypeOf(route.responseSchemasByStatusCode['204']).toEqualTypeOf<typeof ContractNoBody>()
+      expectTypeOf(route.responsesByStatusCode['204']).toEqualTypeOf<typeof ContractNoBody>()
     })
 
-    it('preserves TypedTextResponse in responseSchemasByStatusCode', () => {
+    it('preserves TypedTextResponse in responsesByStatusCode', () => {
       const route = defineApiContract({
         method: 'get',
         pathResolver: () => '/export.csv',
-        responseSchemasByStatusCode: {
+        responsesByStatusCode: {
           200: textResponse('text/csv'),
         },
       })
 
-      expectTypeOf(route.responseSchemasByStatusCode['200']).toEqualTypeOf<TypedTextResponse>()
+      expectTypeOf(route.responsesByStatusCode['200']).toEqualTypeOf<TypedTextResponse>()
     })
 
-    it('preserves TypedBlobResponse in responseSchemasByStatusCode', () => {
+    it('preserves TypedBlobResponse in responsesByStatusCode', () => {
       const route = defineApiContract({
         method: 'get',
         pathResolver: () => '/photo.png',
-        responseSchemasByStatusCode: {
+        responsesByStatusCode: {
           200: blobResponse('image/png'),
         },
       })
 
-      expectTypeOf(route.responseSchemasByStatusCode['200']).toEqualTypeOf<TypedBlobResponse>()
+      expectTypeOf(route.responsesByStatusCode['200']).toEqualTypeOf<TypedBlobResponse>()
     })
   })
 })
@@ -113,7 +113,7 @@ describe('mapApiContractToPath', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/users',
-      responseSchemasByStatusCode: {},
+      responsesByStatusCode: {},
     })
 
     expect(mapApiContractToPath(route)).toBe('/users')
@@ -124,7 +124,7 @@ describe('mapApiContractToPath', () => {
       method: 'get',
       requestPathParamsSchema: z.object({ userId: z.string() }),
       pathResolver: ({ userId }) => `/users/${userId}`,
-      responseSchemasByStatusCode: {},
+      responsesByStatusCode: {},
     })
 
     expect(mapApiContractToPath(route)).toBe('/users/:userId')
@@ -135,7 +135,7 @@ describe('mapApiContractToPath', () => {
       method: 'get',
       requestPathParamsSchema: z.object({ orgId: z.string(), userId: z.string() }),
       pathResolver: ({ orgId, userId }) => `/orgs/${orgId}/users/${userId}`,
-      responseSchemasByStatusCode: {},
+      responsesByStatusCode: {},
     })
 
     expect(mapApiContractToPath(route)).toBe('/orgs/:orgId/users/:userId')
@@ -148,7 +148,7 @@ describe('describeApiContract', () => {
       method: 'get',
       requestPathParamsSchema: z.object({ userId: z.string() }),
       pathResolver: ({ userId }) => `/users/${userId}`,
-      responseSchemasByStatusCode: {},
+      responsesByStatusCode: {},
     })
 
     expect(describeApiContract(route)).toBe('GET /users/:userId')
@@ -159,7 +159,7 @@ describe('describeApiContract', () => {
       method: 'post',
       pathResolver: () => '/users',
       requestBodySchema: z.object({ name: z.string() }),
-      responseSchemasByStatusCode: {},
+      responsesByStatusCode: {},
     })
 
     expect(describeApiContract(route)).toBe('POST /users')
@@ -167,11 +167,11 @@ describe('describeApiContract', () => {
 })
 
 describe('getSuccessResponseSchema', () => {
-  it('returns null when responseSchemasByStatusCode is not defined', () => {
+  it('returns null when responsesByStatusCode is not defined', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/users',
-      responseSchemasByStatusCode: {},
+      responsesByStatusCode: {},
     })
 
     expect(getSuccessResponseSchema(route)).toBeNull()
@@ -181,7 +181,7 @@ describe('getSuccessResponseSchema', () => {
     const route = defineApiContract({
       method: 'delete',
       pathResolver: () => '/users/1',
-      responseSchemasByStatusCode: { 204: ContractNoBody },
+      responsesByStatusCode: { 204: ContractNoBody },
     })
 
     const result = getSuccessResponseSchema(route)
@@ -193,7 +193,7 @@ describe('getSuccessResponseSchema', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/users',
-      responseSchemasByStatusCode: { 404: z.object({ message: z.string() }) },
+      responsesByStatusCode: { 404: z.object({ message: z.string() }) },
     })
 
     expect(getSuccessResponseSchema(route)).toBeNull()
@@ -204,7 +204,7 @@ describe('getSuccessResponseSchema', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/users',
-      responseSchemasByStatusCode: { 200: schema },
+      responsesByStatusCode: { 200: schema },
     })
 
     expect(getSuccessResponseSchema(route)).toBe(schema)
@@ -217,7 +217,7 @@ describe('getSuccessResponseSchema', () => {
       method: 'post',
       pathResolver: () => '/users',
       requestBodySchema: z.object({ name: z.string() }),
-      responseSchemasByStatusCode: { 200: schema200, 201: schema201 },
+      responsesByStatusCode: { 200: schema200, 201: schema201 },
     })
 
     const result = getSuccessResponseSchema(route)
@@ -230,7 +230,7 @@ describe('getSuccessResponseSchema', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/export.csv',
-      responseSchemasByStatusCode: { 200: textResponse('text/csv') },
+      responsesByStatusCode: { 200: textResponse('text/csv') },
     })
 
     const result = getSuccessResponseSchema(route)
@@ -242,7 +242,7 @@ describe('getSuccessResponseSchema', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/photo.png',
-      responseSchemasByStatusCode: { 200: blobResponse('image/png') },
+      responsesByStatusCode: { 200: blobResponse('image/png') },
     })
 
     const result = getSuccessResponseSchema(route)
@@ -256,7 +256,7 @@ describe('getSuccessResponseSchema', () => {
       method: 'post',
       pathResolver: () => '/users',
       requestBodySchema: z.object({ name: z.string() }),
-      responseSchemasByStatusCode: { 200: schema200, 204: ContractNoBody },
+      responsesByStatusCode: { 200: schema200, 204: ContractNoBody },
     })
 
     const result = getSuccessResponseSchema(route)
@@ -266,11 +266,11 @@ describe('getSuccessResponseSchema', () => {
 })
 
 describe('getIsEmptyResponseExpected', () => {
-  it('returns true when responseSchemasByStatusCode is not defined', () => {
+  it('returns true when responsesByStatusCode is not defined', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/users',
-      responseSchemasByStatusCode: {},
+      responsesByStatusCode: {},
     })
 
     expect(getIsEmptyResponseExpected(route)).toBe(true)
@@ -280,7 +280,7 @@ describe('getIsEmptyResponseExpected', () => {
     const route = defineApiContract({
       method: 'delete',
       pathResolver: () => '/users/1',
-      responseSchemasByStatusCode: { 204: ContractNoBody },
+      responsesByStatusCode: { 204: ContractNoBody },
     })
 
     expect(getIsEmptyResponseExpected(route)).toBe(true)
@@ -290,7 +290,7 @@ describe('getIsEmptyResponseExpected', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/users',
-      responseSchemasByStatusCode: { 404: z.object({ message: z.string() }) },
+      responsesByStatusCode: { 404: z.object({ message: z.string() }) },
     })
 
     expect(getIsEmptyResponseExpected(route)).toBe(true)
@@ -300,7 +300,7 @@ describe('getIsEmptyResponseExpected', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/users',
-      responseSchemasByStatusCode: { 200: z.object({ id: z.string() }) },
+      responsesByStatusCode: { 200: z.object({ id: z.string() }) },
     })
 
     expect(getIsEmptyResponseExpected(route)).toBe(false)
@@ -311,7 +311,7 @@ describe('getIsEmptyResponseExpected', () => {
       method: 'post',
       pathResolver: () => '/users',
       requestBodySchema: z.object({ name: z.string() }),
-      responseSchemasByStatusCode: {
+      responsesByStatusCode: {
         200: z.object({ id: z.string() }),
         204: ContractNoBody,
       },
@@ -324,7 +324,7 @@ describe('getIsEmptyResponseExpected', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/export.csv',
-      responseSchemasByStatusCode: { 200: textResponse('text/csv') },
+      responsesByStatusCode: { 200: textResponse('text/csv') },
     })
 
     expect(getIsEmptyResponseExpected(route)).toBe(false)
@@ -334,7 +334,7 @@ describe('getIsEmptyResponseExpected', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/photo.png',
-      responseSchemasByStatusCode: { 200: blobResponse('image/png') },
+      responsesByStatusCode: { 200: blobResponse('image/png') },
     })
 
     expect(getIsEmptyResponseExpected(route)).toBe(false)
@@ -426,7 +426,7 @@ describe('getSuccessResponseSchema with SSE', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/stream',
-      responseSchemasByStatusCode: {
+      responsesByStatusCode: {
         200: sseResponse({ chunk: z.object({ delta: z.string() }) }),
       },
     })
@@ -441,7 +441,7 @@ describe('getSuccessResponseSchema with SSE', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/stream',
-      responseSchemasByStatusCode: {
+      responsesByStatusCode: {
         200: anyOfResponses([sseResponse({ chunk: z.object({ delta: z.string() }) }), jsonSchema]),
       },
     })
@@ -454,7 +454,7 @@ describe('getSuccessResponseSchema with SSE', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/stream',
-      responseSchemasByStatusCode: {
+      responsesByStatusCode: {
         200: anyOfResponses([sseResponse({ chunk: z.object({ delta: z.string() }) })]),
       },
     })
@@ -466,7 +466,7 @@ describe('getSuccessResponseSchema with SSE', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/export.csv',
-      responseSchemasByStatusCode: {
+      responsesByStatusCode: {
         200: anyOfResponses([textResponse('text/csv')]),
       },
     })
@@ -479,7 +479,7 @@ describe('getSuccessResponseSchema with SSE', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/export',
-      responseSchemasByStatusCode: {
+      responsesByStatusCode: {
         200: anyOfResponses([textResponse('text/csv'), jsonSchema]),
       },
     })
@@ -493,7 +493,7 @@ describe('getIsEmptyResponseExpected with SSE', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/stream',
-      responseSchemasByStatusCode: {
+      responsesByStatusCode: {
         200: sseResponse({ chunk: z.object({ delta: z.string() }) }),
       },
     })
@@ -505,7 +505,7 @@ describe('getIsEmptyResponseExpected with SSE', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/stream',
-      responseSchemasByStatusCode: {
+      responsesByStatusCode: {
         200: anyOfResponses([sseResponse({ chunk: z.string() }), z.object({ id: z.string() })]),
       },
     })
@@ -519,29 +519,29 @@ describe('getSseSchemaByEventName', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/users',
-      responseSchemasByStatusCode: { 200: z.object({ id: z.string() }) },
+      responsesByStatusCode: { 200: z.object({ id: z.string() }) },
     })
 
     expect(getSseSchemaByEventName(route)).toBeNull()
   })
 
-  it('returns null when responseSchemasByStatusCode is not defined', () => {
+  it('returns null when responsesByStatusCode is not defined', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/users',
-      responseSchemasByStatusCode: {},
+      responsesByStatusCode: {},
     })
 
     expect(getSseSchemaByEventName(route)).toBeNull()
   })
 
-  it('extracts schemas from sseResponse in responseSchemasByStatusCode', () => {
+  it('extracts schemas from sseResponse in responsesByStatusCode', () => {
     const chunkSchema = z.object({ delta: z.string() })
     const doneSchema = z.object({ finish_reason: z.string() })
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/stream',
-      responseSchemasByStatusCode: {
+      responsesByStatusCode: {
         200: sseResponse({ chunk: chunkSchema, done: doneSchema }),
       },
     })
@@ -557,7 +557,7 @@ describe('getSseSchemaByEventName', () => {
     const route = defineApiContract({
       method: 'get',
       pathResolver: () => '/stream',
-      responseSchemasByStatusCode: {
+      responsesByStatusCode: {
         200: anyOfResponses([sseResponse({ chunk: chunkSchema }), z.object({ id: z.string() })]),
       },
     })

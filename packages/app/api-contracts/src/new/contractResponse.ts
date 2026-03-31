@@ -70,7 +70,7 @@ export const isAnyOfResponses = (value: ApiContractResponse): value is AnyOfResp
 
 export type ApiContractResponse = typeof ContractNoBody | TypedApiContractResponse | AnyOfResponses
 
-export type ResponseSchemasByStatusCode = Partial<Record<HttpStatusCode, ApiContractResponse>>
+export type ResponsesByStatusCode = Partial<Record<HttpStatusCode, ApiContractResponse>>
 
 export type ResponseKind =
   | { kind: 'noContent' }
