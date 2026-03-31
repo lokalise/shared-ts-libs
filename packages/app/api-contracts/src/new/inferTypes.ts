@@ -1,7 +1,7 @@
 import type { z } from 'zod/v4'
 import type { SuccessfulHttpStatusCode } from '../HttpStatusCodes.ts'
 import type { IsUnion, ValueOf } from '../typeUtils.ts'
-import type { ContractNoBodyType } from './constants.ts'
+import type { ContractNoBody } from './constants.ts'
 import type { ResponseSchemasByStatusCode } from './contractResponse.ts'
 
 type ExtractSuccessResponses<T extends ResponseSchemasByStatusCode> = ValueOf<
@@ -14,7 +14,7 @@ type ExtractSuccessResponses<T extends ResponseSchemasByStatusCode> = ValueOf<
  */
 export type IsNoBodySuccessResponse<T extends ResponseSchemasByStatusCode> = [
   ExtractSuccessResponses<T>,
-] extends [ContractNoBodyType | undefined]
+] extends [typeof ContractNoBody | undefined]
   ? true
   : false
 
@@ -107,4 +107,4 @@ export type AvailableResponseModes<T extends ResponseSchemasByStatusCode> =
   | (HasAnySseSuccessResponse<T> extends true ? 'sse' : never)
   | (Extract<FlatSuccessResponses<T>, { _tag: 'BlobResponse' }> extends never ? never : 'blob')
   | (Extract<FlatSuccessResponses<T>, { _tag: 'TextResponse' }> extends never ? never : 'text')
-  | (Extract<FlatSuccessResponses<T>, ContractNoBodyType> extends never ? never : 'noContent')
+  | (Extract<FlatSuccessResponses<T>, typeof ContractNoBody> extends never ? never : 'noContent')

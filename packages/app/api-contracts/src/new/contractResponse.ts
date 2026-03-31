@@ -1,6 +1,6 @@
 import type { z } from 'zod/v4'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
-import { ContractNoBody, type ContractNoBodyType } from './constants.ts'
+import { ContractNoBody } from './constants.ts'
 
 export type TypedTextResponse = {
   readonly _tag: 'TextResponse'
@@ -68,7 +68,7 @@ export const anyOfResponses = <T extends TypedApiContractResponse>(
 export const isAnyOfResponses = (value: ApiContractResponse): value is AnyOfResponses =>
   typeof value === 'object' && value !== null && '_tag' in value && value._tag === 'AnyOfResponses'
 
-export type ApiContractResponse = ContractNoBodyType | TypedApiContractResponse | AnyOfResponses
+export type ApiContractResponse = typeof ContractNoBody | TypedApiContractResponse | AnyOfResponses
 
 export type ResponseSchemasByStatusCode = Partial<Record<HttpStatusCode, ApiContractResponse>>
 

@@ -2,7 +2,7 @@ import { z } from 'zod/v4'
 import type { InferSchemaOutput, RoutePathResolver } from '../apiContracts.ts'
 import { SUCCESSFUL_HTTP_STATUS_CODES } from '../HttpStatusCodes.ts'
 import type { Exactly } from '../typeUtils.ts'
-import { ContractNoBody, type ContractNoBodyType } from './constants.ts'
+import { ContractNoBody } from './constants.ts'
 import {
   isAnyOfResponses,
   isBlobResponse,
@@ -41,7 +41,7 @@ export type DeleteApiContract = CommonApiContract & {
 
 export type PayloadApiContract = CommonApiContract & {
   method: 'post' | 'put' | 'patch'
-  requestBodySchema: ContractNoBodyType | z.ZodType
+  requestBodySchema: typeof ContractNoBody | z.ZodType
 }
 
 export type ApiContract = GetApiContract | DeleteApiContract | PayloadApiContract
