@@ -127,7 +127,7 @@ Where:
 Construction registers a separate label-free Prometheus Counter for each dimension, named `{namePrefix}_{dimension}:{nameSuffix}`. All dimensions are initialized to `0` on construction.
 
 The above example registers the following metrics:
-```
+```text
 pizza_delivery_delivered_to_customer:counter 0
 pizza_delivery_delivered_to_pickup_point:counter 0
 pizza_delivery_not_delivered:counter 0
@@ -179,7 +179,7 @@ Where:
 5. `buckets` - histogram bucket boundaries
 
 The above example registers the following metrics:
-```
+```text
 request_duration_successful:histogram
 request_duration_failed:histogram
 ```
