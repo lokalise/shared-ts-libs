@@ -6,6 +6,12 @@ export type BaseMetricParams = {
   helpDescription: string
 }
 
+export type BaseDimensionalMetricParams = {
+  namePrefix: string
+  nameSuffix: string
+  helpDescription: string
+}
+
 export abstract class AbstractMetric<
   MetricType extends Metric,
   MetricsParams extends BaseMetricParams,

@@ -1,13 +1,12 @@
 import type promClient from 'prom-client'
 import type { Histogram } from 'prom-client'
+import type { BaseDimensionalMetricParams } from './AbstractMetric.ts'
 
-type DimensionalHistogramMetricConfiguration<TDimensions extends string[]> = {
-  namePrefix: string
-  nameSuffix: string
-  helpDescription: string
-  dimensions: TDimensions
-  buckets: number[]
-}
+type DimensionalHistogramMetricConfiguration<TDimensions extends string[]> =
+  BaseDimensionalMetricParams & {
+    dimensions: TDimensions
+    buckets: number[]
+  }
 
 type DimensionalHistogramMeasurement =
   | { time: number; startTime?: never; endTime?: never }
