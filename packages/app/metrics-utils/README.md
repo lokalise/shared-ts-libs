@@ -5,6 +5,8 @@ This package contains set of utilities to work with Prometheus metrics.
 Table of contents:
 1. [AbstractCounterMetric](#AbstractCounterMetric)
 2. [AbstractHistogramMetric](#AbstractHistogramMetric)
+3. [AbstractDimensionalCounterMetric](#AbstractDimensionalCounterMetric)
+4. [AbstractDimensionalHistogramMetric](#AbstractDimensionalHistogramMetric)
 
 ### AbstractCounterMetric
 
@@ -82,3 +84,104 @@ const start = Date.now()
 const end = Date.now()
 requestDurationMetric.registerMeasurement({ route: '/api/users', startTime: start, endTime: end })
 ```
+
+### AbstractDimensionalCounterMetric
+
+A base class for counter metrics where dimensions are encoded in the metric name rather than as Prometheus labels. Each dimension becomes a separate metric record in the format `{namePrefix}_{dimension}:{nameSuffix}`.
+
+Use this instead of `AbstractCounterMetric` when the tool consuming your metrics does not support Prometheus labels.
+
+Usage:
+
+```typescript
+export class PizzaDeliveryCountMetric extends AbstractDimensionalCounterMetric<
+	['delivered_to_customer', 'delivered_to_pickup_point', 'not_delivered']
+> {
+	constructor({ promClient }: Deps) {
+		super(
+			{
+				namePrefix: 'pizza_delivery',
+				nameSuffix: 'counter',
+				helpDescription: 'Number of pizza deliveries per status',
+				dimensions: ['delivered_to_customer', 'delivered_to_pickup_point', 'not_delivered'],
+			},
+			promClient,
+		)
+	}
+}
+
+const pizzaDeliveryCountMetric = new PizzaDeliveryCountMetric({ appMetrics })
+
+pizzaDeliveryCountMetric.registerMeasurement({
+    delivered_to_customer: 1,
+    delivered_to_pickup_point: 2,
+})
+```
+
+Where:
+1. `namePrefix` - prefix of the metric name, before the dimension (e.g. `pizza_delivery`)
+2. `nameSuffix` - suffix of the metric name, after the dimension (e.g. `counter`)
+3. `helpDescription` - metric description
+4. `dimensions` - the set of possible dimension values
+
+Construction registers a separate label-free Prometheus Counter for each dimension, named `{namePrefix}_{dimension}:{nameSuffix}`. All dimensions are initialized to `0` on construction.
+
+The above example registers the following metrics:
+```
+pizza_delivery_delivered_to_customer:counter 0
+pizza_delivery_delivered_to_pickup_point:counter 0
+pizza_delivery_not_delivered:counter 0
+```
+
+`registerMeasurement` increments only the dimensions provided.
+
+### AbstractDimensionalHistogramMetric
+
+A base class for histogram metrics where dimensions are encoded in the metric name rather than as Prometheus labels. Each dimension becomes a separate label-free Prometheus Histogram in the format `{namePrefix}_{dimension}:{nameSuffix}`.
+
+Use this instead of `AbstractHistogramMetric` when the tool consuming your metrics does not support Prometheus labels.
+
+Usage:
+
+```typescript
+export class RequestDurationMetric extends AbstractDimensionalHistogramMetric<['successful', 'failed']> {
+  constructor({ promClient }: Deps) {
+    super(
+      {
+        namePrefix: 'request_duration',
+        nameSuffix: 'histogram',
+        helpDescription: 'Duration of requests in seconds',
+        dimensions: ['successful', 'failed'],
+        buckets: [0.1, 0.5, 1, 5],
+      },
+      promClient,
+    )
+  }
+}
+
+const requestDurationMetric = new RequestDurationMetric({ appMetrics })
+
+// Record a duration directly:
+requestDurationMetric.registerMeasurement('successful', { time: 0.32 })
+
+// Or record using start and end times:
+const start = Date.now()
+// ... operation ...
+const end = Date.now()
+requestDurationMetric.registerMeasurement('failed', { startTime: start, endTime: end })
+```
+
+Where:
+1. `namePrefix` - prefix of the metric name, before the dimension (e.g. `request_duration`)
+2. `nameSuffix` - suffix of the metric name, after the dimension (e.g. `histogram`)
+3. `helpDescription` - metric description
+4. `dimensions` - the set of possible dimension values
+5. `buckets` - histogram bucket boundaries
+
+The above example registers the following metrics:
+```
+request_duration_successful:histogram
+request_duration_failed:histogram
+```
+
+`registerMeasurement` takes the dimension as its first argument and either a direct `time` value or a `startTime`/`endTime` pair.
