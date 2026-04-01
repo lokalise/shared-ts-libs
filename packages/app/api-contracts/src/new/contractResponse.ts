@@ -104,28 +104,36 @@ const matchTypedResponse = (
   return null
 }
 
+const resolveByKind = (entry: TypedApiContractResponse): ResponseKind => {
+  if (isTextResponse(entry)) return { kind: 'text' }
+  if (isBlobResponse(entry)) return { kind: 'blob' }
+  if (isSseResponse(entry)) return { kind: 'sse', schemaByEventName: entry.schemaByEventName }
+  return { kind: 'json', schema: entry }
+}
+
 export const resolveContractResponse = (
   schemaEntry: ApiContractResponse,
   contentType: string | undefined,
+  strict = true,
 ): ResponseKind | null => {
   if (schemaEntry === ContractNoBody) {
     return { kind: 'noContent' }
   }
 
-  if (!contentType) {
-    return null
-  }
-
+  // AnyOfResponses always requires content-type to disambiguate — strict mode has no effect here
   if (isAnyOfResponses(schemaEntry)) {
+    if (!contentType) return null
     for (const item of schemaEntry.responses) {
       const resolved = matchTypedResponse(item, contentType)
-
-      if (resolved) {
-        return resolved
-      }
+      if (resolved) return resolved
     }
     return null
   }
 
-  return matchTypedResponse(schemaEntry, contentType)
+  if (!contentType) {
+    return strict ? null : resolveByKind(schemaEntry)
+  }
+
+  const matched = matchTypedResponse(schemaEntry, contentType)
+  return matched ?? (strict ? null : resolveByKind(schemaEntry))
 }

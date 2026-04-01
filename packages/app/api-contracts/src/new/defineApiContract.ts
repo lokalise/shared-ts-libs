@@ -105,6 +105,28 @@ export const getSseSchemaByEventName = (routeConfig: ApiContract): SseSchemaByEv
   return Object.keys(result).length > 0 ? result : null
 }
 
+export const hasAnySuccessSseResponse = (apiContract: ApiContract): boolean => {
+  for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
+    const value = apiContract.responsesByStatusCode[code]
+
+    if (!value) {
+      continue
+    }
+
+    if (isSseResponse(value)) {
+       return true
+    } else if (isAnyOfResponses(value)) {
+      for (const response of value.responses) {
+        if (isSseResponse(response)) {
+          return true
+        }
+      }
+    }
+  }
+
+  return false
+}
+
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it is acceptable
 export const getSuccessResponseSchema = (routeConfig: ApiContract): z.ZodType | null => {
   const schemas: z.ZodType[] = []

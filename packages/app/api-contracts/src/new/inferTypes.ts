@@ -22,13 +22,6 @@ type UnpackAnyOf<T> = T extends { _tag: 'AnyOfResponses'; responses: Array<infer
 
 type FlatSuccessResponses<T extends ResponsesByStatusCode> = UnpackAnyOf<ExtractSuccessResponses<T>>
 
-/**
- * Returns true if any success status code entry is TypedSseResponse,
- * or an AnyOfResponses containing a TypedSseResponse.
- */
-export type HasAnySseSuccessResponse<T extends ResponsesByStatusCode> =
-  Extract<FlatSuccessResponses<T>, { _tag: 'SseResponse' }> extends never ? false : true
-
 type SseSchemaOf<T> = T extends { _tag: 'SseResponse'; schemaByEventName: infer S } ? S : never
 
 /**
@@ -77,6 +70,7 @@ export type InferNonSseSuccessResponses<T extends ResponsesByStatusCode> = NonSs
   FlatSuccessResponses<T>
 >
 
+
 /**
  * Discriminated union of SSE events inferred from a schemaByEventName map.
  * Each event is `{ event: EventName, data: z.output<Schema> }`.
@@ -87,15 +81,33 @@ export type SseEventOf<S> = {
     : never
 }[keyof S]
 
+
 /**
- * True when the contract has both SSE and non-SSE success responses (dual-mode).
+ * Returns true if any success status code entry is TypedSseResponse,
+ * or an AnyOfResponses containing a TypedSseResponse.
  */
-export type IsDualModeSse<T extends ResponsesByStatusCode> =
+export type HasAnySseSuccessResponse<T extends ResponsesByStatusCode> =
+    Extract<FlatSuccessResponses<T>, { _tag: 'SseResponse' }> extends never ? false : true
+
+/**
+ * Returns true if any success status code entry has a non-SSE response
+ * (JSON, text, blob, or no-body). Mirrors HasAnySseSuccessResponse.
+ */
+export type HasAnyNonSseSuccessResponse<T extends ResponsesByStatusCode> =
+    Exclude<FlatSuccessResponses<T>, { _tag: 'SseResponse' }> extends never ? false : true
+
+/**
+ * Classifies a contract's response mode into one of three cases:
+ * - 'dual'    — SSE + non-SSE success responses; caller chooses via streaming param
+ * - 'sse'     — SSE-only success responses; always streams
+ * - 'non-sse' — JSON / text / blob / no-body; never streams
+ */
+export type ContractResponseMode<T extends ResponsesByStatusCode> =
   HasAnySseSuccessResponse<T> extends true
-    ? IsUnion<AvailableResponseModes<T>> extends true
-      ? true
-      : false
-    : false
+    ? HasAnyNonSseSuccessResponse<T> extends true
+      ? 'dual'
+      : 'sse'
+    : 'non-sse'
 
 /**
  * Union of response mode literals available for a given responsesByStatusCode map.

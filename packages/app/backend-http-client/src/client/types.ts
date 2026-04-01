@@ -40,6 +40,22 @@ export type RequestOptions<
   throwOnError?: DoThrowOnError
 }
 
+export type ContractRequestOptions<DoThrowOnError extends boolean = boolean> = {
+  reqContext?: HttpRequestContext
+  requestLabel: string
+  disableKeepAlive?: boolean
+  retryConfig?: RetryConfig
+  validateResponse?: boolean
+  throwOnError?: DoThrowOnError
+  signal?: AbortSignal
+  /**
+   * When true (default), throws if the response content-type doesn't match the contract entry.
+   * When false, falls back to the contract entry's kind when content-type is absent or mismatched —
+   * only applies to single-entry responses (not anyOfResponses).
+   */
+  strictContentType?: boolean
+}
+
 export type RequestResultDefinitiveEither<
   T,
   IsEmptyResponseExpected extends boolean,

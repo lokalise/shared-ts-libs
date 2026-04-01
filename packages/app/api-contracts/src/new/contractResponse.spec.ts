@@ -78,6 +78,44 @@ describe('resolveContractResponse', () => {
     })
   })
 
+  describe('strict: false', () => {
+    it('resolves single json entry when content-type is absent', () => {
+      const schema = z.object({ id: z.string() })
+      expect(resolveContractResponse(schema, undefined, false)).toEqual({ kind: 'json', schema })
+    })
+
+    it('resolves single json entry when content-type does not match', () => {
+      const schema = z.object({ id: z.string() })
+      expect(resolveContractResponse(schema, 'text/plain', false)).toEqual({ kind: 'json', schema })
+    })
+
+    it('resolves single text entry when content-type is absent', () => {
+      expect(resolveContractResponse(textResponse('text/csv'), undefined, false)).toEqual({ kind: 'text' })
+    })
+
+    it('resolves single blob entry when content-type is absent', () => {
+      expect(resolveContractResponse(blobResponse('image/png'), undefined, false)).toEqual({ kind: 'blob' })
+    })
+
+    it('resolves single sse entry when content-type is absent', () => {
+      const schema = { update: z.object({ id: z.string() }) }
+      expect(resolveContractResponse(sseResponse(schema), undefined, false)).toEqual({
+        kind: 'sse',
+        schemaByEventName: schema,
+      })
+    })
+
+    it('still returns null for anyOfResponses when content-type is absent', () => {
+      const entry = anyOfResponses([textResponse('text/csv'), z.object({ id: z.string() })])
+      expect(resolveContractResponse(entry, undefined, false)).toBeNull()
+    })
+
+    it('still returns null for anyOfResponses when content-type does not match', () => {
+      const entry = anyOfResponses([textResponse('text/csv'), blobResponse('image/png')])
+      expect(resolveContractResponse(entry, 'application/json', false)).toBeNull()
+    })
+  })
+
   describe('anyOfResponses', () => {
     it('resolves to the first matching entry by content-type', () => {
       const schema = z.object({ id: z.string() })

@@ -25,7 +25,9 @@ export {
   sendPut,
   sendPutBinary,
 } from './client/httpClient.ts'
+export { sendByApiContract } from './client/sendByApiContract.ts'
 export type {
+  ContractRequestOptions,
   HttpRequestContext,
   RequestOptions,
   RequestResultDefinitiveEither,
