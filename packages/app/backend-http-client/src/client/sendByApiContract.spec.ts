@@ -48,7 +48,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         {},
-        { requestLabel: 'test', validateResponse: true },
+        { requestLabel: 'test' },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number; title: string } } | undefined>()
@@ -150,11 +150,11 @@ describe('sendByApiContract', () => {
       await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
       await expect(
-        sendByApiContract(client, contract, {}, { requestLabel: 'test', validateResponse: true }),
+        sendByApiContract(client, contract, {}, { requestLabel: 'test' }),
       ).rejects.toThrow()
     })
 
-    it('returns error in Either.error when captureAsError is true and response is non-2xx', async () => {
+    it('returns non-2xx response as Either.error by default', async () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/products/1',
@@ -167,7 +167,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         {},
-        { requestLabel: 'test', captureAsError: true },
+        { requestLabel: 'test' },
       )
 
       expect(response.error).toBeDefined()
@@ -237,7 +237,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { body: { name: 'test' } },
-        { requestLabel: 'test', validateResponse: true, captureAsError: false },
+        { requestLabel: 'test', captureAsError: false },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
@@ -282,7 +282,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { pathParams: { id: '1' }, body: { name: 'updated' } },
-        { requestLabel: 'test', captureAsError: false, validateResponse: true },
+        { requestLabel: 'test', captureAsError: false },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
@@ -306,7 +306,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { pathParams: { id: '1' }, body: { name: 'patched' } },
-        { requestLabel: 'test', captureAsError: false, validateResponse: true },
+        { requestLabel: 'test', captureAsError: false },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
@@ -329,7 +329,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { pathParams: { id: '1' } },
-        { requestLabel: 'test', validateResponse: true },
+        { requestLabel: 'test' },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: null } | undefined>()

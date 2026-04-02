@@ -6,8 +6,8 @@ import {
   sseResponse,
   textResponse,
 } from '@lokalise/api-contracts'
-import { getLocal, type Mockttp } from 'mockttp'
-import { afterAll, afterEach, beforeAll, describe, expect, expectTypeOf, it } from 'vitest'
+import { getLocal } from 'mockttp'
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import wretch from 'wretch'
 import { z } from 'zod/v4'
 import { sendByApiContract } from './sendByApiContract.ts'
@@ -15,19 +15,14 @@ import { sendByApiContract } from './sendByApiContract.ts'
 const JSON_HEADERS = { 'content-type': 'application/json' }
 
 describe('sendByApiContract', () => {
-  let mockServer: Mockttp
+  const mockServer = getLocal()
 
-  beforeAll(async () => {
-    mockServer = getLocal()
+  beforeEach(async () => {
     await mockServer.start()
   })
 
-  afterAll(async () => {
+  afterEach(async () => {
     await mockServer.stop()
-  })
-
-  afterEach(() => {
-    mockServer.reset()
   })
 
   const buildClient = () => wretch(mockServer.url)
@@ -50,7 +45,6 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         {},
-        { validateResponse: true },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number; title: string } } | undefined>()
@@ -71,7 +65,6 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { pathParams: { productId: 1 } },
-        {},
       )
 
       expect(result.result).toMatchObject({ body: { id: 1 } })
@@ -94,7 +87,6 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { queryParams: { limit: 3 } },
-        {},
       )
 
       expect(result.result).toMatchObject({ body: [{ id: 1 }] })
@@ -117,7 +109,6 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { headers: { authorization: 'Bearer token' } },
-        {},
       )
 
       expect(result.result).toMatchObject({ body: { id: 1 } })
@@ -136,7 +127,6 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { pathPrefix: 'api' },
-        {},
       )
 
       expect(result.result).toMatchObject({ body: { id: 1 } })
@@ -152,7 +142,7 @@ describe('sendByApiContract', () => {
       await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
 
       await expect(
-        sendByApiContract(buildClient(), contract, {}, { validateResponse: true }),
+        sendByApiContract(buildClient(), contract, {}),
       ).rejects.toThrow()
     })
 
@@ -192,7 +182,7 @@ describe('sendByApiContract', () => {
       expect(response.result).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
     })
 
-    it('returns error in Either.error when captureAsError is true and response is non-2xx', async () => {
+    it('returns non-2xx response as Either.error by default', async () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/products/1',
@@ -204,7 +194,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' }, JSON_HEADERS)
 
-      const response = await sendByApiContract(buildClient(), contract, {}, { captureAsError: true })
+      const response = await sendByApiContract(buildClient(), contract, {})
 
       expectTypeOf(response.result).toEqualTypeOf<
         | { statusCode: 200; body: { id: number }; headers: Record<string, string> }
@@ -230,7 +220,6 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { body: { name: 'test' } },
-        { validateResponse: true },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
@@ -252,7 +241,6 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { pathParams: { orgId: 'acme' }, body: { email: 'alice@example.com' } },
-        {},
       )
 
       expect(result.result).toMatchObject({ body: { id: '1' } })
@@ -275,7 +263,6 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { pathParams: { id: '1' }, body: { name: 'updated' } },
-        { validateResponse: true },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
@@ -299,7 +286,6 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { pathParams: { id: '1' }, body: { name: 'patched' } },
-        { validateResponse: true },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
@@ -322,7 +308,6 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { pathParams: { id: '1' } },
-        { validateResponse: true },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: null } | undefined>()
@@ -459,7 +444,7 @@ describe('sendByApiContract', () => {
         .forGet('/export.csv')
         .thenReply(200, 'id,name\n1,Backpack', { 'content-type': 'text/csv' })
 
-      const result = await sendByApiContract(buildClient(), contract, {}, {})
+      const result = await sendByApiContract(buildClient(), contract, {})
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: string } | undefined>()
       expect(result.result).toMatchObject({ body: 'id,name\n1,Backpack' })
@@ -480,7 +465,7 @@ describe('sendByApiContract', () => {
         .forGet('/photo.png')
         .thenReply(200, imageBytes, { 'content-type': 'image/png' })
 
-      const result = await sendByApiContract(buildClient(), contract, {}, {})
+      const result = await sendByApiContract(buildClient(), contract, {})
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: Blob } | undefined>()
       expect(result.result?.body).toBeInstanceOf(Blob)
