@@ -90,11 +90,15 @@ describe('resolveContractResponse', () => {
     })
 
     it('resolves single text entry when content-type is absent', () => {
-      expect(resolveContractResponse(textResponse('text/csv'), undefined, false)).toEqual({ kind: 'text' })
+      expect(resolveContractResponse(textResponse('text/csv'), undefined, false)).toEqual({
+        kind: 'text',
+      })
     })
 
     it('resolves single blob entry when content-type is absent', () => {
-      expect(resolveContractResponse(blobResponse('image/png'), undefined, false)).toEqual({ kind: 'blob' })
+      expect(resolveContractResponse(blobResponse('image/png'), undefined, false)).toEqual({
+        kind: 'blob',
+      })
     })
 
     it('resolves single sse entry when content-type is absent', () => {

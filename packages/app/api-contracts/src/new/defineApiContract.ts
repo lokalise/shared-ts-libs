@@ -114,7 +114,7 @@ export const hasAnySuccessSseResponse = (apiContract: ApiContract): boolean => {
     }
 
     if (isSseResponse(value)) {
-       return true
+      return true
     } else if (isAnyOfResponses(value)) {
       for (const response of value.responses) {
         if (isSseResponse(response)) {

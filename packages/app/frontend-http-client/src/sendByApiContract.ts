@@ -1,20 +1,20 @@
 import {
-  buildRequestPath,
-  hasAnySuccessSseResponse,
-  resolveContractResponse,
   type ApiContract,
+  buildRequestPath,
   type ContractResponseMode,
   type HttpStatusCode,
+  hasAnySuccessSseResponse,
   type InferNonSseClientResponse,
   type InferSchemaInput,
   type InferSseClientResponse,
   type ResponseKind,
   type ResponsesByStatusCode,
+  resolveContractResponse,
   type SseSchemaByEventName,
   type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
 import { stringify } from 'fast-querystring'
-import type {ConfiguredMiddleware, WretchError} from 'wretch'
+import type { ConfiguredMiddleware, WretchError } from 'wretch'
 import type { z } from 'zod/v4'
 import type { WretchInstance } from './types.ts'
 import { parseSseStream } from './utils/sseUtils.ts'
@@ -36,6 +36,7 @@ type RequestParams<TPathParams, TBody, TQueryParams, THeaders> = Prettify<
     CondKey<THeaders, 'headers', HeadersParam<THeaders>>
 >
 
+// biome-ignore lint/suspicious/noExplicitAny: we accept any request params here
 type AnyRequestParams = RequestParams<any, any, any, any>
 
 type ExtractRequestBody<T> = T extends { requestBodySchema: z.ZodType }
@@ -51,8 +52,9 @@ type DefaultStreaming<T extends ResponsesByStatusCode> =
   ContractResponseMode<T> extends 'sse' ? true : false
 
 // captureAsError: true → filter to success codes only; captureAsError: false → all codes from contract
-type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> =
-  TDoCaptureAsError extends true ? Extract<T, { statusCode: SuccessfulHttpStatusCode }> : T
+type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> = TDoCaptureAsError extends true
+  ? Extract<T, { statusCode: SuccessfulHttpStatusCode }>
+  : T
 
 // fetch headers are simple string-to-string (no multi-value)
 type FetchHeaders = Record<string, string>
@@ -154,6 +156,7 @@ async function parseBody(
   }
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it is acceptable
 export async function sendByApiContract<
   TApiContract extends ApiContract,
   TIsStreaming extends boolean = DefaultStreaming<TApiContract['responsesByStatusCode']>,
@@ -169,7 +172,9 @@ export async function sendByApiContract<
   > &
     StreamingParam<TApiContract['responsesByStatusCode'], TIsStreaming>,
   options: ContractRequestOptions<TCaptureAsError> = {} as ContractRequestOptions<TCaptureAsError>,
-): Promise<ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TCaptureAsError>> {
+): Promise<
+  ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TCaptureAsError>
+> {
   const anyParams = params as AnyRequestParams
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
 
@@ -178,7 +183,7 @@ export async function sendByApiContract<
   const validateResponse = options.validateResponse ?? true
   const strictContentType = options.strictContentType ?? true
 
-  const resolvedHeaders: Record<string, string> = await resolveHeaders(anyParams.headers) ?? {}
+  const resolvedHeaders: Record<string, string> = (await resolveHeaders(anyParams.headers)) ?? {}
 
   if (useStreaming) {
     resolvedHeaders.accept = 'text/event-stream'
@@ -187,10 +192,11 @@ export async function sendByApiContract<
     resolvedHeaders['content-type'] = 'application/json'
   }
 
-  const path = buildRequestPath(routeContract.pathResolver(anyParams.pathParams), anyParams.pathPrefix)
-  const queryString = anyParams.queryParams
-    ? stringify(anyParams.queryParams)
-    : ''
+  const path = buildRequestPath(
+    routeContract.pathResolver(anyParams.pathParams),
+    anyParams.pathPrefix,
+  )
+  const queryString = anyParams.queryParams ? stringify(anyParams.queryParams) : ''
   const fullUrl = queryString ? `${path}?${queryString}` : path
   const bodyString = anyParams.body ? JSON.stringify(anyParams.body) : undefined
 
@@ -206,7 +212,11 @@ export async function sendByApiContract<
     return fetchResponse
   }
 
-  const wretchInstance = wretch.middlewares([cloneErrorResponseMiddleware]).url(fullUrl).headers(resolvedHeaders).options({ signal })
+  const wretchInstance = wretch
+    .middlewares([cloneErrorResponseMiddleware])
+    .url(fullUrl)
+    .headers(resolvedHeaders)
+    .options({ signal })
 
   let response: Response
 

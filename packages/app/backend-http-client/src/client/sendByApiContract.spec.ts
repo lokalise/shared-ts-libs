@@ -44,14 +44,11 @@ describe('sendByApiContract', () => {
         .forGet('/products/1')
         .thenJson(200, { id: 1, title: 'Backpack' }, JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        client,
-        contract,
-        {},
-        { requestLabel: 'test' },
-      )
+      const result = await sendByApiContract(client, contract, {}, { requestLabel: 'test' })
 
-      expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number; title: string } } | undefined>()
+      expectTypeOf(result.result).toMatchTypeOf<
+        { body: { id: number; title: string } } | undefined
+      >()
       expect(result.result).toMatchObject({ body: { id: 1, title: 'Backpack' } })
     })
 
@@ -163,12 +160,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(500, { error: 'fail' }, JSON_HEADERS)
 
-      const response = await sendByApiContract(
-        client,
-        contract,
-        {},
-        { requestLabel: 'test' },
-      )
+      const response = await sendByApiContract(client, contract, {}, { requestLabel: 'test' })
 
       expect(response.error).toBeDefined()
       expect(response.result).toBeUndefined()
@@ -194,8 +186,16 @@ describe('sendByApiContract', () => {
       )
 
       expectTypeOf(response.result).toEqualTypeOf<
-        | { statusCode: 200; body: { id: number }; headers: Record<string, string | string[] | undefined> }
-        | { statusCode: 404; body: { message: string }; headers: Record<string, string | string[] | undefined> }
+        | {
+            statusCode: 200
+            body: { id: number }
+            headers: Record<string, string | string[] | undefined>
+          }
+        | {
+            statusCode: 404
+            body: { message: string }
+            headers: Record<string, string | string[] | undefined>
+          }
         | undefined
       >()
       expect(response.result).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
@@ -466,12 +466,7 @@ describe('sendByApiContract', () => {
         .forGet('/export.csv')
         .thenReply(200, 'id,name\n1,Backpack', { 'content-type': 'text/csv' })
 
-      const result = await sendByApiContract(
-        client,
-        contract,
-        {},
-        { requestLabel: 'test' },
-      )
+      const result = await sendByApiContract(client, contract, {}, { requestLabel: 'test' })
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: string } | undefined>()
       expect(result.result).toMatchObject({ body: 'id,name\n1,Backpack' })
@@ -492,12 +487,7 @@ describe('sendByApiContract', () => {
         .forGet('/photo.png')
         .thenReply(200, imageBytes, { 'content-type': 'image/png' })
 
-      const result = await sendByApiContract(
-        client,
-        contract,
-        {},
-        { requestLabel: 'test' },
-      )
+      const result = await sendByApiContract(client, contract, {}, { requestLabel: 'test' })
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: Blob } | undefined>()
       expect(result.result?.body).toBeInstanceOf(Blob)

@@ -7,20 +7,19 @@ import type { SseEventOf } from './inferTypes.ts'
 /**
  * Maps a single responsesByStatusCode entry value to its TypeScript body type.
  */
-type InferResponseBody<T> =
-  T extends typeof ContractNoBody
-    ? null
-    : T extends z.ZodType
-      ? z.output<T>
-      : T extends { _tag: 'TextResponse' }
-        ? string
-        : T extends { _tag: 'BlobResponse' }
-          ? Blob
-          : T extends { _tag: 'SseResponse'; schemaByEventName: infer S extends SseSchemaByEventName }
-            ? AsyncIterable<SseEventOf<S>>
-            : T extends { _tag: 'AnyOfResponses'; responses: Array<infer Item> }
-              ? InferResponseBody<Item>
-              : never
+type InferResponseBody<T> = T extends typeof ContractNoBody
+  ? null
+  : T extends z.ZodType
+    ? z.output<T>
+    : T extends { _tag: 'TextResponse' }
+      ? string
+      : T extends { _tag: 'BlobResponse' }
+        ? Blob
+        : T extends { _tag: 'SseResponse'; schemaByEventName: infer S extends SseSchemaByEventName }
+          ? AsyncIterable<SseEventOf<S>>
+          : T extends { _tag: 'AnyOfResponses'; responses: Array<infer Item> }
+            ? InferResponseBody<Item>
+            : never
 
 /**
  * Like InferResponseBody but returns only SSE bodies — non-SSE entries resolve to never.

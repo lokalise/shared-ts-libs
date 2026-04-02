@@ -1,18 +1,18 @@
 import type { Readable } from 'node:stream'
 import {
-  buildRequestPath,
-  hasAnySuccessSseResponse,
   type ApiContract,
+  buildRequestPath,
   type ContractResponseMode,
   type HttpStatusCode,
+  hasAnySuccessSseResponse,
   type InferNonSseClientResponse,
   type InferSchemaInput,
   type InferSseClientResponse,
-  type SuccessfulHttpStatusCode,
   type ResponseKind,
   type ResponsesByStatusCode,
   resolveContractResponse,
   type SseSchemaByEventName,
+  type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
 import { copyWithoutUndefined } from '@lokalise/node-core'
 import type { Client, Dispatcher } from 'undici'
@@ -45,6 +45,7 @@ type RequestParams<TPathParams, TBody, TQueryParams, THeaders> = Prettify<
     CondKey<THeaders, 'headers', HedersParam<THeaders>>
 >
 
+// biome-ignore lint/suspicious/noExplicitAny: we accept any request params here
 type AnyRequestParams = RequestParams<any, any, any, any>
 
 type ExtractRequestBody<T> = T extends { requestBodySchema: z.ZodType }
@@ -60,8 +61,9 @@ type DefaultStreaming<T extends ResponsesByStatusCode> =
   ContractResponseMode<T> extends 'sse' ? true : false
 
 // captureAsError: true → filter to success codes only; captureAsError: false → all codes
-type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> =
-  TDoCaptureAsError extends true ? Extract<T, { statusCode: SuccessfulHttpStatusCode }> : T
+type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> = TDoCaptureAsError extends true
+  ? Extract<T, { statusCode: SuccessfulHttpStatusCode }>
+  : T
 
 type ReturnTypeForContract<
   T extends ResponsesByStatusCode,
@@ -187,7 +189,9 @@ export async function sendByApiContract<
   > &
     StreamingParam<TApiContract['responsesByStatusCode'], TIsStreaming>,
   options: ContractRequestOptions<TCaptureAsError>,
-): Promise<ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TCaptureAsError>> {
+): Promise<
+  ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TCaptureAsError>
+> {
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
 
   const captureAsError = options.captureAsError ?? true
@@ -290,11 +294,12 @@ function resolveAndReturnParsedResponse(
     throw new Error(`Could not resolve response contentType "${contentType}"`)
   }
 
-  const body = resolvedEntry.kind === 'noContent'
-    ? null
-    : resolvedEntry.kind === 'json' && validateResponse
-      ? resolvedEntry.schema.parse(result.body)
-      : result.body
+  const body =
+    resolvedEntry.kind === 'noContent'
+      ? null
+      : resolvedEntry.kind === 'json' && validateResponse
+        ? resolvedEntry.schema.parse(result.body)
+        : result.body
 
   return {
     result: { body, statusCode: result.statusCode, headers: result.headers },

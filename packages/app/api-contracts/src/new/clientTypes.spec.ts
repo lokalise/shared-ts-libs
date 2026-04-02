@@ -1,9 +1,9 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
+import type { InferNonSseClientResponse, InferSseClientResponse } from './clientTypes.ts'
 import { ContractNoBody } from './constants.ts'
 import { anyOfResponses, blobResponse, sseResponse, textResponse } from './contractResponse.ts'
 import { defineApiContract } from './defineApiContract.ts'
-import type { InferNonSseClientResponse, InferSseClientResponse } from './clientTypes.ts'
 
 type DefaultHeaders = Record<string, string | string[] | undefined>
 
@@ -20,7 +20,11 @@ describe('clientTypes', () => {
       })
       type Result = InferSseClientResponse<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<
-        | { statusCode: 200; headers: DefaultHeaders; body: AsyncIterable<{ event: 'update'; data: { id: string } }> }
+        | {
+            statusCode: 200
+            headers: DefaultHeaders
+            body: AsyncIterable<{ event: 'update'; data: { id: string } }>
+          }
         | { statusCode: 404; headers: DefaultHeaders; body: { message: string } }
       >()
     })
@@ -123,7 +127,11 @@ describe('clientTypes', () => {
         responsesByStatusCode: { 204: ContractNoBody },
       })
       type Result = InferNonSseClientResponse<(typeof contract)['responsesByStatusCode']>
-      expectTypeOf<Result>().toEqualTypeOf<{ statusCode: 204; headers: DefaultHeaders; body: null }>()
+      expectTypeOf<Result>().toEqualTypeOf<{
+        statusCode: 204
+        headers: DefaultHeaders
+        body: null
+      }>()
     })
 
     it('maps text success response to string body', () => {
@@ -133,7 +141,11 @@ describe('clientTypes', () => {
         responsesByStatusCode: { 200: textResponse('text/csv') },
       })
       type Result = InferNonSseClientResponse<(typeof contract)['responsesByStatusCode']>
-      expectTypeOf<Result>().toEqualTypeOf<{ statusCode: 200; headers: DefaultHeaders; body: string }>()
+      expectTypeOf<Result>().toEqualTypeOf<{
+        statusCode: 200
+        headers: DefaultHeaders
+        body: string
+      }>()
     })
 
     it('maps blob success response to Blob body', () => {
@@ -143,7 +155,11 @@ describe('clientTypes', () => {
         responsesByStatusCode: { 200: blobResponse('image/png') },
       })
       type Result = InferNonSseClientResponse<(typeof contract)['responsesByStatusCode']>
-      expectTypeOf<Result>().toEqualTypeOf<{ statusCode: 200; headers: DefaultHeaders; body: Blob }>()
+      expectTypeOf<Result>().toEqualTypeOf<{
+        statusCode: 200
+        headers: DefaultHeaders
+        body: Blob
+      }>()
     })
 
     it('accepts a custom THeaders override', () => {

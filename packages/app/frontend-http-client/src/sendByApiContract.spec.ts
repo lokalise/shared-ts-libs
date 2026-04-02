@@ -41,13 +41,11 @@ describe('sendByApiContract', () => {
         .forGet('/products/1')
         .thenJson(200, { id: 1, title: 'Backpack' }, JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        buildClient(),
-        contract,
-        {},
-      )
+      const result = await sendByApiContract(buildClient(), contract, {})
 
-      expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number; title: string } } | undefined>()
+      expectTypeOf(result.result).toMatchTypeOf<
+        { body: { id: number; title: string } } | undefined
+      >()
       expect(result.result).toMatchObject({ body: { id: 1, title: 'Backpack' } })
     })
 
@@ -61,11 +59,9 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        buildClient(),
-        contract,
-        { pathParams: { productId: 1 } },
-      )
+      const result = await sendByApiContract(buildClient(), contract, {
+        pathParams: { productId: 1 },
+      })
 
       expect(result.result).toMatchObject({ body: { id: 1 } })
     })
@@ -83,11 +79,7 @@ describe('sendByApiContract', () => {
         .withQuery({ limit: '3' })
         .thenJson(200, [{ id: 1 }], JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        buildClient(),
-        contract,
-        { queryParams: { limit: 3 } },
-      )
+      const result = await sendByApiContract(buildClient(), contract, { queryParams: { limit: 3 } })
 
       expect(result.result).toMatchObject({ body: [{ id: 1 }] })
     })
@@ -105,11 +97,9 @@ describe('sendByApiContract', () => {
         .withHeaders({ authorization: 'Bearer token' })
         .thenJson(200, { id: 1 }, JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        buildClient(),
-        contract,
-        { headers: { authorization: 'Bearer token' } },
-      )
+      const result = await sendByApiContract(buildClient(), contract, {
+        headers: { authorization: 'Bearer token' },
+      })
 
       expect(result.result).toMatchObject({ body: { id: 1 } })
     })
@@ -123,11 +113,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/api/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        buildClient(),
-        contract,
-        { pathPrefix: 'api' },
-      )
+      const result = await sendByApiContract(buildClient(), contract, { pathPrefix: 'api' })
 
       expect(result.result).toMatchObject({ body: { id: 1 } })
     })
@@ -141,9 +127,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
 
-      await expect(
-        sendByApiContract(buildClient(), contract, {}),
-      ).rejects.toThrow()
+      await expect(sendByApiContract(buildClient(), contract, {})).rejects.toThrow()
     })
 
     it('throws when status is not in contract', async () => {
@@ -155,9 +139,9 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(500, { error: 'fail' }, JSON_HEADERS)
 
-      await expect(
-        sendByApiContract(buildClient(), contract, {}),
-      ).rejects.toThrow('Could not map response statusCode')
+      await expect(sendByApiContract(buildClient(), contract, {})).rejects.toThrow(
+        'Could not map response statusCode',
+      )
     })
 
     it('returns typed body for non-2xx response when status is in contract', async () => {
@@ -172,7 +156,12 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' }, JSON_HEADERS)
 
-      const response = await sendByApiContract(buildClient(), contract, {}, { captureAsError: false })
+      const response = await sendByApiContract(
+        buildClient(),
+        contract,
+        {},
+        { captureAsError: false },
+      )
 
       expectTypeOf(response.result).toEqualTypeOf<
         | { statusCode: 200; body: { id: number }; headers: Record<string, string> }
@@ -197,8 +186,7 @@ describe('sendByApiContract', () => {
       const response = await sendByApiContract(buildClient(), contract, {})
 
       expectTypeOf(response.result).toEqualTypeOf<
-        | { statusCode: 200; body: { id: number }; headers: Record<string, string> }
-        | undefined
+        { statusCode: 200; body: { id: number }; headers: Record<string, string> } | undefined
       >()
       expect(response.error).toBeDefined()
       expect(response.result).toBeUndefined()
@@ -216,11 +204,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forPost('/products').thenJson(201, { id: 21 }, JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        buildClient(),
-        contract,
-        { body: { name: 'test' } },
-      )
+      const result = await sendByApiContract(buildClient(), contract, { body: { name: 'test' } })
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
       expect(result.result).toMatchObject({ body: { id: 21 } })
@@ -237,11 +221,10 @@ describe('sendByApiContract', () => {
 
       await mockServer.forPost('/orgs/acme/members').thenJson(201, { id: '1' }, JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        buildClient(),
-        contract,
-        { pathParams: { orgId: 'acme' }, body: { email: 'alice@example.com' } },
-      )
+      const result = await sendByApiContract(buildClient(), contract, {
+        pathParams: { orgId: 'acme' },
+        body: { email: 'alice@example.com' },
+      })
 
       expect(result.result).toMatchObject({ body: { id: '1' } })
     })
@@ -259,11 +242,10 @@ describe('sendByApiContract', () => {
 
       await mockServer.forPut('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        buildClient(),
-        contract,
-        { pathParams: { id: '1' }, body: { name: 'updated' } },
-      )
+      const result = await sendByApiContract(buildClient(), contract, {
+        pathParams: { id: '1' },
+        body: { name: 'updated' },
+      })
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
       expect(result.result).toMatchObject({ body: { id: 1 } })
@@ -282,11 +264,10 @@ describe('sendByApiContract', () => {
 
       await mockServer.forPatch('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        buildClient(),
-        contract,
-        { pathParams: { id: '1' }, body: { name: 'patched' } },
-      )
+      const result = await sendByApiContract(buildClient(), contract, {
+        pathParams: { id: '1' },
+        body: { name: 'patched' },
+      })
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
       expect(result.result).toMatchObject({ body: { id: 1 } })
@@ -304,11 +285,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forDelete('/products/1').thenReply(204)
 
-      const result = await sendByApiContract(
-        buildClient(),
-        contract,
-        { pathParams: { id: '1' } },
-      )
+      const result = await sendByApiContract(buildClient(), contract, { pathParams: { id: '1' } })
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: null } | undefined>()
       expect(result.result).toMatchObject({ statusCode: 204, body: null })

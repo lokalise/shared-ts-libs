@@ -105,12 +105,34 @@ const matchTypedResponse = (
 }
 
 const resolveByKind = (entry: TypedApiContractResponse): ResponseKind => {
-  if (isTextResponse(entry)) return { kind: 'text' }
-  if (isBlobResponse(entry)) return { kind: 'blob' }
-  if (isSseResponse(entry)) return { kind: 'sse', schemaByEventName: entry.schemaByEventName }
+  if (isTextResponse(entry)) {
+    return { kind: 'text' }
+  }
+  if (isBlobResponse(entry)) {
+    return { kind: 'blob' }
+  }
+  if (isSseResponse(entry)) {
+    return { kind: 'sse', schemaByEventName: entry.schemaByEventName }
+  }
   return { kind: 'json', schema: entry }
 }
 
+/**
+ * Resolves a contract's response entry for a given status code into a concrete `ResponseKind`,
+ * taking the response `content-type` into account.
+ *
+ * Returns `null` when the content-type cannot be matched to any entry in the contract,
+ * indicating the response is unexpected and should be treated as an error by the caller.
+ *
+ * @param schemaEntry - The contract entry for the matched status code (`ContractNoBody`,
+ *   a Zod schema, `textResponse`, `blobResponse`, `sseResponse`, or `anyOfResponses`).
+ * @param contentType - The `content-type` header value from the actual HTTP response,
+ *   or `undefined` when the header is absent.
+ * @param strict - When `true` (default), returns `null` if the `content-type` is absent or does
+ *   not match the contract entry. When `false`, falls back to the entry's declared kind instead of
+ *   returning `null` — only applies to single-entry responses; `anyOfResponses` always requires a
+ *   content-type to disambiguate regardless of this flag.
+ */
 export const resolveContractResponse = (
   schemaEntry: ApiContractResponse,
   contentType: string | undefined,
@@ -120,12 +142,17 @@ export const resolveContractResponse = (
     return { kind: 'noContent' }
   }
 
-  // AnyOfResponses always requires content-type to disambiguate — strict mode has no effect here
   if (isAnyOfResponses(schemaEntry)) {
-    if (!contentType) return null
+    // AnyOfResponses always requires content-type to disambiguate — strict mode has no effect here
+    if (!contentType) {
+      return null
+    }
+
     for (const item of schemaEntry.responses) {
       const resolved = matchTypedResponse(item, contentType)
-      if (resolved) return resolved
+      if (resolved) {
+        return resolved
+      }
     }
     return null
   }
@@ -135,5 +162,6 @@ export const resolveContractResponse = (
   }
 
   const matched = matchTypedResponse(schemaEntry, contentType)
+
   return matched ?? (strict ? null : resolveByKind(schemaEntry))
 }

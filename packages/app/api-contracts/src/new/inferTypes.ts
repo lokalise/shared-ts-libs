@@ -1,6 +1,6 @@
 import type { z } from 'zod/v4'
 import type { SuccessfulHttpStatusCode } from '../HttpStatusCodes.ts'
-import type { IsUnion, ValueOf } from '../typeUtils.ts'
+import type { ValueOf } from '../typeUtils.ts'
 import type { ContractNoBody } from './constants.ts'
 import type { ResponsesByStatusCode } from './contractResponse.ts'
 
@@ -70,7 +70,6 @@ export type InferNonSseSuccessResponses<T extends ResponsesByStatusCode> = NonSs
   FlatSuccessResponses<T>
 >
 
-
 /**
  * Discriminated union of SSE events inferred from a schemaByEventName map.
  * Each event is `{ event: EventName, data: z.output<Schema> }`.
@@ -81,20 +80,19 @@ export type SseEventOf<S> = {
     : never
 }[keyof S]
 
-
 /**
  * Returns true if any success status code entry is TypedSseResponse,
  * or an AnyOfResponses containing a TypedSseResponse.
  */
 export type HasAnySseSuccessResponse<T extends ResponsesByStatusCode> =
-    Extract<FlatSuccessResponses<T>, { _tag: 'SseResponse' }> extends never ? false : true
+  Extract<FlatSuccessResponses<T>, { _tag: 'SseResponse' }> extends never ? false : true
 
 /**
  * Returns true if any success status code entry has a non-SSE response
  * (JSON, text, blob, or no-body). Mirrors HasAnySseSuccessResponse.
  */
 export type HasAnyNonSseSuccessResponse<T extends ResponsesByStatusCode> =
-    Exclude<FlatSuccessResponses<T>, { _tag: 'SseResponse' }> extends never ? false : true
+  Exclude<FlatSuccessResponses<T>, { _tag: 'SseResponse' }> extends never ? false : true
 
 /**
  * Classifies a contract's response mode into one of three cases:
