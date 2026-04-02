@@ -25,11 +25,8 @@ import {
   sendWithRetryReturnStream,
 } from 'undici-retry'
 import type { z } from 'zod/v4'
-import { ResponseStatusError } from '../errors/ResponseStatusError.ts'
 import { DEFAULT_OPTIONS } from './constants.ts'
 import type { ContractRequestOptions } from './types.ts'
-
-type DEFAULT_THROW_ON_ERROR = typeof DEFAULT_OPTIONS.throwOnError
 
 type Prettify<T> = {
   [K in keyof T]: T[K]
@@ -62,19 +59,19 @@ type StreamingParam<T extends ResponsesByStatusCode, IsStreaming extends boolean
 type DefaultStreaming<T extends ResponsesByStatusCode> =
   ContractResponseMode<T> extends 'sse' ? true : false
 
-// throwOnError: true → filter to success codes only; throwOnError: false → all codes
-type ThrowOnErrorFilter<T, DoThrowOnError extends boolean> =
-  DoThrowOnError extends true ? Extract<T, { statusCode: SuccessfulHttpStatusCode }> : T
+// mapHttpErrors: true → filter to success codes only; mapHttpErrors: false → all codes
+type MapHttpErrorsFilter<T, DoMapHttpErrors extends boolean> =
+  DoMapHttpErrors extends true ? Extract<T, { statusCode: SuccessfulHttpStatusCode }> : T
 
 type ReturnTypeForContract<
   T extends ResponsesByStatusCode,
   IsStreaming extends boolean,
-  DoThrowOnError extends boolean,
+  DoMapHttpErrors extends boolean,
 > = Either<
   RequestResult<unknown> | InternalRequestError,
-  ThrowOnErrorFilter<
+  MapHttpErrorsFilter<
     IsStreaming extends true ? InferSseClientResponse<T> : InferNonSseClientResponse<T>,
-    DoThrowOnError
+    DoMapHttpErrors
   >
 >
 
@@ -177,7 +174,7 @@ async function parseBody(
 export async function sendByApiContract<
   TApiContract extends ApiContract,
   TIsStreaming extends boolean = DefaultStreaming<TApiContract['responsesByStatusCode']>,
-  TDoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  TMapHttpErrors extends boolean = false,
 >(
   client: Client,
   routeContract: TApiContract,
@@ -188,11 +185,11 @@ export async function sendByApiContract<
     InferSchemaInput<TApiContract['requestHeaderSchema']>
   > &
     StreamingParam<TApiContract['responsesByStatusCode'], TIsStreaming>,
-  options: ContractRequestOptions<TDoThrowOnError>,
-): Promise<ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TDoThrowOnError>> {
+  options: ContractRequestOptions<TMapHttpErrors>,
+): Promise<ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TMapHttpErrors>> {
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
 
-  const throwOnError = options.throwOnError ?? DEFAULT_OPTIONS.throwOnError
+  const mapHttpErrors = options.mapHttpErrors ?? false
   const retryConfig = options.retryConfig ?? NO_RETRY_CONFIG
 
   const baseRequest = await buildBaseRequest(routeContract, params as AnyRequestParams, options)
@@ -207,42 +204,99 @@ export async function sendByApiContract<
   })
 
   if (sendOutput.error) {
-    if (throwOnError) {
-      throw isRequestResult(sendOutput.error)
-        ? new ResponseStatusError(sendOutput.error, options.requestLabel)
-        : sendOutput.error
+    if (!isRequestResult(sendOutput.error)) {
+      // Internal/network error — always throw
+      throw sendOutput.error
     }
 
-    // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from DoThrowOnError
-    return sendOutput as any
+    if (mapHttpErrors) {
+      // Non-2xx HTTP response mapped to Either.error
+      // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TMapHttpErrors
+      return { error: sendOutput.error, result: undefined } as any
+    }
+
+    // mapHttpErrors: false — process non-2xx response through the contract
+    // Note: undici-retry eagerly parses the error body via resolveBody(), so it is
+    // already a plain JS value (object/string), not a stream.
+    return resolveAndReturnParsedResponse(
+      sendOutput.error,
+      routeContract,
+      request.validateResponse,
+      options.strictContentType ?? true,
+    )
   }
 
-  const responseSchemas =
-    routeContract.responsesByStatusCode[sendOutput.result.statusCode as HttpStatusCode]
+  return resolveAndParseResponse(
+    sendOutput.result,
+    routeContract,
+    request.validateResponse,
+    options.strictContentType ?? true,
+  )
+}
+
+async function resolveAndParseResponse(
+  result: RequestResult<Dispatcher.ResponseData['body']>,
+  routeContract: ApiContract,
+  validateResponse: boolean,
+  strictContentType: boolean,
+) {
+  const responseSchemas = routeContract.responsesByStatusCode[result.statusCode as HttpStatusCode]
 
   if (!responseSchemas) {
-    await sendOutput.result.body.dump()
+    await result.body.dump()
     throw new Error('Could not map response statusCode')
   }
 
-  const rawContentType = sendOutput.result.headers['content-type']
+  const rawContentType = result.headers['content-type']
   const contentType = Array.isArray(rawContentType) ? rawContentType[0] : rawContentType
 
-  const resolvedEntry = resolveContractResponse(responseSchemas, contentType, options.strictContentType ?? true)
+  const resolvedEntry = resolveContractResponse(responseSchemas, contentType, strictContentType)
 
   if (!resolvedEntry) {
-    await sendOutput.result.body.dump()
+    await result.body.dump()
     throw new Error(`Could not resolve response contentType "${contentType}"`)
   }
 
-  const body = await parseBody(sendOutput.result, resolvedEntry, request.validateResponse)
+  const body = await parseBody(result, resolvedEntry, validateResponse)
 
   return {
-    result: {
-      body,
-      statusCode: sendOutput.result.statusCode,
-      headers: sendOutput.result.headers,
-    },
+    result: { body, statusCode: result.statusCode, headers: result.headers },
+    // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from IsStreaming
+  } as any
+}
+
+// Used for non-2xx responses when mapHttpErrors: false.
+// undici-retry eagerly parses error bodies (JSON → object, otherwise → string),
+// so we cannot re-read the stream — instead we validate the pre-parsed value.
+function resolveAndReturnParsedResponse(
+  result: RequestResult<unknown>,
+  routeContract: ApiContract,
+  validateResponse: boolean,
+  strictContentType: boolean,
+) {
+  const responseSchemas = routeContract.responsesByStatusCode[result.statusCode as HttpStatusCode]
+
+  if (!responseSchemas) {
+    throw new Error('Could not map response statusCode')
+  }
+
+  const rawContentType = result.headers['content-type']
+  const contentType = Array.isArray(rawContentType) ? rawContentType[0] : rawContentType
+
+  const resolvedEntry = resolveContractResponse(responseSchemas, contentType, strictContentType)
+
+  if (!resolvedEntry) {
+    throw new Error(`Could not resolve response contentType "${contentType}"`)
+  }
+
+  const body = resolvedEntry.kind === 'noContent'
+    ? null
+    : resolvedEntry.kind === 'json' && validateResponse
+      ? resolvedEntry.schema.parse(result.body)
+      : result.body
+
+  return {
+    result: { body, statusCode: result.statusCode, headers: result.headers },
     // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from IsStreaming
   } as any
 }

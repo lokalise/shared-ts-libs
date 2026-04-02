@@ -50,7 +50,7 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         {},
-        { validateResponse: true, throwOnError: true },
+        { validateResponse: true },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number; title: string } } | undefined>()
@@ -71,7 +71,7 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { pathParams: { productId: 1 } },
-        { throwOnError: true },
+        {},
       )
 
       expect(result.result).toMatchObject({ body: { id: 1 } })
@@ -94,7 +94,7 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { queryParams: { limit: 3 } },
-        { throwOnError: true },
+        {},
       )
 
       expect(result.result).toMatchObject({ body: [{ id: 1 }] })
@@ -117,7 +117,7 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { headers: { authorization: 'Bearer token' } },
-        { throwOnError: true },
+        {},
       )
 
       expect(result.result).toMatchObject({ body: { id: 1 } })
@@ -136,7 +136,7 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { pathPrefix: 'api' },
-        { throwOnError: true },
+        {},
       )
 
       expect(result.result).toMatchObject({ body: { id: 1 } })
@@ -156,7 +156,7 @@ describe('sendByApiContract', () => {
       ).rejects.toThrow()
     })
 
-    it('throws on error response when throwOnError is true', async () => {
+    it('throws when status is not in contract', async () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/products/1',
@@ -166,11 +166,11 @@ describe('sendByApiContract', () => {
       await mockServer.forGet('/products/1').thenJson(500, { error: 'fail' }, JSON_HEADERS)
 
       await expect(
-        sendByApiContract(buildClient(), contract, {}, { throwOnError: true }),
-      ).rejects.toThrow()
+        sendByApiContract(buildClient(), contract, {}),
+      ).rejects.toThrow('Could not map response statusCode')
     })
 
-    it('returns error in error field when throwOnError is false', async () => {
+    it('returns typed body for non-2xx response when status is in contract', async () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/products/1',
@@ -182,16 +182,32 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' }, JSON_HEADERS)
 
-      const response = await sendByApiContract(
-        buildClient(),
-        contract,
-        {},
-        { throwOnError: false },
-      )
+      const response = await sendByApiContract(buildClient(), contract, {})
 
       expectTypeOf(response.result).toEqualTypeOf<
         | { statusCode: 200; body: { id: number }; headers: Record<string, string> }
         | { statusCode: 404; body: { message: string }; headers: Record<string, string> }
+        | undefined
+      >()
+      expect(response.result).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
+    })
+
+    it('returns error in Either.error when mapHttpErrors is true and response is non-2xx', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: {
+          200: z.object({ id: z.number() }),
+          404: z.object({ message: z.string() }),
+        },
+      })
+
+      await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' }, JSON_HEADERS)
+
+      const response = await sendByApiContract(buildClient(), contract, {}, { mapHttpErrors: true })
+
+      expectTypeOf(response.result).toEqualTypeOf<
+        | { statusCode: 200; body: { id: number }; headers: Record<string, string> }
         | undefined
       >()
       expect(response.error).toBeDefined()
@@ -214,7 +230,7 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { body: { name: 'test' } },
-        { validateResponse: true, throwOnError: true },
+        { validateResponse: true },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
@@ -236,7 +252,7 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { pathParams: { orgId: 'acme' }, body: { email: 'alice@example.com' } },
-        { throwOnError: true },
+        {},
       )
 
       expect(result.result).toMatchObject({ body: { id: '1' } })
@@ -259,7 +275,7 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { pathParams: { id: '1' }, body: { name: 'updated' } },
-        { throwOnError: true, validateResponse: true },
+        { validateResponse: true },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
@@ -283,7 +299,7 @@ describe('sendByApiContract', () => {
         buildClient(),
         contract,
         { pathParams: { id: '1' }, body: { name: 'patched' } },
-        { throwOnError: true, validateResponse: true },
+        { validateResponse: true },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
@@ -443,7 +459,7 @@ describe('sendByApiContract', () => {
         .forGet('/export.csv')
         .thenReply(200, 'id,name\n1,Backpack', { 'content-type': 'text/csv' })
 
-      const result = await sendByApiContract(buildClient(), contract, {}, { throwOnError: true })
+      const result = await sendByApiContract(buildClient(), contract, {}, {})
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: string } | undefined>()
       expect(result.result).toMatchObject({ body: 'id,name\n1,Backpack' })
@@ -464,7 +480,7 @@ describe('sendByApiContract', () => {
         .forGet('/photo.png')
         .thenReply(200, imageBytes, { 'content-type': 'image/png' })
 
-      const result = await sendByApiContract(buildClient(), contract, {}, { throwOnError: true })
+      const result = await sendByApiContract(buildClient(), contract, {}, {})
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: Blob } | undefined>()
       expect(result.result?.body).toBeInstanceOf(Blob)

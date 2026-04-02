@@ -14,7 +14,7 @@ import {
   type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
 import { stringify } from 'fast-querystring'
-import type { WretchError } from 'wretch'
+import type {ConfiguredMiddleware, WretchError} from 'wretch'
 import type { z } from 'zod/v4'
 import type { WretchInstance } from './types.ts'
 import { parseSseStream } from './utils/sseUtils.ts'
@@ -50,9 +50,9 @@ type StreamingParam<T extends ResponsesByStatusCode, IsStreaming extends boolean
 type DefaultStreaming<T extends ResponsesByStatusCode> =
   ContractResponseMode<T> extends 'sse' ? true : false
 
-// throwOnError: true → filter to success codes only; throwOnError: false → all codes from contract
-type ThrowOnErrorFilter<T, DoThrowOnError extends boolean> =
-  DoThrowOnError extends true ? Extract<T, { statusCode: SuccessfulHttpStatusCode }> : T
+// mapHttpErrors: true → filter to success codes only; mapHttpErrors: false → all codes from contract
+type MapHttpErrorsFilter<T, DoMapHttpErrors extends boolean> =
+  DoMapHttpErrors extends true ? Extract<T, { statusCode: SuccessfulHttpStatusCode }> : T
 
 // fetch headers are simple string-to-string (no multi-value)
 type FetchHeaders = Record<string, string>
@@ -62,20 +62,24 @@ type Either<E, R> = { error: E; result: undefined } | { error: undefined; result
 type ReturnTypeForContract<
   T extends ResponsesByStatusCode,
   IsStreaming extends boolean,
-  DoThrowOnError extends boolean,
+  DoMapHttpErrors extends boolean,
 > = Either<
   WretchError,
-  ThrowOnErrorFilter<
+  MapHttpErrorsFilter<
     IsStreaming extends true
       ? InferSseClientResponse<T, FetchHeaders>
       : InferNonSseClientResponse<T, FetchHeaders>,
-    DoThrowOnError
+    DoMapHttpErrors
   >
 >
 
-export type ContractRequestOptions<DoThrowOnError extends boolean = boolean> = {
+export type ContractRequestOptions<DoMapHttpErrors extends boolean = boolean> = {
   validateResponse?: boolean
-  throwOnError?: DoThrowOnError
+  /**
+   * When true, non-success HTTP responses are mapped to Either.error.
+   * When false (default), all HTTP responses are returned in Either.result regardless of status code.
+   */
+  mapHttpErrors?: DoMapHttpErrors
   strictContentType?: boolean
   signal?: AbortSignal
 }
@@ -141,7 +145,7 @@ async function parseBody(
 export async function sendByApiContract<
   TApiContract extends ApiContract,
   TIsStreaming extends boolean = DefaultStreaming<TApiContract['responsesByStatusCode']>,
-  TDoThrowOnError extends boolean = false,
+  TMapHttpErrors extends boolean = false,
 >(
   wretch: WretchInstance,
   routeContract: TApiContract,
@@ -152,13 +156,13 @@ export async function sendByApiContract<
     InferSchemaInput<TApiContract['requestHeaderSchema']>
   > &
     StreamingParam<TApiContract['responsesByStatusCode'], TIsStreaming>,
-  options: ContractRequestOptions<TDoThrowOnError> = {} as ContractRequestOptions<TDoThrowOnError>,
-): Promise<ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TDoThrowOnError>> {
+  options: ContractRequestOptions<TMapHttpErrors> = {} as ContractRequestOptions<TMapHttpErrors>,
+): Promise<ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TMapHttpErrors>> {
   const anyParams = params as AnyRequestParams
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
 
-  const signal = options.signal ?? new AbortSignal()
-  const throwOnError = options.throwOnError ?? false
+  const signal = options.signal ?? new AbortController().signal
+  const mapHttpErrors = options.mapHttpErrors ?? false
   const validateResponse = options.validateResponse ?? false
   const strictContentType = options.strictContentType ?? true
 
@@ -175,15 +179,36 @@ export async function sendByApiContract<
   const queryString = anyParams.queryParams
     ? stringify(anyParams.queryParams)
     : ''
-  const fullPath = queryString ? `${path}?${queryString}` : path
+  const fullUrl = queryString ? `${path}?${queryString}` : path
   const bodyString = anyParams.body ? JSON.stringify(anyParams.body) : undefined
+
+  // Middleware that clones the response for non-2xx statuses before wretch consumes the body
+  // during WretchError creation, allowing contract-based body parsing even for error responses.
+  let clonedErrorResponse: Response | undefined
+
+  const cloneErrorResponseMiddleware: ConfiguredMiddleware = (next) => async (url, opts) => {
+    const fetchResponse = await next(url, opts)
+    if (!fetchResponse.ok) {
+      clonedErrorResponse = fetchResponse.clone()
+    }
+    return fetchResponse
+  }
+
+  const wretchWithMiddleware = wretch.middlewares([cloneErrorResponseMiddleware])
 
   let response: Response
 
-  if (routeContract.method === 'get' || routeContract.method === 'delete') {
-    response = await wretch.url(fullPath).headers(resolvedHeaders).options({ signal })[routeContract.method](fullPath).res()
-  } else {
-    response = await wretch.url(fullPath).headers(resolvedHeaders).options({ signal })[routeContract.method](bodyString, fullPath).res()
+  try {
+    if (routeContract.method === 'get' || routeContract.method === 'delete') {
+      response = await wretchWithMiddleware.url(fullUrl).headers(resolvedHeaders).options({ signal })[routeContract.method]().res()
+    } else {
+      response = await wretchWithMiddleware.url(fullUrl).headers(resolvedHeaders).options({ signal })[routeContract.method](bodyString).res()
+    }
+  } catch (err) {
+    if (!clonedErrorResponse) {
+      throw new Error('Unable to retrieve response', { cause: err })
+    }
+    response = clonedErrorResponse
   }
 
   const responseSchemas = routeContract.responsesByStatusCode[response.status as HttpStatusCode]
@@ -204,9 +229,17 @@ export async function sendByApiContract<
   const body = await parseBody(response, resolvedEntry, validateResponse, signal)
   const headers = extractHeaders(response)
 
-  return {
-    result: { statusCode: response.status as HttpStatusCode, headers, body },
-    error: undefined,
+  const parsedResponse = {
+    statusCode: response.status,
+    headers,
+    body,
+  }
+
+  if (!mapHttpErrors && !response.ok) {
     // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TIsStreaming
-  } as any
+    return { error: parsedResponse } as any
+  }
+
+  // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TIsStreaming
+  return { result: parsedResponse } as any
 }

@@ -48,7 +48,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         {},
-        { requestLabel: 'test', validateResponse: true, throwOnError: true },
+        { requestLabel: 'test', validateResponse: true },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number; title: string } } | undefined>()
@@ -69,7 +69,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { pathParams: { productId: 1 } },
-        { requestLabel: 'test', throwOnError: true },
+        { requestLabel: 'test' },
       )
 
       expect(result.result).toMatchObject({ body: mockProduct1 })
@@ -92,7 +92,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { queryParams: { limit: 3 } },
-        { requestLabel: 'test', throwOnError: true },
+        { requestLabel: 'test' },
       )
 
       expect(result.result).toMatchObject({ body: [{ id: 1 }] })
@@ -115,7 +115,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { headers: { authorization: 'Bearer token' } },
-        { requestLabel: 'test', throwOnError: true },
+        { requestLabel: 'test' },
       )
 
       expect(result.result).toMatchObject({ body: mockProduct1 })
@@ -134,7 +134,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { pathPrefix: 'api' },
-        { requestLabel: 'test', throwOnError: true },
+        { requestLabel: 'test' },
       )
 
       expect(result.result).toMatchObject({ body: mockProduct1 })
@@ -154,7 +154,7 @@ describe('sendByApiContract', () => {
       ).rejects.toThrow()
     })
 
-    it('throws on error response when throwOnError is true', async () => {
+    it('returns error in Either.error when mapHttpErrors is true and response is non-2xx', async () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/products/1',
@@ -163,12 +163,18 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(500, { error: 'fail' }, JSON_HEADERS)
 
-      await expect(
-        sendByApiContract(client, contract, {}, { requestLabel: 'test', throwOnError: true }),
-      ).rejects.toMatchObject({ message: 'Response status code 500' })
+      const response = await sendByApiContract(
+        client,
+        contract,
+        {},
+        { requestLabel: 'test', mapHttpErrors: true },
+      )
+
+      expect(response.error).toBeDefined()
+      expect(response.result).toBeUndefined()
     })
 
-    it('returns typed error body when throwOnError is false and error status is in contract', async () => {
+    it('returns typed body for non-2xx response when status is in contract', async () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/products/1',
@@ -180,12 +186,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' }, JSON_HEADERS)
 
-      const response = await sendByApiContract(
-        client,
-        contract,
-        {},
-        { requestLabel: 'test', throwOnError: false },
-      )
+      const response = await sendByApiContract(client, contract, {}, { requestLabel: 'test' })
 
       expectTypeOf(response.result).toEqualTypeOf<
         | { statusCode: 200; body: { id: number }; headers: Record<string, string | string[] | undefined> }
@@ -195,7 +196,7 @@ describe('sendByApiContract', () => {
       expect(response.result).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
     })
 
-    it('returns raw error when throwOnError is false and error status is not in contract', async () => {
+    it('throws when status is not in contract', async () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/products/1',
@@ -206,15 +207,9 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(500, { error: 'fail' }, JSON_HEADERS)
 
-      const response = await sendByApiContract(
-        client,
-        contract,
-        {},
-        { requestLabel: 'test', throwOnError: false },
-      )
-
-      expect(response.error).toBeDefined()
-      expect(response.result).toBeUndefined()
+      await expect(
+        sendByApiContract(client, contract, {}, { requestLabel: 'test' }),
+      ).rejects.toThrow('Could not map response statusCode')
     })
   })
 
@@ -236,7 +231,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { body: { name: 'test' } },
-        { requestLabel: 'test', validateResponse: true, throwOnError: true },
+        { requestLabel: 'test', validateResponse: true, mapHttpErrors: false },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
@@ -258,7 +253,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { pathParams: { orgId: 'acme' }, body: { email: 'alice@example.com' } },
-        { requestLabel: 'test', throwOnError: true },
+        { requestLabel: 'test' },
       )
 
       expect(result.result).toMatchObject({ body: { id: '1' } })
@@ -281,7 +276,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { pathParams: { id: '1' }, body: { name: 'updated' } },
-        { requestLabel: 'test', throwOnError: true, validateResponse: true },
+        { requestLabel: 'test', mapHttpErrors: false, validateResponse: true },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
@@ -305,7 +300,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { pathParams: { id: '1' }, body: { name: 'patched' } },
-        { requestLabel: 'test', throwOnError: true, validateResponse: true },
+        { requestLabel: 'test', mapHttpErrors: false, validateResponse: true },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
@@ -469,7 +464,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         {},
-        { requestLabel: 'test', throwOnError: true },
+        { requestLabel: 'test' },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: string } | undefined>()
@@ -495,7 +490,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         {},
-        { requestLabel: 'test', throwOnError: true },
+        { requestLabel: 'test' },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: Blob } | undefined>()
