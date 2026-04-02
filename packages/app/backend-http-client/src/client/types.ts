@@ -40,17 +40,21 @@ export type RequestOptions<
   throwOnError?: DoThrowOnError
 }
 
-export type ContractRequestOptions<DoMapHttpErrors extends boolean = boolean> = {
+export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> = {
   reqContext?: HttpRequestContext
   requestLabel: string
   disableKeepAlive?: boolean
   retryConfig?: RetryConfig
+  /**
+   * When true (default), the response body is validated against the contract schema.
+   * When false, the body is returned as-is without validation.
+   */
   validateResponse?: boolean
   /**
-   * When true, non-success HTTP responses are mapped to Either.error.
-   * When false (default), all HTTP responses are returned in Either.result regardless of status code.
+   * When true (default), non-success HTTP responses are mapped to Either.error.
+   * When false, all HTTP responses are returned in Either.result regardless of status code.
    */
-  mapHttpErrors?: DoMapHttpErrors
+  captureAsError?: DoCaptureAsError
   signal?: AbortSignal
   /**
    * When true (default), throws if the response content-type doesn't match the contract entry.

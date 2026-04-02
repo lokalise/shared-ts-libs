@@ -50,9 +50,9 @@ type StreamingParam<T extends ResponsesByStatusCode, IsStreaming extends boolean
 type DefaultStreaming<T extends ResponsesByStatusCode> =
   ContractResponseMode<T> extends 'sse' ? true : false
 
-// mapHttpErrors: true → filter to success codes only; mapHttpErrors: false → all codes from contract
-type MapHttpErrorsFilter<T, DoMapHttpErrors extends boolean> =
-  DoMapHttpErrors extends true ? Extract<T, { statusCode: SuccessfulHttpStatusCode }> : T
+// captureAsError: true → filter to success codes only; captureAsError: false → all codes from contract
+type CaptureAsErrorFilter<T, DoCaptureAsError extends boolean> =
+  DoCaptureAsError extends true ? Extract<T, { statusCode: SuccessfulHttpStatusCode }> : T
 
 // fetch headers are simple string-to-string (no multi-value)
 type FetchHeaders = Record<string, string>
@@ -61,26 +61,38 @@ type Either<E, R> = { error: E; result: undefined } | { error: undefined; result
 
 type ReturnTypeForContract<
   T extends ResponsesByStatusCode,
-  IsStreaming extends boolean,
-  DoMapHttpErrors extends boolean,
+  TIsStreaming extends boolean,
+  TDoCaptureAsError extends boolean,
 > = Either<
   WretchError,
-  MapHttpErrorsFilter<
-    IsStreaming extends true
+  CaptureAsErrorFilter<
+    TIsStreaming extends true
       ? InferSseClientResponse<T, FetchHeaders>
       : InferNonSseClientResponse<T, FetchHeaders>,
-    DoMapHttpErrors
+    TDoCaptureAsError
   >
 >
 
-export type ContractRequestOptions<DoMapHttpErrors extends boolean = boolean> = {
+export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> = {
+  /**
+   * When true (default), the response body is validated against the contract schema.
+   * When false, the body is returned as-is without validation.
+   */
   validateResponse?: boolean
   /**
    * When true, non-success HTTP responses are mapped to Either.error.
    * When false (default), all HTTP responses are returned in Either.result regardless of status code.
    */
-  mapHttpErrors?: DoMapHttpErrors
+  captureAsError?: DoCaptureAsError
+  /**
+   * When true (default), throws if the response content-type doesn't match the contract entry.
+   * When false, falls back to the contract entry's kind when content-type is absent or mismatched —
+   * only applies to single-entry responses (not anyOfResponses).
+   */
   strictContentType?: boolean
+  /**
+   * An AbortSignal to cancel the request.
+   */
   signal?: AbortSignal
 }
 
@@ -145,7 +157,7 @@ async function parseBody(
 export async function sendByApiContract<
   TApiContract extends ApiContract,
   TIsStreaming extends boolean = DefaultStreaming<TApiContract['responsesByStatusCode']>,
-  TMapHttpErrors extends boolean = false,
+  TCaptureAsError extends boolean = true,
 >(
   wretch: WretchInstance,
   routeContract: TApiContract,
@@ -156,14 +168,14 @@ export async function sendByApiContract<
     InferSchemaInput<TApiContract['requestHeaderSchema']>
   > &
     StreamingParam<TApiContract['responsesByStatusCode'], TIsStreaming>,
-  options: ContractRequestOptions<TMapHttpErrors> = {} as ContractRequestOptions<TMapHttpErrors>,
-): Promise<ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TMapHttpErrors>> {
+  options: ContractRequestOptions<TCaptureAsError> = {} as ContractRequestOptions<TCaptureAsError>,
+): Promise<ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TCaptureAsError>> {
   const anyParams = params as AnyRequestParams
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
 
   const signal = options.signal ?? new AbortController().signal
-  const mapHttpErrors = options.mapHttpErrors ?? false
-  const validateResponse = options.validateResponse ?? false
+  const captureAsError = options.captureAsError ?? true
+  const validateResponse = options.validateResponse ?? true
   const strictContentType = options.strictContentType ?? true
 
   const resolvedHeaders: Record<string, string> = await resolveHeaders(anyParams.headers) ?? {}
@@ -194,15 +206,15 @@ export async function sendByApiContract<
     return fetchResponse
   }
 
-  const wretchWithMiddleware = wretch.middlewares([cloneErrorResponseMiddleware])
+  const wretchInstance = wretch.middlewares([cloneErrorResponseMiddleware]).url(fullUrl).headers(resolvedHeaders).options({ signal })
 
   let response: Response
 
   try {
     if (routeContract.method === 'get' || routeContract.method === 'delete') {
-      response = await wretchWithMiddleware.url(fullUrl).headers(resolvedHeaders).options({ signal })[routeContract.method]().res()
+      response = await wretchInstance[routeContract.method]().res()
     } else {
-      response = await wretchWithMiddleware.url(fullUrl).headers(resolvedHeaders).options({ signal })[routeContract.method](bodyString).res()
+      response = await wretchInstance[routeContract.method](bodyString).res()
     }
   } catch (err) {
     if (!clonedErrorResponse) {
@@ -235,7 +247,7 @@ export async function sendByApiContract<
     body,
   }
 
-  if (!mapHttpErrors && !response.ok) {
+  if (captureAsError && !response.ok) {
     // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TIsStreaming
     return { error: parsedResponse } as any
   }

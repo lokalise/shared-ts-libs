@@ -59,19 +59,19 @@ type StreamingParam<T extends ResponsesByStatusCode, IsStreaming extends boolean
 type DefaultStreaming<T extends ResponsesByStatusCode> =
   ContractResponseMode<T> extends 'sse' ? true : false
 
-// mapHttpErrors: true → filter to success codes only; mapHttpErrors: false → all codes
-type MapHttpErrorsFilter<T, DoMapHttpErrors extends boolean> =
-  DoMapHttpErrors extends true ? Extract<T, { statusCode: SuccessfulHttpStatusCode }> : T
+// captureAsError: true → filter to success codes only; captureAsError: false → all codes
+type CaptureAsErrorFilter<T, DoCaptureAsError extends boolean> =
+  DoCaptureAsError extends true ? Extract<T, { statusCode: SuccessfulHttpStatusCode }> : T
 
 type ReturnTypeForContract<
   T extends ResponsesByStatusCode,
   IsStreaming extends boolean,
-  DoMapHttpErrors extends boolean,
+  DoCaptureAsError extends boolean,
 > = Either<
   RequestResult<unknown> | InternalRequestError,
-  MapHttpErrorsFilter<
+  CaptureAsErrorFilter<
     IsStreaming extends true ? InferSseClientResponse<T> : InferNonSseClientResponse<T>,
-    DoMapHttpErrors
+    DoCaptureAsError
   >
 >
 
@@ -131,6 +131,7 @@ async function buildBaseRequest(
 
   return {
     ...DEFAULT_OPTIONS,
+    validateResponse: options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     path: buildRequestPath(routeContract.pathResolver(params.pathParams), params.pathPrefix),
     method: routeContract.method.toUpperCase(),
     body: params.body ? JSON.stringify(params.body) : undefined,
@@ -174,7 +175,7 @@ async function parseBody(
 export async function sendByApiContract<
   TApiContract extends ApiContract,
   TIsStreaming extends boolean = DefaultStreaming<TApiContract['responsesByStatusCode']>,
-  TMapHttpErrors extends boolean = false,
+  TCaptureAsError extends boolean = true,
 >(
   client: Client,
   routeContract: TApiContract,
@@ -185,11 +186,11 @@ export async function sendByApiContract<
     InferSchemaInput<TApiContract['requestHeaderSchema']>
   > &
     StreamingParam<TApiContract['responsesByStatusCode'], TIsStreaming>,
-  options: ContractRequestOptions<TMapHttpErrors>,
-): Promise<ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TMapHttpErrors>> {
+  options: ContractRequestOptions<TCaptureAsError>,
+): Promise<ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TCaptureAsError>> {
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
 
-  const mapHttpErrors = options.mapHttpErrors ?? false
+  const captureAsError = options.captureAsError ?? true
   const retryConfig = options.retryConfig ?? NO_RETRY_CONFIG
 
   const baseRequest = await buildBaseRequest(routeContract, params as AnyRequestParams, options)
@@ -209,13 +210,13 @@ export async function sendByApiContract<
       throw sendOutput.error
     }
 
-    if (mapHttpErrors) {
+    if (captureAsError) {
       // Non-2xx HTTP response mapped to Either.error
-      // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TMapHttpErrors
+      // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TCaptureAsError
       return { error: sendOutput.error, result: undefined } as any
     }
 
-    // mapHttpErrors: false — process non-2xx response through the contract
+    // captureAsError: false — process non-2xx response through the contract
     // Note: undici-retry eagerly parses the error body via resolveBody(), so it is
     // already a plain JS value (object/string), not a stream.
     return resolveAndReturnParsedResponse(
@@ -265,7 +266,7 @@ async function resolveAndParseResponse(
   } as any
 }
 
-// Used for non-2xx responses when mapHttpErrors: false.
+// Used for non-2xx responses when captureAsError: false.
 // undici-retry eagerly parses error bodies (JSON → object, otherwise → string),
 // so we cannot re-read the stream — instead we validate the pre-parsed value.
 function resolveAndReturnParsedResponse(

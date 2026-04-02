@@ -182,7 +182,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' }, JSON_HEADERS)
 
-      const response = await sendByApiContract(buildClient(), contract, {})
+      const response = await sendByApiContract(buildClient(), contract, {}, { captureAsError: false })
 
       expectTypeOf(response.result).toEqualTypeOf<
         | { statusCode: 200; body: { id: number }; headers: Record<string, string> }
@@ -192,7 +192,7 @@ describe('sendByApiContract', () => {
       expect(response.result).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
     })
 
-    it('returns error in Either.error when mapHttpErrors is true and response is non-2xx', async () => {
+    it('returns error in Either.error when captureAsError is true and response is non-2xx', async () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/products/1',
@@ -204,7 +204,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' }, JSON_HEADERS)
 
-      const response = await sendByApiContract(buildClient(), contract, {}, { mapHttpErrors: true })
+      const response = await sendByApiContract(buildClient(), contract, {}, { captureAsError: true })
 
       expectTypeOf(response.result).toEqualTypeOf<
         | { statusCode: 200; body: { id: number }; headers: Record<string, string> }
