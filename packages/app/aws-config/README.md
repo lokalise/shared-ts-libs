@@ -15,11 +15,36 @@ import { getAwsConfig } from '@lokalise/aws-config';
 const awsConfig = getAwsConfig();
 ```
 
-#### Using with envase
+#### Using with envase (nested config)
 
-For applications using the [envase](https://github.com/CatchMe2/envase) library for configuration management,
-use `getEnvaseAwsConfig()` to get schema and computed fragments that can be composed into your application's
-`createConfig()` call:
+For applications using [envase](https://github.com/CatchMe2/envase) that nest AWS config under a key like `aws`,
+pass `{ path: 'aws' }` so the computed resolvers access `fullParsedConfig.aws` instead of `fullParsedConfig`:
+
+```ts
+import { createConfig, envvar } from 'envase';
+import { z } from 'zod';
+import { getEnvaseAwsConfig } from '@lokalise/aws-config';
+
+const awsConfig = getEnvaseAwsConfig({ path: 'aws' });
+
+const config = createConfig(process.env, {
+  schema: {
+    aws: awsConfig.schema,
+    appName: envvar('APP_NAME', z.string()),
+  },
+  computed: {
+    aws: awsConfig.computed,
+  },
+});
+
+console.log(config.aws.region); // string
+console.log(config.aws.credentials); // AwsCredentialIdentity | Provider<AwsCredentialIdentity>
+console.log(config.appName); // string
+```
+
+#### Using with envase (flat config)
+
+When AWS fields don't need to be namespaced, omit `path` and spread the fragments at root level:
 
 ```ts
 import { createConfig, envvar } from 'envase';
@@ -28,47 +53,21 @@ import { getEnvaseAwsConfig } from '@lokalise/aws-config';
 
 const awsConfig = getEnvaseAwsConfig();
 
-// Spread fragments into your config (flat structure)
 const config = createConfig(process.env, {
   schema: {
     ...awsConfig.schema,
     appName: envvar('APP_NAME', z.string()),
-    port: envvar('PORT', z.coerce.number().default(3000)),
   },
   computed: {
     ...awsConfig.computed,
   },
 });
 
-// Access typed configuration
 console.log(config.region); // string
 console.log(config.credentials); // AwsCredentialIdentity | Provider<AwsCredentialIdentity>
-console.log(config.appName); // string
 ```
 
-##### Nested AWS Namespace
-
-When nesting AWS config under a namespace, wrap the computed resolver to access nested raw values:
-
-```ts
-const awsConfig = getEnvaseAwsConfig();
-
-const config = createConfig(process.env, {
-  schema: {
-    aws: awsConfig.schema,
-    appName: envvar('APP_NAME', z.string()),
-  },
-  computed: {
-    aws: {
-      credentials: (raw: { aws: { accessKeyId?: string; secretAccessKey?: string } }) =>
-        awsConfig.computed.credentials(raw.aws),
-    },
-  },
-});
-
-console.log(config.aws.region); // string
-console.log(config.aws.credentials); // resolved credentials
-```
+#### Schema validation
 
 The schema includes Zod validation with:
 - Required `region` field (must be non-empty string)
@@ -78,7 +77,7 @@ The schema includes Zod validation with:
 - Optional `resourcePrefix` with max length validation (10 characters)
 - Optional `accessKeyId` and `secretAccessKey` fields for credential resolution
 
-##### Credentials Resolution
+#### Credentials resolution
 
 The `computed.credentials` resolver handles credential resolution:
 - If both `accessKeyId` and `secretAccessKey` are present: returns static credentials

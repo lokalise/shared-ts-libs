@@ -165,7 +165,7 @@ describe('envaseAwsConfig', () => {
       testResetAwsConfig()
     })
 
-    it('works with nested aws namespace using wrapped computed', () => {
+    it('works with nested aws namespace using path option', () => {
       const env = {
         AWS_REGION: DEFAULT_REGION,
         AWS_ACCESS_KEY_ID: 'access-key-id',
@@ -173,19 +173,15 @@ describe('envaseAwsConfig', () => {
         APP_NAME: 'my-app',
       }
 
-      const awsConfig = getEnvaseAwsConfig()
+      const awsConfig = getEnvaseAwsConfig({ path: 'aws' })
 
-      // When nesting, wrap the computed to access nested raw values
       const config = createConfig(env, {
         schema: {
           aws: awsConfig.schema,
           appName: envvar('APP_NAME', z.string()),
         },
         computed: {
-          aws: {
-            credentials: (raw: { aws: { accessKeyId?: string; secretAccessKey?: string } }) =>
-              awsConfig.computed.credentials(raw.aws),
-          },
+          aws: awsConfig.computed,
         },
       })
 
