@@ -1,8 +1,11 @@
 import type { z } from 'zod/v4'
+import type { InferSchemaInput } from '../apiContracts.ts'
 import type { HttpStatusCode, SuccessfulHttpStatusCode } from '../HttpStatusCodes.ts'
+import type { Prettify } from '../typeUtils.ts'
 import type { ContractNoBody } from './constants.ts'
 import type { ResponsesByStatusCode, SseSchemaByEventName } from './contractResponse.ts'
-import type { SseEventOf } from './inferTypes.ts'
+import type { ApiContract } from './defineApiContract.ts'
+import type { ContractResponseMode, SseEventOf } from './inferTypes.ts'
 
 /**
  * Maps a single responsesByStatusCode entry value to its TypeScript body type.
@@ -70,3 +73,37 @@ export type InferNonSseClientResponse<
       : InferResponseBody<NonNullable<T[K]>>
   }
 }[keyof T & HttpStatusCode]
+
+export type CondKey<T, TKey extends string, TExtra = T> = [T] extends [undefined]
+  ? { [K in TKey]?: undefined }
+  : { [K in TKey]: TExtra }
+
+export type HeadersParam<T> = T | (() => T) | (() => Promise<T>)
+
+type ExtractRequestBody<T> = T extends { requestBodySchema: z.ZodType }
+  ? T['requestBodySchema']
+  : undefined
+
+// streaming param: required for dual-mode, forbidden otherwise
+type StreamingParam<T extends ResponsesByStatusCode, TIsStreaming extends boolean> =
+  ContractResponseMode<T> extends 'dual' ? { streaming: TIsStreaming } : { streaming?: never }
+
+// SSE-only contracts default IsStreaming to true; everything else to false
+export type DefaultStreaming<T extends ResponsesByStatusCode> =
+    ContractResponseMode<T> extends 'sse' ? true : false
+
+export type ClientRequestParams<
+  TApiContract extends ApiContract,
+  TIsStreaming extends boolean,
+> = Prettify<
+  StreamingParam<TApiContract['responsesByStatusCode'], TIsStreaming> &
+  CondKey<InferSchemaInput<TApiContract['requestPathParamsSchema']>, 'pathParams'> &
+  CondKey<InferSchemaInput<ExtractRequestBody<TApiContract>>, 'body'> &
+  CondKey<InferSchemaInput<TApiContract['requestQuerySchema']>, 'queryParams'> &
+  CondKey<
+    InferSchemaInput<TApiContract['requestHeaderSchema']>,
+    'headers',
+    HeadersParam<InferSchemaInput<TApiContract['requestHeaderSchema']>>
+  > &
+  { pathPrefix?: string }
+>

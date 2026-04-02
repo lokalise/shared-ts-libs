@@ -2,12 +2,12 @@ import type { Readable } from 'node:stream'
 import {
   type ApiContract,
   buildRequestPath,
-  type ContractResponseMode,
+  type DefaultStreaming,
   type HttpStatusCode,
   hasAnySuccessSseResponse,
   type InferNonSseClientResponse,
-  type InferSchemaInput,
   type InferSseClientResponse,
+  type ClientRequestParams,
   type ResponseKind,
   type ResponsesByStatusCode,
   resolveContractResponse,
@@ -23,41 +23,11 @@ import {
   type RequestResult,
   sendWithRetryReturnStream,
 } from 'undici-retry'
-import type { z } from 'zod/v4'
 import { DEFAULT_OPTIONS } from './constants.ts'
 import type { ContractRequestOptions } from './types.ts'
 
-type Prettify<T> = {
-  [K in keyof T]: T[K]
-} & {}
-
-type CondKey<T, TKey extends string, TExtra = T> = [T] extends [undefined]
-  ? { [K in TKey]?: undefined }
-  : { [K in TKey]: TExtra }
-
-type HedersParam<T> = T | (() => T) | (() => Promise<T>)
-
-type RequestParams<TPathParams, TBody, TQueryParams, THeaders> = Prettify<
-  { pathPrefix?: string } & CondKey<TPathParams, 'pathParams'> &
-    CondKey<TBody, 'body'> &
-    CondKey<TQueryParams, 'queryParams'> &
-    CondKey<THeaders, 'headers', HedersParam<THeaders>>
->
-
 // biome-ignore lint/suspicious/noExplicitAny: we accept any request params here
-type AnyRequestParams = RequestParams<any, any, any, any>
-
-type ExtractRequestBody<T> = T extends { requestBodySchema: z.ZodType }
-  ? T['requestBodySchema']
-  : undefined
-
-// streaming param: required for dual-mode, forbidden otherwise
-type StreamingParam<T extends ResponsesByStatusCode, TIsStreaming extends boolean> =
-  ContractResponseMode<T> extends 'dual' ? { streaming: TIsStreaming } : { streaming?: never }
-
-// SSE-only contracts default IsStreaming to true; everything else to false
-type DefaultStreaming<T extends ResponsesByStatusCode> =
-  ContractResponseMode<T> extends 'sse' ? true : false
+type AnyClientRequestParams = ClientRequestParams<any, any, any, any>
 
 type ReturnTypeForContract<T extends ResponsesByStatusCode, TIsStreaming extends boolean> = Either<
   RequestResult<unknown> | InternalRequestError,
@@ -107,13 +77,13 @@ async function* parseSseStream(
   }
 }
 
-const resolveHeaders = <T>(headers: HedersParam<T>): T | Promise<T> => {
+const resolveHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> => {
   return typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
 }
 
 async function buildBaseRequest(
   routeContract: ApiContract,
-  params: AnyRequestParams,
+  params: AnyClientRequestParams,
   options: ContractRequestOptions,
 ) {
   const resolvedHeaders = (await resolveHeaders(params.headers)) ?? {}
@@ -167,20 +137,14 @@ export async function sendByApiContract<
 >(
   client: Client,
   routeContract: TApiContract,
-  params: RequestParams<
-    InferSchemaInput<TApiContract['requestPathParamsSchema']>,
-    InferSchemaInput<ExtractRequestBody<TApiContract>>,
-    InferSchemaInput<TApiContract['requestQuerySchema']>,
-    InferSchemaInput<TApiContract['requestHeaderSchema']>
-  > &
-    StreamingParam<TApiContract['responsesByStatusCode'], TIsStreaming>,
+  params: ClientRequestParams<TApiContract, TIsStreaming>,
   options: ContractRequestOptions,
 ): Promise<ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming>> {
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
 
   const retryConfig = options.retryConfig ?? NO_RETRY_CONFIG
 
-  const baseRequest = await buildBaseRequest(routeContract, params as AnyRequestParams, options)
+  const baseRequest = await buildBaseRequest(routeContract, params as AnyClientRequestParams, options)
 
   const request = useStreaming
     ? { ...baseRequest, headers: { ...baseRequest.headers, accept: 'text/event-stream' } }

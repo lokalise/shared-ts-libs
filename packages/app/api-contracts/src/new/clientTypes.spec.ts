@@ -1,6 +1,11 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import type { InferNonSseClientResponse, InferSseClientResponse } from './clientTypes.ts'
+import type {
+  ClientRequestParams,
+  HeadersParam,
+  InferNonSseClientResponse,
+  InferSseClientResponse,
+} from './clientTypes.ts'
 import { ContractNoBody } from './constants.ts'
 import { anyOfResponses, blobResponse, sseResponse, textResponse } from './contractResponse.ts'
 import { defineApiContract } from './defineApiContract.ts'
@@ -81,6 +86,140 @@ describe('clientTypes', () => {
         headers: Record<string, string>
         body: AsyncIterable<{ event: 'tick'; data: { count: number } }>
       }>()
+    })
+  })
+
+  describe('ClientRequestParams', () => {
+    it('has no required fields for a minimal contract', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/ping',
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+      expectTypeOf<ClientRequestParams<typeof contract, false>>().toEqualTypeOf<{
+        streaming?: never
+        pathParams?: undefined
+        body?: undefined
+        queryParams?: undefined
+        headers?: undefined
+        pathPrefix?: string
+      }>()
+    })
+
+    it('requires pathParams when requestPathParamsSchema is defined', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        requestPathParamsSchema: z.object({ id: z.string() }),
+        pathResolver: ({ id }) => `/products/${id}`,
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+      expectTypeOf<ClientRequestParams<typeof contract, false>>().toEqualTypeOf<{
+        streaming?: never
+        pathParams: { id: string }
+        body?: undefined
+        queryParams?: undefined
+        headers?: undefined
+        pathPrefix?: string
+      }>()
+    })
+
+    it('requires body when requestBodySchema is defined', () => {
+      const contract = defineApiContract({
+        method: 'post',
+        pathResolver: () => '/products',
+        requestBodySchema: z.object({ name: z.string() }),
+        responsesByStatusCode: { 201: z.unknown() },
+      })
+      expectTypeOf<ClientRequestParams<typeof contract, false>>().toEqualTypeOf<{
+        streaming?: never
+        pathParams?: undefined
+        body: { name: string }
+        queryParams?: undefined
+        headers?: undefined
+        pathPrefix?: string
+      }>()
+    })
+
+    it('requires queryParams when requestQuerySchema is defined', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products',
+        requestQuerySchema: z.object({ limit: z.number() }),
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+      expectTypeOf<ClientRequestParams<typeof contract, false>>().toEqualTypeOf<{
+        streaming?: never
+        pathParams?: undefined
+        body?: undefined
+        queryParams: { limit: number }
+        headers?: undefined
+        pathPrefix?: string
+      }>()
+    })
+
+    it('requires headers when requestHeaderSchema is defined, accepting plain object or function', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products',
+        requestHeaderSchema: z.object({ authorization: z.string() }),
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+      expectTypeOf<ClientRequestParams<typeof contract, false>>().toEqualTypeOf<{
+        streaming?: never
+        pathParams?: undefined
+        body?: undefined
+        queryParams?: undefined
+        headers: HeadersParam<{ authorization: string }>
+        pathPrefix?: string
+      }>()
+    })
+
+    it('pathPrefix is always optional', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products',
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+      expectTypeOf<ClientRequestParams<typeof contract, false>['pathPrefix']>().toEqualTypeOf<
+        string | undefined
+      >()
+    })
+
+    it('forbids streaming field for non-SSE contracts', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products',
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+      expectTypeOf<ClientRequestParams<typeof contract, false>['streaming']>().toEqualTypeOf<
+        never | undefined
+      >()
+    })
+
+    it('forbids streaming field for SSE-only contracts', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/events',
+        responsesByStatusCode: { 200: sseResponse({ update: z.object({ id: z.string() }) }) },
+      })
+      expectTypeOf<ClientRequestParams<typeof contract, true>['streaming']>().toEqualTypeOf<
+        never | undefined
+      >()
+    })
+
+    it('requires streaming: true for dual-mode contracts with TIsStreaming=true', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/feed',
+        responsesByStatusCode: {
+          200: anyOfResponses([
+            sseResponse({ update: z.object({ id: z.string() }) }),
+            z.object({ latest: z.string() }),
+          ]),
+        },
+      })
+      expectTypeOf<ClientRequestParams<typeof contract, true>['streaming']>().toEqualTypeOf<true>()
+      expectTypeOf<ClientRequestParams<typeof contract, false>['streaming']>().toEqualTypeOf<false>()
     })
   })
 

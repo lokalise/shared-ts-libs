@@ -1,12 +1,12 @@
 import {
   type ApiContract,
   buildRequestPath,
-  type ContractResponseMode,
+  type DefaultStreaming,
   type HttpStatusCode,
   hasAnySuccessSseResponse,
   type InferNonSseClientResponse,
-  type InferSchemaInput,
   type InferSseClientResponse,
+  type ClientRequestParams,
   type ResponseKind,
   type ResponsesByStatusCode,
   resolveContractResponse,
@@ -15,41 +15,11 @@ import {
 } from '@lokalise/api-contracts'
 import { stringify } from 'fast-querystring'
 import type { ConfiguredMiddleware, WretchError } from 'wretch'
-import type { z } from 'zod/v4'
 import type { WretchInstance } from './types.ts'
 import { parseSseStream } from './utils/sseUtils.ts'
 
-type Prettify<T> = {
-  [K in keyof T]: T[K]
-} & {}
-
-type CondKey<T, TKey extends string, TExtra = T> = [T] extends [undefined]
-  ? { [K in TKey]?: undefined }
-  : { [K in TKey]: TExtra }
-
-type HeadersParam<T> = T | (() => T) | (() => Promise<T>)
-
-type RequestParams<TPathParams, TBody, TQueryParams, THeaders> = Prettify<
-  { pathPrefix?: string } & CondKey<TPathParams, 'pathParams'> &
-    CondKey<TBody, 'body'> &
-    CondKey<TQueryParams, 'queryParams'> &
-    CondKey<THeaders, 'headers', HeadersParam<THeaders>>
->
-
 // biome-ignore lint/suspicious/noExplicitAny: we accept any request params here
-type AnyRequestParams = RequestParams<any, any, any, any>
-
-type ExtractRequestBody<T> = T extends { requestBodySchema: z.ZodType }
-  ? T['requestBodySchema']
-  : undefined
-
-// streaming param: required for dual-mode, forbidden otherwise
-type StreamingParam<T extends ResponsesByStatusCode, TIsStreaming extends boolean> =
-  ContractResponseMode<T> extends 'dual' ? { streaming: TIsStreaming } : { streaming?: never }
-
-// SSE-only contracts default IsStreaming to true; everything else to false
-type DefaultStreaming<T extends ResponsesByStatusCode> =
-  ContractResponseMode<T> extends 'sse' ? true : false
+type AnyClientRequestParams = ClientRequestParams<any, any, any, any>
 
 // captureAsError: true → filter to success codes only; captureAsError: false → all codes from contract
 type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> = TDoCaptureAsError extends true
@@ -164,18 +134,12 @@ export async function sendByApiContract<
 >(
   wretch: WretchInstance,
   routeContract: TApiContract,
-  params: RequestParams<
-    InferSchemaInput<TApiContract['requestPathParamsSchema']>,
-    InferSchemaInput<ExtractRequestBody<TApiContract>>,
-    InferSchemaInput<TApiContract['requestQuerySchema']>,
-    InferSchemaInput<TApiContract['requestHeaderSchema']>
-  > &
-    StreamingParam<TApiContract['responsesByStatusCode'], TIsStreaming>,
+  params: ClientRequestParams<TApiContract, TIsStreaming>,
   options: ContractRequestOptions<TCaptureAsError> = {} as ContractRequestOptions<TCaptureAsError>,
 ): Promise<
   ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TCaptureAsError>
 > {
-  const anyParams = params as AnyRequestParams
+  const anyParams = params as AnyClientRequestParams
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
 
   const signal = options.signal ?? new AbortController().signal
