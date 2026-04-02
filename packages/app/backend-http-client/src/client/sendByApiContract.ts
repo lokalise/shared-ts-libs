@@ -12,7 +12,6 @@ import {
   type ResponsesByStatusCode,
   resolveContractResponse,
   type SseSchemaByEventName,
-  type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
 import { copyWithoutUndefined } from '@lokalise/node-core'
 import type { Client, Dispatcher } from 'undici'
@@ -60,21 +59,9 @@ type StreamingParam<T extends ResponsesByStatusCode, TIsStreaming extends boolea
 type DefaultStreaming<T extends ResponsesByStatusCode> =
   ContractResponseMode<T> extends 'sse' ? true : false
 
-// captureAsError: true → filter to success codes only; captureAsError: false → all codes
-type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> = TDoCaptureAsError extends true
-  ? Extract<T, { statusCode: SuccessfulHttpStatusCode }>
-  : T
-
-type ReturnTypeForContract<
-  T extends ResponsesByStatusCode,
-  TIsStreaming extends boolean,
-  TDoCaptureAsError extends boolean,
-> = Either<
+type ReturnTypeForContract<T extends ResponsesByStatusCode, TIsStreaming extends boolean> = Either<
   RequestResult<unknown> | InternalRequestError,
-  CaptureAsErrorFilter<
-    TIsStreaming extends true ? InferSseClientResponse<T> : InferNonSseClientResponse<T>,
-    TDoCaptureAsError
-  >
+  TIsStreaming extends true ? InferSseClientResponse<T> : InferNonSseClientResponse<T>
 >
 
 function parseSseBlock(block: string, schemaByEventName: SseSchemaByEventName) {
@@ -127,7 +114,7 @@ const resolveHeaders = <T>(headers: HedersParam<T>): T | Promise<T> => {
 async function buildBaseRequest(
   routeContract: ApiContract,
   params: AnyRequestParams,
-  options: ContractRequestOptions<boolean>,
+  options: ContractRequestOptions,
 ) {
   const resolvedHeaders = (await resolveHeaders(params.headers)) ?? {}
 
@@ -177,7 +164,6 @@ async function parseBody(
 export async function sendByApiContract<
   TApiContract extends ApiContract,
   TIsStreaming extends boolean = DefaultStreaming<TApiContract['responsesByStatusCode']>,
-  TCaptureAsError extends boolean = true,
 >(
   client: Client,
   routeContract: TApiContract,
@@ -188,13 +174,10 @@ export async function sendByApiContract<
     InferSchemaInput<TApiContract['requestHeaderSchema']>
   > &
     StreamingParam<TApiContract['responsesByStatusCode'], TIsStreaming>,
-  options: ContractRequestOptions<TCaptureAsError>,
-): Promise<
-  ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TCaptureAsError>
-> {
+  options: ContractRequestOptions,
+): Promise<ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming>> {
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
 
-  const captureAsError = options.captureAsError ?? true
   const retryConfig = options.retryConfig ?? NO_RETRY_CONFIG
 
   const baseRequest = await buildBaseRequest(routeContract, params as AnyRequestParams, options)
@@ -210,25 +193,12 @@ export async function sendByApiContract<
 
   if (sendOutput.error) {
     if (!isRequestResult(sendOutput.error)) {
-      // Internal/network error — always throw
       throw sendOutput.error
     }
 
-    if (captureAsError) {
-      // Non-2xx HTTP response mapped to Either.error
-      // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TCaptureAsError
-      return { error: sendOutput.error, result: undefined } as any
-    }
-
-    // captureAsError: false — process non-2xx response through the contract
-    // Note: undici-retry eagerly parses the error body via resolveBody(), so it is
-    // already a plain JS value (object/string), not a stream.
-    return resolveAndReturnParsedResponse(
-      sendOutput.error,
-      routeContract,
-      request.validateResponse,
-      options.strictContentType ?? true,
-    )
+    // Non-2xx HTTP response mapped to Either.error
+    // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TIsStreaming
+    return { error: sendOutput.error, result: undefined } as any
   }
 
   return resolveAndParseResponse(
@@ -263,43 +233,6 @@ async function resolveAndParseResponse(
   }
 
   const body = await parseBody(result, resolvedEntry, validateResponse)
-
-  return {
-    result: { body, statusCode: result.statusCode, headers: result.headers },
-    // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from IsStreaming
-  } as any
-}
-
-// Used for non-2xx responses when captureAsError: false.
-// undici-retry eagerly parses error bodies (JSON → object, otherwise → string),
-// so we cannot re-read the stream — instead we validate the pre-parsed value.
-function resolveAndReturnParsedResponse(
-  result: RequestResult<unknown>,
-  routeContract: ApiContract,
-  validateResponse: boolean,
-  strictContentType: boolean,
-) {
-  const responseSchemas = routeContract.responsesByStatusCode[result.statusCode as HttpStatusCode]
-
-  if (!responseSchemas) {
-    throw new Error('Could not map response statusCode')
-  }
-
-  const rawContentType = result.headers['content-type']
-  const contentType = Array.isArray(rawContentType) ? rawContentType[0] : rawContentType
-
-  const resolvedEntry = resolveContractResponse(responseSchemas, contentType, strictContentType)
-
-  if (!resolvedEntry) {
-    throw new Error(`Could not resolve response contentType "${contentType}"`)
-  }
-
-  const body =
-    resolvedEntry.kind === 'noContent'
-      ? null
-      : resolvedEntry.kind === 'json' && validateResponse
-        ? resolvedEntry.schema.parse(result.body)
-        : result.body
 
   return {
     result: { body, statusCode: result.statusCode, headers: result.headers },

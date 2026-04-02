@@ -166,41 +166,6 @@ describe('sendByApiContract', () => {
       expect(response.result).toBeUndefined()
     })
 
-    it('returns typed body for non-2xx response when status is in contract', async () => {
-      const contract = defineApiContract({
-        method: 'get',
-        pathResolver: () => '/products/1',
-        responsesByStatusCode: {
-          200: z.object({ id: z.number() }),
-          404: z.object({ message: z.string() }),
-        },
-      })
-
-      await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' }, JSON_HEADERS)
-
-      const response = await sendByApiContract(
-        client,
-        contract,
-        {},
-        { requestLabel: 'test', captureAsError: false },
-      )
-
-      expectTypeOf(response.result).toEqualTypeOf<
-        | {
-            statusCode: 200
-            body: { id: number }
-            headers: Record<string, string | string[] | undefined>
-          }
-        | {
-            statusCode: 404
-            body: { message: string }
-            headers: Record<string, string | string[] | undefined>
-          }
-        | undefined
-      >()
-      expect(response.result).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
-    })
-
     it('returns error in Either.error when status is not in contract', async () => {
       const contract = defineApiContract({
         method: 'get',
@@ -282,7 +247,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { pathParams: { id: '1' }, body: { name: 'updated' } },
-        { requestLabel: 'test', captureAsError: false },
+        { requestLabel: 'test' },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
@@ -306,7 +271,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { pathParams: { id: '1' }, body: { name: 'patched' } },
-        { requestLabel: 'test', captureAsError: false },
+        { requestLabel: 'test' },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
