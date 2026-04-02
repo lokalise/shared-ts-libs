@@ -32,17 +32,17 @@ type Prettify<T> = {
   [K in keyof T]: T[K]
 } & {}
 
-type CondKey<T, Key extends string, Extra = T> = [T] extends [undefined]
-  ? { [K in Key]?: undefined }
-  : { [K in Key]: Extra }
+type CondKey<T, TKey extends string, TExtra = T> = [T] extends [undefined]
+  ? { [K in TKey]?: undefined }
+  : { [K in TKey]: TExtra }
 
 type HedersParam<T> = T | (() => T) | (() => Promise<T>)
 
-type RequestParams<PathParams, Body, QueryParams, Headers> = Prettify<
-  { pathPrefix?: string } & CondKey<PathParams, 'pathParams'> &
-    CondKey<Body, 'body'> &
-    CondKey<QueryParams, 'queryParams'> &
-    CondKey<Headers, 'headers', HedersParam<Headers>>
+type RequestParams<TPathParams, TBody, TQueryParams, THeaders> = Prettify<
+  { pathPrefix?: string } & CondKey<TPathParams, 'pathParams'> &
+    CondKey<TBody, 'body'> &
+    CondKey<TQueryParams, 'queryParams'> &
+    CondKey<THeaders, 'headers', HedersParam<THeaders>>
 >
 
 type AnyRequestParams = RequestParams<any, any, any, any>
@@ -52,26 +52,26 @@ type ExtractRequestBody<T> = T extends { requestBodySchema: z.ZodType }
   : undefined
 
 // streaming param: required for dual-mode, forbidden otherwise
-type StreamingParam<T extends ResponsesByStatusCode, IsStreaming extends boolean> =
-  ContractResponseMode<T> extends 'dual' ? { streaming: IsStreaming } : { streaming?: never }
+type StreamingParam<T extends ResponsesByStatusCode, TIsStreaming extends boolean> =
+  ContractResponseMode<T> extends 'dual' ? { streaming: TIsStreaming } : { streaming?: never }
 
 // SSE-only contracts default IsStreaming to true; everything else to false
 type DefaultStreaming<T extends ResponsesByStatusCode> =
   ContractResponseMode<T> extends 'sse' ? true : false
 
 // captureAsError: true → filter to success codes only; captureAsError: false → all codes
-type CaptureAsErrorFilter<T, DoCaptureAsError extends boolean> =
-  DoCaptureAsError extends true ? Extract<T, { statusCode: SuccessfulHttpStatusCode }> : T
+type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> =
+  TDoCaptureAsError extends true ? Extract<T, { statusCode: SuccessfulHttpStatusCode }> : T
 
 type ReturnTypeForContract<
   T extends ResponsesByStatusCode,
-  IsStreaming extends boolean,
-  DoCaptureAsError extends boolean,
+  TIsStreaming extends boolean,
+  TDoCaptureAsError extends boolean,
 > = Either<
   RequestResult<unknown> | InternalRequestError,
   CaptureAsErrorFilter<
-    IsStreaming extends true ? InferSseClientResponse<T> : InferNonSseClientResponse<T>,
-    DoCaptureAsError
+    TIsStreaming extends true ? InferSseClientResponse<T> : InferNonSseClientResponse<T>,
+    TDoCaptureAsError
   >
 >
 
