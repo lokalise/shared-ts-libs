@@ -14,7 +14,7 @@ function sendByApiContract<
   routeContract: TApiContract,
   params: RequestParams<...> & StreamingParam<...>,
   options?: ContractRequestOptions<TCaptureAsError>,
-): Promise<Either<WretchError, ...>>
+): Promise<Either<unknown, ...>>
 ```
 
 ## Parameters
@@ -64,15 +64,17 @@ All fields are optional. Defaults are shown.
 |---|---|---|
 | `validateResponse` | `true` | When `true`, parses the response body through the contract's Zod schema and throws on mismatch. When `false`, returns the raw parsed value. |
 | `captureAsError` | `true` | When `true`, non-2xx responses are placed in `Either.error`. When `false`, all HTTP responses whose status code is listed in the contract are placed in `Either.result`. |
-| `strictContentType` | `true` | When `true`, throws if the response `content-type` doesn't match the contract entry. When `false`, falls back to the contract entry's kind (only applies to single-entry responses, not `anyOfResponses`). |
-| `signal` | new `AbortController().signal` | An `AbortSignal` to cancel the request mid-flight. |
+| `strictContentType` | `true` | When `true`, returns an error if the response `content-type` doesn't match the contract entry. When `false`, falls back to the contract entry's kind (only applies to single-entry responses, not `anyOfResponses`). |
+| `signal` | `undefined` | Optional `AbortSignal` to cancel the request mid-flight. |
 
 ## Return value
 
-Returns `Promise<Either<WretchError, ResponseObject>>` where `Either` is:
+Returns `Promise<Either<unknown, ResponseObject>>` where `Either` is:
 
 ```ts
-type Either<E, R> = { error: E; result: undefined } | { error: undefined; result: R }
+type Either<E, R> =
+  | { error: E; result?: never }
+  | { error?: never; result: R }
 ```
 
 `result` (when defined) has the shape:
@@ -80,7 +82,7 @@ type Either<E, R> = { error: E; result: undefined } | { error: undefined; result
 ```ts
 {
   statusCode: number
-  headers: Record<string, string>
+  headers: <inferred from contract> & Record<string, string | undefined>
   body: <inferred from contract>
 }
 ```
