@@ -11,39 +11,86 @@ import {
   type ResponseKind,
   resolveContractResponse,
   type SseSchemaByEventName,
+  type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
-import { copyWithoutUndefined } from '@lokalise/node-core'
 import { type Client, type Dispatcher, interceptors, type RetryHandler } from 'undici'
 import type { RetryConfig } from 'undici-retry'
 import type { HttpRequestContext } from './types.ts'
 
-export type ContractRequestOptions = {
-  reqContext?: HttpRequestContext
+// captureAsError: true → filter to success codes only; captureAsError: false → all codes from contract
+type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> = TDoCaptureAsError extends true
+  ? Extract<T, { statusCode: SuccessfulHttpStatusCode }>
+  : T
+
+export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> = {
   requestLabel: string
+  reqContext?: HttpRequestContext
   disableKeepAlive?: boolean
   retryConfig?: RetryConfig
+  signal?: AbortSignal
   /**
    * When true (default), the response body is validated against the contract schema.
    * When false, the body is returned as-is without validation.
    */
   validateResponse?: boolean
-  signal?: AbortSignal
   /**
    * When true (default), throws if the response content-type doesn't match the contract entry.
    * When false, falls back to the contract entry's kind when content-type is absent or mismatched —
    * only applies to single-entry responses (not anyOfResponses).
    */
   strictContentType?: boolean
+  /**
+   * When true (default), non-success HTTP responses are mapped to Either.error.
+   * When false, all HTTP responses defined in the contract are returned in Either.result regardless of status code.
+   */
+  captureAsError?: DoCaptureAsError
 }
 
-type Either<TError, TResult> = { error: TError; result?: never } | { error?: never; result: TResult }
+type Either<TError, TResult> =
+  | { error: TError; result?: never }
+  | { error?: never; result: TResult }
 
-type ReturnTypeForContract<TApiContract extends ApiContract, TIsStreaming extends boolean> = Either<
+type ReturnTypeForContract<
+  TApiContract extends ApiContract,
+  TIsStreaming extends boolean,
+  TDoCaptureAsError extends boolean,
+> = Either<
   unknown,
-  TIsStreaming extends true
-    ? InferSseClientResponse<TApiContract>
-    : InferNonSseClientResponse<TApiContract>
+  CaptureAsErrorFilter<
+    TIsStreaming extends true
+      ? InferSseClientResponse<TApiContract>
+      : InferNonSseClientResponse<TApiContract>,
+    TDoCaptureAsError
+  >
 >
+
+function toUndiciRetryOptions(config: RetryConfig): RetryHandler.RetryOptions {
+  return {
+    throwOnError: false,
+    maxRetries: config.maxAttempts - 1,
+    statusCodes: config.statusCodesToRetry ? [...config.statusCodesToRetry] : undefined,
+    errorCodes: config.retryOnTimeout
+      ? ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'ENOTFOUND', 'ENETUNREACH', 'EAI_AGAIN']
+      : undefined,
+    retry: config.delayResolver
+      ? (err, { state }, callback) => {
+          const stub = {
+            statusCode: ('statusCode' in err && err.statusCode) ?? 500,
+            headers: ('headers' in err && err.headers) ?? {},
+          } as Dispatcher.ResponseData
+          const delay = config.delayResolver?.(stub, state.counter, config.statusCodesToRetry ?? [])
+
+          if (!delay || delay === -1) {
+            callback(err)
+          } else {
+            setTimeout(() => {
+              callback(null)
+            }, delay)
+          }
+        }
+      : undefined,
+  }
+}
 
 function parseSseBlock(block: string, schemaByEventName: SseSchemaByEventName) {
   let event = 'message'
@@ -88,34 +135,6 @@ async function* parseSseStream(
   }
 }
 
-function toUndiciRetryOptions(config: RetryConfig): RetryHandler.RetryOptions {
-  return {
-    throwOnError: false,
-    maxRetries: config.maxAttempts - 1,
-    statusCodes: config.statusCodesToRetry ? [...config.statusCodesToRetry] : undefined,
-    errorCodes: config.retryOnTimeout
-      ? ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'ENOTFOUND', 'ENETUNREACH', 'EAI_AGAIN']
-      : undefined,
-    retry: config.delayResolver
-      ? (err, { state }, callback) => {
-          const stub = {
-            statusCode: ('statusCode' in err && err.statusCode) ?? 500,
-            headers: ('headers' in err && err.headers) ?? {},
-          } as Dispatcher.ResponseData
-          const delay = config.delayResolver!(stub, state.counter, config.statusCodesToRetry ?? [])
-
-          if (!delay || delay === -1) {
-            callback(err)
-          } else {
-            setTimeout(() => {
-              callback(null)
-            }, delay)
-          }
-        }
-      : undefined,
-  }
-}
-
 const resolveHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> => {
   return typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
 }
@@ -146,21 +165,34 @@ async function parseBody(
   }
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it is acceptable
 export async function sendByApiContract<
   TApiContract extends ApiContract,
   TIsStreaming extends boolean = DefaultStreaming<TApiContract['responsesByStatusCode']>,
+  TCaptureAsError extends boolean = true,
 >(
   client: Client,
-  routeContract: TApiContract,
+  apiContract: TApiContract,
   params: ClientRequestParams<TApiContract, TIsStreaming>,
-  options: ContractRequestOptions,
-): Promise<ReturnTypeForContract<TApiContract, TIsStreaming>> {
-  const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
+  options: ContractRequestOptions<TCaptureAsError>,
+): Promise<ReturnTypeForContract<TApiContract, TIsStreaming, TCaptureAsError>> {
+  const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(apiContract)
 
   const validateResponse = options.validateResponse ?? true
   const strictContentType = options.strictContentType ?? true
+  const captureAsError = options.captureAsError ?? true
 
-  const resolvedHeaders = (await resolveHeaders(params.headers)) ?? {}
+  const resolvedHeaders: Record<string, string> = (await resolveHeaders(params.headers)) ?? {}
+
+  if (options.reqContext) {
+    resolvedHeaders['x-request-id'] = options.reqContext.reqId
+  }
+  if (useStreaming) {
+    resolvedHeaders.accept = 'text/event-stream'
+  }
+  if (params.body) {
+    resolvedHeaders['content-type'] = 'application/json'
+  }
 
   const dispatcher = options.retryConfig
     ? client.compose(interceptors.retry(toUndiciRetryOptions(options.retryConfig)))
@@ -169,33 +201,19 @@ export async function sendByApiContract<
   let response: Dispatcher.ResponseData
   try {
     response = await dispatcher.request({
-      method: routeContract.method.toUpperCase(),
-      path: buildRequestPath(routeContract.pathResolver(params.pathParams), params.pathPrefix),
+      method: apiContract.method.toUpperCase(),
+      path: buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix),
       body: params.body ? JSON.stringify(params.body) : undefined,
       query: params.queryParams,
-      headers: copyWithoutUndefined({
-        'x-request-id': options.reqContext?.reqId,
-        ...resolvedHeaders,
-        ...(useStreaming ? { accept: 'text/event-stream' } : {}),
-      }),
+      headers: resolvedHeaders,
       reset: options.disableKeepAlive ?? false,
       signal: options.signal,
-      throwOnError: false,
     })
   } catch (err) {
     return { error: err }
   }
 
-  return resolveAndParseResponse(response, routeContract, validateResponse, strictContentType)
-}
-
-async function resolveAndParseResponse(
-  response: Dispatcher.ResponseData,
-  routeContract: ApiContract,
-  validateResponse: boolean,
-  strictContentType: boolean,
-) {
-  const responseSchemas = routeContract.responsesByStatusCode[response.statusCode as HttpStatusCode]
+  const responseSchemas = apiContract.responsesByStatusCode[response.statusCode as HttpStatusCode]
 
   if (!responseSchemas) {
     await response.body.dump()
@@ -213,16 +231,22 @@ async function resolveAndParseResponse(
   }
 
   const body = await parseBody(response.body, resolvedEntry, validateResponse)
-  const rawHeaders = response.headers as Record<string, string | undefined>
-  const headers = routeContract.responseHeaderSchema
+
+  const rawHeaders = response.headers
+  const headers = apiContract.responseHeaderSchema
     ? {
         ...rawHeaders,
-        ...(routeContract.responseHeaderSchema.parse(rawHeaders) as Record<string, string>),
+        ...apiContract.responseHeaderSchema.parse(rawHeaders),
       }
     : rawHeaders
 
-  return {
-    result: { body, statusCode: response.statusCode, headers },
-    // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from IsStreaming
-  } as any
+  const parsedResponse = { body, statusCode: response.statusCode, headers }
+
+  if (captureAsError && response.statusCode >= 400) {
+    // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TCaptureAsError
+    return { error: parsedResponse } as any
+  }
+
+  // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TIsStreaming and TCaptureAsError
+  return { result: parsedResponse } as any
 }
