@@ -12,8 +12,7 @@ import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vites
 import { z } from 'zod/v4'
 import { JSON_HEADERS } from './constants.ts'
 import { buildClient } from './httpClient.ts'
-// @ts-expect-error
-import mockProduct1 from './mock-data/mockProduct1.json'
+import mockProduct1 from './mock-data/mockProduct1.json' with { type: 'json' }
 import { sendByApiContract } from './sendByApiContract.ts'
 
 describe('sendByApiContract', () => {
