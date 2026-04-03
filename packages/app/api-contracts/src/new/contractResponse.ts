@@ -165,3 +165,22 @@ export const resolveContractResponse = (
 
   return matched ?? (strict ? null : resolveByKind(schemaEntry))
 }
+
+/**
+ * Combines status-code lookup and content-type resolution into a single call.
+ * Returns `null` when the status code is not in the contract or the content-type cannot be matched.
+ */
+export function resolveResponseEntry(
+  responsesByStatusCode: ResponsesByStatusCode,
+  statusCode: number,
+  contentType: string | undefined,
+  strictContentType: boolean,
+): ResponseKind | null {
+  const schemaEntry = responsesByStatusCode[statusCode as HttpStatusCode]
+
+  if (!schemaEntry) {
+    return null
+  }
+
+  return resolveContractResponse(schemaEntry, contentType, strictContentType)
+}

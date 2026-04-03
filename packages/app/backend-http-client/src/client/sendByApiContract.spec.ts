@@ -562,7 +562,7 @@ describe('sendByApiContract', () => {
       )
 
       expect(callCount).toBe(2)
-      expect(result.error).toMatchObject({ statusCode: 503 })
+      expect(result.error).toMatchObject({ message: 'Could not map response' })
       expect(result.result).toBeUndefined()
     })
   })

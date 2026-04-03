@@ -4,16 +4,15 @@ import {
   type ClientRequestParams,
   type DefaultStreaming,
   type HeadersParam,
-  type HttpStatusCode,
   hasAnySuccessSseResponse,
   type InferNonSseClientResponse,
   type InferSseClientResponse,
   type ResponseKind,
-  resolveContractResponse,
+  resolveResponseEntry,
   type SseSchemaByEventName,
   type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
-import { type Client, type Dispatcher, interceptors, type RetryHandler } from 'undici'
+import { type Client, type Dispatcher, Headers, interceptors, type RetryHandler } from 'undici'
 import type { RetryConfig } from 'undici-retry'
 import type { HttpRequestContext } from './types.ts'
 
@@ -140,6 +139,33 @@ async function* parseSseStream(
   }
 }
 
+function normalizeHeaders(
+  rawHeaders: Dispatcher.ResponseData['headers'],
+): Record<string, string | undefined> {
+  const headers = new Headers()
+
+  for (const [key, value] of Object.entries(rawHeaders)) {
+    if (!value) {
+      continue
+    }
+    if (Array.isArray(value)) {
+      for (const element of value) {
+        headers.append(key, element)
+      }
+    } else {
+      headers.append(key, value)
+    }
+  }
+
+  const result: Record<string, string | undefined> = {}
+
+  headers.forEach((value, key) => {
+    result[key] = value
+  })
+
+  return result
+}
+
 const resolveHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> => {
   return typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
 }
@@ -218,38 +244,34 @@ export async function sendByApiContract<
     return { error: err }
   }
 
-  const responseSchemas = apiContract.responsesByStatusCode[response.statusCode as HttpStatusCode]
+  const normalizedHeaders = normalizeHeaders(response.headers)
 
-  if (!responseSchemas) {
-    await response.body.dump()
-    if (response.statusCode >= 300) {
-      // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TCaptureAsError
-      return { error: { statusCode: response.statusCode, headers: response.headers } } as any
-    }
-    throw new Error('Could not map response statusCode')
-  }
+  const parsedHeaders =
+    validateResponse && apiContract.responseHeaderSchema
+      ? { ...normalizedHeaders, ...apiContract.responseHeaderSchema.parse(normalizedHeaders) }
+      : normalizedHeaders
 
-  const rawContentType = response.headers['content-type']
-  const contentType = Array.isArray(rawContentType) ? rawContentType[0] : rawContentType
+  const contentType = normalizedHeaders['content-type']
 
-  const resolvedEntry = resolveContractResponse(responseSchemas, contentType, strictContentType)
+  const resolvedEntry = resolveResponseEntry(
+    apiContract.responsesByStatusCode,
+    response.statusCode,
+    contentType,
+    strictContentType,
+  )
 
   if (!resolvedEntry) {
     await response.body.dump()
-    throw new Error(`Could not resolve response contentType "${contentType}"`)
+    return { error: new Error('Could not map response') }
   }
 
-  const body = await parseBody(response.body, resolvedEntry, validateResponse)
+  const parsedBody = await parseBody(response.body, resolvedEntry, validateResponse)
 
-  const rawHeaders = response.headers
-  const headers = apiContract.responseHeaderSchema
-    ? {
-        ...rawHeaders,
-        ...apiContract.responseHeaderSchema.parse(rawHeaders),
-      }
-    : rawHeaders
-
-  const parsedResponse = { body, statusCode: response.statusCode, headers }
+  const parsedResponse = {
+    statusCode: response.statusCode,
+    headers: parsedHeaders,
+    body: parsedBody,
+  }
 
   if (captureAsError && response.statusCode >= 400) {
     // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TCaptureAsError

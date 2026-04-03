@@ -130,7 +130,7 @@ describe('sendByApiContract', () => {
       await expect(sendByApiContract(buildClient(), contract, {})).rejects.toThrow()
     })
 
-    it('throws when status is not in contract', async () => {
+    it('returns error when status is not in contract', async () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/products/1',
@@ -139,9 +139,10 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(500, { error: 'fail' }, JSON_HEADERS)
 
-      await expect(sendByApiContract(buildClient(), contract, {})).rejects.toThrow(
-        'Could not map response statusCode',
-      )
+      const result = await sendByApiContract(buildClient(), contract, {})
+
+      expect(result.error).toEqual(expect.objectContaining({ message: 'Could not map response' }))
+      expect(result.result).toBeUndefined()
     })
 
     it('returns typed body for non-2xx response when status is in contract', async () => {

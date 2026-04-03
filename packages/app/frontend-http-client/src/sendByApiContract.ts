@@ -4,17 +4,16 @@ import {
   type ClientRequestParams,
   type DefaultStreaming,
   type HeadersParam,
-  type HttpStatusCode,
   hasAnySuccessSseResponse,
   type InferNonSseClientResponse,
   type InferSseClientResponse,
   type ResponseKind,
-  resolveContractResponse,
+  resolveResponseEntry,
   type SseSchemaByEventName,
   type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
 import { stringify } from 'fast-querystring'
-import type { ConfiguredMiddleware, WretchError } from 'wretch'
+import type { ConfiguredMiddleware } from 'wretch'
 import type { WretchInstance } from './types.ts'
 import { parseSseStream } from './utils/sseUtils.ts'
 
@@ -30,7 +29,7 @@ type ReturnTypeForContract<
   TIsStreaming extends boolean,
   TDoCaptureAsError extends boolean,
 > = Either<
-  WretchError,
+  unknown,
   CaptureAsErrorFilter<
     TIsStreaming extends true
       ? InferSseClientResponse<TApiContract>
@@ -183,32 +182,35 @@ export async function sendByApiContract<
     }
   } catch (err) {
     if (!clonedErrorResponse) {
-      throw new Error('Unable to retrieve response', { cause: err })
+      return { error: err, result: undefined }
     }
     response = clonedErrorResponse
   }
 
-  const responseSchemas = routeContract.responsesByStatusCode[response.status as HttpStatusCode]
-
-  if (!responseSchemas) {
-    await response.body?.cancel()
-    throw new Error('Could not map response statusCode')
-  }
-
-  const contentType = response.headers.get('content-type') ?? undefined
-  const resolvedEntry = resolveContractResponse(responseSchemas, contentType, strictContentType)
-
-  if (!resolvedEntry) {
-    await response.body?.cancel()
-    throw new Error(`Could not resolve response contentType "${contentType}"`)
-  }
-
-  const body = await parseBody(response, resolvedEntry, validateResponse, signal)
-
+  // Resolve headers first — schema validation applies once we know the status code is mapped
   const rawHeaders = extractHeaders(response)
   const headers = routeContract.responseHeaderSchema
-    ? { ...rawHeaders, ...routeContract.responseHeaderSchema.parse(rawHeaders) }
+    ? {
+        ...rawHeaders,
+        ...(routeContract.responseHeaderSchema.parse(rawHeaders) as Record<string, string>),
+      }
     : rawHeaders
+
+  const contentType = headers['content-type']
+
+  const resolution = resolveResponseEntry(
+    routeContract.responsesByStatusCode,
+    response.status,
+    contentType,
+    strictContentType,
+  )
+
+  if (!resolution) {
+    await response.body?.cancel()
+    return { error: new Error('Could not map response'), result: undefined }
+  }
+
+  const body = await parseBody(response, resolution, validateResponse, signal)
 
   const parsedResponse = {
     statusCode: response.status,
