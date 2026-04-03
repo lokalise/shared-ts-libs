@@ -22,7 +22,9 @@ type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> = TDoCaptureAsEr
   ? Extract<T, { statusCode: SuccessfulHttpStatusCode }>
   : T
 
-type Either<E, R> = { error: E; result: undefined } | { error: undefined; result: R }
+type Either<TError, TResult> =
+    | { error: TError; result?: never }
+    | { error?: never; result: TResult }
 
 type ReturnTypeForContract<
   TApiContract extends ApiContract,
@@ -182,7 +184,7 @@ export async function sendByApiContract<
     }
   } catch (err) {
     if (!clonedErrorResponse) {
-      return { error: err, result: undefined }
+      return { error: err }
     }
     response = clonedErrorResponse
   }
@@ -211,7 +213,6 @@ export async function sendByApiContract<
       error: new Error(
         `Failed to process API response. (Status: ${response.status}, Content-Type: ${contentType ?? 'unknown'})`,
       ),
-      result: undefined,
     }
   }
 
