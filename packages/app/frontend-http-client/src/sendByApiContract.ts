@@ -18,9 +18,6 @@ import type { ConfiguredMiddleware, WretchError } from 'wretch'
 import type { WretchInstance } from './types.ts'
 import { parseSseStream } from './utils/sseUtils.ts'
 
-// biome-ignore lint/suspicious/noExplicitAny: we accept any request params here
-type AnyClientRequestParams = ClientRequestParams<any, any>
-
 // captureAsError: true → filter to success codes only; captureAsError: false → all codes from contract
 type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> = TDoCaptureAsError extends true
   ? Extract<T, { statusCode: SuccessfulHttpStatusCode }>
@@ -132,9 +129,8 @@ export async function sendByApiContract<
   wretch: WretchInstance,
   routeContract: TApiContract,
   params: ClientRequestParams<TApiContract, TIsStreaming>,
-  options: ContractRequestOptions<TCaptureAsError> = {} as ContractRequestOptions<TCaptureAsError>,
+  options: ContractRequestOptions<TCaptureAsError> = {},
 ): Promise<ReturnTypeForContract<TApiContract, TIsStreaming, TCaptureAsError>> {
-  const anyParams = params as AnyClientRequestParams
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
 
   const signal = options.signal ?? new AbortController().signal
@@ -142,22 +138,19 @@ export async function sendByApiContract<
   const validateResponse = options.validateResponse ?? true
   const strictContentType = options.strictContentType ?? true
 
-  const resolvedHeaders: Record<string, string> = (await resolveHeaders(anyParams.headers)) ?? {}
+  const resolvedHeaders: Record<string, string> = (await resolveHeaders(params.headers)) ?? {}
 
   if (useStreaming) {
     resolvedHeaders.accept = 'text/event-stream'
   }
-  if (anyParams.body) {
+  if (params.body) {
     resolvedHeaders['content-type'] = 'application/json'
   }
 
-  const path = buildRequestPath(
-    routeContract.pathResolver(anyParams.pathParams),
-    anyParams.pathPrefix,
-  )
-  const queryString = anyParams.queryParams ? stringify(anyParams.queryParams) : ''
+  const path = buildRequestPath(routeContract.pathResolver(params.pathParams), params.pathPrefix)
+  const queryString = params.queryParams ? stringify(params.queryParams) : ''
   const fullUrl = queryString ? `${path}?${queryString}` : path
-  const bodyString = anyParams.body ? JSON.stringify(anyParams.body) : undefined
+  const bodyString = params.body ? JSON.stringify(params.body) : undefined
 
   // Middleware that clones the response for non-2xx statuses before wretch consumes the body
   // during WretchError creation, allowing contract-based body parsing even for error responses.
@@ -185,6 +178,9 @@ export async function sendByApiContract<
     } else {
       response = await wretchInstance[routeContract.method](bodyString).res()
     }
+    if (clonedErrorResponse) {
+      clonedErrorResponse.body?.cancel()
+    }
   } catch (err) {
     if (!clonedErrorResponse) {
       throw new Error('Unable to retrieve response', { cause: err })
@@ -208,6 +204,7 @@ export async function sendByApiContract<
   }
 
   const body = await parseBody(response, resolvedEntry, validateResponse, signal)
+
   const rawHeaders = extractHeaders(response)
   const headers = routeContract.responseHeaderSchema
     ? { ...rawHeaders, ...routeContract.responseHeaderSchema.parse(rawHeaders) }
