@@ -40,8 +40,13 @@ export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> =
    */
   strictContentType?: boolean
   /**
-   * When true (default), non-success HTTP responses are mapped to Either.error.
-   * When false, all HTTP responses defined in the contract are returned in Either.result regardless of status code.
+   * Controls how HTTP 4xx/5xx responses defined in the contract are surfaced.
+   *
+   * - `true` (default): error status codes are returned as `Either.error`, and the result type is
+   *   narrowed to success status codes only.
+   * - `false`: all status codes defined in `responsesByStatusCode` are returned as `Either.result`.
+   *
+   * Status codes absent from the contract always surface as `Either.error` regardless of this option.
    */
   captureAsError?: DoCaptureAsError
 }
@@ -217,6 +222,10 @@ export async function sendByApiContract<
 
   if (!responseSchemas) {
     await response.body.dump()
+    if (response.statusCode >= 300) {
+      // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TCaptureAsError
+      return { error: { statusCode: response.statusCode, headers: response.headers } } as any
+    }
     throw new Error('Could not map response statusCode')
   }
 

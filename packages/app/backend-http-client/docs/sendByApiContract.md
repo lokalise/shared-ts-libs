@@ -39,18 +39,70 @@ const { result } = await sendByApiContract(
 - **SSE** — `sseResponse({ … })` returns an `AsyncIterable` of typed events
 - **Dual-mode** — `anyOfResponses([sseResponse(…), z.object(…)])` requires an explicit `streaming: boolean` param
 
-## Timeout
+## Return type — Either
 
-There is no `timeout` option. Use `AbortSignal.timeout(ms)` via the `signal` option instead:
+`sendByApiContract` always returns an `Either`:
 
 ```ts
-const { result } = await sendByApiContract(
-  client,
-  getUser,
-  { pathParams: { userId: '1' } },
-  { requestLabel: 'get-user', signal: AbortSignal.timeout(5000) },
-)
+type Either<TError, TResult> =
+  | { error: TError; result?: never }
+  | { error?: never; result: TResult }
 ```
+
+By default (`captureAsError: true`), the result type only includes success status codes. HTTP 4xx/5xx responses defined in the contract are returned as `Either.error`. Status codes absent from the contract are always returned as `Either.error`.
+
+```ts
+const response = await sendByApiContract(client, contract, params, { requestLabel: 'get-user' })
+
+if (response.error) {
+  // network error, retry exhaustion, or non-2xx response
+} else {
+  response.result.body // typed to the 2xx response schema
+}
+```
+
+## Non-2xx responses
+
+### captureAsError: true (default)
+
+4xx/5xx status codes defined in `responsesByStatusCode` are returned as `Either.error` with the parsed body. The `result` type is narrowed to success status codes only.
+
+```ts
+const contract = defineApiContract({
+  method: 'get',
+  pathResolver: ({ id }) => `/users/${id}`,
+  requestPathParamsSchema: z.object({ id: z.string() }),
+  responsesByStatusCode: {
+    200: z.object({ id: z.string(), name: z.string() }),
+    404: z.object({ message: z.string() }),
+  },
+})
+
+const response = await sendByApiContract(client, contract, { pathParams: { id: '1' } }, { requestLabel: 'get-user' })
+
+// response.result is only typed for 200 (success codes)
+// response.error holds the 404 body when the server returns 404
+```
+
+### captureAsError: false
+
+All status codes defined in `responsesByStatusCode` are returned as `Either.result`, regardless of whether they indicate success or failure.
+
+```ts
+const response = await sendByApiContract(
+  client,
+  contract,
+  { pathParams: { id: '1' } },
+  { requestLabel: 'get-user', captureAsError: false },
+)
+
+// response.result is typed for both 200 and 404
+if (response.result.statusCode === 404) {
+  response.result.body // { message: string }
+}
+```
+
+Status codes absent from the contract always surface as `Either.error`, regardless of this option.
 
 ## SSE and dual-mode
 
@@ -101,14 +153,53 @@ const json = await sendByApiContract(
 // json.result.body: { text: string }
 ```
 
+## Timeout
+
+There is no `timeout` option. Use `AbortSignal.timeout(ms)` via the `signal` option instead:
+
+```ts
+const { result } = await sendByApiContract(
+  client,
+  getUser,
+  { pathParams: { userId: '1' } },
+  { requestLabel: 'get-user', signal: AbortSignal.timeout(5000) },
+)
+```
+
+## Retry
+
+Pass a `retryConfig` to retry failed requests. Uses `RetryConfig` from `undici-retry`:
+
+```ts
+import { createDefaultRetryResolver } from '@lokalise/backend-http-client'
+
+const { result } = await sendByApiContract(
+  client,
+  getUser,
+  { pathParams: { userId: '1' } },
+  {
+    requestLabel: 'get-user',
+    retryConfig: {
+      maxAttempts: 3,
+      statusCodesToRetry: [503, 429],
+      retryOnTimeout: true,
+      delayResolver: createDefaultRetryResolver(),
+    },
+  },
+)
+```
+
+`maxAttempts` is the total number of attempts (initial + retries). When all attempts are exhausted, the last error response is returned as `Either.error`.
+
 ## Options
 
-| Option | Type | Description |
-|---|---|---|
-| `requestLabel` | `string` | Required. Included in errors for context. |
-| `signal` | `AbortSignal` | Cancel the request or set a timeout via `AbortSignal.timeout(ms)`. |
-| `reqContext` | `{ reqId: string }` | Forwarded as `x-request-id` header. |
-| `throwOnError` | `boolean` | Throw on error responses instead of returning `Either`. Default: `true`. |
-| `validateResponse` | `boolean` | Validate the response body against the contract schema. Default: `true`. |
-| `disableKeepAlive` | `boolean` | Disable connection keep-alive for this request. |
-| `retryConfig` | `RetryConfig` | Retry configuration. Default: no retries. |
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `requestLabel` | `string` | required | Label included in errors for observability. |
+| `captureAsError` | `boolean` | `true` | When `true`, 4xx/5xx responses defined in the contract go to `Either.error`. When `false`, all contract-defined status codes go to `Either.result`. |
+| `signal` | `AbortSignal` | — | Cancel the request or set a timeout via `AbortSignal.timeout(ms)`. |
+| `reqContext` | `{ reqId: string }` | — | Forwarded as `x-request-id` header. |
+| `validateResponse` | `boolean` | `true` | Validate the response body against the contract schema. |
+| `strictContentType` | `boolean` | `true` | When `true`, throws if the response `content-type` doesn't match the contract entry. When `false`, falls back to the entry's kind for single-entry responses. |
+| `disableKeepAlive` | `boolean` | `false` | Disable connection keep-alive for this request. |
+| `retryConfig` | `RetryConfig` | — | Retry configuration. See [Retry](#retry). |
