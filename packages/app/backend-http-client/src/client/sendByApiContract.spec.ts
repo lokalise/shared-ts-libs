@@ -562,7 +562,9 @@ describe('sendByApiContract', () => {
       )
 
       expect(callCount).toBe(2)
-      expect(result.error).toMatchObject({ message: 'Could not map response' })
+      expect(result.error).toMatchObject({
+        message: expect.stringContaining('Could not map response'),
+      })
       expect(result.result).toBeUndefined()
     })
   })

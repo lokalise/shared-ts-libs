@@ -64,7 +64,7 @@ export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> =
 const resolveHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> =>
   typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
 
-function extractHeaders(response: Response): Record<string, string | undefined> {
+function normalizeHeaders(response: Response): Record<string, string | undefined> {
   const headers: Record<string, string | undefined> = {}
 
   response.headers.forEach((value, key) => {
@@ -137,13 +137,13 @@ export async function sendByApiContract<
   const validateResponse = options.validateResponse ?? true
   const strictContentType = options.strictContentType ?? true
 
-  const resolvedHeaders: Record<string, string> = (await resolveHeaders(params.headers)) ?? {}
+  const requestHeaders: Record<string, string> = (await resolveHeaders(params.headers)) ?? {}
 
   if (useStreaming) {
-    resolvedHeaders.accept = 'text/event-stream'
+    requestHeaders.accept = 'text/event-stream'
   }
   if (params.body) {
-    resolvedHeaders['content-type'] = 'application/json'
+    requestHeaders['content-type'] = 'application/json'
   }
 
   const path = buildRequestPath(routeContract.pathResolver(params.pathParams), params.pathPrefix)
@@ -166,7 +166,7 @@ export async function sendByApiContract<
   const wretchInstance = wretch
     .middlewares([cloneErrorResponseMiddleware])
     .url(fullUrl)
-    .headers(resolvedHeaders)
+    .headers(requestHeaders)
     .options({ signal })
 
   let response: Response
@@ -187,16 +187,16 @@ export async function sendByApiContract<
     response = clonedErrorResponse
   }
 
-  // Resolve headers first — schema validation applies once we know the status code is mapped
-  const rawHeaders = extractHeaders(response)
-  const headers = routeContract.responseHeaderSchema
-    ? {
-        ...rawHeaders,
-        ...(routeContract.responseHeaderSchema.parse(rawHeaders) as Record<string, string>),
-      }
-    : rawHeaders
+  const normalizedHeaders = normalizeHeaders(response)
+  const parsedHeaders =
+    validateResponse && routeContract.responseHeaderSchema
+      ? {
+          ...normalizedHeaders,
+          ...routeContract.responseHeaderSchema.parse(normalizedHeaders),
+        }
+      : normalizedHeaders
 
-  const contentType = headers['content-type']
+  const contentType = normalizedHeaders['content-type']
 
   const resolution = resolveResponseEntry(
     routeContract.responsesByStatusCode,
@@ -207,15 +207,20 @@ export async function sendByApiContract<
 
   if (!resolution) {
     await response.body?.cancel()
-    return { error: new Error('Could not map response'), result: undefined }
+    return {
+      error: new Error(
+        `Failed to process API response. (Status: ${response.status}, Content-Type: ${contentType ?? 'unknown'})`,
+      ),
+      result: undefined,
+    }
   }
 
-  const body = await parseBody(response, resolution, validateResponse, signal)
+  const parsedBody = await parseBody(response, resolution, validateResponse, signal)
 
   const parsedResponse = {
     statusCode: response.status,
-    headers,
-    body,
+    headers: parsedHeaders,
+    body: parsedBody,
   }
 
   if (captureAsError && !response.ok) {

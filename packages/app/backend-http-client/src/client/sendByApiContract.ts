@@ -207,22 +207,22 @@ export async function sendByApiContract<
   params: ClientRequestParams<TApiContract, TIsStreaming>,
   options: ContractRequestOptions<TCaptureAsError>,
 ): Promise<ReturnTypeForContract<TApiContract, TIsStreaming, TCaptureAsError>> {
-  const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(apiContract)
-
   const validateResponse = options.validateResponse ?? true
   const strictContentType = options.strictContentType ?? true
   const captureAsError = options.captureAsError ?? true
 
-  const resolvedHeaders: Record<string, string> = (await resolveHeaders(params.headers)) ?? {}
+  const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(apiContract)
+
+  const requestHeaders: Record<string, string> = (await resolveHeaders(params.headers)) ?? {}
 
   if (options.reqContext) {
-    resolvedHeaders['x-request-id'] = options.reqContext.reqId
+    requestHeaders['x-request-id'] = options.reqContext.reqId
   }
   if (useStreaming) {
-    resolvedHeaders.accept = 'text/event-stream'
+    requestHeaders.accept = 'text/event-stream'
   }
   if (params.body) {
-    resolvedHeaders['content-type'] = 'application/json'
+    requestHeaders['content-type'] = 'application/json'
   }
 
   const dispatcher = options.retryConfig
@@ -236,7 +236,7 @@ export async function sendByApiContract<
       path: buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix),
       body: params.body ? JSON.stringify(params.body) : undefined,
       query: params.queryParams,
-      headers: resolvedHeaders,
+      headers: requestHeaders,
       reset: options.disableKeepAlive ?? false,
       signal: options.signal,
     })
@@ -253,19 +253,23 @@ export async function sendByApiContract<
 
   const contentType = normalizedHeaders['content-type']
 
-  const resolvedEntry = resolveResponseEntry(
+  const resolvedResponseEntry = resolveResponseEntry(
     apiContract.responsesByStatusCode,
     response.statusCode,
     contentType,
     strictContentType,
   )
 
-  if (!resolvedEntry) {
+  if (!resolvedResponseEntry) {
     await response.body.dump()
-    return { error: new Error('Could not map response') }
+    return {
+      error: new Error(
+        `Failed to process API response. (Status: ${response.statusCode}, Content-Type: ${contentType ?? 'unknown'})`,
+      ),
+    }
   }
 
-  const parsedBody = await parseBody(response.body, resolvedEntry, validateResponse)
+  const parsedBody = await parseBody(response.body, resolvedResponseEntry, validateResponse)
 
   const parsedResponse = {
     statusCode: response.statusCode,
