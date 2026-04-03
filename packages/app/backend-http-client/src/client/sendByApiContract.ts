@@ -104,7 +104,7 @@ function parseSseBlock(block: string, schemaByEventName: SseSchemaByEventName) {
     if (line.startsWith('event:')) {
       event = line.slice(6).trim()
     } else if (line.startsWith('data:')) {
-      data = line.slice(5).trim()
+      data += (data ? '\n' : '') + line.slice(5).trim()
     }
   }
 
@@ -125,7 +125,7 @@ async function* parseSseStream(
 ): AsyncGenerator {
   let buffer = ''
   for await (const chunk of stream) {
-    buffer += (chunk as Buffer).toString('utf8')
+    buffer += (chunk as Buffer).toString('utf8').replace(/\r\n/g, '\n')
     let boundary = buffer.indexOf('\n\n')
     while (boundary !== -1) {
       const block = buffer.slice(0, boundary)
