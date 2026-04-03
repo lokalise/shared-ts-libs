@@ -23,11 +23,7 @@ import {
   type RequestResult,
   sendWithRetryReturnStream,
 } from 'undici-retry'
-import { DEFAULT_OPTIONS } from './constants.ts'
 import type { ContractRequestOptions } from './types.ts'
-
-// biome-ignore lint/suspicious/noExplicitAny: we accept any request params here
-type AnyClientRequestParams = ClientRequestParams<any, any>
 
 type ReturnTypeForContract<TApiContract extends ApiContract, TIsStreaming extends boolean> = Either<
   RequestResult<unknown> | InternalRequestError,
@@ -83,30 +79,6 @@ const resolveHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> => {
   return typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
 }
 
-async function buildBaseRequest(
-  routeContract: ApiContract,
-  params: AnyClientRequestParams,
-  options: ContractRequestOptions,
-) {
-  const resolvedHeaders = (await resolveHeaders(params.headers)) ?? {}
-
-  return {
-    ...DEFAULT_OPTIONS,
-    validateResponse: options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
-    path: buildRequestPath(routeContract.pathResolver(params.pathParams), params.pathPrefix),
-    method: routeContract.method.toUpperCase(),
-    body: params.body ? JSON.stringify(params.body) : undefined,
-    query: params.queryParams,
-    headers: copyWithoutUndefined({
-      'x-request-id': options.reqContext?.reqId,
-      ...resolvedHeaders,
-    }),
-    reset: options.disableKeepAlive ?? false,
-    signal: options.signal,
-    throwOnError: undefined,
-  }
-}
-
 async function parseBody(
   result: RequestResult<Dispatcher.ResponseData['body']>,
   resolvedEntry: ResponseKind,
@@ -144,17 +116,25 @@ export async function sendByApiContract<
 ): Promise<ReturnTypeForContract<TApiContract, TIsStreaming>> {
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
 
+  const validateResponse = options.validateResponse ?? true
+  const strictContentType = options.strictContentType ?? true
   const retryConfig = options.retryConfig ?? NO_RETRY_CONFIG
 
-  const baseRequest = await buildBaseRequest(
-    routeContract,
-    params as AnyClientRequestParams,
-    options,
-  )
+  const resolvedHeaders = (await resolveHeaders(params.headers)) ?? {}
 
-  const request = useStreaming
-    ? { ...baseRequest, headers: { ...baseRequest.headers, accept: 'text/event-stream' } }
-    : baseRequest
+  const request = {
+    method: routeContract.method.toUpperCase(),
+    path: buildRequestPath(routeContract.pathResolver(params.pathParams), params.pathPrefix),
+    body: params.body ? JSON.stringify(params.body) : undefined,
+    query: params.queryParams,
+    headers: copyWithoutUndefined({
+      'x-request-id': options.reqContext?.reqId,
+      ...resolvedHeaders,
+      ...(useStreaming ? { accept: 'text/event-stream' } : {}),
+    }),
+    reset: options.disableKeepAlive ?? false,
+    signal: options.signal,
+  } satisfies Dispatcher.RequestOptions
 
   const sendOutput = await sendWithRetryReturnStream(client, request, retryConfig, {
     throwOnInternalError: false,
@@ -174,8 +154,8 @@ export async function sendByApiContract<
   return resolveAndParseResponse(
     sendOutput.result,
     routeContract,
-    request.validateResponse,
-    options.strictContentType ?? true,
+    validateResponse,
+    strictContentType,
   )
 }
 
