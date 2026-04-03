@@ -8,6 +8,7 @@ import {
 } from '@lokalise/api-contracts'
 import { getLocal } from 'mockttp'
 import type { Client } from 'undici'
+import { createDefaultRetryResolver, DEFAULT_RETRY_CONFIG } from 'undici-retry'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import { JSON_HEADERS } from './constants.ts'
@@ -566,6 +567,141 @@ describe('sendByApiContract', () => {
         message: 'Failed to process API response. (Status: 503, Content-Type: application/json)',
       })
       expect(result.result).toBeUndefined()
+    })
+
+    describe('Retry-After', () => {
+      const retryAfterContract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: {
+          200: z.object({ id: z.number() }),
+          429: z.object({ message: z.string() }),
+        },
+      })
+
+      it('returns error if Retry-After delay is too long', async () => {
+        let callCount = 0
+        await mockServer.forGet('/products/1').thenCallback(() => {
+          callCount++
+          return {
+            statusCode: 429,
+            headers: { ...JSON_HEADERS, 'retry-after': '90' },
+            body: JSON.stringify({ message: 'rate limited' }),
+          }
+        })
+
+        const result = await sendByApiContract(
+          client,
+          retryAfterContract,
+          {},
+          {
+            requestLabel: 'test',
+            retryConfig: { ...DEFAULT_RETRY_CONFIG, delayResolver: createDefaultRetryResolver() },
+          },
+        )
+
+        expect(callCount).toBe(1)
+        expect(result.error).toMatchObject({ statusCode: 429 })
+        expect(result.result).toBeUndefined()
+      })
+
+      it('falls back to default delay when Retry-After has invalid format', async () => {
+        let callCount = 0
+        await mockServer.forGet('/products/1').thenCallback(() => {
+          callCount++
+          if (callCount === 1) {
+            return {
+              statusCode: 429,
+              headers: { ...JSON_HEADERS, 'retry-after': 'invalid-format-abc' },
+              body: JSON.stringify({ message: 'rate limited' }),
+            }
+          }
+          return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
+        })
+
+        const result = await sendByApiContract(
+          client,
+          retryAfterContract,
+          {},
+          {
+            requestLabel: 'test',
+            retryConfig: {
+              maxAttempts: 3,
+              statusCodesToRetry: [429],
+              retryOnTimeout: false,
+              delayResolver: createDefaultRetryResolver({ baseDelay: 0, maxDelay: 0 }),
+            },
+          },
+        )
+
+        expect(callCount).toBe(2)
+        expect(result.result).toMatchObject({ statusCode: 200 })
+      })
+
+      it('ignores Retry-After when respectRetryAfter is false', async () => {
+        let callCount = 0
+        await mockServer.forGet('/products/1').thenCallback(() => {
+          callCount++
+          if (callCount === 1) {
+            return {
+              statusCode: 429,
+              headers: { ...JSON_HEADERS, 'retry-after': '90' },
+              body: JSON.stringify({ message: 'rate limited' }),
+            }
+          }
+          return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
+        })
+
+        const result = await sendByApiContract(
+          client,
+          retryAfterContract,
+          {},
+          {
+            requestLabel: 'test',
+            retryConfig: {
+              ...DEFAULT_RETRY_CONFIG,
+              delayResolver: createDefaultRetryResolver({
+                respectRetryAfter: false,
+                baseDelay: 0,
+                maxDelay: 0,
+              }),
+            },
+          },
+        )
+
+        expect(callCount).toBe(2)
+        expect(result.result).toMatchObject({ statusCode: 200 })
+      })
+
+      it('retries when Retry-After delay is short', async () => {
+        let callCount = 0
+        await mockServer.forGet('/products/1').thenCallback(() => {
+          callCount++
+          if (callCount === 1) {
+            return {
+              statusCode: 429,
+              headers: { ...JSON_HEADERS, 'retry-after': '1' },
+              body: JSON.stringify({ message: 'rate limited' }),
+            }
+          }
+          return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
+        })
+
+        const start = Date.now()
+        const result = await sendByApiContract(
+          client,
+          retryAfterContract,
+          {},
+          {
+            requestLabel: 'test',
+            retryConfig: { ...DEFAULT_RETRY_CONFIG, delayResolver: createDefaultRetryResolver() },
+          },
+        )
+
+        expect(Date.now() - start).toBeGreaterThanOrEqual(1000)
+        expect(callCount).toBe(2)
+        expect(result.result).toMatchObject({ statusCode: 200 })
+      })
     })
   })
 })

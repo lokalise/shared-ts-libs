@@ -84,7 +84,7 @@ function toUndiciRetryOptions(config: RetryConfig): RetryHandler.RetryOptions {
           } as Dispatcher.ResponseData
           const delay = config.delayResolver?.(stub, state.counter, config.statusCodesToRetry ?? [])
 
-          if (!delay || delay === -1) {
+          if (delay == null || delay === -1) {
             callback(err)
           } else {
             setTimeout(() => {
