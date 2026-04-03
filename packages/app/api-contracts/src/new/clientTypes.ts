@@ -1,82 +1,11 @@
 import type { z } from 'zod/v4'
-import type { InferSchemaInput } from '../apiContracts.ts'
+import type { InferSchemaInput, InferSchemaOutput } from '../apiContracts.ts'
 import type { HttpStatusCode, SuccessfulHttpStatusCode } from '../HttpStatusCodes.ts'
 import type { Prettify } from '../typeUtils.ts'
 import type { ContractNoBody } from './constants.ts'
 import type { ResponsesByStatusCode, SseSchemaByEventName } from './contractResponse.ts'
 import type { ApiContract } from './defineApiContract.ts'
 import type { ContractResponseMode, SseEventOf } from './inferTypes.ts'
-
-/**
- * Maps a single responsesByStatusCode entry value to its TypeScript body type.
- */
-type InferResponseBody<T> = T extends typeof ContractNoBody
-  ? null
-  : T extends z.ZodType
-    ? z.output<T>
-    : T extends { _tag: 'TextResponse' }
-      ? string
-      : T extends { _tag: 'BlobResponse' }
-        ? Blob
-        : T extends { _tag: 'SseResponse'; schemaByEventName: infer S extends SseSchemaByEventName }
-          ? AsyncIterable<SseEventOf<S>>
-          : T extends { _tag: 'AnyOfResponses'; responses: Array<infer Item> }
-            ? InferResponseBody<Item>
-            : never
-
-/**
- * Like InferResponseBody but returns only SSE bodies — non-SSE entries resolve to never.
- */
-type SseInferResponseBody<T> = Extract<InferResponseBody<T>, AsyncIterable<unknown>>
-
-/**
- * Like InferResponseBody but returns only non-SSE bodies — SSE entries resolve to never.
- */
-type NonSseInferResponseBody<T> = Exclude<InferResponseBody<T>, AsyncIterable<unknown>>
-
-/**
- * Infers a discriminated union of `{ statusCode, headers, body }` for SSE mode:
- * - success status codes → SSE body only (AsyncIterable)
- * - error status codes  → body as-is (all kinds)
- *
- * THeaders defaults to the Node.js/undici header shape. Override for fetch-based clients.
- */
-export type InferSseClientResponse<
-  T extends ResponsesByStatusCode,
-  THeaders extends Record<string, unknown> = Record<string, string | string[] | undefined>,
-> = {
-  [K in keyof T & HttpStatusCode]: {
-    statusCode: K
-    headers: THeaders
-    body: K extends SuccessfulHttpStatusCode
-      ? SseInferResponseBody<NonNullable<T[K]>>
-      : InferResponseBody<NonNullable<T[K]>>
-  }
-}[keyof T & HttpStatusCode]
-
-/**
- * Infers a discriminated union of `{ statusCode, headers, body }` for non-SSE mode:
- * - success status codes → non-SSE body only (JSON / text / blob / null)
- * - error status codes  → body as-is (all kinds)
- *
- * THeaders defaults to the Node.js/undici header shape. Override for fetch-based clients.
- */
-export type InferNonSseClientResponse<
-  T extends ResponsesByStatusCode,
-  THeaders extends Record<string, unknown> = Record<string, string | string[] | undefined>,
-> = {
-  [K in keyof T & HttpStatusCode]: {
-    statusCode: K
-    headers: THeaders
-    body: K extends SuccessfulHttpStatusCode
-      ? NonSseInferResponseBody<NonNullable<T[K]>>
-      : InferResponseBody<NonNullable<T[K]>>
-  }
-}[keyof T & HttpStatusCode]
-
-export type CondKey<T, TKey extends string, TExtra = T> = [T] extends [undefined]
-  ? { [K in TKey]?: undefined }
-  : { [K in TKey]: TExtra }
 
 export type HeadersParam<T> = T | (() => T) | (() => Promise<T>)
 
@@ -90,20 +19,91 @@ type StreamingParam<T extends ResponsesByStatusCode, TIsStreaming extends boolea
 
 // SSE-only contracts default IsStreaming to true; everything else to false
 export type DefaultStreaming<T extends ResponsesByStatusCode> =
-    ContractResponseMode<T> extends 'sse' ? true : false
+  ContractResponseMode<T> extends 'sse' ? true : false
+
+type RequiredWhenDefined<T, TKey extends string, TExtra = T> = [T] extends [undefined]
+  ? { [K in TKey]?: undefined }
+  : { [K in TKey]: TExtra }
 
 export type ClientRequestParams<
   TApiContract extends ApiContract,
   TIsStreaming extends boolean,
 > = Prettify<
   StreamingParam<TApiContract['responsesByStatusCode'], TIsStreaming> &
-  CondKey<InferSchemaInput<TApiContract['requestPathParamsSchema']>, 'pathParams'> &
-  CondKey<InferSchemaInput<ExtractRequestBody<TApiContract>>, 'body'> &
-  CondKey<InferSchemaInput<TApiContract['requestQuerySchema']>, 'queryParams'> &
-  CondKey<
-    InferSchemaInput<TApiContract['requestHeaderSchema']>,
-    'headers',
-    HeadersParam<InferSchemaInput<TApiContract['requestHeaderSchema']>>
-  > &
-  { pathPrefix?: string }
+    RequiredWhenDefined<InferSchemaInput<TApiContract['requestPathParamsSchema']>, 'pathParams'> &
+    RequiredWhenDefined<InferSchemaInput<ExtractRequestBody<TApiContract>>, 'body'> &
+    RequiredWhenDefined<InferSchemaInput<TApiContract['requestQuerySchema']>, 'queryParams'> &
+    RequiredWhenDefined<
+      InferSchemaInput<TApiContract['requestHeaderSchema']>,
+      'headers',
+      HeadersParam<InferSchemaInput<TApiContract['requestHeaderSchema']>>
+    > & { pathPrefix?: string }
 >
+
+type InferClientResponseHeaders<TApiContract extends ApiContract> =
+  TApiContract['responseHeaderSchema'] extends z.ZodType
+    ? InferSchemaOutput<TApiContract['responseHeaderSchema']> & Record<string, string | undefined>
+    : Record<string, string | undefined>
+
+/**
+ * Maps a single responsesByStatusCode entry value to its TypeScript body type.
+ */
+type InferClientResponseBody<T> = T extends typeof ContractNoBody
+  ? null
+  : T extends z.ZodType
+    ? InferSchemaOutput<T>
+    : T extends { _tag: 'TextResponse' }
+      ? string
+      : T extends { _tag: 'BlobResponse' }
+        ? Blob
+        : T extends { _tag: 'SseResponse'; schemaByEventName: infer S extends SseSchemaByEventName }
+          ? AsyncIterable<SseEventOf<S>>
+          : T extends { _tag: 'AnyOfResponses'; responses: Array<infer Item> }
+            ? InferClientResponseBody<Item>
+            : never
+
+/**
+ * Like InferClientResponseBody but returns only SSE bodies — non-SSE entries resolve to never.
+ */
+type SseInferClientResponseBody<T> = Extract<InferClientResponseBody<T>, AsyncIterable<unknown>>
+
+/**
+ * Like InferClientResponseBody but returns only non-SSE bodies — SSE entries resolve to never.
+ */
+type NonSseInferClientResponseBody<T> = Exclude<InferClientResponseBody<T>, AsyncIterable<unknown>>
+
+/**
+ * Infers a discriminated union of `{ statusCode, headers, body }` for SSE mode:
+ * - success status codes → SSE body only (AsyncIterable)
+ * - error status codes  → body as-is (all kinds)
+ *
+ * Headers are typed via `InferClientResponseHeaders`: known headers from `responseHeaderSchema`
+ * are strongly typed; all other headers remain accessible as `string | undefined`.
+ */
+export type InferSseClientResponse<TApiContract extends ApiContract> = {
+  [K in keyof TApiContract['responsesByStatusCode'] & HttpStatusCode]: {
+    statusCode: K
+    headers: InferClientResponseHeaders<TApiContract>
+    body: K extends SuccessfulHttpStatusCode
+      ? SseInferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
+      : InferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
+  }
+}[keyof TApiContract['responsesByStatusCode'] & HttpStatusCode]
+
+/**
+ * Infers a discriminated union of `{ statusCode, headers, body }` for non-SSE mode:
+ * - success status codes → non-SSE body only (JSON / text / blob / null)
+ * - error status codes  → body as-is (all kinds)
+ *
+ * Headers are typed via `InferClientResponseHeaders`: known headers from `responseHeaderSchema`
+ * are strongly typed; all other headers remain accessible as `string | undefined`.
+ */
+export type InferNonSseClientResponse<TApiContract extends ApiContract> = {
+  [K in keyof TApiContract['responsesByStatusCode'] & HttpStatusCode]: {
+    statusCode: K
+    headers: InferClientResponseHeaders<TApiContract>
+    body: K extends SuccessfulHttpStatusCode
+      ? NonSseInferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
+      : InferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
+  }
+}[keyof TApiContract['responsesByStatusCode'] & HttpStatusCode]

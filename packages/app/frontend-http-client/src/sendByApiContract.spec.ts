@@ -164,8 +164,12 @@ describe('sendByApiContract', () => {
       )
 
       expectTypeOf(response.result).toEqualTypeOf<
-        | { statusCode: 200; body: { id: number }; headers: Record<string, string> }
-        | { statusCode: 404; body: { message: string }; headers: Record<string, string> }
+        | { statusCode: 200; body: { id: number }; headers: Record<string, string | undefined> }
+        | {
+            statusCode: 404
+            body: { message: string }
+            headers: Record<string, string | undefined>
+          }
         | undefined
       >()
       expect(response.result).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
@@ -186,7 +190,8 @@ describe('sendByApiContract', () => {
       const response = await sendByApiContract(buildClient(), contract, {})
 
       expectTypeOf(response.result).toEqualTypeOf<
-        { statusCode: 200; body: { id: number }; headers: Record<string, string> } | undefined
+        | { statusCode: 200; body: { id: number }; headers: Record<string, string | undefined> }
+        | undefined
       >()
       expect(response.error).toBeDefined()
       expect(response.result).toBeUndefined()

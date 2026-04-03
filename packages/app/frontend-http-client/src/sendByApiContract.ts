@@ -1,14 +1,14 @@
 import {
   type ApiContract,
   buildRequestPath,
+  type ClientRequestParams,
   type DefaultStreaming,
+  type HeadersParam,
   type HttpStatusCode,
   hasAnySuccessSseResponse,
   type InferNonSseClientResponse,
   type InferSseClientResponse,
-  type ClientRequestParams,
   type ResponseKind,
-  type ResponsesByStatusCode,
   resolveContractResponse,
   type SseSchemaByEventName,
   type SuccessfulHttpStatusCode,
@@ -19,28 +19,25 @@ import type { WretchInstance } from './types.ts'
 import { parseSseStream } from './utils/sseUtils.ts'
 
 // biome-ignore lint/suspicious/noExplicitAny: we accept any request params here
-type AnyClientRequestParams = ClientRequestParams<any, any, any, any>
+type AnyClientRequestParams = ClientRequestParams<any, any>
 
 // captureAsError: true → filter to success codes only; captureAsError: false → all codes from contract
 type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> = TDoCaptureAsError extends true
   ? Extract<T, { statusCode: SuccessfulHttpStatusCode }>
   : T
 
-// fetch headers are simple string-to-string (no multi-value)
-type FetchHeaders = Record<string, string>
-
 type Either<E, R> = { error: E; result: undefined } | { error: undefined; result: R }
 
 type ReturnTypeForContract<
-  T extends ResponsesByStatusCode,
+  TApiContract extends ApiContract,
   TIsStreaming extends boolean,
   TDoCaptureAsError extends boolean,
 > = Either<
   WretchError,
   CaptureAsErrorFilter<
     TIsStreaming extends true
-      ? InferSseClientResponse<T, FetchHeaders>
-      : InferNonSseClientResponse<T, FetchHeaders>,
+      ? InferSseClientResponse<TApiContract>
+      : InferNonSseClientResponse<TApiContract>,
     TDoCaptureAsError
   >
 >
@@ -71,8 +68,8 @@ export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> =
 const resolveHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> =>
   typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
 
-function extractHeaders(response: Response): FetchHeaders {
-  const headers: FetchHeaders = {}
+function extractHeaders(response: Response): Record<string, string | undefined> {
+  const headers: Record<string, string | undefined> = {}
 
   response.headers.forEach((value, key) => {
     headers[key] = value
@@ -136,9 +133,7 @@ export async function sendByApiContract<
   routeContract: TApiContract,
   params: ClientRequestParams<TApiContract, TIsStreaming>,
   options: ContractRequestOptions<TCaptureAsError> = {} as ContractRequestOptions<TCaptureAsError>,
-): Promise<
-  ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming, TCaptureAsError>
-> {
+): Promise<ReturnTypeForContract<TApiContract, TIsStreaming, TCaptureAsError>> {
   const anyParams = params as AnyClientRequestParams
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
 
@@ -213,7 +208,10 @@ export async function sendByApiContract<
   }
 
   const body = await parseBody(response, resolvedEntry, validateResponse, signal)
-  const headers = extractHeaders(response)
+  const rawHeaders = extractHeaders(response)
+  const headers = routeContract.responseHeaderSchema
+    ? { ...rawHeaders, ...routeContract.responseHeaderSchema.parse(rawHeaders) }
+    : rawHeaders
 
   const parsedResponse = {
     statusCode: response.status,

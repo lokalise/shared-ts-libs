@@ -202,7 +202,7 @@ describe('sendByApiContract', () => {
         client,
         contract,
         { body: { name: 'test' } },
-        { requestLabel: 'test', captureAsError: false },
+        { requestLabel: 'test' },
       )
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()

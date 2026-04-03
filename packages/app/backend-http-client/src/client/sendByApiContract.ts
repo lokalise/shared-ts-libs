@@ -2,14 +2,14 @@ import type { Readable } from 'node:stream'
 import {
   type ApiContract,
   buildRequestPath,
+  type ClientRequestParams,
   type DefaultStreaming,
+  type HeadersParam,
   type HttpStatusCode,
   hasAnySuccessSseResponse,
   type InferNonSseClientResponse,
   type InferSseClientResponse,
-  type ClientRequestParams,
   type ResponseKind,
-  type ResponsesByStatusCode,
   resolveContractResponse,
   type SseSchemaByEventName,
 } from '@lokalise/api-contracts'
@@ -27,11 +27,13 @@ import { DEFAULT_OPTIONS } from './constants.ts'
 import type { ContractRequestOptions } from './types.ts'
 
 // biome-ignore lint/suspicious/noExplicitAny: we accept any request params here
-type AnyClientRequestParams = ClientRequestParams<any, any, any, any>
+type AnyClientRequestParams = ClientRequestParams<any, any>
 
-type ReturnTypeForContract<T extends ResponsesByStatusCode, TIsStreaming extends boolean> = Either<
+type ReturnTypeForContract<TApiContract extends ApiContract, TIsStreaming extends boolean> = Either<
   RequestResult<unknown> | InternalRequestError,
-  TIsStreaming extends true ? InferSseClientResponse<T> : InferNonSseClientResponse<T>
+  TIsStreaming extends true
+    ? InferSseClientResponse<TApiContract>
+    : InferNonSseClientResponse<TApiContract>
 >
 
 function parseSseBlock(block: string, schemaByEventName: SseSchemaByEventName) {
@@ -139,12 +141,16 @@ export async function sendByApiContract<
   routeContract: TApiContract,
   params: ClientRequestParams<TApiContract, TIsStreaming>,
   options: ContractRequestOptions,
-): Promise<ReturnTypeForContract<TApiContract['responsesByStatusCode'], TIsStreaming>> {
+): Promise<ReturnTypeForContract<TApiContract, TIsStreaming>> {
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
 
   const retryConfig = options.retryConfig ?? NO_RETRY_CONFIG
 
-  const baseRequest = await buildBaseRequest(routeContract, params as AnyClientRequestParams, options)
+  const baseRequest = await buildBaseRequest(
+    routeContract,
+    params as AnyClientRequestParams,
+    options,
+  )
 
   const request = useStreaming
     ? { ...baseRequest, headers: { ...baseRequest.headers, accept: 'text/event-stream' } }
@@ -197,9 +203,13 @@ async function resolveAndParseResponse(
   }
 
   const body = await parseBody(result, resolvedEntry, validateResponse)
+  const rawHeaders = result.headers
+  const headers = routeContract.responseHeaderSchema
+    ? { ...rawHeaders, ...routeContract.responseHeaderSchema.parse(rawHeaders) }
+    : rawHeaders
 
   return {
-    result: { body, statusCode: result.statusCode, headers: result.headers },
+    result: { body, statusCode: result.statusCode, headers },
     // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from IsStreaming
   } as any
 }

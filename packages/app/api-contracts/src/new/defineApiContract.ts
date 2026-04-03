@@ -17,14 +17,17 @@ import {
 } from './contractResponse.ts'
 
 export type RequestPathParamsSchema = z.ZodObject
+export type RequestQuerySchema = z.ZodObject
+export type RequestHeaderSchema = z.ZodObject
+export type ResponseHeaderSchema = z.ZodObject
 
 export type CommonApiContract = {
   // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with generics
   pathResolver: RoutePathResolver<any>
   requestPathParamsSchema?: RequestPathParamsSchema
-  requestQuerySchema?: z.ZodType
-  requestHeaderSchema?: z.ZodType
-  responseHeaderSchema?: z.ZodType
+  requestQuerySchema?: RequestQuerySchema
+  requestHeaderSchema?: RequestHeaderSchema
+  responseHeaderSchema?: ResponseHeaderSchema
   responsesByStatusCode: ResponsesByStatusCode
 
   metadata?: CommonRouteDefinitionMetadata
