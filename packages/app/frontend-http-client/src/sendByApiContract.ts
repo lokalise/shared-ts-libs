@@ -23,8 +23,8 @@ type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> = TDoCaptureAsEr
   : T
 
 type Either<TError, TResult> =
-    | { error: TError; result?: never }
-    | { error?: never; result: TResult }
+  | { error: TError; result?: never }
+  | { error?: never; result: TResult }
 
 type ReturnTypeForContract<
   TApiContract extends ApiContract,

@@ -563,7 +563,7 @@ describe('sendByApiContract', () => {
 
       expect(callCount).toBe(2)
       expect(result.error).toMatchObject({
-        message: 'Failed to process API response. (Status: 503, Content-Type: application/json)'
+        message: 'Failed to process API response. (Status: 503, Content-Type: application/json)',
       })
       expect(result.result).toBeUndefined()
     })
