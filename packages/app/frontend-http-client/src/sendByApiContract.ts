@@ -190,24 +190,16 @@ export async function sendByApiContract<
   }
 
   const normalizedHeaders = normalizeHeaders(response)
-  const parsedHeaders =
-    validateResponse && routeContract.responseHeaderSchema
-      ? {
-          ...normalizedHeaders,
-          ...routeContract.responseHeaderSchema.parse(normalizedHeaders),
-        }
-      : normalizedHeaders
-
   const contentType = normalizedHeaders['content-type']
 
-  const resolution = resolveResponseEntry(
+  const resolvedResponseEntry = resolveResponseEntry(
     routeContract.responsesByStatusCode,
     response.status,
     contentType,
     strictContentType,
   )
 
-  if (!resolution) {
+  if (!resolvedResponseEntry) {
     await response.body?.cancel()
     return {
       error: new Error(
@@ -216,7 +208,15 @@ export async function sendByApiContract<
     }
   }
 
-  const parsedBody = await parseBody(response, resolution, validateResponse, signal)
+  const parsedBody = await parseBody(response, resolvedResponseEntry, validateResponse, signal)
+
+  const parsedHeaders =
+    validateResponse && routeContract.responseHeaderSchema
+      ? {
+          ...normalizedHeaders,
+          ...routeContract.responseHeaderSchema.parse(normalizedHeaders),
+        }
+      : normalizedHeaders
 
   const parsedResponse = {
     statusCode: response.status,

@@ -142,7 +142,9 @@ describe('sendByApiContract', () => {
       const result = await sendByApiContract(buildClient(), contract, {})
 
       expect(result.error).toEqual(
-        expect.objectContaining({ message: expect.stringContaining('Could not map response') }),
+        expect.objectContaining({
+          message: expect.stringContaining('Failed to process API response'),
+        }),
       )
       expect(result.result).toBeUndefined()
     })

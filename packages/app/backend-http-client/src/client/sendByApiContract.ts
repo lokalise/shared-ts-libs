@@ -245,12 +245,6 @@ export async function sendByApiContract<
   }
 
   const normalizedHeaders = normalizeHeaders(response.headers)
-
-  const parsedHeaders =
-    validateResponse && apiContract.responseHeaderSchema
-      ? { ...normalizedHeaders, ...apiContract.responseHeaderSchema.parse(normalizedHeaders) }
-      : normalizedHeaders
-
   const contentType = normalizedHeaders['content-type']
 
   const resolvedResponseEntry = resolveResponseEntry(
@@ -270,6 +264,11 @@ export async function sendByApiContract<
   }
 
   const parsedBody = await parseBody(response.body, resolvedResponseEntry, validateResponse)
+
+  const parsedHeaders =
+    validateResponse && apiContract.responseHeaderSchema
+      ? { ...normalizedHeaders, ...apiContract.responseHeaderSchema.parse(normalizedHeaders) }
+      : normalizedHeaders
 
   const parsedResponse = {
     statusCode: response.statusCode,
