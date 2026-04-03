@@ -311,7 +311,26 @@ describe('clientTypes', () => {
       type Result = InferNonSseClientResponse<typeof contract>
       expectTypeOf<Result>().toEqualTypeOf<{
         statusCode: 200
-        headers: { 'x-request-id': string } & Record<string, string | undefined>
+        headers: Omit<Record<string, string | undefined>, 'x-request-id'> & {
+          'x-request-id': string
+        }
+        body: { id: number }
+      }>()
+    })
+
+    it('allows non-string transformed header types without collapsing to never', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+        responseHeaderSchema: z.object({ 'x-retry-count': z.coerce.number() }),
+      })
+      type Result = InferNonSseClientResponse<typeof contract>
+      expectTypeOf<Result>().toEqualTypeOf<{
+        statusCode: 200
+        headers: Omit<Record<string, string | undefined>, 'x-retry-count'> & {
+          'x-retry-count': number
+        }
         body: { id: number }
       }>()
     })

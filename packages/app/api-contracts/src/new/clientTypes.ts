@@ -42,7 +42,11 @@ export type ClientRequestParams<
 
 type InferClientResponseHeaders<TApiContract extends ApiContract> =
   TApiContract['responseHeaderSchema'] extends z.ZodType
-    ? InferSchemaOutput<TApiContract['responseHeaderSchema']> & Record<string, string | undefined>
+    ? Omit<
+        Record<string, string | undefined>,
+        keyof InferSchemaOutput<TApiContract['responseHeaderSchema']>
+      > &
+        InferSchemaOutput<TApiContract['responseHeaderSchema']>
     : Record<string, string | undefined>
 
 /**
