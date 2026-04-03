@@ -459,4 +459,71 @@ describe('sendByApiContract', () => {
       expect(result.result?.body.size).toBe(4)
     })
   })
+
+  describe('retry', () => {
+    it('retries on configured status codes and returns success on recovery', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+      })
+
+      let callCount = 0
+      await mockServer.forGet('/products/1').thenCallback(() => {
+        callCount++
+        if (callCount === 1) {
+          return { statusCode: 503, headers: JSON_HEADERS, body: '{}' }
+        }
+        return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
+      })
+
+      const result = await sendByApiContract(
+        client,
+        contract,
+        {},
+        {
+          requestLabel: 'test',
+          retryConfig: { maxAttempts: 2, statusCodesToRetry: [503], retryOnTimeout: false },
+        },
+      )
+
+      expect(callCount).toBe(2)
+      expect(result.result).toMatchObject({ statusCode: 200, body: { id: 1 } })
+    })
+
+    it('returns error after exhausting all retries', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: {},
+      })
+
+      let callCount = 0
+      await mockServer.forGet('/products/1').thenCallback(() => {
+        callCount++
+        return { statusCode: 503, headers: JSON_HEADERS, body: '{}' }
+      })
+
+      const result = await sendByApiContract(
+        client,
+        contract,
+        {},
+        {
+          requestLabel: 'test',
+          retryConfig: {
+            maxAttempts: 2,
+            statusCodesToRetry: [503],
+            retryOnTimeout: false,
+            delayResolver(_, attemptNumber) {
+              return attemptNumber < 2 ? 1 : -1
+            },
+          },
+        },
+      )
+
+      expect(callCount).toBe(2)
+      expect(result.error).toMatchObject({ statusCode: 503 })
+      expect(result.result).toBeUndefined()
+    })
+  })
 })
