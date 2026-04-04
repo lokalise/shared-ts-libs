@@ -15,6 +15,7 @@ import { JSON_HEADERS } from './constants.ts'
 import { buildClient } from './httpClient.ts'
 import mockProduct1 from './mock-data/mockProduct1.json' with { type: 'json' }
 import { sendByApiContract } from './sendByApiContract.ts'
+import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
 describe('sendByApiContract', () => {
   const mockServer = getLocal()
@@ -563,9 +564,8 @@ describe('sendByApiContract', () => {
       )
 
       expect(callCount).toBe(2)
-      expect(result.error).toMatchObject({
-        message: 'Failed to process API response. (Status: 503, Content-Type: application/json)',
-      })
+      expect(result.error).toBeInstanceOf(UnexpectedResponseError)
+      expect(result.error).toMatchObject({ statusCode: 503 })
       expect(result.result).toBeUndefined()
     })
 

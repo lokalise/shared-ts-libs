@@ -33,6 +33,7 @@ export type {
   RequestResultDefinitiveEither,
 } from './client/types.ts'
 export { isInternalRequestError } from './client/types.ts'
+export { UnexpectedResponseError } from './client/UnexpectedResponseError.ts'
 export {
   isResponseStatusError,
   ResponseStatusError,

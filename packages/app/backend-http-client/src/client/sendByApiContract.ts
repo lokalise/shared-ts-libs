@@ -15,6 +15,7 @@ import {
 import { type Client, type Dispatcher, Headers, interceptors, type RetryHandler } from 'undici'
 import type { RetryConfig } from 'undici-retry'
 import type { HttpRequestContext } from './types.ts'
+import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
 // captureAsError: true → filter to success codes only; captureAsError: false → all codes from contract
 type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> = TDoCaptureAsError extends true
@@ -245,12 +246,8 @@ export async function sendByApiContract<
   )
 
   if (!resolvedResponseEntry) {
-    await response.body.dump()
-    return {
-      error: new Error(
-        `Failed to process API response. (Status: ${response.statusCode}, Content-Type: ${contentType ?? 'unknown'})`,
-      ),
-    }
+    const body = await response.body.text()
+    return { error: new UnexpectedResponseError(response.statusCode, normalizedHeaders, body) }
   }
 
   const parsedBody = await parseBody(response.body, resolvedResponseEntry)
