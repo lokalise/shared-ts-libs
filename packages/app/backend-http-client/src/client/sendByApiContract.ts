@@ -28,11 +28,6 @@ export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> =
   retryConfig?: RetryConfig
   signal?: AbortSignal
   /**
-   * When true (default), the response body is validated against the contract schema.
-   * When false, the body is returned as-is without validation.
-   */
-  validateResponse?: boolean
-  /**
    * When true (default), throws if the response content-type doesn't match the contract entry.
    * When false, falls back to the contract entry's kind when content-type is absent or mismatched —
    * only applies to single-entry responses (not anyOfResponses).
@@ -170,11 +165,7 @@ const resolveHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> => {
   return typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
 }
 
-async function parseBody(
-  body: Dispatcher.ResponseData['body'],
-  resolvedEntry: ResponseKind,
-  validateResponse: boolean,
-) {
+async function parseBody(body: Dispatcher.ResponseData['body'], resolvedEntry: ResponseKind) {
   switch (resolvedEntry.kind) {
     case 'noContent': {
       await body.dump()
@@ -188,7 +179,7 @@ async function parseBody(
     }
     case 'json': {
       const json = await body.json()
-      return validateResponse ? resolvedEntry.schema.parse(json) : json
+      return resolvedEntry.schema.parse(json)
     }
     case 'sse': {
       return parseSseStream(body, resolvedEntry.schemaByEventName)
@@ -207,7 +198,6 @@ export async function sendByApiContract<
   params: ClientRequestParams<TApiContract, TIsStreaming>,
   options: ContractRequestOptions<TCaptureAsError>,
 ): Promise<ReturnTypeForContract<TApiContract, TIsStreaming, TCaptureAsError>> {
-  const validateResponse = options.validateResponse ?? true
   const strictContentType = options.strictContentType ?? true
   const captureAsError = options.captureAsError ?? true
 
@@ -263,12 +253,11 @@ export async function sendByApiContract<
     }
   }
 
-  const parsedBody = await parseBody(response.body, resolvedResponseEntry, validateResponse)
+  const parsedBody = await parseBody(response.body, resolvedResponseEntry)
 
-  const parsedHeaders =
-    validateResponse && apiContract.responseHeaderSchema
-      ? { ...normalizedHeaders, ...apiContract.responseHeaderSchema.parse(normalizedHeaders) }
-      : normalizedHeaders
+  const parsedHeaders = apiContract.responseHeaderSchema
+    ? { ...normalizedHeaders, ...apiContract.responseHeaderSchema.parse(normalizedHeaders) }
+    : normalizedHeaders
 
   const parsedResponse = {
     statusCode: response.statusCode,

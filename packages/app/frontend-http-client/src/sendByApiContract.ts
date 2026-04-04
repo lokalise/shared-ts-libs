@@ -42,11 +42,6 @@ type ReturnTypeForContract<
 
 export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> = {
   /**
-   * When true (default), the response body is validated against the contract schema.
-   * When false, the body is returned as-is without validation.
-   */
-  validateResponse?: boolean
-  /**
    * When true, non-success HTTP responses are mapped to Either.error.
    * When false (default), all HTTP responses are returned in Either.result regardless of status code.
    */
@@ -99,12 +94,7 @@ async function* parseSseStreamWithSchema(
   }
 }
 
-async function parseBody(
-  response: Response,
-  resolvedEntry: ResponseKind,
-  validateResponse: boolean,
-  signal: AbortSignal,
-) {
+async function parseBody(response: Response, resolvedEntry: ResponseKind, signal: AbortSignal) {
   switch (resolvedEntry.kind) {
     case 'noContent':
       return null
@@ -114,7 +104,7 @@ async function parseBody(
       return await response.blob()
     case 'json': {
       const json = await response.json()
-      return validateResponse ? resolvedEntry.schema.parse(json) : json
+      return resolvedEntry.schema.parse(json)
     }
     case 'sse':
       return parseSseStreamWithSchema(response, resolvedEntry.schemaByEventName, signal)
@@ -136,7 +126,6 @@ export async function sendByApiContract<
 
   const signal = options.signal ?? new AbortController().signal
   const captureAsError = options.captureAsError ?? true
-  const validateResponse = options.validateResponse ?? true
   const strictContentType = options.strictContentType ?? true
 
   const requestHeaders: Record<string, string> = (await resolveHeaders(params.headers)) ?? {}
@@ -208,15 +197,14 @@ export async function sendByApiContract<
     }
   }
 
-  const parsedBody = await parseBody(response, resolvedResponseEntry, validateResponse, signal)
+  const parsedBody = await parseBody(response, resolvedResponseEntry, signal)
 
-  const parsedHeaders =
-    validateResponse && routeContract.responseHeaderSchema
-      ? {
-          ...normalizedHeaders,
-          ...routeContract.responseHeaderSchema.parse(normalizedHeaders),
-        }
-      : normalizedHeaders
+  const parsedHeaders = routeContract.responseHeaderSchema
+    ? {
+        ...normalizedHeaders,
+        ...routeContract.responseHeaderSchema.parse(normalizedHeaders),
+      }
+    : normalizedHeaders
 
   const parsedResponse = {
     statusCode: response.status,

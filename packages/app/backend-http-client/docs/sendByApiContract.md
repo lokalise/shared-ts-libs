@@ -209,7 +209,6 @@ const { result } = await sendByApiContract(
 | `captureAsError` | `boolean` | `true` | When `true`, 4xx/5xx responses defined in the contract go to `Either.error`. When `false`, all contract-defined status codes go to `Either.result`. |
 | `signal` | `AbortSignal` | `undefined` | Cancel the request or set a timeout via `AbortSignal.timeout(ms)`. |
 | `reqContext` | `{ reqId: string }` | — | Forwarded as `x-request-id` header. |
-| `validateResponse` | `boolean` | `true` | Validate the response body against the contract schema. |
 | `strictContentType` | `boolean` | `true` | When `true`, returns an error if the response `content-type` doesn't match the contract entry. When `false`, falls back to the entry's kind for single-entry responses. |
 | `disableKeepAlive` | `boolean` | `false` | Disable connection keep-alive for this request. |
 | `retryConfig` | `RetryConfig` | — | Retry configuration. See [Retry](#retry). |

@@ -62,7 +62,6 @@ All fields are optional. Defaults are shown.
 
 | Field | Default | Description |
 |---|---|---|
-| `validateResponse` | `true` | When `true`, parses the response body through the contract's Zod schema and throws on mismatch. When `false`, returns the raw parsed value. |
 | `captureAsError` | `true` | When `true`, non-2xx responses are placed in `Either.error`. When `false`, all HTTP responses whose status code is listed in the contract are placed in `Either.result`. |
 | `strictContentType` | `true` | When `true`, returns an error if the response `content-type` doesn't match the contract entry. When `false`, falls back to the contract entry's kind (only applies to single-entry responses, not `anyOfResponses`). |
 | `signal` | `undefined` | Optional `AbortSignal` to cancel the request mid-flight. |
@@ -257,9 +256,3 @@ const request = sendByApiContract(client, contract, {}, { signal: controller.sig
 controller.abort()
 ```
 
-### Skipping response validation
-
-```ts
-const { result } = await sendByApiContract(client, contract, {}, { validateResponse: false })
-// result.body is the raw parsed JSON value, no Zod parsing applied
-```
