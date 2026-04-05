@@ -114,6 +114,30 @@ if (response.result.statusCode === 404) {
 
 Status codes absent from the contract always surface as `Either.error`, regardless of this option.
 
+## UnexpectedResponseError
+
+When a response cannot be mapped — either because its status code is not listed in `responsesByStatusCode`, or because its `content-type` doesn't match the contract entry — `sendByApiContract` returns an `UnexpectedResponseError` as `Either.error`.
+
+```ts
+import { UnexpectedResponseError } from '@lokalise/backend-http-client'
+
+const response = await sendByApiContract(client, contract, params, { requestLabel: 'get-user' })
+
+if (response.error instanceof UnexpectedResponseError) {
+  console.log(response.error.statusCode) // e.g. 503
+  console.log(response.error.headers['content-type'])
+  console.log(response.error.body) // raw response body as text
+}
+```
+
+`UnexpectedResponseError` supports cross-realm `instanceof` checks via `Symbol.hasInstance`, so it works correctly even when the error crosses module or VM boundaries.
+
+| Property | Type | Description |
+|---|---|---|
+| `statusCode` | `number` | HTTP status code of the unexpected response. |
+| `headers` | `Record<string, string \| undefined>` | Normalised response headers. |
+| `body` | `string` | Raw response body read as UTF-8 text. |
+
 ## SSE and dual-mode
 
 ```ts

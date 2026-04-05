@@ -1,4 +1,4 @@
-const UNEXPECTED_RESPONSE_ERROR_BRAND = Symbol.for(
+const unexpectedResponseErrorBrand = Symbol.for(
   'lokalise.backend-http-client.error.UnexpectedResponseError',
 )
 
@@ -16,15 +16,15 @@ export class UnexpectedResponseError extends Error {
     this.headers = headers
     this.body = body
 
-    Object.defineProperty(this, UNEXPECTED_RESPONSE_ERROR_BRAND, { value: true })
+    Object.defineProperty(this, unexpectedResponseErrorBrand, { value: true })
   }
 
   static override [Symbol.hasInstance](val: unknown): boolean {
     return (
       val !== null &&
       typeof val === 'object' &&
-      UNEXPECTED_RESPONSE_ERROR_BRAND in val &&
-      val[UNEXPECTED_RESPONSE_ERROR_BRAND] === true
+      unexpectedResponseErrorBrand in val &&
+      val[unexpectedResponseErrorBrand] === true
     )
   }
 }
