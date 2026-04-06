@@ -53,7 +53,7 @@
         "cross-env": "^10.0.0",
         "fastify": "^5.7.4",
         "fastify-graceful-shutdown": "^4.0.1",
-        "fastify-metrics": "^12.1.0",
+        "fastify-metrics": "^13.2.0",
         "fastify-plugin": "^5.0.1",
         "ioredis": "^5.6.1",
         "pino": "^10.1.0",
