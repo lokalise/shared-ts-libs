@@ -3,6 +3,7 @@ const unexpectedResponseErrorBrand = Symbol.for(
 )
 
 export class UnexpectedResponseError extends Error {
+  readonly code = 'UNEXPECTED_RESPONSE_ERROR'
   readonly statusCode: number
   readonly headers: Record<string, string | undefined>
   readonly body: string
