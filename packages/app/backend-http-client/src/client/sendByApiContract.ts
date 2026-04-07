@@ -74,13 +74,20 @@ function toUndiciRetryOptions(config: RetryConfig): RetryHandler.RetryOptions {
       : undefined,
     retry: config.delayResolver
       ? (err, { state }, callback) => {
+          if (state.counter > config.maxAttempts) {
+            callback(err)
+            return
+          }
+
           const stub = {
             statusCode: ('statusCode' in err && err.statusCode) ?? 500,
             headers: ('headers' in err && err.headers) ?? {},
           } as Dispatcher.ResponseData
           const delay = config.delayResolver?.(stub, state.counter, config.statusCodesToRetry ?? [])
 
-          if (delay == null || delay === -1) {
+          if (delay === undefined) {
+            callback(null)
+          } else if (delay === -1) {
             callback(err)
           } else {
             setTimeout(() => {
