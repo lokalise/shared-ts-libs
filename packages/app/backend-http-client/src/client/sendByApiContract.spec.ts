@@ -180,6 +180,7 @@ describe('sendByApiContract', () => {
 
       const response = await sendByApiContract(client, contract, {}, { requestLabel: 'test' })
 
+      expectTypeOf(response.error).toEqualTypeOf<UnexpectedResponseError | undefined>()
       expect(response.error).toBeDefined()
       expect(response.result).toBeUndefined()
     })
@@ -593,6 +594,9 @@ describe('sendByApiContract', () => {
         )
 
         expect(callCount).toBe(1)
+        expectTypeOf(result.error).toEqualTypeOf<
+          UnexpectedResponseError | { statusCode: 429; headers: Record<string, string | undefined>; body: { message: string } } | undefined
+        >()
         expect(result.error).toMatchObject({ statusCode: 429 })
         expect(result.result).toBeUndefined()
       })

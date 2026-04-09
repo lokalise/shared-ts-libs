@@ -17,10 +17,31 @@ import type { RetryConfig } from 'undici-retry'
 import type { HttpRequestContext } from './types.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
-// captureAsError: true → filter to success codes only; captureAsError: false → all codes from contract
-type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> = TDoCaptureAsError extends true
-  ? Extract<T, { statusCode: SuccessfulHttpStatusCode }>
-  : T
+type AllContractResponses<
+  TApiContract extends ApiContract,
+  TIsStreaming extends boolean,
+> = TIsStreaming extends true
+  ? InferSseClientResponse<TApiContract>
+  : InferNonSseClientResponse<TApiContract>
+
+// captureAsError: true → success codes only; captureAsError: false → all codes from contract
+type ContractResultType<
+  TApiContract extends ApiContract,
+  TIsStreaming extends boolean,
+  TDoCaptureAsError extends boolean,
+> = TDoCaptureAsError extends true
+  ? Extract<AllContractResponses<TApiContract, TIsStreaming>, { statusCode: SuccessfulHttpStatusCode }>
+  : AllContractResponses<TApiContract, TIsStreaming>
+
+// captureAsError: true → UnexpectedResponseError | <error-status-code responses from contract>
+// captureAsError: false → only UnexpectedResponseError (all contract responses go to result)
+type ContractErrorType<
+  TApiContract extends ApiContract,
+  TIsStreaming extends boolean,
+  TDoCaptureAsError extends boolean,
+> = TDoCaptureAsError extends true
+  ? UnexpectedResponseError | Exclude<AllContractResponses<TApiContract, TIsStreaming>, { statusCode: SuccessfulHttpStatusCode }>
+  : UnexpectedResponseError
 
 export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> = {
   requestLabel: string
@@ -55,13 +76,8 @@ type ReturnTypeForContract<
   TIsStreaming extends boolean,
   TDoCaptureAsError extends boolean,
 > = Either<
-  UnexpectedResponseError,
-  CaptureAsErrorFilter<
-    TIsStreaming extends true
-      ? InferSseClientResponse<TApiContract>
-      : InferNonSseClientResponse<TApiContract>,
-    TDoCaptureAsError
-  >
+  ContractErrorType<TApiContract, TIsStreaming, TDoCaptureAsError>,
+  ContractResultType<TApiContract, TIsStreaming, TDoCaptureAsError>
 >
 
 function toUndiciRetryOptions(config: RetryConfig): RetryHandler.RetryOptions {
