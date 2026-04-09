@@ -13,9 +13,9 @@ import {
   type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
 import { stringify } from 'fast-querystring'
+import { ServerSentEventTransformStream } from 'parse-sse'
 import type { ConfiguredMiddleware } from 'wretch'
 import type { WretchInstance } from './types.ts'
-import { parseSseStream } from './utils/sseUtils.ts'
 
 // captureAsError: true → filter to success codes only; captureAsError: false → all codes from contract
 type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> = TDoCaptureAsError extends true
@@ -74,27 +74,36 @@ function normalizeHeaders(response: Response): Record<string, string | undefined
 async function* parseSseStreamWithSchema(
   response: Response,
   schemaByEventName: SseSchemaByEventName,
-  signal: AbortSignal,
-): AsyncGenerator<{ event: string; data: unknown }> {
+): AsyncGenerator<{ type: string; data: unknown; lastEventId: string; retry: number | undefined }> {
   if (!response.body) {
     throw new Error('Response body is null')
   }
 
-  const reader = response.body.getReader()
+  const reader = response.body
+    .pipeThrough(new TextDecoderStream())
+    .pipeThrough(new ServerSentEventTransformStream())
+    .getReader()
 
-  for await (const sseEvent of parseSseStream(reader, signal)) {
-    const schema = schemaByEventName[sseEvent.event]
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
 
-    if (!schema) {
-      throw new Error(`Schema for event "${sseEvent.event}" not found.`)
+      const { type, data, lastEventId, retry } = value
+      const schema = schemaByEventName[type]
+
+      if (!schema) {
+        throw new Error(`Schema for event "${type}" not found.`)
+      }
+
+      yield { type, data: schema.parse(JSON.parse(data)), lastEventId, retry }
     }
-
-    const parsed = JSON.parse(sseEvent.data)
-    yield { event: sseEvent.event, data: schema.parse(parsed) }
+  } finally {
+    reader.releaseLock()
   }
 }
 
-async function parseBody(response: Response, resolvedEntry: ResponseKind, signal: AbortSignal) {
+async function parseBody(response: Response, resolvedEntry: ResponseKind) {
   switch (resolvedEntry.kind) {
     case 'noContent':
       return null
@@ -107,7 +116,7 @@ async function parseBody(response: Response, resolvedEntry: ResponseKind, signal
       return resolvedEntry.schema.parse(json)
     }
     case 'sse':
-      return parseSseStreamWithSchema(response, resolvedEntry.schemaByEventName, signal)
+      return parseSseStreamWithSchema(response, resolvedEntry.schemaByEventName)
   }
 }
 
@@ -197,7 +206,7 @@ export async function sendByApiContract<
     }
   }
 
-  const parsedBody = await parseBody(response, resolvedResponseEntry, signal)
+  const parsedBody = await parseBody(response, resolvedResponseEntry)
 
   const parsedHeaders = routeContract.responseHeaderSchema
     ? {

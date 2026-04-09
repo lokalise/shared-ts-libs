@@ -52,7 +52,6 @@ type ContractErrorType<
   : UnexpectedResponseError
 
 export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> = {
-  requestLabel: string
   reqContext?: HttpRequestContext
   disableKeepAlive?: boolean
   retryConfig?: RetryConfig

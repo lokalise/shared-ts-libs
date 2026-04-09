@@ -164,7 +164,12 @@ describe('clientTypes', () => {
         | {
             statusCode: 200
             headers: DefaultHeaders
-            body: AsyncIterable<{ event: 'update'; data: { id: string } }>
+            body: AsyncIterable<{
+              type: 'update'
+              data: { id: string }
+              lastEventId: string
+              retry: number | undefined
+            }>
           }
         | { statusCode: 404; headers: DefaultHeaders; body: { message: string } }
       >()
@@ -185,7 +190,12 @@ describe('clientTypes', () => {
       expectTypeOf<Result>().toEqualTypeOf<{
         statusCode: 200
         headers: DefaultHeaders
-        body: AsyncIterable<{ event: 'chunk'; data: { delta: string } }>
+        body: AsyncIterable<{
+          type: 'chunk'
+          data: { delta: string }
+          lastEventId: string
+          retry: number | undefined
+        }>
       }>()
     })
 
@@ -201,7 +211,12 @@ describe('clientTypes', () => {
       expectTypeOf<Result>().toEqualTypeOf<{
         statusCode: 200
         headers: DefaultHeaders
-        body: AsyncIterable<{ event: 'tick'; data: { count: number } }>
+        body: AsyncIterable<{
+          type: 'tick'
+          data: { count: number }
+          lastEventId: string
+          retry: number | undefined
+        }>
       }>()
     })
 
@@ -218,7 +233,12 @@ describe('clientTypes', () => {
       expectTypeOf<Result>().toEqualTypeOf<{
         statusCode: 200
         headers: { 'x-request-id': string } & Record<string, string | undefined>
-        body: AsyncIterable<{ event: 'tick'; data: { count: number } }>
+        body: AsyncIterable<{
+          type: 'tick'
+          data: { count: number }
+          lastEventId: string
+          retry: number | undefined
+        }>
       }>()
     })
   })

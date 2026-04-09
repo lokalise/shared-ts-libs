@@ -72,11 +72,16 @@ export type InferNonSseSuccessResponses<T extends ResponsesByStatusCode> = NonSs
 
 /**
  * Discriminated union of SSE events inferred from a schemaByEventName map.
- * Each event is `{ event: EventName, data: z.output<Schema> }`.
+ * Aligns with the browser MessageEvent shape.
  */
 export type SseEventOf<S> = {
   [K in keyof S]: K extends string
-    ? { event: K; data: S[K] extends z.ZodType ? z.output<S[K]> : never }
+    ? {
+        type: K
+        data: S[K] extends z.ZodType ? z.output<S[K]> : never
+        lastEventId: string
+        retry: number | undefined
+      }
     : never
 }[keyof S]
 

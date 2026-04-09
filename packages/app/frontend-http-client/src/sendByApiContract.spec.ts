@@ -322,18 +322,31 @@ describe('sendByApiContract', () => {
       const response = await sendByApiContract(buildClient(), contract, {})
 
       expectTypeOf(response.result).toMatchTypeOf<
-        { body: AsyncIterable<{ event: 'update'; data: { id: string } }> } | undefined
+        | {
+            body: AsyncIterable<{
+              type: 'update'
+              data: { id: string }
+              lastEventId: string
+              retry: number | undefined
+            }>
+          }
+        | undefined
       >()
 
       if (!response.result) throw new Error('Expected result')
-      const events: { event: string; data: { id: string } }[] = []
+      const events: {
+        type: string
+        data: { id: string }
+        lastEventId: string
+        retry: number | undefined
+      }[] = []
       for await (const event of response.result.body) {
         events.push(event)
       }
 
       expect(events).toEqual([
-        { event: 'update', data: { id: '1' } },
-        { event: 'update', data: { id: '2' } },
+        { type: 'update', data: { id: '1' }, lastEventId: '', retry: undefined },
+        { type: 'update', data: { id: '2' }, lastEventId: '', retry: undefined },
       ])
     })
 
@@ -357,12 +370,19 @@ describe('sendByApiContract', () => {
       const response = await sendByApiContract(buildClient(), contract, {})
 
       if (!response.result) throw new Error('Expected result')
-      const events: { event: string; data: { count: number } }[] = []
+      const events: {
+        type: string
+        data: { count: number }
+        lastEventId: string
+        retry: number | undefined
+      }[] = []
       for await (const event of response.result.body) {
         events.push(event)
       }
 
-      expect(events).toEqual([{ event: 'tick', data: { count: 42 } }])
+      expect(events).toEqual([
+        { type: 'tick', data: { count: 42 }, lastEventId: '', retry: undefined },
+      ])
     })
 
     it('dual-mode: streaming: true infers AsyncIterable, streaming: false infers typed body', () => {
@@ -385,7 +405,12 @@ describe('sendByApiContract', () => {
       >
 
       expectTypeOf<NonNullable<SseResult['result']>['body']>().toEqualTypeOf<
-        AsyncIterable<{ event: 'update'; data: { id: string } }>
+        AsyncIterable<{
+          type: 'update'
+          data: { id: string }
+          lastEventId: string
+          retry: number | undefined
+        }>
       >()
       expectTypeOf<NonNullable<JsonResult['result']>['body']>().toEqualTypeOf<{ latest: string }>()
     })

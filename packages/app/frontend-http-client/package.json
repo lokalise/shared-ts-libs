@@ -37,7 +37,8 @@
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
-        "fast-querystring": "^1.1.2"
+        "fast-querystring": "^1.1.2",
+        "parse-sse": "^0.1.0"
     },
     "peerDependencies": {
         "@lokalise/api-contracts": ">=6.0.0",

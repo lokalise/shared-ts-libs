@@ -11,13 +11,13 @@ export async function* parseSseStream(
     .pipeThrough(new TextDecoderStream())
     .pipeThrough(new ServerSentEventTransformStream())
 
-  for await (const { type: event, data } of sseStream) {
-    const schema = schemaByEventName[event]
+  for await (const { type, data, lastEventId, retry } of sseStream) {
+    const schema = schemaByEventName[type]
 
     if (!schema) {
-      throw new Error(`Schema for event "${event}" not found.`)
+      throw new Error(`Schema for event "${type}" not found.`)
     }
 
-    yield { event, data: schema.parse(JSON.parse(data)) }
+    yield { type, data: schema.parse(JSON.parse(data)), lastEventId, retry }
   }
 }
