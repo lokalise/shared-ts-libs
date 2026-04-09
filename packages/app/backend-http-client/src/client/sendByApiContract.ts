@@ -12,7 +12,7 @@ import {
   type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
 import { type Client, type Dispatcher, Headers, interceptors, type RetryHandler } from 'undici'
-import type { RetryConfig } from 'undici-retry'
+import { createDefaultRetryResolver, type RetryConfig } from 'undici-retry'
 import { parseSseStream } from './parseSseStream.ts'
 import type { HttpRequestContext } from './types.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
@@ -87,38 +87,45 @@ type ReturnTypeForContract<
   ContractResultType<TApiContract, TIsStreaming, TDoCaptureAsError>
 >
 
+export const DEFAULT_RETRYABLE_STATUS_CODES = [
+  408, // Request Timeout
+  425, // Too Early
+  429, // Too Many Requests
+  500, // Internal Server Error
+  502, // Bad Gateway
+  503, // Service Unavailable
+  504, // Gateway Timeout
+] as const
+const DEFAULT_DELAY_RESOLVER = createDefaultRetryResolver()
+
 function toUndiciRetryOptions(config: RetryConfig): RetryHandler.RetryOptions {
+  const statusCodesToRetry = config.statusCodesToRetry || DEFAULT_RETRYABLE_STATUS_CODES
+  const delayResolver = config.delayResolver || DEFAULT_DELAY_RESOLVER
+
   return {
     throwOnError: false,
-    maxRetries: config.maxAttempts - 1,
-    statusCodes: config.statusCodesToRetry ? [...config.statusCodesToRetry] : undefined,
-    errorCodes: config.retryOnTimeout
-      ? ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'ENOTFOUND', 'ENETUNREACH', 'EAI_AGAIN']
-      : undefined,
-    retry: config.delayResolver
-      ? (err, { state }, callback) => {
-          if (state.counter > config.maxAttempts) {
-            callback(err)
-            return
-          }
+    retry(err, { state }, callback) {
+      if (state.counter >= config.maxAttempts) {
+        callback(err)
+        return
+      }
 
-          const stub = {
-            statusCode: ('statusCode' in err && err.statusCode) ?? 500,
-            headers: ('headers' in err && err.headers) ?? {},
-          } as Dispatcher.ResponseData
-          const delay = config.delayResolver?.(stub, state.counter, config.statusCodesToRetry ?? [])
+      const stub = {
+        statusCode: ('statusCode' in err && err.statusCode) ?? 500,
+        headers: ('headers' in err && err.headers) ?? {},
+      } as Dispatcher.ResponseData
+      const delay = delayResolver(stub, state.counter, statusCodesToRetry)
 
-          if (delay === undefined) {
-            callback(null)
-          } else if (delay === -1) {
-            callback(err)
-          } else {
-            setTimeout(() => {
-              callback(null)
-            }, delay)
-          }
-        }
-      : undefined,
+      if (delay === undefined) {
+        callback(null)
+      } else if (delay === -1) {
+        callback(err)
+      } else {
+        setTimeout(() => {
+          callback(null)
+        }, delay)
+      }
+    },
   }
 }
 

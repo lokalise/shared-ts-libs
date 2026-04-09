@@ -682,5 +682,99 @@ describe('sendByApiContract', () => {
         expect(result.result).toMatchObject({ statusCode: 200 })
       })
     })
+
+    describe('UNDICI network errors', () => {
+      // UND_ERR_SOCKET has no HTTP statusCode. The retry handler falls back to 500 when building
+      // the stub passed to the delayResolver, so retry behaviour depends on whether 500 is in
+      // statusCodesToRetry. mockttp rule priority is FIFO: first-registered handler wins.
+
+      it('retries on connection close and succeeds on recovery', async () => {
+        const contract = defineApiContract({
+          method: 'get',
+          pathResolver: () => '/products/1',
+          responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+        })
+
+        // FIFO: close handler fires once, success handler fires on retry.
+        // A small delay lets undici tear down the closed socket before reconnecting.
+        await mockServer.forGet('/products/1').once().thenCloseConnection()
+        await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+
+        const result = await sendByApiContract(
+          client,
+          contract,
+          {},
+          {
+            retryConfig: {
+              maxAttempts: 2,
+              statusCodesToRetry: [500],
+              retryOnTimeout: false,
+              delayResolver: () => 50,
+            },
+          },
+        )
+
+        expect(result.result).toMatchObject({ statusCode: 200, body: { id: 1 } })
+      })
+
+      it('throws UND_ERR_SOCKET after exhausting all retries', async () => {
+        const contract = defineApiContract({
+          method: 'get',
+          pathResolver: () => '/products/1',
+          responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+        })
+
+        await mockServer.forGet('/products/1').thenCloseConnection()
+
+        await expect(
+          sendByApiContract(
+            client,
+            contract,
+            {},
+            {
+              retryConfig: {
+                maxAttempts: 2,
+                statusCodesToRetry: [500],
+                retryOnTimeout: false,
+                delayResolver: () => 0,
+              },
+            },
+          ),
+        ).rejects.toMatchObject({ code: 'UND_ERR_SOCKET' })
+      })
+
+      it('does not retry when network error status proxy (500) is not in statusCodesToRetry', async () => {
+        const contract = defineApiContract({
+          method: 'get',
+          pathResolver: () => '/products/1',
+          responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+        })
+
+        // FIFO: close handler fires first. Because 500 is not in [503], the delay resolver
+        // returns -1 and the error propagates immediately — the success handler is never reached.
+        await mockServer.forGet('/products/1').once().thenCloseConnection()
+        await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+
+        await expect(
+          sendByApiContract(
+            client,
+            contract,
+            {},
+            {
+              retryConfig: {
+                maxAttempts: 3,
+                statusCodesToRetry: [503],
+                retryOnTimeout: false,
+                delayResolver: createDefaultRetryResolver({
+                  baseDelay: 0,
+                  maxDelay: 0,
+                  maxJitter: 0,
+                }),
+              },
+            },
+          ),
+        ).rejects.toMatchObject({ code: 'UND_ERR_SOCKET' })
+      })
+    })
   })
 })
