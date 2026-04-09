@@ -45,7 +45,7 @@ describe('sendByApiContract', () => {
         .forGet('/products/1')
         .thenJson(200, { id: 1, title: 'Backpack' }, JSON_HEADERS)
 
-      const result = await sendByApiContract(client, contract, {}, {})
+      const result = await sendByApiContract(client, contract, {})
 
       expectTypeOf(result.result).toMatchTypeOf<
         { body: { id: number; title: string } } | undefined
@@ -63,7 +63,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
-      const result = await sendByApiContract(client, contract, { pathParams: { productId: 1 } }, {})
+      const result = await sendByApiContract(client, contract, { pathParams: { productId: 1 } })
 
       expect(result.result).toMatchObject({ body: mockProduct1 })
     })
@@ -81,7 +81,7 @@ describe('sendByApiContract', () => {
         .withQuery({ limit: '3' })
         .thenJson(200, [{ id: 1 }], JSON_HEADERS)
 
-      const result = await sendByApiContract(client, contract, { queryParams: { limit: 3 } }, {})
+      const result = await sendByApiContract(client, contract, { queryParams: { limit: 3 } })
 
       expect(result.result).toMatchObject({ body: [{ id: 1 }] })
     })
@@ -118,7 +118,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/api/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
-      const result = await sendByApiContract(client, contract, { pathPrefix: 'api' }, {})
+      const result = await sendByApiContract(client, contract, { pathPrefix: 'api' })
 
       expect(result.result).toMatchObject({ body: mockProduct1 })
     })
@@ -132,7 +132,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(200, mockProduct1, JSON_HEADERS)
 
-      await expect(sendByApiContract(client, contract, {}, {})).rejects.toThrow()
+      await expect(sendByApiContract(client, contract, {})).rejects.toThrow()
     })
 
     it('returns non-2xx response as Either.error by default', async () => {
@@ -144,7 +144,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(500, { error: 'fail' }, JSON_HEADERS)
 
-      const response = await sendByApiContract(client, contract, {}, {})
+      const response = await sendByApiContract(client, contract, {})
 
       expect(response.error).toBeDefined()
       expect(response.result).toBeUndefined()
@@ -161,7 +161,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(500, { error: 'fail' }, JSON_HEADERS)
 
-      const response = await sendByApiContract(client, contract, {}, {})
+      const response = await sendByApiContract(client, contract, {})
 
       expectTypeOf(response.error).toEqualTypeOf<UnexpectedResponseError | undefined>()
       expect(response.error).toBeDefined()
@@ -183,7 +183,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forPost('/products').thenJson(201, { id: 21 }, JSON_HEADERS)
 
-      const result = await sendByApiContract(client, contract, { body: { name: 'test' } }, {})
+      const result = await sendByApiContract(client, contract, { body: { name: 'test' } })
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
       expect(result.result).toMatchObject({ body: { id: 21 } })
@@ -270,7 +270,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forDelete('/products/1').thenReply(204)
 
-      const result = await sendByApiContract(client, contract, { pathParams: { id: '1' } }, {})
+      const result = await sendByApiContract(client, contract, { pathParams: { id: '1' } })
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: null } | undefined>()
       expect(result.result).toMatchObject({ statusCode: 204, body: null })
@@ -294,7 +294,7 @@ describe('sendByApiContract', () => {
         .withHeaders({ accept: 'text/event-stream' })
         .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
 
-      const response = await sendByApiContract(client, contract, {}, {})
+      const response = await sendByApiContract(client, contract, {})
 
       expectTypeOf(response.result).toMatchTypeOf<
         | {
@@ -337,7 +337,7 @@ describe('sendByApiContract', () => {
         .withHeaders({ accept: 'text/event-stream' })
         .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
 
-      const response = await sendByApiContract(client, contract, {}, {})
+      const response = await sendByApiContract(client, contract, {})
 
       if (!response.result) throw new Error('Expected result')
       const events: unknown[] = []
@@ -396,7 +396,7 @@ describe('sendByApiContract', () => {
         .withHeaders({ accept: 'text/event-stream' })
         .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
 
-      const response = await sendByApiContract(client, contract, {}, {})
+      const response = await sendByApiContract(client, contract, {})
 
       if (!response.result) throw new Error('Expected result')
       const resultBody = response.result.body
@@ -421,7 +421,7 @@ describe('sendByApiContract', () => {
         .forGet('/export.csv')
         .thenReply(200, 'id,name\n1,Backpack', { 'content-type': 'text/csv' })
 
-      const result = await sendByApiContract(client, contract, {}, {})
+      const result = await sendByApiContract(client, contract, {})
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: string } | undefined>()
       expect(result.result).toMatchObject({ body: 'id,name\n1,Backpack' })
@@ -442,7 +442,7 @@ describe('sendByApiContract', () => {
         .forGet('/photo.png')
         .thenReply(200, imageBytes, { 'content-type': 'image/png' })
 
-      const result = await sendByApiContract(client, contract, {}, {})
+      const result = await sendByApiContract(client, contract, {})
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: Blob } | undefined>()
       expect(result.result?.body).toBeInstanceOf(Blob)
@@ -460,7 +460,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenCloseConnection()
 
-      await expect(sendByApiContract(client, contract, {}, {})).rejects.toMatchObject({
+      await expect(sendByApiContract(client, contract, {})).rejects.toMatchObject({
         code: 'UND_ERR_SOCKET',
       })
     })

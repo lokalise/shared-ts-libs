@@ -52,9 +52,28 @@ type ContractErrorType<
   : UnexpectedResponseError
 
 export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> = {
+  /**
+   * Request context used to propagate the request ID (`x-request-id` header) for distributed tracing.
+   */
   reqContext?: HttpRequestContext
+  /**
+   * When true, disables HTTP keep-alive so the connection is closed after the request.
+   * Useful for one-off requests where connection reuse is undesirable.
+   */
   disableKeepAlive?: boolean
+  /**
+   * Retry configuration. When provided, failed requests are retried according to the policy.
+   * Use `createDefaultRetryResolver` from `undici-retry` to build a standard delay resolver.
+   * Network-level errors (e.g. `UND_ERR_SOCKET`) are proxied to status 500 when evaluating
+   * `statusCodesToRetry`, so include 500 to retry on connection failures.
+   */
   retryConfig?: RetryConfig
+  /**
+   * An AbortSignal to cancel the in-flight request. Use this for both manual cancellation and
+   * timeouts — e.g. `AbortSignal.timeout(5000)` to abort after 5 seconds, or
+   * `AbortSignal.any([timeoutSignal, cancelSignal])` to combine multiple abort sources.
+   * When aborted, the request rejects with an `AbortError`.
+   */
   signal?: AbortSignal
   /**
    * When true (default), throws if the response content-type doesn't match the contract entry.
@@ -191,7 +210,7 @@ export async function sendByApiContract<
   client: Client,
   apiContract: TApiContract,
   params: ClientRequestParams<TApiContract, TIsStreaming>,
-  options: ContractRequestOptions<TCaptureAsError>,
+  options: ContractRequestOptions<TCaptureAsError> = {},
 ): Promise<ReturnTypeForContract<TApiContract, TIsStreaming, TCaptureAsError>> {
   const strictContentType = options.strictContentType ?? true
   const captureAsError = options.captureAsError ?? true

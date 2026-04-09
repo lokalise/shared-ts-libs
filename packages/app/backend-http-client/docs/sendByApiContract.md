@@ -23,7 +23,6 @@ const { result } = await sendByApiContract(
   client,
   getUser,
   { pathParams: { userId: '1' } },
-  { requestLabel: 'get-user' },
 )
 // result.body: { id: string; name: string }
 ```
@@ -62,7 +61,7 @@ type Either<TError, TResult> =
 By default (`captureAsError: true`), the result type only includes success status codes. HTTP 4xx/5xx responses defined in the contract are returned as `Either.error`. Status codes absent from the contract are always returned as `Either.error`.
 
 ```ts
-const response = await sendByApiContract(client, contract, params, { requestLabel: 'get-user' })
+const response = await sendByApiContract(client, contract, params)
 
 if (response.error) {
   // network error, retry exhaustion, or non-2xx response
@@ -88,7 +87,7 @@ const contract = defineApiContract({
   },
 })
 
-const response = await sendByApiContract(client, contract, { pathParams: { id: '1' } }, { requestLabel: 'get-user' })
+const response = await sendByApiContract(client, contract, { pathParams: { id: '1' } })
 
 // response.result is only typed for 200 (success codes)
 // response.error holds the 404 body when the server returns 404
@@ -103,7 +102,7 @@ const response = await sendByApiContract(
   client,
   contract,
   { pathParams: { id: '1' } },
-  { requestLabel: 'get-user', captureAsError: false },
+  { captureAsError: false },
 )
 
 // response.result is typed for both 200 and 404
@@ -121,7 +120,7 @@ When a response cannot be mapped — either because its status code is not liste
 ```ts
 import { UnexpectedResponseError } from '@lokalise/backend-http-client'
 
-const response = await sendByApiContract(client, contract, params, { requestLabel: 'get-user' })
+const response = await sendByApiContract(client, contract, params)
 
 if (response.error instanceof UnexpectedResponseError) {
   console.log(response.error.statusCode) // e.g. 503
@@ -152,9 +151,9 @@ const notifications = defineApiContract({
   },
 })
 
-const { result } = await sendByApiContract(client, notifications, {}, { requestLabel: 'subscribe' })
+const { result } = await sendByApiContract(client, notifications)
 for await (const event of result.body) {
-  // event: { event: 'update'; data: { id: string } }
+  // event: { type: 'update'; data: { id: string }; lastEventId: string; retry: number | undefined }
 }
 
 // Dual-mode — streaming: true/false selects between SSE and JSON
@@ -174,15 +173,13 @@ const stream = await sendByApiContract(
   client,
   chat,
   { body: { message: 'hi' }, streaming: true },
-  { requestLabel: 'chat' },
 )
-// stream.result.body: AsyncIterable<{ event: 'chunk'; data: { delta: string } }>
+// stream.result.body: AsyncIterable<{ type: 'chunk'; data: { delta: string }; lastEventId: string; retry: number | undefined }>
 
 const json = await sendByApiContract(
   client,
   chat,
   { body: { message: 'hi' }, streaming: false },
-  { requestLabel: 'chat' },
 )
 // json.result.body: { text: string }
 ```
@@ -196,9 +193,24 @@ const { result } = await sendByApiContract(
   client,
   getUser,
   { pathParams: { userId: '1' } },
-  { requestLabel: 'get-user', signal: AbortSignal.timeout(5000) },
+  { signal: AbortSignal.timeout(5000) },
 )
 ```
+
+To combine a timeout with manual cancellation, use `AbortSignal.any`:
+
+```ts
+const controller = new AbortController()
+
+const { result } = await sendByApiContract(
+  client,
+  getUser,
+  { pathParams: { userId: '1' } },
+  { signal: AbortSignal.any([AbortSignal.timeout(5000), controller.signal]) },
+)
+```
+
+When the signal fires, the request rejects with an `AbortError`.
 
 ## Retry
 
@@ -212,7 +224,6 @@ const { result } = await sendByApiContract(
   getUser,
   { pathParams: { userId: '1' } },
   {
-    requestLabel: 'get-user',
     retryConfig: {
       maxAttempts: 3,
       statusCodesToRetry: [503, 429],
@@ -225,14 +236,25 @@ const { result } = await sendByApiContract(
 
 `maxAttempts` is the total number of attempts (initial + retries). When all attempts are exhausted, the last error response is returned as `Either.error`.
 
+### Network-level errors
+
+Network-level errors such as `UND_ERR_SOCKET` (connection closed) have no HTTP status code. The retry handler proxies them to status `500` when consulting the `delayResolver`, so include `500` in `statusCodesToRetry` to retry on connection failures:
+
+```ts
+retryConfig: {
+  maxAttempts: 3,
+  statusCodesToRetry: [500, 503, 429],
+  delayResolver: createDefaultRetryResolver(),
+}
+```
+
 ## Options
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `requestLabel` | `string` | required | Label included in errors for observability. |
 | `captureAsError` | `boolean` | `true` | When `true`, 4xx/5xx responses defined in the contract go to `Either.error`. When `false`, all contract-defined status codes go to `Either.result`. |
-| `signal` | `AbortSignal` | `undefined` | Cancel the request or set a timeout via `AbortSignal.timeout(ms)`. |
-| `reqContext` | `{ reqId: string }` | — | Forwarded as `x-request-id` header. |
+| `signal` | `AbortSignal` | — | Cancel the request or apply a timeout. Use `AbortSignal.timeout(ms)` for timeouts or `AbortSignal.any([…])` to combine sources. Rejects with `AbortError` when fired. |
+| `reqContext` | `{ reqId: string }` | — | Forwarded as `x-request-id` header for distributed tracing. |
 | `strictContentType` | `boolean` | `true` | When `true`, returns an error if the response `content-type` doesn't match the contract entry. When `false`, falls back to the entry's kind for single-entry responses. |
 | `disableKeepAlive` | `boolean` | `false` | Disable connection keep-alive for this request. |
 | `retryConfig` | `RetryConfig` | — | Retry configuration. See [Retry](#retry). |
