@@ -462,7 +462,7 @@ describe('sendByApiContract', () => {
   })
 
   describe('request errors', () => {
-    it('returns connection error as Either.error when server closes the connection', async () => {
+    it('throws when server closes the connection', async () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/products/1',
@@ -471,34 +471,26 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenCloseConnection()
 
-      const result = await sendByApiContract(client, contract, {}, { requestLabel: 'test' })
-
-      expect(result).toEqual({
-        error: expect.objectContaining({
-          code: 'UND_ERR_SOCKET',
-        }),
-      })
+      await expect(
+        sendByApiContract(client, contract, {}, { requestLabel: 'test' }),
+      ).rejects.toMatchObject({ code: 'UND_ERR_SOCKET' })
     })
 
-    it('returns network error as Either.error when request is aborted', async () => {
+    it('throws when request is aborted', async () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 200: z.object({ id: z.number() }) },
       })
 
-      const result = await sendByApiContract(
-        client,
-        contract,
-        {},
-        { requestLabel: 'test', signal: AbortSignal.abort() },
-      )
-
-      expect(result).toEqual({
-        error: expect.objectContaining({
-          name: 'AbortError',
-        }),
-      })
+      await expect(
+        sendByApiContract(
+          client,
+          contract,
+          {},
+          { requestLabel: 'test', signal: AbortSignal.abort() },
+        ),
+      ).rejects.toMatchObject({ name: 'AbortError' })
     })
   })
 

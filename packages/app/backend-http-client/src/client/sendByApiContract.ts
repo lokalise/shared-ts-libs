@@ -55,7 +55,7 @@ type ReturnTypeForContract<
   TIsStreaming extends boolean,
   TDoCaptureAsError extends boolean,
 > = Either<
-  unknown,
+  UnexpectedResponseError,
   CaptureAsErrorFilter<
     TIsStreaming extends true
       ? InferSseClientResponse<TApiContract>
@@ -227,20 +227,15 @@ export async function sendByApiContract<
     ? client.compose(interceptors.retry(toUndiciRetryOptions(options.retryConfig)))
     : client
 
-  let response: Dispatcher.ResponseData
-  try {
-    response = await dispatcher.request({
-      method: apiContract.method.toUpperCase(),
-      path: buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix),
-      body: params.body ? JSON.stringify(params.body) : undefined,
-      query: params.queryParams,
-      headers: requestHeaders,
-      reset: options.disableKeepAlive ?? false,
-      signal: options.signal,
-    })
-  } catch (err) {
-    return { error: err }
-  }
+  const response = await dispatcher.request({
+    method: apiContract.method.toUpperCase(),
+    path: buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix),
+    body: params.body ? JSON.stringify(params.body) : undefined,
+    query: params.queryParams,
+    headers: requestHeaders,
+    reset: options.disableKeepAlive ?? false,
+    signal: options.signal,
+  })
 
   const normalizedHeaders = normalizeHeaders(response.headers)
   const contentType = normalizedHeaders['content-type']
