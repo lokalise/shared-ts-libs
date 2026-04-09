@@ -595,7 +595,13 @@ describe('sendByApiContract', () => {
 
         expect(callCount).toBe(1)
         expectTypeOf(result.error).toEqualTypeOf<
-          UnexpectedResponseError | { statusCode: 429; headers: Record<string, string | undefined>; body: { message: string } } | undefined
+          | UnexpectedResponseError
+          | {
+              statusCode: 429
+              headers: Record<string, string | undefined>
+              body: { message: string }
+            }
+          | undefined
         >()
         expect(result.error).toMatchObject({ statusCode: 429 })
         expect(result.result).toBeUndefined()

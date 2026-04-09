@@ -9,11 +9,11 @@ import {
   type InferSseClientResponse,
   type ResponseKind,
   resolveResponseEntry,
-  type SseSchemaByEventName,
   type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
 import { type Client, type Dispatcher, Headers, interceptors, type RetryHandler } from 'undici'
 import type { RetryConfig } from 'undici-retry'
+import { parseSseStream } from './parseSseStream.ts'
 import type { HttpRequestContext } from './types.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
@@ -30,7 +30,10 @@ type ContractResultType<
   TIsStreaming extends boolean,
   TDoCaptureAsError extends boolean,
 > = TDoCaptureAsError extends true
-  ? Extract<AllContractResponses<TApiContract, TIsStreaming>, { statusCode: SuccessfulHttpStatusCode }>
+  ? Extract<
+      AllContractResponses<TApiContract, TIsStreaming>,
+      { statusCode: SuccessfulHttpStatusCode }
+    >
   : AllContractResponses<TApiContract, TIsStreaming>
 
 // captureAsError: true → UnexpectedResponseError | <error-status-code responses from contract>
@@ -40,7 +43,12 @@ type ContractErrorType<
   TIsStreaming extends boolean,
   TDoCaptureAsError extends boolean,
 > = TDoCaptureAsError extends true
-  ? UnexpectedResponseError | Exclude<AllContractResponses<TApiContract, TIsStreaming>, { statusCode: SuccessfulHttpStatusCode }>
+  ?
+      | UnexpectedResponseError
+      | Exclude<
+          AllContractResponses<TApiContract, TIsStreaming>,
+          { statusCode: SuccessfulHttpStatusCode }
+        >
   : UnexpectedResponseError
 
 export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> = {
@@ -112,49 +120,6 @@ function toUndiciRetryOptions(config: RetryConfig): RetryHandler.RetryOptions {
           }
         }
       : undefined,
-  }
-}
-
-function parseSseBlock(block: string, schemaByEventName: SseSchemaByEventName) {
-  let event = 'message'
-  let data = ''
-
-  for (const line of block.split('\n')) {
-    if (line.startsWith('event:')) {
-      event = line.slice(6).trim()
-    } else if (line.startsWith('data:')) {
-      data += (data ? '\n' : '') + line.slice(5).trim()
-    }
-  }
-
-  const schema = schemaByEventName[event]
-
-  if (!schema) {
-    throw new Error(`Schema for event "${event}" not found.`)
-  }
-
-  const parsed = JSON.parse(data)
-
-  return { event, data: schema.parse(parsed) }
-}
-
-async function* parseSseStream(
-  stream: Dispatcher.ResponseData['body'],
-  schemaByEventName: SseSchemaByEventName,
-): AsyncGenerator {
-  let buffer = ''
-  for await (const chunk of stream) {
-    buffer += (chunk as Buffer).toString('utf8').replace(/\r\n/g, '\n')
-    let boundary = buffer.indexOf('\n\n')
-    while (boundary !== -1) {
-      const block = buffer.slice(0, boundary)
-      buffer = buffer.slice(boundary + 2)
-      if (block.trim()) {
-        const item = parseSseBlock(block, schemaByEventName)
-        if (item !== null) yield item
-      }
-      boundary = buffer.indexOf('\n\n')
-    }
   }
 }
 
