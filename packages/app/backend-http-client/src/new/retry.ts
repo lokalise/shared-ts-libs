@@ -3,63 +3,68 @@ import type { Dispatcher } from 'undici'
 
 export type RetryConfig = {
   /**
-  Maximum number of retries, not counting the initial attempt.
-
-  @default 2
-  */
+   * Maximum number of retries after the initial attempt.
+   * For example, `maxRetries: 2` allows up to 3 total calls.
+   *
+   * @default 2
+   */
   maxRetries?: number
 
   /**
-  HTTP status codes that trigger a retry.
-
-  @default [408, 425, 429, 500, 502, 503, 504]
-  */
+   * HTTP status codes that trigger a retry.
+   * Responses with codes not in this list are returned immediately.
+   *
+   * @default [408, 425, 429, 500, 502, 503, 504]
+   */
   statusCodes?: readonly number[]
 
   /**
-   Function to calculate the delay in milliseconds between retries.
-   Receives the retry number (1 = first retry, 2 = second, …).
-
-   @default (n) => 100 * 2 ** (n - 1)
+   * Calculates the delay in milliseconds before the next retry.
+   * Receives the retry number (1 = first retry, 2 = second, …).
+   * The result is capped by `maxDelay` and has jitter added via `maxJitter`.
+   *
+   * @default (n) => 100 * 2 ** (n - 1) — exponential backoff: 100 ms, 200 ms, 400 ms, …
    */
   delay?: (retryNumber: number) => number
 
   /**
-   Hard upper bound in milliseconds for any delay, including `Retry-After` values.
-
-   @default 30_000
+   * Hard upper bound in milliseconds for any delay, including `Retry-After` values.
+   *
+   * @default 30_000
    */
   maxDelay?: number
 
   /**
-  Maximum random jitter in milliseconds to add on top of any delay, including `Retry-After` values.
-  Helps spread out retries when many clients fail simultaneously.
-
-  @default 100
-  */
+   * Maximum random jitter in milliseconds added on top of the computed delay,
+   * including `Retry-After` values. Spreads retries across clients to avoid
+   * a thundering herd after a shared outage.
+   *
+   * @default 100
+   */
   maxJitter?: number
 
   /**
-  When `true`, honors `Retry-After` response headers instead of calling `delay()`.
-  Set to `false` to always use `delay()`.
-
-  @default true
-  */
+   * When `true`, uses the `Retry-After` response header as the delay instead of `delay()`.
+   * Falls back to `delay()` when the header is absent or unparseable.
+   * Set to `false` to always use `delay()`.
+   *
+   * @default true
+   */
   respectRetryAfter?: boolean
 
   /**
-  Whether to retry on network-level errors (e.g. `UND_ERR_SOCKET`).
-
-  @default true
-  */
+   * When `true`, retries on network-level errors such as `UND_ERR_SOCKET`.
+   *
+   * @default true
+   */
   retryOnNetworkError?: boolean
 
   /**
-  Whether to retry when a per-attempt timeout (set via `timeout` option) is exceeded.
-  Has no effect when `timeout` is not set.
-
-  @default true
-  */
+   * When `true`, retries when a per-attempt timeout expires (set via the `timeout` option).
+   * Has no effect when `timeout` is not configured.
+   *
+   * @default true
+   */
   retryOnTimeout?: boolean
 }
 
@@ -95,7 +100,7 @@ export function resolveRetryConfig(config: RetryConfig | true): ResolvedRetryCon
 
   // Strip undefined fields so they don't override defaults when spread below.
   // TypeScript optional fields can be explicitly set to undefined (e.g. { maxRetries: undefined }),
-  // which would otherwise shadow the default value in { ...defaultResolvedRetryConfig, ...config }.
+  // which would otherwise shadow the default value in { ...defaultRetryConfig, ...config }.
   const definedConfig = Object.fromEntries(
     Object.entries(config).filter(([, v]) => v !== undefined),
   )
@@ -135,11 +140,14 @@ export function parseRetryAfterHeader(headers: Dispatcher.ResponseData['headers'
   return null
 }
 
-function withJitterAndCap(delay: number, config: ResolvedRetryConfig): number {
+/**
+ * Adds a random jitter up to `maxJitter` ms to `delay`, then clamps the result to `maxDelay`.
+ */
+function applyJitterAndCap(delay: number, config: ResolvedRetryConfig): number {
   return Math.min(delay + Math.random() * config.maxJitter, config.maxDelay)
 }
 
-function resolveRetryDelayMs(
+function computeRetryDelay(
   response: Dispatcher.ResponseData,
   retryNumber: number,
   config: ResolvedRetryConfig,
@@ -148,15 +156,27 @@ function resolveRetryDelayMs(
     const retryAfterMs = parseRetryAfterHeader(response.headers)
 
     if (retryAfterMs !== null) {
-      return withJitterAndCap(retryAfterMs, config)
+      return applyJitterAndCap(retryAfterMs, config)
     }
   }
 
-  return withJitterAndCap(config.delay(retryNumber), config)
+  return applyJitterAndCap(config.delay(retryNumber), config)
 }
 
+/**
+ * Executes `fn` repeatedly until it resolves with a non-retryable response,
+ * throws a non-retryable error, or exhausts all retries.
+ *
+ * Retries on:
+ * - HTTP status codes listed in `config.statusCodes`
+ * - Network errors (e.g. `UND_ERR_SOCKET`) when `config.retryOnNetworkError` is `true`
+ * - Per-attempt timeouts when `config.retryOnTimeout` is `true`
+ *
+ * The optional `signal` is forwarded to inter-retry sleeps, so aborting it
+ * cancels both the in-flight request and any pending wait between attempts.
+ */
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it is acceptable
-export async function executeWithRetry(
+export async function withRetry(
   fn: () => Promise<Dispatcher.ResponseData>,
   config: ResolvedRetryConfig,
   signal?: AbortSignal,
@@ -171,11 +191,13 @@ export async function executeWithRetry(
     try {
       response = await fn()
     } catch (err) {
-      // handle NetworkError/Timeout/SignalAbort
+      // Re-throw immediately when retries are exhausted or the caller has aborted.
       if (isLastAttempt || signal?.aborted) {
         throw err
       }
 
+      // AbortSignal.timeout() throws a DOMException named 'TimeoutError', which is
+      // distinct from a manual signal.abort() which throws an 'AbortError'.
       const isTimeout =
         err !== null && typeof err === 'object' && 'name' in err && err.name === 'TimeoutError'
 
@@ -183,7 +205,7 @@ export async function executeWithRetry(
         throw err
       }
 
-      const delay = withJitterAndCap(config.delay(retryNumber), config)
+      const delay = applyJitterAndCap(config.delay(retryNumber), config)
       if (delay > 0) {
         await setTimeoutPromise(delay, undefined, { signal })
       }
@@ -191,11 +213,11 @@ export async function executeWithRetry(
       continue
     }
 
-    // handle response
+    // Retryable status code — consume the body and wait before the next attempt.
     if (!isLastAttempt && config.statusCodes.includes(response.statusCode)) {
-      const delay = resolveRetryDelayMs(response, retryNumber, config)
+      const delay = computeRetryDelay(response, retryNumber, config)
 
-      // undici response body always has to be processed or discarded
+      // undici response body must always be consumed or explicitly dumped.
       await response.body.dump()
 
       if (delay > 0) {
@@ -205,7 +227,6 @@ export async function executeWithRetry(
       continue
     }
 
-    // return success response or last error response
     return response
   }
 }

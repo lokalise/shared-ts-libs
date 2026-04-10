@@ -14,42 +14,8 @@ import {
 import { type Client, type Dispatcher, Headers } from 'undici'
 import type { HttpRequestContext } from '../client/types.ts'
 import { parseSseStream } from './parseSseStream.ts'
-import { executeWithRetry, type RetryConfig, resolveRetryConfig } from './retry.ts'
+import { type RetryConfig, resolveRetryConfig, withRetry } from './retry.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
-
-type AllContractResponses<
-  TApiContract extends ApiContract,
-  TIsStreaming extends boolean,
-> = TIsStreaming extends true
-  ? InferSseClientResponse<TApiContract>
-  : InferNonSseClientResponse<TApiContract>
-
-// captureAsError: true → success codes only; captureAsError: false → all codes from contract
-type ContractResultType<
-  TApiContract extends ApiContract,
-  TIsStreaming extends boolean,
-  TDoCaptureAsError extends boolean,
-> = TDoCaptureAsError extends true
-  ? Extract<
-      AllContractResponses<TApiContract, TIsStreaming>,
-      { statusCode: SuccessfulHttpStatusCode }
-    >
-  : AllContractResponses<TApiContract, TIsStreaming>
-
-// captureAsError: true → UnexpectedResponseError | <error-status-code responses from contract>
-// captureAsError: false → only UnexpectedResponseError (all contract responses go to result)
-type ContractErrorType<
-  TApiContract extends ApiContract,
-  TIsStreaming extends boolean,
-  TDoCaptureAsError extends boolean,
-> = TDoCaptureAsError extends true
-  ?
-      | UnexpectedResponseError
-      | Exclude<
-          AllContractResponses<TApiContract, TIsStreaming>,
-          { statusCode: SuccessfulHttpStatusCode }
-        >
-  : UnexpectedResponseError
 
 export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> = {
   /**
@@ -100,6 +66,40 @@ type Either<TError, TResult> =
   | { error: TError; result?: never }
   | { error?: never; result: TResult }
 
+type AllContractResponses<
+  TApiContract extends ApiContract,
+  TIsStreaming extends boolean,
+> = TIsStreaming extends true
+  ? InferSseClientResponse<TApiContract>
+  : InferNonSseClientResponse<TApiContract>
+
+// captureAsError: true → success codes only; captureAsError: false → all codes from contract
+type ContractResultType<
+  TApiContract extends ApiContract,
+  TIsStreaming extends boolean,
+  TDoCaptureAsError extends boolean,
+> = TDoCaptureAsError extends true
+  ? Extract<
+      AllContractResponses<TApiContract, TIsStreaming>,
+      { statusCode: SuccessfulHttpStatusCode }
+    >
+  : AllContractResponses<TApiContract, TIsStreaming>
+
+// captureAsError: true → UnexpectedResponseError | <error-status-code responses from contract>
+// captureAsError: false → only UnexpectedResponseError (all contract responses go to result)
+type ContractErrorType<
+  TApiContract extends ApiContract,
+  TIsStreaming extends boolean,
+  TDoCaptureAsError extends boolean,
+> = TDoCaptureAsError extends true
+  ?
+      | UnexpectedResponseError
+      | Exclude<
+          AllContractResponses<TApiContract, TIsStreaming>,
+          { statusCode: SuccessfulHttpStatusCode }
+        >
+  : UnexpectedResponseError
+
 type ReturnTypeForContract<
   TApiContract extends ApiContract,
   TIsStreaming extends boolean,
@@ -109,7 +109,11 @@ type ReturnTypeForContract<
   ContractResultType<TApiContract, TIsStreaming, TDoCaptureAsError>
 >
 
-function normalizeHeaders(
+const resolveRequestHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> => {
+  return typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
+}
+
+function normalizeResponseHeaders(
   rawHeaders: Dispatcher.ResponseData['headers'],
 ): Record<string, string | undefined> {
   const headers = new Headers()
@@ -136,10 +140,6 @@ function normalizeHeaders(
   })
 
   return result
-}
-
-const resolveHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> => {
-  return typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
 }
 
 async function parseBody(body: Dispatcher.ResponseData['body'], resolvedEntry: ResponseKind) {
@@ -179,7 +179,7 @@ export async function sendByApiContract<
 
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(apiContract)
 
-  const requestHeaders: Record<string, string> = (await resolveHeaders(params.headers)) ?? {}
+  const requestHeaders: Record<string, string> = (await resolveRequestHeaders(params.headers)) ?? {}
 
   if (options.reqContext) {
     requestHeaders['x-request-id'] = options.reqContext.reqId
@@ -209,10 +209,10 @@ export async function sendByApiContract<
   }
 
   const response = options.retry
-    ? await executeWithRetry(requestFn, resolveRetryConfig(options.retry), options.signal)
+    ? await withRetry(requestFn, resolveRetryConfig(options.retry), options.signal)
     : await requestFn()
 
-  const normalizedHeaders = normalizeHeaders(response.headers)
+  const normalizedHeaders = normalizeResponseHeaders(response.headers)
   const contentType = normalizedHeaders['content-type']
 
   const resolvedResponseEntry = resolveResponseEntry(
