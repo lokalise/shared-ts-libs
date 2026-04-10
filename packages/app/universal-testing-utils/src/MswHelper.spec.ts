@@ -1,7 +1,7 @@
 import { mapRouteToPath } from '@lokalise/api-contracts'
 import { sendByContract } from '@lokalise/frontend-http-client'
 import { setupServer } from 'msw/node'
-import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import wretch from 'wretch'
 import {
   getContract,
@@ -25,7 +25,7 @@ describe('MswHelper', () => {
   const mswHelper = new MswHelper(BASE_URL)
   const wretchClient = wretch(BASE_URL)
 
-  beforeEach(() => {
+  beforeAll(() => {
     server.listen({ onUnhandledRequest: 'error' })
   })
   afterEach(() => {
