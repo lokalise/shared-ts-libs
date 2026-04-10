@@ -155,8 +155,8 @@ export async function executeWithRetry(
   let retryNumber = 0
 
   while (true) {
-    retryNumber += 1
     const isLastAttempt = retryNumber >= config.maxRetries
+    retryNumber += 1
 
     let response: Dispatcher.ResponseData
     try {

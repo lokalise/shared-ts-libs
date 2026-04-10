@@ -25,16 +25,17 @@ export {
   sendPut,
   sendPutBinary,
 } from './client/httpClient.ts'
-export type { ContractRequestOptions } from './client/sendByApiContract.ts'
-export { sendByApiContract } from './client/sendByApiContract.ts'
 export type {
   HttpRequestContext,
   RequestOptions,
   RequestResultDefinitiveEither,
 } from './client/types.ts'
 export { isInternalRequestError } from './client/types.ts'
-export { UnexpectedResponseError } from './client/UnexpectedResponseError.ts'
 export {
   isResponseStatusError,
   ResponseStatusError,
 } from './errors/ResponseStatusError.ts'
+export type { RetryConfig as SendByApiContractRetryConfig } from './new/retry.ts'
+export type { ContractRequestOptions } from './new/sendByApiContract.ts'
+export { sendByApiContract } from './new/sendByApiContract.ts'
+export { UnexpectedResponseError } from './new/UnexpectedResponseError.ts'

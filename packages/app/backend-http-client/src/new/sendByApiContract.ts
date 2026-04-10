@@ -12,9 +12,9 @@ import {
   type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
 import { type Client, type Dispatcher, Headers } from 'undici'
+import type { HttpRequestContext } from '../client/types.ts'
 import { parseSseStream } from './parseSseStream.ts'
 import { executeWithRetry, type RetryConfig, resolveRetryConfig } from './retry.ts'
-import type { HttpRequestContext } from './types.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
 type AllContractResponses<

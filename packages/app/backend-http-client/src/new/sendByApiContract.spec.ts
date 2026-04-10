@@ -10,9 +10,9 @@ import { getLocal } from 'mockttp'
 import type { Client } from 'undici'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import { JSON_HEADERS } from './constants.ts'
-import { buildClient } from './httpClient.ts'
-import mockProduct1 from './mock-data/mockProduct1.json' with { type: 'json' }
+import { JSON_HEADERS } from '../client/constants.ts'
+import { buildClient } from '../client/httpClient.ts'
+import mockProduct1 from '../client/mock-data/mockProduct1.json' with { type: 'json' }
 import { sendByApiContract } from './sendByApiContract.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
