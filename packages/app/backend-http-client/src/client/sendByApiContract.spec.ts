@@ -8,7 +8,6 @@ import {
 } from '@lokalise/api-contracts'
 import { getLocal } from 'mockttp'
 import type { Client } from 'undici'
-import { createDefaultRetryResolver, DEFAULT_RETRY_CONFIG } from 'undici-retry'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import { JSON_HEADERS } from './constants.ts'
@@ -99,12 +98,9 @@ describe('sendByApiContract', () => {
         .withHeaders({ authorization: 'Bearer token' })
         .thenJson(200, mockProduct1, JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        client,
-        contract,
-        { headers: { authorization: 'Bearer token' } },
-        {},
-      )
+      const result = await sendByApiContract(client, contract, {
+        headers: { authorization: 'Bearer token' },
+      })
 
       expect(result.result).toMatchObject({ body: mockProduct1 })
     })
@@ -200,12 +196,10 @@ describe('sendByApiContract', () => {
 
       await mockServer.forPost('/orgs/acme/members').thenJson(201, { id: '1' }, JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        client,
-        contract,
-        { pathParams: { orgId: 'acme' }, body: { email: 'alice@example.com' } },
-        {},
-      )
+      const result = await sendByApiContract(client, contract, {
+        pathParams: { orgId: 'acme' },
+        body: { email: 'alice@example.com' },
+      })
 
       expect(result.result).toMatchObject({ body: { id: '1' } })
     })
@@ -223,12 +217,10 @@ describe('sendByApiContract', () => {
 
       await mockServer.forPut('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        client,
-        contract,
-        { pathParams: { id: '1' }, body: { name: 'updated' } },
-        {},
-      )
+      const result = await sendByApiContract(client, contract, {
+        pathParams: { id: '1' },
+        body: { name: 'updated' },
+      })
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
       expect(result.result).toMatchObject({ body: { id: 1 } })
@@ -247,12 +239,10 @@ describe('sendByApiContract', () => {
 
       await mockServer.forPatch('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        client,
-        contract,
-        { pathParams: { id: '1' }, body: { name: 'patched' } },
-        {},
-      )
+      const result = await sendByApiContract(client, contract, {
+        pathParams: { id: '1' },
+        body: { name: 'patched' },
+      })
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
       expect(result.result).toMatchObject({ body: { id: 1 } })
@@ -500,7 +490,7 @@ describe('sendByApiContract', () => {
         contract,
         {},
         {
-          retryConfig: { maxAttempts: 2, statusCodesToRetry: [503], retryOnTimeout: false },
+          retry: { maxRetries: 2, statusCodes: [503], delay: () => 0, maxJitter: 0 },
         },
       )
 
@@ -526,14 +516,7 @@ describe('sendByApiContract', () => {
         contract,
         {},
         {
-          retryConfig: {
-            maxAttempts: 2,
-            statusCodesToRetry: [503],
-            retryOnTimeout: false,
-            delayResolver(_, attemptNumber) {
-              return attemptNumber < 2 ? 1 : -1
-            },
-          },
+          retry: { maxRetries: 1, statusCodes: [503], delay: () => 0, maxJitter: 0 },
         },
       )
 
@@ -551,40 +534,6 @@ describe('sendByApiContract', () => {
           200: z.object({ id: z.number() }),
           429: z.object({ message: z.string() }),
         },
-      })
-
-      it('returns error if Retry-After delay is too long', async () => {
-        let callCount = 0
-        await mockServer.forGet('/products/1').thenCallback(() => {
-          callCount++
-          return {
-            statusCode: 429,
-            headers: { ...JSON_HEADERS, 'retry-after': '90' },
-            body: JSON.stringify({ message: 'rate limited' }),
-          }
-        })
-
-        const result = await sendByApiContract(
-          client,
-          retryAfterContract,
-          {},
-          {
-            retryConfig: { ...DEFAULT_RETRY_CONFIG, delayResolver: createDefaultRetryResolver() },
-          },
-        )
-
-        expect(callCount).toBe(1)
-        expectTypeOf(result.error).toEqualTypeOf<
-          | UnexpectedResponseError
-          | {
-              statusCode: 429
-              headers: Record<string, string | undefined>
-              body: { message: string }
-            }
-          | undefined
-        >()
-        expect(result.error).toMatchObject({ statusCode: 429 })
-        expect(result.result).toBeUndefined()
       })
 
       it('falls back to default delay when Retry-After has invalid format', async () => {
@@ -606,12 +555,7 @@ describe('sendByApiContract', () => {
           retryAfterContract,
           {},
           {
-            retryConfig: {
-              maxAttempts: 3,
-              statusCodesToRetry: [429],
-              retryOnTimeout: false,
-              delayResolver: createDefaultRetryResolver({ baseDelay: 0, maxDelay: 0 }),
-            },
+            retry: { maxRetries: 3, statusCodes: [429], delay: () => 0, maxJitter: 0 },
           },
         )
 
@@ -638,13 +582,12 @@ describe('sendByApiContract', () => {
           retryAfterContract,
           {},
           {
-            retryConfig: {
-              ...DEFAULT_RETRY_CONFIG,
-              delayResolver: createDefaultRetryResolver({
-                respectRetryAfter: false,
-                baseDelay: 0,
-                maxDelay: 0,
-              }),
+            retry: {
+              maxRetries: 3,
+              statusCodes: [429],
+              respectRetryAfter: false,
+              delay: () => 0,
+              maxJitter: 0,
             },
           },
         )
@@ -673,7 +616,7 @@ describe('sendByApiContract', () => {
           retryAfterContract,
           {},
           {
-            retryConfig: { ...DEFAULT_RETRY_CONFIG, delayResolver: createDefaultRetryResolver() },
+            retry: { maxRetries: 3, statusCodes: [429] },
           },
         )
 
@@ -684,9 +627,7 @@ describe('sendByApiContract', () => {
     })
 
     describe('UNDICI network errors', () => {
-      // UND_ERR_SOCKET has no HTTP statusCode. The retry handler falls back to 500 when building
-      // the stub passed to the delayResolver, so retry behaviour depends on whether 500 is in
-      // statusCodesToRetry. mockttp rule priority is FIFO: first-registered handler wins.
+      // mockttp rule priority is FIFO: first-registered handler wins.
 
       it('retries on connection close and succeeds on recovery', async () => {
         const contract = defineApiContract({
@@ -704,14 +645,7 @@ describe('sendByApiContract', () => {
           client,
           contract,
           {},
-          {
-            retryConfig: {
-              maxAttempts: 2,
-              statusCodesToRetry: [500],
-              retryOnTimeout: false,
-              delayResolver: () => 50,
-            },
-          },
+          { retry: { maxRetries: 2, retryOnNetworkError: true, delay: () => 50, maxJitter: 0 } },
         )
 
         expect(result.result).toMatchObject({ statusCode: 200, body: { id: 1 } })
@@ -731,27 +665,20 @@ describe('sendByApiContract', () => {
             client,
             contract,
             {},
-            {
-              retryConfig: {
-                maxAttempts: 2,
-                statusCodesToRetry: [500],
-                retryOnTimeout: false,
-                delayResolver: () => 0,
-              },
-            },
+            { retry: { maxRetries: 2, retryOnNetworkError: true, delay: () => 0, maxJitter: 0 } },
           ),
         ).rejects.toMatchObject({ code: 'UND_ERR_SOCKET' })
       })
 
-      it('does not retry when network error status proxy (500) is not in statusCodesToRetry', async () => {
+      it('does not retry network errors when retryOnNetworkError is false', async () => {
         const contract = defineApiContract({
           method: 'get',
           pathResolver: () => '/products/1',
           responsesByStatusCode: { 200: z.object({ id: z.number() }) },
         })
 
-        // FIFO: close handler fires first. Because 500 is not in [503], the delay resolver
-        // returns -1 and the error propagates immediately — the success handler is never reached.
+        // FIFO: close handler fires first. retryOnNetworkError: false means the error
+        // propagates immediately — the success handler is never reached.
         await mockServer.forGet('/products/1').once().thenCloseConnection()
         await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
 
@@ -760,18 +687,7 @@ describe('sendByApiContract', () => {
             client,
             contract,
             {},
-            {
-              retryConfig: {
-                maxAttempts: 3,
-                statusCodesToRetry: [503],
-                retryOnTimeout: false,
-                delayResolver: createDefaultRetryResolver({
-                  baseDelay: 0,
-                  maxDelay: 0,
-                  maxJitter: 0,
-                }),
-              },
-            },
+            { retry: { maxRetries: 3, retryOnNetworkError: false } },
           ),
         ).rejects.toMatchObject({ code: 'UND_ERR_SOCKET' })
       })

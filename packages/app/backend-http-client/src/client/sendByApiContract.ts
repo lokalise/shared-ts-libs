@@ -11,9 +11,9 @@ import {
   resolveResponseEntry,
   type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
-import { type Client, type Dispatcher, Headers, interceptors, type RetryHandler } from 'undici'
-import { createDefaultRetryResolver, type RetryConfig } from 'undici-retry'
+import { type Client, type Dispatcher, Headers } from 'undici'
 import { parseSseStream } from './parseSseStream.ts'
+import { executeWithRetry, type RetryConfig, resolveRetryConfig } from './retry.ts'
 import type { HttpRequestContext } from './types.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
@@ -63,15 +63,18 @@ export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> =
   disableKeepAlive?: boolean
   /**
    * Retry configuration. When provided, failed requests are retried according to the policy.
-   * Use `createDefaultRetryResolver` from `undici-retry` to build a standard delay resolver.
-   * Network-level errors (e.g. `UND_ERR_SOCKET`) are proxied to status 500 when evaluating
-   * `statusCodesToRetry`, so include 500 to retry on connection failures.
+   * Pass `true` to use all defaults (`maxRetries: 2`, exponential backoff, standard status codes).
    */
-  retryConfig?: RetryConfig
+  retry?: RetryConfig | true
   /**
-   * An AbortSignal to cancel the in-flight request. Use this for both manual cancellation and
-   * timeouts — e.g. `AbortSignal.timeout(5000)` to abort after 5 seconds, or
-   * `AbortSignal.any([timeoutSignal, cancelSignal])` to combine multiple abort sources.
+   * Per-attempt timeout in milliseconds. Each attempt (including retries) gets its own independent timeout.
+   * For a total deadline across all attempts, pass an `AbortSignal` via `signal` instead.
+   */
+  timeout?: number
+  /**
+   * An AbortSignal to cancel the in-flight request. Use this for manual cancellation or
+   * a total deadline across all attempts — e.g. `AbortSignal.timeout(5000)` to abort
+   * after 5 seconds regardless of retries, or `AbortSignal.any([...])` to combine sources.
    * When aborted, the request rejects with an `AbortError`.
    */
   signal?: AbortSignal
@@ -105,48 +108,6 @@ type ReturnTypeForContract<
   ContractErrorType<TApiContract, TIsStreaming, TDoCaptureAsError>,
   ContractResultType<TApiContract, TIsStreaming, TDoCaptureAsError>
 >
-
-export const DEFAULT_RETRYABLE_STATUS_CODES = [
-  408, // Request Timeout
-  425, // Too Early
-  429, // Too Many Requests
-  500, // Internal Server Error
-  502, // Bad Gateway
-  503, // Service Unavailable
-  504, // Gateway Timeout
-] as const
-const DEFAULT_DELAY_RESOLVER = createDefaultRetryResolver()
-
-function toUndiciRetryOptions(config: RetryConfig): RetryHandler.RetryOptions {
-  const statusCodesToRetry = config.statusCodesToRetry || DEFAULT_RETRYABLE_STATUS_CODES
-  const delayResolver = config.delayResolver || DEFAULT_DELAY_RESOLVER
-
-  return {
-    throwOnError: false,
-    retry(err, { state }, callback) {
-      if (state.counter >= config.maxAttempts) {
-        callback(err)
-        return
-      }
-
-      const stub = {
-        statusCode: ('statusCode' in err && err.statusCode) ?? 500,
-        headers: ('headers' in err && err.headers) ?? {},
-      } as Dispatcher.ResponseData
-      const delay = delayResolver(stub, state.counter, statusCodesToRetry)
-
-      if (delay === undefined) {
-        callback(null)
-      } else if (delay === -1) {
-        callback(err)
-      } else {
-        setTimeout(() => {
-          callback(null)
-        }, delay)
-      }
-    },
-  }
-}
 
 function normalizeHeaders(
   rawHeaders: Dispatcher.ResponseData['headers'],
@@ -201,7 +162,6 @@ async function parseBody(body: Dispatcher.ResponseData['body'], resolvedEntry: R
   }
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it is acceptable
 export async function sendByApiContract<
   TApiContract extends ApiContract,
   TIsStreaming extends boolean = DefaultStreaming<TApiContract['responsesByStatusCode']>,
@@ -229,19 +189,26 @@ export async function sendByApiContract<
     requestHeaders['content-type'] = 'application/json'
   }
 
-  const dispatcher = options.retryConfig
-    ? client.compose(interceptors.retry(toUndiciRetryOptions(options.retryConfig)))
-    : client
+  const requestFn = () => {
+    const signals = [
+      options.signal,
+      options.timeout !== undefined ? AbortSignal.timeout(options.timeout) : undefined,
+    ].filter((signal) => signal !== undefined)
 
-  const response = await dispatcher.request({
-    method: apiContract.method.toUpperCase(),
-    path: buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix),
-    body: params.body ? JSON.stringify(params.body) : undefined,
-    query: params.queryParams,
-    headers: requestHeaders,
-    reset: options.disableKeepAlive ?? false,
-    signal: options.signal,
-  })
+    return client.request({
+      method: apiContract.method.toUpperCase(),
+      path: buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix),
+      body: params.body ? JSON.stringify(params.body) : undefined,
+      query: params.queryParams,
+      headers: requestHeaders,
+      reset: options.disableKeepAlive ?? false,
+      signal: signals.length > 1 ? AbortSignal.any(signals) : signals[0],
+    })
+  }
+
+  const response = options.retry
+    ? await executeWithRetry(requestFn, resolveRetryConfig(options.retry), options.signal)
+    : await requestFn()
 
   const normalizedHeaders = normalizeHeaders(response.headers)
   const contentType = normalizedHeaders['content-type']

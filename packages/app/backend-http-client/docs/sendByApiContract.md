@@ -186,18 +186,29 @@ const json = await sendByApiContract(
 
 ## Timeout
 
-There is no `timeout` option. Use `AbortSignal.timeout(ms)` via the `signal` option instead:
+Use `timeout` to set a per-attempt deadline in milliseconds. Each attempt (including retries) gets its own independent timer:
 
 ```ts
 const { result } = await sendByApiContract(
   client,
   getUser,
   { pathParams: { userId: '1' } },
-  { signal: AbortSignal.timeout(5000) },
+  { timeout: 5000 },
 )
 ```
 
-To combine a timeout with manual cancellation, use `AbortSignal.any`:
+For a total deadline across all attempts, pass an `AbortSignal` via `signal` instead:
+
+```ts
+const { result } = await sendByApiContract(
+  client,
+  getUser,
+  { pathParams: { userId: '1' } },
+  { signal: AbortSignal.timeout(10_000) },
+)
+```
+
+To combine both, use `AbortSignal.any`:
 
 ```ts
 const controller = new AbortController()
@@ -206,55 +217,97 @@ const { result } = await sendByApiContract(
   client,
   getUser,
   { pathParams: { userId: '1' } },
-  { signal: AbortSignal.any([AbortSignal.timeout(5000), controller.signal]) },
+  {
+    timeout: 5000,
+    signal: AbortSignal.any([AbortSignal.timeout(15_000), controller.signal]),
+  },
 )
 ```
 
-When the signal fires, the request rejects with an `AbortError`.
+When the total signal fires, the request rejects with an `AbortError` and retries are stopped immediately.
 
 ## Retry
 
-Pass a `retryConfig` to retry failed requests. Uses `RetryConfig` from `undici-retry`:
+Pass a `retry` option to retry failed requests. Pass `true` to use all defaults, or a config object to customise behaviour:
 
 ```ts
-import { createDefaultRetryResolver } from '@lokalise/backend-http-client'
+// shorthand — retry up to 2 times with all defaults
+const { result } = await sendByApiContract(
+  client,
+  getUser,
+  { pathParams: { userId: '1' } },
+  { retry: true },
+)
 
+// full config
 const { result } = await sendByApiContract(
   client,
   getUser,
   { pathParams: { userId: '1' } },
   {
-    retryConfig: {
-      maxAttempts: 3,
-      statusCodesToRetry: [503, 429],
-      retryOnTimeout: true,
-      delayResolver: createDefaultRetryResolver(),
+    retry: {
+      maxRetries: 3,
+      statusCodes: [503, 429],
     },
   },
 )
 ```
 
-`maxAttempts` is the total number of attempts (initial + retries). When all attempts are exhausted, the last error response is returned as `Either.error`.
+`maxRetries` is the maximum number of retries, not counting the initial attempt. Default: `2`. When all retries are exhausted, the last response is returned as `Either.error`.
 
-### Network-level errors
+### Delay and backoff
 
-Network-level errors such as `UND_ERR_SOCKET` (connection closed) have no HTTP status code. The retry handler proxies them to status `500` when consulting the `delayResolver`, so include `500` in `statusCodesToRetry` to retry on connection failures:
+The `delay` function controls how long to wait before each retry. It receives the retry number (1 = first retry, 2 = second, …) and returns milliseconds. Default: exponential backoff — `100 * 2^(n - 1)`.
 
 ```ts
-retryConfig: {
-  maxAttempts: 3,
-  statusCodesToRetry: [500, 503, 429],
-  delayResolver: createDefaultRetryResolver(),
+// constant 200ms
+retry: { delay: () => 200 }
+
+// custom exponential
+retry: { delay: (n) => 300 * 2 ** (n - 1) }
+```
+
+`maxDelay` caps the final delay for any retry, including `Retry-After` values. Default: `30_000`.
+
+`maxJitter` adds up to this many milliseconds of random jitter on top of any delay, including `Retry-After` values, to spread out concurrent retries. Default: `100`.
+
+### Retry-After
+
+When a `Retry-After` response header is present and `respectRetryAfter` is `true` (default), it takes precedence over `delay()`. `maxDelay` and `maxJitter` still apply. Set `respectRetryAfter: false` to always use `delay()`.
+
+### Network errors and timeouts
+
+```ts
+retry: {
+  maxRetries: 3,
+  retryOnNetworkError: true,  // default: true  — retry on UND_ERR_SOCKET etc.
+  retryOnTimeout: true,        // default: false — retry when per-attempt timeout fires
 }
 ```
+
+`retryOnTimeout` only has effect when `timeout` is set. When `retryOnTimeout: true` and `timeout: 5000`, each attempt gets a fresh 5s timer and a timed-out attempt is retried just like a network error.
 
 ## Options
 
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `captureAsError` | `boolean` | `true` | When `true`, 4xx/5xx responses defined in the contract go to `Either.error`. When `false`, all contract-defined status codes go to `Either.result`. |
-| `signal` | `AbortSignal` | — | Cancel the request or apply a timeout. Use `AbortSignal.timeout(ms)` for timeouts or `AbortSignal.any([…])` to combine sources. Rejects with `AbortError` when fired. |
+| `timeout` | `number` | — | Per-attempt timeout in milliseconds. Each attempt gets its own independent timer. For a total deadline, use `signal` instead. |
+| `signal` | `AbortSignal` | — | Total deadline or manual cancellation. Stops retries immediately when fired. Combine with `timeout` for both per-attempt and total deadlines. |
+| `retry` | `RetryConfig \| true` | — | Retry configuration. Pass `true` for all defaults, or a config object. See [Retry](#retry). |
 | `reqContext` | `{ reqId: string }` | — | Forwarded as `x-request-id` header for distributed tracing. |
 | `strictContentType` | `boolean` | `true` | When `true`, returns an error if the response `content-type` doesn't match the contract entry. When `false`, falls back to the entry's kind for single-entry responses. |
 | `disableKeepAlive` | `boolean` | `false` | Disable connection keep-alive for this request. |
-| `retryConfig` | `RetryConfig` | — | Retry configuration. See [Retry](#retry). |
+
+### RetryConfig
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `maxRetries` | `number` | `2` | Maximum number of retries, not counting the initial attempt. |
+| `statusCodes` | `number[]` | `[408, 425, 429, 500, 502, 503, 504]` | HTTP status codes that trigger a retry. |
+| `delay` | `(n: number) => number` | `(n) => 100 * 2^(n-1)` | Delay in ms before retry `n`. |
+| `maxDelay` | `number` | `30_000` | Hard cap on any delay, including `Retry-After`. |
+| `maxJitter` | `number` | `100` | Maximum additive random jitter in ms added to every delay. |
+| `respectRetryAfter` | `boolean` | `true` | Honor `Retry-After` response headers instead of `delay()`. |
+| `retryOnNetworkError` | `boolean` | `true` | Retry on network-level errors (e.g. `UND_ERR_SOCKET`). |
+| `retryOnTimeout` | `boolean` | `false` | Retry when the per-attempt `timeout` is exceeded. |
