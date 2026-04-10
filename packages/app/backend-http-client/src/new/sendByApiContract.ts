@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream'
 import {
   type ApiContract,
   buildRequestPath,
@@ -9,11 +10,12 @@ import {
   type InferSseClientResponse,
   type ResponseKind,
   resolveResponseEntry,
+  type SseSchemaByEventName,
   type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
+import { ServerSentEventTransformStream } from 'parse-sse'
 import { type Client, type Dispatcher, Headers } from 'undici'
 import type { HttpRequestContext } from '../client/types.ts'
-import { parseSseStream } from './parseSseStream.ts'
 import { type RetryConfig, resolveRetryConfig, withRetry } from './retry.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
@@ -142,6 +144,25 @@ function normalizeResponseHeaders(
   return result
 }
 
+async function* parseSseStream(
+  body: Dispatcher.ResponseData['body'],
+  schemaByEventName: SseSchemaByEventName,
+): AsyncGenerator {
+  const sseStream = Readable.toWeb(body)
+    .pipeThrough(new TextDecoderStream())
+    .pipeThrough(new ServerSentEventTransformStream())
+
+  for await (const { type, data, lastEventId, retry } of sseStream) {
+    const schema = schemaByEventName[type]
+
+    if (!schema) {
+      throw new Error(`Schema for event "${type}" not found.`)
+    }
+
+    yield { type, data: schema.parse(JSON.parse(data)), lastEventId, retry }
+  }
+}
+
 async function parseBody(body: Dispatcher.ResponseData['body'], resolvedEntry: ResponseKind) {
   switch (resolvedEntry.kind) {
     case 'noContent': {
@@ -164,6 +185,19 @@ async function parseBody(body: Dispatcher.ResponseData['body'], resolvedEntry: R
   }
 }
 
+/**
+ * Executes an HTTP request described by `apiContract` and returns a type-safe `Either`.
+ *
+ * Response bodies are parsed and validated against the schema defined in
+ * `responsesByStatusCode`. Status codes absent from the contract are returned as
+ * `Either.error` with an {@link UnexpectedResponseError}.
+ *
+ * By default (`captureAsError: true`), 4xx/5xx responses defined in the contract are
+ * also returned as `Either.error`; pass `captureAsError: false` to receive all
+ * contract-defined responses as `Either.result`.
+ *
+ * @see {@link ContractRequestOptions} for timeout, retry, cancellation, and other options.
+ */
 export async function sendByApiContract<
   TApiContract extends ApiContract,
   TIsStreaming extends boolean = DefaultStreaming<TApiContract['responsesByStatusCode']>,
