@@ -34,7 +34,7 @@ Reusable testing utilities that are potentially relevant for both backend and fr
 import { buildRestContract } from '@lokalise/api-contracts'
 import { sendByContract } from '@lokalise/frontend-http-client'
 import { setupServer } from 'msw/node'
-import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import wretch, { type Wretch } from 'wretch'
 import { z } from 'zod/v4'
 import { MswHelper } from '@lokalise/universal-testing-utils'
@@ -59,7 +59,7 @@ describe('MswHelper', () => {
     const mswHelper = new MswHelper(BASE_URL)
     const wretchClient = wretch(BASE_URL)
 
-    beforeEach(() => { server.listen({ onUnhandledRequest: 'error' }) })
+    beforeAll(() => { server.listen({ onUnhandledRequest: 'error' }) })
     afterEach(() => { server.resetHandlers() })
     afterAll(() => { server.close() })
 

@@ -17,7 +17,7 @@ import {
   type JsonBodyType,
   type PathParams,
 } from 'msw'
-import type { SetupServerApi } from 'msw/node'
+import type { SetupServer } from 'msw/node'
 import type { ZodObject, z } from 'zod/v4'
 import { formatSseResponse, type SseMockEvent } from './MockttpHelper.ts'
 
@@ -96,7 +96,7 @@ function joinURL(base: string, path: string): string {
 }
 
 export type MockEndpointParams<PathParamsSchema extends z.Schema | undefined> = {
-  server: SetupServerApi
+  server: SetupServer
   contract:
     | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any, any>
     | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any, any>
@@ -213,7 +213,7 @@ export class MswHelper {
       any,
       any
     >,
-    server: SetupServerApi,
+    server: SetupServer,
     params: PathParamsSchema extends z.Schema
       ? MswDualModeMockParams<
           InferSchemaInput<PathParamsSchema>,
@@ -243,7 +243,7 @@ export class MswHelper {
       Events,
       any
     >,
-    server: SetupServerApi,
+    server: SetupServer,
     params: PathParamsSchema extends z.Schema
       ? MswSseMockParams<
           InferSchemaInput<PathParamsSchema>,
@@ -280,14 +280,14 @@ export class MswHelper {
           boolean,
           any
         >,
-    server: SetupServerApi,
+    server: SetupServer,
     params: PathParamsSchema extends undefined
       ? MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
       : MockParams<InferSchemaInput<PathParamsSchema>, InferSchemaInput<ResponseBodySchema>>,
   ): void
 
   // Implementation
-  mockValidResponse(contract: any, server: SetupServerApi, params: any): void {
+  mockValidResponse(contract: any, server: SetupServer, params: any): void {
     if ('isDualMode' in contract && contract.isDualMode) {
       const { resolvedPath, method } = this.resolveStreamingPath(contract, params.pathParams)
       const sseBody = formatSseResponse(params.events)
@@ -351,7 +351,7 @@ export class MswHelper {
       any,
       any
     >,
-    server: SetupServerApi,
+    server: SetupServer,
     params: MswDualModeMockParamsNoPath<
       InferSchemaInput<RequestQuerySchema>,
       InferSchemaInput<ResponseBodySchema>,
@@ -373,7 +373,7 @@ export class MswHelper {
       Events,
       any
     >,
-    server: SetupServerApi,
+    server: SetupServer,
     params: MswSseMockParamsNoPath<InferSchemaInput<RequestQuerySchema>, Events>,
   ): void
 
@@ -401,12 +401,12 @@ export class MswHelper {
           boolean,
           any
         >,
-    server: SetupServerApi,
+    server: SetupServer,
     params: MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>,
   ): void
 
   // Implementation
-  mockValidResponseWithAnyPath(contract: any, server: SetupServerApi, params: any): void {
+  mockValidResponseWithAnyPath(contract: any, server: SetupServer, params: any): void {
     const pathParams = contract.requestPathParamsSchema
       ? Object.keys((contract.requestPathParamsSchema as ZodObject<any>).shape).reduce(
           (acc, value) => {
@@ -438,7 +438,7 @@ export class MswHelper {
       any,
       any
     >,
-    server: SetupServerApi,
+    server: SetupServer,
     params: (PathParamsSchema extends z.Schema
       ? MockWithImplementationParams<any, any, any>
       : MockWithImplementationParamsNoPath<any, any, any>) & {
@@ -476,14 +476,14 @@ export class MswHelper {
           boolean,
           any
         >,
-    server: SetupServerApi,
+    server: SetupServer,
     params: PathParamsSchema extends undefined
       ? MockWithImplementationParamsNoPath<any, any, any>
       : MockWithImplementationParams<any, any, any>,
   ): void
 
   // Implementation
-  mockValidResponseWithImplementation(contract: any, server: SetupServerApi, params: any): void {
+  mockValidResponseWithImplementation(contract: any, server: SetupServer, params: any): void {
     if ('isDualMode' in contract && contract.isDualMode) {
       const { resolvedPath, method } = this.resolveStreamingPath(contract, params.pathParams)
       const sseBody = formatSseResponse(params.events)
@@ -539,7 +539,7 @@ export class MswHelper {
       any,
       any
     >,
-    server: SetupServerApi,
+    server: SetupServer,
     params: PathParamsSchema extends z.Schema
       ? MswDualModeMockParams<
           InferSchemaInput<PathParamsSchema>,
@@ -555,14 +555,14 @@ export class MswHelper {
     contract:
       | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any, any>
       | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any, any>,
-    server: SetupServerApi,
+    server: SetupServer,
     params: PathParamsSchema extends undefined
       ? MockParamsNoPath<InferSchemaInput<any>>
       : MockParams<InferSchemaInput<PathParamsSchema>, InferSchemaInput<any>>,
   ): void
 
   // Implementation
-  mockAnyResponse(contract: any, server: SetupServerApi, params: any): void {
+  mockAnyResponse(contract: any, server: SetupServer, params: any): void {
     if ('isDualMode' in contract && contract.isDualMode) {
       const { resolvedPath, method } = this.resolveStreamingPath(contract, params.pathParams)
       const sseBody = formatSseResponse(params.events)
@@ -612,7 +612,7 @@ export class MswHelper {
       any,
       any
     >,
-    server: SetupServerApi,
+    server: SetupServer,
     params: (PathParamsSchema extends z.Schema
       ? { pathParams: InferSchemaInput<PathParamsSchema> }
       : { pathParams?: undefined }) & {
@@ -638,7 +638,7 @@ export class MswHelper {
       Events,
       any
     >,
-    server: SetupServerApi,
+    server: SetupServer,
     params?: (PathParamsSchema extends z.Schema
       ? { pathParams: InferSchemaInput<PathParamsSchema> }
       : { pathParams?: undefined }) &
@@ -649,7 +649,7 @@ export class MswHelper {
   ): SseEventController<Events>
 
   // Implementation
-  mockSseStream(contract: any, server: SetupServerApi, params?: any): SseEventController<any> {
+  mockSseStream(contract: any, server: SetupServer, params?: any): SseEventController<any> {
     const pathParams = params?.pathParams
     const { resolvedPath, method } = this.resolveStreamingPath(contract, pathParams)
     const encoder = new TextEncoder()
