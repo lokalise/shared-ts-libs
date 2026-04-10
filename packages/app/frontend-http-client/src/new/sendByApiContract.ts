@@ -15,53 +15,82 @@ import {
 import { stringify } from 'fast-querystring'
 import { ServerSentEventTransformStream } from 'parse-sse'
 import type { ConfiguredMiddleware } from 'wretch'
-import type { WretchInstance } from './types.ts'
+import type { WretchInstance } from '../types.ts'
+import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
-// captureAsError: true → filter to success codes only; captureAsError: false → all codes from contract
-type CaptureAsErrorFilter<T, TDoCaptureAsError extends boolean> = TDoCaptureAsError extends true
-  ? Extract<T, { statusCode: SuccessfulHttpStatusCode }>
-  : T
+export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> = {
+  /**
+   * Controls how HTTP 4xx/5xx responses defined in the contract are surfaced.
+   *
+   * - `true` (default): error status codes are returned as `Either.error`, and the result type is
+   *   narrowed to success status codes only.
+   * - `false`: all status codes defined in `responsesByStatusCode` are returned as `Either.result`.
+   *
+   * Status codes absent from the contract always surface as `Either.error` regardless of this option.
+   */
+  captureAsError?: DoCaptureAsError
+  /**
+   * When `true` (default), returns an error if the response `content-type` doesn't match the contract entry.
+   * When `false`, falls back to the entry's kind for single-entry responses.
+   */
+  strictContentType?: boolean
+  /**
+   * An `AbortSignal` to cancel the in-flight request.
+   */
+  signal?: AbortSignal
+}
 
 type Either<TError, TResult> =
   | { error: TError; result?: never }
   | { error?: never; result: TResult }
+
+type AllContractResponses<
+  TApiContract extends ApiContract,
+  TIsStreaming extends boolean,
+> = TIsStreaming extends true
+  ? InferSseClientResponse<TApiContract>
+  : InferNonSseClientResponse<TApiContract>
+
+// captureAsError: true → success codes only; captureAsError: false → all codes from contract
+type ContractResultType<
+  TApiContract extends ApiContract,
+  TIsStreaming extends boolean,
+  TDoCaptureAsError extends boolean,
+> = TDoCaptureAsError extends true
+  ? Extract<
+      AllContractResponses<TApiContract, TIsStreaming>,
+      { statusCode: SuccessfulHttpStatusCode }
+    >
+  : AllContractResponses<TApiContract, TIsStreaming>
+
+// captureAsError: true → UnexpectedResponseError | <error-status-code responses from contract>
+// captureAsError: false → only UnexpectedResponseError (all contract responses go to result)
+type ContractErrorType<
+  TApiContract extends ApiContract,
+  TIsStreaming extends boolean,
+  TDoCaptureAsError extends boolean,
+> = TDoCaptureAsError extends true
+  ?
+      | UnexpectedResponseError
+      | Exclude<
+          AllContractResponses<TApiContract, TIsStreaming>,
+          { statusCode: SuccessfulHttpStatusCode }
+        >
+  : UnexpectedResponseError
 
 type ReturnTypeForContract<
   TApiContract extends ApiContract,
   TIsStreaming extends boolean,
   TDoCaptureAsError extends boolean,
 > = Either<
-  unknown,
-  CaptureAsErrorFilter<
-    TIsStreaming extends true
-      ? InferSseClientResponse<TApiContract>
-      : InferNonSseClientResponse<TApiContract>,
-    TDoCaptureAsError
-  >
+  ContractErrorType<TApiContract, TIsStreaming, TDoCaptureAsError>,
+  ContractResultType<TApiContract, TIsStreaming, TDoCaptureAsError>
 >
 
-export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> = {
-  /**
-   * When true, non-success HTTP responses are mapped to Either.error.
-   * When false (default), all HTTP responses are returned in Either.result regardless of status code.
-   */
-  captureAsError?: DoCaptureAsError
-  /**
-   * When true (default), throws if the response content-type doesn't match the contract entry.
-   * When false, falls back to the contract entry's kind when content-type is absent or mismatched —
-   * only applies to single-entry responses (not anyOfResponses).
-   */
-  strictContentType?: boolean
-  /**
-   * An AbortSignal to cancel the request.
-   */
-  signal?: AbortSignal
-}
-
-const resolveHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> =>
+const resolveRequestHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> =>
   typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
 
-function normalizeHeaders(response: Response): Record<string, string | undefined> {
+function normalizeResponseHeaders(response: Response): Record<string, string | undefined> {
   const headers: Record<string, string | undefined> = {}
 
   response.headers.forEach((value, key) => {
@@ -71,7 +100,7 @@ function normalizeHeaders(response: Response): Record<string, string | undefined
   return headers
 }
 
-async function* parseSseStreamWithSchema(
+async function* parseSseStream(
   response: Response,
   schemaByEventName: SseSchemaByEventName,
 ): AsyncGenerator<{ type: string; data: unknown; lastEventId: string; retry: number | undefined }> {
@@ -116,10 +145,23 @@ async function parseBody(response: Response, resolvedEntry: ResponseKind) {
       return resolvedEntry.schema.parse(json)
     }
     case 'sse':
-      return parseSseStreamWithSchema(response, resolvedEntry.schemaByEventName)
+      return parseSseStream(response, resolvedEntry.schemaByEventName)
   }
 }
 
+/**
+ * Executes an HTTP request described by `apiContract` and returns a type-safe `Either`.
+ *
+ * Response bodies are parsed and validated against the schema defined in
+ * `responsesByStatusCode`. Status codes absent from the contract are returned as
+ * `Either.error` with an {@link UnexpectedResponseError}.
+ *
+ * By default (`captureAsError: true`), 4xx/5xx responses defined in the contract are
+ * also returned as `Either.error`; pass `captureAsError: false` to receive all
+ * contract-defined responses as `Either.result`.
+ *
+ * @see {@link ContractRequestOptions} for cancellation and other options.
+ */
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it is acceptable
 export async function sendByApiContract<
   TApiContract extends ApiContract,
@@ -127,17 +169,17 @@ export async function sendByApiContract<
   TCaptureAsError extends boolean = true,
 >(
   wretch: WretchInstance,
-  routeContract: TApiContract,
+  apiContract: TApiContract,
   params: ClientRequestParams<TApiContract, TIsStreaming>,
   options: ContractRequestOptions<TCaptureAsError> = {},
 ): Promise<ReturnTypeForContract<TApiContract, TIsStreaming, TCaptureAsError>> {
-  const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(routeContract)
+  const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(apiContract)
 
   const signal = options.signal ?? new AbortController().signal
   const captureAsError = options.captureAsError ?? true
   const strictContentType = options.strictContentType ?? true
 
-  const requestHeaders: Record<string, string> = (await resolveHeaders(params.headers)) ?? {}
+  const requestHeaders: Record<string, string> = (await resolveRequestHeaders(params.headers)) ?? {}
 
   if (useStreaming) {
     requestHeaders.accept = 'text/event-stream'
@@ -146,7 +188,7 @@ export async function sendByApiContract<
     requestHeaders['content-type'] = 'application/json'
   }
 
-  const path = buildRequestPath(routeContract.pathResolver(params.pathParams), params.pathPrefix)
+  const path = buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix)
   const queryString = params.queryParams ? stringify(params.queryParams) : ''
   const fullUrl = queryString ? `${path}?${queryString}` : path
   const bodyString = params.body ? JSON.stringify(params.body) : undefined
@@ -172,46 +214,42 @@ export async function sendByApiContract<
   let response: Response
 
   try {
-    if (routeContract.method === 'get' || routeContract.method === 'delete') {
-      response = await wretchInstance[routeContract.method]().res()
+    if (apiContract.method === 'get' || apiContract.method === 'delete') {
+      response = await wretchInstance[apiContract.method]().res()
     } else {
-      response = await wretchInstance[routeContract.method](bodyString).res()
+      response = await wretchInstance[apiContract.method](bodyString).res()
     }
     if (clonedErrorResponse) {
       clonedErrorResponse.body?.cancel()
     }
   } catch (err) {
     if (!clonedErrorResponse) {
-      return { error: err }
+      return { error: err as UnexpectedResponseError }
     }
     response = clonedErrorResponse
   }
 
-  const normalizedHeaders = normalizeHeaders(response)
+  const normalizedHeaders = normalizeResponseHeaders(response)
   const contentType = normalizedHeaders['content-type']
 
   const resolvedResponseEntry = resolveResponseEntry(
-    routeContract.responsesByStatusCode,
+    apiContract.responsesByStatusCode,
     response.status,
     contentType,
     strictContentType,
   )
 
   if (!resolvedResponseEntry) {
-    await response.body?.cancel()
-    return {
-      error: new Error(
-        `Failed to process API response. (Status: ${response.status}, Content-Type: ${contentType ?? 'unknown'})`,
-      ),
-    }
+    const body = await response.text()
+    return { error: new UnexpectedResponseError(response.status, normalizedHeaders, body) }
   }
 
   const parsedBody = await parseBody(response, resolvedResponseEntry)
 
-  const parsedHeaders = routeContract.responseHeaderSchema
+  const parsedHeaders = apiContract.responseHeaderSchema
     ? {
         ...normalizedHeaders,
-        ...routeContract.responseHeaderSchema.parse(normalizedHeaders),
+        ...apiContract.responseHeaderSchema.parse(normalizedHeaders),
       }
     : normalizedHeaders
 

@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vites
 import wretch from 'wretch'
 import { z } from 'zod/v4'
 import { sendByApiContract } from './sendByApiContract.ts'
+import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
 const JSON_HEADERS = { 'content-type': 'application/json' }
 
@@ -130,7 +131,7 @@ describe('sendByApiContract', () => {
       await expect(sendByApiContract(buildClient(), contract, {})).rejects.toThrow()
     })
 
-    it('returns error when status is not in contract', async () => {
+    it('returns UnexpectedResponseError when status is not in contract', async () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/products/1',
@@ -141,11 +142,8 @@ describe('sendByApiContract', () => {
 
       const result = await sendByApiContract(buildClient(), contract, {})
 
-      expect(result.error).toEqual(
-        expect.objectContaining({
-          message: expect.stringContaining('Failed to process API response'),
-        }),
-      )
+      expect(result.error).toBeInstanceOf(UnexpectedResponseError)
+      expect((result.error as UnexpectedResponseError).statusCode).toBe(500)
       expect(result.result).toBeUndefined()
     })
 
