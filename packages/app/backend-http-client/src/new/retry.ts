@@ -1,20 +1,6 @@
 import { setTimeout as setTimeoutPromise } from 'node:timers/promises'
 import type { Dispatcher } from 'undici'
 
-const DEFAULT_MAX_RETRIES = 2
-const DEFAULT_RETRYABLE_STATUS_CODES = [
-  408, // Request Timeout
-  425, // Too Early
-  429, // Too Many Requests
-  500, // Internal Server Error
-  502, // Bad Gateway
-  503, // Service Unavailable
-  504, // Gateway Timeout
-] as const
-const DEFAULT_DELAY = (retryNumber: number) => 100 * 2 ** (retryNumber - 1)
-const DEFAULT_MAX_DELAY = 30_000
-const DEFAULT_MAX_JITTER = 100
-
 export type RetryConfig = {
   /**
   Maximum number of retries, not counting the initial attempt.
@@ -72,26 +58,49 @@ export type RetryConfig = {
   Whether to retry when a per-attempt timeout (set via `timeout` option) is exceeded.
   Has no effect when `timeout` is not set.
 
-  @default false
+  @default true
   */
   retryOnTimeout?: boolean
 }
 
+const defaultRetryConfig: Required<RetryConfig> = {
+  maxRetries: 2,
+  statusCodes: [
+    408, // Request Timeout
+    425, // Too Early
+    429, // Too Many Requests
+    500, // Internal Server Error
+    502, // Bad Gateway
+    503, // Service Unavailable
+    504, // Gateway Timeout
+  ],
+  delay: (retryNumber: number) => 100 * 2 ** (retryNumber - 1),
+  maxDelay: 30_000,
+  maxJitter: 100,
+  respectRetryAfter: true,
+  retryOnNetworkError: true,
+  retryOnTimeout: true,
+}
+
 type ResolvedRetryConfig = Required<RetryConfig>
 
+/**
+ * Resolves a {@link RetryConfig} (or the `true` shorthand) into a fully-populated config
+ * with all defaults applied.
+ */
 export function resolveRetryConfig(config: RetryConfig | true): ResolvedRetryConfig {
-  const resolved = config === true ? {} : config
-
-  return {
-    maxRetries: resolved.maxRetries ?? DEFAULT_MAX_RETRIES,
-    statusCodes: resolved.statusCodes ?? DEFAULT_RETRYABLE_STATUS_CODES,
-    delay: resolved.delay ?? DEFAULT_DELAY,
-    maxDelay: resolved.maxDelay ?? DEFAULT_MAX_DELAY,
-    maxJitter: resolved.maxJitter ?? DEFAULT_MAX_JITTER,
-    respectRetryAfter: resolved.respectRetryAfter ?? true,
-    retryOnNetworkError: resolved.retryOnNetworkError ?? true,
-    retryOnTimeout: resolved.retryOnTimeout ?? false,
+  if (config === true) {
+    return defaultRetryConfig
   }
+
+  // Strip undefined fields so they don't override defaults when spread below.
+  // TypeScript optional fields can be explicitly set to undefined (e.g. { maxRetries: undefined }),
+  // which would otherwise shadow the default value in { ...defaultResolvedRetryConfig, ...config }.
+  const definedConfig = Object.fromEntries(
+    Object.entries(config).filter(([, v]) => v !== undefined),
+  )
+
+  return { ...defaultRetryConfig, ...definedConfig }
 }
 
 /**

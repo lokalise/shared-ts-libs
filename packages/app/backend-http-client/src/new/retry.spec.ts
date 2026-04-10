@@ -12,7 +12,7 @@ describe('retry', () => {
       expect(config.maxJitter).toBe(100)
       expect(config.respectRetryAfter).toBe(true)
       expect(config.retryOnNetworkError).toBe(true)
-      expect(config.retryOnTimeout).toBe(false)
+      expect(config.retryOnTimeout).toBe(true)
       expect(typeof config.delay).toBe('function')
     })
 
@@ -25,7 +25,7 @@ describe('retry', () => {
       expect(config.maxJitter).toBe(100)
       expect(config.respectRetryAfter).toBe(true)
       expect(config.retryOnNetworkError).toBe(true)
-      expect(config.retryOnTimeout).toBe(false)
+      expect(config.retryOnTimeout).toBe(true)
     })
 
     it('merges a partial config with defaults', () => {
