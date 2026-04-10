@@ -105,6 +105,46 @@ describe('sendByApiContract', () => {
       expect(result.result).toMatchObject({ body: { id: 1 } })
     })
 
+    it('resolves headers from a sync function', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        requestHeaderSchema: z.object({ authorization: z.string() }),
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await mockServer
+        .forGet('/products/1')
+        .withHeaders({ authorization: 'Bearer token' })
+        .thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const result = await sendByApiContract(buildClient(), contract, {
+        headers: () => ({ authorization: 'Bearer token' }),
+      })
+
+      expect(result.result).toMatchObject({ body: { id: 1 } })
+    })
+
+    it('resolves headers from an async function', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        requestHeaderSchema: z.object({ authorization: z.string() }),
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await mockServer
+        .forGet('/products/1')
+        .withHeaders({ authorization: 'Bearer token' })
+        .thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const result = await sendByApiContract(buildClient(), contract, {
+        headers: async () => ({ authorization: 'Bearer token' }),
+      })
+
+      expect(result.result).toMatchObject({ body: { id: 1 } })
+    })
+
     it('works with path prefix', async () => {
       const contract = defineApiContract({
         method: 'get',
@@ -129,6 +169,26 @@ describe('sendByApiContract', () => {
       await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
 
       await expect(sendByApiContract(buildClient(), contract, {})).rejects.toThrow()
+    })
+
+    it('returns error on network failure (no HTTP response)', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      const result = await sendByApiContract(
+        buildClient(),
+        contract,
+        {},
+        {
+          signal: AbortSignal.abort(),
+        },
+      )
+
+      expect(result.error).toBeDefined()
+      expect(result.result).toBeUndefined()
     })
 
     it('returns UnexpectedResponseError when status is not in contract', async () => {
@@ -198,6 +258,22 @@ describe('sendByApiContract', () => {
       >()
       expect(response.error).toBeDefined()
       expect(response.result).toBeUndefined()
+    })
+
+    it('parses and merges response headers when responseHeaderSchema is defined', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+        responseHeaderSchema: z.object({ 'x-request-id': z.string() }),
+      })
+
+      await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, { 'x-request-id': 'abc-123' })
+
+      const result = await sendByApiContract(buildClient(), contract, {})
+
+      expect(result.result?.headers['x-request-id']).toBe('abc-123')
+      expect(result.result?.headers['content-type']).toBe('application/json')
     })
   })
 
@@ -411,6 +487,33 @@ describe('sendByApiContract', () => {
         }>
       >()
       expectTypeOf<NonNullable<JsonResult['result']>['body']>().toEqualTypeOf<{ latest: string }>()
+    })
+
+    it('throws when SSE event type is not in the contract schema', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/events',
+        responsesByStatusCode: {
+          200: sseResponse({ update: z.object({ id: z.string() }) }),
+        },
+      })
+
+      const sseBody = 'event: unknown\ndata: {}\n\n'
+
+      await mockServer
+        .forGet('/events')
+        .withHeaders({ accept: 'text/event-stream' })
+        .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
+
+      const response = await sendByApiContract(buildClient(), contract, {})
+
+      if (!response.result) throw new Error('Expected result')
+
+      await expect(async () => {
+        for await (const _ of response.result.body) {
+          // consume
+        }
+      }).rejects.toThrow('Schema for event "unknown" not found.')
     })
 
     it('throws when event data fails schema validation', async () => {

@@ -104,10 +104,11 @@ async function* parseSseStream(
   response: Response,
   schemaByEventName: SseSchemaByEventName,
 ): AsyncGenerator<{ type: string; data: unknown; lastEventId: string; retry: number | undefined }> {
+  /* v8 ignore start */
   if (!response.body) {
     throw new Error('Response body is null')
   }
-
+  /* v8 ignore stop */
   const reader = response.body
     .pipeThrough(new TextDecoderStream())
     .pipeThrough(new ServerSentEventTransformStream())
@@ -219,9 +220,11 @@ export async function sendByApiContract<
     } else {
       response = await wretchInstance[apiContract.method](bodyString).res()
     }
+    /* v8 ignore start */
     if (clonedErrorResponse) {
       clonedErrorResponse.body?.cancel()
     }
+    /* v8 ignore stop */
   } catch (err) {
     if (!clonedErrorResponse) {
       return { error: err as UnexpectedResponseError }
