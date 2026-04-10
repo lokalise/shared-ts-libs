@@ -105,6 +105,28 @@ describe('sendByApiContract', () => {
       expect(result.result).toMatchObject({ body: mockProduct1 })
     })
 
+    it('forwards x-request-id from reqContext', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await mockServer
+        .forGet('/products/1')
+        .withHeaders({ 'x-request-id': 'req-abc' })
+        .thenJson(200, mockProduct1, JSON_HEADERS)
+
+      const result = await sendByApiContract(
+        client,
+        contract,
+        {},
+        { reqContext: { reqId: 'req-abc' } },
+      )
+
+      expect(result.result).toMatchObject({ body: mockProduct1 })
+    })
+
     it('works with path prefix', async () => {
       const contract = defineApiContract({
         method: 'get',
@@ -162,6 +184,59 @@ describe('sendByApiContract', () => {
       expectTypeOf(response.error).toEqualTypeOf<UnexpectedResponseError | undefined>()
       expect(response.error).toBeDefined()
       expect(response.result).toBeUndefined()
+    })
+
+    it('returns 4xx defined in contract as Either.error when captureAsError is true (default)', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: {
+          200: z.object({ id: z.number() }),
+          404: z.object({ message: z.string() }),
+        },
+      })
+
+      await mockServer.forGet('/products/1').thenJson(404, { message: 'Not found' }, JSON_HEADERS)
+
+      const response = await sendByApiContract(client, contract, {})
+
+      expect(response.error).toMatchObject({ statusCode: 404, body: { message: 'Not found' } })
+      expect(response.result).toBeUndefined()
+    })
+
+    it('returns 4xx defined in contract as Either.result when captureAsError is false', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: {
+          200: z.object({ id: z.number() }),
+          404: z.object({ message: z.string() }),
+        },
+      })
+
+      await mockServer.forGet('/products/1').thenJson(404, { message: 'Not found' }, JSON_HEADERS)
+
+      const response = await sendByApiContract(client, contract, {}, { captureAsError: false })
+
+      expect(response.result).toMatchObject({ statusCode: 404, body: { message: 'Not found' } })
+      expect(response.error).toBeUndefined()
+    })
+
+    it('normalizes array-valued response headers', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await mockServer.forGet('/products/1').thenReply(200, JSON.stringify(mockProduct1), {
+        'content-type': 'application/json',
+        'set-cookie': ['sessionId=abc', 'userId=123'],
+      })
+
+      const result = await sendByApiContract(client, contract, {})
+
+      expect(result.result?.headers['set-cookie']).toBeDefined()
     })
   })
 
@@ -397,6 +472,34 @@ describe('sendByApiContract', () => {
         }
       }).rejects.toThrow()
     })
+
+    it('throws when an unknown event type is received', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/events',
+        responsesByStatusCode: {
+          200: sseResponse({ update: z.object({ id: z.string() }) }),
+        },
+      })
+
+      const sseBody = 'event: unknown\ndata: {"id":"1"}\n\n'
+
+      await mockServer
+        .forGet('/events')
+        .withHeaders({ accept: 'text/event-stream' })
+        .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
+
+      const response = await sendByApiContract(client, contract, {})
+
+      if (!response.result) throw new Error('Expected result')
+      const { body } = response.result
+
+      await expect(async () => {
+        for await (const _ of body) {
+          // consume
+        }
+      }).rejects.toThrow('Schema for event "unknown" not found.')
+    })
   })
 
   describe('text', () => {
@@ -621,6 +724,66 @@ describe('sendByApiContract', () => {
         )
 
         expect(Date.now() - start).toBeGreaterThanOrEqual(1000)
+        expect(callCount).toBe(2)
+        expect(result.result).toMatchObject({ statusCode: 200 })
+      })
+
+      it('respects Retry-After in HTTP-date format', async () => {
+        let callCount = 0
+        // Use +2000ms so that even with toUTCString() second-boundary truncation
+        // the parsed delta is at least ~1000ms.
+        const retryAfterDate = new Date(Date.now() + 2000).toUTCString()
+
+        await mockServer.forGet('/products/1').thenCallback(() => {
+          callCount++
+          if (callCount === 1) {
+            return {
+              statusCode: 429,
+              headers: { ...JSON_HEADERS, 'retry-after': retryAfterDate },
+              body: JSON.stringify({ message: 'rate limited' }),
+            }
+          }
+          return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
+        })
+
+        const start = Date.now()
+        const result = await sendByApiContract(
+          client,
+          retryAfterContract,
+          {},
+          { retry: { maxRetries: 3, statusCodes: [429], maxJitter: 0 } },
+        )
+
+        expect(Date.now() - start).toBeGreaterThanOrEqual(1000)
+        expect(callCount).toBe(2)
+        expect(result.result).toMatchObject({ statusCode: 200 })
+      })
+
+      it('falls back to default delay when Retry-After HTTP-date is in the past', async () => {
+        let callCount = 0
+        const pastDate = new Date(Date.now() - 1000).toUTCString()
+
+        await mockServer.forGet('/products/1').thenCallback(() => {
+          callCount++
+          if (callCount === 1) {
+            return {
+              statusCode: 429,
+              headers: { ...JSON_HEADERS, 'retry-after': pastDate },
+              body: JSON.stringify({ message: 'rate limited' }),
+            }
+          }
+          return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
+        })
+
+        const result = await sendByApiContract(
+          client,
+          retryAfterContract,
+          {},
+          {
+            retry: { maxRetries: 3, statusCodes: [429], delay: () => 0, maxJitter: 0 },
+          },
+        )
+
         expect(callCount).toBe(2)
         expect(result.result).toMatchObject({ statusCode: 200 })
       })

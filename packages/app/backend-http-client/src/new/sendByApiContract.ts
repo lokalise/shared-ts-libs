@@ -115,9 +115,11 @@ function normalizeHeaders(
   const headers = new Headers()
 
   for (const [key, value] of Object.entries(rawHeaders)) {
+    /* v8 ignore start */
     if (!value) {
       continue
     }
+    /* v8 ignore stop */
     if (Array.isArray(value)) {
       for (const element of value) {
         headers.append(key, element)

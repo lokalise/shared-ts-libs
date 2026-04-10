@@ -103,7 +103,7 @@ export function resolveRetryConfig(config: RetryConfig | true): ResolvedRetryCon
  *
  * Returns delay in milliseconds, or `null` if missing or invalid.
  */
-function parseRetryAfterHeader(headers: Dispatcher.ResponseData['headers']): number | null {
+export function parseRetryAfterHeader(headers: Dispatcher.ResponseData['headers']): number | null {
   const rawRetryAfter = headers['retry-after']
 
   const retryAfter = Array.isArray(rawRetryAfter) ? rawRetryAfter[0] : rawRetryAfter
