@@ -107,7 +107,7 @@ if (response.result.statusCode === 404) {
 }
 ```
 
-Status codes absent from the contract always surface as `Either.error`, regardless of this option.
+Status codes absent from the contract always surface as `Either.error` as an [`UnexpectedResponseError`](#unexpectedresponseerror), regardless of this option.
 
 ## UnexpectedResponseError
 
@@ -171,6 +171,8 @@ const stream = await sendByApiContract(client, chat, { body: { message: 'hi' }, 
 const json = await sendByApiContract(client, chat, { body: { message: 'hi' }, streaming: false })
 // json.result.body: { text: string }
 ```
+
+The `streaming` param is **required** for dual-mode contracts and is **not allowed** for any other contract kind.
 
 ## Timeout
 
