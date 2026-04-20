@@ -171,14 +171,13 @@ export async function sendByApiContract<
 >(
   wretch: WretchInstance,
   apiContract: TApiContract,
-  params: ClientRequestParams<TApiContract, TIsStreaming>,
-  options: ContractRequestOptions<TCaptureAsError> = {},
+  params: ClientRequestParams<TApiContract, TIsStreaming> & ContractRequestOptions<TCaptureAsError>,
 ): Promise<ReturnTypeForContract<TApiContract, TIsStreaming, TCaptureAsError>> {
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(apiContract)
 
-  const signal = options.signal ?? new AbortController().signal
-  const captureAsError = options.captureAsError ?? true
-  const strictContentType = options.strictContentType ?? true
+  const signal = params.signal ?? new AbortController().signal
+  const captureAsError = params.captureAsError ?? true
+  const strictContentType = params.strictContentType ?? true
 
   const requestHeaders: Record<string, string> = (await resolveRequestHeaders(params.headers)) ?? {}
 

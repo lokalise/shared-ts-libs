@@ -205,18 +205,17 @@ export async function sendByApiContract<
 >(
   client: Client,
   apiContract: TApiContract,
-  params: ClientRequestParams<TApiContract, TIsStreaming>,
-  options: ContractRequestOptions<TCaptureAsError> = {},
+  params: ClientRequestParams<TApiContract, TIsStreaming> & ContractRequestOptions<TCaptureAsError>,
 ): Promise<ReturnTypeForContract<TApiContract, TIsStreaming, TCaptureAsError>> {
-  const strictContentType = options.strictContentType ?? true
-  const captureAsError = options.captureAsError ?? true
+  const strictContentType = params.strictContentType ?? true
+  const captureAsError = params.captureAsError ?? true
 
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(apiContract)
 
   const requestHeaders: Record<string, string> = (await resolveRequestHeaders(params.headers)) ?? {}
 
-  if (options.reqContext) {
-    requestHeaders['x-request-id'] = options.reqContext.reqId
+  if (params.reqContext) {
+    requestHeaders['x-request-id'] = params.reqContext.reqId
   }
   if (useStreaming) {
     requestHeaders.accept = 'text/event-stream'
@@ -227,8 +226,8 @@ export async function sendByApiContract<
 
   const requestFn = () => {
     const signals = [
-      options.signal,
-      options.timeout !== undefined ? AbortSignal.timeout(options.timeout) : undefined,
+      params.signal,
+      params.timeout !== undefined ? AbortSignal.timeout(params.timeout) : undefined,
     ].filter((signal) => signal !== undefined)
 
     return client.request({
@@ -237,13 +236,13 @@ export async function sendByApiContract<
       body: params.body ? JSON.stringify(params.body) : undefined,
       query: params.queryParams,
       headers: requestHeaders,
-      reset: options.disableKeepAlive ?? false,
+      reset: params.disableKeepAlive ?? false,
       signal: signals.length > 1 ? AbortSignal.any(signals) : signals[0],
     })
   }
 
-  const response = options.retry
-    ? await withRetry(requestFn, resolveRetryConfig(options.retry), options.signal)
+  const response = params.retry
+    ? await withRetry(requestFn, resolveRetryConfig(params.retry), params.signal)
     : await requestFn()
 
   const normalizedHeaders = normalizeResponseHeaders(response.headers)

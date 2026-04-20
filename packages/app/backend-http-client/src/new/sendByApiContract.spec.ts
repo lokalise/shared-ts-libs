@@ -117,12 +117,7 @@ describe('sendByApiContract', () => {
         .withHeaders({ 'x-request-id': 'req-abc' })
         .thenJson(200, mockProduct1, JSON_HEADERS)
 
-      const result = await sendByApiContract(
-        client,
-        contract,
-        {},
-        { reqContext: { reqId: 'req-abc' } },
-      )
+      const result = await sendByApiContract(client, contract, { reqContext: { reqId: 'req-abc' } })
 
       expect(result.result).toMatchObject({ body: mockProduct1 })
     })
@@ -216,7 +211,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(404, { message: 'Not found' }, JSON_HEADERS)
 
-      const response = await sendByApiContract(client, contract, {}, { captureAsError: false })
+      const response = await sendByApiContract(client, contract, { captureAsError: false })
 
       expect(response.result).toMatchObject({ statusCode: 404, body: { message: 'Not found' } })
       expect(response.error).toBeUndefined()
@@ -566,7 +561,7 @@ describe('sendByApiContract', () => {
       })
 
       await expect(
-        sendByApiContract(client, contract, {}, { signal: AbortSignal.abort() }),
+        sendByApiContract(client, contract, { signal: AbortSignal.abort() }),
       ).rejects.toMatchObject({ name: 'AbortError' })
     })
   })
@@ -588,14 +583,9 @@ describe('sendByApiContract', () => {
         return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
       })
 
-      const result = await sendByApiContract(
-        client,
-        contract,
-        {},
-        {
-          retry: { maxRetries: 2, statusCodes: [503], delay: () => 0, maxJitter: 0 },
-        },
-      )
+      const result = await sendByApiContract(client, contract, {
+        retry: { maxRetries: 2, statusCodes: [503], delay: () => 0, maxJitter: 0 },
+      })
 
       expect(callCount).toBe(2)
       expect(result.result).toMatchObject({ statusCode: 200, body: { id: 1 } })
@@ -614,14 +604,9 @@ describe('sendByApiContract', () => {
         return { statusCode: 503, headers: JSON_HEADERS, body: '{}' }
       })
 
-      const result = await sendByApiContract(
-        client,
-        contract,
-        {},
-        {
-          retry: { maxRetries: 1, statusCodes: [503], delay: () => 0, maxJitter: 0 },
-        },
-      )
+      const result = await sendByApiContract(client, contract, {
+        retry: { maxRetries: 1, statusCodes: [503], delay: () => 0, maxJitter: 0 },
+      })
 
       expect(callCount).toBe(2)
       expect(result.error).toBeInstanceOf(UnexpectedResponseError)
@@ -653,14 +638,9 @@ describe('sendByApiContract', () => {
           return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
         })
 
-        const result = await sendByApiContract(
-          client,
-          retryAfterContract,
-          {},
-          {
-            retry: { maxRetries: 3, statusCodes: [429], delay: () => 0, maxJitter: 0 },
-          },
-        )
+        const result = await sendByApiContract(client, retryAfterContract, {
+          retry: { maxRetries: 3, statusCodes: [429], delay: () => 0, maxJitter: 0 },
+        })
 
         expect(callCount).toBe(2)
         expect(result.result).toMatchObject({ statusCode: 200 })
@@ -680,20 +660,15 @@ describe('sendByApiContract', () => {
           return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
         })
 
-        const result = await sendByApiContract(
-          client,
-          retryAfterContract,
-          {},
-          {
-            retry: {
-              maxRetries: 3,
-              statusCodes: [429],
-              respectRetryAfter: false,
-              delay: () => 0,
-              maxJitter: 0,
-            },
+        const result = await sendByApiContract(client, retryAfterContract, {
+          retry: {
+            maxRetries: 3,
+            statusCodes: [429],
+            respectRetryAfter: false,
+            delay: () => 0,
+            maxJitter: 0,
           },
-        )
+        })
 
         expect(callCount).toBe(2)
         expect(result.result).toMatchObject({ statusCode: 200 })
@@ -714,14 +689,9 @@ describe('sendByApiContract', () => {
         })
 
         const start = Date.now()
-        const result = await sendByApiContract(
-          client,
-          retryAfterContract,
-          {},
-          {
-            retry: { maxRetries: 3, statusCodes: [429] },
-          },
-        )
+        const result = await sendByApiContract(client, retryAfterContract, {
+          retry: { maxRetries: 3, statusCodes: [429] },
+        })
 
         expect(Date.now() - start).toBeGreaterThanOrEqual(1000)
         expect(callCount).toBe(2)
@@ -747,12 +717,9 @@ describe('sendByApiContract', () => {
         })
 
         const start = Date.now()
-        const result = await sendByApiContract(
-          client,
-          retryAfterContract,
-          {},
-          { retry: { maxRetries: 3, statusCodes: [429], maxJitter: 0 } },
-        )
+        const result = await sendByApiContract(client, retryAfterContract, {
+          retry: { maxRetries: 3, statusCodes: [429], maxJitter: 0 },
+        })
 
         expect(Date.now() - start).toBeGreaterThanOrEqual(1000)
         expect(callCount).toBe(2)
@@ -775,14 +742,9 @@ describe('sendByApiContract', () => {
           return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
         })
 
-        const result = await sendByApiContract(
-          client,
-          retryAfterContract,
-          {},
-          {
-            retry: { maxRetries: 3, statusCodes: [429], delay: () => 0, maxJitter: 0 },
-          },
-        )
+        const result = await sendByApiContract(client, retryAfterContract, {
+          retry: { maxRetries: 3, statusCodes: [429], delay: () => 0, maxJitter: 0 },
+        })
 
         expect(callCount).toBe(2)
         expect(result.result).toMatchObject({ statusCode: 200 })
@@ -804,12 +766,9 @@ describe('sendByApiContract', () => {
         await mockServer.forGet('/products/1').once().thenCloseConnection()
         await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
 
-        const result = await sendByApiContract(
-          client,
-          contract,
-          {},
-          { retry: { maxRetries: 2, retryOnNetworkError: true, delay: () => 50, maxJitter: 0 } },
-        )
+        const result = await sendByApiContract(client, contract, {
+          retry: { maxRetries: 2, retryOnNetworkError: true, delay: () => 50, maxJitter: 0 },
+        })
 
         expect(result.result).toMatchObject({ statusCode: 200, body: { id: 1 } })
       })
@@ -824,12 +783,9 @@ describe('sendByApiContract', () => {
         await mockServer.forGet('/products/1').thenCloseConnection()
 
         await expect(
-          sendByApiContract(
-            client,
-            contract,
-            {},
-            { retry: { maxRetries: 2, retryOnNetworkError: true, delay: () => 0, maxJitter: 0 } },
-          ),
+          sendByApiContract(client, contract, {
+            retry: { maxRetries: 2, retryOnNetworkError: true, delay: () => 0, maxJitter: 0 },
+          }),
         ).rejects.toMatchObject({ code: 'UND_ERR_SOCKET' })
       })
 
@@ -846,12 +802,9 @@ describe('sendByApiContract', () => {
         await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
 
         await expect(
-          sendByApiContract(
-            client,
-            contract,
-            {},
-            { retry: { maxRetries: 3, retryOnNetworkError: false } },
-          ),
+          sendByApiContract(client, contract, {
+            retry: { maxRetries: 3, retryOnNetworkError: false },
+          }),
         ).rejects.toMatchObject({ code: 'UND_ERR_SOCKET' })
       })
     })

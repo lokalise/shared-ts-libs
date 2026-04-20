@@ -97,12 +97,10 @@ const response = await sendByApiContract(client, contract, { pathParams: { id: '
 All status codes defined in `responsesByStatusCode` are returned as `Either.result`, regardless of whether they indicate success or failure.
 
 ```ts
-const response = await sendByApiContract(
-  client,
-  contract,
-  { pathParams: { id: '1' } },
-  { captureAsError: false },
-)
+const response = await sendByApiContract(client, contract, {
+  pathParams: { id: '1' },
+  captureAsError: false,
+})
 
 // response.result is typed for both 200 and 404
 if (response.result.statusCode === 404) {
@@ -192,7 +190,7 @@ Pass an `AbortSignal` via `signal` to cancel an in-flight request:
 ```ts
 const controller = new AbortController()
 
-const request = sendByApiContract(client, contract, {}, { signal: controller.signal })
+const request = sendByApiContract(client, contract, { signal: controller.signal })
 
 controller.abort()
 ```

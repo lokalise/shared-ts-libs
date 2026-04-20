@@ -94,12 +94,10 @@ const response = await sendByApiContract(client, contract, { pathParams: { id: '
 All status codes defined in `responsesByStatusCode` are returned as `Either.result`, regardless of whether they indicate success or failure.
 
 ```ts
-const response = await sendByApiContract(
-  client,
-  contract,
-  { pathParams: { id: '1' } },
-  { captureAsError: false },
-)
+const response = await sendByApiContract(client, contract, {
+  pathParams: { id: '1' },
+  captureAsError: false,
+})
 
 // response.result is typed for both 200 and 404
 if (response.result.statusCode === 404) {
@@ -179,23 +177,19 @@ The `streaming` param is **required** for dual-mode contracts and is **not allow
 Use `timeout` to set a per-attempt deadline in milliseconds. Each attempt (including retries) gets its own independent timer. When it fires, the request throws a `TimeoutError` (a `DOMException` — distinct from the `AbortError` thrown by a manual abort).
 
 ```ts
-const { result } = await sendByApiContract(
-  client,
-  getUser,
-  { pathParams: { userId: '1' } },
-  { timeout: 5000 },
-)
+const { result } = await sendByApiContract(client, getUser, {
+  pathParams: { userId: '1' },
+  timeout: 5000,
+})
 ```
 
 For a total deadline across all attempts, pass an `AbortSignal` via `signal` instead:
 
 ```ts
-const { result } = await sendByApiContract(
-  client,
-  getUser,
-  { pathParams: { userId: '1' } },
-  { signal: AbortSignal.timeout(10_000) },
-)
+const { result } = await sendByApiContract(client, getUser, {
+  pathParams: { userId: '1' },
+  signal: AbortSignal.timeout(10_000),
+})
 ```
 
 To combine both, use `AbortSignal.any`:
@@ -203,15 +197,11 @@ To combine both, use `AbortSignal.any`:
 ```ts
 const controller = new AbortController()
 
-const { result } = await sendByApiContract(
-  client,
-  getUser,
-  { pathParams: { userId: '1' } },
-  {
-    timeout: 5_000,
-    signal: AbortSignal.any([AbortSignal.timeout(15_000), controller.signal]),
-  },
-)
+const { result } = await sendByApiContract(client, getUser, {
+  pathParams: { userId: '1' },
+  timeout: 5_000,
+  signal: AbortSignal.any([AbortSignal.timeout(15_000), controller.signal]),
+})
 ```
 
 When the total signal fires, the request rejects with an `AbortError` and any pending retry is stopped immediately.
@@ -222,25 +212,19 @@ Pass a `retry` option to retry failed requests. Pass `true` to use all defaults,
 
 ```ts
 // shorthand — retry up to 2 times with all defaults
-const { result } = await sendByApiContract(
-  client,
-  getUser,
-  { pathParams: { userId: '1' } },
-  { retry: true },
-)
+const { result } = await sendByApiContract(client, getUser, {
+  pathParams: { userId: '1' },
+  retry: true,
+})
 
 // full config
-const { result } = await sendByApiContract(
-  client,
-  getUser,
-  { pathParams: { userId: '1' } },
-  {
-    retry: {
-      maxRetries: 3,
-      statusCodes: [503, 429],
-    },
+const { result } = await sendByApiContract(client, getUser, {
+  pathParams: { userId: '1' },
+  retry: {
+    maxRetries: 3,
+    statusCodes: [503, 429],
   },
-)
+})
 ```
 
 `maxRetries` is the number of retries after the initial attempt — `maxRetries: 2` allows up to 3 total calls.

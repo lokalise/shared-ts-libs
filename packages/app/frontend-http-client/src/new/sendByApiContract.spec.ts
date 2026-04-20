@@ -178,14 +178,9 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: { 200: z.unknown() },
       })
 
-      const result = await sendByApiContract(
-        buildClient(),
-        contract,
-        {},
-        {
-          signal: AbortSignal.abort(),
-        },
-      )
+      const result = await sendByApiContract(buildClient(), contract, {
+        signal: AbortSignal.abort(),
+      })
 
       expect(result.error).toBeDefined()
       expect(result.result).toBeUndefined()
@@ -219,12 +214,7 @@ describe('sendByApiContract', () => {
 
       await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' }, JSON_HEADERS)
 
-      const response = await sendByApiContract(
-        buildClient(),
-        contract,
-        {},
-        { captureAsError: false },
-      )
+      const response = await sendByApiContract(buildClient(), contract, { captureAsError: false })
 
       expectTypeOf(response.result).toEqualTypeOf<
         | { statusCode: 200; body: { id: number }; headers: Record<string, string | undefined> }
