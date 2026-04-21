@@ -78,10 +78,10 @@ const requestDurationMetric = new RequestDurationMetric({ appMetrics })
 // Record a duration directly:
 requestDurationMetric.registerMeasurement({ route: '/api/users', time: 0.32 })
 
-// Or record using start and end times:
-const start = Date.now()
+// Or record using start and end times (in seconds):
+const start = Date.now() / 1000
 // ... operation ...
-const end = Date.now()
+const end = Date.now() / 1000
 requestDurationMetric.registerMeasurement({ route: '/api/users', startTime: start, endTime: end })
 ```
 
@@ -164,8 +164,8 @@ const requestDurationMetric = new RequestDurationMetric({ appMetrics })
 // Record a duration directly:
 requestDurationMetric.registerMeasurement('successful', { time: 0.32 })
 
-// Or record using start and end times:
-const start = Date.now()
+// Or record using start and end times (in seconds):
+const start = Date.now() / 1000
 // ... operation ...
 const end = Date.now()
 requestDurationMetric.registerMeasurement('failed', { startTime: start, endTime: end })
