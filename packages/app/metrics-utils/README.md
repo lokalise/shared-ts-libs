@@ -167,7 +167,7 @@ requestDurationMetric.registerMeasurement('successful', { time: 0.32 })
 // Or record using start and end times (in seconds):
 const start = Date.now() / 1000
 // ... operation ...
-const end = Date.now()
+const end = Date.now() / 1000
 requestDurationMetric.registerMeasurement('failed', { startTime: start, endTime: end })
 ```
 
