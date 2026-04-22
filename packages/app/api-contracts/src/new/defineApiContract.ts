@@ -17,14 +17,17 @@ import {
 } from './contractResponse.ts'
 
 export type RequestPathParamsSchema = z.ZodObject
+export type RequestQuerySchema = z.ZodObject
+export type RequestHeaderSchema = z.ZodObject
+export type ResponseHeaderSchema = z.ZodObject
 
 export type CommonApiContract = {
   // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with generics
   pathResolver: RoutePathResolver<any>
   requestPathParamsSchema?: RequestPathParamsSchema
-  requestQuerySchema?: z.ZodType
-  requestHeaderSchema?: z.ZodType
-  responseHeaderSchema?: z.ZodType
+  requestQuerySchema?: RequestQuerySchema
+  requestHeaderSchema?: RequestHeaderSchema
+  responseHeaderSchema?: ResponseHeaderSchema
   responsesByStatusCode: ResponsesByStatusCode
 
   metadata?: CommonRouteDefinitionMetadata
@@ -105,6 +108,28 @@ export const getSseSchemaByEventName = (routeConfig: ApiContract): SseSchemaByEv
   return Object.keys(result).length > 0 ? result : null
 }
 
+export const hasAnySuccessSseResponse = (apiContract: ApiContract): boolean => {
+  for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
+    const value = apiContract.responsesByStatusCode[code]
+
+    if (!value) {
+      continue
+    }
+
+    if (isSseResponse(value)) {
+      return true
+    } else if (isAnyOfResponses(value)) {
+      for (const response of value.responses) {
+        if (isSseResponse(response)) {
+          return true
+        }
+      }
+    }
+  }
+
+  return false
+}
+
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it is acceptable
 export const getSuccessResponseSchema = (routeConfig: ApiContract): z.ZodType | null => {
   const schemas: z.ZodType[] = []
@@ -138,9 +163,12 @@ export const getSuccessResponseSchema = (routeConfig: ApiContract): z.ZodType | 
   if (schemas.length > 1) {
     return z.union(schemas)
   }
-  if (schemas.length === 1) {
-    return schemas[0]!
+
+  const firstSchema = schemas.at(0)
+  if (firstSchema) {
+    return firstSchema
   }
+
   return hasDirectNonJsonEntry ? z.never() : null
 }
 

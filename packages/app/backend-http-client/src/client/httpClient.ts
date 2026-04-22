@@ -28,7 +28,7 @@ import type { ZodError, ZodSchema } from 'zod/v4'
 import { z } from 'zod/v4'
 import { ResponseStatusError } from '../errors/ResponseStatusError.ts'
 import type { PayloadRouteRequestParams, RouteRequestParams } from './apiContractTypes.ts'
-import { DEFAULT_OPTIONS, defaultClientOptions } from './constants.ts'
+import { DEFAULT_OPTIONS, defaultClientOptions, REQUEST_ID_HEADER } from './constants.ts'
 import type {
   InternalRequestOptions,
   RecordObject,
@@ -70,7 +70,7 @@ export async function sendGet<
       method: 'GET',
       query: options.query,
       headers: copyWithoutUndefined({
-        'x-request-id': options.reqContext?.reqId,
+        [REQUEST_ID_HEADER]: options.reqContext?.reqId,
         ...options.headers,
       }),
       reset: options.disableKeepAlive ?? false,
@@ -116,7 +116,7 @@ export async function sendGetWithStreamedResponse<
       method: 'GET',
       query: options.query,
       headers: copyWithoutUndefined({
-        'x-request-id': options.reqContext?.reqId,
+        [REQUEST_ID_HEADER]: options.reqContext?.reqId,
         ...options.headers,
       }),
       reset: options.disableKeepAlive ?? false,
@@ -162,7 +162,7 @@ export async function sendDelete<
       method: 'DELETE',
       query: options.query,
       headers: copyWithoutUndefined({
-        'x-request-id': options.reqContext?.reqId,
+        [REQUEST_ID_HEADER]: options.reqContext?.reqId,
         ...options.headers,
       }),
       reset: options.disableKeepAlive ?? false,
@@ -212,7 +212,7 @@ async function sendResourceChange<
       body: body ? JSON.stringify(body) : undefined,
       query: options.query,
       headers: copyWithoutUndefined({
-        'x-request-id': options.reqContext?.reqId,
+        [REQUEST_ID_HEADER]: options.reqContext?.reqId,
         ...options.headers,
       }),
       reset: options.disableKeepAlive ?? false,
@@ -257,7 +257,7 @@ async function sendNonPayload<
       method,
       query: options.query,
       headers: copyWithoutUndefined({
-        'x-request-id': options.reqContext?.reqId,
+        [REQUEST_ID_HEADER]: options.reqContext?.reqId,
         ...options.headers,
       }),
       reset: options.disableKeepAlive ?? false,
@@ -317,7 +317,7 @@ export async function sendPostBinary<
       body,
       query: options.query,
       headers: copyWithoutUndefined({
-        'x-request-id': options.reqContext?.reqId,
+        [REQUEST_ID_HEADER]: options.reqContext?.reqId,
         ...options.headers,
       }),
       reset: options.disableKeepAlive ?? false,
@@ -377,7 +377,7 @@ export async function sendPutBinary<
       body,
       query: options.query,
       headers: copyWithoutUndefined({
-        'x-request-id': options.reqContext?.reqId,
+        [REQUEST_ID_HEADER]: options.reqContext?.reqId,
         ...options.headers,
       }),
       reset: options.disableKeepAlive ?? false,

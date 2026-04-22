@@ -1,0 +1,589 @@
+import {
+  anyOfResponses,
+  blobResponse,
+  ContractNoBody,
+  defineApiContract,
+  sseResponse,
+  textResponse,
+} from '@lokalise/api-contracts'
+import { getLocal } from 'mockttp'
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
+import wretch from 'wretch'
+import { z } from 'zod/v4'
+import { sendByApiContract } from './sendByApiContract.ts'
+import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
+
+const JSON_HEADERS = { 'content-type': 'application/json' }
+
+describe('sendByApiContract', () => {
+  const mockServer = getLocal()
+
+  beforeEach(async () => {
+    await mockServer.start()
+  })
+
+  afterEach(async () => {
+    await mockServer.stop()
+  })
+
+  const buildClient = () => wretch(mockServer.url)
+
+  describe('GET', () => {
+    it('sends GET request and returns typed body', async () => {
+      const responseSchema = z.object({ id: z.number(), title: z.string() })
+
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: responseSchema },
+      })
+
+      await mockServer
+        .forGet('/products/1')
+        .thenJson(200, { id: 1, title: 'Backpack' }, JSON_HEADERS)
+
+      const result = await sendByApiContract(buildClient(), contract, {})
+
+      expectTypeOf(result.result).toMatchTypeOf<
+        { body: { id: number; title: string } } | undefined
+      >()
+      expect(result.result).toMatchObject({ body: { id: 1, title: 'Backpack' } })
+    })
+
+    it('sends GET request with path params', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        requestPathParamsSchema: z.object({ productId: z.coerce.number() }),
+        pathResolver: ({ productId }) => `/products/${productId}`,
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const result = await sendByApiContract(buildClient(), contract, {
+        pathParams: { productId: 1 },
+      })
+
+      expect(result.result).toMatchObject({ body: { id: 1 } })
+    })
+
+    it('sends GET request with query params', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products',
+        requestQuerySchema: z.object({ limit: z.number() }),
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await mockServer
+        .forGet('/products')
+        .withQuery({ limit: '3' })
+        .thenJson(200, [{ id: 1 }], JSON_HEADERS)
+
+      const result = await sendByApiContract(buildClient(), contract, { queryParams: { limit: 3 } })
+
+      expect(result.result).toMatchObject({ body: [{ id: 1 }] })
+    })
+
+    it('sends GET request with headers', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        requestHeaderSchema: z.object({ authorization: z.string() }),
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await mockServer
+        .forGet('/products/1')
+        .withHeaders({ authorization: 'Bearer token' })
+        .thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const result = await sendByApiContract(buildClient(), contract, {
+        headers: { authorization: 'Bearer token' },
+      })
+
+      expect(result.result).toMatchObject({ body: { id: 1 } })
+    })
+
+    it('resolves headers from a sync function', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        requestHeaderSchema: z.object({ authorization: z.string() }),
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await mockServer
+        .forGet('/products/1')
+        .withHeaders({ authorization: 'Bearer token' })
+        .thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const result = await sendByApiContract(buildClient(), contract, {
+        headers: () => ({ authorization: 'Bearer token' }),
+      })
+
+      expect(result.result).toMatchObject({ body: { id: 1 } })
+    })
+
+    it('resolves headers from an async function', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        requestHeaderSchema: z.object({ authorization: z.string() }),
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await mockServer
+        .forGet('/products/1')
+        .withHeaders({ authorization: 'Bearer token' })
+        .thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const result = await sendByApiContract(buildClient(), contract, {
+        headers: async () => ({ authorization: 'Bearer token' }),
+      })
+
+      expect(result.result).toMatchObject({ body: { id: 1 } })
+    })
+
+    it('works with path prefix', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await mockServer.forGet('/api/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const result = await sendByApiContract(buildClient(), contract, { pathPrefix: 'api' })
+
+      expect(result.result).toMatchObject({ body: { id: 1 } })
+    })
+
+    it('validates response and throws on schema mismatch', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.object({ id: z.string() }) },
+      })
+
+      await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      await expect(sendByApiContract(buildClient(), contract, {})).rejects.toThrow()
+    })
+
+    it('throws on network failure (no HTTP response)', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await expect(
+        sendByApiContract(buildClient(), contract, { signal: AbortSignal.abort() }),
+      ).rejects.toMatchObject({ name: 'AbortError' })
+    })
+
+    it('returns UnexpectedResponseError when status is not in contract', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: {},
+      })
+
+      await mockServer.forGet('/products/1').thenJson(500, { error: 'fail' }, JSON_HEADERS)
+
+      const result = await sendByApiContract(buildClient(), contract, {})
+
+      expect(result.error).toBeInstanceOf(UnexpectedResponseError)
+      expect((result.error as UnexpectedResponseError).statusCode).toBe(500)
+      expect(result.result).toBeUndefined()
+    })
+
+    it('returns typed body for non-2xx response when status is in contract', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: {
+          200: z.object({ id: z.number() }),
+          404: z.object({ message: z.string() }),
+        },
+      })
+
+      await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' }, JSON_HEADERS)
+
+      const response = await sendByApiContract(buildClient(), contract, { captureAsError: false })
+
+      expectTypeOf(response.result).toEqualTypeOf<
+        | { statusCode: 200; body: { id: number }; headers: Record<string, string> }
+        | {
+            statusCode: 404
+            body: { message: string }
+            headers: Record<string, string>
+          }
+        | undefined
+      >()
+      expect(response.result).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
+    })
+
+    it('returns non-2xx response as Either.error by default', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: {
+          200: z.object({ id: z.number() }),
+          404: z.object({ message: z.string() }),
+        },
+      })
+
+      await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' }, JSON_HEADERS)
+
+      const response = await sendByApiContract(buildClient(), contract, {})
+
+      expectTypeOf(response.result).toEqualTypeOf<
+        { statusCode: 200; body: { id: number }; headers: Record<string, string> } | undefined
+      >()
+      expect(response.error).toBeDefined()
+      expect(response.result).toBeUndefined()
+    })
+
+    it('parses and merges response headers when responseHeaderSchema is defined', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+        responseHeaderSchema: z.object({ 'x-request-id': z.string() }),
+      })
+
+      await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, { 'x-request-id': 'abc-123' })
+
+      const result = await sendByApiContract(buildClient(), contract, {})
+
+      expect(result.result?.headers['x-request-id']).toBe('abc-123')
+      expect(result.result?.headers['content-type']).toBe('application/json')
+    })
+  })
+
+  describe('POST', () => {
+    it('sends POST request with body and returns typed response', async () => {
+      const contract = defineApiContract({
+        method: 'post',
+        pathResolver: () => '/products',
+        requestBodySchema: z.object({ name: z.string() }),
+        responsesByStatusCode: { 201: z.object({ id: z.number() }) },
+      })
+
+      await mockServer.forPost('/products').thenJson(201, { id: 21 }, JSON_HEADERS)
+
+      const result = await sendByApiContract(buildClient(), contract, { body: { name: 'test' } })
+
+      expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
+      expect(result.result).toMatchObject({ body: { id: 21 } })
+    })
+
+    it('sends POST with path params and body', async () => {
+      const contract = defineApiContract({
+        method: 'post',
+        requestPathParamsSchema: z.object({ orgId: z.string() }),
+        pathResolver: ({ orgId }) => `/orgs/${orgId}/members`,
+        requestBodySchema: z.object({ email: z.string() }),
+        responsesByStatusCode: { 201: z.object({ id: z.string() }) },
+      })
+
+      await mockServer.forPost('/orgs/acme/members').thenJson(201, { id: '1' }, JSON_HEADERS)
+
+      const result = await sendByApiContract(buildClient(), contract, {
+        pathParams: { orgId: 'acme' },
+        body: { email: 'alice@example.com' },
+      })
+
+      expect(result.result).toMatchObject({ body: { id: '1' } })
+    })
+  })
+
+  describe('PUT', () => {
+    it('sends PUT request', async () => {
+      const contract = defineApiContract({
+        method: 'put',
+        requestPathParamsSchema: z.object({ id: z.string() }),
+        pathResolver: ({ id }) => `/products/${id}`,
+        requestBodySchema: z.object({ name: z.string() }),
+        responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+      })
+
+      await mockServer.forPut('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const result = await sendByApiContract(buildClient(), contract, {
+        pathParams: { id: '1' },
+        body: { name: 'updated' },
+      })
+
+      expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
+      expect(result.result).toMatchObject({ body: { id: 1 } })
+    })
+  })
+
+  describe('PATCH', () => {
+    it('sends PATCH request', async () => {
+      const contract = defineApiContract({
+        method: 'patch',
+        requestPathParamsSchema: z.object({ id: z.string() }),
+        pathResolver: ({ id }) => `/products/${id}`,
+        requestBodySchema: z.object({ name: z.string() }),
+        responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+      })
+
+      await mockServer.forPatch('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const result = await sendByApiContract(buildClient(), contract, {
+        pathParams: { id: '1' },
+        body: { name: 'patched' },
+      })
+
+      expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
+      expect(result.result).toMatchObject({ body: { id: 1 } })
+    })
+  })
+
+  describe('DELETE', () => {
+    it('sends DELETE request with ContractNoBody and returns null on 204', async () => {
+      const contract = defineApiContract({
+        method: 'delete',
+        requestPathParamsSchema: z.object({ id: z.string() }),
+        pathResolver: ({ id }) => `/products/${id}`,
+        responsesByStatusCode: { 204: ContractNoBody },
+      })
+
+      await mockServer.forDelete('/products/1').thenReply(204)
+
+      const result = await sendByApiContract(buildClient(), contract, { pathParams: { id: '1' } })
+
+      expectTypeOf(result.result).toMatchTypeOf<{ body: null } | undefined>()
+      expect(result.result).toMatchObject({ statusCode: 204, body: null })
+    })
+  })
+
+  describe('SSE', () => {
+    it('returns async iterable of typed events', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/events',
+        responsesByStatusCode: {
+          200: sseResponse({ update: z.object({ id: z.string() }) }),
+        },
+      })
+
+      const sseBody = 'event: update\ndata: {"id":"1"}\n\nevent: update\ndata: {"id":"2"}\n\n'
+
+      await mockServer
+        .forGet('/events')
+        .withHeaders({ accept: 'text/event-stream' })
+        .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
+
+      const response = await sendByApiContract(buildClient(), contract, {})
+
+      expectTypeOf(response.result).toMatchTypeOf<
+        | {
+            body: AsyncIterable<{
+              type: 'update'
+              data: { id: string }
+              lastEventId: string
+              retry: number | undefined
+            }>
+          }
+        | undefined
+      >()
+
+      if (!response.result) throw new Error('Expected result')
+      const events: {
+        type: string
+        data: { id: string }
+        lastEventId: string
+        retry: number | undefined
+      }[] = []
+      for await (const event of response.result.body) {
+        events.push(event)
+      }
+
+      expect(events).toEqual([
+        { type: 'update', data: { id: '1' }, lastEventId: '', retry: undefined },
+        { type: 'update', data: { id: '2' }, lastEventId: '', retry: undefined },
+      ])
+    })
+
+    it('validates event data against contract schema', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/events',
+        responsesByStatusCode: {
+          200: sseResponse({ tick: z.object({ count: z.coerce.number() }) }),
+        },
+      })
+
+      // count arrives as a string — coerce.number() should transform it
+      const sseBody = 'event: tick\ndata: {"count":"42"}\n\n'
+
+      await mockServer
+        .forGet('/events')
+        .withHeaders({ accept: 'text/event-stream' })
+        .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
+
+      const response = await sendByApiContract(buildClient(), contract, {})
+
+      if (!response.result) throw new Error('Expected result')
+      const events: {
+        type: string
+        data: { count: number }
+        lastEventId: string
+        retry: number | undefined
+      }[] = []
+      for await (const event of response.result.body) {
+        events.push(event)
+      }
+
+      expect(events).toEqual([
+        { type: 'tick', data: { count: 42 }, lastEventId: '', retry: undefined },
+      ])
+    })
+
+    it('dual-mode: streaming: true infers AsyncIterable, streaming: false infers typed body', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/events',
+        responsesByStatusCode: {
+          200: anyOfResponses([
+            sseResponse({ update: z.object({ id: z.string() }) }),
+            z.object({ latest: z.string() }),
+          ]),
+        },
+      })
+
+      type SseResult = Awaited<
+        ReturnType<() => ReturnType<typeof sendByApiContract<typeof contract, true>>>
+      >
+      type JsonResult = Awaited<
+        ReturnType<() => ReturnType<typeof sendByApiContract<typeof contract, false>>>
+      >
+
+      expectTypeOf<NonNullable<SseResult['result']>['body']>().toEqualTypeOf<
+        AsyncIterable<{
+          type: 'update'
+          data: { id: string }
+          lastEventId: string
+          retry: number | undefined
+        }>
+      >()
+      expectTypeOf<NonNullable<JsonResult['result']>['body']>().toEqualTypeOf<{ latest: string }>()
+    })
+
+    it('throws when a conflicting Accept header is provided for an SSE contract', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/events',
+        requestHeaderSchema: z.object({ accept: z.string() }),
+        responsesByStatusCode: {
+          200: sseResponse({ update: z.object({ id: z.string() }) }),
+        },
+      })
+
+      await expect(
+        sendByApiContract(buildClient(), contract, { headers: { accept: 'application/json' } }),
+      ).rejects.toThrow('Cannot use SSE streaming with a custom Accept header ("application/json")')
+    })
+
+    it('throws when SSE event type is not in the contract schema', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/events',
+        responsesByStatusCode: {
+          200: sseResponse({ update: z.object({ id: z.string() }) }),
+        },
+      })
+
+      const sseBody = 'event: unknown\ndata: {}\n\n'
+
+      await mockServer
+        .forGet('/events')
+        .withHeaders({ accept: 'text/event-stream' })
+        .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
+
+      const response = await sendByApiContract(buildClient(), contract, {})
+
+      if (!response.result) throw new Error('Expected result')
+
+      await expect(async () => {
+        for await (const _ of response.result.body) {
+          // consume
+        }
+      }).rejects.toThrow('Schema for event "unknown" not found.')
+    })
+
+    it('throws when event data fails schema validation', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/events',
+        responsesByStatusCode: {
+          200: sseResponse({ update: z.object({ id: z.string() }) }),
+        },
+      })
+
+      const sseBody = 'event: update\ndata: {"id":123}\n\n'
+
+      await mockServer
+        .forGet('/events')
+        .withHeaders({ accept: 'text/event-stream' })
+        .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
+
+      const response = await sendByApiContract(buildClient(), contract, {})
+
+      if (!response.result) throw new Error('Expected result')
+      const resultBody = response.result.body
+
+      await expect(async () => {
+        for await (const _ of resultBody) {
+          // consume
+        }
+      }).rejects.toThrow()
+    })
+  })
+
+  describe('text', () => {
+    it('returns string body for text response', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/export.csv',
+        responsesByStatusCode: { 200: textResponse('text/csv') },
+      })
+
+      await mockServer
+        .forGet('/export.csv')
+        .thenReply(200, 'id,name\n1,Backpack', { 'content-type': 'text/csv' })
+
+      const result = await sendByApiContract(buildClient(), contract, {})
+
+      expectTypeOf(result.result).toMatchTypeOf<{ body: string } | undefined>()
+      expect(result.result).toMatchObject({ body: 'id,name\n1,Backpack' })
+    })
+  })
+
+  describe('blob', () => {
+    it('returns Blob body for blob response', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/photo.png',
+        responsesByStatusCode: { 200: blobResponse('image/png') },
+      })
+
+      const imageBytes = Buffer.from([0x89, 0x50, 0x4e, 0x47])
+
+      await mockServer
+        .forGet('/photo.png')
+        .thenReply(200, imageBytes, { 'content-type': 'image/png' })
+
+      const result = await sendByApiContract(buildClient(), contract, {})
+
+      expectTypeOf(result.result).toMatchTypeOf<{ body: Blob } | undefined>()
+      expect(result.result?.body).toBeInstanceOf(Blob)
+      expect(result.result?.body.size).toBe(4)
+    })
+  })
+})

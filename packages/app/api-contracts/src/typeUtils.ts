@@ -1,4 +1,12 @@
 /**
+ * Flattens an intersection type into a single object type, making hover tooltips
+ * show the fully-resolved shape instead of `A & B & C`.
+ */
+export type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}
+
+/**
  * Returns true when T is a union with more than one member.
  */
 export type IsUnion<T, U = T> = (T extends unknown ? ([U] extends [T] ? 0 : 1) : never) extends 0

@@ -1,3 +1,5 @@
+export { type ContractRequestOptions, sendByApiContract } from './api-contract/sendByApiContract.ts'
+export { UnexpectedResponseError } from './api-contract/UnexpectedResponseError.ts'
 export {
   sendByContract,
   sendByDeleteRoute,

@@ -1,6 +1,5 @@
 import type { TransactionObservabilityManager } from '@lokalise/node-core'
 
-export type { TransactionObservabilityManager }
 export type { BarrierCallback, BarrierResult } from './background-job-processor/barrier/barrier.ts'
 export {
   type ChildJobThrottlingBarrierConfig,
@@ -22,3 +21,4 @@ export type {
   Schedule,
 } from './periodic-jobs/periodicJobTypes.ts'
 export { createTask } from './periodic-jobs/periodicJobUtils.ts'
+export type { TransactionObservabilityManager }

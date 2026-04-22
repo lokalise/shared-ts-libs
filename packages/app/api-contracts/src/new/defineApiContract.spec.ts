@@ -19,6 +19,7 @@ import {
   getIsEmptyResponseExpected,
   getSseSchemaByEventName,
   getSuccessResponseSchema,
+  hasAnySuccessSseResponse,
   mapApiContractToPath,
 } from './defineApiContract.ts'
 import type { InferJsonSuccessResponses } from './inferTypes.ts'
@@ -485,6 +486,67 @@ describe('getSuccessResponseSchema with SSE', () => {
     })
 
     expect(getSuccessResponseSchema(route)).toBe(jsonSchema)
+  })
+})
+
+describe('hasAnySuccessSseResponse', () => {
+  it('returns true for a direct sseResponse at a success code', () => {
+    const route = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/stream',
+      responsesByStatusCode: {
+        200: sseResponse({ chunk: z.object({ delta: z.string() }) }),
+      },
+    })
+
+    expect(hasAnySuccessSseResponse(route)).toBe(true)
+  })
+
+  it('returns true for sseResponse inside anyOfResponses at a success code', () => {
+    const route = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/stream',
+      responsesByStatusCode: {
+        200: anyOfResponses([sseResponse({ chunk: z.string() }), z.object({ id: z.string() })]),
+      },
+    })
+
+    expect(hasAnySuccessSseResponse(route)).toBe(true)
+  })
+
+  it('returns false when sseResponse is only at an error status code', () => {
+    const route = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/stream',
+      responsesByStatusCode: {
+        200: z.object({ id: z.string() }),
+        404: sseResponse({ error: z.string() }),
+      },
+    })
+
+    expect(hasAnySuccessSseResponse(route)).toBe(false)
+  })
+
+  it('returns false when no SSE response is present', () => {
+    const route = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/users',
+      responsesByStatusCode: { 200: z.object({ id: z.string() }) },
+    })
+
+    expect(hasAnySuccessSseResponse(route)).toBe(false)
+  })
+
+  it('returns false for anyOfResponses with no sseResponse at a success code', () => {
+    const route = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/users',
+      responsesByStatusCode: {
+        200: anyOfResponses([textResponse('text/csv'), z.object({ id: z.string() })]),
+      },
+    })
+
+    expect(hasAnySuccessSseResponse(route)).toBe(false)
   })
 })
 

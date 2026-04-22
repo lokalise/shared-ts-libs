@@ -22,6 +22,8 @@ export const JSON_HEADERS = {
   'Content-Type': 'application/json',
 }
 
+export const REQUEST_ID_HEADER = 'x-request-id'
+
 // biome-ignore lint/suspicious/noExplicitAny: ok
 export const TEST_OPTIONS: RequestOptions<any, any, true> = {
   requestLabel: 'test',
