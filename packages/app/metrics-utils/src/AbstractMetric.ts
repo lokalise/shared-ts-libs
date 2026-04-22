@@ -11,7 +11,7 @@ export type LabeledMetricParams = CommonMetricParams & {
 
 export type DimensionalMetricParams<TDimensions extends string[]> = CommonMetricParams & {
   namePrefix: string
-  nameSuffix: string
+  nameSuffix?: string
   dimensions: TDimensions
 }
 
