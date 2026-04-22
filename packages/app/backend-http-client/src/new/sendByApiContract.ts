@@ -220,21 +220,27 @@ export async function sendByApiContract<
     requestHeaders['content-type'] = 'application/json'
   }
 
-  const requestFn = () => {
-    const signals = [
-      params.signal,
-      params.timeout !== undefined ? AbortSignal.timeout(params.timeout) : undefined,
-    ].filter((signal) => signal !== undefined)
+  const baseRequest = {
+    method: apiContract.method.toUpperCase(),
+    path: buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix),
+    body: params.body ? JSON.stringify(params.body) : undefined,
+    query: params.queryParams,
+    headers: requestHeaders,
+    reset: params.disableKeepAlive ?? false,
+  }
 
-    return client.request({
-      method: apiContract.method.toUpperCase(),
-      path: buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix),
-      body: params.body ? JSON.stringify(params.body) : undefined,
-      query: params.queryParams,
-      headers: requestHeaders,
-      reset: params.disableKeepAlive ?? false,
-      signal: signals.length > 1 ? AbortSignal.any(signals) : signals[0],
-    })
+  // AbortSignal.timeout() creates a fresh timer, so it must be built per attempt.
+  const requestFn = () => {
+    const signal =
+      params.signal && params.timeout !== undefined
+        ? AbortSignal.any([params.signal, AbortSignal.timeout(params.timeout)])
+        : params.signal
+          ? params.signal
+          : params.timeout !== undefined
+            ? AbortSignal.timeout(params.timeout)
+            : undefined
+
+    return client.request({ ...baseRequest, signal })
   }
 
   const response = params.retry
