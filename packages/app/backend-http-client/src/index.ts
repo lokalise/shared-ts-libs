@@ -35,7 +35,7 @@ export {
   isResponseStatusError,
   ResponseStatusError,
 } from './errors/ResponseStatusError.ts'
-export type { RetryConfig as SendByApiContractRetryConfig } from './new/retry.ts'
-export type { ContractRequestOptions } from './new/sendByApiContract.ts'
-export { sendByApiContract } from './new/sendByApiContract.ts'
-export { UnexpectedResponseError } from './new/UnexpectedResponseError.ts'
+export type { RetryConfig as SendByApiContractRetryConfig } from './api-contract/retry.ts'
+export type { ContractRequestOptions } from './api-contract/sendByApiContract.ts'
+export { sendByApiContract } from './api-contract/sendByApiContract.ts'
+export { UnexpectedResponseError } from './api-contract/UnexpectedResponseError.ts'
