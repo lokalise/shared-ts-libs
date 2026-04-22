@@ -168,7 +168,6 @@ export async function sendByApiContract<
 ): Promise<ReturnTypeForContract<TApiContract, TIsStreaming, TCaptureAsError>> {
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(apiContract)
 
-  const signal = params.signal ?? new AbortController().signal
   const captureAsError = params.captureAsError ?? true
   const strictContentType = params.strictContentType ?? true
 
@@ -202,7 +201,7 @@ export async function sendByApiContract<
     .middlewares([cloneErrorResponseMiddleware])
     .url(fullUrl)
     .headers(requestHeaders)
-    .options({ signal })
+    .options({ signal: params.signal })
 
   let response: Response
 
