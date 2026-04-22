@@ -116,17 +116,19 @@ const resolveRequestHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> => {
   return typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
 }
 
-// AbortSignal.timeout() creates a fresh timer, so this must be called per attempt.
 function resolveAttemptSignal(
   userSignal: AbortSignal | undefined,
   timeoutMs: number | undefined,
 ): AbortSignal | undefined {
-  if (userSignal && timeoutMs !== undefined) {
+  if (timeoutMs === undefined) {
+    return userSignal
+  }
+
+  if (userSignal) {
     return AbortSignal.any([userSignal, AbortSignal.timeout(timeoutMs)])
   }
-  if (userSignal) return userSignal
-  if (timeoutMs !== undefined) return AbortSignal.timeout(timeoutMs)
-  return undefined
+
+  return AbortSignal.timeout(timeoutMs)
 }
 
 /**
