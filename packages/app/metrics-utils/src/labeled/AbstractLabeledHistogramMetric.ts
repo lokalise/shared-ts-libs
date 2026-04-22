@@ -1,9 +1,9 @@
 import type promClient from 'prom-client'
 import type { Histogram } from 'prom-client'
-import type { BaseMetricParams } from '../AbstractMetric.ts'
+import type { LabeledMetricParams } from '../AbstractMetric.ts'
 import { AbstractLabeledMetric } from './AbstractLabeledMetric.ts'
 
-type HistogramMetricConfiguration<Labels extends string[]> = BaseMetricParams & {
+type HistogramMetricConfiguration<Labels extends string[]> = LabeledMetricParams & {
   buckets: number[]
   labelNames: Labels
 }

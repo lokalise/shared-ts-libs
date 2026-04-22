@@ -5,13 +5,14 @@ export type CommonMetricParams = {
   helpDescription: string
 }
 
-export type BaseMetricParams = CommonMetricParams & {
+export type LabeledMetricParams = CommonMetricParams & {
   name: string
 }
 
-export type BaseDimensionalMetricParams = CommonMetricParams & {
+export type DimensionalMetricParams<TDimensions extends string[]> = CommonMetricParams & {
   namePrefix: string
   nameSuffix: string
+  dimensions: TDimensions
 }
 
 export abstract class AbstractMetric<
