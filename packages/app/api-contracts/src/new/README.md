@@ -234,3 +234,21 @@ getSseSchemaByEventName(notifications) // { notification: ZodObject<...> }
 getSseSchemaByEventName(getUser)       // null
 ```
 
+## Future: request body content type
+
+Currently, HTTP clients using this contract default to `application/json` when a request body is present.
+This is the right default for most cases but is not universally correct — `requestBodySchema` does not imply JSON; form data, multipart uploads, and XML are all valid body formats.
+
+The planned improvement is a `requestBodyContentType` field on `defineApiContract`:
+
+```ts
+defineApiContract({
+  method: 'post',
+  pathResolver: () => '/upload',
+  requestBodySchema: z.object({ file: z.unknown() }),
+  requestBodyContentType: 'multipart/form-data',
+  responsesByStatusCode: { 200: z.object({ url: z.string() }) },
+})
+```
+
+The HTTP client would then derive the `content-type` request header from the contract rather than assuming JSON.
