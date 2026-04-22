@@ -210,11 +210,13 @@ export async function sendByApiContract<
 
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(apiContract)
 
-  const requestHeaders: Record<string, string> = (await resolveRequestHeaders(params.headers)) ?? {}
+  const userHeaders = (await resolveRequestHeaders(params.headers)) ?? {}
 
-  if (params.reqContext) {
-    requestHeaders[REQUEST_ID_HEADER] = params.reqContext.reqId
+  const requestHeaders: Record<string, string> = {
+    ...(params.reqContext ? { [REQUEST_ID_HEADER]: params.reqContext.reqId } : {}),
+    ...userHeaders,
   }
+
   if (useStreaming) {
     requestHeaders.accept = 'text/event-stream'
   }
