@@ -54,9 +54,9 @@ export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> =
    */
   strictContentType?: boolean
   /**
-   * Controls how HTTP 4xx/5xx responses defined in the contract are surfaced.
+   * Controls how non-2xx responses defined in the contract are surfaced.
    *
-   * - `true` (default): error status codes are returned as `Either.error`, and the result type is
+   * - `true` (default): non-2xx status codes are returned as `Either.error`, and the result type is
    *   narrowed to success status codes only.
    * - `false`: all status codes defined in `responsesByStatusCode` are returned as `Either.result`.
    *
@@ -188,7 +188,7 @@ async function parseBody(body: Dispatcher.ResponseData['body'], resolvedEntry: R
  * `responsesByStatusCode`. Status codes absent from the contract are returned as
  * `Either.error` with an {@link UnexpectedResponseError}.
  *
- * By default (`captureAsError: true`), 4xx/5xx responses defined in the contract are
+ * By default (`captureAsError: true`), non-2xx responses defined in the contract are
  * also returned as `Either.error`; pass `captureAsError: false` to receive all
  * contract-defined responses as `Either.result`.
  *
@@ -274,7 +274,7 @@ export async function sendByApiContract<
     body: parsedBody,
   }
 
-  if (captureAsError && response.statusCode >= 400) {
+  if (captureAsError && (response.statusCode < 200 || response.statusCode > 299)) {
     // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TCaptureAsError
     return { error: parsedResponse } as any
   }

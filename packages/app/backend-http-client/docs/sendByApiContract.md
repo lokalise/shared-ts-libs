@@ -56,7 +56,7 @@ type Either<TError, TResult> =
 
 > **Header normalisation caveat:** multi-value headers are joined into a single comma-separated string. This is correct for most headers but mangles `set-cookie` — cookies that arrive as separate headers are collapsed into one string. If you need individual `Set-Cookie` values, this is a known limitation. A future `rawHeaders` field may expose the original undici headers as an escape hatch.
 
-By default (`captureAsError: true`), the result type only includes success status codes. HTTP 4xx/5xx responses defined in the contract are returned as `Either.error`. Status codes absent from the contract are always returned as `Either.error`.
+By default (`captureAsError: true`), the result type only includes success status codes. Non-2xx responses defined in the contract are returned as `Either.error`. Status codes absent from the contract are always returned as `Either.error`.
 
 ```ts
 const response = await sendByApiContract(client, contract, params)
@@ -72,7 +72,7 @@ if (response.error) {
 
 ### captureAsError: true (default)
 
-4xx/5xx status codes defined in `responsesByStatusCode` are returned as `Either.error` with the parsed body. The `result` type is narrowed to success status codes only.
+Non-2xx status codes defined in `responsesByStatusCode` are returned as `Either.error` with the parsed body. The `result` type is narrowed to success status codes only.
 
 ```ts
 const contract = defineApiContract({
@@ -271,7 +271,7 @@ retry: {
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `captureAsError` | `boolean` | `true` | When `true`, 4xx/5xx responses defined in the contract go to `Either.error`. When `false`, all contract-defined status codes go to `Either.result`. |
+| `captureAsError` | `boolean` | `true` | When `true`, non-2xx responses defined in the contract go to `Either.error`. When `false`, all contract-defined status codes go to `Either.result`. |
 | `timeout` | `number` | — | Per-attempt timeout in milliseconds. Each attempt gets its own independent timer. For a total deadline, use `signal` instead. |
 | `signal` | `AbortSignal` | — | Total deadline or manual cancellation. Stops retries immediately when fired. Combine with `timeout` for both per-attempt and total deadlines. |
 | `retry` | `RetryConfig \| true` | — | Retry configuration. Pass `true` for all defaults, or a config object. See [Retry](#retry). |

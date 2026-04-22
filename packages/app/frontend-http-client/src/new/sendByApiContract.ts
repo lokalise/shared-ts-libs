@@ -20,7 +20,7 @@ import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
 export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> = {
   /**
-   * Controls how HTTP 4xx/5xx responses defined in the contract are surfaced.
+   * Controls how non-2xx responses defined in the contract are surfaced.
    *
    * - `true` (default): error status codes are returned as `Either.error`, and the result type is
    *   narrowed to success status codes only.
@@ -150,7 +150,7 @@ async function parseBody(response: Response, resolvedEntry: ResponseKind) {
  * `responsesByStatusCode`. Status codes absent from the contract are returned as
  * `Either.error` with an {@link UnexpectedResponseError}.
  *
- * By default (`captureAsError: true`), 4xx/5xx responses defined in the contract are
+ * By default (`captureAsError: true`), non-2xx responses defined in the contract are
  * also returned as `Either.error`; pass `captureAsError: false` to receive all
  * contract-defined responses as `Either.result`.
  *
