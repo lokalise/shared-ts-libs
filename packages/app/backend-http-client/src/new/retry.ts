@@ -1,3 +1,13 @@
+// Why custom retry instead of undici's built-in RetryAgent:
+//
+// 1. Per-attempt AbortSignal.timeout() throws a TimeoutError (a DOMException), which is
+//    distinct from a manual AbortError — RetryAgent does not distinguish the two, so
+//    retryOnTimeout cannot be implemented on top of it.
+// 2. RetryAgent uses plain setTimeout for inter-retry delays, which leaves a dangling
+//    timer when the caller aborts mid-wait. Our implementation uses setTimeout from
+//    node:timers/promises with the { signal } option, which cancels the pending delay
+//    immediately when the AbortSignal fires.
+
 import { setTimeout as setTimeoutPromise } from 'node:timers/promises'
 import type { Dispatcher } from 'undici'
 
