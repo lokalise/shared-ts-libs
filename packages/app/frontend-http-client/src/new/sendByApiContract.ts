@@ -109,27 +109,20 @@ async function* parseSseStream(
     throw new Error('Response body is null')
   }
   /* v8 ignore stop */
+
   const reader = response.body
     .pipeThrough(new TextDecoderStream())
     .pipeThrough(new ServerSentEventTransformStream())
-    .getReader()
 
-  try {
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
+  for await (const event of reader) {
+    const { type, data, lastEventId, retry } = event
+    const schema = schemaByEventName[type]
 
-      const { type, data, lastEventId, retry } = value
-      const schema = schemaByEventName[type]
-
-      if (!schema) {
-        throw new Error(`Schema for event "${type}" not found.`)
-      }
-
-      yield { type, data: schema.parse(JSON.parse(data)), lastEventId, retry }
+    if (!schema) {
+      throw new Error(`Schema for event "${type}" not found.`)
     }
-  } finally {
-    reader.releaseLock()
+
+    yield { type, data: schema.parse(JSON.parse(data)), lastEventId, retry }
   }
 }
 
