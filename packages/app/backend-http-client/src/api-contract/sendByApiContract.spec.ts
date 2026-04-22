@@ -564,6 +564,23 @@ describe('sendByApiContract', () => {
         sendByApiContract(client, contract, { signal: AbortSignal.abort() }),
       ).rejects.toMatchObject({ name: 'AbortError' })
     })
+
+    it('throws TimeoutError when both signal and timeout are provided and timeout fires first', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+      })
+
+      await mockServer.forGet('/products/1').thenTimeout()
+
+      await expect(
+        sendByApiContract(client, contract, {
+          signal: new AbortController().signal,
+          timeout: 50,
+        }),
+      ).rejects.toMatchObject({ name: 'TimeoutError' })
+    })
   })
 
   describe('retry', () => {
