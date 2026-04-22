@@ -227,12 +227,14 @@ export async function withRetry(
     if (!isLastAttempt && config.statusCodes.includes(response.statusCode)) {
       const delay = computeRetryDelay(response, retryNumber, config)
 
-      // undici response body must always be consumed or explicitly dumped.
-      await response.body.dump()
+      // undici response body must always be consumed or explicitly dumped
+      const promises: Promise<unknown>[] = [response.body.dump()]
 
       if (delay > 0) {
-        await setTimeoutPromise(delay, undefined, { signal })
+        promises.push(setTimeoutPromise(delay, undefined, { signal }))
       }
+
+      await Promise.all(promises)
 
       continue
     }
