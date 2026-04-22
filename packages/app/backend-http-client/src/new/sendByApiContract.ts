@@ -130,7 +130,7 @@ function normalizeResponseHeaders(
   const result: Record<string, string> = {}
 
   for (const [key, value] of Object.entries(rawHeaders)) {
-    if (!value) {
+    if (value === undefined) {
       continue
     }
 
