@@ -14,7 +14,8 @@ import {
   type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
 import { ServerSentEventTransformStream } from 'parse-sse'
-import { type Client, type Dispatcher, Headers } from 'undici'
+import { type Client, type Dispatcher } from 'undici'
+import { REQUEST_ID_HEADER } from '../client/constants.ts'
 import type { HttpRequestContext } from '../client/types.ts'
 import { type RetryConfig, resolveRetryConfig, withRetry } from './retry.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
@@ -210,7 +211,7 @@ export async function sendByApiContract<
   const requestHeaders: Record<string, string> = (await resolveRequestHeaders(params.headers)) ?? {}
 
   if (params.reqContext) {
-    requestHeaders['x-request-id'] = params.reqContext.reqId
+    requestHeaders[REQUEST_ID_HEADER] = params.reqContext.reqId
   }
   if (useStreaming) {
     requestHeaders.accept = 'text/event-stream'
