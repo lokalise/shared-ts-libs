@@ -1,6 +1,7 @@
 import type promClient from 'prom-client'
 import type { Histogram } from 'prom-client'
-import { AbstractMetric, type BaseMetricParams } from './AbstractMetric.ts'
+import type { BaseMetricParams } from '../AbstractMetric.ts'
+import { AbstractLabeledMetric } from './AbstractLabeledMetric.ts'
 
 type HistogramMetricConfiguration<Labels extends string[]> = BaseMetricParams & {
   buckets: number[]
@@ -23,9 +24,12 @@ type HistogramMeasurement<Labels extends string[]> = Partial<
       }
   )
 
-export abstract class AbstractHistogramMetric<Labels extends string[]> extends AbstractMetric<
+export abstract class AbstractLabeledHistogramMetric<
+  Labels extends string[],
+> extends AbstractLabeledMetric<
   Histogram<Labels[number]>,
-  HistogramMetricConfiguration<Labels>
+  HistogramMetricConfiguration<Labels>,
+  HistogramMeasurement<Labels>
 > {
   protected constructor(
     metricConfig: HistogramMetricConfiguration<Labels>,
@@ -34,9 +38,12 @@ export abstract class AbstractHistogramMetric<Labels extends string[]> extends A
     super(metricConfig, client)
   }
 
-  protected override createMetric(client: typeof promClient): Histogram<Labels[number]> {
+  protected override createMetric(
+    name: string,
+    client: typeof promClient,
+  ): Histogram<Labels[number]> {
     return new client.Histogram({
-      name: this.metricConfig.name,
+      name,
       help: this.metricConfig.helpDescription,
       buckets: this.metricConfig.buckets,
       labelNames: this.metricConfig.labelNames,
