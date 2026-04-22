@@ -171,19 +171,16 @@ describe('sendByApiContract', () => {
       await expect(sendByApiContract(buildClient(), contract, {})).rejects.toThrow()
     })
 
-    it('returns error on network failure (no HTTP response)', async () => {
+    it('throws on network failure (no HTTP response)', async () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 200: z.unknown() },
       })
 
-      const result = await sendByApiContract(buildClient(), contract, {
-        signal: AbortSignal.abort(),
-      })
-
-      expect(result.error).toBeDefined()
-      expect(result.result).toBeUndefined()
+      await expect(
+        sendByApiContract(buildClient(), contract, { signal: AbortSignal.abort() }),
+      ).rejects.toMatchObject({ name: 'AbortError' })
     })
 
     it('returns UnexpectedResponseError when status is not in contract', async () => {

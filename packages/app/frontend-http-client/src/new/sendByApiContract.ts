@@ -226,7 +226,7 @@ export async function sendByApiContract<
     /* v8 ignore stop */
   } catch (err) {
     if (!clonedErrorResponse) {
-      return { error: err as UnexpectedResponseError }
+      throw err
     }
     response = clonedErrorResponse
   }
