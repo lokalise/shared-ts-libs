@@ -232,10 +232,10 @@ export async function sendByApiContract<
     ...userHeaders,
   }
 
-  if (useStreaming) {
+  if (useStreaming && !requestHeaders.accept) {
     requestHeaders.accept = 'text/event-stream'
   }
-  if (params.body !== undefined) {
+  if (params.body !== undefined && !requestHeaders['content-type']) {
     requestHeaders['content-type'] = 'application/json'
   }
 

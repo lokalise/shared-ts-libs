@@ -173,10 +173,10 @@ export async function sendByApiContract<
 
   const requestHeaders: Record<string, string> = (await resolveRequestHeaders(params.headers)) ?? {}
 
-  if (useStreaming) {
+  if (useStreaming && !requestHeaders.accept) {
     requestHeaders.accept = 'text/event-stream'
   }
-  if (params.body !== undefined) {
+  if (params.body !== undefined && !requestHeaders['content-type']) {
     requestHeaders['content-type'] = 'application/json'
   }
 
