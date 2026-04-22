@@ -42,12 +42,9 @@ export type ClientRequestParams<
 
 type InferClientResponseHeaders<TApiContract extends ApiContract> =
   TApiContract['responseHeaderSchema'] extends z.ZodType
-    ? Omit<
-        Record<string, string | undefined>,
-        keyof InferSchemaOutput<TApiContract['responseHeaderSchema']>
-      > &
+    ? Omit<Record<string, string>, keyof InferSchemaOutput<TApiContract['responseHeaderSchema']>> &
         InferSchemaOutput<TApiContract['responseHeaderSchema']>
-    : Record<string, string | undefined>
+    : Record<string, string>
 
 /**
  * Maps a single responsesByStatusCode entry value to its TypeScript body type.

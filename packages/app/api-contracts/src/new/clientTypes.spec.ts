@@ -10,7 +10,7 @@ import { ContractNoBody } from './constants.ts'
 import { anyOfResponses, blobResponse, sseResponse, textResponse } from './contractResponse.ts'
 import { defineApiContract } from './defineApiContract.ts'
 
-type DefaultHeaders = Record<string, string | undefined>
+type DefaultHeaders = Record<string, string>
 
 describe('clientTypes', () => {
   describe('ClientRequestParams', () => {
@@ -232,7 +232,7 @@ describe('clientTypes', () => {
       type Result = InferSseClientResponse<typeof contract>
       expectTypeOf<Result>().toEqualTypeOf<{
         statusCode: 200
-        headers: { 'x-request-id': string } & Record<string, string | undefined>
+        headers: { 'x-request-id': string } & DefaultHeaders
         body: AsyncIterable<{
           type: 'tick'
           data: { count: number }
@@ -331,7 +331,7 @@ describe('clientTypes', () => {
       type Result = InferNonSseClientResponse<typeof contract>
       expectTypeOf<Result>().toEqualTypeOf<{
         statusCode: 200
-        headers: Omit<Record<string, string | undefined>, 'x-request-id'> & {
+        headers: Omit<DefaultHeaders, 'x-request-id'> & {
           'x-request-id': string
         }
         body: { id: number }
@@ -348,7 +348,7 @@ describe('clientTypes', () => {
       type Result = InferNonSseClientResponse<typeof contract>
       expectTypeOf<Result>().toEqualTypeOf<{
         statusCode: 200
-        headers: Omit<Record<string, string | undefined>, 'x-retry-count'> & {
+        headers: Omit<DefaultHeaders, 'x-retry-count'> & {
           'x-retry-count': number
         }
         body: { id: number }

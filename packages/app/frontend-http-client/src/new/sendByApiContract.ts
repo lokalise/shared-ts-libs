@@ -90,8 +90,8 @@ type ReturnTypeForContract<
 const resolveRequestHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> =>
   typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
 
-function normalizeResponseHeaders(response: Response): Record<string, string | undefined> {
-  const headers: Record<string, string | undefined> = {}
+function normalizeResponseHeaders(response: Response): Record<string, string> {
+  const headers: Record<string, string> = {}
 
   response.headers.forEach((value, key) => {
     headers[key] = value

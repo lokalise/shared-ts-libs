@@ -163,9 +163,12 @@ export const getSuccessResponseSchema = (routeConfig: ApiContract): z.ZodType | 
   if (schemas.length > 1) {
     return z.union(schemas)
   }
-  if (schemas.length === 1) {
-    return schemas[0]!
+
+  const firstSchema = schemas.at(0)
+  if (firstSchema) {
+    return firstSchema
   }
+
   return hasDirectNonJsonEntry ? z.never() : null
 }
 
