@@ -54,6 +54,8 @@ type Either<TError, TResult> =
 }
 ```
 
+> **Header normalisation caveat:** multi-value headers are joined into a single comma-separated string. This is correct for most headers but mangles `set-cookie` — cookies that arrive as separate headers are collapsed into one string. If you need individual `Set-Cookie` values, this is a known limitation. A future `rawHeaders` field may expose the original undici headers as an escape hatch.
+
 By default (`captureAsError: true`), the result type only includes success status codes. HTTP 4xx/5xx responses defined in the contract are returned as `Either.error`. Status codes absent from the contract are always returned as `Either.error`.
 
 ```ts

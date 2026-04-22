@@ -115,31 +115,26 @@ const resolveRequestHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> => {
   return typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
 }
 
+/**
+ * Converts undici's raw response headers into a flat `Record<string, string>`.
+ *
+ * Multi-value headers (e.g. arrays from undici) are joined into a single comma-separated
+ * string, which is correct for most headers but **not** for `set-cookie` — cookies must
+ * remain separate and are mangled by this join. A future `rawHeaders` field on the result
+ * may expose the original undici headers as an escape hatch.
+ */
 function normalizeResponseHeaders(
   rawHeaders: Dispatcher.ResponseData['headers'],
-): Record<string, string | undefined> {
-  const headers = new Headers()
+): Record<string, string> {
+  const result: Record<string, string> = {}
 
   for (const [key, value] of Object.entries(rawHeaders)) {
-    /* v8 ignore start */
     if (!value) {
       continue
     }
-    /* v8 ignore stop */
-    if (Array.isArray(value)) {
-      for (const element of value) {
-        headers.append(key, element)
-      }
-    } else {
-      headers.append(key, value)
-    }
+
+    result[key] = Array.isArray(value) ? value.join(', ') : value
   }
-
-  const result: Record<string, string | undefined> = {}
-
-  headers.forEach((value, key) => {
-    result[key] = value
-  })
 
   return result
 }
