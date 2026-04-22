@@ -211,6 +211,7 @@ async function parseBody(body: Dispatcher.ResponseData['body'], resolvedEntry: R
  *
  * @see {@link ContractRequestOptions} for timeout, retry, cancellation, and other options.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it is acceptable
 export async function sendByApiContract<
   TApiContract extends ApiContract,
   TIsStreaming extends boolean = DefaultStreaming<TApiContract['responsesByStatusCode']>,

@@ -480,9 +480,7 @@ describe('sendByApiContract', () => {
 
       await expect(
         sendByApiContract(client, contract, { headers: { accept: 'application/json' } }),
-      ).rejects.toThrow(
-        'Cannot use SSE streaming with a custom Accept header ("application/json")',
-      )
+      ).rejects.toThrow('Cannot use SSE streaming with a custom Accept header ("application/json")')
     })
 
     it('throws when an unknown event type is received', async () => {
