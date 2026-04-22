@@ -1,8 +1,11 @@
 import type promClient from 'prom-client'
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
-import { AbstractCounterMetric } from './AbstractCounterMetric.ts'
+import { AbstractLabeledCounterMetric } from './AbstractLabeledCounterMetric.ts'
 
-class ConcreteCounterMetric extends AbstractCounterMetric<'status', ['successful', 'failed']> {
+class ConcreteCounterMetric extends AbstractLabeledCounterMetric<
+  'status',
+  ['successful', 'failed']
+> {
   constructor(client?: typeof promClient) {
     super(
       {
@@ -16,7 +19,7 @@ class ConcreteCounterMetric extends AbstractCounterMetric<'status', ['successful
   }
 }
 
-describe('AbstractCounterMetric', () => {
+describe('AbstractLabeledCounterMetric', () => {
   let incMock: Mock
   let labelsMock: Mock
   let counterMock: Mock
