@@ -43,7 +43,7 @@ describe('AbstractDimensionalHistogramMetric', () => {
     const metric = new ConcreteDimensionalHistogramMetric(undefined)
 
     // When
-    metric.registerMeasurement('successful', { time: 100 })
+    metric.registerMeasurement({ dimension: 'successful', time: 100 })
 
     // Then
     expect(observeMock).not.toHaveBeenCalled()
@@ -55,7 +55,7 @@ describe('AbstractDimensionalHistogramMetric', () => {
 
     // When
     const metric = new ConcreteDimensionalHistogramMetric(client)
-    metric.registerMeasurement('successful', { time: 100 })
+    metric.registerMeasurement({ dimension: 'successful', time: 100 })
 
     // Then
     expect(getSingleMetricMock).toHaveBeenCalledWith(
@@ -83,7 +83,7 @@ describe('AbstractDimensionalHistogramMetric', () => {
     const metric = new ConcreteDimensionalHistogramMetric(client)
 
     // When
-    metric.registerMeasurement('failed', { startTime: 100, endTime: 150 })
+    metric.registerMeasurement({ dimension: 'failed', startTime: 100, endTime: 150 })
 
     // Then
     expect(observeMock).toHaveBeenCalledWith({}, 50)
@@ -96,7 +96,7 @@ describe('AbstractDimensionalHistogramMetric', () => {
 
     // When
     const metric = new ConcreteDimensionalHistogramMetric(client)
-    metric.registerMeasurement('successful', { time: 75 })
+    metric.registerMeasurement({ dimension: 'successful', time: 75 })
 
     // Then
     expect(histogramMock).not.toHaveBeenCalled()
@@ -108,7 +108,7 @@ describe('AbstractDimensionalHistogramMetric', () => {
     const metric = new ConcreteDimensionalHistogramMetric()
 
     // When
-    metric.registerMeasurement('successful', { time: 100 })
+    metric.registerMeasurement({ dimension: 'successful', time: 100 })
 
     // Then
     expect(observeMock).not.toHaveBeenCalled()
@@ -120,7 +120,7 @@ describe('AbstractDimensionalHistogramMetric', () => {
     const metric = new ConcreteDimensionalHistogramMetric(client)
 
     // When
-    metric.registerMeasurement('unknown' as 'successful', { time: 100 })
+    metric.registerMeasurement({ dimension: 'unknown' as 'successful', time: 100 })
 
     // Then
     expect(observeMock).not.toHaveBeenCalled()
