@@ -807,6 +807,25 @@ describe('sendByApiContract', () => {
           }),
         ).rejects.toMatchObject({ code: 'UND_ERR_SOCKET' })
       })
+
+      it('does not retry timeout errors when retryOnTimeout is false', async () => {
+        const contract = defineApiContract({
+          method: 'get',
+          pathResolver: () => '/products/1',
+          responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+        })
+
+        // Server hangs — per-attempt timeout fires and retryOnTimeout: false means
+        // the TimeoutError propagates immediately without retrying.
+        await mockServer.forGet('/products/1').thenTimeout()
+
+        await expect(
+          sendByApiContract(client, contract, {
+            timeout: 50,
+            retry: { maxRetries: 3, retryOnTimeout: false },
+          }),
+        ).rejects.toMatchObject({ name: 'TimeoutError' })
+      })
     })
   })
 })

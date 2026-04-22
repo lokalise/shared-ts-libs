@@ -130,9 +130,11 @@ function normalizeResponseHeaders(
   const result: Record<string, string> = {}
 
   for (const [key, value] of Object.entries(rawHeaders)) {
+    /* v8 ignore start -- undefined header values are a type artifact; undici never produces them */
     if (value === undefined) {
       continue
     }
+    /* v8 ignore stop */
 
     result[key] = Array.isArray(value) ? value.join(', ') : value
   }
