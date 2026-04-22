@@ -28,7 +28,7 @@ import type { ZodError, ZodSchema } from 'zod/v4'
 import { z } from 'zod/v4'
 import { ResponseStatusError } from '../errors/ResponseStatusError.ts'
 import type { PayloadRouteRequestParams, RouteRequestParams } from './apiContractTypes.ts'
-import { DEFAULT_OPTIONS, REQUEST_ID_HEADER, defaultClientOptions } from './constants.ts'
+import { DEFAULT_OPTIONS, defaultClientOptions, REQUEST_ID_HEADER } from './constants.ts'
 import type {
   InternalRequestOptions,
   RecordObject,

@@ -45,25 +45,39 @@ const deleteUser = defineApiContract({
 
 ### Non-JSON responses
 
-Use `textResponse` for plain-text or CSV responses, and `blobResponse` for binary responses (images, PDFs, etc.). Both carry the content type.
+Use `textResponse` for text-based responses (plain text, CSV, HTML, XML, YAML, etc.):
 
 ```ts
-import { defineApiContract, textResponse, blobResponse } from '@lokalise/api-contracts'
+import { defineApiContract, textResponse } from '@lokalise/api-contracts'
 
 const exportCsv = defineApiContract({
   method: 'get',
   pathResolver: () => '/export.csv',
-  responsesByStatusCode: {
-    200: textResponse('text/csv'),
-  },
+  responsesByStatusCode: { 200: textResponse('text/csv') },
 })
+
+const getPage = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/page',
+  responsesByStatusCode: { 200: textResponse('text/html') },
+})
+
+const getDocument = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/document',
+  responsesByStatusCode: { 200: textResponse('application/xml') },
+})
+```
+
+Use `blobResponse` for binary responses (images, PDFs, etc.):
+
+```ts
+import { defineApiContract, blobResponse } from '@lokalise/api-contracts'
 
 const downloadPhoto = defineApiContract({
   method: 'get',
   pathResolver: () => '/photo.png',
-  responsesByStatusCode: {
-    200: blobResponse('image/png'),
-  },
+  responsesByStatusCode: { 200: blobResponse('image/png') },
 })
 ```
 
