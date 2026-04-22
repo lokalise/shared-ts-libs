@@ -214,11 +214,11 @@ describe('sendByApiContract', () => {
       const response = await sendByApiContract(buildClient(), contract, { captureAsError: false })
 
       expectTypeOf(response.result).toEqualTypeOf<
-        | { statusCode: 200; body: { id: number }; headers: Record<string, string | undefined> }
+        | { statusCode: 200; body: { id: number }; headers: Record<string, string> }
         | {
             statusCode: 404
             body: { message: string }
-            headers: Record<string, string | undefined>
+            headers: Record<string, string>
           }
         | undefined
       >()
@@ -240,8 +240,7 @@ describe('sendByApiContract', () => {
       const response = await sendByApiContract(buildClient(), contract, {})
 
       expectTypeOf(response.result).toEqualTypeOf<
-        | { statusCode: 200; body: { id: number }; headers: Record<string, string | undefined> }
-        | undefined
+        { statusCode: 200; body: { id: number }; headers: Record<string, string> } | undefined
       >()
       expect(response.error).toBeDefined()
       expect(response.result).toBeUndefined()
