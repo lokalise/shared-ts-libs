@@ -1,6 +1,7 @@
 import type promClient from 'prom-client'
 import type { Counter } from 'prom-client'
-import { AbstractMetric, type BaseMetricParams } from './AbstractMetric.ts'
+import type { BaseMetricParams } from '../AbstractMetric.ts'
+import { AbstractLabeledMetric } from './AbstractLabeledMetric.ts'
 
 type CounterMetricConfiguration<
   TMetricLabel extends string,
@@ -14,12 +15,13 @@ type CounterMeasurement<TMetricMeasurementKeys extends string[]> = Partial<
   Record<TMetricMeasurementKeys[number], number>
 >
 
-export abstract class AbstractCounterMetric<
+export abstract class AbstractLabeledCounterMetric<
   TMetricLabel extends string,
   TMetricMeasurementKeys extends string[],
-> extends AbstractMetric<
+> extends AbstractLabeledMetric<
   Counter<TMetricLabel>,
-  CounterMetricConfiguration<TMetricLabel, TMetricMeasurementKeys>
+  CounterMetricConfiguration<TMetricLabel, TMetricMeasurementKeys>,
+  CounterMeasurement<TMetricMeasurementKeys>
 > {
   protected constructor(
     metricConfig: CounterMetricConfiguration<TMetricLabel, TMetricMeasurementKeys>,
@@ -28,9 +30,9 @@ export abstract class AbstractCounterMetric<
     super(metricConfig, client)
   }
 
-  protected override createMetric(client: typeof promClient): Counter<TMetricLabel> {
+  protected override createMetric(name: string, client: typeof promClient): Counter<TMetricLabel> {
     const counter = new client.Counter({
-      name: this.metricConfig.name,
+      name,
       help: this.metricConfig.helpDescription,
       labelNames: [this.metricConfig.label],
     })
