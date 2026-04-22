@@ -475,6 +475,23 @@ describe('sendByApiContract', () => {
       expectTypeOf<NonNullable<JsonResult['result']>['body']>().toEqualTypeOf<{ latest: string }>()
     })
 
+    it('throws when a conflicting Accept header is provided for an SSE contract', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/events',
+        requestHeaderSchema: z.object({ accept: z.string() }),
+        responsesByStatusCode: {
+          200: sseResponse({ update: z.object({ id: z.string() }) }),
+        },
+      })
+
+      await expect(
+        sendByApiContract(buildClient(), contract, { headers: { accept: 'application/json' } }),
+      ).rejects.toThrow(
+        'Cannot use SSE streaming with a custom Accept header ("application/json")',
+      )
+    })
+
     it('throws when SSE event type is not in the contract schema', async () => {
       const contract = defineApiContract({
         method: 'get',

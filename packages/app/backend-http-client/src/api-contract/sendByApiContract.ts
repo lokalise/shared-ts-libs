@@ -232,7 +232,12 @@ export async function sendByApiContract<
     ...userHeaders,
   }
 
-  if (useStreaming && !requestHeaders.accept) {
+  if (useStreaming) {
+    if (requestHeaders.accept && requestHeaders.accept !== 'text/event-stream') {
+      throw new Error(
+        `Cannot use SSE streaming with a custom Accept header ("${requestHeaders.accept}"). Remove the header or set it to "text/event-stream".`,
+      )
+    }
     requestHeaders.accept = 'text/event-stream'
   }
   if (params.body !== undefined && !requestHeaders['content-type']) {
