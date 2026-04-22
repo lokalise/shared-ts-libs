@@ -116,6 +116,19 @@ const resolveRequestHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> => {
   return typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
 }
 
+// AbortSignal.timeout() creates a fresh timer, so this must be called per attempt.
+function resolveAttemptSignal(
+  userSignal: AbortSignal | undefined,
+  timeoutMs: number | undefined,
+): AbortSignal | undefined {
+  if (userSignal && timeoutMs !== undefined) {
+    return AbortSignal.any([userSignal, AbortSignal.timeout(timeoutMs)])
+  }
+  if (userSignal) return userSignal
+  if (timeoutMs !== undefined) return AbortSignal.timeout(timeoutMs)
+  return undefined
+}
+
 /**
  * Converts undici's raw response headers into a flat `Record<string, string>`.
  *
@@ -233,19 +246,11 @@ export async function sendByApiContract<
     reset: params.disableKeepAlive ?? false,
   }
 
-  // AbortSignal.timeout() creates a fresh timer, so it must be built per attempt.
-  const requestFn = () => {
-    const signal =
-      params.signal && params.timeout !== undefined
-        ? AbortSignal.any([params.signal, AbortSignal.timeout(params.timeout)])
-        : params.signal
-          ? params.signal
-          : params.timeout !== undefined
-            ? AbortSignal.timeout(params.timeout)
-            : undefined
-
-    return client.request({ ...baseRequest, signal })
-  }
+  const requestFn = () =>
+    client.request({
+      ...baseRequest,
+      signal: resolveAttemptSignal(params.signal, params.timeout),
+    })
 
   const response = params.retry
     ? await withRetry(requestFn, resolveRetryConfig(params.retry), params.signal)
