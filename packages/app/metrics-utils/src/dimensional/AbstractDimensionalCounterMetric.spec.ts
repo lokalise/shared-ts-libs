@@ -86,8 +86,7 @@ describe('AbstractDimensionalCounterMetric', () => {
 
       // Then
       expect(counterMock).not.toHaveBeenCalled()
-      expect(incMock).toHaveBeenCalledTimes(2)
-      expect(incMock).toHaveBeenCalledWith(0)
+      expect(incMock).not.toHaveBeenCalled()
     })
 
     it('registers all measurements properly', () => {
