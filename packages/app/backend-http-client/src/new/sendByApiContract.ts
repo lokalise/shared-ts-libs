@@ -216,14 +216,14 @@ export async function sendByApiContract<
   if (useStreaming) {
     requestHeaders.accept = 'text/event-stream'
   }
-  if (params.body) {
+  if (params.body !== undefined) {
     requestHeaders['content-type'] = 'application/json'
   }
 
   const baseRequest = {
     method: apiContract.method.toUpperCase(),
     path: buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix),
-    body: params.body ? JSON.stringify(params.body) : undefined,
+    body: params.body !== undefined ? JSON.stringify(params.body) : undefined,
     query: params.queryParams,
     headers: requestHeaders,
     reset: params.disableKeepAlive ?? false,
