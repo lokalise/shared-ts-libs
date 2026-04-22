@@ -134,6 +134,35 @@ if (response.error instanceof UnexpectedResponseError) {
 | `headers` | `Record<string, string \| undefined>` | Normalised response headers. |
 | `body` | `string` | Raw response body read as UTF-8 text. |
 
+## Throws
+
+`sendByApiContract` wraps most failure modes in `Either.error`, but the following conditions throw directly. Wrap call sites in `try/catch` if any of these can arise:
+
+| Cause | What is thrown |
+|---|---|
+| Network error | Browser / fetch network error |
+| Manual cancellation — `signal` fired | `AbortError` (`DOMException`) |
+| Response body contains malformed JSON | `SyntaxError` |
+| Response body fails JSON schema validation | `ZodError` |
+| Response headers fail schema validation — `responseHeaderSchema` defined in the contract | `ZodError` |
+| SSE event type has no matching schema in the contract | `Error` |
+| SSE event data contains malformed JSON | `SyntaxError` |
+| SSE event data fails schema validation | `ZodError` |
+
+```ts
+try {
+  const response = await sendByApiContract(client, contract, params)
+
+  if (response.error) {
+    // Either.error — non-2xx or UnexpectedResponseError
+  } else {
+    // Either.result — success
+  }
+} catch (err) {
+  // Network error, abort, or schema/parse failure
+}
+```
+
 ## SSE and dual-mode
 
 ```ts
