@@ -3,17 +3,17 @@ import type { Histogram } from 'prom-client'
 import type { DimensionalMetricParams } from '../AbstractMetric.ts'
 import { AbstractDimensionalMetric } from './AbstractDimensionalMetric.ts'
 
-type DimensionalHistogramMetricConfiguration<TDimensions extends string[]> =
+type DimensionalHistogramMetricConfiguration<TDimensions extends readonly string[]> =
   DimensionalMetricParams<TDimensions> & {
     buckets: number[]
   }
 
-type DimensionalHistogramMeasurement<TDimensions extends string[]> =
+type DimensionalHistogramMeasurement<TDimensions extends readonly string[]> =
   | { dimension: TDimensions[number]; time: number; startTime?: never; endTime?: never }
   | { dimension: TDimensions[number]; time?: never; startTime: number; endTime: number }
 
 export abstract class AbstractDimensionalHistogramMetric<
-  TDimensions extends string[],
+  TDimensions extends readonly string[],
 > extends AbstractDimensionalMetric<
   Histogram,
   TDimensions,

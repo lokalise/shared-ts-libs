@@ -9,11 +9,12 @@ export type LabeledMetricParams = CommonMetricParams & {
   name: string
 }
 
-export type DimensionalMetricParams<TDimensions extends string[]> = CommonMetricParams & {
-  namePrefix: string
-  nameSuffix?: string
-  dimensions: TDimensions
-}
+export type DimensionalMetricParams<TDimensions extends readonly string[]> =
+  CommonMetricParams & {
+    namePrefix: string
+    nameSuffix?: string
+    dimensions: TDimensions
+  }
 
 export abstract class AbstractMetric<
   MetricType extends Metric,

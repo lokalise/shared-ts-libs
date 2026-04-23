@@ -5,19 +5,19 @@ import { AbstractLabeledMetric } from './AbstractLabeledMetric.ts'
 
 type CounterMetricConfiguration<
   TMetricLabel extends string,
-  TMetricMeasurementKeys extends string[],
+  TMetricMeasurementKeys extends readonly string[],
 > = LabeledMetricParams & {
   label: TMetricLabel
   measurementKeys: TMetricMeasurementKeys
 }
 
-type CounterMeasurement<TMetricMeasurementKeys extends string[]> = Partial<
+type CounterMeasurement<TMetricMeasurementKeys extends readonly string[]> = Partial<
   Record<TMetricMeasurementKeys[number], number>
 >
 
 export abstract class AbstractLabeledCounterMetric<
   TMetricLabel extends string,
-  TMetricMeasurementKeys extends string[],
+  TMetricMeasurementKeys extends readonly string[],
 > extends AbstractLabeledMetric<
   Counter<TMetricLabel>,
   CounterMetricConfiguration<TMetricLabel, TMetricMeasurementKeys>,
@@ -40,9 +40,7 @@ export abstract class AbstractLabeledCounterMetric<
     // Initializing the metric with default values, so that they are present even if no data was registered yet.
     for (const measurementKey of this.metricConfig.measurementKeys) {
       counter
-        .labels({
-          [this.metricConfig.label]: measurementKey,
-        } as Record<TMetricLabel, string>)
+        .labels({ [this.metricConfig.label]: measurementKey } as Record<TMetricLabel, string>)
         .inc(0)
     }
 
@@ -54,15 +52,11 @@ export abstract class AbstractLabeledCounterMetric<
   ): void {
     if (!this.metric) return
 
-    for (const [measurementKey, value] of Object.entries(measurement) as [
-      TMetricMeasurementKeys[number],
-      number,
-    ][]) {
+    for (const [measurementKey, value] of Object.entries(measurement)) {
+      if (value === undefined) continue
       this.metric
-        .labels({
-          [this.metricConfig.label]: measurementKey,
-        } as Record<TMetricLabel, string>)
-        .inc(value)
+        .labels({ [this.metricConfig.label]: measurementKey } as Record<TMetricLabel, string>)
+        .inc(value as number)
     }
   }
 }

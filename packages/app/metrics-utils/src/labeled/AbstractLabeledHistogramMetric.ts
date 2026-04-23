@@ -3,12 +3,12 @@ import type { Histogram } from 'prom-client'
 import type { LabeledMetricParams } from '../AbstractMetric.ts'
 import { AbstractLabeledMetric } from './AbstractLabeledMetric.ts'
 
-type HistogramMetricConfiguration<Labels extends string[]> = LabeledMetricParams & {
+type HistogramMetricConfiguration<Labels extends readonly string[]> = LabeledMetricParams & {
   buckets: number[]
   labelNames: Labels
 }
 
-type HistogramMeasurement<Labels extends string[]> = Partial<
+type HistogramMeasurement<Labels extends readonly string[]> = Partial<
   Record<Labels[number], string | number>
 > &
   (
@@ -25,7 +25,7 @@ type HistogramMeasurement<Labels extends string[]> = Partial<
   )
 
 export abstract class AbstractLabeledHistogramMetric<
-  Labels extends string[],
+  Labels extends readonly string[],
 > extends AbstractLabeledMetric<
   Histogram<Labels[number]>,
   HistogramMetricConfiguration<Labels>,

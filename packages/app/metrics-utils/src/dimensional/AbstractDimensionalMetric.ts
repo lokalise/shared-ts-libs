@@ -5,7 +5,7 @@ import { getOrRegisterMetric } from '../getOrRegisterMetric.ts'
 
 export abstract class AbstractDimensionalMetric<
   MetricType extends Metric,
-  TDimensions extends string[],
+  TDimensions extends readonly string[],
   MetricsParams extends DimensionalMetricParams<TDimensions>,
   TMeasurement,
 > extends AbstractMetric<MetricType, MetricsParams, TMeasurement> {
@@ -16,7 +16,7 @@ export abstract class AbstractDimensionalMetric<
     this.metrics = new Map()
     if (!client) return
 
-    for (const dimension of metricConfig.dimensions as TDimensions[number][]) {
+    for (const dimension of metricConfig.dimensions) {
       const name = this.buildMetricName(dimension)
       const metric = getOrRegisterMetric(client, name, () => this.createMetric(name, client))
       this.metrics.set(dimension, metric)

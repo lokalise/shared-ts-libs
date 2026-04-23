@@ -118,5 +118,23 @@ describe('AbstractLabeledCounterMetric', () => {
       expect(labelsMock).not.toHaveBeenCalled()
       expect(incMock).not.toHaveBeenCalled()
     })
+
+    it('skips keys with undefined value', () => {
+      // Given
+      getSingleMetricMock.mockReturnValueOnce(counterMock())
+      const metric = new ConcreteCounterMetric(client)
+      labelsMock.mockClear()
+      incMock.mockClear()
+
+      // When
+      metric.registerMeasurement({ successful: 20, failed: undefined })
+
+      // Then
+      expect(labelsMock).toHaveBeenCalledTimes(1)
+      expect(labelsMock).toHaveBeenCalledWith({ status: 'successful' })
+      expect(labelsMock).not.toHaveBeenCalledWith({ status: 'failed' })
+      expect(incMock).toHaveBeenCalledTimes(1)
+      expect(incMock).toHaveBeenCalledWith(20)
+    })
   })
 })
