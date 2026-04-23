@@ -1,7 +1,7 @@
 import type promClient from 'prom-client'
 import type { Metric } from 'prom-client'
 import { AbstractMetric, type LabeledMetricParams } from '../AbstractMetric.ts'
-import { getOrRegisterMetric } from '../getOrRegisterMetric.ts'
+import { getOrCreateMetric } from '../getOrCreateMetric.ts'
 
 export abstract class AbstractLabeledMetric<
   MetricType extends Metric,
@@ -14,7 +14,7 @@ export abstract class AbstractLabeledMetric<
     super(metricConfig)
     if (!client) return
 
-    this.metric = getOrRegisterMetric(client, metricConfig.name, () =>
+    this.metric = getOrCreateMetric(client, metricConfig.name, () =>
       this.createMetric(metricConfig.name, client),
     )
   }

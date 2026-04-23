@@ -1,7 +1,7 @@
 import type promClient from 'prom-client'
 import type { Metric } from 'prom-client'
 import { AbstractMetric, type DimensionalMetricParams } from '../AbstractMetric.ts'
-import { getOrRegisterMetric } from '../getOrRegisterMetric.ts'
+import { getOrCreateMetric } from '../getOrCreateMetric.ts'
 
 export abstract class AbstractDimensionalMetric<
   MetricType extends Metric,
@@ -18,7 +18,7 @@ export abstract class AbstractDimensionalMetric<
 
     for (const dimension of metricConfig.dimensions) {
       const name = this.buildMetricName(dimension)
-      const metric = getOrRegisterMetric(client, name, () => this.createMetric(name, client))
+      const metric = getOrCreateMetric(client, name, () => this.createMetric(name, client))
       this.metrics.set(dimension, metric)
     }
   }

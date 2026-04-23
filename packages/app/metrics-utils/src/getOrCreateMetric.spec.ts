@@ -1,9 +1,9 @@
 import type promClient from 'prom-client'
 import type { Metric } from 'prom-client'
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
-import { getOrRegisterMetric } from './getOrRegisterMetric.ts'
+import { getOrCreateMetric } from './getOrCreateMetric.ts'
 
-describe('getOrRegisterMetric', () => {
+describe('getOrCreateMetric', () => {
   let getSingleMetricMock: Mock
   let client: typeof promClient
 
@@ -21,7 +21,7 @@ describe('getOrRegisterMetric', () => {
     const factory = vi.fn()
 
     // When
-    const result = getOrRegisterMetric(client, 'my_metric', factory)
+    const result = getOrCreateMetric(client, 'my_metric', factory)
 
     // Then
     expect(getSingleMetricMock).toHaveBeenCalledWith('my_metric')
@@ -36,7 +36,7 @@ describe('getOrRegisterMetric', () => {
     const factory = vi.fn().mockReturnValue(created)
 
     // When
-    const result = getOrRegisterMetric(client, 'my_metric', factory)
+    const result = getOrCreateMetric(client, 'my_metric', factory)
 
     // Then
     expect(getSingleMetricMock).toHaveBeenCalledWith('my_metric')

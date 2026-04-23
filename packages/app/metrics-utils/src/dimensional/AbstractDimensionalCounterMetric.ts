@@ -3,9 +3,6 @@ import type { Counter } from 'prom-client'
 import type { DimensionalMetricParams } from '../AbstractMetric.ts'
 import { AbstractDimensionalMetric } from './AbstractDimensionalMetric.ts'
 
-type DimensionalCounterMetricConfiguration<TDimensions extends readonly string[]> =
-  DimensionalMetricParams<TDimensions>
-
 type DimensionalCounterMeasurement<TDimensions extends readonly string[]> = Partial<
   Record<TDimensions[number], number>
 >
@@ -15,11 +12,11 @@ export abstract class AbstractDimensionalCounterMetric<
 > extends AbstractDimensionalMetric<
   Counter,
   TDimensions,
-  DimensionalCounterMetricConfiguration<TDimensions>,
+  DimensionalMetricParams<TDimensions>,
   DimensionalCounterMeasurement<TDimensions>
 > {
   protected constructor(
-    metricConfig: DimensionalCounterMetricConfiguration<TDimensions>,
+    metricConfig: DimensionalMetricParams<TDimensions>,
     client?: typeof promClient,
   ) {
     super(metricConfig, client)

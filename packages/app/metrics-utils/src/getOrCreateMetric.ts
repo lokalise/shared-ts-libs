@@ -1,7 +1,7 @@
 import type promClient from 'prom-client'
 import type { Metric } from 'prom-client'
 
-export const getOrRegisterMetric = <T extends Metric>(
+export const getOrCreateMetric = <T extends Metric>(
   client: typeof promClient,
   name: string,
   factory: () => T,
