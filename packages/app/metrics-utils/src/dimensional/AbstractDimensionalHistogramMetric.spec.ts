@@ -8,11 +8,10 @@ class ConcreteDimensionalHistogramMetric extends AbstractDimensionalHistogramMet
   constructor(client?: typeof promClient) {
     super(
       {
-        namePrefix: 'workflow_run:entitlements',
-        nameSuffix: 'histogram',
         helpDescription: 'Duration of workflow runs per status',
         dimensions: ['successful', 'failed'],
         buckets: [1, 2, 3],
+        buildMetricName: (dimension) => `workflow_run:entitlements_${dimension}:histogram`,
       },
       client,
     )

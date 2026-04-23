@@ -17,15 +17,9 @@ export abstract class AbstractDimensionalMetric<
     if (!client) return
 
     for (const dimension of metricConfig.dimensions) {
-      const name = this.buildMetricName(dimension)
+      const name = metricConfig.buildMetricName(dimension)
       const metric = getOrCreateMetric(client, name, () => this.createMetric(name, client))
       this.metrics.set(dimension, metric)
     }
-  }
-
-  private buildMetricName(dimension: string): string {
-    const { namePrefix, nameSuffix } = this.metricConfig
-    const base = `${namePrefix}_${dimension}`
-    return nameSuffix ? `${base}:${nameSuffix}` : base
   }
 }

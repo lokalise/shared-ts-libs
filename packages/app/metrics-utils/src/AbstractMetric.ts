@@ -10,9 +10,8 @@ export type LabeledMetricParams = CommonMetricParams & {
 }
 
 export type DimensionalMetricParams<TDimensions extends readonly string[]> = CommonMetricParams & {
-  namePrefix: string
-  nameSuffix?: string
   dimensions: TDimensions
+  buildMetricName: (dimension: TDimensions[number]) => string
 }
 
 export abstract class AbstractMetric<

@@ -8,10 +8,9 @@ class ConcreteDimensionalCounterMetric extends AbstractDimensionalCounterMetric<
   constructor(client?: typeof promClient) {
     super(
       {
-        namePrefix: 'workflow_run:entitlements',
-        nameSuffix: 'counter',
         helpDescription: 'Number of workflow runs per status',
         dimensions: ['successful', 'failed'],
+        buildMetricName: (dimension) => `workflow_run:entitlements_${dimension}:counter`,
       },
       client,
     )

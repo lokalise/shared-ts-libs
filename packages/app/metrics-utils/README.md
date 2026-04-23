@@ -5,7 +5,7 @@ This package contains a set of utilities to work with Prometheus metrics.
 It provides four abstract base classes, organized into two families:
 
 - **Labeled** — one Prometheus metric with dimensions expressed as Prometheus labels.
-- **Dimensional** — one Prometheus metric per dimension, with the dimension encoded in the metric name. Use this when the backend consuming your metrics does not support Prometheus labels.
+- **Dimensional** — one Prometheus metric per dimension, with the metric name built by a caller-provided `buildMetricName(dimension)` callback. Use this when the backend consuming your metrics does not support Prometheus labels.
 
 Table of contents:
 1. [AbstractLabeledCounterMetric](#abstractlabeledcountermetric)
@@ -92,7 +92,7 @@ requestDurationMetric.registerMeasurement({ route: '/api/users', startTime: star
 
 ### AbstractDimensionalCounterMetric
 
-A base class for counter metrics where dimensions are encoded in the metric name rather than as Prometheus labels. Each dimension becomes a separate metric record in the format `{namePrefix}_{dimension}:{nameSuffix}` (or `{namePrefix}_{dimension}` when `nameSuffix` is omitted).
+A base class for counter metrics where each dimension is registered as a separate label-free Prometheus Counter. The metric name for each dimension is produced by a caller-provided `buildMetricName(dimension)` callback, giving you full control over the naming scheme.
 
 Use this instead of `AbstractLabeledCounterMetric` when the tool consuming your metrics does not support Prometheus labels.
 
@@ -105,10 +105,9 @@ export class PizzaDeliveryCountMetric extends AbstractDimensionalCounterMetric<
 	constructor({ promClient }: Deps) {
 		super(
 			{
-				namePrefix: 'pizza_delivery',
-				nameSuffix: 'counter',
 				helpDescription: 'Number of pizza deliveries per status',
 				dimensions: ['delivered_to_customer', 'delivered_to_pickup_point', 'not_delivered'],
+				buildMetricName: (dimension) => `pizza_delivery_${dimension}:counter`,
 			},
 			promClient,
 		)
@@ -124,10 +123,9 @@ pizzaDeliveryCountMetric.registerMeasurement({
 ```
 
 Where:
-1. `namePrefix` - prefix of the metric name, before the dimension (e.g. `pizza_delivery`)
-2. `nameSuffix` - *(optional)* suffix of the metric name, after the dimension (e.g. `counter`). If omitted, the metric name is `{namePrefix}_{dimension}`.
-3. `helpDescription` - metric description
-4. `dimensions` - the set of possible dimension values
+1. `helpDescription` - metric description
+2. `dimensions` - the set of possible dimension values
+3. `buildMetricName` - function that returns the Prometheus metric name for a given dimension
 
 Construction registers a separate label-free Prometheus Counter for each dimension. All dimensions are initialized to `0` on construction.
 
@@ -142,7 +140,7 @@ pizza_delivery_not_delivered:counter 0
 
 ### AbstractDimensionalHistogramMetric
 
-A base class for histogram metrics where dimensions are encoded in the metric name rather than as Prometheus labels. Each dimension becomes a separate label-free Prometheus Histogram in the format `{namePrefix}_{dimension}:{nameSuffix}` (or `{namePrefix}_{dimension}` when `nameSuffix` is omitted).
+A base class for histogram metrics where each dimension is registered as a separate label-free Prometheus Histogram. The metric name for each dimension is produced by a caller-provided `buildMetricName(dimension)` callback, giving you full control over the naming scheme.
 
 Use this instead of `AbstractLabeledHistogramMetric` when the tool consuming your metrics does not support Prometheus labels.
 
@@ -153,11 +151,10 @@ export class RequestDurationMetric extends AbstractDimensionalHistogramMetric<['
   constructor({ promClient }: Deps) {
     super(
       {
-        namePrefix: 'request_duration',
-        nameSuffix: 'histogram',
         helpDescription: 'Duration of requests in seconds',
         dimensions: ['successful', 'failed'],
         buckets: [0.1, 0.5, 1, 5],
+        buildMetricName: (dimension) => `request_duration_${dimension}:histogram`,
       },
       promClient,
     )
@@ -177,11 +174,10 @@ requestDurationMetric.registerMeasurement({ dimension: 'failed', startTime: star
 ```
 
 Where:
-1. `namePrefix` - prefix of the metric name, before the dimension (e.g. `request_duration`)
-2. `nameSuffix` - *(optional)* suffix of the metric name, after the dimension (e.g. `histogram`). If omitted, the metric name is `{namePrefix}_{dimension}`.
-3. `helpDescription` - metric description
-4. `dimensions` - the set of possible dimension values
-5. `buckets` - histogram bucket boundaries
+1. `helpDescription` - metric description
+2. `dimensions` - the set of possible dimension values
+3. `buckets` - histogram bucket boundaries
+4. `buildMetricName` - function that returns the Prometheus metric name for a given dimension
 
 The above example registers the following metrics:
 ```text
