@@ -7,6 +7,8 @@ It provides four abstract base classes, organized into two families:
 - **Labeled** — one Prometheus metric with dimensions expressed as Prometheus labels.
 - **Dimensional** — one Prometheus metric per dimension, with the metric name built by a caller-provided `buildMetricName(dimension)` callback. Use this when the backend consuming your metrics does not support Prometheus labels.
 
+All four base classes accept the Prometheus client as an optional constructor argument. Passing `undefined` (or omitting it) disables the metric: no Prometheus registration happens and `registerMeasurement` becomes a no-op. This lets consumers gate metrics behind a runtime flag without conditionally instantiating their classes.
+
 Table of contents:
 1. [AbstractLabeledCounterMetric](#abstractlabeledcountermetric)
 2. [AbstractLabeledHistogramMetric](#abstractlabeledhistogrammetric)
