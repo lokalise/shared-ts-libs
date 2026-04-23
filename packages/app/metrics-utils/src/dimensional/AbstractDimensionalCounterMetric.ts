@@ -41,11 +41,9 @@ export abstract class AbstractDimensionalCounterMetric<
   ): void {
     if (this.metrics.size === 0) return
 
-    for (const [dimension, value] of Object.entries(measurement) as [
-      TDimensions[number],
-      number,
-    ][]) {
-      this.metrics.get(dimension)?.inc(value)
+    for (const [dimension, value] of Object.entries(measurement)) {
+      if (value === undefined) continue
+      this.metrics.get(dimension)?.inc(value as number)
     }
   }
 }

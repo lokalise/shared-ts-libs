@@ -128,5 +128,19 @@ describe('AbstractDimensionalCounterMetric', () => {
       // Then
       expect(incMock).not.toHaveBeenCalled()
     })
+
+    it('skips dimensions with undefined value', () => {
+      // Given
+      getSingleMetricMock.mockReturnValue(undefined)
+      const metric = new ConcreteDimensionalCounterMetric(client)
+      incMock.mockClear()
+
+      // When
+      metric.registerMeasurement({ successful: 20, failed: undefined })
+
+      // Then
+      expect(incMock).toHaveBeenCalledTimes(1)
+      expect(incMock).toHaveBeenCalledWith(20)
+    })
   })
 })
