@@ -5,8 +5,8 @@ import { AbstractPrometheusTransactionManager } from './AbstractPrometheusTransa
 import {
   ManagerLabeledCounter,
   ManagerLabeledHistogram,
-  prometheusTransactionManagerBuiltInLabels,
   type PrometheusTransactionManagerLabels,
+  prometheusTransactionManagerBuiltInLabels,
   type TransactionStatus,
 } from './utils.ts'
 

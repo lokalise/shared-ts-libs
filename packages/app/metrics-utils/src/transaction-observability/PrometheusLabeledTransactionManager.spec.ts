@@ -348,10 +348,7 @@ describe('PrometheusLabeledTransactionManager', () => {
       manager.start('queue_b', 'key-1')
       manager.stop('key-1', false)
 
-      expect(incMock).toHaveBeenLastCalledWith(
-        { status: 'error', transaction_name: 'queue_b' },
-        1,
-      )
+      expect(incMock).toHaveBeenLastCalledWith({ status: 'error', transaction_name: 'queue_b' }, 1)
     })
   })
 })
