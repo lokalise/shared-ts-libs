@@ -3,7 +3,7 @@ import type { Histogram } from 'prom-client'
 import type { LabeledMetricParams } from '../AbstractMetric.ts'
 import { AbstractLabeledMetric } from './AbstractLabeledMetric.ts'
 
-type HistogramMetricConfiguration<Labels extends readonly string[]> = LabeledMetricParams & {
+export type HistogramMetricConfiguration<Labels extends readonly string[]> = LabeledMetricParams & {
   buckets: number[]
   labelNames: Labels
 }

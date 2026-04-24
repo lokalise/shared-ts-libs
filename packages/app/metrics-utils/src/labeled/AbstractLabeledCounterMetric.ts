@@ -3,7 +3,7 @@ import type { Counter } from 'prom-client'
 import type { LabeledMetricParams } from '../AbstractMetric.ts'
 import { AbstractLabeledMetric } from './AbstractLabeledMetric.ts'
 
-type CounterMetricConfiguration<
+export type CounterMetricConfiguration<
   TMetricLabel extends string,
   TMetricMeasurementKeys extends readonly string[],
 > = LabeledMetricParams & {

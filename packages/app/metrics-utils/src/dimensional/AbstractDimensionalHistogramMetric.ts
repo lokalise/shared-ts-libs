@@ -3,7 +3,7 @@ import type { Histogram } from 'prom-client'
 import type { DimensionalMetricParams } from '../AbstractMetric.ts'
 import { AbstractDimensionalMetric } from './AbstractDimensionalMetric.ts'
 
-type DimensionalHistogramMetricConfiguration<TDimensions extends readonly string[]> =
+export type DimensionalHistogramMetricConfiguration<TDimensions extends readonly string[]> =
   DimensionalMetricParams<TDimensions> & {
     buckets: number[]
   }
