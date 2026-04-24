@@ -8,10 +8,9 @@ class ConcreteDimensionalCounterMetric extends AbstractDimensionalCounterMetric<
   constructor(client?: typeof promClient) {
     super(
       {
-        namePrefix: 'workflow_run:entitlements',
-        nameSuffix: 'counter',
         helpDescription: 'Number of workflow runs per status',
         dimensions: ['successful', 'failed'],
+        buildMetricName: (dimension) => `workflow_run:entitlements_${dimension}:counter`,
       },
       client,
     )
@@ -86,8 +85,7 @@ describe('AbstractDimensionalCounterMetric', () => {
 
       // Then
       expect(counterMock).not.toHaveBeenCalled()
-      expect(incMock).toHaveBeenCalledTimes(2)
-      expect(incMock).toHaveBeenCalledWith(0)
+      expect(incMock).not.toHaveBeenCalled()
     })
 
     it('registers all measurements properly', () => {
@@ -128,6 +126,20 @@ describe('AbstractDimensionalCounterMetric', () => {
 
       // Then
       expect(incMock).not.toHaveBeenCalled()
+    })
+
+    it('skips dimensions with undefined value', () => {
+      // Given
+      getSingleMetricMock.mockReturnValue(undefined)
+      const metric = new ConcreteDimensionalCounterMetric(client)
+      incMock.mockClear()
+
+      // When
+      metric.registerMeasurement({ successful: 20, failed: undefined })
+
+      // Then
+      expect(incMock).toHaveBeenCalledTimes(1)
+      expect(incMock).toHaveBeenCalledWith(20)
     })
   })
 })
