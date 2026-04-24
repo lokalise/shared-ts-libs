@@ -36,11 +36,12 @@ export abstract class AbstractDimensionalCounterMetric<
   public override registerMeasurement(
     measurement: DimensionalCounterMeasurement<TDimensions>,
   ): void {
-    if (this.metrics.size === 0) return
+    if (!this.client) return
 
     for (const [dimension, value] of Object.entries(measurement)) {
       if (value === undefined) continue
-      this.metrics.get(dimension)?.inc(value as number)
+
+      this.getOrRegisterMetric(dimension)?.inc(value as number)
     }
   }
 }

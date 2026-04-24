@@ -3,8 +3,8 @@ import type { HistogramMetricConfiguration } from '../labeled/AbstractLabeledHis
 import type { MultiLabeledCounterMetricConfiguration } from '../labeled/AbstractMultiLabeledCounterMetric.ts'
 import { AbstractPrometheusTransactionManager } from './AbstractPrometheusTransactionManager.ts'
 import {
-  LabeledCounter,
-  LabeledHistogram,
+  ManagerLabeledCounter,
+  ManagerLabeledHistogram,
   prometheusTransactionManagerBuiltInLabels,
   type PrometheusTransactionManagerLabels,
   type TransactionStatus,
@@ -45,8 +45,8 @@ export class PrometheusLabeledTransactionManager<
   CustomLabels extends readonly string[] = readonly [],
 > extends AbstractPrometheusTransactionManager {
   private readonly supportedCustomLabels: Set<string>
-  private readonly counter?: LabeledCounter<CustomLabels>
-  private readonly histogram?: LabeledHistogram<CustomLabels>
+  private readonly counter?: ManagerLabeledCounter<CustomLabels>
+  private readonly histogram?: ManagerLabeledHistogram<CustomLabels>
   private readonly customLabelsByKey = new Map<
     string,
     Record<CustomLabels[number], string | number>
@@ -65,12 +65,12 @@ export class PrometheusLabeledTransactionManager<
     ]
 
     if (config.type === 'counter') {
-      this.counter = new LabeledCounter<CustomLabels>(
+      this.counter = new ManagerLabeledCounter<CustomLabels>(
         { name: config.name, helpDescription: config.helpDescription, labelNames },
         client,
       )
     } else if (config.type === 'histogram') {
-      this.histogram = new LabeledHistogram<CustomLabels>(
+      this.histogram = new ManagerLabeledHistogram<CustomLabels>(
         {
           name: config.name,
           helpDescription: config.helpDescription,

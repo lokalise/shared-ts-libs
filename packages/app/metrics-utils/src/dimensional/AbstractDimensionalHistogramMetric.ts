@@ -39,9 +39,7 @@ export abstract class AbstractDimensionalHistogramMetric<
   public override registerMeasurement(
     measurement: DimensionalHistogramMeasurement<TDimensions>,
   ): void {
-    if (this.metrics.size === 0) return
-
-    const histogram = this.metrics.get(measurement.dimension)
+    const histogram = this.getOrRegisterMetric(measurement.dimension)
     if (!histogram) return
 
     const { time, startTime, endTime } = measurement

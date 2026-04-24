@@ -15,7 +15,7 @@ export type PrometheusTransactionManagerLabels<CustomLabels extends readonly str
   | CustomLabels[number]
 )[]
 
-export class LabeledCounter<
+export class ManagerLabeledCounter<
   CustomLabels extends readonly string[],
 > extends AbstractMultiLabeledCounterMetric<PrometheusTransactionManagerLabels<CustomLabels>> {
   // biome-ignore lint/complexity/noUselessConstructor: promotes the abstract's protected ctor to public
@@ -29,7 +29,7 @@ export class LabeledCounter<
   }
 }
 
-export class LabeledHistogram<
+export class ManagerLabeledHistogram<
   CustomLabels extends readonly string[],
 > extends AbstractLabeledHistogramMetric<PrometheusTransactionManagerLabels<CustomLabels>> {
   // biome-ignore lint/complexity/noUselessConstructor: promotes the abstract's protected ctor to public
