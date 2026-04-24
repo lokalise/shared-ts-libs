@@ -1,7 +1,9 @@
 import type promClient from 'prom-client'
 import type { Histogram } from 'prom-client'
-import type { DimensionalMetricParams } from '../AbstractMetric.ts'
-import { AbstractDimensionalMetric } from './AbstractDimensionalMetric.ts'
+import {
+  AbstractDimensionalMetric,
+  type DimensionalMetricParams,
+} from './AbstractDimensionalMetric.ts'
 
 export type DimensionalHistogramMetricConfiguration<TDimensions extends readonly string[]> =
   DimensionalMetricParams<TDimensions> & {

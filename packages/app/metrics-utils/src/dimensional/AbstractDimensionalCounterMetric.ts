@@ -1,7 +1,9 @@
 import type promClient from 'prom-client'
 import type { Counter } from 'prom-client'
-import type { DimensionalMetricParams } from '../AbstractMetric.ts'
-import { AbstractDimensionalMetric } from './AbstractDimensionalMetric.ts'
+import {
+  AbstractDimensionalMetric,
+  type DimensionalMetricParams,
+} from './AbstractDimensionalMetric.ts'
 
 type DimensionalCounterMeasurement<TDimensions extends readonly string[]> = Partial<
   Record<TDimensions[number], number>

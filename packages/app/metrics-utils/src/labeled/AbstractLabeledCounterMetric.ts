@@ -1,7 +1,6 @@
 import type promClient from 'prom-client'
 import type { Counter } from 'prom-client'
-import type { LabeledMetricParams } from '../AbstractMetric.ts'
-import { AbstractLabeledMetric } from './AbstractLabeledMetric.ts'
+import { AbstractLabeledMetric, type LabeledMetricParams } from './AbstractLabeledMetric.ts'
 
 export type CounterMetricConfiguration<
   TMetricLabel extends string,

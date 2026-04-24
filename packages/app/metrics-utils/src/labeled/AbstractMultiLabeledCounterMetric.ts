@@ -1,7 +1,6 @@
 import type promClient from 'prom-client'
 import type { Counter } from 'prom-client'
-import type { LabeledMetricParams } from '../AbstractMetric.ts'
-import { AbstractLabeledMetric } from './AbstractLabeledMetric.ts'
+import { AbstractLabeledMetric, type LabeledMetricParams } from './AbstractLabeledMetric.ts'
 
 export type MultiLabeledCounterMetricConfiguration<Labels extends readonly string[]> =
   LabeledMetricParams & {
@@ -28,7 +27,10 @@ export abstract class AbstractMultiLabeledCounterMetric<
     super(metricConfig, client)
   }
 
-  protected override createMetric(name: string, client: typeof promClient): Counter<Labels[number]> {
+  protected override createMetric(
+    name: string,
+    client: typeof promClient,
+  ): Counter<Labels[number]> {
     return new client.Counter({
       name,
       help: this.metricConfig.helpDescription,
