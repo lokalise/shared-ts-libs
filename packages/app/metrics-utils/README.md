@@ -4,17 +4,24 @@ This package contains a set of utilities to work with Prometheus metrics.
 
 It provides five abstract base classes, organized into two families:
 
-- **Labeled** — one Prometheus metric with dimensions expressed as Prometheus labels.
-- **Dimensional** — one Prometheus metric per dimension, with the metric name built by a caller-provided `buildMetricName(dimension)` callback. Use this when the backend consuming your metrics does not support Prometheus labels.
+- **[Labeled](#labeled)** — one Prometheus metric with dimensions expressed as Prometheus labels. This is the idiomatic Prometheus approach and is what you want whenever your metrics backend supports labels (Prometheus itself, Grafana, most standard APMs).
+- **[Dimensional](#dimensional)** — one Prometheus metric per dimension. Designed for backends that **do not support Prometheus labels** (e.g. some Datadog setups): instead of one labeled series, each dimension becomes its own metric with a caller-provided name.
 
 All base classes accept the Prometheus client as an optional constructor argument. Passing `undefined` (or omitting it) disables the metric: no Prometheus registration happens and `registerMeasurement` becomes a no-op. This lets consumers gate metrics behind a runtime flag without conditionally instantiating their classes.
 
 Table of contents:
-1. [AbstractLabeledCounterMetric](#abstractlabeledcountermetric)
-2. [AbstractMultiLabeledCounterMetric](#abstractmultilabeledcountermetric)
-3. [AbstractLabeledHistogramMetric](#abstractlabeledhistogrammetric)
-4. [AbstractDimensionalCounterMetric](#abstractdimensionalcountermetric)
-5. [AbstractDimensionalHistogramMetric](#abstractdimensionalhistogrammetric)
+1. [Labeled](#labeled)
+    1. [AbstractLabeledCounterMetric](#abstractlabeledcountermetric)
+    2. [AbstractMultiLabeledCounterMetric](#abstractmultilabeledcountermetric)
+    3. [AbstractLabeledHistogramMetric](#abstractlabeledhistogrammetric)
+2. [Dimensional](#dimensional)
+    1. [AbstractDimensionalCounterMetric](#abstractdimensionalcountermetric)
+    2. [AbstractDimensionalHistogramMetric](#abstractdimensionalhistogrammetric)
+    3. [Lazy initialization](#lazy-initialization)
+
+## Labeled
+
+The Labeled family exposes dimensions as Prometheus labels on a **single** metric. Use these classes whenever your metrics backend supports labels — this is the standard Prometheus way and results in the smallest number of metrics and the most flexible dashboards.
 
 ### AbstractLabeledCounterMetric
 
@@ -148,11 +155,19 @@ const end = Date.now() / 1000
 requestDurationMetric.registerMeasurement({ route: '/api/users', startTime: start, endTime: end })
 ```
 
+## Dimensional
+
+The Dimensional family is designed for metrics backends that **do not support Prometheus labels** — most notably some Datadog ingestion paths, where a labeled metric is rejected or collapsed on the way in. Instead of a single labeled metric with N time series, Dimensional classes register **N separate label-free metrics**, one per dimension, with the metric name produced by a caller-provided `buildMetricName(dimension)` callback.
+
+This means each dimension becomes its own top-level metric in the backend, which loses some of the filtering/aggregation power that labels give you, but makes the metrics compatible with backends that cannot consume them otherwise.
+
+**Rule of thumb**: if your backend supports Prometheus labels, use the [Labeled](#labeled) family. Use Dimensional only when labels are not an option.
+
 ### AbstractDimensionalCounterMetric
 
 A base class for counter metrics where each dimension is registered as a separate label-free Prometheus Counter. The metric name for each dimension is produced by a caller-provided `buildMetricName(dimension)` callback, giving you full control over the naming scheme.
 
-Use this instead of `AbstractLabeledCounterMetric` when the tool consuming your metrics does not support Prometheus labels.
+Use this instead of [`AbstractLabeledCounterMetric`](#abstractlabeledcountermetric) / [`AbstractMultiLabeledCounterMetric`](#abstractmultilabeledcountermetric) when the tool consuming your metrics does not support Prometheus labels.
 
 Usage:
 
@@ -194,13 +209,13 @@ pizza_delivery_delivered_to_pickup_point:counter 0
 pizza_delivery_not_delivered:counter 0
 ```
 
-`registerMeasurement` increments only the dimensions provided.
+`registerMeasurement` increments only the dimensions provided. A measurement for a dimension that was not declared throws an error (see [Lazy initialization](#lazy-initialization) for relaxing this).
 
 ### AbstractDimensionalHistogramMetric
 
 A base class for histogram metrics where each dimension is registered as a separate label-free Prometheus Histogram. The metric name for each dimension is produced by a caller-provided `buildMetricName(dimension)` callback, giving you full control over the naming scheme.
 
-Use this instead of `AbstractLabeledHistogramMetric` when the tool consuming your metrics does not support Prometheus labels.
+Use this instead of [`AbstractLabeledHistogramMetric`](#abstractlabeledhistogrammetric) when the tool consuming your metrics does not support Prometheus labels.
 
 Usage:
 
@@ -243,4 +258,42 @@ request_duration_successful:histogram
 request_duration_failed:histogram
 ```
 
-`registerMeasurement` takes a single object containing the target `dimension` and either a direct `time` value or a `startTime`/`endTime` pair.
+`registerMeasurement` takes a single object containing the target `dimension` and either a direct `time` value or a `startTime`/`endTime` pair. A measurement for a dimension that was not declared throws an error (see [Lazy initialization](#lazy-initialization) for relaxing this).
+
+### Lazy initialization
+
+By default, both `AbstractDimensionalCounterMetric` and `AbstractDimensionalHistogramMetric` operate in **eager mode**: every declared dimension is registered at construction time, and a measurement targeting a dimension that was not listed in `dimensions` **throws an error** — unknown dimensions are treated as bugs, not silently dropped.
+
+When the set of valid dimensions is not known up-front (e.g. it comes from runtime input such as a queue name or a tenant identifier), opt into **lazy mode** with `lazyInit: true`:
+
+```typescript
+export class QueueProcessingDurationMetric extends AbstractDimensionalHistogramMetric<readonly string[]> {
+  constructor({ promClient }: Deps) {
+    super(
+      {
+        helpDescription: 'Duration of queue message processing, per queue',
+        lazyInit: true,           // ← opt in
+        buckets: [0.1, 0.5, 1, 5],
+        buildMetricName: (queueName) => `queue_processing_${queueName}:histogram`,
+      },
+      promClient,
+    )
+  }
+}
+```
+
+In lazy mode:
+
+- **Nothing is pre-registered at construction time.** A metric is created the first time `registerMeasurement` is called with a given dimension, and reused on subsequent calls.
+- **If `dimensions` is provided**, it acts as an **allow-list**: a measurement for a dimension outside the allow-list throws an error. Useful when you know the shape but not the exact timing.
+- **If `dimensions` is omitted**, any dimension is accepted and registered lazily.
+
+Summary of the three modes:
+
+| Mode                 | `lazyInit`           | `dimensions`      | At construction            | Measurement for an unknown dimension |
+|----------------------|----------------------|-------------------|----------------------------|--------------------------------------|
+| Eager (default)      | `false` or omitted   | Required          | All dimensions pre-registered | Throws                               |
+| Lazy with allow-list | `true`               | Provided          | Nothing pre-registered      | Throws if outside the allow-list     |
+| Lazy open            | `true`               | Omitted           | Nothing pre-registered      | Accepted and registered on the fly   |
+
+**Trade-off vs eager mode**: lazy mode loses the "series exists from the start with a `0` value" property that eager counters provide, so dashboards may display "no data" until the first measurement arrives.
