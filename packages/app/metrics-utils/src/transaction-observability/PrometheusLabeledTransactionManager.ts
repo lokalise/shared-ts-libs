@@ -1,7 +1,7 @@
-import type { TransactionObservabilityManager } from '@lokalise/node-core'
 import type promClient from 'prom-client'
 import type { HistogramMetricConfiguration } from '../labeled/AbstractLabeledHistogramMetric.ts'
 import type { MultiLabeledCounterMetricConfiguration } from '../labeled/AbstractMultiLabeledCounterMetric.ts'
+import { AbstractPrometheusTransactionManager } from './AbstractPrometheusTransactionManager.ts'
 import {
   LabeledCounter,
   LabeledHistogram,
@@ -30,8 +30,9 @@ export type PrometheusLabeledTransactionManagerConfig<
  * TransactionObservabilityManager implementation backed by a Prometheus counter OR histogram.
  *
  * - `counter` mode: increments a counter on `stop()` with labels `{ status, transaction_name, ...customLabels }`.
- * - `histogram` mode: observes the transaction duration on `stop()` with the same label set. The histogram
- *   exposes `${name}_count` and `${name}_sum` automatically, so a separate counter is not needed.
+ * - `histogram` mode: observes the transaction duration (in milliseconds) on `stop()` with the same label
+ *   set. The histogram exposes `${name}_count` and `${name}_sum` automatically, so a separate counter is
+ *   not needed.
  *
  * `status` is always `'success'` or `'error'` (determined by the `wasSuccessful` flag passed to `stop()`).
  * `transaction_name` is the `transactionName` supplied to `start()` / `startWithGroup()`.
@@ -41,14 +42,10 @@ export type PrometheusLabeledTransactionManagerConfig<
  */
 export class PrometheusLabeledTransactionManager<
   CustomLabels extends readonly string[] = readonly [],
-> implements TransactionObservabilityManager
-{
+> extends AbstractPrometheusTransactionManager {
   private readonly supportedCustomLabels: Set<string>
   private readonly counter?: LabeledCounter<CustomLabels>
   private readonly histogram?: LabeledHistogram<CustomLabels>
-
-  private readonly transactionNameByKey = new Map<string, string>()
-  private readonly startTimeByKey = new Map<string, number>()
   private readonly customLabelsByKey = new Map<
     string,
     Record<CustomLabels[number], string | number>
@@ -58,6 +55,7 @@ export class PrometheusLabeledTransactionManager<
     config: PrometheusLabeledTransactionManagerConfig<CustomLabels>,
     client?: typeof promClient,
   ) {
+    super()
     this.supportedCustomLabels = new Set(config.customLabels ?? [])
 
     const labelNames = [
@@ -83,24 +81,12 @@ export class PrometheusLabeledTransactionManager<
     }
   }
 
-  start(transactionName: string, uniqueTransactionKey: string): void {
-    this.transactionNameByKey.set(uniqueTransactionKey, transactionName)
-    if (this.histogram) this.startTimeByKey.set(uniqueTransactionKey, Date.now())
-  }
-
-  startWithGroup(
-    transactionName: string,
+  protected override emitMeasurement(
     uniqueTransactionKey: string,
-    _transactionGroup: string,
+    transactionName: string,
+    status: 'success' | 'error',
+    durationMs: number,
   ): void {
-    this.start(transactionName, uniqueTransactionKey)
-  }
-
-  stop(uniqueTransactionKey: string, wasSuccessful = true): void {
-    const transactionName = this.transactionNameByKey.get(uniqueTransactionKey)
-    if (!transactionName) return
-
-    const status = wasSuccessful ? 'success' : 'error'
     const customLabels =
       this.customLabelsByKey.get(uniqueTransactionKey) ??
       ({} as Record<CustomLabels[number], string | number>)
@@ -113,19 +99,14 @@ export class PrometheusLabeledTransactionManager<
         increment: 1,
       })
     } else if (this.histogram) {
-      const startTime = this.startTimeByKey.get(uniqueTransactionKey) ?? Date.now()
-      const endTime = Date.now()
       this.histogram.registerMeasurement({
         status,
         transaction_name: transactionName,
         ...customLabels,
-        startTime,
-        endTime,
+        time: durationMs,
       })
     }
 
-    this.transactionNameByKey.delete(uniqueTransactionKey)
-    this.startTimeByKey.delete(uniqueTransactionKey)
     this.customLabelsByKey.delete(uniqueTransactionKey)
   }
 
@@ -134,7 +115,7 @@ export class PrometheusLabeledTransactionManager<
    * the set declared via `config.customLabels` is silently ignored. Boolean values are coerced to strings
    * (`"true"` / `"false"`) because prom-client only accepts `string | number` as label values.
    */
-  addCustomAttributes(
+  override addCustomAttributes(
     uniqueTransactionKey: string,
     attributes: Record<string, string | number | boolean>,
   ): void {
