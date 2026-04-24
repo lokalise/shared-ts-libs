@@ -7,6 +7,7 @@ import {
   LabeledHistogram,
   prometheusTransactionManagerBuiltInLabels,
   type PrometheusTransactionManagerLabels,
+  type TransactionStatus,
 } from './utils.ts'
 
 export type PrometheusLabeledTransactionManagerConfig<
@@ -84,7 +85,7 @@ export class PrometheusLabeledTransactionManager<
   protected override emitMeasurement(
     uniqueTransactionKey: string,
     transactionName: string,
-    status: 'success' | 'error',
+    status: TransactionStatus,
     durationMs: number,
   ): void {
     const customLabels =

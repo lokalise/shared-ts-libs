@@ -1,4 +1,5 @@
 import type { TransactionObservabilityManager } from '@lokalise/node-core'
+import type { TransactionStatus } from './utils.ts'
 
 /**
  * Shared state + lifecycle for all Prometheus-backed `TransactionObservabilityManager` implementations.
@@ -63,7 +64,7 @@ export abstract class AbstractPrometheusTransactionManager
   protected abstract emitMeasurement(
     uniqueTransactionKey: string,
     transactionName: string,
-    status: 'success' | 'error',
+    status: TransactionStatus,
     durationMs: number,
   ): void
 }

@@ -8,6 +8,7 @@ import {
   type MultiLabeledCounterMetricConfiguration,
 } from '../labeled/AbstractMultiLabeledCounterMetric.ts'
 
+export type TransactionStatus = 'success' | 'error'
 export const prometheusTransactionManagerBuiltInLabels = ['status', 'transaction_name'] as const
 export type PrometheusTransactionManagerLabels<CustomLabels extends readonly string[]> = readonly (
   | (typeof prometheusTransactionManagerBuiltInLabels)[number]
