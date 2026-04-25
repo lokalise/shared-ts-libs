@@ -9,6 +9,16 @@ type DimensionalCounterMeasurement<TDimensions extends readonly string[]> = Part
   Record<TDimensions[number], number>
 >
 
+/**
+ * Base class for counter metrics where each dimension is registered as a **separate label-free Prometheus Counter**.
+ *
+ * The metric name for each dimension is produced by the caller-provided `buildMetricName(dimension)` callback.
+ * Intended for backends that do not support Prometheus labels (e.g. some Datadog setups); when labels are
+ * supported, prefer {@link AbstractLabeledCounterMetric} or {@link AbstractMultiLabeledCounterMetric}.
+ *
+ * In eager mode (default) every declared dimension is pre-registered with a value of `0`; with `lazyInit: true`,
+ * each metric is registered on the first measurement targeting its dimension.
+ */
 export abstract class AbstractDimensionalCounterMetric<
   TDimensions extends readonly string[],
 > extends AbstractDimensionalMetric<
@@ -35,6 +45,12 @@ export abstract class AbstractDimensionalCounterMetric<
     return counter
   }
 
+  /**
+   * Increments the per-dimension counter for one or more dimensions.
+   *
+   * Pass an object mapping each dimension to the amount to add. Keys with `undefined` values are skipped.
+   * A measurement targeting a dimension outside the declared set throws (unless running in lazy open mode).
+   */
   public override registerMeasurement(
     measurement: DimensionalCounterMeasurement<TDimensions>,
   ): void {
