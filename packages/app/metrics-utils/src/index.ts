@@ -3,3 +3,5 @@ export { AbstractDimensionalHistogramMetric } from './dimensional/AbstractDimens
 export { AbstractLabeledCounterMetric } from './labeled/AbstractLabeledCounterMetric.ts'
 export { AbstractLabeledHistogramMetric } from './labeled/AbstractLabeledHistogramMetric.ts'
 export { AbstractMultiLabeledCounterMetric } from './labeled/AbstractMultiLabeledCounterMetric.ts'
+export { PrometheusDimensionalTransactionManager } from './transaction-observability/PrometheusDimensionalTransactionManager.ts'
+export { PrometheusLabeledTransactionManager } from './transaction-observability/PrometheusLabeledTransactionManager.ts'

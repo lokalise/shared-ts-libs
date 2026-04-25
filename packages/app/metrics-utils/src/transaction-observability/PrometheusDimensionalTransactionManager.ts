@@ -16,6 +16,14 @@ export type PrometheusDimensionalTransactionManagerConfig = {
   | (ManagerDimensionalHistogramBaseConfig & { type: 'histogram' })
 )
 
+/**
+ * `TransactionObservabilityManager` implementation that emits transactions as **one label-free Prometheus
+ * metric per `(transactionName, status)` combo**, with the metric name produced by the caller-provided
+ * `buildMetricName(transactionName, status)` callback.
+ *
+ * Use this for backends that do not support Prometheus labels (e.g. some Datadog setups). When labels are
+ * supported, prefer {@link PrometheusLabeledTransactionManager}.
+ */
 export class PrometheusDimensionalTransactionManager extends AbstractPrometheusTransactionManager {
   private readonly counter?: ManagerDimensionalCounter
   private readonly histogram?: ManagerDimensionalHistogram
@@ -52,6 +60,10 @@ export class PrometheusDimensionalTransactionManager extends AbstractPrometheusT
     this.histogram?.observeForTransaction(transactionName, status, durationMs)
   }
 
+  /**
+   * No-op by design. Surfacing attributes as additional `(transactionName, status, ...attrs)` combos would
+   * spawn one metric per combination and risk an unbounded number of registered metrics.
+   */
   override addCustomAttributes(
     _uniqueTransactionKey: string,
     _attributes: Record<string, string | number | boolean>,

@@ -16,6 +16,14 @@ export type PrometheusLabeledTransactionManagerConfig<
   | (ManagerLabeledHistogramBaseConfig<CustomLabels> & { type: 'histogram' })
 )
 
+/**
+ * `TransactionObservabilityManager` implementation that emits transactions as a single Prometheus metric
+ * (counter or histogram) with `status` and `transaction_name` as built-in labels, plus any caller-declared
+ * `customLabels`.
+ *
+ * Use this when your metrics backend supports Prometheus labels. For backends without label support, use
+ * {@link PrometheusDimensionalTransactionManager} instead.
+ */
 export class PrometheusLabeledTransactionManager<
   CustomLabels extends readonly string[] = readonly [],
 > extends AbstractPrometheusTransactionManager {
@@ -83,6 +91,12 @@ export class PrometheusLabeledTransactionManager<
     this.customLabelsByKey.delete(uniqueTransactionKey)
   }
 
+  /**
+   * Attaches custom attributes to an in-flight transaction; they are emitted as labels on the next `stop()`.
+   *
+   * Only attributes whose keys appear in the `customLabels` declared at construction are kept; the rest are
+   * silently ignored.
+   */
   override addCustomAttributes(
     uniqueTransactionKey: string,
     attributes: Record<string, string | number | boolean>,

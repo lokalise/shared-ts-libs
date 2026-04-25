@@ -2,10 +2,12 @@
 
 This package contains a set of utilities to work with Prometheus metrics.
 
-It provides five abstract base classes, organized into two families:
+It provides:
 
-- **[Labeled](#labeled)** — one Prometheus metric with dimensions expressed as Prometheus labels. This is the idiomatic Prometheus approach and is what you want whenever your metrics backend supports labels (Prometheus itself, Grafana, most standard APMs).
-- **[Dimensional](#dimensional)** — one Prometheus metric per dimension. Designed for backends that **do not support Prometheus labels** (e.g. some Datadog setups): instead of one labeled series, each dimension becomes its own metric with a caller-provided name.
+- Five abstract base classes for building Prometheus metrics, organized into two families:
+  - **[Labeled](#labeled)** — one Prometheus metric with dimensions expressed as Prometheus labels. This is the idiomatic Prometheus approach and is what you want whenever your metrics backend supports labels (Prometheus itself, Grafana, most standard APMs).
+  - **[Dimensional](#dimensional)** — one Prometheus metric per dimension. Designed for backends that **do not support Prometheus labels** (e.g. some Datadog setups): instead of one labeled series, each dimension becomes its own metric with a caller-provided name.
+- Two ready-made [Transaction observability managers](#transaction-observability-managers) (one per family) that implement the `TransactionObservabilityManager` interface from [`@lokalise/node-core`](https://github.com/lokalise/node-core).
 
 All base classes accept the Prometheus client as an optional constructor argument. Passing `undefined` (or omitting it) disables the metric: no Prometheus registration happens and `registerMeasurement` becomes a no-op. This lets consumers gate metrics behind a runtime flag without conditionally instantiating their classes.
 
@@ -18,6 +20,10 @@ Table of contents:
     1. [AbstractDimensionalCounterMetric](#abstractdimensionalcountermetric)
     2. [AbstractDimensionalHistogramMetric](#abstractdimensionalhistogrammetric)
     3. [Lazy initialization](#lazy-initialization)
+3. [Transaction observability managers](#transaction-observability-managers)
+    1. [PrometheusLabeledTransactionManager](#prometheuslabeledtransactionmanager)
+    2. [PrometheusDimensionalTransactionManager](#prometheusdimensionaltransactionmanager)
+    3. [Composing with other transaction managers](#composing-with-other-transaction-managers)
 
 ## Labeled
 
@@ -297,3 +303,82 @@ Summary of the three modes:
 | Lazy open            | `true`               | Omitted           | Nothing pre-registered      | Accepted and registered on the fly   |
 
 **Trade-off vs eager mode**: lazy mode loses the "series exists from the start with a `0` value" property that eager counters provide, so dashboards may display "no data" until the first measurement arrives.
+
+## Transaction observability managers
+
+Two ready-made implementations of the `TransactionObservabilityManager` interface from [`@lokalise/node-core`](https://github.com/lokalise/node-core), built on top of the metric base classes above. They time the work between `start()` and `stop()` and emit the result as a Prometheus metric.
+
+Both managers:
+- Emit `status` as either `success` or `error` (driven by the `wasSuccessful` argument of `stop`).
+- Express the measured duration in **milliseconds**.
+- Treat the prom client as optional — if it is omitted, every method becomes a no-op so consumers can gate metrics behind a runtime flag without conditionally instantiating them.
+
+Pick the manager that matches your metrics backend, the same way you would pick between the [Labeled](#labeled) and [Dimensional](#dimensional) families above.
+
+### PrometheusLabeledTransactionManager
+
+Emits a single Prometheus metric (counter or histogram, picked via `type`) carrying `status` and `transaction_name` as built-in labels. Caller-declared `customLabels` are appended to that list and can be populated mid-transaction via `addCustomAttributes`.
+
+Usage:
+
+```typescript
+const manager = new PrometheusLabeledTransactionManager<['tenant_id']>(
+  {
+    type: 'histogram',
+    name: 'transaction_duration_ms',
+    helpDescription: 'Duration of transactions in milliseconds',
+    buckets: [50, 250, 1000, 5000],
+    customLabels: ['tenant_id'],
+  },
+  promClient,
+)
+
+manager.start('queue_consumer', 'msg-42')
+manager.addCustomAttributes('msg-42', { tenant_id: 'tenant-7' })
+// ... do the work ...
+manager.stop('msg-42', true)
+```
+
+`addCustomAttributes` only retains attributes whose keys appear in `customLabels`; the rest are silently dropped, so unexpected attributes from upstream callers cannot grow the label set or break Prometheus registration. Boolean values are coerced to their string form, numbers are passed through as-is.
+
+Use `type: 'counter'` instead of `histogram` when you only care about the count and status, not the latency distribution.
+
+### PrometheusDimensionalTransactionManager
+
+Emits **one label-free Prometheus metric per `(transactionName, status)` combination**. The metric name is produced by a caller-provided `buildMetricName(transactionName, status)` callback. Use this for backends that do not support Prometheus labels (e.g. some Datadog setups).
+
+Usage:
+
+```typescript
+const manager = new PrometheusDimensionalTransactionManager(
+  {
+    type: 'histogram',
+    helpDescription: 'Duration of transactions in milliseconds',
+    buckets: [50, 250, 1000, 5000],
+    buildMetricName: (transactionName, status) => `transaction_${transactionName}_${status}:histogram`,
+  },
+  promClient,
+)
+
+manager.start('queue_consumer', 'msg-42')
+// ... do the work ...
+manager.stop('msg-42', true)
+```
+
+Metrics are registered lazily: each `(transactionName, status)` combo creates its corresponding metric on the first `stop()` and is reused thereafter.
+
+`addCustomAttributes` is intentionally a **no-op**: surfacing attributes as additional `(transactionName, status, ...attrs)` combinations would spawn one metric per combination and risk an unbounded number of registered metrics.
+### Composing with other transaction managers
+
+`@lokalise/node-core` ships a `MultiTransactionObservabilityManager` that fans `start` / `stop` / `addCustomAttributes` calls out to several `TransactionObservabilityManager` instances, so you can run a Prometheus manager alongside another implementation that handles concerns Prometheus is not a good fit for (e.g. attribute capture for the dimensional manager):
+
+```typescript
+import { MultiTransactionObservabilityManager } from '@lokalise/node-core'
+
+const manager = new MultiTransactionObservabilityManager([
+  new PrometheusDimensionalTransactionManager(prometheusConfig, promClient),
+  new SomeOtherTransactionManager(/* ... */),
+])
+```
+
+In this setup the dimensional manager keeps Prometheus cardinality bounded, while attributes added with `addCustomAttributes` flow into the other manager where high cardinality is acceptable.
