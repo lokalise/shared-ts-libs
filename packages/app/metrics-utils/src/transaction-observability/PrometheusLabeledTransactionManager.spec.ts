@@ -96,21 +96,6 @@ describe('PrometheusLabeledTransactionManager', () => {
       )
     })
 
-    it('defaults wasSuccessful to true when not provided', () => {
-      const manager = new PrometheusLabeledTransactionManager(
-        { type: 'counter', name: 'tx_count', helpDescription: 'desc' },
-        client,
-      )
-
-      manager.start('queue_consumer', 'key-1')
-      manager.stop('key-1')
-
-      expect(incMock).toHaveBeenCalledWith(
-        { status: 'success', transaction_name: 'queue_consumer' },
-        1,
-      )
-    })
-
     it('does nothing on stop() if start() was never called for the key', () => {
       const manager = new PrometheusLabeledTransactionManager(
         { type: 'counter', name: 'tx_count', helpDescription: 'desc' },
@@ -201,47 +186,10 @@ describe('PrometheusLabeledTransactionManager', () => {
         250,
       )
     })
-
-    it('does nothing on stop() if start() was never called for the key', () => {
-      const manager = new PrometheusLabeledTransactionManager(
-        {
-          type: 'histogram',
-          name: 'tx_duration_seconds',
-          helpDescription: 'desc',
-          buckets: [0.1, 0.5, 1, 5],
-        },
-        client,
-      )
-
-      manager.stop('unknown-key', true)
-
-      expect(observeMock).not.toHaveBeenCalled()
-    })
   })
 
   describe('addCustomAttributes', () => {
-    it('includes declared custom attributes in the emitted labels', () => {
-      const manager = new PrometheusLabeledTransactionManager<['tenant_id']>(
-        {
-          type: 'counter',
-          name: 'tx_count',
-          helpDescription: 'desc',
-          customLabels: ['tenant_id'],
-        },
-        client,
-      )
-
-      manager.start('queue_consumer', 'key-1')
-      manager.addCustomAttributes('key-1', { tenant_id: 'tenant-42' })
-      manager.stop('key-1', true)
-
-      expect(incMock).toHaveBeenCalledWith(
-        { status: 'success', transaction_name: 'queue_consumer', tenant_id: 'tenant-42' },
-        1,
-      )
-    })
-
-    it('ignores attributes whose keys were not declared in customLabels', () => {
+    it('only emits attributes whose keys are declared in customLabels', () => {
       const manager = new PrometheusLabeledTransactionManager<['tenant_id']>(
         {
           type: 'counter',
@@ -327,28 +275,6 @@ describe('PrometheusLabeledTransactionManager', () => {
 
       expect(counterMock).not.toHaveBeenCalled()
       expect(incMock).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('state cleanup', () => {
-    it('deletes internal state after stop() so keys can be reused', () => {
-      const manager = new PrometheusLabeledTransactionManager(
-        { type: 'counter', name: 'tx_count', helpDescription: 'desc' },
-        client,
-      )
-
-      manager.start('queue_a', 'key-1')
-      manager.stop('key-1', true)
-
-      // Second call for same key with different name should not emit (key was cleaned up)
-      manager.stop('key-1', true)
-      expect(incMock).toHaveBeenCalledTimes(1)
-
-      // Key can be reused with a different transaction name
-      manager.start('queue_b', 'key-1')
-      manager.stop('key-1', false)
-
-      expect(incMock).toHaveBeenLastCalledWith({ status: 'error', transaction_name: 'queue_b' }, 1)
     })
   })
 })

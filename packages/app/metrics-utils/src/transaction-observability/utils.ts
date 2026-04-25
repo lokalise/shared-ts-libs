@@ -76,7 +76,6 @@ export class ManagerDimensionalCounter extends AbstractDimensionalCounterMetric<
   constructor(config: ManagerDimensionalCounterBaseConfig, client?: typeof promClient) {
     super(
       {
-        dimensions: [],
         lazyInit: true,
         helpDescription: config.helpDescription,
         // `dim` is already the full metric name; see `incForTransaction` below.
@@ -115,7 +114,6 @@ export class ManagerDimensionalHistogram extends AbstractDimensionalHistogramMet
   constructor(config: ManagerDimensionalHistogramBaseConfig, client?: typeof promClient) {
     super(
       {
-        dimensions: [],
         lazyInit: true,
         helpDescription: config.helpDescription,
         buckets: config.buckets,
