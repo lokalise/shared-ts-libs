@@ -1,11 +1,10 @@
 import type promClient from 'prom-client'
-import type { HistogramMetricConfiguration } from '../labeled/AbstractLabeledHistogramMetric.ts'
-import type { MultiLabeledCounterMetricConfiguration } from '../labeled/AbstractMultiLabeledCounterMetric.ts'
 import { AbstractPrometheusTransactionManager } from './AbstractPrometheusTransactionManager.ts'
 import {
   ManagerLabeledCounter,
+  type ManagerLabeledCounterBaseConfig,
   ManagerLabeledHistogram,
-  type PrometheusTransactionManagerLabels,
+  type ManagerLabeledHistogramBaseConfig,
   prometheusTransactionManagerBuiltInLabels,
   type TransactionStatus,
 } from './utils.ts'
@@ -13,18 +12,8 @@ import {
 export type PrometheusLabeledTransactionManagerConfig<
   CustomLabels extends readonly string[] = readonly [],
 > = { customLabels?: CustomLabels } & (
-  | (Omit<
-      MultiLabeledCounterMetricConfiguration<PrometheusTransactionManagerLabels<CustomLabels>>,
-      'labelNames'
-    > & {
-      type: 'counter'
-    })
-  | (Omit<
-      HistogramMetricConfiguration<PrometheusTransactionManagerLabels<CustomLabels>>,
-      'labelNames'
-    > & {
-      type: 'histogram'
-    })
+  | (ManagerLabeledCounterBaseConfig<CustomLabels> & { type: 'counter' })
+  | (ManagerLabeledHistogramBaseConfig<CustomLabels> & { type: 'histogram' })
 )
 
 export class PrometheusLabeledTransactionManager<

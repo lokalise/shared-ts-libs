@@ -16,13 +16,16 @@ import {
 
 export type TransactionStatus = 'success' | 'error'
 export const prometheusTransactionManagerBuiltInLabels = ['status', 'transaction_name'] as const
-export type PrometheusTransactionManagerBuiltInLabels =
-  typeof prometheusTransactionManagerBuiltInLabels
 
-export type PrometheusTransactionManagerLabels<CustomLabels extends readonly string[]> = readonly (
-  | PrometheusTransactionManagerBuiltInLabels[number]
+type PrometheusTransactionManagerLabels<CustomLabels extends readonly string[]> = readonly (
+  | (typeof prometheusTransactionManagerBuiltInLabels)[number]
   | CustomLabels[number]
 )[]
+
+export type ManagerLabeledCounterBaseConfig<CustomLabels extends readonly string[]> = Omit<
+  MultiLabeledCounterMetricConfiguration<PrometheusTransactionManagerLabels<CustomLabels>>,
+  'labelNames'
+>
 
 export class ManagerLabeledCounter<
   CustomLabels extends readonly string[],
@@ -37,6 +40,11 @@ export class ManagerLabeledCounter<
     super(config, client)
   }
 }
+
+export type ManagerLabeledHistogramBaseConfig<CustomLabels extends readonly string[]> = Omit<
+  HistogramMetricConfiguration<PrometheusTransactionManagerLabels<CustomLabels>>,
+  'labelNames'
+>
 
 export class ManagerLabeledHistogram<
   CustomLabels extends readonly string[],
