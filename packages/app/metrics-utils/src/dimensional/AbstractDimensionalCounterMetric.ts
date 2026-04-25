@@ -40,8 +40,10 @@ export abstract class AbstractDimensionalCounterMetric<
       help: this.metricConfig.helpDescription,
       labelNames: [],
     })
-    // Initializing the metric with 0 so it is exposed in scrapes even with no measurements.
-    counter.inc(0)
+    // Eager mode: pre-init to 0 so the series is exposed in scrapes before any measurement.
+    // Lazy mode: the metric is created on the first measurement, pre-init is not needed.
+    if (!this.metricConfig.lazyInit) counter.inc(0)
+
     return counter
   }
 
