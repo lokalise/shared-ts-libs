@@ -27,20 +27,6 @@ export type PrometheusLabeledTransactionManagerConfig<
     })
 )
 
-/**
- * TransactionObservabilityManager implementation backed by a Prometheus counter OR histogram.
- *
- * - `counter` mode: increments a counter on `stop()` with labels `{ status, transaction_name, ...customLabels }`.
- * - `histogram` mode: observes the transaction duration (in milliseconds) on `stop()` with the same label
- *   set. The histogram exposes `${name}_count` and `${name}_sum` automatically, so a separate counter is
- *   not needed.
- *
- * `status` is always `'success'` or `'error'` (determined by the `wasSuccessful` flag passed to `stop()`).
- * `transaction_name` is the `transactionName` supplied to `start()` / `startWithGroup()`.
- *
- * Custom labels must be declared up-front via `config.customLabels`. Values are supplied at runtime through
- * `addCustomAttributes()`; attributes whose keys are not in the declared set are silently ignored.
- */
 export class PrometheusLabeledTransactionManager<
   CustomLabels extends readonly string[] = readonly [],
 > extends AbstractPrometheusTransactionManager {
@@ -92,30 +78,22 @@ export class PrometheusLabeledTransactionManager<
       this.customLabelsByKey.get(uniqueTransactionKey) ??
       ({} as Record<CustomLabels[number], string | number>)
 
-    if (this.counter) {
-      this.counter.registerMeasurement({
-        status,
-        transaction_name: transactionName,
-        ...customLabels,
-        increment: 1,
-      })
-    } else if (this.histogram) {
-      this.histogram.registerMeasurement({
-        status,
-        transaction_name: transactionName,
-        ...customLabels,
-        time: durationMs,
-      })
-    }
+    this.counter?.registerMeasurement({
+      status,
+      transaction_name: transactionName,
+      ...customLabels,
+      increment: 1,
+    })
+    this.histogram?.registerMeasurement({
+      status,
+      transaction_name: transactionName,
+      ...customLabels,
+      time: durationMs,
+    })
 
     this.customLabelsByKey.delete(uniqueTransactionKey)
   }
 
-  /**
-   * Stores the supported custom label values for the given transaction. Any attribute whose key is not in
-   * the set declared via `config.customLabels` is silently ignored. Boolean values are coerced to strings
-   * (`"true"` / `"false"`) because prom-client only accepts `string | number` as label values.
-   */
   override addCustomAttributes(
     uniqueTransactionKey: string,
     attributes: Record<string, string | number | boolean>,

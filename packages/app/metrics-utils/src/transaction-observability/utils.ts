@@ -1,4 +1,10 @@
 import type promClient from 'prom-client'
+import { AbstractDimensionalCounterMetric } from '../dimensional/AbstractDimensionalCounterMetric.ts'
+import {
+  AbstractDimensionalHistogramMetric,
+  type DimensionalHistogramMetricConfiguration,
+} from '../dimensional/AbstractDimensionalHistogramMetric.ts'
+import type { DimensionalMetricParams } from '../dimensional/AbstractDimensionalMetric.ts'
 import {
   AbstractLabeledHistogramMetric,
   type HistogramMetricConfiguration,
@@ -10,8 +16,11 @@ import {
 
 export type TransactionStatus = 'success' | 'error'
 export const prometheusTransactionManagerBuiltInLabels = ['status', 'transaction_name'] as const
+export type PrometheusTransactionManagerBuiltInLabels =
+  typeof prometheusTransactionManagerBuiltInLabels
+
 export type PrometheusTransactionManagerLabels<CustomLabels extends readonly string[]> = readonly (
-  | (typeof prometheusTransactionManagerBuiltInLabels)[number]
+  | PrometheusTransactionManagerBuiltInLabels[number]
   | CustomLabels[number]
 )[]
 
@@ -38,5 +47,84 @@ export class ManagerLabeledHistogram<
     client?: typeof promClient,
   ) {
     super(config, client)
+  }
+}
+
+export type ManagerDimensionalBuildMetricName = (
+  transactionName: string,
+  status: TransactionStatus,
+) => string
+
+export type ManagerDimensionalCounterBaseConfig = Omit<
+  DimensionalMetricParams<readonly string[]>,
+  'dimensions' | 'buildMetricName' | 'lazyInit'
+> & {
+  buildMetricName: ManagerDimensionalBuildMetricName
+}
+
+export class ManagerDimensionalCounter extends AbstractDimensionalCounterMetric<readonly string[]> {
+  private readonly buildMetricName: ManagerDimensionalBuildMetricName
+
+  constructor(config: ManagerDimensionalCounterBaseConfig, client?: typeof promClient) {
+    super(
+      {
+        dimensions: [],
+        lazyInit: true,
+        helpDescription: config.helpDescription,
+        // `dim` is already the full metric name; see `incForTransaction` below.
+        buildMetricName: (dim) => dim,
+      },
+      client,
+    )
+    this.buildMetricName = config.buildMetricName
+  }
+
+  public incForTransaction(
+    transactionName: string,
+    status: TransactionStatus,
+    increment: number,
+  ): void {
+    const metricName = this.buildMetricName(transactionName, status)
+    this.registerMeasurement({ [metricName]: increment })
+  }
+}
+
+/**
+ * Base configuration shared between the dimensional histogram helper and the manager's histogram
+ * branch. Keeps `buckets` from the abstract's histogram config.
+ */
+export type ManagerDimensionalHistogramBaseConfig = Omit<
+  DimensionalHistogramMetricConfiguration<readonly string[]>,
+  'dimensions' | 'buildMetricName' | 'lazyInit'
+> & {
+  buildMetricName: ManagerDimensionalBuildMetricName
+}
+export class ManagerDimensionalHistogram extends AbstractDimensionalHistogramMetric<
+  readonly string[]
+> {
+  private readonly buildMetricName: ManagerDimensionalBuildMetricName
+
+  constructor(config: ManagerDimensionalHistogramBaseConfig, client?: typeof promClient) {
+    super(
+      {
+        dimensions: [],
+        lazyInit: true,
+        helpDescription: config.helpDescription,
+        buckets: config.buckets,
+        // `dim` is already the full metric name; see `observeForTransaction` below.
+        buildMetricName: (dim) => dim,
+      },
+      client,
+    )
+    this.buildMetricName = config.buildMetricName
+  }
+
+  public observeForTransaction(
+    transactionName: string,
+    status: TransactionStatus,
+    durationMs: number,
+  ): void {
+    const metricName = this.buildMetricName(transactionName, status)
+    this.registerMeasurement({ dimension: metricName, time: durationMs })
   }
 }
