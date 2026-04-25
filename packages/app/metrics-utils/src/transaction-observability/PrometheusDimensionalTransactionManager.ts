@@ -67,7 +67,5 @@ export class PrometheusDimensionalTransactionManager extends AbstractPrometheusT
   override addCustomAttributes(
     _uniqueTransactionKey: string,
     _attributes: Record<string, string | number | boolean>,
-  ): void {
-    // intentionally empty
-  }
+  ): void {}
 }

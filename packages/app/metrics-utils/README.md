@@ -368,6 +368,7 @@ manager.stop('msg-42', true)
 Metrics are registered lazily: each `(transactionName, status)` combo creates its corresponding metric on the first `stop()` and is reused thereafter.
 
 `addCustomAttributes` is intentionally a **no-op**: surfacing attributes as additional `(transactionName, status, ...attrs)` combinations would spawn one metric per combination and risk an unbounded number of registered metrics.
+
 ### Composing with other transaction managers
 
 `@lokalise/node-core` ships a `MultiTransactionObservabilityManager` that fans `start` / `stop` / `addCustomAttributes` calls out to several `TransactionObservabilityManager` instances, so you can run a Prometheus manager alongside another implementation that handles concerns Prometheus is not a good fit for (e.g. attribute capture for the dimensional manager):

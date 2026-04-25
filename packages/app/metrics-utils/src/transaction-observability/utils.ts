@@ -96,16 +96,13 @@ export class ManagerDimensionalCounter extends AbstractDimensionalCounterMetric<
   }
 }
 
-/**
- * Base configuration shared between the dimensional histogram helper and the manager's histogram
- * branch. Keeps `buckets` from the abstract's histogram config.
- */
 export type ManagerDimensionalHistogramBaseConfig = Omit<
   DimensionalHistogramMetricConfiguration<readonly string[]>,
   'dimensions' | 'buildMetricName' | 'lazyInit'
 > & {
   buildMetricName: ManagerDimensionalBuildMetricName
 }
+
 export class ManagerDimensionalHistogram extends AbstractDimensionalHistogramMetric<
   readonly string[]
 > {
