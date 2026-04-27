@@ -30,7 +30,7 @@
     },
     "dependencies": {
         "@bull-board/api": "^6.18.0",
-        "@bull-board/fastify": "^6.18.0",
+        "@bull-board/fastify": "^7.0.0",
         "@fastify/auth": "^5.0.4",
         "@fastify/basic-auth": "^6.2.0"
     },
