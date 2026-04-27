@@ -22,19 +22,21 @@ export abstract class AbstractPrometheusTransactionManager
 
   stop(uniqueTransactionKey: string, wasSuccessful = true): void {
     const transactionName = this.transactionNameByKey.get(uniqueTransactionKey)
-    if (!transactionName) return
+    if (transactionName === undefined) return
 
     const startTime = this.startTimeByKey.get(uniqueTransactionKey) ?? Date.now()
 
-    this.emitMeasurement(
-      uniqueTransactionKey,
-      transactionName,
-      wasSuccessful ? 'success' : 'error',
-      Date.now() - startTime,
-    )
-
-    this.transactionNameByKey.delete(uniqueTransactionKey)
-    this.startTimeByKey.delete(uniqueTransactionKey)
+    try {
+      this.emitMeasurement(
+        uniqueTransactionKey,
+        transactionName,
+        wasSuccessful ? 'success' : 'error',
+        Date.now() - startTime,
+      )
+    } finally {
+      this.transactionNameByKey.delete(uniqueTransactionKey)
+      this.startTimeByKey.delete(uniqueTransactionKey)
+    }
   }
 
   abstract addCustomAttributes(
