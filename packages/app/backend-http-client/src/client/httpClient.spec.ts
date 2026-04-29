@@ -20,12 +20,14 @@ import {
   sendByGetRoute,
   sendByGetRouteWithStreamedResponse,
   sendByPayloadRoute,
+  sendByPayloadRouteWithStreamedResponse,
   sendDelete,
   sendGet,
   sendGetWithStreamedResponse,
   sendPatch,
   sendPost,
   sendPostBinary,
+  sendPostWithStreamedResponse,
   sendPut,
   sendPutBinary,
 } from './httpClient.ts'
@@ -2246,6 +2248,285 @@ describe('httpClient', () => {
     })
   })
 
+  describe('sendPostWithStreamedResponse', () => {
+    it('returns streamed response body', async () => {
+      const responseData = JSON.stringify(mockProduct1)
+
+      await mockServer.forPost('/products').thenReply(200, responseData, JSON_HEADERS)
+
+      const result = await sendPostWithStreamedResponse(client, '/products', undefined, {
+        requestLabel: 'dummy',
+      })
+
+      expect(result.result).toBeDefined()
+      expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
+      expect(result.result.body).toBeDefined()
+
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('sends body correctly', async () => {
+      const requestBody = { foo: 'bar' }
+      const responseData = JSON.stringify(mockProduct1)
+
+      await mockServer
+        .forPost('/products')
+        .withJsonBody(requestBody)
+        .thenReply(200, responseData, JSON_HEADERS)
+
+      const result = await sendPostWithStreamedResponse(client, '/products', requestBody, {
+        requestLabel: 'dummy',
+      })
+
+      expect(result.result).toBeDefined()
+      expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('throws an error when throwOnError is true and request fails', async () => {
+      expect.assertions(1)
+
+      await mockServer
+        .forPost('/products')
+        .thenJson(500, { error: 'Internal Server Error' }, JSON_HEADERS)
+
+      await expect(
+        sendPostWithStreamedResponse(client, '/products', undefined, {
+          requestLabel: 'dummy',
+          throwOnError: true,
+        }),
+      ).rejects.toMatchObject({
+        message: 'Response status code 500',
+        errorCode: 'REQUEST_ERROR',
+      })
+    })
+
+    it('returns error when throwOnError is false and request fails', async () => {
+      await mockServer
+        .forPost('/products')
+        .thenJson(500, { error: 'Internal Server Error' }, JSON_HEADERS)
+
+      const result = await sendPostWithStreamedResponse(client, '/products', undefined, {
+        requestLabel: 'dummy',
+        throwOnError: false,
+      })
+
+      expect(result.error).toBeDefined()
+      expect(result.result).toBeUndefined()
+    })
+
+    it('returns internal error when connection fails with throwOnError false', async () => {
+      await mockServer.forPost('/products').thenCloseConnection()
+
+      const result = await sendPostWithStreamedResponse(client, '/products', undefined, {
+        requestLabel: 'dummy',
+        throwOnError: false,
+      })
+
+      expect(result.result).toBeUndefined()
+      expect(isInternalRequestError(result.error)).toBe(true)
+    })
+
+    it('throws on internal error when throwOnError is true', async () => {
+      expect.assertions(1)
+
+      await mockServer.forPost('/products').thenCloseConnection()
+
+      await expect(
+        sendPostWithStreamedResponse(client, '/products', undefined, {
+          requestLabel: 'dummy',
+          throwOnError: true,
+        }),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('other side closed'),
+      })
+    })
+  })
+
+  describe('sendByPayloadRouteWithStreamedResponse', () => {
+    it('returns streamed response body', async () => {
+      const apiContract = buildPayloadRoute({
+        method: 'post',
+        successResponseBodySchema: undefined,
+        requestBodySchema: z.undefined(),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products',
+      })
+      const responseData = JSON.stringify(mockProduct1)
+
+      await mockServer.forPost('/products').thenReply(200, responseData, JSON_HEADERS)
+
+      const result = await sendByPayloadRouteWithStreamedResponse(
+        client,
+        apiContract,
+        {},
+        { requestLabel: 'dummy' },
+      )
+
+      expect(result.result).toBeDefined()
+      expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
+      expect(result.result.body).toBeDefined()
+
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('sends body, path and query params correctly', async () => {
+      const requestBody = { foo: 'bar' }
+      const pathParamsSchema = z.object({ productId: z.number() })
+      const queryParamsSchema = z.object({ limit: z.number() })
+      const requestBodySchema = z.object({ foo: z.string() })
+      const apiContract = buildPayloadRoute({
+        method: 'post',
+        successResponseBodySchema: undefined,
+        requestBodySchema,
+        requestPathParamsSchema: pathParamsSchema,
+        requestQuerySchema: queryParamsSchema,
+        pathResolver: (params) => `/products/${params.productId}`,
+      })
+      const responseData = JSON.stringify(mockProduct1)
+
+      await mockServer
+        .forPost('/products/1')
+        .withQuery({ limit: '3' })
+        .withJsonBody(requestBody)
+        .thenReply(200, responseData, JSON_HEADERS)
+
+      const result = await sendByPayloadRouteWithStreamedResponse(
+        client,
+        apiContract,
+        {
+          pathParams: { productId: 1 },
+          queryParams: { limit: 3 },
+          body: requestBody,
+        },
+        { requestLabel: 'dummy' },
+      )
+
+      expect(result.result).toBeDefined()
+      expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('supports PUT and PATCH methods', async () => {
+      const responseData = JSON.stringify(mockProduct1)
+
+      const putContract = buildPayloadRoute({
+        method: 'put',
+        successResponseBodySchema: undefined,
+        requestBodySchema: z.undefined(),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+      await mockServer.forPut('/products/1').thenReply(200, responseData, JSON_HEADERS)
+      const putResult = await sendByPayloadRouteWithStreamedResponse(
+        client,
+        putContract,
+        {},
+        { requestLabel: 'dummy' },
+      )
+      expect(putResult.result.statusCode).toBe(200)
+      expect(JSON.parse(await streamToString(putResult.result.body))).toEqual(mockProduct1)
+
+      const patchContract = buildPayloadRoute({
+        method: 'patch',
+        successResponseBodySchema: undefined,
+        requestBodySchema: z.undefined(),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+      await mockServer.forPatch('/products/1').thenReply(200, responseData, JSON_HEADERS)
+      const patchResult = await sendByPayloadRouteWithStreamedResponse(
+        client,
+        patchContract,
+        {},
+        { requestLabel: 'dummy' },
+      )
+      expect(patchResult.result.statusCode).toBe(200)
+      expect(JSON.parse(await streamToString(patchResult.result.body))).toEqual(mockProduct1)
+    })
+
+    it('throws an error when throwOnError is true and request fails', async () => {
+      expect.assertions(1)
+      const apiContract = buildPayloadRoute({
+        method: 'post',
+        successResponseBodySchema: undefined,
+        requestBodySchema: z.undefined(),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products',
+      })
+
+      await mockServer
+        .forPost('/products')
+        .thenJson(500, { error: 'Internal Server Error' }, JSON_HEADERS)
+
+      await expect(
+        sendByPayloadRouteWithStreamedResponse(
+          client,
+          apiContract,
+          {},
+          { requestLabel: 'Test request', throwOnError: true },
+        ),
+      ).rejects.toMatchObject({
+        message: 'Response status code 500',
+        errorCode: 'REQUEST_ERROR',
+      })
+    })
+
+    it('returns error when throwOnError is false and request fails', async () => {
+      const apiContract = buildPayloadRoute({
+        method: 'post',
+        successResponseBodySchema: undefined,
+        requestBodySchema: z.undefined(),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products',
+      })
+
+      await mockServer
+        .forPost('/products')
+        .thenJson(500, { error: 'Internal Server Error' }, JSON_HEADERS)
+
+      const result = await sendByPayloadRouteWithStreamedResponse(
+        client,
+        apiContract,
+        {},
+        { requestLabel: 'dummy', throwOnError: false },
+      )
+
+      expect(result.error).toBeDefined()
+      expect(result.result).toBeUndefined()
+    })
+
+    it('returns internal error when connection fails with throwOnError false', async () => {
+      const apiContract = buildPayloadRoute({
+        method: 'post',
+        successResponseBodySchema: undefined,
+        requestBodySchema: z.undefined(),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products',
+      })
+
+      await mockServer.forPost('/products').thenCloseConnection()
+
+      const result = await sendByPayloadRouteWithStreamedResponse(
+        client,
+        apiContract,
+        {},
+        { requestLabel: 'dummy', throwOnError: false },
+      )
+
+      expect(result.result).toBeUndefined()
+      expect(isInternalRequestError(result.error)).toBe(true)
+    })
+  })
+
   describe('Coverage for optional parameters', () => {
     describe('timeout options', () => {
       it('GET with explicit timeout', async () => {
@@ -3193,6 +3474,63 @@ describe('httpClient', () => {
       expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('routes payload contracts to streamed POST', async () => {
+      const requestBody = { foo: 'bar' }
+      const apiContract = buildPayloadRoute({
+        method: 'post',
+        successResponseBodySchema: undefined,
+        requestBodySchema: z.object({ foo: z.string() }),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products',
+      })
+      const responseData = JSON.stringify(mockProduct1)
+
+      await mockServer
+        .forPost('/products')
+        .withJsonBody(requestBody)
+        .thenReply(200, responseData, JSON_HEADERS)
+
+      const result = await sendByContractWithStreamedResponse(
+        client,
+        apiContract,
+        { body: requestBody },
+        { requestLabel: 'dummy' },
+      )
+
+      expect(result.result).toBeDefined()
+      expect(result.result.statusCode).toBe(200)
+      expectTypeOf(result.result.body).toEqualTypeOf<Readable>()
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual(mockProduct1)
+    })
+
+    it('throws on payload contract when throwOnError is true and request fails', async () => {
+      expect.assertions(1)
+      const apiContract = buildPayloadRoute({
+        method: 'post',
+        successResponseBodySchema: undefined,
+        requestBodySchema: z.undefined(),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products',
+      })
+
+      await mockServer
+        .forPost('/products')
+        .thenJson(500, { error: 'Internal Server Error' }, JSON_HEADERS)
+
+      await expect(
+        sendByContractWithStreamedResponse(
+          client,
+          apiContract,
+          {},
+          { requestLabel: 'Test request', throwOnError: true },
+        ),
+      ).rejects.toMatchObject({
+        message: 'Response status code 500',
+        errorCode: 'REQUEST_ERROR',
+      })
     })
   })
 })
