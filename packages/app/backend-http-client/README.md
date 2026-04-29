@@ -14,10 +14,11 @@ The library provides methods to implement the client side of HTTP protocols. Pub
     keepAliveTimeout: 4000,
     ```
 - `sendByContract()`, a unified method that accepts any route definition (GET, POST, PUT, PATCH, DELETE) and dispatches based on the contract's `method` field;
-- `sendByContractWithStreamedResponse()`, a streaming variant of `sendByContract()` for GET contracts;
+- `sendByContractWithStreamedResponse()`, a streaming variant of `sendByContract()` for GET and payload (POST/PUT/PATCH) contracts;
 - `sendGet()`;
 - `sendGetWithStreamedResponse()`;
 - `sendPost()`;
+- `sendPostWithStreamedResponse()`;
 - `sendPut()`;
 - `sendPutBinary()`;
 - `sendDelete()`;
@@ -150,10 +151,11 @@ The following parameters can be specified when sending API contract-based reques
 
 For scenarios where you need to process large response bodies without loading them entirely into memory (e.g., downloading large files, processing data incrementally), use the streaming variants:
 
-- `sendGetWithStreamedResponse()` - for direct path-based requests
-- `sendByContractWithStreamedResponse()` - for API contract-based requests
+- `sendGetWithStreamedResponse()` - for direct path-based GET requests
+- `sendPostWithStreamedResponse()` - for direct path-based POST requests with a JSON body (e.g., consuming Server-Sent Events from a POST endpoint)
+- `sendByContractWithStreamedResponse()` - for API contract-based requests; supports both GET and payload (POST/PUT/PATCH) contracts
 
-> **Note:** `sendByGetRouteWithStreamedResponse` is deprecated in favor of `sendByContractWithStreamedResponse`.
+> **Note:** `sendByGetRouteWithStreamedResponse` and `sendByPayloadRouteWithStreamedResponse` are deprecated in favor of `sendByContractWithStreamedResponse`.
 
 These methods return a `Readable` stream instead of parsing the entire response body, allowing for memory-efficient processing.
 
