@@ -23,15 +23,15 @@ export function formatSseResponse(events: { event: string; data: unknown }[]): s
 
 // Maps a single responsesByStatusCode entry to the body field(s) needed for mocking.
 // symbol (ContractNoBody) → no body field
-// ZodType              → { responseBody: z.input<T> }
+// ZodType              → { responseJson: z.input<T> }
 // TypedSseResponse     → { events: SseMockEventInput[] }
 // TypedTextResponse    → { responseText: string }
 // TypedBlobResponse    → { responseBlob: string }
-// AnyOfResponses       → { responseBody: ...; events: ... } for dual-mode (SSE + JSON)
+// AnyOfResponses       → { responseJson: ...; events: ... } for dual-mode (SSE + JSON)
 type InferBodyParam<T> = T extends symbol
-  ? { responseBody?: null }
+  ? { responseJson?: null }
   : T extends z.ZodType
-    ? { responseBody: z.input<T> }
+    ? { responseJson: z.input<T> }
     : T extends TypedSseResponse<infer S extends SseSchemaByEventName>
       ? { events: SseMockEventInput<S>[] }
       : T extends TypedTextResponse
@@ -41,7 +41,7 @@ type InferBodyParam<T> = T extends symbol
           : T extends AnyOfResponses<infer Items>
             ? (Extract<Items, z.ZodType> extends never
                 ? object
-                : { responseBody: z.input<Extract<Items, z.ZodType>> }) &
+                : { responseJson: z.input<Extract<Items, z.ZodType>> }) &
                 (Extract<Items, TypedSseResponse<any>> extends TypedSseResponse<
                   infer S extends SseSchemaByEventName
                 >

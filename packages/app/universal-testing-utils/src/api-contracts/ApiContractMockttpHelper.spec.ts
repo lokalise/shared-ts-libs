@@ -33,7 +33,7 @@ describe('ApiContractMockttpHelper', () => {
 
   describe('mockResponse — REST contracts', () => {
     it('mocks GET without path params', async () => {
-      await helper.mockResponse(getApiContract, { responseStatus: 200, responseBody: { id: '1' } })
+      await helper.mockResponse(getApiContract, { responseStatus: 200, responseJson: { id: '1' } })
       const result = await sendByApiContract(client(), getApiContract, {})
       expect(result.result?.body).toEqual({ id: '1' })
     })
@@ -41,8 +41,8 @@ describe('ApiContractMockttpHelper', () => {
     it('enforces GET contract schema (strips unknown properties)', async () => {
       await helper.mockResponse(getApiContract, {
         responseStatus: 200,
-        // @ts-expect-error wrong property on responseBody
-        responseBody: { id: '1', wrong: 'x' },
+        // @ts-expect-error wrong property on responseJson
+        responseJson: { id: '1', wrong: 'x' },
       })
       const result = await sendByApiContract(client(), getApiContract, {})
       expect(result.result?.body).toEqual({ id: '1' })
@@ -52,7 +52,7 @@ describe('ApiContractMockttpHelper', () => {
       await helper.mockResponse(getApiContractWithPathParams, {
         pathParams: { userId: '3' },
         responseStatus: 200,
-        responseBody: { id: '3' },
+        responseJson: { id: '3' },
       })
       const result = await sendByApiContract(client(), getApiContractWithPathParams, {
         pathParams: { userId: '3' },
@@ -63,7 +63,7 @@ describe('ApiContractMockttpHelper', () => {
     it('mocks GET with query params', async () => {
       await helper.mockResponse(getApiContractWithQueryParams, {
         responseStatus: 200,
-        responseBody: { id: '1' },
+        responseJson: { id: '1' },
       })
       const result = await sendByApiContract(client(), getApiContractWithQueryParams, {
         queryParams: { yearFrom: 2024 },
@@ -75,7 +75,7 @@ describe('ApiContractMockttpHelper', () => {
       await helper.mockResponse(getApiContractWithPathAndQueryParams, {
         pathParams: { userId: '3' },
         responseStatus: 200,
-        responseBody: { id: '3' },
+        responseJson: { id: '3' },
       })
       const result = await sendByApiContract(client(), getApiContractWithPathAndQueryParams, {
         pathParams: { userId: '3' },
@@ -85,7 +85,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('mocks POST without path params', async () => {
-      await helper.mockResponse(postApiContract, { responseStatus: 200, responseBody: { id: '1' } })
+      await helper.mockResponse(postApiContract, { responseStatus: 200, responseJson: { id: '1' } })
       const result = await sendByApiContract(client(), postApiContract, { body: { name: 'test' } })
       expect(result.result?.body).toEqual({ id: '1' })
     })
@@ -94,7 +94,7 @@ describe('ApiContractMockttpHelper', () => {
       await helper.mockResponse(postApiContractWithPathParams, {
         pathParams: { userId: '3' },
         responseStatus: 200,
-        responseBody: { id: '2' },
+        responseJson: { id: '2' },
       })
       const result = await sendByApiContract(client(), postApiContractWithPathParams, {
         pathParams: { userId: '3' },
@@ -168,7 +168,7 @@ describe('ApiContractMockttpHelper', () => {
     it('returns JSON when no SSE Accept header', async () => {
       await helper.mockResponse(dualModeApiContract, {
         responseStatus: 200,
-        responseBody: { id: '1' },
+        responseJson: { id: '1' },
         events: [{ event: 'completed', data: { totalCount: 1 } }],
       })
       const result = await sendByApiContract(client(), dualModeApiContract, {
@@ -181,7 +181,7 @@ describe('ApiContractMockttpHelper', () => {
     it('returns SSE when Accept: text/event-stream', async () => {
       await helper.mockResponse(dualModeApiContract, {
         responseStatus: 200,
-        responseBody: { id: '1' },
+        responseJson: { id: '1' },
         events: [{ event: 'completed', data: { totalCount: 1 } }],
       })
       const result = await sendByApiContract<typeof dualModeApiContract, true>(
@@ -203,7 +203,7 @@ describe('ApiContractMockttpHelper', () => {
       await helper.mockResponse(dualModeApiContractWithPathParams, {
         pathParams: { userId: '2' },
         responseStatus: 200,
-        responseBody: { id: '2' },
+        responseJson: { id: '2' },
         events: [{ event: 'completed', data: { totalCount: 2 } }],
       })
       const result = await sendByApiContract(client(), dualModeApiContractWithPathParams, {
