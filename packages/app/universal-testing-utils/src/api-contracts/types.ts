@@ -3,11 +3,11 @@ import type {
   ApiContract,
   HttpStatusCode,
   InferSchemaInput,
+  RequestPathParamsSchema,
   SseSchemaByEventName,
   TypedBlobResponse,
   TypedSseResponse,
   TypedTextResponse,
-    RequestPathParamsSchema,
 } from '@lokalise/api-contracts'
 import type { z } from 'zod/v4'
 
@@ -59,8 +59,8 @@ type StatusCodeBodyPair<TContract extends ApiContract> = {
 
 type PathParamsField<TContract extends ApiContract> =
   TContract['requestPathParamsSchema'] extends RequestPathParamsSchema
-  ? { pathParams: InferSchemaInput<TContract['requestPathParamsSchema']> }
-  : { pathParams?: never }
+    ? { pathParams: InferSchemaInput<TContract['requestPathParamsSchema']> }
+    : { pathParams?: never }
 
-export type MockResponseParams<TContract extends ApiContract> = PathParamsField<TContract>
-    & StatusCodeBodyPair<TContract>
+export type MockResponseParams<TContract extends ApiContract> = PathParamsField<TContract> &
+  StatusCodeBodyPair<TContract>
