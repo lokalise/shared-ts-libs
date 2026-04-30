@@ -296,6 +296,76 @@ export function sendPost<
   return sendResourceChange(client, 'POST', path, body, options)
 }
 
+async function sendPayloadWithStreamedResponse<
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
+  client: Client,
+  method: PayloadMethods,
+  path: string,
+  body: RecordObject | undefined,
+  options: Omit<
+    RequestOptions<undefined, false, DoThrowOnError>,
+    | 'responseSchema'
+    | 'validateResponse'
+    | 'isEmptyResponseExpected'
+    | 'safeParseJson'
+    | 'blobResponseBody'
+  >,
+): Promise<RequestResultDefinitiveEither<Readable, false, DoThrowOnError>> {
+  const result = await sendWithRetryReturnStream(
+    client,
+    {
+      ...DEFAULT_OPTIONS,
+      path: path,
+      method,
+      body: body ? JSON.stringify(body) : undefined,
+      query: options.query,
+      headers: copyWithoutUndefined({
+        [REQUEST_ID_HEADER]: options.reqContext?.reqId,
+        ...options.headers,
+      }),
+      reset: options.disableKeepAlive ?? false,
+      ...(Object.hasOwn(options, 'timeout') && {
+        bodyTimeout: options.timeout,
+        headersTimeout: options.timeout,
+      }),
+      throwOnError: undefined,
+    },
+    resolveRetryConfig(options),
+    {
+      throwOnInternalError: false,
+      requestLabel: options.requestLabel,
+    },
+  )
+
+  // Handle errors if throwOnError is enabled
+  if (result.error && (options.throwOnError ?? DEFAULT_OPTIONS.throwOnError)) {
+    throw isRequestResult(result.error)
+      ? new ResponseStatusError(result.error, options.requestLabel)
+      : result.error
+  }
+
+  return result as RequestResultDefinitiveEither<Readable, false, DoThrowOnError>
+}
+
+export function sendPostWithStreamedResponse<
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
+  client: Client,
+  path: string,
+  body: RecordObject | undefined,
+  options: Omit<
+    RequestOptions<undefined, false, DoThrowOnError>,
+    | 'responseSchema'
+    | 'validateResponse'
+    | 'isEmptyResponseExpected'
+    | 'safeParseJson'
+    | 'blobResponseBody'
+  >,
+): Promise<RequestResultDefinitiveEither<Readable, false, DoThrowOnError>> {
+  return sendPayloadWithStreamedResponse(client, 'POST', path, body, options)
+}
+
 export async function sendPostBinary<
   T extends ZodSchema,
   IsEmptyResponseExpected extends boolean = false,
@@ -748,6 +818,67 @@ export function sendByGetRouteWithStreamedResponse<
   )
 }
 
+/**
+ * @deprecated Use `sendByContractWithStreamedResponse` instead. This function will be removed in a future version.
+ */
+export function sendByPayloadRouteWithStreamedResponse<
+  RequestBodySchema extends z.Schema | undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
+>(
+  client: Client,
+  routeDefinition: PayloadRouteDefinition<
+    RequestBodySchema,
+    undefined,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    undefined,
+    false,
+    false,
+    ResponseSchemasByStatusCode
+  >,
+  params: PayloadRouteRequestParams<
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestBodySchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
+  >,
+  options: Omit<
+    RequestOptions<undefined, false, DoThrowOnError>,
+    | 'body'
+    | 'headers'
+    | 'query'
+    | 'responseSchema'
+    | 'isEmptyResponseExpected'
+    | 'validateResponse'
+    | 'safeParseJson'
+    | 'blobResponseBody'
+  >,
+): Promise<RequestResultDefinitiveEither<Readable, false, DoThrowOnError>> {
+  return sendPayloadWithStreamedResponse(
+    client,
+    // @ts-expect-error TS loses exact string type during uppercasing
+    routeDefinition.method.toUpperCase(),
+    // @ts-expect-error magic type inferring happening
+    buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
+    // @ts-expect-error magic type inferring happening
+    params.body,
+    {
+      // @ts-expect-error FixMe
+      headers: params.headers,
+      // @ts-expect-error magic type inferring happening
+      query: params.queryParams,
+      ...options,
+    },
+  )
+}
+
 // Overload 1: GET route
 export function sendByContract<
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -908,6 +1039,7 @@ export function sendByContract(
   )
 }
 
+// Overload 1: GET route
 export function sendByContractWithStreamedResponse<
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
@@ -944,8 +1076,73 @@ export function sendByContractWithStreamedResponse<
     | 'safeParseJson'
     | 'blobResponseBody'
   >,
-): Promise<RequestResultDefinitiveEither<Readable, false, DoThrowOnError>> {
-  return sendByGetRouteWithStreamedResponse(client, routeDefinition, params, options)
+): Promise<RequestResultDefinitiveEither<Readable, false, DoThrowOnError>>
+
+// Overload 2: Payload route (POST/PUT/PATCH)
+export function sendByContractWithStreamedResponse<
+  RequestBodySchema extends z.Schema | undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  ResponseSchemasByStatusCode extends
+    | Partial<Record<HttpStatusCode, z.Schema>>
+    | undefined = undefined,
+>(
+  client: Client,
+  routeDefinition: PayloadRouteDefinition<
+    RequestBodySchema,
+    undefined,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    undefined,
+    false,
+    false,
+    ResponseSchemasByStatusCode
+  >,
+  params: PayloadRouteRequestParams<
+    InferSchemaInput<PathParamsSchema>,
+    InferSchemaInput<RequestBodySchema>,
+    InferSchemaInput<RequestQuerySchema>,
+    InferSchemaInput<RequestHeaderSchema>
+  >,
+  options: Omit<
+    RequestOptions<undefined, false, DoThrowOnError>,
+    | 'body'
+    | 'headers'
+    | 'query'
+    | 'responseSchema'
+    | 'isEmptyResponseExpected'
+    | 'validateResponse'
+    | 'safeParseJson'
+    | 'blobResponseBody'
+  >,
+): Promise<RequestResultDefinitiveEither<Readable, false, DoThrowOnError>>
+
+// Implementation
+export function sendByContractWithStreamedResponse(
+  client: Client,
+  routeDefinition: // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
+    | GetRouteDefinition<any, any, any, any, any, any, any, any>
+    // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
+    | PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>,
+  // biome-ignore lint/suspicious/noExplicitAny: params type depends on overload
+  params: any,
+  // biome-ignore lint/suspicious/noExplicitAny: options type depends on overload
+  options: any,
+  // biome-ignore lint/suspicious/noExplicitAny: return type depends on overload
+): Promise<any> {
+  if (routeDefinition.method === 'get') {
+    return sendByGetRouteWithStreamedResponse(client, routeDefinition, params, options)
+  }
+  return sendByPayloadRouteWithStreamedResponse(
+    client,
+    // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
+    routeDefinition as PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>,
+    params,
+    options,
+  )
 }
 
 export const httpClient = {
