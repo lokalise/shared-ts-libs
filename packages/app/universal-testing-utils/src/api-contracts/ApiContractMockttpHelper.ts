@@ -102,7 +102,7 @@ export class ApiContractMockttpHelper {
         }
 
         if (jsonEntry) {
-          const body = JSON.stringify(anyParams.responseBody)
+          const body = JSON.stringify(anyParams.responseJson)
           return { statusCode, headers: { 'content-type': 'application/json' }, body }
         }
 
@@ -112,7 +112,7 @@ export class ApiContractMockttpHelper {
       return
     }
 
-    const body = responseEntry.parse(anyParams.responseBody)
+    const body = responseEntry.parse(anyParams.responseJson)
     await mockRule.thenReply(statusCode, JSON.stringify(body), {
       'content-type': 'application/json',
     })
