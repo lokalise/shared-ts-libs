@@ -36,7 +36,7 @@ export class ApiContractMockttpHelper {
     }
   }
 
-  private resolvePath(contract: ApiContract, pathParams: any): string {
+  private resolvePath(contract: ApiContract, pathParams: unknown): string {
     return contract.requestPathParamsSchema && pathParams
       ? contract.pathResolver(pathParams)
       : mapApiContractToPath(contract)
@@ -78,7 +78,7 @@ export class ApiContractMockttpHelper {
     }
 
     if (isSseResponse(responseEntry)) {
-      const body = formatSseResponse((anyParams.events))
+      const body = formatSseResponse(anyParams.events)
       await mockRule.thenCallback(() => ({
         statusCode,
         headers: { 'content-type': 'text/event-stream' },
