@@ -586,4 +586,89 @@ describe('sendByApiContract', () => {
       expect(result.result?.body.size).toBe(4)
     })
   })
+
+  describe('content-type request header', () => {
+    it('sets content-type: application/json automatically when body is present', async () => {
+      const contract = defineApiContract({
+        method: 'post',
+        pathResolver: () => '/items',
+        requestBodySchema: z.object({ name: z.string() }),
+        responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+      })
+
+      let contentTypeHeader: string | undefined
+      await mockServer.forPost('/items').thenCallback((req) => {
+        contentTypeHeader = req.headers['content-type']
+        return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
+      })
+
+      await sendByApiContract(buildClient(), contract, { body: { name: 'test' } })
+
+      expect(contentTypeHeader).toBe('application/json')
+    })
+
+    it('does not set content-type when no body is present', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/items',
+        responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+      })
+
+      let contentTypeHeader: string | undefined
+      await mockServer.forGet('/items').thenCallback((req) => {
+        contentTypeHeader = req.headers['content-type']
+        return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
+      })
+
+      await sendByApiContract(buildClient(), contract, {})
+
+      expect(contentTypeHeader).toBeUndefined()
+    })
+
+    it('preserves user-provided content-type (lowercase)', async () => {
+      const contract = defineApiContract({
+        method: 'post',
+        pathResolver: () => '/items',
+        requestBodySchema: z.object({ name: z.string() }),
+        requestHeaderSchema: z.object({ 'content-type': z.string().optional() }),
+        responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+      })
+
+      let contentTypeHeader: string | undefined
+      await mockServer.forPost('/items').thenCallback((req) => {
+        contentTypeHeader = req.headers['content-type']
+        return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
+      })
+
+      await sendByApiContract(buildClient(), contract, {
+        body: { name: 'test' },
+        headers: { 'content-type': 'text/plain' },
+      })
+
+      expect(contentTypeHeader).toBe('text/plain')
+    })
+
+    it('preserves user-provided content-type (Title-Case)', async () => {
+      const contract = defineApiContract({
+        method: 'post',
+        pathResolver: () => '/items',
+        requestBodySchema: z.object({ name: z.string() }),
+        requestHeaderSchema: z.object({ 'Content-Type': z.string().optional() }),
+        responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+      })
+
+      let contentTypeHeader: string | undefined
+      await mockServer.forPost('/items').thenCallback((req) => {
+        contentTypeHeader = req.headers['content-type']
+        return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
+      })
+
+      await sendByApiContract(buildClient(), contract, {
+        body: { name: 'test' },
+        headers: { 'Content-Type': 'text/plain' },
+      })
+
+      expect(contentTypeHeader).toBe('text/plain')
+    })
+  })
 })
