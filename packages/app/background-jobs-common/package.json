@@ -46,7 +46,7 @@
         "bullmq": "^5.28.2",
         "ioredis": "^5.4.1",
         "pino": ">=9.7.0",
-        "toad-scheduler": "^3.1.0",
+        "toad-scheduler": "^4.0.1",
         "zod": ">=3.25.67"
     },
     "devDependencies": {
@@ -59,7 +59,7 @@
         "ioredis": "^5.6.1",
         "pino": "^10.0.0",
         "rimraf": "^6.0.1",
-        "toad-scheduler": "^3.1.0",
+        "toad-scheduler": "^4.0.1",
         "typescript": "5.9.3",
         "vitest": "^4.0.15",
         "zod": "^4.3.6"
