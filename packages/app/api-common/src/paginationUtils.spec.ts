@@ -43,61 +43,113 @@ describe('paginationUtils', () => {
     })
 
     describe('cursor', () => {
-      it('empty cursorKeys produce error', () => {
-        const mockedArray: Entity[] = []
-        expect(() => createPaginatedResponse(mockedArray, 2, [])).toThrowError(
-          'cursorKeys cannot be an empty array',
-        )
-      })
-
-      it('cursor using id as default', () => {
-        const mockedArray = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
-        const result = createPaginatedResponse(mockedArray, 2)
-        expect(result).toEqual({
-          data: [mockedArray[0], mockedArray[1]],
-          meta: { resultCount: 2, cursor: 'b', hasMore: true },
+      describe('undefined (default id)', () => {
+        it('uses id of the last element within the page limit', () => {
+          const mockedArray = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+          const result = createPaginatedResponse(mockedArray, 2)
+          expect(result).toEqual({
+            data: [mockedArray[0], mockedArray[1]],
+            meta: { resultCount: 2, cursor: 'b', hasMore: true },
+          })
         })
       })
 
-      it('cursor using single prop', () => {
-        // not using id as prop to test type checking
-        const mockedArray = [
-          { extra: 'a', name: 'hello' },
-          { extra: 'b', name: 'world' },
-        ]
-        const result = createPaginatedResponse(mockedArray, 3, ['name'])
-        expect(result).toEqual({
-          data: mockedArray,
-          meta: { resultCount: 2, cursor: 'world', hasMore: false },
+      describe('cursorKeys', () => {
+        it('empty array produces error', () => {
+          const mockedArray: Entity[] = []
+          expect(() => createPaginatedResponse(mockedArray, 2, [])).toThrowError(
+            'cursorKeys cannot be an empty array',
+          )
+        })
+
+        it('single key uses raw value of that key', () => {
+          // not using id as prop to test type checking
+          const mockedArray = [
+            { extra: 'a', name: 'hello' },
+            { extra: 'b', name: 'world' },
+          ]
+          const result = createPaginatedResponse(mockedArray, 3, ['name'])
+          expect(result).toEqual({
+            data: mockedArray,
+            meta: { resultCount: 2, cursor: 'world', hasMore: false },
+          })
+        })
+
+        it('multiple keys produce an encoded cursor', () => {
+          const mockedArray = [
+            {
+              id: '1',
+              name: 'apple',
+              description: 'red',
+            },
+            {
+              id: '2',
+              name: 'banana',
+              description: 'yellow',
+            },
+            {
+              id: '3',
+              name: 'orange',
+              description: 'orange',
+            },
+          ]
+          const result = createPaginatedResponse(mockedArray, 3, ['id', 'name'])
+          expect(result).toEqual({
+            data: mockedArray,
+            meta: {
+              resultCount: 3,
+              cursor: encodeCursor({ id: '3', name: 'orange' }),
+              hasMore: false,
+            },
+          })
         })
       })
 
-      it('cursor with multiple fields', () => {
-        const mockedArray = [
-          {
-            id: '1',
-            name: 'apple',
-            description: 'red',
-          },
-          {
-            id: '2',
-            name: 'banana',
-            description: 'yellow',
-          },
-          {
-            id: '3',
-            name: 'orange',
-            description: 'orange',
-          },
+      describe('builder', () => {
+        const nestedArray = [
+          { id: '1', author: { name: 'alice', age: 30 } },
+          { id: '2', author: { name: 'bob', age: 40 } },
+          { id: '3', author: { name: 'carol', age: 50 } },
         ]
-        const result = createPaginatedResponse(mockedArray, 3, ['id', 'name'])
-        expect(result).toEqual({
-          data: mockedArray,
-          meta: {
-            resultCount: 3,
-            cursor: encodeCursor({ id: '3', name: 'orange' }),
-            hasMore: false,
-          },
+
+        it('returning a string is used as raw cursor', () => {
+          const result = createPaginatedResponse(nestedArray, 2, (item) => item.author.name)
+          expect(result).toEqual({
+            data: [nestedArray[0], nestedArray[1]],
+            meta: { resultCount: 2, cursor: 'bob', hasMore: true },
+          })
+        })
+
+        it('returning an object is encoded', () => {
+          const result = createPaginatedResponse(nestedArray, 3, (item) => ({
+            id: item.id,
+            authorName: item.author.name,
+          }))
+          expect(result).toEqual({
+            data: nestedArray,
+            meta: {
+              resultCount: 3,
+              cursor: encodeCursor({ id: '3', authorName: 'carol' }),
+              hasMore: false,
+            },
+          })
+        })
+
+        it('is not invoked when page is empty', () => {
+          const builder = vi.fn(() => 'never')
+          const result = createPaginatedResponse([] as { id: string }[], 2, builder)
+          expect(builder).not.toHaveBeenCalled()
+          expect(result).toEqual({
+            data: [],
+            meta: { resultCount: 0, hasMore: false },
+          })
+        })
+
+        it('receives last element within page limit, not the overflow item', () => {
+          const builder = vi.fn((item: (typeof nestedArray)[number]) => item.author.name)
+          createPaginatedResponse(nestedArray, 2, builder)
+          expect(builder).toHaveBeenCalledTimes(1)
+          expect(builder).toHaveBeenCalledWith(nestedArray[1])
         })
       })
     })
