@@ -2,7 +2,6 @@
     "extends": "@lokalise/tsconfig/tsc-dom",
     "include": ["src/**/*", "vitest.config.ts"],
     "compilerOptions": {
-        "lib": ["ES2023", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
-        "types": ["vitest/globals"]
+        "lib": ["ES2023", "DOM", "DOM.Iterable", "DOM.AsyncIterable"]
     }
 }
