@@ -1,9 +1,8 @@
 import type promClient from 'prom-client'
 import type { Histogram } from 'prom-client'
-import type { LabeledMetricParams } from '../AbstractMetric.ts'
-import { AbstractLabeledMetric } from './AbstractLabeledMetric.ts'
+import { AbstractLabeledMetric, type LabeledMetricParams } from './AbstractLabeledMetric.ts'
 
-type HistogramMetricConfiguration<Labels extends readonly string[]> = LabeledMetricParams & {
+export type HistogramMetricConfiguration<Labels extends readonly string[]> = LabeledMetricParams & {
   buckets: number[]
   labelNames: Labels
 }
@@ -24,6 +23,11 @@ type HistogramMeasurement<Labels extends readonly string[]> = Partial<
       }
   )
 
+/**
+ * Base class for histogram metrics with configurable buckets and any number of labels.
+ *
+ * Observations can be recorded either via a direct `time` value or via a `startTime`/`endTime` pair.
+ */
 export abstract class AbstractLabeledHistogramMetric<
   Labels extends readonly string[],
 > extends AbstractLabeledMetric<
@@ -50,6 +54,12 @@ export abstract class AbstractLabeledHistogramMetric<
     })
   }
 
+  /**
+   * Records an observation for the given label combination.
+   *
+   * Provide the duration as either `time` directly, or as a `startTime`/`endTime` pair from which the duration
+   * is computed.
+   */
   public override registerMeasurement(measurement: HistogramMeasurement<Labels>): void {
     if (!this.metric) return
 

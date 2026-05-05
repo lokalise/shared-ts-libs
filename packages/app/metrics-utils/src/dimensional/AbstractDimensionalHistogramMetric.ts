@@ -1,9 +1,11 @@
 import type promClient from 'prom-client'
 import type { Histogram } from 'prom-client'
-import type { DimensionalMetricParams } from '../AbstractMetric.ts'
-import { AbstractDimensionalMetric } from './AbstractDimensionalMetric.ts'
+import {
+  AbstractDimensionalMetric,
+  type DimensionalMetricParams,
+} from './AbstractDimensionalMetric.ts'
 
-type DimensionalHistogramMetricConfiguration<TDimensions extends readonly string[]> =
+export type DimensionalHistogramMetricConfiguration<TDimensions extends readonly string[]> =
   DimensionalMetricParams<TDimensions> & {
     buckets: number[]
   }
@@ -12,6 +14,16 @@ type DimensionalHistogramMeasurement<TDimensions extends readonly string[]> =
   | { dimension: TDimensions[number]; time: number; startTime?: never; endTime?: never }
   | { dimension: TDimensions[number]; time?: never; startTime: number; endTime: number }
 
+/**
+ * Base class for histogram metrics where each dimension is registered as a **separate label-free Prometheus Histogram**.
+ *
+ * The metric name for each dimension is produced by the caller-provided `buildMetricName(dimension)` callback.
+ * Intended for backends that do not support Prometheus labels (e.g. some Datadog setups); when labels are
+ * supported, prefer {@link AbstractLabeledHistogramMetric}.
+ *
+ * In eager mode (default) every declared dimension is pre-registered at construction; with `lazyInit: true`,
+ * each metric is registered on the first measurement targeting its dimension.
+ */
 export abstract class AbstractDimensionalHistogramMetric<
   TDimensions extends readonly string[],
 > extends AbstractDimensionalMetric<
@@ -36,12 +48,17 @@ export abstract class AbstractDimensionalHistogramMetric<
     })
   }
 
+  /**
+   * Records an observation on the histogram for the given `dimension`.
+   *
+   * Provide the duration as either `time` directly, or as a `startTime`/`endTime` pair from which the duration
+   * is computed. A measurement targeting a dimension outside the declared set throws (unless running in lazy
+   * open mode).
+   */
   public override registerMeasurement(
     measurement: DimensionalHistogramMeasurement<TDimensions>,
   ): void {
-    if (this.metrics.size === 0) return
-
-    const histogram = this.metrics.get(measurement.dimension)
+    const histogram = this.getOrRegisterMetric(measurement.dimension)
     if (!histogram) return
 
     const { time, startTime, endTime } = measurement
