@@ -168,7 +168,8 @@ These methods return a `Readable` stream instead of parsing the entire response 
 
 **Critical: Body consumption requirement**
 
-According to the undici documentation, garbage collection in Node.js is less aggressive and deterministic compared to browsers, which means leaving the release of connection resources to the garbage collector can lead to excessive connection usage, reduced performance (due to less connection re-use), and even stalls or deadlocks when running out of connections.
+According to the undici documentation, garbage collection in Node.js is less aggressive and deterministic compared to browsers, 
+which means leaving the release of connection resources to the garbage collector can lead to excessive connection usage, reduced performance (due to less connection re-use), and even stalls or deadlocks when running out of connections.
 
 Therefore, when using streaming response methods, you **must** either:
 1. Fully consume the response body by reading all chunks
