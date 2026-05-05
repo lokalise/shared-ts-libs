@@ -52,11 +52,11 @@
         "@lokalise/api-contracts": "^6.1.1",
         "@lokalise/biome-config": "^3.1.1",
         "@lokalise/node-core": "^14.7.4",
-        "@lokalise/tsconfig": "^3.1.0",
+        "@lokalise/tsconfig": "^4.0.0",
         "@types/node": "^25.2.0",
         "@vitest/coverage-v8": "^4.0.18",
         "mockttp": "^4.2.1",
-        "typescript": "^5.9.3",
+        "typescript": "6.0.3",
         "vitest": "^4.0.18",
         "zod": "^4.3.6"
     }
