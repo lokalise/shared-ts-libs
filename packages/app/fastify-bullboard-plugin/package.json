@@ -33,7 +33,7 @@
         "@bull-board/fastify": "^6.18.0",
         "@fastify/auth": "^5.0.4",
         "@fastify/basic-auth": "^6.2.0",
-        "@lokalise/tsconfig": "^3.1.0"
+        "@lokalise/tsconfig": "^4.0.0"
     },
     "peerDependencies": {
         "@lokalise/background-jobs-common": ">=12.6.0"
