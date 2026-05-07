@@ -39,8 +39,7 @@
     },
     "dependencies": {
         "parse-sse": "^0.1.0",
-        "undici": "^8.0.2",
-        "undici-retry": "^7.0.0"
+        "undici": "^8.0.2"
     },
     "peerDependencies": {
         "@lokalise/api-contracts": ">=6.9.0",

@@ -8,7 +8,6 @@ import {
 } from '@lokalise/api-contracts'
 import { getLocal, type Mockttp } from 'mockttp'
 import { Client } from 'undici'
-import { createDefaultRetryResolver } from 'undici-retry'
 import { afterAll, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import { JSON_HEADERS } from './constants.ts'
@@ -35,7 +34,8 @@ import {
 import mockProduct1 from './mock-data/mockProduct1.json'
 // @ts-expect-error
 import mockProductsLimit3 from './mock-data/mockProductsLimit3.json'
-import { type HttpRequestContext, isInternalRequestError } from './types.ts'
+import { isInternalRequestError } from '../errors/InternalRequestError.ts'
+import type { HttpRequestContext } from './types.ts'
 
 const TEXT_HEADERS = {
   'content-type': 'text/plain',
@@ -413,13 +413,10 @@ describe('httpClient', () => {
         responseSchema: UNKNOWN_RESPONSE_SCHEMA,
         requestLabel: 'dummy',
         retryConfig: {
-          statusCodesToRetry: [500],
-          retryOnTimeout: false,
-          delayResolver: createDefaultRetryResolver({
-            baseDelay: 0,
-            maxDelay: 0,
-          }),
-          maxAttempts: 2,
+          statusCodes: [500],
+          maxRetries: 1,
+          delay: () => 0,
+          maxJitter: 0,
         },
       })
 
@@ -2164,13 +2161,10 @@ describe('httpClient', () => {
         {
           requestLabel: 'dummy',
           retryConfig: {
-            maxAttempts: 2,
-            statusCodesToRetry: [500],
-            retryOnTimeout: false,
-            delayResolver: createDefaultRetryResolver({
-              baseDelay: 0,
-              maxDelay: 0,
-            }),
+            statusCodes: [500],
+            maxRetries: 1,
+            delay: () => 0,
+            maxJitter: 0,
           },
         },
       )

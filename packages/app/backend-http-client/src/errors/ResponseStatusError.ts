@@ -1,5 +1,5 @@
 import { InternalError } from '@lokalise/node-core'
-import type { RequestResult } from 'undici-retry'
+import type { RequestResult } from '../client/types.ts'
 
 export function isResponseStatusError(entity: unknown): entity is ResponseStatusError {
   return 'isResponseStatusError' in (entity as ResponseStatusError)
