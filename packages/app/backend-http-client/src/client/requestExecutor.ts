@@ -1,6 +1,7 @@
 import { type Either } from '@lokalise/node-core'
 import type { Dispatcher } from 'undici'
 import { Client } from 'undici'
+import type { ZodType } from 'zod/v4'
 import { resolveRetryConfig, withRetry } from '../api-contract/retry.ts'
 import { InternalRequestError } from '../errors/InternalRequestError.ts'
 import { ResponseParseError } from '../errors/ResponseParseError.ts'
@@ -42,11 +43,7 @@ export async function parseResponseBody(
 export async function executeRequest<T>(
   client: Client,
   requestOptions: Dispatcher.RequestOptions,
-  options: Pick<
-    // biome-ignore lint/suspicious/noExplicitAny: used internally
-    InternalRequestOptions<any>,
-    'retryConfig' | 'safeParseJson' | 'blobResponseBody' | 'requestLabel'
-  >,
+  options: InternalRequestOptions<ZodType | undefined>,
 ): Promise<Either<RequestResult<unknown> | InternalRequestError, RequestResult<T>>> {
   try {
     const response = options.retryConfig
@@ -93,8 +90,7 @@ export async function executeRequest<T>(
 export async function executeStreamRequest(
   client: Client,
   requestOptions: Dispatcher.RequestOptions,
-  // biome-ignore lint/suspicious/noExplicitAny: used internally
-  options: Pick<InternalRequestOptions<any>, 'retryConfig' | 'requestLabel'>,
+  options: Pick<InternalRequestOptions<ZodType | undefined>, 'retryConfig' | 'requestLabel'>,
 ): Promise<
   Either<
     RequestResult<unknown> | InternalRequestError,
