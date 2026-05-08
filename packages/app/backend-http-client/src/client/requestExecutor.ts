@@ -79,9 +79,6 @@ export async function executeRequest<T>(
       },
     }
   } catch (err) {
-    if (err instanceof ResponseParseError) {
-      return { error: err as unknown as RequestResult<unknown> | InternalRequestError }
-    }
     return { error: new InternalRequestError(err, options.requestLabel) }
   }
 }

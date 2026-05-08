@@ -216,11 +216,13 @@ describe('httpClient', () => {
         // eslint-disable-next-line vitest/no-conditional-expect
         expect(err).toMatchObject({
           message: 'Error while parsing HTTP JSON response',
-          errorCode: 'INVALID_HTTP_RESPONSE_JSON',
-          details: {
-            rawBody: 'this is not a real json',
-            requestLabel: 'label',
-          },
+          cause: expect.objectContaining({
+            errorCode: 'INVALID_HTTP_RESPONSE_JSON',
+            details: {
+              rawBody: 'this is not a real json',
+              requestLabel: 'label',
+            },
+          }),
         })
       }
     })
@@ -238,11 +240,13 @@ describe('httpClient', () => {
 
       expect(result.error).toMatchObject({
         message: 'Error while parsing HTTP JSON response',
-        errorCode: 'INVALID_HTTP_RESPONSE_JSON',
-        details: {
-          rawBody: 'this is not a real json',
-          requestLabel: 'label',
-        },
+        cause: expect.objectContaining({
+          errorCode: 'INVALID_HTTP_RESPONSE_JSON',
+          details: {
+            rawBody: 'this is not a real json',
+            requestLabel: 'label',
+          },
+        }),
       })
     })
 
