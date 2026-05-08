@@ -3,8 +3,8 @@ import {
   ContractNoBody,
   isAnyOfResponses,
   isBlobResponse,
-  isSseResponse,
   isJsonResponse,
+  isSseResponse,
   isTextResponse,
   mapApiContractToPath,
 } from '@lokalise/api-contracts'
@@ -102,7 +102,11 @@ export class ApiContractMockttpHelper {
 
         if (jsonEntry) {
           const body = jsonEntry.parse(anyParams.responseJson)
-          return { statusCode, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }
+          return {
+            statusCode,
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(body),
+          }
         }
 
         return { statusCode }
