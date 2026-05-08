@@ -39,11 +39,15 @@ All _send_ methods accept a type parameter and the following arguments:
   - `blobResponseBody`, used when the response body should be returned as Blob;
   - `requestLabel`, this string will be returned together with any thrown or returned Error to provide additional context about what request was being executed when the error has happened;
   - `disableKeepAlive`;`
-  - `retryConfig`, defined by:
-    - `maxAttempts`, the maximum number of times a request should be retried;
-    - `delayResolver?`, an optional function that calculates retry delay: `(response, attemptNumber, statusCodesToRetry) => number | undefined`;
-    - `statusCodesToRetry?`, the status codes that trigger a retry;
-    - `retryOnTimeout`, whether to retry on timeout;
+  - `retryConfig` – pass `true` to enable retries with all defaults, or an object with:
+    - `maxRetries?` – maximum number of retries after the initial attempt (default: `2`);
+    - `statusCodes?` – HTTP status codes that trigger a retry (default: `[408, 425, 429, 500, 502, 503, 504]`);
+    - `delay?` – function `(retryNumber: number) => number` returning the base delay in ms (default: exponential backoff starting at 100 ms);
+    - `maxDelay?` – hard cap on any delay in ms (default: `30_000`);
+    - `maxJitter?` – maximum random jitter in ms added to each delay (default: `100`);
+    - `respectRetryAfter?` – use the `Retry-After` response header as the delay when present (default: `true`);
+    - `retryOnNetworkError?` – retry on network-level errors such as socket resets (default: `true`);
+    - `retryOnTimeout?` – retry when a per-attempt timeout fires (default: `true`);
   - `clientOptions`;
   - `responseSchema`, used both for inferring the response type of the call, and also (if `validateResponse` is `true`) for validating the response structure;
   - `validateResponse`;
@@ -55,12 +59,8 @@ All _send_ methods accept a type parameter and the following arguments:
   validateResponse: true,
   throwOnError: true,
   timeout: 30000,
-  retryConfig: {
-      maxAttempts: 1,
-      statusCodesToRetry: [],
-      retryOnTimeout: false,
-  }
   ```
+  No `retryConfig` is set by default — retries are disabled unless explicitly configured.
   For `sendDelete()` `isEmptyResponseExpected` by default is set to `true`, for all other methods it is `false`.
 
 Additionally, `sendPost()`, `sendPut()`, `sendPutBinary()`, and `sendPatch()` also accept a `body` parameter.
@@ -209,8 +209,8 @@ const result = await sendByContractWithStreamedResponse(
   {
     requestLabel: 'Download large file',
     retryConfig: {
-      maxAttempts: 3,
-      statusCodesToRetry: [500, 502, 503],
+      maxRetries: 3,
+      statusCodes: [500, 502, 503],
       retryOnTimeout: true,
     },
   }
