@@ -10,6 +10,7 @@ import { getLocal, type Mockttp } from 'mockttp'
 import { Client } from 'undici'
 import { afterAll, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
+import { isInternalRequestError } from '../errors/InternalRequestError.ts'
 import { JSON_HEADERS } from './constants.ts'
 import {
   buildClient,
@@ -34,7 +35,6 @@ import {
 import mockProduct1 from './mock-data/mockProduct1.json'
 // @ts-expect-error
 import mockProductsLimit3 from './mock-data/mockProductsLimit3.json'
-import { isInternalRequestError } from '../errors/InternalRequestError.ts'
 import type { HttpRequestContext } from './types.ts'
 
 const TEXT_HEADERS = {

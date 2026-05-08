@@ -1,6 +1,5 @@
-import { type Either } from '@lokalise/node-core'
-import type { Dispatcher } from 'undici'
-import { Client } from 'undici'
+import type { Either } from '@lokalise/node-core'
+import type { Client, Dispatcher } from 'undici'
 import type { ZodType } from 'zod/v4'
 import { resolveRetryConfig, withRetry } from '../api-contract/retry.ts'
 import { InternalRequestError } from '../errors/InternalRequestError.ts'
