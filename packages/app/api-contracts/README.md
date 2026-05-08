@@ -1,8 +1,11 @@
 # api-contracts
 
-API contracts are shared definitions that live in a shared package and are consumed by both the client and the backend. The contract describes a route — its path, HTTP method, and request/response schemas — and serves as the single source of truth for both sides.
+API contracts are shared definitions that live in a shared package and are consumed by both the client and the backend.
+The contract describes a route — its path, HTTP method, and request/response schemas — and serves as the single source of truth for both sides.
 
-The backend implements the route against the contract. The client uses the same contract to make type-safe requests without duplicating configuration. This eliminates assumptions across the boundary and keeps documentation, validation, and types in sync.
+The backend implements the route against the contract.
+The client uses the same contract to make type-safe requests without duplicating configuration.
+This eliminates assumptions across the boundary and keeps documentation, validation, and types in sync.
 
 ## Defining contracts
 
@@ -83,7 +86,8 @@ const downloadPhoto = defineApiContract({
 
 ### SSE and dual-mode routes
 
-Use `sseResponse()` inside `responsesByStatusCode` to define SSE event schemas. For endpoints that can respond with either JSON or an SSE stream depending on the `Accept` header, use `anyOfResponses()` to declare both options on the same status code.
+Use `sseResponse()` inside `responsesByStatusCode` to define SSE event schemas.
+For endpoints that can respond with either JSON or an SSE stream depending on the `Accept` header, use `anyOfResponses()` to declare both options on the same status code.
 
 ```ts
 import { defineApiContract, sseResponse, anyOfResponses } from '@lokalise/api-contracts'
@@ -144,12 +148,12 @@ defineApiContract({
   requestPathParamsSchema: z.ZodObject,
 
   // Request
-  requestBodySchema: z.ZodType | ContractNoBody, // POST / PUT / PATCH only
-  requestQuerySchema: z.ZodType,
-  requestHeaderSchema: z.ZodType,
+  requestBodySchema: z.ZodType | ContractNoBody, // required for POST / PUT / PATCH, forbidden otherwise
+  requestQuerySchema: z.ZodObject,
+  requestHeaderSchema: z.ZodObject,
 
   // Response
-  responseHeaderSchema: z.ZodType,
+  responseHeaderSchema: z.ZodObject,
 
   // Documentation
   summary: string,
@@ -201,7 +205,53 @@ type CsvResponse = InferNonSseSuccessResponses<typeof exportCsv['responsesByStat
 
 **`HasAnyJsonSuccessResponse<T>`** — `true` if any 2xx entry is a JSON Zod schema or an `AnyOfResponses` containing one.
 
+**`HasAnyNonSseSuccessResponse<T>`** — `true` if any 2xx entry is a non-SSE response (JSON, text, blob, or no-body).
+
 **`IsNoBodySuccessResponse<T>`** — `true` when all 2xx entries are `ContractNoBody` or no 2xx status codes are defined.
+
+**`ContractResponseMode<T>`** — classifies a contract into `'dual'` (SSE + non-SSE), `'sse'` (SSE-only), or `'non-sse'` (JSON/text/blob/no-body).
+
+**`AvailableResponseModes<T>`** — union of mode literals available for a contract: `'json' | 'sse' | 'blob' | 'text' | 'noContent'`.
+
+**`SseEventOf<S>`** — discriminated union of SSE events inferred from a `schemaByEventName` map. Aligns with the browser `MessageEvent` shape: `{ type, data, lastEventId, retry }`.
+
+```ts
+import type { SseEventOf, InferSseSuccessResponses } from '@lokalise/api-contracts'
+
+type NotificationEvents = InferSseSuccessResponses<typeof notifications['responsesByStatusCode']>
+type NotificationEvent = SseEventOf<NotificationEvents>
+// { type: 'notification'; data: { id: string; message: string }; lastEventId: string; retry: number | undefined }
+```
+
+### Client types
+
+These types are primarily consumed by HTTP client implementations.
+
+**`ClientRequestParams<TApiContract, TIsStreaming>`** — infers the request parameter object for a contract. Includes `pathParams`, `body`, `queryParams`, `headers` (required when the corresponding schema is defined), `pathPrefix` (always optional), and `streaming` (required for dual-mode contracts, forbidden otherwise).
+
+**`InferSseClientResponse<TApiContract>`** — discriminated union of `{ statusCode, headers, body }` for SSE mode. Success status codes yield `AsyncIterable<SseEventOf<...>>`; error codes yield the declared body type.
+
+**`InferNonSseClientResponse<TApiContract>`** — same shape as above for non-SSE mode. Success status codes yield JSON / `string` / `Blob` / `null`; SSE entries are excluded (`never`).
+
+**`DefaultStreaming<T>`** — `true` for SSE-only contracts, `false` for everything else.
+
+```ts
+import type { ClientRequestParams, InferNonSseClientResponse } from '@lokalise/api-contracts'
+
+type GetUserParams = ClientRequestParams<typeof getUser, false>
+// { pathParams: { userId: string }; pathPrefix?: string }
+
+type GetUserResponse = InferNonSseClientResponse<typeof getUser>
+// { statusCode: 200; headers: Record<string, string>; body: { id: string; name: string } }
+```
+
+### Contract type aliases
+
+**`ApiContract`** — union of all contract variants (`GetApiContract | DeleteApiContract | PayloadApiContract`). Use this to type function parameters that accept any contract.
+
+**`GetApiContract`**, **`DeleteApiContract`**, **`PayloadApiContract`** — individual contract variants if you need to narrow the type.
+
+**`RequestPathParamsSchema`**, **`RequestQuerySchema`**, **`RequestHeaderSchema`**, **`ResponseHeaderSchema`** — type aliases for `z.ZodObject`. Use these to constrain schema arguments in generic helpers.
 
 ### Utility functions
 
@@ -237,6 +287,16 @@ import { getIsEmptyResponseExpected } from '@lokalise/api-contracts'
 
 getIsEmptyResponseExpected(deleteUser) // true
 getIsEmptyResponseExpected(getUser)    // false
+```
+
+**`hasAnySuccessSseResponse`** — `true` when any 2xx entry is an SSE response (including inside `anyOfResponses`).
+
+```ts
+import { hasAnySuccessSseResponse } from '@lokalise/api-contracts'
+
+hasAnySuccessSseResponse(notifications)   // true
+hasAnySuccessSseResponse(getUser)         // false
+hasAnySuccessSseResponse(chatCompletion)  // true (dual-mode)
 ```
 
 **`getSseSchemaByEventName`** — extracts SSE event schemas from a contract. Returns `null` when no SSE schemas are present.
