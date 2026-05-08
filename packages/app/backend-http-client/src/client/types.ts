@@ -29,7 +29,7 @@ export type InternalRequestOptions<T extends ZodSchema | undefined> = {
   requestLabel: string
 
   disableKeepAlive?: boolean
-  retryConfig?: RetryConfig
+  retryConfig?: RetryConfig | true
   clientOptions?: Client.Options
   responseSchema: T
   validateResponse?: boolean
