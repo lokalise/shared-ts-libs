@@ -422,6 +422,22 @@ describe('httpClient', () => {
 
       expect(response.result.body).toBe('OK')
     })
+
+    it('returns Blob when blobResponseBody is true', async () => {
+      const imageBytes = Buffer.from([0x89, 0x50, 0x4e, 0x47])
+
+      await mockServer.forGet('/photo.png').thenReply(200, imageBytes, {
+        'content-type': 'image/png',
+      })
+
+      const result = await sendGet(client, '/photo.png', {
+        responseSchema: UNKNOWN_RESPONSE_SCHEMA,
+        requestLabel: 'dummy',
+        blobResponseBody: true,
+      })
+
+      expect(result.result.body).toBeInstanceOf(Blob)
+    })
   })
 
   describe('sendByGetRoute', () => {
