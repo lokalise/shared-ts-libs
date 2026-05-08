@@ -47,6 +47,9 @@ export const isSseResponse = (value: ApiContractResponse): value is TypedSseResp
 
 export type TypedJsonResponse = z.ZodType
 
+export const isJsonResponse = (value: ApiContractResponse): value is TypedJsonResponse =>
+  typeof value === 'object' && value !== null && !('_tag' in value)
+
 export type TypedApiContractResponse =
   | TypedJsonResponse
   | TypedTextResponse

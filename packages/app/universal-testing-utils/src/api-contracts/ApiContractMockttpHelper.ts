@@ -4,6 +4,7 @@ import {
   isAnyOfResponses,
   isBlobResponse,
   isSseResponse,
+  isJsonResponse,
   isTextResponse,
   mapApiContractToPath,
 } from '@lokalise/api-contracts'
@@ -89,9 +90,7 @@ export class ApiContractMockttpHelper {
 
     if (isAnyOfResponses(responseEntry)) {
       const sseEntry = responseEntry.responses.find(isSseResponse)
-      const jsonEntry = responseEntry.responses.find(
-        (entry) => !isSseResponse(entry) && !isTextResponse(entry) && !isBlobResponse(entry),
-      )
+      const jsonEntry = responseEntry.responses.find(isJsonResponse)
 
       await mockRule.thenCallback((request) => {
         const accept = request.headers.accept ?? ''
@@ -102,8 +101,8 @@ export class ApiContractMockttpHelper {
         }
 
         if (jsonEntry) {
-          const body = JSON.stringify(anyParams.responseJson)
-          return { statusCode, headers: { 'content-type': 'application/json' }, body }
+          const body = jsonEntry.parse(anyParams.responseJson)
+          return { statusCode, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }
         }
 
         return { statusCode }
