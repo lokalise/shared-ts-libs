@@ -202,6 +202,43 @@ export type DualModePayloadContractConfig<
 }
 
 /**
+ * @deprecated Use `defineApiContract` with `sseResponse()` or `anyOfResponses()` instead. This function will be removed in a future version.
+ * @example
+ * ```typescript
+ * // SSE-only — Before (deprecated):
+ * const contract = buildSseContract({
+ *   method: 'get',
+ *   pathResolver: () => '/stream',
+ *   serverSentEventSchemas: { event: eventSchema },
+ * })
+ *
+ * // SSE-only — After (recommended):
+ * const contract = defineApiContract({
+ *   method: 'get',
+ *   pathResolver: () => '/stream',
+ *   responsesByStatusCode: { 200: sseResponse({ event: eventSchema }) },
+ * })
+ *
+ * // Dual-mode — Before (deprecated):
+ * const contract = buildSseContract({
+ *   method: 'post',
+ *   pathResolver: () => '/stream',
+ *   requestBodySchema: bodySchema,
+ *   successResponseBodySchema: jsonSchema,
+ *   serverSentEventSchemas: { chunk: chunkSchema },
+ * })
+ *
+ * // Dual-mode — After (recommended):
+ * const contract = defineApiContract({
+ *   method: 'post',
+ *   pathResolver: () => '/stream',
+ *   requestBodySchema: bodySchema,
+ *   responsesByStatusCode: {
+ *     200: anyOfResponses([sseResponse({ chunk: chunkSchema }), jsonSchema]),
+ *   },
+ * })
+ * ```
+ *
  * Builds SSE (Server-Sent Events) and dual-mode contracts.
  *
  * This builder supports two contract types:
