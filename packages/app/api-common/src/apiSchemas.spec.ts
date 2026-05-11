@@ -157,7 +157,7 @@ describe('apiSchemas', () => {
         const page: pageType = {
           data: [{ id: '1' }],
           meta: {
-            count: 1,
+            resultCount: 1,
             cursor: '1',
             hasMore: false,
           },
@@ -169,7 +169,7 @@ describe('apiSchemas', () => {
         const page: pageType = {
           data: [{ fake: '1' }] as any,
           meta: {
-            count: 1,
+            resultCount: 1,
             cursor: '1',
             hasMore: false,
           },

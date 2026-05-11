@@ -51,9 +51,14 @@ export const multiCursorOptionalPaginationSchema = <
 ) => multiCursorMandatoryPaginationSchema(cursorType).partial({ limit: true })
 
 export const zMeta = z.object({
-  count: z.number(),
-  cursor: z.string().optional().describe('Pagination cursor, a last item id from this result set'),
-  hasMore: z.boolean().optional().describe('Whether there are more items to fetch'),
+  resultCount: z.number().describe('Number of items returned in this response'),
+  cursor: z
+    .string()
+    .optional()
+    .describe(
+      'Opaque cursor pointing at the last item on the current page. Pass as `after` or `before` to navigate to the next or previous page.',
+    ),
+  hasMore: z.boolean().describe('Whether there are more items to fetch'),
 })
 
 export type PaginationMeta = z.infer<typeof zMeta>
