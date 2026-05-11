@@ -4,18 +4,15 @@
         "lib": ["ES2023"],
         "target": "ES2023",
         "skipLibCheck": true,
-        "esModuleInterop": true,
         "resolveJsonModule": true,
         "moduleDetection": "force",
         "verbatimModuleSyntax": true,
         "noEmit": true,
         "allowImportingTsExtensions": true,
-        "strict": true,
         "erasableSyntaxOnly": true,
         "noImplicitOverride": true,
         "noUncheckedIndexedAccess": true,
-        "noUncheckedSideEffectImports": true,
-        "types": ["node", "vitest/globals"]
+        "types": []
     },
     "include": [],
     "exclude": []

@@ -1,8 +1,8 @@
 import type promClient from 'prom-client'
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
-import { AbstractHistogramMetric } from './AbstractHistogramMetric.ts'
+import { AbstractLabeledHistogramMetric } from './AbstractLabeledHistogramMetric.ts'
 
-class HistogramMetric extends AbstractHistogramMetric<['label1', 'label2']> {
+class HistogramMetric extends AbstractLabeledHistogramMetric<['label1', 'label2']> {
   constructor(client?: typeof promClient) {
     super(
       {
@@ -16,7 +16,7 @@ class HistogramMetric extends AbstractHistogramMetric<['label1', 'label2']> {
   }
 }
 
-describe('AbstractHistogramMetric', () => {
+describe('AbstractLabeledHistogramMetric', () => {
   let observeMock: Mock
   let histogramMock: Mock
   let getSingleMetricMock: Mock

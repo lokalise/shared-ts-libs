@@ -4,11 +4,38 @@ import { ContractNoBody } from './constants.ts'
 import {
   anyOfResponses,
   blobResponse,
+  isJsonResponse,
   resolveContractResponse,
   resolveResponseEntry,
   sseResponse,
   textResponse,
 } from './contractResponse.ts'
+
+describe('isJsonResponse', () => {
+  it('returns true for a ZodType schema', () => {
+    expect(isJsonResponse(z.object({ id: z.string() }))).toBe(true)
+  })
+
+  it('returns false for textResponse', () => {
+    expect(isJsonResponse(textResponse('text/csv'))).toBe(false)
+  })
+
+  it('returns false for blobResponse', () => {
+    expect(isJsonResponse(blobResponse('image/png'))).toBe(false)
+  })
+
+  it('returns false for sseResponse', () => {
+    expect(isJsonResponse(sseResponse({ update: z.string() }))).toBe(false)
+  })
+
+  it('returns false for anyOfResponses', () => {
+    expect(isJsonResponse(anyOfResponses([z.object({ id: z.string() })]))).toBe(false)
+  })
+
+  it('returns false for ContractNoBody', () => {
+    expect(isJsonResponse(ContractNoBody)).toBe(false)
+  })
+})
 
 describe('resolveContractResponse', () => {
   describe('ContractNoBody', () => {

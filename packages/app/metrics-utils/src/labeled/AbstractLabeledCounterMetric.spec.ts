@@ -1,8 +1,11 @@
 import type promClient from 'prom-client'
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
-import { AbstractCounterMetric } from './AbstractCounterMetric.ts'
+import { AbstractLabeledCounterMetric } from './AbstractLabeledCounterMetric.ts'
 
-class ConcreteCounterMetric extends AbstractCounterMetric<'status', ['successful', 'failed']> {
+class ConcreteCounterMetric extends AbstractLabeledCounterMetric<
+  'status',
+  ['successful', 'failed']
+> {
   constructor(client?: typeof promClient) {
     super(
       {
@@ -16,7 +19,7 @@ class ConcreteCounterMetric extends AbstractCounterMetric<'status', ['successful
   }
 }
 
-describe('AbstractCounterMetric', () => {
+describe('AbstractLabeledCounterMetric', () => {
   let incMock: Mock
   let labelsMock: Mock
   let counterMock: Mock
@@ -114,6 +117,24 @@ describe('AbstractCounterMetric', () => {
       // Then
       expect(labelsMock).not.toHaveBeenCalled()
       expect(incMock).not.toHaveBeenCalled()
+    })
+
+    it('skips keys with undefined value', () => {
+      // Given
+      getSingleMetricMock.mockReturnValueOnce(counterMock())
+      const metric = new ConcreteCounterMetric(client)
+      labelsMock.mockClear()
+      incMock.mockClear()
+
+      // When
+      metric.registerMeasurement({ successful: 20, failed: undefined })
+
+      // Then
+      expect(labelsMock).toHaveBeenCalledTimes(1)
+      expect(labelsMock).toHaveBeenCalledWith({ status: 'successful' })
+      expect(labelsMock).not.toHaveBeenCalledWith({ status: 'failed' })
+      expect(incMock).toHaveBeenCalledTimes(1)
+      expect(incMock).toHaveBeenCalledWith(20)
     })
   })
 })

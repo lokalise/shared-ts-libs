@@ -171,18 +171,20 @@ export async function sendByApiContract<
   const captureAsError = params.captureAsError ?? true
   const strictContentType = params.strictContentType ?? true
 
-  const requestHeaders: Record<string, string> = (await resolveRequestHeaders(params.headers)) ?? {}
+  const requestHeaders = new Headers((await resolveRequestHeaders(params.headers)) ?? {})
+
+  if (params.body !== undefined && !requestHeaders.has('content-type')) {
+    requestHeaders.set('content-type', 'application/json')
+  }
 
   if (useStreaming) {
-    if (requestHeaders.accept && requestHeaders.accept !== 'text/event-stream') {
+    const existingAccept = requestHeaders.get('accept')
+    if (existingAccept && existingAccept !== 'text/event-stream') {
       throw new Error(
-        `Cannot use SSE streaming with a custom Accept header ("${requestHeaders.accept}"). Remove the header or set it to "text/event-stream".`,
+        `Cannot use SSE streaming with a custom Accept header ("${existingAccept}"). Remove the header or set it to "text/event-stream".`,
       )
     }
-    requestHeaders.accept = 'text/event-stream'
-  }
-  if (params.body !== undefined && !requestHeaders['content-type']) {
-    requestHeaders['content-type'] = 'application/json'
+    requestHeaders.set('accept', 'text/event-stream')
   }
 
   const path = buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix)
@@ -205,7 +207,7 @@ export async function sendByApiContract<
   const wretchInstance = wretch
     .middlewares([cloneErrorResponseMiddleware])
     .url(fullUrl)
-    .headers(requestHeaders)
+    .headers(Object.fromEntries(requestHeaders))
     .options({ signal: params.signal })
 
   let response: Response

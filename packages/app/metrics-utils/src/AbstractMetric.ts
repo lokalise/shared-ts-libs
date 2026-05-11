@@ -1,38 +1,31 @@
 import type promClient from 'prom-client'
 import type { Metric } from 'prom-client'
 
-export type BaseMetricParams = {
-  name: string
+export type CommonMetricParams = {
   helpDescription: string
 }
 
-export type BaseDimensionalMetricParams = {
-  namePrefix: string
-  nameSuffix: string
-  helpDescription: string
+export type LabeledMetricParams = CommonMetricParams & {
+  name: string
+}
+
+export type DimensionalMetricParams<TDimensions extends readonly string[]> = CommonMetricParams & {
+  dimensions: TDimensions
+  buildMetricName: (dimension: TDimensions[number]) => string
 }
 
 export abstract class AbstractMetric<
   MetricType extends Metric,
-  MetricsParams extends BaseMetricParams,
+  MetricsParams extends CommonMetricParams,
+  TMeasurement,
 > {
-  protected readonly metric?: MetricType
   protected readonly metricConfig: MetricsParams
 
-  protected constructor(metricConfig: MetricsParams, client?: typeof promClient) {
+  protected constructor(metricConfig: MetricsParams) {
     this.metricConfig = metricConfig
-
-    if (!client) return
-    this.metric = this.registerMetric(client)
   }
 
-  private registerMetric(client: typeof promClient): MetricType {
-    const existingMetric = client.register.getSingleMetric(this.metricConfig.name)
+  protected abstract createMetric(name: string, client: typeof promClient): MetricType
 
-    return existingMetric ? (existingMetric as MetricType) : this.createMetric(client)
-  }
-
-  protected abstract createMetric(client: typeof promClient): MetricType
-
-  public abstract registerMeasurement(measurement: unknown): void
+  public abstract registerMeasurement(measurement: TMeasurement): void
 }

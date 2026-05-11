@@ -5,7 +5,7 @@ Shared TypeScript configuration for Lokalise projects.
 ## Getting Started
 
 ### Requirements:
-- TypeScript `>=5.9.0`
+- TypeScript `>=6.0.0`
 - ESM codebase
 
 ### Installation:
@@ -104,8 +104,25 @@ To include additional type definitions, add `types` option in `tsconfig.json`:
 {
   "extends": "@lokalise/tsconfig/tsc",
   "compilerOptions": {
-    "types": ["vitest/globals"]
+    "types": ["node", "vitest/globals"]
   }
+}
+```
+
+## **Changing Source and Output Directories**
+
+The build presets (`build-app`, `build-public-lib`, `build-private-lib`) default to `src/` as the source directory and `dist/` as the output directory.
+To override either, set `rootDir` or `outDir` in your `tsconfig.build.json`:
+
+```json
+{
+  "extends": ["./tsconfig.json", "@lokalise/tsconfig/build-app"],
+  "compilerOptions": {
+    "rootDir": "./lib",
+    "outDir": "./build"
+  },
+  "include": ["lib/**/*"],
+  "exclude": ["lib/**/*.test.ts"]
 }
 ```
 
