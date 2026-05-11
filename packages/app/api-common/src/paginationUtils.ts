@@ -29,12 +29,12 @@ const getMetaForNextPage = <T extends Record<string, unknown>, K extends keyof T
     throw new Error('cursorKeys cannot be an empty array')
   }
   if (currentPageData.length === 0) {
-    return { resultCount: 0, hasMore: false }
+    return { count: 0, hasMore: false }
   }
 
-  const resultCount = Math.min(currentPageData.length, pageLimit)
+  const count = Math.min(currentPageData.length, pageLimit)
 
-  const lastElement = currentPageData[resultCount - 1] as T
+  const lastElement = currentPageData[count - 1] as T
   let cursor: string
   if (cursorKeysOrBuilder === undefined) {
     cursor = lastElement.id as string
@@ -48,7 +48,7 @@ const getMetaForNextPage = <T extends Record<string, unknown>, K extends keyof T
         : encodeCursor(pick(lastElement, cursorKeysOrBuilder))
   }
 
-  return { resultCount, cursor, hasMore: currentPageData.length > pageLimit }
+  return { count, cursor, hasMore: currentPageData.length > pageLimit }
 }
 
 /**

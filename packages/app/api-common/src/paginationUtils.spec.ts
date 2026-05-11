@@ -10,7 +10,7 @@ describe('paginationUtils', () => {
       const result = createPaginatedResponse(mockedArray, 2)
       expect(result).toEqual({
         data: [],
-        meta: { resultCount: 0, hasMore: false },
+        meta: { count: 0, hasMore: false },
       })
     })
 
@@ -21,7 +21,7 @@ describe('paginationUtils', () => {
         const result = createPaginatedResponse(mockedArray, 2)
         expect(result).toEqual({
           data: [mockedArray[0], mockedArray[1]],
-          meta: { resultCount: 2, cursor: 'b', hasMore: true },
+          meta: { count: 2, cursor: 'b', hasMore: true },
         })
       })
 
@@ -29,7 +29,7 @@ describe('paginationUtils', () => {
         const result = createPaginatedResponse(mockedArray, 4)
         expect(result).toEqual({
           data: mockedArray,
-          meta: { resultCount: 4, cursor: 'd', hasMore: false },
+          meta: { count: 4, cursor: 'd', hasMore: false },
         })
       })
 
@@ -37,7 +37,7 @@ describe('paginationUtils', () => {
         const result = createPaginatedResponse(mockedArray, 6)
         expect(result).toEqual({
           data: mockedArray,
-          meta: { resultCount: 4, cursor: 'd', hasMore: false },
+          meta: { count: 4, cursor: 'd', hasMore: false },
         })
       })
     })
@@ -49,7 +49,7 @@ describe('paginationUtils', () => {
           const result = createPaginatedResponse(mockedArray, 2)
           expect(result).toEqual({
             data: [mockedArray[0], mockedArray[1]],
-            meta: { resultCount: 2, cursor: 'b', hasMore: true },
+            meta: { count: 2, cursor: 'b', hasMore: true },
           })
         })
       })
@@ -71,7 +71,7 @@ describe('paginationUtils', () => {
           const result = createPaginatedResponse(mockedArray, 3, ['name'])
           expect(result).toEqual({
             data: mockedArray,
-            meta: { resultCount: 2, cursor: 'world', hasMore: false },
+            meta: { count: 2, cursor: 'world', hasMore: false },
           })
         })
 
@@ -97,7 +97,7 @@ describe('paginationUtils', () => {
           expect(result).toEqual({
             data: mockedArray,
             meta: {
-              resultCount: 3,
+              count: 3,
               cursor: encodeCursor({ id: '3', name: 'orange' }),
               hasMore: false,
             },
@@ -116,7 +116,7 @@ describe('paginationUtils', () => {
           const result = createPaginatedResponse(nestedArray, 2, (item) => item.author.name)
           expect(result).toEqual({
             data: [nestedArray[0], nestedArray[1]],
-            meta: { resultCount: 2, cursor: 'bob', hasMore: true },
+            meta: { count: 2, cursor: 'bob', hasMore: true },
           })
         })
 
@@ -128,7 +128,7 @@ describe('paginationUtils', () => {
           expect(result).toEqual({
             data: nestedArray,
             meta: {
-              resultCount: 3,
+              count: 3,
               cursor: encodeCursor({ id: '3', authorName: 'carol' }),
               hasMore: false,
             },
@@ -141,7 +141,7 @@ describe('paginationUtils', () => {
           expect(builder).not.toHaveBeenCalled()
           expect(result).toEqual({
             data: [],
-            meta: { resultCount: 0, hasMore: false },
+            meta: { count: 0, hasMore: false },
           })
         })
 
@@ -160,7 +160,7 @@ describe('paginationUtils', () => {
       const spy = vi.spyOn(market, 'getApples').mockResolvedValueOnce({
         data: [{ id: 'red' }],
         meta: {
-          resultCount: 1,
+          count: 1,
           cursor: 'red',
           hasMore: false,
         },
@@ -178,7 +178,7 @@ describe('paginationUtils', () => {
       const spy = vi.spyOn(market, 'getApples').mockResolvedValueOnce({
         data: [],
         meta: {
-          resultCount: 0,
+          count: 0,
           hasMore: false,
         },
       })
@@ -197,7 +197,7 @@ describe('paginationUtils', () => {
         .mockResolvedValueOnce({
           data: [{ id: 'red' }],
           meta: {
-            resultCount: 1,
+            count: 1,
             cursor: 'red',
             hasMore: true,
           },
@@ -205,7 +205,7 @@ describe('paginationUtils', () => {
         .mockResolvedValueOnce({
           data: [{ id: 'blue' }],
           meta: {
-            resultCount: 1,
+            count: 1,
             cursor: 'blue',
             hasMore: false,
           },
@@ -225,7 +225,7 @@ describe('paginationUtils', () => {
       const spy = vi.spyOn(market, 'getApples').mockResolvedValueOnce({
         data: [{ id: 'red' }],
         meta: {
-          resultCount: 1,
+          count: 1,
           cursor: 'red',
           hasMore: false,
         },
@@ -244,7 +244,7 @@ describe('paginationUtils', () => {
       const spy = vi.spyOn(market, 'getApples').mockResolvedValueOnce({
         data: [{ id: 'red' }],
         meta: {
-          resultCount: 1,
+          count: 1,
           cursor: 'red',
           hasMore: false,
         },
@@ -276,7 +276,7 @@ type Entity = {
 type GetApplesResponse = {
   data: Entity[]
   meta: {
-    resultCount: number
+    count: number
     cursor?: string
     hasMore: boolean
   }
@@ -286,7 +286,7 @@ const market = {
     return Promise.resolve({
       data: [{ id: 'red' }],
       meta: {
-        resultCount: params.limit ?? 1,
+        count: params.limit ?? 1,
         cursor: 'red',
         hasMore: false,
       },

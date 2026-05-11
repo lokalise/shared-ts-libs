@@ -51,7 +51,7 @@ export const multiCursorOptionalPaginationSchema = <
 ) => multiCursorMandatoryPaginationSchema(cursorType).partial({ limit: true })
 
 export const zMeta = z.object({
-  resultCount: z.number().describe('Number of items returned in this response'),
+  count: z.number().describe('Number of items returned in this response'),
   cursor: z
     .string()
     .optional()
