@@ -58,7 +58,7 @@ const getMetaForNextPage = <T extends Record<string, unknown>, K extends keyof T
  * @param pageLimit - Expected count of items in the current page.
  * 	- If page length is less than or equal to pageLimit, it means that there are no more items to fetch.
  * 		In that case, hasMore flag will be set to false. Otherwise, hasMore flag will be set to true.
- * 		If page length is greater than pageLimit, it will be sliced and resultCount will be set to pageLimit.
+ * 		If page length is greater than pageLimit, it will be sliced and `count` will be set to pageLimit.
  * @param cursorKeysOrBuilder - Either an array of top-level keys, or a builder function that receives the last
  *    element of the page and returns the cursor payload. By default, the 'id' property is used.
  *  - If undefined, the cursor will default to the 'id' property of the last element in 'data'.
