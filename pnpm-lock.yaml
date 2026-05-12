@@ -27,6 +27,9 @@ importers:
       '@lokalise/tsconfig':
         specifier: ^4.0.0
         version: 4.0.0
+      '@types/node':
+        specifier: ^25.0.3
+        version: 25.6.2
       '@vitest/coverage-v8':
         specifier: ^4.0.15
         version: 4.1.5(vitest@4.1.5)
@@ -38,7 +41,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: ^4.0.15
-        version: 4.1.5(@opentelemetry/api@1.9.0)(@types/node@25.7.0)(@vitest/coverage-v8@4.1.5)(msw@2.14.5(@types/node@25.7.0)(typescript@6.0.3))(vite@6.4.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.8.4))
+        version: 4.1.5(@opentelemetry/api@1.9.0)(@types/node@25.6.2)(@vitest/coverage-v8@4.1.5)(msw@2.14.5(@types/node@25.6.2)(typescript@6.0.3))(vite@6.4.2(@types/node@25.6.2)(jiti@2.7.0)(yaml@2.8.4))
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -54,6 +57,9 @@ importers:
       '@lokalise/tsconfig':
         specifier: ^4.0.0
         version: 4.0.0
+      '@types/node':
+        specifier: ^25.0.3
+        version: 25.6.2
       '@vitest/coverage-v8':
         specifier: ^4.0.18
         version: 4.1.5(vitest@4.1.5)
@@ -65,7 +71,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: ^4.0.18
-        version: 4.1.5(@opentelemetry/api@1.9.0)(@types/node@25.7.0)(@vitest/coverage-v8@4.1.5)(msw@2.14.5(@types/node@25.7.0)(typescript@6.0.3))(vite@6.4.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.8.4))
+        version: 4.1.5(@opentelemetry/api@1.9.0)(@types/node@25.6.2)(@vitest/coverage-v8@4.1.5)(msw@2.14.5(@types/node@25.6.2)(typescript@6.0.3))(vite@6.4.2(@types/node@25.6.2)(jiti@2.7.0)(yaml@2.8.4))
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -364,6 +370,9 @@ importers:
       '@lokalise/tsconfig':
         specifier: ^4.0.0
         version: 4.0.0
+      '@types/node':
+        specifier: ^25.0.3
+        version: 25.6.2
       dd-trace:
         specifier: ^5.85.0
         version: 5.102.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0))
@@ -385,6 +394,9 @@ importers:
       '@lokalise/tsconfig':
         specifier: ^4.0.0
         version: 4.0.0
+      '@types/node':
+        specifier: ^25.0.3
+        version: 25.6.2
       '@vitest/coverage-v8':
         specifier: ^4.0.15
         version: 4.1.5(vitest@4.1.5)
@@ -399,10 +411,10 @@ importers:
         version: 1.0.0-beta.23
       drizzle-orm:
         specifier: 1.0.0-beta.23
-        version: 1.0.0-beta.23(@electric-sql/pglite@0.4.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(mysql2@3.22.3(@types/node@25.7.0))(pg@8.20.0)(postgres@3.4.9)(valibot@1.2.0(typescript@6.0.3))(zod@4.4.3)
+        version: 1.0.0-beta.23(@electric-sql/pglite@0.4.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(mysql2@3.22.3(@types/node@25.6.2))(pg@8.20.0)(postgres@3.4.9)(valibot@1.2.0(typescript@6.0.3))(zod@4.4.3)
       mysql2:
         specifier: ^3.14.0
-        version: 3.22.3(@types/node@25.7.0)
+        version: 3.22.3(@types/node@25.6.2)
       postgres:
         specifier: ^3.4.8
         version: 3.4.9
@@ -414,7 +426,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: ^4.0.15
-        version: 4.1.5(@opentelemetry/api@1.9.0)(@types/node@25.7.0)(@vitest/coverage-v8@4.1.5)(msw@2.14.5(@types/node@25.7.0)(typescript@6.0.3))(vite@6.4.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.8.4))
+        version: 4.1.5(@opentelemetry/api@1.9.0)(@types/node@25.6.2)(@vitest/coverage-v8@4.1.5)(msw@2.14.5(@types/node@25.6.2)(typescript@6.0.3))(vite@6.4.2(@types/node@25.6.2)(jiti@2.7.0)(yaml@2.8.4))
 
   packages/app/error-utils:
     dependencies:
@@ -841,6 +853,9 @@ importers:
       '@lokalise/tsconfig':
         specifier: ^4.0.0
         version: 4.0.0
+      '@types/node':
+        specifier: ^25.0.3
+        version: 25.6.2
       '@vitest/coverage-v8':
         specifier: ^4.0.15
         version: 4.1.5(vitest@4.1.5)
@@ -852,7 +867,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: ^4.0.15
-        version: 4.1.5(@opentelemetry/api@1.9.0)(@types/node@25.7.0)(@vitest/coverage-v8@4.1.5)(msw@2.14.5(@types/node@25.7.0)(typescript@6.0.3))(vite@6.4.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.8.4))
+        version: 4.1.5(@opentelemetry/api@1.9.0)(@types/node@25.6.2)(@vitest/coverage-v8@4.1.5)(msw@2.14.5(@types/node@25.6.2)(typescript@6.0.3))(vite@6.4.2(@types/node@25.6.2)(jiti@2.7.0)(yaml@2.8.4))
 
   packages/app/prisma-utils:
     dependencies:
@@ -10772,7 +10787,7 @@ snapshots:
       obug: 2.1.1
       std-env: 4.1.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.5(@opentelemetry/api@1.9.0)(@types/node@25.7.0)(@vitest/coverage-v8@4.1.5)(msw@2.14.5(@types/node@25.7.0)(typescript@6.0.3))(vite@6.4.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.8.4))
+      vitest: 4.1.5(@opentelemetry/api@1.9.0)(@types/node@25.6.2)(@vitest/coverage-v8@4.1.5)(msw@2.14.5(@types/node@25.6.2)(typescript@6.0.3))(vite@6.4.2(@types/node@25.6.2)(jiti@2.7.0)(yaml@2.8.4))
 
   '@vitest/coverage-v8@4.1.5(vitest@4.1.6)':
     dependencies:
@@ -11550,12 +11565,12 @@ snapshots:
       get-tsconfig: 4.14.0
       jiti: 2.7.0
 
-  drizzle-orm@1.0.0-beta.23(@electric-sql/pglite@0.4.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(mysql2@3.22.3(@types/node@25.7.0))(pg@8.20.0)(postgres@3.4.9)(valibot@1.2.0(typescript@6.0.3))(zod@4.4.3):
+  drizzle-orm@1.0.0-beta.23(@electric-sql/pglite@0.4.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(mysql2@3.22.3(@types/node@25.6.2))(pg@8.20.0)(postgres@3.4.9)(valibot@1.2.0(typescript@6.0.3))(zod@4.4.3):
     optionalDependencies:
       '@electric-sql/pglite': 0.4.1
       '@opentelemetry/api': 1.9.0
       '@types/pg': 8.20.0
-      mysql2: 3.22.3(@types/node@25.7.0)
+      mysql2: 3.22.3(@types/node@25.6.2)
       pg: 8.20.0
       postgres: 3.4.9
       valibot: 1.2.0(typescript@6.0.3)
@@ -13161,9 +13176,9 @@ snapshots:
       seq-queue: 0.0.5
       sqlstring: 2.3.3
 
-  mysql2@3.22.3(@types/node@25.7.0):
+  mysql2@3.22.3(@types/node@25.6.2):
     dependencies:
-      '@types/node': 25.7.0
+      '@types/node': 25.6.2
       aws-ssl-profiles: 1.1.2
       denque: 2.1.0
       generate-function: 2.3.1
