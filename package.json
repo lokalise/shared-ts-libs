@@ -1,8 +1,18 @@
 {
   "name": "shared-ts-libs",
-  "version": "1.0.0",
-  "description": "Opinionated HTTP client for the Node.js backend",
-  "packageManager": "pnpm@11.1.0",
+  "private": true,
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=24.0.0",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "version": ">=11.0.0",
+      "onFail": "error"
+    }
+  },
   "scripts": {
     "clean": "turbo run clean",
     "build": "turbo run build",
