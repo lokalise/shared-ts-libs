@@ -1,18 +1,7 @@
 {
   "name": "shared-ts-libs",
   "private": true,
-  "devEngines": {
-    "runtime": {
-      "name": "node",
-      "version": ">=22.0.0",
-      "onFail": "error"
-    },
-    "packageManager": {
-      "name": "pnpm",
-      "version": ">=11.0.0",
-      "onFail": "error"
-    }
-  },
+  "packageManager": "pnpm@11.1.0",
   "scripts": {
     "clean": "turbo run clean",
     "build": "turbo run build",

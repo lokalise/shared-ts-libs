@@ -36,7 +36,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build Package
-        run: npm run build -- --filter=${{ inputs.package_name }}
+        run: pnpm run build --filter=${{ inputs.package_name }}
 
       - name: Setup git config
         run: |
