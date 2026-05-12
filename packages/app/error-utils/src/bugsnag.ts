@@ -1,4 +1,4 @@
-import Bugsnag, { type NodeConfig, type Event, type NotifiableError } from '@bugsnag/node'
+import Bugsnag, { type Event, type NodeConfig, type NotifiableError } from '@bugsnag/node'
 import type { ErrorReporter, FreeformRecord } from '@lokalise/node-core'
 import { isError, isInternalError, isPublicNonRecoverableError } from '@lokalise/node-core'
 
