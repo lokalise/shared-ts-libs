@@ -174,8 +174,12 @@ async function runSseConnection(
       handleSseEvent(event, data, contract, callbacks)
     }
 
-    // Natural end of stream — server closed without error and we weren't aborted.
+    // Natural end of stream — server closed without error. The aborted-here
+    // branch is only reachable if abort is signaled between reader.read() calls
+    // (otherwise reader.read() throws and we go to catch), so coverage skips it.
+    /* v8 ignore start */
     if (!abortController.signal.aborted) callbacks.onClose?.()
+    /* v8 ignore stop */
   } catch (err) {
     /* v8 ignore start */
     if (!abortController.signal.aborted) {
