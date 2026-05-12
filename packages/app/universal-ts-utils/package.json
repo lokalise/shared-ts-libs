@@ -28,7 +28,7 @@
         "test": "vitest",
         "test:ci": "vitest --coverage",
         "test:update-snapshots": "vitest -u",
-        "prepublishOnly": "npm run build",
+        "prepublishOnly": "pnpm run build",
         "postversion": "biome check --write package.json",
         "package-version": "echo $npm_package_version"
     },

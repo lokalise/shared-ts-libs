@@ -1,11 +1,7 @@
 {
   "name": "shared-ts-libs",
-  "version": "1.0.0",
-  "description": "Opinionated HTTP client for the Node.js backend",
-  "workspaces": [
-    "packages/dev/*",
-    "packages/app/*"
-  ],
+  "private": true,
+  "packageManager": "pnpm@11.1.0",
   "scripts": {
     "clean": "turbo run clean",
     "build": "turbo run build",
@@ -14,8 +10,6 @@
     "lint:fix": "turbo run lint:fix --continue=always"
   },
   "devDependencies": {
-    "pino": "^10.1.0",
     "turbo": "^2.4.4"
-  },
-  "packageManager": "npm@10.7.0"
+  }
 }

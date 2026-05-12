@@ -27,7 +27,7 @@
         "pretest:ci": "docker compose up -d",
         "test:ci": "vitest run --coverage",
         "posttest:ci": "docker compose down",
-        "prepublishOnly": "npm run build",
+        "prepublishOnly": "pnpm run build",
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
     },

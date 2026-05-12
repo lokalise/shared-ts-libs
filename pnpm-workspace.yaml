@@ -1,0 +1,18 @@
+packages:
+  - "packages/dev/*"
+  - "packages/app/*"
+allowBuilds:
+  '@datadog/native-appsec': true
+  '@datadog/native-iast-taint-tracking': true
+  '@datadog/native-metrics': true
+  '@datadog/pprof': true
+  '@newrelic/fn-inspect': true
+  '@newrelic/native-metrics': true
+  '@prisma/engines': true
+  dd-trace: true
+  esbuild: true
+  msgpackr-extract: true
+  msw: true
+  prisma: true
+  protobufjs: true
+  unrs-resolver: true

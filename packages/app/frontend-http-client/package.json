@@ -33,7 +33,7 @@
         "test": "vitest run",
         "test:ci": "vitest run --coverage",
         "package-version": "echo $npm_package_version",
-        "prepublishOnly": "npm run clean && npm run build",
+        "prepublishOnly": "pnpm run clean && pnpm run build",
         "postversion": "biome check --write package.json"
     },
     "dependencies": {

@@ -26,13 +26,13 @@
         "./package.json": "./package.json"
     },
     "scripts": {
-        "build": "npm run clean && tsc --project tsconfig.build.json",
+        "build": "pnpm run clean && tsc --project tsconfig.build.json",
         "clean": "rimraf dist",
         "lint": "biome check . && tsc",
         "lint:fix": "biome check --write",
         "test": "vitest run --typecheck",
-        "test:ci": "npm run test -- --coverage",
-        "prepublishOnly": "npm run build",
+        "test:ci": "pnpm run test -- --coverage",
+        "prepublishOnly": "pnpm run build",
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
     },
@@ -40,8 +40,8 @@
         "@lokalise/fastify-extras": ">=29.0.0",
         "@lokalise/node-core": ">=14.0.0",
         "@lokalise/universal-ts-utils": ">=4.5.0",
-        "fastify": "^5.6.0",
         "fast-jwt": "^6.0.2",
+        "fastify": "^5.6.0",
         "jwks-rsa": "^3.2.0",
         "pino": ">=9.0.0"
     },
@@ -54,6 +54,7 @@
         "@lokalise/universal-ts-utils": "^4.5.1",
         "@types/node": "^25.0.3",
         "@vitest/coverage-v8": "^4.0.15",
+        "jose": "^6.2.3",
         "mockttp": "^4.1.0",
         "rimraf": "^6.0.1",
         "typescript": "6.0.3",
