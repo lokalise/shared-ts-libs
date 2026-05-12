@@ -233,6 +233,43 @@ describe('sendByApiContract', () => {
 
       expect(result.result?.headers['set-cookie']).toBeDefined()
     })
+
+    it('resolves headers when provided as a function', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        requestHeaderSchema: z.object({ authorization: z.string() }),
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await mockServer
+        .forGet('/products/1')
+        .withHeaders({ authorization: 'Bearer token' })
+        .thenJson(200, mockProduct1, JSON_HEADERS)
+
+      const result = await sendByApiContract(client, contract, {
+        headers: () => ({ authorization: 'Bearer token' }),
+      })
+
+      expect(result.result).toMatchObject({ body: mockProduct1 })
+    })
+
+    it('parses and merges response headers when responseHeaderSchema is defined', async () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.object({ id: z.number() }) },
+        responseHeaderSchema: z.object({ 'x-request-id': z.string() }),
+      })
+
+      await mockServer
+        .forGet('/products/1')
+        .thenJson(200, { id: 1 }, { ...JSON_HEADERS, 'x-request-id': 'abc-123' })
+
+      const result = await sendByApiContract(client, contract, {})
+
+      expect(result.result?.headers['x-request-id']).toBe('abc-123')
+    })
   })
 
   describe('POST', () => {
@@ -351,7 +388,6 @@ describe('sendByApiContract', () => {
         return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
       })
 
-      // biome-ignore lint/suspicious/noExplicitAny: intentionally testing runtime case-insensitivity
       await sendByApiContract(client, contract, {
         body: { name: 'test' },
         headers: { 'Content-Type': 'text/plain' },

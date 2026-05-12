@@ -1,7 +1,8 @@
-import type { DefiniteEither } from '@lokalise/node-core'
-import type { Client } from 'undici'
-import type { Either, InternalRequestError, RequestResult, RetryConfig } from 'undici-retry'
+import type { DefiniteEither, Either } from '@lokalise/node-core'
+import type { Client, Dispatcher } from 'undici'
 import type { ZodSchema } from 'zod/v4'
+import type { RetryConfig } from '../api-contract/retry.ts'
+import type { InternalRequestError } from '../errors/InternalRequestError.ts'
 
 // biome-ignore lint/suspicious/noExplicitAny: ok
 export type RecordObject = Record<string, any>
@@ -10,8 +11,11 @@ export type HttpRequestContext = {
   reqId: string
 }
 
-export function isInternalRequestError(error: unknown): error is InternalRequestError {
-  return (error as InternalRequestError).isInternalRequestError === true
+export type RequestResult<T> = {
+  body: T
+  headers: Dispatcher.ResponseData['headers']
+  statusCode: number
+  requestLabel?: string
 }
 
 export type InternalRequestOptions<T extends ZodSchema | undefined> = {
@@ -25,7 +29,7 @@ export type InternalRequestOptions<T extends ZodSchema | undefined> = {
   requestLabel: string
 
   disableKeepAlive?: boolean
-  retryConfig?: RetryConfig
+  retryConfig?: RetryConfig | true
   clientOptions?: Client.Options
   responseSchema: T
   validateResponse?: boolean
