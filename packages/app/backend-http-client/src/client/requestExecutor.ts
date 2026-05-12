@@ -79,6 +79,9 @@ export async function executeRequest<T>(
       },
     }
   } catch (err) {
+    if (err instanceof ResponseParseError) {
+      return { error: err }
+    }
     return { error: new InternalRequestError(err, options.requestLabel) }
   }
 }

@@ -388,7 +388,6 @@ describe('sendByApiContract', () => {
         return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ id: 1 }) }
       })
 
-      // biome-ignore lint/suspicious/noExplicitAny: intentionally testing runtime case-insensitivity
       await sendByApiContract(client, contract, {
         body: { name: 'test' },
         headers: { 'Content-Type': 'text/plain' },
