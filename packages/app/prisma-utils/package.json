@@ -19,7 +19,7 @@
         "url": "https://github.com/lokalise/shared-ts-libs.git"
     },
     "scripts": {
-        "build": "rimraf dist && npm run db:update-client && tsc --project tsconfig.build.json",
+        "build": "rimraf dist && pnpm run db:update-client && tsc --project tsconfig.build.json",
         "clean": "rimraf dist",
         "lint": "biome check . && tsc",
         "lint:fix": "biome check --write",
@@ -27,10 +27,10 @@
         "db:update-client": "prisma generate",
         "test": "vitest run",
         "test:migrate": "cross-env NODE_ENV=test prisma migrate reset --config=./prisma/prisma.config --force",
-        "pretest:ci": "docker compose up -d --wait && npm run test:migrate",
-        "test:ci": "npm run test",
+        "pretest:ci": "docker compose up -d --wait && pnpm run test:migrate",
+        "test:ci": "pnpm run test",
         "posttest:ci": "docker compose down",
-        "prepublishOnly": "npm run build",
+        "prepublishOnly": "pnpm run build",
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
     },

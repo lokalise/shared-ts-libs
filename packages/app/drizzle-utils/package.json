@@ -25,15 +25,15 @@
         "url": "https://github.com/lokalise/shared-ts-libs.git"
     },
     "scripts": {
-        "build": "npm run clean && tsc --project tsconfig.build.json",
+        "build": "pnpm run clean && tsc --project tsconfig.build.json",
         "clean": "rimraf dist",
         "lint": "biome check . && tsc",
         "lint:fix": "biome check --write",
         "test": "vitest run",
         "pretest:ci": "docker compose up -d --quiet-pull --wait",
-        "test:ci": "npm run test -- --coverage",
+        "test:ci": "pnpm run test -- --coverage",
         "posttest:ci": "docker compose down",
-        "prepublishOnly": "npm run build",
+        "prepublishOnly": "pnpm run build",
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
     },
