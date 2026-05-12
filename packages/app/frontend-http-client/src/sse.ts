@@ -22,6 +22,13 @@ export type SseCallbacks<Events extends SSEEventSchemas> = {
   }
   onError?: (error: Error) => void
   onOpen?: () => void
+  /**
+   * Fires once the server closes the stream naturally (i.e. without an error and
+   * without the caller invoking `close()`). Use this to react to end-of-stream
+   * without inferring it from event content. Not called on aborted streams or
+   * errors — `onError` is the signal for those.
+   */
+  onClose?: () => void
 }
 
 type AnyContract = AnyDualModeContractDefinition | AnySSEContractDefinition
@@ -166,6 +173,9 @@ async function runSseConnection(
       /* v8 ignore stop */
       handleSseEvent(event, data, contract, callbacks)
     }
+
+    // Natural end of stream — server closed without error and we weren't aborted.
+    if (!abortController.signal.aborted) callbacks.onClose?.()
   } catch (err) {
     /* v8 ignore start */
     if (!abortController.signal.aborted) {
