@@ -1,3 +1,5 @@
+export { ApiContractMockttpHelper } from './api-contracts/ApiContractMockttpHelper.ts'
+export type { MockResponseParams } from './api-contracts/types.ts'
 export {
   type DualModeMockParams,
   type DualModeMockParamsNoPath,

@@ -18,154 +18,85 @@ const pick = <T, K extends string | number | symbol>(
   return result
 }
 
-/**
- * @deprecated use `createPaginatedResponse` instead
- *
- * Constructs a PaginationMeta object encapsulating the total count and the cursor for fetching the next page.
- *
- * The resultant cursor can be either a simple string or an encoded string based on the 'cursorKeys' parameter.
- * 	- If 'cursorKeys' is undefined, the cursor will default to the 'id' property of the last element in 'data'.
- * 	- If 'cursorKeys' contains a single key, the cursor will correspond to the value of that key from the last element
- * 		in 'data'.
- * 	- If 'cursorKeys' features multiple keys, the cursor will be an encoded string incorporating the values of these
- * 		keys from the last element in 'data'.
- *
- * @param currentPageData - A generic array of objects, each object expected to extend { id: string }.
- * @param cursorKeys - An optional array of keys that determine the formation of the cursor. By default, this uses
- * 	the 'id' property.
- * @param pageLimit - An optional number that can be used to specify the expected count of items in the current page.
- * 	- If it is provided and currentPageData length is less than or equal to pageLimit, it means that there are no more items to fetch.
- * 		In that case, hasMore flag will be set to false. Otherwise, hasMore flag will be set to true.
- * 		If currentPageData length is greater than pageLimit, count will be set to pageLimit.
- * 	- If the parameter is not provided, hasMore flag will be undefined.
- *
- * @returns PaginationMeta - An object detailing two crucial properties required for effective pagination: total item
- * 	count, the cursor and has more flag.
- */
-export function getMetaForNextPage<T extends { id: string }>(
+type CursorBuilder<T> = (lastItem: T) => string | Record<string, unknown>
+
+const getMetaForNextPage = <T extends Record<string, unknown>, K extends keyof T>(
   currentPageData: T[],
-  cursorKeys?: undefined,
-  pageLimit?: number,
-): PaginationMeta
-export function getMetaForNextPage<T extends Record<string, unknown>, K extends keyof T>(
-  currentPageData: T[],
-  cursorKeys: K[],
-  pageLimit?: number,
-): PaginationMeta
-export function getMetaForNextPage<T extends Record<string, unknown>, K extends keyof T>(
-  currentPageData: T[],
-  cursorKeys?: K[],
-  pageLimit?: number,
-): PaginationMeta {
-  if (cursorKeys !== undefined && cursorKeys.length === 0) {
+  pageLimit: number,
+  cursorKeysOrBuilder?: K[] | CursorBuilder<T>,
+): PaginationMeta => {
+  if (Array.isArray(cursorKeysOrBuilder) && cursorKeysOrBuilder.length === 0) {
     throw new Error('cursorKeys cannot be an empty array')
   }
   if (currentPageData.length === 0) {
     return { count: 0, hasMore: false }
   }
 
-  const count = pageLimit ? Math.min(currentPageData.length, pageLimit) : currentPageData.length
+  const count = Math.min(currentPageData.length, pageLimit)
 
   const lastElement = currentPageData[count - 1] as T
   let cursor: string
-  if (!cursorKeys) {
+  if (cursorKeysOrBuilder === undefined) {
     cursor = lastElement.id as string
+  } else if (typeof cursorKeysOrBuilder === 'function') {
+    const builtCursor = cursorKeysOrBuilder(lastElement)
+    cursor = typeof builtCursor === 'string' ? builtCursor : encodeCursor(builtCursor)
   } else {
     cursor =
-      cursorKeys.length === 1
-        ? (lastElement[cursorKeys[0] as K] as string)
-        : encodeCursor(pick(lastElement, cursorKeys))
+      cursorKeysOrBuilder.length === 1
+        ? (lastElement[cursorKeysOrBuilder[0] as K] as string)
+        : encodeCursor(pick(lastElement, cursorKeysOrBuilder))
   }
 
-  return {
-    count,
-    cursor,
-    hasMore: pageLimit ? currentPageData.length > pageLimit : undefined,
-  }
+  return { count, cursor, hasMore: currentPageData.length > pageLimit }
 }
 
 /**
  * Constructs a PaginatedResponse object with the current page respecting page limit and building meta to retrieve next page.
  *
- * @param page - Current page of objects which will be included in `data`. It will be sliced to pageLimit if provided
- * @param pageLimit - An optional number that can be used to specify the expected count of items in the current page.
- * 	- If it is provided and page length is less than or equal to pageLimit, it means that there are no more items to fetch.
+ * @param page - Current page of objects which will be included in `data`. It will be sliced to pageLimit.
+ * @param pageLimit - Expected count of items in the current page.
+ * 	- If page length is less than or equal to pageLimit, it means that there are no more items to fetch.
  * 		In that case, hasMore flag will be set to false. Otherwise, hasMore flag will be set to true.
- * 		If currentPageData length is greater than pageLimit, it will be sliced and count will be set to pageLimit.
- * 	- If the parameter is not provided, hasMore flag will be undefined.
- * @param cursorKeys - An optional array of keys that determine the formation of the cursor. By default, this uses
- *    the 'id' property.
- *  - If 'cursorKeys' is undefined, the cursor will default to the 'id' property of the last element in 'data'.
- *  - If 'cursorKeys' contains a single key, the cursor will correspond to the value of that key from the last element
+ * 		If page length is greater than pageLimit, it will be sliced and `count` will be set to pageLimit.
+ * @param cursorKeysOrBuilder - Either an array of top-level keys, or a builder function that receives the last
+ *    element of the page and returns the cursor payload. By default, the 'id' property is used.
+ *  - If undefined, the cursor will default to the 'id' property of the last element in 'data'.
+ *  - If an array with a single key, the cursor will correspond to the value of that key from the last element
  *    in 'data'.
- *  - If 'cursorKeys' features multiple keys, the cursor will be an encoded string incorporating the values of these
+ *  - If an array with multiple keys, the cursor will be an encoded string incorporating the values of these
  *    keys from the last element in 'data'.
+ *  - If a builder function returning a string, that string is used as the raw cursor (use this for nested values
+ *    like `(item) => item.author.name`).
+ *  - If a builder function returning an object, the object is passed through `encodeCursor` (use this when the
+ *    cursor needs multiple values, including nested ones).
  *
  * @returns PageResponse
- *
- * Note: `hasMore` flag will be undefined if `pageLimit` is not provided, please read the param doc for more details.
  */
 export function createPaginatedResponse<T extends { id: string }>(
   page: T[],
-  pageLimit: number | undefined,
-  cursorKeys?: undefined,
+  pageLimit: number,
+  cursorKeysOrBuilder?: undefined,
 ): PaginatedResponse<T>
 export function createPaginatedResponse<T extends Record<string, unknown>, K extends keyof T>(
   page: T[],
-  pageLimit: number | undefined,
-  cursorKeys: K[],
+  pageLimit: number,
+  cursorKeysOrBuilder: K[],
 ): PaginatedResponse<T>
-
-/**
- * @deprecated use other versions of {@link createPaginatedResponse}
- *
- * @param page
- * @param pageLimit
- * @param cursorKeys
- */
+export function createPaginatedResponse<T extends Record<string, unknown>>(
+  page: T[],
+  pageLimit: number,
+  cursorKeysOrBuilder: CursorBuilder<T>,
+): PaginatedResponse<T>
 export function createPaginatedResponse<T extends Record<string, unknown>, K extends keyof T>(
   page: T[],
-  pageLimit?: number,
-  cursorKeys?: K[],
+  pageLimit: number,
+  cursorKeysOrBuilder?: K[] | CursorBuilder<T>,
 ): PaginatedResponse<T> {
   return {
     data: page.slice(0, pageLimit),
-    // @ts-expect-error -> on next major version, we can simplify getMetaForNextPage signature and remove ts-ignore
-    meta: getMetaForNextPage(page, cursorKeys, pageLimit),
+    meta: getMetaForNextPage(page, pageLimit, cursorKeysOrBuilder),
   }
-}
-
-/**
- * @deprecated use {@link getPaginatedEntriesByHasMore}
- *
- * This function will collect all paginated entries based on returned 'cursor'.
- * For function to behave correctly the last result should have 'cursor === undefined'.
- *
- * @param pagination
- * @param apiCall
- *
- * @example
- * &lt;caption>Example usage of method&lt;/caption>
- * await getPaginatedEntries({ limit: 1 }, (params) => {
- *                return market.getApples(params)
- *            }
- */
-export async function getPaginatedEntries<T extends Record<string, unknown>>(
-  pagination: OptionalPaginationParams,
-  apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,
-): Promise<T[]> {
-  const resultArray: T[] = []
-  let currentCursor: string | undefined
-  do {
-    const pageResult = await apiCall({
-      ...(pagination.limit ? { limit: pagination.limit } : {}),
-      ...(currentCursor ? { after: currentCursor } : {}),
-    })
-    resultArray.push(...pageResult.data)
-    currentCursor = pageResult.meta.cursor
-  } while (currentCursor)
-
-  return resultArray
 }
 
 /**
@@ -187,12 +118,12 @@ export async function getPaginatedEntries<T extends Record<string, unknown>>(
  *                return market.getApples(params)
  *            }
  */
-export async function getPaginatedEntriesByHasMore<T extends Record<string, unknown>>(
+export const getPaginatedEntries = async <T extends Record<string, unknown>>(
   pagination: OptionalPaginationParams,
   apiCall: (params: OptionalPaginationParams) => Promise<PaginatedResponse<T>>,
-): Promise<T[]> {
+): Promise<T[]> => {
   const resultArray: T[] = []
-  let hasMore: boolean | undefined
+  let hasMore = true
   let currentCursor: string | undefined = pagination.after
   do {
     const pageResult = await apiCall({
