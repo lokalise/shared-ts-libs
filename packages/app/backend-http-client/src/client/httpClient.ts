@@ -513,7 +513,7 @@ function handleRequestResultSuccess<T extends ZodSchema | undefined>(
 }
 
 /**
- * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
  */
 export function sendByPayloadRoute<
   RequestBodySchema extends z.Schema | undefined,
@@ -579,7 +579,7 @@ export function sendByPayloadRoute<
 }
 
 /**
- * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
  */
 export function sendByGetRoute<
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -640,7 +640,7 @@ export function sendByGetRoute<
 }
 
 /**
- * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
  */
 export function sendByDeleteRoute<
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -701,7 +701,7 @@ export function sendByDeleteRoute<
 }
 
 /**
- * @deprecated Use `sendByContractWithStreamedResponse` instead. This function will be removed in a future version.
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
  */
 export function sendByGetRouteWithStreamedResponse<
   PathParamsSchema extends z.Schema | undefined = undefined,
@@ -755,7 +755,7 @@ export function sendByGetRouteWithStreamedResponse<
 }
 
 /**
- * @deprecated Use `sendByContractWithStreamedResponse` instead. This function will be removed in a future version.
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
  */
 export function sendByPayloadRouteWithStreamedResponse<
   RequestBodySchema extends z.Schema | undefined,
@@ -815,6 +815,22 @@ export function sendByPayloadRouteWithStreamedResponse<
   )
 }
 
+/**
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
+ * @example
+ * ```typescript
+ * // Before (deprecated):
+ * const result = await sendByContract(client, someGetRouteDefinition,
+ *   { pathParams: { userId: 1 } },
+ *   { requestLabel: 'Get user' },
+ * )
+ *
+ * // After (recommended):
+ * const result = await sendByApiContract(client, someGetContract, {
+ *   pathParams: { userId: 1 },
+ * })
+ * ```
+ */
 // Overload 1: GET route
 export function sendByContract<
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -975,6 +991,22 @@ export function sendByContract(
   )
 }
 
+/**
+ * @deprecated Use `sendByApiContract` with an SSE contract instead. This function will be removed in a future version.
+ * @example
+ * ```typescript
+ * // Before (deprecated):
+ * const result = await sendByContractWithStreamedResponse(client, downloadContract,
+ *   { pathParams: { fileId: '123' } },
+ *   { requestLabel: 'Download file' },
+ * )
+ *
+ * // After (recommended):
+ * const result = await sendByApiContract(client, downloadContract, {
+ *   pathParams: { fileId: '123' },
+ * })
+ * ```
+ */
 // Overload 1: GET route
 export function sendByContractWithStreamedResponse<
   PathParamsSchema extends z.Schema | undefined = undefined,
