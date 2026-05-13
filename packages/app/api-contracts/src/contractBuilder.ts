@@ -27,6 +27,26 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
 // ============================================================================
 
 /**
+ * @deprecated Use `defineApiContract` instead. This function will be removed in a future version.
+ * @example
+ * ```typescript
+ * // Before (deprecated):
+ * const contract = buildContract({
+ *   method: 'post',
+ *   requestBodySchema: bodySchema,
+ *   successResponseBodySchema: responseSchema,
+ *   pathResolver: () => '/api/resource',
+ * })
+ *
+ * // After (recommended):
+ * const contract = defineApiContract({
+ *   method: 'post',
+ *   requestBodySchema: bodySchema,
+ *   pathResolver: () => '/api/resource',
+ *   responsesByStatusCode: { 201: responseSchema },
+ * })
+ * ```
+ *
  * Universal contract builder that creates either REST or SSE contracts based on configuration.
  *
  * This is a unified entry point that delegates to:

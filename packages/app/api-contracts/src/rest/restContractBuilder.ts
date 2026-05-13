@@ -116,6 +116,26 @@ export type PayloadContractConfig<
 // ============================================================================
 
 /**
+ * @deprecated Use `defineApiContract` instead. This function will be removed in a future version.
+ * @example
+ * ```typescript
+ * // Before (deprecated):
+ * const contract = buildRestContract({
+ *   method: 'get',
+ *   pathResolver: (params) => `/users/${params.userId}`,
+ *   requestPathParamsSchema: z.object({ userId: z.string() }),
+ *   successResponseBodySchema: userSchema,
+ * })
+ *
+ * // After (recommended):
+ * const contract = defineApiContract({
+ *   method: 'get',
+ *   pathResolver: ({ userId }) => `/users/${userId}`,
+ *   requestPathParamsSchema: z.object({ userId: z.string() }),
+ *   responsesByStatusCode: { 200: userSchema },
+ * })
+ * ```
+ *
  * Builds REST API contracts with automatic type inference.
  *
  * This unified builder replaces the individual `buildGetRoute`, `buildPayloadRoute`,

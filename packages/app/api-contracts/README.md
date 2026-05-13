@@ -1,420 +1,345 @@
 # api-contracts
 
-Key idea behind API contracts: backend owns entire definition for the route, including its path, HTTP method used and
-response structure expectations, and exposes it as a part of its API schemas. Then frontend consumes that definition
-instead of forming full request configuration manually on the client side.
+API contracts are shared definitions that live in a shared package and are consumed by both the client and the backend.
+The contract describes a route — its path, HTTP method, and request/response schemas — and serves as the single source of truth for both sides.
 
-This reduces amount of assumptions FE needs to make about the behaviour of BE, reduces amount of code that needs to be
-written on FE, and makes the code more type-safe (as path parameter setting is handled by logic exposed by BE, in a
-type-safe way).
+The backend implements the route against the contract.
+The client uses the same contract to make type-safe requests without duplicating configuration.
+This eliminates assumptions across the boundary and keeps documentation, validation, and types in sync.
 
-## Universal Contract Builder
+## Defining contracts
 
-Use `buildContract` as a single entry point for creating any type of API contract. It automatically delegates to the appropriate specialized builder based on the configuration:
-
-| `serverSentEventSchemas` | Contract Type |
-|--------------------------|---------------|
-| ❌ | REST contract (GET, POST, PUT, PATCH, DELETE) |
-| ✅ | SSE or Dual-mode contract |
+### REST routes
 
 ```ts
-import { buildContract } from '@lokalise/api-contracts'
-import { z } from 'zod'
+import { defineApiContract, ContractNoBody } from '@lokalise/api-contracts'
+import { z } from 'zod/v4'
 
-// REST GET route
-const getUsers = buildContract({
-    successResponseBodySchema: z.array(userSchema),
-    pathResolver: () => '/api/users',
+// GET with path params
+const getUser = defineApiContract({
+  method: 'get',
+  requestPathParamsSchema: z.object({ userId: z.uuid() }),
+  pathResolver: ({ userId }) => `/users/${userId}`,
+  responsesByStatusCode: {
+    200: z.object({ id: z.string(), name: z.string() }),
+  },
 })
 
-// REST POST route
-const createUser = buildContract({
-    method: 'post',
-    requestBodySchema: createUserSchema,
-    successResponseBodySchema: userSchema,
-    pathResolver: () => '/api/users',
+// POST
+const createUser = defineApiContract({
+  method: 'post',
+  pathResolver: () => '/users',
+  requestBodySchema: z.object({ name: z.string() }),
+  responsesByStatusCode: {
+    201: z.object({ id: z.string(), name: z.string() }),
+  },
 })
 
-// REST DELETE route
-const deleteUser = buildContract({
-    method: 'delete',
-    requestPathParamsSchema: z.object({ userId: z.string() }),
-    pathResolver: (params) => `/api/users/${params.userId}`,
+// DELETE with no response body
+const deleteUser = defineApiContract({
+  method: 'delete',
+  requestPathParamsSchema: z.object({ userId: z.uuid() }),
+  pathResolver: ({ userId }) => `/users/${userId}`,
+  responsesByStatusCode: {
+    204: ContractNoBody,
+  },
+})
+```
+
+### Non-JSON responses
+
+Use `textResponse` for text-based responses (plain text, CSV, HTML, XML, YAML, etc.):
+
+```ts
+import { defineApiContract, textResponse } from '@lokalise/api-contracts'
+
+const exportCsv = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/export.csv',
+  responsesByStatusCode: { 200: textResponse('text/csv') },
 })
 
-// SSE-only streaming endpoint
-const notifications = buildContract({
-    method: 'get',
-    pathResolver: () => '/api/notifications/stream',
-    serverSentEventSchemas: {
-        notification: z.object({ id: z.string(), message: z.string() }),
-    },
+const getPage = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/page',
+  responsesByStatusCode: { 200: textResponse('text/html') },
 })
 
-// Dual-mode endpoint (supports both JSON and SSE)
-const chatCompletion = buildContract({
-    method: 'post',
-    pathResolver: () => '/api/chat/completions',
-    requestBodySchema: z.object({ message: z.string() }),
-    successResponseBodySchema: z.object({ reply: z.string() }),
-    serverSentEventSchemas: {
+const getDocument = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/document',
+  responsesByStatusCode: { 200: textResponse('application/xml') },
+})
+```
+
+Use `blobResponse` for binary responses (images, PDFs, etc.):
+
+```ts
+import { defineApiContract, blobResponse } from '@lokalise/api-contracts'
+
+const downloadPhoto = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/photo.png',
+  responsesByStatusCode: { 200: blobResponse('image/png') },
+})
+```
+
+### SSE and dual-mode routes
+
+Use `sseResponse()` inside `responsesByStatusCode` to define SSE event schemas.
+For endpoints that can respond with either JSON or an SSE stream depending on the `Accept` header, use `anyOfResponses()` to declare both options on the same status code.
+
+```ts
+import { defineApiContract, sseResponse, anyOfResponses } from '@lokalise/api-contracts'
+import { z } from 'zod/v4'
+
+// SSE-only
+const notifications = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/notifications/stream',
+  responsesByStatusCode: {
+    200: sseResponse({
+      notification: z.object({ id: z.string(), message: z.string() }),
+    }),
+  },
+})
+
+// Dual-mode: JSON response or SSE stream depending on Accept header
+const chatCompletion = defineApiContract({
+  method: 'post',
+  pathResolver: () => '/chat/completions',
+  requestBodySchema: z.object({ message: z.string() }),
+  responsesByStatusCode: {
+    200: anyOfResponses([
+      sseResponse({
         chunk: z.object({ delta: z.string() }),
-        done: z.object({ usage: z.object({ tokens: z.number() }) }),
-    },
+        done: z.object({ finish_reason: z.string() }),
+      }),
+      z.object({ text: z.string() }),
+    ]),
+  },
 })
 ```
 
-You can also use the specialized builders directly (`buildRestContract`, `buildSseContract`) if you prefer explicit control over contract types.
-
-## REST Contracts
-
-Use `buildRestContract` to create REST API contracts. The contract type is automatically determined based on the configuration:
-
-| `method` | `requestBodySchema` | Result |
-|----------|---------------------|--------|
-| omitted/undefined | ❌ | GET route |
-| `'delete'` | ❌ | DELETE route |
-| `'post'`/`'put'`/`'patch'` | ✅ | Payload route |
-
-Usage examples:
+`getSseSchemaByEventName(contract)` extracts SSE event schemas from a contract:
 
 ```ts
-import { buildRestContract } from '@lokalise/api-contracts'
+import { getSseSchemaByEventName } from '@lokalise/api-contracts'
 
-// GET route - method is inferred automatically
-const getContract = buildRestContract({
-    successResponseBodySchema: RESPONSE_BODY_SCHEMA,
-    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
-    requestQuerySchema: REQUEST_QUERY_SCHEMA,
-    requestHeaderSchema: REQUEST_HEADER_SCHEMA,
-    responseHeaderSchema: RESPONSE_HEADER_SCHEMA,
-    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-    summary: 'Route summary',
-    metadata: { allowedRoles: ['admin'] },
-})
+getSseSchemaByEventName(notifications)
+// { notification: ZodObject<...> }
 
-// POST route - requires method and requestBodySchema
-const postContract = buildRestContract({
-    method: 'post', // can also be 'put' or 'patch'
-    successResponseBodySchema: RESPONSE_BODY_SCHEMA,
-    requestBodySchema: REQUEST_BODY_SCHEMA,
-    pathResolver: () => '/',
-    summary: 'Route summary',
-    metadata: { allowedPermission: ['edit'] },
-})
-
-// DELETE route - method is 'delete', no body, defaults isEmptyResponseExpected to true
-const deleteContract = buildRestContract({
-    method: 'delete',
-    successResponseBodySchema: RESPONSE_BODY_SCHEMA,
-    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
-    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-})
+getSseSchemaByEventName(chatCompletion)
+// { chunk: ZodObject<...>, done: ZodObject<...> }
 ```
 
-### Deprecated Builders
-
-The individual builders `buildGetRoute`, `buildPayloadRoute`, and `buildDeleteRoute` are deprecated. Use `buildRestContract` instead:
+### All fields
 
 ```ts
-// Before (deprecated):
-import { buildGetRoute, buildPayloadRoute, buildDeleteRoute } from '@lokalise/api-contracts'
+defineApiContract({
+  // Required
+  method: 'get' | 'post' | 'put' | 'patch' | 'delete',
+  pathResolver: (pathParams) => string,
+  responsesByStatusCode: {
+    [statusCode]: z.ZodType | ContractNoBody | TypedTextResponse | TypedBlobResponse | TypedSseResponse | AnyOfResponses
+  },
 
-const getContract = buildGetRoute({ ... })
-const postContract = buildPayloadRoute({ method: 'post', ... })
-const deleteContract = buildDeleteRoute({ ... })
+  // Path params — links pathResolver parameter type to the schema
+  requestPathParamsSchema: z.ZodObject,
 
-// After (recommended):
-import { buildRestContract } from '@lokalise/api-contracts'
+  // Request
+  requestBodySchema: z.ZodType | ContractNoBody, // required for POST / PUT / PATCH, forbidden otherwise
+  requestQuerySchema: z.ZodObject,
+  requestHeaderSchema: z.ZodObject,
 
-const getContract = buildRestContract({ ... })  // method inferred as 'get'
-const postContract = buildRestContract({ method: 'post', ... })
-const deleteContract = buildRestContract({ method: 'delete', ... })
+  // Response
+  responseHeaderSchema: z.ZodObject,
+
+  // Documentation
+  summary: string,
+  description: string,
+  tags: readonly string[],
+  metadata: Record<string, unknown>,
+})
 ```
 
-In the previous example, the `metadata` property is an optional, free-form field that allows you to store any additional
-information related to the route. If you require more precise type definitions for the `metadata` field, you can utilize
-TypeScript's module augmentation mechanism to enforce stricter typing. This allows for more controlled and type-safe
-usage in your route definitions.
+### Header schemas
 
-Here is how you can apply strict typing to the `metadata` property using TypeScript module augmentation:
-```typescript 
+```ts
+const contract = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/api/data',
+  requestHeaderSchema: z.object({
+    authorization: z.string(),
+    'x-api-key': z.string(),
+  }),
+  responseHeaderSchema: z.object({
+    'x-ratelimit-remaining': z.string(),
+    'cache-control': z.string(),
+  }),
+  responsesByStatusCode: {
+    200: dataSchema,
+  },
+})
+```
+
+### Type utilities
+
+**`InferNonSseSuccessResponses<T>`** — TypeScript output type of all non-SSE 2xx responses. JSON schemas → `z.output<T>`, `textResponse` → `string`, `blobResponse` → `Blob`, `ContractNoBody` → `undefined`, `sseResponse` → `never` (excluded). `anyOfResponses` entries are unpacked before mapping.
+
+```ts
+import type { InferNonSseSuccessResponses } from '@lokalise/api-contracts'
+
+type UserResponse = InferNonSseSuccessResponses<typeof getUser['responsesByStatusCode']>
+// { id: string; name: string }
+
+type CsvResponse = InferNonSseSuccessResponses<typeof exportCsv['responsesByStatusCode']>
+// string
+```
+
+**`InferJsonSuccessResponses<T>`** — union of Zod schema types for all JSON 2xx entries. Text, Blob, SSE, and `ContractNoBody` entries are excluded.
+
+**`InferSseSuccessResponses<T>`** — extracts the SSE event schema map type from a `responsesByStatusCode` map. Returns `never` when no SSE schemas are present.
+
+**`HasAnySseSuccessResponse<T>`** — `true` if any 2xx entry is a `TypedSseResponse` or an `AnyOfResponses` containing one.
+
+**`HasAnyJsonSuccessResponse<T>`** — `true` if any 2xx entry is a JSON Zod schema or an `AnyOfResponses` containing one.
+
+**`HasAnyNonSseSuccessResponse<T>`** — `true` if any 2xx entry is a non-SSE response (JSON, text, blob, or no-body).
+
+**`IsNoBodySuccessResponse<T>`** — `true` when all 2xx entries are `ContractNoBody` or no 2xx status codes are defined.
+
+**`ContractResponseMode<T>`** — classifies a contract into `'dual'` (SSE + non-SSE), `'sse'` (SSE-only), or `'non-sse'` (JSON/text/blob/no-body).
+
+**`AvailableResponseModes<T>`** — union of mode literals available for a contract: `'json' | 'sse' | 'blob' | 'text' | 'noContent'`.
+
+**`SseEventOf<S>`** — discriminated union of SSE events inferred from a `schemaByEventName` map. Aligns with the browser `MessageEvent` shape: `{ type, data, lastEventId, retry }`.
+
+```ts
+import type { SseEventOf, InferSseSuccessResponses } from '@lokalise/api-contracts'
+
+type NotificationEvents = InferSseSuccessResponses<typeof notifications['responsesByStatusCode']>
+type NotificationEvent = SseEventOf<NotificationEvents>
+// { type: 'notification'; data: { id: string; message: string }; lastEventId: string; retry: number | undefined }
+```
+
+### Client types
+
+These types are primarily consumed by HTTP client implementations.
+
+**`ClientRequestParams<TApiContract, TIsStreaming>`** — infers the request parameter object for a contract. Includes `pathParams`, `body`, `queryParams`, `headers` (required when the corresponding schema is defined), `pathPrefix` (always optional), and `streaming` (required for dual-mode contracts, forbidden otherwise).
+
+**`InferSseClientResponse<TApiContract>`** — discriminated union of `{ statusCode, headers, body }` for SSE mode. Success status codes yield `AsyncIterable<SseEventOf<...>>`; error codes yield the declared body type.
+
+**`InferNonSseClientResponse<TApiContract>`** — same shape as above for non-SSE mode. Success status codes yield JSON / `string` / `Blob` / `null`; SSE entries are excluded (`never`).
+
+**`DefaultStreaming<T>`** — `true` for SSE-only contracts, `false` for everything else.
+
+```ts
+import type { ClientRequestParams, InferNonSseClientResponse } from '@lokalise/api-contracts'
+
+type GetUserParams = ClientRequestParams<typeof getUser, false>
+// { pathParams: { userId: string }; pathPrefix?: string }
+
+type GetUserResponse = InferNonSseClientResponse<typeof getUser>
+// { statusCode: 200; headers: Record<string, string>; body: { id: string; name: string } }
+```
+
+### Contract type aliases
+
+**`ApiContract`** — union of all contract variants (`GetApiContract | DeleteApiContract | PayloadApiContract`). Use this to type function parameters that accept any contract.
+
+**`GetApiContract`**, **`DeleteApiContract`**, **`PayloadApiContract`** — individual contract variants if you need to narrow the type.
+
+**`RequestPathParamsSchema`**, **`RequestQuerySchema`**, **`RequestHeaderSchema`**, **`ResponseHeaderSchema`** — type aliases for `z.ZodObject`. Use these to constrain schema arguments in generic helpers.
+
+### Utility functions
+
+**`mapApiContractToPath`** — Express/Fastify-style path pattern.
+
+```ts
+import { mapApiContractToPath } from '@lokalise/api-contracts'
+
+mapApiContractToPath(getUser) // "/users/:userId"
+```
+
+**`describeApiContract`** — human-readable `"METHOD /path"` string.
+
+```ts
+import { describeApiContract } from '@lokalise/api-contracts'
+
+describeApiContract(getUser) // "GET /users/:userId"
+```
+
+**`getSuccessResponseSchema`** — merged Zod schema from all 2xx JSON entries. `ContractNoBody` and non-JSON entries are excluded. Returns `null` when no schema is present.
+
+```ts
+import { getSuccessResponseSchema } from '@lokalise/api-contracts'
+
+getSuccessResponseSchema(getUser)    // ZodObject
+getSuccessResponseSchema(deleteUser) // null
+```
+
+**`getIsEmptyResponseExpected`** — `true` when no Zod schema exists among 2xx entries.
+
+```ts
+import { getIsEmptyResponseExpected } from '@lokalise/api-contracts'
+
+getIsEmptyResponseExpected(deleteUser) // true
+getIsEmptyResponseExpected(getUser)    // false
+```
+
+**`hasAnySuccessSseResponse`** — `true` when any 2xx entry is an SSE response (including inside `anyOfResponses`).
+
+```ts
+import { hasAnySuccessSseResponse } from '@lokalise/api-contracts'
+
+hasAnySuccessSseResponse(notifications)   // true
+hasAnySuccessSseResponse(getUser)         // false
+hasAnySuccessSseResponse(chatCompletion)  // true (dual-mode)
+```
+
+**`getSseSchemaByEventName`** — extracts SSE event schemas from a contract. Returns `null` when no SSE schemas are present.
+
+```ts
+import { getSseSchemaByEventName } from '@lokalise/api-contracts'
+
+getSseSchemaByEventName(notifications) // { notification: ZodObject<...> }
+getSseSchemaByEventName(getUser)       // null
+```
+
+## Module augmentation
+
+If you require more precise type definitions for the `metadata` field, you can utilize TypeScript's module augmentation mechanism to enforce stricter typing:
+
+```typescript
 // file -> apiContracts.d.ts
-// Import the existing module to ensure TypeScript recognizes the original definitions
 import '@lokalise/api-contracts';
 
-// Augment the module to extend the interface with specific properties
 declare module '@lokalise/api-contracts' {
-    interface CommonRouteDefinitionMetadata {
-        myTestProp?: string[];
-        mySecondTestProp?: number;
-    }
+  interface CommonRouteDefinitionMetadata {
+    myTestProp?: string[];
+    mySecondTestProp?: number;
+  }
 }
 ```
 
-Note that in order to make contract-based requests, you need to use a compatible HTTP client
-(`@lokalise/frontend-http-client` or `@lokalise/backend-http-client`)
+## HTTP clients
 
-In case you are using fastify on the backend, you can also use `@lokalise/fastify-api-contracts` in order to simplify definition of your fastify routes, utilizing contracts as the single source of truth.
+To make contract-based requests, use a compatible HTTP client (`@lokalise/frontend-http-client` or `@lokalise/backend-http-client`).
 
-## Header Schemas
+For Fastify backends, use `@lokalise/fastify-api-contracts` to simplify route definition using contracts as the single source of truth.
 
-### Request Headers (`requestHeaderSchema`)
+## Future: request body content type
 
-Use `requestHeaderSchema` to define and validate headers that the client must send with the request. This is useful for authentication headers, API keys, content negotiation, and other request-specific headers.
-
-```ts
-import { buildRestContract } from '@lokalise/api-contracts'
-import { z } from 'zod'
-
-const contract = buildRestContract({
-    successResponseBodySchema: DATA_SCHEMA,
-    requestHeaderSchema: z.object({
-        'authorization': z.string(),
-        'x-api-key': z.string(),
-        'accept-language': z.string().optional(),
-    }),
-    pathResolver: () => '/api/data',
-})
-```
-
-### Response Headers (`responseHeaderSchema`)
-
-Use `responseHeaderSchema` to define and validate headers that the server will send in the response. This is particularly useful for documenting:
-- Rate limiting headers
-- Pagination headers
-- Cache control headers
-- Custom API metadata headers
+Currently, HTTP clients default to `application/json` when a request body is present. The planned improvement is a `requestBodyContentType` field on `defineApiContract`:
 
 ```ts
-import { buildRestContract } from '@lokalise/api-contracts'
-import { z } from 'zod'
-
-const contract = buildRestContract({
-    successResponseBodySchema: DATA_SCHEMA,
-    responseHeaderSchema: z.object({
-        'x-ratelimit-limit': z.string(),
-        'x-ratelimit-remaining': z.string(),
-        'x-ratelimit-reset': z.string(),
-        'cache-control': z.string(),
-    }),
-    pathResolver: () => '/api/data',
+defineApiContract({
+  method: 'post',
+  pathResolver: () => '/upload',
+  requestBodySchema: z.object({ file: z.unknown() }),
+  requestBodyContentType: 'multipart/form-data',
+  responsesByStatusCode: { 200: z.object({ url: z.string() }) },
 })
 ```
-
-Both header schemas can be used together in a single contract:
-
-```ts
-const contract = buildRestContract({
-    successResponseBodySchema: DATA_SCHEMA,
-    requestHeaderSchema: z.object({
-        'authorization': z.string(),
-    }),
-    responseHeaderSchema: z.object({
-        'x-ratelimit-limit': z.string(),
-        'x-ratelimit-remaining': z.string(),
-    }),
-    pathResolver: () => '/api/data',
-})
-```
-
-These header schemas are primarily used for:
-- OpenAPI/Swagger documentation generation
-- Client-side validation of response headers
-- Type-safe header access in TypeScript
-- Contract testing between frontend and backend
-
-## Utility Functions
-
-### `mapRouteToPath`
-
-Converts a route definition to its corresponding path pattern with parameter placeholders.
-
-```ts
-import { mapRouteToPath, buildRestContract } from '@lokalise/api-contracts'
-
-const userContract = buildRestContract({
-    requestPathParamsSchema: z.object({ userId: z.string() }),
-    successResponseBodySchema: USER_SCHEMA,
-    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-})
-
-const pathPattern = mapRouteToPath(userContract)
-// Returns: "/users/:userId"
-```
-
-This function is useful when you need to:
-- Generate OpenAPI/Swagger documentation
-- Create route patterns for server-side routing frameworks
-- Display route information in debugging or logging
-
-The function replaces actual path parameters with placeholder syntax (`:paramName`), making it compatible with Express-style route patterns.
-
-### `describeContract`
-
-Generates a human-readable description of a route contract, combining the HTTP method with the route path.
-
-```ts
-import { describeContract, buildRestContract } from '@lokalise/api-contracts'
-
-const getContract = buildRestContract({
-    requestPathParamsSchema: z.object({ userId: z.string() }),
-    successResponseBodySchema: USER_SCHEMA,
-    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-})
-
-const postContract = buildRestContract({
-    method: 'post',
-    requestPathParamsSchema: z.object({
-        orgId: z.string(),
-        userId: z.string()
-    }),
-    requestBodySchema: CREATE_USER_SCHEMA,
-    successResponseBodySchema: USER_SCHEMA,
-    pathResolver: (pathParams) => `/orgs/${pathParams.orgId}/users/${pathParams.userId}`,
-})
-
-console.log(describeContract(getContract))  // "GET /users/:userId"
-console.log(describeContract(postContract)) // "POST /orgs/:orgId/users/:userId"
-```
-
-This function is particularly useful for:
-- Logging and debugging API calls
-- Generating documentation or route summaries
-- Error messages that need to reference specific endpoints
-- Test descriptions and assertions
-
-## SSE and Dual-Mode Contracts
-
-Use `buildSseContract` for endpoints that support Server-Sent Events (SSE) streaming. This builder supports two contract types:
-
-### SSE-Only Contracts
-
-Pure streaming endpoints that only return SSE events. Use these for real-time notifications, live feeds, or any endpoint that only streams data.
-
-```ts
-import { buildSseContract } from '@lokalise/api-contracts'
-import { z } from 'zod'
-
-// GET SSE endpoint for live notifications
-// requestPathParamsSchema, requestQuerySchema, requestHeaderSchema are optional
-const notificationsStream = buildSseContract({
-    method: 'get',
-    pathResolver: () => '/api/notifications/stream',
-    requestQuerySchema: z.object({ userId: z.string().optional() }),
-    serverSentEventSchemas: {
-        notification: z.object({ id: z.string(), message: z.string() }),
-    },
-})
-// Result: isSSE: true
-
-// POST SSE endpoint (e.g., streaming file processing)
-const processStream = buildSseContract({
-    method: 'post',
-    pathResolver: () => '/api/process/stream',
-    requestBodySchema: z.object({ fileId: z.string() }),
-    serverSentEventSchemas: {
-        progress: z.object({ percent: z.number() }),
-        done: z.object({ result: z.string() }),
-    },
-})
-// Result: isSSE: true
-
-// SSE endpoint with error schemas (for errors before streaming starts)
-const channelStream = buildSseContract({
-    method: 'get',
-    pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
-    requestPathParamsSchema: z.object({ channelId: z.string() }),
-    requestHeaderSchema: z.object({ authorization: z.string() }),
-    serverSentEventSchemas: {
-        message: z.object({ text: z.string() }),
-    },
-    // Errors returned before streaming begins
-    responseBodySchemasByStatusCode: {
-        401: z.object({ error: z.literal('Unauthorized') }),
-        404: z.object({ error: z.literal('Channel not found') }),
-    },
-})
-```
-
-### Dual-Mode (Hybrid) Contracts
-
-Hybrid endpoints that support **both** synchronous JSON responses **and** SSE streaming from the same URL. The response mode is determined by the client's `Accept` header:
-- `Accept: application/json` → Synchronous JSON response
-- `Accept: text/event-stream` → SSE streaming
-
-This pattern is ideal for AI/LLM APIs (like OpenAI's Chat Completions API) where clients can choose between getting the full response at once or streaming it token-by-token.
-
-```ts
-import { buildSseContract } from '@lokalise/api-contracts'
-import { z } from 'zod'
-
-// OpenAI-style chat completion endpoint
-// - Accept: application/json → returns { reply, usage } immediately
-// - Accept: text/event-stream → streams chunk events, then done event
-const chatCompletion = buildSseContract({
-    method: 'post',
-    pathResolver: () => '/api/chat/completions',
-    requestBodySchema: z.object({ message: z.string() }),
-    // Adding successResponseBodySchema makes it dual-mode
-    successResponseBodySchema: z.object({
-        reply: z.string(),
-        usage: z.object({ tokens: z.number() }),
-    }),
-    serverSentEventSchemas: {
-        chunk: z.object({ delta: z.string() }),
-        done: z.object({ usage: z.object({ totalTokens: z.number() }) }),
-    },
-})
-// Result: isDualMode: true
-
-// GET dual-mode endpoint for job status (poll or stream)
-const jobStatus = buildSseContract({
-    method: 'get',
-    pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
-    requestPathParamsSchema: z.object({ jobId: z.string().uuid() }),
-    requestQuerySchema: z.object({ verbose: z.string().optional() }),
-    successResponseBodySchema: z.object({
-        status: z.enum(['pending', 'running', 'completed', 'failed']),
-        progress: z.number(),
-    }),
-    serverSentEventSchemas: {
-        progress: z.object({ percent: z.number() }),
-        done: z.object({ result: z.string() }),
-    },
-})
-// Result: isDualMode: true
-```
-
-### Response Schemas by Status Code
-
-Both SSE-only and dual-mode contracts support `responseBodySchemasByStatusCode` for defining different response shapes for errors that occur **before streaming starts** (e.g., authentication failures, validation errors, resource not found):
-
-```ts
-const chatCompletion = buildSseContract({
-    method: 'post',
-    pathResolver: () => '/api/chat/completions',
-    requestHeaderSchema: z.object({ authorization: z.string() }),
-    requestBodySchema: z.object({ message: z.string() }),
-    successResponseBodySchema: z.object({ reply: z.string() }),
-    serverSentEventSchemas: {
-        chunk: z.object({ delta: z.string() }),
-    },
-    responseBodySchemasByStatusCode: {
-        400: z.object({ error: z.string(), details: z.array(z.string()) }),
-        401: z.object({ error: z.literal('Unauthorized') }),
-        429: z.object({ error: z.string(), retryAfter: z.number() }),
-    },
-})
-```
-
-### Contract Type Detection
-
-`buildSseContract` automatically determines the contract type based on the presence of `successResponseBodySchema`:
-
-| `successResponseBodySchema` | `requestBodySchema` | Result |
-|----------------------------|---------------------|--------|
-| ❌ | ❌ | SSE-only GET |
-| ❌ | ✅ | SSE-only POST/PUT/PATCH |
-| ✅ | ❌ | Dual-mode GET |
-| ✅ | ✅ | Dual-mode POST/PUT/PATCH |

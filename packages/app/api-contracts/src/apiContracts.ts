@@ -160,7 +160,7 @@ export type DeleteRouteDefinition<
 }
 
 /**
- * @deprecated Use `buildRestContract` instead. This function will be removed in a future version.
+ * @deprecated Use `defineApiContract` instead. This function will be removed in a future version.
  * @example
  * ```typescript
  * // Before (deprecated):
@@ -172,11 +172,11 @@ export type DeleteRouteDefinition<
  * })
  *
  * // After (recommended):
- * const route = buildRestContract({
+ * const route = defineApiContract({
  *   method: 'post',
  *   requestBodySchema: bodySchema,
- *   successResponseBodySchema: responseSchema,
  *   pathResolver: () => '/api/users',
+ *   responsesByStatusCode: { 201: responseSchema },
  * })
  * ```
  */
@@ -236,7 +236,7 @@ export function buildPayloadRoute<
 }
 
 /**
- * @deprecated Use `buildRestContract` instead. This function will be removed in a future version.
+ * @deprecated Use `defineApiContract` instead. This function will be removed in a future version.
  * @example
  * ```typescript
  * // Before (deprecated):
@@ -246,9 +246,10 @@ export function buildPayloadRoute<
  * })
  *
  * // After (recommended):
- * const route = buildRestContract({
- *   successResponseBodySchema: responseSchema,
+ * const route = defineApiContract({
+ *   method: 'get',
  *   pathResolver: () => '/api/users',
+ *   responsesByStatusCode: { 200: responseSchema },
  * })
  * ```
  */
@@ -307,20 +308,21 @@ export function buildGetRoute<
 }
 
 /**
- * @deprecated Use `buildRestContract` instead. This function will be removed in a future version.
+ * @deprecated Use `defineApiContract` instead. This function will be removed in a future version.
  * @example
  * ```typescript
  * // Before (deprecated):
  * const route = buildDeleteRoute({
- *   successResponseBodySchema: responseSchema,
- *   pathResolver: () => '/api/users/123',
+ *   requestPathParamsSchema: z.object({ userId: z.string() }),
+ *   pathResolver: (params) => `/api/users/${params.userId}`,
  * })
  *
  * // After (recommended):
- * const route = buildRestContract({
+ * const route = defineApiContract({
  *   method: 'delete',
- *   successResponseBodySchema: responseSchema,
- *   pathResolver: () => '/api/users/123',
+ *   requestPathParamsSchema: z.object({ userId: z.string() }),
+ *   pathResolver: ({ userId }) => `/api/users/${userId}`,
+ *   responsesByStatusCode: { 204: ContractNoBody },
  * })
  * ```
  */
@@ -379,7 +381,8 @@ export function buildDeleteRoute<
 }
 
 /**
- * This method maps given route definition to a string of the format '/static-path-part/:path-param-value'
+ * @deprecated Use `mapApiContractToPath` instead.
+ * Maps a route definition to a path string of the format '/static-path-part/:path-param-value'.
  */
 export function mapRouteToPath(
   // biome-ignore lint/suspicious/noExplicitAny: We don't care about types here, we just need Zod schema
@@ -397,6 +400,9 @@ export function mapRouteToPath(
   return routeDefinition.pathResolver(resolverParams)
 }
 
+/**
+ * @deprecated Use `describeApiContract` instead.
+ */
 export function describeContract(
   contract: // biome-ignore lint/suspicious/noExplicitAny: we accept any contract here
     | PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>
