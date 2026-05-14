@@ -300,7 +300,9 @@ controller.abort()
 | `strictContentType` | `boolean` | `true` | When `true`, returns an error if the response `content-type` doesn't match the contract entry. When `false`, falls back to the entry's kind for single-entry responses. |
 | `signal` | `AbortSignal` | — | Manual cancellation signal. When fired, the request rejects with an `AbortError`. |
 
-### Server-sent events (SSE) — connectSseByContract
+### Server-sent events (SSE) — connectSseByContract (deprecated)
+
+> **Deprecated:** Use `sendByApiContract` with an SSE contract (`sseResponse`) instead. See the [SSE and dual-mode](#sse-and-dual-mode) section above.
 
 `connectSseByContract` opens an SSE stream defined by a contract and dispatches typed, schema-validated events to callbacks.
 
