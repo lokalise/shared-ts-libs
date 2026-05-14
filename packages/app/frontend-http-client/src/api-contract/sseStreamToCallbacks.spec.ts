@@ -78,6 +78,7 @@ describe('sseStreamToCallbacks', () => {
 
     async function* failingStream(): AsyncGenerator<TestEvent> {
       await Promise.resolve()
+      yield updateEvent('1')
       throw error
     }
 
