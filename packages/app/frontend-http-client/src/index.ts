@@ -1,4 +1,8 @@
 export { type ContractRequestOptions, sendByApiContract } from './api-contract/sendByApiContract.ts'
+export {
+  type SseEventCallbacks,
+  sseStreamToCallbacks,
+} from './api-contract/sseStreamToCallbacks.ts'
 export { UnexpectedResponseError } from './api-contract/UnexpectedResponseError.ts'
 export {
   sendByContract,
