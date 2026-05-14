@@ -1,7 +1,9 @@
 type MaybePromise<T> = T | Promise<T>
 
 export type SseEventCallbacks<TEvent extends { type: string; data: unknown }> = {
-  onEvent: { [K in TEvent['type']]: (data: Extract<TEvent, { type: K }>['data']) => MaybePromise<void> }
+  onEvent: {
+    [K in TEvent['type']]: (data: Extract<TEvent, { type: K }>['data']) => MaybePromise<void>
+  }
   onError?: (error: unknown) => MaybePromise<void>
   /**
    * Called once after the server closes the stream naturally (without error). Not called on

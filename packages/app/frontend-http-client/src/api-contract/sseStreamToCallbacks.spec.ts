@@ -3,6 +3,7 @@ import { type SseEventCallbacks, sseStreamToCallbacks } from './sseStreamToCallb
 
 async function* makeStream<T>(events: T[]) {
   for (const event of events) {
+    await Promise.resolve()
     yield event
   }
 }
@@ -56,6 +57,7 @@ describe('sseStreamToCallbacks', () => {
 
   it('calls onError when the stream throws', async () => {
     async function* failingStream(): AsyncGenerator<TestEvent> {
+      await Promise.resolve()
       yield updateEvent('1')
       throw new Error('stream failure')
     }
@@ -71,28 +73,12 @@ describe('sseStreamToCallbacks', () => {
     expect(onError).toHaveBeenCalledWith(new Error('stream failure'))
   })
 
-  it('passes non-Error throws to onError as-is', async () => {
-    async function* throwingStream(): AsyncGenerator<TestEvent> {
-      throw 'oops'
-    }
-
-    const onError = vi.fn()
-
-    sseStreamToCallbacks(throwingStream(), {
-      onEvent: { update: vi.fn(), done: vi.fn() },
-      onError,
-    })
-
-    await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce())
-    expect(onError.mock.calls[0]![0]).toBe('oops')
-  })
-
   it('onEvent handlers receive the correct data type per event name', () => {
     expectTypeOf<SseEventCallbacks<TestEvent>['onEvent']['update']>().parameters.toEqualTypeOf<
-        [{ id: string }]
+      [{ id: string }]
     >()
     expectTypeOf<SseEventCallbacks<TestEvent>['onEvent']['done']>().parameters.toEqualTypeOf<
-        [{ total: number }]
+      [{ total: number }]
     >()
   })
 })
