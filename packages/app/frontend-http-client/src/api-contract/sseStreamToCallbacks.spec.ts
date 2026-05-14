@@ -73,6 +73,32 @@ describe('sseStreamToCallbacks', () => {
     expect(onError).toHaveBeenCalledWith(new Error('stream failure'))
   })
 
+  it('rethrows when onError is not provided', async () => {
+    const error = new Error('no handler')
+
+    async function* failingStream(): AsyncGenerator<TestEvent> {
+      await Promise.resolve()
+      throw error
+    }
+
+    let caught: unknown
+    const onUnhandledRejection = (reason: unknown) => {
+      caught = reason
+    }
+    process.once('unhandledRejection', onUnhandledRejection)
+
+    try {
+      sseStreamToCallbacks(failingStream(), {
+        onEvent: { update: vi.fn(), done: vi.fn() },
+      })
+
+      await vi.waitFor(() => expect(caught).toBeDefined())
+      expect(caught).toBe(error)
+    } finally {
+      process.removeListener('unhandledRejection', onUnhandledRejection)
+    }
+  })
+
   it('onEvent handlers receive the correct data type per event name', () => {
     expectTypeOf<SseEventCallbacks<TestEvent>['onEvent']['update']>().parameters.toEqualTypeOf<
       [{ id: string }]
