@@ -1,36 +1,36 @@
 {
-    "name": "@lokalise/eslint-config",
-    "version": "1.3.1",
-    "type": "module",
-    "license": "Apache-2.0",
-    "files": [
-        "configs/*"
-    ],
-    "homepage": "https://github.com/lokalise/shared-ts-libs",
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/lokalise/shared-ts-libs.git",
-        "directory": "packages/dev/eslint-config"
-    },
-    "exports": {
-        "./*": [
-            "./configs/*.cjs"
-        ]
-    },
-    "scripts": {
-        "build": "echo 'No build step required.'",
-        "lint": "prettier --check .",
-        "lint:fix": "prettier --write .",
-        "package-version": "echo $npm_package_version"
-    },
-    "dependencies": {
-        "@lokalise/eslint-config-frontend": "^4.6.1",
-        "@tanstack/eslint-plugin-query": "^5.35.6",
-        "@typescript-eslint/parser": "^8.4.0"
-    },
-    "devDependencies": {
-        "@lokalise/prettier-config": "latest",
-        "prettier": "^3.3.3"
-    },
-    "prettier": "@lokalise/prettier-config"
+	"name": "@lokalise/eslint-config",
+	"version": "1.3.1",
+	"type": "module",
+	"license": "Apache-2.0",
+	"files": [
+		"configs/*"
+	],
+	"homepage": "https://github.com/lokalise/shared-ts-libs",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/lokalise/shared-ts-libs.git",
+		"directory": "packages/dev/eslint-config"
+	},
+	"exports": {
+		"./*": [
+			"./configs/*.cjs"
+		]
+	},
+	"scripts": {
+		"build": "echo 'No build step required.'",
+		"lint": "prettier --check .",
+		"lint:fix": "prettier --write .",
+		"package-version": "echo $npm_package_version"
+	},
+	"dependencies": {
+		"@lokalise/eslint-config-frontend": "^4.6.1",
+		"@tanstack/eslint-plugin-query": "^5.35.6",
+		"@typescript-eslint/parser": "^8.4.0"
+	},
+	"devDependencies": {
+		"@lokalise/prettier-config": "latest",
+		"prettier": "^3.3.3"
+	},
+	"prettier": "@lokalise/prettier-config"
 }
