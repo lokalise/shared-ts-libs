@@ -137,6 +137,96 @@ await sql.end()
 
 ---
 
+### snapshotSchema + diffSchemaSnapshots
+
+Tools for verifying that a fresh `drizzle-kit migrate` against an empty database actually reconstructs the same schema as the original (e.g. Prisma-managed) database.
+
+#### Problem
+
+`markMigrationsApplied` tells Drizzle "these migrations are already applied." But that claim is only honest if running those migrations from scratch would produce a structurally identical database. If your Drizzle schema lacks explicit name overrides for constraints, indexes, and FKs, the migrations will generate Drizzle's default names — different from what Prisma named them. The baseline is then a lie: production has `Bundle_projectId_fkey`, a new dev's local DB has `bundle_project_id_bundle_id_fk`, and any code path that references constraint names breaks differently across environments.
+
+#### Solution
+
+Build the same schema twice — once via your old ORM, once via `drizzle-kit migrate` — then snapshot both and diff. **Any difference is a real defect** in the Drizzle schema definition that needs to be fixed (usually by adding the right `name:` override on a constraint or index) *before* you trust `markMigrationsApplied`.
+
+The comparison is strict and not normalized — names are part of the schema. Column ordering is the only thing not enforced (columns are keyed by name, not by ordinal position).
+
+Supported dialects: **PostgreSQL**, **MySQL**, **CockroachDB** (uses the PostgreSQL path).
+
+#### Example
+
+```typescript
+import { snapshotSchema, diffSchemaSnapshots } from '@lokalise/drizzle-utils'
+import postgres from 'postgres'
+
+const prismaSql = postgres(PRISMA_BUILT_DATABASE_URL)
+const drizzleSql = postgres(DRIZZLE_BUILT_DATABASE_URL)
+
+const toExecutor = (sql) => ({
+  run: (q) => sql.unsafe(q).then(() => {}),
+  all: (q) => sql.unsafe(q),
+})
+
+const before = await snapshotSchema({
+  executor: toExecutor(prismaSql),
+  dialect: 'postgresql',
+})
+const after = await snapshotSchema({
+  executor: toExecutor(drizzleSql),
+  dialect: 'postgresql',
+})
+
+const diff = diffSchemaSnapshots(before, after)
+if (!diff.equal) {
+  console.error('Schema mismatch — fix the Drizzle schema before marking migrations applied:')
+  for (const d of diff.differences) {
+    console.error(`  [${d.kind}] ${d.path}`)
+    if (d.kind === 'changed') console.error(`     before: ${JSON.stringify(d.before)}`)
+    if (d.kind === 'changed') console.error(`     after:  ${JSON.stringify(d.after)}`)
+  }
+  process.exit(1)
+}
+```
+
+A natural CI flow: spin up two databases via docker-compose — one with the existing Prisma migrations applied, one with `drizzle-kit migrate` run against an empty DB — then snapshot and diff. Local-only; no production runtime impact.
+
+#### What is captured
+
+| Element | PostgreSQL / CockroachDB | MySQL |
+|---|---|---|
+| Tables | ✅ | ✅ |
+| Columns (type, nullable, default, identity, generated) | ✅ | ✅ (extra: auto_increment etc.) |
+| Primary keys (with name) | ✅ | ✅ (name always `PRIMARY` in MySQL) |
+| Unique constraints (with name) | ✅ | ✅ |
+| Foreign keys (with name, ON UPDATE, ON DELETE) | ✅ | ✅ |
+| Check constraints (with name and expression) | ✅ | ✅ (MySQL 8.0.16+) |
+| Indexes (with name, columns, unique, method, partial predicate) | ✅ | ✅ (no partial predicates) |
+| Enums | ✅ | ❌ (MySQL enums are column types — captured in column type) |
+| Sequences | ✅ | ❌ (MySQL uses auto_increment) |
+
+**Not captured in v1** (scoping decision — not because they don't matter):
+
+- **Views** and **materialized views** — both Drizzle (`pgView`, `pgMaterializedView`, `mysqlView`) and Prisma support these natively. If your schema declares views, this tool will not catch differences in them.
+- **Functions, triggers, stored procedures** — no ORM DSL, but commonly added via raw-SQL migration files (e.g. the `updated_at` trigger pattern in the [Prisma → Drizzle guide](docs/migrating-from-prisma.md#prisma-updatedat-columns)). If your migrations declare them, divergence will not surface here.
+- **Domains** (PostgreSQL) — genuinely rare in ORM-managed schemas.
+
+Adding any of these is a reasonable follow-up; the snapshot type is structured to extend without breaking existing consumers.
+
+#### Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `executor` | `SqlExecutor` | *(required)* | Object with `run(sql)` and `all(sql)` — same shape as for `markMigrationsApplied` |
+| `dialect` | `'postgresql' \| 'mysql' \| 'cockroachdb'` | *(required)* | Database dialect |
+| `schemas` | `string[]` | PG: `['public']`; MySQL: current database | Schemas to capture |
+| `excludeTables` | `string[]` | `['__drizzle_migrations', '_prisma_migrations']` | Tables to skip (by unqualified name). Override to add your own |
+
+#### Diff result
+
+`diffSchemaSnapshots` returns `{ equal: boolean, differences: SnapshotDifference[] }` where each difference has a dotted `path` (e.g. `schemas.public.tables.users.columns.email.type`) and a `kind` of `'added'`, `'removed'`, or `'changed'`. The output is stable and sorted, suitable for snapshot testing.
+
+---
+
 ### drizzleFullBulkUpdate
 
 Performs efficient bulk updates using a single SQL query with a `VALUES` clause. This is more efficient than executing multiple individual UPDATE statements and more effective than INSERT ON CONFLICT UPDATE (UPSERT) for update-only operations.
