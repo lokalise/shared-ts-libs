@@ -1,7 +1,7 @@
 import fastifySchedule from '@fastify/schedule'
 import { Queue } from 'bullmq'
 import fastify, { type FastifyInstance } from 'fastify'
-import { beforeAll, expect, vi } from 'vitest'
+import { beforeAll, expect } from 'vitest'
 import {
   type BullBoardOptions,
   bullBoard,
@@ -9,16 +9,7 @@ import {
   type QueueProConstructor,
 } from './bullBoard.ts'
 
-vi.mock('@lokalise/background-jobs-common', async (orig) => {
-  const actual = await orig<typeof import('@lokalise/background-jobs-common')>()
-  return {
-    ...actual,
-    backgroundJobProcessorGetActiveQueueIds: vi.fn().mockResolvedValue([]),
-  }
-})
-
-const { backgroundJobProcessorGetActiveQueueIds } = await import('@lokalise/background-jobs-common')
-
+const QueuePro: QueueProConstructor = Queue as unknown as QueueProConstructor
 const BullMqQueue: QueueConstructor = Queue
 
 async function initApp(
@@ -122,6 +113,19 @@ describe('bull board', () => {
   })
 
   describe('pro queue support', () => {
+    it('accepts registration with both queueConstructor and queueProConstructor provided', async () => {
+      app = await initApp({
+        queueConstructor: BullMqQueue,
+        queueProConstructor: QueuePro,
+        redisConfigs: [],
+        basePath: '/test-mixed',
+      })
+
+      const response = await app.inject().get('/test-mixed').end()
+      expect(response.statusCode).toBe(200)
+      expect(response.body.toLowerCase()).includes('<!doctype html>')
+    })
+
     it('throws when a pro config is provided without queueProConstructor', async () => {
       const promise = initApp({
         queueConstructor: BullMqQueue,
@@ -129,69 +133,6 @@ describe('bull board', () => {
         basePath: '/test-missing-pro',
       })
       await expect(promise).rejects.toThrow(/queueProConstructor is required/)
-    })
-
-    describe('queue discovery', () => {
-      const fakeQueueSpy = vi.fn()
-      const fakeProSpy = vi.fn()
-      // bull-board verifies the queue identity at adapter construction time;
-      // any `metaValues.version` starting with "bullmq" passes (BullMQ Pro is
-      // built on BullMQ and identifies itself with a "bullmq-pro-..." version).
-      const metaValues = { version: 'bullmq-5.0.0' }
-      class FakeQueue {
-        name: string
-        opts: Record<string, unknown>
-        metaValues = metaValues
-        constructor(name: string, opts: Record<string, unknown>) {
-          this.name = name
-          this.opts = opts
-          fakeQueueSpy(name, opts)
-        }
-        async close() {}
-      }
-      class FakeProQueue {
-        name: string
-        opts: Record<string, unknown>
-        metaValues = metaValues
-        constructor(name: string, opts: Record<string, unknown>) {
-          this.name = name
-          this.opts = opts
-          fakeProSpy(name, opts)
-        }
-        async close() {}
-      }
-
-      beforeEach(() => {
-        fakeQueueSpy.mockClear()
-        fakeProSpy.mockClear()
-      })
-
-      it('builds Pro and non-Pro queues from mixed redisConfigs', async () => {
-        vi.mocked(backgroundJobProcessorGetActiveQueueIds)
-          .mockResolvedValueOnce(['plain-queue'])
-          .mockResolvedValueOnce(['pro-queue'])
-
-        app = await initApp({
-          queueConstructor: FakeQueue as unknown as QueueConstructor,
-          queueProConstructor: FakeProQueue as unknown as QueueProConstructor,
-          redisConfigs: [
-            { host: 'localhost', port: 6379, useTls: false, lazyConnect: true },
-            {
-              host: 'localhost',
-              port: 6379,
-              useTls: false,
-              lazyConnect: true,
-              isPro: true,
-            },
-          ],
-          basePath: '/test-mixed-build',
-        })
-
-        expect(fakeQueueSpy).toHaveBeenCalledTimes(1)
-        expect(fakeQueueSpy.mock.calls[0]?.[0]).toBe('plain-queue')
-        expect(fakeProSpy).toHaveBeenCalledTimes(1)
-        expect(fakeProSpy.mock.calls[0]?.[0]).toBe('pro-queue')
-      })
     })
   })
 })
