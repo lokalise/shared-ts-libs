@@ -137,7 +137,11 @@ const replaceQueues = async (
   const { refreshIntervalInSeconds } = pluginOptions
 
   fastify.log.debug({ refreshIntervalInSeconds }, 'Bull-dashboard -> updating queues')
-  const { queues: newQueues, queuesAdapter } = await getCurrentQueues(resolvedRedis, pluginOptions, fastify.log)
+  const { queues: newQueues, queuesAdapter } = await getCurrentQueues(
+    resolvedRedis,
+    pluginOptions,
+    fastify.log,
+  )
   bullBoard.replaceQueues(queuesAdapter)
   await Promise.all(currentQueues.map((queue) => queue.close()))
   currentQueues = newQueues
@@ -184,7 +188,11 @@ const plugin = async (fastify: FastifyInstance, pluginOptions: BullBoardOptions)
   const { basePath, assetsPath } = pluginOptions
   const resolvedRedis = resolveRedis(pluginOptions)
 
-  const { queues, queuesAdapter } = await getCurrentQueues(resolvedRedis, pluginOptions, fastify.log)
+  const { queues, queuesAdapter } = await getCurrentQueues(
+    resolvedRedis,
+    pluginOptions,
+    fastify.log,
+  )
   currentQueues = queues
 
   const serverAdapter = new FastifyAdapter()
