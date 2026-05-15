@@ -112,8 +112,8 @@ describe('bull board', () => {
     })
   })
 
-  describe('mixed pro/non-pro configs', () => {
-    it('accepts both pro and non-pro redis configs in the same registration', async () => {
+  describe('pro queue support', () => {
+    it('accepts registration with both queueConstructor and queueProConstructor provided', async () => {
       app = await initApp({
         queueConstructor: QueueCtor,
         queueProConstructor: QueuePro,
@@ -133,15 +133,6 @@ describe('bull board', () => {
         basePath: '/test-missing-pro',
       })
       await expect(promise).rejects.toThrow(/queueProConstructor is required/)
-    })
-
-    it('throws when a non-pro config is provided without queueConstructor', async () => {
-      const promise = initApp({
-        queueProConstructor: QueuePro,
-        redisConfigs: [{ host: 'localhost', port: 6379, useTls: false }],
-        basePath: '/test-missing-nonpro',
-      })
-      await expect(promise).rejects.toThrow(/queueConstructor is required/)
     })
   })
 })

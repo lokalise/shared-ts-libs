@@ -27,11 +27,8 @@ export type BullBoardRedisConfig = RedisConfig & {
 }
 
 export type BullBoardOptions = {
-  /**
-   * Constructor for non-Pro BullMQ queues. Required if any entry of `redisConfigs`
-   * does not have `isPro: true`.
-   */
-  queueConstructor?: QueueConstructor
+  /** Constructor for standard BullMQ queues, used for any `redisConfigs` entry without `isPro: true`. */
+  queueConstructor: QueueConstructor
   /**
    * Constructor for BullMQ Pro queues (e.g. `QueuePro` from `@taskforcesh/bullmq-pro`).
    * Required if any entry of `redisConfigs` has `isPro: true`.
@@ -76,16 +73,9 @@ const bullBoardErrorHandler = (error: Error) => {
 
 const validateConstructors = (pluginOptions: BullBoardOptions) => {
   const hasPro = pluginOptions.redisConfigs.some((c) => c.isPro)
-  const hasNonPro = pluginOptions.redisConfigs.some((c) => !c.isPro)
-
   if (hasPro && !pluginOptions.queueProConstructor) {
     throw new Error(
       'bull-board: queueProConstructor is required when redisConfigs contains entries with isPro: true',
-    )
-  }
-  if (hasNonPro && !pluginOptions.queueConstructor) {
-    throw new Error(
-      'bull-board: queueConstructor is required when redisConfigs contains entries without isPro: true',
     )
   }
 }
@@ -106,8 +96,7 @@ const buildQueueForConfig = (
     }
   }
 
-  // biome-ignore lint/style/noNonNullAssertion: validated by validateConstructors
-  const queue = new pluginOptions.queueConstructor!(id, opts)
+  const queue = new pluginOptions.queueConstructor(id, opts)
   return { queue, adapter: new BullMQAdapter(queue, { delimiter: QUEUE_GROUP_DELIMITER }) }
 }
 
