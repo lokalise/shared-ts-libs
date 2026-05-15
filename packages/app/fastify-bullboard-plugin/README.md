@@ -29,7 +29,7 @@ await app.register(basicAuth, {
 })
 
 await app.register(bullBoard, {
-  queueConstructor: Queue, // can be QueuePro if bullmq-pro is used
+  queueConstructor: Queue,
   redisConfigs: [
       {
           host: process.env.REDIS_HOST!,
@@ -44,6 +44,43 @@ await app.register(bullBoard, {
   refreshIntervalInSeconds: config.bullBoard.refreshIntervalInSeconds,
 })
 ```
+
+## BullMQ Pro support
+
+The plugin supports both standard BullMQ queues and BullMQ Pro queues, including mixing
+the two in a single deployment. Mark each Redis connection that hosts Pro queues with
+`isPro: true` and provide the `QueuePro` constructor via `queueProConstructor`. Queues
+discovered on Pro connections are wrapped in `BullMQProAdapter`, surfacing group-aware
+counts and listings in the dashboard.
+
+```ts
+import { bullBoard } from '@lokalise/fastify-bullboard-plugin'
+import { Queue } from 'bullmq'
+import { QueuePro } from '@taskforcesh/bullmq-pro'
+
+await app.register(bullBoard, {
+  queueConstructor: Queue,
+  queueProConstructor: QueuePro,
+  redisConfigs: [
+    // Standard BullMQ connection
+    {
+      host: process.env.REDIS_HOST!,
+      port: Number(process.env.REDIS_PORT),
+    },
+    // BullMQ Pro connection on the same deployment
+    {
+      host: process.env.REDIS_PRO_HOST!,
+      port: Number(process.env.REDIS_PRO_PORT),
+      isPro: true,
+    },
+  ],
+  basePath: '/bull',
+})
+```
+
+`queueConstructor` is required when any `redisConfigs` entry omits `isPro` (or sets it to `false`).
+`queueProConstructor` is required when any entry sets `isPro: true`. Both may be supplied together
+for mixed deployments.
 
 ## Compatibility with existing fastify plugins
 
