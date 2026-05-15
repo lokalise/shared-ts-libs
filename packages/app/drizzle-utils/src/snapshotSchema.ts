@@ -294,40 +294,54 @@ function parsePgIdentity(row: Record<string, unknown>): 'always' | 'by-default' 
 
 function buildPgType(row: Record<string, unknown>): string {
   const dataType = asString(row.data_type)
-  const udt = asString(row.udt_name)
-  const udtSchema = asString(row.udt_schema)
-  const charLen = row.character_maximum_length
-  const numPrecision = row.numeric_precision
-  const numScale = row.numeric_scale
-  const datetimePrecision = row.datetime_precision
+  return (
+    buildPgUserDefinedType(dataType, row) ??
+    buildPgCharType(dataType, row.character_maximum_length) ??
+    buildPgNumericType(dataType, row.numeric_precision, row.numeric_scale) ??
+    buildPgDatetimeType(dataType, row.datetime_precision) ??
+    dataType
+  )
+}
 
-  if ((dataType === 'USER-DEFINED' || dataType === 'ARRAY') && udt) {
-    // Qualify user-defined types with their schema so two enums of the same name
-    // in different schemas don't snapshot as identical. Built-ins (pg_catalog) stay unqualified
-    // to keep names like `integer` / `_int4` readable.
-    return udtSchema && udtSchema !== 'pg_catalog' ? `${udtSchema}.${udt}` : udt
-  }
-  if (dataType === 'character varying' && charLen != null) {
-    return `character varying(${charLen})`
-  }
-  if (dataType === 'character' && charLen != null) {
-    return `character(${charLen})`
-  }
-  if (dataType === 'numeric' && numPrecision != null) {
-    if (numScale != null) return `numeric(${numPrecision},${numScale})`
-    return `numeric(${numPrecision})`
-  }
-  if (dataType === 'bit' && charLen != null) return `bit(${charLen})`
-  if (dataType === 'bit varying' && charLen != null) return `bit varying(${charLen})`
-  if (datetimePrecision != null) {
-    // time/timestamp/interval may carry a fractional-seconds precision. information_schema
-    // returns data_type as e.g. "timestamp without time zone" without baking precision into it,
-    // so inject it after the base word: "timestamp(3) without time zone".
-    // Order matters: `timestamp` must come before `time` so the longer prefix wins.
-    const match = /^(timestamp|time|interval)(.*)$/.exec(dataType)
-    if (match) return `${match[1]}(${datetimePrecision})${match[2]}`
-  }
-  return dataType
+function buildPgUserDefinedType(dataType: string, row: Record<string, unknown>): string | null {
+  if (dataType !== 'USER-DEFINED' && dataType !== 'ARRAY') return null
+  const udt = asString(row.udt_name)
+  if (!udt) return null
+  // Qualify user-defined types with their schema so two enums of the same name
+  // in different schemas don't snapshot as identical. Built-ins (pg_catalog) stay unqualified
+  // to keep names like `integer` / `_int4` readable.
+  const udtSchema = asString(row.udt_schema)
+  return udtSchema && udtSchema !== 'pg_catalog' ? `${udtSchema}.${udt}` : udt
+}
+
+function buildPgCharType(dataType: string, charLen: unknown): string | null {
+  if (charLen == null) return null
+  if (dataType === 'character varying') return `character varying(${charLen})`
+  if (dataType === 'character') return `character(${charLen})`
+  if (dataType === 'bit') return `bit(${charLen})`
+  if (dataType === 'bit varying') return `bit varying(${charLen})`
+  return null
+}
+
+function buildPgNumericType(
+  dataType: string,
+  numPrecision: unknown,
+  numScale: unknown,
+): string | null {
+  if (dataType !== 'numeric' || numPrecision == null) return null
+  if (numScale != null) return `numeric(${numPrecision},${numScale})`
+  return `numeric(${numPrecision})`
+}
+
+function buildPgDatetimeType(dataType: string, datetimePrecision: unknown): string | null {
+  if (datetimePrecision == null) return null
+  // time/timestamp/interval may carry a fractional-seconds precision. information_schema
+  // returns data_type as e.g. "timestamp without time zone" without baking precision into it,
+  // so inject it after the base word: "timestamp(3) without time zone".
+  // Order matters: `timestamp` must come before `time` so the longer prefix wins.
+  const match = /^(timestamp|time|interval)(.*)$/.exec(dataType)
+  if (!match) return null
+  return `${match[1]}(${datetimePrecision})${match[2]}`
 }
 
 async function loadPgAttMap(
