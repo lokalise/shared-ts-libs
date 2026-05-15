@@ -101,6 +101,36 @@ describe('snapshotSchema (PostgreSQL)', () => {
     expect(contents.enums.Color).toEqual({ values: ['red', 'green', 'blue'] })
   })
 
+  it('captures expression-index column text distinctly per index', async () => {
+    // Two expression indexes on the same column must not collide on a placeholder —
+    // their expression text has to land in the snapshot so they diff distinctly.
+    await db.execute(`
+      CREATE TABLE "${testSchemaA}"."contacts" (
+        "id" integer PRIMARY KEY,
+        "email" text NOT NULL
+      )
+    `)
+    await db.execute(
+      `CREATE INDEX "contacts_email_lower_idx" ON "${testSchemaA}"."contacts" (lower("email"))`,
+    )
+    await db.execute(
+      `CREATE INDEX "contacts_email_upper_idx" ON "${testSchemaA}"."contacts" (upper("email"))`,
+    )
+
+    const snap = await snapshotSchema({
+      executor,
+      dialect: 'postgresql',
+      schemas: [testSchemaA],
+    })
+
+    const contacts = snap.schemas[testSchemaA]!.tables.contacts!
+    const lowerCol = contacts.indexes.contacts_email_lower_idx!.columns[0]!
+    const upperCol = contacts.indexes.contacts_email_upper_idx!.columns[0]!
+    expect(lowerCol.toLowerCase()).toContain('lower')
+    expect(upperCol.toLowerCase()).toContain('upper')
+    expect(lowerCol).not.toBe(upperCol)
+  })
+
   it('captures check constraints with normalized expressions', async () => {
     await db.execute(`
       CREATE TABLE "${testSchemaA}"."products" (

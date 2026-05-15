@@ -66,15 +66,15 @@ function diffObjects(
   const keys = new Set([...Object.keys(before), ...Object.keys(after)])
   const sorted = [...keys].sort()
   for (const key of sorted) {
-    const childPath = path === '' ? key : `${path}.${escapeKey(key)}`
+    const childPath = joinPath(path, key)
     const beforeVal = before[key]
     const afterVal = after[key]
 
-    if (!(key in before)) {
+    if (!Object.hasOwn(before, key)) {
       out.push({ path: childPath, kind: 'added', after: afterVal })
       continue
     }
-    if (!(key in after)) {
+    if (!Object.hasOwn(after, key)) {
       out.push({ path: childPath, kind: 'removed', before: beforeVal })
       continue
     }
@@ -128,6 +128,13 @@ function deepEqualArrays(a: unknown[], b: unknown[]): boolean {
     if (!deepEqual(a[i], b[i])) return false
   }
   return true
+}
+
+function joinPath(path: string, key: string): string {
+  const escaped = escapeKey(key)
+  if (path === '') return escaped
+  // Bracketed segments like `["a.b"]` attach directly: `parent["a.b"]`, not `parent.["a.b"]`.
+  return escaped.startsWith('[') ? `${path}${escaped}` : `${path}.${escaped}`
 }
 
 function escapeKey(key: string): string {

@@ -207,4 +207,37 @@ describe('diffSchemaSnapshots', () => {
     expect(diff.equal).toBe(false)
     expect(diff.differences[0]!.path).toBe('dialect')
   })
+
+  it('treats inherited property names like "constructor" as added/removed, not changed', () => {
+    // `key in object` returns true for "constructor"/"toString" even when the key
+    // is not an own property, which would have caused false "changed" entries.
+    const a = makeSnapshot()
+    const b = makeSnapshot()
+    a.schemas.public!.tables.users!.columns.constructor = {
+      type: 'text',
+      nullable: false,
+      default: null,
+      identity: null,
+      generated: null,
+    }
+    const diff = diffSchemaSnapshots(a, b)
+    expect(diff.equal).toBe(false)
+    const constructorDiff = diff.differences.find((d) => d.path.endsWith('.constructor'))
+    expect(constructorDiff?.kind).toBe('removed')
+  })
+
+  it('joins bracketed escape segments without an extra dot', () => {
+    const a = makeSnapshot()
+    const b = makeSnapshot()
+    a.schemas.public!.tables.users!.indexes['idx.with.dot'] = {
+      columns: ['email'],
+      unique: false,
+      method: 'btree',
+    }
+    const diff = diffSchemaSnapshots(a, b)
+    expect(diff.equal).toBe(false)
+    const path = diff.differences[0]!.path
+    expect(path).toBe('schemas.public.tables.users.indexes["idx.with.dot"]')
+    expect(path).not.toContain('.[')
+  })
 })

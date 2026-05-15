@@ -518,6 +518,9 @@ async function loadPgIndexes(
   excludeList: string,
   attMap: Map<string, Map<number, string>>,
 ): Promise<void> {
+  // pg_get_indexdef(index, column, pretty) returns the per-column expression text. We aggregate
+  // them with a unit-separator delimiter (CHR(31)) so we can split on something that can't appear
+  // in identifiers or expression syntax, then use the n=0 (expression column) entries by position.
   const rows = await executor.all(
     `SELECT
         n.nspname AS schema_name,
@@ -526,7 +529,12 @@ async function loadPgIndexes(
         am.amname AS method,
         ix.indisunique AS is_unique,
         ix.indkey::text AS indkey,
-        pg_get_expr(ix.indpred, ix.indrelid) AS predicate
+        pg_get_expr(ix.indpred, ix.indrelid) AS predicate,
+        COALESCE(
+          (SELECT string_agg(pg_get_indexdef(ix.indexrelid, k::int, false), CHR(31) ORDER BY k)
+           FROM generate_subscripts(ix.indkey, 1) AS k),
+          ''
+        ) AS index_exprs
       FROM pg_index ix
       JOIN pg_class ic ON ic.oid = ix.indexrelid
       JOIN pg_class cl ON cl.oid = ix.indrelid
@@ -548,10 +556,13 @@ async function loadPgIndexes(
     const indexName = asString(row.index_name)
     const inner = attMap.get(`${schemaName}.${tableName}`)
     const indkey = parsePgIntArray(row.indkey)
-    const columns = indkey.map((n) => {
+    const exprText = asString(row.index_exprs)
+    const exprs = exprText === '' ? [] : exprText.split('\x1f')
+    const columns = indkey.map((n, idx) => {
       if (n === 0) {
-        // expression index — extract from pg_get_indexdef as a fallback
-        return '<expression>'
+        // Expression index column: use the per-position pg_get_indexdef text so that
+        // lower(email) and upper(email) snapshot distinctly.
+        return exprs[idx] ?? '<expression>'
       }
       return inner?.get(n) ?? `attnum:${n}`
     })
@@ -924,9 +935,18 @@ async function loadMysqlCheckConstraints(
           AND tc.table_name NOT IN (${excludeIn})
         ORDER BY tc.table_schema, tc.table_name, tc.constraint_name`,
     )
-  } catch {
-    // information_schema.check_constraints not available (MySQL < 8.0.16); silently skip.
-    return
+  } catch (error) {
+    // information_schema.check_constraints didn't ship until MySQL 8.0.16. Silently swallow
+    // only that specific missing-table case; everything else (permissions, catalog corruption,
+    // network) must surface so callers don't get silently incomplete snapshots.
+    const message = error instanceof Error ? error.message : ''
+    if (
+      /check_constraints/i.test(message) &&
+      /(unknown table|doesn't exist|does not exist|not exist)/i.test(message)
+    ) {
+      return
+    }
+    throw error
   }
   for (const row of checkRows) {
     const schema = asString(row.table_schema ?? row.TABLE_SCHEMA)
