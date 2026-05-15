@@ -211,15 +211,18 @@ describe('diffSchemaSnapshots', () => {
   it('treats inherited property names like "constructor" as added/removed, not changed', () => {
     // `key in object` returns true for "constructor"/"toString" even when the key
     // is not an own property, which would have caused false "changed" entries.
+    // Use Object.assign to bypass TS's dotted-access narrowing to Function on `constructor`.
     const a = makeSnapshot()
     const b = makeSnapshot()
-    a.schemas.public!.tables.users!.columns.constructor = {
-      type: 'text',
-      nullable: false,
-      default: null,
-      identity: null,
-      generated: null,
-    }
+    Object.assign(a.schemas.public!.tables.users!.columns, {
+      constructor: {
+        type: 'text',
+        nullable: false,
+        default: null,
+        identity: null,
+        generated: null,
+      },
+    })
     const diff = diffSchemaSnapshots(a, b)
     expect(diff.equal).toBe(false)
     const constructorDiff = diff.differences.find((d) => d.path.endsWith('.constructor'))
