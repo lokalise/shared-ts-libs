@@ -2,9 +2,15 @@ import fastifySchedule from '@fastify/schedule'
 import { Queue } from 'bullmq'
 import fastify, { type FastifyInstance } from 'fastify'
 import { beforeAll, expect } from 'vitest'
-import { type BullBoardOptions, bullBoard, type QueueProConstructor } from './bullBoard.ts'
+import {
+  type BullBoardOptions,
+  bullBoard,
+  type QueueConstructor,
+  type QueueProConstructor,
+} from './bullBoard.ts'
 
-const QueuePro: QueueProConstructor = Queue as QueueProConstructor
+const QueuePro: QueueProConstructor = Queue as unknown as QueueProConstructor
+const BullMqQueue: QueueConstructor = Queue
 
 async function initApp(
   options: BullBoardOptions,
@@ -29,7 +35,7 @@ describe('bull board', () => {
   describe('refresh disabled', () => {
     beforeAll(async () => {
       app = await initApp({
-        queueConstructor: QueuePro,
+        queueConstructor: BullMqQueue,
         redisConfigs: [],
         basePath: '/test-disabled',
       })
@@ -49,7 +55,7 @@ describe('bull board', () => {
   describe('assets path set', () => {
     it('works', async () => {
       app = await initApp({
-        queueConstructor: QueuePro,
+        queueConstructor: BullMqQueue,
         redisConfigs: [],
         basePath: '/test-disabled',
         assetsPath: '/test-disabled',
@@ -63,7 +69,7 @@ describe('bull board', () => {
 
     it('doesnt work', async () => {
       app = await initApp({
-        queueConstructor: QueuePro,
+        queueConstructor: BullMqQueue,
         redisConfigs: [],
         basePath: '/test-disabled',
         assetsPath: '/test-disabled/notfound',
@@ -78,7 +84,7 @@ describe('bull board', () => {
     const startApp = async (preRegisterScheduler: boolean) => {
       app = await initApp(
         {
-          queueConstructor: QueuePro,
+          queueConstructor: BullMqQueue,
           basePath: '/test-enabled',
           redisConfigs: [],
           refreshIntervalInSeconds: 1,
@@ -103,6 +109,30 @@ describe('bull board', () => {
       const jobs = app.scheduler.getAllJobs()
       expect(jobs).toHaveLength(1)
       expect(jobs[0]!.id).toBe('bull-board-queues-update')
+    })
+  })
+
+  describe('pro queue support', () => {
+    it('accepts registration with both queueConstructor and queueProConstructor provided', async () => {
+      app = await initApp({
+        queueConstructor: BullMqQueue,
+        queueProConstructor: QueuePro,
+        redisConfigs: [],
+        basePath: '/test-mixed',
+      })
+
+      const response = await app.inject().get('/test-mixed').end()
+      expect(response.statusCode).toBe(200)
+      expect(response.body.toLowerCase()).includes('<!doctype html>')
+    })
+
+    it('throws when a pro config is provided without queueProConstructor', async () => {
+      const promise = initApp({
+        queueConstructor: BullMqQueue,
+        redisConfigs: [{ host: 'localhost', port: 6379, useTls: false, isPro: true }],
+        basePath: '/test-missing-pro',
+      })
+      await expect(promise).rejects.toThrow(/queueProConstructor is required/)
     })
   })
 })
