@@ -20,7 +20,8 @@
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
-        "url": "git://github.com/lokalise/shared-ts-libs.git"
+        "url": "git://github.com/lokalise/shared-ts-libs.git",
+        "directory": "packages/app/frontend-http-client"
     },
     "publishConfig": {
         "access": "public"

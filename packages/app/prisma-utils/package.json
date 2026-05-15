@@ -16,7 +16,8 @@
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
-        "url": "https://github.com/lokalise/shared-ts-libs.git"
+        "url": "https://github.com/lokalise/shared-ts-libs.git",
+        "directory": "packages/app/prisma-utils"
     },
     "scripts": {
         "build": "rimraf dist && pnpm run db:update-client && tsc --project tsconfig.build.json",
