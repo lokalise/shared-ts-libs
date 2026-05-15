@@ -401,7 +401,7 @@ importers:
         specifier: ^25.0.3
         version: 25.8.0
       '@vitest/coverage-v8':
-        specifier: ^4.0.15
+        specifier: ^4.1.6
         version: 4.1.6(vitest@4.1.6)
       cli-testlab:
         specifier: ^6.0.1
@@ -428,7 +428,7 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
       vitest:
-        specifier: ^4.0.15
+        specifier: ^4.1.6
         version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@25.8.0)(@vitest/coverage-v8@4.1.6)(msw@2.14.6(@types/node@25.8.0)(typescript@6.0.3))(vite@6.4.2(@types/node@25.8.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/error-utils:
