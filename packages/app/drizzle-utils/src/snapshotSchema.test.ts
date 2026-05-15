@@ -77,7 +77,7 @@ describe('snapshotSchema (PostgreSQL)', () => {
       type: 'character varying(255)',
       nullable: false,
     })
-    expect(users.columns.favorite_color).toMatchObject({ type: 'Color' })
+    expect(users.columns.favorite_color).toMatchObject({ type: `${testSchemaA}.Color` })
     expect(users.uniqueConstraints.users_email_key).toEqual({
       columns: ['email'],
       deferrable: false,
@@ -180,6 +180,56 @@ describe('snapshotSchema (PostgreSQL)', () => {
     expect(snap.schemas.public!.tables.snapshot_default_schema_t).toBeDefined()
 
     await db.execute(`DROP TABLE "public"."snapshot_default_schema_t"`)
+  })
+
+  it('qualifies user-defined types with their schema (cross-schema enums diff)', async () => {
+    // Same enum name in two different schemas — columns referencing each must snapshot distinctly.
+    await db.execute(`CREATE TYPE "${testSchemaA}"."Status" AS ENUM ('a', 'b')`)
+    await db.execute(`CREATE TYPE "${testSchemaB}"."Status" AS ENUM ('a', 'b')`)
+    await db.execute(`
+      CREATE TABLE "${testSchemaA}"."t" ("id" integer PRIMARY KEY, "status" "${testSchemaA}"."Status")
+    `)
+    await db.execute(`
+      CREATE TABLE "${testSchemaB}"."t" ("id" integer PRIMARY KEY, "status" "${testSchemaB}"."Status")
+    `)
+
+    const snap = await snapshotSchema({
+      executor,
+      dialect: 'postgresql',
+      schemas: [testSchemaA, testSchemaB],
+    })
+    const a = snap.schemas[testSchemaA]!.tables.t!
+    const b = snap.schemas[testSchemaB]!.tables.t!
+    expect(a.columns.status!.type).toBe(`${testSchemaA}.Status`)
+    expect(b.columns.status!.type).toBe(`${testSchemaB}.Status`)
+    expect(a.columns.status!.type).not.toBe(b.columns.status!.type)
+  })
+
+  it('captures fractional-seconds precision for time/timestamp/interval columns', async () => {
+    await db.execute(`
+      CREATE TABLE "${testSchemaA}"."precision_t" (
+        "id" integer PRIMARY KEY,
+        "ts3" timestamp(3),
+        "ts6" timestamp(6),
+        "tsz0" timestamp(0) with time zone,
+        "t2" time(2),
+        "ivl" interval(4)
+      )
+    `)
+
+    const snap = await snapshotSchema({
+      executor,
+      dialect: 'postgresql',
+      schemas: [testSchemaA],
+    })
+    const cols = snap.schemas[testSchemaA]!.tables.precision_t!.columns
+    expect(cols.ts3!.type).toBe('timestamp(3) without time zone')
+    expect(cols.ts6!.type).toBe('timestamp(6) without time zone')
+    expect(cols.tsz0!.type).toBe('timestamp(0) with time zone')
+    expect(cols.t2!.type).toBe('time(2) without time zone')
+    expect(cols.ivl!.type).toMatch(/^interval\(4\)/)
+    // Differing precision must surface as a diff, not be silently equal.
+    expect(cols.ts3!.type).not.toBe(cols.ts6!.type)
   })
 
   // ──────── End-to-end "Prisma vs Drizzle" conformance scenarios ────────

@@ -202,8 +202,10 @@ async function snapshotPostgres(
 
   await loadPgTables(executor, snapshot, schemaList, excludeList)
   await loadPgColumns(executor, snapshot, schemaList, excludeList)
-  await loadPgConstraints(executor, snapshot, schemaList, excludeList)
-  await loadPgIndexes(executor, snapshot, schemaList, excludeList)
+  // attMap is shared between constraint and index loading — fetch once.
+  const attMap = await loadPgAttMap(executor, schemaList, excludeList)
+  await loadPgConstraints(executor, snapshot, schemaList, excludeList, attMap)
+  await loadPgIndexes(executor, snapshot, schemaList, excludeList, attMap)
   await loadPgEnums(executor, snapshot, schemaList)
   await loadPgSequences(executor, snapshot, schemaList)
 
@@ -245,10 +247,12 @@ async function loadPgColumns(
         c.table_name,
         c.column_name,
         c.data_type,
+        c.udt_schema,
         c.udt_name,
         c.character_maximum_length,
         c.numeric_precision,
         c.numeric_scale,
+        c.datetime_precision,
         c.is_nullable,
         c.column_default,
         c.is_identity,
@@ -291,12 +295,18 @@ function parsePgIdentity(row: Record<string, unknown>): 'always' | 'by-default' 
 function buildPgType(row: Record<string, unknown>): string {
   const dataType = asString(row.data_type)
   const udt = asString(row.udt_name)
+  const udtSchema = asString(row.udt_schema)
   const charLen = row.character_maximum_length
   const numPrecision = row.numeric_precision
   const numScale = row.numeric_scale
+  const datetimePrecision = row.datetime_precision
 
-  if (dataType === 'USER-DEFINED' && udt) return udt
-  if (dataType === 'ARRAY' && udt) return udt
+  if ((dataType === 'USER-DEFINED' || dataType === 'ARRAY') && udt) {
+    // Qualify user-defined types with their schema so two enums of the same name
+    // in different schemas don't snapshot as identical. Built-ins (pg_catalog) stay unqualified
+    // to keep names like `integer` / `_int4` readable.
+    return udtSchema && udtSchema !== 'pg_catalog' ? `${udtSchema}.${udt}` : udt
+  }
   if (dataType === 'character varying' && charLen != null) {
     return `character varying(${charLen})`
   }
@@ -306,6 +316,16 @@ function buildPgType(row: Record<string, unknown>): string {
   if (dataType === 'numeric' && numPrecision != null) {
     if (numScale != null) return `numeric(${numPrecision},${numScale})`
     return `numeric(${numPrecision})`
+  }
+  if (dataType === 'bit' && charLen != null) return `bit(${charLen})`
+  if (dataType === 'bit varying' && charLen != null) return `bit varying(${charLen})`
+  if (datetimePrecision != null) {
+    // time/timestamp/interval may carry a fractional-seconds precision. information_schema
+    // returns data_type as e.g. "timestamp without time zone" without baking precision into it,
+    // so inject it after the base word: "timestamp(3) without time zone".
+    // Order matters: `timestamp` must come before `time` so the longer prefix wins.
+    const match = /^(timestamp|time|interval)(.*)$/.exec(dataType)
+    if (match) return `${match[1]}(${datetimePrecision})${match[2]}`
   }
   return dataType
 }
@@ -356,6 +376,7 @@ async function loadPgConstraints(
   snapshot: SchemaSnapshot,
   schemaList: string,
   excludeList: string,
+  attMap: Map<string, Map<number, string>>,
 ): Promise<void> {
   // pg_constraint gives us the canonical view across types.
   // contype: 'p' primary, 'u' unique, 'f' foreign, 'c' check.
@@ -383,8 +404,6 @@ async function loadPgConstraints(
         AND c.contype IN ('p', 'u', 'f', 'c')
       ORDER BY n.nspname, cl.relname, c.conname`,
   )
-
-  const attMap = await loadPgAttMap(executor, schemaList, excludeList)
 
   for (const row of constraintRows) {
     const schemaName = asString(row.schema_name)
@@ -483,6 +502,7 @@ async function loadPgIndexes(
   snapshot: SchemaSnapshot,
   schemaList: string,
   excludeList: string,
+  attMap: Map<string, Map<number, string>>,
 ): Promise<void> {
   const rows = await executor.all(
     `SELECT
@@ -491,10 +511,8 @@ async function loadPgIndexes(
         ic.relname AS index_name,
         am.amname AS method,
         ix.indisunique AS is_unique,
-        ix.indisprimary AS is_primary,
         ix.indkey::text AS indkey,
-        pg_get_expr(ix.indpred, ix.indrelid) AS predicate,
-        pg_get_indexdef(ix.indexrelid) AS indexdef
+        pg_get_expr(ix.indpred, ix.indrelid) AS predicate
       FROM pg_index ix
       JOIN pg_class ic ON ic.oid = ix.indexrelid
       JOIN pg_class cl ON cl.oid = ix.indrelid
@@ -504,8 +522,6 @@ async function loadPgIndexes(
         AND cl.relname NOT IN (${excludeList})
       ORDER BY n.nspname, cl.relname, ic.relname`,
   )
-
-  const attMap = await loadPgAttMap(executor, schemaList, excludeList)
 
   for (const row of rows) {
     const schemaName = asString(row.schema_name)
