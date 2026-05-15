@@ -41,7 +41,7 @@ export type BullBoardOptions = {
 }
 
 export interface QueueProConstructor {
-  new (name: string, opts?: Record<string, unknown>): QueueProLike
+  new (name: string, opts?: QueueOptions): QueueProLike
 }
 
 export interface QueueConstructor {

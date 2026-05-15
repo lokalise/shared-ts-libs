@@ -1,7 +1,8 @@
+import type { QueueProLike } from '@bull-board/api/bullMQProAdapter'
 import fastifySchedule from '@fastify/schedule'
-import { Queue } from 'bullmq'
+import { Queue, type QueueOptions } from 'bullmq'
 import fastify, { type FastifyInstance } from 'fastify'
-import { beforeAll, expect } from 'vitest'
+import { beforeAll, expect, expectTypeOf } from 'vitest'
 import {
   type BullBoardOptions,
   bullBoard,
@@ -113,6 +114,18 @@ describe('bull board', () => {
   })
 
   describe('pro queue support', () => {
+    it('QueueProConstructor accepts a real QueuePro-shaped ctor without a cast', () => {
+      // Type-only check. A constructor whose opts extend `QueueOptions` (the real
+      // `QueuePro` shape) must be assignable to `QueueProConstructor` directly —
+      // downstream consumers paid an `as unknown as` tax while opts was typed as
+      // `Record<string, unknown>`.
+      interface FakeQueueProOptions extends QueueOptions {
+        isPro?: boolean
+      }
+      type FakeQueueProCtor = new (name: string, opts?: FakeQueueProOptions) => QueueProLike
+      expectTypeOf<FakeQueueProCtor>().toMatchTypeOf<QueueProConstructor>()
+    })
+
     it('accepts registration with both queueConstructor and queueProConstructor provided', async () => {
       app = await initApp({
         queueConstructor: BullMqQueue,
