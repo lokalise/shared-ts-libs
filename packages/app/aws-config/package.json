@@ -57,7 +57,7 @@
         "@biomejs/biome": "^2.3.7",
         "@smithy/types": "^4.14.2",
         "@lokalise/biome-config": "^3.1.0",
-        "@lokalise/fastify-extras": "^30.7.0",
+        "@lokalise/fastify-extras": "^31.0.0",
         "@lokalise/node-core": "^14.0.0",
         "@lokalise/tsconfig": "^4.0.0",
         "@lokalise/universal-ts-utils": "^4.5.1",
