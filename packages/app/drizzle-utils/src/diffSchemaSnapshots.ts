@@ -1,4 +1,4 @@
-import type { SchemaSnapshot } from './snapshotSchema.ts'
+import type { SchemaSnapshot } from './snapshot-schema/index.ts'
 
 export interface SnapshotDifference {
   /** Dotted path describing where in the snapshot the difference is located. */

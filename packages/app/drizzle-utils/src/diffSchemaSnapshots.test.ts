@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { diffSchemaSnapshots } from './diffSchemaSnapshots.ts'
-import type { SchemaSnapshot } from './snapshotSchema.ts'
+import type { SchemaSnapshot } from './snapshot-schema/index.ts'
 
 function makeSnapshot(): SchemaSnapshot {
   return {

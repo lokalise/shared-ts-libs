@@ -35,4 +35,4 @@ export {
   snapshotSchema,
   type TableSnapshot,
   type UniqueConstraintSnapshot,
-} from './snapshotSchema.ts'
+} from './snapshot-schema/index.ts'

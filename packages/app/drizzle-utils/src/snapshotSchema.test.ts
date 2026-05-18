@@ -6,7 +6,7 @@ import { getDatabaseUrl } from '../test/getDatabaseUrl.ts'
 import { getMysqlDatabaseUrl } from '../test/getMysqlDatabaseUrl.ts'
 import { diffSchemaSnapshots } from './diffSchemaSnapshots.ts'
 import type { SqlExecutor } from './markMigrationsApplied.ts'
-import { snapshotSchema } from './snapshotSchema.ts'
+import { snapshotSchema } from './snapshot-schema/index.ts'
 
 // ──────────────────── PostgreSQL ────────────────────
 
