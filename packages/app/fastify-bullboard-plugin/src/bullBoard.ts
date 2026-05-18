@@ -12,7 +12,7 @@ import {
 } from '@lokalise/background-jobs-common'
 import { type RedisConfig, resolveGlobalErrorLogObject } from '@lokalise/node-core'
 import type { Queue, QueueOptions, RedisConnection } from 'bullmq'
-import type { FastifyInstance } from 'fastify'
+import type { FastifyBaseLogger, FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
 import { Redis } from 'ioredis'
 import { AsyncTask, SimpleIntervalJob } from 'toad-scheduler'
@@ -103,6 +103,7 @@ const buildQueueForConfig = (
 const getCurrentQueues = async (
   resolvedRedis: ResolvedRedis[],
   pluginOptions: BullBoardOptions,
+  logger: FastifyBaseLogger,
 ) => {
   const queueIds = await Promise.all(
     resolvedRedis.map((e) => backgroundJobProcessorGetActiveQueueIds(e.redis)),
@@ -113,6 +114,10 @@ const getCurrentQueues = async (
   queueIds.forEach((ids, index) => {
     // biome-ignore lint/style/noNonNullAssertion: Should exist
     const resolved = resolvedRedis[index]!
+    logger.debug(
+      { configIndex: index, queueCount: ids.length, queueIds: ids, isPro: resolved.isPro },
+      'Bull-board -> queues discovered from Redis config',
+    )
     for (const id of ids) {
       const { queue, adapter } = buildQueueForConfig(id, resolved, pluginOptions)
       queues.push(queue)
@@ -132,7 +137,11 @@ const replaceQueues = async (
   const { refreshIntervalInSeconds } = pluginOptions
 
   fastify.log.debug({ refreshIntervalInSeconds }, 'Bull-dashboard -> updating queues')
-  const { queues: newQueues, queuesAdapter } = await getCurrentQueues(resolvedRedis, pluginOptions)
+  const { queues: newQueues, queuesAdapter } = await getCurrentQueues(
+    resolvedRedis,
+    pluginOptions,
+    fastify.log,
+  )
   bullBoard.replaceQueues(queuesAdapter)
   await Promise.all(currentQueues.map((queue) => queue.close()))
   currentQueues = newQueues
@@ -179,7 +188,11 @@ const plugin = async (fastify: FastifyInstance, pluginOptions: BullBoardOptions)
   const { basePath, assetsPath } = pluginOptions
   const resolvedRedis = resolveRedis(pluginOptions)
 
-  const { queues, queuesAdapter } = await getCurrentQueues(resolvedRedis, pluginOptions)
+  const { queues, queuesAdapter } = await getCurrentQueues(
+    resolvedRedis,
+    pluginOptions,
+    fastify.log,
+  )
   currentQueues = queues
 
   const serverAdapter = new FastifyAdapter()
