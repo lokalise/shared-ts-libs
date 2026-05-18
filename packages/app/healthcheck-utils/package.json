@@ -36,7 +36,7 @@
         "@lokalise/node-core": "^14.0.0",
         "@supercharge/promise-pool": "^3.2.0",
         "redis-semaphore": "^5.6.2",
-        "toad-cache": "^3.7.0"
+        "toad-cache": "^3.7.1"
     },
     "peerDependencies": {
         "@lokalise/background-jobs-common": ">=12.0.0",
