@@ -114,7 +114,7 @@ const getCurrentQueues = async (
   queueIds.forEach((ids, index) => {
     // biome-ignore lint/style/noNonNullAssertion: Should exist
     const resolved = resolvedRedis[index]!
-    logger.info(
+    logger.debug(
       { configIndex: index, queueCount: ids.length, queueIds: ids, isPro: resolved.isPro },
       'Bull-board -> queues discovered from Redis config',
     )
