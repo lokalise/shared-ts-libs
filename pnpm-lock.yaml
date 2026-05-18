@@ -1115,8 +1115,8 @@ importers:
         specifier: ^4.6.1
         version: 4.6.1(eslint@8.57.1)(typescript@6.0.3)(vitest@4.1.6)
       '@tanstack/eslint-plugin-query':
-        specifier: ^5.35.6
-        version: 5.100.10(eslint@8.57.1)(typescript@6.0.3)
+        specifier: ^5.100.11
+        version: 5.100.11(eslint@8.57.1)(typescript@6.0.3)
       '@typescript-eslint/parser':
         specifier: ^8.59.4
         version: 8.59.4(eslint@8.57.1)(typescript@6.0.3)
@@ -3539,8 +3539,8 @@ packages:
     resolution: {integrity: sha512-qGzCltMN05ohRRQAXB8TPWt+0Coz9Va266gr9nYN1qc/f/EIaup3VRg7b59mtRaeKTRcxreF20l/udCM/gOqNg==}
     engines: {node: '>=8'}
 
-  '@tanstack/eslint-plugin-query@5.100.10':
-    resolution: {integrity: sha512-Ddou3agTWv5rvHSBby4yHlugUFHVh0nyo2fyoZ81qSxaTBIwNCoPgpiJhjo5QkThrH1wGC7k548BcMTszZCkBw==}
+  '@tanstack/eslint-plugin-query@5.100.11':
+    resolution: {integrity: sha512-4JfaSf6/ql9AFAsRWaWulz40gS86bDgSr15pWCI3o+oX3sdZ0ZR8AOeNrCEqyIrV6wFxnCfhFi1kWjOlZ+66Ew==}
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
       typescript: ^5.4.0 || ^6.0.0
@@ -10565,7 +10565,7 @@ snapshots:
 
   '@supercharge/promise-pool@3.3.0': {}
 
-  '@tanstack/eslint-plugin-query@5.100.10(eslint@8.57.1)(typescript@6.0.3)':
+  '@tanstack/eslint-plugin-query@5.100.11(eslint@8.57.1)(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/utils': 8.59.3(eslint@8.57.1)(typescript@6.0.3)
       eslint: 8.57.1
