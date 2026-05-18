@@ -4,7 +4,7 @@ Please describe
 
 ## Checklist
 
-- [ ] Apply one of following labels; `major`, `minor`, `patch` or `skip-release`
+- [ ] I've added a changeset, or no published packages were changed
 - [ ] I've updated the documentation, or no changes were necessary
 - [ ] I've updated the tests, or no changes were necessary
 

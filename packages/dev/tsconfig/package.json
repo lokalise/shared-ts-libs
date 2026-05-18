@@ -5,7 +5,8 @@
     "type": "module",
     "repository": {
         "type": "git",
-        "url": "git://github.com/lokalise/shared-ts-libs.git"
+        "url": "git://github.com/lokalise/shared-ts-libs.git",
+        "directory": "packages/dev/tsconfig"
     },
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "publishConfig": {

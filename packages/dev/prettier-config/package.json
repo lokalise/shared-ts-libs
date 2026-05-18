@@ -1,29 +1,30 @@
 {
-  "name": "@lokalise/prettier-config",
-  "version": "1.0.1",
-  "type": "module",
-  "license": "Apache-2.0",
-  "files": [
-    "index.json"
-  ],
-  "main": "./index.json",
-  "module": "./index.json",
-  "types": "./index.json",
-  "homepage": "https://github.com/lokalise/shared-ts-libs",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/lokalise/shared-ts-libs.git"
-  },
-  "exports": {
-    ".": {
-      "types": "./index.json",
-      "import": "./index.json",
-      "require": "./index.json"
+    "name": "@lokalise/prettier-config",
+    "version": "1.0.1",
+    "type": "module",
+    "license": "Apache-2.0",
+    "files": [
+        "index.json"
+    ],
+    "main": "./index.json",
+    "module": "./index.json",
+    "types": "./index.json",
+    "homepage": "https://github.com/lokalise/shared-ts-libs",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/lokalise/shared-ts-libs.git",
+        "directory": "packages/dev/prettier-config"
+    },
+    "exports": {
+        ".": {
+            "types": "./index.json",
+            "import": "./index.json",
+            "require": "./index.json"
+        }
+    },
+    "scripts": {
+        "build": "echo 'No build step required.'",
+        "lint": "echo 'No lint step required.'",
+        "package-version": "echo $npm_package_version"
     }
-  },
-  "scripts": {
-    "build": "echo 'No build step required.'",
-    "lint": "echo 'No lint step required.'",
-    "package-version": "echo $npm_package_version"
-  }
 }

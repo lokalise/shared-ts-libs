@@ -98,6 +98,63 @@ npx drizzle-kit migrate
 
 This should be a **no-op** — all migrations are already tracked, so nothing is executed. If Drizzle tries to run migrations here, your baseline was not applied correctly.
 
+### Step 6.1: Verify the baseline is honest (recommended)
+
+The previous check only verifies that Drizzle *thinks* the migrations are applied. It does **not** verify that a fresh `drizzle-kit migrate` against an empty database would actually reproduce the same schema as production. If the Drizzle schema lacks explicit name overrides for constraints, indexes, and foreign keys, the generated migrations will use Drizzle's default names — and a new dev's local database will end up with subtly different constraint/index/FK names than production. `markMigrationsApplied` will happily record those migrations as "applied" anyway, masking the divergence.
+
+To catch this, use `snapshotSchema` + `diffSchemaSnapshots`. The recipe:
+
+1. Set up two databases via `docker-compose` (or locally on different ports):
+   - **Database A**: empty, then `prisma migrate deploy` applied (or restored from a sanitized prod dump).
+   - **Database B**: empty, then `drizzle-kit migrate` applied (against the migration files you just generated in Step 4).
+2. Snapshot both and diff:
+
+```typescript
+import { snapshotSchema, diffSchemaSnapshots } from '@lokalise/drizzle-utils'
+import postgres from 'postgres'
+
+async function verifyBaseline() {
+  const prismaSql = postgres(process.env.DATABASE_URL_PRISMA!)
+  const drizzleSql = postgres(process.env.DATABASE_URL_DRIZZLE!)
+  const toExecutor = (sql) => ({
+    run: (q) => sql.unsafe(q).then(() => {}),
+    all: (q) => sql.unsafe(q),
+  })
+
+  const prismaSnapshot = await snapshotSchema({
+    executor: toExecutor(prismaSql),
+    dialect: 'postgresql',
+  })
+  const drizzleSnapshot = await snapshotSchema({
+    executor: toExecutor(drizzleSql),
+    dialect: 'postgresql',
+  })
+
+  const diff = diffSchemaSnapshots(prismaSnapshot, drizzleSnapshot)
+  if (!diff.equal) {
+    console.error(`Schema diverges (${diff.differences.length} differences):`)
+    for (const d of diff.differences) {
+      console.error(`  [${d.kind}] ${d.path}`)
+    }
+    process.exit(1)
+  }
+  await prismaSql.end()
+  await drizzleSql.end()
+}
+```
+
+**Every difference is a real defect** — not noise to be filtered out. The fix is usually adding the right `name:` override on a constraint or index in your Drizzle schema:
+
+- FK rename → wrap with `foreignKey({ name: 'OriginalName_fkey', ... })`
+- PK rename → `primaryKey({ name: 'OriginalName_pkey', columns: [...] })`
+- Unique rename → `.unique('OriginalName_key')` or `uniqueIndex('OriginalName_key')`
+- Index rename → `index('OriginalName_idx').on(...)`
+- `SERIAL` vs identity divergence → use Drizzle's `serial()` / `bigserial()` if Prisma used `SERIAL`, instead of switching to identity
+
+Re-generate the migration after each round of fixes (delete the old migration file, run `drizzle-kit generate` again) and re-run the diff until it returns `equal: true`. This check is intentionally local-only — it has zero production runtime impact.
+
+The same pattern works for **MySQL** (`dialect: 'mysql'`) and **CockroachDB** (`dialect: 'cockroachdb'`).
+
 ## Step 7: Remove Prisma and deploy
 
 - Remove `prisma` and `@prisma/client` from your dependencies

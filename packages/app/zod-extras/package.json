@@ -8,7 +8,8 @@
     "license": "Apache-2.0",
     "repository": {
         "type": "git",
-        "url": "git://github.com/lokalise/shared-ts-libs.git"
+        "url": "git://github.com/lokalise/shared-ts-libs.git",
+        "directory": "packages/app/zod-extras"
     },
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "files": [
