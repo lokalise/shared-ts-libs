@@ -8,11 +8,34 @@ There are a few basic ground-rules for contributors:
 2. Contributors should attempt to adhere to the prevailing code-style.
 3. Before submitting a PR for a major new feature, or introducing a significant change, please open an issue to discuss the proposal with maintainers.
 
+## Changesets
+
+This repo uses [Changesets](https://github.com/changesets/changesets) to automate versioning and releases.
+
+If your PR affects anything used by consumers (API, types, runtime behavior, or usage-facing docs), add a changeset by running: `pnpm changeset`.
+
+The command will prompt you to select affected packages, choose the change type (`major`, `minor`, or `patch`) for each, and a description of the change.
+It will generate a file in `.changeset/` that you should commit.
+You can edit the generated file to improve the release note if needed.
+
+> **Note:** If you add headers inside a changeset, use `####` or `#####` only. Shallower headers will break the final CHANGELOG and upstream tooling.
+
+**Choose the correct bump type:**
+
+- `patch` — bug fixes
+- `minor` — new features, backwards-compatible
+- `major` — breaking changes
+
+**Writing a good description:**
+
+- Focus on user-facing impact; skip implementation details
+- Keep it to 1–3 sentences
+- Use past tense for what you did ("Added support for X") and present tense for package behavior ("The processor now handles Y")
+
 ## Releases
 
-- Releases are done automatically after pull requests are merged.
-- Please label your PR in accordance with requirements of [SemVer](https://semver.org/).
-- Do not bump version numbers in pull requests.
+Releases are triggered automatically when a PR with a changeset is merged to `main`.
+Do not bump version numbers manually — versioning is handled by the release pipeline.
 
 ## Developer's Certificate of Origin 1.1
 
