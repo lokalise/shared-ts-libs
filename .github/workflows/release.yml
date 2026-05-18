@@ -45,7 +45,6 @@ jobs:
         with:
           title: "Release Packages"
           commit: "chore: update versions"
-          publish: pnpm ci:publish
 
       - name: Auto-merge Changesets PR
         if: steps.changesets.outputs.hasChangesets == 'true'
