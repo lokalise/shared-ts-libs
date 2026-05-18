@@ -16,7 +16,8 @@
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
-        "url": "git://github.com/lokalise/shared-ts-libs.git"
+        "url": "git://github.com/lokalise/shared-ts-libs.git",
+        "directory": "packages/app/error-utils"
     },
     "scripts": {
         "build": "rimraf dist && tsc --project tsconfig.build.json",
