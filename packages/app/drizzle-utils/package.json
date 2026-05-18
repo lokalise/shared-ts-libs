@@ -22,7 +22,8 @@
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
-        "url": "https://github.com/lokalise/shared-ts-libs.git"
+        "url": "https://github.com/lokalise/shared-ts-libs.git",
+        "directory": "packages/app/drizzle-utils"
     },
     "scripts": {
         "build": "pnpm run clean && tsc --project tsconfig.build.json",

@@ -121,10 +121,16 @@ async function verifyBaseline() {
     all: (q) => sql.unsafe(q),
   })
 
-  const before = await snapshotSchema({ executor: toExecutor(prismaSql), dialect: 'postgresql' })
-  const after = await snapshotSchema({ executor: toExecutor(drizzleSql), dialect: 'postgresql' })
+  const prismaSnapshot = await snapshotSchema({
+    executor: toExecutor(prismaSql),
+    dialect: 'postgresql',
+  })
+  const drizzleSnapshot = await snapshotSchema({
+    executor: toExecutor(drizzleSql),
+    dialect: 'postgresql',
+  })
 
-  const diff = diffSchemaSnapshots(before, after)
+  const diff = diffSchemaSnapshots(prismaSnapshot, drizzleSnapshot)
   if (!diff.equal) {
     console.error(`Schema diverges (${diff.differences.length} differences):`)
     for (const d of diff.differences) {
