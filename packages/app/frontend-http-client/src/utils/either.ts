@@ -29,10 +29,6 @@ export const isFailure = <T, U>(e: Either<T, U>): e is Left<T> => {
   return e.error !== undefined
 }
 
-export const isSuccess = <T, U>(e: Either<T, U>): e is Right<U> => {
-  return e.result !== undefined
-}
-
 export const failure = <T>(error: T): Left<T> => ({ error })
 
 export const success = <U>(result: U): Right<U> => ({ result })

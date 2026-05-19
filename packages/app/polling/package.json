@@ -16,7 +16,8 @@
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
-        "url": "git://github.com/lokalise/shared-ts-libs.git"
+        "url": "git://github.com/lokalise/shared-ts-libs.git",
+        "directory": "packages/app/polling"
     },
     "exports": {
         ".": "./dist/index.js",
@@ -29,12 +30,13 @@
         "lint:fix": "biome check --write",
         "test": "vitest run",
         "test:ci": "vitest run --coverage",
-        "prepublishOnly": "npm run build",
+        "prepublishOnly": "pnpm run build",
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.3.7",
+        "@types/node": "^25.9.0",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "^4.0.0",
         "@vitest/coverage-v8": "^4.0.15",

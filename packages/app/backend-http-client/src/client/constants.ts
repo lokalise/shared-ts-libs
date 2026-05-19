@@ -31,8 +31,8 @@ export const TEST_OPTIONS: RequestOptions<any, any, true> = {
 }
 
 /**
- * Technically 204 will send an empty body, but undici-retry defaults to parsing unknown mimetype as text for
- * compatibility reasons, so we should expect to get an empty string here
+ * Technically 204 will send an empty body, but unknown MIME types are parsed as text,
+ * so we should expect to get an empty string here
  */
 export const NO_CONTENT_RESPONSE_SCHEMA = z.string().length(0)
 

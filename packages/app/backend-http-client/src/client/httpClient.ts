@@ -8,39 +8,25 @@ import type {
   PayloadRouteDefinition,
 } from '@lokalise/api-contracts'
 import { buildRequestPath } from '@lokalise/api-contracts'
-import { copyWithoutUndefined } from '@lokalise/node-core'
+import { copyWithoutUndefined, type Either } from '@lokalise/node-core'
 import type { FormData } from 'undici'
 import { Client } from 'undici'
-import type {
-  Either,
-  InternalRequestError,
-  RequestParams,
-  RequestResult,
-  RetryConfig,
-} from 'undici-retry'
-import {
-  isRequestResult,
-  NO_RETRY_CONFIG,
-  sendWithRetry,
-  sendWithRetryReturnStream,
-} from 'undici-retry'
-import type { ZodError, ZodSchema } from 'zod/v4'
-import { z } from 'zod/v4'
+import type { ZodError, ZodSchema, z } from 'zod/v4'
+import type { InternalRequestError } from '../errors/InternalRequestError.ts'
 import { ResponseStatusError } from '../errors/ResponseStatusError.ts'
 import type { PayloadRouteRequestParams, RouteRequestParams } from './apiContractTypes.ts'
 import { DEFAULT_OPTIONS, defaultClientOptions, REQUEST_ID_HEADER } from './constants.ts'
+import { executeRequest, executeStreamRequest, isRequestResult } from './requestExecutor.ts'
 import type {
-  InternalRequestOptions,
   RecordObject,
   RequestOptions,
+  RequestResult,
   RequestResultDefinitiveEither,
 } from './types.ts'
 
 type PayloadMethods = 'POST' | 'PUT' | 'PATCH'
 type NonPayloadMethods = 'DELETE' | 'GET'
 type DEFAULT_THROW_ON_ERROR = typeof DEFAULT_OPTIONS.throwOnError
-
-const _EMPTY_SCHEMA = z.null()
 
 export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
   return new Client(baseUrl, {
@@ -62,11 +48,10 @@ export async function sendGet<
 ): Promise<
   RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError>
 > {
-  const result = await sendWithRetry<InferSchemaOutput<T>>(
+  const result = await executeRequest<InferSchemaOutput<T>>(
     client,
     {
-      ...DEFAULT_OPTIONS,
-      path: path,
+      path,
       method: 'GET',
       query: options.query,
       headers: copyWithoutUndefined({
@@ -78,10 +63,8 @@ export async function sendGet<
         bodyTimeout: options.timeout,
         headersTimeout: options.timeout,
       }),
-      throwOnError: undefined,
     },
-    resolveRetryConfig(options),
-    resolveRequestConfig(options),
+    options,
   )
 
   return resolveResult(
@@ -108,11 +91,10 @@ export async function sendGetWithStreamedResponse<
     | 'blobResponseBody'
   >,
 ): Promise<RequestResultDefinitiveEither<Readable, false, DoThrowOnError>> {
-  const result = await sendWithRetryReturnStream(
+  const result = await executeStreamRequest(
     client,
     {
-      ...DEFAULT_OPTIONS,
-      path: path,
+      path,
       method: 'GET',
       query: options.query,
       headers: copyWithoutUndefined({
@@ -124,16 +106,10 @@ export async function sendGetWithStreamedResponse<
         bodyTimeout: options.timeout,
         headersTimeout: options.timeout,
       }),
-      throwOnError: undefined,
     },
-    resolveRetryConfig(options),
-    {
-      throwOnInternalError: false,
-      requestLabel: options.requestLabel,
-    },
+    options,
   )
 
-  // Handle errors if throwOnError is enabled
   if (result.error && (options.throwOnError ?? DEFAULT_OPTIONS.throwOnError)) {
     throw isRequestResult(result.error)
       ? new ResponseStatusError(result.error, options.requestLabel)
@@ -154,10 +130,9 @@ export async function sendDelete<
 ): Promise<
   RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError>
 > {
-  const result = await sendWithRetry<InferSchemaOutput<T>>(
+  const result = await executeRequest<InferSchemaOutput<T>>(
     client,
     {
-      ...DEFAULT_OPTIONS,
       path,
       method: 'DELETE',
       query: options.query,
@@ -170,10 +145,8 @@ export async function sendDelete<
         bodyTimeout: options.timeout,
         headersTimeout: options.timeout,
       }),
-      throwOnError: undefined,
     },
-    resolveRetryConfig(options),
-    resolveRequestConfig(options),
+    options,
   )
 
   return resolveResult(
@@ -203,11 +176,10 @@ async function sendResourceChange<
     DoThrowOnError
   >
 > {
-  const result = await sendWithRetry<InferSchemaOutput<ResponseBodySchema>>(
+  const result = await executeRequest<InferSchemaOutput<ResponseBodySchema>>(
     client,
     {
-      ...DEFAULT_OPTIONS,
-      path: path,
+      path,
       method,
       body: body ? JSON.stringify(body) : undefined,
       query: options.query,
@@ -220,10 +192,8 @@ async function sendResourceChange<
         bodyTimeout: options.timeout,
         headersTimeout: options.timeout,
       }),
-      throwOnError: undefined,
     },
-    resolveRetryConfig(options),
-    resolveRequestConfig(options),
+    options,
   )
 
   return resolveResult(
@@ -249,11 +219,10 @@ async function sendNonPayload<
     'isEmptyResponseExpected'
   > & { isEmptyResponseExpected: boolean },
 ) {
-  const result = await sendWithRetry<InferSchemaOutput<T>>(
+  const result = await executeRequest<InferSchemaOutput<T>>(
     client,
     {
-      ...DEFAULT_OPTIONS,
-      path: path,
+      path,
       method,
       query: options.query,
       headers: copyWithoutUndefined({
@@ -265,10 +234,8 @@ async function sendNonPayload<
         bodyTimeout: options.timeout,
         headersTimeout: options.timeout,
       }),
-      throwOnError: undefined,
     },
-    resolveRetryConfig(options),
-    resolveRequestConfig(options),
+    options,
   )
 
   return resolveResult(
@@ -312,11 +279,10 @@ async function sendPayloadWithStreamedResponse<
     | 'blobResponseBody'
   >,
 ): Promise<RequestResultDefinitiveEither<Readable, false, DoThrowOnError>> {
-  const result = await sendWithRetryReturnStream(
+  const result = await executeStreamRequest(
     client,
     {
-      ...DEFAULT_OPTIONS,
-      path: path,
+      path,
       method,
       body: body ? JSON.stringify(body) : undefined,
       query: options.query,
@@ -329,16 +295,10 @@ async function sendPayloadWithStreamedResponse<
         bodyTimeout: options.timeout,
         headersTimeout: options.timeout,
       }),
-      throwOnError: undefined,
     },
-    resolveRetryConfig(options),
-    {
-      throwOnInternalError: false,
-      requestLabel: options.requestLabel,
-    },
+    options,
   )
 
-  // Handle errors if throwOnError is enabled
   if (result.error && (options.throwOnError ?? DEFAULT_OPTIONS.throwOnError)) {
     throw isRequestResult(result.error)
       ? new ResponseStatusError(result.error, options.requestLabel)
@@ -378,11 +338,10 @@ export async function sendPostBinary<
 ): Promise<
   RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError>
 > {
-  const result = await sendWithRetry<InferSchemaOutput<T>>(
+  const result = await executeRequest<InferSchemaOutput<T>>(
     client,
     {
-      ...DEFAULT_OPTIONS,
-      path: path,
+      path,
       method: 'POST',
       body,
       query: options.query,
@@ -395,10 +354,8 @@ export async function sendPostBinary<
         bodyTimeout: options.timeout,
         headersTimeout: options.timeout,
       }),
-      throwOnError: undefined,
     },
-    resolveRetryConfig(options),
-    resolveRequestConfig(options),
+    options,
   )
 
   return resolveResult(
@@ -438,11 +395,10 @@ export async function sendPutBinary<
 ): Promise<
   RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError>
 > {
-  const result = await sendWithRetry<InferSchemaOutput<T>>(
+  const result = await executeRequest<InferSchemaOutput<T>>(
     client,
     {
-      ...DEFAULT_OPTIONS,
-      path: path,
+      path,
       method: 'PUT',
       body,
       query: options.query,
@@ -455,10 +411,8 @@ export async function sendPutBinary<
         bodyTimeout: options.timeout,
         headersTimeout: options.timeout,
       }),
-      throwOnError: undefined,
     },
-    resolveRetryConfig(options),
-    resolveRequestConfig(options),
+    options,
   )
 
   return resolveResult(
@@ -486,23 +440,6 @@ export function sendPatch<
   return sendResourceChange(client, 'PATCH', path, body, options)
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: we don't care here
-function resolveRequestConfig(options: InternalRequestOptions<any>): RequestParams {
-  return {
-    safeParseJson: options.safeParseJson ?? false,
-    blobBody: options.blobResponseBody ?? false,
-    throwOnInternalError: false,
-    requestLabel: options.requestLabel,
-  }
-}
-
-function resolveRetryConfig(
-  // biome-ignore lint/suspicious/noExplicitAny: we don't care here
-  options: Pick<InternalRequestOptions<any>, 'retryConfig'>,
-): RetryConfig {
-  return options.retryConfig ?? NO_RETRY_CONFIG
-}
-
 function resolveResult<
   T extends ZodSchema | undefined,
   IsEmptyResponseExpected extends boolean,
@@ -518,7 +455,6 @@ function resolveResult<
   requestLabel: string,
   isEmptyResponseExpected: IsEmptyResponseExpected,
 ): RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError> {
-  // Throw response error
   if (requestResult.error && throwOnError) {
     throw isRequestResult(requestResult.error)
       ? new ResponseStatusError(requestResult.error, requestLabel)
@@ -577,7 +513,7 @@ function handleRequestResultSuccess<T extends ZodSchema | undefined>(
 }
 
 /**
- * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
  */
 export function sendByPayloadRoute<
   RequestBodySchema extends z.Schema | undefined,
@@ -643,7 +579,7 @@ export function sendByPayloadRoute<
 }
 
 /**
- * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
  */
 export function sendByGetRoute<
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -704,7 +640,7 @@ export function sendByGetRoute<
 }
 
 /**
- * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
  */
 export function sendByDeleteRoute<
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -765,7 +701,7 @@ export function sendByDeleteRoute<
 }
 
 /**
- * @deprecated Use `sendByContractWithStreamedResponse` instead. This function will be removed in a future version.
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
  */
 export function sendByGetRouteWithStreamedResponse<
   PathParamsSchema extends z.Schema | undefined = undefined,
@@ -819,7 +755,7 @@ export function sendByGetRouteWithStreamedResponse<
 }
 
 /**
- * @deprecated Use `sendByContractWithStreamedResponse` instead. This function will be removed in a future version.
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
  */
 export function sendByPayloadRouteWithStreamedResponse<
   RequestBodySchema extends z.Schema | undefined,
@@ -879,6 +815,22 @@ export function sendByPayloadRouteWithStreamedResponse<
   )
 }
 
+/**
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
+ * @example
+ * ```typescript
+ * // Before (deprecated):
+ * const result = await sendByContract(client, someGetRouteDefinition,
+ *   { pathParams: { userId: 1 } },
+ *   { requestLabel: 'Get user' },
+ * )
+ *
+ * // After (recommended):
+ * const result = await sendByApiContract(client, someGetContract, {
+ *   pathParams: { userId: 1 },
+ * })
+ * ```
+ */
 // Overload 1: GET route
 export function sendByContract<
   ResponseBodySchema extends z.Schema | undefined = undefined,
@@ -1039,6 +991,22 @@ export function sendByContract(
   )
 }
 
+/**
+ * @deprecated Use `sendByApiContract` with an SSE contract instead. This function will be removed in a future version.
+ * @example
+ * ```typescript
+ * // Before (deprecated):
+ * const result = await sendByContractWithStreamedResponse(client, downloadContract,
+ *   { pathParams: { fileId: '123' } },
+ *   { requestLabel: 'Download file' },
+ * )
+ *
+ * // After (recommended):
+ * const result = await sendByApiContract(client, downloadContract, {
+ *   pathParams: { fileId: '123' },
+ * })
+ * ```
+ */
 // Overload 1: GET route
 export function sendByContractWithStreamedResponse<
   PathParamsSchema extends z.Schema | undefined = undefined,

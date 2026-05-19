@@ -12,7 +12,8 @@
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
-        "url": "https://github.com/lokalise/shared-ts-libs.git"
+        "url": "https://github.com/lokalise/shared-ts-libs.git",
+        "directory": "packages/app/healthcheck-utils"
     },
     "exports": {
         ".": "./dist/index.js",
@@ -27,7 +28,7 @@
         "pretest:ci": "docker compose up -d",
         "test:ci": "vitest run --coverage",
         "posttest:ci": "docker compose down",
-        "prepublishOnly": "npm run build",
+        "prepublishOnly": "pnpm run build",
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
     },
@@ -35,7 +36,7 @@
         "@lokalise/node-core": "^14.0.0",
         "@supercharge/promise-pool": "^3.2.0",
         "redis-semaphore": "^5.6.2",
-        "toad-cache": "^3.7.0"
+        "toad-cache": "^3.7.1"
     },
     "peerDependencies": {
         "@lokalise/background-jobs-common": ">=12.0.0",

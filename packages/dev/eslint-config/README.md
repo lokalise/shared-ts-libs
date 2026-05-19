@@ -1,3 +1,10 @@
 # Shared eslint config
 
-DEPRECATION NOTICE: This is no longer recommended to use. Instead, use [biome-config](https://github.com/lokalise/shared-ts-libs/tree/main/packages/dev/biome-config) and [eslint-config-biome-companion](https://github.com/lokalise/shared-ts-libs/tree/main/packages/dev/eslint-config-biome-companion).
+> **Deprecated:** This package is no longer recommended for new projects.
+
+Please use the following alternatives instead:
+
+- [biome-config](https://github.com/lokalise/shared-ts-libs/tree/main/packages/dev/biome-config)
+- [eslint-config-biome-companion](https://github.com/lokalise/shared-ts-libs/tree/main/packages/dev/eslint-config-biome-companion)
+
+These packages provide the recommended setup going forward.

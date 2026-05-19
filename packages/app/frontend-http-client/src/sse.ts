@@ -22,6 +22,13 @@ export type SseCallbacks<Events extends SSEEventSchemas> = {
   }
   onError?: (error: Error) => void
   onOpen?: () => void
+  /**
+   * Fires once the server closes the stream naturally (i.e. without an error and
+   * without the caller invoking `close()`). Use this to react to end-of-stream
+   * without inferring it from event content. Not called on aborted streams or
+   * errors — `onError` is the signal for those.
+   */
+  onClose?: () => void
 }
 
 type AnyContract = AnyDualModeContractDefinition | AnySSEContractDefinition
@@ -166,6 +173,13 @@ async function runSseConnection(
       /* v8 ignore stop */
       handleSseEvent(event, data, contract, callbacks)
     }
+
+    // Natural end of stream — server closed without error. The aborted-here
+    // branch is only reachable if abort is signaled between reader.read() calls
+    // (otherwise reader.read() throws and we go to catch), so coverage skips it.
+    /* v8 ignore start */
+    if (!abortController.signal.aborted) callbacks.onClose?.()
+    /* v8 ignore stop */
   } catch (err) {
     /* v8 ignore start */
     if (!abortController.signal.aborted) {
@@ -176,26 +190,29 @@ async function runSseConnection(
 }
 
 /**
- * Connects to a server-sent event (SSE) stream defined by a contract and dispatches typed events
- * to the provided callbacks.
- *
- * The connection is established immediately and runs asynchronously in the background. Events are
- * validated against the contract's schemas before being passed to handlers. The stream runs until
- * the server closes it or `close()` is called — there is no automatic reconnection.
- *
- * @param wretch - A configured wretch instance (base URL, default headers, etc.)
- * @param contract - The SSE or dual-mode contract defining the endpoint and event schemas
- * @param params - Path params, query params, body, and headers required by the contract
- * @param callbacks - `onEvent` handlers keyed by event name, plus optional `onOpen` and `onError`
- * @returns A `SseConnection` with a `close()` method to abort the stream
- *
+ * @deprecated Use `sendByApiContract` with an SSE contract (`sseResponse`) instead. This function will be removed in a future version.
  * @example
+ * ```typescript
+ * // Before (deprecated):
  * const connection = connectSseByContract(client, myContract, { pathParams: { id: '1' } }, {
  *   onEvent: { 'item.updated': (data) => console.log(data) },
  *   onError: (err) => console.error(err),
  * })
- * // later:
- * connection.close()
+ *
+ * // After (recommended):
+ * const { result } = await sendByApiContract(client, myContract, { pathParams: { id: '1' } })
+ *
+ * // Option A — async iteration:
+ * for await (const event of result.body) {
+ *   if (event.type === 'item.updated') console.log(event.data)
+ * }
+ *
+ * // Option B — callback-based (mirrors this API):
+ * sseStreamToCallbacks(result.body, {
+ *   onEvent: { 'item.updated': (data) => console.log(data) },
+ *   onError: (err) => console.error(err),
+ * })
+ * ```
  */
 export function connectSseByContract<
   Contract extends AnyContract,

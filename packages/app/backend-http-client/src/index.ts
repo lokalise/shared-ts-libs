@@ -1,7 +1,4 @@
-export type { DelayResolver, RetryConfig } from 'undici-retry'
-// Re-export retry utilities from undici-retry for convenience
-export { createDefaultRetryResolver, DEFAULT_RETRY_CONFIG } from 'undici-retry'
-export type { RetryConfig as SendByApiContractRetryConfig } from './api-contract/retry.ts'
+export type { RetryConfig } from './api-contract/retry.ts'
 export type { ContractRequestOptions } from './api-contract/sendByApiContract.ts'
 export { sendByApiContract } from './api-contract/sendByApiContract.ts'
 export { UnexpectedResponseError } from './api-contract/UnexpectedResponseError.ts'
@@ -36,7 +33,7 @@ export type {
   RequestOptions,
   RequestResultDefinitiveEither,
 } from './client/types.ts'
-export { isInternalRequestError } from './client/types.ts'
+export { InternalRequestError, isInternalRequestError } from './errors/InternalRequestError.ts'
 export {
   isResponseStatusError,
   ResponseStatusError,

@@ -42,3 +42,13 @@ services:
       interval: 2s
       timeout: 5s
       retries: 30
+
+# Pin an explicit small subnet so Docker doesn't allocate one from its default
+# pool. Required on hosts where the default address pools are exhausted —
+# Docker errors with "all predefined address pools have been fully subnetted"
+# otherwise. The /28 is more than enough for three services.
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 10.234.97.0/28

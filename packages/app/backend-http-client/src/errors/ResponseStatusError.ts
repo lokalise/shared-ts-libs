@@ -1,17 +1,15 @@
 import { InternalError } from '@lokalise/node-core'
-import type { RequestResult } from 'undici-retry'
+import type { RequestResult } from '../client/types.ts'
 
 export function isResponseStatusError(entity: unknown): entity is ResponseStatusError {
   return 'isResponseStatusError' in (entity as ResponseStatusError)
 }
 
 export class ResponseStatusError extends InternalError {
-  // biome-ignore lint/suspicious/noExplicitAny: ok
-  public readonly response: RequestResult<any>
+  public readonly response: RequestResult<unknown>
   public readonly isResponseStatusError = true
 
-  // biome-ignore lint/suspicious/noExplicitAny: ok
-  constructor(requestResult: RequestResult<any>, requestLabel = 'N/A') {
+  constructor(requestResult: RequestResult<unknown>, requestLabel = 'N/A') {
     super({
       message: `Response status code ${requestResult.statusCode}`,
       details: {

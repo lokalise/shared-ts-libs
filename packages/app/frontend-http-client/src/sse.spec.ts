@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream'
 import { buildSseContract } from '@lokalise/api-contracts'
 import { getLocal, type Mockttp } from 'mockttp'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -363,6 +364,110 @@ describe('connectSseByContract', () => {
     await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
 
     expect(onOpen).toHaveBeenCalledOnce()
+    connection.close()
+  })
+
+  it('calls onClose when the server closes the stream naturally', async () => {
+    await mockServer.forGet('/events/stream').thenCallback(() => ({
+      statusCode: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+      body: sseResponse([
+        { event: 'item.updated', data: JSON.stringify({ items: [{ id: '1' }] }) },
+        { event: 'done', data: JSON.stringify({ total: 1 }) },
+      ]),
+    }))
+
+    const onDone = vi.fn()
+    const onClose = vi.fn()
+    const onError = vi.fn()
+
+    const client = wretch(mockServer.url)
+    const connection = connectSseByContract(
+      client,
+      getSseContract,
+      {},
+      {
+        onEvent: {
+          'item.updated': vi.fn(),
+          done: onDone,
+        },
+        onClose,
+        onError,
+      },
+    )
+
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalled())
+
+    expect(onDone).toHaveBeenCalledOnce()
+    expect(onClose).toHaveBeenCalledOnce()
+    expect(onError).not.toHaveBeenCalled()
+    connection.close()
+  })
+
+  it('does not call onClose when the caller aborts the connection', async () => {
+    // Use a streaming response that emits one event and then stays open, so we can
+    // deterministically abort mid-stream (a `thenCallback` response would deliver
+    // its full body before we get a chance to call `close()`, racing the assertion).
+    const responseStream = new Readable({ read() {} })
+    responseStream.push(
+      `event: item.updated\ndata: ${JSON.stringify({ items: [{ id: '1' }] })}\n\n`,
+    )
+    await mockServer
+      .forGet('/events/stream')
+      .thenStream(200, responseStream, { 'Content-Type': 'text/event-stream' })
+
+    const onItemUpdated = vi.fn()
+    const onClose = vi.fn()
+
+    const client = wretch(mockServer.url)
+    const connection = connectSseByContract(
+      client,
+      getSseContract,
+      {},
+      {
+        onEvent: {
+          'item.updated': onItemUpdated,
+          done: vi.fn(),
+        },
+        onClose,
+      },
+    )
+
+    await vi.waitFor(() => expect(onItemUpdated).toHaveBeenCalled())
+    connection.close()
+
+    await new Promise((r) => setTimeout(r, 50))
+    expect(onClose).not.toHaveBeenCalled()
+    responseStream.push(null)
+  })
+
+  it('does not call onClose when the stream errors', async () => {
+    await mockServer.forGet('/events/stream').thenCallback(() => ({
+      statusCode: 500,
+      body: 'Server error',
+    }))
+
+    const onClose = vi.fn()
+    const onError = vi.fn()
+
+    const client = wretch(mockServer.url)
+    const connection = connectSseByContract(
+      client,
+      getSseContract,
+      {},
+      {
+        onEvent: {
+          'item.updated': vi.fn(),
+          done: vi.fn(),
+        },
+        onClose,
+        onError,
+      },
+    )
+
+    await vi.waitFor(() => expect(onError).toHaveBeenCalled())
+
+    expect(onClose).not.toHaveBeenCalled()
     connection.close()
   })
 

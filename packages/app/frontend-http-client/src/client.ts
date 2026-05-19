@@ -393,7 +393,7 @@ export async function sendDelete<
 }
 
 /**
- * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
  */
 export function sendByPayloadRoute<
   T extends WretchInstance,
@@ -456,7 +456,7 @@ export function sendByPayloadRoute<
 }
 
 /**
- * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
  */
 export function sendByGetRoute<
   T extends WretchInstance,
@@ -512,7 +512,7 @@ export function sendByGetRoute<
 }
 
 /**
- * @deprecated Use `sendByContract` instead. This function will be removed in a future version.
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
  */
 export function sendByDeleteRoute<
   T extends WretchInstance,
@@ -567,6 +567,21 @@ export function sendByDeleteRoute<
   })
 }
 
+/**
+ * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
+ * @example
+ * ```typescript
+ * // Before (deprecated):
+ * const result = await sendByContract(wretch, someGetRouteDefinition, {
+ *   pathParams: { userId: 1 },
+ * })
+ *
+ * // After (recommended):
+ * const result = await sendByApiContract(wretch, someGetContract, {
+ *   pathParams: { userId: 1 },
+ * })
+ * ```
+ */
 // Overload 1: GET route
 export function sendByContract<
   T extends WretchInstance,

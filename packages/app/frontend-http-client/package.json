@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/frontend-http-client",
-    "version": "7.3.1",
+    "version": "7.5.0",
     "description": "Opinionated HTTP client for the frontend",
     "files": [
         "dist/**",
@@ -20,7 +20,8 @@
     "homepage": "https://github.com/lokalise/shared-ts-libs",
     "repository": {
         "type": "git",
-        "url": "git://github.com/lokalise/shared-ts-libs.git"
+        "url": "git://github.com/lokalise/shared-ts-libs.git",
+        "directory": "packages/app/frontend-http-client"
     },
     "publishConfig": {
         "access": "public"
@@ -33,7 +34,7 @@
         "test": "vitest run",
         "test:ci": "vitest run --coverage",
         "package-version": "echo $npm_package_version",
-        "prepublishOnly": "npm run clean && npm run build",
+        "prepublishOnly": "pnpm run clean && pnpm run build",
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
@@ -50,7 +51,7 @@
         "@lokalise/api-contracts": "^6.0.0",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "^4.0.0",
-        "@types/node": "^25.0.3",
+        "@types/node": "^25.9.0",
         "@vitest/coverage-v8": "^4.0.15",
         "mock-xmlhttprequest": "^8.4.1",
         "mockttp": "^4.2.1",

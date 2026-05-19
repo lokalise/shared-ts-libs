@@ -15,20 +15,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - uses: pnpm/action-setup@v6
+
       - name: Setup Node ${{ inputs.node_version }}
         uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node_version }}
-          package-manager-cache: false
+          cache: 'pnpm'
 
       - name: Install
-        run: npm install --ignore-scripts
+        run: pnpm install --ignore-scripts
 
       - name: Build
-        run: npm run build -- --filter=${{ inputs.package_name }}
+        run: pnpm run build --filter=${{ inputs.package_name }}
 
       - name: Lint
-        run: npm run lint -- --filter=${{ inputs.package_name }}
+        run: pnpm run lint --filter=${{ inputs.package_name }}
 
       - name: Run Tests
-        run: npm run test:ci -- --filter=${{ inputs.package_name }}
+        run: pnpm run test:ci --filter=${{ inputs.package_name }}
