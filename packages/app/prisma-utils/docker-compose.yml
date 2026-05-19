@@ -4,7 +4,7 @@ services:
     hostname: crdb
     command: start-single-node --cluster-name=example-single-node
     ports:
-      - '26257:26257'
+      - '26258:26257'
       - '8181:8080'
     environment:
       - COCKROACH_PASSWORD=pass
