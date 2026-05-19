@@ -1,0 +1,57 @@
+name: CI (Turbo)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  ci:
+    name: CI / Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x, 24.x]
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - name: Setup Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ matrix.node-version }}-turbo-
+
+      - name: Install
+        run: pnpm install --ignore-scripts
+
+      - name: Build
+        run: pnpm turbo run build --cache-dir=.turbo
+
+      - name: Lint
+        run: pnpm turbo run lint --cache-dir=.turbo
+
+      - name: Test
+        run: pnpm turbo run test:ci --cache-dir=.turbo
+
+  automerge:
+    needs: ci
+    if: always() && needs.ci.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - uses: fastify/github-action-merge-dependabot@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
