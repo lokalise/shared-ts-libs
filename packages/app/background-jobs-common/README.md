@@ -84,16 +84,65 @@ To set up a queue configuration, you need to define a list of objects containing
 
 - **`queueId`**: The unique identifier for the queue.
 - **`queueOptions`**: Options for the queue. Refer to the [BullMQ documentation](https://docs.bullmq.io/guide/queues) for more details.
- - **`bullDashboardGrouping`**: Optional array of strings to control how queues are grouped in the 
-   [bull-dashboard](https://github.com/felixmosh/bull-board), using the [queues grouping feature](https://github.com/felixmosh/bull-board/pull/867). 
+- **`bullDashboardGrouping`**: Optional array of strings to control how queues are grouped in the
+   [bull-dashboard](https://github.com/felixmosh/bull-board), using the [queues grouping feature](https://github.com/felixmosh/bull-board/pull/867).
    Array elements are applied left to right: the first string is the top-level group, and each subsequent string defines
-   a nested subgroup.
-   The delimiter is `QUEUE_GROUP_DELIMITER`.
-   You can use the helper `commonBullDashboardGroupingBuilder(serviceId, moduleId)` to generate a grouping like 
-   `['serviceId', 'moduleId']`.
+   a nested subgroup. The delimiter is `QUEUE_GROUP_DELIMITER`. See [Bull Dashboard Grouping](#bull-dashboard-grouping)
+   below for usage and migration guidance — **the grouping is encoded into the queue name, so changing it on an existing
+   queue effectively creates a new queue.**
 - **`jobPayloadSchema`**: A Zod schema that defines the structure of the jobs payload for this queue.
 - **`jobOptions`**: Default options for jobs in this queue. Can be a function that will be resolved when a job is 
    scheduled. See [BullMQ documentation](https://docs.bullmq.io/guide/job-options).
+
+### Bull Dashboard Grouping
+
+To have a service's queues grouped together in the Bull Dashboard, queues must either be managed by
+`ModuleAwareQueueManager` (recommended for Lokalise services) or be configured individually with `bullDashboardGrouping`.
+
+#### Recommended: `ModuleAwareQueueManager`
+
+`ModuleAwareQueueManager` automatically derives the grouping from a `serviceId` (constructor argument) and the `moduleId`
+declared on each queue, producing `[serviceId, moduleId]`.
+
+```typescript
+const supportedQueues = [
+  {
+    queueId: 'email-queue',
+    moduleId: 'emails',
+    jobPayloadSchema: z.object({ /* ... */ }),
+  },
+] as const satisfies ModuleAwareQueueConfiguration[]
+
+const queueManager = new ModuleAwareQueueManager(
+  'my-service',
+  new CommonBullmqFactoryNew(),
+  supportedQueues,
+  { isTest: false, redisConfig: config.getRedisConfig() },
+)
+```
+
+#### Manual: `bullDashboardGrouping` on `QueueConfiguration`
+
+When using the standard `QueueManager`, pass `bullDashboardGrouping` per queue (optionally via the
+`commonBullDashboardGroupingBuilder(serviceId, moduleId)` helper).
+
+#### ⚠️ Grouping is part of the queue name
+
+Bull Dashboard grouping is **not metadata** — it is encoded into the queue name. Adding, removing, or changing
+`bullDashboardGrouping` (including switching from `QueueManager` to `ModuleAwareQueueManager`) on an already-running
+queue effectively creates a new queue and leaves the existing jobs orphaned in the old one.
+
+#### Migrating an existing queue
+
+To introduce grouping on existing queues without losing jobs, follow this migration path:
+
+1. Rename the existing queue manager in your DI config (e.g. `queueManagerOld`) and keep passing it to all current processors.
+2. Register a new queue manager under the original name using `ModuleAwareQueueManager` (so newly scheduled jobs go there).
+3. Duplicate the processors and queue configurations, wiring the new ones to the new queue manager.
+4. Release. Both old and new queues now run in parallel: the **old processors keep consuming the pre-existing (orphan)
+   jobs from the old queue** until it drains, while **all newly scheduled jobs land on the new queue** and are picked
+   up by the new processors.
+5. Once the old queue is empty, remove the old processors, queue configurations, and `queueManagerOld`.
 
 #### Job Deduplication
 
