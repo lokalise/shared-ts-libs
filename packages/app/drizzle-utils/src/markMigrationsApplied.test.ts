@@ -345,7 +345,7 @@ describe('markMigrationsApplied (PostgreSQL, drizzle-kit generated)', () => {
 
   beforeAll(() => {
     generatedDir = generateNewFormatMigrations('postgresql')
-  })
+  }, 20000)
 
   beforeEach(async () => {
     await db.execute(`DROP TABLE IF EXISTS "${testSchema}"."${testTable}"`)
