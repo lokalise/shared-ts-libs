@@ -132,6 +132,8 @@ Bull Dashboard grouping is **not metadata** — it is encoded into the queue nam
 `bullDashboardGrouping` (including switching from `QueueManager` to `ModuleAwareQueueManager`) on an already-running
 queue effectively creates a new queue and leaves the existing jobs orphaned in the old one.
 
+#### Migrating an existing queue
+
 To introduce grouping on existing queues without losing jobs, follow this migration path:
 
 1. Rename the existing queue manager in your DI config (e.g. `queueManagerOld`) and keep passing it to all current processors.
