@@ -75,6 +75,7 @@ export function generateNewFormatMigrations(dialect: 'postgresql' | 'mysql'): st
     dialect === 'postgresql' ? [PG_SCHEMA_V1, PG_SCHEMA_V2] : [MYSQL_SCHEMA_V1, MYSQL_SCHEMA_V2]
 
   const outDirForConfig = outDir.replace(/\\/g, '/')
+
   writeFileSync(
     configPath,
     `export default { dialect: '${dialect}', schema: './test/fixtures/_gen_schema_${id}.ts', out: '${outDirForConfig}' }\n`,
