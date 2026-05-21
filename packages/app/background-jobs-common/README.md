@@ -227,12 +227,20 @@ const node = await flowManager.addFlow({
 ```
 
 `addFlowBulk` accepts multiple roots, and `getFlow({ queueId, id })` retrieves a previously added tree using the queue
-config's resolved (grouped) name.
+config's resolved (grouped) name. BullMQ's `getFlow` defaults to `depth: 10` and `maxChildren: 20` — pass them
+explicitly when fetching deeper trees.
+
+#### Lazy initialization
+
+`lazyInitEnabled` controls whether the first `addFlow` (or `addFlowBulk` / `getFlow`) will implicitly call `start()`. With
+`lazyInitEnabled: false` you must call `start()` yourself or the first add will throw. `ModuleAwareFlowManager` enables
+lazy init in production (`isTest: false`) and disables it in tests so lifecycle is explicit.
 
 #### Constraints inherited from BullMQ
 
 - **Flow children cannot carry `deduplication`, `debounce` or `parent`** — these are typed off `FlowChildJobInput.opts`
-  and queue-level defaults for these fields are stripped on children. Apply `deduplication` on the root only.
+  and queue-level defaults for these fields are stripped on children, as are any fields smuggled in via the per-call
+  options. Apply `deduplication` on the root only.
 - **Flow nodes cannot carry `repeat`** — for repeatable jobs use `QueueManager.schedule`.
 
 #### `ModuleAwareFlowManager`

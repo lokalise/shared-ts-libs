@@ -75,7 +75,17 @@ export type FlowJobInput<
   }
 }[QueueId]
 
+/** Configuration accepted by {@link FlowManager}. Mirrors {@link QueueManagerConfig}. */
 export type FlowManagerConfig = QueueManagerConfig
+
+const stripChildOnlyFields = (opts: JobsOptions): JobsOptions => {
+  const next: JobsOptions = { ...opts }
+  delete next.deduplication
+  delete next.debounce
+  delete next.parent
+  delete next.repeat
+  return next
+}
 
 /**
  * Manages a BullMQ {@link FlowProducer} backed by the same {@link QueueConfiguration}
@@ -111,6 +121,10 @@ export class FlowManager<
     // biome-ignore lint/suspicious/noExplicitAny: matches the value type above
   > = {} as Record<SupportedQueueIds<Queues>, BackgroundJobProcessorSpy<any, any>>
 
+  // Reverse lookup of resolved queueName (including dashboard grouping) ->
+  // queueId, so `recordNode` doesn't rescan every queue config per node.
+  private readonly queueIdByResolvedName: Map<string, SupportedQueueIds<Queues>>
+
   private flowProducer?: FlowProducerType
   private startPromise?: Promise<void>
 
@@ -123,6 +137,14 @@ export class FlowManager<
     this.flowProducerFactory = flowProducerFactory
     this.config = config
 
+    this.queueIdByResolvedName = new Map()
+    for (const queue of queues) {
+      this.queueIdByResolvedName.set(
+        resolveQueueId(queue),
+        queue.queueId as SupportedQueueIds<Queues>,
+      )
+    }
+
     if (config.isTest) {
       for (const queue of queues) {
         this.spies[queue.queueId as SupportedQueueIds<Queues>] = new BackgroundJobProcessorSpy()
@@ -133,11 +155,23 @@ export class FlowManager<
   public async start(): Promise<void> {
     if (this.flowProducer) return
     if (!this.startPromise) this.startPromise = this.doStart()
-    await this.startPromise
-    this.startPromise = undefined
+    try {
+      await this.startPromise
+    } finally {
+      this.startPromise = undefined
+    }
   }
 
   public async dispose(): Promise<void> {
+    // Wait for any in-flight start so we don't leak a producer that gets
+    // assigned to `this.flowProducer` right after dispose returns.
+    if (this.startPromise) {
+      try {
+        await this.startPromise
+      } catch {
+        // start failure already surfaced to its caller; nothing to dispose
+      }
+    }
     if (!this.flowProducer) return
     try {
       await this.flowProducer.close()
@@ -210,7 +244,20 @@ export class FlowManager<
       prefix: this.config.redisConfig.keyPrefix ?? undefined,
     } as unknown as FlowProducerOptionsType
     const flowProducer = this.flowProducerFactory.buildFlowProducer(options)
-    await flowProducer.waitUntilReady()
+    try {
+      await flowProducer.waitUntilReady()
+    } catch (error) {
+      // `new FlowProducer(...)` already opened an ioredis connection — close it
+      // so a failed start doesn't leak the underlying client.
+      /* v8 ignore start */
+      try {
+        await flowProducer.close()
+      } catch {
+        // swallow; surfacing the original error is more useful
+      }
+      /* v8 ignore stop */
+      throw error
+    }
     this.flowProducer = flowProducer
   }
 
@@ -290,22 +337,21 @@ export class FlowManager<
         ? queueConfig.jobOptions(jobPayload)
         : queueConfig.jobOptions
 
-    // Children cannot carry deduplication/debounce/parent — drop them from
-    // queue-level defaults so they don't get applied here.
-    const defaultOptions: JobsOptions = { ...((rawDefaults ?? {}) as JobsOptions) }
-    delete defaultOptions.deduplication
-    delete defaultOptions.debounce
-    delete defaultOptions.parent
-    delete defaultOptions.repeat
+    // Children cannot carry deduplication/debounce/parent/repeat — strip these
+    // from both queue-level defaults and the per-call options. TypeScript blocks
+    // the latter, but a JS caller (or `as any` cast) could still smuggle them
+    // through to BullMQ where they misbehave on flow children.
+    const defaultOptions = stripChildOnlyFields((rawDefaults ?? {}) as JobsOptions)
+    const callerOptions = stripChildOnlyFields((options ?? {}) as JobsOptions)
 
-    const resolvedOptions = merge(defaultOptions, options ?? {}) as JobOptionsType
+    const resolvedOptions = merge(defaultOptions, callerOptions) as JobOptionsType
     return prepareJobOptions(this.config.isTest, resolvedOptions)
   }
 
   private recordNode(node: JobNode): void {
     const job = node.job
     if (job?.id) {
-      const queueId = this.resolveQueueIdFromName(job.queueName)
+      const queueId = this.queueIdByResolvedName.get(job.queueName)
       if (queueId && this.spies[queueId]) {
         this.spies[queueId].addJob(job, 'scheduled')
       }
@@ -314,14 +360,6 @@ export class FlowManager<
     if (node.children?.length) {
       for (const child of node.children) this.recordNode(child)
     }
-  }
-
-  private resolveQueueIdFromName(queueName: string): SupportedQueueIds<Queues> | undefined {
-    for (const queueId of this.queueRegistry.queueIds) {
-      const resolved = resolveQueueId(this.queueRegistry.getQueueConfig(queueId))
-      if (resolved === queueName) return queueId as SupportedQueueIds<Queues>
-    }
-    return undefined
   }
 
   private getFlowProducer(): FlowProducerType {

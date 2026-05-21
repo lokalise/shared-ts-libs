@@ -1,4 +1,5 @@
 import type { RedisConfig } from '@lokalise/node-core'
+import type { FlowProducer, QueueBaseOptions } from 'bullmq'
 import {
   afterAll,
   afterEach,
@@ -11,9 +12,11 @@ import {
 } from 'vitest'
 import { z } from 'zod/v4'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
+import type { BullmqFlowProducerFactory } from '../factories/BullmqFlowProducerFactory.ts'
+import { CommonBullmqFactoryNew } from '../factories/CommonBullmqFactoryNew.ts'
 import { FakeFlowManager } from './FakeFlowManager.ts'
 import { FakeQueueManager } from './FakeQueueManager.ts'
-import type { FlowJobInput } from './FlowManager.ts'
+import { type FlowJobInput, FlowManager } from './FlowManager.ts'
 import type { QueueConfiguration } from './types.ts'
 
 const supportedQueues = [
@@ -340,6 +343,82 @@ describe('FlowManager', () => {
 
       expect(() => prodManager.getSpy('parent_queue')).toThrowError(/spy was not instantiated/)
       await prodManager.dispose()
+    })
+  })
+
+  describe('start failure recovery', () => {
+    it('clears startPromise on failure so a subsequent start can succeed', async () => {
+      const realFactory = new CommonBullmqFactoryNew()
+      let shouldFail = true
+      const closedProducers: FlowProducer[] = []
+
+      const factory: BullmqFlowProducerFactory = {
+        buildFlowProducer: (options: QueueBaseOptions) => {
+          const producer = realFactory.buildFlowProducer(options)
+          if (shouldFail) {
+            // Force the first start to reject — and prove the producer is
+            // closed (no leaked connection) by tracking close() calls.
+            const close = producer.close.bind(producer)
+            producer.close = () => {
+              closedProducers.push(producer)
+              return close()
+            }
+            producer.waitUntilReady = () => Promise.reject(new Error('simulated startup failure'))
+          }
+          return producer
+        },
+      }
+
+      const manager = new FlowManager(factory, supportedQueues, {
+        redisConfig,
+        isTest: true,
+        lazyInitEnabled: true,
+      })
+
+      await expect(manager.start()).rejects.toThrowError('simulated startup failure')
+      expect(manager.isStarted).toBe(false)
+      expect(closedProducers).toHaveLength(1)
+
+      shouldFail = false
+      await expect(manager.start()).resolves.not.toThrowError()
+      expect(manager.isStarted).toBe(true)
+
+      await manager.dispose()
+    })
+
+    it('dispose during an in-flight start closes the producer that resolves', async () => {
+      const realFactory = new CommonBullmqFactoryNew()
+      let releaseReady: (() => void) | undefined
+      const readyGate = new Promise<void>((resolve) => {
+        releaseReady = resolve
+      })
+
+      const factory: BullmqFlowProducerFactory = {
+        buildFlowProducer: (options: QueueBaseOptions) => {
+          const producer = realFactory.buildFlowProducer(options)
+          const originalReady = producer.waitUntilReady.bind(producer)
+          producer.waitUntilReady = async () => {
+            await readyGate
+            return originalReady()
+          }
+          return producer
+        },
+      }
+
+      const manager = new FlowManager(factory, supportedQueues, {
+        redisConfig,
+        isTest: true,
+        lazyInitEnabled: true,
+      })
+
+      const startPromise = manager.start()
+      const disposePromise = manager.dispose()
+      releaseReady?.()
+
+      await startPromise
+      await disposePromise
+
+      expect(manager.isStarted).toBe(false)
     })
   })
 })

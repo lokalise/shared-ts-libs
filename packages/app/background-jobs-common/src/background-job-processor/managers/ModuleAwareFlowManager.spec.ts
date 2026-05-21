@@ -79,7 +79,7 @@ describe('ModuleAwareFlowManager', () => {
     expect(node.children?.[0]?.job.queueName).toBe('test-service.phone.sms-queue')
   })
 
-  it('sets lazyInitEnabled based on isTest', () => {
+  it('sets lazyInitEnabled based on isTest', async () => {
     const testManager = new ModuleAwareFlowManager(
       'svc',
       new CommonBullmqFactoryNew(),
@@ -95,5 +95,8 @@ describe('ModuleAwareFlowManager', () => {
       { isTest: false, redisConfig },
     )
     expect(prodManager.config.lazyInitEnabled).toBe(true)
+
+    await testManager.dispose()
+    await prodManager.dispose()
   })
 })
