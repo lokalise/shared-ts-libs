@@ -1,4 +1,7 @@
+export * from './FakeFlowManager.ts'
 export * from './FakeQueueManager.ts'
+export * from './FlowManager.ts'
+export * from './ModuleAwareFlowManager.ts'
 export * from './ModuleAwareQueueManager.ts'
 export * from './QueueManager.ts'
 export * from './types.ts'
