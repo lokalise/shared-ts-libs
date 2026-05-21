@@ -1,5 +1,12 @@
 # @lokalise/fastify-bullboard-plugin
 
+## 3.0.0
+
+### Patch Changes
+
+- Updated dependencies [50f6ceb]
+  - @lokalise/background-jobs-common@14.4.0
+
 ## 2.2.2
 
 ### Patch Changes
