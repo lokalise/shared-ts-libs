@@ -58,7 +58,7 @@ const supportedQueues = [
   }
 ] as const satisfies QueueConfiguration[]
 
-const queueManager = new QueueManager(supportedQueues, {
+const queueManager = new QueueManager(new CommonBullmqFactoryNew(), supportedQueues, {
   redisConfig: config.getRedisConfig(),
   isTest: false,
   lazyInitEnabled: false,
@@ -186,9 +186,10 @@ connection.
 
 ```typescript
 import {
-  FlowManager,
-  ModuleAwareQueueManager,
   CommonBullmqFactoryNew,
+  FlowManager,
+  ModuleAwareQueueConfiguration,
+  ModuleAwareQueueManager,
 } from '@lokalise/background-jobs-common'
 
 const supportedQueues = [
@@ -218,10 +219,13 @@ const queueManager = new ModuleAwareQueueManager(
 )
 
 // `isTest` and `redisConfig` are inherited from `queueManager.config`.
-const flowManager = new FlowManager(
-  { flowProducerFactory: new CommonBullmqFactoryNew(), queueManager },
-  { lazyInitEnabled: false },
-)
+// `lazyInitEnabled` defaults to enabled, so the first `addFlow` will call
+// `start()` for you; calling it eagerly here is optional but common in services
+// that want fail-fast startup checks.
+const flowManager = new FlowManager({
+  flowProducerFactory: new CommonBullmqFactoryNew(),
+  queueManager,
+})
 await flowManager.start()
 
 const node = await flowManager.addFlow({
@@ -251,8 +255,10 @@ of truth.
 #### Lazy initialization
 
 `lazyInitEnabled` controls whether the first `addFlow` (or `addFlowBulk` / `getFlow`) will implicitly call `start()`.
-With `lazyInitEnabled: false` you must call `start()` yourself or the first add will throw. In production keep it
-`true`; in tests keep it `false` so lifecycle is explicit. `FakeFlowManager` defaults it to `true`.
+The default is "enabled" — omit the flag (or set it to `true`) and the first add will start the FlowProducer
+transparently. Set `lazyInitEnabled: false` when you want lifecycle to be fully explicit (typically in tests, where
+ordering matters); calls before an explicit `start()` will then throw. `FakeFlowManager` defaults to `true` so specs can
+call `addFlow` without remembering `start()`.
 
 #### Constraints inherited from BullMQ
 
