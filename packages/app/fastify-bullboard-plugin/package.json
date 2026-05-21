@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/fastify-bullboard-plugin",
-    "version": "3.0.0",
+    "version": "2.2.2",
     "type": "module",
     "files": [
         "dist",
@@ -36,13 +36,13 @@
         "@lokalise/tsconfig": "^4.0.0"
     },
     "peerDependencies": {
-        "@lokalise/background-jobs-common": ">=14.4.0"
+        "@lokalise/background-jobs-common": ">=12.6.0"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.3.7",
         "@fastify/awilix": "^8.0.0",
         "@fastify/schedule": "^6.0.0",
-        "@lokalise/background-jobs-common": "^14.4.0",
+        "@lokalise/background-jobs-common": "^14.0.0",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/fastify-extras": "^31.0.0",
         "@lokalise/node-core": "^14.1.0",
