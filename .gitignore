@@ -131,3 +131,6 @@ dist
 
 # turbo
 .turbo
+
+# Windows shell crash dumps
+*.stackdump

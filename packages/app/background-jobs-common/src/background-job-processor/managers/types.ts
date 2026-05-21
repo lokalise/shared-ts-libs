@@ -1,7 +1,9 @@
 import type { RedisConfig } from '@lokalise/node-core'
-import type { Job, JobsOptions, Queue, QueueOptions } from 'bullmq'
+import type { FlowProducer, Job, JobsOptions, Queue, QueueBaseOptions, QueueOptions } from 'bullmq'
 import type { z } from 'zod/v4'
+import type { BullmqFlowProducerFactory } from '../factories/BullmqFlowProducerFactory.ts'
 import type { BaseJobPayload } from '../types.ts'
+import type { QueueManager } from './QueueManager.ts'
 
 export type QueueManagerConfig = {
   isTest: boolean
@@ -78,4 +80,85 @@ export type JobInQueue<JobData extends object, jobReturn> = Pick<
 export type JobsPaginatedResponse<JobData extends BaseJobPayload, jobReturn> = {
   jobs: JobInQueue<JobData, jobReturn>[]
   hasMore: boolean
+}
+
+/**
+ * Options accepted on a child flow node. Mirrors BullMQ's `FlowChildJob.opts`:
+ * `debounce`, `deduplication`, `parent` and `repeat` are not supported on children.
+ */
+export type FlowChildJobOptions = Omit<
+  JobsOptions,
+  'debounce' | 'deduplication' | 'parent' | 'repeat'
+>
+
+/**
+ * Options accepted on a root flow node. Mirrors BullMQ's `FlowJob.opts`:
+ * `repeat` is not supported on flow roots (use `Queue.add` for repeatable jobs).
+ */
+export type FlowRootJobOptions = Omit<JobsOptions, 'repeat'>
+
+/**
+ * Typed flow child node. The `queueId` discriminates which queue's payload
+ * schema is required on `data`.
+ */
+export type FlowChildJobInput<
+  Queues extends QueueConfiguration[],
+  QueueId extends SupportedQueueIds<Queues> = SupportedQueueIds<Queues>,
+> = {
+  [Id in QueueId]: {
+    queueId: Id
+    /** Defaults to `queueId` when omitted, matching `QueueManager.schedule`. */
+    name?: string
+    data: JobPayloadInputForQueue<Queues, Id>
+    opts?: FlowChildJobOptions
+    children?: FlowChildJobInput<Queues>[]
+  }
+}[QueueId]
+
+/**
+ * Typed flow root node. Root jobs may carry `deduplication`/`debounce`
+ * (children may not — see {@link FlowChildJobInput}).
+ */
+export type FlowJobInput<
+  Queues extends QueueConfiguration[],
+  QueueId extends SupportedQueueIds<Queues> = SupportedQueueIds<Queues>,
+> = {
+  [Id in QueueId]: {
+    queueId: Id
+    name?: string
+    data: JobPayloadInputForQueue<Queues, Id>
+    opts?: FlowRootJobOptions
+    children?: FlowChildJobInput<Queues>[]
+  }
+}[QueueId]
+
+/** Configuration accepted by `FlowManager` — distinct from `QueueManagerConfig`
+ * because `isTest` and `redisConfig` are inherited from the paired `QueueManager`. */
+export type FlowManagerConfig = {
+  lazyInitEnabled?: boolean
+}
+
+/**
+ * Dependencies bundle for `FlowManager`. Mirrors the convention used by
+ * `BackgroundJobProcessorDependenciesNew` so future optional dependencies
+ * (logger, errorReporter, …) can be added without breaking the constructor
+ * signature.
+ */
+export type FlowManagerDependencies<
+  Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
+  QueueType extends Queue<
+    SupportedJobPayloads<Queues>,
+    unknown,
+    string,
+    SupportedJobPayloads<Queues>,
+    unknown,
+    string
+  > = Queue<SupportedJobPayloads<Queues>, void, string, SupportedJobPayloads<Queues>, void, string>,
+  QueueOptionsType extends QueueOptions = QueueOptions,
+  JobOptionsType extends JobsOptions = JobsOptions,
+  FlowProducerType extends FlowProducer = FlowProducer,
+  FlowProducerOptionsType extends QueueBaseOptions = QueueBaseOptions,
+> = {
+  flowProducerFactory: BullmqFlowProducerFactory<FlowProducerType, FlowProducerOptionsType>
+  queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
 }

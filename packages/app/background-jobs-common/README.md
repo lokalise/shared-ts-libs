@@ -5,6 +5,12 @@ This library provides a basic abstraction over BullMQ-powered background jobs. T
 - AbstractBackgroundJobProcessor: a base class for running jobs, it provides an instrumentation and logger integration plus
   basic API for enqueuing jobs.
 
+For publishing jobs, it also provides:
+
+- `QueueManager` — schedules jobs onto individual queues
+- `FlowManager` — schedules tree-structured jobs (parent + children) via BullMQ's `FlowProducer`, with the same
+  validation, options-merging and spy support as `QueueManager`
+
 ## Getting Started
 
 Install all dependencies:
@@ -52,7 +58,7 @@ const supportedQueues = [
   }
 ] as const satisfies QueueConfiguration[]
 
-const queueManager = new QueueManager(supportedQueues, {
+const queueManager = new QueueManager(new CommonBullmqFactoryNew(), supportedQueues, {
   redisConfig: config.getRedisConfig(),
   isTest: false,
   lazyInitEnabled: false,
@@ -167,6 +173,105 @@ const supportedQueues = [
   },
 ] as const satisfies QueueConfiguration[]
 ```
+
+### Flows (FlowProducer)
+
+For tree-structured jobs where children must complete before their parent runs (BullMQ's
+[FlowProducer](https://docs.bullmq.io/guide/flows)), use `FlowManager`. It is paired with a `QueueManager` and reuses
+its registry as the single source of truth for queue names and dashboard grouping, and shares the same spy instances —
+so `queueManager.getSpy('x')`, `flowManager.getSpy('x')`, and a worker processor's spy all observe the same job
+lifecycle. Provides the same guarantees as `QueueManager.schedule`: Zod payload validation per node, merged job options
++ default retry/retention, deduplication `idBuilder` on flow roots, and lazy initialization for the FlowProducer
+connection.
+
+```typescript
+import {
+  CommonBullmqFactoryNew,
+  FlowManager,
+  ModuleAwareQueueConfiguration,
+  ModuleAwareQueueManager,
+} from '@lokalise/background-jobs-common'
+
+const supportedQueues = [
+  {
+    queueId: 'render-pdf',
+    moduleId: 'pdf',
+    jobPayloadSchema: z.object({
+      documentId: z.string(),
+      metadata: z.object({ correlationId: z.string() }),
+    }),
+  },
+  {
+    queueId: 'fetch-data',
+    moduleId: 'ingestion',
+    jobPayloadSchema: z.object({
+      source: z.string(),
+      metadata: z.object({ correlationId: z.string() }),
+    }),
+  },
+] as const satisfies ModuleAwareQueueConfiguration[]
+
+const queueManager = new ModuleAwareQueueManager(
+  'my-service',
+  new CommonBullmqFactoryNew(),
+  supportedQueues,
+  { isTest: false, redisConfig: config.getRedisConfig() },
+)
+
+// `isTest` and `redisConfig` are inherited from `queueManager.config`.
+// `lazyInitEnabled` defaults to enabled, so the first `addFlow` will call
+// `start()` for you; calling it eagerly here is optional but common in services
+// that want fail-fast startup checks.
+const flowManager = new FlowManager({
+  flowProducerFactory: new CommonBullmqFactoryNew(),
+  queueManager,
+})
+await flowManager.start()
+
+const node = await flowManager.addFlow({
+  queueId: 'render-pdf',
+  data: { documentId: 'doc-1', metadata: { correlationId: 'c' } },
+  children: [
+    { queueId: 'fetch-data', data: { source: 'crm', metadata: { correlationId: 'c' } } },
+    { queueId: 'fetch-data', data: { source: 'analytics', metadata: { correlationId: 'c' } } },
+  ],
+})
+// node.job.id, node.children?.[i].job.id
+// node.job.queueName === 'my-service.pdf.render-pdf' (grouping inherited from QueueManager)
+```
+
+`addFlowBulk` accepts multiple roots (each can target a different queue) and is the primitive for mass-scheduling jobs
+across different queues in a single batched call. `getFlow({ queueId, id })` retrieves a previously added tree using
+the queue config's resolved (grouped) name. BullMQ's `getFlow` defaults to `depth: 10` and `maxChildren: 20` — pass
+them explicitly when fetching deeper trees.
+
+#### Publish-only services (no workers in this process)
+
+`FlowManager` always requires a `QueueManager` to share its registry and spies. A service that publishes flows but
+doesn't run any of the workers should construct the `QueueManager` and simply never call `start()` on it — that keeps
+it cheap (a config holder, no Redis connection or queue instantiation) while still giving `FlowManager` a typed source
+of truth.
+
+#### Lazy initialization
+
+`lazyInitEnabled` controls whether the first `addFlow` (or `addFlowBulk` / `getFlow`) will implicitly call `start()`.
+The default is "enabled" — omit the flag (or set it to `true`) and the first add will start the FlowProducer
+transparently. Set `lazyInitEnabled: false` when you want lifecycle to be fully explicit (typically in tests, where
+ordering matters); calls before an explicit `start()` will then throw. `FakeFlowManager` defaults to `true` so specs can
+call `addFlow` without remembering `start()`.
+
+#### Constraints inherited from BullMQ
+
+- **Flow children cannot carry `deduplication`, `debounce` or `parent`** — these are typed off `FlowChildJobInput.opts`
+  and queue-level defaults for these fields are stripped on children, as are any fields smuggled in via the per-call
+  options. Apply `deduplication` on the root only.
+- **Flow nodes cannot carry `repeat`** — for repeatable jobs use `QueueManager.schedule`.
+
+#### Spies
+
+`FlowManager.getSpy(queueId)` is a delegation to `QueueManager.getSpy(queueId)`: same instance, same data. Spies are
+populated for every node in the flow tree (parent + all descendants) at `'scheduled'` state. Enable via the
+`QueueManager`'s `isTest: true`.
 
 ### Do not report UnrecoverableError
 
