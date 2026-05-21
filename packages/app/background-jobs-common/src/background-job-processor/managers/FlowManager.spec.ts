@@ -16,8 +16,13 @@ import type { BullmqFlowProducerFactory } from '../factories/BullmqFlowProducerF
 import { CommonBullmqFactoryNew } from '../factories/CommonBullmqFactoryNew.ts'
 import { FakeFlowManager } from './FakeFlowManager.ts'
 import { FakeQueueManager } from './FakeQueueManager.ts'
-import { type FlowJobInput, FlowManager } from './FlowManager.ts'
-import type { QueueConfiguration } from './types.ts'
+import { type FlowChildJobInput, type FlowJobInput, FlowManager } from './FlowManager.ts'
+import {
+  type ModuleAwareQueueConfiguration,
+  ModuleAwareQueueManager,
+} from './ModuleAwareQueueManager.ts'
+import { QueueConfigRegistry } from './QueueRegistry.ts'
+import type { JobPayloadForQueue, QueueConfiguration } from './types.ts'
 
 const supportedQueues = [
   {
@@ -346,6 +351,198 @@ describe('FlowManager', () => {
     })
   })
 
+  describe('interop with ModuleAwareQueueManager', () => {
+    const moduleAwareQueues = [
+      {
+        queueId: 'email-queue',
+        moduleId: 'emails',
+        jobPayloadSchema: z.object({
+          id: z.string(),
+          email: z.string(),
+          metadata: z.object({ correlationId: z.string() }),
+        }),
+      },
+      {
+        queueId: 'sms-queue',
+        moduleId: 'phone',
+        jobPayloadSchema: z.object({
+          id: z.string(),
+          phone: z.string(),
+          metadata: z.object({ correlationId: z.string() }),
+        }),
+      },
+    ] as const satisfies ModuleAwareQueueConfiguration[]
+
+    it('shares the queueRegistry so [serviceId, moduleId] grouping is inherited', async () => {
+      const queueManager = new ModuleAwareQueueManager(
+        'test-service',
+        new CommonBullmqFactoryNew(),
+        moduleAwareQueues,
+        { isTest: true, redisConfig },
+      )
+      const moduleAwareFlowManager = FlowManager.fromQueueManager(
+        new CommonBullmqFactoryNew(),
+        queueManager,
+        { isTest: true, lazyInitEnabled: true, redisConfig },
+      )
+
+      try {
+        const node = await moduleAwareFlowManager.addFlow({
+          queueId: 'email-queue',
+          data: { id: 'e1', email: 'a@b.c', metadata: { correlationId: 'c' } },
+          children: [
+            {
+              queueId: 'sms-queue',
+              data: { id: 's1', phone: '+1', metadata: { correlationId: 'c' } },
+            },
+          ],
+        })
+
+        expect(node.job.queueName).toBe('test-service.emails.email-queue')
+        expect(node.children?.[0]?.job.queueName).toBe('test-service.phone.sms-queue')
+      } finally {
+        await moduleAwareFlowManager.dispose()
+        await queueManager.dispose()
+      }
+    })
+  })
+
+  describe('type inference', () => {
+    type ParentPayload = JobPayloadForQueue<SupportedQueues, 'parent_queue'>
+    type ChildPayload = JobPayloadForQueue<SupportedQueues, 'child_queue'>
+
+    it('FlowJobInput discriminates payload by queueId', () => {
+      expectTypeOf<FlowJobInput<SupportedQueues, 'parent_queue'>['data']>().toEqualTypeOf<{
+        id: string
+        value: string
+        metadata: { correlationId: string }
+      }>()
+      expectTypeOf<FlowJobInput<SupportedQueues, 'child_queue'>['data']>().toEqualTypeOf<{
+        id: string
+        childValue: string
+        metadata: { correlationId: string }
+      }>()
+    })
+
+    it('FlowChildJobInput discriminates payload by queueId', () => {
+      expectTypeOf<FlowChildJobInput<SupportedQueues, 'child_queue'>['data']>().toEqualTypeOf<{
+        id: string
+        childValue: string
+        metadata: { correlationId: string }
+      }>()
+    })
+
+    it('FlowChildJobInput.opts forbids deduplication/debounce/parent/repeat', () => {
+      type ChildOpts = NonNullable<FlowChildJobInput<SupportedQueues>['opts']>
+      expectTypeOf<ChildOpts>().not.toHaveProperty('deduplication')
+      expectTypeOf<ChildOpts>().not.toHaveProperty('debounce')
+      expectTypeOf<ChildOpts>().not.toHaveProperty('parent')
+      expectTypeOf<ChildOpts>().not.toHaveProperty('repeat')
+    })
+
+    it('FlowJobInput root opts forbid repeat but allow deduplication', () => {
+      type RootOpts = NonNullable<FlowJobInput<SupportedQueues>['opts']>
+      expectTypeOf<RootOpts>().not.toHaveProperty('repeat')
+      expectTypeOf<RootOpts>().toHaveProperty('deduplication')
+    })
+
+    it('getSpy infers payload type from queueId', () => {
+      type ParentSpy = ReturnType<typeof flowManager.getSpy<'parent_queue'>>
+      type ChildSpy = ReturnType<typeof flowManager.getSpy<'child_queue'>>
+
+      // The spy's `waitForJobWithId` resolves with a SafeJob whose data matches.
+      expectTypeOf<
+        Awaited<ReturnType<ParentSpy['waitForJobWithId']>>['data']
+      >().toMatchTypeOf<ParentPayload>()
+      expectTypeOf<
+        Awaited<ReturnType<ChildSpy['waitForJobWithId']>>['data']
+      >().toMatchTypeOf<ChildPayload>()
+    })
+
+    it('rejects invalid queueId in addFlow / addFlowBulk / getFlow / getSpy', () => {
+      // Wrapped in an unused function so type-checks fire at compile time but
+      // no runtime call is made (avoids unhandled rejections from invalid
+      // payloads landing on Bull/Zod).
+      const _typeCheck = (m: FakeFlowManager<SupportedQueues>) => {
+        // @ts-expect-error - 'bogus_queue' is not a valid queueId
+        void m.addFlow({ queueId: 'bogus_queue', data: {} })
+        // @ts-expect-error - 'bogus_queue' is not a valid queueId
+        void m.addFlowBulk([{ queueId: 'bogus_queue', data: {} }])
+        // @ts-expect-error - 'bogus_queue' is not a valid queueId
+        void m.getFlow({ queueId: 'bogus_queue', id: 'x' })
+        // @ts-expect-error - 'bogus_queue' is not a valid queueId
+        void m.getSpy('bogus_queue')
+      }
+      expect(typeof _typeCheck).toBe('function')
+    })
+
+    it("rejects another queue's payload shape", () => {
+      const _typeCheck = (m: FakeFlowManager<SupportedQueues>) => {
+        void m.addFlow({
+          queueId: 'parent_queue',
+          // @ts-expect-error - childValue belongs to child_queue, not parent_queue
+          data: { id: 'p', childValue: 'cv', metadata: { correlationId: 'c' } },
+        })
+
+        void m.addFlow({
+          queueId: 'parent_queue',
+          data: { id: 'p', value: 'v', metadata: { correlationId: 'c' } },
+          children: [
+            {
+              queueId: 'child_queue',
+              // @ts-expect-error - value belongs to parent_queue, not child_queue
+              data: { id: 'c', value: 'v', metadata: { correlationId: 'c' } },
+            },
+          ],
+        })
+      }
+      expect(typeof _typeCheck).toBe('function')
+    })
+
+    it("a ModuleAwareQueueManager's queueRegistry is assignable to FlowManager's ctor arg", () => {
+      const typeTestQueues = [
+        {
+          queueId: 'q',
+          moduleId: 'mod',
+          jobPayloadSchema: z.object({
+            id: z.string(),
+            metadata: z.object({ correlationId: z.string() }),
+          }),
+        },
+      ] as const satisfies ModuleAwareQueueConfiguration[]
+
+      const queueManager = new ModuleAwareQueueManager(
+        'svc',
+        new CommonBullmqFactoryNew(),
+        typeTestQueues,
+        { isTest: true, redisConfig },
+      )
+
+      // The compilation of this call is the assertion — if `Queues` weren't
+      // inferred correctly through `fromQueueManager`, `addFlow` below would
+      // demand `never` for data.
+      const fm = FlowManager.fromQueueManager(new CommonBullmqFactoryNew(), queueManager, {
+        isTest: true,
+        lazyInitEnabled: true,
+        redisConfig,
+      })
+
+      // Wrapped to avoid making real Bull calls — we only want the type-check.
+      const _typeCheck = () => {
+        // @ts-expect-error - 'wrong-queue' is not in the ModuleAware registry
+        void fm.addFlow({ queueId: 'wrong-queue', data: {} })
+        void fm.addFlow({
+          queueId: 'q',
+          data: { id: '1', metadata: { correlationId: 'c' } },
+        })
+      }
+      expect(typeof _typeCheck).toBe('function')
+
+      void queueManager.dispose()
+      void fm.dispose()
+    })
+  })
+
   describe('start failure recovery', () => {
     it('clears startPromise on failure so a subsequent start can succeed', async () => {
       const realFactory = new CommonBullmqFactoryNew()
@@ -369,7 +566,7 @@ describe('FlowManager', () => {
         },
       }
 
-      const manager = new FlowManager(factory, supportedQueues, {
+      const manager = new FlowManager(factory, new QueueConfigRegistry(supportedQueues), {
         redisConfig,
         isTest: true,
         lazyInitEnabled: true,
@@ -405,7 +602,7 @@ describe('FlowManager', () => {
         },
       }
 
-      const manager = new FlowManager(factory, supportedQueues, {
+      const manager = new FlowManager(factory, new QueueConfigRegistry(supportedQueues), {
         redisConfig,
         isTest: true,
         lazyInitEnabled: true,

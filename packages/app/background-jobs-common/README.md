@@ -177,17 +177,22 @@ const supportedQueues = [
 ### Flows (FlowProducer)
 
 For tree-structured jobs where children must complete before their parent runs (BullMQ's
-[FlowProducer](https://docs.bullmq.io/guide/flows)), use `FlowManager`. It takes the same `QueueConfiguration[]` array as
-`QueueManager` and provides matching guarantees: Zod payload validation per node, merged job options + default
-retry/retention, deduplication `idBuilder` on flow roots, dashboard grouping via `bullDashboardGrouping`, spies in test
-mode, and lazy initialization.
+[FlowProducer](https://docs.bullmq.io/guide/flows)), use `FlowManager`. It reads queue configurations from a
+`QueueConfigRegistry` — typically the one already owned by your `QueueManager` — and provides matching guarantees: Zod
+payload validation per node, merged job options + default retry/retention, deduplication `idBuilder` on flow roots,
+dashboard grouping via `bullDashboardGrouping`, spies in test mode, and lazy initialization.
 
 ```typescript
-import { FlowManager, CommonBullmqFactoryNew } from '@lokalise/background-jobs-common'
+import {
+  FlowManager,
+  ModuleAwareQueueManager,
+  CommonBullmqFactoryNew,
+} from '@lokalise/background-jobs-common'
 
 const supportedQueues = [
   {
     queueId: 'render-pdf',
+    moduleId: 'pdf',
     jobPayloadSchema: z.object({
       documentId: z.string(),
       metadata: z.object({ correlationId: z.string() }),
@@ -195,14 +200,24 @@ const supportedQueues = [
   },
   {
     queueId: 'fetch-data',
+    moduleId: 'ingestion',
     jobPayloadSchema: z.object({
       source: z.string(),
       metadata: z.object({ correlationId: z.string() }),
     }),
   },
-] as const satisfies QueueConfiguration[]
+] as const satisfies ModuleAwareQueueConfiguration[]
 
-const flowManager = new FlowManager(new CommonBullmqFactoryNew(), supportedQueues, {
+const queueManager = new ModuleAwareQueueManager(
+  'my-service',
+  new CommonBullmqFactoryNew(),
+  supportedQueues,
+  { isTest: false, redisConfig: config.getRedisConfig() },
+)
+
+// `fromQueueManager` is the recommended interop pattern: it forwards
+// `queueManager.queueRegistry` to FlowManager and keeps full type inference.
+const flowManager = FlowManager.fromQueueManager(new CommonBullmqFactoryNew(), queueManager, {
   redisConfig: config.getRedisConfig(),
   isTest: false,
   lazyInitEnabled: false,
@@ -213,28 +228,46 @@ const node = await flowManager.addFlow({
   queueId: 'render-pdf',
   data: { documentId: 'doc-1', metadata: { correlationId: 'c' } },
   children: [
-    {
-      queueId: 'fetch-data',
-      data: { source: 'crm', metadata: { correlationId: 'c' } },
-    },
-    {
-      queueId: 'fetch-data',
-      data: { source: 'analytics', metadata: { correlationId: 'c' } },
-    },
+    { queueId: 'fetch-data', data: { source: 'crm', metadata: { correlationId: 'c' } } },
+    { queueId: 'fetch-data', data: { source: 'analytics', metadata: { correlationId: 'c' } } },
   ],
 })
 // node.job.id, node.children?.[i].job.id
+// node.job.queueName === 'my-service.pdf.render-pdf' (grouping inherited from QueueManager)
 ```
 
 `addFlowBulk` accepts multiple roots, and `getFlow({ queueId, id })` retrieves a previously added tree using the queue
 config's resolved (grouped) name. BullMQ's `getFlow` defaults to `depth: 10` and `maxChildren: 20` — pass them
 explicitly when fetching deeper trees.
 
+#### Standalone use (no `QueueManager` in this process)
+
+A publish-only service that doesn't run any of the workers can construct a `QueueConfigRegistry` directly. The
+`applyModuleGrouping(serviceId, queues)` helper reproduces what `ModuleAwareQueueManager` does to its queue configs:
+
+```typescript
+import {
+  applyModuleGrouping,
+  FlowManager,
+  QueueConfigRegistry,
+  CommonBullmqFactoryNew,
+} from '@lokalise/background-jobs-common'
+
+const groupedQueues = applyModuleGrouping('my-service', supportedQueues)
+const registry = new QueueConfigRegistry(groupedQueues)
+
+const flowManager = new FlowManager(new CommonBullmqFactoryNew(), registry, {
+  redisConfig: config.getRedisConfig(),
+  isTest: false,
+  lazyInitEnabled: false,
+})
+```
+
 #### Lazy initialization
 
-`lazyInitEnabled` controls whether the first `addFlow` (or `addFlowBulk` / `getFlow`) will implicitly call `start()`. With
-`lazyInitEnabled: false` you must call `start()` yourself or the first add will throw. `ModuleAwareFlowManager` enables
-lazy init in production (`isTest: false`) and disables it in tests so lifecycle is explicit.
+`lazyInitEnabled` controls whether the first `addFlow` (or `addFlowBulk` / `getFlow`) will implicitly call `start()`.
+With `lazyInitEnabled: false` you must call `start()` yourself or the first add will throw. In production keep it `true`;
+in tests keep it `false` so lifecycle is explicit.
 
 #### Constraints inherited from BullMQ
 
@@ -243,32 +276,10 @@ lazy init in production (`isTest: false`) and disables it in tests so lifecycle 
   options. Apply `deduplication` on the root only.
 - **Flow nodes cannot carry `repeat`** — for repeatable jobs use `QueueManager.schedule`.
 
-#### `ModuleAwareFlowManager`
-
-Lokalise-flavored variant that mirrors `ModuleAwareQueueManager`: derives `[serviceId, moduleId]` grouping from the
-queue's `moduleId` and sets `lazyInitEnabled` based on `isTest`.
-
-```typescript
-import { ModuleAwareFlowManager, CommonBullmqFactoryNew } from '@lokalise/background-jobs-common'
-
-const flowManager = new ModuleAwareFlowManager(
-  'my-service',
-  new CommonBullmqFactoryNew(),
-  supportedQueues, // ModuleAwareQueueConfiguration[]
-  { isTest: false, redisConfig: config.getRedisConfig() },
-)
-```
-
 #### Spies
 
 `FlowManager.getSpy(queueId)` returns the same `BackgroundJobProcessorSpy` interface as `QueueManager.getSpy`, and is
 populated for every node in the flow tree (parent + all descendants) at `'scheduled'` state. Enable via `isTest: true`.
-
-#### Sharing queue configs with `QueueManager`
-
-`FlowManager` only needs the queue configurations to validate payloads and resolve names — it does **not** instantiate
-queues. In a typical service, the same `supportedQueues` array is passed to both `QueueManager` (to start the queues for
-the workers running in this process) and `FlowManager` (to publish flows that may target queues consumed elsewhere).
 
 ### Do not report UnrecoverableError
 

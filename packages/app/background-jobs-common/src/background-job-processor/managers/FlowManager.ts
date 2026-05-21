@@ -6,6 +6,7 @@ import type {
   JobNode,
   JobsOptions,
   NodeOpts,
+  Queue,
   QueueBaseOptions,
   QueueOptions,
 } from 'bullmq'
@@ -15,7 +16,8 @@ import { enrichRedisConfig, sanitizeRedisConfig } from '../public-utils/index.ts
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
 import { prepareJobOptions, resolveQueueId } from '../utils.ts'
-import { QueueConfigRegistry } from './QueueRegistry.ts'
+import type { QueueManager } from './QueueManager.ts'
+import type { QueueConfigRegistry } from './QueueRegistry.ts'
 import type {
   JobPayloadForQueue,
   JobPayloadInputForQueue,
@@ -88,12 +90,20 @@ const stripChildOnlyFields = (opts: JobsOptions): JobsOptions => {
 }
 
 /**
- * Manages a BullMQ {@link FlowProducer} backed by the same {@link QueueConfiguration}
- * array used by {@link QueueManager}. Provides the same guarantees as
+ * Manages a BullMQ {@link FlowProducer} backed by the same {@link QueueConfigRegistry}
+ * used by {@link QueueManager}. Provides the same guarantees as
  * `QueueManager.schedule`: Zod-validated payloads, merged job options + default
  * retry/retention, deduplication `idBuilder` resolution (root only — BullMQ
  * does not allow deduplication on flow children), dashboard grouping via
  * `resolveQueueId`, spy support in test mode, and lazy initialization.
+ *
+ * Wire it with the registry your {@link QueueManager} already owns — the registry
+ * is the single source of truth for queue names and dashboard grouping, so a
+ * `FlowManager` paired with a `ModuleAwareQueueManager` inherits the
+ * `[serviceId, moduleId]` grouping automatically. The recommended interop entry
+ * point is {@link FlowManager.fromQueueManager}; pass a freshly-built
+ * {@link QueueConfigRegistry} to the regular constructor for publish-only
+ * services that don't run a `QueueManager`.
  */
 export class FlowManager<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
@@ -130,26 +140,66 @@ export class FlowManager<
 
   constructor(
     flowProducerFactory: BullmqFlowProducerFactory<FlowProducerType, FlowProducerOptionsType>,
-    queues: Queues,
+    queueRegistry: QueueConfigRegistry<Queues, QueueOptionsType, JobOptionsType>,
     config: FlowManagerConfig,
   ) {
-    this.queueRegistry = new QueueConfigRegistry(queues)
+    this.queueRegistry = queueRegistry
     this.flowProducerFactory = flowProducerFactory
     this.config = config
 
     this.queueIdByResolvedName = new Map()
-    for (const queue of queues) {
-      this.queueIdByResolvedName.set(
-        resolveQueueId(queue),
-        queue.queueId as SupportedQueueIds<Queues>,
-      )
+    for (const queueId of queueRegistry.queueIds) {
+      const typedQueueId = queueId as SupportedQueueIds<Queues>
+      const queueConfig = queueRegistry.getQueueConfig(typedQueueId)
+      this.queueIdByResolvedName.set(resolveQueueId(queueConfig), typedQueueId)
     }
 
     if (config.isTest) {
-      for (const queue of queues) {
-        this.spies[queue.queueId as SupportedQueueIds<Queues>] = new BackgroundJobProcessorSpy()
+      for (const queueId of queueRegistry.queueIds) {
+        this.spies[queueId as SupportedQueueIds<Queues>] = new BackgroundJobProcessorSpy()
       }
     }
+  }
+
+  /**
+   * Convenience factory that pairs a `FlowManager` to an existing `QueueManager`,
+   * sharing its registry. Use this when you have a `QueueManager` instance handy —
+   * TypeScript infers `Queues` cleanly through it (which it does not always do when
+   * passing `queueManager.queueRegistry` to the regular constructor, especially
+   * for `ModuleAwareQueueManager` registries).
+   */
+  public static fromQueueManager<
+    Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
+    QueueType extends Queue<
+      SupportedJobPayloads<Queues>,
+      unknown,
+      string,
+      SupportedJobPayloads<Queues>,
+      unknown,
+      string
+    >,
+    QueueOptionsType extends QueueOptions,
+    JobOptionsType extends JobsOptions,
+    FlowProducerType extends FlowProducer = FlowProducer,
+    FlowProducerOptionsType extends QueueBaseOptions = QueueBaseOptions,
+  >(
+    flowProducerFactory: BullmqFlowProducerFactory<FlowProducerType, FlowProducerOptionsType>,
+    queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>,
+    config: FlowManagerConfig,
+  ): FlowManager<
+    Queues,
+    FlowProducerType,
+    FlowProducerOptionsType,
+    QueueOptionsType,
+    JobOptionsType
+  > {
+    return new FlowManager<
+      Queues,
+      FlowProducerType,
+      FlowProducerOptionsType,
+      QueueOptionsType,
+      JobOptionsType
+    >(flowProducerFactory, queueManager.queueRegistry, config)
   }
 
   public async start(): Promise<void> {

@@ -31,12 +31,12 @@ export class QueueManager<
 > {
   public readonly config: QueueManagerConfig
 
-  protected readonly queueRegistry: QueueRegistry<
-    Queues,
-    QueueType,
-    QueueOptionsType,
-    JobOptionsType
-  >
+  /**
+   * The underlying registry. Exposed so dependent components (e.g.
+   * {@link FlowManager}) can share the same configurations without rebuilding
+   * a parallel registry.
+   */
+  public readonly queueRegistry: QueueRegistry<Queues, QueueType, QueueOptionsType, JobOptionsType>
 
   private readonly spies: Record<
     QueueConfiguration<QueueOptionsType>['queueId'],
