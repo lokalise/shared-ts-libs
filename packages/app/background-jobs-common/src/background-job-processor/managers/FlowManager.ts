@@ -13,72 +13,20 @@ import type {
 import { merge } from 'ts-deepmerge'
 import type { BullmqFlowProducerFactory } from '../factories/BullmqFlowProducerFactory.ts'
 import { enrichRedisConfig, sanitizeRedisConfig } from '../public-utils/index.ts'
-import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
 import { prepareJobOptions, resolveQueueId } from '../utils.ts'
 import type { QueueManager } from './QueueManager.ts'
-import type { QueueConfigRegistry } from './QueueRegistry.ts'
 import type {
+  FlowChildJobInput,
+  FlowChildJobOptions,
+  FlowJobInput,
+  FlowManagerConfig,
+  FlowRootJobOptions,
   JobPayloadForQueue,
-  JobPayloadInputForQueue,
   QueueConfiguration,
-  QueueManagerConfig,
   SupportedJobPayloads,
   SupportedQueueIds,
 } from './types.ts'
-
-/**
- * Options accepted on a child flow node. Mirrors BullMQ's `FlowChildJob.opts`:
- * `debounce`, `deduplication`, `parent` and `repeat` are not supported on children.
- */
-export type FlowChildJobOptions = Omit<
-  JobsOptions,
-  'debounce' | 'deduplication' | 'parent' | 'repeat'
->
-
-/**
- * Options accepted on a root flow node. Mirrors BullMQ's `FlowJob.opts`:
- * `repeat` is not supported on flow roots (use `Queue.add` for repeatable jobs).
- */
-export type FlowRootJobOptions = Omit<JobsOptions, 'repeat'>
-
-/**
- * Typed flow child node. The `queueId` discriminates which queue's payload
- * schema is required on `data`.
- */
-export type FlowChildJobInput<
-  Queues extends QueueConfiguration[],
-  QueueId extends SupportedQueueIds<Queues> = SupportedQueueIds<Queues>,
-> = {
-  [Id in QueueId]: {
-    queueId: Id
-    /** Defaults to `queueId` when omitted, matching `QueueManager.schedule`. */
-    name?: string
-    data: JobPayloadInputForQueue<Queues, Id>
-    opts?: FlowChildJobOptions
-    children?: FlowChildJobInput<Queues>[]
-  }
-}[QueueId]
-
-/**
- * Typed flow root node. Root jobs may carry `deduplication`/`debounce`
- * (children may not — see {@link FlowChildJobInput}).
- */
-export type FlowJobInput<
-  Queues extends QueueConfiguration[],
-  QueueId extends SupportedQueueIds<Queues> = SupportedQueueIds<Queues>,
-> = {
-  [Id in QueueId]: {
-    queueId: Id
-    name?: string
-    data: JobPayloadInputForQueue<Queues, Id>
-    opts?: FlowRootJobOptions
-    children?: FlowChildJobInput<Queues>[]
-  }
-}[QueueId]
-
-/** Configuration accepted by {@link FlowManager}. Mirrors {@link QueueManagerConfig}. */
-export type FlowManagerConfig = QueueManagerConfig
 
 const stripChildOnlyFields = (opts: JobsOptions): JobsOptions => {
   const next: JobsOptions = { ...opts }
@@ -90,46 +38,44 @@ const stripChildOnlyFields = (opts: JobsOptions): JobsOptions => {
 }
 
 /**
- * Manages a BullMQ {@link FlowProducer} backed by the same {@link QueueConfigRegistry}
- * used by {@link QueueManager}. Provides the same guarantees as
- * `QueueManager.schedule`: Zod-validated payloads, merged job options + default
- * retry/retention, deduplication `idBuilder` resolution (root only — BullMQ
- * does not allow deduplication on flow children), dashboard grouping via
- * `resolveQueueId`, spy support in test mode, and lazy initialization.
+ * Manages a BullMQ {@link FlowProducer} paired with an existing {@link QueueManager}.
+ * Reuses the QueueManager's registry as the single source of truth for queue
+ * configs, names and dashboard grouping, and shares its spy instances so that
+ * `queueManager.getSpy(...)`, `flowManager.getSpy(...)` and a worker processor's
+ * spy all observe the same job lifecycle.
  *
- * Wire it with the registry your {@link QueueManager} already owns — the registry
- * is the single source of truth for queue names and dashboard grouping, so a
- * `FlowManager` paired with a `ModuleAwareQueueManager` inherits the
- * `[serviceId, moduleId]` grouping automatically. The recommended interop entry
- * point is {@link FlowManager.fromQueueManager}; pass a freshly-built
- * {@link QueueConfigRegistry} to the regular constructor for publish-only
- * services that don't run a `QueueManager`.
+ * Provides the same guarantees as `QueueManager.schedule`: Zod-validated
+ * payloads, merged job options + default retry/retention, deduplication
+ * `idBuilder` resolution (root only — BullMQ does not allow deduplication on
+ * flow children), dashboard grouping via `resolveQueueId`, and lazy
+ * initialization for the FlowProducer connection.
+ *
+ * A `FlowManager` paired with a `ModuleAwareQueueManager` inherits the
+ * `[serviceId, moduleId]` grouping automatically.
  */
 export class FlowManager<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
-  FlowProducerType extends FlowProducer = FlowProducer,
-  FlowProducerOptionsType extends QueueBaseOptions = QueueBaseOptions,
+  QueueType extends Queue<
+    SupportedJobPayloads<Queues>,
+    unknown,
+    string,
+    SupportedJobPayloads<Queues>,
+    unknown,
+    string
+  > = Queue<SupportedJobPayloads<Queues>, void, string, SupportedJobPayloads<Queues>, void, string>,
   QueueOptionsType extends QueueOptions = QueueOptions,
   JobOptionsType extends JobsOptions = JobsOptions,
+  FlowProducerType extends FlowProducer = FlowProducer,
+  FlowProducerOptionsType extends QueueBaseOptions = QueueBaseOptions,
 > {
   public readonly config: FlowManagerConfig
 
-  protected readonly queueRegistry: QueueConfigRegistry<Queues, QueueOptionsType, JobOptionsType>
+  protected readonly queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
 
   private readonly flowProducerFactory: BullmqFlowProducerFactory<
     FlowProducerType,
     FlowProducerOptionsType
   >
-
-  private readonly spies: Record<
-    SupportedQueueIds<Queues>,
-    BackgroundJobProcessorSpy<
-      JobPayloadForQueue<Queues, SupportedQueueIds<Queues>>,
-      // biome-ignore lint/suspicious/noExplicitAny: spy return type is unknown here
-      any
-    >
-    // biome-ignore lint/suspicious/noExplicitAny: matches the value type above
-  > = {} as Record<SupportedQueueIds<Queues>, BackgroundJobProcessorSpy<any, any>>
 
   // Reverse lookup of resolved queueName (including dashboard grouping) ->
   // queueId, so `recordNode` doesn't rescan every queue config per node.
@@ -140,66 +86,19 @@ export class FlowManager<
 
   constructor(
     flowProducerFactory: BullmqFlowProducerFactory<FlowProducerType, FlowProducerOptionsType>,
-    queueRegistry: QueueConfigRegistry<Queues, QueueOptionsType, JobOptionsType>,
-    config: FlowManagerConfig,
+    queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>,
+    config: FlowManagerConfig = {},
   ) {
-    this.queueRegistry = queueRegistry
+    this.queueManager = queueManager
     this.flowProducerFactory = flowProducerFactory
     this.config = config
 
     this.queueIdByResolvedName = new Map()
-    for (const queueId of queueRegistry.queueIds) {
+    for (const queueId of queueManager.queueRegistry.queueIds) {
       const typedQueueId = queueId as SupportedQueueIds<Queues>
-      const queueConfig = queueRegistry.getQueueConfig(typedQueueId)
+      const queueConfig = queueManager.queueRegistry.getQueueConfig(typedQueueId)
       this.queueIdByResolvedName.set(resolveQueueId(queueConfig), typedQueueId)
     }
-
-    if (config.isTest) {
-      for (const queueId of queueRegistry.queueIds) {
-        this.spies[queueId as SupportedQueueIds<Queues>] = new BackgroundJobProcessorSpy()
-      }
-    }
-  }
-
-  /**
-   * Convenience factory that pairs a `FlowManager` to an existing `QueueManager`,
-   * sharing its registry. Use this when you have a `QueueManager` instance handy —
-   * TypeScript infers `Queues` cleanly through it (which it does not always do when
-   * passing `queueManager.queueRegistry` to the regular constructor, especially
-   * for `ModuleAwareQueueManager` registries).
-   */
-  public static fromQueueManager<
-    Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
-    QueueType extends Queue<
-      SupportedJobPayloads<Queues>,
-      unknown,
-      string,
-      SupportedJobPayloads<Queues>,
-      unknown,
-      string
-    >,
-    QueueOptionsType extends QueueOptions,
-    JobOptionsType extends JobsOptions,
-    FlowProducerType extends FlowProducer = FlowProducer,
-    FlowProducerOptionsType extends QueueBaseOptions = QueueBaseOptions,
-  >(
-    flowProducerFactory: BullmqFlowProducerFactory<FlowProducerType, FlowProducerOptionsType>,
-    queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>,
-    config: FlowManagerConfig,
-  ): FlowManager<
-    Queues,
-    FlowProducerType,
-    FlowProducerOptionsType,
-    QueueOptionsType,
-    JobOptionsType
-  > {
-    return new FlowManager<
-      Queues,
-      FlowProducerType,
-      FlowProducerOptionsType,
-      QueueOptionsType,
-      JobOptionsType
-    >(flowProducerFactory, queueManager.queueRegistry, config)
   }
 
   public async start(): Promise<void> {
@@ -237,15 +136,15 @@ export class FlowManager<
     return this.flowProducer !== undefined
   }
 
+  /**
+   * Returns the shared spy for `queueId` — the very same instance
+   * `QueueManager.getSpy` and a processor's spy expose, so tests see a unified
+   * view of every job whether it was scheduled directly or as part of a flow.
+   */
   public getSpy<QueueId extends SupportedQueueIds<Queues>, JobReturn = unknown>(
     queueId: QueueId,
   ): BackgroundJobProcessorSpyInterface<JobPayloadForQueue<Queues, QueueId>, JobReturn> {
-    if (!this.spies[queueId])
-      throw new Error(
-        `${queueId} spy was not instantiated, it is only available on test mode. Please use \`config.isTest\` to enable it on FlowManager`,
-      )
-
-    return this.spies[queueId]
+    return this.queueManager.getSpy<QueueId, JobReturn>(queueId)
   }
 
   public async addFlow<QueueId extends SupportedQueueIds<Queues>>(
@@ -282,16 +181,17 @@ export class FlowManager<
     opts: Omit<NodeOpts, 'queueName'> & { queueId: SupportedQueueIds<Queues> },
   ): Promise<JobNode> {
     const { queueId, ...rest } = opts
-    const queueName = resolveQueueId(this.queueRegistry.getQueueConfig(queueId))
+    const queueName = resolveQueueId(this.queueManager.queueRegistry.getQueueConfig(queueId))
 
     await this.startIfNotStarted()
     return this.getFlowProducer().getFlow({ ...rest, queueName })
   }
 
   private async doStart(): Promise<void> {
+    const redisConfig = this.queueManager.config.redisConfig
     const options = {
-      connection: sanitizeRedisConfig(enrichRedisConfig(this.config.redisConfig)),
-      prefix: this.config.redisConfig.keyPrefix ?? undefined,
+      connection: sanitizeRedisConfig(enrichRedisConfig(redisConfig)),
+      prefix: redisConfig.keyPrefix ?? undefined,
     } as unknown as FlowProducerOptionsType
     const flowProducer = this.flowProducerFactory.buildFlowProducer(options)
     try {
@@ -315,7 +215,7 @@ export class FlowManager<
     flow: FlowJobInput<Queues, QueueId>,
   ): FlowJob {
     const { queueId, name, data, opts, children } = flow
-    const queueConfig = this.queueRegistry.getQueueConfig(queueId)
+    const queueConfig = this.queueManager.queueRegistry.getQueueConfig(queueId)
     const parsedData = queueConfig.jobPayloadSchema.parse(data) as SupportedJobPayloads<Queues>
 
     return {
@@ -331,7 +231,7 @@ export class FlowManager<
     flow: FlowChildJobInput<Queues, QueueId>,
   ): FlowChildJob {
     const { queueId, name, data, opts, children } = flow
-    const queueConfig = this.queueRegistry.getQueueConfig(queueId)
+    const queueConfig = this.queueManager.queueRegistry.getQueueConfig(queueId)
     const parsedData = queueConfig.jobPayloadSchema.parse(data) as SupportedJobPayloads<Queues>
 
     return {
@@ -348,7 +248,7 @@ export class FlowManager<
     jobPayload: JobPayloadForQueue<Queues, QueueId>,
     options?: FlowRootJobOptions,
   ): FlowRootJobOptions {
-    const queueConfig = this.queueRegistry.getQueueConfig(queueId)
+    const queueConfig = this.queueManager.queueRegistry.getQueueConfig(queueId)
 
     const defaultOptions =
       typeof queueConfig.jobOptions === 'function'
@@ -372,7 +272,7 @@ export class FlowManager<
       }
     }
 
-    return prepareJobOptions(this.config.isTest, resolvedOptions)
+    return prepareJobOptions(this.queueManager.config.isTest, resolvedOptions)
   }
 
   private resolveChildJobOptions<QueueId extends SupportedQueueIds<Queues>>(
@@ -380,7 +280,7 @@ export class FlowManager<
     jobPayload: JobPayloadForQueue<Queues, QueueId>,
     options?: FlowChildJobOptions,
   ): FlowChildJobOptions {
-    const queueConfig = this.queueRegistry.getQueueConfig(queueId)
+    const queueConfig = this.queueManager.queueRegistry.getQueueConfig(queueId)
 
     const rawDefaults =
       typeof queueConfig.jobOptions === 'function'
@@ -395,15 +295,15 @@ export class FlowManager<
     const callerOptions = stripChildOnlyFields((options ?? {}) as JobsOptions)
 
     const resolvedOptions = merge(defaultOptions, callerOptions) as JobOptionsType
-    return prepareJobOptions(this.config.isTest, resolvedOptions)
+    return prepareJobOptions(this.queueManager.config.isTest, resolvedOptions)
   }
 
   private recordNode(node: JobNode): void {
-    const job = node.job
-    if (job?.id) {
-      const queueId = this.queueIdByResolvedName.get(job.queueName)
-      if (queueId && this.spies[queueId]) {
-        this.spies[queueId].addJob(job, 'scheduled')
+    if (this.queueManager.config.isTest) {
+      const job = node.job
+      if (job?.id) {
+        const queueId = this.queueIdByResolvedName.get(job.queueName)
+        if (queueId) this.queueManager.recordScheduledJob(queueId, job)
       }
     }
 

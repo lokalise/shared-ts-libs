@@ -79,3 +79,59 @@ export type JobsPaginatedResponse<JobData extends BaseJobPayload, jobReturn> = {
   jobs: JobInQueue<JobData, jobReturn>[]
   hasMore: boolean
 }
+
+/**
+ * Options accepted on a child flow node. Mirrors BullMQ's `FlowChildJob.opts`:
+ * `debounce`, `deduplication`, `parent` and `repeat` are not supported on children.
+ */
+export type FlowChildJobOptions = Omit<
+  JobsOptions,
+  'debounce' | 'deduplication' | 'parent' | 'repeat'
+>
+
+/**
+ * Options accepted on a root flow node. Mirrors BullMQ's `FlowJob.opts`:
+ * `repeat` is not supported on flow roots (use `Queue.add` for repeatable jobs).
+ */
+export type FlowRootJobOptions = Omit<JobsOptions, 'repeat'>
+
+/**
+ * Typed flow child node. The `queueId` discriminates which queue's payload
+ * schema is required on `data`.
+ */
+export type FlowChildJobInput<
+  Queues extends QueueConfiguration[],
+  QueueId extends SupportedQueueIds<Queues> = SupportedQueueIds<Queues>,
+> = {
+  [Id in QueueId]: {
+    queueId: Id
+    /** Defaults to `queueId` when omitted, matching `QueueManager.schedule`. */
+    name?: string
+    data: JobPayloadInputForQueue<Queues, Id>
+    opts?: FlowChildJobOptions
+    children?: FlowChildJobInput<Queues>[]
+  }
+}[QueueId]
+
+/**
+ * Typed flow root node. Root jobs may carry `deduplication`/`debounce`
+ * (children may not — see {@link FlowChildJobInput}).
+ */
+export type FlowJobInput<
+  Queues extends QueueConfiguration[],
+  QueueId extends SupportedQueueIds<Queues> = SupportedQueueIds<Queues>,
+> = {
+  [Id in QueueId]: {
+    queueId: Id
+    name?: string
+    data: JobPayloadInputForQueue<Queues, Id>
+    opts?: FlowRootJobOptions
+    children?: FlowChildJobInput<Queues>[]
+  }
+}[QueueId]
+
+/** Configuration accepted by `FlowManager` — distinct from `QueueManagerConfig`
+ * because `isTest` and `redisConfig` are inherited from the paired `QueueManager`. */
+export type FlowManagerConfig = {
+  lazyInitEnabled?: boolean
+}

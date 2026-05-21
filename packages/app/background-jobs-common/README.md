@@ -177,10 +177,12 @@ const supportedQueues = [
 ### Flows (FlowProducer)
 
 For tree-structured jobs where children must complete before their parent runs (BullMQ's
-[FlowProducer](https://docs.bullmq.io/guide/flows)), use `FlowManager`. It reads queue configurations from a
-`QueueConfigRegistry` — typically the one already owned by your `QueueManager` — and provides matching guarantees: Zod
-payload validation per node, merged job options + default retry/retention, deduplication `idBuilder` on flow roots,
-dashboard grouping via `bullDashboardGrouping`, spies in test mode, and lazy initialization.
+[FlowProducer](https://docs.bullmq.io/guide/flows)), use `FlowManager`. It is paired with a `QueueManager` and reuses
+its registry as the single source of truth for queue names and dashboard grouping, and shares the same spy instances —
+so `queueManager.getSpy('x')`, `flowManager.getSpy('x')`, and a worker processor's spy all observe the same job
+lifecycle. Provides the same guarantees as `QueueManager.schedule`: Zod payload validation per node, merged job options
++ default retry/retention, deduplication `idBuilder` on flow roots, and lazy initialization for the FlowProducer
+connection.
 
 ```typescript
 import {
@@ -215,11 +217,8 @@ const queueManager = new ModuleAwareQueueManager(
   { isTest: false, redisConfig: config.getRedisConfig() },
 )
 
-// `fromQueueManager` is the recommended interop pattern: it forwards
-// `queueManager.queueRegistry` to FlowManager and keeps full type inference.
-const flowManager = FlowManager.fromQueueManager(new CommonBullmqFactoryNew(), queueManager, {
-  redisConfig: config.getRedisConfig(),
-  isTest: false,
+// `isTest` and `redisConfig` are inherited from `queueManager.config`.
+const flowManager = new FlowManager(new CommonBullmqFactoryNew(), queueManager, {
   lazyInitEnabled: false,
 })
 await flowManager.start()
@@ -236,38 +235,23 @@ const node = await flowManager.addFlow({
 // node.job.queueName === 'my-service.pdf.render-pdf' (grouping inherited from QueueManager)
 ```
 
-`addFlowBulk` accepts multiple roots, and `getFlow({ queueId, id })` retrieves a previously added tree using the queue
-config's resolved (grouped) name. BullMQ's `getFlow` defaults to `depth: 10` and `maxChildren: 20` — pass them
-explicitly when fetching deeper trees.
+`addFlowBulk` accepts multiple roots (each can target a different queue) and is the primitive for mass-scheduling jobs
+across different queues in a single batched call. `getFlow({ queueId, id })` retrieves a previously added tree using
+the queue config's resolved (grouped) name. BullMQ's `getFlow` defaults to `depth: 10` and `maxChildren: 20` — pass
+them explicitly when fetching deeper trees.
 
-#### Standalone use (no `QueueManager` in this process)
+#### Publish-only services (no workers in this process)
 
-A publish-only service that doesn't run any of the workers can construct a `QueueConfigRegistry` directly. The
-`applyModuleGrouping(serviceId, queues)` helper reproduces what `ModuleAwareQueueManager` does to its queue configs:
-
-```typescript
-import {
-  applyModuleGrouping,
-  FlowManager,
-  QueueConfigRegistry,
-  CommonBullmqFactoryNew,
-} from '@lokalise/background-jobs-common'
-
-const groupedQueues = applyModuleGrouping('my-service', supportedQueues)
-const registry = new QueueConfigRegistry(groupedQueues)
-
-const flowManager = new FlowManager(new CommonBullmqFactoryNew(), registry, {
-  redisConfig: config.getRedisConfig(),
-  isTest: false,
-  lazyInitEnabled: false,
-})
-```
+`FlowManager` always requires a `QueueManager` to share its registry and spies. A service that publishes flows but
+doesn't run any of the workers should construct the `QueueManager` and simply never call `start()` on it — that keeps
+it cheap (a config holder, no Redis connection or queue instantiation) while still giving `FlowManager` a typed source
+of truth.
 
 #### Lazy initialization
 
 `lazyInitEnabled` controls whether the first `addFlow` (or `addFlowBulk` / `getFlow`) will implicitly call `start()`.
-With `lazyInitEnabled: false` you must call `start()` yourself or the first add will throw. In production keep it `true`;
-in tests keep it `false` so lifecycle is explicit.
+With `lazyInitEnabled: false` you must call `start()` yourself or the first add will throw. In production keep it
+`true`; in tests keep it `false` so lifecycle is explicit. `FakeFlowManager` defaults it to `true`.
 
 #### Constraints inherited from BullMQ
 
@@ -278,8 +262,9 @@ in tests keep it `false` so lifecycle is explicit.
 
 #### Spies
 
-`FlowManager.getSpy(queueId)` returns the same `BackgroundJobProcessorSpy` interface as `QueueManager.getSpy`, and is
-populated for every node in the flow tree (parent + all descendants) at `'scheduled'` state. Enable via `isTest: true`.
+`FlowManager.getSpy(queueId)` is a delegation to `QueueManager.getSpy(queueId)`: same instance, same data. Spies are
+populated for every node in the flow tree (parent + all descendants) at `'scheduled'` state. Enable via the
+`QueueManager`'s `isTest: true`.
 
 ### Do not report UnrecoverableError
 

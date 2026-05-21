@@ -105,6 +105,18 @@ export class QueueManager<
     return this.spies[queueId]
   }
 
+  /**
+   * Records a scheduled job in this manager's spy (no-op outside test mode or
+   * when no spy is registered for `queueId`). Intended for sibling components
+   * such as `FlowManager` that schedule jobs through a different BullMQ
+   * primitive but should still surface in the same spy stream as
+   * `QueueManager.schedule`.
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: spy job type matches what we accept here
+  public recordScheduledJob(queueId: SupportedQueueIds<Queues>, job: any): void {
+    this.spies[queueId]?.addJob(job, 'scheduled')
+  }
+
   public async getJobCount(queueId: SupportedQueueIds<Queues>): Promise<number> {
     await this.startIfNotStarted(queueId)
     return this.getQueue(queueId)?.getJobCountByTypes(

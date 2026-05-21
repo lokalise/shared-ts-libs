@@ -1,6 +1,6 @@
 import type { JobsOptions, Queue, QueueOptions } from 'bullmq'
 import type { BullmqQueueFactory } from '../factories/index.ts'
-import { applyModuleGrouping } from './applyModuleGrouping.ts'
+import { commonBullDashboardGroupingBuilder } from '../public-utils/index.ts'
 import { QueueManager } from './QueueManager.ts'
 import type { QueueConfiguration, QueueManagerConfig, SupportedJobPayloads } from './types.ts'
 
@@ -38,10 +38,25 @@ export class ModuleAwareQueueManager<
     queues: Queues,
     config: Omit<QueueManagerConfig, 'lazyInitEnabled'>,
   ) {
-    super(queueFactory, applyModuleGrouping(serviceId, queues), {
+    super(queueFactory, ModuleAwareQueueManager.resolveQueuesGrouping(serviceId, queues), {
       isTest: config.isTest,
       redisConfig: config.redisConfig,
       lazyInitEnabled: !config.isTest,
     })
+  }
+
+  /**
+   * Resolve queues config by adding bullDashboardGrouping.
+   */
+  private static resolveQueuesGrouping<
+    ModuleId extends string,
+    QueueOptionsType extends QueueOptions,
+    JobOptionsType extends JobsOptions,
+    Queues extends ModuleAwareQueueConfiguration<ModuleId, QueueOptionsType, JobOptionsType>[],
+  >(serviceId: string, queues: Queues): Queues {
+    return queues.map((queue) => ({
+      ...queue,
+      bullDashboardGrouping: commonBullDashboardGroupingBuilder(serviceId, queue.moduleId),
+    })) as unknown as Queues
   }
 }

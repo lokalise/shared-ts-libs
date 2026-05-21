@@ -16,13 +16,17 @@ import type { BullmqFlowProducerFactory } from '../factories/BullmqFlowProducerF
 import { CommonBullmqFactoryNew } from '../factories/CommonBullmqFactoryNew.ts'
 import { FakeFlowManager } from './FakeFlowManager.ts'
 import { FakeQueueManager } from './FakeQueueManager.ts'
-import { type FlowChildJobInput, type FlowJobInput, FlowManager } from './FlowManager.ts'
+import { FlowManager } from './FlowManager.ts'
 import {
   type ModuleAwareQueueConfiguration,
   ModuleAwareQueueManager,
 } from './ModuleAwareQueueManager.ts'
-import { QueueConfigRegistry } from './QueueRegistry.ts'
-import type { JobPayloadForQueue, QueueConfiguration } from './types.ts'
+import type {
+  FlowChildJobInput,
+  FlowJobInput,
+  JobPayloadForQueue,
+  QueueConfiguration,
+} from './types.ts'
 
 const supportedQueues = [
   {
@@ -75,6 +79,7 @@ type SupportedQueues = typeof supportedQueues
 describe('FlowManager', () => {
   let factory: TestDependencyFactory
   let redisConfig: RedisConfig
+  let queueManager: FakeQueueManager<SupportedQueues>
   let flowManager: FakeFlowManager<SupportedQueues>
 
   beforeAll(() => {
@@ -84,14 +89,13 @@ describe('FlowManager', () => {
 
   beforeEach(async () => {
     await factory.clearRedis()
-    flowManager = new FakeFlowManager(supportedQueues, {
-      redisConfig,
-      lazyInitEnabled: true,
-    })
+    queueManager = new FakeQueueManager(supportedQueues, { redisConfig })
+    flowManager = new FakeFlowManager(queueManager)
   })
 
   afterEach(async () => {
     await flowManager?.dispose()
+    await queueManager?.dispose()
     await factory.clearRedis()
   })
 
@@ -101,7 +105,7 @@ describe('FlowManager', () => {
 
   describe('lifecycle', () => {
     it('multiple start calls (sequential or concurrent) do not error', async () => {
-      const localFlowManager = new FakeFlowManager(supportedQueues, { redisConfig })
+      const localFlowManager = new FakeFlowManager(queueManager)
 
       await expect(localFlowManager.start()).resolves.not.toThrowError()
       await expect(localFlowManager.start()).resolves.not.toThrowError()
@@ -116,16 +120,13 @@ describe('FlowManager', () => {
     })
 
     it('dispose is a no-op when not started', async () => {
-      const localFlowManager = new FakeFlowManager(supportedQueues, { redisConfig })
+      const localFlowManager = new FakeFlowManager(queueManager)
       await expect(localFlowManager.dispose()).resolves.not.toThrowError()
       expect(localFlowManager.isStarted).toBe(false)
     })
 
     it('throws when scheduling without start and lazy init disabled', async () => {
-      const localFlowManager = new FakeFlowManager(supportedQueues, {
-        redisConfig,
-        lazyInitEnabled: false,
-      })
+      const localFlowManager = new FakeFlowManager(queueManager, { lazyInitEnabled: false })
 
       await expect(
         localFlowManager.addFlow({
@@ -136,10 +137,7 @@ describe('FlowManager', () => {
     })
 
     it('lazy-inits on addFlow', async () => {
-      const localFlowManager = new FakeFlowManager(supportedQueues, {
-        redisConfig,
-        lazyInitEnabled: true,
-      })
+      const localFlowManager = new FakeFlowManager(queueManager, { lazyInitEnabled: true })
       expect(localFlowManager.isStarted).toBe(false)
 
       await localFlowManager.addFlow({
@@ -153,7 +151,7 @@ describe('FlowManager', () => {
   })
 
   describe('addFlow', () => {
-    it('adds a root-only flow and records spy', async () => {
+    it('adds a root-only flow and records into the shared spy', async () => {
       const node = await flowManager.addFlow({
         queueId: 'parent_queue',
         data: { id: 'parent-1', value: 'hello', metadata: { correlationId: 'c1' } },
@@ -162,7 +160,10 @@ describe('FlowManager', () => {
       expect(node.job.id).toBeDefined()
       expect(node.job.name).toBe('parent_queue')
 
-      const spyResult = await flowManager
+      // The same spy instance is exposed by both managers.
+      expect(flowManager.getSpy('parent_queue')).toBe(queueManager.getSpy('parent_queue'))
+
+      const spyResult = await queueManager
         .getSpy('parent_queue')
         .waitForJobWithId(node.job.id, 'scheduled')
       expect(spyResult.data).toMatchObject({
@@ -235,35 +236,17 @@ describe('FlowManager', () => {
     })
 
     it('applies deduplication idBuilder on root', async () => {
-      const dedupManager = new FakeFlowManager(supportedQueues, {
-        redisConfig,
-        lazyInitEnabled: true,
-      })
-
-      const node = await dedupManager.addFlow({
+      const node = await flowManager.addFlow({
         queueId: 'dedup_queue',
         data: { id: '42', value: 'x', metadata: { correlationId: 'c' } },
       })
 
       expect(node.job.opts.deduplication?.id).toBe('42:x')
-      await dedupManager.dispose()
-    })
-
-    it('infers payload type from queueId', () => {
-      // type-level check — no need to call
-      expectTypeOf<FlowJobInput<SupportedQueues, 'parent_queue'>>().toMatchTypeOf<{
-        queueId: 'parent_queue'
-        data: { id: string; value: string; metadata: { correlationId: string } }
-      }>()
-      expectTypeOf<FlowJobInput<SupportedQueues, 'child_queue'>>().toMatchTypeOf<{
-        queueId: 'child_queue'
-        data: { id: string; childValue: string; metadata: { correlationId: string } }
-      }>()
     })
   })
 
   describe('addFlowBulk', () => {
-    it('adds multiple flows', async () => {
+    it('adds multiple flows across different queues atomically', async () => {
       const nodes = await flowManager.addFlowBulk([
         {
           queueId: 'parent_queue',
@@ -314,40 +297,37 @@ describe('FlowManager', () => {
 
   describe('interop with QueueManager', () => {
     it('jobs added via FlowManager appear in the matching Queue', async () => {
-      const queueManager = new FakeQueueManager(supportedQueues, { redisConfig })
-      try {
-        await queueManager.start(['parent_queue', 'child_queue'])
+      await queueManager.start(['parent_queue', 'child_queue'])
 
-        const node = await flowManager.addFlow({
-          queueId: 'parent_queue',
-          data: { id: 'p', value: 'v', metadata: { correlationId: 'c' } },
-          children: [
-            {
-              queueId: 'child_queue',
-              data: { id: 'c', childValue: 'cv', metadata: { correlationId: 'c' } },
-            },
-          ],
-        })
+      const node = await flowManager.addFlow({
+        queueId: 'parent_queue',
+        data: { id: 'p', value: 'v', metadata: { correlationId: 'c' } },
+        children: [
+          {
+            queueId: 'child_queue',
+            data: { id: 'c', childValue: 'cv', metadata: { correlationId: 'c' } },
+          },
+        ],
+      })
 
-        // Parent should be waiting-children until child completes; both are countable.
-        expect(await queueManager.getJobCount('parent_queue')).toBeGreaterThanOrEqual(1)
-        expect(await queueManager.getJobCount('child_queue')).toBeGreaterThanOrEqual(1)
-        expect(node.job.id).toBeDefined()
-      } finally {
-        await queueManager.dispose()
-      }
+      // Parent should be waiting-children until child completes; both are countable.
+      expect(await queueManager.getJobCount('parent_queue')).toBeGreaterThanOrEqual(1)
+      expect(await queueManager.getJobCount('child_queue')).toBeGreaterThanOrEqual(1)
+      expect(node.job.id).toBeDefined()
     })
   })
 
   describe('spy', () => {
-    it('throws when spy is requested but isTest is false', async () => {
-      const prodManager = new FakeFlowManager(supportedQueues, {
+    it('delegates getSpy to the paired QueueManager (throws in production mode)', async () => {
+      const prodQueueManager = new FakeQueueManager(supportedQueues, {
         redisConfig,
         isTest: false,
       })
+      const prodFlowManager = new FakeFlowManager(prodQueueManager)
 
-      expect(() => prodManager.getSpy('parent_queue')).toThrowError(/spy was not instantiated/)
-      await prodManager.dispose()
+      expect(() => prodFlowManager.getSpy('parent_queue')).toThrowError(/spy was not instantiated/)
+      await prodFlowManager.dispose()
+      await prodQueueManager.dispose()
     })
   })
 
@@ -373,18 +353,14 @@ describe('FlowManager', () => {
       },
     ] as const satisfies ModuleAwareQueueConfiguration[]
 
-    it('shares the queueRegistry so [serviceId, moduleId] grouping is inherited', async () => {
-      const queueManager = new ModuleAwareQueueManager(
+    it('inherits [serviceId, moduleId] grouping from a ModuleAwareQueueManager', async () => {
+      const moduleAwareQueueManager = new ModuleAwareQueueManager(
         'test-service',
         new CommonBullmqFactoryNew(),
         moduleAwareQueues,
         { isTest: true, redisConfig },
       )
-      const moduleAwareFlowManager = FlowManager.fromQueueManager(
-        new CommonBullmqFactoryNew(),
-        queueManager,
-        { isTest: true, lazyInitEnabled: true, redisConfig },
-      )
+      const moduleAwareFlowManager = new FakeFlowManager(moduleAwareQueueManager)
 
       try {
         const node = await moduleAwareFlowManager.addFlow({
@@ -400,9 +376,14 @@ describe('FlowManager', () => {
 
         expect(node.job.queueName).toBe('test-service.emails.email-queue')
         expect(node.children?.[0]?.job.queueName).toBe('test-service.phone.sms-queue')
+
+        // Shared spy: looking up either way returns the same instance.
+        expect(moduleAwareFlowManager.getSpy('email-queue')).toBe(
+          moduleAwareQueueManager.getSpy('email-queue'),
+        )
       } finally {
         await moduleAwareFlowManager.dispose()
-        await queueManager.dispose()
+        await moduleAwareQueueManager.dispose()
       }
     })
   })
@@ -499,7 +480,7 @@ describe('FlowManager', () => {
       expect(typeof _typeCheck).toBe('function')
     })
 
-    it("a ModuleAwareQueueManager's queueRegistry is assignable to FlowManager's ctor arg", () => {
+    it('a ModuleAwareQueueManager pairs cleanly with FlowManager', () => {
       const typeTestQueues = [
         {
           queueId: 'q',
@@ -511,23 +492,19 @@ describe('FlowManager', () => {
         },
       ] as const satisfies ModuleAwareQueueConfiguration[]
 
-      const queueManager = new ModuleAwareQueueManager(
+      const localQueueManager = new ModuleAwareQueueManager(
         'svc',
         new CommonBullmqFactoryNew(),
         typeTestQueues,
         { isTest: true, redisConfig },
       )
 
-      // The compilation of this call is the assertion — if `Queues` weren't
-      // inferred correctly through `fromQueueManager`, `addFlow` below would
-      // demand `never` for data.
-      const fm = FlowManager.fromQueueManager(new CommonBullmqFactoryNew(), queueManager, {
-        isTest: true,
+      // Compilation IS the assertion — if `Queues` weren't inferred through
+      // the QueueManager param, `addFlow` below would demand `never` for data.
+      const fm = new FlowManager(new CommonBullmqFactoryNew(), localQueueManager, {
         lazyInitEnabled: true,
-        redisConfig,
       })
 
-      // Wrapped to avoid making real Bull calls — we only want the type-check.
       const _typeCheck = () => {
         // @ts-expect-error - 'wrong-queue' is not in the ModuleAware registry
         void fm.addFlow({ queueId: 'wrong-queue', data: {} })
@@ -538,7 +515,7 @@ describe('FlowManager', () => {
       }
       expect(typeof _typeCheck).toBe('function')
 
-      void queueManager.dispose()
+      void localQueueManager.dispose()
       void fm.dispose()
     })
   })
@@ -566,11 +543,7 @@ describe('FlowManager', () => {
         },
       }
 
-      const manager = new FlowManager(factory, new QueueConfigRegistry(supportedQueues), {
-        redisConfig,
-        isTest: true,
-        lazyInitEnabled: true,
-      })
+      const manager = new FlowManager(factory, queueManager, { lazyInitEnabled: true })
 
       await expect(manager.start()).rejects.toThrowError('simulated startup failure')
       expect(manager.isStarted).toBe(false)
@@ -602,11 +575,7 @@ describe('FlowManager', () => {
         },
       }
 
-      const manager = new FlowManager(factory, new QueueConfigRegistry(supportedQueues), {
-        redisConfig,
-        isTest: true,
-        lazyInitEnabled: true,
-      })
+      const manager = new FlowManager(factory, queueManager, { lazyInitEnabled: true })
 
       const startPromise = manager.start()
       const disposePromise = manager.dispose()
