@@ -501,9 +501,13 @@ describe('FlowManager', () => {
 
       // Compilation IS the assertion — if `Queues` weren't inferred through
       // the QueueManager param, `addFlow` below would demand `never` for data.
-      const fm = new FlowManager(new CommonBullmqFactoryNew(), localQueueManager, {
-        lazyInitEnabled: true,
-      })
+      const fm = new FlowManager(
+        {
+          flowProducerFactory: new CommonBullmqFactoryNew(),
+          queueManager: localQueueManager,
+        },
+        { lazyInitEnabled: true },
+      )
 
       const _typeCheck = () => {
         // @ts-expect-error - 'wrong-queue' is not in the ModuleAware registry
@@ -543,7 +547,10 @@ describe('FlowManager', () => {
         },
       }
 
-      const manager = new FlowManager(factory, queueManager, { lazyInitEnabled: true })
+      const manager = new FlowManager(
+        { flowProducerFactory: factory, queueManager },
+        { lazyInitEnabled: true },
+      )
 
       await expect(manager.start()).rejects.toThrowError('simulated startup failure')
       expect(manager.isStarted).toBe(false)
@@ -575,7 +582,10 @@ describe('FlowManager', () => {
         },
       }
 
-      const manager = new FlowManager(factory, queueManager, { lazyInitEnabled: true })
+      const manager = new FlowManager(
+        { flowProducerFactory: factory, queueManager },
+        { lazyInitEnabled: true },
+      )
 
       const startPromise = manager.start()
       const disposePromise = manager.dispose()

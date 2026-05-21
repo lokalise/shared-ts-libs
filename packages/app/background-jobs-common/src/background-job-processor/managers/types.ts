@@ -1,7 +1,9 @@
 import type { RedisConfig } from '@lokalise/node-core'
-import type { Job, JobsOptions, Queue, QueueOptions } from 'bullmq'
+import type { FlowProducer, Job, JobsOptions, Queue, QueueBaseOptions, QueueOptions } from 'bullmq'
 import type { z } from 'zod/v4'
+import type { BullmqFlowProducerFactory } from '../factories/BullmqFlowProducerFactory.ts'
 import type { BaseJobPayload } from '../types.ts'
+import type { QueueManager } from './QueueManager.ts'
 
 export type QueueManagerConfig = {
   isTest: boolean
@@ -134,4 +136,29 @@ export type FlowJobInput<
  * because `isTest` and `redisConfig` are inherited from the paired `QueueManager`. */
 export type FlowManagerConfig = {
   lazyInitEnabled?: boolean
+}
+
+/**
+ * Dependencies bundle for `FlowManager`. Mirrors the convention used by
+ * `BackgroundJobProcessorDependenciesNew` so future optional dependencies
+ * (logger, errorReporter, …) can be added without breaking the constructor
+ * signature.
+ */
+export type FlowManagerDependencies<
+  Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
+  QueueType extends Queue<
+    SupportedJobPayloads<Queues>,
+    unknown,
+    string,
+    SupportedJobPayloads<Queues>,
+    unknown,
+    string
+  > = Queue<SupportedJobPayloads<Queues>, void, string, SupportedJobPayloads<Queues>, void, string>,
+  QueueOptionsType extends QueueOptions = QueueOptions,
+  JobOptionsType extends JobsOptions = JobsOptions,
+  FlowProducerType extends FlowProducer = FlowProducer,
+  FlowProducerOptionsType extends QueueBaseOptions = QueueBaseOptions,
+> = {
+  flowProducerFactory: BullmqFlowProducerFactory<FlowProducerType, FlowProducerOptionsType>
+  queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>
 }

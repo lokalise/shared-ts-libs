@@ -218,9 +218,10 @@ const queueManager = new ModuleAwareQueueManager(
 )
 
 // `isTest` and `redisConfig` are inherited from `queueManager.config`.
-const flowManager = new FlowManager(new CommonBullmqFactoryNew(), queueManager, {
-  lazyInitEnabled: false,
-})
+const flowManager = new FlowManager(
+  { flowProducerFactory: new CommonBullmqFactoryNew(), queueManager },
+  { lazyInitEnabled: false },
+)
 await flowManager.start()
 
 const node = await flowManager.addFlow({

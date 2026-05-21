@@ -11,8 +11,9 @@ import type { FlowManagerConfig, QueueConfiguration } from './types.ts'
  */
 export class FakeFlowManager<Queues extends QueueConfiguration[]> extends FlowManager<Queues> {
   constructor(queueManager: QueueManager<Queues>, config: FlowManagerConfig = {}) {
-    super(new CommonBullmqFactoryNew(), queueManager, {
-      lazyInitEnabled: config.lazyInitEnabled ?? true,
-    })
+    super(
+      { flowProducerFactory: new CommonBullmqFactoryNew(), queueManager },
+      { lazyInitEnabled: config.lazyInitEnabled ?? true },
+    )
   }
 }

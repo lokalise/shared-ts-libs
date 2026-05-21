@@ -21,6 +21,7 @@ import type {
   FlowChildJobOptions,
   FlowJobInput,
   FlowManagerConfig,
+  FlowManagerDependencies,
   FlowRootJobOptions,
   JobPayloadForQueue,
   QueueConfiguration,
@@ -85,18 +86,24 @@ export class FlowManager<
   private startPromise?: Promise<void>
 
   constructor(
-    flowProducerFactory: BullmqFlowProducerFactory<FlowProducerType, FlowProducerOptionsType>,
-    queueManager: QueueManager<Queues, QueueType, QueueOptionsType, JobOptionsType>,
+    dependencies: FlowManagerDependencies<
+      Queues,
+      QueueType,
+      QueueOptionsType,
+      JobOptionsType,
+      FlowProducerType,
+      FlowProducerOptionsType
+    >,
     config: FlowManagerConfig = {},
   ) {
-    this.queueManager = queueManager
-    this.flowProducerFactory = flowProducerFactory
+    this.queueManager = dependencies.queueManager
+    this.flowProducerFactory = dependencies.flowProducerFactory
     this.config = config
 
     this.queueIdByResolvedName = new Map()
-    for (const queueId of queueManager.queueRegistry.queueIds) {
+    for (const queueId of this.queueManager.queueRegistry.queueIds) {
       const typedQueueId = queueId as SupportedQueueIds<Queues>
-      const queueConfig = queueManager.queueRegistry.getQueueConfig(typedQueueId)
+      const queueConfig = this.queueManager.queueRegistry.getQueueConfig(typedQueueId)
       this.queueIdByResolvedName.set(resolveQueueId(queueConfig), typedQueueId)
     }
   }
