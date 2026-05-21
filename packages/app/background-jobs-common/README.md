@@ -5,6 +5,12 @@ This library provides a basic abstraction over BullMQ-powered background jobs. T
 - AbstractBackgroundJobProcessor: a base class for running jobs, it provides an instrumentation and logger integration plus
   basic API for enqueuing jobs.
 
+For publishing jobs, it also provides:
+
+- `QueueManager` — schedules jobs onto individual queues
+- `FlowManager` — schedules tree-structured jobs (parent + children) via BullMQ's `FlowProducer`, with the same
+  validation, options-merging and spy support as `QueueManager`
+
 ## Getting Started
 
 Install all dependencies:
@@ -167,6 +173,94 @@ const supportedQueues = [
   },
 ] as const satisfies QueueConfiguration[]
 ```
+
+### Flows (FlowProducer)
+
+For tree-structured jobs where children must complete before their parent runs (BullMQ's
+[FlowProducer](https://docs.bullmq.io/guide/flows)), use `FlowManager`. It takes the same `QueueConfiguration[]` array as
+`QueueManager` and provides matching guarantees: Zod payload validation per node, merged job options + default
+retry/retention, deduplication `idBuilder` on flow roots, dashboard grouping via `bullDashboardGrouping`, spies in test
+mode, and lazy initialization.
+
+```typescript
+import { FlowManager, CommonBullmqFactoryNew } from '@lokalise/background-jobs-common'
+
+const supportedQueues = [
+  {
+    queueId: 'render-pdf',
+    jobPayloadSchema: z.object({
+      documentId: z.string(),
+      metadata: z.object({ correlationId: z.string() }),
+    }),
+  },
+  {
+    queueId: 'fetch-data',
+    jobPayloadSchema: z.object({
+      source: z.string(),
+      metadata: z.object({ correlationId: z.string() }),
+    }),
+  },
+] as const satisfies QueueConfiguration[]
+
+const flowManager = new FlowManager(new CommonBullmqFactoryNew(), supportedQueues, {
+  redisConfig: config.getRedisConfig(),
+  isTest: false,
+  lazyInitEnabled: false,
+})
+await flowManager.start()
+
+const node = await flowManager.addFlow({
+  queueId: 'render-pdf',
+  data: { documentId: 'doc-1', metadata: { correlationId: 'c' } },
+  children: [
+    {
+      queueId: 'fetch-data',
+      data: { source: 'crm', metadata: { correlationId: 'c' } },
+    },
+    {
+      queueId: 'fetch-data',
+      data: { source: 'analytics', metadata: { correlationId: 'c' } },
+    },
+  ],
+})
+// node.job.id, node.children?.[i].job.id
+```
+
+`addFlowBulk` accepts multiple roots, and `getFlow({ queueId, id })` retrieves a previously added tree using the queue
+config's resolved (grouped) name.
+
+#### Constraints inherited from BullMQ
+
+- **Flow children cannot carry `deduplication`, `debounce` or `parent`** — these are typed off `FlowChildJobInput.opts`
+  and queue-level defaults for these fields are stripped on children. Apply `deduplication` on the root only.
+- **Flow nodes cannot carry `repeat`** — for repeatable jobs use `QueueManager.schedule`.
+
+#### `ModuleAwareFlowManager`
+
+Lokalise-flavored variant that mirrors `ModuleAwareQueueManager`: derives `[serviceId, moduleId]` grouping from the
+queue's `moduleId` and sets `lazyInitEnabled` based on `isTest`.
+
+```typescript
+import { ModuleAwareFlowManager, CommonBullmqFactoryNew } from '@lokalise/background-jobs-common'
+
+const flowManager = new ModuleAwareFlowManager(
+  'my-service',
+  new CommonBullmqFactoryNew(),
+  supportedQueues, // ModuleAwareQueueConfiguration[]
+  { isTest: false, redisConfig: config.getRedisConfig() },
+)
+```
+
+#### Spies
+
+`FlowManager.getSpy(queueId)` returns the same `BackgroundJobProcessorSpy` interface as `QueueManager.getSpy`, and is
+populated for every node in the flow tree (parent + all descendants) at `'scheduled'` state. Enable via `isTest: true`.
+
+#### Sharing queue configs with `QueueManager`
+
+`FlowManager` only needs the queue configurations to validate payloads and resolve names — it does **not** instantiate
+queues. In a typical service, the same `supportedQueues` array is passed to both `QueueManager` (to start the queues for
+the workers running in this process) and `FlowManager` (to publish flows that may target queues consumed elsewhere).
 
 ### Do not report UnrecoverableError
 
