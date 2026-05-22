@@ -12,7 +12,7 @@ This eliminates assumptions across the boundary and keeps documentation, validat
 ### REST routes
 
 ```ts
-import { defineApiContract, ContractNoBody } from '@lokalise/api-contracts'
+import { defineApiContract, noBodyResponse } from '@lokalise/api-contracts'
 import { z } from 'zod/v4'
 
 // GET with path params
@@ -41,7 +41,7 @@ const deleteUser = defineApiContract({
   requestPathParamsSchema: z.object({ userId: z.uuid() }),
   pathResolver: ({ userId }) => `/users/${userId}`,
   responsesByStatusCode: {
-    204: ContractNoBody,
+    204: noBodyResponse(),
   },
 })
 ```
@@ -121,6 +121,41 @@ const chatCompletion = defineApiContract({
 })
 ```
 
+### OpenAPI response descriptions
+
+All response factories accept an optional `ResponseOptions` object as their last argument.
+
+```ts
+import {
+  defineApiContract,
+  noBodyResponse,
+  textResponse,
+  blobResponse,
+  sseResponse,
+  anyOfResponses,
+} from '@lokalise/api-contracts'
+import { z } from 'zod/v4'
+
+const contract = defineApiContract({
+  method: 'post',
+  pathResolver: () => '/files',
+  requestBodySchema: z.object({ name: z.string() }),
+  responsesByStatusCode: {
+    201: z.object({ id: z.string() }).describe('Created resource'),
+    204: noBodyResponse({ description: 'Deleted — no content returned' }),
+    200: anyOfResponses(
+      [
+        z.object({ id: z.string() }).describe('JSON representation'),
+        textResponse('text/csv', { description: 'CSV export' }),
+        blobResponse('application/pdf', { description: 'PDF report' }),
+        sseResponse({ update: z.object({ id: z.string() }) }, { description: 'Live update stream' }),
+      ],
+      { description: 'Multiple response formats available' },
+    ),
+  },
+})
+```
+
 `getSseSchemaByEventName(contract)` extracts SSE event schemas from a contract:
 
 ```ts
@@ -141,7 +176,7 @@ defineApiContract({
   method: 'get' | 'post' | 'put' | 'patch' | 'delete',
   pathResolver: (pathParams) => string,
   responsesByStatusCode: {
-    [statusCode]: z.ZodType | ContractNoBody | TypedTextResponse | TypedBlobResponse | TypedSseResponse | AnyOfResponses
+    [statusCode]: z.ZodType | NoBodyResponse | TypedTextResponse | TypedBlobResponse | TypedSseResponse | AnyOfResponses
   },
 
   // Path params — links pathResolver parameter type to the schema
@@ -185,7 +220,7 @@ const contract = defineApiContract({
 
 ### Type utilities
 
-**`InferNonSseSuccessResponses<T>`** — TypeScript output type of all non-SSE 2xx responses. JSON schemas → `z.output<T>`, `textResponse` → `string`, `blobResponse` → `Blob`, `ContractNoBody` → `undefined`, `sseResponse` → `never` (excluded). `anyOfResponses` entries are unpacked before mapping.
+**`InferNonSseSuccessResponses<T>`** — TypeScript output type of all non-SSE 2xx responses. JSON schemas → `z.output<T>`, `textResponse` → `string`, `blobResponse` → `Blob`, `ContractNoBody`/`NoBodyResponse` → `undefined`, `sseResponse` → `never` (excluded). `anyOfResponses` entries are unpacked before mapping.
 
 ```ts
 import type { InferNonSseSuccessResponses } from '@lokalise/api-contracts'
@@ -207,7 +242,7 @@ type CsvResponse = InferNonSseSuccessResponses<typeof exportCsv['responsesByStat
 
 **`HasAnyNonSseSuccessResponse<T>`** — `true` if any 2xx entry is a non-SSE response (JSON, text, blob, or no-body).
 
-**`IsNoBodySuccessResponse<T>`** — `true` when all 2xx entries are `ContractNoBody` or no 2xx status codes are defined.
+**`IsNoBodySuccessResponse<T>`** — `true` when all 2xx entries are `ContractNoBody`/`NoBodyResponse` or no 2xx status codes are defined.
 
 **`ContractResponseMode<T>`** — classifies a contract into `'dual'` (SSE + non-SSE), `'sse'` (SSE-only), or `'non-sse'` (JSON/text/blob/no-body).
 
@@ -271,7 +306,7 @@ import { describeApiContract } from '@lokalise/api-contracts'
 describeApiContract(getUser) // "GET /users/:userId"
 ```
 
-**`getSuccessResponseSchema`** — merged Zod schema from all 2xx JSON entries. `ContractNoBody` and non-JSON entries are excluded. Returns `null` when no schema is present.
+**`getSuccessResponseSchema`** *(deprecated — no known consumers, will be removed in a future release)* — merged Zod schema from all 2xx JSON entries. `ContractNoBody`/`NoBodyResponse` and non-JSON entries are excluded. Returns `null` when no schema is present.
 
 ```ts
 import { getSuccessResponseSchema } from '@lokalise/api-contracts'
@@ -280,7 +315,7 @@ getSuccessResponseSchema(getUser)    // ZodObject
 getSuccessResponseSchema(deleteUser) // null
 ```
 
-**`getIsEmptyResponseExpected`** — `true` when no Zod schema exists among 2xx entries.
+**`getIsEmptyResponseExpected`** *(deprecated — no known consumers, will be removed in a future release)* — `true` when no Zod schema exists among 2xx entries.
 
 ```ts
 import { getIsEmptyResponseExpected } from '@lokalise/api-contracts'
