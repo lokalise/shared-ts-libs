@@ -5,6 +5,8 @@ import {
   anyOfResponses,
   blobResponse,
   isJsonResponse,
+  isNoBodyResponse,
+  noBodyResponse,
   resolveContractResponse,
   resolveResponseEntry,
   sseResponse,
@@ -37,6 +39,79 @@ describe('isJsonResponse', () => {
   })
 })
 
+describe('factory description option', () => {
+  it('textResponse includes description when provided', () => {
+    expect(textResponse('text/csv', { description: 'CSV export' })).toMatchObject({
+      description: 'CSV export',
+    })
+  })
+
+  it('textResponse omits description when not provided', () => {
+    expect(textResponse('text/csv')).not.toHaveProperty('description')
+  })
+
+  it('blobResponse includes description when provided', () => {
+    expect(blobResponse('image/png', { description: 'PNG image' })).toMatchObject({
+      description: 'PNG image',
+    })
+  })
+
+  it('blobResponse omits description when not provided', () => {
+    expect(blobResponse('image/png')).not.toHaveProperty('description')
+  })
+
+  it('sseResponse includes description when provided', () => {
+    expect(sseResponse({ update: z.string() }, { description: 'SSE stream' })).toMatchObject({
+      description: 'SSE stream',
+    })
+  })
+
+  it('sseResponse omits description when not provided', () => {
+    expect(sseResponse({ update: z.string() })).not.toHaveProperty('description')
+  })
+
+  it('anyOfResponses includes description when provided', () => {
+    expect(anyOfResponses([z.object({ id: z.string() })], { description: 'Multiple types' })).toMatchObject({
+      description: 'Multiple types',
+    })
+  })
+
+  it('anyOfResponses omits description when not provided', () => {
+    expect(anyOfResponses([z.object({ id: z.string() })])).not.toHaveProperty('description')
+  })
+
+  it('noBodyResponse includes description when provided', () => {
+    expect(noBodyResponse({ description: 'No content' })).toMatchObject({
+      description: 'No content',
+    })
+  })
+
+  it('noBodyResponse omits description when not provided', () => {
+    expect(noBodyResponse()).not.toHaveProperty('description')
+  })
+})
+
+describe('noBodyResponse / isNoBodyResponse', () => {
+  it('noBodyResponse returns correct tag', () => {
+    expect(noBodyResponse()).toEqual({ _tag: 'NoBodyResponse' })
+  })
+
+  it('isNoBodyResponse returns true for noBodyResponse()', () => {
+    expect(isNoBodyResponse(noBodyResponse())).toBe(true)
+  })
+
+  it('isNoBodyResponse returns false for ContractNoBody symbol', () => {
+    expect(isNoBodyResponse(ContractNoBody)).toBe(false)
+  })
+
+  it('isNoBodyResponse returns false for other tagged responses', () => {
+    expect(isNoBodyResponse(textResponse('text/csv'))).toBe(false)
+    expect(isNoBodyResponse(blobResponse('image/png'))).toBe(false)
+    expect(isNoBodyResponse(sseResponse({ update: z.string() }))).toBe(false)
+    expect(isNoBodyResponse(anyOfResponses([z.object({ id: z.string() })]))).toBe(false)
+  })
+})
+
 describe('resolveContractResponse', () => {
   describe('ContractNoBody', () => {
     it('returns noContent regardless of content-type', () => {
@@ -44,6 +119,15 @@ describe('resolveContractResponse', () => {
         kind: 'noContent',
       })
       expect(resolveContractResponse(ContractNoBody, undefined)).toEqual({ kind: 'noContent' })
+    })
+  })
+
+  describe('noBodyResponse', () => {
+    it('returns noContent regardless of content-type', () => {
+      expect(resolveContractResponse(noBodyResponse(), 'application/json')).toEqual({
+        kind: 'noContent',
+      })
+      expect(resolveContractResponse(noBodyResponse(), undefined)).toEqual({ kind: 'noContent' })
     })
   })
 
