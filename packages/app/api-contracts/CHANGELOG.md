@@ -1,34 +1,40 @@
 # Changelog
 
+## 6.12.0
+
+### Minor Changes
+
+- 81c79bf: Add optional `description` field to all response factories for OpenAPI spec support. New `noBodyResponse()` factory and `isNoBodyResponse()` type guard replace `ContractNoBody` in `responsesByStatusCode`. Shared `ResponseOptions` type accepted by `textResponse`, `blobResponse`, `sseResponse`, `anyOfResponses`, and `noBodyResponse`.
+
 ## [6.10.0] - 2026-05-08
 
 ### Deprecations
 
 All previous contract builder functions are deprecated in favor of `defineApiContract`. They remain functional but will be removed in a future major version.
 
-| Deprecated function | Replacement |
-|---|---|
-| `buildGetRoute` | `defineApiContract` |
-| `buildPayloadRoute` | `defineApiContract` |
-| `buildDeleteRoute` | `defineApiContract` |
-| `buildRestContract` | `defineApiContract` |
-| `buildContract` | `defineApiContract` |
-| `buildSseContract` | `defineApiContract` |
-| `mapRouteToPath` | `mapApiContractToPath` |
-| `describeContract` | `describeApiContract` |
+| Deprecated function | Replacement            |
+| ------------------- | ---------------------- |
+| `buildGetRoute`     | `defineApiContract`    |
+| `buildPayloadRoute` | `defineApiContract`    |
+| `buildDeleteRoute`  | `defineApiContract`    |
+| `buildRestContract` | `defineApiContract`    |
+| `buildContract`     | `defineApiContract`    |
+| `buildSseContract`  | `defineApiContract`    |
+| `mapRouteToPath`    | `mapApiContractToPath` |
+| `describeContract`  | `describeApiContract`  |
 
 ### New API: `defineApiContract`
 
 `defineApiContract` is the single entry point for defining any contract type — REST, SSE-only, or dual-mode. It replaces all previous builders with a unified API centred on `responsesByStatusCode`.
 
-| Old API | New API |
-|---|---|
-| `successResponseBodySchema` | `responsesByStatusCode: { 200: schema }` |
-| `serverSentEventSchemas` | `responsesByStatusCode: { 200: sseResponse(schemas) }` |
-| `successResponseBodySchema` + `serverSentEventSchemas` | `responsesByStatusCode: { 200: anyOfResponses([sseResponse(...), jsonSchema]) }` |
-| `isEmptyResponseExpected: true` | `responsesByStatusCode: { 204: ContractNoBody }` |
-| `isNonJSONResponseExpected: true` | `responsesByStatusCode: { 200: textResponse(contentType) }` or `blobResponse(contentType)` |
-| `responseSchemasByStatusCode` / `responseBodySchemasByStatusCode` | Same `responsesByStatusCode` map, alongside success entries |
+| Old API                                                           | New API                                                                                    |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `successResponseBodySchema`                                       | `responsesByStatusCode: { 200: schema }`                                                   |
+| `serverSentEventSchemas`                                          | `responsesByStatusCode: { 200: sseResponse(schemas) }`                                     |
+| `successResponseBodySchema` + `serverSentEventSchemas`            | `responsesByStatusCode: { 200: anyOfResponses([sseResponse(...), jsonSchema]) }`           |
+| `isEmptyResponseExpected: true`                                   | `responsesByStatusCode: { 204: ContractNoBody }`                                           |
+| `isNonJSONResponseExpected: true`                                 | `responsesByStatusCode: { 200: textResponse(contentType) }` or `blobResponse(contentType)` |
+| `responseSchemasByStatusCode` / `responseBodySchemasByStatusCode` | Same `responsesByStatusCode` map, alongside success entries                                |
 
 Fields that carry over unchanged: `method`, `pathResolver`, `requestPathParamsSchema`, `requestQuerySchema`, `requestBodySchema`, `requestHeaderSchema`, `responseHeaderSchema`, `summary`, `description`, `tags`, `metadata`.
 
@@ -53,17 +59,17 @@ buildGetRoute({
   requestPathParamsSchema: z.object({ userId: z.string() }),
   successResponseBodySchema: z.object({ id: z.string(), name: z.string() }),
   pathResolver: (params) => `/users/${params.userId}`,
-})
+});
 
 // After
 defineApiContract({
-  method: 'get',
+  method: "get",
   requestPathParamsSchema: z.object({ userId: z.string() }),
   pathResolver: ({ userId }) => `/users/${userId}`,
   responsesByStatusCode: {
     200: z.object({ id: z.string(), name: z.string() }),
   },
-})
+});
 ```
 
 ### Rule 2 — POST / PUT / PATCH route
@@ -71,21 +77,21 @@ defineApiContract({
 ```ts
 // Before
 buildPayloadRoute({
-  method: 'post',
+  method: "post",
   requestBodySchema: z.object({ name: z.string() }),
   successResponseBodySchema: z.object({ id: z.string(), name: z.string() }),
-  pathResolver: () => '/users',
-})
+  pathResolver: () => "/users",
+});
 
 // After
 defineApiContract({
-  method: 'post',
+  method: "post",
   requestBodySchema: z.object({ name: z.string() }),
-  pathResolver: () => '/users',
+  pathResolver: () => "/users",
   responsesByStatusCode: {
     201: z.object({ id: z.string(), name: z.string() }),
   },
-})
+});
 ```
 
 ### Rule 3 — DELETE route
@@ -95,17 +101,17 @@ defineApiContract({
 buildDeleteRoute({
   requestPathParamsSchema: z.object({ userId: z.string() }),
   pathResolver: (params) => `/users/${params.userId}`,
-})
+});
 
 // After
 defineApiContract({
-  method: 'delete',
+  method: "delete",
   requestPathParamsSchema: z.object({ userId: z.string() }),
   pathResolver: ({ userId }) => `/users/${userId}`,
   responsesByStatusCode: {
     204: ContractNoBody,
   },
-})
+});
 ```
 
 ### Rule 4 — SSE-only route
@@ -115,23 +121,23 @@ defineApiContract({
 ```ts
 // Before
 buildSseContract({
-  method: 'get',
-  pathResolver: () => '/notifications/stream',
+  method: "get",
+  pathResolver: () => "/notifications/stream",
   serverSentEventSchemas: {
     notification: z.object({ id: z.string(), message: z.string() }),
   },
-})
+});
 
 // After
 defineApiContract({
-  method: 'get',
-  pathResolver: () => '/notifications/stream',
+  method: "get",
+  pathResolver: () => "/notifications/stream",
   responsesByStatusCode: {
     200: sseResponse({
       notification: z.object({ id: z.string(), message: z.string() }),
     }),
   },
-})
+});
 ```
 
 ### Rule 5 — Dual-mode route (JSON or SSE based on `Accept` header)
@@ -141,20 +147,20 @@ defineApiContract({
 ```ts
 // Before
 buildSseContract({
-  method: 'post',
-  pathResolver: () => '/chat/completions',
+  method: "post",
+  pathResolver: () => "/chat/completions",
   requestBodySchema: z.object({ message: z.string() }),
   successResponseBodySchema: z.object({ reply: z.string() }),
   serverSentEventSchemas: {
     chunk: z.object({ delta: z.string() }),
     done: z.object({ finish_reason: z.string() }),
   },
-})
+});
 
 // After
 defineApiContract({
-  method: 'post',
-  pathResolver: () => '/chat/completions',
+  method: "post",
+  pathResolver: () => "/chat/completions",
   requestBodySchema: z.object({ message: z.string() }),
   responsesByStatusCode: {
     200: anyOfResponses([
@@ -165,7 +171,7 @@ defineApiContract({
       z.object({ reply: z.string() }),
     ]),
   },
-})
+});
 ```
 
 ### Rule 6 — `isNonJSONResponseExpected: true` → `textResponse()` or `blobResponse()`
@@ -175,19 +181,19 @@ Use `textResponse(contentType)` for text-based formats (CSV, HTML, XML, plain te
 ```ts
 // Before
 buildRestContract({
-  method: 'get',
+  method: "get",
   isNonJSONResponseExpected: true,
-  pathResolver: () => '/export.csv',
-})
+  pathResolver: () => "/export.csv",
+});
 
 // After
 defineApiContract({
-  method: 'get',
-  pathResolver: () => '/export.csv',
+  method: "get",
+  pathResolver: () => "/export.csv",
   responsesByStatusCode: {
-    200: textResponse('text/csv'), // substitute the actual content type
+    200: textResponse("text/csv"), // substitute the actual content type
   },
-})
+});
 ```
 
 ### Rule 7 — `isEmptyResponseExpected: true` → `ContractNoBody`
@@ -195,17 +201,17 @@ defineApiContract({
 ```ts
 // Before
 buildRestContract({
-  method: 'get',
+  method: "get",
   isEmptyResponseExpected: true,
-  pathResolver: () => '/ping',
-})
+  pathResolver: () => "/ping",
+});
 
 // After
 defineApiContract({
-  method: 'get',
-  pathResolver: () => '/ping',
+  method: "get",
+  pathResolver: () => "/ping",
   responsesByStatusCode: { 204: ContractNoBody },
-})
+});
 ```
 
 ### Rule 8 — Error schemas merge into `responsesByStatusCode`
@@ -215,39 +221,39 @@ The separate `responseSchemasByStatusCode` (REST) and `responseBodySchemasByStat
 ```ts
 // Before
 buildSseContract({
-  method: 'get',
+  method: "get",
   pathResolver: ({ channelId }) => `/channels/${channelId}/stream`,
   requestPathParamsSchema: z.object({ channelId: z.string() }),
   serverSentEventSchemas: { message: z.object({ text: z.string() }) },
   responseBodySchemasByStatusCode: {
-    401: z.object({ error: z.literal('Unauthorized') }),
+    401: z.object({ error: z.literal("Unauthorized") }),
     404: z.object({ error: z.string() }),
   },
-})
+});
 
 // After
 defineApiContract({
-  method: 'get',
+  method: "get",
   pathResolver: ({ channelId }) => `/channels/${channelId}/stream`,
   requestPathParamsSchema: z.object({ channelId: z.string() }),
   responsesByStatusCode: {
     200: sseResponse({ message: z.object({ text: z.string() }) }),
-    401: z.object({ error: z.literal('Unauthorized') }),
+    401: z.object({ error: z.literal("Unauthorized") }),
     404: z.object({ error: z.string() }),
   },
-})
+});
 ```
 
 ### Rule 9 — Utility functions
 
 ```ts
 // Before
-mapRouteToPath(contract)   // "/users/:userId"
-describeContract(contract) // "GET /users/:userId"
+mapRouteToPath(contract); // "/users/:userId"
+describeContract(contract); // "GET /users/:userId"
 
 // After
-mapApiContractToPath(contract)   // "/users/:userId"
-describeApiContract(contract)    // "GET /users/:userId"
+mapApiContractToPath(contract); // "/users/:userId"
+describeApiContract(contract); // "GET /users/:userId"
 ```
 
 ### Rule 10 — Import changes
@@ -255,15 +261,25 @@ describeApiContract(contract)    // "GET /users/:userId"
 ```ts
 // Remove
 import {
-  buildGetRoute, buildPayloadRoute, buildDeleteRoute,
-  buildRestContract, buildContract, buildSseContract,
-  mapRouteToPath, describeContract,
-} from '@lokalise/api-contracts'
+  buildGetRoute,
+  buildPayloadRoute,
+  buildDeleteRoute,
+  buildRestContract,
+  buildContract,
+  buildSseContract,
+  mapRouteToPath,
+  describeContract,
+} from "@lokalise/api-contracts";
 
 // Add (only what you use)
 import {
   defineApiContract,
-  ContractNoBody, textResponse, blobResponse, sseResponse, anyOfResponses,
-  mapApiContractToPath, describeApiContract,
-} from '@lokalise/api-contracts'
+  ContractNoBody,
+  textResponse,
+  blobResponse,
+  sseResponse,
+  anyOfResponses,
+  mapApiContractToPath,
+  describeApiContract,
+} from "@lokalise/api-contracts";
 ```
