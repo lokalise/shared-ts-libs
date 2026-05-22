@@ -2,14 +2,23 @@ import type { z } from 'zod/v4'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 import { ContractNoBody } from './constants.ts'
 
+export type ResponseOptions = {
+  readonly description?: string
+}
+
 export type TypedTextResponse = {
   readonly _tag: 'TextResponse'
   readonly contentType: string
+  readonly description?: string
 }
 
-export const textResponse = (contentType: string): TypedTextResponse => ({
+export const textResponse = (
+  contentType: string,
+  options?: ResponseOptions,
+): TypedTextResponse => ({
   _tag: 'TextResponse',
   contentType,
+  ...(options?.description !== undefined && { description: options.description }),
 })
 
 export const isTextResponse = (value: ApiContractResponse): value is TypedTextResponse =>
@@ -18,11 +27,16 @@ export const isTextResponse = (value: ApiContractResponse): value is TypedTextRe
 export type TypedBlobResponse = {
   readonly _tag: 'BlobResponse'
   readonly contentType: string
+  readonly description?: string
 }
 
-export const blobResponse = (contentType: string): TypedBlobResponse => ({
+export const blobResponse = (
+  contentType: string,
+  options?: ResponseOptions,
+): TypedBlobResponse => ({
   _tag: 'BlobResponse',
   contentType,
+  ...(options?.description !== undefined && { description: options.description }),
 })
 
 export const isBlobResponse = (value: ApiContractResponse): value is TypedBlobResponse =>
@@ -33,13 +47,16 @@ export type SseSchemaByEventName = Record<string, z.ZodType>
 export type TypedSseResponse<T extends SseSchemaByEventName = SseSchemaByEventName> = {
   readonly _tag: 'SseResponse'
   readonly schemaByEventName: T
+  readonly description?: string
 }
 
 export const sseResponse = <T extends SseSchemaByEventName>(
   schemaByEventName: T,
+  options?: ResponseOptions,
 ): TypedSseResponse<T> => ({
   _tag: 'SseResponse',
   schemaByEventName,
+  ...(options?.description !== undefined && { description: options.description }),
 })
 
 export const isSseResponse = (value: ApiContractResponse): value is TypedSseResponse =>
@@ -59,19 +76,39 @@ export type TypedApiContractResponse =
 export type AnyOfResponses<T extends TypedApiContractResponse = TypedApiContractResponse> = {
   readonly _tag: 'AnyOfResponses'
   readonly responses: T[]
+  readonly description?: string
 }
 
 export const anyOfResponses = <T extends TypedApiContractResponse>(
   responses: T[],
+  options?: ResponseOptions,
 ): AnyOfResponses<T> => ({
   _tag: 'AnyOfResponses',
   responses,
+  ...(options?.description !== undefined && { description: options.description }),
 })
 
 export const isAnyOfResponses = (value: ApiContractResponse): value is AnyOfResponses =>
   typeof value === 'object' && value !== null && '_tag' in value && value._tag === 'AnyOfResponses'
 
-export type ApiContractResponse = typeof ContractNoBody | TypedApiContractResponse | AnyOfResponses
+export type NoBodyResponse = {
+  readonly _tag: 'NoBodyResponse'
+  readonly description?: string
+}
+
+export const noBodyResponse = (options?: ResponseOptions): NoBodyResponse => ({
+  _tag: 'NoBodyResponse',
+  ...(options?.description !== undefined && { description: options.description }),
+})
+
+export const isNoBodyResponse = (value: ApiContractResponse): value is NoBodyResponse =>
+  typeof value === 'object' && value !== null && '_tag' in value && value._tag === 'NoBodyResponse'
+
+export type ApiContractResponse =
+  | typeof ContractNoBody
+  | NoBodyResponse
+  | TypedApiContractResponse
+  | AnyOfResponses
 
 export type ResponsesByStatusCode = Partial<Record<HttpStatusCode, ApiContractResponse>>
 
@@ -141,7 +178,7 @@ export const resolveContractResponse = (
   contentType: string | undefined,
   strict = true,
 ): ResponseKind | null => {
-  if (schemaEntry === ContractNoBody) {
+  if (schemaEntry === ContractNoBody || isNoBodyResponse(schemaEntry)) {
     return { kind: 'noContent' }
   }
 
