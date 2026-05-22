@@ -71,7 +71,9 @@ describe('factory description option', () => {
   })
 
   it('anyOfResponses includes description when provided', () => {
-    expect(anyOfResponses([z.object({ id: z.string() })], { description: 'Multiple types' })).toMatchObject({
+    expect(
+      anyOfResponses([z.object({ id: z.string() })], { description: 'Multiple types' }),
+    ).toMatchObject({
       description: 'Multiple types',
     })
   })
