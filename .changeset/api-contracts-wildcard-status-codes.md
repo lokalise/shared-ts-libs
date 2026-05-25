@@ -1,6 +1,5 @@
 ---
 "@lokalise/api-contracts": minor
-"@lokalise/fastify-api-contracts": minor
 ---
 
 Add support for wildcard status code keys (`'1xx'`–`'5xx'`) and `'default'` in `responsesByStatusCode`, aligning with OpenAPI and Fastify conventions.
