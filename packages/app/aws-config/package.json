@@ -63,7 +63,7 @@
         "@lokalise/universal-ts-utils": "^4.5.1",
         "@message-queue-toolkit/core": "^26.0.0",
         "@message-queue-toolkit/sns": "^25.0.1",
-        "@message-queue-toolkit/sqs": "^24.1.0",
+        "@message-queue-toolkit/sqs": "^25.0.0",
         "@types/node": "^25.9.1",
         "@vitest/coverage-v8": "^4.1.7",
         "envase": "^1.5.0",
