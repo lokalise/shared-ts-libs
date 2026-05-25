@@ -38,7 +38,7 @@ export function buildFastifyRouteHandler<
   RequestHeaderSchema extends OptionalZodSchema = undefined,
   ResponseHeaderSchema extends OptionalZodSchema = undefined,
   ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode | '1xx' | '2xx' | '3xx' | '4xx' | '5xx' | 'default', z.Schema>>
+    | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
 >(
   apiContract: GetRouteDefinition<
@@ -67,7 +67,7 @@ export function buildFastifyRouteHandler<
   RequestHeaderSchema extends OptionalZodSchema = undefined,
   ResponseHeaderSchema extends OptionalZodSchema = undefined,
   ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode | '1xx' | '2xx' | '3xx' | '4xx' | '5xx' | 'default', z.Schema>>
+    | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
 >(
   apiContract: DeleteRouteDefinition<
@@ -99,7 +99,7 @@ export function buildFastifyRouteHandler<
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode | '1xx' | '2xx' | '3xx' | '4xx' | '5xx' | 'default', z.Schema>>
+    | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
 >(
   apiContract: PayloadRouteDefinition<
@@ -151,7 +151,7 @@ export function buildFastifyRoute<
   RequestHeaderSchema extends OptionalZodSchema = undefined,
   ResponseHeaderSchema extends OptionalZodSchema = undefined,
   ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode | '1xx' | '2xx' | '3xx' | '4xx' | '5xx' | 'default', z.Schema>>
+    | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
 >(
   apiContract: GetRouteDefinition<
@@ -187,7 +187,7 @@ export function buildFastifyRoute<
   RequestHeaderSchema extends OptionalZodSchema = undefined,
   ResponseHeaderSchema extends OptionalZodSchema = undefined,
   ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode | '1xx' | '2xx' | '3xx' | '4xx' | '5xx' | 'default', z.Schema>>
+    | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
 >(
   apiContract: DeleteRouteDefinition<
@@ -226,7 +226,7 @@ export function buildFastifyRoute<
   IsNonJSONResponseExpected extends boolean = false,
   IsEmptyResponseExpected extends boolean = false,
   ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode | '1xx' | '2xx' | '3xx' | '4xx' | '5xx' | 'default', z.Schema>>
+    | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
 >(
   apiContract: PayloadRouteDefinition<
