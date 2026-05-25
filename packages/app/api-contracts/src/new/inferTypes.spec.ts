@@ -165,6 +165,30 @@ describe('inferTypes', () => {
       type Result = HasAnySseSuccessResponse<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<false>()
     })
+
+    it('returns true for sseResponse under the 2xx range key', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: {
+          '2xx': sseResponse({ chunk: z.object({ delta: z.string() }) }),
+        },
+      })
+      type Result = HasAnySseSuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<true>()
+    })
+
+    it('returns false for sseResponse under a non-success range key', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: {
+          '4xx': sseResponse({ chunk: z.object({ delta: z.string() }) }),
+        },
+      })
+      type Result = HasAnySseSuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<false>()
+    })
   })
 
   describe('InferSseSuccessResponses', () => {

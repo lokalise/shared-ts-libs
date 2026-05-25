@@ -110,7 +110,7 @@ export const getSseSchemaByEventName = (routeConfig: ApiContract): SseSchemaByEv
 }
 
 export const hasAnySuccessSseResponse = (apiContract: ApiContract): boolean => {
-  for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
+  for (const code of [...SUCCESSFUL_HTTP_STATUS_CODES, '2xx' as const]) {
     const value = apiContract.responsesByStatusCode[code]
 
     if (!value) {

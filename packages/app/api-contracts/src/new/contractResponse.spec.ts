@@ -287,4 +287,92 @@ describe('resolveResponseEntry', () => {
       kind: 'noContent',
     })
   })
+
+  describe('range key fallback', () => {
+    it('resolves via 2xx range for any success code', () => {
+      const schema = z.object({ id: z.string() })
+      expect(resolveResponseEntry({ '2xx': schema }, 200, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+      expect(resolveResponseEntry({ '2xx': schema }, 201, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
+    it('resolves via 4xx range for any client-error code', () => {
+      const schema = z.object({ message: z.string() })
+      expect(resolveResponseEntry({ '4xx': schema }, 404, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+      expect(resolveResponseEntry({ '4xx': schema }, 400, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
+    it('resolves via 5xx range for any server-error code', () => {
+      const schema = z.object({ error: z.string() })
+      expect(resolveResponseEntry({ '5xx': schema }, 500, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+      expect(resolveResponseEntry({ '5xx': schema }, 503, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
+    it('exact code takes precedence over range key', () => {
+      const exact = z.object({ id: z.string() })
+      const range = z.object({ message: z.string() })
+      expect(
+        resolveResponseEntry({ 200: exact, '2xx': range }, 200, 'application/json', true),
+      ).toEqual({ kind: 'json', schema: exact })
+    })
+
+    it('range key takes precedence over default', () => {
+      const range = z.object({ message: z.string() })
+      const def = z.object({ error: z.string() })
+      expect(
+        resolveResponseEntry({ '5xx': range, default: def }, 500, 'application/json', true),
+      ).toEqual({ kind: 'json', schema: range })
+    })
+
+    it('returns null when range does not cover the status code', () => {
+      expect(resolveResponseEntry({ '2xx': z.object({}) }, 404, 'application/json', true)).toBeNull()
+    })
+  })
+
+  describe('default fallback', () => {
+    it('resolves via default when no exact or range match', () => {
+      const schema = z.object({ error: z.string() })
+      expect(resolveResponseEntry({ default: schema }, 503, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
+    it('resolves via default for any status code when it is the only entry', () => {
+      const schema = z.object({ message: z.string() })
+      expect(resolveResponseEntry({ default: schema }, 200, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+      expect(resolveResponseEntry({ default: schema }, 404, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
+    it('exact code takes precedence over default', () => {
+      const exact = z.object({ id: z.string() })
+      const def = z.object({ error: z.string() })
+      expect(
+        resolveResponseEntry({ 200: exact, default: def }, 200, 'application/json', true),
+      ).toEqual({ kind: 'json', schema: exact })
+    })
+  })
 })

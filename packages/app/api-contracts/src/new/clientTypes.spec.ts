@@ -1,6 +1,11 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import type {
+  ExpandStatusRangeKey,
+  HttpStatusCode,
+  SuccessfulHttpStatusCode,
+} from '../HttpStatusCodes.ts'
+import type {
   ClientRequestParams,
   HeadersParam,
   InferNonSseClientResponse,
@@ -352,6 +357,105 @@ describe('clientTypes', () => {
           'x-retry-count': number
         }
         body: { id: number }
+      }>()
+    })
+
+    it('maps 2xx range key to SuccessfulHttpStatusCode with non-SSE body', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': z.object({ id: z.number() }) },
+      })
+      type Result = InferNonSseClientResponse<typeof contract>
+      expectTypeOf<Result>().toEqualTypeOf<{
+        statusCode: SuccessfulHttpStatusCode
+        headers: DefaultHeaders
+        body: { id: number }
+      }>()
+    })
+
+    it('maps 4xx range key to 4xx status codes with as-is body', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: {
+          200: z.object({ id: z.number() }),
+          '4xx': z.object({ message: z.string() }),
+        },
+      })
+      type Result = InferNonSseClientResponse<typeof contract>
+      expectTypeOf<Result>().toEqualTypeOf<
+        | { statusCode: 200; headers: DefaultHeaders; body: { id: number } }
+        | {
+            statusCode: ExpandStatusRangeKey<'4xx'>
+            headers: DefaultHeaders
+            body: { message: string }
+          }
+      >()
+    })
+
+    it('maps default key to split success/non-success statusCode entries', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { default: z.object({ message: z.string() }) },
+      })
+      type Result = InferNonSseClientResponse<typeof contract>
+      expectTypeOf<Result>().toEqualTypeOf<
+        | { statusCode: SuccessfulHttpStatusCode; headers: DefaultHeaders; body: { message: string } }
+        | {
+            statusCode: Exclude<HttpStatusCode, SuccessfulHttpStatusCode>
+            headers: DefaultHeaders
+            body: { message: string }
+          }
+      >()
+    })
+  })
+
+  describe('InferNonSseClientResponse with range keys and captureAsError', () => {
+    it('2xx range response ends up in result type (extends SuccessfulHttpStatusCode)', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': z.object({ ok: z.boolean() }) },
+      })
+      type Response = InferNonSseClientResponse<typeof contract>
+      // The statusCode must be SuccessfulHttpStatusCode so Extract works with captureAsError
+      type SuccessPart = Extract<Response, { statusCode: SuccessfulHttpStatusCode }>
+      expectTypeOf<SuccessPart>().not.toEqualTypeOf<never>()
+    })
+
+    it('4xx range response ends up in error type (not SuccessfulHttpStatusCode)', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '4xx': z.object({ error: z.string() }) },
+      })
+      type Response = InferNonSseClientResponse<typeof contract>
+      type SuccessPart = Extract<Response, { statusCode: SuccessfulHttpStatusCode }>
+      expectTypeOf<SuccessPart>().toEqualTypeOf<never>()
+    })
+  })
+
+  describe('InferSseClientResponse with range keys', () => {
+    it('maps 2xx SSE range to AsyncIterable body for success codes', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/events',
+        responsesByStatusCode: {
+          '2xx': sseResponse({ tick: z.object({ count: z.number() }) }),
+        },
+      })
+      type Result = InferSseClientResponse<typeof contract>
+      expectTypeOf<Result>().toEqualTypeOf<{
+        statusCode: SuccessfulHttpStatusCode
+        headers: DefaultHeaders
+        body: AsyncIterable<{
+          type: 'tick'
+          data: { count: number }
+          lastEventId: string
+          retry: number | undefined
+        }>
       }>()
     })
   })
