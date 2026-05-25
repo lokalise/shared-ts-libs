@@ -58,7 +58,7 @@
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "^4.0.0",
         "@prisma/instrumentation": "^7.0.1",
-        "@types/node": "^25.9.0",
+        "@types/node": "^25.9.1",
         "@vitest/coverage-v8": "^4.1.7",
         "fastify": "^5.0.0",
         "pino": "^10.1.0",
