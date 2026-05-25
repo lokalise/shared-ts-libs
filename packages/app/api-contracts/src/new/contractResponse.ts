@@ -1,5 +1,9 @@
 import type { z } from 'zod/v4'
-import type { HttpStatusCode, HttpStatusCodeRange, WildcardStatusCodeKey } from '../HttpStatusCodes.ts'
+import type {
+  HttpStatusCode,
+  HttpStatusCodeRange,
+  WildcardStatusCodeKey,
+} from '../HttpStatusCodes.ts'
 import { ContractNoBody } from './constants.ts'
 
 export type ResponseOptions = {

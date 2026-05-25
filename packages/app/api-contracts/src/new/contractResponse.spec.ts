@@ -342,7 +342,9 @@ describe('resolveResponseEntry', () => {
     })
 
     it('returns null when range does not cover the status code', () => {
-      expect(resolveResponseEntry({ '2xx': z.object({}) }, 404, 'application/json', true)).toBeNull()
+      expect(
+        resolveResponseEntry({ '2xx': z.object({}) }, 404, 'application/json', true),
+      ).toBeNull()
     })
   })
 

@@ -6,9 +6,7 @@ export const SUCCESSFUL_HTTP_STATUS_CODES = [
 ] as const
 export type SuccessfulHttpStatusCode = (typeof SUCCESSFUL_HTTP_STATUS_CODES)[number]
 
-export const REDIRECTION_HTTP_STATUS_CODES = [
-  300, 301, 302, 303, 304, 305, 306, 307, 308,
-] as const
+export const REDIRECTION_HTTP_STATUS_CODES = [300, 301, 302, 303, 304, 305, 306, 307, 308] as const
 export type RedirectionHttpStatusCode = (typeof REDIRECTION_HTTP_STATUS_CODES)[number]
 
 export const CLIENT_ERROR_HTTP_STATUS_CODES = [
@@ -33,15 +31,14 @@ export type HttpStatusCodeRange = '1xx' | '2xx' | '3xx' | '4xx' | '5xx'
 
 export type WildcardStatusCodeKey = HttpStatusCodeRange | 'default'
 
-export type ExpandStatusRangeKey<K extends WildcardStatusCodeKey> =
-  K extends '1xx'
-    ? InformationalHttpStatusCode
-    : K extends '2xx'
-      ? SuccessfulHttpStatusCode
-      : K extends '3xx'
-        ? RedirectionHttpStatusCode
-        : K extends '4xx'
-          ? ClientErrorHttpStatusCode
-          : K extends '5xx'
-            ? ServerErrorHttpStatusCode
-            : HttpStatusCode // 'default'
+export type ExpandStatusRangeKey<K extends WildcardStatusCodeKey> = K extends '1xx'
+  ? InformationalHttpStatusCode
+  : K extends '2xx'
+    ? SuccessfulHttpStatusCode
+    : K extends '3xx'
+      ? RedirectionHttpStatusCode
+      : K extends '4xx'
+        ? ClientErrorHttpStatusCode
+        : K extends '5xx'
+          ? ServerErrorHttpStatusCode
+          : HttpStatusCode // 'default'

@@ -402,7 +402,11 @@ describe('clientTypes', () => {
       })
       type Result = InferNonSseClientResponse<typeof contract>
       expectTypeOf<Result>().toEqualTypeOf<
-        | { statusCode: SuccessfulHttpStatusCode; headers: DefaultHeaders; body: { message: string } }
+        | {
+            statusCode: SuccessfulHttpStatusCode
+            headers: DefaultHeaders
+            body: { message: string }
+          }
         | {
             statusCode: Exclude<HttpStatusCode, SuccessfulHttpStatusCode>
             headers: DefaultHeaders

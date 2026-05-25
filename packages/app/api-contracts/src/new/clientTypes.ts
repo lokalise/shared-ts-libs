@@ -91,43 +91,47 @@ type WildcardNonSseBody<V, K extends WildcardStatusCodeKey> = K extends '2xx'
 
 // 'default' is split into success and non-success parts so captureAsError typing stays accurate:
 // the success part ends up in Either.result, the non-success part in Either.error.
-type WildcardSseEntry<TApiContract extends ApiContract, K extends WildcardStatusCodeKey> =
-  K extends 'default'
-    ?
-        | {
-            statusCode: SuccessfulHttpStatusCode
-            headers: InferClientResponseHeaders<TApiContract>
-            body: SseInferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
-          }
-        | {
-            statusCode: Exclude<HttpStatusCode, SuccessfulHttpStatusCode>
-            headers: InferClientResponseHeaders<TApiContract>
-            body: InferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
-          }
-    : {
-        statusCode: ExpandStatusRangeKey<K>
-        headers: InferClientResponseHeaders<TApiContract>
-        body: WildcardSseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>, K>
-      }
+type WildcardSseEntry<
+  TApiContract extends ApiContract,
+  K extends WildcardStatusCodeKey,
+> = K extends 'default'
+  ?
+      | {
+          statusCode: SuccessfulHttpStatusCode
+          headers: InferClientResponseHeaders<TApiContract>
+          body: SseInferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
+        }
+      | {
+          statusCode: Exclude<HttpStatusCode, SuccessfulHttpStatusCode>
+          headers: InferClientResponseHeaders<TApiContract>
+          body: InferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
+        }
+  : {
+      statusCode: ExpandStatusRangeKey<K>
+      headers: InferClientResponseHeaders<TApiContract>
+      body: WildcardSseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>, K>
+    }
 
-type WildcardNonSseEntry<TApiContract extends ApiContract, K extends WildcardStatusCodeKey> =
-  K extends 'default'
-    ?
-        | {
-            statusCode: SuccessfulHttpStatusCode
-            headers: InferClientResponseHeaders<TApiContract>
-            body: NonSseInferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
-          }
-        | {
-            statusCode: Exclude<HttpStatusCode, SuccessfulHttpStatusCode>
-            headers: InferClientResponseHeaders<TApiContract>
-            body: InferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
-          }
-    : {
-        statusCode: ExpandStatusRangeKey<K>
-        headers: InferClientResponseHeaders<TApiContract>
-        body: WildcardNonSseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>, K>
-      }
+type WildcardNonSseEntry<
+  TApiContract extends ApiContract,
+  K extends WildcardStatusCodeKey,
+> = K extends 'default'
+  ?
+      | {
+          statusCode: SuccessfulHttpStatusCode
+          headers: InferClientResponseHeaders<TApiContract>
+          body: NonSseInferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
+        }
+      | {
+          statusCode: Exclude<HttpStatusCode, SuccessfulHttpStatusCode>
+          headers: InferClientResponseHeaders<TApiContract>
+          body: InferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
+        }
+  : {
+      statusCode: ExpandStatusRangeKey<K>
+      headers: InferClientResponseHeaders<TApiContract>
+      body: WildcardNonSseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>, K>
+    }
 
 /**
  * Infers a discriminated union of `{ statusCode, headers, body }` for SSE mode:
@@ -151,8 +155,10 @@ export type InferSseClientResponse<TApiContract extends ApiContract> =
       }
     }[keyof TApiContract['responsesByStatusCode'] & HttpStatusCode]
   | {
-      [K in keyof TApiContract['responsesByStatusCode'] &
-        WildcardStatusCodeKey]: WildcardSseEntry<TApiContract, K>
+      [K in keyof TApiContract['responsesByStatusCode'] & WildcardStatusCodeKey]: WildcardSseEntry<
+        TApiContract,
+        K
+      >
     }[keyof TApiContract['responsesByStatusCode'] & WildcardStatusCodeKey]
 
 /**
