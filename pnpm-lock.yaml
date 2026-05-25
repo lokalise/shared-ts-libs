@@ -557,8 +557,8 @@ importers:
         specifier: ^13.0.0
         version: 13.0.3
       awilix-manager:
-        specifier: ^6.3.0
-        version: 6.4.0(awilix@13.0.3)
+        specifier: ^7.0.0
+        version: 7.0.0(awilix@13.0.3)
       bullmq:
         specifier: 5.76.10
         version: 5.76.10
@@ -4059,6 +4059,12 @@ packages:
   awilix-manager@6.4.0:
     resolution: {integrity: sha512-8YBhrtxlhMyFwvZRT+BeLlrBNF6KSzdUTeXZBdX5B7IcjqB6xDQ8cdkfSixJEsjMBS4P3NvbodUTDAikG7rQqQ==}
     engines: {node: '>=18'}
+    peerDependencies:
+      awilix: '>=9.0.0'
+
+  awilix-manager@7.0.0:
+    resolution: {integrity: sha512-dl9ubYXn+rDFV+h3cFujcA5zLDrSrgo5XFU4Vaz3JYawZoUPq8F4gb+p8EgxmuJ5nGRktpMLKAtN34x4srHPyA==}
+    engines: {node: '>=22.13'}
     peerDependencies:
       awilix: '>=9.0.0'
 
@@ -10840,6 +10846,10 @@ snapshots:
       fastq: 1.20.1
 
   awilix-manager@6.4.0(awilix@13.0.3):
+    dependencies:
+      awilix: 13.0.3
+
+  awilix-manager@7.0.0(awilix@13.0.3):
     dependencies:
       awilix: 13.0.3
 
