@@ -60,7 +60,7 @@
         "cli-testlab": "^6.0.1",
         "cross-env": "^10.1.0",
         "drizzle-kit": "1.0.0-rc.3",
-        "drizzle-orm": "1.0.0-rc.3",
+        "drizzle-orm": "1.0.0-rc.4-273829f",
         "mysql2": "^3.22.3",
         "postgres": "^3.4.9",
         "rimraf": "^6.1.3",

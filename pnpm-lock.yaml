@@ -416,8 +416,8 @@ importers:
         specifier: 1.0.0-rc.3
         version: 1.0.0-rc.3
       drizzle-orm:
-        specifier: 1.0.0-rc.3
-        version: 1.0.0-rc.3(@electric-sql/pglite@0.4.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(mysql2@3.22.3(@types/node@25.9.0))(pg@8.20.0)(postgres@3.4.9)(valibot@1.2.0(typescript@6.0.3))(zod@4.4.3)
+        specifier: 1.0.0-rc.4-273829f
+        version: 1.0.0-rc.4-273829f(@electric-sql/pglite@0.4.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(mysql2@3.22.3(@types/node@25.9.0))(pg@8.20.0)(postgres@3.4.9)(valibot@1.2.0(typescript@6.0.3))(zod@4.4.3)
       mysql2:
         specifier: ^3.22.3
         version: 3.22.3(@types/node@25.9.0)
@@ -4463,8 +4463,8 @@ packages:
     resolution: {integrity: sha512-lwGIi6GTlEYzrtac1Szecns+zrAxjaOoNysfBCKRQOXQE7nMJ8IU2I2S6ek3FHEm1N30dQb5YrTdqV7zNH6n7A==}
     hasBin: true
 
-  drizzle-orm@1.0.0-rc.3:
-    resolution: {integrity: sha512-akZOa5UxapFbdBG8IDkfBRpSZJpMHaOJtGgp7oi1oHaiU8S3KN92waHo2l5aRuv1D9tMGYpv3BQFOsiGcNjLTQ==}
+  drizzle-orm@1.0.0-rc.4-273829f:
+    resolution: {integrity: sha512-Ivv1KCkrSdgku9K3RGAqwlAqg3wLhv1NG40gOS3RROmL5tE/1p2+I7LJDHQiu8gYxQgTC068m7vRnCQCEAV7jw==}
     peerDependencies:
       '@aws-sdk/client-rds-data': '>=3'
       '@cloudflare/workers-types': '>=4'
@@ -11208,7 +11208,7 @@ snapshots:
       get-tsconfig: 4.14.0
       jiti: 2.7.0
 
-  drizzle-orm@1.0.0-rc.3(@electric-sql/pglite@0.4.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(mysql2@3.22.3(@types/node@25.9.0))(pg@8.20.0)(postgres@3.4.9)(valibot@1.2.0(typescript@6.0.3))(zod@4.4.3):
+  drizzle-orm@1.0.0-rc.4-273829f(@electric-sql/pglite@0.4.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(mysql2@3.22.3(@types/node@25.9.0))(pg@8.20.0)(postgres@3.4.9)(valibot@1.2.0(typescript@6.0.3))(zod@4.4.3):
     optionalDependencies:
       '@electric-sql/pglite': 0.4.1
       '@opentelemetry/api': 1.9.0
