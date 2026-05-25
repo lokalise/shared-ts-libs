@@ -54,10 +54,10 @@
         "@lokalise/node-core": "^14.7.4",
         "@lokalise/tsconfig": "^4.0.0",
         "@types/node": "^25.9.0",
-        "@vitest/coverage-v8": "^4.0.18",
+        "@vitest/coverage-v8": "^4.1.7",
         "mockttp": "^4.2.1",
         "typescript": "^6.0.3",
-        "vitest": "^4.0.18",
+        "vitest": "^4.1.7",
         "zod": "^4.3.6"
     }
 }
