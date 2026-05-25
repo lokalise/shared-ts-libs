@@ -301,6 +301,22 @@ describe('resolveResponseEntry', () => {
       })
     })
 
+    it('resolves via 1xx range for any informational code', () => {
+      const schema = z.object({ info: z.string() })
+      expect(resolveResponseEntry({ '1xx': schema }, 100, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
+    it('resolves via 3xx range for any redirect code', () => {
+      const schema = z.object({ location: z.string() })
+      expect(resolveResponseEntry({ '3xx': schema }, 301, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
     it('resolves via 4xx range for any client-error code', () => {
       const schema = z.object({ message: z.string() })
       expect(resolveResponseEntry({ '4xx': schema }, 404, 'application/json', true)).toEqual({
@@ -345,6 +361,14 @@ describe('resolveResponseEntry', () => {
       expect(
         resolveResponseEntry({ '2xx': z.object({}) }, 404, 'application/json', true),
       ).toBeNull()
+    })
+
+    it('falls through to default when status code is outside all ranges', () => {
+      const schema = z.object({ error: z.string() })
+      expect(resolveResponseEntry({ default: schema }, 0, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
     })
   })
 
