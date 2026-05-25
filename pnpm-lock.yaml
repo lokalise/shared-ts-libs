@@ -168,10 +168,10 @@ importers:
         version: 26.0.0(zod@4.4.3)
       '@message-queue-toolkit/sns':
         specifier: ^25.0.1
-        version: 25.0.1(@aws-sdk/client-sns@3.1053.0)(@aws-sdk/client-sqs@3.1053.0)(@aws-sdk/client-sts@3.1047.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(@message-queue-toolkit/schemas@7.1.0(zod@4.4.3))(@message-queue-toolkit/sqs@24.2.1(@aws-sdk/client-sqs@3.1053.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3))(zod@4.4.3)
+        version: 25.0.1(@aws-sdk/client-sns@3.1053.0)(@aws-sdk/client-sqs@3.1053.0)(@aws-sdk/client-sts@3.1047.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(@message-queue-toolkit/schemas@7.1.0(zod@4.4.3))(@message-queue-toolkit/sqs@25.0.0(@aws-sdk/client-sqs@3.1053.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3))(zod@4.4.3)
       '@message-queue-toolkit/sqs':
-        specifier: ^24.1.0
-        version: 24.2.1(@aws-sdk/client-sqs@3.1053.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3)
+        specifier: ^25.0.0
+        version: 25.0.0(@aws-sdk/client-sqs@3.1053.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3)
       '@smithy/types':
         specifier: ^4.14.2
         version: 4.14.2
@@ -2019,11 +2019,12 @@ packages:
       '@message-queue-toolkit/sqs': '>=23.0.0 <26.0.0'
       zod: '>=3.25.76 <5.0.0'
 
-  '@message-queue-toolkit/sqs@24.2.1':
-    resolution: {integrity: sha512-R3+XSzvBUStsjbjKWtTIb64PD/4+cUM0CrqiATuPj4XUK0WTzCYhHF42okk+6k1Nv5H3U7P1gGXgeotBGRKadg==}
+  '@message-queue-toolkit/sqs@25.0.0':
+    resolution: {integrity: sha512-9bq2iKi7lrh7KHaj6QQDQx2wXKAmSCRfTmksZpc+4onay6G8diwAg3/xjaN/01m/oyH3U2+iiHlwVfhKR0G95Q==}
+    engines: {node: '>=22.0.0'}
     peerDependencies:
-      '@aws-sdk/client-sqs': ^3.632.0
-      '@message-queue-toolkit/core': '>=25.0.0'
+      '@aws-sdk/client-sqs': ^3.1034.0
+      '@message-queue-toolkit/core': '>=26.0.0'
       zod: '>=3.25.76 <5.0.0'
 
   '@microsoft/api-extractor-model@7.33.8':
@@ -6551,12 +6552,6 @@ packages:
     resolution: {integrity: sha512-qC9iz2FlN7DQl3+wjwn3802RTyjCx7sDvfQEXchwa6CWOx07/WVfh91gBmQ9fahw8snwGEWU3xGzOt4tFyHLxg==}
     engines: {node: '>= 0.6'}
 
-  sqs-consumer@14.2.8:
-    resolution: {integrity: sha512-Iq3AdASfsxY2s3KL88aPRGgvST3gviZphL5teTKxUqDZzXRIB8s6SWATft+v7YaGMspCs8BwrOKo9vD6ltcJmw==}
-    engines: {node: '>=20.0.0'}
-    peerDependencies:
-      '@aws-sdk/client-sqs': ^3.1018.0
-
   sqs-consumer@15.0.1:
     resolution: {integrity: sha512-cDcSkekXxhLMn3u+FSnAG3Ryh6jwHMPna1/oqs2dUL0gvUXOLLMa2Yzu0K4QqwVyaH0MDZw1IU7+W+W618/xcw==}
     engines: {node: '>=22.0.0'}
@@ -8290,7 +8285,7 @@ snapshots:
     dependencies:
       zod: 4.4.3
 
-  '@message-queue-toolkit/sns@25.0.1(@aws-sdk/client-sns@3.1053.0)(@aws-sdk/client-sqs@3.1053.0)(@aws-sdk/client-sts@3.1047.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(@message-queue-toolkit/schemas@7.1.0(zod@4.4.3))(@message-queue-toolkit/sqs@24.2.1(@aws-sdk/client-sqs@3.1053.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3))(zod@4.4.3)':
+  '@message-queue-toolkit/sns@25.0.1(@aws-sdk/client-sns@3.1053.0)(@aws-sdk/client-sqs@3.1053.0)(@aws-sdk/client-sts@3.1047.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(@message-queue-toolkit/schemas@7.1.0(zod@4.4.3))(@message-queue-toolkit/sqs@25.0.0(@aws-sdk/client-sqs@3.1053.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3))(zod@4.4.3)':
     dependencies:
       '@aws-sdk/client-sns': 3.1053.0
       '@aws-sdk/client-sqs': 3.1053.0
@@ -8298,18 +8293,18 @@ snapshots:
       '@lokalise/node-core': 14.8.1(zod@4.4.3)
       '@message-queue-toolkit/core': 26.0.0(zod@4.4.3)
       '@message-queue-toolkit/schemas': 7.1.0(zod@4.4.3)
-      '@message-queue-toolkit/sqs': 24.2.1(@aws-sdk/client-sqs@3.1053.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3)
+      '@message-queue-toolkit/sqs': 25.0.0(@aws-sdk/client-sqs@3.1053.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3)
       sqs-consumer: 15.0.1(@aws-sdk/client-sqs@3.1053.0)
       zod: 4.4.3
     transitivePeerDependencies:
       - supports-color
 
-  '@message-queue-toolkit/sqs@24.2.1(@aws-sdk/client-sqs@3.1053.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3)':
+  '@message-queue-toolkit/sqs@25.0.0(@aws-sdk/client-sqs@3.1053.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3)':
     dependencies:
       '@aws-sdk/client-sqs': 3.1053.0
       '@lokalise/node-core': 14.8.1(zod@4.4.3)
       '@message-queue-toolkit/core': 26.0.0(zod@4.4.3)
-      sqs-consumer: 14.2.8(@aws-sdk/client-sqs@3.1053.0)
+      sqs-consumer: 15.0.1(@aws-sdk/client-sqs@3.1053.0)
       zod: 4.4.3
     transitivePeerDependencies:
       - supports-color
@@ -13449,13 +13444,6 @@ snapshots:
   sql-escaper@1.3.3: {}
 
   sqlstring@2.3.3: {}
-
-  sqs-consumer@14.2.8(@aws-sdk/client-sqs@3.1053.0):
-    dependencies:
-      '@aws-sdk/client-sqs': 3.1053.0
-      debug: 4.4.3
-    transitivePeerDependencies:
-      - supports-color
 
   sqs-consumer@15.0.1(@aws-sdk/client-sqs@3.1053.0):
     dependencies:
