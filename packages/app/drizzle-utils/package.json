@@ -59,7 +59,7 @@
         "@vitest/coverage-v8": "^4.1.7",
         "cli-testlab": "^6.0.1",
         "cross-env": "^10.1.0",
-        "drizzle-kit": "1.0.0-rc.3",
+        "drizzle-kit": "1.0.0-rc.4-273829f",
         "drizzle-orm": "1.0.0-rc.4-273829f",
         "mysql2": "^3.22.3",
         "postgres": "^3.4.9",
