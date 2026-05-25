@@ -54,7 +54,7 @@
         "@types/node": "^25.9.1",
         "@vitest/coverage-v8": "^4.1.7",
         "mock-xmlhttprequest": "^8.4.1",
-        "mockttp": "^4.2.1",
+        "mockttp": "^4.4.2",
         "rimraf": "^6.0.1",
         "typescript": "6.0.3",
         "vitest": "^4.1.7",
