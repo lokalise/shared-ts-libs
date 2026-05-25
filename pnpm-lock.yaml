@@ -182,8 +182,8 @@ importers:
         specifier: ^4.1.7
         version: 4.1.7(vitest@4.1.7)
       envase:
-        specifier: ^1.3.0
-        version: 1.4.0
+        specifier: ^1.5.0
+        version: 1.5.0
       rimraf:
         specifier: ^6.1.2
         version: 6.1.3
@@ -4601,8 +4601,8 @@ packages:
     resolution: {integrity: sha512-dtJUTepzMW3Lm/NPxRf3wP4642UWhjL2sQxc+ym2YMj1m/H2zDNQOlezafzkHwn6sMstjHTwG6iQQsctDW/b1A==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
-  envase@1.4.0:
-    resolution: {integrity: sha512-bQ7oHD17huhlX7wHyxnN8UwJwLezt7U9ds1xEI7it2eJv9RDMgPQBrKqRd/7N7b5G94wJteXGfKCHD3GaN8NBg==}
+  envase@1.5.0:
+    resolution: {integrity: sha512-z1YDInqCr92YiUansvzukG/Bw/TYRmix4ABi9hRhDVyvLRMRaaCHLxH6atRw23ms7KGlW8HisbnhQedrbrpRrQ==}
     hasBin: true
 
   error-stack-parser@2.1.4:
@@ -11155,7 +11155,7 @@ snapshots:
 
   env-paths@3.0.0: {}
 
-  envase@1.4.0:
+  envase@1.5.0:
     dependencies:
       cac: 7.0.0
       diff: 9.0.0
