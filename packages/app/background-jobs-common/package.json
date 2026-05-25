@@ -41,7 +41,7 @@
         "@lokalise/id-utils": "^3.0.1",
         "@lokalise/node-core": "^14.6.0",
         "redis-semaphore": "^5.6.2",
-        "ts-deepmerge": "^7.0.3"
+        "ts-deepmerge": "^8.0.0"
     },
     "peerDependencies": {
         "bullmq": "^5.28.2",
