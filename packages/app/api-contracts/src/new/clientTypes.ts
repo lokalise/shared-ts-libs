@@ -91,8 +91,8 @@ type WildcardNonSseBody<V, K extends WildcardStatusCodeKey> = K extends '2xx'
   : InferClientResponseBody<V>
 
 // Exact status codes explicitly defined in the contract — these take precedence over range keys.
-type ExactStatusCodes<TApiContract extends ApiContract> = keyof TApiContract['responsesByStatusCode'] &
-  HttpStatusCode
+type ExactStatusCodes<TApiContract extends ApiContract> =
+  keyof TApiContract['responsesByStatusCode'] & HttpStatusCode
 
 // Status codes covered by any range key (e.g. '2xx', '4xx') present in the contract.
 // These take precedence over 'default'.
