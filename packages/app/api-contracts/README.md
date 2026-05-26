@@ -217,34 +217,36 @@ getSseSchemaByEventName(chatCompletion)
 ### All fields
 
 ```ts
-defineApiContract({
+type ApiContractOptions = {
   // Required
-  method: 'get' | 'post' | 'put' | 'patch' | 'delete',
-  pathResolver: (pathParams) => string,
-  responsesByStatusCode: {
-    // exact status codes
-    [statusCode: HttpStatusCode]: z.ZodType | NoBodyResponse | TypedTextResponse | TypedBlobResponse | TypedSseResponse | AnyOfResponses
-    // range keys (OpenAPI-style): '1xx' | '2xx' | '3xx' | '4xx' | '5xx' | 'default'
-    [rangeKey: WildcardStatusCodeKey]: z.ZodType | NoBodyResponse | TypedTextResponse | TypedBlobResponse | TypedSseResponse | AnyOfResponses
-  },
+  method: 'get' | 'post' | 'put' | 'patch' | 'delete'
+  pathResolver: (pathParams: Record<string, string>) => string
+  // Accepts exact codes, OpenAPI-style range keys ('1xx'–'5xx'), and a catch-all 'default'.
+  // Lookup precedence at runtime: exact code → range key → 'default'.
+  responsesByStatusCode: Partial<
+    Record<
+      HttpStatusCode | '1xx' | '2xx' | '3xx' | '4xx' | '5xx' | 'default',
+      z.ZodType | NoBodyResponse | TypedTextResponse | TypedBlobResponse | TypedSseResponse | AnyOfResponses
+    >
+  >
 
   // Path params — links pathResolver parameter type to the schema
-  requestPathParamsSchema: z.ZodObject,
+  requestPathParamsSchema?: z.ZodObject<z.ZodRawShape>
 
   // Request
-  requestBodySchema: z.ZodType | ContractNoBody, // required for POST / PUT / PATCH, forbidden otherwise
-  requestQuerySchema: z.ZodObject,
-  requestHeaderSchema: z.ZodObject,
+  requestBodySchema?: z.ZodType | ContractNoBody  // required for POST / PUT / PATCH, forbidden otherwise
+  requestQuerySchema?: z.ZodObject<z.ZodRawShape>
+  requestHeaderSchema?: z.ZodObject<z.ZodRawShape>
 
   // Response
-  responseHeaderSchema: z.ZodObject,
+  responseHeaderSchema?: z.ZodObject<z.ZodRawShape>
 
   // Documentation
-  summary: string,
-  description: string,
-  tags: readonly string[],
-  metadata: Record<string, unknown>,
-})
+  summary?: string
+  description?: string
+  tags?: readonly string[]
+  metadata?: Record<string, unknown>
+}
 ```
 
 ### Header schemas
