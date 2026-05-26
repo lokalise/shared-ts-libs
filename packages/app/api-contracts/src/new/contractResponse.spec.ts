@@ -408,6 +408,41 @@ describe('resolveResponseEntry', () => {
       ).toEqual({ kind: 'json', schema: range })
     })
 
+    it('multiple range keys each route correctly and default is not invoked for covered codes', () => {
+      const s4xx = z.object({ clientError: z.string() })
+      const s5xx = z.object({ serverError: z.string() })
+      const def = z.object({ fallback: z.string() })
+      const contract = { '4xx': s4xx, '5xx': s5xx, default: def }
+      // 4xx code → 4xx range
+      expect(resolveResponseEntry(contract, 404, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema: s4xx,
+      })
+      // 5xx code → 5xx range
+      expect(resolveResponseEntry(contract, 503, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema: s5xx,
+      })
+      // code not covered by either range → default
+      expect(resolveResponseEntry(contract, 304, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema: def,
+      })
+    })
+
+    it('2xx range takes precedence over default for success codes', () => {
+      const s2xx = z.object({ data: z.string() })
+      const def = z.object({ fallback: z.string() })
+      // success code → 2xx range, not default
+      expect(
+        resolveResponseEntry({ '2xx': s2xx, default: def }, 201, 'application/json', true),
+      ).toEqual({ kind: 'json', schema: s2xx })
+      // non-2xx code with no range → default
+      expect(
+        resolveResponseEntry({ '2xx': s2xx, default: def }, 404, 'application/json', true),
+      ).toEqual({ kind: 'json', schema: def })
+    })
+
     it('returns null when range does not cover the status code', () => {
       expect(
         resolveResponseEntry({ '2xx': z.object({}) }, 404, 'application/json', true),
@@ -450,6 +485,23 @@ describe('resolveResponseEntry', () => {
       expect(
         resolveResponseEntry({ 200: exact, default: def }, 200, 'application/json', true),
       ).toEqual({ kind: 'json', schema: exact })
+    })
+
+    it('resolves the correct kind from a composite default anyOfResponses entry by content-type', () => {
+      const jsonSchema = z.object({ id: z.string() })
+      const contract = {
+        default: anyOfResponses([sseResponse({ event: z.object({ id: z.string() }) }), jsonSchema]),
+      }
+      // application/json → JSON kind
+      expect(resolveResponseEntry(contract, 500, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema: jsonSchema,
+      })
+      // text/event-stream → SSE kind
+      expect(resolveResponseEntry(contract, 500, 'text/event-stream', true)).toEqual({
+        kind: 'sse',
+        schemaByEventName: { event: expect.any(Object) },
+      })
     })
   })
 })
