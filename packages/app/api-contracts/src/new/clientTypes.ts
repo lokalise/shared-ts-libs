@@ -3,6 +3,7 @@ import type { InferSchemaInput, InferSchemaOutput } from '../apiContracts.ts'
 import type {
   ExpandStatusRangeKey,
   HttpStatusCode,
+  HttpStatusCodeRange,
   SuccessfulHttpStatusCode,
   WildcardStatusCodeKey,
 } from '../HttpStatusCodes.ts'
@@ -89,25 +90,43 @@ type WildcardNonSseBody<V, K extends WildcardStatusCodeKey> = K extends '2xx'
   ? NonSseInferClientResponseBody<V>
   : InferClientResponseBody<V>
 
+// Exact status codes explicitly defined in the contract — these take precedence over range keys.
+type ExactStatusCodes<TApiContract extends ApiContract> = keyof TApiContract['responsesByStatusCode'] &
+  HttpStatusCode
+
+// Status codes covered by any range key (e.g. '2xx', '4xx') present in the contract.
+// These take precedence over 'default'.
+type RangeStatusCodes<TApiContract extends ApiContract> = {
+  [K in keyof TApiContract['responsesByStatusCode'] & HttpStatusCodeRange]: ExpandStatusRangeKey<K>
+}[keyof TApiContract['responsesByStatusCode'] & HttpStatusCodeRange]
+
 // 'default' is split into success and non-success parts so captureAsError typing stays accurate:
 // the success part ends up in Either.result, the non-success part in Either.error.
+// Exact codes are excluded from range/default statusCode unions so narrowing by an exact code
+// resolves only to the exact entry's body, not the range entry's body.
 type WildcardSseEntry<
   TApiContract extends ApiContract,
   K extends WildcardStatusCodeKey,
 > = K extends 'default'
   ?
       | {
-          statusCode: SuccessfulHttpStatusCode
+          statusCode: Exclude<
+            SuccessfulHttpStatusCode,
+            ExactStatusCodes<TApiContract> | RangeStatusCodes<TApiContract>
+          >
           headers: InferClientResponseHeaders<TApiContract>
           body: SseInferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
         }
       | {
-          statusCode: Exclude<HttpStatusCode, SuccessfulHttpStatusCode>
+          statusCode: Exclude<
+            Exclude<HttpStatusCode, SuccessfulHttpStatusCode>,
+            ExactStatusCodes<TApiContract> | RangeStatusCodes<TApiContract>
+          >
           headers: InferClientResponseHeaders<TApiContract>
           body: InferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
         }
   : {
-      statusCode: ExpandStatusRangeKey<K>
+      statusCode: Exclude<ExpandStatusRangeKey<K>, ExactStatusCodes<TApiContract>>
       headers: InferClientResponseHeaders<TApiContract>
       body: WildcardSseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>, K>
     }
@@ -118,17 +137,23 @@ type WildcardNonSseEntry<
 > = K extends 'default'
   ?
       | {
-          statusCode: SuccessfulHttpStatusCode
+          statusCode: Exclude<
+            SuccessfulHttpStatusCode,
+            ExactStatusCodes<TApiContract> | RangeStatusCodes<TApiContract>
+          >
           headers: InferClientResponseHeaders<TApiContract>
           body: NonSseInferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
         }
       | {
-          statusCode: Exclude<HttpStatusCode, SuccessfulHttpStatusCode>
+          statusCode: Exclude<
+            Exclude<HttpStatusCode, SuccessfulHttpStatusCode>,
+            ExactStatusCodes<TApiContract> | RangeStatusCodes<TApiContract>
+          >
           headers: InferClientResponseHeaders<TApiContract>
           body: InferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
         }
   : {
-      statusCode: ExpandStatusRangeKey<K>
+      statusCode: Exclude<ExpandStatusRangeKey<K>, ExactStatusCodes<TApiContract>>
       headers: InferClientResponseHeaders<TApiContract>
       body: WildcardNonSseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>, K>
     }
