@@ -288,6 +288,32 @@ describe('resolveResponseEntry', () => {
     })
   })
 
+  describe('getRangeKey boundaries', () => {
+    const schema = z.object({ x: z.string() })
+    // Use a contract with all five range keys so a mismatch (null from getRangeKey) falls to null,
+    // and a match resolves to the schema with kind 'json'.
+    const allRanges = {
+      '1xx': schema,
+      '2xx': schema,
+      '3xx': schema,
+      '4xx': schema,
+      '5xx': schema,
+    }
+
+    it.each([
+      [99, null],
+      [100, { kind: 'json', schema }],
+      [199, { kind: 'json', schema }],
+      [200, { kind: 'json', schema }],
+      [299, { kind: 'json', schema }],
+      [300, { kind: 'json', schema }],
+      [599, { kind: 'json', schema }],
+      [600, null],
+    ])('status %i → %s', (statusCode, expected) => {
+      expect(resolveResponseEntry(allRanges, statusCode, 'application/json', true)).toEqual(expected)
+    })
+  })
+
   describe('range key fallback', () => {
     it('resolves via 2xx range for any success code', () => {
       const schema = z.object({ id: z.string() })
