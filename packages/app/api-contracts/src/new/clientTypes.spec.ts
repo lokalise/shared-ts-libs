@@ -1,6 +1,12 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import type {
+  ClientErrorHttpStatusCode,
+  ExpandStatusRangeKey,
+  HttpStatusCode,
+  SuccessfulHttpStatusCode,
+} from '../HttpStatusCodes.ts'
+import type {
   ClientRequestParams,
   HeadersParam,
   InferNonSseClientResponse,
@@ -352,6 +358,180 @@ describe('clientTypes', () => {
           'x-retry-count': number
         }
         body: { id: number }
+      }>()
+    })
+
+    it('exact code takes precedence over 2xx range: narrowing by exact statusCode resolves only the exact body', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: {
+          '2xx': z.object({ id: z.number() }),
+          201: z.object({ name: z.string() }),
+        },
+      })
+      type Result = InferNonSseClientResponse<typeof contract>
+      // Narrowing to 201 must yield only the exact entry's body, not the range body
+      type At201 = Extract<Result, { statusCode: 201 }>
+      expectTypeOf<At201>().toEqualTypeOf<{
+        statusCode: 201
+        headers: DefaultHeaders
+        body: { name: string }
+      }>()
+      // The range entry must not include 201 in its statusCode union
+      type RangeEntry = Extract<Result, { statusCode: Exclude<SuccessfulHttpStatusCode, 201> }>
+      expectTypeOf<RangeEntry>().toEqualTypeOf<{
+        statusCode: Exclude<SuccessfulHttpStatusCode, 201>
+        headers: DefaultHeaders
+        body: { id: number }
+      }>()
+    })
+
+    it('maps 2xx range key to SuccessfulHttpStatusCode with non-SSE body', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': z.object({ id: z.number() }) },
+      })
+      type Result = InferNonSseClientResponse<typeof contract>
+      expectTypeOf<Result>().toEqualTypeOf<{
+        statusCode: SuccessfulHttpStatusCode
+        headers: DefaultHeaders
+        body: { id: number }
+      }>()
+    })
+
+    it('maps 4xx range key to 4xx status codes with as-is body', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: {
+          200: z.object({ id: z.number() }),
+          '4xx': z.object({ message: z.string() }),
+        },
+      })
+      type Result = InferNonSseClientResponse<typeof contract>
+      expectTypeOf<Result>().toEqualTypeOf<
+        | { statusCode: 200; headers: DefaultHeaders; body: { id: number } }
+        | {
+            statusCode: ExpandStatusRangeKey<'4xx'>
+            headers: DefaultHeaders
+            body: { message: string }
+          }
+      >()
+    })
+
+    it('maps default key to split success/non-success statusCode entries', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { default: z.object({ message: z.string() }) },
+      })
+      type Result = InferNonSseClientResponse<typeof contract>
+      expectTypeOf<Result>().toEqualTypeOf<
+        | {
+            statusCode: SuccessfulHttpStatusCode
+            headers: DefaultHeaders
+            body: { message: string }
+          }
+        | {
+            statusCode: Exclude<HttpStatusCode, SuccessfulHttpStatusCode>
+            headers: DefaultHeaders
+            body: { message: string }
+          }
+      >()
+    })
+
+    it('range key takes precedence over default: range codes excluded from default statusCode', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: {
+          '4xx': z.object({ error: z.string() }),
+          default: z.object({ message: z.string() }),
+        },
+      })
+      type Result = InferNonSseClientResponse<typeof contract>
+      // The 4xx range entry covers all ClientErrorHttpStatusCode codes
+      type RangeEntry = Extract<Result, { body: { error: string } }>
+      expectTypeOf<RangeEntry['statusCode']>().toEqualTypeOf<ClientErrorHttpStatusCode>()
+      // The default entry's statusCode must not include any 4xx code
+      type DefaultEntry = Extract<Result, { body: { message: string } }>
+      expectTypeOf<404 extends DefaultEntry['statusCode'] ? true : false>().toEqualTypeOf<false>()
+    })
+
+    it('exact code takes precedence over both range and default', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: {
+          404: z.object({ notFound: z.boolean() }),
+          '4xx': z.object({ error: z.string() }),
+          default: z.object({ message: z.string() }),
+        },
+      })
+      type Result = InferNonSseClientResponse<typeof contract>
+      // Exact 404 entry is a literal statusCode — Extract works correctly here
+      type At404 = Extract<Result, { statusCode: 404 }>
+      expectTypeOf<At404>().toEqualTypeOf<{
+        statusCode: 404
+        headers: DefaultHeaders
+        body: { notFound: boolean }
+      }>()
+      // The 4xx range entry excludes 404
+      type RangeEntry = Extract<Result, { body: { error: string } }>
+      expectTypeOf<404 extends RangeEntry['statusCode'] ? true : false>().toEqualTypeOf<false>()
+      // The default entry excludes all 4xx codes (covered by range) and 404 (exact)
+      type DefaultEntry = Extract<Result, { body: { message: string } }>
+      expectTypeOf<400 extends DefaultEntry['statusCode'] ? true : false>().toEqualTypeOf<false>()
+      expectTypeOf<404 extends DefaultEntry['statusCode'] ? true : false>().toEqualTypeOf<false>()
+    })
+  })
+
+  describe('InferNonSseClientResponse with range keys and captureAsError', () => {
+    it('2xx range response ends up in result type (extends SuccessfulHttpStatusCode)', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': z.object({ ok: z.boolean() }) },
+      })
+      type Response = InferNonSseClientResponse<typeof contract>
+      // The statusCode must be SuccessfulHttpStatusCode so Extract works with captureAsError
+      type SuccessPart = Extract<Response, { statusCode: SuccessfulHttpStatusCode }>
+      expectTypeOf<SuccessPart>().not.toEqualTypeOf<never>()
+    })
+
+    it('4xx range response ends up in error type (not SuccessfulHttpStatusCode)', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '4xx': z.object({ error: z.string() }) },
+      })
+      type Response = InferNonSseClientResponse<typeof contract>
+      type SuccessPart = Extract<Response, { statusCode: SuccessfulHttpStatusCode }>
+      expectTypeOf<SuccessPart>().toEqualTypeOf<never>()
+    })
+  })
+
+  describe('InferSseClientResponse with range keys', () => {
+    it('maps 2xx SSE range to AsyncIterable body for success codes', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/events',
+        responsesByStatusCode: {
+          '2xx': sseResponse({ tick: z.object({ count: z.number() }) }),
+        },
+      })
+      type Result = InferSseClientResponse<typeof contract>
+      expectTypeOf<Result>().toEqualTypeOf<{
+        statusCode: SuccessfulHttpStatusCode
+        headers: DefaultHeaders
+        body: AsyncIterable<{
+          type: 'tick'
+          data: { count: number }
+          lastEventId: string
+          retry: number | undefined
+        }>
       }>()
     })
   })

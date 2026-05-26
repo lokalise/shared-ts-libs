@@ -1,5 +1,9 @@
 import type { z } from 'zod/v4'
-import type { HttpStatusCode } from '../HttpStatusCodes.ts'
+import type {
+  HttpStatusCode,
+  HttpStatusCodeRange,
+  WildcardStatusCodeKey,
+} from '../HttpStatusCodes.ts'
 import { ContractNoBody } from './constants.ts'
 
 export type ResponseOptions = {
@@ -110,7 +114,9 @@ export type ApiContractResponse =
   | TypedApiContractResponse
   | AnyOfResponses
 
-export type ResponsesByStatusCode = Partial<Record<HttpStatusCode, ApiContractResponse>>
+export type ResponsesByStatusCode = Partial<
+  Record<HttpStatusCode | WildcardStatusCodeKey, ApiContractResponse>
+>
 
 export type ResponseKind =
   | { kind: 'noContent' }
@@ -206,9 +212,19 @@ export const resolveContractResponse = (
   return matched ?? (strict ? null : resolveByKind(schemaEntry))
 }
 
+function getRangeKey(statusCode: number): HttpStatusCodeRange | null {
+  if (statusCode >= 100 && statusCode < 200) return '1xx'
+  if (statusCode >= 200 && statusCode < 300) return '2xx'
+  if (statusCode >= 300 && statusCode < 400) return '3xx'
+  if (statusCode >= 400 && statusCode < 500) return '4xx'
+  if (statusCode >= 500 && statusCode < 600) return '5xx'
+  return null
+}
+
 /**
  * Combines status-code lookup and content-type resolution into a single call.
- * Returns `null` when the status code is not in the contract or the content-type cannot be matched.
+ * Lookup precedence: exact code → range key (e.g. `'4xx'`) → `'default'`.
+ * Returns `null` when no entry matches or the content-type cannot be matched.
  */
 export function resolveResponseEntry(
   responsesByStatusCode: ResponsesByStatusCode,
@@ -216,11 +232,23 @@ export function resolveResponseEntry(
   contentType: string | undefined,
   strictContentType: boolean,
 ): ResponseKind | null {
-  const schemaEntry = responsesByStatusCode[statusCode as HttpStatusCode]
-
-  if (!schemaEntry) {
-    return null
+  const exactEntry = responsesByStatusCode[statusCode as HttpStatusCode]
+  if (exactEntry) {
+    return resolveContractResponse(exactEntry, contentType, strictContentType)
   }
 
-  return resolveContractResponse(schemaEntry, contentType, strictContentType)
+  const rangeKey = getRangeKey(statusCode)
+  if (rangeKey) {
+    const rangeEntry = responsesByStatusCode[rangeKey]
+    if (rangeEntry) {
+      return resolveContractResponse(rangeEntry, contentType, strictContentType)
+    }
+  }
+
+  const defaultEntry = responsesByStatusCode['default']
+  if (defaultEntry) {
+    return resolveContractResponse(defaultEntry, contentType, strictContentType)
+  }
+
+  return null
 }
