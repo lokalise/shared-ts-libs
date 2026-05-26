@@ -79,9 +79,12 @@ type SseInferClientResponseBody<T> = Extract<InferClientResponseBody<T>, AsyncIt
  */
 type NonSseInferClientResponseBody<T> = Exclude<InferClientResponseBody<T>, AsyncIterable<unknown>>
 
-// Body helpers for wildcard response keys.
-// '2xx' maps to success mode (SSE-filtered or non-SSE-filtered); all other ranges and 'default' use
-// the full body union since those entries are always on the error side of captureAsError.
+// Body helpers for non-'default' wildcard range keys (e.g. '2xx', '4xx', '5xx').
+// '2xx' maps to success mode (SSE-filtered or non-SSE-filtered); all other ranges use the full body
+// union because non-2xx range entries always land on the error side of captureAsError.
+// 'default' does not use these helpers — it inlines its own body logic in WildcardSseEntry /
+// WildcardNonSseEntry, where the success half is still SSE/non-SSE filtered and the non-success
+// half uses the full body union.
 type WildcardSseBody<V, K extends WildcardStatusCodeKey> = K extends '2xx'
   ? SseInferClientResponseBody<V>
   : InferClientResponseBody<V>
@@ -100,28 +103,30 @@ type RangeStatusCodes<TApiContract extends ApiContract> = {
   [K in keyof TApiContract['responsesByStatusCode'] & HttpStatusCodeRange]: ExpandStatusRangeKey<K>
 }[keyof TApiContract['responsesByStatusCode'] & HttpStatusCodeRange]
 
-// 'default' is split into success and non-success parts so captureAsError typing stays accurate:
-// the success part ends up in Either.result, the non-success part in Either.error.
-// Exact codes are excluded from range/default statusCode unions so narrowing by an exact code
-// resolves only to the exact entry's body, not the range entry's body.
+// Status codes that fall through to 'default' — not claimed by any exact code or range key.
+// Split into success/non-success so captureAsError typing stays accurate: success lands in
+// Either.result, non-success lands in Either.error.
+type DefaultSuccessStatusCodes<TApiContract extends ApiContract> = Exclude<
+  SuccessfulHttpStatusCode,
+  ExactStatusCodes<TApiContract> | RangeStatusCodes<TApiContract>
+>
+type DefaultNonSuccessStatusCodes<TApiContract extends ApiContract> = Exclude<
+  Exclude<HttpStatusCode, SuccessfulHttpStatusCode>,
+  ExactStatusCodes<TApiContract> | RangeStatusCodes<TApiContract>
+>
+
 type WildcardSseEntry<
   TApiContract extends ApiContract,
   K extends WildcardStatusCodeKey,
 > = K extends 'default'
   ?
       | {
-          statusCode: Exclude<
-            SuccessfulHttpStatusCode,
-            ExactStatusCodes<TApiContract> | RangeStatusCodes<TApiContract>
-          >
+          statusCode: DefaultSuccessStatusCodes<TApiContract>
           headers: InferClientResponseHeaders<TApiContract>
           body: SseInferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
         }
       | {
-          statusCode: Exclude<
-            Exclude<HttpStatusCode, SuccessfulHttpStatusCode>,
-            ExactStatusCodes<TApiContract> | RangeStatusCodes<TApiContract>
-          >
+          statusCode: DefaultNonSuccessStatusCodes<TApiContract>
           headers: InferClientResponseHeaders<TApiContract>
           body: InferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
         }
@@ -137,18 +142,12 @@ type WildcardNonSseEntry<
 > = K extends 'default'
   ?
       | {
-          statusCode: Exclude<
-            SuccessfulHttpStatusCode,
-            ExactStatusCodes<TApiContract> | RangeStatusCodes<TApiContract>
-          >
+          statusCode: DefaultSuccessStatusCodes<TApiContract>
           headers: InferClientResponseHeaders<TApiContract>
           body: NonSseInferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
         }
       | {
-          statusCode: Exclude<
-            Exclude<HttpStatusCode, SuccessfulHttpStatusCode>,
-            ExactStatusCodes<TApiContract> | RangeStatusCodes<TApiContract>
-          >
+          statusCode: DefaultNonSuccessStatusCodes<TApiContract>
           headers: InferClientResponseHeaders<TApiContract>
           body: InferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
         }

@@ -349,6 +349,31 @@ describe('resolveResponseEntry', () => {
       ).toEqual({ kind: 'json', schema: exact })
     })
 
+    it('exact match is absolute: content-type mismatch on exact entry returns null without falling through to range', () => {
+      // The exact entry is a text/csv response; the server returns application/json.
+      // resolveContractResponse returns null for the exact entry, and the function must NOT
+      // fall through to the '2xx' range entry — exact match wins absolutely.
+      expect(
+        resolveResponseEntry(
+          { 200: textResponse('text/csv'), '2xx': z.object({ id: z.string() }) },
+          200,
+          'application/json',
+          true,
+        ),
+      ).toBeNull()
+    })
+
+    it('exact match is absolute: content-type mismatch on exact entry returns null without falling through to default', () => {
+      expect(
+        resolveResponseEntry(
+          { 200: textResponse('text/csv'), default: z.object({ id: z.string() }) },
+          200,
+          'application/json',
+          true,
+        ),
+      ).toBeNull()
+    })
+
     it('range key takes precedence over default', () => {
       const range = z.object({ message: z.string() })
       const def = z.object({ error: z.string() })
