@@ -11,6 +11,8 @@
 import { setTimeout as setTimeoutPromise } from 'node:timers/promises'
 import type { Dispatcher } from 'undici'
 
+export type RetryDelay = (retryNumber: number) => number
+
 export type RetryConfig = {
   /**
    * Maximum number of retries after the initial attempt.
@@ -35,7 +37,7 @@ export type RetryConfig = {
    *
    * @default (n) => 100 * 2 ** (n - 1) — exponential backoff: 100 ms, 200 ms, 400 ms, …
    */
-  delay?: (retryNumber: number) => number
+  delay?: RetryDelay
 
   /**
    * Hard upper bound in milliseconds for any delay, including `Retry-After` values.
