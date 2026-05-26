@@ -2,4 +2,4 @@
 "@lokalise/backend-http-client": minor
 ---
 
-Add createConstantDelay, createLinearDelay, and createExponentialDelay helpers for composing RetryConfig delay functions.
+Add constantDelay, linearDelay, and exponentialDelay helpers for composing RetryConfig delay functions.
