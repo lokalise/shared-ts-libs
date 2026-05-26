@@ -1,4 +1,14 @@
-export type { RetryConfig } from './api-contract/retry.ts'
+export {
+  constantDelay,
+  exponentialDelay,
+  linearDelay,
+} from './api-contract/delayBuilders.ts'
+export type {
+  ConstantDelayOptions,
+  ExponentialDelayOptions,
+  LinearDelayOptions,
+} from './api-contract/delayBuilders.ts'
+export type { RetryConfig, RetryDelay } from './api-contract/retry.ts'
 export type { ContractRequestOptions } from './api-contract/sendByApiContract.ts'
 export { sendByApiContract } from './api-contract/sendByApiContract.ts'
 export { UnexpectedResponseError } from './api-contract/UnexpectedResponseError.ts'

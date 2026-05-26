@@ -363,6 +363,28 @@ retry: { delay: () => 200 }
 retry: { delay: (n) => 300 * 2 ** (n - 1) }
 ```
 
+Three built-in delay builders are exported for common strategies:
+
+```ts
+import { constantDelay, linearDelay, exponentialDelay } from '@lokalise/backend-http-client'
+
+// constant — always 200 ms
+retry: { delay: constantDelay({ baseDelayMs: 200 }) }
+// attempt 1 → 200 ms, attempt 2 → 200 ms, …
+
+// linear — grows by baseDelayMs each attempt
+retry: { delay: linearDelay({ baseDelayMs: 100 }) }
+// attempt 1 → 100 ms, attempt 2 → 200 ms, attempt 3 → 300 ms, …
+
+// exponential — doubles by default (multiplier defaults to 2)
+retry: { delay: exponentialDelay({ baseDelayMs: 100 }) }
+// attempt 1 → 100 ms, attempt 2 → 200 ms, attempt 3 → 400 ms, …
+
+// exponential with custom multiplier
+retry: { delay: exponentialDelay({ baseDelayMs: 100, multiplier: 3 }) }
+// attempt 1 → 100 ms, attempt 2 → 300 ms, attempt 3 → 900 ms, …
+```
+
 `maxDelay` caps the final delay for any retry, including `Retry-After` values. Default: `30_000`.
 
 `maxJitter` adds up to this many milliseconds of random jitter on top of any delay, including `Retry-After` values, to spread out concurrent retries. Default: `100`.
