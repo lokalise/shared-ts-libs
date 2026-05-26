@@ -310,7 +310,9 @@ describe('resolveResponseEntry', () => {
       [599, { kind: 'json', schema }],
       [600, null],
     ])('status %i → %s', (statusCode, expected) => {
-      expect(resolveResponseEntry(allRanges, statusCode, 'application/json', true)).toEqual(expected)
+      expect(resolveResponseEntry(allRanges, statusCode, 'application/json', true)).toEqual(
+        expected,
+      )
     })
   })
 
