@@ -1,12 +1,12 @@
-export {
-  constantDelay,
-  exponentialDelay,
-  linearDelay,
-} from './api-contract/delayBuilders.ts'
 export type {
   ConstantDelayOptions,
   ExponentialDelayOptions,
   LinearDelayOptions,
+} from './api-contract/delayBuilders.ts'
+export {
+  constantDelay,
+  exponentialDelay,
+  linearDelay,
 } from './api-contract/delayBuilders.ts'
 export type { RetryConfig, RetryDelay } from './api-contract/retry.ts'
 export type { ContractRequestOptions } from './api-contract/sendByApiContract.ts'
