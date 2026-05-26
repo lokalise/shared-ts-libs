@@ -148,15 +148,12 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
       allSpanProcessors.push(new SimpleSpanProcessor(new ConsoleSpanExporter()))
     }
 
-    // Setup SDK
+    // auto-instrumentations-node no longer bundles a fastify instrumentation
+    // since v0.76.0 — @fastify/otel below is the sole fastify instrumentation.
     sdk = new NodeSDK({
       spanProcessors: allSpanProcessors,
       instrumentations: [
-        getNodeAutoInstrumentations({
-          '@opentelemetry/instrumentation-fastify': {
-            enabled: false,
-          },
-        }),
+        getNodeAutoInstrumentations(),
         new FastifyOtelInstrumentation({
           registerOnInitialization: true,
           ignorePaths: (req) => {
