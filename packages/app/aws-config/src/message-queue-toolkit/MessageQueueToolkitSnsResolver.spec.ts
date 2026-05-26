@@ -666,6 +666,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               },
               "updateAttributesIfExists": true,
             },
+            "subscriptionDeadLetterQueue": undefined,
           }
         `)
       })
@@ -781,6 +782,9 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               },
               "updateAttributesIfExists": true,
             },
+            "subscriptionDeadLetterQueue": {
+              "reuseConsumerDeadLetterQueue": true,
+            },
           }
         `)
       })
@@ -861,6 +865,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               },
               "updateAttributesIfExists": true,
             },
+            "subscriptionDeadLetterQueue": undefined,
           }
         `)
       })
@@ -951,6 +956,9 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
                 "FilterPolicyScope": "MessageBody",
               },
               "updateAttributesIfExists": true,
+            },
+            "subscriptionDeadLetterQueue": {
+              "reuseConsumerDeadLetterQueue": true,
             },
           }
         `)
