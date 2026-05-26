@@ -374,6 +374,7 @@ Both `MessageQueueToolkitSnsOptionsResolver` and `MessageQueueToolkitSqsOptionsR
   - Applies standardized tags, see tags section above.
 - **Consumer**:
   - Dead-letter queue automatically created with suffix `-dlq`, `redrivePolicy.maxReceiveCount = 5`, retention = 7 days.
+  - SNS only: the SNS subscription is configured to redrive undeliverable messages (deleted endpoint, IAM/policy errors, throttling) to the same DLQ via `subscriptionDeadLetterQueue.reuseConsumerDeadLetterQueue`, so they aren't silently dropped.
   - `maxRetryDuration`: 2 days for in-flight message retries.
   - `heartbeatInterval`: 20 seconds for visibility timeout heartbeats.
   - `updateAttributesIfExists`: `true` (updates tags/config if resource exists).
