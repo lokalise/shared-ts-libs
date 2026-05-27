@@ -4,6 +4,7 @@ import type {
   ExpandStatusRangeKey,
   HttpStatusCode,
   InferSchemaInput,
+  NoBodyResponse,
   RequestPathParamsSchema,
   SseSchemaByEventName,
   TypedBlobResponse,
@@ -25,6 +26,7 @@ export function formatSseResponse(events: { event: string; data: unknown }[]): s
 
 // Maps a single responsesByStatusCode entry to the body field(s) needed for mocking.
 // symbol (ContractNoBody) → no body field
+// NoBodyResponse         → no body field
 // ZodType              → { responseJson: z.input<T> }
 // TypedSseResponse     → { events: SseMockEventInput[] }
 // TypedTextResponse    → { responseText: string }
@@ -32,7 +34,9 @@ export function formatSseResponse(events: { event: string; data: unknown }[]): s
 // AnyOfResponses       → { responseJson: ...; events: ... } for dual-mode (SSE + JSON)
 type InferBodyParam<T> = T extends symbol
   ? { responseJson?: null }
-  : T extends z.ZodType
+  : T extends NoBodyResponse
+    ? { responseJson?: null }
+    : T extends z.ZodType
     ? { responseJson: z.input<T> }
     : T extends TypedSseResponse<infer S extends SseSchemaByEventName>
       ? { events: SseMockEventInput<S>[] }
@@ -50,12 +54,6 @@ type InferBodyParam<T> = T extends symbol
                   ? { events: SseMockEventInput<S>[] }
                   : object)
             : object
-
-// responseStatus is always a concrete numeric code. Two sources contribute valid codes:
-//   1. Exact keys already present in responsesByStatusCode (e.g. 200, 404)
-//   2. Range/wildcard keys expanded to their constituent codes (e.g. '2xx' → 200–299),
-//      minus any exact keys that are already handled by source 1.
-// The runtime resolves the contract entry with exact → range → 'default' precedence.
 
 type ExactStatusCodePairs<TContract extends ApiContract> = {
   [K in keyof TContract['responsesByStatusCode'] & HttpStatusCode]: {
