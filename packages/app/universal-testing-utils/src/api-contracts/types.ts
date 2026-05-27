@@ -1,6 +1,7 @@
 import type {
   AnyOfResponses,
   ApiContract,
+  ExpandStatusRangeKey,
   HttpStatusCode,
   InferSchemaInput,
   RequestPathParamsSchema,
@@ -8,6 +9,7 @@ import type {
   TypedBlobResponse,
   TypedSseResponse,
   TypedTextResponse,
+  WildcardStatusCodeKey,
 } from '@lokalise/api-contracts'
 import type { z } from 'zod/v4'
 
@@ -49,13 +51,30 @@ type InferBodyParam<T> = T extends symbol
                   : object)
             : object
 
-// Discriminated union: each member pairs one response code with its typed body param.
-// responseStatus is required so the runtime always knows which schema entry to use.
-type StatusCodeBodyPair<TContract extends ApiContract> = {
+// responseStatus is always a concrete numeric code. Two sources contribute valid codes:
+//   1. Exact keys already present in responsesByStatusCode (e.g. 200, 404)
+//   2. Range/wildcard keys expanded to their constituent codes (e.g. '2xx' → 200–299),
+//      minus any exact keys that are already handled by source 1.
+// The runtime resolves the contract entry with exact → range → 'default' precedence.
+
+type ExactStatusCodePairs<TContract extends ApiContract> = {
   [K in keyof TContract['responsesByStatusCode'] & HttpStatusCode]: {
     responseStatus: K
   } & InferBodyParam<NonNullable<TContract['responsesByStatusCode'][K]>>
 }[keyof TContract['responsesByStatusCode'] & HttpStatusCode]
+
+type RangeStatusCodePairs<TContract extends ApiContract> = {
+  [K in keyof TContract['responsesByStatusCode'] & WildcardStatusCodeKey]: {
+    responseStatus: Exclude<
+      ExpandStatusRangeKey<K>,
+      keyof TContract['responsesByStatusCode'] & HttpStatusCode
+    >
+  } & InferBodyParam<NonNullable<TContract['responsesByStatusCode'][K]>>
+}[keyof TContract['responsesByStatusCode'] & WildcardStatusCodeKey]
+
+type StatusCodeBodyPair<TContract extends ApiContract> =
+  | ExactStatusCodePairs<TContract>
+  | RangeStatusCodePairs<TContract>
 
 type PathParamsField<TContract extends ApiContract> =
   TContract['requestPathParamsSchema'] extends RequestPathParamsSchema

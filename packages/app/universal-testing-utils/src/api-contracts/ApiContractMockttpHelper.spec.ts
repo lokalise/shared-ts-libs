@@ -3,9 +3,13 @@ import { getLocal } from 'mockttp'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch from 'wretch'
 import {
+  deleteApiContractWithNoBodyResponse,
   dualModeApiContract,
   dualModeApiContractWithPathParams,
   getApiContract,
+  getApiContractWith2xxRange,
+  getApiContractWithDefault,
+  getApiContractWithExactAndRange,
   getApiContractWithPathAndQueryParams,
   getApiContractWithPathParams,
   getApiContractWithQueryParams,
@@ -212,6 +216,52 @@ describe('ApiContractMockttpHelper', () => {
         streaming: false,
       })
       expect(result.result?.body).toEqual({ id: '2' })
+    })
+  })
+
+  describe('mockResponse — range / wildcard status key fallback', () => {
+    it('resolves response entry via range key when exact code is absent', async () => {
+      await helper.mockResponse(getApiContractWith2xxRange, {
+        responseStatus: 201,
+        responseJson: { id: '42' },
+      })
+      const result = await sendByApiContract(client(), getApiContractWith2xxRange, {})
+      expect(result.result?.body).toEqual({ id: '42' })
+    })
+
+    it('resolves response entry via default key when no exact or range key matches', async () => {
+      await helper.mockResponse(getApiContractWithDefault, {
+        responseStatus: 200,
+        responseJson: { id: '7' },
+      })
+      const result = await sendByApiContract(client(), getApiContractWithDefault, {})
+      expect(result.result?.body).toEqual({ id: '7' })
+    })
+
+    it('exact key takes priority over range key', async () => {
+      await helper.mockResponse(getApiContractWithExactAndRange, {
+        responseStatus: 200,
+        responseJson: { id: 'exact' },
+      })
+      const result = await sendByApiContract(client(), getApiContractWithExactAndRange, {})
+      expect(result.result?.body).toEqual({ id: 'exact' })
+    })
+
+    it('range key is used when exact code is absent but range matches', async () => {
+      await helper.mockResponse(getApiContractWithExactAndRange, {
+        responseStatus: 201,
+        responseJson: { id: 'range', created: true },
+      })
+      const result = await sendByApiContract(client(), getApiContractWithExactAndRange, {})
+      expect(result.result?.body).toEqual({ id: 'range', created: true })
+    })
+  })
+
+  describe('mockResponse — NoBodyResponse', () => {
+    it('replies with no body for noBodyResponse() entry', async () => {
+      await helper.mockResponse(deleteApiContractWithNoBodyResponse, { responseStatus: 204 })
+      const response = await client().url('/no-body').delete().res()
+      expect(response.status).toBe(204)
     })
   })
 })

@@ -2,6 +2,7 @@ import {
   anyOfResponses,
   ContractNoBody,
   defineApiContract,
+  noBodyResponse,
   sseResponse,
 } from '@lokalise/api-contracts'
 import { z } from 'zod/v4'
@@ -105,4 +106,33 @@ export const noBodyApiContract = defineApiContract({
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
   pathResolver: ({ userId }) => `/users/${userId}`,
   responsesByStatusCode: { 204: ContractNoBody },
+})
+
+export const getApiContractWith2xxRange = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/range',
+  responsesByStatusCode: { '2xx': RESPONSE_BODY_SCHEMA },
+})
+
+export const getApiContractWithDefault = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/default',
+  responsesByStatusCode: { default: RESPONSE_BODY_SCHEMA },
+})
+
+const CREATED_BODY_SCHEMA = z.object({ id: z.string(), created: z.literal(true) })
+
+export const getApiContractWithExactAndRange = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/exact-and-range',
+  responsesByStatusCode: {
+    200: RESPONSE_BODY_SCHEMA,
+    '2xx': CREATED_BODY_SCHEMA,
+  },
+})
+
+export const deleteApiContractWithNoBodyResponse = defineApiContract({
+  method: 'delete',
+  pathResolver: () => '/no-body',
+  responsesByStatusCode: { 204: noBodyResponse() },
 })

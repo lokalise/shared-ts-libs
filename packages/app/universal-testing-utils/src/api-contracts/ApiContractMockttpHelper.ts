@@ -1,17 +1,34 @@
 import {
   type ApiContract,
-  ContractNoBody,
+  type ApiContractResponse,
+  ContractNoBody, type HttpStatusCode,
   isAnyOfResponses,
   isBlobResponse,
   isJsonResponse,
+  isNoBodyResponse,
   isSseResponse,
   isTextResponse,
   mapApiContractToPath,
+  type ResponsesByStatusCode,
 } from '@lokalise/api-contracts'
 import type { Mockttp, RequestRuleBuilder } from 'mockttp'
 import { formatSseResponse, type MockResponseParams } from './types.ts'
 
 type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
+
+function getRangeKey(statusCode: HttpStatusCode) {
+  if (statusCode >= 100 && statusCode < 200) return '1xx'
+  if (statusCode >= 200 && statusCode < 300) return '2xx'
+  if (statusCode >= 300 && statusCode < 400) return '3xx'
+  if (statusCode >= 400 && statusCode < 500) return '4xx'
+  if (statusCode >= 500 && statusCode < 600) return '5xx'
+}
+
+function resolveContractEntry(responsesByStatusCode: ResponsesByStatusCode, statusCode: HttpStatusCode): ApiContractResponse | undefined {
+  const rangeKey = getRangeKey(statusCode)
+
+  return responsesByStatusCode[statusCode] ?? (rangeKey ? responsesByStatusCode[rangeKey] : undefined) ?? responsesByStatusCode['default']
+}
 
 export class ApiContractMockttpHelper {
   private readonly mockServer: Mockttp
@@ -51,7 +68,7 @@ export class ApiContractMockttpHelper {
     const anyParams = params as any
     const path = this.resolvePath(contract, params.pathParams)
     const statusCode = params.responseStatus
-    const responseEntry = contract.responsesByStatusCode[params.responseStatus]
+    const responseEntry = resolveContractEntry(contract.responsesByStatusCode, statusCode)
 
     if (!responseEntry) {
       throw new Error('Specified responseStatus cannot be mapped with contract')
@@ -59,7 +76,7 @@ export class ApiContractMockttpHelper {
 
     const mockRule = this.resolveMethodBuilder(contract.method, path)
 
-    if (responseEntry === ContractNoBody) {
+    if (responseEntry === ContractNoBody || isNoBodyResponse(responseEntry)) {
       await mockRule.thenReply(statusCode)
       return
     }
