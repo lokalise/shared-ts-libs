@@ -1,7 +1,8 @@
 import {
   type ApiContract,
   type ApiContractResponse,
-  ContractNoBody, type HttpStatusCode,
+  ContractNoBody,
+  type HttpStatusCode,
   isAnyOfResponses,
   isBlobResponse,
   isJsonResponse,
@@ -24,10 +25,17 @@ function getRangeKey(statusCode: HttpStatusCode) {
   if (statusCode >= 500 && statusCode < 600) return '5xx'
 }
 
-function resolveContractEntry(responsesByStatusCode: ResponsesByStatusCode, statusCode: HttpStatusCode): ApiContractResponse | undefined {
+function resolveContractEntry(
+  responsesByStatusCode: ResponsesByStatusCode,
+  statusCode: HttpStatusCode,
+): ApiContractResponse | undefined {
   const rangeKey = getRangeKey(statusCode)
 
-  return responsesByStatusCode[statusCode] ?? (rangeKey ? responsesByStatusCode[rangeKey] : undefined) ?? responsesByStatusCode['default']
+  return (
+    responsesByStatusCode[statusCode] ??
+    (rangeKey ? responsesByStatusCode[rangeKey] : undefined) ??
+    responsesByStatusCode['default']
+  )
 }
 
 export class ApiContractMockttpHelper {

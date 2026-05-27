@@ -37,23 +37,23 @@ type InferBodyParam<T> = T extends symbol
   : T extends NoBodyResponse
     ? { responseJson?: null }
     : T extends z.ZodType
-    ? { responseJson: z.input<T> }
-    : T extends TypedSseResponse<infer S extends SseSchemaByEventName>
-      ? { events: SseMockEventInput<S>[] }
-      : T extends TypedTextResponse
-        ? { responseText: string }
-        : T extends TypedBlobResponse
-          ? { responseBlob: string }
-          : T extends AnyOfResponses<infer Items>
-            ? (Extract<Items, z.ZodType> extends never
-                ? object
-                : { responseJson: z.input<Extract<Items, z.ZodType>> }) &
-                (Extract<Items, TypedSseResponse<any>> extends TypedSseResponse<
-                  infer S extends SseSchemaByEventName
-                >
-                  ? { events: SseMockEventInput<S>[] }
-                  : object)
-            : object
+      ? { responseJson: z.input<T> }
+      : T extends TypedSseResponse<infer S extends SseSchemaByEventName>
+        ? { events: SseMockEventInput<S>[] }
+        : T extends TypedTextResponse
+          ? { responseText: string }
+          : T extends TypedBlobResponse
+            ? { responseBlob: string }
+            : T extends AnyOfResponses<infer Items>
+              ? (Extract<Items, z.ZodType> extends never
+                  ? object
+                  : { responseJson: z.input<Extract<Items, z.ZodType>> }) &
+                  (Extract<Items, TypedSseResponse<any>> extends TypedSseResponse<
+                    infer S extends SseSchemaByEventName
+                  >
+                    ? { events: SseMockEventInput<S>[] }
+                    : object)
+              : object
 
 type ExactStatusCodePairs<TContract extends ApiContract> = {
   [K in keyof TContract['responsesByStatusCode'] & HttpStatusCode]: {
