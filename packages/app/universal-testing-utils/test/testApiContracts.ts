@@ -1,9 +1,11 @@
 import {
   anyOfResponses,
+  blobResponse,
   ContractNoBody,
   defineApiContract,
   noBodyResponse,
   sseResponse,
+  textResponse,
 } from '@lokalise/api-contracts'
 import { z } from 'zod/v4'
 
@@ -135,4 +137,48 @@ export const deleteApiContractWithNoBodyResponse = defineApiContract({
   method: 'delete',
   pathResolver: () => '/no-body',
   responsesByStatusCode: { 204: noBodyResponse() },
+})
+
+export const patchApiContract = defineApiContract({
+  method: 'patch',
+  requestBodySchema: REQUEST_BODY_SCHEMA,
+  pathResolver: () => '/patch',
+  responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
+})
+
+export const putApiContract = defineApiContract({
+  method: 'put',
+  requestBodySchema: REQUEST_BODY_SCHEMA,
+  pathResolver: () => '/put',
+  responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
+})
+
+export const textResponseApiContract = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/text',
+  responsesByStatusCode: { 200: textResponse('text/plain') },
+})
+
+export const blobResponseApiContract = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/blob',
+  responsesByStatusCode: { 200: blobResponse('application/octet-stream') },
+})
+
+export const anyOfTextResponsesApiContract = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/any-of-text',
+  responsesByStatusCode: { 200: anyOfResponses([textResponse('text/plain')]) },
+})
+
+export const getApiContractWith4xxRange = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/not-found',
+  responsesByStatusCode: { '4xx': RESPONSE_BODY_SCHEMA },
+})
+
+export const getApiContractWith5xxRange = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/server-error',
+  responsesByStatusCode: { '5xx': RESPONSE_BODY_SCHEMA },
 })
