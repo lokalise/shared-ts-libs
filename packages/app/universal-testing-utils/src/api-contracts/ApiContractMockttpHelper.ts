@@ -34,7 +34,7 @@ function resolveContractEntry(
   return (
     responsesByStatusCode[statusCode] ??
     (rangeKey ? responsesByStatusCode[rangeKey] : undefined) ??
-    responsesByStatusCode['default']
+    responsesByStatusCode.default
   )
 }
 

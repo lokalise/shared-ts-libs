@@ -48,11 +48,13 @@ type InferBodyParam<T> = T extends symbol
               ? (Extract<Items, z.ZodType> extends never
                   ? object
                   : { responseJson: z.input<Extract<Items, z.ZodType>> }) &
-                  (Extract<Items, TypedSseResponse<any>> extends TypedSseResponse<
-                    infer S extends SseSchemaByEventName
-                  >
-                    ? { events: SseMockEventInput<S>[] }
-                    : object)
+                  ([Extract<Items, TypedSseResponse<any>>] extends [never]
+                    ? object
+                    : Extract<Items, TypedSseResponse<any>> extends TypedSseResponse<
+                          infer S extends SseSchemaByEventName
+                        >
+                      ? { events: SseMockEventInput<S>[] }
+                      : object)
               : object
 
 type ExactStatusCodePairs<TContract extends ApiContract> = {
