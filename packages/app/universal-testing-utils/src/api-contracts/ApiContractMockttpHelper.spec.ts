@@ -3,18 +3,29 @@ import { getLocal } from 'mockttp'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch from 'wretch'
 import {
+  anyOfTextResponsesApiContract,
+  blobResponseApiContract,
+  deleteApiContractWithNoBodyResponse,
   dualModeApiContract,
   dualModeApiContractWithPathParams,
   getApiContract,
+  getApiContractWith2xxRange,
+  getApiContractWith4xxRange,
+  getApiContractWith5xxRange,
+  getApiContractWithDefault,
+  getApiContractWithExactAndRange,
   getApiContractWithPathAndQueryParams,
   getApiContractWithPathParams,
   getApiContractWithQueryParams,
   noBodyApiContract,
+  patchApiContract,
   postApiContract,
   postApiContractWithPathParams,
+  putApiContract,
   sseGetApiContract,
   sseGetApiContractWithPathParams,
   sseGetApiContractWithQueryParams,
+  textResponseApiContract,
 } from '../../test/testApiContracts.ts'
 import { ApiContractMockttpHelper } from './ApiContractMockttpHelper.ts'
 
@@ -212,6 +223,127 @@ describe('ApiContractMockttpHelper', () => {
         streaming: false,
       })
       expect(result.result?.body).toEqual({ id: '2' })
+    })
+  })
+
+  describe('mockResponse — range / wildcard status key fallback', () => {
+    it('resolves response entry via range key when exact code is absent', async () => {
+      await helper.mockResponse(getApiContractWith2xxRange, {
+        responseStatus: 201,
+        responseJson: { id: '42' },
+      })
+      const result = await sendByApiContract(client(), getApiContractWith2xxRange, {})
+      expect(result.result?.body).toEqual({ id: '42' })
+    })
+
+    it('resolves response entry via default key when no exact or range key matches', async () => {
+      await helper.mockResponse(getApiContractWithDefault, {
+        responseStatus: 200,
+        responseJson: { id: '7' },
+      })
+      const result = await sendByApiContract(client(), getApiContractWithDefault, {})
+      expect(result.result?.body).toEqual({ id: '7' })
+    })
+
+    it('exact key takes priority over range key', async () => {
+      await helper.mockResponse(getApiContractWithExactAndRange, {
+        responseStatus: 200,
+        responseJson: { id: 'exact' },
+      })
+      const result = await sendByApiContract(client(), getApiContractWithExactAndRange, {})
+      expect(result.result?.body).toEqual({ id: 'exact' })
+    })
+
+    it('range key is used when exact code is absent but range matches', async () => {
+      await helper.mockResponse(getApiContractWithExactAndRange, {
+        responseStatus: 201,
+        responseJson: { id: 'range', created: true },
+      })
+      const result = await sendByApiContract(client(), getApiContractWithExactAndRange, {})
+      expect(result.result?.body).toEqual({ id: 'range', created: true })
+    })
+  })
+
+  describe('mockResponse — NoBodyResponse', () => {
+    it('replies with no body for noBodyResponse() entry', async () => {
+      await helper.mockResponse(deleteApiContractWithNoBodyResponse, { responseStatus: 204 })
+      const response = await client().url('/no-body').delete().res()
+      expect(response.status).toBe(204)
+    })
+  })
+
+  describe('mockResponse — HTTP methods', () => {
+    it('mocks PATCH request', async () => {
+      await helper.mockResponse(patchApiContract, {
+        responseStatus: 200,
+        responseJson: { id: '1' },
+      })
+      const result = await sendByApiContract(client(), patchApiContract, { body: { name: 'test' } })
+      expect(result.result?.body).toEqual({ id: '1' })
+    })
+
+    it('mocks PUT request', async () => {
+      await helper.mockResponse(putApiContract, { responseStatus: 200, responseJson: { id: '2' } })
+      const result = await sendByApiContract(client(), putApiContract, { body: { name: 'test' } })
+      expect(result.result?.body).toEqual({ id: '2' })
+    })
+  })
+
+  describe('mockResponse — non-JSON response types', () => {
+    it('mocks text response', async () => {
+      await helper.mockResponse(textResponseApiContract, {
+        responseStatus: 200,
+        responseText: 'hello world',
+      })
+      const response = await client().url('/text').get().res()
+      expect(response.status).toBe(200)
+      expect(response.headers.get('content-type')).toBe('text/plain')
+      expect(await response.text()).toBe('hello world')
+    })
+
+    it('mocks blob response', async () => {
+      await helper.mockResponse(blobResponseApiContract, {
+        responseStatus: 200,
+        responseBlob: 'binary-data',
+      })
+      const response = await client().url('/blob').get().res()
+      expect(response.status).toBe(200)
+      expect(response.headers.get('content-type')).toBe('application/octet-stream')
+    })
+
+    it('replies with status only when anyOfResponses has no SSE or JSON entry', async () => {
+      await helper.mockResponse(anyOfTextResponsesApiContract, { responseStatus: 200 })
+      const response = await client().url('/any-of-text').get().res()
+      expect(response.status).toBe(200)
+    })
+  })
+
+  describe('mockResponse — error handling', () => {
+    it('throws when responseStatus cannot be mapped with contract', async () => {
+      await expect(
+        // @ts-expect-error testing runtime error path with status code not in contract
+        helper.mockResponse(getApiContract, { responseStatus: 999, responseJson: { id: 'x' } }),
+      ).rejects.toThrow('Specified responseStatus cannot be mapped with contract')
+    })
+  })
+
+  describe('mockResponse — extended range / wildcard status key fallback', () => {
+    it('resolves response entry via 4xx range key', async () => {
+      await helper.mockResponse(getApiContractWith4xxRange, {
+        responseStatus: 404,
+        responseJson: { id: 'not-found' },
+      })
+      const response = await fetch(`${mockServer.url}/not-found`)
+      expect(response.status).toBe(404)
+    })
+
+    it('resolves response entry via 5xx range key', async () => {
+      await helper.mockResponse(getApiContractWith5xxRange, {
+        responseStatus: 503,
+        responseJson: { id: 'error' },
+      })
+      const response = await fetch(`${mockServer.url}/server-error`)
+      expect(response.status).toBe(503)
     })
   })
 })

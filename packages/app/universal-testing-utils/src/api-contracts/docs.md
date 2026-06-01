@@ -17,7 +17,7 @@ afterEach(() => mockServer.stop())
 
 ## mockResponse
 
-Registers a mock rule for the given contract. The `responseStatus` field is required and must match a key in the contract's `responsesByStatusCode` — it drives both which schema to use for validation and which response type to return.
+Registers a mock rule for the given contract. `responseStatus` is the concrete numeric HTTP status code the mock will send (e.g. `201`, `404`). It also controls which schema is used: the helper looks up the contract entry with **exact → range → `'default'`** precedence, so a contract with only a `'2xx'` key accepts any `responseStatus` in 200–299.
 
 ```ts
 await helper.mockResponse(contract, params)
@@ -31,7 +31,7 @@ await helper.mockResponse(contract, params)
 | `sseResponse(schemas)` | `events: { event: string; data: unknown }[]` |
 | `textResponse(contentType)` | `responseText: string` |
 | `blobResponse(contentType)` | `responseBlob: string` |
-| `ContractNoBody` | *(none)* |
+| `ContractNoBody` / `noBodyResponse()` | *(none)* |
 | `anyOfResponses([sse, json])` | `responseJson` + `events` |
 
 Path params are required when the contract declares `requestPathParamsSchema`, and optional otherwise.
@@ -129,6 +129,63 @@ await helper.mockResponse(contract, {
 
 - Requests with `Accept: text/event-stream` receive the SSE stream.
 - All other requests receive the JSON body.
+
+### Range and wildcard status keys
+
+Contracts may use range keys (`'1xx'`–`'5xx'`) or `'default'` in `responsesByStatusCode` instead of exact codes. Pass any concrete numeric code covered by that range as `responseStatus`; the helper resolves the contract entry using the same **exact → range → `'default'`** precedence as the runtime client.
+
+**Range key only** — `responseStatus` accepts any code in 200–299:
+
+```ts
+const contract = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/items',
+  responsesByStatusCode: { '2xx': z.object({ id: z.string() }) },
+})
+
+await helper.mockResponse(contract, {
+  responseStatus: 201,          // any 2xx code is valid
+  responseJson: { id: '1' },
+})
+```
+
+**`'default'` catch-all** — `responseStatus` accepts any `HttpStatusCode`:
+
+```ts
+const contract = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/items',
+  responsesByStatusCode: { default: z.object({ id: z.string() }) },
+})
+
+await helper.mockResponse(contract, {
+  responseStatus: 200,
+  responseJson: { id: '1' },
+})
+```
+
+**Exact key takes priority** — when both `200` and `'2xx'` are defined, `responseStatus: 200` uses the exact entry and `responseStatus: 201` falls back to the range entry:
+
+```ts
+const contract = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/items',
+  responsesByStatusCode: {
+    200: z.object({ id: z.string() }),
+    '2xx': z.object({ id: z.string(), created: z.literal(true) }),
+  },
+})
+
+await helper.mockResponse(contract, { responseStatus: 200, responseJson: { id: '1' } })
+await helper.mockResponse(contract, { responseStatus: 201, responseJson: { id: '2', created: true } })
+```
+
+### How `StatusCodeBodyPair` works (type-level)
+
+`MockResponseParams<TContract>` is a discriminated union on `responseStatus`. It has two branches:
+
+- **`ExactStatusCodePairs`** — one member per exact numeric key in `responsesByStatusCode`. `responseStatus` is that literal number and the body fields come from the entry at that key.
+- **`RangeStatusCodePairs`** — one member per wildcard key (`'1xx'`–`'5xx'`, `'default'`). `ExpandStatusRangeKey<K>` expands the key to its numeric union (e.g. `'2xx'` → `200|201|…|299`), then exact codes already covered by `ExactStatusCodePairs` are excluded via `Exclude` so the discriminated union stays unambiguous.
 
 ## Type safety
 
