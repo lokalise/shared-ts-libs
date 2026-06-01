@@ -2,6 +2,14 @@
 
 Reusable testing utilities that are potentially relevant for both backend and frontend
 
+## Compatibility matrix
+
+| Helper | Contract API |
+|---|---|
+| `ApiContractMockttpHelper` | `defineApiContract` |
+| `MswHelper` | `buildRestContract` / `buildSseContract` |
+| `MockttpHelper` *(deprecated)* | `buildRestContract` / `buildSseContract` |
+
 ## Table of contents
 
 - [ApiContractMockttpHelper](#apicontractmockttphelper)
