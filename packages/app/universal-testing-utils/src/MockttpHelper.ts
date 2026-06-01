@@ -62,6 +62,7 @@ export function formatSseResponse(events: { event: string; data: unknown }[]): s
 type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
 type SseHttpMethod = 'get' | 'post' | 'patch' | 'put'
 
+/** @deprecated Use {@link ApiContractMockttpHelper} for contracts defined with `defineApiContract`. */
 export class MockttpHelper {
   private readonly mockServer: Mockttp
 
