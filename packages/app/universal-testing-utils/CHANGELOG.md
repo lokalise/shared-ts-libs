@@ -1,5 +1,11 @@
 # @lokalise/universal-testing-utils
 
+## 3.8.0
+
+### Minor Changes
+
+- 1a227f6: Add `ApiContractMockttpHelper` for mocking HTTP responses with `defineApiContract`-based contracts in mockttp tests. Supports JSON, SSE, text, blob, no-body, and dual-mode responses with full type-safety, including range and wildcard status key resolution. Deprecate `MockttpHelper` in favour of the new helper.
+
 ## 3.7.0
 
 ### Minor Changes
