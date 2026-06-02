@@ -1,4 +1,5 @@
 import {
+  anyOfResponses,
   blobResponse,
   ContractNoBody,
   defineApiContract,
@@ -391,6 +392,65 @@ describe('buildFastifyRouteByApiContract', () => {
       const route = buildFastifyRouteByApiContract(contract, () => Promise.resolve(undefined))
 
       expect(route.schema?.response).toBeUndefined()
+    })
+
+    it('unions the JSON members of an anyOfResponses entry', () => {
+      const SCHEMA_A = z.object({ a: z.string() })
+      const SCHEMA_B = z.object({ b: z.number() })
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/multi',
+        responsesByStatusCode: { 200: anyOfResponses([SCHEMA_A, SCHEMA_B]) },
+      })
+
+      const route = buildFastifyRouteByApiContract(contract, () => Promise.resolve({ a: 'x' }))
+
+      const responseSchema = route.schema?.response as Record<string, z.ZodType>
+      const union = responseSchema['200']
+      // both JSON members are accepted by the unioned serializer schema
+      expect(union?.safeParse({ a: 'x' }).success).toBe(true)
+      expect(union?.safeParse({ b: 1 }).success).toBe(true)
+    })
+
+    it('uses the single JSON member of an anyOfResponses entry directly', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/single',
+        responsesByStatusCode: { 200: anyOfResponses([RESPONSE_BODY_SCHEMA]) },
+      })
+
+      const route = buildFastifyRouteByApiContract(contract, () => Promise.resolve({ name: 'x' }))
+
+      const responseSchema = route.schema?.response as Record<string, z.ZodType>
+      expect(responseSchema['200']).toBe(RESPONSE_BODY_SCHEMA)
+    })
+
+    it('skips an anyOfResponses entry that has no JSON members', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/files',
+        responsesByStatusCode: {
+          200: anyOfResponses([textResponse('text/csv'), blobResponse('application/pdf')]),
+        },
+      })
+
+      const route = buildFastifyRouteByApiContract(contract, () => Promise.resolve('a,b,c'))
+
+      expect(route.schema?.response).toBeUndefined()
+    })
+
+    it('skips undefined response entries', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/maybe',
+        responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA, 404: undefined },
+      })
+
+      const route = buildFastifyRouteByApiContract(contract, () => Promise.resolve({ name: 'x' }))
+
+      const responseSchema = route.schema?.response as Record<string, z.ZodType>
+      expect(responseSchema['200']).toBe(RESPONSE_BODY_SCHEMA)
+      expect(responseSchema['404']).toBeUndefined()
     })
   })
 
