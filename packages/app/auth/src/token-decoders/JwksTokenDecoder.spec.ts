@@ -233,9 +233,6 @@ describe('JwksTokenDecoder', () => {
 
       it('serves repeated decodes from cache instead of refetching the JWKS each time', async () => {
         // Given
-        // getSigningKeys() performs the uncached network fetch of the JWKS. With the
-        // cached getSigningKey path it runs once; the buggy getSigningKeys() fallback ran
-        // it on every request.
         const getSigningKeysSpy = vi.spyOn(client, 'getSigningKeys')
         const token = await createToken(emptyKidContext, { foo: 'bar' })
 
