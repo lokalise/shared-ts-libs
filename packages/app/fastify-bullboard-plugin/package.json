@@ -56,7 +56,7 @@
         "fastify-graceful-shutdown": "^4.0.1",
         "fastify-metrics": "^13.2.0",
         "fastify-plugin": "^5.0.1",
-        "ioredis": "^5.6.1",
+        "ioredis": "^5.11.0",
         "pino": "^10.1.0",
         "pino-pretty": "^13.0.0",
         "rimraf": "^6.1.3",
