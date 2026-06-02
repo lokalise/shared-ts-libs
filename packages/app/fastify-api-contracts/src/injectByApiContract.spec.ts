@@ -317,6 +317,35 @@ describe('injectByApiContract', () => {
       expect(response.statusCode).toBe(201)
     })
 
+    it('prepends pathPrefix to the resolved path for a payload route', async () => {
+      expect.assertions(3)
+      const contract = defineApiContract({
+        method: 'post',
+        requestBodySchema: REQUEST_BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+        responsesByStatusCode: { 201: RESPONSE_BODY_SCHEMA },
+      })
+
+      const app = await initAppForContract(
+        contract,
+        (req, reply) => {
+          expect(req.params).toEqual({ userId: '1' })
+          expect(req.body).toEqual({ id: '2' })
+          return reply.code(201).send({})
+        },
+        '/api/v1',
+      )
+
+      const response = await injectByApiContract(app, contract, {
+        pathParams: { userId: '1' },
+        body: { id: '2' },
+        pathPrefix: '/api/v1',
+      })
+
+      expect(response.statusCode).toBe(201)
+    })
+
     it('injects a POST request for a contract with a ContractNoBody request body', async () => {
       expect.assertions(2)
       const contract = defineApiContract({

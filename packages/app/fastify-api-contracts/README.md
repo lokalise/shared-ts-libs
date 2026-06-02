@@ -189,11 +189,13 @@ const createUserContract = defineApiContract({
     method: 'post',
     requestBodySchema: REQUEST_BODY_SCHEMA,
     requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+    requestHeaderSchema: HEADERS_SCHEMA,
     pathResolver: (pathParams) => `/users/${pathParams.userId}`,
     responsesByStatusCode: { 201: RESPONSE_BODY_SCHEMA },
 })
 
-// POST request — body is required and typed from the contract
+// POST request — body is required and typed from the contract; headers are required
+// because the contract declares requestHeaderSchema
 const postResponse = await injectByApiContract(app, createUserContract, {
     pathParams: { userId: '1' },
     body: { id: '2' },

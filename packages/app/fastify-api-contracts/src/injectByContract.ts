@@ -22,7 +22,7 @@ import { type AnyFastifyInstance, dispatchInjectByMethod } from './injectRequest
  */
 
 // Overload 1: GET route
-export async function injectByContract<
+export function injectByContract<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
@@ -53,7 +53,7 @@ export async function injectByContract<
 ): Promise<LightMyRequestResponse>
 
 // Overload 2: DELETE route
-export async function injectByContract<
+export function injectByContract<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
@@ -84,7 +84,7 @@ export async function injectByContract<
 ): Promise<LightMyRequestResponse>
 
 // Overload 3: Payload route (POST/PUT/PATCH)
-export async function injectByContract<
+export function injectByContract<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   RequestBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
