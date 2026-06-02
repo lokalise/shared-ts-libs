@@ -187,6 +187,67 @@ describe('JwksTokenDecoder', () => {
       })
     })
 
+    describe('empty string kid', () => {
+      let emptyKidContext: TestContext
+      let emptyKidServer: JwksServer
+      let client: ReturnType<typeof jwksClient>
+      let emptyKidDecoder: JwksTokenDecoder
+
+      beforeAll(async () => {
+        emptyKidContext = await createTestContext('')
+        emptyKidServer = new JwksServer()
+        await emptyKidServer.start(emptyKidContext)
+      })
+
+      afterAll(async () => {
+        await emptyKidServer.stop()
+      })
+
+      beforeEach(() => {
+        // Fresh client per test so the lru-memoizer cache starts empty.
+        client = jwksClient({
+          jwksUri: emptyKidServer.jwksUrl,
+          cache: true,
+        })
+        emptyKidDecoder = new JwksTokenDecoder(client, {
+          algorithms: ['RS256'],
+          clockTolerance: 30,
+          requiredClaims: ['exp'],
+        })
+      })
+
+      it('verifies the token and resolves the key with a normalized (undefined) kid', async () => {
+        // Given
+        const getSigningKeySpy = vi.spyOn(client, 'getSigningKey')
+        const token = await createToken(emptyKidContext, { foo: 'bar' })
+
+        // When
+        const result = await emptyKidDecoder.decode(reqContext, token)
+
+        // Then
+        expect(result).toEqual({
+          result: expect.objectContaining({ foo: 'bar' }),
+        })
+        expect(getSigningKeySpy).toHaveBeenCalledWith(undefined)
+      })
+
+      it('serves repeated decodes from cache instead of refetching the JWKS each time', async () => {
+        // Given
+        // getSigningKeys() performs the uncached network fetch of the JWKS. With the
+        // cached getSigningKey path it runs once; the buggy getSigningKeys() fallback ran
+        // it on every request.
+        const getSigningKeysSpy = vi.spyOn(client, 'getSigningKeys')
+        const token = await createToken(emptyKidContext, { foo: 'bar' })
+
+        // When
+        await emptyKidDecoder.decode(reqContext, token)
+        await emptyKidDecoder.decode(reqContext, token)
+
+        // Then
+        expect(getSigningKeysSpy).toHaveBeenCalledTimes(1)
+      })
+    })
+
     describe('cryptographic verification', () => {
       it('rejects JWT signed with different key', async () => {
         // Given
