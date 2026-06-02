@@ -186,6 +186,60 @@ describe('injectByApiContract', () => {
 
       expect(response.statusCode).toBe(200)
     })
+
+    it('normalizes a pathPrefix with a trailing slash without doubling the separator', async () => {
+      expect.assertions(2)
+      const contract = defineApiContract({
+        method: 'get',
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+        responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
+      })
+
+      const app = await initAppForContract(
+        contract,
+        (req) => {
+          expect(req.params).toEqual({ userId: '1' })
+          return Promise.resolve({})
+        },
+        '/api/v1',
+      )
+
+      // a trailing slash on the prefix must not produce `/api/v1//users/1`
+      const response = await injectByApiContract(app, contract, {
+        pathParams: { userId: '1' },
+        pathPrefix: '/api/v1/',
+      })
+
+      expect(response.statusCode).toBe(200)
+    })
+
+    it('normalizes a pathPrefix without a leading slash', async () => {
+      expect.assertions(2)
+      const contract = defineApiContract({
+        method: 'get',
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+        responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
+      })
+
+      const app = await initAppForContract(
+        contract,
+        (req) => {
+          expect(req.params).toEqual({ userId: '1' })
+          return Promise.resolve({})
+        },
+        '/api/v1',
+      )
+
+      // a missing leading slash must still resolve to `/api/v1/users/1`
+      const response = await injectByApiContract(app, contract, {
+        pathParams: { userId: '1' },
+        pathPrefix: 'api/v1',
+      })
+
+      expect(response.statusCode).toBe(200)
+    })
   })
 
   describe('DELETE', () => {

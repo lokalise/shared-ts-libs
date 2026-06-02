@@ -1,4 +1,8 @@
-import type { ApiContract, ClientRequestParams } from '@lokalise/api-contracts'
+import {
+  type ApiContract,
+  buildRequestPath,
+  type ClientRequestParams,
+} from '@lokalise/api-contracts'
 import type { Response as LightMyRequestResponse } from 'light-my-request'
 
 import { type AnyFastifyInstance, dispatchInjectByMethod } from './injectRequestDispatcher.ts'
@@ -47,7 +51,7 @@ export function injectByApiContract(
   // biome-ignore lint/suspicious/noExplicitAny: params shape depends on the contract
   params: any,
 ): Promise<LightMyRequestResponse> {
-  const path = `${params.pathPrefix ?? ''}${apiContract.pathResolver(params.pathParams)}`
+  const path = buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix)
 
   return dispatchInjectByMethod(app, apiContract.method, path, params)
 }
