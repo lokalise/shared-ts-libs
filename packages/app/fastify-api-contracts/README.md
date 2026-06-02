@@ -6,6 +6,8 @@ This package adds support for generating fastify routes using universal API cont
 
 - [Requirements](#requirements)
 - [Builders](#builders)
+  - [`buildFastifyRouteByApiContract`](#buildfastifyroutebyapicontract)
+  - [`buildFastifyRouteHandlerByApiContract`](#buildfastifyroutehandlerbyapicontract)
   - [`buildFastifyRoute`](#buildfastifyroute)
   - [`buildFastifyRouteHandler`](#buildfastifyroutehandler)
   - [Accessing the contract](#accessing-the-contract)
@@ -42,7 +44,105 @@ app.withTypeProvider<ZodTypeProvider>().route(route)
 
 Builders turn a universal API contract into a Fastify route (or just a route handler). They are meant for production code: you define the contract once with `@lokalise/api-contracts` and let the builders infer request/response types for you.
 
+Pick the builder that matches how the contract was created:
+
+- [`buildFastifyRouteByApiContract`](#buildfastifyroutebyapicontract) / [`buildFastifyRouteHandlerByApiContract`](#buildfastifyroutehandlerbyapicontract) — for contracts created with `defineApiContract` (the current `@lokalise/api-contracts` API).
+- [`buildFastifyRoute`](#buildfastifyroute) / [`buildFastifyRouteHandler`](#buildfastifyroutehandler) — for contracts created with the deprecated `buildRestContract`/`buildGetRoute`/`buildPayloadRoute` builders.
+
+### `buildFastifyRouteByApiContract`
+
+`buildFastifyRouteByApiContract` produces a complete Fastify route definition from a contract created with `defineApiContract`. The HTTP method, URL, request schemas and response schema are all derived from the contract, and the handler request/reply types are inferred from it:
+
+- GET/DELETE contracts → handler without `req.body`
+- POST/PUT/PATCH contracts → handler with `req.body` (typed `undefined` for `ContractNoBody`)
+
+```ts
+import { buildFastifyRouteByApiContract } from '@lokalise/fastify-api-contracts'
+import { ContractNoBody, defineApiContract } from '@lokalise/api-contracts'
+
+// GET route
+const getUserContract = defineApiContract({
+    method: 'get',
+    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
+    requestQuerySchema: REQUEST_QUERY_SCHEMA,
+    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+    responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
+})
+
+// POST route
+const createUserContract = defineApiContract({
+    method: 'post',
+    requestBodySchema: REQUEST_BODY_SCHEMA,
+    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
+    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+    responsesByStatusCode: { 201: RESPONSE_BODY_SCHEMA },
+})
+
+// DELETE route returning no body
+const deleteUserContract = defineApiContract({
+    method: 'delete',
+    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
+    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+    responsesByStatusCode: { 204: ContractNoBody },
+})
+
+const getRoute = buildFastifyRouteByApiContract(getUserContract, (req) => {
+    // req.query, req.params and req.headers are typed from the contract
+})
+
+const postRoute = buildFastifyRouteByApiContract(createUserContract, (req) => {
+    // req.body, req.query, req.params and req.headers are typed from the contract
+})
+
+const deleteRoute = buildFastifyRouteByApiContract(deleteUserContract, (req, reply) => {
+    // req.params is typed from the contract, no req.body
+    reply.code(204)
+})
+
+app.withTypeProvider<ZodTypeProvider>().route(getRoute)
+app.withTypeProvider<ZodTypeProvider>().route(postRoute)
+app.withTypeProvider<ZodTypeProvider>().route(deleteRoute)
+
+await app.ready()
+```
+
+Only response entries that carry a JSON body contribute to `schema.response`. `ContractNoBody`, `textResponse`, `blobResponse` and `sseResponse` entries are skipped, since they have no Zod serializer schema; `anyOfResponses` entries contribute the union of their JSON members.
+
+Like [`buildFastifyRoute`](#buildfastifyroute), it exposes the contract on the route config (see [Accessing the contract](#accessing-the-contract)) and accepts an optional metadata-mapper as a third argument (see [Adding extra route options from contract metadata](#adding-extra-route-options-from-contract-metadata)).
+
+### `buildFastifyRouteHandlerByApiContract`
+
+Use `buildFastifyRouteHandlerByApiContract` to define the handler separately from the route for a `defineApiContract` contract. It gives you a `req`/`reply` pair correctly typed from the contract:
+
+```ts
+import {
+    buildFastifyRouteByApiContract,
+    buildFastifyRouteHandlerByApiContract,
+} from '@lokalise/fastify-api-contracts'
+import { defineApiContract } from '@lokalise/api-contracts'
+
+const contract = defineApiContract({
+    method: 'post',
+    requestBodySchema: REQUEST_BODY_SCHEMA,
+    requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+    responsesByStatusCode: { 201: RESPONSE_BODY_SCHEMA },
+})
+
+const handler = buildFastifyRouteHandlerByApiContract(contract,
+    async (req, reply) => {
+        // handler definition here, req and reply will be correctly typed based on the contract
+    }
+)
+
+const routes = [
+    buildFastifyRouteByApiContract(contract, handler),
+]
+```
+
 ### `buildFastifyRoute`
+
+> This builder targets the deprecated `buildRestContract`/`buildGetRoute`/`buildPayloadRoute` contracts. For contracts created with `defineApiContract`, use [`buildFastifyRouteByApiContract`](#buildfastifyroutebyapicontract) instead.
 
 `buildFastifyRoute` is the unified builder that produces a complete Fastify route definition from a contract. It automatically infers the correct handler type from the contract:
 

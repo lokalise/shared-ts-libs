@@ -1,4 +1,8 @@
 export {
+  buildFastifyRouteByApiContract,
+  buildFastifyRouteHandlerByApiContract,
+} from './buildFastifyRouteByApiContract.ts'
+export {
   buildFastifyNoPayloadRoute,
   buildFastifyNoPayloadRouteHandler,
   buildFastifyPayloadRoute,
