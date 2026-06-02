@@ -26,7 +26,7 @@
 	"dependencies": {
 		"@lokalise/eslint-config-frontend": "^4.6.1",
 		"@tanstack/eslint-plugin-query": "^5.100.14",
-		"@typescript-eslint/parser": "^8.60.0"
+		"@typescript-eslint/parser": "^8.60.1"
 	},
 	"devDependencies": {
 		"@lokalise/prettier-config": "latest",
