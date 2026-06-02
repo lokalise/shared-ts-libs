@@ -14,10 +14,7 @@ import {
 } from 'fastify-type-provider-zod'
 import { describe, expect, expectTypeOf, it, onTestFinished } from 'vitest'
 import { z } from 'zod/v4'
-import {
-  buildFastifyRouteByApiContract,
-  buildFastifyRouteHandlerByApiContract,
-} from './buildFastifyRouteByApiContract.ts'
+import { buildFastifyApiRoute, buildFastifyApiRouteHandler } from './buildFastifyApiRoute.ts'
 import { injectByApiContract } from './injectByApiContract.ts'
 import type { RouteType } from './types.ts'
 
@@ -55,7 +52,7 @@ async function initApp<Route extends RouteType>(route: Route) {
   return app
 }
 
-describe('buildFastifyRouteHandlerByApiContract', () => {
+describe('buildFastifyApiRouteHandler', () => {
   it('builds a GET handler', () => {
     const contract = defineApiContract({
       method: 'get',
@@ -64,7 +61,7 @@ describe('buildFastifyRouteHandlerByApiContract', () => {
       responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
     })
 
-    const handler = buildFastifyRouteHandlerByApiContract(contract, () =>
+    const handler = buildFastifyApiRouteHandler(contract, () =>
       Promise.resolve({ name: 'test' }),
     )
     expect(handler).toBeTypeOf('function')
@@ -79,14 +76,14 @@ describe('buildFastifyRouteHandlerByApiContract', () => {
       responsesByStatusCode: { 201: RESPONSE_BODY_SCHEMA },
     })
 
-    const handler = buildFastifyRouteHandlerByApiContract(contract, () =>
+    const handler = buildFastifyApiRouteHandler(contract, () =>
       Promise.resolve({ name: 'test' }),
     )
     expect(handler).toBeTypeOf('function')
   })
 })
 
-describe('buildFastifyRouteByApiContract', () => {
+describe('buildFastifyApiRoute', () => {
   describe('GET routes', () => {
     it('builds a valid GET route in a fastify app', async () => {
       expect.assertions(6)
@@ -98,7 +95,7 @@ describe('buildFastifyRouteByApiContract', () => {
         responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
       })
 
-      const route = buildFastifyRouteByApiContract(contract, (req) => {
+      const route = buildFastifyApiRoute(contract, (req) => {
         expect(req.routeOptions.config.apiContract).toBe(contract)
         expect(req.params.userId).toEqual('1')
         expect(req.query.testIds satisfies string[] | undefined).toBeUndefined()
@@ -137,13 +134,13 @@ describe('buildFastifyRouteByApiContract', () => {
         responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
       })
 
-      const handler = buildFastifyRouteHandlerByApiContract(contract, (req) => {
+      const handler = buildFastifyApiRouteHandler(contract, (req) => {
         expect(req.params.userId).toEqual('1')
         expect(req.query.testIds satisfies string[] | undefined).toEqual(['test-id'])
         return Promise.resolve({ name: 'Frodo' })
       })
 
-      const route = buildFastifyRouteByApiContract(contract, handler)
+      const route = buildFastifyApiRoute(contract, handler)
 
       expectTypeOf(route).toEqualTypeOf<
         RouteType<
@@ -176,7 +173,7 @@ describe('buildFastifyRouteByApiContract', () => {
         responsesByStatusCode: { 204: ContractNoBody },
       })
 
-      const route = buildFastifyRouteByApiContract(contract, (req, reply) => {
+      const route = buildFastifyApiRoute(contract, (req, reply) => {
         expect(req.params.userId).toEqual('1')
         reply.code(204)
         return Promise.resolve(undefined)
@@ -206,7 +203,7 @@ describe('buildFastifyRouteByApiContract', () => {
         responsesByStatusCode: { 201: RESPONSE_BODY_SCHEMA },
       })
 
-      const route = buildFastifyRouteByApiContract(contract, (req, reply) => {
+      const route = buildFastifyApiRoute(contract, (req, reply) => {
         expect(req.routeOptions.config.apiContract).toBe(contract)
         expect(req.params.userId).toEqual('1')
         expect(req.body.id).toEqual('2')
@@ -244,7 +241,7 @@ describe('buildFastifyRouteByApiContract', () => {
         responsesByStatusCode: { 204: ContractNoBody },
       })
 
-      const route = buildFastifyRouteByApiContract(contract, (req, reply) => {
+      const route = buildFastifyApiRoute(contract, (req, reply) => {
         expect(req.params.userId).toEqual('1')
         reply.code(204)
         return Promise.resolve(undefined)
@@ -269,7 +266,7 @@ describe('buildFastifyRouteByApiContract', () => {
         responsesByStatusCode: { 201: RESPONSE_BODY_SCHEMA },
       })
 
-      const handler = buildFastifyRouteHandlerByApiContract(contract, (req, reply) => {
+      const handler = buildFastifyApiRouteHandler(contract, (req, reply) => {
         expect(req.params.userId).toEqual('1')
         expect(req.body.id).toEqual('2')
         expect(req.headers.authorization).toEqual('dummy')
@@ -277,7 +274,7 @@ describe('buildFastifyRouteByApiContract', () => {
         return Promise.resolve({ name: 'Frodo' })
       })
 
-      const route = buildFastifyRouteByApiContract(contract, handler)
+      const route = buildFastifyApiRoute(contract, handler)
       const app = await initApp(route)
       const response = await injectByApiContract(app, contract, {
         headers: () => Promise.resolve({ authorization: 'dummy' }),
@@ -300,7 +297,7 @@ describe('buildFastifyRouteByApiContract', () => {
         responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
       })
 
-      const route = buildFastifyRouteByApiContract(contract, (req) => {
+      const route = buildFastifyApiRoute(contract, (req) => {
         expect(req.body.id).toEqual('2')
         return Promise.resolve({ name: 'Frodo' })
       })
@@ -326,7 +323,7 @@ describe('buildFastifyRouteByApiContract', () => {
         responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
       })
 
-      const route = buildFastifyRouteByApiContract(contract, (req) => {
+      const route = buildFastifyApiRoute(contract, (req) => {
         expect(req.body.id).toEqual('2')
         return Promise.resolve({ name: 'Frodo' })
       })
@@ -351,7 +348,7 @@ describe('buildFastifyRouteByApiContract', () => {
       })
 
       // The handler returns an extra field that the response schema strips on serialization.
-      const route = buildFastifyRouteByApiContract(contract, () =>
+      const route = buildFastifyApiRoute(contract, () =>
         Promise.resolve({ name: 'Frodo', extra: 'dropped' } as { name: string }),
       )
 
@@ -372,7 +369,7 @@ describe('buildFastifyRouteByApiContract', () => {
         },
       })
 
-      const route = buildFastifyRouteByApiContract(contract, () => Promise.resolve('a,b,c'))
+      const route = buildFastifyApiRoute(contract, () => Promise.resolve('a,b,c'))
 
       // Only the JSON (400) entry contributes a serializer schema; the text entry is skipped.
       expect(route.schema?.response).toEqual({ 400: RESPONSE_BODY_SCHEMA })
@@ -389,7 +386,7 @@ describe('buildFastifyRouteByApiContract', () => {
         },
       })
 
-      const route = buildFastifyRouteByApiContract(contract, () => Promise.resolve(undefined))
+      const route = buildFastifyApiRoute(contract, () => Promise.resolve(undefined))
 
       expect(route.schema?.response).toBeUndefined()
     })
@@ -403,7 +400,7 @@ describe('buildFastifyRouteByApiContract', () => {
         responsesByStatusCode: { 200: anyOfResponses([SCHEMA_A, SCHEMA_B]) },
       })
 
-      const route = buildFastifyRouteByApiContract(contract, () => Promise.resolve({ a: 'x' }))
+      const route = buildFastifyApiRoute(contract, () => Promise.resolve({ a: 'x' }))
 
       const responseSchema = route.schema?.response as Record<string, z.ZodType>
       const union = responseSchema['200']
@@ -419,7 +416,7 @@ describe('buildFastifyRouteByApiContract', () => {
         responsesByStatusCode: { 200: anyOfResponses([RESPONSE_BODY_SCHEMA]) },
       })
 
-      const route = buildFastifyRouteByApiContract(contract, () => Promise.resolve({ name: 'x' }))
+      const route = buildFastifyApiRoute(contract, () => Promise.resolve({ name: 'x' }))
 
       const responseSchema = route.schema?.response as Record<string, z.ZodType>
       expect(responseSchema['200']).toBe(RESPONSE_BODY_SCHEMA)
@@ -434,7 +431,7 @@ describe('buildFastifyRouteByApiContract', () => {
         },
       })
 
-      const route = buildFastifyRouteByApiContract(contract, () => Promise.resolve('a,b,c'))
+      const route = buildFastifyApiRoute(contract, () => Promise.resolve('a,b,c'))
 
       expect(route.schema?.response).toBeUndefined()
     })
@@ -446,7 +443,7 @@ describe('buildFastifyRouteByApiContract', () => {
         responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA, 404: undefined },
       })
 
-      const route = buildFastifyRouteByApiContract(contract, () => Promise.resolve({ name: 'x' }))
+      const route = buildFastifyApiRoute(contract, () => Promise.resolve({ name: 'x' }))
 
       const responseSchema = route.schema?.response as Record<string, z.ZodType>
       expect(responseSchema['200']).toBe(RESPONSE_BODY_SCHEMA)
@@ -466,7 +463,7 @@ describe('buildFastifyRouteByApiContract', () => {
         },
       })
 
-      const route = buildFastifyRouteByApiContract(
+      const route = buildFastifyApiRoute(
         contract,
         () => Promise.resolve({ name: 'Frodo' }),
         (metadata) =>
@@ -494,7 +491,7 @@ describe('buildFastifyRouteByApiContract', () => {
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
         responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
       })
-      buildFastifyRouteByApiContract(getContract, (req) => {
+      buildFastifyApiRoute(getContract, (req) => {
         expectTypeOf(req.params).toEqualTypeOf<{ userId: string }>()
         return Promise.resolve({ name: 'Frodo' })
       })
@@ -507,7 +504,7 @@ describe('buildFastifyRouteByApiContract', () => {
         pathResolver: () => '/users',
         responsesByStatusCode: { 201: RESPONSE_BODY_SCHEMA },
       })
-      buildFastifyRouteByApiContract(postContract, (req) => {
+      buildFastifyApiRoute(postContract, (req) => {
         expectTypeOf(req.body).toEqualTypeOf<{ id: string }>()
         return Promise.resolve({ name: 'Frodo' })
       })

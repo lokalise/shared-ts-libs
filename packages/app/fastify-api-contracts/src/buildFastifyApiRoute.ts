@@ -162,27 +162,25 @@ function mapResponsesByStatusCodeToFastifyResponseSchema(
  */
 
 // Overload: GET route handler
-export function buildFastifyRouteHandlerByApiContract<const TApiContract extends GetApiContract>(
+export function buildFastifyApiRouteHandler<const TApiContract extends GetApiContract>(
   apiContract: TApiContract,
   handler: NoPayloadContractHandler<TApiContract>,
 ): NoPayloadContractHandler<TApiContract>
 
 // Overload: DELETE route handler
-export function buildFastifyRouteHandlerByApiContract<const TApiContract extends DeleteApiContract>(
+export function buildFastifyApiRouteHandler<const TApiContract extends DeleteApiContract>(
   apiContract: TApiContract,
   handler: NoPayloadContractHandler<TApiContract>,
 ): NoPayloadContractHandler<TApiContract>
 
 // Overload: payload (POST/PUT/PATCH) route handler
-export function buildFastifyRouteHandlerByApiContract<
-  const TApiContract extends PayloadApiContract,
->(
+export function buildFastifyApiRouteHandler<const TApiContract extends PayloadApiContract>(
   apiContract: TApiContract,
   handler: PayloadContractHandler<TApiContract>,
 ): PayloadContractHandler<TApiContract>
 
 // Implementation
-export function buildFastifyRouteHandlerByApiContract(
+export function buildFastifyApiRouteHandler(
   _apiContract: ApiContract,
   // biome-ignore lint/suspicious/noExplicitAny: handler type depends on the overload
   handler: any,
@@ -215,28 +213,28 @@ export function buildFastifyRouteHandlerByApiContract(
  */
 
 // Overload: GET route
-export function buildFastifyRouteByApiContract<const TApiContract extends GetApiContract>(
+export function buildFastifyApiRoute<const TApiContract extends GetApiContract>(
   apiContract: TApiContract,
   handler: NoPayloadContractHandler<TApiContract>,
   contractMetadataToRouteMapper?: ApiContractMetadataToRouteMapper,
 ): NoPayloadContractRoute<TApiContract>
 
 // Overload: DELETE route
-export function buildFastifyRouteByApiContract<const TApiContract extends DeleteApiContract>(
+export function buildFastifyApiRoute<const TApiContract extends DeleteApiContract>(
   apiContract: TApiContract,
   handler: NoPayloadContractHandler<TApiContract>,
   contractMetadataToRouteMapper?: ApiContractMetadataToRouteMapper,
 ): NoPayloadContractRoute<TApiContract>
 
 // Overload: payload route (POST/PUT/PATCH)
-export function buildFastifyRouteByApiContract<const TApiContract extends PayloadApiContract>(
+export function buildFastifyApiRoute<const TApiContract extends PayloadApiContract>(
   apiContract: TApiContract,
   handler: PayloadContractHandler<TApiContract>,
   contractMetadataToRouteMapper?: ApiContractMetadataToRouteMapper,
 ): PayloadContractRoute<TApiContract>
 
 // Implementation
-export function buildFastifyRouteByApiContract(
+export function buildFastifyApiRoute(
   apiContract: ApiContract,
   // biome-ignore lint/suspicious/noExplicitAny: handler type depends on the overload
   handler: any,
