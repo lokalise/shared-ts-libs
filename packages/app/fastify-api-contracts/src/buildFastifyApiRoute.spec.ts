@@ -61,9 +61,7 @@ describe('buildFastifyApiRouteHandler', () => {
       responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
     })
 
-    const handler = buildFastifyApiRouteHandler(contract, () =>
-      Promise.resolve({ name: 'test' }),
-    )
+    const handler = buildFastifyApiRouteHandler(contract, () => Promise.resolve({ name: 'test' }))
     expect(handler).toBeTypeOf('function')
   })
 
@@ -76,9 +74,7 @@ describe('buildFastifyApiRouteHandler', () => {
       responsesByStatusCode: { 201: RESPONSE_BODY_SCHEMA },
     })
 
-    const handler = buildFastifyApiRouteHandler(contract, () =>
-      Promise.resolve({ name: 'test' }),
-    )
+    const handler = buildFastifyApiRouteHandler(contract, () => Promise.resolve({ name: 'test' }))
     expect(handler).toBeTypeOf('function')
   })
 })
