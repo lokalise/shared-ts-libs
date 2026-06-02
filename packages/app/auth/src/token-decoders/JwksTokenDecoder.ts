@@ -24,8 +24,17 @@ export class JwksTokenDecoder extends TokenDecoder {
     this.jwksClient = jwksClient
   }
 
+  private getPublicKey(header: FreeformRecord): Promise<string> {
+    // Resolve through the cached getSigningKey(kid) path when a string kid is present;
+    // otherwise fall back to the first available key.
+    return 'kid' in header && typeof header.kid === 'string'
+      ? this.getKeyByKid(header.kid)
+      : this.getFirstAvailableKey()
+  }
+
   private async getKeyByKid(kid: string): Promise<string> {
-    const key = await this.jwksClient.getSigningKey(kid)
+    // An empty-string kid is normalized to undefined internally by jwksClient
+    const key = await this.jwksClient.getSigningKey(kid.length ? kid : undefined)
     return key.getPublicKey()
   }
 
@@ -36,9 +45,5 @@ export class JwksTokenDecoder extends TokenDecoder {
     /* v8 ignore stop */
 
     return keys[0].getPublicKey()
-  }
-
-  private getPublicKey(header: FreeformRecord): Promise<string> {
-    return header.kid ? this.getKeyByKid(header.kid) : this.getFirstAvailableKey()
   }
 }
