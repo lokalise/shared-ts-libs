@@ -50,10 +50,10 @@
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "^4.0.0",
         "@types/node": "^25.9.1",
-        "@vitest/coverage-v8": "^4.1.7",
+        "@vitest/coverage-v8": "^4.1.8",
         "rimraf": "^6.1.2",
         "typescript": "6.0.3",
-        "vitest": "^4.1.7",
+        "vitest": "^4.1.8",
         "zod": "^4.3.6"
     }
 }
