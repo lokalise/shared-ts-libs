@@ -24,11 +24,12 @@ export class JwksTokenDecoder extends TokenDecoder {
     this.jwksClient = jwksClient
   }
 
-  private async getPublicKey(header: FreeformRecord): Promise<string> {
-    return 'kid' in header && typeof header.kid === 'string' ?
-        this.getKeyByKid(header.kid) :
-        // if kid is not present or string, fallback to the first available key
-        this.getFirstAvailableKey()
+  private getPublicKey(header: FreeformRecord): Promise<string> {
+    // Resolve through the cached getSigningKey(kid) path when a string kid is present;
+    // otherwise fall back to the first available key.
+    return 'kid' in header && typeof header.kid === 'string'
+      ? this.getKeyByKid(header.kid)
+      : this.getFirstAvailableKey()
   }
 
   private async getKeyByKid(kid: string): Promise<string> {
