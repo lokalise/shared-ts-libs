@@ -1,21 +1,56 @@
 # API contract support for fastify
 
-This package adds support for generating fastify routes using universal API contracts, created with `@lokalise/api-contracts`
+This package adds support for generating fastify routes using universal API contracts, created with `@lokalise/api-contracts`.
 
-This module requires `fastify-type-provider-zod` type provider to work and is ESM-only.
+## Table of Contents
 
-## Usage
+- [Requirements](#requirements)
+- [Builders](#builders)
+  - [`buildFastifyRoute`](#buildfastifyroute)
+  - [`buildFastifyRouteHandler`](#buildfastifyroutehandler)
+  - [Accessing the contract](#accessing-the-contract)
+  - [Adding extra route options from contract metadata](#adding-extra-route-options-from-contract-metadata)
+- [Test helpers](#test-helpers)
+  - [`injectByContract`](#injectbycontract)
+- [Deprecated APIs](#deprecated-apis)
 
-Basic usage pattern using the unified `buildFastifyRoute` builder:
+## Requirements
+
+This module requires the `fastify-type-provider-zod` type provider to work and is ESM-only.
+
+Register the Zod compilers on your Fastify instance and use the `ZodTypeProvider` when adding routes:
 
 ```ts
-import { buildFastifyRoute, buildFastifyRouteHandler, injectByContract } from '@lokalise/fastify-api-contracts'
-import { buildRestContract } from '@lokalise/api-contracts'
 import {
     type ZodTypeProvider,
     serializerCompiler,
     validatorCompiler,
 } from 'fastify-type-provider-zod'
+
+const app = fastify({
+    // app params
+})
+
+app.setValidatorCompiler(validatorCompiler)
+app.setSerializerCompiler(serializerCompiler)
+
+app.withTypeProvider<ZodTypeProvider>().route(route)
+```
+
+## Builders
+
+Builders turn a universal API contract into a Fastify route (or just a route handler). They are meant for production code: you define the contract once with `@lokalise/api-contracts` and let the builders infer request/response types for you.
+
+### `buildFastifyRoute`
+
+`buildFastifyRoute` is the unified builder that produces a complete Fastify route definition from a contract. It automatically infers the correct handler type from the contract:
+
+- GET/DELETE contracts → handler without `req.body`
+- POST/PUT/PATCH contracts → handler with `req.body`
+
+```ts
+import { buildFastifyRoute } from '@lokalise/fastify-api-contracts'
+import { buildRestContract } from '@lokalise/api-contracts'
 
 // GET route
 const getContract = buildRestContract({
@@ -44,14 +79,8 @@ const deleteContract = buildRestContract({
     pathResolver: (pathParams) => `/users/${pathParams.userId}`,
 })
 
-// buildFastifyRoute automatically infers the correct handler type from the contract:
-// - GET/DELETE contracts -> handler without req.body
-// - POST/PUT/PATCH contracts -> handler with req.body
 const getRoute = buildFastifyRoute(getContract, (req) => {
     // req.query, req.params and req.headers are typed from the contract
-}, (contractMetadata) => {
-    // Optionally, use this callback to dynamically add extra Fastify route options
-    // (like config, preHandler, etc.) using contract metadata.
 })
 
 const postRoute = buildFastifyRoute(postContract, (req) => {
@@ -62,37 +91,16 @@ const deleteRoute = buildFastifyRoute(deleteContract, (req) => {
     // req.params is typed from the contract, no req.body
 })
 
-const app = fastify({
-    // app params
-})
-
-app.setValidatorCompiler(validatorCompiler)
-app.setSerializerCompiler(serializerCompiler)
-
 app.withTypeProvider<ZodTypeProvider>().route(getRoute)
 app.withTypeProvider<ZodTypeProvider>().route(postRoute)
 app.withTypeProvider<ZodTypeProvider>().route(deleteRoute)
 
 await app.ready()
-
-// used in tests, you can use '@lokalise/frontend-http-client' in production code
-// injectByContract automatically determines the HTTP method from the contract
-const postResponse = await injectByContract(app, postContract, {
-    pathParams: { userId: '1' },
-    body: { id: '2' },
-    headers: { authorization: 'some-value' } // can be passed directly
-})
-
-// used in tests, you can use '@lokalise/frontend-http-client' in production code
-const getResponse = await injectByContract(app, getContract, {
-    pathParams: { userId: '1' },
-    headers: async () => ({ authorization: 'some-value' }) // headers producing function (sync or async) can be passed as well
-})
 ```
 
-### Separating handler from route definition
+### `buildFastifyRouteHandler`
 
-Use `buildFastifyRouteHandler` to define the handler separately from the route. It works with any contract type (GET, DELETE, POST, PUT, PATCH):
+Use `buildFastifyRouteHandler` to define the handler separately from the route. It works with any contract type (GET, DELETE, POST, PUT, PATCH) and gives you a `req`/`reply` pair correctly typed from the contract:
 
 ```ts
 import {
@@ -120,15 +128,66 @@ const routes = [
 ]
 ```
 
-## Accessing the contract
+### Accessing the contract
 
-In case you need some of the contract data within your lifecycle hook or a handler, it is exposed as a part of a route config, and can be accessed like this:
+In case you need some of the contract data within your lifecycle hook or a handler, it is exposed as a part of the route config, and can be accessed like this:
 
 ```ts
 const route = buildFastifyRoute(contract, (req) => {
     const { apiContract } = req.routeOptions.config
 })
 ```
+
+### Adding extra route options from contract metadata
+
+`buildFastifyRoute` accepts an optional third argument: a callback that receives the contract metadata and returns extra Fastify route options (such as `config`, `preHandler`, etc.). Use it to derive route options dynamically from the contract:
+
+```ts
+const route = buildFastifyRoute(
+    contract,
+    (req) => {
+        // handler
+    },
+    (contractMetadata) => ({
+        // extra Fastify route options derived from contract metadata
+        config: {
+            // ...
+        },
+    }),
+)
+```
+
+## Test helpers
+
+Test helpers let you dispatch requests against a Fastify instance directly from a contract, without spinning up a real HTTP server. They are intended for tests — in production code, prefer a real HTTP client such as `@lokalise/frontend-http-client`.
+
+### `injectByContract`
+
+`injectByContract` dispatches a request through Fastify's [`inject`](https://fastify.dev/docs/latest/Guides/Testing/) and automatically determines the HTTP method from the contract. It replaces the per-method `injectGet`/`injectDelete`/`injectPost`/`injectPut`/`injectPatch` helpers.
+
+The params type is automatically resolved from the contract:
+
+- GET/DELETE contracts → params without a request body
+- POST/PUT/PATCH contracts → params with a request body
+
+```ts
+import { injectByContract } from '@lokalise/fastify-api-contracts'
+
+// POST request — body is required and typed from the contract
+const postResponse = await injectByContract(app, postContract, {
+    pathParams: { userId: '1' },
+    body: { id: '2' },
+    headers: { authorization: 'some-value' }, // can be passed directly
+})
+
+// GET request — no body
+const getResponse = await injectByContract(app, getContract, {
+    pathParams: { userId: '1' },
+    headers: async () => ({ authorization: 'some-value' }), // a sync or async headers-producing function can be passed as well
+})
+```
+
+`headers` can be provided either as a plain object or as a (sync or async) function that produces the headers — useful when authentication tokens need to be resolved per request.
 
 ## Deprecated APIs
 
