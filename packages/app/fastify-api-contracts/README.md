@@ -11,6 +11,7 @@ This package adds support for generating fastify routes using universal API cont
   - [Accessing the contract](#accessing-the-contract)
   - [Adding extra route options from contract metadata](#adding-extra-route-options-from-contract-metadata)
 - [Test helpers](#test-helpers)
+  - [`injectByApiContract`](#injectbyapicontract)
   - [`injectByContract`](#injectbycontract)
 - [Deprecated APIs](#deprecated-apis)
 
@@ -161,9 +162,61 @@ const route = buildFastifyRoute(
 
 Test helpers let you dispatch requests against a Fastify instance directly from a contract, without spinning up a real HTTP server. They are intended for tests — in production code, prefer a real HTTP client such as `@lokalise/frontend-http-client`.
 
+Pick the helper that matches how the contract was created:
+
+- [`injectByApiContract`](#injectbyapicontract) — for contracts created with `defineApiContract` (the current `@lokalise/api-contracts` API).
+- [`injectByContract`](#injectbycontract) — for contracts created with the deprecated `buildRestContract`/`buildGetRoute`/`buildPayloadRoute` builders.
+
+Both share the same core parameter shape (`pathParams`, `body`, `queryParams`, `headers`) and runtime behavior — only the contract type they accept differs. `injectByApiContract` additionally accepts an optional `pathPrefix`.
+
+### `injectByApiContract`
+
+`injectByApiContract` dispatches a request through Fastify's [`inject`](https://fastify.dev/docs/latest/Guides/Testing/) for contracts created with `defineApiContract`, automatically determining the HTTP method from the contract.
+
+The params type is resolved directly from the contract (the same way the contract client's request params are), so each field is required only when the corresponding request schema is present:
+
+- `pathParams` — required when `requestPathParamsSchema` is defined
+- `body` — required when `requestBodySchema` is a schema (omitted for GET/DELETE and for `ContractNoBody`)
+- `queryParams` — required when `requestQuerySchema` is defined
+- `headers` — required when `requestHeaderSchema` is defined; accepts a plain object or a (sync or async) function
+- `pathPrefix` — always optional; when provided, it is prepended to the path resolved from the contract (e.g. to hit a route mounted under a Fastify prefix)
+
+```ts
+import { injectByApiContract } from '@lokalise/fastify-api-contracts'
+import { ContractNoBody, defineApiContract } from '@lokalise/api-contracts'
+
+const createUserContract = defineApiContract({
+    method: 'post',
+    requestBodySchema: REQUEST_BODY_SCHEMA,
+    requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+    responsesByStatusCode: { 201: RESPONSE_BODY_SCHEMA },
+})
+
+// POST request — body is required and typed from the contract
+const postResponse = await injectByApiContract(app, createUserContract, {
+    pathParams: { userId: '1' },
+    body: { id: '2' },
+    headers: async () => ({ authorization: 'some-value' }), // plain object or (a)sync function
+})
+
+const pingContract = defineApiContract({
+    method: 'get',
+    pathResolver: () => '/ping',
+    responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
+})
+
+// A contract with no request schemas needs no input fields
+const pingResponse = await injectByApiContract(app, pingContract, {})
+```
+
+The resolved params type is also exported as `InjectByApiContractParams<typeof contract>`, which is handy for building typed request factories in tests.
+
 ### `injectByContract`
 
 `injectByContract` dispatches a request through Fastify's [`inject`](https://fastify.dev/docs/latest/Guides/Testing/) and automatically determines the HTTP method from the contract. It replaces the per-method `injectGet`/`injectDelete`/`injectPost`/`injectPut`/`injectPatch` helpers.
+
+> It targets the deprecated `buildRestContract`/`buildGetRoute`/`buildPayloadRoute` contracts. For contracts created with `defineApiContract`, use [`injectByApiContract`](#injectbyapicontract) instead.
 
 The params type is automatically resolved from the contract:
 

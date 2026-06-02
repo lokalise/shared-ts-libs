@@ -12,5 +12,6 @@ export {
   injectPut,
 } from './fastifyApiRequestInjector.ts'
 export { buildFastifyRoute, buildFastifyRouteHandler } from './fastifyRouteBuilder.ts'
+export { type InjectByApiContractParams, injectByApiContract } from './injectByApiContract.ts'
 export { injectByContract } from './injectByContract.ts'
 export * from './types.ts'
