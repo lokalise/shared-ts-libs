@@ -51,16 +51,16 @@ describe('prismaBulkUpdate', () => {
     count?: number | null
     metadata?: unknown
   }) =>
-      prisma.bulkUpdateItem.create({
-        data: {
-          id: overrides?.id ?? randomUUID(),
-          groupId: overrides?.groupId ?? randomUUID(),
-          number: overrides?.number ?? 0,
-          value: overrides?.value ?? 'init',
-          count: overrides?.count ?? null,
-          ...(overrides?.metadata === undefined ? {} : { metadata: overrides.metadata as never }),
-        },
-      })
+    prisma.bulkUpdateItem.create({
+      data: {
+        id: overrides?.id ?? randomUUID(),
+        groupId: overrides?.groupId ?? randomUUID(),
+        number: overrides?.number ?? 0,
+        value: overrides?.value ?? 'init',
+        count: overrides?.count ?? null,
+        ...(overrides?.metadata === undefined ? {} : { metadata: overrides.metadata as never }),
+      },
+    })
 
   describe('input validation', () => {
     it('throws an error if entries array is empty', () => {
