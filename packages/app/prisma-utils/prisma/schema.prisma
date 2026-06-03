@@ -24,3 +24,15 @@ model Item2 {
 
   @@map("item2")
 }
+
+model BulkUpdateItem {
+  id       String @id @default(dbgenerated("gen_random_ulid()")) @db.Uuid
+  groupId  String @map("group_id") @db.Uuid
+  number   Int    @default(0)
+  value    String
+  count    Int?
+  metadata Json?
+
+  @@unique([groupId, number])
+  @@map("bulk_update_item")
+}
