@@ -52,8 +52,8 @@ const ENTRIES_LIMIT = 1000
  * @param entries - The entries containing the match condition and column values for the update.
  * @returns The updated rows (aliased per `options.returning`), or an empty array when it is omitted.
  */
-export const prismaBulkUpdate = <T = unknown>(
-  prisma: PrismaClient | PrismaTransactionClient<PrismaClient>,
+export const prismaBulkUpdate = <T = unknown, P extends PrismaClient = PrismaClient>(
+  prisma: P | PrismaTransactionClient<P>,
   tableName: string,
   options: PrismaBulkUpdateOptions,
   entries: BulkUpdateEntry[],
@@ -106,8 +106,9 @@ export const prismaBulkUpdate = <T = unknown>(
   const updateStatement = sql`
     UPDATE ${sql([quotedTableName])}
     SET ${join(sqlSetExpressions, ', ')}
-    FROM (VALUES ${join(sqlValuesExpressions, ',\n')})
-        AS updates(${join(sqlValuesColumnAliases, ', ')})
+    FROM (
+        VALUES ${join(sqlValuesExpressions, ',\n')}
+    ) AS updates(${join(sqlValuesColumnAliases, ', ')})
     WHERE ${join(sqlWhereConditions, ' AND ')}
   `
 
