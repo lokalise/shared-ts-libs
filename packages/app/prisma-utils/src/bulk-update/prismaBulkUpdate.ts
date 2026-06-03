@@ -45,7 +45,10 @@ const ENTRIES_LIMIT = 1000
  * avoid ambiguity with the `updates` source. Without it the statement runs as a
  * plain update and an empty array is returned.
  *
- * @param prisma - The Prisma client instance (or a transaction client).
+ * @template T - The shape of each row returned via `options.returning`.
+ * @template P - The concrete Prisma client type, inferred from `prisma` so that both
+ *   a full client and its derived transaction client (`PrismaTransactionClient<P>`) are accepted.
+ * @param prisma - The Prisma client instance (or a transaction client, e.g. inside `prismaTransaction`).
  * @param tableName - The name of the table to update (may be schema-qualified, e.g. `translation.segment`).
  * @param options - `dbDriver`, the `typeByColumn` map (must map every "where" column and every
  *   "data" column that has a defined value), and an optional `returning` map.
