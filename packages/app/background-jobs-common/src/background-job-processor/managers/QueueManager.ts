@@ -31,12 +31,12 @@ export class QueueManager<
 > {
   public readonly config: QueueManagerConfig
 
-  protected readonly queueRegistry: QueueRegistry<
-    Queues,
-    QueueType,
-    QueueOptionsType,
-    JobOptionsType
-  >
+  /**
+   * The underlying registry. Exposed so dependent components (e.g.
+   * {@link FlowManager}) can share the same configurations without rebuilding
+   * a parallel registry.
+   */
+  public readonly queueRegistry: QueueRegistry<Queues, QueueType, QueueOptionsType, JobOptionsType>
 
   private readonly spies: Record<
     QueueConfiguration<QueueOptionsType>['queueId'],
@@ -103,6 +103,18 @@ export class QueueManager<
       )
 
     return this.spies[queueId]
+  }
+
+  /**
+   * Records a scheduled job in this manager's spy (no-op outside test mode or
+   * when no spy is registered for `queueId`). Intended for sibling components
+   * such as `FlowManager` that schedule jobs through a different BullMQ
+   * primitive but should still surface in the same spy stream as
+   * `QueueManager.schedule`.
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: spy job type matches what we accept here
+  public recordScheduledJob(queueId: SupportedQueueIds<Queues>, job: any): void {
+    this.spies[queueId]?.addJob(job, 'scheduled')
   }
 
   public async getJobCount(queueId: SupportedQueueIds<Queues>): Promise<number> {

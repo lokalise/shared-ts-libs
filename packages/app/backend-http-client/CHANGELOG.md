@@ -1,5 +1,11 @@
 # Changelog
 
+## 11.2.0
+
+### Minor Changes
+
+- d6f099b: Add constantDelay, linearDelay, and exponentialDelay helpers for composing RetryConfig delay functions.
+
 ## [11.0.0] - 2026-05-08
 
 ### Remove `undici-retry` dependency
@@ -15,16 +21,16 @@ Replace `undici-retry` with an internal retry implementation. The following expo
 
 Migrate all `retryConfig` usages to the new field names:
 
-| Before | After |
-|---|---|
-| `maxAttempts` | `maxRetries` |
-| `statusCodesToRetry` | `statusCodes` |
-| `delayResolver` | `delay: (retryNumber: number) => number` |
-| `retryOnTimeout` | `retryOnTimeout?` (default `true`) |
-| — | `maxDelay?` (default `30_000`) |
-| — | `maxJitter?` (default `100`) |
-| — | `respectRetryAfter?` (default `true`) |
-| — | `retryOnNetworkError?` (default `true`) |
+| Before               | After                                    |
+| -------------------- | ---------------------------------------- |
+| `maxAttempts`        | `maxRetries`                             |
+| `statusCodesToRetry` | `statusCodes`                            |
+| `delayResolver`      | `delay: (retryNumber: number) => number` |
+| `retryOnTimeout`     | `retryOnTimeout?` (default `true`)       |
+| —                    | `maxDelay?` (default `30_000`)           |
+| —                    | `maxJitter?` (default `100`)             |
+| —                    | `respectRetryAfter?` (default `true`)    |
+| —                    | `retryOnNetworkError?` (default `true`)  |
 
 Pass `retryConfig: true` to enable retries with all defaults applied. Retries are now opt-in — no retries are performed unless `retryConfig` is explicitly set.
 

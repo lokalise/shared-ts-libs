@@ -5,6 +5,8 @@ import {
   anyOfResponses,
   blobResponse,
   isJsonResponse,
+  isNoBodyResponse,
+  noBodyResponse,
   resolveContractResponse,
   resolveResponseEntry,
   sseResponse,
@@ -37,6 +39,81 @@ describe('isJsonResponse', () => {
   })
 })
 
+describe('factory description option', () => {
+  it('textResponse includes description when provided', () => {
+    expect(textResponse('text/csv', { description: 'CSV export' })).toMatchObject({
+      description: 'CSV export',
+    })
+  })
+
+  it('textResponse omits description when not provided', () => {
+    expect(textResponse('text/csv')).not.toHaveProperty('description')
+  })
+
+  it('blobResponse includes description when provided', () => {
+    expect(blobResponse('image/png', { description: 'PNG image' })).toMatchObject({
+      description: 'PNG image',
+    })
+  })
+
+  it('blobResponse omits description when not provided', () => {
+    expect(blobResponse('image/png')).not.toHaveProperty('description')
+  })
+
+  it('sseResponse includes description when provided', () => {
+    expect(sseResponse({ update: z.string() }, { description: 'SSE stream' })).toMatchObject({
+      description: 'SSE stream',
+    })
+  })
+
+  it('sseResponse omits description when not provided', () => {
+    expect(sseResponse({ update: z.string() })).not.toHaveProperty('description')
+  })
+
+  it('anyOfResponses includes description when provided', () => {
+    expect(
+      anyOfResponses([z.object({ id: z.string() })], { description: 'Multiple types' }),
+    ).toMatchObject({
+      description: 'Multiple types',
+    })
+  })
+
+  it('anyOfResponses omits description when not provided', () => {
+    expect(anyOfResponses([z.object({ id: z.string() })])).not.toHaveProperty('description')
+  })
+
+  it('noBodyResponse includes description when provided', () => {
+    expect(noBodyResponse({ description: 'No content' })).toMatchObject({
+      description: 'No content',
+    })
+  })
+
+  it('noBodyResponse omits description when not provided', () => {
+    expect(noBodyResponse()).not.toHaveProperty('description')
+  })
+})
+
+describe('noBodyResponse / isNoBodyResponse', () => {
+  it('noBodyResponse returns correct tag', () => {
+    expect(noBodyResponse()).toEqual({ _tag: 'NoBodyResponse' })
+  })
+
+  it('isNoBodyResponse returns true for noBodyResponse()', () => {
+    expect(isNoBodyResponse(noBodyResponse())).toBe(true)
+  })
+
+  it('isNoBodyResponse returns false for ContractNoBody symbol', () => {
+    expect(isNoBodyResponse(ContractNoBody)).toBe(false)
+  })
+
+  it('isNoBodyResponse returns false for other tagged responses', () => {
+    expect(isNoBodyResponse(textResponse('text/csv'))).toBe(false)
+    expect(isNoBodyResponse(blobResponse('image/png'))).toBe(false)
+    expect(isNoBodyResponse(sseResponse({ update: z.string() }))).toBe(false)
+    expect(isNoBodyResponse(anyOfResponses([z.object({ id: z.string() })]))).toBe(false)
+  })
+})
+
 describe('resolveContractResponse', () => {
   describe('ContractNoBody', () => {
     it('returns noContent regardless of content-type', () => {
@@ -44,6 +121,15 @@ describe('resolveContractResponse', () => {
         kind: 'noContent',
       })
       expect(resolveContractResponse(ContractNoBody, undefined)).toEqual({ kind: 'noContent' })
+    })
+  })
+
+  describe('noBodyResponse', () => {
+    it('returns noContent regardless of content-type', () => {
+      expect(resolveContractResponse(noBodyResponse(), 'application/json')).toEqual({
+        kind: 'noContent',
+      })
+      expect(resolveContractResponse(noBodyResponse(), undefined)).toEqual({ kind: 'noContent' })
     })
   })
 
@@ -199,6 +285,225 @@ describe('resolveResponseEntry', () => {
   it('resolves ContractNoBody regardless of content-type', () => {
     expect(resolveResponseEntry({ 204: ContractNoBody }, 204, undefined, true)).toEqual({
       kind: 'noContent',
+    })
+  })
+
+  describe('getRangeKey boundaries', () => {
+    const schema = z.object({ x: z.string() })
+    // Use a contract with all five range keys so a mismatch (null from getRangeKey) falls to null,
+    // and a match resolves to the schema with kind 'json'.
+    const allRanges = {
+      '1xx': schema,
+      '2xx': schema,
+      '3xx': schema,
+      '4xx': schema,
+      '5xx': schema,
+    }
+
+    it.each([
+      [99, null],
+      [100, { kind: 'json', schema }],
+      [199, { kind: 'json', schema }],
+      [200, { kind: 'json', schema }],
+      [299, { kind: 'json', schema }],
+      [300, { kind: 'json', schema }],
+      [599, { kind: 'json', schema }],
+      [600, null],
+    ])('status %i → %s', (statusCode, expected) => {
+      expect(resolveResponseEntry(allRanges, statusCode, 'application/json', true)).toEqual(
+        expected,
+      )
+    })
+  })
+
+  describe('range key fallback', () => {
+    it('resolves via 2xx range for any success code', () => {
+      const schema = z.object({ id: z.string() })
+      expect(resolveResponseEntry({ '2xx': schema }, 200, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+      expect(resolveResponseEntry({ '2xx': schema }, 201, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
+    it('resolves via 1xx range for any informational code', () => {
+      const schema = z.object({ info: z.string() })
+      expect(resolveResponseEntry({ '1xx': schema }, 100, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
+    it('resolves via 3xx range for any redirect code', () => {
+      const schema = z.object({ location: z.string() })
+      expect(resolveResponseEntry({ '3xx': schema }, 301, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
+    it('resolves via 4xx range for any client-error code', () => {
+      const schema = z.object({ message: z.string() })
+      expect(resolveResponseEntry({ '4xx': schema }, 404, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+      expect(resolveResponseEntry({ '4xx': schema }, 400, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
+    it('resolves via 5xx range for any server-error code', () => {
+      const schema = z.object({ error: z.string() })
+      expect(resolveResponseEntry({ '5xx': schema }, 500, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+      expect(resolveResponseEntry({ '5xx': schema }, 503, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
+    it('exact code takes precedence over range key', () => {
+      const exact = z.object({ id: z.string() })
+      const range = z.object({ message: z.string() })
+      expect(
+        resolveResponseEntry({ 200: exact, '2xx': range }, 200, 'application/json', true),
+      ).toEqual({ kind: 'json', schema: exact })
+    })
+
+    it('exact match is absolute: content-type mismatch on exact entry returns null without falling through to range', () => {
+      // The exact entry is a text/csv response; the server returns application/json.
+      // resolveContractResponse returns null for the exact entry, and the function must NOT
+      // fall through to the '2xx' range entry — exact match wins absolutely.
+      expect(
+        resolveResponseEntry(
+          { 200: textResponse('text/csv'), '2xx': z.object({ id: z.string() }) },
+          200,
+          'application/json',
+          true,
+        ),
+      ).toBeNull()
+    })
+
+    it('exact match is absolute: content-type mismatch on exact entry returns null without falling through to default', () => {
+      expect(
+        resolveResponseEntry(
+          { 200: textResponse('text/csv'), default: z.object({ id: z.string() }) },
+          200,
+          'application/json',
+          true,
+        ),
+      ).toBeNull()
+    })
+
+    it('range key takes precedence over default', () => {
+      const range = z.object({ message: z.string() })
+      const def = z.object({ error: z.string() })
+      expect(
+        resolveResponseEntry({ '5xx': range, default: def }, 500, 'application/json', true),
+      ).toEqual({ kind: 'json', schema: range })
+    })
+
+    it('multiple range keys each route correctly and default is not invoked for covered codes', () => {
+      const s4xx = z.object({ clientError: z.string() })
+      const s5xx = z.object({ serverError: z.string() })
+      const def = z.object({ fallback: z.string() })
+      const contract = { '4xx': s4xx, '5xx': s5xx, default: def }
+      // 4xx code → 4xx range
+      expect(resolveResponseEntry(contract, 404, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema: s4xx,
+      })
+      // 5xx code → 5xx range
+      expect(resolveResponseEntry(contract, 503, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema: s5xx,
+      })
+      // code not covered by either range → default
+      expect(resolveResponseEntry(contract, 304, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema: def,
+      })
+    })
+
+    it('2xx range takes precedence over default for success codes', () => {
+      const s2xx = z.object({ data: z.string() })
+      const def = z.object({ fallback: z.string() })
+      // success code → 2xx range, not default
+      expect(
+        resolveResponseEntry({ '2xx': s2xx, default: def }, 201, 'application/json', true),
+      ).toEqual({ kind: 'json', schema: s2xx })
+      // non-2xx code with no range → default
+      expect(
+        resolveResponseEntry({ '2xx': s2xx, default: def }, 404, 'application/json', true),
+      ).toEqual({ kind: 'json', schema: def })
+    })
+
+    it('returns null when range does not cover the status code', () => {
+      expect(
+        resolveResponseEntry({ '2xx': z.object({}) }, 404, 'application/json', true),
+      ).toBeNull()
+    })
+
+    it('falls through to default when status code is outside all ranges', () => {
+      const schema = z.object({ error: z.string() })
+      expect(resolveResponseEntry({ default: schema }, 0, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+  })
+
+  describe('default fallback', () => {
+    it('resolves via default when no exact or range match', () => {
+      const schema = z.object({ error: z.string() })
+      expect(resolveResponseEntry({ default: schema }, 503, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
+    it('resolves via default for any status code when it is the only entry', () => {
+      const schema = z.object({ message: z.string() })
+      expect(resolveResponseEntry({ default: schema }, 200, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+      expect(resolveResponseEntry({ default: schema }, 404, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
+    it('exact code takes precedence over default', () => {
+      const exact = z.object({ id: z.string() })
+      const def = z.object({ error: z.string() })
+      expect(
+        resolveResponseEntry({ 200: exact, default: def }, 200, 'application/json', true),
+      ).toEqual({ kind: 'json', schema: exact })
+    })
+
+    it('resolves the correct kind from a composite default anyOfResponses entry by content-type', () => {
+      const jsonSchema = z.object({ id: z.string() })
+      const contract = {
+        default: anyOfResponses([sseResponse({ event: z.object({ id: z.string() }) }), jsonSchema]),
+      }
+      // application/json → JSON kind
+      expect(resolveResponseEntry(contract, 500, 'application/json', true)).toEqual({
+        kind: 'json',
+        schema: jsonSchema,
+      })
+      // text/event-stream → SSE kind
+      expect(resolveResponseEntry(contract, 500, 'text/event-stream', true)).toEqual({
+        kind: 'sse',
+        schemaByEventName: { event: expect.any(Object) },
+      })
     })
   })
 })

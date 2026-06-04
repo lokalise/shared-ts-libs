@@ -1,4 +1,5 @@
 export * from './AbstractBullmqFactory.ts'
+export * from './BullmqFlowProducerFactory.ts'
 export * from './BullmqQueueFactory.ts'
 export * from './BullmqWorkerFactory.ts'
 export * from './CommonBullmqFactory.ts'

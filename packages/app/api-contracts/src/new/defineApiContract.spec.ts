@@ -548,6 +548,28 @@ describe('hasAnySuccessSseResponse', () => {
 
     expect(hasAnySuccessSseResponse(route)).toBe(false)
   })
+
+  it('returns true for sseResponse under the default key', () => {
+    const route = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/stream',
+      responsesByStatusCode: {
+        default: sseResponse({ chunk: z.object({ delta: z.string() }) }),
+      },
+    })
+
+    expect(hasAnySuccessSseResponse(route)).toBe(true)
+  })
+
+  it('returns false for non-SSE response under the default key', () => {
+    const route = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/users',
+      responsesByStatusCode: { default: z.object({ message: z.string() }) },
+    })
+
+    expect(hasAnySuccessSseResponse(route)).toBe(false)
+  })
 })
 
 describe('getIsEmptyResponseExpected with SSE', () => {

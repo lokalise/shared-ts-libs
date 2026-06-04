@@ -1,15 +1,28 @@
 import type { z } from 'zod/v4'
-import type { HttpStatusCode } from '../HttpStatusCodes.ts'
+import type {
+  HttpStatusCode,
+  HttpStatusCodeRange,
+  WildcardStatusCodeKey,
+} from '../HttpStatusCodes.ts'
 import { ContractNoBody } from './constants.ts'
+
+export type ResponseOptions = {
+  readonly description?: string
+}
 
 export type TypedTextResponse = {
   readonly _tag: 'TextResponse'
   readonly contentType: string
+  readonly description?: string
 }
 
-export const textResponse = (contentType: string): TypedTextResponse => ({
+export const textResponse = (
+  contentType: string,
+  options?: ResponseOptions,
+): TypedTextResponse => ({
   _tag: 'TextResponse',
   contentType,
+  ...(options?.description !== undefined && { description: options.description }),
 })
 
 export const isTextResponse = (value: ApiContractResponse): value is TypedTextResponse =>
@@ -18,11 +31,16 @@ export const isTextResponse = (value: ApiContractResponse): value is TypedTextRe
 export type TypedBlobResponse = {
   readonly _tag: 'BlobResponse'
   readonly contentType: string
+  readonly description?: string
 }
 
-export const blobResponse = (contentType: string): TypedBlobResponse => ({
+export const blobResponse = (
+  contentType: string,
+  options?: ResponseOptions,
+): TypedBlobResponse => ({
   _tag: 'BlobResponse',
   contentType,
+  ...(options?.description !== undefined && { description: options.description }),
 })
 
 export const isBlobResponse = (value: ApiContractResponse): value is TypedBlobResponse =>
@@ -33,13 +51,16 @@ export type SseSchemaByEventName = Record<string, z.ZodType>
 export type TypedSseResponse<T extends SseSchemaByEventName = SseSchemaByEventName> = {
   readonly _tag: 'SseResponse'
   readonly schemaByEventName: T
+  readonly description?: string
 }
 
 export const sseResponse = <T extends SseSchemaByEventName>(
   schemaByEventName: T,
+  options?: ResponseOptions,
 ): TypedSseResponse<T> => ({
   _tag: 'SseResponse',
   schemaByEventName,
+  ...(options?.description !== undefined && { description: options.description }),
 })
 
 export const isSseResponse = (value: ApiContractResponse): value is TypedSseResponse =>
@@ -59,21 +80,43 @@ export type TypedApiContractResponse =
 export type AnyOfResponses<T extends TypedApiContractResponse = TypedApiContractResponse> = {
   readonly _tag: 'AnyOfResponses'
   readonly responses: T[]
+  readonly description?: string
 }
 
 export const anyOfResponses = <T extends TypedApiContractResponse>(
   responses: T[],
+  options?: ResponseOptions,
 ): AnyOfResponses<T> => ({
   _tag: 'AnyOfResponses',
   responses,
+  ...(options?.description !== undefined && { description: options.description }),
 })
 
 export const isAnyOfResponses = (value: ApiContractResponse): value is AnyOfResponses =>
   typeof value === 'object' && value !== null && '_tag' in value && value._tag === 'AnyOfResponses'
 
-export type ApiContractResponse = typeof ContractNoBody | TypedApiContractResponse | AnyOfResponses
+export type NoBodyResponse = {
+  readonly _tag: 'NoBodyResponse'
+  readonly description?: string
+}
 
-export type ResponsesByStatusCode = Partial<Record<HttpStatusCode, ApiContractResponse>>
+export const noBodyResponse = (options?: ResponseOptions): NoBodyResponse => ({
+  _tag: 'NoBodyResponse',
+  ...(options?.description !== undefined && { description: options.description }),
+})
+
+export const isNoBodyResponse = (value: ApiContractResponse): value is NoBodyResponse =>
+  typeof value === 'object' && value !== null && '_tag' in value && value._tag === 'NoBodyResponse'
+
+export type ApiContractResponse =
+  | typeof ContractNoBody
+  | NoBodyResponse
+  | TypedApiContractResponse
+  | AnyOfResponses
+
+export type ResponsesByStatusCode = Partial<
+  Record<HttpStatusCode | WildcardStatusCodeKey, ApiContractResponse>
+>
 
 export type ResponseKind =
   | { kind: 'noContent' }
@@ -141,7 +184,7 @@ export const resolveContractResponse = (
   contentType: string | undefined,
   strict = true,
 ): ResponseKind | null => {
-  if (schemaEntry === ContractNoBody) {
+  if (schemaEntry === ContractNoBody || isNoBodyResponse(schemaEntry)) {
     return { kind: 'noContent' }
   }
 
@@ -169,9 +212,19 @@ export const resolveContractResponse = (
   return matched ?? (strict ? null : resolveByKind(schemaEntry))
 }
 
+function getRangeKey(statusCode: number): HttpStatusCodeRange | null {
+  if (statusCode >= 100 && statusCode < 200) return '1xx'
+  if (statusCode >= 200 && statusCode < 300) return '2xx'
+  if (statusCode >= 300 && statusCode < 400) return '3xx'
+  if (statusCode >= 400 && statusCode < 500) return '4xx'
+  if (statusCode >= 500 && statusCode < 600) return '5xx'
+  return null
+}
+
 /**
  * Combines status-code lookup and content-type resolution into a single call.
- * Returns `null` when the status code is not in the contract or the content-type cannot be matched.
+ * Lookup precedence: exact code → range key (e.g. `'4xx'`) → `'default'`.
+ * Returns `null` when no entry matches or the content-type cannot be matched.
  */
 export function resolveResponseEntry(
   responsesByStatusCode: ResponsesByStatusCode,
@@ -179,11 +232,23 @@ export function resolveResponseEntry(
   contentType: string | undefined,
   strictContentType: boolean,
 ): ResponseKind | null {
-  const schemaEntry = responsesByStatusCode[statusCode as HttpStatusCode]
-
-  if (!schemaEntry) {
-    return null
+  const exactEntry = responsesByStatusCode[statusCode as HttpStatusCode]
+  if (exactEntry) {
+    return resolveContractResponse(exactEntry, contentType, strictContentType)
   }
 
-  return resolveContractResponse(schemaEntry, contentType, strictContentType)
+  const rangeKey = getRangeKey(statusCode)
+  if (rangeKey) {
+    const rangeEntry = responsesByStatusCode[rangeKey]
+    if (rangeEntry) {
+      return resolveContractResponse(rangeEntry, contentType, strictContentType)
+    }
+  }
+
+  const defaultEntry = responsesByStatusCode['default']
+  if (defaultEntry) {
+    return resolveContractResponse(defaultEntry, contentType, strictContentType)
+  }
+
+  return null
 }

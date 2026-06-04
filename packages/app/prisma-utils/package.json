@@ -42,17 +42,17 @@
         "prom-client": ">=15.0.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.3.7",
+        "@biomejs/biome": "^2.4.16",
         "dotenv": "^17.0.0",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "^4.0.0",
         "@prisma/adapter-pg": "^7.4.0",
         "@prisma/client": "^7.4.0",
-        "@vitest/coverage-v8": "^4.0.15",
+        "@vitest/coverage-v8": "^4.1.8",
         "cross-env": "^10.0.0",
         "prisma": "^7.4.0",
         "rimraf": "^6.0.1",
         "typescript": "6.0.3",
-        "vitest": "^4.0.15"
+        "vitest": "^4.1.8"
     }
 }

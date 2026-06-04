@@ -44,7 +44,10 @@ type ResolveTopicResult =
  */
 export type ResolvedSnsConsumerOptions<MessagePayload extends ConsumerBaseMessageType> =
   ResolvedConsumerOptions<SNSSQSCreationConfig, SNSSQSQueueLocatorType, MessagePayload> &
-    Pick<SNSSQSConsumerOptions<MessagePayload, object, object>, 'subscriptionConfig'>
+    Pick<
+      SNSSQSConsumerOptions<MessagePayload, object, object>,
+      'subscriptionConfig' | 'subscriptionDeadLetterQueue'
+    >
 
 /**
  * Options resolver for MQT SNS lib.
@@ -157,6 +160,9 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
           MESSAGE_TYPE_PATH,
         ),
       },
+      subscriptionDeadLetterQueue: options.deadLetterQueue
+        ? { reuseConsumerDeadLetterQueue: true }
+        : undefined,
       ...options,
     }
   }

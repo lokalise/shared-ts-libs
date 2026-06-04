@@ -10,6 +10,7 @@ import { ContractNoBody } from './constants.ts'
 import {
   isAnyOfResponses,
   isBlobResponse,
+  isNoBodyResponse,
   isSseResponse,
   isTextResponse,
   type ResponsesByStatusCode,
@@ -109,7 +110,7 @@ export const getSseSchemaByEventName = (routeConfig: ApiContract): SseSchemaByEv
 }
 
 export const hasAnySuccessSseResponse = (apiContract: ApiContract): boolean => {
-  for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
+  for (const code of [...SUCCESSFUL_HTTP_STATUS_CODES, '2xx' as const, 'default' as const]) {
     const value = apiContract.responsesByStatusCode[code]
 
     if (!value) {
@@ -130,6 +131,7 @@ export const hasAnySuccessSseResponse = (apiContract: ApiContract): boolean => {
   return false
 }
 
+/** @deprecated No known consumers — will be removed in a future release. */
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it is acceptable
 export const getSuccessResponseSchema = (routeConfig: ApiContract): z.ZodType | null => {
   const schemas: z.ZodType[] = []
@@ -150,6 +152,7 @@ export const getSuccessResponseSchema = (routeConfig: ApiContract): z.ZodType | 
       }
     } else if (
       value === ContractNoBody ||
+      isNoBodyResponse(value) ||
       isSseResponse(value) ||
       isTextResponse(value) ||
       isBlobResponse(value)
@@ -172,13 +175,14 @@ export const getSuccessResponseSchema = (routeConfig: ApiContract): z.ZodType | 
   return hasDirectNonJsonEntry ? z.never() : null
 }
 
+/** @deprecated No known consumers — will be removed in a future release. */
 export const getIsEmptyResponseExpected = (routeConfig: ApiContract): boolean => {
   let isEmptyResponseExpected = true
 
   for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
     const value = routeConfig.responsesByStatusCode[code]
 
-    if (value && value !== ContractNoBody) {
+    if (value && value !== ContractNoBody && !isNoBodyResponse(value)) {
       isEmptyResponseExpected = false
       break
     }

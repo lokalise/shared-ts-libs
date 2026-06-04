@@ -8,10 +8,11 @@
     "test:ci": "turbo run test:ci",
     "lint": "turbo run lint --continue=always",
     "lint:fix": "turbo run lint:fix --continue=always",
-    "changeset": "changeset"
+    "changeset": "changeset",
+    "ci:publish": "turbo run build && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
-    "turbo": "^2.4.4"
+    "turbo": "^2.9.16"
   }
 }

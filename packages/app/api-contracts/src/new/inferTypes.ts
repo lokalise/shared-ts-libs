@@ -6,7 +6,7 @@ import type { ResponsesByStatusCode } from './contractResponse.ts'
 
 type ExtractSuccessResponses<T extends ResponsesByStatusCode> = ValueOf<
   T,
-  Extract<keyof T, SuccessfulHttpStatusCode>
+  Extract<keyof T, SuccessfulHttpStatusCode | '2xx' | 'default'>
 >
 
 /**

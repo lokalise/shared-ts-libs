@@ -35,12 +35,12 @@
         "@lokalise/node-core": "^14.0.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.3.7",
+        "@biomejs/biome": "^2.4.16",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "^4.0.0",
-        "@vitest/coverage-v8": "^4.0.15",
+        "@vitest/coverage-v8": "^4.1.8",
         "rimraf": "^6.0.1",
         "typescript": "6.0.3",
-        "vitest": "^4.0.15"
+        "vitest": "^4.1.8"
     }
 }

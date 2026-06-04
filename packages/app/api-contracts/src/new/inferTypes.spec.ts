@@ -4,9 +4,14 @@ import { ContractNoBody } from './constants.ts'
 import { anyOfResponses, blobResponse, sseResponse, textResponse } from './contractResponse.ts'
 import { defineApiContract } from './defineApiContract.ts'
 import type {
+  AvailableResponseModes,
+  ContractResponseMode,
+  HasAnyJsonSuccessResponse,
   HasAnySseSuccessResponse,
   InferJsonSuccessResponses,
+  InferNonSseSuccessResponses,
   InferSseSuccessResponses,
+  IsNoBodySuccessResponse,
 } from './inferTypes.ts'
 
 describe('inferTypes', () => {
@@ -94,6 +99,17 @@ describe('inferTypes', () => {
       type Result = InferJsonSuccessResponses<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<typeof jsonSchema>()
     })
+
+    it('extracts JSON schema from the 2xx range key', () => {
+      const schema = z.object({ id: z.string() })
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': schema },
+      })
+      type Result = InferJsonSuccessResponses<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<typeof schema>()
+    })
   })
 
   describe('HasAnySseSuccessResponse', () => {
@@ -164,6 +180,277 @@ describe('inferTypes', () => {
       })
       type Result = HasAnySseSuccessResponse<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<false>()
+    })
+
+    it('returns true for sseResponse under the 2xx range key', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: {
+          '2xx': sseResponse({ chunk: z.object({ delta: z.string() }) }),
+        },
+      })
+      type Result = HasAnySseSuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<true>()
+    })
+
+    it('returns false for sseResponse under a non-success range key', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: {
+          '4xx': sseResponse({ chunk: z.object({ delta: z.string() }) }),
+        },
+      })
+      type Result = HasAnySseSuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<false>()
+    })
+
+    it('returns true for sseResponse under the default key', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: {
+          default: sseResponse({ chunk: z.object({ delta: z.string() }) }),
+        },
+      })
+      type Result = HasAnySseSuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<true>()
+    })
+
+    it('returns false for non-SSE response under the default key', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { default: z.object({ message: z.string() }) },
+      })
+      type Result = HasAnySseSuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<false>()
+    })
+  })
+
+  describe('IsNoBodySuccessResponse', () => {
+    it('returns true when all success responses are ContractNoBody', () => {
+      const contract = defineApiContract({
+        method: 'delete',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 204: ContractNoBody },
+      })
+      type Result = IsNoBodySuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<true>()
+    })
+
+    it('returns false when a success response has a JSON schema', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 200: z.object({ id: z.string() }) },
+      })
+      type Result = IsNoBodySuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<false>()
+    })
+
+    it('returns true for 2xx: ContractNoBody', () => {
+      const contract = defineApiContract({
+        method: 'delete',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': ContractNoBody },
+      })
+      type Result = IsNoBodySuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<true>()
+    })
+
+    it('returns false for 2xx: JSON schema', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': z.object({ id: z.string() }) },
+      })
+      type Result = IsNoBodySuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<false>()
+    })
+  })
+
+  describe('HasAnyJsonSuccessResponse', () => {
+    it('returns true for a JSON schema at an exact success code', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 200: z.object({ id: z.string() }) },
+      })
+      type Result = HasAnyJsonSuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<true>()
+    })
+
+    it('returns false for SSE-only response', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 200: sseResponse({ chunk: z.object({ delta: z.string() }) }) },
+      })
+      type Result = HasAnyJsonSuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<false>()
+    })
+
+    it('returns true for 2xx: JSON schema', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': z.object({ id: z.string() }) },
+      })
+      type Result = HasAnyJsonSuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<true>()
+    })
+
+    it('returns false for 2xx: sseResponse', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': sseResponse({ chunk: z.object({ delta: z.string() }) }) },
+      })
+      type Result = HasAnyJsonSuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<false>()
+    })
+  })
+
+  describe('InferNonSseSuccessResponses', () => {
+    it('returns the output type of a JSON success schema', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 200: z.object({ id: z.string() }) },
+      })
+      type Result = InferNonSseSuccessResponses<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<{ id: string }>()
+    })
+
+    it('returns never for SSE-only response', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 200: sseResponse({ chunk: z.object({ delta: z.string() }) }) },
+      })
+      type Result = InferNonSseSuccessResponses<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<never>()
+    })
+
+    it('returns the output type for 2xx: JSON schema', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': z.object({ id: z.string() }) },
+      })
+      type Result = InferNonSseSuccessResponses<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<{ id: string }>()
+    })
+
+    it('returns never for 2xx: sseResponse', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': sseResponse({ chunk: z.object({ delta: z.string() }) }) },
+      })
+      type Result = InferNonSseSuccessResponses<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<never>()
+    })
+  })
+
+  describe('ContractResponseMode', () => {
+    it('returns non-sse for a JSON-only contract', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 200: z.object({ id: z.string() }) },
+      })
+      type Result = ContractResponseMode<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<'non-sse'>()
+    })
+
+    it('returns sse for an SSE-only contract', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 200: sseResponse({ chunk: z.object({ delta: z.string() }) }) },
+      })
+      type Result = ContractResponseMode<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<'sse'>()
+    })
+
+    it('returns sse for 2xx: sseResponse', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': sseResponse({ chunk: z.object({ delta: z.string() }) }) },
+      })
+      type Result = ContractResponseMode<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<'sse'>()
+    })
+
+    it('returns non-sse for 2xx: JSON schema', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': z.object({ id: z.string() }) },
+      })
+      type Result = ContractResponseMode<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<'non-sse'>()
+    })
+
+    it('returns dual for 2xx: anyOfResponses with SSE and JSON', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: {
+          '2xx': anyOfResponses([
+            sseResponse({ chunk: z.object({ delta: z.string() }) }),
+            z.object({ id: z.string() }),
+          ]),
+        },
+      })
+      type Result = ContractResponseMode<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<'dual'>()
+    })
+  })
+
+  describe('AvailableResponseModes', () => {
+    it('includes json for a JSON success response', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 200: z.object({ id: z.string() }) },
+      })
+      type Result = AvailableResponseModes<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<'json'>()
+    })
+
+    it('includes sse for an SSE-only response', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 200: sseResponse({ chunk: z.object({ delta: z.string() }) }) },
+      })
+      type Result = AvailableResponseModes<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<'sse'>()
+    })
+
+    it('includes json for 2xx: JSON schema', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': z.object({ id: z.string() }) },
+      })
+      type Result = AvailableResponseModes<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<'json'>()
+    })
+
+    it('includes sse for 2xx: sseResponse', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { '2xx': sseResponse({ chunk: z.object({ delta: z.string() }) }) },
+      })
+      type Result = AvailableResponseModes<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<'sse'>()
     })
   })
 

@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/background-jobs-common",
-    "version": "14.3.0",
+    "version": "14.4.0",
     "files": [
         "dist",
         "LICENSE.md",
@@ -41,7 +41,7 @@
         "@lokalise/id-utils": "^3.0.1",
         "@lokalise/node-core": "^14.6.0",
         "redis-semaphore": "^5.6.2",
-        "ts-deepmerge": "^7.0.3"
+        "ts-deepmerge": "^8.0.0"
     },
     "peerDependencies": {
         "bullmq": "^5.28.2",
@@ -51,18 +51,18 @@
         "zod": ">=3.25.67"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.3.7",
+        "@biomejs/biome": "^2.4.16",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "^4.0.0",
-        "@types/node": "^25.9.0",
-        "@vitest/coverage-v8": "^4.0.15",
-        "bullmq": "^5.76.10",
-        "ioredis": "^5.6.1",
+        "@types/node": "^25.9.1",
+        "@vitest/coverage-v8": "^4.1.8",
+        "bullmq": "^5.78.0",
+        "ioredis": "^5.11.0",
         "pino": "^10.0.0",
         "rimraf": "^6.0.1",
         "toad-scheduler": "^4.0.1",
         "typescript": "6.0.3",
-        "vitest": "^4.0.15",
+        "vitest": "^4.1.8",
         "zod": "^4.3.6"
     }
 }
