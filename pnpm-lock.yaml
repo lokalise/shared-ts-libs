@@ -484,8 +484,8 @@ importers:
         specifier: ^0.4.0
         version: 0.4.0(fastify@5.8.5)
       '@lokalise/api-contracts':
-        specifier: ^6.5.3
-        version: 6.11.0(zod@4.4.3)
+        specifier: ^6.13.0
+        version: 6.13.0(zod@4.4.3)
       '@lokalise/biome-config':
         specifier: ^3.1.0
         version: 3.1.1

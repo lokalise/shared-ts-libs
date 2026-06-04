@@ -157,7 +157,7 @@ export type SSESession<Events extends SSEEventSchemas = SSEEventSchemas, Context
   /** The Fastify reply with SSE capabilities from `@fastify/sse` */
   reply: FastifyReply
   /** Custom context data for this connection */
-  context: Context
+  context?: Context
   /** Timestamp when the connection was established */
   connectedAt: Date
   /** Type-safe event sender for this connection. */

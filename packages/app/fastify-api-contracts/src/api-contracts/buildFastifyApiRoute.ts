@@ -1,16 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import {
   type ApiContract,
-  type ApiContractResponse,
   ContractNoBody,
   getSseSchemaByEventName,
   type HttpStatusCode,
   hasAnySuccessSseResponse,
   isAnyOfResponses,
-  isBlobResponse,
   isJsonResponse,
   isSseResponse,
-  isTextResponse,
   mapApiContractToPath,
   type SseSchemaByEventName,
   SUCCESSFUL_HTTP_STATUS_CODES,
@@ -35,20 +32,34 @@ import { determineMode, hasHttpStatusCode, isErrorLike, type SSEReply } from './
 
 type ResponseMode = 'non-sse' | 'sse' | 'dual'
 
-function isSuccessResponseDual(value: ApiContractResponse): boolean {
-  if (value === ContractNoBody || isTextResponse(value) || isBlobResponse(value)) return true
-  if (!isSseResponse(value) && !isAnyOfResponses(value)) return true
-  if (isAnyOfResponses(value)) {
-    return value.responses.some((response: ApiContractResponse) => !isSseResponse(response))
+function hasAnySuccessNonSseResponse(apiContract: ApiContract): boolean {
+  for (const code of [...SUCCESSFUL_HTTP_STATUS_CODES, '2xx' as const, 'default' as const]) {
+    const value = apiContract.responsesByStatusCode[code]
+
+    if (!value) {
+      continue
+    }
+
+    if (isAnyOfResponses(value)) {
+      for (const response of value.responses) {
+        if (!isSseResponse(response)) {
+          return true
+        }
+      }
+    } else if (!isSseResponse(value)) {
+      return false
+    }
   }
+
   return false
 }
 
 function getContractResponseMode(contract: ApiContract): ResponseMode {
-  if (!hasAnySuccessSseResponse(contract)) return 'non-sse'
-  for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
-    const value = contract.responsesByStatusCode[code]
-    if (value && isSuccessResponseDual(value)) return 'dual'
+  if (!hasAnySuccessSseResponse(contract)) {
+    return 'non-sse'
+  }
+  if (hasAnySuccessNonSseResponse(contract)) {
+    return 'dual'
   }
   return 'sse'
 }
@@ -56,11 +67,19 @@ function getContractResponseMode(contract: ApiContract): ResponseMode {
 function buildSSERouteConfig(
   options: ApiRouteOptions | undefined,
 ): true | { serializer?: (data: unknown) => string; heartbeatInterval?: number } {
-  if (!options?.serializer && options?.heartbeatInterval === undefined) return true
+  if (!options?.serializer && options?.heartbeatInterval === undefined) {
+    return true
+  }
+
   const sseConfig: { serializer?: (data: unknown) => string; heartbeatInterval?: number } = {}
-  if (options.serializer) sseConfig.serializer = options.serializer
-  if (options.heartbeatInterval !== undefined)
+
+  if (options.serializer) {
+    sseConfig.serializer = options.serializer
+  }
+  if (options.heartbeatInterval !== undefined) {
     sseConfig.heartbeatInterval = options.heartbeatInterval
+  }
+
   return sseConfig
 }
 
@@ -118,29 +137,15 @@ async function handleApiSyncRoute(
 ): Promise<void> {
   const { status, body } = await handler(request, reply as SyncModeReply)
 
+  // Response body validation is handled by the `fastify-type-provider-zod` serializer
+  // compiler (a required dependency), which throws a 500 when the body doesn't match the
+  // contract's response schema for this status code. Response headers are not covered by
+  // the serializer, so they are validated explicitly here.
+  validateApiResponseHeaders(contract, reply)
+
   if (reply.sent) {
-    request.log.warn({
-      msg: 'Sync handler sent response directly, bypassing response validation',
-      tag: 'response_sent_directly',
-      method: request.method,
-      url: request.url,
-    })
     return
   }
-
-  const schema = getSchemaForStatusCode(contract, status)
-  if (schema) {
-    const result = schema.safeParse(body)
-    if (!result.success) {
-      throw new InternalError({
-        message: 'Internal Server Error',
-        errorCode: 'RESPONSE_VALIDATION_FAILED',
-        details: { validationError: result.error.message },
-      })
-    }
-  }
-
-  validateApiResponseHeaders(contract, reply)
 
   if (!reply.hasHeader('content-type')) {
     reply.type('application/json')
@@ -217,10 +222,9 @@ function buildApiSSEContext(
         id: connectionId,
         request,
         reply,
-        context: (startOptions?.context ?? {}) as Context,
+        context: startOptions?.context,
         connectedAt: new Date(),
-        // biome-ignore lint/suspicious/noExplicitAny: SSEEventSender generic is satisfied at handler call site
-        send: send as any,
+        send,
         isConnected: () => sseReply.sse.isConnected,
         getStream: () => sseReply.sse.stream(),
         sendStream: async (messages: AsyncIterable<SSEStreamMessage>) => {
