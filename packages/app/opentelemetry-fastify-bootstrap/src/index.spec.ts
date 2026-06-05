@@ -1,4 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises'
+import { trace } from '@opentelemetry/api'
 import {
   InMemorySpanExporter,
   type ReadableSpan,
@@ -203,6 +204,7 @@ describe('opentelemetry-fastify-bootstrap', () => {
           new SimpleSpanProcessor(memoryExporter),
           new SimpleSpanProcessor(secondaryExporter),
         ],
+        peerDbNames: { dbNames: { elasticsearch: 'lokalise' } },
       })
     })
 
@@ -424,6 +426,53 @@ describe('opentelemetry-fastify-bootstrap', () => {
         expect(ctx.traceId).toMatch(/^[0-9a-f]{32}$/)
         expect(ctx.spanId).toMatch(/^[0-9a-f]{16}$/)
       }
+    })
+
+    // End-to-end check that the peerDbNames option is wired into the SDK and
+    // mutates spans before they reach the exporters. The unit-level
+    // peerDbNameSpanProcessor.spec.ts covers the mutation rules in isolation;
+    // this asserts the SDK actually runs the processor in the order required
+    // for downstream exporters to observe the new attributes.
+    it('stamps db.namespace via the peerDbNames pipeline on outbound DB-like spans', async () => {
+      const tracer = trace.getTracer('verify-peer-db-name')
+      const span = tracer.startSpan('elasticsearch.query', {
+        attributes: { 'db.system': 'elasticsearch' },
+      })
+      span.end()
+
+      await vi.waitFor(
+        () => {
+          const dbSpan = memoryExporter
+            .getFinishedSpans()
+            .find((s) => s.attributes['db.system'] === 'elasticsearch')
+          expect(dbSpan).toBeDefined()
+          expect(dbSpan?.attributes['db.namespace']).toBe('lokalise')
+          expect(dbSpan?.attributes['peer.db.system']).toBe('elasticsearch')
+        },
+        { timeout: 2000, interval: 10 },
+      )
+    })
+
+    it('does not stamp anything on spans without a matching db.system', async () => {
+      // Guards against the processor ever leaking attributes onto fastify or
+      // other unrelated spans. The configured mapping is { elasticsearch },
+      // so a redis-tagged span should pass through untouched.
+      const tracer = trace.getTracer('verify-peer-db-name')
+      const span = tracer.startSpan('redis.cmd', {
+        attributes: { 'db.system': 'redis' },
+      })
+      span.end()
+
+      await vi.waitFor(
+        () => {
+          const redisSpan = memoryExporter
+            .getFinishedSpans()
+            .find((s) => s.attributes['db.system'] === 'redis')
+          expect(redisSpan).toBeDefined()
+          expect(redisSpan?.attributes['db.namespace']).toBeUndefined()
+        },
+        { timeout: 2000, interval: 10 },
+      )
     })
   })
 })
