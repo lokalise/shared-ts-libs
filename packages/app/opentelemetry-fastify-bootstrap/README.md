@@ -66,6 +66,7 @@ initOpenTelemetry()
 | `skippedPaths` | `string[]` | `['/health', '/metrics', '/']` | Paths to exclude from tracing |
 | `consoleSpans` | `boolean` | `false` | Enable console span exporter for debugging |
 | `spanProcessors` | `SpanProcessor[]` | `[]` | Additional span processors to register |
+| `peerDbNames` | `{ dbNames: Record<string, string> }` | `undefined` | Stamps `db.namespace` on outbound DB spans so they join Datadog's existing inferred-service entity for the cluster. See [Joining a Datadog inferred-service entity](#joining-a-datadog-inferred-service-entity). |
 
 ### Debugging with Console Spans
 
@@ -80,6 +81,31 @@ initOpenTelemetry({
 ```
 
 When enabled, spans are printed to the console in addition to being sent to the OTLP exporter. This is useful for verifying that instrumentation is working correctly without needing to run a full observability stack.
+
+### Joining a Datadog inferred-service entity
+
+Datadog's APM service catalog auto-creates inferred-service entities for downstream clusters using the tuple `(peer.db.system, peer.db.name)`, deriving `peer.db.name` from the OTel-canonical `db.namespace`. When `db.namespace` is missing on outbound spans, Datadog falls back to `peer.hostname` — and downstream clusters reached through a Kubernetes service IP (e.g. an in-cluster Elasticsearch) then surface as the synthetic `blocked-ip-address` service in the dependency map.
+
+Some instrumentations don't set `db.namespace`. Notably the Node.js `@elastic/transport` (v8 Elasticsearch client) sets `db.system: elasticsearch` but never `db.namespace`, so outbound ES calls don't join the existing cluster entity.
+
+Pass `peerDbNames` to stamp `db.namespace` based on `db.system`:
+
+```ts
+initOpenTelemetry({
+  peerDbNames: {
+    dbNames: { elasticsearch: 'lokalise' },
+  },
+})
+```
+
+For every span where `db.system: elasticsearch`, the processor sets:
+
+- `db.namespace: lokalise` — the OTel 1.27+ canonical attribute; Datadog derives `peer.db.name` from this.
+- `peer.db.system: elasticsearch` — mirrored from `db.system` if missing, so the Datadog entity key has both halves.
+
+This matches the attributes that `lokalise-main`'s `OtelTracer` already stamps for the PHP services that feed the same Datadog entities.
+
+The processor never overwrites an existing `db.namespace` or `peer.db.system`. `PeerDbNameSpanProcessor` is exported from the package if you want to use it as a custom processor directly.
 
 ### Adding Custom Span Processors
 
@@ -107,6 +133,7 @@ initOpenTelemetry({
 - Configurable path filtering
 - Optional console span exporter for debugging
 - Support for custom span processors
+- Optional `peer.db.name` stamping to join Datadog inferred-service entities
 - Graceful shutdown support
 
 ## Graceful Shutdown

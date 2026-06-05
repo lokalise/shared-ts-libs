@@ -8,6 +8,15 @@ import {
   SimpleSpanProcessor,
   type SpanProcessor,
 } from '@opentelemetry/sdk-trace-base'
+import {
+  PeerDbNameSpanProcessor,
+  type PeerDbNameSpanProcessorOptions,
+} from './peerDbNameSpanProcessor.ts'
+
+export {
+  PeerDbNameSpanProcessor,
+  type PeerDbNameSpanProcessorOptions,
+} from './peerDbNameSpanProcessor.ts'
 
 // Call initOpenTelemetry() before starting the server.
 // The application must be started with --import=@opentelemetry/instrumentation/hook.mjs
@@ -62,6 +71,13 @@ const logger = {
 
 const DEFAULT_SKIPPED_PATHS = ['/health', '/metrics', '/']
 
+function resolvePeerDbNameProcessor(
+  peerDbNames: PeerDbNameSpanProcessorOptions | undefined,
+): SpanProcessor | undefined {
+  if (!peerDbNames || Object.keys(peerDbNames.dbNames).length === 0) return undefined
+  return new PeerDbNameSpanProcessor(peerDbNames)
+}
+
 export interface OpenTelemetryOptions {
   /**
    * Paths to exclude from tracing.
@@ -80,6 +96,21 @@ export interface OpenTelemetryOptions {
    * Additional span processors to register with the OpenTelemetry SDK.
    */
   spanProcessors?: SpanProcessor[]
+
+  /**
+   * Stamp `db.namespace` on outbound DB spans (and mirror `peer.db.system`
+   * from `db.system` when missing) so they join Datadog's existing
+   * inferred-service entity for the cluster, instead of landing in the
+   * synthetic `blocked-ip-address` bucket.
+   *
+   * Datadog derives `peer.db.name` from the OTel-canonical `db.namespace`.
+   *
+   * @example
+   * ```ts
+   * peerDbNames: { dbNames: { elasticsearch: 'lokalise' } }
+   * ```
+   */
+  peerDbNames?: PeerDbNameSpanProcessorOptions
 }
 
 let isInstrumentationRegistered = false
@@ -108,6 +139,7 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
     skippedPaths = DEFAULT_SKIPPED_PATHS,
     consoleSpans = false,
     spanProcessors = [],
+    peerDbNames,
   } = options
 
   logger.info('[OTEL] initOpenTelemetry called')
@@ -123,6 +155,7 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
       skippedPaths,
       consoleSpans,
       additionalSpanProcessorsCount: spanProcessors.length,
+      peerDbNamesConfigured: peerDbNames ? Object.keys(peerDbNames.dbNames) : [],
     },
     '[OTEL] Configuration',
   )
@@ -139,7 +172,14 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
       url: exporterUrl,
     })
 
+    // peer.db.name stamping must run before the BatchSpanProcessor in the
+    // processor chain so the BSP serializes the mutated attributes when it
+    // flushes (BSP buffers spans rather than serializing on onEnd, so timing
+    // happens to work out today — placing this first defends against future
+    // BSP changes that might serialize eagerly).
+    const peerDbNameProcessor = resolvePeerDbNameProcessor(peerDbNames)
     const allSpanProcessors: SpanProcessor[] = [
+      ...(peerDbNameProcessor ? [peerDbNameProcessor] : []),
       new BatchSpanProcessor(traceExporter),
       ...spanProcessors,
     ]
