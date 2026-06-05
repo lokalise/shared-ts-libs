@@ -172,11 +172,17 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
       url: exporterUrl,
     })
 
-    // peer.db.name stamping must run before the BatchSpanProcessor in the
-    // processor chain so the BSP serializes the mutated attributes when it
-    // flushes (BSP buffers spans rather than serializing on onEnd, so timing
-    // happens to work out today — placing this first defends against future
-    // BSP changes that might serialize eagerly).
+    // Registration order is load-bearing: MultiSpanProcessor invokes onEnd
+    // synchronously in the order processors were registered, so the peer
+    // processor must come BEFORE any other processor that observes attributes
+    // on the same tick. That includes user-supplied `spanProcessors` (often
+    // SimpleSpanProcessor, which serializes on onEnd) and any future eagerly-
+    // serializing exporter. BSP itself buffers spans, so its placement is
+    // less timing-sensitive today, but keeping the peer processor first
+    // covers it too. The peer-stamping integration test in index.spec.ts
+    // pins this contract: it asserts the user's memory-exporter — registered
+    // via `spanProcessors`, i.e. AFTER the peer processor — observes the
+    // mutated `db.namespace`.
     const peerDbNameProcessor = resolvePeerDbNameProcessor(peerDbNames)
     const allSpanProcessors: SpanProcessor[] = [
       ...(peerDbNameProcessor ? [peerDbNameProcessor] : []),
