@@ -83,6 +83,28 @@ describe('prismaBulkUpdate', () => {
       ).toThrow('Entries array length must not exceed 1000')
     })
 
+    it('throws an error if the total bind parameters exceed the limit', () => {
+      // 700 entries × (1 where + 100 data) columns = 70700 placeholders, above the
+      // 65535 limit. The columns need not exist on the table: the guard throws
+      // before any SQL is built or sent to the driver.
+      const dataColumnNames = Array.from({ length: 100 }, (_, index) => `c${index}`)
+      const wideTypeByColumn = Object.fromEntries(dataColumnNames.map((name) => [name, 'int4']))
+      const data = Object.fromEntries(dataColumnNames.map((name, index) => [name, index]))
+      const entries = Array.from({ length: 700 }, () => ({ where: { id: randomUUID() }, data }))
+
+      expect(() =>
+        prismaBulkUpdate(
+          prisma,
+          TABLE,
+          {
+            dbDriver: DbDriverEnum.COCKROACH_DB,
+            typeByColumn: { id: 'uuid', ...wideTypeByColumn },
+          },
+          entries,
+        ),
+      ).toThrow('Bulk update would use 70700 bind parameters')
+    })
+
     it('throws an error if where is empty', () => {
       expect(() =>
         prismaBulkUpdate(prisma, TABLE, cockroachOptions(), [{ where: {}, data: { value: 'x' } }]),
@@ -315,6 +337,22 @@ describe('prismaBulkUpdate', () => {
         ])
 
         expect(result).toEqual([])
+      })
+
+      it('applies the update and returns an empty array when returning map is empty', async () => {
+        const i1 = await createItem({ value: 'before' })
+
+        const result = await prismaBulkUpdate(prisma, TABLE, cockroachOptions({}), [
+          { where: { id: i1.id }, data: { value: 'after' } },
+        ])
+
+        expect(result).toEqual([])
+
+        const [item] = await prisma.bulkUpdateItem.findMany({
+          where: { id: i1.id },
+          select: { value: true },
+        })
+        expect(item).toEqual({ value: 'after' })
       })
     })
   })

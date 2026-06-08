@@ -13,6 +13,16 @@ type Column = {
 const ENTRIES_LIMIT = 1000
 
 /**
+ * Every value (each "where" and each defined "data" cell) becomes one bound
+ * placeholder in the `VALUES` list, so the statement uses
+ * `entries × (whereColumns + dataColumns)` parameters. PostgreSQL caps a single
+ * statement at 65535 bound parameters and CockroachDB has its own ceiling, so we
+ * guard the total up front to fail with a clear message instead of an opaque
+ * driver error. The effective row cap therefore shrinks as the statement widens.
+ */
+const BIND_PARAMETERS_LIMIT = 65535
+
+/**
  * Performs a full bulk update operation using Prisma in a single SQL statement.
  * Because it is a single statement, the update is atomic: it either fully applies
  * or fully rolls back, so no surrounding transaction is required. Works on both
@@ -82,6 +92,15 @@ export const prismaBulkUpdate = <T = unknown, P extends PrismaClient = PrismaCli
     throw new Error('Entry "data" object must not be empty')
   }
 
+  const bindParametersCount = entries.length * (whereColumns.length + dataColumns.length)
+  if (bindParametersCount > BIND_PARAMETERS_LIMIT) {
+    throw new Error(
+      `Bulk update would use ${bindParametersCount} bind parameters ` +
+        `(${entries.length} entries × ${whereColumns.length + dataColumns.length} columns), ` +
+        `exceeding the limit of ${BIND_PARAMETERS_LIMIT}`,
+    )
+  }
+
   // Quote each part of a (possibly schema-qualified) table name separately,
   // so that "translation.segment" becomes "translation"."segment" rather than a
   // single identifier named "translation.segment".
@@ -115,7 +134,7 @@ export const prismaBulkUpdate = <T = unknown, P extends PrismaClient = PrismaCli
     WHERE ${join(sqlWhereConditions, ' AND ')}
   `
 
-  if (!returning) {
+  if (!returning || Object.keys(returning).length === 0) {
     return prisma.$executeRaw(updateStatement).then(() => [])
   }
 
