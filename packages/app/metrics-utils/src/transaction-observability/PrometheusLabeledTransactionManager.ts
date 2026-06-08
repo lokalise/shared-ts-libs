@@ -40,7 +40,19 @@ export class PrometheusLabeledTransactionManager<
     client?: typeof promClient,
   ) {
     super()
-    this.supportedCustomLabels = new Set(config.customLabels ?? [])
+
+    const customLabels = config.customLabels ?? []
+
+    const collisions = customLabels.filter((label) =>
+      (prometheusTransactionManagerBuiltInLabels as readonly string[]).includes(label),
+    )
+    if (collisions.length > 0) {
+      throw new Error(
+        `customLabels must not collide with built-in labels (${prometheusTransactionManagerBuiltInLabels.join(', ')}): ${collisions.join(', ')}`,
+      )
+    }
+
+    this.supportedCustomLabels = new Set(customLabels)
 
     const labelNames = [
       ...prometheusTransactionManagerBuiltInLabels,

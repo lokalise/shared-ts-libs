@@ -66,6 +66,34 @@ describe('PrometheusLabeledTransactionManager', () => {
       })
     })
 
+    it('throws when a customLabel collides with a built-in label', () => {
+      expect(
+        () =>
+          new PrometheusLabeledTransactionManager<['status']>(
+            {
+              type: 'counter',
+              name: 'tx_count',
+              helpDescription: 'desc',
+              customLabels: ['status'],
+            },
+            client,
+          ),
+      ).toThrow(/must not collide with built-in labels/)
+
+      expect(
+        () =>
+          new PrometheusLabeledTransactionManager<['transaction_name']>(
+            {
+              type: 'counter',
+              name: 'tx_count',
+              helpDescription: 'desc',
+              customLabels: ['transaction_name'],
+            },
+            client,
+          ),
+      ).toThrow(/must not collide with built-in labels/)
+    })
+
     it('increments counter with status=success on stop()', () => {
       const manager = new PrometheusLabeledTransactionManager(
         { type: 'counter', name: 'tx_count', helpDescription: 'desc' },
