@@ -165,6 +165,32 @@ describe('prismaBulkUpdate', () => {
         ]),
       ).toThrow('Entry "where" column "id" was not found')
     })
+
+    it('reports the entry index of a mismatched entry', () => {
+      expect(() =>
+        prismaBulkUpdate(prisma, TABLE, cockroachOptions(), [
+          { where: { id: randomUUID() }, data: { value: 'x' } },
+          { where: { id: randomUUID() }, data: { value: 'y' } },
+          { where: { id: randomUUID() }, data: { count: 1 } },
+        ]),
+      ).toThrow('Entry "data" column "value" was not found (at index 2)')
+    })
+
+    it('throws an error if a where value is undefined', () => {
+      expect(() =>
+        prismaBulkUpdate(prisma, TABLE, cockroachOptions(), [
+          { where: { id: undefined }, data: { value: 'x' } },
+        ]),
+      ).toThrow('Entry "where" column "id" must not be undefined')
+    })
+
+    it('throws an error if a column appears in both where and data', () => {
+      expect(() =>
+        prismaBulkUpdate(prisma, TABLE, cockroachOptions(), [
+          { where: { id: randomUUID() }, data: { id: randomUUID(), value: 'x' } },
+        ]),
+      ).toThrow('Column "id" must not appear in both "where" and "data"')
+    })
   })
 
   describe('bulk update against bulk_update_item', () => {

@@ -185,7 +185,7 @@ WHERE "segment"."id" = updates."id"::uuid
 
 - **`undefined` vs `null`** — following Prisma's convention, an `undefined` value in `data` leaves that column untouched (it is dropped from the statement), while `null` sets the column to SQL `NULL`.
 - **JSON columns** — values for `json`/`jsonb` columns are `JSON.stringify`-ed automatically; everything else is bound natively.
-- **Returning rows** — when `returning` is provided, the updated rows are returned aliased per the map; otherwise an empty array is returned. The row type can be set via the generic:
+- **Returning rows** — when `returning` is provided (and non-empty), the updated rows are returned aliased per the map; when it is omitted or an empty map, an empty array is returned. The row type can be set via the generic:
 
 ```typescript
 const updated = await prismaBulkUpdate<{ id: string; value: string }>(
@@ -200,4 +200,5 @@ const updated = await prismaBulkUpdate<{ id: string; value: string }>(
 )
 ```
 
-- **Limit** — at most 1000 entries per call.
+- **Limits** — at most 1000 entries per call, and the total bound parameters (`entries × (where columns + data columns)`) must not exceed 65535 — the shared protocol limit for PostgreSQL and CockroachDB. Both are validated up front. A column may not appear in both `where` and `data`.
+- **Trusted identifiers** — `tableName`, all column names, the column types, and the `returning` keys/aliases are interpolated as raw SQL identifiers (only row values are bound). They must be static, trusted configuration, never end-user input.

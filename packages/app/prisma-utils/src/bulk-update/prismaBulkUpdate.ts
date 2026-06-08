@@ -52,8 +52,16 @@ const BIND_PARAMETERS_LIMIT = 65535
  * `RETURNING` clause built from it: each entry maps a DB column name to the alias
  * the row should expose (e.g. `content_unit_id` -> `contentUnitId`). Columns are
  * qualified with the target table (e.g. `"translation"."segment"."value"`) to
- * avoid ambiguity with the `updates` source. Without it the statement runs as a
- * plain update and an empty array is returned.
+ * avoid ambiguity with the `updates` source. Without it (or with an empty map)
+ * the statement runs as a plain update and an empty array is returned.
+ *
+ * Note on identifiers: `tableName`, the column names (`typeByColumn` keys and the
+ * `where`/`data` keys), the column `type`s, and the `returning` keys/aliases are
+ * interpolated into the SQL as raw identifiers — only the row *values* are bound
+ * as parameters. These must therefore be trusted, static configuration, never
+ * end-user input: a name containing a `"` would break out of its quoted
+ * identifier, and any string assigned to a `(string & {})` column type reaches
+ * the SQL verbatim.
  *
  * @template T - The shape of each row returned via `options.returning`.
  * @template P - The concrete Prisma client type, inferred from `prisma` so that both
@@ -92,6 +100,22 @@ export const prismaBulkUpdate = <T = unknown, P extends PrismaClient = PrismaCli
     throw new Error('Entry "data" object must not be empty')
   }
 
+  const undefinedWhereColumn = Object.keys(firstEntry.where).find(
+    (columnName) => firstEntry.where[columnName] === undefined,
+  )
+  if (undefinedWhereColumn) {
+    throw new Error(`Entry "where" column "${undefinedWhereColumn}" must not be undefined`)
+  }
+
+  // A column appearing in both "where" and "data" would be emitted twice in the
+  // `updates(...)` alias list, producing an invalid derived-table column list.
+  const overlappingColumn = dataColumns.find((dataColumn) =>
+    whereColumns.some((whereColumn) => whereColumn.name === dataColumn.name),
+  )
+  if (overlappingColumn) {
+    throw new Error(`Column "${overlappingColumn.name}" must not appear in both "where" and "data"`)
+  }
+
   const bindParametersCount = entries.length * (whereColumns.length + dataColumns.length)
   if (bindParametersCount > BIND_PARAMETERS_LIMIT) {
     throw new Error(
@@ -113,8 +137,8 @@ export const prismaBulkUpdate = <T = unknown, P extends PrismaClient = PrismaCli
     return sql([`"${column.name}" = updates."${column.name}"::${column.type}`])
   })
 
-  const sqlValuesExpressions = entries.map((entry) =>
-    prepareSqlValuesExpression(entry, whereColumns, dataColumns),
+  const sqlValuesExpressions = entries.map((entry, index) =>
+    prepareSqlValuesExpression(entry, index, whereColumns, dataColumns),
   )
 
   const sqlValuesColumnAliases = [...whereColumns, ...dataColumns].map((column) => {
@@ -156,32 +180,37 @@ export const prismaBulkUpdate = <T = unknown, P extends PrismaClient = PrismaCli
  */
 const prepareSqlValuesExpression = (
   entry: BulkUpdateEntry,
+  index: number,
   whereColumns: Column[],
   dataColumns: Column[],
 ) => {
   if (whereColumns.length !== Object.keys(entry.where).length) {
-    throw new Error('Entry "where" columns are not the same')
+    throw new Error(`Entry "where" columns are not the same (at index ${index})`)
   }
 
   const sqlWhereValues = whereColumns.map((whereConditionColumn) => {
     const whereConditionValue = entry.where[whereConditionColumn.name]
 
     if (whereConditionValue === undefined) {
-      throw new Error(`Entry "where" column "${whereConditionColumn.name}" was not found`)
+      throw new Error(
+        `Entry "where" column "${whereConditionColumn.name}" was not found (at index ${index})`,
+      )
     }
 
     return renderTypedValue(whereConditionValue, whereConditionColumn.type)
   })
 
   if (dataColumns.length !== definedColumnNames(entry.data).length) {
-    throw new Error('Entry "data" columns are not the same')
+    throw new Error(`Entry "data" columns are not the same (at index ${index})`)
   }
 
   const sqlSetValues = dataColumns.map((setExpressionColumn) => {
     const setExpressionValue = entry.data[setExpressionColumn.name]
 
     if (setExpressionValue === undefined) {
-      throw new Error(`Entry "data" column "${setExpressionColumn.name}" was not found`)
+      throw new Error(
+        `Entry "data" column "${setExpressionColumn.name}" was not found (at index ${index})`,
+      )
     }
 
     return renderTypedValue(setExpressionValue, setExpressionColumn.type)
