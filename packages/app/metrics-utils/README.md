@@ -343,6 +343,8 @@ manager.stop('msg-42', true)
 
 Use `type: 'counter'` instead of `histogram` when you only care about the count and status, not the latency distribution.
 
+> ⚠️ **`transactionName` must be low-cardinality.** It becomes the `transaction_name` label value, so every distinct value creates a new Prometheus time series. Never embed ids, uuids, or other unbounded values in it — doing so blows up the registry. The same applies to any high-cardinality `customLabels` value.
+
 ### PrometheusDimensionalTransactionManager
 
 Emits **one label-free Prometheus metric per `(transactionName, status)` combination**. The metric name is produced by a caller-provided `buildMetricName(transactionName, status)` callback. Use this for backends that do not support Prometheus labels (e.g. some Datadog setups).
@@ -368,6 +370,8 @@ manager.stop('msg-42', true)
 Metrics are registered lazily: each `(transactionName, status)` combo creates its corresponding metric on the first `stop()` and is reused thereafter.
 
 `addCustomAttributes` is intentionally a **no-op**: surfacing attributes as additional `(transactionName, status, ...attrs)` combinations would spawn one metric per combination and risk an unbounded number of registered metrics.
+
+> ⚠️ **`transactionName` must be low-cardinality.** Each distinct `(transactionName, status)` pair registers a new label-free metric, so an unbounded `transactionName` (e.g. one containing an id) blows up the registry just as badly as a high-cardinality label would. Keep it to a small, fixed set of names.
 
 ### Composing with other transaction managers
 

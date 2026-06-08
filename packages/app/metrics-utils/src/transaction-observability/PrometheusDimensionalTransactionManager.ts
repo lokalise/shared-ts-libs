@@ -23,6 +23,10 @@ export type PrometheusDimensionalTransactionManagerConfig = {
  *
  * Use this for backends that do not support Prometheus labels (e.g. some Datadog setups). When labels are
  * supported, prefer {@link PrometheusLabeledTransactionManager}.
+ *
+ * @remarks `transactionName` MUST be low-cardinality. Each distinct `(transactionName, status)` pair registers
+ * a new label-free metric, so an unbounded `transactionName` (e.g. one containing an id) grows the registry
+ * without bound. Keep it to a small, fixed set of names.
  */
 export class PrometheusDimensionalTransactionManager extends AbstractPrometheusTransactionManager {
   private readonly counter?: ManagerDimensionalCounter

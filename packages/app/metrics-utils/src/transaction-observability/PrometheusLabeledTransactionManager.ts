@@ -23,6 +23,10 @@ export type PrometheusLabeledTransactionManagerConfig<
  *
  * Use this when your metrics backend supports Prometheus labels. For backends without label support, use
  * {@link PrometheusDimensionalTransactionManager} instead.
+ *
+ * @remarks `transactionName` becomes the `transaction_name` label value and MUST be low-cardinality. Never
+ * embed ids, uuids, or other unbounded values in it — each distinct value creates a new time series and grows
+ * the registry without bound. The same applies to any high-cardinality `customLabels` value.
  */
 export class PrometheusLabeledTransactionManager<
   CustomLabels extends readonly string[] = readonly [],
