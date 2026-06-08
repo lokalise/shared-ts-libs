@@ -167,8 +167,8 @@ importers:
         specifier: ^26.0.0
         version: 26.0.0(zod@4.4.3)
       '@message-queue-toolkit/sns':
-        specifier: ^26.1.0
-        version: 26.1.0(@aws-sdk/client-sns@3.1058.0)(@aws-sdk/client-sqs@3.1058.0)(@aws-sdk/client-sts@3.1047.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(@message-queue-toolkit/schemas@7.1.0(zod@4.4.3))(@message-queue-toolkit/sqs@26.1.0(@aws-sdk/client-sqs@3.1058.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3))(zod@4.4.3)
+        specifier: ^26.2.0
+        version: 26.2.0(@aws-sdk/client-sns@3.1058.0)(@aws-sdk/client-sqs@3.1058.0)(@aws-sdk/client-sts@3.1047.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(@message-queue-toolkit/schemas@7.1.0(zod@4.4.3))(@message-queue-toolkit/sqs@26.1.0(@aws-sdk/client-sqs@3.1058.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3))(zod@4.4.3)
       '@message-queue-toolkit/sqs':
         specifier: ^26.1.0
         version: 26.1.0(@aws-sdk/client-sqs@3.1058.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3)
@@ -2036,12 +2036,12 @@ packages:
     peerDependencies:
       zod: '>=3.25.76 <5.0.0'
 
-  '@message-queue-toolkit/sns@26.1.0':
-    resolution: {integrity: sha512-oJMNqjGEWyT3RL+MHBfDf+25Dq6yE02lGIuyFgAGqrCJwra9CaQeHBrvNyqYUoCr1loJ+S3MbXLmAToiKC9BrA==}
+  '@message-queue-toolkit/sns@26.2.0':
+    resolution: {integrity: sha512-CNx8gdXHGEP129OZ67AWx1crRdR62U0BAwkNDNvSnpGwkHf3ezarjxYmXD/uio32KK21qrdTbcdHos+ALcf/GA==}
     engines: {node: '>=22.0.0'}
     peerDependencies:
       '@aws-sdk/client-sns': ^3.632.0
-      '@aws-sdk/client-sqs': ^3.1034.0
+      '@aws-sdk/client-sqs': ^3.1051.0
       '@aws-sdk/client-sts': ^3.632.0
       '@message-queue-toolkit/core': '>=26.0.0'
       '@message-queue-toolkit/schemas': '>=7.0.0'
@@ -6565,12 +6565,6 @@ packages:
     resolution: {integrity: sha512-qC9iz2FlN7DQl3+wjwn3802RTyjCx7sDvfQEXchwa6CWOx07/WVfh91gBmQ9fahw8snwGEWU3xGzOt4tFyHLxg==}
     engines: {node: '>= 0.6'}
 
-  sqs-consumer@15.0.1:
-    resolution: {integrity: sha512-cDcSkekXxhLMn3u+FSnAG3Ryh6jwHMPna1/oqs2dUL0gvUXOLLMa2Yzu0K4QqwVyaH0MDZw1IU7+W+W618/xcw==}
-    engines: {node: '>=22.0.0'}
-    peerDependencies:
-      '@aws-sdk/client-sqs': ^3.1034.0
-
   sqs-consumer@15.0.2:
     resolution: {integrity: sha512-ZNfzgtGBM4Wo3tepI/A54OEd7upnnK5DMWmdzgU33mKEPYSOyykOfQWGH+d8xBPE6lXsW/rM+ClhgfwjKL9LVg==}
     engines: {node: '>=22.0.0'}
@@ -8347,7 +8341,7 @@ snapshots:
     dependencies:
       zod: 4.4.3
 
-  '@message-queue-toolkit/sns@26.1.0(@aws-sdk/client-sns@3.1058.0)(@aws-sdk/client-sqs@3.1058.0)(@aws-sdk/client-sts@3.1047.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(@message-queue-toolkit/schemas@7.1.0(zod@4.4.3))(@message-queue-toolkit/sqs@26.1.0(@aws-sdk/client-sqs@3.1058.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3))(zod@4.4.3)':
+  '@message-queue-toolkit/sns@26.2.0(@aws-sdk/client-sns@3.1058.0)(@aws-sdk/client-sqs@3.1058.0)(@aws-sdk/client-sts@3.1047.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(@message-queue-toolkit/schemas@7.1.0(zod@4.4.3))(@message-queue-toolkit/sqs@26.1.0(@aws-sdk/client-sqs@3.1058.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3))(zod@4.4.3)':
     dependencies:
       '@aws-sdk/client-sns': 3.1058.0
       '@aws-sdk/client-sqs': 3.1058.0
@@ -8356,7 +8350,7 @@ snapshots:
       '@message-queue-toolkit/core': 26.0.0(zod@4.4.3)
       '@message-queue-toolkit/schemas': 7.1.0(zod@4.4.3)
       '@message-queue-toolkit/sqs': 26.1.0(@aws-sdk/client-sqs@3.1058.0)(@message-queue-toolkit/core@26.0.0(zod@4.4.3))(zod@4.4.3)
-      sqs-consumer: 15.0.1(@aws-sdk/client-sqs@3.1058.0)
+      sqs-consumer: 15.0.2(@aws-sdk/client-sqs@3.1058.0)
       zod: 4.4.3
     transitivePeerDependencies:
       - supports-color
@@ -13477,13 +13471,6 @@ snapshots:
   sql-escaper@1.3.3: {}
 
   sqlstring@2.3.3: {}
-
-  sqs-consumer@15.0.1(@aws-sdk/client-sqs@3.1058.0):
-    dependencies:
-      '@aws-sdk/client-sqs': 3.1058.0
-      debug: 4.4.3
-    transitivePeerDependencies:
-      - supports-color
 
   sqs-consumer@15.0.2(@aws-sdk/client-sqs@3.1058.0):
     dependencies:
