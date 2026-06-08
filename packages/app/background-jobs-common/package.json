@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/background-jobs-common",
-    "version": "14.4.0",
+    "version": "14.4.1",
     "files": [
         "dist",
         "LICENSE.md",
@@ -54,10 +54,10 @@
         "@biomejs/biome": "^2.4.16",
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "^4.0.0",
-        "@types/node": "^25.9.1",
+        "@types/node": "^25.9.2",
         "@vitest/coverage-v8": "^4.1.8",
         "bullmq": "^5.78.0",
-        "ioredis": "^5.11.0",
+        "ioredis": "^5.11.1",
         "pino": "^10.0.0",
         "rimraf": "^6.0.1",
         "toad-scheduler": "^4.0.1",

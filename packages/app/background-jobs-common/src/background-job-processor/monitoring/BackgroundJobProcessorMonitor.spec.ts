@@ -1,4 +1,5 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
+import { DelayedError, RateLimitError, WaitingChildrenError } from 'bullmq'
 import pino from 'pino'
 import {
   afterAll,
@@ -247,6 +248,36 @@ describe('BackgroundJobProcessorMonitor', () => {
           }),
         }),
         'name_test-correlation-id_job try failed',
+      ])
+    })
+
+    it.each([
+      ['DelayedError', () => new DelayedError()],
+      ['WaitingChildrenError', () => new WaitingChildrenError()],
+      ['RateLimitError', () => new RateLimitError()],
+    ])('should log %s at debug level as bullmq control flow', (name, makeError) => {
+      const job = createFakeJob('test-correlation-id', 30)
+      const requestContext = {
+        reqId: 'test-req-id',
+        logger: {
+          debug: (_obj: unknown, _msg: unknown) => undefined,
+          error: (_obj: unknown, _msg: unknown) => undefined,
+        },
+      } as unknown as RequestContext
+      const errorSpy = vi.spyOn(requestContext.logger, 'error')
+      const debugSpy = vi.spyOn(requestContext.logger, 'debug')
+
+      monitor.jobAttemptError(job, makeError(), requestContext)
+
+      expect(errorSpy).not.toHaveBeenCalled()
+      expect(debugSpy).toHaveBeenCalledOnce()
+      expect(debugSpy.mock.calls[0]).toMatchObject([
+        expect.objectContaining({
+          jobProgress: 30,
+          origin: 'BackgroundJobProcessorMonitor tests',
+          error: expect.objectContaining({ type: name }),
+        }),
+        `name_test-correlation-id_job deferred via ${name}`,
       ])
     })
   })
