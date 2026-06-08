@@ -1,5 +1,11 @@
 # @lokalise/background-jobs-common
 
+## 14.4.1
+
+### Patch Changes
+
+- 4f87da7: Stop logging BullMQ control-flow errors (`DelayedError`, `WaitingChildrenError`, `RateLimitError`) as job attempt failures. These errors are cooperative signals a processor throws after `moveToDelayed`/`moveToWaitingChildren`/`rateLimit` to hand the job back to BullMQ, not real failures. They now emit a `"<jobName> deferred via <ErrorName>"` debug log instead of the `"<jobName> try failed"` error log.
+
 ## 14.4.0
 
 ### Minor Changes
