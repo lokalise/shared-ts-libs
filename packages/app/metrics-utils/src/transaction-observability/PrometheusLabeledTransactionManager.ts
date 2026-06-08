@@ -94,6 +94,9 @@ export class PrometheusLabeledTransactionManager<
   /**
    * Attaches custom attributes to an in-flight transaction; they are emitted as labels on the next `stop()`.
    *
+   * Attributes accumulate across calls for the same transaction key: a later call adds to (and overrides
+   * matching keys of) what earlier calls set, rather than replacing it.
+   *
    * Only attributes whose keys appear in the `customLabels` declared at construction are kept; the rest are
    * silently ignored.
    */
@@ -103,13 +106,14 @@ export class PrometheusLabeledTransactionManager<
   ): void {
     if (!this.transactionNameByKey.has(uniqueTransactionKey)) return
 
-    const filtered: Record<string, string | number> = {}
+    const merged: Record<string, string | number> = {
+      ...this.customLabelsByKey.get(uniqueTransactionKey),
+    }
     for (const [key, value] of Object.entries(attributes)) {
-      if (this.supportedCustomLabels.has(key)) {
-        filtered[key] = typeof value === 'boolean' ? String(value) : value
-      }
+      if (this.supportedCustomLabels.has(key))
+        merged[key] = typeof value === 'boolean' ? String(value) : value
     }
 
-    this.customLabelsByKey.set(uniqueTransactionKey, filtered)
+    this.customLabelsByKey.set(uniqueTransactionKey, merged)
   }
 }

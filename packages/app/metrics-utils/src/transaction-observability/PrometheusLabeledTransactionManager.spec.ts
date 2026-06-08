@@ -239,6 +239,55 @@ describe('PrometheusLabeledTransactionManager', () => {
       )
     })
 
+    it('accumulates attributes across repeated calls for the same key', () => {
+      const manager = new PrometheusLabeledTransactionManager<['tenant_id', 'project_type']>(
+        {
+          type: 'counter',
+          name: 'tx_count',
+          helpDescription: 'desc',
+          customLabels: ['tenant_id', 'project_type'],
+        },
+        client,
+      )
+
+      manager.start('queue_consumer', 'key-1')
+      manager.addCustomAttributes('key-1', { tenant_id: 'tenant-42' })
+      manager.addCustomAttributes('key-1', { project_type: 'software' })
+      manager.stop('key-1', true)
+
+      expect(incMock).toHaveBeenCalledWith(
+        {
+          status: 'success',
+          transaction_name: 'queue_consumer',
+          tenant_id: 'tenant-42',
+          project_type: 'software',
+        },
+        1,
+      )
+    })
+
+    it('later calls override matching keys from earlier calls', () => {
+      const manager = new PrometheusLabeledTransactionManager<['tenant_id']>(
+        {
+          type: 'counter',
+          name: 'tx_count',
+          helpDescription: 'desc',
+          customLabels: ['tenant_id'],
+        },
+        client,
+      )
+
+      manager.start('queue_consumer', 'key-1')
+      manager.addCustomAttributes('key-1', { tenant_id: 'tenant-1' })
+      manager.addCustomAttributes('key-1', { tenant_id: 'tenant-2' })
+      manager.stop('key-1', true)
+
+      expect(incMock).toHaveBeenCalledWith(
+        { status: 'success', transaction_name: 'queue_consumer', tenant_id: 'tenant-2' },
+        1,
+      )
+    })
+
     it('is a no-op if the transaction was never started', () => {
       const manager = new PrometheusLabeledTransactionManager<['tenant_id']>(
         {
