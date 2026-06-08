@@ -142,3 +142,63 @@ when multiple transactions compete for the same resources. This helper abstracts
 errors, providing a robust and efficient way to ensure your transactions succeed even under high contention.
 By automatically retrying failed transactions with an intelligent backoff strategy, you can significantly improve the 
 reliability and performance of your application when using distributed databases.
+
+### Prisma Bulk Update
+
+Updates many rows in a single atomic SQL statement (`UPDATE ... FROM (VALUES ...)`), instead of issuing one `UPDATE` per row. Because it is a single statement, it either fully applies or fully rolls back, so no surrounding transaction is required. Works on both CockroachDB and PostgreSQL.
+
+#### Basic Usage
+
+```typescript
+import { prismaBulkUpdate } from '@lokalise/prisma-utils'
+
+await prismaBulkUpdate(prisma, 'segment', {
+  dbDriver: 'CockroachDb',
+  typeByColumn: { id: 'uuid', value: 'text', words_count: 'int4' },
+}, [
+  { where: { id: id1 }, data: { value: 'a', words_count: 1 } },
+  { where: { id: id2 }, data: { value: 'b', words_count: 2 } },
+])
+```
+
+The above executes a single statement of the form:
+
+```sql
+UPDATE "segment"
+SET "value" = updates."value"::text, "words_count" = updates."words_count"::int4
+FROM (VALUES ($1::uuid, $2::text, $3::int4), ($4::uuid, $5::text, $6::int4))
+    AS updates("id", "value", "words_count")
+WHERE "segment"."id" = updates."id"::uuid
+```
+
+#### Parameters
+
+- **`prisma`** — a Prisma client or a transaction client (e.g. the `tx` passed to `prismaTransaction`'s callback).
+- **`tableName`** — target table, optionally schema-qualified (e.g. `'translation.segment'`).
+- **`options`**:
+  - **`dbDriver`** — `'CockroachDb'` or `'Postgres'`. Selects which column-type vocabulary `typeByColumn` autocompletes; the emitted SQL is identical for both.
+  - **`typeByColumn`** — explicit SQL type for every `where` column and every defined `data` column. The explicit `::type` cast is required by CockroachDB (it will not infer placeholder types inside a `VALUES` list) and is also valid PostgreSQL.
+  - **`returning`** (optional) — map of DB column name to the result alias to expose via a `RETURNING` clause.
+- **`entries`** — the rows to update; every entry must specify the same `where` columns and the same set of defined `data` columns.
+
+#### Behavior Notes
+
+- **`undefined` vs `null`** — following Prisma's convention, an `undefined` value in `data` leaves that column untouched (it is dropped from the statement), while `null` sets the column to SQL `NULL`.
+- **JSON columns** — values for `json`/`jsonb` columns are `JSON.stringify`-ed automatically; everything else is bound natively.
+- **Returning rows** — when `returning` is provided (and non-empty), the updated rows are returned aliased per the map; when it is omitted or an empty map, an empty array is returned. The row type can be set via the generic:
+
+```typescript
+const updated = await prismaBulkUpdate<{ id: string; value: string }>(
+  prisma,
+  'segment',
+  {
+    dbDriver: 'CockroachDb',
+    typeByColumn: { id: 'uuid', value: 'text' },
+    returning: { id: 'id', value: 'value' },
+  },
+  [{ where: { id: id1 }, data: { value: 'a' } }],
+)
+```
+
+- **Limits** — at most 1000 entries per call, and the total bound parameters (`entries × (where columns + data columns)`) must not exceed 65535 — the shared protocol limit for PostgreSQL and CockroachDB. Both are validated up front. A column may not appear in both `where` and `data`.
+- **Trusted identifiers** — `tableName`, all column names, the column types, and the `returning` keys/aliases are interpolated as raw SQL identifiers (only row values are bound). They must be static, trusted configuration, never end-user input.
