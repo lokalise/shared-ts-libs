@@ -52,8 +52,7 @@ export abstract class AbstractDimensionalHistogramMetric<
    * Records an observation on the histogram for the given `dimension`.
    *
    * Provide the duration as either `time` directly, or as a `startTime`/`endTime` pair from which the duration
-   * is computed. A measurement targeting a dimension outside the declared set throws (unless running in lazy
-   * open mode).
+   * is computed. A measurement targeting a dimension outside the declared set is silently ignored.
    */
   public override registerMeasurement(
     measurement: DimensionalHistogramMeasurement<TDimensions>,

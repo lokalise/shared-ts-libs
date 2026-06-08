@@ -9,8 +9,8 @@ export type DimensionalMetricParams<TDimensions extends readonly string[]> = Com
     | {
         /**
          * Eager mode (default). All `dimensions` are pre-registered at construction time. At runtime,
-         * a measurement for a dimension that was not declared throws an error — unknown dimensions
-         * are treated as bugs, not silently dropped.
+         * a measurement for a dimension that was not declared is silently ignored — instrumentation
+         * never throws into the caller's path.
          */
         lazyInit?: false
         dimensions: TDimensions
@@ -21,7 +21,7 @@ export type DimensionalMetricParams<TDimensions extends readonly string[]> = Com
          *
          * - If `dimensions` is provided, it acts as an allow-list: only those dimensions are
          *   registered (lazily, on first measurement); a measurement for a dimension outside the
-         *   allow-list throws an error.
+         *   allow-list is silently ignored.
          * - If `dimensions` is omitted, any dimension is accepted and registered lazily.
          */
         lazyInit: true
@@ -56,15 +56,11 @@ export abstract class AbstractDimensionalMetric<
     const existing = this.metrics.get(dimension)
     if (existing) return existing
 
-    if (!this.metricConfig.lazyInit) {
-      throw new Error(`Dimension "${dimension}" was not declared in "dimensions"`)
-    }
-
-    if (this.metricConfig.dimensions && !this.metricConfig.dimensions.includes(dimension)) {
-      throw new Error(
-        `Dimension "${dimension}" is not in the declared allow-list (${this.metricConfig.dimensions.join(', ')}).`,
-      )
-    }
+    // Eager mode pre-registers every declared dimension, so an unknown one here was never declared.
+    // Lazy mode with `dimensions` treats it as an allow-list. In both cases an out-of-set dimension is
+    // silently ignored: a metrics utility must not throw into the caller's request/consumer path.
+    if (!this.metricConfig.lazyInit) return
+    if (this.metricConfig.dimensions && !this.metricConfig.dimensions.includes(dimension)) return
 
     return this.createAndCache(this.client, dimension)
   }

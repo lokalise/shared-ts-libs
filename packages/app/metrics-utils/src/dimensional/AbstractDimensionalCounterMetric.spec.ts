@@ -159,15 +159,30 @@ describe('AbstractDimensionalCounterMetric', () => {
       expect(incMock).toHaveBeenCalledWith(20)
     })
 
-    it('throws when measuring a dimension not declared in eager mode', () => {
+    it('silently ignores a dimension not declared in eager mode', () => {
       // Given
       getSingleMetricMock.mockReturnValue(undefined)
       const metric = new ConcreteDimensionalCounterMetric(client)
+      incMock.mockClear()
 
       // When + Then — TS normally blocks this; cast bypasses to test runtime.
-      expect(() => metric.registerMeasurement({ unknown: 1 } as any)).toThrow(
-        /Dimension "unknown" was not declared/,
-      )
+      expect(() => metric.registerMeasurement({ unknown: 1 } as any)).not.toThrow()
+      expect(incMock).not.toHaveBeenCalled()
+    })
+
+    it('still applies known dimensions when the same measurement carries an unknown one', () => {
+      // Given
+      getSingleMetricMock.mockReturnValue(undefined)
+      const metric = new ConcreteDimensionalCounterMetric(client)
+      incMock.mockClear()
+
+      // When — unknown sits between two valid dimensions to guard against partial application.
+      metric.registerMeasurement({ successful: 2, unknown: 1, failed: 3 } as any)
+
+      // Then
+      expect(incMock).toHaveBeenCalledTimes(2)
+      expect(incMock).toHaveBeenCalledWith(2)
+      expect(incMock).toHaveBeenCalledWith(3)
     })
   })
 
@@ -261,15 +276,15 @@ describe('AbstractDimensionalCounterMetric', () => {
       expect(incMock).not.toHaveBeenCalled()
     })
 
-    it('throws when measuring a dimension outside the declared allow-list', () => {
+    it('silently ignores a dimension outside the declared allow-list', () => {
       // Given
       getSingleMetricMock.mockReturnValue(undefined)
       const metric = new LazyConcreteDimensionalCounterMetric(client)
 
       // When + Then
-      expect(() => metric.registerMeasurement({ unknown: 1 } as any)).toThrow(
-        /Dimension "unknown" is not in the declared allow-list/,
-      )
+      expect(() => metric.registerMeasurement({ unknown: 1 } as any)).not.toThrow()
+      expect(counterMock).not.toHaveBeenCalled()
+      expect(incMock).not.toHaveBeenCalled()
     })
 
     describe('without allow-list (dimensions omitted)', () => {

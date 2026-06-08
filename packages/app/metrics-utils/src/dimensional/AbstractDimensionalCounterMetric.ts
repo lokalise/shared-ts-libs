@@ -51,7 +51,7 @@ export abstract class AbstractDimensionalCounterMetric<
    * Increments the per-dimension counter for one or more dimensions.
    *
    * Pass an object mapping each dimension to the amount to add. Keys with `undefined` values are skipped.
-   * A measurement targeting a dimension outside the declared set throws (unless running in lazy open mode).
+   * A measurement targeting a dimension outside the declared set is silently ignored.
    */
   public override registerMeasurement(
     measurement: DimensionalCounterMeasurement<TDimensions>,

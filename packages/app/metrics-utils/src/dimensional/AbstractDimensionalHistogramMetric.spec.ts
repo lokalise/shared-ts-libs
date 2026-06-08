@@ -147,15 +147,17 @@ describe('AbstractDimensionalHistogramMetric', () => {
       expect(observeMock).not.toHaveBeenCalled()
     })
 
-    it('throws when measuring a dimension not declared in eager mode', () => {
+    it('silently ignores a dimension not declared in eager mode', () => {
       // Given
       getSingleMetricMock.mockReturnValue(undefined)
       const metric = new ConcreteDimensionalHistogramMetric(client)
+      observeMock.mockClear()
 
       // When + Then — TS normally blocks this; cast bypasses to test runtime.
       expect(() =>
         metric.registerMeasurement({ dimension: 'unknown' as 'successful', time: 100 }),
-      ).toThrow(/Dimension "unknown" was not declared/)
+      ).not.toThrow()
+      expect(observeMock).not.toHaveBeenCalled()
     })
   })
 
@@ -235,15 +237,17 @@ describe('AbstractDimensionalHistogramMetric', () => {
       expect(observeMock).not.toHaveBeenCalled()
     })
 
-    it('throws when measuring a dimension outside the declared allow-list', () => {
+    it('silently ignores a dimension outside the declared allow-list', () => {
       // Given
       getSingleMetricMock.mockReturnValue(undefined)
       const metric = new LazyConcreteDimensionalHistogramMetric(client)
 
       // When + Then
-      expect(() => metric.registerMeasurement({ dimension: 'unknown' as any, time: 100 })).toThrow(
-        /Dimension "unknown" is not in the declared allow-list/,
-      )
+      expect(() =>
+        metric.registerMeasurement({ dimension: 'unknown' as any, time: 100 }),
+      ).not.toThrow()
+      expect(histogramMock).not.toHaveBeenCalled()
+      expect(observeMock).not.toHaveBeenCalled()
     })
 
     describe('without allow-list (dimensions omitted)', () => {
