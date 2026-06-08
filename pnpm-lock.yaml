@@ -417,10 +417,10 @@ importers:
         version: 1.0.0-rc.4-273829f
       drizzle-orm:
         specifier: 1.0.0-rc.4-273829f
-        version: 1.0.0-rc.4-273829f(@electric-sql/pglite@0.4.1)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.22.4(@types/node@25.9.2))(pg@8.20.0)(postgres@3.4.9)(valibot@1.2.0(typescript@6.0.3))(zod@4.4.3)
+        version: 1.0.0-rc.4-273829f(@electric-sql/pglite@0.4.1)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.22.5(@types/node@25.9.2))(pg@8.20.0)(postgres@3.4.9)(valibot@1.2.0(typescript@6.0.3))(zod@4.4.3)
       mysql2:
-        specifier: ^3.22.4
-        version: 3.22.4(@types/node@25.9.2)
+        specifier: ^3.22.5
+        version: 3.22.5(@types/node@25.9.2)
       postgres:
         specifier: ^3.4.9
         version: 3.4.9
@@ -5823,8 +5823,8 @@ packages:
     resolution: {integrity: sha512-FBrGau0IXmuqg4haEZRBfHNWB5mUARw6hNwPDXXGg0XzVJ50mr/9hb267lvpVMnhZ1FON3qNd4Xfcez1rbFwSg==}
     engines: {node: '>= 8.0'}
 
-  mysql2@3.22.4:
-    resolution: {integrity: sha512-CtXYlmL7ZamiYKbmqkamQHWJROUHSfm+f3kByzGfknw7kW51mcB2ouMUqYq1XfYxbXmnWo6RhPydx6OCqdgcmQ==}
+  mysql2@3.22.5:
+    resolution: {integrity: sha512-95uZ2TrPWAZdwpB3vvvDbmEMcNG8yIeNCyu6GUcr/QnWEE/wXm7+mhOCsdQfWQDTV7qYT/PDUZ4U4UPP4AsXqQ==}
     engines: {node: '>= 8.0'}
     peerDependencies:
       '@types/node': '>= 8'
@@ -11234,12 +11234,12 @@ snapshots:
       get-tsconfig: 4.14.0
       jiti: 2.7.0
 
-  drizzle-orm@1.0.0-rc.4-273829f(@electric-sql/pglite@0.4.1)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.22.4(@types/node@25.9.2))(pg@8.20.0)(postgres@3.4.9)(valibot@1.2.0(typescript@6.0.3))(zod@4.4.3):
+  drizzle-orm@1.0.0-rc.4-273829f(@electric-sql/pglite@0.4.1)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.22.5(@types/node@25.9.2))(pg@8.20.0)(postgres@3.4.9)(valibot@1.2.0(typescript@6.0.3))(zod@4.4.3):
     optionalDependencies:
       '@electric-sql/pglite': 0.4.1
       '@opentelemetry/api': 1.9.1
       '@types/pg': 8.20.0
-      mysql2: 3.22.4(@types/node@25.9.2)
+      mysql2: 3.22.5(@types/node@25.9.2)
       pg: 8.20.0
       postgres: 3.4.9
       valibot: 1.2.0(typescript@6.0.3)
@@ -12802,7 +12802,7 @@ snapshots:
       seq-queue: 0.0.5
       sqlstring: 2.3.3
 
-  mysql2@3.22.4(@types/node@25.9.2):
+  mysql2@3.22.5(@types/node@25.9.2):
     dependencies:
       '@types/node': 25.9.2
       aws-ssl-profiles: 1.1.2
