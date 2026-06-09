@@ -356,6 +356,7 @@ describe('markMigrationsApplied (PostgreSQL, drizzle-kit generated)', () => {
     await db.execute(`DROP TABLE IF EXISTS "${testSchema}"."${testTable}"`)
     await db.execute(`DROP SCHEMA IF EXISTS "${testSchema}" CASCADE`)
     await sql.end()
+
     cleanupGeneratedMigrations(generatedDir)
   })
 
