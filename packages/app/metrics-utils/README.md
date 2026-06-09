@@ -4,7 +4,7 @@ This package contains a set of utilities to work with Prometheus metrics.
 
 It provides:
 
-- Five abstract base classes for building Prometheus metrics, organized into two families:
+- Eight abstract base classes for building Prometheus metrics, organized into two families:
   - **[Labeled](#labeled)** — one Prometheus metric with dimensions expressed as Prometheus labels. This is the idiomatic Prometheus approach and is what you want whenever your metrics backend supports labels (Prometheus itself, Grafana, most standard APMs).
   - **[Dimensional](#dimensional)** — one Prometheus metric per dimension. Designed for backends that **do not support Prometheus labels** (e.g. some Datadog setups): instead of one labeled series, each dimension becomes its own metric with a caller-provided name.
 - Two ready-made [Transaction observability managers](#transaction-observability-managers) (one per family) that implement the `TransactionObservabilityManager` interface from [`@lokalise/node-core`](https://github.com/lokalise/node-core).
@@ -15,11 +15,14 @@ Table of contents:
 1. [Labeled](#labeled)
     1. [AbstractLabeledCounterMetric](#abstractlabeledcountermetric)
     2. [AbstractMultiLabeledCounterMetric](#abstractmultilabeledcountermetric)
-    3. [AbstractLabeledHistogramMetric](#abstractlabeledhistogrammetric)
+    3. [AbstractLabeledGaugeMetric](#abstractlabeledgaugemetric)
+    4. [AbstractMultiLabeledGaugeMetric](#abstractmultilabeledgaugemetric)
+    5. [AbstractLabeledHistogramMetric](#abstractlabeledhistogrammetric)
 2. [Dimensional](#dimensional)
     1. [AbstractDimensionalCounterMetric](#abstractdimensionalcountermetric)
-    2. [AbstractDimensionalHistogramMetric](#abstractdimensionalhistogrammetric)
-    3. [Lazy initialization](#lazy-initialization)
+    2. [AbstractDimensionalGaugeMetric](#abstractdimensionalgaugemetric)
+    3. [AbstractDimensionalHistogramMetric](#abstractdimensionalhistogrammetric)
+    4. [Lazy initialization](#lazy-initialization)
 3. [Transaction observability managers](#transaction-observability-managers)
     1. [PrometheusLabeledTransactionManager](#prometheuslabeledtransactionmanager)
     2. [PrometheusDimensionalTransactionManager](#prometheusdimensionaltransactionmanager)
@@ -128,6 +131,107 @@ The measurement object contains a value for each label plus a mandatory `increme
 | Pre-initialization to `0`  | Yes, for every declared value      | No, series appear on first measurement |
 | Measurement shape          | `{ [labelValue]: incrementAmount }` | `{ [labelName]: labelValue, ..., increment: number }` |
 
+### AbstractLabeledGaugeMetric
+
+A base class for gauge metrics that have **exactly one label whose possible values are known at construction time**.
+
+Unlike a counter, a gauge represents a value that can go up **or** down (e.g. queue depth, in-flight requests, last-run timestamp). Each measurement **sets** the current value for a label value rather than adding to it.
+
+**When to use**: you want a gauge with a single label (e.g. `state`) and you can enumerate all its possible values upfront. The class pre-initializes every declared value to `0`, so the corresponding time series exist from the moment the metric is registered — even before any measurement is recorded.
+
+**When NOT to use**: if you need more than one label, or if the label values are only known at runtime, use [`AbstractMultiLabeledGaugeMetric`](#abstractmultilabeledgaugemetric) instead.
+
+Usage:
+
+```typescript
+export class ConnectionPoolMetric extends AbstractLabeledGaugeMetric<
+	'state',
+	['active', 'idle']
+> {
+	constructor({ promClient }: Deps) {
+		super(
+			{
+				name: 'connection_pool_size',
+				helpDescription: 'Number of connections per state',
+				label: 'state',
+				measurementKeys: ['active', 'idle'],
+			},
+            promClient,
+		)
+	}
+}
+
+const connectionPoolMetric = new ConnectionPoolMetric({ appMetrics })
+
+connectionPoolMetric.registerMeasurement({
+    active: 7,
+    idle: 3,
+})
+```
+
+Where:
+1. `name` - metric name
+2. `helpDescription` - metric description
+3. `label` - metric label name (single label)
+4. `measurementKeys` - the complete set of possible values for that label
+
+Creation of `ConnectionPoolMetric` initializes a `connection_pool_size` metric with a `state` label and all the provided measurement keys (`active`, `idle`) set to `0`.
+
+`registerMeasurement` **sets** the gauge to the provided values; keys with an `undefined` value are skipped.
+
+### AbstractMultiLabeledGaugeMetric
+
+A base class for gauge metrics that have **one or more labels whose values are not necessarily known at construction time**.
+
+As with `AbstractLabeledGaugeMetric`, each measurement **sets** the current value (gauges can go up or down). Unlike that class, this one does **not** pre-initialize any time series — each series appears in Prometheus the first time `registerMeasurement` is called with that specific label combination.
+
+**When to use**: you need multiple labels on a gauge (for example a two-label gauge), or the label values only become available at runtime and can't be enumerated in advance.
+
+**When NOT to use**: if you have exactly one label with a fully known, enumerable set of values and want the series to exist from the start (with `0` values until measured), use [`AbstractLabeledGaugeMetric`](#abstractlabeledgaugemetric) instead.
+
+Usage:
+
+```typescript
+export class QueueDepthMetric extends AbstractMultiLabeledGaugeMetric<
+	['queue', 'priority']
+> {
+	constructor({ promClient }: Deps) {
+		super(
+			{
+				name: 'queue_depth',
+				helpDescription: 'Number of pending messages by queue and priority',
+				labelNames: ['queue', 'priority'],
+			},
+			promClient,
+		)
+	}
+}
+
+const queueDepthMetric = new QueueDepthMetric({ appMetrics })
+
+queueDepthMetric.registerMeasurement({
+    queue: 'emails',
+    priority: 'high',
+    value: 42,
+})
+```
+
+Where:
+1. `name` - metric name
+2. `helpDescription` - metric description
+3. `labelNames` - the list of label names the gauge will carry
+
+The measurement object contains a value for each label plus a mandatory `value` indicating the current value to set the gauge to for that combination.
+
+**Key differences with `AbstractLabeledGaugeMetric`**:
+
+| Aspect                       | `AbstractLabeledGaugeMetric`           | `AbstractMultiLabeledGaugeMetric`   |
+|------------------------------|----------------------------------------|-------------------------------------|
+| Number of labels             | Exactly one                            | One or more                         |
+| Label values at construction | Must be enumerated (`measurementKeys`) | Not declared; discovered at runtime |
+| Pre-initialization to `0`    | Yes, for every declared value          | No, series appear on first measurement |
+| Measurement shape            | `{ [labelValue]: valueToSet }`         | `{ [labelName]: labelValue, ..., value: number }` |
+
 ### AbstractLabeledHistogramMetric
 
 A base class for histogram-like metrics, supporting configurable buckets and labeled observations. It handles metric registration and measurement recording, accepting either a direct `time` value or a `startTime`/`endTime` pair.
@@ -215,7 +319,54 @@ pizza_delivery_delivered_to_pickup_point:counter 0
 pizza_delivery_not_delivered:counter 0
 ```
 
-`registerMeasurement` increments only the dimensions provided. A measurement for a dimension that was not declared throws an error (see [Lazy initialization](#lazy-initialization) for relaxing this).
+`registerMeasurement` increments only the dimensions provided. A measurement for a dimension that was not declared is silently ignored (see [Lazy initialization](#lazy-initialization) for relaxing this).
+
+### AbstractDimensionalGaugeMetric
+
+A base class for gauge metrics where each dimension is registered as a separate label-free Prometheus Gauge. The metric name for each dimension is produced by a caller-provided `buildMetricName(dimension)` callback, giving you full control over the naming scheme.
+
+As with the labeled gauge classes, each measurement **sets** the current value for its dimension (gauges can go up or down). Use this instead of [`AbstractLabeledGaugeMetric`](#abstractlabeledgaugemetric) / [`AbstractMultiLabeledGaugeMetric`](#abstractmultilabeledgaugemetric) when the tool consuming your metrics does not support Prometheus labels.
+
+Usage:
+
+```typescript
+export class ConnectionPoolMetric extends AbstractDimensionalGaugeMetric<
+	['active', 'idle']
+> {
+	constructor({ promClient }: Deps) {
+		super(
+			{
+				helpDescription: 'Number of connections per state',
+				dimensions: ['active', 'idle'],
+				buildMetricName: (dimension) => `connection_pool_${dimension}:gauge`,
+			},
+			promClient,
+		)
+	}
+}
+
+const connectionPoolMetric = new ConnectionPoolMetric({ appMetrics })
+
+connectionPoolMetric.registerMeasurement({
+    active: 7,
+    idle: 3,
+})
+```
+
+Where:
+1. `helpDescription` - metric description
+2. `dimensions` - the set of possible dimension values
+3. `buildMetricName` - function that returns the Prometheus metric name for a given dimension
+
+Construction registers a separate label-free Prometheus Gauge for each dimension. All dimensions are initialized to `0` on construction.
+
+The above example registers the following metrics:
+```text
+connection_pool_active:gauge 0
+connection_pool_idle:gauge 0
+```
+
+`registerMeasurement` **sets** only the dimensions provided. A measurement for a dimension that was not declared is silently ignored (see [Lazy initialization](#lazy-initialization) for relaxing this).
 
 ### AbstractDimensionalHistogramMetric
 
@@ -264,11 +415,11 @@ request_duration_successful:histogram
 request_duration_failed:histogram
 ```
 
-`registerMeasurement` takes a single object containing the target `dimension` and either a direct `time` value or a `startTime`/`endTime` pair. A measurement for a dimension that was not declared throws an error (see [Lazy initialization](#lazy-initialization) for relaxing this).
+`registerMeasurement` takes a single object containing the target `dimension` and either a direct `time` value or a `startTime`/`endTime` pair. A measurement for a dimension that was not declared is silently ignored (see [Lazy initialization](#lazy-initialization) for relaxing this).
 
 ### Lazy initialization
 
-By default, both `AbstractDimensionalCounterMetric` and `AbstractDimensionalHistogramMetric` operate in **eager mode**: every declared dimension is registered at construction time, and a measurement targeting a dimension that was not listed in `dimensions` **throws an error** — unknown dimensions are treated as bugs, not silently dropped.
+By default, all Dimensional classes (`AbstractDimensionalCounterMetric`, `AbstractDimensionalGaugeMetric` and `AbstractDimensionalHistogramMetric`) operate in **eager mode**: every declared dimension is registered at construction time, and a measurement targeting a dimension that was not listed in `dimensions` is silently ignored — a metrics utility must not throw into the caller's path.
 
 When the set of valid dimensions is not known up-front (e.g. it comes from runtime input such as a queue name or a tenant identifier), opt into **lazy mode** with `lazyInit: true`:
 
@@ -291,15 +442,15 @@ export class QueueProcessingDurationMetric extends AbstractDimensionalHistogramM
 In lazy mode:
 
 - **Nothing is pre-registered at construction time.** A metric is created the first time `registerMeasurement` is called with a given dimension, and reused on subsequent calls.
-- **If `dimensions` is provided**, it acts as an **allow-list**: a measurement for a dimension outside the allow-list throws an error. Useful when you know the shape but not the exact timing.
+- **If `dimensions` is provided**, it acts as an **allow-list**: a measurement for a dimension outside the allow-list is silently ignored. Useful when you know the shape but not the exact timing.
 - **If `dimensions` is omitted**, any dimension is accepted and registered lazily.
 
 Summary of the three modes:
 
 | Mode                 | `lazyInit`           | `dimensions`      | At construction            | Measurement for an unknown dimension |
 |----------------------|----------------------|-------------------|----------------------------|--------------------------------------|
-| Eager (default)      | `false` or omitted   | Required          | All dimensions pre-registered | Throws                               |
-| Lazy with allow-list | `true`               | Provided          | Nothing pre-registered      | Throws if outside the allow-list     |
+| Eager (default)      | `false` or omitted   | Required          | All dimensions pre-registered | Silently ignored                     |
+| Lazy with allow-list | `true`               | Provided          | Nothing pre-registered      | Silently ignored if outside the allow-list |
 | Lazy open            | `true`               | Omitted           | Nothing pre-registered      | Accepted and registered on the fly   |
 
 **Trade-off vs eager mode**: lazy mode loses the "series exists from the start with a `0` value" property that eager counters provide, so dashboards may display "no data" until the first measurement arrives.
