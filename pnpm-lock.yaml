@@ -746,6 +746,9 @@ importers:
       '@lokalise/biome-config':
         specifier: ^3.1.0
         version: 3.1.1
+      '@lokalise/node-core':
+        specifier: ^14.7.4
+        version: 14.8.1(zod@4.4.3)
       '@lokalise/tsconfig':
         specifier: ^4.0.0
         version: 4.0.0
