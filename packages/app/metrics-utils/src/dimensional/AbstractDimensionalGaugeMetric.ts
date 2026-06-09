@@ -58,10 +58,11 @@ export abstract class AbstractDimensionalGaugeMetric<
   public override registerMeasurement(measurement: DimensionalGaugeMeasurement<TDimensions>): void {
     if (!this.client) return
 
-    for (const [dimension, value] of Object.entries(measurement)) {
+    const entries = Object.entries(measurement) as [string, number | undefined][]
+    for (const [dimension, value] of entries) {
       if (value === undefined) continue
 
-      this.getOrRegisterMetric(dimension)?.set(value as number)
+      this.getOrRegisterMetric(dimension)?.set(value)
     }
   }
 }

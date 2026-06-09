@@ -58,10 +58,11 @@ export abstract class AbstractDimensionalCounterMetric<
   ): void {
     if (!this.client) return
 
-    for (const [dimension, value] of Object.entries(measurement)) {
+    const entries = Object.entries(measurement) as [string, number | undefined][]
+    for (const [dimension, value] of entries) {
       if (value === undefined) continue
 
-      this.getOrRegisterMetric(dimension)?.inc(value as number)
+      this.getOrRegisterMetric(dimension)?.inc(value)
     }
   }
 }
