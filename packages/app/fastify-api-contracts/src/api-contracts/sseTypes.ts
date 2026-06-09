@@ -1,4 +1,4 @@
-import type { HttpStatusCode, SSEEventSchemas } from '@lokalise/api-contracts'
+import type { SSEEventSchemas } from '@lokalise/api-contracts'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import type { z } from 'zod/v4'
 import type { ApiContractMetadataToRouteMapper } from '../types.ts'
@@ -66,49 +66,6 @@ export type SSEEventSender<Events extends SSEEventSchemas> = <
  * - `'client'`: Client closed the connection (EventSource.close(), navigation, network failure)
  */
 export type SSECloseReason = 'server' | 'client'
-
-// ============================================================================
-// SSE handler result types
-// ============================================================================
-
-/**
- * Type for `responseBodySchemasByStatusCode` — maps HTTP status codes to Zod schemas.
- */
-export type ResponseSchemasByStatusCode = Partial<Record<HttpStatusCode, z.ZodType>>
-
-/**
- * Result indicating the handler returned an HTTP response before streaming started.
- * Created via `sse.respond(code, body)`.
- */
-export type SSERespondResult = {
-  _type: 'respond'
-  code: number
-  body: unknown
-}
-
-/**
- * Possible results from an SSE handler.
- * - `SSERespondResult`: Send an HTTP response before streaming (via `sse.respond()`)
- * - `void`: Streaming was started via `sse.start()`
- */
-// biome-ignore lint/suspicious/noConfusingVoidType: void is intentional — handlers can return nothing after calling sse.start()
-export type SSEHandlerResult = SSERespondResult | void
-
-/**
- * Strictly typed `respond` function for `sse.respond()`.
- *
- * When `responseBodySchemasByStatusCode` is defined, the body must match the
- * schema for the given status code; otherwise any body is accepted.
- */
-export type StrictRespondFunction<ResponseSchemas extends ResponseSchemasByStatusCode | undefined> =
-  ResponseSchemas extends ResponseSchemasByStatusCode
-    ? keyof ResponseSchemas & number extends never
-      ? (code: number, body: unknown) => SSERespondResult
-      : <Code extends keyof ResponseSchemas & number>(
-          code: Code,
-          body: ResponseSchemas[Code] extends z.ZodType ? z.infer<ResponseSchemas[Code]> : unknown,
-        ) => SSERespondResult
-    : (code: number, body: unknown) => SSERespondResult
 
 // ============================================================================
 // SSE session
@@ -182,16 +139,12 @@ export type SSESession<Events extends SSEEventSchemas = SSEEventSchemas, Context
 /**
  * Context object passed to SSE handlers for deferred header sending.
  *
- * Lets handlers validate before any headers are sent, return early with an HTTP
- * response (via `respond()`), or explicitly start streaming (via `start()`).
+ * Lets handlers validate before any headers are sent and then either return an early
+ * HTTP response as `{ status, body }`, or explicitly start streaming (via `start()`).
  *
  * @template Events - Event schemas for type-safe sending
- * @template ResponseSchemas - Response schemas by status code for strict `respond()` typing
  */
-export type SSEContext<
-  Events extends SSEEventSchemas = SSEEventSchemas,
-  ResponseSchemas extends ResponseSchemasByStatusCode | undefined = undefined,
-> = {
+export type SSEContext<Events extends SSEEventSchemas = SSEEventSchemas> = {
   /**
    * Start streaming — sends HTTP 200 + SSE headers and returns a typed session.
    * After this call you can no longer send a regular HTTP response.
@@ -200,12 +153,6 @@ export type SSEContext<
     mode: SSESessionMode,
     options?: SSEStartOptions<Context>,
   ) => SSESession<Events, Context>
-
-  /**
-   * Send an HTTP response before streaming starts (early return).
-   * Must be called BEFORE `start()`.
-   */
-  respond: StrictRespondFunction<ResponseSchemas>
 
   /**
    * Advanced: send headers without creating a full connection.

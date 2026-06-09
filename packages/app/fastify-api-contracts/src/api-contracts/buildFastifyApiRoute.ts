@@ -7,13 +7,11 @@ import {
   hasAnySuccessSseResponse,
   isAnyOfResponses,
   isJsonResponse,
-  isSseResponse,
   mapApiContractToPath,
   type SseSchemaByEventName,
-  SUCCESSFUL_HTTP_STATUS_CODES,
 } from '@lokalise/api-contracts'
 import { InternalError } from '@lokalise/node-core'
-import type { FastifyReply, RouteOptions } from 'fastify'
+import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
 import type { z } from 'zod/v4'
 import type { ApiRouteOptions, InferApiHandler } from './apiHandlerTypes.ts'
 import type {
@@ -22,47 +20,12 @@ import type {
   SSESessionMode,
   SSEStartOptions,
   SSEStreamMessage,
-  SyncModeReply,
 } from './sseTypes.ts'
-import { determineMode, hasHttpStatusCode, isErrorLike, type SSEReply } from './sseUtils.ts'
+import { hasHttpStatusCode, isErrorLike, type SSEReply } from './sseUtils.ts'
 
 // ============================================================================
 // Internal Helpers — Response Mode
 // ============================================================================
-
-type ResponseMode = 'non-sse' | 'sse' | 'dual'
-
-function hasAnySuccessNonSseResponse(apiContract: ApiContract): boolean {
-  for (const code of [...SUCCESSFUL_HTTP_STATUS_CODES, '2xx' as const, 'default' as const]) {
-    const value = apiContract.responsesByStatusCode[code]
-
-    if (!value) {
-      continue
-    }
-
-    if (isAnyOfResponses(value)) {
-      for (const response of value.responses) {
-        if (!isSseResponse(response)) {
-          return true
-        }
-      }
-    } else if (!isSseResponse(value)) {
-      return false
-    }
-  }
-
-  return false
-}
-
-function getContractResponseMode(contract: ApiContract): ResponseMode {
-  if (!hasAnySuccessSseResponse(contract)) {
-    return 'non-sse'
-  }
-  if (hasAnySuccessNonSseResponse(contract)) {
-    return 'dual'
-  }
-  return 'sse'
-}
 
 function buildSSERouteConfig(
   options: ApiRouteOptions | undefined,
@@ -125,17 +88,32 @@ function validateApiResponseHeaders(contract: ApiContract, reply: FastifyReply):
   }
 }
 
-type MaybePromise<T> = T | Promise<T>
+type StatusBody = { status: number; body: unknown }
 
-async function handleApiSyncRoute(
+function isStatusBodyResult(value: unknown): value is StatusBody {
+  return typeof value === 'object' && value !== null && 'status' in value && 'body' in value
+}
+
+function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
+  return typeof value === 'object' && value !== null && Symbol.asyncIterator in value
+}
+
+/**
+ * Send a `{ status, body }` HTTP response, shared by the non-SSE path and the
+ * non-streaming branch of an SSE-capable handler.
+ *
+ * When `fromSseRoute` is true, the SSE-specific headers that the route config may
+ * have queued are removed first, so an early HTTP response is a clean JSON reply.
+ */
+async function sendResponse(
   contract: ApiContract,
-  // biome-ignore lint/suspicious/noExplicitAny: Handler types are validated by InferApiHandler at the call site
-  handler: (request: any, reply: SyncModeReply) => MaybePromise<{ status: number; body: unknown }>,
-  // biome-ignore lint/suspicious/noExplicitAny: Request types are validated by Fastify schema
-  request: any,
   reply: FastifyReply,
+  status: number,
+  body: unknown,
 ): Promise<void> {
-  const { status, body } = await handler(request, reply as SyncModeReply)
+  if (!reply.hasHeader('content-type')) {
+    reply.type('application/json')
+  }
 
   // Response body validation is handled by the `fastify-type-provider-zod` serializer
   // compiler (a required dependency), which throws a 500 when the body doesn't match the
@@ -147,10 +125,6 @@ async function handleApiSyncRoute(
     return
   }
 
-  if (!reply.hasHeader('content-type')) {
-    reply.type('application/json')
-  }
-
   await reply.code(status).send(body)
 }
 
@@ -159,8 +133,7 @@ async function handleApiSyncRoute(
 // ============================================================================
 
 function buildApiSSEContext(
-  // biome-ignore lint/suspicious/noExplicitAny: Request types are validated by Fastify schema
-  request: any,
+  request: FastifyRequest,
   reply: FastifyReply,
   eventSchemas: SseSchemaByEventName,
   options: ApiRouteOptions | undefined,
@@ -168,11 +141,8 @@ function buildApiSSEContext(
   // biome-ignore lint/suspicious/noExplicitAny: SSE event schemas are contract-specific, cast at call site
   sseContext: SSEContext<any>
   isStarted: () => boolean
-  hasResponse: () => boolean
-  getResponseData: () => { code: number; body: unknown } | undefined
 } {
   let started = false
-  let responseData: { code: number; body: unknown } | undefined
   const sseReply = reply as SSEReply
 
   const sseContext: SSEContext = {
@@ -262,17 +232,6 @@ function buildApiSSEContext(
       return session
     },
 
-    respond: ((code: number, body: unknown) => {
-      if (started) {
-        throw new Error(
-          'Cannot call sse.respond() after sse.start() — the SSE stream is already open.',
-        )
-      }
-      responseData = { code, body }
-      return { _type: 'respond' as const, code, body }
-      // biome-ignore lint/suspicious/noExplicitAny: respond typing is enforced by contract at call site
-    }) as any,
-
     sendHeaders: () => {
       sseReply.sse.sendHeaders()
     },
@@ -283,46 +242,67 @@ function buildApiSSEContext(
   return {
     sseContext,
     isStarted: () => started,
-    hasResponse: () => responseData !== undefined,
-    getResponseData: () => responseData,
   }
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Core SSE handler coordinates context, error handling, and lifecycle
-async function handleApiSseRoute(
-  // biome-ignore lint/suspicious/noExplicitAny: SSE handler types are validated by InferApiHandler at call site
-  sseHandler: (request: any, sse: any) => unknown,
-  eventSchemas: SseSchemaByEventName,
-  options: ApiRouteOptions | undefined,
-  // biome-ignore lint/suspicious/noExplicitAny: Request types are validated by Fastify schema
-  request: any,
-  reply: FastifyReply,
-): Promise<void> {
-  const { sseContext, isStarted, hasResponse, getResponseData } = buildApiSSEContext(
-    request,
-    reply,
-    eventSchemas,
-    options,
-  )
+type HandleApiRouteParams = {
+  contract: ApiContract
+  // biome-ignore lint/suspicious/noExplicitAny: Handler types are validated by InferApiHandler at call site
+  handler: (request: FastifyRequest, reply: FastifyReply, sse?: any) => any
+  eventSchemas: SseSchemaByEventName
+  options: ApiRouteOptions | undefined
+  sseCapable: boolean
+  request: FastifyRequest
+  reply: FastifyReply
+}
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Core route handler coordinates context, error handling, and lifecycle
+async function handleApiRoute({
+  contract,
+  handler,
+  eventSchemas,
+  options,
+  sseCapable,
+  request,
+  reply,
+}: HandleApiRouteParams): Promise<void> {
+  // Non-SSE contracts never receive an `sse` context and always return `{ status, body }`.
+  // Errors (e.g. response-schema serialization failures) propagate to Fastify's default
+  // handler, same as before.
+  if (!sseCapable) {
+    const { status, body } = await handler(request, reply)
+    await sendResponse(contract, reply, status, body)
+    return
+  }
+
+  const { sseContext, isStarted } = buildApiSSEContext(request, reply, eventSchemas, options)
 
   try {
-    await sseHandler(request, sseContext)
+    const result = await handler(request, reply, sseContext)
 
-    if (!isStarted() && !hasResponse()) {
-      throw new Error(
-        'SSE handler must either send a response (sse.respond()) ' +
-          'or start streaming (sse.start()). Handler returned without doing either.',
-      )
+    if (isStarted()) {
+      // The handler drove the session imperatively via sse.start(); @fastify/sse manages
+      // the rest of the connection lifecycle.
+      return
     }
 
-    const responseData = getResponseData()
-    if (responseData) {
-      // Early HTTP response (sse.respond() was called before streaming)
-      reply.removeHeader('cache-control')
-      reply.removeHeader('x-accel-buffering')
-      reply.type('application/json').code(responseData.code).send(responseData.body)
+    if (isStatusBodyResult(result)) {
+      // An SSE response carries an async iterable of events as its body: open the connection
+      // and pipe each event (validated against the contract's event schemas).
+      if (isAsyncIterable(result.body)) {
+        const session = sseContext.start('autoClose')
+        await session.sendStream(result.body as AsyncIterable<SSEStreamMessage>)
+        return
+      }
+      // Any other status/body is sent as a regular HTTP response.
+      await sendResponse(contract, reply, result.status, result.body)
+      return
     }
-    // If started, @fastify/sse manages the rest of the connection lifecycle
+
+    throw new Error(
+      'SSE handler must return { status, body } (with an async-iterable body to stream) or ' +
+        'call sse.start(). Handler returned without doing either.',
+    )
   } catch (err) {
     if (isStarted()) {
       // Headers already sent — can't change status code; try to send error event
@@ -412,28 +392,27 @@ export function buildFastifyApiRouteHandler<Contract extends ApiContract>(
  * Build a Fastify `RouteOptions` object from an `ApiContract` + handler.
  *
  * The handler shape is inferred from the contract's response mode:
- * - `'non-sse'` — bare async function returning `{ status, body }`
- * - `'sse'`     — bare async function calling `sse.start(...)` / `sse.respond(...)`
- * - `'dual'`    — `{ nonSse, sse }` object branched by the `Accept` header
+ * - non-SSE contracts — `(request, reply) => { status, body }`
+ * - contracts with any SSE response — `(request, reply, sse) => { status, body } | stream`,
+ *   where the single handler runs shared logic once and then either returns a non-SSE
+ *   `{ status, body }` response or calls `sse.start(...)` to stream.
  *
  * The optional `options` argument carries:
  * - any Fastify route field (`preHandler`, `onRequest`, `config`, `bodyLimit`, …)
  *   minus the ones the contract provides (`method`, `url`, `schema`, `handler`, `sse`),
  * - SSE lifecycle hooks (`onConnect`, `onClose`, `onReconnect`, `serializer`,
- *   `heartbeatInterval`) — applied for `'sse'` and `'dual'` contracts only,
- * - `defaultMode` for `'dual'` contracts when the `Accept` header is ambiguous.
+ *   `heartbeatInterval`) — applied only for contracts that declare an SSE response.
  *
  * @returns Fastify `RouteOptions` ready to pass to `app.route()`
  */
 export function buildFastifyApiRoute<Contract extends ApiContract>(
   contract: Contract,
-  handler: InferApiHandler<Contract>,
+  apiHandler: InferApiHandler<Contract>,
   options?: ApiRouteOptions,
 ): RouteOptions {
   // Separate SSE-specific options (not part of Fastify RouteOptions) from the
   // passthrough options spread directly onto the route.
   const {
-    defaultMode,
     contractMetadataToRouteMapper,
     serializer: _serializer,
     heartbeatInterval: _heartbeatInterval,
@@ -445,56 +424,29 @@ export function buildFastifyApiRoute<Contract extends ApiContract>(
   } = options ?? {}
 
   const url = mapApiContractToPath(contract)
-  const mode = getContractResponseMode(contract)
   const eventSchemas = getSseSchemaByEventName(contract) ?? {}
   const baseSchema = buildBaseSchema(contract)
   const contractMetadata = contractMetadataToRouteMapper?.(contract.metadata) ?? {}
+  const sseCapable = hasAnySuccessSseResponse(contract)
 
-  if (mode === 'non-sse') {
-    // biome-ignore lint/suspicious/noExplicitAny: handler shape validated by InferApiHandler at call site
-    const syncHandler = handler as any
-    return {
-      ...fastifyOptions,
-      ...contractMetadata,
-      method: contract.method,
-      url,
-      schema: baseSchema,
-      handler: async (request, reply) => handleApiSyncRoute(contract, syncHandler, request, reply),
-    }
-  }
-
-  if (mode === 'dual') {
-    const resolvedDefaultMode = defaultMode ?? 'json'
-    // biome-ignore lint/suspicious/noExplicitAny: handler shape validated by InferApiHandler at call site
-    const dualHandlers = handler as any
-    return {
-      ...fastifyOptions,
-      ...contractMetadata,
-      method: contract.method,
-      url,
-      sse: buildSSERouteConfig(options),
-      schema: baseSchema,
-      handler: (request, reply) => {
-        const responseMode = determineMode(request.headers.accept, resolvedDefaultMode)
-        if (responseMode === 'json') {
-          return handleApiSyncRoute(contract, dualHandlers.nonSse, request, reply)
-        }
-        return handleApiSseRoute(dualHandlers.sse, eventSchemas, options, request, reply)
-      },
-    }
-  }
-
-  // SSE-only
-  // biome-ignore lint/suspicious/noExplicitAny: handler shape validated by InferApiHandler at call site
-  const sseHandler = handler as any
   return {
     ...fastifyOptions,
     ...contractMetadata,
     method: contract.method,
     url,
-    sse: buildSSERouteConfig(options),
+    // `sse` is only set for SSE-capable contracts; non-SSE routes must not carry it.
+    ...(sseCapable ? { sse: buildSSERouteConfig(options) } : {}),
     schema: baseSchema,
     handler: async (request, reply) =>
-      handleApiSseRoute(sseHandler, eventSchemas, options, request, reply),
+      handleApiRoute({
+        contract,
+        // biome-ignore lint/suspicious/noExplicitAny: Handler types are validated by InferApiHandler at call site
+        handler: apiHandler as any,
+        eventSchemas,
+        options,
+        sseCapable,
+        request,
+        reply,
+      }),
   }
 }

@@ -21,7 +21,7 @@ This package adds support for generating fastify routes using universal API cont
 
 This module requires the `fastify-type-provider-zod` type provider to work and is ESM-only.
 
-SSE-only and dual-mode routes (see [`buildFastifyApiRoute`](#buildfastifyapiroute)) additionally require the [`@fastify/sse`](https://github.com/fastify/fastify-sse) plugin to be registered on the Fastify instance. It is a peer dependency and only needs to be installed when you use SSE/dual-mode contracts. Plain JSON routes do not need it.
+SSE-capable routes (see [`buildFastifyApiRoute`](#buildfastifyapiroute)) additionally require the [`@fastify/sse`](https://github.com/fastify/fastify-sse) plugin to be registered on the Fastify instance. It is a peer dependency and only needs to be installed when you use contracts that declare an SSE response. Plain JSON routes do not need it.
 
 ```ts
 import fastifySSE from '@fastify/sse'
@@ -63,11 +63,10 @@ Pick the builder that matches how the contract was created:
 
 | Mode | Contract shape | Handler |
 |------|----------------|---------|
-| **non-SSE** | all success responses are plain Zod schemas / `ContractNoBody` / `textResponse` / `blobResponse` | bare `(request, reply) => { status, body }` |
-| **SSE-only** | all success responses are `sseResponse(...)` | bare `(request, sse) => ...` |
-| **dual** | success responses mix SSE and non-SSE (via `anyOfResponses`) | `{ nonSse, sse }` object, branched by the `Accept` header |
+| **non-SSE** | all success responses are plain Zod schemas / `ContractNoBody` / `textResponse` / `blobResponse` | `(request, reply) => { status, body }` |
+| **SSE-capable** | at least one success response is `sseResponse(...)` (SSE-only or mixed with non-SSE via `anyOfResponses`) | `(request, reply, sse) => { status, body } \| stream` |
 
-TypeScript enforces the correct shape per contract — passing `{ nonSse, sse }` to a non-dual contract (or vice versa) is a compile error.
+A single handler covers both representations of an SSE-capable contract: it runs shared logic once and then either returns a non-SSE `{ status, body }` response (e.g. a `404` shared with the streaming path, or the JSON variant of a mixed contract) or calls `sse.start(...)` to stream. The `sse` context is only present on the handler signature when the contract actually declares an SSE response, so non-SSE routes never see it.
 
 #### Non-SSE routes
 
@@ -110,7 +109,12 @@ await app.ready()
 
 #### SSE-only routes
 
-SSE handlers receive an `sse` context as the second argument. Call `sse.start(mode)` to begin streaming (`'autoClose'` closes the connection when the handler returns; `'keepAlive'` keeps it open), or `sse.respond(code, body)` for an early HTTP response before streaming starts. The returned `session` exposes `send(event, data)` (validated against the contract's event schemas), `isConnected()`, `sendStream(iterable)` and `getStream()`.
+Every handler returns `{ status, body }`. For an SSE response the `body` is an `AsyncIterable` of events — the handler streams in one of two ways:
+
+- **Declarative (preferred):** return `{ status, body }` where `body` is an `AsyncIterable` of events (e.g. an `async function*`). The framework opens the connection, validates and sends each event against the contract's event schemas, then closes it (`autoClose`).
+- **Imperative:** receive the `sse` context as the **third** argument and call `sse.start(mode)` (`'autoClose'` closes when the handler returns; `'keepAlive'` keeps it open), then return nothing. The returned `session` exposes `send(event, data)`, `isConnected()`, `sendStream(iterable)` and `getStream()`. Use this when you need keep-alive, lifecycle hooks, or reconnection.
+
+To respond without streaming, return `{ status, body }` with a non-SSE body (the status must be a non-SSE response declared on the contract).
 
 ```ts
 import { sseResponse } from '@lokalise/api-contracts'
@@ -126,19 +130,30 @@ const streamContract = defineApiContract({
     },
 })
 
-const streamRoute = buildFastifyApiRoute(streamContract, async (_request, sse) => {
+// Declarative: the body is an async iterable of events.
+const streamRoute = buildFastifyApiRoute(streamContract, (_request) => ({
+    status: 200,
+    body: (async function* () {
+        yield { event: 'update', data: { value: 1 } }
+        yield { event: 'done', data: { total: 1 } }
+    })(),
+}))
+
+// Imperative: drive the session via the sse context (keep-alive, hooks, etc.).
+const streamRouteImperative = buildFastifyApiRoute(streamContract, async (_request, _reply, sse) => {
     const session = sse.start('autoClose')
     await session.send('update', { value: 1 })
     await session.send('done', { total: 1 })
 })
 ```
 
-#### Dual-mode routes
+#### Mixed (SSE + non-SSE) routes
 
-Dual-mode contracts (a success response built with `anyOfResponses([...])` that mixes a JSON schema and an `sseResponse(...)`) take a `{ nonSse, sse }` object. The request is routed to `nonSse` or `sse` based on the `Accept` header (`application/json` → `nonSse`, `text/event-stream` → `sse`); use the `defaultMode` option to pick the branch when the header is ambiguous.
+When a success response built with `anyOfResponses([...])` mixes a JSON schema and an `sseResponse(...)`, the contract is SSE-capable and uses the same single handler. That status's `body` type is then a union — the JSON payload **or** an `AsyncIterable` of events — so the handler returns `{ status, body }` with whichever it wants. Shared logic (auth, loading, validation) runs once, then the handler decides. It is free to base that decision on anything; the `determineMode(request.headers.accept)` helper resolves the client's `Accept` header (with `q=` quality values) to `'json'` or `'sse'`.
 
 ```ts
 import { anyOfResponses, sseResponse } from '@lokalise/api-contracts'
+import { determineMode } from '@lokalise/fastify-api-contracts'
 
 const chatContract = defineApiContract({
     method: 'post',
@@ -149,19 +164,28 @@ const chatContract = defineApiContract({
             z.object({ reply: z.string() }),
             sseResponse({ chunk: z.object({ delta: z.string() }), done: z.object({}) }),
         ]),
+        404: z.object({ error: z.string() }),
     },
 })
 
-const chatRoute = buildFastifyApiRoute(chatContract, {
-    nonSse: async (request) => ({ status: 200, body: { reply: await complete(request.body.message) } }),
-    sse: async (request, sse) => {
-        const session = sse.start('autoClose')
-        for await (const chunk of stream(request.body.message)) {
-            await session.send('chunk', { delta: chunk })
+const chatRoute = buildFastifyApiRoute(chatContract, async (request, _reply, _sse) => {
+    const conversation = await conversations.find(request.body.message)
+    if (!conversation) return { status: 404, body: { error: 'Not found' } } // shared by both
+
+    if (determineMode(request.headers.accept) === 'sse') {
+        return {
+            status: 200,
+            body: (async function* () {
+                for await (const chunk of stream(conversation)) {
+                    yield { event: 'chunk', data: { delta: chunk } }
+                }
+                yield { event: 'done', data: {} }
+            })(),
         }
-        await session.send('done', {})
-    },
-}, { defaultMode: 'json' })
+    }
+
+    return { status: 200, body: { reply: await complete(conversation) } }
+})
 ```
 
 Only response entries that carry a JSON body contribute to `schema.response`. `ContractNoBody`, `textResponse`, `blobResponse` and `sseResponse` entries are skipped, since they have no Zod serializer schema; `anyOfResponses` entries contribute the union of their JSON members.
@@ -172,7 +196,6 @@ Only response entries that carry a JSON body contribute to `schema.response`. `C
 
 | Option | Description |
 |--------|-------------|
-| `defaultMode` | Default branch for dual-mode routes when the `Accept` header is ambiguous (`'json'` or `'sse'`). Default: `'json'` |
 | `onConnect` / `onClose` / `onReconnect` | SSE connection lifecycle hooks (ignored for non-SSE routes) |
 | `serializer` | Custom serializer for SSE event data |
 | `heartbeatInterval` | Interval in ms for SSE keep-alive heartbeats |
@@ -180,7 +203,7 @@ Only response entries that carry a JSON body contribute to `schema.response`. `C
 
 ### `buildFastifyApiRouteHandler`
 
-Use `buildFastifyApiRouteHandler` to define a handler separately from the route. It returns the handler unchanged at runtime, typed from the contract (the same shape `buildFastifyApiRoute` expects — bare function, or `{ nonSse, sse }` for dual-mode contracts):
+Use `buildFastifyApiRouteHandler` to define a handler separately from the route. It returns the handler unchanged at runtime, typed from the contract (the same shape `buildFastifyApiRoute` expects — `(request, reply) => …` for non-SSE contracts, or `(request, reply, sse) => …` for SSE-capable ones):
 
 ```ts
 import {

@@ -2,19 +2,15 @@ import {
   anyOfResponses,
   ContractNoBody,
   defineApiContract,
+  type InferSseSuccessResponses,
   sseResponse,
 } from '@lokalise/api-contracts'
 import type { RouteOptions } from 'fastify'
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import type {
-  ApiNonSseHandler,
-  ApiSseHandler,
-  InferApiHandler,
-  InferApiRequest,
-  InferApiStatusResponse,
-} from './apiHandlerTypes.ts'
+import type { InferApiHandler, InferApiRequest, InferApiStatusResponse } from './apiHandlerTypes.ts'
 import { buildFastifyApiRoute, buildFastifyApiRouteHandler } from './buildFastifyApiRoute.ts'
+import type { SSEContext, SSEStreamMessage, SyncModeReply } from './sseTypes.ts'
 
 const userSchema = z.object({ id: z.string(), name: z.string() })
 const sseEventsSchema = {
@@ -91,15 +87,20 @@ describe('InferApiStatusResponse', () => {
     >()
   })
 
-  it('infers a string body for a textResponse and excludes SSE entries', () => {
+  it('infers an async-iterable body for an SSE response', () => {
     const contract = defineApiContract({
       method: 'get',
       pathResolver: () => '/stream',
       responsesByStatusCode: { 200: sseResponse(sseEventsSchema) },
     })
 
-    // An SSE-only contract has no non-SSE responses, so the status response is never.
-    expectTypeOf<InferApiStatusResponse<typeof contract>>().toEqualTypeOf<never>()
+    // An SSE response surfaces as a { status, body } whose body streams the contract events.
+    expectTypeOf<InferApiStatusResponse<typeof contract>>().toEqualTypeOf<{
+      status: 200
+      body: AsyncIterable<
+        SSEStreamMessage<InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>>
+      >
+    }>()
   })
 })
 
@@ -108,29 +109,32 @@ describe('InferApiStatusResponse', () => {
 // ============================================================================
 
 describe('InferApiHandler', () => {
-  it('infers a bare non-SSE handler for a plain JSON contract', () => {
+  it('infers a (request, reply) handler with no sse context for a non-SSE contract', () => {
     const contract = defineApiContract({
       method: 'get',
       pathResolver: () => '/users',
       responsesByStatusCode: { 200: userSchema },
     })
 
-    expectTypeOf<InferApiHandler<typeof contract>>().toEqualTypeOf<
-      ApiNonSseHandler<typeof contract>
+    // Exactly two params — no sse context is added for non-SSE contracts.
+    expectTypeOf<Parameters<InferApiHandler<typeof contract>>>().toEqualTypeOf<
+      [InferApiRequest<typeof contract>, SyncModeReply]
     >()
   })
 
-  it('infers a bare SSE handler for an SSE-only contract', () => {
+  it('adds an sse context as the third arg for an SSE-only contract', () => {
     const contract = defineApiContract({
       method: 'get',
       pathResolver: () => '/stream',
       responsesByStatusCode: { 200: sseResponse(sseEventsSchema) },
     })
 
-    expectTypeOf<InferApiHandler<typeof contract>>().toEqualTypeOf<ApiSseHandler<typeof contract>>()
+    expectTypeOf<Parameters<InferApiHandler<typeof contract>>[2]>().toEqualTypeOf<
+      SSEContext<InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>>
+    >()
   })
 
-  it('infers a { nonSse, sse } object for a dual-mode contract', () => {
+  it('adds an sse context as the third arg for a dual-mode contract', () => {
     const contract = defineApiContract({
       method: 'post',
       requestBodySchema: z.object({ message: z.string() }),
@@ -140,10 +144,9 @@ describe('InferApiHandler', () => {
       },
     })
 
-    expectTypeOf<InferApiHandler<typeof contract>>().toEqualTypeOf<{
-      nonSse: ApiNonSseHandler<typeof contract>
-      sse: ApiSseHandler<typeof contract>
-    }>()
+    expectTypeOf<Parameters<InferApiHandler<typeof contract>>[2]>().toEqualTypeOf<
+      SSEContext<InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>>
+    >()
   })
 })
 
@@ -180,7 +183,7 @@ describe('buildFastifyApiRoute typing', () => {
     )
   })
 
-  it('requires a { nonSse, sse } object for a dual-mode contract', () => {
+  it('accepts a single merged handler that returns JSON or streams for a dual-mode contract', () => {
     const contract = defineApiContract({
       method: 'post',
       requestBodySchema: z.object({ message: z.string() }),
@@ -190,8 +193,62 @@ describe('buildFastifyApiRoute typing', () => {
       },
     })
 
-    // @ts-expect-error dual-mode contracts require an object handler, not a bare function
-    buildFastifyApiRoute(contract, async () => ({ status: 200, body: { id: '1', name: 'A' } }))
+    buildFastifyApiRoute(contract, (request, _reply, sse) => {
+      expectTypeOf(request.body).toEqualTypeOf<{ message: string }>()
+      if (request.headers.accept === 'text/event-stream') {
+        sse.start('autoClose')
+        return
+      }
+      return { status: 200, body: { id: '1', name: 'A' } }
+    })
+  })
+
+  it('rejects an undeclared status code from a dual-mode handler', () => {
+    const contract = defineApiContract({
+      method: 'post',
+      requestBodySchema: z.object({ message: z.string() }),
+      pathResolver: () => '/chat',
+      responsesByStatusCode: {
+        200: anyOfResponses([userSchema, sseResponse(sseEventsSchema)]),
+      },
+    })
+
+    buildFastifyApiRoute(contract, (_request, _reply, _sse) =>
+      // @ts-expect-error 418 is not a declared response status code
+      ({ status: 418, body: { id: '1', name: 'A' } }),
+    )
+  })
+
+  it('accepts a returned { status, body } whose body is an async iterable of contract events', () => {
+    const contract = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/stream',
+      responsesByStatusCode: { 200: sseResponse(sseEventsSchema) },
+    })
+
+    buildFastifyApiRoute(contract, (_request, _reply, _sse) => ({
+      status: 200,
+      // biome-ignore lint/suspicious/useAwait: async is required to satisfy AsyncIterable
+      body: (async function* () {
+        yield { event: 'chunk', data: { delta: 'hi' } } as const
+        yield { event: 'done', data: { total: 1 } } as const
+      })(),
+    }))
+  })
+
+  it('types each streamed event against the contract event schemas', () => {
+    const contract = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/stream',
+      responsesByStatusCode: { 200: sseResponse(sseEventsSchema) },
+    })
+    type Event = SSEStreamMessage<
+      InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>
+    >
+
+    expectTypeOf<{ event: 'chunk'; data: { delta: string } }>().toMatchTypeOf<Event>()
+    // @ts-expect-error 'nope' is not a declared SSE event name
+    expectTypeOf<{ event: 'nope'; data: { delta: string } }>().toMatchTypeOf<Event>()
   })
 
   it('infers request typing inside the handler', () => {
