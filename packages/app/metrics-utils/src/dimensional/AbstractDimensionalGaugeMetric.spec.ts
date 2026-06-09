@@ -15,7 +15,9 @@ class ConcreteDimensionalGaugeMetric extends AbstractDimensionalGaugeMetric<['ac
   }
 }
 
-class LazyConcreteDimensionalGaugeMetric extends AbstractDimensionalGaugeMetric<['active', 'idle']> {
+class LazyConcreteDimensionalGaugeMetric extends AbstractDimensionalGaugeMetric<
+  ['active', 'idle']
+> {
   constructor(client?: typeof promClient) {
     super(
       {
@@ -29,7 +31,9 @@ class LazyConcreteDimensionalGaugeMetric extends AbstractDimensionalGaugeMetric<
   }
 }
 
-class LazyUnboundedDimensionalGaugeMetric extends AbstractDimensionalGaugeMetric<readonly string[]> {
+class LazyUnboundedDimensionalGaugeMetric extends AbstractDimensionalGaugeMetric<
+  readonly string[]
+> {
   constructor(client?: typeof promClient) {
     super(
       {

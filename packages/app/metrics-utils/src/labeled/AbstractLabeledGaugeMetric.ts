@@ -61,9 +61,7 @@ export abstract class AbstractLabeledGaugeMetric<
    *
    * Pass an object mapping each measurement key to the value to set. Keys with `undefined` values are skipped.
    */
-  public override registerMeasurement(
-    measurement: GaugeMeasurement<TMetricMeasurementKeys>,
-  ): void {
+  public override registerMeasurement(measurement: GaugeMeasurement<TMetricMeasurementKeys>): void {
     if (!this.metric) return
 
     for (const [measurementKey, value] of Object.entries(measurement)) {

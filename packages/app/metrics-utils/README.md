@@ -4,7 +4,7 @@ This package contains a set of utilities to work with Prometheus metrics.
 
 It provides:
 
-- Eight abstract base classes for building Prometheus metrics, organized into two families:
+- Abstract base classes for building Prometheus metrics, organized into two families:
   - **[Labeled](#labeled)** — one Prometheus metric with dimensions expressed as Prometheus labels. This is the idiomatic Prometheus approach and is what you want whenever your metrics backend supports labels (Prometheus itself, Grafana, most standard APMs).
   - **[Dimensional](#dimensional)** — one Prometheus metric per dimension. Designed for backends that **do not support Prometheus labels** (e.g. some Datadog setups): instead of one labeled series, each dimension becomes its own metric with a caller-provided name.
 - Two ready-made [Transaction observability managers](#transaction-observability-managers) (one per family) that implement the `TransactionObservabilityManager` interface from [`@lokalise/node-core`](https://github.com/lokalise/node-core).
