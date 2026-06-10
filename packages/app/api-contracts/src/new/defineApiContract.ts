@@ -5,7 +5,7 @@ import type {
   RoutePathResolver,
 } from '../apiContracts.ts'
 import { SUCCESSFUL_HTTP_STATUS_CODES } from '../HttpStatusCodes.ts'
-import type { Exactly } from '../typeUtils.ts'
+import type { DistributiveOmit, Exactly } from '../typeUtils.ts'
 import { ContractNoBody } from './constants.ts'
 import {
   isAnyOfResponses,
@@ -54,7 +54,7 @@ export type PayloadApiContract = CommonApiContract & {
 
 export type ApiContract = GetApiContract | DeleteApiContract | PayloadApiContract
 
-type TypedPathApiContract<T extends RequestPathParamsSchema> = Omit<
+type TypedPathApiContract<T extends RequestPathParamsSchema> = DistributiveOmit<
   ApiContract,
   'pathResolver' | 'requestPathParamsSchema'
 > & {

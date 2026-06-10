@@ -21,6 +21,15 @@ export type Exactly<T, U> = T & {
 }
 
 /**
+ * Like `Omit`, but distributes over unions: each union member is transformed
+ * separately, preserving discriminated-union relationships between keys.
+ * (Plain `Omit` collapses a union into a single object type of its common keys.)
+ */
+export type DistributiveOmit<TUnion, TKeys extends PropertyKey> = TUnion extends unknown
+  ? Omit<TUnion, TKeys>
+  : never
+
+/**
  * Extracts a union of value types from an object type.
  * Optionally constrained to a subset of keys via ValueType.
  */
