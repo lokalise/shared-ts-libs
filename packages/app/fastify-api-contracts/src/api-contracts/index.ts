@@ -20,4 +20,4 @@ export type {
   SSEStartOptions,
   SSEStreamMessage,
 } from './sseTypes.ts'
-export { determineMode, hasHttpStatusCode, isErrorLike } from './sseUtils.ts'
+export { determineMode } from './sseUtils.ts'

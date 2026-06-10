@@ -24,7 +24,6 @@ import type {
   SSEStartOptions,
   SSEStreamMessage,
 } from './sseTypes.ts'
-import { hasHttpStatusCode, isErrorLike } from './sseUtils.ts'
 
 function buildSSERouteConfig(
   options: ApiRouteOptions | undefined,
@@ -265,7 +264,6 @@ type HandleApiRouteParams = {
   reply: FastifyReply
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Core route handler coordinates context, error handling, and lifecycle
 async function handleApiRoute({
   contract,
   handler,
@@ -275,72 +273,36 @@ async function handleApiRoute({
   request,
   reply,
 }: HandleApiRouteParams): Promise<void> {
-  // Non-SSE contracts never receive an `sse` context and always return `{ status, body }`.
-  // Errors (e.g. response-schema serialization failures) propagate to Fastify's default
-  // handler, same as before.
-  if (!sseCapable) {
-    const { status, body } = await handler(request, reply)
-    await sendResponse(contract, reply, status, body)
+  const apiSSEContext = sseCapable
+    ? buildApiSSEContext(request, reply, eventSchemas, options)
+    : undefined
+
+  const result = await handler(request, reply, apiSSEContext?.sseContext)
+
+  if (apiSSEContext?.isStarted()) {
+    // The handler drove the session imperatively via sse.start(); @fastify/sse manages
+    // the rest of the connection lifecycle.
+    apiSSEContext.markHandlerDone()
     return
   }
 
-  const { sseContext, isStarted, markHandlerDone } = buildApiSSEContext(
-    request,
-    reply,
-    eventSchemas,
-    options,
-  )
-
-  try {
-    const result = await handler(request, reply, sseContext)
-
-    if (isStarted()) {
-      // The handler drove the session imperatively via sse.start(); @fastify/sse manages
-      // the rest of the connection lifecycle.
-      markHandlerDone()
+  if (isStatusBodyResult(result)) {
+    // An SSE response carries an async iterable of events as its body: open the connection
+    // and pipe each event (validated against the contract's event schemas).
+    if (apiSSEContext && isAsyncIterable(result.body)) {
+      const session = apiSSEContext.sseContext.start('autoClose')
+      await session.sendStream(result.body as AsyncIterable<SSEStreamMessage>)
+      apiSSEContext.markHandlerDone()
       return
     }
-
-    if (isStatusBodyResult(result)) {
-      // An SSE response carries an async iterable of events as its body: open the connection
-      // and pipe each event (validated against the contract's event schemas).
-      if (isAsyncIterable(result.body)) {
-        const session = sseContext.start('autoClose')
-        await session.sendStream(result.body as AsyncIterable<SSEStreamMessage>)
-        markHandlerDone()
-        return
-      }
-      // Any other status/body is sent as a regular HTTP response.
-      await sendResponse(contract, reply, result.status, result.body)
-      return
-    }
-
-    throw new Error(
-      'SSE handler must return { status, body } (with an async-iterable body to stream) or ' +
-        'call sse.start(). Handler returned without doing either.',
-    )
-  } catch (err) {
-    if (isStarted()) {
-      // Headers already sent — can't change status code; try to send error event
-      if (reply.sse.isConnected) {
-        try {
-          await reply.sse.send({
-            event: 'error',
-            data: { message: isErrorLike(err) ? err.message : 'Internal Server Error' },
-          })
-        } catch {
-          // Ignore send failures during error handling
-        }
-      }
-      throw err
-    }
-
-    // Streaming not started — send HTTP error response
-    const message = isErrorLike(err) ? err.message : 'Internal Server Error'
-    const statusCode = hasHttpStatusCode(err) ? err.httpStatusCode : 500
-    const statusText = statusCode >= 500 ? 'Internal Server Error' : 'Error'
-    reply.code(statusCode).type('application/json').send({ statusCode, error: statusText, message })
+    // Any other status/body is sent as a regular HTTP response.
+    await sendResponse(contract, reply, result.status, result.body)
+    return
   }
+
+  throw new Error(
+    'Handler must return { status, body } or call sse.start(). Handler returned without doing either.',
+  )
 }
 
 function buildResponseSchemas(contract: ApiContract): Record<string, z.ZodType> {

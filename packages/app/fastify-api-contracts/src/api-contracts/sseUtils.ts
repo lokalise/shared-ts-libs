@@ -1,38 +1,6 @@
 import type { DualModeType } from './sseTypes.ts'
 
 /**
- * Check if a value is an Error-like object (cross-realm safe).
- * Uses duck typing instead of `instanceof` for reliability across realms.
- */
-export function isErrorLike(err: unknown): err is { message: string } {
-  return (
-    typeof err === 'object' &&
-    err !== null &&
-    'message' in err &&
-    typeof (err as { message: unknown }).message === 'string'
-  )
-}
-
-/**
- * Check if an error has a valid `httpStatusCode` property (like `PublicNonRecoverableError`).
- * Uses duck typing instead of `instanceof` for reliability across realms.
- * Validates the status code is a finite integer within the valid HTTP range (100-599).
- */
-export function hasHttpStatusCode(err: unknown): err is { httpStatusCode: number } {
-  if (typeof err !== 'object' || err === null || !('httpStatusCode' in err)) {
-    return false
-  }
-  const statusCode = (err as { httpStatusCode: unknown }).httpStatusCode
-  return (
-    typeof statusCode === 'number' &&
-    Number.isFinite(statusCode) &&
-    Number.isInteger(statusCode) &&
-    statusCode >= 100 &&
-    statusCode <= 599
-  )
-}
-
-/**
  * Determine the response mode from the `Accept` header for dual-mode routes.
  *
  * Parses the `Accept` header and determines whether to use JSON or SSE mode.
