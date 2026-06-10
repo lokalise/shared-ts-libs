@@ -1,7 +1,6 @@
 import type { SSEEventSchemas } from '@lokalise/api-contracts'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import type { z } from 'zod/v4'
-import type { ApiContractMetadataToRouteMapper } from '../types.ts'
 
 // ============================================================================
 // Dual-mode
@@ -49,11 +48,12 @@ export type SSEEventSender<Events extends SSEEventSchemas> = <
 ) => Promise<boolean>
 
 /**
- * Reason why the SSE connection was closed.
- * - `'server'`: Server explicitly closed the connection
+ * Which side initiated the SSE connection close.
+ * - `'server'`: `session.close()` was called, or an `autoClose` session ended because the
+ *   handler completed.
  * - `'client'`: Client closed the connection (EventSource.close(), navigation, network failure)
  */
-export type SSECloseReason = 'server' | 'client'
+export type SSECloseInitiator = 'server' | 'client'
 
 // ============================================================================
 // SSE session
@@ -113,11 +113,8 @@ export type SSESession<Events extends SSEEventSchemas = SSEEventSchemas, Context
   getStream: () => NodeJS.WritableStream
   /** Send multiple SSE messages from an async iterable, validating each against the event schemas. */
   sendStream: (messages: AsyncIterable<SSEStreamMessage<Events>>) => Promise<void>
-  /**
-   * Zod schemas for validating event data.
-   * @internal
-   */
-  eventSchemas?: SSEEventSchemas
+  /** Close the connection from the server side (`onClose` fires with initiator `'server'`). */
+  close: () => void
 }
 
 // ============================================================================
@@ -142,12 +139,6 @@ export type SSEContext<Events extends SSEEventSchemas = SSEEventSchemas> = {
     options?: SSEStartOptions<Context>,
   ) => SSESession<Events, Context>
 
-  /**
-   * Advanced: send headers without creating a full connection.
-   * Most handlers should use `start()` instead.
-   */
-  sendHeaders: () => void
-
   /** Escape hatch to the raw Fastify reply. Prefer the typed methods above. */
   reply: FastifyReply
 }
@@ -162,8 +153,8 @@ export type SSEContext<Events extends SSEEventSchemas = SSEEventSchemas> = {
 export type FastifySSERouteOptions = {
   /** Called when the client connects (after the SSE handshake). */
   onConnect?: (connection: SSESession) => void | Promise<void>
-  /** Called when the SSE connection closes for any reason. */
-  onClose?: (connection: SSESession, reason: SSECloseReason) => void | Promise<void>
+  /** Called when the SSE connection closes, with the side that initiated the close. */
+  onClose?: (connection: SSESession, initiator: SSECloseInitiator) => void | Promise<void>
   /**
    * Handler for `Last-Event-ID` reconnection.
    * Return an iterable of events to replay, or handle replay manually.
@@ -182,12 +173,4 @@ export type FastifySSERouteOptions = {
    * @default 30000
    */
   heartbeatInterval?: number
-  /**
-   * Maps contract metadata to additional Fastify route options.
-   *
-   * Called with the contract's `metadata` field; its return value is merged into
-   * the Fastify route options as a base — useful for cross-cutting concerns (auth,
-   * rate limiting, tracing) driven by metadata declared on the contract.
-   */
-  contractMetadataToRouteMapper?: ApiContractMetadataToRouteMapper
 }

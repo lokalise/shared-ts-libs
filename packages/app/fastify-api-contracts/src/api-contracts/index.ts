@@ -11,7 +11,7 @@ export { buildFastifyApiRoute, buildFastifyApiRouteHandler } from './buildFastif
 export type {
   DualModeType,
   FastifySSERouteOptions,
-  SSECloseReason,
+  SSECloseInitiator,
   SSEContext,
   SSEEventSender,
   SSEMessage,

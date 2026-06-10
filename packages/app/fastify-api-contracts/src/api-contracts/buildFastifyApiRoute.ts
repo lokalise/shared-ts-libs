@@ -168,13 +168,17 @@ function buildApiSSEContext(
   // biome-ignore lint/suspicious/noExplicitAny: SSE event schemas are contract-specific, cast at call site
   sseContext: SSEContext<any>
   isStarted: () => boolean
+  markHandlerDone: () => void
 } {
   let started = false
+  let sessionMode: SSESessionMode | undefined
+  let closedByServer = false
   const sseReply = reply as SSEReply
 
   const sseContext: SSEContext = {
     start: <Context = unknown>(mode: SSESessionMode, startOptions?: SSEStartOptions<Context>) => {
       started = true
+      sessionMode = mode
 
       if (mode === 'keepAlive') {
         sseReply.sse.keepAlive()
@@ -229,7 +233,10 @@ function buildApiSSEContext(
             await send(message.event, message.data, { id: message.id, retry: message.retry })
           }
         },
-        eventSchemas,
+        close: () => {
+          closedByServer = true
+          sseReply.sse.close()
+        },
       }
 
       if (options?.onConnect) {
@@ -239,7 +246,9 @@ function buildApiSSEContext(
       if (options?.onClose) {
         const onClose = options.onClose
         sseReply.sse.onClose(() => {
-          void Promise.resolve(onClose(session, 'client')).catch(() => {})
+          void Promise.resolve(onClose(session, closedByServer ? 'server' : 'client')).catch(
+            () => {},
+          )
         })
       }
 
@@ -259,16 +268,20 @@ function buildApiSSEContext(
       return session
     },
 
-    sendHeaders: () => {
-      sseReply.sse.sendHeaders()
-    },
-
     reply,
   }
 
   return {
     sseContext,
     isStarted: () => started,
+    // An autoClose session is closed by @fastify/sse when the handler completes — that close
+    // is server-initiated. Called after the handler resolves, before the close fires; if the
+    // client already disconnected mid-stream, onClose has fired with 'client' and this is moot.
+    markHandlerDone: () => {
+      if (sessionMode === 'autoClose') {
+        closedByServer = true
+      }
+    },
   }
 }
 
@@ -302,7 +315,12 @@ async function handleApiRoute({
     return
   }
 
-  const { sseContext, isStarted } = buildApiSSEContext(request, reply, eventSchemas, options)
+  const { sseContext, isStarted, markHandlerDone } = buildApiSSEContext(
+    request,
+    reply,
+    eventSchemas,
+    options,
+  )
 
   try {
     const result = await handler(request, reply, sseContext)
@@ -310,6 +328,7 @@ async function handleApiRoute({
     if (isStarted()) {
       // The handler drove the session imperatively via sse.start(); @fastify/sse manages
       // the rest of the connection lifecycle.
+      markHandlerDone()
       return
     }
 
@@ -319,6 +338,7 @@ async function handleApiRoute({
       if (isAsyncIterable(result.body)) {
         const session = sseContext.start('autoClose')
         await session.sendStream(result.body as AsyncIterable<SSEStreamMessage>)
+        markHandlerDone()
         return
       }
       // Any other status/body is sent as a regular HTTP response.

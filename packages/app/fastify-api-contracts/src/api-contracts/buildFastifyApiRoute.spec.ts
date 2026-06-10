@@ -514,6 +514,34 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(response.body).toContain('event: done')
   })
 
+  it("reports 'server' as the close initiator when an autoClose stream completes", async () => {
+    let closeInitiator: string | undefined
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(
+        sseOnlyContract,
+        async (_request, _reply, sse) => {
+          const session = sse.start('autoClose')
+          await session.send('done', { total: 1 })
+        },
+        {
+          onClose: (_session, initiator) => {
+            closeInitiator = initiator
+          },
+        },
+      ),
+    )
+    await app.ready()
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/stream',
+      headers: { accept: 'text/event-stream' },
+    })
+    expect(response.statusCode).toBe(200)
+    await vi.waitFor(() => expect(closeInitiator).toBe('server'))
+  })
+
   it('shares a 404 then streams via async iterable for an SSE-capable contract', async () => {
     const contract = defineApiContract({
       method: 'get',

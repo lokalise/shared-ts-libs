@@ -8,6 +8,7 @@ import type {
 } from '@lokalise/api-contracts'
 import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
 import type { z } from 'zod/v4'
+import type { ApiContractMetadataToRouteMapper } from '../types.ts'
 import type { FastifySSERouteOptions, SSEContext, SSEStreamMessage } from './sseTypes.ts'
 
 /**
@@ -127,4 +128,13 @@ export type InferApiHandler<Contract extends ApiContract> = [
  * options (`onConnect`/`onClose`/`onReconnect`, …) that apply only to SSE-capable contracts.
  */
 export type ApiRouteOptions = Omit<RouteOptions, 'method' | 'url' | 'schema' | 'handler' | 'sse'> &
-  FastifySSERouteOptions
+  FastifySSERouteOptions & {
+    /**
+     * Maps contract metadata to additional Fastify route options.
+     *
+     * Called with the contract's `metadata` field; its return value is merged into
+     * the Fastify route options as a base — useful for cross-cutting concerns (auth,
+     * rate limiting, tracing) driven by metadata declared on the contract.
+     */
+    contractMetadataToRouteMapper?: ApiContractMetadataToRouteMapper
+  }
