@@ -1,6 +1,6 @@
+import type { Readable } from 'node:stream'
 import type {
   ApiContract,
-  ContractNoBody,
   ContractResponseMode,
   InferSseSuccessResponses,
   PayloadApiContract,
@@ -15,87 +15,43 @@ import type {
   SyncModeReply,
 } from './sseTypes.ts'
 
-type MaybePromise<T> = T | Promise<T>
-
-// ============================================================================
-// Status+Body Response
-// ============================================================================
-
 /**
- * Maps a single `responsesByStatusCode` entry to its handler body type:
- * - `SseResponse`  → `AsyncIterable` of the entry's events (return it to stream)
- * - `BlobResponse` → `Blob`
- * - `TextResponse` → `string`
- * - `AnyOfResponses` → the union of its members' body types
- * - plain Zod schema → its output type
+ * Maps a single `responsesByStatusCode` entry to its handler body type.
  */
-type ResponseBodyEntry<T> = T extends undefined
-  ? never
+type HandlerResponseBody<T> = T extends z.ZodType
+  ? z.output<T>
   : T extends { _tag: 'SseResponse'; schemaByEventName: infer S extends SSEEventSchemas }
     ? AsyncIterable<SSEStreamMessage<S>>
-    : T extends { _tag: 'NoContentResponse' }
-      ? undefined
-      : T extends { _tag: 'BlobResponse' }
-        ? Blob
-        : T extends { _tag: 'TextResponse' }
-          ? string
-          : T extends z.ZodType
-            ? z.output<T>
-            : T extends { _tag: 'AnyOfResponses'; responses: Array<infer R> }
-              ? ResponseBodyEntry<R>
-              : undefined
+    : T extends { _tag: 'NoBodyResponse' }
+      ? undefined | null
+      : T extends { _tag: 'TextResponse' }
+        ? string | Buffer | Readable
+        : T extends { _tag: 'BlobResponse' }
+          ? Buffer | Readable
+          : T extends { _tag: 'AnyOfResponses'; responses: Array<infer R> }
+            ? HandlerResponseBody<R>
+            : undefined
 
 /**
  * Discriminated union of `{ status, body }` pairs for every response a contract declares.
- *
- * The handler returns one of these to send a status code and body together (no separate
- * `reply.code()` call). For an SSE response the `body` is an `AsyncIterable` of events —
- * returning it streams those events to the client.
- *
- * @example
- * ```typescript
- * async (request) => {
- *   if (!valid) return { status: 400, body: { error: 'Bad Request' } }
- *   return { status: 200, body: { id: request.params.id } }
- * }
- * ```
  */
 export type InferApiStatusResponse<TApiContract extends ApiContract> = {
-  [K in keyof TApiContract['responsesByStatusCode']]: ResponseBodyEntry<
-    TApiContract['responsesByStatusCode'][K]
-  > extends never
-    ? never
-    : { status: K; body: ResponseBodyEntry<TApiContract['responsesByStatusCode'][K]> }
+  [TStatusCode in keyof TApiContract['responsesByStatusCode']]: HandlerResponseBody<
+    TApiContract['responsesByStatusCode'][TStatusCode]
+  > extends infer TBody
+    ? [TBody] extends [undefined]
+      ? { status: TStatusCode; body?: TBody }
+      : { status: TStatusCode; body: TBody }
+    : never
 }[keyof TApiContract['responsesByStatusCode']]
 
-// ============================================================================
-// Request Inference
-// ============================================================================
-
-type InferOptSchema<T, Fallback = unknown> =
-  NonNullable<T> extends z.ZodType ? z.output<NonNullable<T>> : Fallback
+type InferOptSchema<T> = T extends z.ZodType ? z.output<T> : undefined
 
 type InferApiBodyType<Contract extends ApiContract> = Contract extends PayloadApiContract
-  ? Contract['requestBodySchema'] extends typeof ContractNoBody
-    ? undefined
-    : NonNullable<Contract['requestBodySchema']> extends z.ZodType
-      ? z.output<NonNullable<Contract['requestBodySchema']>>
-      : undefined
+  ? InferOptSchema<Contract['requestBodySchema']>
   : undefined
 
-/**
- * Infer the `FastifyRequest` type from an `ApiContract`.
- *
- * Provides properly typed params, querystring, headers, and body.
- *
- * @example
- * ```typescript
- * const handler = async (request: InferApiRequest<typeof myContract>) => {
- *   request.params.userId  // typed
- *   request.body.name      // typed
- * }
- * ```
- */
+/** Infer the typed `FastifyRequest` for an `ApiContract`. */
 export type InferApiRequest<Contract extends ApiContract> = FastifyRequest<{
   Params: InferOptSchema<Contract['requestPathParamsSchema']>
   Querystring: InferOptSchema<Contract['requestQuerySchema']>
@@ -103,46 +59,26 @@ export type InferApiRequest<Contract extends ApiContract> = FastifyRequest<{
   Body: InferApiBodyType<Contract>
 }>
 
-// ============================================================================
-// Handler Types
-// ============================================================================
+type MaybePromise<T> = T | Promise<T>
 
 /**
- * Handler inferred from a contract's response mode.
+ * Handler for an `ApiContract`. Returns `{ status, body }` for any response the contract
+ * declares. The `body` type follows the contract entry for that status: the JSON/text/blob payload, or an
+ * `AsyncIterable` of events (e.g. an `async function*`) for an SSE status.
  *
- * - **Non-SSE contracts** (`(request, reply)`): always `return { status, body }` — the
- *   framework validates the body against the contract's schema for that status code and
- *   sends it. Use `reply.header()` to set response headers when needed.
+ * Contracts that declare an SSE response also get an `sse` context as the third arg
+ * (`(request, reply, sse)`) for imperative streaming — `sse.start()` for keep-alive, lifecycle
+ * hooks, or reconnection; non-SSE contracts get just `(request, reply)`.
  *
- * - **SSE-capable contracts** (`(request, reply, sse)`): a single handler covers both
- *   representations. Shared logic (auth, loading, validation) runs once, then the handler
- *   `return`s a `{ status, body }` response. For an SSE status the `body` is an
- *   `AsyncIterable` of events (e.g. from an `async function*`) — returning it opens the
- *   connection, validates and sends each event, then closes it; for any other status the
- *   `body` is the usual JSON/text/blob payload. For advanced control (keep-alive, lifecycle
- *   hooks, reconnection) call `sse.start(mode)` and drive the session imperatively instead.
- *   The `sse` context is only present on the signature when the contract
- *   declares an SSE response, so non-SSE routes never see it.
- *
- * @example Non-SSE
- * ```typescript
- * async (request) => ({ status: 200, body: { id: request.params.userId } })
- * ```
- *
- * @example SSE-capable — return `{ status, body }` whose body is an async iterable
+ * @example
  * ```typescript
  * async (request, reply, sse) => {
  *   const user = await findUser(request.params.id)
- *   if (!user) return { status: 404, body: { message: 'Not found' } } // shared by both
- *
- *   if (request.headers.accept !== 'text/event-stream') {
- *     return { status: 200, body: user }
- *   }
+ *   if (!user) return { status: 404, body: { message: 'Not found' } }
  *   return {
  *     status: 200,
  *     body: (async function* () {
  *       yield { event: 'update', data: user }
- *       yield { event: 'done', data: { total: 1 } }
  *     })(),
  *   }
  * }
@@ -162,19 +98,10 @@ export type InferApiHandler<Contract extends ApiContract> = [
       // biome-ignore lint/suspicious/noConfusingVoidType: void is intentional — handler returns nothing after sse.start()
     ) => MaybePromise<InferApiStatusResponse<Contract> | void>
 
-// ============================================================================
-// Route Options
-// ============================================================================
-
 /**
- * Options for configuring an `ApiContract` route.
- *
- * Extends Fastify's `RouteOptions` minus the fields the contract provides
- * (`method`, `url`, `schema`, `handler`, `sse`), so any Fastify hook or config
- * (`preHandler`, `onRequest`, `config`, `bodyLimit`, etc.) can be passed directly.
- *
- * SSE lifecycle options (`onConnect`, `onClose`, `onReconnect`) are only relevant
- * for SSE and dual-mode contracts and are ignored for non-SSE routes.
+ * Extra options for an `ApiContract` route: any Fastify `RouteOptions` field except the ones
+ * the contract provides (`method`, `url`, `schema`, `handler`, `sse`), plus the SSE lifecycle
+ * options (`onConnect`/`onClose`/`onReconnect`, …) that apply only to SSE-capable contracts.
  */
 export type ApiRouteOptions = Omit<RouteOptions, 'method' | 'url' | 'schema' | 'handler' | 'sse'> &
-  Omit<FastifySSERouteOptions, 'preHandler'>
+  FastifySSERouteOptions

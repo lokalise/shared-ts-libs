@@ -7,7 +7,6 @@ export type {
 export { buildFastifyApiRoute, buildFastifyApiRouteHandler } from './buildFastifyApiRoute.ts'
 export type {
   DualModeType,
-  FastifySSEPreHandler,
   FastifySSERouteOptions,
   SSECloseReason,
   SSEContext,

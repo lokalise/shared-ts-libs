@@ -1,12 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import {
   type ApiContract,
+  type ApiContractResponse,
   ContractNoBody,
   getSseSchemaByEventName,
   type HttpStatusCode,
   hasAnySuccessSseResponse,
   isAnyOfResponses,
+  isBlobResponse,
   isJsonResponse,
+  isTextResponse,
   mapApiContractToPath,
   type SseSchemaByEventName,
 } from '@lokalise/api-contracts'
@@ -99,11 +102,32 @@ function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
 }
 
 /**
- * Send a `{ status, body }` HTTP response, shared by the non-SSE path and the
- * non-streaming branch of an SSE-capable handler.
+ * Look up the `content-type` a contract declares for a `textResponse`/`blobResponse` at a
+ * given status code (directly or inside an `anyOfResponses`). Used to set the response
+ * header so the client can match the body kind. Returns `undefined` for JSON/unknown entries.
+ */
+function getDeclaredContentType(contract: ApiContract, status: number): string | undefined {
+  const entry = contract.responsesByStatusCode[status as HttpStatusCode]
+  if (!entry) {
+    return undefined
+  }
+  const candidates: ApiContractResponse[] = isAnyOfResponses(entry) ? entry.responses : [entry]
+  for (const candidate of candidates) {
+    if (isTextResponse(candidate) || isBlobResponse(candidate)) {
+      return candidate.contentType
+    }
+  }
+  return undefined
+}
+
+/**
+ * Send a `{ status, body }` HTTP response, shared by the non-SSE path and the non-streaming
+ * branch of an SSE-capable handler.
  *
- * When `fromSseRoute` is true, the SSE-specific headers that the route config may
- * have queued are removed first, so an early HTTP response is a clean JSON reply.
+ * The body is passed to Fastify as-is — a `string`, `Buffer` or `Readable` stream is sent
+ * natively, everything else is serialized as JSON. The `content-type` (unless the handler
+ * already set one) comes from the contract: a `textResponse`/`blobResponse` entry's declared
+ * type, otherwise `application/json`.
  */
 async function sendResponse(
   contract: ApiContract,
@@ -111,8 +135,11 @@ async function sendResponse(
   status: number,
   body: unknown,
 ): Promise<void> {
-  if (!reply.hasHeader('content-type')) {
-    reply.type('application/json')
+  const existing = reply.getHeader('content-type')
+  // Set the content-type when none is present, or replace the SSE route config's pre-set
+  // `text/event-stream` for an early non-streaming response.
+  if (existing === undefined || String(existing).includes('text/event-stream')) {
+    reply.type(getDeclaredContentType(contract, status) ?? 'application/json')
   }
 
   // Response body validation is handled by the `fastify-type-provider-zod` serializer

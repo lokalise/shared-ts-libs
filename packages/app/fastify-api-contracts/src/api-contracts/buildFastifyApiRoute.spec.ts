@@ -1,9 +1,12 @@
+import { Readable } from 'node:stream'
 import * as fastifySSEImport from '@fastify/sse'
 import {
   anyOfResponses,
+  blobResponse,
   ContractNoBody,
   defineApiContract,
   sseResponse,
+  textResponse,
 } from '@lokalise/api-contracts'
 import fastify, { type FastifyInstance, type FastifyPluginAsync } from 'fastify'
 import {
@@ -332,6 +335,16 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(response.json()).toEqual({ id: '42', name: 'Alice' })
   })
 
+  it('accepts a no-body response returned as just { status }', async () => {
+    app = await buildApp()
+    app.route(buildFastifyApiRoute(deleteUserContract, async () => ({ status: 204 })))
+    await app.ready()
+
+    const response = await app.inject({ method: 'DELETE', url: '/users/42' })
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe('')
+  })
+
   it('returns 500 when the handler body fails contract validation', async () => {
     const contract = defineApiContract({
       method: 'get',
@@ -375,6 +388,85 @@ describe('buildFastifyApiRoute — runtime', () => {
     const missing = await app.inject({ method: 'GET', url: '/users/missing' })
     expect(missing.statusCode).toBe(404)
     expect(missing.json()).toEqual({ error: 'Not found' })
+  })
+
+  it('sends a string body with the contract-declared text content-type', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/export.csv',
+      responsesByStatusCode: { 200: textResponse('text/csv') },
+    })
+    app = await buildApp()
+    app.route(buildFastifyApiRoute(contract, () => ({ status: 200, body: 'a,b\n1,2' })))
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/export.csv' })
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['content-type']).toContain('text/csv')
+    expect(response.body).toBe('a,b\n1,2')
+  })
+
+  it('streams a text response (e.g. text/html) via a Readable', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/page',
+      responsesByStatusCode: { 200: textResponse('text/html') },
+    })
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(contract, () => ({
+        status: 200,
+        body: Readable.from(['<html>', '<body>hi</body>', '</html>']),
+      })),
+    )
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/page' })
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['content-type']).toContain('text/html')
+    expect(response.body).toBe('<html><body>hi</body></html>')
+  })
+
+  it('sends a Buffer body with the contract-declared blob content-type', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/report.pdf',
+      responsesByStatusCode: { 200: blobResponse('application/pdf') },
+    })
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(contract, () => ({
+        status: 200,
+        body: Buffer.from('%PDF-1.4 data'),
+      })),
+    )
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/report.pdf' })
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['content-type']).toContain('application/pdf')
+    expect(response.body).toBe('%PDF-1.4 data')
+  })
+
+  it('pipes a Readable stream body with the contract-declared blob content-type', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/report.pdf',
+      responsesByStatusCode: { 200: blobResponse('application/pdf') },
+    })
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(contract, () => ({
+        status: 200,
+        body: Readable.from(['%PDF-1.4 ', 'streamed']),
+      })),
+    )
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/report.pdf' })
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['content-type']).toContain('application/pdf')
+    expect(response.body).toBe('%PDF-1.4 streamed')
   })
 
   it('streams events from an SSE-only autoClose handler', async () => {

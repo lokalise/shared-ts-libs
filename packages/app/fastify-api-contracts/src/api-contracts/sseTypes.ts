@@ -203,25 +203,9 @@ export type SyncModeReply = Omit<FastifyReply, 'send' | FastifyReplyFluentKeys> 
 // ============================================================================
 
 /**
- * Async preHandler hook for SSE routes.
- *
- * IMPORTANT: SSE route preHandlers MUST return a Promise for proper integration
- * with `@fastify/sse`. Synchronous handlers will cause connection issues.
- */
-export type FastifySSEPreHandler = (
-  request: FastifyRequest,
-  reply: FastifyReply,
-) => Promise<unknown>
-
-/**
  * Options for configuring an SSE (or dual-mode) route.
  */
 export type FastifySSERouteOptions = {
-  /**
-   * Async preHandler hook for authentication/authorization.
-   * Runs BEFORE the SSE connection is established. MUST return a Promise.
-   */
-  preHandler?: FastifySSEPreHandler
   /** Called when the client connects (after the SSE handshake). */
   onConnect?: (connection: SSESession) => void | Promise<void>
   /** Called when the SSE connection closes for any reason. */
