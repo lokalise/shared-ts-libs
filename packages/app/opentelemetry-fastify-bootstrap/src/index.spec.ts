@@ -4,6 +4,7 @@ import {
   InMemorySpanExporter,
   type ReadableSpan,
   SimpleSpanProcessor,
+  type SpanProcessor,
 } from '@opentelemetry/sdk-trace-base'
 import { type FastifyInstance, fastify } from 'fastify'
 import { gracefulOtelShutdown, initOpenTelemetry } from './index.ts'
@@ -160,6 +161,24 @@ describe('opentelemetry-fastify-bootstrap', () => {
 
       expect(memoryExporter.getFinishedSpans()).toHaveLength(0)
     })
+
+    it('throws on a misconfigured peerDbNames mapping even when OTEL is disabled', () => {
+      // Validation is hoisted above the enabled gate so a typo'd mapping
+      // fails in dev/CI (where OTEL is off) instead of only at prod startup.
+      process.env.NODE_ENV = 'test'
+
+      expect(() => initOpenTelemetry({ peerDbNames: { elasticsearch: '' } })).toThrow(/non-empty/)
+    })
+
+    it('warns when peerDbNames is provided but empty', () => {
+      process.env.NODE_ENV = 'test'
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      initOpenTelemetry({ peerDbNames: {} })
+
+      const warned = consoleWarnSpy.mock.calls.map((call: unknown[]) => String(call[0])).join('\n')
+      expect(warned).toContain('peerDbNames was provided but contains no entries')
+    })
   })
 
   // ---------------------------------------------------------------------------
@@ -185,6 +204,19 @@ describe('opentelemetry-fastify-bootstrap', () => {
     let app: FastifyInstance | undefined
     const memoryExporter = new InMemorySpanExporter()
     const secondaryExporter = new InMemorySpanExporter()
+    // Synchronously snapshots attributes in onEnd. InMemorySpanExporter holds
+    // live span references, so it observes in-place mutations regardless of
+    // processor order — only an eager copy like this can detect whether the
+    // peer processor ran BEFORE user-supplied processors.
+    const attributeSnapshots: Array<Record<string, unknown>> = []
+    const snapshotProcessor: SpanProcessor = {
+      onStart() {},
+      onEnd(span) {
+        attributeSnapshots.push({ ...span.attributes })
+      },
+      forceFlush: () => Promise.resolve(),
+      shutdown: () => Promise.resolve(),
+    }
     let consoleDirSpy: ReturnType<typeof vi.spyOn>
     let consoleLogSpy: ReturnType<typeof vi.spyOn>
     let consoleErrorSpy: ReturnType<typeof vi.spyOn>
@@ -203,8 +235,9 @@ describe('opentelemetry-fastify-bootstrap', () => {
         spanProcessors: [
           new SimpleSpanProcessor(memoryExporter),
           new SimpleSpanProcessor(secondaryExporter),
+          snapshotProcessor,
         ],
-        peerDbNames: { dbNames: { elasticsearch: 'lokalise' } },
+        peerDbNames: { elasticsearch: 'lokalise' },
       })
     })
 
@@ -220,6 +253,7 @@ describe('opentelemetry-fastify-bootstrap', () => {
     beforeEach(() => {
       memoryExporter.reset()
       secondaryExporter.reset()
+      attributeSnapshots.length = 0
       // vitest config `mockReset: true` wipes mockImplementation between tests
       // and reverts spies to pass-through. Re-install no-op impls each test.
       consoleDirSpy.mockImplementation(() => {})
@@ -429,10 +463,11 @@ describe('opentelemetry-fastify-bootstrap', () => {
     })
 
     // End-to-end check that the peerDbNames option is wired into the SDK and
-    // mutates spans before they reach the exporters. The unit-level
+    // the mutation reaches exporters. The unit-level
     // peerDbNameSpanProcessor.spec.ts covers the mutation rules in isolation;
-    // this asserts the SDK actually runs the processor in the order required
-    // for downstream exporters to observe the new attributes.
+    // the registration-order contract is pinned separately by the snapshot
+    // test below (the in-memory exporter holds live references, so this test
+    // alone cannot detect ordering).
     it('stamps db.namespace via the peerDbNames pipeline on outbound DB-like spans', async () => {
       const tracer = trace.getTracer('verify-peer-db-name')
       const span = tracer.startSpan('elasticsearch.query', {
@@ -451,6 +486,24 @@ describe('opentelemetry-fastify-bootstrap', () => {
         },
         { timeout: 2000, interval: 10 },
       )
+    })
+
+    it('runs the peer processor before user-supplied span processors', () => {
+      // MultiSpanProcessor calls onEnd synchronously in registration order;
+      // the snapshot processor copies attributes eagerly, so the stamped
+      // db.namespace only appears in the snapshot if the peer processor was
+      // registered (and therefore ran) first. This is the genuine order pin —
+      // it fails if the peer processor is moved after `spanProcessors`.
+      const tracer = trace.getTracer('verify-peer-order')
+      const span = tracer.startSpan('elasticsearch.order-check', {
+        attributes: { 'db.system': 'elasticsearch', 'order.check': true },
+      })
+      span.end()
+
+      const snapshot = attributeSnapshots.find((attrs) => attrs['order.check'] === true)
+      expect(snapshot).toBeDefined()
+      expect(snapshot?.['db.namespace']).toBe('lokalise')
+      expect(snapshot?.['peer.db.system']).toBe('elasticsearch')
     })
 
     it('does not stamp anything on spans without a matching db.system', async () => {
