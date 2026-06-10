@@ -245,7 +245,7 @@ export function resolveResponseEntry(
     }
   }
 
-  const defaultEntry = responsesByStatusCode.default
+  const defaultEntry = responsesByStatusCode['default']
   if (defaultEntry) {
     return resolveContractResponse(defaultEntry, contentType, strictContentType)
   }
