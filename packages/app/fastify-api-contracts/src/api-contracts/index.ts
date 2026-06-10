@@ -1,8 +1,11 @@
+// Convenience re-export: the event-schema shape used by SSE contract responses.
+export type { SSEEventSchemas } from '@lokalise/api-contracts'
 export type {
+  ApiHandlerReply,
   ApiRouteOptions,
   InferApiHandler,
-  InferApiRequest,
-  InferApiStatusResponse,
+  InferApiHandlerRequest,
+  InferApiHandlerResult,
 } from './apiHandlerTypes.ts'
 export { buildFastifyApiRoute, buildFastifyApiRouteHandler } from './buildFastifyApiRoute.ts'
 export type {
@@ -10,14 +13,11 @@ export type {
   FastifySSERouteOptions,
   SSECloseReason,
   SSEContext,
-  SSEEventSchemas,
   SSEEventSender,
-  SSELogger,
   SSEMessage,
   SSESession,
   SSESessionMode,
   SSEStartOptions,
   SSEStreamMessage,
-  SyncModeReply,
 } from './sseTypes.ts'
 export { determineMode, hasHttpStatusCode, isErrorLike, type SSEReply } from './sseUtils.ts'

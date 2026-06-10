@@ -8,9 +8,14 @@ import {
 import type { RouteOptions } from 'fastify'
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import type { InferApiHandler, InferApiRequest, InferApiStatusResponse } from './apiHandlerTypes.ts'
+import type {
+  ApiHandlerReply,
+  InferApiHandler,
+  InferApiHandlerRequest,
+  InferApiHandlerResult,
+} from './apiHandlerTypes.ts'
 import { buildFastifyApiRoute, buildFastifyApiRouteHandler } from './buildFastifyApiRoute.ts'
-import type { SSEContext, SSEStreamMessage, SyncModeReply } from './sseTypes.ts'
+import type { SSEContext, SSEStreamMessage } from './sseTypes.ts'
 
 const userSchema = z.object({ id: z.string(), name: z.string() })
 const sseEventsSchema = {
@@ -19,10 +24,10 @@ const sseEventsSchema = {
 }
 
 // ============================================================================
-// InferApiRequest
+// InferApiHandlerRequest
 // ============================================================================
 
-describe('InferApiRequest', () => {
+describe('InferApiHandlerRequest', () => {
   it('infers path params, query and headers for a GET contract', () => {
     const contract = defineApiContract({
       method: 'get',
@@ -33,7 +38,7 @@ describe('InferApiRequest', () => {
       responsesByStatusCode: { 200: userSchema },
     })
 
-    type Request = InferApiRequest<typeof contract>
+    type Request = InferApiHandlerRequest<typeof contract>
     expectTypeOf<Request['params']>().toEqualTypeOf<{ userId: string }>()
     expectTypeOf<Request['query']>().toEqualTypeOf<{ limit: number }>()
     expectTypeOf<Request['headers']>().toHaveProperty('authorization')
@@ -47,7 +52,7 @@ describe('InferApiRequest', () => {
       responsesByStatusCode: { 201: userSchema },
     })
 
-    type Request = InferApiRequest<typeof contract>
+    type Request = InferApiHandlerRequest<typeof contract>
     expectTypeOf<Request['body']>().toEqualTypeOf<{ name: string }>()
   })
 
@@ -61,16 +66,16 @@ describe('InferApiRequest', () => {
 
     // The route-level Body generic is `undefined`; Fastify surfaces an absent body
     // as `unknown` on `req.body` at the handler level.
-    type Request = InferApiRequest<typeof contract>
+    type Request = InferApiHandlerRequest<typeof contract>
     expectTypeOf<Request['body']>().toEqualTypeOf<unknown>()
   })
 })
 
 // ============================================================================
-// InferApiStatusResponse
+// InferApiHandlerResult
 // ============================================================================
 
-describe('InferApiStatusResponse', () => {
+describe('InferApiHandlerResult', () => {
   it('builds a discriminated union of { status, body } pairs over JSON responses', () => {
     const contract = defineApiContract({
       method: 'get',
@@ -81,7 +86,7 @@ describe('InferApiStatusResponse', () => {
       },
     })
 
-    type Response = InferApiStatusResponse<typeof contract>
+    type Response = InferApiHandlerResult<typeof contract>
     expectTypeOf<Response>().toEqualTypeOf<
       { status: 200; body: { id: string; name: string } } | { status: 404; body: { error: string } }
     >()
@@ -95,7 +100,7 @@ describe('InferApiStatusResponse', () => {
     })
 
     // An SSE response surfaces as a { status, body } whose body streams the contract events.
-    expectTypeOf<InferApiStatusResponse<typeof contract>>().toEqualTypeOf<{
+    expectTypeOf<InferApiHandlerResult<typeof contract>>().toEqualTypeOf<{
       status: 200
       body: AsyncIterable<
         SSEStreamMessage<InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>>
@@ -111,15 +116,15 @@ describe('InferApiStatusResponse', () => {
       responsesByStatusCode: { 204: ContractNoBody },
     })
 
-    expectTypeOf<InferApiStatusResponse<typeof contract>>().toEqualTypeOf<{
+    expectTypeOf<InferApiHandlerResult<typeof contract>>().toEqualTypeOf<{
       status: 204
       body?: undefined
     }>()
 
     // `{ status }` (no body) and `{ status, body: undefined }` are both assignable.
-    expectTypeOf<{ status: 204 }>().toMatchTypeOf<InferApiStatusResponse<typeof contract>>()
+    expectTypeOf<{ status: 204 }>().toMatchTypeOf<InferApiHandlerResult<typeof contract>>()
     expectTypeOf<{ status: 204; body: undefined }>().toMatchTypeOf<
-      InferApiStatusResponse<typeof contract>
+      InferApiHandlerResult<typeof contract>
     >()
   })
 })
@@ -138,7 +143,7 @@ describe('InferApiHandler', () => {
 
     // Exactly two params — no sse context is added for non-SSE contracts.
     expectTypeOf<Parameters<InferApiHandler<typeof contract>>>().toEqualTypeOf<
-      [InferApiRequest<typeof contract>, SyncModeReply]
+      [InferApiHandlerRequest<typeof contract>, ApiHandlerReply]
     >()
   })
 

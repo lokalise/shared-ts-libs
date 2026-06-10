@@ -446,7 +446,6 @@ export function buildFastifyApiRoute<Contract extends ApiContract>(
     onConnect: _onConnect,
     onClose: _onClose,
     onReconnect: _onReconnect,
-    logger: _logger,
     ...fastifyOptions
   } = options ?? {}
 

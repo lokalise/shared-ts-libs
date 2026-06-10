@@ -4,16 +4,11 @@ import type {
   ContractResponseMode,
   InferSseSuccessResponses,
   PayloadApiContract,
-} from '@lokalise/api-contracts'
-import type { FastifyRequest, RouteOptions } from 'fastify'
-import type { z } from 'zod/v4'
-import type {
-  FastifySSERouteOptions,
-  SSEContext,
   SSEEventSchemas,
-  SSEStreamMessage,
-  SyncModeReply,
-} from './sseTypes.ts'
+} from '@lokalise/api-contracts'
+import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
+import type { z } from 'zod/v4'
+import type { FastifySSERouteOptions, SSEContext, SSEStreamMessage } from './sseTypes.ts'
 
 /**
  * Maps a single `responsesByStatusCode` entry to its handler body type.
@@ -35,7 +30,7 @@ type HandlerResponseBody<T> = T extends z.ZodType
 /**
  * Discriminated union of `{ status, body }` pairs for every response a contract declares.
  */
-export type InferApiStatusResponse<TApiContract extends ApiContract> = {
+export type InferApiHandlerResult<TApiContract extends ApiContract> = {
   [TStatusCode in keyof TApiContract['responsesByStatusCode']]: HandlerResponseBody<
     TApiContract['responsesByStatusCode'][TStatusCode]
   > extends infer TBody
@@ -52,7 +47,7 @@ type InferApiBodyType<Contract extends ApiContract> = Contract extends PayloadAp
   : undefined
 
 /** Infer the typed `FastifyRequest` for an `ApiContract`. */
-export type InferApiRequest<Contract extends ApiContract> = FastifyRequest<{
+export type InferApiHandlerRequest<Contract extends ApiContract> = FastifyRequest<{
   Params: InferOptSchema<Contract['requestPathParamsSchema']>
   Querystring: InferOptSchema<Contract['requestQuerySchema']>
   Headers: InferOptSchema<Contract['requestHeaderSchema']>
@@ -60,6 +55,34 @@ export type InferApiRequest<Contract extends ApiContract> = FastifyRequest<{
 }>
 
 type MaybePromise<T> = T | Promise<T>
+
+// Extracts keys of FastifyReply whose return type extends FastifyReply (fluent setters).
+// If Fastify adds a new fluent method, it appears in this type automatically.
+type FastifyReplyFluentKeys = {
+  [K in keyof FastifyReply]: FastifyReply[K] extends (...args: never[]) => infer R
+    ? [R] extends [FastifyReply]
+      ? K
+      : never
+    : never
+}[keyof FastifyReply]
+
+// Replaces FastifyReply return types with NewReturn in a function type,
+// preserving the original parameter signatures from FastifyReply.
+type ReplaceReturn<F, NewReturn> = F extends (...args: infer A) => FastifyReply
+  ? (...args: A) => NewReturn
+  : F
+
+/**
+ * The reply object available to `ApiContract` handlers.
+ *
+ * Unlike the full `FastifyReply`, this omits `send()` because the framework sends the
+ * response after validation — handlers return `{ status, body }` instead. Fluent setters
+ * (`code`, `status`, `header`, …) are overridden to return `ApiHandlerReply` so that
+ * chaining `.send()` after them is a compile-time error too.
+ */
+export type ApiHandlerReply = Omit<FastifyReply, 'send' | FastifyReplyFluentKeys> & {
+  [K in Exclude<FastifyReplyFluentKeys, 'send'>]: ReplaceReturn<FastifyReply[K], ApiHandlerReply>
+}
 
 /**
  * Handler for an `ApiContract`. Returns `{ status, body }` for any response the contract
@@ -88,15 +111,15 @@ export type InferApiHandler<Contract extends ApiContract> = [
   ContractResponseMode<Contract['responsesByStatusCode']>,
 ] extends ['non-sse']
   ? (
-      request: InferApiRequest<Contract>,
-      reply: SyncModeReply,
-    ) => MaybePromise<InferApiStatusResponse<Contract>>
+      request: InferApiHandlerRequest<Contract>,
+      reply: ApiHandlerReply,
+    ) => MaybePromise<InferApiHandlerResult<Contract>>
   : (
-      request: InferApiRequest<Contract>,
-      reply: SyncModeReply,
+      request: InferApiHandlerRequest<Contract>,
+      reply: ApiHandlerReply,
       sse: SSEContext<InferSseSuccessResponses<Contract['responsesByStatusCode']>>,
       // biome-ignore lint/suspicious/noConfusingVoidType: void is intentional — handler returns nothing after sse.start()
-    ) => MaybePromise<InferApiStatusResponse<Contract> | void>
+    ) => MaybePromise<InferApiHandlerResult<Contract> | void>
 
 /**
  * Extra options for an `ApiContract` route: any Fastify `RouteOptions` field except the ones

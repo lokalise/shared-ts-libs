@@ -3,9 +3,6 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 import type { z } from 'zod/v4'
 import type { ApiContractMetadataToRouteMapper } from '../types.ts'
 
-// Re-export so consumers can reference the contract's event-schema shape.
-export type { SSEEventSchemas }
-
 // ============================================================================
 // Dual-mode
 // ============================================================================
@@ -18,15 +15,6 @@ export type DualModeType = 'json' | 'sse'
 // ============================================================================
 // SSE primitives
 // ============================================================================
-
-/**
- * Minimal logger interface for SSE route error handling.
- * Compatible with `CommonLogger` from `@lokalise/node-core` and pino loggers.
- */
-export type SSELogger = {
-  error: (obj: Record<string, unknown>, msg: string) => void
-  warn?: (obj: Record<string, unknown>, msg: string) => void
-}
 
 /**
  * SSE message format compatible with `@fastify/sse`.
@@ -165,40 +153,6 @@ export type SSEContext<Events extends SSEEventSchemas = SSEEventSchemas> = {
 }
 
 // ============================================================================
-// Sync-mode reply
-// ============================================================================
-
-// Extracts keys of FastifyReply whose return type extends FastifyReply (fluent setters).
-// If Fastify adds a new fluent method, it appears in this type automatically.
-type FastifyReplyFluentKeys = {
-  [K in keyof FastifyReply]: FastifyReply[K] extends (...args: never[]) => infer R
-    ? [R] extends [FastifyReply]
-      ? K
-      : never
-    : never
-}[keyof FastifyReply]
-
-// Replaces FastifyReply return types with NewReturn in a function type,
-// preserving the original parameter signatures from FastifyReply.
-type ReplaceReturn<F, NewReturn> = F extends (...args: infer A) => FastifyReply
-  ? (...args: A) => NewReturn
-  : F
-
-/**
- * Reply object available to sync handlers.
- *
- * Unlike the full `FastifyReply`, this omits `send()` because the framework sends
- * the response after validation. Sync handlers return the `{ status, body }` pair
- * directly instead of calling `reply.send()`.
- *
- * Fluent setters (`code`, `status`, `header`, …) are overridden to return
- * `SyncModeReply` so that chaining `.send()` after them is a compile-time error.
- */
-export type SyncModeReply = Omit<FastifyReply, 'send' | FastifyReplyFluentKeys> & {
-  [K in Exclude<FastifyReplyFluentKeys, 'send'>]: ReplaceReturn<FastifyReply[K], SyncModeReply>
-}
-
-// ============================================================================
 // SSE route options
 // ============================================================================
 
@@ -218,11 +172,6 @@ export type FastifySSERouteOptions = {
     connection: SSESession,
     lastEventId: string,
   ) => Iterable<SSEMessage> | AsyncIterable<SSEMessage> | void | Promise<void>
-  /**
-   * Optional logger for SSE route errors.
-   * Compatible with `CommonLogger` from `@lokalise/node-core` and pino loggers.
-   */
-  logger?: SSELogger
   /**
    * Custom serializer for SSE message data on this route.
    * @default JSON.stringify
