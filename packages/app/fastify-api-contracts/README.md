@@ -7,7 +7,6 @@ This package adds support for generating fastify routes using universal API cont
 - [Requirements](#requirements)
 - [Builders](#builders)
   - [`buildFastifyApiRoute`](#buildfastifyapiroute)
-  - [`buildFastifyApiRouteHandler`](#buildfastifyapiroutehandler)
   - [`buildFastifyRoute`](#buildfastifyroute)
   - [`buildFastifyRouteHandler`](#buildfastifyroutehandler)
   - [Accessing the contract](#accessing-the-contract)
@@ -54,7 +53,7 @@ Builders turn a universal API contract into a Fastify route (or just a route han
 
 Pick the builder that matches how the contract was created:
 
-- [`buildFastifyApiRoute`](#buildfastifyapiroute) / [`buildFastifyApiRouteHandler`](#buildfastifyapiroutehandler) — for contracts created with `defineApiContract` (the current `@lokalise/api-contracts` API).
+- [`buildFastifyApiRoute`](#buildfastifyapiroute) — for contracts created with `defineApiContract` (the current `@lokalise/api-contracts` API).
 - [`buildFastifyRoute`](#buildfastifyroute) / [`buildFastifyRouteHandler`](#buildfastifyroutehandler) — for contracts created with the deprecated `buildRestContract`/`buildGetRoute`/`buildPayloadRoute` builders.
 
 ### `buildFastifyApiRoute`
@@ -220,31 +219,17 @@ Only response entries that carry a JSON body contribute to `schema.response`. `C
 | `heartbeatInterval` | Interval in ms for SSE keep-alive heartbeats |
 | `contractMetadataToRouteMapper` | Maps the contract `metadata` to extra Fastify route options (e.g. `config`, `preHandler`) merged into the route |
 
-### `buildFastifyApiRouteHandler`
-
-Use `buildFastifyApiRouteHandler` to define a handler separately from the route. It returns the handler unchanged at runtime, typed from the contract (the same shape `buildFastifyApiRoute` expects — `(request, reply) => …` for non-SSE contracts, or `(request, reply, sse) => …` for SSE-capable ones):
+To define a handler separately from the route, type it with `InferApiHandler`:
 
 ```ts
-import {
-    buildFastifyApiRoute,
-    buildFastifyApiRouteHandler,
-} from '@lokalise/fastify-api-contracts'
-import { defineApiContract } from '@lokalise/api-contracts'
+import type { InferApiHandler } from '@lokalise/fastify-api-contracts'
 
-const contract = defineApiContract({
-    method: 'post',
-    requestBodySchema: REQUEST_BODY_SCHEMA,
-    requestPathParamsSchema: PATH_PARAMS_SCHEMA,
-    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-    responsesByStatusCode: { 201: RESPONSE_BODY_SCHEMA },
-})
-
-const handler = buildFastifyApiRouteHandler(contract, async (request) => ({
+const createUser: InferApiHandler<typeof contract> = async (request) => ({
     status: 201,
     body: await userService.create(request.body),
-}))
+})
 
-const routes = [buildFastifyApiRoute(contract, handler)]
+const routes = [buildFastifyApiRoute(contract, createUser)]
 ```
 
 ### `buildFastifyRoute`

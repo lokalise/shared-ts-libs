@@ -14,7 +14,7 @@ import type {
   InferApiHandlerRequest,
   InferApiHandlerResult,
 } from './apiHandlerTypes.ts'
-import { buildFastifyApiRoute, buildFastifyApiRouteHandler } from './buildFastifyApiRoute.ts'
+import { buildFastifyApiRoute } from './buildFastifyApiRoute.ts'
 import type { SSEContext, SSEStreamMessage } from './sseTypes.ts'
 
 const userSchema = z.object({ id: z.string(), name: z.string() })
@@ -176,7 +176,7 @@ describe('InferApiHandler', () => {
 })
 
 // ============================================================================
-// buildFastifyApiRoute / buildFastifyApiRouteHandler — call-site typing
+// buildFastifyApiRoute — call-site typing
 // ============================================================================
 
 describe('buildFastifyApiRoute typing', () => {
@@ -290,21 +290,5 @@ describe('buildFastifyApiRoute typing', () => {
       expectTypeOf(request.params).toEqualTypeOf<{ orgId: string }>()
       return { status: 201, body: { id: '1', name: request.body.name } }
     })
-  })
-
-  it('buildFastifyApiRouteHandler returns the contract-inferred handler type', () => {
-    const contract = defineApiContract({
-      method: 'get',
-      requestPathParamsSchema: z.object({ userId: z.string() }),
-      pathResolver: (p) => `/users/${p.userId}`,
-      responsesByStatusCode: { 200: userSchema },
-    })
-
-    const handler = buildFastifyApiRouteHandler(contract, async (request) => ({
-      status: 200,
-      body: { id: request.params.userId, name: 'Alice' },
-    }))
-
-    expectTypeOf(handler).toEqualTypeOf<InferApiHandler<typeof contract>>()
   })
 })

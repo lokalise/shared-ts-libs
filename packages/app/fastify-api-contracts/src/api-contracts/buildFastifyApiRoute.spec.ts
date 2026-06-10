@@ -406,6 +406,38 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(response.body).toBe('a,b\n1,2')
   })
 
+  it('selects the content-type by the returned body kind for a mixed anyOf response', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      pathResolver: (p: { format: string }) => `/export/${p.format}`,
+      requestPathParamsSchema: z.object({ format: z.string() }),
+      responsesByStatusCode: {
+        200: anyOfResponses([z.object({ rows: z.number() }), textResponse('text/csv')]),
+      },
+    })
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(contract, (request) =>
+        request.params.format === 'csv'
+          ? { status: 200, body: 'a,b\n1,2' }
+          : { status: 200, body: { rows: 1 } },
+      ),
+    )
+    await app.ready()
+
+    // Object body → JSON, even though the same status also declares a text variant.
+    const json = await app.inject({ method: 'GET', url: '/export/json' })
+    expect(json.statusCode).toBe(200)
+    expect(json.headers['content-type']).toContain('application/json')
+    expect(json.json()).toEqual({ rows: 1 })
+
+    // String body → the declared text content-type.
+    const csv = await app.inject({ method: 'GET', url: '/export/csv' })
+    expect(csv.statusCode).toBe(200)
+    expect(csv.headers['content-type']).toContain('text/csv')
+    expect(csv.body).toBe('a,b\n1,2')
+  })
+
   it('streams a text response (e.g. text/html) via a Readable', async () => {
     const contract = defineApiContract({
       method: 'get',
