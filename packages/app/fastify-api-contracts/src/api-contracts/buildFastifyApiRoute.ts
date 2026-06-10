@@ -1,3 +1,4 @@
+import type { Readable } from 'node:stream'
 import {
   type ApiContract,
   type ApiContractResponse,
@@ -64,22 +65,44 @@ function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
   return typeof value === 'object' && value !== null && Symbol.asyncIterator in value
 }
 
+// Streams are detected by duck-typing (`pipe`), mirroring Fastify's own stream detection —
+// cross-realm safe, unlike `instanceof Readable`.
+function isStream(value: unknown): value is Readable {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'pipe' in value &&
+    typeof value.pipe === 'function'
+  )
+}
+
 /**
- * Look up the `content-type` a contract declares for a `textResponse`/`blobResponse` at a
- * given status code (directly or inside an `anyOfResponses`). Used to set the response
- * header so the client can match the body kind. Returns `undefined` for JSON/unknown entries.
+ * Look up the `content-type` the contract declares for the response the handler returned.
+ *
+ * The status code selects the entry; the body kind selects the matching variant within it —
+ * needed for `anyOfResponses` mixing JSON with text/blob at one status, where the declaration
+ * alone can't tell which representation the handler chose. A raw body (`string`/`Buffer`/
+ * `Readable`) matches a `textResponse`/`blobResponse` and uses its declared type; any other
+ * body matches a JSON schema. Returns `undefined` when nothing matches.
  */
-function getDeclaredContentType(contract: ApiContract, status: number): string | undefined {
+function getDeclaredContentType(
+  contract: ApiContract,
+  status: number,
+  body: unknown,
+): string | undefined {
   const entry = contract.responsesByStatusCode[status as HttpStatusCode]
   if (!entry) {
     return undefined
   }
+
+  const isRawBody = typeof body === 'string' || Buffer.isBuffer(body) || isStream(body)
+
   const candidates: ApiContractResponse[] = isAnyOfResponses(entry) ? entry.responses : [entry]
   for (const candidate of candidates) {
-    if (isJsonResponse(candidate)) {
+    if (!isRawBody && isJsonResponse(candidate)) {
       return 'application/json'
     }
-    if (isTextResponse(candidate) || isBlobResponse(candidate)) {
+    if (isRawBody && (isTextResponse(candidate) || isBlobResponse(candidate))) {
       return candidate.contentType
     }
   }
@@ -105,7 +128,7 @@ async function sendResponse(
   // Set the content-type when none is present, or replace the SSE route config's pre-set
   // `text/event-stream` for an early non-streaming response.
   if (existing === undefined || String(existing).includes('text/event-stream')) {
-    const declaredContentType = getDeclaredContentType(contract, status)
+    const declaredContentType = getDeclaredContentType(contract, status, body)
 
     if (declaredContentType) {
       reply.type(declaredContentType)
