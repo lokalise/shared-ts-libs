@@ -1,6 +1,7 @@
 import type { Readable } from 'node:stream'
 import type {
   ApiContract,
+  ContractNoBody,
   ContractResponseMode,
   InferSseSuccessResponses,
   PayloadApiContract,
@@ -18,27 +19,24 @@ type HandlerResponseBody<T> = T extends z.ZodType
   ? z.output<T>
   : T extends { _tag: 'SseResponse'; schemaByEventName: infer S extends SSEEventSchemas }
     ? AsyncIterable<SSEStreamMessage<S>>
-    : T extends { _tag: 'NoBodyResponse' }
-      ? undefined | null
+    : T extends { _tag: 'NoBodyResponse' } | typeof ContractNoBody
+      ? null
       : T extends { _tag: 'TextResponse' }
         ? string | Buffer | Readable
         : T extends { _tag: 'BlobResponse' }
           ? Buffer | Readable
           : T extends { _tag: 'AnyOfResponses'; responses: Array<infer R> }
             ? HandlerResponseBody<R>
-            : undefined
+            : never
 
 /**
  * Discriminated union of `{ status, body }` pairs for every response a contract declares.
  */
 export type InferApiHandlerResult<TApiContract extends ApiContract> = {
-  [TStatusCode in keyof TApiContract['responsesByStatusCode']]: HandlerResponseBody<
-    TApiContract['responsesByStatusCode'][TStatusCode]
-  > extends infer TBody
-    ? [TBody] extends [undefined]
-      ? { status: TStatusCode; body?: TBody }
-      : { status: TStatusCode; body: TBody }
-    : never
+  [TStatusCode in keyof TApiContract['responsesByStatusCode']]: {
+    status: TStatusCode
+    body: HandlerResponseBody<TApiContract['responsesByStatusCode'][TStatusCode]>
+  }
 }[keyof TApiContract['responsesByStatusCode']]
 
 type InferOptSchema<T> = T extends z.ZodType ? z.output<T> : undefined

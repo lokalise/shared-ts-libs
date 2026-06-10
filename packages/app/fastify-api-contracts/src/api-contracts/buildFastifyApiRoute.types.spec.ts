@@ -108,7 +108,7 @@ describe('InferApiHandlerResult', () => {
     }>()
   })
 
-  it('makes body optional for a no-body response so { status } alone is valid', () => {
+  it('requires body: null for a no-body response', () => {
     const contract = defineApiContract({
       method: 'delete',
       requestPathParamsSchema: z.object({ id: z.string() }),
@@ -118,12 +118,12 @@ describe('InferApiHandlerResult', () => {
 
     expectTypeOf<InferApiHandlerResult<typeof contract>>().toEqualTypeOf<{
       status: 204
-      body?: undefined
+      body: null
     }>()
 
-    // `{ status }` (no body) and `{ status, body: undefined }` are both assignable.
-    expectTypeOf<{ status: 204 }>().toMatchTypeOf<InferApiHandlerResult<typeof contract>>()
-    expectTypeOf<{ status: 204; body: undefined }>().toMatchTypeOf<
+    // Omitting the body (or passing undefined) is rejected — `null` is mandatory.
+    expectTypeOf<{ status: 204 }>().not.toMatchTypeOf<InferApiHandlerResult<typeof contract>>()
+    expectTypeOf<{ status: 204; body: undefined }>().not.toMatchTypeOf<
       InferApiHandlerResult<typeof contract>
     >()
   })

@@ -113,7 +113,7 @@ describe('buildFastifyApiRoute — non-SSE', () => {
   it('excludes body schema for ContractNoBody', () => {
     const routeOptions = buildFastifyApiRoute(deleteUserContract, async () => ({
       status: 204,
-      body: undefined,
+      body: null,
     }))
     expect((routeOptions.schema as { body?: unknown })?.body).toBeUndefined()
   })
@@ -258,7 +258,7 @@ describe('buildFastifyApiRoute — response schemas', () => {
   it('omits ContractNoBody status codes from response schemas', () => {
     const routeOptions = buildFastifyApiRoute(deleteUserContract, async () => ({
       status: 204,
-      body: undefined,
+      body: null,
     }))
     expect(routeOptions).toEqual(
       expect.objectContaining({ schema: expect.objectContaining({ response: {} }) }),
@@ -335,9 +335,9 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(response.json()).toEqual({ id: '42', name: 'Alice' })
   })
 
-  it('accepts a no-body response returned as just { status }', async () => {
+  it('sends an empty 204 for a no-body response returned as { status, body: null }', async () => {
     app = await buildApp()
-    app.route(buildFastifyApiRoute(deleteUserContract, async () => ({ status: 204 })))
+    app.route(buildFastifyApiRoute(deleteUserContract, async () => ({ status: 204, body: null })))
     await app.ready()
 
     const response = await app.inject({ method: 'DELETE', url: '/users/42' })

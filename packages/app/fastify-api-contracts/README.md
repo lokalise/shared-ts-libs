@@ -97,7 +97,7 @@ const getRoute = buildFastifyApiRoute(getUserContract, async (request) => {
 
 const deleteRoute = buildFastifyApiRoute(deleteUserContract, async (request) => {
     await userService.delete(request.params.userId)
-    return { status: 204, body: undefined }
+    return { status: 204, body: null }
 })
 
 app.withTypeProvider<ZodTypeProvider>().route(getRoute)
@@ -106,7 +106,7 @@ app.withTypeProvider<ZodTypeProvider>().route(deleteRoute)
 await app.ready()
 ```
 
-The `body` type is inferred from the contract entry for that status code: a Zod schema → its output, `ContractNoBody` → `undefined`, `textResponse(...)` → `string | Buffer | Readable`, and `blobResponse(...)` → `Buffer | Readable`. `textResponse` and `blobResponse` differ only in the declared `content-type` (and how the client decodes the body), so both accept a `Buffer` or a Node `Readable` stream — Fastify pipes the stream, ideal for serving large or file-backed bodies without buffering them in memory. The framework sets the response `content-type` from the contract's declared type, so the client can match it.
+The `body` type is inferred from the contract entry for that status code: a Zod schema → its output, `ContractNoBody` → `null`, `textResponse(...)` → `string | Buffer | Readable`, and `blobResponse(...)` → `Buffer | Readable`. `textResponse` and `blobResponse` differ only in the declared `content-type` (and how the client decodes the body), so both accept a `Buffer` or a Node `Readable` stream — Fastify pipes the stream, ideal for serving large or file-backed bodies without buffering them in memory. The framework sets the response `content-type` from the contract's declared type, so the client can match it.
 
 ```ts
 import { blobResponse } from '@lokalise/api-contracts'
