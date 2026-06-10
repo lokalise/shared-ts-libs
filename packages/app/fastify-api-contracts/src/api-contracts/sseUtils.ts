@@ -1,11 +1,4 @@
-import type { SSEReplyInterface } from '@fastify/sse'
-import type { FastifyReply } from 'fastify'
 import type { DualModeType } from './sseTypes.ts'
-
-/**
- * `FastifyReply` extended with the SSE capabilities provided by `@fastify/sse`.
- */
-export type SSEReply = FastifyReply & { sse: SSEReplyInterface }
 
 /**
  * Check if a value is an Error-like object (cross-realm safe).

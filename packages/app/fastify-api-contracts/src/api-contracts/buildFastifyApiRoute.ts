@@ -24,7 +24,7 @@ import type {
   SSEStartOptions,
   SSEStreamMessage,
 } from './sseTypes.ts'
-import { hasHttpStatusCode, isErrorLike, type SSEReply } from './sseUtils.ts'
+import { hasHttpStatusCode, isErrorLike } from './sseUtils.ts'
 
 // ============================================================================
 // Internal Helpers — Response Mode
@@ -173,7 +173,6 @@ function buildApiSSEContext(
   let started = false
   let sessionMode: SSESessionMode | undefined
   let closedByServer = false
-  const sseReply = reply as SSEReply
 
   const sseContext: SSEContext = {
     start: <Context = unknown>(mode: SSESessionMode, startOptions?: SSEStartOptions<Context>) => {
@@ -181,12 +180,12 @@ function buildApiSSEContext(
       sessionMode = mode
 
       if (mode === 'keepAlive') {
-        sseReply.sse.keepAlive()
+        reply.sse.keepAlive()
       }
 
       // sendHeaders() calls writeHead(200) but only queues headers in the buffer.
       // flushHeaders() forces them onto the wire so the client's fetch() returns.
-      sseReply.sse.sendHeaders()
+      reply.sse.sendHeaders()
       reply.raw.flushHeaders()
 
       const connectionId = randomUUID()
@@ -207,7 +206,7 @@ function buildApiSSEContext(
           }
         }
         try {
-          await sseReply.sse.send({
+          await reply.sse.send({
             event: eventName,
             data,
             id: sendOptions?.id,
@@ -226,8 +225,8 @@ function buildApiSSEContext(
         context: startOptions?.context,
         connectedAt: new Date(),
         send,
-        isConnected: () => sseReply.sse.isConnected,
-        getStream: () => sseReply.sse.stream(),
+        isConnected: () => reply.sse.isConnected,
+        getStream: () => reply.sse.stream(),
         sendStream: async (messages: AsyncIterable<SSEStreamMessage>) => {
           for await (const message of messages) {
             await send(message.event, message.data, { id: message.id, retry: message.retry })
@@ -235,7 +234,7 @@ function buildApiSSEContext(
         },
         close: () => {
           closedByServer = true
-          sseReply.sse.close()
+          reply.sse.close()
         },
       }
 
@@ -245,21 +244,21 @@ function buildApiSSEContext(
 
       if (options?.onClose) {
         const onClose = options.onClose
-        sseReply.sse.onClose(() => {
+        reply.sse.onClose(() => {
           void Promise.resolve(onClose(session, closedByServer ? 'server' : 'client')).catch(
             () => {},
           )
         })
       }
 
-      if (options?.onReconnect && sseReply.sse.lastEventId) {
+      if (options?.onReconnect && reply.sse.lastEventId) {
         const onReconnect = options.onReconnect
-        const lastEventId = sseReply.sse.lastEventId
-        void sseReply.sse.replay(async () => {
+        const lastEventId = reply.sse.lastEventId
+        void reply.sse.replay(async () => {
           const replay = await onReconnect(session, lastEventId)
           if (replay) {
             for await (const msg of replay) {
-              await sseReply.sse.send(msg)
+              await reply.sse.send(msg)
             }
           }
         })
@@ -353,10 +352,9 @@ async function handleApiRoute({
   } catch (err) {
     if (isStarted()) {
       // Headers already sent — can't change status code; try to send error event
-      const sseReply = reply as SSEReply
-      if (sseReply.sse.isConnected) {
+      if (reply.sse.isConnected) {
         try {
-          await sseReply.sse.send({
+          await reply.sse.send({
             event: 'error',
             data: { message: isErrorLike(err) ? err.message : 'Internal Server Error' },
           })
