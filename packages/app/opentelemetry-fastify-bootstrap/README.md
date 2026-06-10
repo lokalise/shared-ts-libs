@@ -66,7 +66,7 @@ initOpenTelemetry()
 | `skippedPaths` | `string[]` | `['/health', '/metrics', '/']` | Paths to exclude from tracing |
 | `consoleSpans` | `boolean` | `false` | Enable console span exporter for debugging |
 | `spanProcessors` | `SpanProcessor[]` | `[]` | Additional span processors to register |
-| `peerDbNames` | `{ dbNames: Record<string, string> }` | `undefined` | Stamps `db.namespace` on outbound DB spans so they join Datadog's existing inferred-service entity for the cluster. See [Joining a Datadog inferred-service entity](#joining-a-datadog-inferred-service-entity). |
+| `peerDbNames` | `Record<string, string>` | `undefined` | Maps `db.system` values to database names, stamped as `db.namespace` on outbound DB spans so they join Datadog's existing inferred-service entity for the cluster. See [Joining a Datadog inferred-service entity](#joining-a-datadog-inferred-service-entity). |
 
 ### Debugging with Console Spans
 
@@ -92,20 +92,18 @@ Pass `peerDbNames` to stamp `db.namespace` based on `db.system`:
 
 ```ts
 initOpenTelemetry({
-  peerDbNames: {
-    dbNames: { elasticsearch: 'lokalise' },
-  },
+  peerDbNames: { elasticsearch: 'lokalise' },
 })
 ```
 
-For every span where `db.system: elasticsearch`, the processor sets:
+For every span where `db.system: elasticsearch` (or, when `db.system` is absent, `peer.db.system: elasticsearch`), the processor sets:
 
-- `db.namespace: lokalise` — the OTel 1.27+ canonical attribute; Datadog derives `peer.db.name` from this.
+- `db.namespace: lokalise` — the OTel-canonical attribute; Datadog derives `peer.db.name` from this.
 - `peer.db.system: elasticsearch` — mirrored from `db.system` if missing, so the Datadog entity key has both halves.
 
-This matches the attributes that `lokalise-main`'s `OtelTracer` already stamps for the PHP services that feed the same Datadog entities.
+At the time of writing this matches the attributes that `lokalise-main`'s `OtelTracer` stamps for the PHP services that feed the same Datadog entities.
 
-The processor never overwrites an existing `db.namespace` or `peer.db.system`. `PeerDbNameSpanProcessor` is exported from the package if you want to use it as a custom processor directly.
+The processor never overwrites an existing non-empty string `db.namespace` or `peer.db.system`. `PeerDbNameSpanProcessor` is exported from the package if you want to use it as a custom processor directly.
 
 ### Adding Custom Span Processors
 

@@ -8,10 +8,7 @@ import {
   SimpleSpanProcessor,
   type SpanProcessor,
 } from '@opentelemetry/sdk-trace-base'
-import {
-  PeerDbNameSpanProcessor,
-  type PeerDbNameSpanProcessorOptions,
-} from './peerDbNameSpanProcessor.ts'
+import { PeerDbNameSpanProcessor } from './peerDbNameSpanProcessor.ts'
 
 export {
   PeerDbNameSpanProcessor,
@@ -72,10 +69,16 @@ const logger = {
 const DEFAULT_SKIPPED_PATHS = ['/health', '/metrics', '/']
 
 function resolvePeerDbNameProcessor(
-  peerDbNames: PeerDbNameSpanProcessorOptions | undefined,
+  peerDbNames: Readonly<Record<string, string>> | undefined,
 ): SpanProcessor | undefined {
-  if (!peerDbNames || Object.keys(peerDbNames.dbNames).length === 0) return undefined
-  return new PeerDbNameSpanProcessor(peerDbNames)
+  if (!peerDbNames) return undefined
+  if (Object.keys(peerDbNames).length === 0) {
+    logger.warn(
+      '[OTEL] peerDbNames was provided but contains no entries; PeerDbNameSpanProcessor will not be registered',
+    )
+    return undefined
+  }
+  return new PeerDbNameSpanProcessor({ dbNames: peerDbNames })
 }
 
 export interface OpenTelemetryOptions {
@@ -98,19 +101,17 @@ export interface OpenTelemetryOptions {
   spanProcessors?: SpanProcessor[]
 
   /**
-   * Stamp `db.namespace` on outbound DB spans (and mirror `peer.db.system`
-   * from `db.system` when missing) so they join Datadog's existing
-   * inferred-service entity for the cluster, instead of landing in the
-   * synthetic `blocked-ip-address` bucket.
-   *
-   * Datadog derives `peer.db.name` from the OTel-canonical `db.namespace`.
+   * Maps OTel `db.system` values to database names, stamped as `db.namespace`
+   * on matching outbound DB spans so they join Datadog's existing
+   * inferred-service entity for the cluster. See
+   * {@link PeerDbNameSpanProcessor} for the full mechanics.
    *
    * @example
    * ```ts
-   * peerDbNames: { dbNames: { elasticsearch: 'lokalise' } }
+   * peerDbNames: { elasticsearch: 'lokalise' }
    * ```
    */
-  peerDbNames?: PeerDbNameSpanProcessorOptions
+  peerDbNames?: Readonly<Record<string, string>>
 }
 
 let isInstrumentationRegistered = false
@@ -155,10 +156,14 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
       skippedPaths,
       consoleSpans,
       additionalSpanProcessorsCount: spanProcessors.length,
-      peerDbNamesConfigured: peerDbNames ? Object.keys(peerDbNames.dbNames) : [],
+      peerDbNamesConfigured: peerDbNames ? Object.keys(peerDbNames) : [],
     },
     '[OTEL] Configuration',
   )
+
+  // Constructed outside the enabled gate so a misconfigured mapping throws in
+  // every environment (dev, CI) instead of only at production startup.
+  const peerDbNameProcessor = resolvePeerDbNameProcessor(peerDbNames)
 
   if (isOpenTelemetryEnabled && !isInstrumentationRegistered) {
     logger.info('[OTEL] Initializing OpenTelemetry SDK...')
@@ -173,17 +178,12 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
     })
 
     // Registration order is load-bearing: MultiSpanProcessor invokes onEnd
-    // synchronously in the order processors were registered, so the peer
-    // processor must come BEFORE any other processor that observes attributes
-    // on the same tick. That includes user-supplied `spanProcessors` (often
-    // SimpleSpanProcessor, which serializes on onEnd) and any future eagerly-
-    // serializing exporter. BSP itself buffers spans, so its placement is
-    // less timing-sensitive today, but keeping the peer processor first
-    // covers it too. The peer-stamping integration test in index.spec.ts
-    // pins this contract: it asserts the user's memory-exporter — registered
-    // via `spanProcessors`, i.e. AFTER the peer processor — observes the
-    // mutated `db.namespace`.
-    const peerDbNameProcessor = resolvePeerDbNameProcessor(peerDbNames)
+    // synchronously in registration order, so the peer processor must come
+    // BEFORE any processor whose exporter serializes the span eagerly (e.g.
+    // SimpleSpanProcessor wrapping an OTLP exporter), including user-supplied
+    // `spanProcessors`. Pinned by the "runs the peer processor before
+    // user-supplied span processors" test in index.spec.ts, which snapshots
+    // attributes synchronously in a later-registered processor's onEnd.
     const allSpanProcessors: SpanProcessor[] = [
       ...(peerDbNameProcessor ? [peerDbNameProcessor] : []),
       new BatchSpanProcessor(traceExporter),

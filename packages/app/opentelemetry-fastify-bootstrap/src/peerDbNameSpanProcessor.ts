@@ -2,58 +2,64 @@ import type { ReadableSpan, Span, SpanProcessor } from '@opentelemetry/sdk-trace
 
 export interface PeerDbNameSpanProcessorOptions {
   /**
-   * Maps the OTel `db.system` value to the database name to stamp as
-   * `db.namespace` on the span. Example: `{ elasticsearch: 'lokalise' }`
-   * joins outbound ES spans to a Datadog inferred-service entity keyed on
-   * `(peer.db.system:elasticsearch, peer.db.name:lokalise)` — Datadog derives
-   * `peer.db.name` from `db.namespace`.
+   * Maps an OTel `db.system` value to the database name to stamp as
+   * `db.namespace` on matching spans. Example: `{ elasticsearch: 'lokalise' }`.
+   * See {@link PeerDbNameSpanProcessor} for why and how.
    *
-   * Values must be non-empty strings; the constructor throws on misconfigured
-   * entries so typos surface at startup instead of silently no-op'ing in
-   * production.
+   * Keys and values must be non-empty strings; the constructor throws on
+   * misconfigured entries so typos surface at startup instead of silently
+   * no-op'ing in production.
+   *
+   * @see https://opentelemetry.io/docs/specs/semconv/database/database-spans/ for well-known `db.system` values
    */
-  dbNames: Record<string, string>
+  dbNames: Readonly<Record<string, string>>
 }
 
 /**
  * Stamps `db.namespace` on outbound DB spans based on the OTel `db.system`
- * value, so Datadog's APM service catalog joins them to an existing
- * inferred-service entity for the cluster.
+ * value (falling back to `peer.db.system` when `db.system` is absent), and
+ * mirrors `peer.db.system` from `db.system` when missing, so Datadog's APM
+ * service catalog joins the spans to an existing inferred-service entity for
+ * the cluster.
  *
- * Why this exists: when a downstream cluster (e.g. Elasticsearch) is reached
- * by raw IP, Datadog can't classify it from `peer.hostname` and routes the
- * spans into the synthetic `blocked-ip-address` service. Datadog's
- * inferred-service catalog DOES recognize entities keyed by
- * `(peer.db.system, peer.db.name)`, deriving `peer.db.name` from the
- * OTel-canonical `db.namespace`. The Node `@elastic/transport` v8 client sets
- * `db.system` but not `db.namespace`; this processor fills the gap from a
- * service-supplied mapping.
+ * Why this exists (per Datadog inferred-services behavior as of 2026-06):
+ * when a downstream cluster (e.g. Elasticsearch) is reached by raw IP,
+ * Datadog can't classify it from `peer.hostname` and routes the spans into
+ * the synthetic `blocked-ip-address` service. Datadog's inferred-service
+ * catalog DOES recognize entities keyed by `(peer.db.system, peer.db.name)`,
+ * deriving `peer.db.name` from the OTel-canonical `db.namespace` attribute.
+ * The Node `@elastic/transport` v8 client sets `db.system` but not
+ * `db.namespace`; this processor fills the gap from a service-supplied
+ * mapping. Existing non-empty string values are never overwritten.
  *
- * The mutation happens in `onEnd`, which is when the instrumentation libraries
- * have finished attaching attributes. Once a span has ended,
- * `Span.setAttribute` is a no-op, so the processor writes directly into the
- * attribute map — `ReadableSpan.attributes` is the same object the writable
- * span used. This relies on `@opentelemetry/sdk-trace-base` internals (the
- * `ReadableSpan` type marks `attributes` `Readonly`, so the cast is required).
- * If a future SDK upgrade freezes attributes on span end, the first failed
- * assignment is caught, logged once, and further mutation attempts are
- * disarmed — the SDK upgrade surfaces as a single error log rather than a
- * thrown TypeError on every DB span.
+ * The mutation happens in `onEnd`, when the instrumentation libraries have
+ * finished attaching attributes. Once a span has ended, `Span.setAttribute`
+ * is a no-op, so the processor writes directly into the attribute map —
+ * `ReadableSpan.attributes` is the same live object the writable span used.
+ * Nothing in the SDK's types blocks the write (`readonly attributes` only
+ * forbids reassigning the property, and the map type is mutable), but the
+ * mutation is contractually unsanctioned and relies on
+ * `@opentelemetry/sdk-trace-base` internals. If a future SDK upgrade makes
+ * the assignment throw (e.g. by freezing attributes on span end), the failure
+ * is caught, logged once, and further mutation attempts are disarmed — one
+ * error log instead of a broken span pipeline.
  */
 export class PeerDbNameSpanProcessor implements SpanProcessor {
-  private readonly dbNames: Record<string, string>
+  private readonly dbNames = new Map<string, string>()
   private mutationDisabled = false
   private readonly loggedSystems = new Set<string>()
 
   constructor(options: PeerDbNameSpanProcessorOptions) {
+    // Copy validated entries into a Map so later mutation of the caller's
+    // object can't bypass validation, and lookups can't hit Object.prototype.
     for (const [system, value] of Object.entries(options.dbNames)) {
-      if (typeof value !== 'string' || value.length === 0) {
+      if (system.length === 0 || typeof value !== 'string' || value.length === 0) {
         throw new Error(
-          `PeerDbNameSpanProcessor: dbNames[${JSON.stringify(system)}] must be a non-empty string`,
+          `PeerDbNameSpanProcessor: dbNames[${JSON.stringify(system)}] must map a non-empty db.system key to a non-empty string`,
         )
       }
+      this.dbNames.set(system, value)
     }
-    this.dbNames = options.dbNames
   }
 
   onStart(_span: Span): void {}
@@ -66,7 +72,7 @@ export class PeerDbNameSpanProcessor implements SpanProcessor {
     const dbSystem = attrs['db.system'] ?? attrs['peer.db.system']
     if (typeof dbSystem !== 'string' || dbSystem.length === 0) return
 
-    const mapped = this.dbNames[dbSystem]
+    const mapped = this.dbNames.get(dbSystem)
     if (!mapped) return
 
     const needsNamespace = typeof attrs['db.namespace'] !== 'string' || !attrs['db.namespace']
@@ -75,36 +81,30 @@ export class PeerDbNameSpanProcessor implements SpanProcessor {
     if (!needsNamespace && !needsPeerDbSystem) return
 
     try {
-      // OTel 1.27+ canonical attribute. Datadog derives peer.db.name from it
-      // when constructing the inferred-service entity key.
       if (needsNamespace) attrs['db.namespace'] = mapped
-      // Some instrumentations (e.g. @elastic/transport) set db.system but not
-      // peer.db.system. Datadog's inferred-service entity key uses peer.db.*,
-      // so mirror it across.
       if (needsPeerDbSystem) attrs['peer.db.system'] = dbSystem
     } catch (err) {
-      // Defensive: if a future SDK version freezes attributes on span end,
-      // every assignment throws TypeError in strict mode. Log once, disarm,
-      // and stop attempting on subsequent spans.
-      if (err instanceof TypeError) {
-        this.mutationDisabled = true
-        logEntry(
-          'error',
-          '[OTEL] PeerDbNameSpanProcessor: span attributes are not mutable in onEnd; disabling further stamping. The @opentelemetry/sdk-trace-base version likely changed its attribute mutability contract.',
-          { error: err.message },
-        )
-        return
-      }
-      throw err
+      // Never (re)throw from onEnd: a throw propagates synchronously through
+      // MultiSpanProcessor and Span.end() into the instrumented application
+      // code, and skips every later processor — silently dropping the span
+      // from export. Disarm first so even a failing logger can't re-arm.
+      this.mutationDisabled = true
+      logEntry(
+        'error',
+        '[OTEL] PeerDbNameSpanProcessor: failed to mutate span attributes in onEnd; disabling further stamping. A @opentelemetry/sdk-trace-base upgrade may have changed its attribute mutability contract.',
+        { error: err instanceof Error ? err.message : String(err) },
+      )
+      return
     }
 
     if (!this.loggedSystems.has(dbSystem)) {
       this.loggedSystems.add(dbSystem)
-      logEntry(
-        'info',
-        '[OTEL] PeerDbNameSpanProcessor: stamped db.namespace on first matching span',
-        { dbSystem, dbNamespace: mapped },
-      )
+      logEntry('info', '[OTEL] PeerDbNameSpanProcessor: stamped first matching span', {
+        dbSystem,
+        dbNamespace: attrs['db.namespace'],
+        stampedNamespace: needsNamespace,
+        stampedPeerDbSystem: needsPeerDbSystem,
+      })
     }
   }
 

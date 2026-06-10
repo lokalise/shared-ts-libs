@@ -13,7 +13,7 @@ describe('PeerDbNameSpanProcessor', () => {
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
-    // Re-install no-op impls every test because vitest config `restoreMocks: true`
+    // Re-install no-op impls every test because vitest config `mockReset: true`
     // would otherwise revert spies to pass-through, polluting the test runner output.
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -43,12 +43,34 @@ describe('PeerDbNameSpanProcessor', () => {
       ).toThrow(/non-empty/)
     })
 
+    it('throws when a mapping key is an empty string', () => {
+      expect(() => new PeerDbNameSpanProcessor({ dbNames: { '': 'lokalise' } })).toThrow(
+        /non-empty/,
+      )
+    })
+
     it('accepts an empty mapping object (no-op processor)', () => {
-      // The wiring layer in initOpenTelemetry short-circuits empty mappings
-      // before constructing a processor, but constructing one directly with
-      // an empty map should not throw — it's a vacuous configuration, not
-      // an invalid one.
+      // Constructing directly with an empty map should not throw — it's a
+      // vacuous configuration, not an invalid one.
       expect(() => new PeerDbNameSpanProcessor({ dbNames: {} })).not.toThrow()
+    })
+
+    it('is unaffected by mutation of the options object after construction', () => {
+      // The constructor copies validated entries; aliasing the caller's
+      // object would let post-construction mutation bypass validation.
+      const dbNames: Record<string, string> = { elasticsearch: 'lokalise' }
+      const processor = new PeerDbNameSpanProcessor({ dbNames })
+
+      dbNames.elasticsearch = ''
+      dbNames.redis = 'cache'
+
+      const esSpan = makeSpan({ 'db.system': 'elasticsearch' })
+      processor.onEnd(esSpan)
+      expect(esSpan.attributes['db.namespace']).toBe('lokalise')
+
+      const redisSpan = makeSpan({ 'db.system': 'redis' })
+      processor.onEnd(redisSpan)
+      expect(redisSpan.attributes['db.namespace']).toBeUndefined()
     })
   })
 
@@ -138,6 +160,31 @@ describe('PeerDbNameSpanProcessor', () => {
 
       expect(span.attributes['db.namespace']).toBeUndefined()
     })
+
+    it('does not resolve db.system values through Object.prototype', () => {
+      // A plain-record lookup would resolve 'constructor' to
+      // Object.prototype.constructor and stamp a function as an attribute.
+      const processor = new PeerDbNameSpanProcessor({ dbNames: { elasticsearch: 'lokalise' } })
+      const span = makeSpan({ 'db.system': 'constructor' })
+
+      processor.onEnd(span)
+
+      expect(span.attributes['db.namespace']).toBeUndefined()
+    })
+
+    it('does nothing when both db.namespace and peer.db.system are already set', () => {
+      const processor = new PeerDbNameSpanProcessor({ dbNames: { elasticsearch: 'lokalise' } })
+      const span = makeSpan({
+        'db.system': 'elasticsearch',
+        'db.namespace': 'already-there',
+        'peer.db.system': 'elasticsearch',
+      })
+
+      processor.onEnd(span)
+
+      expect(span.attributes['db.namespace']).toBe('already-there')
+      expect(consoleLogSpy).not.toHaveBeenCalled()
+    })
   })
 
   describe('first-match logging', () => {
@@ -159,6 +206,20 @@ describe('PeerDbNameSpanProcessor', () => {
       expect(messages.some((m: string) => m.includes('"dbSystem":"redis"'))).toBe(true)
     })
 
+    it('reports what was actually written when db.namespace was already present', () => {
+      // The log must stay honest: if the namespace was pre-existing and only
+      // peer.db.system was mirrored, it must not claim the mapped value was
+      // stamped.
+      const processor = new PeerDbNameSpanProcessor({ dbNames: { elasticsearch: 'lokalise' } })
+      processor.onEnd(makeSpan({ 'db.system': 'elasticsearch', 'db.namespace': 'pre-existing' }))
+
+      expect(consoleLogSpy).toHaveBeenCalledTimes(1)
+      const message = String(consoleLogSpy.mock.calls[0]?.[0])
+      expect(message).toContain('"dbNamespace":"pre-existing"')
+      expect(message).toContain('"stampedNamespace":false')
+      expect(message).toContain('"stampedPeerDbSystem":true')
+    })
+
     it('does not log when no spans match the mapping', () => {
       // A misconfigured mapping (typo in db.system key) should not produce
       // a "stamped" log — keeps the success signal honest.
@@ -169,12 +230,12 @@ describe('PeerDbNameSpanProcessor', () => {
     })
   })
 
-  describe('frozen attributes (future SDK upgrade guard)', () => {
+  describe('mutation failures (future SDK upgrade guard)', () => {
     it('does not throw when span.attributes is frozen', () => {
-      // Future @opentelemetry/sdk-trace-base versions may freeze attributes on
-      // span end (the ReadableSpan type already marks them Readonly). The
-      // processor must not blow up the SDK pipeline; it should log once and
-      // disarm.
+      // Future @opentelemetry/sdk-trace-base versions may freeze attributes
+      // on span end. A throw from onEnd would propagate into application
+      // code and silently drop the span from export, so the processor must
+      // log once and disarm instead.
       const processor = new PeerDbNameSpanProcessor({ dbNames: { elasticsearch: 'lokalise' } })
       const frozen = Object.freeze({ 'db.system': 'elasticsearch' })
       const span = makeSpan(frozen)
@@ -190,13 +251,29 @@ describe('PeerDbNameSpanProcessor', () => {
       processor.onEnd(makeSpan(frozen))
 
       expect(consoleErrorSpy).toHaveBeenCalledTimes(1)
-      expect(String(consoleErrorSpy.mock.calls[0]?.[0])).toContain('not mutable')
+      expect(String(consoleErrorSpy.mock.calls[0]?.[0])).toContain('disabling further stamping')
 
       // A subsequent mutable span receives no stamp either — the processor
       // stays disarmed so it doesn't keep retrying and re-logging.
       const mutable = makeSpan({ 'db.system': 'elasticsearch' })
       processor.onEnd(mutable)
       expect(mutable.attributes['db.namespace']).toBeUndefined()
+    })
+
+    it('swallows non-TypeError assignment failures too, logging once and disarming', () => {
+      // e.g. a Proxy-wrapped attributes object with a throwing set trap.
+      const processor = new PeerDbNameSpanProcessor({ dbNames: { elasticsearch: 'lokalise' } })
+      const throwing = new Proxy({ 'db.system': 'elasticsearch' } as Record<string, unknown>, {
+        set() {
+          throw new Error('custom failure')
+        },
+      })
+
+      expect(() => processor.onEnd(makeSpan(throwing))).not.toThrow()
+      expect(() => processor.onEnd(makeSpan(throwing))).not.toThrow()
+
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(1)
+      expect(String(consoleErrorSpy.mock.calls[0]?.[0])).toContain('custom failure')
     })
   })
 })
