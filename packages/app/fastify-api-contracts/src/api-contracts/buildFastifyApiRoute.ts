@@ -14,7 +14,7 @@ import {
   type SseSchemaByEventName,
 } from '@lokalise/api-contracts'
 import { InternalError } from '@lokalise/node-core'
-import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
+import type { FastifyReply, FastifyRequest, FastifySchema, RouteOptions } from 'fastify'
 import type { z } from 'zod/v4'
 import type { ApiRouteOptions, InferApiHandler } from './apiHandlerTypes.ts'
 import type {
@@ -25,10 +25,6 @@ import type {
   SSEStreamMessage,
 } from './sseTypes.ts'
 import { hasHttpStatusCode, isErrorLike } from './sseUtils.ts'
-
-// ============================================================================
-// Internal Helpers — Response Mode
-// ============================================================================
 
 function buildSSERouteConfig(
   options: ApiRouteOptions | undefined,
@@ -47,32 +43,6 @@ function buildSSERouteConfig(
   }
 
   return sseConfig
-}
-
-// ============================================================================
-// Internal Helpers — Sync Route
-// ============================================================================
-
-function getSchemaForStatusCode(contract: ApiContract, status: number): z.ZodType | null {
-  const entry = contract.responsesByStatusCode[status as HttpStatusCode]
-
-  if (!entry) {
-    return null
-  }
-
-  // `isJsonResponse` is true only for a plain Zod schema; `ContractNoBody`,
-  // `textResponse`, `blobResponse` and `sseResponse` entries all resolve to `false`.
-  if (isAnyOfResponses(entry)) {
-    for (const anyResponse of entry.responses) {
-      if (isJsonResponse(anyResponse)) {
-        return anyResponse
-      }
-    }
-
-    return null
-  }
-
-  return isJsonResponse(entry) ? entry : null
 }
 
 function validateApiResponseHeaders(contract: ApiContract, reply: FastifyReply): void {
@@ -94,7 +64,7 @@ function validateApiResponseHeaders(contract: ApiContract, reply: FastifyReply):
 type StatusBody = { status: number; body: unknown }
 
 function isStatusBodyResult(value: unknown): value is StatusBody {
-  return typeof value === 'object' && value !== null && 'status' in value && 'body' in value
+  return typeof value === 'object' && value !== null && 'status' in value
 }
 
 function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
@@ -373,29 +343,35 @@ async function handleApiRoute({
   }
 }
 
-// ============================================================================
-// Internal Helpers — Schema
-// ============================================================================
+function buildResponseSchemas(contract: ApiContract): Record<string, z.ZodType> {
+  const schemas: Record<string, z.ZodType> = {}
 
-function buildResponseSchemas(contract: ApiContract): Record<number, unknown> {
-  return Object.keys(contract.responsesByStatusCode).reduce<Record<number, unknown>>(
-    (acc, statusCode) => {
-      const schema = getSchemaForStatusCode(contract, Number(statusCode))
-      if (schema) {
-        acc[Number(statusCode)] = schema
-      }
-      return acc
-    },
-    {},
-  )
+  for (const [statusCode, entry] of Object.entries(contract.responsesByStatusCode)) {
+    const schema = isJsonResponse(entry)
+      ? entry
+      : isAnyOfResponses(entry)
+        ? entry.responses.find(isJsonResponse)
+        : undefined
+
+    if (schema) {
+      schemas[statusCode] = schema
+    }
+  }
+
+  return schemas
 }
 
-function buildBaseSchema(contract: ApiContract): Record<string, unknown> {
-  const schema: Record<string, unknown> = {}
-  if (contract.requestPathParamsSchema) schema.params = contract.requestPathParamsSchema
-  if (contract.requestQuerySchema) schema.querystring = contract.requestQuerySchema
-  if (contract.requestHeaderSchema) schema.headers = contract.requestHeaderSchema
-
+function buildFastifySchema(contract: ApiContract): FastifySchema {
+  const schema: FastifySchema = {}
+  if (contract.requestPathParamsSchema) {
+    schema.params = contract.requestPathParamsSchema
+  }
+  if (contract.requestQuerySchema) {
+    schema.querystring = contract.requestQuerySchema
+  }
+  if (contract.requestHeaderSchema) {
+    schema.headers = contract.requestHeaderSchema
+  }
   if (contract.requestBodySchema !== undefined && contract.requestBodySchema !== ContractNoBody) {
     schema.body = contract.requestBodySchema
   }
@@ -404,10 +380,6 @@ function buildBaseSchema(contract: ApiContract): Record<string, unknown> {
 
   return schema
 }
-
-// ============================================================================
-// Public API
-// ============================================================================
 
 /**
  * Type-only helper to define a handler separately from the route, with the
@@ -467,9 +439,7 @@ export function buildFastifyApiRoute<Contract extends ApiContract>(
     ...fastifyOptions
   } = options ?? {}
 
-  const url = mapApiContractToPath(contract)
   const eventSchemas = getSseSchemaByEventName(contract) ?? {}
-  const baseSchema = buildBaseSchema(contract)
   const contractMetadata = contractMetadataToRouteMapper?.(contract.metadata) ?? {}
   const sseCapable = hasAnySuccessSseResponse(contract)
 
@@ -477,10 +447,10 @@ export function buildFastifyApiRoute<Contract extends ApiContract>(
     ...fastifyOptions,
     ...contractMetadata,
     method: contract.method,
-    url,
+    url: mapApiContractToPath(contract),
     // `sse` is only set for SSE-capable contracts; non-SSE routes must not carry it.
     ...(sseCapable ? { sse: buildSSERouteConfig(options) } : {}),
-    schema: baseSchema,
+    schema: buildFastifySchema(contract),
     handler: async (request, reply) =>
       handleApiRoute({
         contract,
