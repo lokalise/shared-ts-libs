@@ -1,7 +1,13 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import { ContractNoBody } from './constants.ts'
-import { anyOfResponses, blobResponse, sseResponse, textResponse } from './contractResponse.ts'
+import {
+  anyOfResponses,
+  blobResponse,
+  noBodyResponse,
+  sseResponse,
+  textResponse,
+} from './contractResponse.ts'
 import { defineApiContract } from './defineApiContract.ts'
 import type {
   AvailableResponseModes,
@@ -240,11 +246,41 @@ describe('inferTypes', () => {
       expectTypeOf<Result>().toEqualTypeOf<true>()
     })
 
+    it('returns true when all success responses are noBodyResponse()', () => {
+      const contract = defineApiContract({
+        method: 'delete',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 204: noBodyResponse() },
+      })
+      type Result = IsNoBodySuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<true>()
+    })
+
+    it('returns true for a mix of ContractNoBody and noBodyResponse()', () => {
+      const contract = defineApiContract({
+        method: 'delete',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 202: ContractNoBody, 204: noBodyResponse() },
+      })
+      type Result = IsNoBodySuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<true>()
+    })
+
     it('returns false when a success response has a JSON schema', () => {
       const contract = defineApiContract({
         method: 'get',
         pathResolver: () => '/test',
         responsesByStatusCode: { 200: z.object({ id: z.string() }) },
+      })
+      type Result = IsNoBodySuccessResponse<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<false>()
+    })
+
+    it('returns false when noBodyResponse() is mixed with a JSON schema', () => {
+      const contract = defineApiContract({
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 200: z.object({ id: z.string() }), 204: noBodyResponse() },
       })
       type Result = IsNoBodySuccessResponse<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<false>()
@@ -451,6 +487,26 @@ describe('inferTypes', () => {
       })
       type Result = AvailableResponseModes<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<'sse'>()
+    })
+
+    it('includes noContent for ContractNoBody', () => {
+      const contract = defineApiContract({
+        method: 'delete',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 204: ContractNoBody },
+      })
+      type Result = AvailableResponseModes<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<'noContent'>()
+    })
+
+    it('includes noContent for noBodyResponse()', () => {
+      const contract = defineApiContract({
+        method: 'delete',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 204: noBodyResponse() },
+      })
+      type Result = AvailableResponseModes<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<'noContent'>()
     })
   })
 

@@ -13,7 +13,13 @@ import type {
   InferSseClientResponse,
 } from './clientTypes.ts'
 import { ContractNoBody } from './constants.ts'
-import { anyOfResponses, blobResponse, sseResponse, textResponse } from './contractResponse.ts'
+import {
+  anyOfResponses,
+  blobResponse,
+  noBodyResponse,
+  sseResponse,
+  textResponse,
+} from './contractResponse.ts'
 import { defineApiContract } from './defineApiContract.ts'
 
 type DefaultHeaders = Record<string, string>
@@ -290,6 +296,20 @@ describe('clientTypes', () => {
         method: 'delete',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 204: ContractNoBody },
+      })
+      type Result = InferNonSseClientResponse<typeof contract>
+      expectTypeOf<Result>().toEqualTypeOf<{
+        statusCode: 204
+        headers: DefaultHeaders
+        body: null
+      }>()
+    })
+
+    it('maps noBodyResponse() success to null body', () => {
+      const contract = defineApiContract({
+        method: 'delete',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 204: noBodyResponse() },
       })
       type Result = InferNonSseClientResponse<typeof contract>
       expectTypeOf<Result>().toEqualTypeOf<{
