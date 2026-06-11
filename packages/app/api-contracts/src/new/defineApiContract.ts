@@ -54,22 +54,21 @@ export type PayloadApiContract = CommonApiContract & {
 
 export type ApiContract = GetApiContract | DeleteApiContract | PayloadApiContract
 
-type TypedPathApiContract<T extends RequestPathParamsSchema> = DistributiveOmit<
-  ApiContract,
-  'pathResolver' | 'requestPathParamsSchema'
-> & {
-  pathResolver: RoutePathResolver<InferSchemaOutput<T>>
-  requestPathParamsSchema?: T
-}
+type TypedPathApiContract<TPathParamsSchema extends RequestPathParamsSchema | undefined> =
+  DistributiveOmit<ApiContract, 'pathResolver' | 'requestPathParamsSchema'> & {
+    pathResolver: RoutePathResolver<InferSchemaOutput<TPathParamsSchema>>
+    requestPathParamsSchema?: TPathParamsSchema
+  }
 
 export const defineApiContract = <
-  PathParamsSchema extends RequestPathParamsSchema,
-  const Contract extends TypedPathApiContract<PathParamsSchema>,
+  TPathParamsSchema extends RequestPathParamsSchema | undefined = undefined,
+  const TContract extends
+    TypedPathApiContract<TPathParamsSchema> = TypedPathApiContract<TPathParamsSchema>,
 >(
-  contract: Exactly<Contract, TypedPathApiContract<PathParamsSchema>> & {
-    requestPathParamsSchema?: PathParamsSchema
+  contract: Exactly<TContract, TypedPathApiContract<TPathParamsSchema>> & {
+    requestPathParamsSchema?: TPathParamsSchema
   },
-): Contract => contract
+): TContract => contract
 
 export const mapApiContractToPath = (routeConfig: ApiContract): string => {
   if (!routeConfig.requestPathParamsSchema) {

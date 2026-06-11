@@ -61,6 +61,26 @@ describe('defineApiContract', () => {
       expect(mapApiContractToPath(route)).toBe('/users')
     })
 
+    it('types pathResolver param as undefined when no requestPathParamsSchema', () => {
+      defineApiContract({
+        method: 'get',
+        pathResolver: (params) => {
+          expectTypeOf(params).toEqualTypeOf<undefined>()
+          return '/users'
+        },
+        responsesByStatusCode: {},
+      })
+    })
+
+    it('rejects pathResolver that declares params when no requestPathParamsSchema', () => {
+      defineApiContract({
+        method: 'get',
+        // @ts-expect-error pathResolver cannot take params without requestPathParamsSchema
+        pathResolver: (params: { id: string }) => `/users/${params.id}`,
+        responsesByStatusCode: {},
+      })
+    })
+
     it('preserves method literal type', () => {
       const route = defineApiContract({
         method: 'post',
