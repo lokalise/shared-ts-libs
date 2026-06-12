@@ -134,3 +134,5 @@ dist
 
 # Windows shell crash dumps
 *.stackdump
+
+.pnpm-store
