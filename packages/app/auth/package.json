@@ -54,11 +54,11 @@
         "@lokalise/tsconfig": "^4.0.0",
         "@lokalise/universal-ts-utils": "^4.5.1",
         "@types/node": "^25.9.2",
-        "@vitest/coverage-v8": "^4.1.8",
+        "@vitest/coverage-v8": "^4.1.9",
         "jose": "^6.2.3",
         "mockttp": "^4.4.2",
         "rimraf": "^6.0.1",
         "typescript": "6.0.3",
-        "vitest": "^4.1.8"
+        "vitest": "^4.1.9"
     }
 }
