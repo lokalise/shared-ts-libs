@@ -1,5 +1,14 @@
 # Changelog
 
+## 6.13.1
+
+### Patch Changes
+
+- 8b90918: Deprecate `IsNoBodySuccessResponse` — no known consumers; will be removed in a future release.
+- 8b90918: Fix `defineApiContract` not enforcing method/body rules: a non-distributive `Omit` collapsed the `ApiContract` discriminated union, allowing GET/DELETE contracts with a `requestBodySchema` and POST/PUT/PATCH contracts without one. Both are now compile-time errors.
+- 8b90918: Treat tagged `noBodyResponse()` the same as the `ContractNoBody` symbol in type-level inference: `IsNoBodySuccessResponse` now returns `true`, `AvailableResponseModes` includes `'noContent'`, and client response inference maps the body to `null` instead of `never`.
+- 8b90918: Type `pathResolver`'s parameter as `undefined` in `defineApiContract` when no `requestPathParamsSchema` is provided, matching the runtime call. Previously the parameter fell back to a loose `Record<string, unknown>`, allowing resolvers to read path params that are `undefined` at runtime.
+
 ## 6.13.0
 
 ### Minor Changes
