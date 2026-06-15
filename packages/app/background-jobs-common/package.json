@@ -55,14 +55,14 @@
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/tsconfig": "^4.0.0",
         "@types/node": "^25.9.2",
-        "@vitest/coverage-v8": "^4.1.8",
+        "@vitest/coverage-v8": "^4.1.9",
         "bullmq": "^5.78.0",
         "ioredis": "^5.11.1",
         "pino": "^10.0.0",
         "rimraf": "^6.0.1",
         "toad-scheduler": "^4.0.1",
         "typescript": "6.0.3",
-        "vitest": "^4.1.8",
+        "vitest": "^4.1.9",
         "zod": "^4.3.6"
     }
 }
