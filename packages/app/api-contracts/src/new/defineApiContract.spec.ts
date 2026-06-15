@@ -61,6 +61,26 @@ describe('defineApiContract', () => {
       expect(mapApiContractToPath(route)).toBe('/users')
     })
 
+    it('types pathResolver param as undefined when no requestPathParamsSchema', () => {
+      defineApiContract({
+        method: 'get',
+        pathResolver: (params) => {
+          expectTypeOf(params).toEqualTypeOf<undefined>()
+          return '/users'
+        },
+        responsesByStatusCode: {},
+      })
+    })
+
+    it('rejects pathResolver that declares params when no requestPathParamsSchema', () => {
+      defineApiContract({
+        method: 'get',
+        // @ts-expect-error pathResolver cannot take params without requestPathParamsSchema
+        pathResolver: (params: { id: string }) => `/users/${params.id}`,
+        responsesByStatusCode: {},
+      })
+    })
+
     it('preserves method literal type', () => {
       const route = defineApiContract({
         method: 'post',
@@ -70,6 +90,46 @@ describe('defineApiContract', () => {
       })
 
       expectTypeOf(route.method).toEqualTypeOf<'post'>()
+    })
+
+    it('rejects requestBodySchema on GET contracts', () => {
+      // @ts-expect-error GET must not accept a request body
+      defineApiContract({
+        method: 'get',
+        pathResolver: () => '/users',
+        requestBodySchema: z.object({ name: z.string() }),
+        responsesByStatusCode: {},
+      })
+    })
+
+    it('rejects requestBodySchema on DELETE contracts', () => {
+      // @ts-expect-error DELETE must not accept a request body
+      defineApiContract({
+        method: 'delete',
+        pathResolver: () => '/users/1',
+        requestBodySchema: z.object({ name: z.string() }),
+        responsesByStatusCode: {},
+      })
+    })
+
+    it('requires requestBodySchema on POST contracts', () => {
+      // @ts-expect-error POST requires requestBodySchema
+      defineApiContract({
+        method: 'post',
+        pathResolver: () => '/users',
+        responsesByStatusCode: {},
+      })
+    })
+
+    it('accepts ContractNoBody as requestBodySchema on POST contracts', () => {
+      const route = defineApiContract({
+        method: 'post',
+        pathResolver: () => '/users',
+        requestBodySchema: ContractNoBody,
+        responsesByStatusCode: {},
+      })
+
+      expectTypeOf(route.requestBodySchema).toEqualTypeOf<typeof ContractNoBody>()
     })
 
     it('preserves ContractNoBody sentinel in responsesByStatusCode', () => {

@@ -54,20 +54,26 @@ type InferClientResponseHeaders<TApiContract extends ApiContract> =
 
 /**
  * Maps a single responsesByStatusCode entry value to its TypeScript body type.
+ * Both no-body forms (the ContractNoBody symbol and tagged noBodyResponse()) map to null.
  */
 type InferClientResponseBody<T> = T extends typeof ContractNoBody
   ? null
-  : T extends z.ZodType
-    ? InferSchemaOutput<T>
-    : T extends { _tag: 'TextResponse' }
-      ? string
-      : T extends { _tag: 'BlobResponse' }
-        ? Blob
-        : T extends { _tag: 'SseResponse'; schemaByEventName: infer S extends SseSchemaByEventName }
-          ? AsyncIterable<SseEventOf<S>>
-          : T extends { _tag: 'AnyOfResponses'; responses: Array<infer Item> }
-            ? InferClientResponseBody<Item>
-            : never
+  : T extends { _tag: 'NoBodyResponse' }
+    ? null
+    : T extends z.ZodType
+      ? InferSchemaOutput<T>
+      : T extends { _tag: 'TextResponse' }
+        ? string
+        : T extends { _tag: 'BlobResponse' }
+          ? Blob
+          : T extends {
+                _tag: 'SseResponse'
+                schemaByEventName: infer S extends SseSchemaByEventName
+              }
+            ? AsyncIterable<SseEventOf<S>>
+            : T extends { _tag: 'AnyOfResponses'; responses: Array<infer Item> }
+              ? InferClientResponseBody<Item>
+              : never
 
 /**
  * Like InferClientResponseBody but returns only SSE bodies — non-SSE entries resolve to never.

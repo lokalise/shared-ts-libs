@@ -2,7 +2,7 @@ import type { z } from 'zod/v4'
 import type { SuccessfulHttpStatusCode } from '../HttpStatusCodes.ts'
 import type { ValueOf } from '../typeUtils.ts'
 import type { ContractNoBody } from './constants.ts'
-import type { ResponsesByStatusCode } from './contractResponse.ts'
+import type { NoBodyResponse, ResponsesByStatusCode } from './contractResponse.ts'
 
 type ExtractSuccessResponses<T extends ResponsesByStatusCode> = ValueOf<
   T,
@@ -10,11 +10,14 @@ type ExtractSuccessResponses<T extends ResponsesByStatusCode> = ValueOf<
 >
 
 /**
- * Returns true if all success responses have no body (ContractNoBody or no success status codes defined).
+ * Returns true if all success responses have no body
+ * (ContractNoBody, noBodyResponse(), or no success status codes defined).
+ *
+ * @deprecated No known consumers — will be removed in a future release.
  */
 export type IsNoBodySuccessResponse<T extends ResponsesByStatusCode> = [
   ExtractSuccessResponses<T>,
-] extends [typeof ContractNoBody | undefined]
+] extends [typeof ContractNoBody | NoBodyResponse | undefined]
   ? true
   : false
 
@@ -63,7 +66,7 @@ type NonSseBodyOf<T> = T extends { _tag: 'SseResponse' }
 /**
  * Infers the TypeScript output type of all non-SSE success responses.
  * JSON schemas → z.output<T>. TextResponse → string. BlobResponse → Blob.
- * ContractNoBody → undefined. SseResponse → never (excluded).
+ * ContractNoBody and noBodyResponse() → undefined. SseResponse → never (excluded).
  * AnyOfResponses are unpacked before mapping.
  */
 export type InferNonSseSuccessResponses<T extends ResponsesByStatusCode> = NonSseBodyOf<
@@ -120,4 +123,9 @@ export type AvailableResponseModes<T extends ResponsesByStatusCode> =
   | (HasAnySseSuccessResponse<T> extends true ? 'sse' : never)
   | (Extract<FlatSuccessResponses<T>, { _tag: 'BlobResponse' }> extends never ? never : 'blob')
   | (Extract<FlatSuccessResponses<T>, { _tag: 'TextResponse' }> extends never ? never : 'text')
-  | (Extract<FlatSuccessResponses<T>, typeof ContractNoBody> extends never ? never : 'noContent')
+  | (Extract<
+      FlatSuccessResponses<T>,
+      typeof ContractNoBody | { _tag: 'NoBodyResponse' }
+    > extends never
+      ? never
+      : 'noContent')

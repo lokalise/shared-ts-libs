@@ -21,6 +21,24 @@ export type Exactly<T, U> = T & {
 }
 
 /**
+ * Distributed `keyof`: the union of keys across all members of a union type.
+ * (Plain `keyof` over a union yields only the keys common to every member.)
+ */
+export type KeysOfUnion<TUnion> = TUnion extends unknown ? keyof TUnion : never
+
+/**
+ * Like `Omit`, but distributes over unions: each union member is transformed
+ * separately, preserving discriminated-union relationships between keys.
+ * (Plain `Omit` collapses a union into a single object type of its common keys.)
+ *
+ * Keys are constrained to `KeysOfUnion` rather than `keyof TUnion`, so keys present
+ * on only some union members can be omitted too — members without the key pass through unchanged.
+ */
+export type DistributiveOmit<TUnion, TKeys extends KeysOfUnion<TUnion>> = TUnion extends unknown
+  ? Omit<TUnion, TKeys>
+  : never
+
+/**
  * Extracts a union of value types from an object type.
  * Optionally constrained to a subset of keys via ValueType.
  */
