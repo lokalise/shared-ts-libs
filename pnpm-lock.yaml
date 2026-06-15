@@ -796,8 +796,8 @@ importers:
         version: 14.8.1(zod@4.4.3)
     devDependencies:
       '@balena/odata-parser':
-        specifier: ^4.3.0
-        version: 4.3.0
+        specifier: ^4.3.4
+        version: 4.3.4
       '@biomejs/biome':
         specifier: ^2.4.16
         version: 2.4.16
@@ -1406,8 +1406,8 @@ packages:
     resolution: {integrity: sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA==}
     engines: {node: '>=6.9.0'}
 
-  '@balena/odata-parser@4.3.0':
-    resolution: {integrity: sha512-D+8733DLq3v3Z1B2q40VVdSyCJspGqG0Ie8OadQaEh8gJlRH3BUAK2uwMysLliwGkuQ4zQi/wo2fFBNDIgilgA==}
+  '@balena/odata-parser@4.3.4':
+    resolution: {integrity: sha512-07wrPGBczT/Mt5Nu9/siR1kBuPZ5jubM+L/BJ91R7RN/7OKO4xAVapqFvNi7CjS0IVqM6+FieasolbaQkcoenA==}
     engines: {node: '>=16.13.0', npm: '>=8.1.0'}
 
   '@bcoe/v8-coverage@1.0.2':
@@ -7748,7 +7748,7 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
-  '@balena/odata-parser@4.3.0': {}
+  '@balena/odata-parser@4.3.4': {}
 
   '@bcoe/v8-coverage@1.0.2': {}
 
