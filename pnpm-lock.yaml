@@ -511,8 +511,8 @@ importers:
   packages/app/fastify-bullboard-plugin:
     dependencies:
       '@bull-board/api':
-        specifier: ^7.1.5
-        version: 7.1.5(@bull-board/ui@7.1.5)
+        specifier: ^8.0.0
+        version: 8.0.0(@bull-board/ui@8.0.0)
       '@bull-board/fastify':
         specifier: ^7.1.5
         version: 7.1.5
@@ -1494,11 +1494,19 @@ packages:
     peerDependencies:
       '@bull-board/ui': 7.1.5
 
+  '@bull-board/api@8.0.0':
+    resolution: {integrity: sha512-GYXJNJclgm9H5Tt/tmuNWfjyF2BuygMwl8xrRIfxxOTgcK4SB8zNUPveTcHGAOoKKtPDVotHNZCBRrFCcOAXMA==}
+    peerDependencies:
+      '@bull-board/ui': 8.0.0
+
   '@bull-board/fastify@7.1.5':
     resolution: {integrity: sha512-x51r+WVHE3UTIunwhiUfEoicmyxLwezeZ5FAbazhS8DYX5bH0AblcjLzuUG8jP1nUXPvdzyOPh+5yt+bcpLgbQ==}
 
   '@bull-board/ui@7.1.5':
     resolution: {integrity: sha512-2IkatKwNRx/1M9/lAZIptcxS1FPNq6icpp2M46Upwd4olVxs/ujF9Kvs+Ff9ExtIO/OgYfwx7mG2IprGZ+nQCg==}
+
+  '@bull-board/ui@8.0.0':
+    resolution: {integrity: sha512-X/F256CmpBj9oj+fK2wOzjygkhTtjgWnc3f/SxPiUs3rQFvgYCplJLEaURh13J+Tpq46/1drAxq4Ukt4e5LelA==}
 
   '@changesets/apply-release-plan@7.1.1':
     resolution: {integrity: sha512-9qPCm/rLx/xoOFXIHGB229+4GOL76S4MC+7tyOuTsR6+1jYlfFDQORdvwR5hDA6y4FL2BPt3qpbcQIS+dW85LA==}
@@ -7822,6 +7830,11 @@ snapshots:
       '@bull-board/ui': 7.1.5
       redis-info: 3.1.0
 
+  '@bull-board/api@8.0.0(@bull-board/ui@8.0.0)':
+    dependencies:
+      '@bull-board/ui': 8.0.0
+      redis-info: 3.1.0
+
   '@bull-board/fastify@7.1.5':
     dependencies:
       '@bull-board/api': 7.1.5(@bull-board/ui@7.1.5)
@@ -7833,6 +7846,10 @@ snapshots:
   '@bull-board/ui@7.1.5':
     dependencies:
       '@bull-board/api': 7.1.5(@bull-board/ui@7.1.5)
+
+  '@bull-board/ui@8.0.0':
+    dependencies:
+      '@bull-board/api': 8.0.0(@bull-board/ui@8.0.0)
 
   '@changesets/apply-release-plan@7.1.1':
     dependencies:
