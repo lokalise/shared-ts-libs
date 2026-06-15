@@ -329,8 +329,8 @@ importers:
         specifier: ^2.4.16
         version: 2.4.16
       '@fastify/request-context':
-        specifier: ^6.0.1
-        version: 6.2.1
+        specifier: ^7.0.0
+        version: 7.0.0
       '@lokalise/biome-config':
         specifier: ^3.1.0
         version: 3.1.1
@@ -1830,8 +1830,8 @@ packages:
   '@fastify/proxy-addr@5.1.0':
     resolution: {integrity: sha512-INS+6gh91cLUjB+PVHfu1UqcB76Sqtpyp7bnL+FYojhjygvOPA9ctiD/JDKsyD9Xgu4hUhCSJBPig/w7duNajw==}
 
-  '@fastify/request-context@6.2.1':
-    resolution: {integrity: sha512-WJTWXI59ViguS/JFgVck6mnwpv+5UrvMLb711pOGIlyN6ghV4Pb/eEbJG01XvQsTAr/AbjMETjk7Jq9ARIxKnQ==}
+  '@fastify/request-context@7.0.0':
+    resolution: {integrity: sha512-SMnQ4VWa1p20qOSONvi+yG32vqyHoZE6LPD4xrIl3RVE11dLrBwiQ7VmK4aTCS7/jB5Tx6fI9JotTNErClPS5A==}
 
   '@fastify/schedule@6.0.0':
     resolution: {integrity: sha512-q4mPXUtqISb+dH2cB7HE7DxXqQmxPee9k0G29ydvGOoj5Aqb+uzUCLtkMVAzpnkPE6oOFGon6+JzWEmfJNS8ig==}
@@ -8214,7 +8214,7 @@ snapshots:
       '@fastify/forwarded': 3.0.1
       ipaddr.js: 2.4.0
 
-  '@fastify/request-context@6.2.1':
+  '@fastify/request-context@7.0.0':
     dependencies:
       fastify-plugin: 5.1.0
 
