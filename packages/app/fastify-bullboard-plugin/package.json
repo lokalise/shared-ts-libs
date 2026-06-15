@@ -48,7 +48,7 @@
         "@lokalise/node-core": "^14.1.0",
         "@types/node": "^25.9.2",
         "@vitest/coverage-v8": "^4.1.9",
-        "awilix": "^13.0.0",
+        "awilix": "^13.0.5",
         "awilix-manager": "^7.0.0",
         "bullmq": "5.78.0",
         "cross-env": "^10.0.0",
