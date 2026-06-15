@@ -102,7 +102,7 @@ importers:
         version: 3.1.1
       '@lokalise/fastify-extras':
         specifier: ^31.0.0
-        version: 31.0.0(@fastify/jwt@10.0.0)(@lokalise/api-contracts@6.13.0(zod@4.4.3))(@lokalise/background-jobs-common@14.3.0(bullmq@5.78.1)(ioredis@5.11.1)(pino@10.3.1)(toad-scheduler@4.0.1)(zod@4.4.3))(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@5.78.1)(dd-trace@5.106.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0)))(fastify-type-provider-zod@6.1.0(@fastify/swagger@9.7.0)(fastify@5.8.5)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.8.5)(ioredis@5.11.1)(pino@10.3.1)(zod@4.4.3)
+        version: 31.0.0(@fastify/jwt@10.0.0)(@lokalise/api-contracts@6.13.0(zod@4.4.3))(@lokalise/background-jobs-common@14.3.0(bullmq@5.78.1)(ioredis@5.11.1)(pino@10.3.1)(toad-scheduler@4.0.1)(zod@4.4.3))(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@5.78.1)(dd-trace@5.108.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0)))(fastify-type-provider-zod@6.1.0(@fastify/swagger@9.7.0)(fastify@5.8.5)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.8.5)(ioredis@5.11.1)(pino@10.3.1)(zod@4.4.3)
       '@lokalise/node-core':
         specifier: ^14.4.1
         version: 14.8.1(zod@4.4.3)
@@ -153,7 +153,7 @@ importers:
         version: 3.1.1
       '@lokalise/fastify-extras':
         specifier: ^31.0.0
-        version: 31.0.0(@fastify/jwt@10.0.0)(@lokalise/api-contracts@6.13.0(zod@4.4.3))(@lokalise/background-jobs-common@14.3.0(bullmq@5.78.1)(ioredis@5.11.1)(pino@10.3.1)(toad-scheduler@4.0.1)(zod@4.4.3))(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@5.78.1)(dd-trace@5.106.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0)))(fastify-type-provider-zod@6.1.0(@fastify/swagger@9.7.0)(fastify@5.8.5)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.8.5)(ioredis@5.11.1)(pino@10.3.1)(zod@4.4.3)
+        version: 31.0.0(@fastify/jwt@10.0.0)(@lokalise/api-contracts@6.13.0(zod@4.4.3))(@lokalise/background-jobs-common@14.3.0(bullmq@5.78.1)(ioredis@5.11.1)(pino@10.3.1)(toad-scheduler@4.0.1)(zod@4.4.3))(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@5.78.1)(dd-trace@5.108.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0)))(fastify-type-provider-zod@6.1.0(@fastify/swagger@9.7.0)(fastify@5.8.5)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.8.5)(ioredis@5.11.1)(pino@10.3.1)(zod@4.4.3)
       '@lokalise/node-core':
         specifier: ^14.0.0
         version: 14.8.1(zod@4.4.3)
@@ -380,8 +380,8 @@ importers:
         specifier: ^25.9.3
         version: 25.9.3
       dd-trace:
-        specifier: ^5.106.0
-        version: 5.106.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0))
+        specifier: ^5.108.0
+        version: 5.108.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0))
       rimraf:
         specifier: ^6.1.2
         version: 6.1.3
@@ -543,7 +543,7 @@ importers:
         version: 3.1.1
       '@lokalise/fastify-extras':
         specifier: ^31.0.0
-        version: 31.0.0(@fastify/jwt@10.0.0)(@lokalise/api-contracts@6.13.0(zod@4.4.3))(@lokalise/background-jobs-common@14.3.0(bullmq@5.78.1)(ioredis@5.11.1)(pino@10.3.1)(toad-scheduler@4.0.1)(zod@4.4.3))(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@5.78.1)(dd-trace@5.106.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0)))(fastify-type-provider-zod@6.1.0(@fastify/swagger@9.7.0)(fastify@5.8.5)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.8.5)(ioredis@5.11.1)(pino@10.3.1)(zod@4.4.3)
+        version: 31.0.0(@fastify/jwt@10.0.0)(@lokalise/api-contracts@6.13.0(zod@4.4.3))(@lokalise/background-jobs-common@14.3.0(bullmq@5.78.1)(ioredis@5.11.1)(pino@10.3.1)(toad-scheduler@4.0.1)(zod@4.4.3))(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@5.78.1)(dd-trace@5.108.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0)))(fastify-type-provider-zod@6.1.0(@fastify/swagger@9.7.0)(fastify@5.8.5)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.8.5)(ioredis@5.11.1)(pino@10.3.1)(zod@4.4.3)
       '@lokalise/node-core':
         specifier: ^14.1.0
         version: 14.8.1(zod@4.4.3)
@@ -1558,8 +1558,8 @@ packages:
   '@datadog/flagging-core@1.2.1':
     resolution: {integrity: sha512-qeDkki9fFlqyoZBrn7tneT6pZ04EKKvf3xxisYw1a74zbJihvQui/ARUsjXCurRpzpFqGGTJw/oz+HnXaKhcdw==}
 
-  '@datadog/libdatadog@0.9.3':
-    resolution: {integrity: sha512-L+scIlcRRRF0qjeSU3VQLQlqezfQHkDdnOdbmx/gLjPqewKSyqVGp7XRdKXYo2vZTzmG8dH6rPKXwgI68UQufw==}
+  '@datadog/libdatadog@0.9.4':
+    resolution: {integrity: sha512-55wHHAuhHOOrBGoWV+fRuEDypN6PMJZq4LTOwExnhoDMvVcZKtqYT05xea/toRs0o75+A1IeNAQHsRLbJMf5oA==}
 
   '@datadog/native-appsec@11.0.1':
     resolution: {integrity: sha512-Y/XfknUmmJcw4hhQVhqzgdQvfjy+EGmXuUBgtVkI1r+/qS00egYu+wD/x7pOvjdbZNqN96znVszAnXvDQAzMDQ==}
@@ -1572,14 +1572,14 @@ packages:
     resolution: {integrity: sha512-7AEWt0ZLr/ogR/9if1DmFBDTg3y67xM+gdhXUXKs+UQMxK0lnjrOHgN7fkpEmUG1uL+EkX2BDE3ENDlQ23J7OQ==}
     engines: {node: '>=16'}
 
-  '@datadog/openfeature-node-server@1.2.1':
-    resolution: {integrity: sha512-iY32juuL2w07vOlrTG1Y1U0y3ehyvRxuwzJvaLqjmQE8jj2L3o2SRm2UwgmLnzh6JWzMfNxbfs66KvOmPja7dQ==}
+  '@datadog/openfeature-node-server@2.0.0':
+    resolution: {integrity: sha512-Ummu/Bd7ZJpCCNdFnZUt/JI+L1+8OMK53+MyIXbS7dCt4JXWWwelbpzSGqmC2jWbWQ/mTo4hEfnFw3kYOINbXA==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       '@openfeature/server-sdk': '>=1.15.1'
 
-  '@datadog/pprof@5.14.4':
-    resolution: {integrity: sha512-egEZDD9v98RBI8ijbHyaWQeY8rW0WEu004As5D7SUkdqSMORhrnh7ZdsM46PUzQgAc85IaEZoukWS9UhMvWn9w==}
+  '@datadog/pprof@5.15.0':
+    resolution: {integrity: sha512-ODGC3pE+NHo+rz74bWyOyFeC5GgvqA6Xzk0wIBGs8W3v+A14I5Q+Pmc7EC8etk5gE8t0hGYYwA5ymSGCljov+Q==}
     engines: {node: '>=16'}
 
   '@datadog/wasm-js-rewriter@5.0.1':
@@ -1606,11 +1606,20 @@ packages:
   '@emnapi/core@1.10.0':
     resolution: {integrity: sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw==}
 
+  '@emnapi/core@1.11.1':
+    resolution: {integrity: sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ==}
+
   '@emnapi/runtime@1.10.0':
     resolution: {integrity: sha512-ewvYlk86xUoGI0zQRNq/mC+16R1QeDlKQy21Ki3oSYXNgLb45GV1P6A0M+/s6nyCuNDqe5VpaY84BzXGwVbwFA==}
 
+  '@emnapi/runtime@1.11.1':
+    resolution: {integrity: sha512-vgj7R3y3Wgx24IQaGPA/R6YFXLHVMOZ0uVEyIQPaWs+rd1AzfEMXlAC22FYwO1XkKR6NPsq7mUandH8oIRdZFw==}
+
   '@emnapi/wasi-threads@1.2.1':
     resolution: {integrity: sha512-uTII7OYF+/Mes/MrcIOYp5yOtSMLBWSIoLPpcgwipoiKbli6k322tcoFsxoIIxPDqW01SQGAgko4EzZi2BNv2w==}
+
+  '@emnapi/wasi-threads@1.2.2':
+    resolution: {integrity: sha512-c95qOXkHdydNKhscBTebqEC1CVAZpyqOfVfBzQ1qgzyl3gfeldUjIggDbIZgDKsHLgnsM+igH7TJ/eAasaVuMA==}
 
   '@epic-web/invariant@1.0.0':
     resolution: {integrity: sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA==}
@@ -2149,8 +2158,8 @@ packages:
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
 
-  '@napi-rs/wasm-runtime@1.1.4':
-    resolution: {integrity: sha512-3NQNNgA1YSlJb/kMH1ildASP9HW7/7kYnRI2szWJaofaS1hWmbGI4H+d3+22aGzXXN9IJ+n+GiFVcGipJP18ow==}
+  '@napi-rs/wasm-runtime@1.1.5':
+    resolution: {integrity: sha512-AWPoBRJ9tsnVhor4sjO7rkni+7p+2IAEFj6cx06UgP10jkQHqay/36uRV/bFkgrh18D9vb4cr8Q0Pthskgzy+Q==}
     peerDependencies:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
@@ -2201,6 +2210,10 @@ packages:
 
   '@opentelemetry/api-logs@0.218.0':
     resolution: {integrity: sha512-fmEWp5kXlGEc3i/lR698Hz41DfGyN4Tbe4g7L1AxSc7fF8Xeh/FQ9Quqpa9dVA413Q1Ad43QOLzU4JoXgbFPWw==}
+    engines: {node: '>=8.0.0'}
+
+  '@opentelemetry/api-logs@0.219.0':
+    resolution: {integrity: sha512-FFx7YnaYJlIjqWW/AG/yAZ0L/NEY724PipXXXQLdtZPbLwBGbUMTGL1i/esI56TWfTUXxhLfpgrnWJCG8aUJyg==}
     engines: {node: '>=8.0.0'}
 
   '@opentelemetry/api-logs@0.57.2':
@@ -4354,8 +4367,8 @@ packages:
     resolution: {integrity: sha512-TyyeGcjx0YeThAI9fTFtgsvj5qd4R+aGfVmXiUhevbgzWFDr7IK4tv4YjE6jaGzLHQTchk4h7DHdr5q4WGgaZw==}
     engines: {node: '>=12.17'}
 
-  dd-trace@5.106.0:
-    resolution: {integrity: sha512-N4fiGGi5WKVbeguq03ubsApx/+DDE9QDArfeWadr1uEnEn2HDL6fFgByeXTrGbEjJXF4LtFrauWuCed1M2rK3g==}
+  dd-trace@5.108.0:
+    resolution: {integrity: sha512-KuWc2HeZFMVH+YYcCzsmtYavjbQ3VBdH8d0rV3sFeHtPm6mcpkF/Iw9mjulT3q7qiwzdf0Z93JapoXawhKOLGw==}
     engines: {node: '>=18 <27'}
 
   de-indent@1.0.2:
@@ -5303,10 +5316,6 @@ packages:
 
   import-in-the-middle@2.0.6:
     resolution: {integrity: sha512-3vZV3jX0XRFW3EJDTwzWoZa+RH1b8eTTx6YOCjglrLyPuepwoBti1k3L2dKwdCUrnVEfc5CuRuGstaC/uQJJaw==}
-
-  import-in-the-middle@3.0.1:
-    resolution: {integrity: sha512-pYkiyXVL2Mf3pozdlDGV6NAObxQx13Ae8knZk1UJRJ6uRW/ZRmTGHlQYtrsSl7ubuE5F8CD1z+s1n4RHNuTtuA==}
-    engines: {node: '>=18'}
 
   import-in-the-middle@3.0.2:
     resolution: {integrity: sha512-LGLYRl0A2gtyUJb2WDliBHmk6TtlHwdDjxonacZ8QrEs/ZW+YDgNv2QAfjRQWpS8HqvNcq6GGnN6jrOa5FysDQ==}
@@ -7982,7 +7991,7 @@ snapshots:
       spark-md5: 3.0.2
     optional: true
 
-  '@datadog/libdatadog@0.9.3':
+  '@datadog/libdatadog@0.9.4':
     optional: true
 
   '@datadog/native-appsec@11.0.1':
@@ -8001,13 +8010,13 @@ snapshots:
       node-gyp-build: 3.9.0
     optional: true
 
-  '@datadog/openfeature-node-server@1.2.1(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0))':
+  '@datadog/openfeature-node-server@2.0.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0))':
     dependencies:
       '@datadog/flagging-core': 1.2.1
       '@openfeature/server-sdk': 1.21.0(@openfeature/core@1.10.0)
     optional: true
 
-  '@datadog/pprof@5.14.4':
+  '@datadog/pprof@5.15.0':
     dependencies:
       node-gyp-build: 4.8.4
       pprof-format: 2.2.1
@@ -8040,12 +8049,28 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
+  '@emnapi/core@1.11.1':
+    dependencies:
+      '@emnapi/wasi-threads': 1.2.2
+      tslib: 2.8.1
+    optional: true
+
   '@emnapi/runtime@1.10.0':
     dependencies:
       tslib: 2.8.1
     optional: true
 
+  '@emnapi/runtime@1.11.1':
+    dependencies:
+      tslib: 2.8.1
+    optional: true
+
   '@emnapi/wasi-threads@1.2.1':
+    dependencies:
+      tslib: 2.8.1
+    optional: true
+
+  '@emnapi/wasi-threads@1.2.2':
     dependencies:
       tslib: 2.8.1
     optional: true
@@ -8444,7 +8469,7 @@ snapshots:
       - typescript
       - vitest
 
-  '@lokalise/fastify-extras@31.0.0(@fastify/jwt@10.0.0)(@lokalise/api-contracts@6.13.0(zod@4.4.3))(@lokalise/background-jobs-common@14.3.0(bullmq@5.78.1)(ioredis@5.11.1)(pino@10.3.1)(toad-scheduler@4.0.1)(zod@4.4.3))(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@5.78.1)(dd-trace@5.106.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0)))(fastify-type-provider-zod@6.1.0(@fastify/swagger@9.7.0)(fastify@5.8.5)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.8.5)(ioredis@5.11.1)(pino@10.3.1)(zod@4.4.3)':
+  '@lokalise/fastify-extras@31.0.0(@fastify/jwt@10.0.0)(@lokalise/api-contracts@6.13.0(zod@4.4.3))(@lokalise/background-jobs-common@14.3.0(bullmq@5.78.1)(ioredis@5.11.1)(pino@10.3.1)(toad-scheduler@4.0.1)(zod@4.4.3))(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@5.78.1)(dd-trace@5.108.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0)))(fastify-type-provider-zod@6.1.0(@fastify/swagger@9.7.0)(fastify@5.8.5)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.8.5)(ioredis@5.11.1)(pino@10.3.1)(zod@4.4.3)':
     dependencies:
       '@amplitude/analytics-node': 1.5.57
       '@bugsnag/js': 8.9.0
@@ -8457,7 +8482,7 @@ snapshots:
       '@splitsoftware/splitio': 11.11.1
       '@supercharge/promise-pool': 3.3.0
       bullmq: 5.78.1
-      dd-trace: 5.106.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0))
+      dd-trace: 5.108.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0))
       fastify: 5.8.5
       fastify-metrics: 13.2.0(fastify@5.8.5)
       fastify-plugin: 5.1.0
@@ -8622,12 +8647,12 @@ snapshots:
 
   '@napi-rs/wasm-runtime@0.2.12':
     dependencies:
-      '@emnapi/core': 1.10.0
-      '@emnapi/runtime': 1.10.0
+      '@emnapi/core': 1.11.1
+      '@emnapi/runtime': 1.11.1
       '@tybys/wasm-util': 0.10.2
     optional: true
 
-  '@napi-rs/wasm-runtime@1.1.4(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
+  '@napi-rs/wasm-runtime@1.1.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:
       '@emnapi/core': 1.10.0
       '@emnapi/runtime': 1.10.0
@@ -8676,6 +8701,11 @@ snapshots:
   '@opentelemetry/api-logs@0.218.0':
     dependencies:
       '@opentelemetry/api': 1.9.0
+
+  '@opentelemetry/api-logs@0.219.0':
+    dependencies:
+      '@opentelemetry/api': 1.9.0
+    optional: true
 
   '@opentelemetry/api-logs@0.57.2':
     dependencies:
@@ -9528,7 +9558,7 @@ snapshots:
     dependencies:
       '@emnapi/core': 1.10.0
       '@emnapi/runtime': 1.10.0
-      '@napi-rs/wasm-runtime': 1.1.4(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)
+      '@napi-rs/wasm-runtime': 1.1.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)
     optional: true
 
   '@oxc-parser/binding-win32-arm64-msvc@0.132.0':
@@ -11134,21 +11164,21 @@ snapshots:
 
   dc-polyfill@0.1.11: {}
 
-  dd-trace@5.106.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0)):
+  dd-trace@5.108.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0)):
     dependencies:
       dc-polyfill: 0.1.11
-      import-in-the-middle: 3.0.1
+      import-in-the-middle: 3.0.2
       opentracing: 0.14.7
     optionalDependencies:
-      '@datadog/libdatadog': 0.9.3
+      '@datadog/libdatadog': 0.9.4
       '@datadog/native-appsec': 11.0.1
       '@datadog/native-iast-taint-tracking': 4.2.0
       '@datadog/native-metrics': 3.1.2
-      '@datadog/openfeature-node-server': 1.2.1(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0))
-      '@datadog/pprof': 5.14.4
+      '@datadog/openfeature-node-server': 2.0.0(@openfeature/server-sdk@1.21.0(@openfeature/core@1.10.0))
+      '@datadog/pprof': 5.15.0
       '@datadog/wasm-js-rewriter': 5.0.1
       '@opentelemetry/api': 1.9.0
-      '@opentelemetry/api-logs': 0.218.0
+      '@opentelemetry/api-logs': 0.219.0
       oxc-parser: 0.132.0
     transitivePeerDependencies:
       - '@openfeature/server-sdk'
@@ -12226,13 +12256,6 @@ snapshots:
       cjs-module-lexer: 2.2.0
       module-details-from-path: 1.0.4
 
-  import-in-the-middle@3.0.1:
-    dependencies:
-      acorn: 8.16.0
-      acorn-import-attributes: 1.9.5(acorn@8.16.0)
-      cjs-module-lexer: 2.2.0
-      module-details-from-path: 1.0.4
-
   import-in-the-middle@3.0.2:
     dependencies:
       acorn: 8.17.0
@@ -12689,7 +12712,7 @@ snapshots:
 
   mlly@1.8.2:
     dependencies:
-      acorn: 8.16.0
+      acorn: 8.17.0
       pathe: 2.0.3
       pkg-types: 1.3.1
       ufo: 1.6.4
