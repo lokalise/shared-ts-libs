@@ -49,7 +49,8 @@ export type DeleteApiContract = CommonApiContract & {
 
 export type PayloadApiContract = CommonApiContract & {
   method: 'post' | 'put' | 'patch'
-  requestBodySchema: typeof ContractNoBody | z.ZodType
+  // `null` is the preferred "no request body" sentinel; `ContractNoBody` is deprecated.
+  requestBodySchema: typeof ContractNoBody | null | z.ZodType
 }
 
 export type ApiContract = GetApiContract | DeleteApiContract | PayloadApiContract

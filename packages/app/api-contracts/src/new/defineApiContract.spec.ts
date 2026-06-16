@@ -132,6 +132,17 @@ describe('defineApiContract', () => {
       expectTypeOf(route.requestBodySchema).toEqualTypeOf<typeof ContractNoBody>()
     })
 
+    it('accepts null as requestBodySchema on POST contracts', () => {
+      const route = defineApiContract({
+        method: 'post',
+        pathResolver: () => '/users',
+        requestBodySchema: null,
+        responsesByStatusCode: {},
+      })
+
+      expectTypeOf(route.requestBodySchema).toEqualTypeOf<null>()
+    })
+
     it('preserves ContractNoBody sentinel in responsesByStatusCode', () => {
       const route = defineApiContract({
         method: 'delete',
