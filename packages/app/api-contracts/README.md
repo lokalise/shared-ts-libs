@@ -274,7 +274,7 @@ type UserResponse = InferNonSseSuccessResponses<typeof getUser['responsesByStatu
 // { id: string; name: string }
 
 type CsvResponse = InferNonSseSuccessResponses<typeof exportCsv['responsesByStatusCode']>
-// string
+// Blob
 ```
 
 **`InferJsonSuccessResponses<T>`** — union of Zod schema types for all JSON 2xx entries. Text, Blob, SSE, and `ContractNoBody` entries are excluded.
