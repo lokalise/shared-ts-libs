@@ -2,28 +2,49 @@ import type { z } from 'zod/v4'
 import type { SuccessfulHttpStatusCode } from '../HttpStatusCodes.ts'
 import type { ValueOf } from '../typeUtils.ts'
 import type { ContractNoBody } from './constants.ts'
-import type { NoBodyResponse, ResponsesByStatusCode } from './contractResponse.ts'
+import type { NoBodyResponse, ResponseEntry, ResponsesByStatusCode } from './contractResponse.ts'
 
 type ExtractSuccessResponses<T extends ResponsesByStatusCode> = ValueOf<
   T,
   Extract<keyof T, SuccessfulHttpStatusCode | '2xx' | 'default'>
 >
 
+type UnpackAnyOf<T> = T extends { _tag: 'AnyOfResponses'; responses: Array<infer Item> } ? Item : T
+
+// Body descriptors of a content-map entry, normalized to the equivalent old-style tagged shape
+// so every downstream helper (SSE/JSON/blob/no-body extraction) works uniformly across both styles.
+type ContentDescriptorsOf<TEntry> = TEntry extends { content: infer TContent }
+  ? TContent[keyof TContent]
+  : never
+
+type NormalizeContentDescriptor<TDescriptor> = TDescriptor extends {
+  _tag: 'SseBody'
+  schemaByEventName: infer S
+}
+  ? { _tag: 'SseResponse'; schemaByEventName: S }
+  : TDescriptor extends { _tag: 'BlobBody' }
+    ? { _tag: 'BlobResponse' }
+    : TDescriptor
+
+type FlatContentSuccessResponses<TEntry> =
+  | NormalizeContentDescriptor<ContentDescriptorsOf<TEntry>>
+  | (TEntry extends { allowNoBody: true } ? typeof ContractNoBody : never)
+
+type FlatSuccessResponses<T extends ResponsesByStatusCode> =
+  | UnpackAnyOf<Exclude<ExtractSuccessResponses<T>, ResponseEntry>>
+  | FlatContentSuccessResponses<Extract<ExtractSuccessResponses<T>, ResponseEntry>>
+
 /**
- * Returns true if all success responses have no body
- * (ContractNoBody, noBodyResponse(), or no success status codes defined).
+ * Returns true if all success responses have no body (ContractNoBody, noBodyResponse(),
+ * a no-body content entry, or no success status codes defined).
  *
  * @deprecated No known consumers — will be removed in a future release.
  */
 export type IsNoBodySuccessResponse<T extends ResponsesByStatusCode> = [
-  ExtractSuccessResponses<T>,
+  FlatSuccessResponses<T>,
 ] extends [typeof ContractNoBody | NoBodyResponse | undefined]
   ? true
   : false
-
-type UnpackAnyOf<T> = T extends { _tag: 'AnyOfResponses'; responses: Array<infer Item> } ? Item : T
-
-type FlatSuccessResponses<T extends ResponsesByStatusCode> = UnpackAnyOf<ExtractSuccessResponses<T>>
 
 type SseSchemaOf<T> = T extends { _tag: 'SseResponse'; schemaByEventName: infer S } ? S : never
 

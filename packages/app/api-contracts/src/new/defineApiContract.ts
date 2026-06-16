@@ -8,11 +8,16 @@ import { SUCCESSFUL_HTTP_STATUS_CODES } from '../HttpStatusCodes.ts'
 import type { DistributiveOmit, Exactly } from '../typeUtils.ts'
 import { ContractNoBody } from './constants.ts'
 import {
+  type ApiContractResponse,
   isAnyOfResponses,
   isBlobResponse,
+  isContentResponseEntry,
+  isJsonBody,
   isNoBodyResponse,
+  isSseBody,
   isSseResponse,
   isTextResponse,
+  type ResponseEntry,
   type ResponsesByStatusCode,
   type SseSchemaByEventName,
 } from './contractResponse.ts'
@@ -90,17 +95,38 @@ export const describeApiContract = (routeConfig: ApiContract): string => {
   return `${routeConfig.method.toUpperCase()} ${mapApiContractToPath(routeConfig)}`
 }
 
+/** Collects every SSE event-schema map declared by a single response entry (legacy or content-map). */
+const collectSseSchemaMaps = (
+  value: ApiContractResponse | ResponseEntry,
+): SseSchemaByEventName[] => {
+  if (isContentResponseEntry(value)) {
+    const maps: SseSchemaByEventName[] = []
+    for (const descriptor of Object.values(value.content ?? {})) {
+      if (isSseBody(descriptor)) {
+        maps.push(descriptor.schemaByEventName)
+      }
+    }
+    return maps
+  }
+
+  if (isSseResponse(value)) {
+    return [value.schemaByEventName]
+  }
+
+  if (isAnyOfResponses(value)) {
+    return value.responses.filter(isSseResponse).map((response) => response.schemaByEventName)
+  }
+
+  return []
+}
+
 export const getSseSchemaByEventName = (routeConfig: ApiContract): SseSchemaByEventName | null => {
   const result: SseSchemaByEventName = {}
 
   for (const value of Object.values(routeConfig.responsesByStatusCode)) {
-    if (isSseResponse(value)) {
-      Object.assign(result, value.schemaByEventName)
-    } else if (isAnyOfResponses(value)) {
-      for (const response of value.responses) {
-        if (isSseResponse(response)) {
-          Object.assign(result, response.schemaByEventName)
-        }
+    if (value) {
+      for (const map of collectSseSchemaMaps(value)) {
+        Object.assign(result, map)
       }
     }
   }
@@ -112,18 +138,8 @@ export const hasAnySuccessSseResponse = (apiContract: ApiContract): boolean => {
   for (const code of [...SUCCESSFUL_HTTP_STATUS_CODES, '2xx' as const, 'default' as const]) {
     const value = apiContract.responsesByStatusCode[code]
 
-    if (!value) {
-      continue
-    }
-
-    if (isSseResponse(value)) {
+    if (value && collectSseSchemaMaps(value).length > 0) {
       return true
-    } else if (isAnyOfResponses(value)) {
-      for (const response of value.responses) {
-        if (isSseResponse(response)) {
-          return true
-        }
-      }
     }
   }
 
@@ -140,6 +156,21 @@ export const getSuccessResponseSchema = (routeConfig: ApiContract): z.ZodType | 
     const value = routeConfig.responsesByStatusCode[code]
 
     if (!value) {
+      continue
+    }
+
+    if (isContentResponseEntry(value)) {
+      if (!value.content) {
+        hasDirectNonJsonEntry = true
+        continue
+      }
+      for (const descriptor of Object.values(value.content)) {
+        if (isJsonBody(descriptor)) {
+          schemas.push(descriptor)
+        } else {
+          hasDirectNonJsonEntry = true
+        }
+      }
       continue
     }
 
@@ -181,7 +212,19 @@ export const getIsEmptyResponseExpected = (routeConfig: ApiContract): boolean =>
   for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
     const value = routeConfig.responsesByStatusCode[code]
 
-    if (value && value !== ContractNoBody && !isNoBodyResponse(value)) {
+    if (!value) {
+      continue
+    }
+
+    if (isContentResponseEntry(value)) {
+      if (value.content) {
+        isEmptyResponseExpected = false
+        break
+      }
+      continue
+    }
+
+    if (value !== ContractNoBody && !isNoBodyResponse(value)) {
       isEmptyResponseExpected = false
       break
     }
