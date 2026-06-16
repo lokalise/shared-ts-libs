@@ -35,6 +35,16 @@ const createUser = defineApiContract({
   },
 })
 
+// POST with no request body — declare the intent explicitly with `null`
+const reindexUsers = defineApiContract({
+  method: 'post',
+  pathResolver: () => '/users/reindex',
+  requestBodySchema: null,
+  responsesByStatusCode: {
+    202: noBodyResponse(),
+  },
+})
+
 // DELETE with no response body
 const deleteUser = defineApiContract({
   method: 'delete',
@@ -48,34 +58,16 @@ const deleteUser = defineApiContract({
 
 ### Non-JSON responses
 
-Use `textResponse` for text-based responses (plain text, CSV, HTML, XML, YAML, etc.):
+Use `blobResponse` for any non-JSON response — text-based (plain text, CSV, HTML, XML, YAML, etc.) or binary (images, PDFs, etc.). It records the response `content-type` in the contract and hands the consumer a `Blob`, leaving the decode choice to the call site via `.text()`, `.arrayBuffer()`, or `.stream()`:
 
 ```ts
-import { defineApiContract, textResponse } from '@lokalise/api-contracts'
+import { defineApiContract, blobResponse } from '@lokalise/api-contracts'
 
 const exportCsv = defineApiContract({
   method: 'get',
   pathResolver: () => '/export.csv',
-  responsesByStatusCode: { 200: textResponse('text/csv') },
+  responsesByStatusCode: { 200: blobResponse('text/csv') },
 })
-
-const getPage = defineApiContract({
-  method: 'get',
-  pathResolver: () => '/page',
-  responsesByStatusCode: { 200: textResponse('text/html') },
-})
-
-const getDocument = defineApiContract({
-  method: 'get',
-  pathResolver: () => '/document',
-  responsesByStatusCode: { 200: textResponse('application/xml') },
-})
-```
-
-Use `blobResponse` for binary responses (images, PDFs, etc.):
-
-```ts
-import { defineApiContract, blobResponse } from '@lokalise/api-contracts'
 
 const downloadPhoto = defineApiContract({
   method: 'get',
@@ -83,6 +75,8 @@ const downloadPhoto = defineApiContract({
   responsesByStatusCode: { 200: blobResponse('image/png') },
 })
 ```
+
+> **Deprecated:** `textResponse` is deprecated in favour of `blobResponse`. Both declare the same protocol fact (the response `content-type`); they differ only in whether the client materializes the body as `string` or `Blob` — a consumer concern, not part of the contract. Where a string is needed, call `.text()` on the returned `Blob`. `textResponse` will be removed in a future major release.
 
 ### SSE and dual-mode routes
 
@@ -175,7 +169,6 @@ All response factories accept an optional `ResponseOptions` object as their last
 import {
   defineApiContract,
   noBodyResponse,
-  textResponse,
   blobResponse,
   sseResponse,
   anyOfResponses,
@@ -192,7 +185,7 @@ const contract = defineApiContract({
     200: anyOfResponses(
       [
         z.object({ id: z.string() }).describe('JSON representation'),
-        textResponse('text/csv', { description: 'CSV export' }),
+        blobResponse('text/csv', { description: 'CSV export' }),
         blobResponse('application/pdf', { description: 'PDF report' }),
         sseResponse({ update: z.object({ id: z.string() }) }, { description: 'Live update stream' }),
       ],
@@ -234,7 +227,8 @@ type ApiContractOptions = {
   requestPathParamsSchema?: z.ZodObject<z.ZodRawShape>
 
   // Request
-  requestBodySchema?: z.ZodType | ContractNoBody  // required for POST / PUT / PATCH, forbidden otherwise
+  requestBodySchema?: z.ZodType | null  // POST / PUT / PATCH: a schema, or `null` to declare "no body"; forbidden otherwise.
+                                         // (the deprecated `ContractNoBody` symbol is still accepted in place of `null`)
   requestQuerySchema?: z.ZodObject<z.ZodRawShape>
   requestHeaderSchema?: z.ZodObject<z.ZodRawShape>
 
