@@ -68,20 +68,19 @@ Run this **once per environment** (local, staging, production). The command is i
 <details>
 <summary>Alternative: use the function directly in a script</summary>
 
-If you need more control (e.g. custom table name, schema, or executor), create a one-time script:
+If you need more control (e.g. custom table name, schema, or database creation), create a one-time script:
 
 ```typescript
 import { markMigrationsApplied } from '@lokalise/drizzle-utils'
+import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
 const sql = postgres(process.env.DATABASE_URL!)
+const db = drizzle({ client: sql })
 
 const result = await markMigrationsApplied({
+  db,
   migrationsFolder: './drizzle/migrations',
-  executor: {
-    run: (query) => sql.unsafe(query).then(() => {}),
-    all: (query) => sql.unsafe(query) as Promise<Record<string, unknown>[]>,
-  },
 })
 
 console.log(`Baseline complete — Applied: ${result.applied}, Skipped: ${result.skipped}`)

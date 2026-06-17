@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:18.2-alpine
+    image: postgres:18.4-alpine
     command: '-c full_page_writes=off -c fsync=off -c synchronous_commit=off'
     ports:
       - '5432:5432'
@@ -15,7 +15,7 @@ services:
       retries: 10
 
   cockroachdb:
-    image: cockroachdb/cockroach:latest-v26.1
+    image: cockroachdb/cockroach:latest-v26.2
     command: start-single-node --insecure
     ports:
       - '26257:26257'
@@ -28,8 +28,11 @@ services:
       retries: 15
 
   mysql:
-    image: mysql:8.0.40
-    command: '--default-authentication-plugin=mysql_native_password'
+    image: mysql:8.4.8
+    # MySQL 8.4 dropped --default-authentication-plugin; mysql_native_password is
+    # also no longer loaded by default, so enable it explicitly for the test
+    # clients (mysql2 connects as root with a native-password account).
+    command: '--mysql-native-password=ON'
     ports:
       - '3306:3306'
     volumes:
