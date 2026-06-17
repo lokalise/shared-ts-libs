@@ -183,21 +183,6 @@ export type NoBodyContentResponseEntry = {
  */
 export type ResponseEntry = BodyContentResponseEntry | NoBodyContentResponseEntry
 
-/** Builds a content-map entry for the conventional `application/json` media type. */
-export const jsonResponse = <TSchema extends z.ZodType>(
-  schema: TSchema,
-  options?: ResponseOptions,
-): { description?: string; content: { 'application/json': TSchema } } => ({
-  ...(options?.description !== undefined && { description: options.description }),
-  content: { 'application/json': schema },
-})
-
-/** Builds a content-map no-body entry (e.g. for `204 No Content`). */
-export const noContent = (options?: ResponseOptions): NoBodyContentResponseEntry => ({
-  ...(options?.description !== undefined && { description: options.description }),
-  allowNoBody: true,
-})
-
 export const isContentResponseEntry = (
   value: ApiContractResponse | ResponseEntry,
 ): value is ResponseEntry =>
