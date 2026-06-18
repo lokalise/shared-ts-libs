@@ -27,5 +27,5 @@ export const concatObjectValues = <T extends object>(
   objects: T[],
 ): (T extends unknown ? ObjectValues<T> : never)[] =>
   objects.flatMap(
-    (object) => Object.values(object) as (T extends unknown ? ObjectValues<T> : never)[],
+    (object) => Object.values(object),
   )
