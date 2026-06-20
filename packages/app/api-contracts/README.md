@@ -35,16 +35,6 @@ const createUser = defineApiContract({
   },
 })
 
-// POST with no request body — declare the intent explicitly with `null`
-const reindexUsers = defineApiContract({
-  method: 'post',
-  pathResolver: () => '/users/reindex',
-  requestBodySchema: null,
-  responsesByStatusCode: {
-    202: noBodyResponse(),
-  },
-})
-
 // DELETE with no response body
 const deleteUser = defineApiContract({
   method: 'delete',
@@ -227,8 +217,7 @@ type ApiContractOptions = {
   requestPathParamsSchema?: z.ZodObject<z.ZodRawShape>
 
   // Request
-  requestBodySchema?: z.ZodType | null  // POST / PUT / PATCH: a schema, or `null` to declare "no body"; forbidden otherwise.
-                                         // (the deprecated `ContractNoBody` symbol is still accepted in place of `null`)
+  requestBodySchema?: z.ZodType | ContractNoBody  // required for POST / PUT / PATCH, forbidden otherwise
   requestQuerySchema?: z.ZodObject<z.ZodRawShape>
   requestHeaderSchema?: z.ZodObject<z.ZodRawShape>
 

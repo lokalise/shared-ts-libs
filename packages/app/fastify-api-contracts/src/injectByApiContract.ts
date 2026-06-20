@@ -33,7 +33,7 @@ export type InjectByApiContractParams<TApiContract extends ApiContract> = Omit<
  * deprecated `buildRestContract`/`buildGetRoute`/`buildPayloadRoute` route definitions. The params
  * type is resolved directly from the contract:
  * - GET/DELETE contracts → params without a request body
- * - POST/PUT/PATCH contracts → params with a request body (omitted when `null` / `ContractNoBody`)
+ * - POST/PUT/PATCH contracts → params with a request body (omitted when `ContractNoBody`)
  *
  * An optional `pathPrefix` is prepended to the path resolved from the contract, matching the
  * behavior of the contract client.
