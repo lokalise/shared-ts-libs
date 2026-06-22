@@ -16,6 +16,13 @@ export type TypedTextResponse = {
   readonly description?: string
 }
 
+/**
+ * @deprecated Use {@link blobResponse} instead. `textResponse` and `blobResponse` carry the
+ * identical protocol fact (the response `content-type`); they differ only in the JS type the
+ * client materializes the body into (`string` vs `Blob`). That decode choice belongs to the
+ * consumer, not the shared contract — `blobResponse` defers it to the call site via
+ * `.text()` / `.arrayBuffer()` / `.stream()`. Will be removed in a future major release.
+ */
 export const textResponse = (
   contentType: string,
   options?: ResponseOptions,
