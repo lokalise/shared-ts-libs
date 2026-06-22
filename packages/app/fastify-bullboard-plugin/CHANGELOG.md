@@ -1,5 +1,12 @@
 # @lokalise/fastify-bullboard-plugin
 
+## 2.2.3
+
+### Patch Changes
+
+- Updated dependencies [2f42e00]
+  - @lokalise/tsconfig@5.0.0
+
 ## 2.2.2
 
 ### Patch Changes

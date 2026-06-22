@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/fastify-bullboard-plugin",
-    "version": "2.2.2",
+    "version": "2.2.3",
     "type": "module",
     "files": [
         "dist",
@@ -33,7 +33,7 @@
         "@bull-board/fastify": "^7.1.5",
         "@fastify/auth": "^5.0.4",
         "@fastify/basic-auth": "^6.2.0",
-        "@lokalise/tsconfig": "^4.0.0"
+        "@lokalise/tsconfig": "^5.0.0"
     },
     "peerDependencies": {
         "@lokalise/background-jobs-common": ">=12.6.0"

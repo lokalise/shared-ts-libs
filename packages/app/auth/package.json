@@ -51,7 +51,7 @@
         "@lokalise/biome-config": "^3.1.0",
         "@lokalise/fastify-extras": "^31.0.0",
         "@lokalise/node-core": "^14.4.1",
-        "@lokalise/tsconfig": "^4.0.0",
+        "@lokalise/tsconfig": "^5.0.0",
         "@lokalise/universal-ts-utils": "^4.5.1",
         "@types/node": "^25.9.3",
         "@vitest/coverage-v8": "^4.1.9",
