@@ -85,11 +85,6 @@ type SseInferClientResponseBody<T> = Extract<InferClientResponseBody<T>, AsyncIt
  */
 type NonSseInferClientResponseBody<T> = Exclude<InferClientResponseBody<T>, AsyncIterable<unknown>>
 
-// ─── Content-map entry support (newer style) ───
-// Old per-status values yield a legacy `{ statusCode, headers, body }` member (no contentType).
-// Content-map entries instead yield one `{ statusCode, contentType, headers, body }` member per
-// media type, plus a no-body member (`contentType?: undefined; body: null`) when `allowNoBody` is set.
-
 type InferContentDescriptorBody<TDescriptor> = TDescriptor extends { _tag: 'BlobBody' }
   ? Blob
   : TDescriptor extends { _tag: 'SseBody'; schemaByEventName: infer S extends SseSchemaByEventName }
@@ -101,10 +96,10 @@ type InferContentDescriptorBody<TDescriptor> = TDescriptor extends { _tag: 'Blob
 type ContentEntryVariants<TEntry> =
   | (TEntry extends { content: infer C }
       ? {
-          [CT in keyof C & string]: { contentType: CT; body: InferContentDescriptorBody<C[CT]> }
+          [CT in keyof C & string]: { body: InferContentDescriptorBody<C[CT]> }
         }[keyof C & string]
       : never)
-  | (TEntry extends { allowNoBody: true } ? { contentType?: undefined; body: null } : never)
+  | (TEntry extends { allowNoBody: true } ? { body: null } : never)
 
 type IsContentEntry<V> = V extends { content: object }
   ? true
@@ -136,14 +131,14 @@ type LegacyBodyForMode<V, TMode extends ResponseBodyMode> = TMode extends 'sse'
     ? NonSseInferClientResponseBody<V>
     : InferClientResponseBody<V>
 
-/** Attaches `statusCode` + `headers` to each `{ contentType, body }` variant. */
+/** Attaches `statusCode` + `headers` to each `{ body }` variant. */
 type WithMeta<TStatusCode, THeaders, TVariant> = TVariant extends unknown
   ? Prettify<{ statusCode: TStatusCode; headers: THeaders } & TVariant>
   : never
 
 /**
  * Builds the response union member(s) for a status code `K` holding value `V`.
- * Content-map entries expand to contentType-tagged variants; legacy entries keep the original
+ * Content-map entries expand to one body variant per media type; legacy entries keep the original
  * `{ statusCode, headers, body }` shape (so existing contracts are byte-for-byte unchanged).
  */
 type ResponseMember<TStatusCode, THeaders, V, TMode extends ResponseBodyMode> =
