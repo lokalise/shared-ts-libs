@@ -1,7 +1,7 @@
 {
   "name": "shared-ts-libs",
   "private": true,
-  "packageManager": "pnpm@11.1.0",
+  "packageManager": "pnpm@11.9.0",
   "scripts": {
     "clean": "turbo run clean",
     "build": "turbo run build",
