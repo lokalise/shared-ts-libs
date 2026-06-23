@@ -90,6 +90,13 @@ export type AnyOfResponses<T extends TypedApiContractResponse = TypedApiContract
   readonly description?: string
 }
 
+/**
+ * @deprecated Use a content-map response entry instead — `{ content: { <mediaType>: descriptor } }`
+ * (see {@link blobBody} / {@link sseBody}). A flat `anyOfResponses` list can't declare multiple JSON
+ * media types, matches content-types by substring (false positives), and is order-dependent;
+ * content maps match media types exactly and map 1:1 to the OpenAPI Response Object. Will be removed
+ * in a future major release.
+ */
 export const anyOfResponses = <T extends TypedApiContractResponse>(
   responses: T[],
   options?: ResponseOptions,
