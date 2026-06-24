@@ -1023,8 +1023,8 @@ importers:
         specifier: ^4.1.9
         version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(@vitest/coverage-v8@4.1.9)(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@6.4.2(@types/node@25.9.3)(jiti@2.7.0)(yaml@2.9.0))
       wretch:
-        specifier: ^3.0.8
-        version: 3.0.8
+        specifier: ^2.8.0
+        version: 2.11.1
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -7105,10 +7105,6 @@ packages:
   wretch@2.11.1:
     resolution: {integrity: sha512-rJejp30zE8Igs4Mvo4pxXaiOKdSIGYLxyVaY+jZTlAMfQyi/hZsDwMRa9R09N0iS9Q8cLvplKfHwwyBv6XRWsg==}
     engines: {node: '>=14'}
-
-  wretch@3.0.8:
-    resolution: {integrity: sha512-HDDFvyELFUVZFiw4hb/QfMkuh+xwHwJoRjCCTDO+E9ik3TrRJSVI7MmzSKQemimeDH9EwIRmQuh4HTgEcVcYVw==}
-    engines: {node: '>=22'}
 
   ws@8.18.3:
     resolution: {integrity: sha512-PEIGCY5tSlUt50cqyMXfCzX+oOPqN0vuGqWzbcJ2xvnkzkq46oOpz7dQaTDBdfICb4N14+GARUDw2XV2N4tvzg==}
@@ -14040,8 +14036,6 @@ snapshots:
   wrappy@1.0.2: {}
 
   wretch@2.11.1: {}
-
-  wretch@3.0.8: {}
 
   ws@8.18.3: {}
 
