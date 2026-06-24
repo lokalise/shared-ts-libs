@@ -46,9 +46,9 @@
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.0",
-        "@lokalise/background-jobs-common": "^14.0.0",
-        "@lokalise/biome-config": "^3.1.0",
-        "@lokalise/tsconfig": "^5.0.0",
+        "@lokalise/background-jobs-common": "workspace:^",
+        "@lokalise/biome-config": "workspace:^",
+        "@lokalise/tsconfig": "workspace:^",
         "@vitest/coverage-v8": "^4.1.9",
         "ioredis": "^5.11.1",
         "prom-client": "^15.1.3",

@@ -53,8 +53,8 @@
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.0",
-        "@lokalise/biome-config": "^3.1.0",
-        "@lokalise/tsconfig": "^5.0.0",
+        "@lokalise/biome-config": "workspace:^",
+        "@lokalise/tsconfig": "workspace:^",
         "@opentelemetry/auto-instrumentations-node": "^0.76.0",
         "@opentelemetry/exporter-trace-otlp-grpc": "^0.218.0",
         "@opentelemetry/sdk-node": "^0.218.0",

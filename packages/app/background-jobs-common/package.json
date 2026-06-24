@@ -38,7 +38,7 @@
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
-        "@lokalise/id-utils": "^3.0.1",
+        "@lokalise/id-utils": "workspace:^",
         "@lokalise/node-core": "^14.6.0",
         "redis-semaphore": "^5.6.2",
         "ts-deepmerge": "^8.0.0"
@@ -52,8 +52,8 @@
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.0",
-        "@lokalise/biome-config": "^3.1.0",
-        "@lokalise/tsconfig": "^5.0.0",
+        "@lokalise/biome-config": "workspace:^",
+        "@lokalise/tsconfig": "workspace:^",
         "@types/node": "^25.9.3",
         "@vitest/coverage-v8": "^4.1.9",
         "bullmq": "^5.78.1",
