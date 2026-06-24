@@ -3,11 +3,13 @@ import { z } from 'zod/v4'
 import { ContractNoBody } from './constants.ts'
 import {
   anyOfResponses,
+  blobBody,
   blobResponse,
   isAnyOfResponses,
   isBlobResponse,
   isSseResponse,
   isTextResponse,
+  sseBody,
   sseResponse,
   type TypedBlobResponse,
   type TypedTextResponse,
@@ -324,6 +326,43 @@ describe('getSuccessResponseSchema', () => {
     expect(result).not.toBeNull()
     expect(result!.parse({ id: 'x' })).toEqual({ id: 'x' })
   })
+
+  it('extracts the JSON descriptor from a content-map entry', () => {
+    const schema = z.object({ id: z.string() })
+    const route = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/report',
+      responsesByStatusCode: {
+        200: { content: { 'application/json': schema, 'application/pdf': blobBody() } },
+      },
+    })
+
+    expect(getSuccessResponseSchema(route)).toBe(schema)
+  })
+
+  it('returns z.never() for a content-map entry with only non-JSON descriptors', () => {
+    const route = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/report.pdf',
+      responsesByStatusCode: { 200: { content: { 'application/pdf': blobBody() } } },
+    })
+
+    const result = getSuccessResponseSchema(route)
+    expect(result).not.toBeNull()
+    expect(result!.safeParse('anything').success).toBe(false)
+  })
+
+  it('returns z.never() for a no-body content entry', () => {
+    const route = defineApiContract({
+      method: 'delete',
+      pathResolver: () => '/users/1',
+      responsesByStatusCode: { 204: { allowNoBody: true } },
+    })
+
+    const result = getSuccessResponseSchema(route)
+    expect(result).not.toBeNull()
+    expect(result!.safeParse('anything').success).toBe(false)
+  })
 })
 
 describe('getIsEmptyResponseExpected', () => {
@@ -399,6 +438,60 @@ describe('getIsEmptyResponseExpected', () => {
     })
 
     expect(getIsEmptyResponseExpected(route)).toBe(false)
+  })
+
+  it('returns false for a content-map entry with content', () => {
+    const route = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/report',
+      responsesByStatusCode: {
+        200: { content: { 'application/json': z.object({ id: z.string() }) } },
+      },
+    })
+
+    expect(getIsEmptyResponseExpected(route)).toBe(false)
+  })
+
+  it('returns true for a no-body content entry', () => {
+    const route = defineApiContract({
+      method: 'delete',
+      pathResolver: () => '/users/1',
+      responsesByStatusCode: { 204: { allowNoBody: true } },
+    })
+
+    expect(getIsEmptyResponseExpected(route)).toBe(true)
+  })
+})
+
+describe('getSseSchemaByEventName with content-map entries', () => {
+  it('extracts the SSE schema from a content-map sseBody descriptor', () => {
+    const schemaByEventName = { tick: z.object({ n: z.number() }) }
+    const route = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/stream',
+      responsesByStatusCode: {
+        200: {
+          content: {
+            'application/json': z.object({ id: z.string() }),
+            'text/event-stream': sseBody(schemaByEventName),
+          },
+        },
+      },
+    })
+
+    expect(getSseSchemaByEventName(route)).toEqual(schemaByEventName)
+  })
+
+  it('hasAnySuccessSseResponse is true for a content-map sseBody descriptor', () => {
+    const route = defineApiContract({
+      method: 'get',
+      pathResolver: () => '/stream',
+      responsesByStatusCode: {
+        200: { content: { 'text/event-stream': sseBody({ tick: z.object({ n: z.number() }) }) } },
+      },
+    })
+
+    expect(hasAnySuccessSseResponse(route)).toBe(true)
   })
 })
 

@@ -10,7 +10,16 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/index.ts'],
+      exclude: [
+        'src/index.ts',
+        // Type-only modules — no runtime code to cover.
+        'src/typeUtils.ts',
+        'src/new/clientTypes.ts',
+        'src/new/inferTypes.ts',
+        'src/sse/sseTypes.ts',
+        'src/sse/sseContracts.ts',
+        'src/sse/dualModeContracts.ts',
+      ],
       thresholds: {
         lines: 100,
         functions: 100,
