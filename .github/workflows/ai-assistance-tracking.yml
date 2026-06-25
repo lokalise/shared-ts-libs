@@ -4,6 +4,8 @@ on:
   pull_request:
     types: [opened, edited]
 
+permissions: {}
+
 jobs:
   validate-and-label:
     if: ${{ !endsWith(github.event.pull_request.user.login, '[bot]') }} # Only run for human authors (skip bots)
@@ -49,18 +51,16 @@ jobs:
 
       - name: Add AI label
         if: steps.check_selection.outputs.ai_assisted == 'true'
-        uses: actions-ecosystem/action-add-labels@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          number: ${{ github.event.pull_request.number }}
-          repo: ${{ github.repository }}
-          labels: ai-assisted
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label ai-assisted
 
       - name: Remove AI label
         if: steps.check_selection.outputs.ai_assisted == 'false'
-        uses: actions-ecosystem/action-remove-labels@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          number: ${{ github.event.pull_request.number }}
-          repo: ${{ github.repository }}
-          labels: ai-assisted
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label ai-assisted
