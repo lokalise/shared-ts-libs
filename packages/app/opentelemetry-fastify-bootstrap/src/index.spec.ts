@@ -482,7 +482,8 @@ describe('opentelemetry-fastify-bootstrap', () => {
             .find((s) => s.attributes['db.system'] === 'elasticsearch')
           expect(dbSpan).toBeDefined()
           expect(dbSpan?.attributes['db.namespace']).toBe('lokalise')
-          expect(dbSpan?.attributes['peer.db.system']).toBe('elasticsearch')
+          // We only stamp the short-form attribute; Datadog derives peer.db.*.
+          expect(dbSpan?.attributes['peer.db.system']).toBeUndefined()
         },
         { timeout: 2000, interval: 10 },
       )
@@ -503,7 +504,7 @@ describe('opentelemetry-fastify-bootstrap', () => {
       const snapshot = attributeSnapshots.find((attrs) => attrs['order.check'] === true)
       expect(snapshot).toBeDefined()
       expect(snapshot?.['db.namespace']).toBe('lokalise')
-      expect(snapshot?.['peer.db.system']).toBe('elasticsearch')
+      expect(snapshot?.['peer.db.system']).toBeUndefined()
     })
 
     it('does not stamp anything on spans without a matching db.system', async () => {

@@ -17,20 +17,22 @@ export interface PeerDbNameSpanProcessorOptions {
 
 /**
  * Stamps `db.namespace` on outbound DB spans based on the OTel `db.system`
- * value (falling back to `peer.db.system` when `db.system` is absent), and
- * mirrors `peer.db.system` from `db.system` when missing, so Datadog's APM
- * service catalog joins the spans to an existing inferred-service entity for
- * the cluster.
+ * value (falling back to `peer.db.system` when `db.system` is absent), so
+ * Datadog's APM service catalog joins the spans to an existing inferred-service
+ * entity for the cluster.
  *
  * Why this exists (per Datadog inferred-services behavior as of 2026-06):
  * when a downstream cluster (e.g. Elasticsearch) is reached by raw IP,
  * Datadog can't classify it from `peer.hostname` and routes the spans into
  * the synthetic `blocked-ip-address` service. Datadog's inferred-service
- * catalog DOES recognize entities keyed by `(peer.db.system, peer.db.name)`,
- * deriving `peer.db.name` from the OTel-canonical `db.namespace` attribute.
- * The Node `@elastic/transport` v8 client sets `db.system` but not
- * `db.namespace`; this processor fills the gap from a service-supplied
- * mapping. Existing non-empty string values are never overwritten.
+ * catalog instead recognizes entities keyed by the `peer.db.*` tags, which it
+ * derives from short-form OTel attributes — `peer.db.name` from `db.namespace`
+ * and `peer.db.system` from `db.system`. So we only set the vendor-neutral
+ * short-form attribute and let Datadog add the `peer.` prefix; we never write
+ * `peer.*` tags ourselves. The Node `@elastic/transport` v8 client sets
+ * `db.system` but not `db.namespace`, so this processor fills that one gap from
+ * a service-supplied mapping. Existing non-empty `db.namespace` values are
+ * never overwritten.
  *
  * The mutation happens in `onEnd`, when the instrumentation libraries have
  * finished attaching attributes. Once a span has ended, `Span.setAttribute`
@@ -76,13 +78,10 @@ export class PeerDbNameSpanProcessor implements SpanProcessor {
     if (!mapped) return
 
     const needsNamespace = typeof attrs['db.namespace'] !== 'string' || !attrs['db.namespace']
-    const needsPeerDbSystem =
-      typeof attrs['peer.db.system'] !== 'string' || !attrs['peer.db.system']
-    if (!needsNamespace && !needsPeerDbSystem) return
+    if (!needsNamespace) return
 
     try {
-      if (needsNamespace) attrs['db.namespace'] = mapped
-      if (needsPeerDbSystem) attrs['peer.db.system'] = dbSystem
+      attrs['db.namespace'] = mapped
     } catch (err) {
       // Never (re)throw from onEnd: a throw propagates synchronously through
       // MultiSpanProcessor and Span.end() into the instrumented application
@@ -102,8 +101,6 @@ export class PeerDbNameSpanProcessor implements SpanProcessor {
       logEntry('info', '[OTEL] PeerDbNameSpanProcessor: stamped first matching span', {
         dbSystem,
         dbNamespace: attrs['db.namespace'],
-        stampedNamespace: needsNamespace,
-        stampedPeerDbSystem: needsPeerDbSystem,
       })
     }
   }

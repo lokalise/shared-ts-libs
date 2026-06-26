@@ -84,15 +84,17 @@ describe('PeerDbNameSpanProcessor', () => {
       expect(span.attributes['db.namespace']).toBe('lokalise')
     })
 
-    it('mirrors db.system to peer.db.system when only db.system is present', () => {
-      // @elastic/transport sets db.system but not peer.db.system, and DD's
-      // entity key uses peer.db.*, so the processor must mirror.
+    it('does not write any peer.* tag — Datadog derives those from the short-form attributes', () => {
+      // Datadog adds the peer.* prefix itself (peer.db.system from db.system,
+      // peer.db.name from db.namespace), so we only set the vendor-neutral
+      // short form and never stamp peer.* tags ourselves.
       const processor = new PeerDbNameSpanProcessor({ dbNames: { elasticsearch: 'lokalise' } })
       const span = makeSpan({ 'db.system': 'elasticsearch' })
 
       processor.onEnd(span)
 
-      expect(span.attributes['peer.db.system']).toBe('elasticsearch')
+      expect(span.attributes['peer.db.system']).toBeUndefined()
+      expect(span.attributes['peer.db.name']).toBeUndefined()
     })
 
     it('reads peer.db.system as a fallback when db.system is absent', () => {
@@ -116,20 +118,6 @@ describe('PeerDbNameSpanProcessor', () => {
       processor.onEnd(span)
 
       expect(span.attributes['db.namespace']).toBe('preserve-me')
-    })
-
-    it('does not overwrite an existing peer.db.system that differs from db.system', () => {
-      // Defensive: if an instrumentation set a different peer.db.system,
-      // preserve it. We're filling gaps, not relabeling.
-      const processor = new PeerDbNameSpanProcessor({ dbNames: { elasticsearch: 'lokalise' } })
-      const span = makeSpan({
-        'db.system': 'elasticsearch',
-        'peer.db.system': 'something-explicit',
-      })
-
-      processor.onEnd(span)
-
-      expect(span.attributes['peer.db.system']).toBe('something-explicit')
     })
   })
 
@@ -172,12 +160,11 @@ describe('PeerDbNameSpanProcessor', () => {
       expect(span.attributes['db.namespace']).toBeUndefined()
     })
 
-    it('does nothing when both db.namespace and peer.db.system are already set', () => {
+    it('does nothing when db.namespace is already set', () => {
       const processor = new PeerDbNameSpanProcessor({ dbNames: { elasticsearch: 'lokalise' } })
       const span = makeSpan({
         'db.system': 'elasticsearch',
         'db.namespace': 'already-there',
-        'peer.db.system': 'elasticsearch',
       })
 
       processor.onEnd(span)
@@ -206,18 +193,13 @@ describe('PeerDbNameSpanProcessor', () => {
       expect(messages.some((m: string) => m.includes('"dbSystem":"redis"'))).toBe(true)
     })
 
-    it('reports what was actually written when db.namespace was already present', () => {
-      // The log must stay honest: if the namespace was pre-existing and only
-      // peer.db.system was mirrored, it must not claim the mapped value was
-      // stamped.
+    it('logs the stamped namespace value', () => {
       const processor = new PeerDbNameSpanProcessor({ dbNames: { elasticsearch: 'lokalise' } })
-      processor.onEnd(makeSpan({ 'db.system': 'elasticsearch', 'db.namespace': 'pre-existing' }))
+      processor.onEnd(makeSpan({ 'db.system': 'elasticsearch' }))
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const message = String(consoleLogSpy.mock.calls[0]?.[0])
-      expect(message).toContain('"dbNamespace":"pre-existing"')
-      expect(message).toContain('"stampedNamespace":false')
-      expect(message).toContain('"stampedPeerDbSystem":true')
+      expect(message).toContain('"dbNamespace":"lokalise"')
     })
 
     it('does not log when no spans match the mapping', () => {
