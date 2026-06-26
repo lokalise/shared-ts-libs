@@ -18,33 +18,24 @@ export interface PeerDbNameSpanProcessorOptions {
 /**
  * Stamps `db.namespace` on outbound DB spans based on the OTel `db.system`
  * value (falling back to `peer.db.system` when `db.system` is absent), so
- * Datadog's APM service catalog joins the spans to an existing inferred-service
- * entity for the cluster.
+ * Datadog's APM catalog joins the spans to an existing inferred-service entity.
  *
- * Why this exists (per Datadog inferred-services behavior as of 2026-06):
- * when a downstream cluster (e.g. Elasticsearch) is reached by raw IP,
- * Datadog can't classify it from `peer.hostname` and routes the spans into
- * the synthetic `blocked-ip-address` service. Datadog's inferred-service
- * catalog instead recognizes entities keyed by the `peer.db.*` tags, which it
- * derives from short-form OTel attributes — `peer.db.name` from `db.namespace`
- * and `peer.db.system` from `db.system`. So we only set the vendor-neutral
- * short-form attribute and let Datadog add the `peer.` prefix; we never write
- * `peer.*` tags ourselves. The Node `@elastic/transport` v8 client sets
- * `db.system` but not `db.namespace`, so this processor fills that one gap from
- * a service-supplied mapping. Existing non-empty `db.namespace` values are
- * never overwritten.
+ * Why (per Datadog inferred-services behavior as of 2026-06): a cluster reached
+ * by raw IP can't be classified from `peer.hostname` and gets bucketed into the
+ * synthetic `blocked-ip-address` service. Datadog instead keys entities on the
+ * `peer.db.*` tags, which it derives from short-form OTel attributes
+ * (`peer.db.name` from `db.namespace`, `peer.db.system` from `db.system`) — so
+ * we only set the vendor-neutral short form and never write `peer.*` ourselves.
+ * The Node `@elastic/transport` v8 client sets `db.system` but not
+ * `db.namespace`; this fills that one gap. Existing `db.namespace` is never
+ * overwritten.
  *
- * The mutation happens in `onEnd`, when the instrumentation libraries have
- * finished attaching attributes. Once a span has ended, `Span.setAttribute`
- * is a no-op, so the processor writes directly into the attribute map —
- * `ReadableSpan.attributes` is the same live object the writable span used.
- * Nothing in the SDK's types blocks the write (`readonly attributes` only
- * forbids reassigning the property, and the map type is mutable), but the
- * mutation is contractually unsanctioned and relies on
- * `@opentelemetry/sdk-trace-base` internals. If a future SDK upgrade makes
- * the assignment throw (e.g. by freezing attributes on span end), the failure
- * is caught, logged once, and further mutation attempts are disarmed — one
- * error log instead of a broken span pipeline.
+ * The write happens in `onEnd`, after instrumentation has attached attributes
+ * and `Span.setAttribute` has become a no-op, so we mutate `ReadableSpan.attributes`
+ * directly — it's the same live, mutable map the writable span used. This relies
+ * on `@opentelemetry/sdk-trace-base` internals; if a future SDK freezes the map
+ * on span end, the assignment throws and we catch it, log once, and disarm —
+ * one error log instead of a broken span pipeline.
  */
 export class PeerDbNameSpanProcessor implements SpanProcessor {
   private readonly dbNames = new Map<string, string>()
