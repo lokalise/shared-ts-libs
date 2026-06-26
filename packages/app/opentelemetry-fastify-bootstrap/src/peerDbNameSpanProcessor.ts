@@ -32,8 +32,8 @@ export interface PeerDbNameSpanProcessorOptions {
  *
  * The write happens in `onEnd`, after instrumentation has attached attributes
  * and the span has ended — at which point `Span.setAttribute` is a no-op, so we
- * mutate `ReadableSpan.attributes` directly — it's the same live, mutable map
- * the writable span used. This relies
+ * mutate `ReadableSpan.attributes` directly — in the current SDK this is the
+ * same backing map the writable span wrote to. This relies
  * on `@opentelemetry/sdk-trace-base` internals; if a future SDK freezes the map
  * on span end, the assignment throws and we catch it, log once, and disarm —
  * one error log instead of a broken span pipeline.

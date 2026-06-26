@@ -107,8 +107,9 @@ describe('PeerDbNameSpanProcessor', () => {
     })
 
     it('does NOT fall back to peer.db.system when db.system is an empty string', () => {
-      // The fallback uses `??`, which only triggers on null/undefined — an
-      // empty-string db.system short-circuits and bails. This pins the
+      // Two guards combine here: the fallback uses `??` (only triggers on
+      // null/undefined, so `''` does not fall through to peer.db.system), and
+      // the subsequent length-0 check bails on the empty string. This pins the
       // empty-vs-absent asymmetry so a later switch to `||` can't silently
       // change it.
       const processor = new PeerDbNameSpanProcessor({ dbNames: { elasticsearch: 'lokalise' } })
