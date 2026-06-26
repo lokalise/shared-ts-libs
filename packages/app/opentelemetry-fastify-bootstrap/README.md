@@ -84,7 +84,7 @@ When enabled, spans are printed to the console in addition to being sent to the 
 
 ### Joining a Datadog inferred-service entity
 
-Datadog's APM service catalog auto-creates inferred-service entities for downstream clusters using the tuple `(peer.db.system, peer.db.name)`, deriving `peer.db.name` from the OTel-canonical `db.namespace`. When `db.namespace` is missing on outbound spans, Datadog falls back to `peer.hostname` — and downstream clusters reached by raw IP (e.g. an Elasticsearch cluster on EC2 addressed by IP) then surface as the synthetic `blocked-ip-address` service in the dependency map.
+Datadog's APM service catalog auto-creates inferred-service entities for downstream clusters from peer tags such as `peer.db.system` and `peer.db.name`, deriving `peer.db.name` from the OTel-canonical `db.namespace` (see the [peer-tags precedence list](https://docs.datadoghq.com/tracing/services/inferred_services/?tab=agentv7600#peer-tags) for the authoritative set). When no usable peer tag is present, Datadog falls back to `peer.hostname` — and downstream clusters reached by raw IP (e.g. an Elasticsearch cluster on EC2 addressed by IP) then surface as the synthetic `blocked-ip-address` service in the dependency map.
 
 Some instrumentations don't set `db.namespace`. Notably the Node.js `@elastic/transport` (v8 Elasticsearch client) sets `db.system: elasticsearch` but never `db.namespace`, so outbound ES calls don't join the existing cluster entity.
 

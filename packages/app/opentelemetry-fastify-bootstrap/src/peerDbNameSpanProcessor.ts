@@ -27,12 +27,13 @@ export interface PeerDbNameSpanProcessorOptions {
  * (`peer.db.name` from `db.namespace`, `peer.db.system` from `db.system`) — so
  * we only set the vendor-neutral short form and never write `peer.*` ourselves.
  * The Node `@elastic/transport` v8 client sets `db.system` but not
- * `db.namespace`; this fills that one gap. Existing `db.namespace` is never
- * overwritten.
+ * `db.namespace`; this fills that one gap. An existing non-empty `db.namespace`
+ * is never overwritten (an empty-string value is treated as absent).
  *
  * The write happens in `onEnd`, after instrumentation has attached attributes
- * and `Span.setAttribute` has become a no-op, so we mutate `ReadableSpan.attributes`
- * directly — it's the same live, mutable map the writable span used. This relies
+ * and the span has ended — at which point `Span.setAttribute` is a no-op, so we
+ * mutate `ReadableSpan.attributes` directly — it's the same live, mutable map
+ * the writable span used. This relies
  * on `@opentelemetry/sdk-trace-base` internals; if a future SDK freezes the map
  * on span end, the assignment throws and we catch it, log once, and disarm —
  * one error log instead of a broken span pipeline.
@@ -82,7 +83,9 @@ export class PeerDbNameSpanProcessor implements SpanProcessor {
       logEntry(
         'error',
         '[OTEL] PeerDbNameSpanProcessor: failed to mutate span attributes in onEnd; disabling further stamping. A @opentelemetry/sdk-trace-base upgrade may have changed its attribute mutability contract.',
-        { error: err instanceof Error ? err.message : String(err) },
+        // Keep the stack: for a "should be impossible" failure (e.g. the SDK
+        // froze the attribute map) the frame is what identifies the culprit.
+        { error: err instanceof Error ? (err.stack ?? err.message) : String(err) },
       )
       return
     }

@@ -105,6 +105,19 @@ describe('PeerDbNameSpanProcessor', () => {
 
       expect(span.attributes['db.namespace']).toBe('lokalise')
     })
+
+    it('does NOT fall back to peer.db.system when db.system is an empty string', () => {
+      // The fallback uses `??`, which only triggers on null/undefined — an
+      // empty-string db.system short-circuits and bails. This pins the
+      // empty-vs-absent asymmetry so a later switch to `||` can't silently
+      // change it.
+      const processor = new PeerDbNameSpanProcessor({ dbNames: { elasticsearch: 'lokalise' } })
+      const span = makeSpan({ 'db.system': '', 'peer.db.system': 'elasticsearch' })
+
+      processor.onEnd(span)
+
+      expect(span.attributes['db.namespace']).toBeUndefined()
+    })
   })
 
   describe('non-overwrite guarantees', () => {
@@ -118,6 +131,19 @@ describe('PeerDbNameSpanProcessor', () => {
       processor.onEnd(span)
 
       expect(span.attributes['db.namespace']).toBe('preserve-me')
+    })
+
+    it('overwrites an empty-string db.namespace (treated as absent, not preserved)', () => {
+      // The non-overwrite guarantee is for an existing *non-empty* value; an
+      // empty string is considered missing and gets stamped. Pinning this
+      // boundary guards the `!attrs['db.namespace']` clause against a refactor
+      // to a bare `typeof` check.
+      const processor = new PeerDbNameSpanProcessor({ dbNames: { elasticsearch: 'lokalise' } })
+      const span = makeSpan({ 'db.system': 'elasticsearch', 'db.namespace': '' })
+
+      processor.onEnd(span)
+
+      expect(span.attributes['db.namespace']).toBe('lokalise')
     })
   })
 
