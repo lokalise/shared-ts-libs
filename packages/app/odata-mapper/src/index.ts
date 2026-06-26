@@ -35,6 +35,7 @@ export {
   extractAllFieldValues,
   extractComparison,
   extractEqualityValue,
+  extractEqualityValues,
   extractFieldValues,
   extractInclusiveRange,
   extractInValues,
