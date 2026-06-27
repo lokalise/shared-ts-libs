@@ -281,23 +281,24 @@ const resolveContentEntry = (
     return { kind: 'noContent' }
   }
 
-  const descriptors = Object.values(entry.content)
-  const onlyDescriptor = descriptors.length === 1 ? descriptors[0] : undefined
+  const entries = Object.entries(entry.content)
 
   if (!contentType) {
     if (entry.allowNoBody) {
       return { kind: 'noContent' }
     }
-    return !strict && onlyDescriptor ? descriptorToKind(onlyDescriptor) : null
-  }
-
-  const target = normalizeMediaType(contentType)
-  for (const [mediaType, descriptor] of Object.entries(entry.content)) {
-    if (normalizeMediaType(mediaType) === target) {
-      return descriptorToKind(descriptor)
+  } else {
+    const target = normalizeMediaType(contentType)
+    for (const [mediaType, descriptor] of entries) {
+      if (normalizeMediaType(mediaType) === target) {
+        return descriptorToKind(descriptor)
+      }
     }
   }
 
+  // No content-type (without allowNoBody), or no media type matched: in non-strict mode fall
+  // back to the sole descriptor when the entry declares exactly one.
+  const onlyDescriptor = entries.length === 1 ? entries[0]?.[1] : undefined
   return !strict && onlyDescriptor ? descriptorToKind(onlyDescriptor) : null
 }
 
