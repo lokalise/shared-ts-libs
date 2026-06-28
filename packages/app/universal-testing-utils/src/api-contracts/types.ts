@@ -24,6 +24,22 @@ export function formatSseResponse(events: { event: string; data: unknown }[]): s
     .join('\n')
 }
 
+// Maps a content-map entry's descriptors to the body field(s) needed for mocking:
+// a JSON descriptor → { responseJson }, an SseBody → { events }, a BlobBody → { responseBlob }.
+// A no-body content entry ({ allowNoBody: true }, no `content`) has no descriptors and is handled
+// by the `object` fallback in InferBodyParam (no body field).
+type InferContentBodyParam<C> = ([Extract<C[keyof C], z.ZodType>] extends [never]
+  ? object
+  : { responseJson: z.input<Extract<C[keyof C], z.ZodType>> }) &
+  ([Extract<C[keyof C], { _tag: 'SseBody' }>] extends [never]
+    ? object
+    : Extract<C[keyof C], { _tag: 'SseBody' }> extends {
+          schemaByEventName: infer S extends SseSchemaByEventName
+        }
+      ? { events: SseMockEventInput<S>[] }
+      : object) &
+  ([Extract<C[keyof C], { _tag: 'BlobBody' }>] extends [never] ? object : { responseBlob: string })
+
 // Maps a single responsesByStatusCode entry to the body field(s) needed for mocking.
 // symbol (ContractNoBody) → no body field
 // NoBodyResponse         → no body field
@@ -32,6 +48,7 @@ export function formatSseResponse(events: { event: string; data: unknown }[]): s
 // TypedTextResponse    → { responseText: string }
 // TypedBlobResponse    → { responseBlob: string }
 // AnyOfResponses       → { responseJson: ...; events: ... } for dual-mode (SSE + JSON)
+// content-map entry    → body field(s) for its declared descriptors (see InferContentBodyParam)
 type InferBodyParam<T> = T extends symbol
   ? { responseJson?: null }
   : T extends NoBodyResponse
@@ -55,7 +72,9 @@ type InferBodyParam<T> = T extends symbol
                         >
                       ? { events: SseMockEventInput<S>[] }
                       : object)
-              : object
+              : T extends { content: infer C }
+                ? InferContentBodyParam<C>
+                : object
 
 type ExactStatusCodePairs<TContract extends ApiContract> = {
   [K in keyof TContract['responsesByStatusCode'] & HttpStatusCode]: {

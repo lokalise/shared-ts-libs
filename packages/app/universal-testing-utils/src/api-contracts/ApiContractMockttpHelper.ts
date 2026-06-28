@@ -4,15 +4,21 @@ import {
   ContractNoBody,
   type HttpStatusCode,
   isAnyOfResponses,
+  isBlobBody,
   isBlobResponse,
+  isContentResponseEntry,
+  isJsonBody,
   isJsonResponse,
   isNoBodyResponse,
+  isSseBody,
   isSseResponse,
   isTextResponse,
   mapApiContractToPath,
+  type ResponseEntry,
   type ResponsesByStatusCode,
 } from '@lokalise/api-contracts'
 import type { Mockttp, RequestRuleBuilder } from 'mockttp'
+import type { z } from 'zod/v4'
 import { formatSseResponse, type MockResponseParams } from './types.ts'
 
 type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
@@ -28,7 +34,7 @@ function getRangeKey(statusCode: HttpStatusCode) {
 function resolveContractEntry(
   responsesByStatusCode: ResponsesByStatusCode,
   statusCode: HttpStatusCode,
-): ApiContractResponse | undefined {
+): ApiContractResponse | ResponseEntry | undefined {
   const rangeKey = getRangeKey(statusCode)
 
   return (
@@ -83,6 +89,62 @@ export class ApiContractMockttpHelper {
     }
 
     const mockRule = this.resolveMethodBuilder(contract.method, path)
+
+    if (isContentResponseEntry(responseEntry)) {
+      // A no-body content entry (`{ allowNoBody: true }`) carries no `content`.
+      if (!responseEntry.content) {
+        await mockRule.thenReply(statusCode)
+        return
+      }
+
+      const contentEntries = Object.entries(responseEntry.content)
+      const jsonEntry = contentEntries.find((entry): entry is [string, z.ZodType] =>
+        isJsonBody(entry[1]),
+      )
+      const sseEntry = contentEntries.find(([, descriptor]) => isSseBody(descriptor))
+      const blobEntry = contentEntries.find(([, descriptor]) => isBlobBody(descriptor))
+
+      await mockRule.thenCallback((request) => {
+        const accept = request.headers.accept ?? ''
+
+        // SSE wins only when the caller negotiates it via Accept (mirrors anyOfResponses).
+        if (sseEntry && accept.includes('text/event-stream')) {
+          return {
+            statusCode,
+            headers: { 'content-type': sseEntry[0] },
+            body: formatSseResponse(anyParams.events),
+          }
+        }
+
+        if (jsonEntry) {
+          const body = jsonEntry[1].parse(anyParams.responseJson)
+          return {
+            statusCode,
+            headers: { 'content-type': jsonEntry[0] },
+            body: JSON.stringify(body),
+          }
+        }
+
+        if (blobEntry) {
+          return {
+            statusCode,
+            headers: { 'content-type': blobEntry[0] },
+            body: anyParams.responseBlob,
+          }
+        }
+
+        if (sseEntry) {
+          return {
+            statusCode,
+            headers: { 'content-type': sseEntry[0] },
+            body: formatSseResponse(anyParams.events),
+          }
+        }
+
+        return { statusCode }
+      })
+      return
+    }
 
     if (responseEntry === ContractNoBody || isNoBodyResponse(responseEntry)) {
       await mockRule.thenReply(statusCode)

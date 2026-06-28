@@ -1,9 +1,11 @@
 import {
   anyOfResponses,
+  blobBody,
   blobResponse,
   ContractNoBody,
   defineApiContract,
   noBodyResponse,
+  sseBody,
   sseResponse,
   textResponse,
 } from '@lokalise/api-contracts'
@@ -169,6 +171,45 @@ export const anyOfTextResponsesApiContract = defineApiContract({
   method: 'get',
   pathResolver: () => '/any-of-text',
   responsesByStatusCode: { 200: anyOfResponses([textResponse('text/plain')]) },
+})
+
+export const jsonContentApiContract = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/content-json',
+  responsesByStatusCode: { 200: { content: { 'application/json': RESPONSE_BODY_SCHEMA } } },
+})
+
+export const blobContentApiContract = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/content-blob',
+  responsesByStatusCode: { 200: { content: { 'application/octet-stream': blobBody() } } },
+})
+
+export const sseContentApiContract = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/content-sse',
+  responsesByStatusCode: { 200: { content: { 'text/event-stream': sseBody(SSE_SCHEMAS) } } },
+})
+
+export const dualContentApiContract = defineApiContract({
+  method: 'post',
+  requestBodySchema: REQUEST_BODY_SCHEMA,
+  pathResolver: () => '/content-dual',
+  responsesByStatusCode: {
+    200: {
+      content: {
+        'application/json': RESPONSE_BODY_SCHEMA,
+        'text/event-stream': sseBody(SSE_SCHEMAS),
+      },
+    },
+  },
+})
+
+export const noBodyContentApiContract = defineApiContract({
+  method: 'delete',
+  requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+  pathResolver: ({ userId }) => `/content-no-body/${userId}`,
+  responsesByStatusCode: { 204: { allowNoBody: true } },
 })
 
 export const getApiContractWith4xxRange = defineApiContract({
