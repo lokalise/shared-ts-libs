@@ -3,12 +3,14 @@ import { z } from 'zod/v4'
 import { ContractNoBody } from './constants.ts'
 import {
   anyOfResponses,
+  blobBody,
   blobResponse,
   isJsonResponse,
   isNoBodyResponse,
   noBodyResponse,
   resolveContractResponse,
   resolveResponseEntry,
+  sseBody,
   sseResponse,
   textResponse,
 } from './contractResponse.ts'
@@ -256,6 +258,91 @@ describe('resolveContractResponse', () => {
     it('returns null when no entry matches content-type', () => {
       const entry = anyOfResponses([textResponse('text/csv'), blobResponse('image/png')])
       expect(resolveContractResponse(entry, 'application/json')).toBeNull()
+    })
+  })
+
+  describe('content-map entry', () => {
+    const jsonSchema = z.object({ id: z.string() })
+
+    it('resolves a JSON descriptor by exact media type', () => {
+      const entry = { content: { 'application/json': jsonSchema } }
+      expect(resolveContractResponse(entry, 'application/json')).toEqual({
+        kind: 'json',
+        schema: jsonSchema,
+      })
+    })
+
+    it('resolves a blobBody descriptor', () => {
+      const entry = { content: { 'application/pdf': blobBody() } }
+      expect(resolveContractResponse(entry, 'application/pdf')).toEqual({ kind: 'blob' })
+    })
+
+    it('resolves an sseBody descriptor', () => {
+      const schemaByEventName = { tick: z.object({ n: z.number() }) }
+      const entry = { content: { 'text/event-stream': sseBody(schemaByEventName) } }
+      expect(resolveContractResponse(entry, 'text/event-stream')).toEqual({
+        kind: 'sse',
+        schemaByEventName,
+      })
+    })
+
+    it('matches media types exactly, ignoring parameters and case', () => {
+      const entry = { content: { 'application/json': jsonSchema } }
+      expect(resolveContractResponse(entry, 'Application/JSON; charset=utf-8')).toEqual({
+        kind: 'json',
+        schema: jsonSchema,
+      })
+    })
+
+    it('keeps distinct JSON media types separate', () => {
+      const v2 = z.object({ data: z.object({ id: z.string() }) })
+      const entry = { content: { 'application/json': jsonSchema, 'application/vnd.api+json': v2 } }
+      expect(resolveContractResponse(entry, 'application/vnd.api+json')).toEqual({
+        kind: 'json',
+        schema: v2,
+      })
+    })
+
+    it('returns noContent for a no-body content entry', () => {
+      expect(resolveContractResponse({ allowNoBody: true }, 'application/json')).toEqual({
+        kind: 'noContent',
+      })
+    })
+
+    it('returns noContent when content-type is absent and allowNoBody is set', () => {
+      const entry = { content: { 'application/json': jsonSchema }, allowNoBody: true }
+      expect(resolveContractResponse(entry, undefined)).toEqual({ kind: 'noContent' })
+    })
+
+    it('returns null when content-type is absent (strict, no allowNoBody)', () => {
+      const entry = { content: { 'application/json': jsonSchema } }
+      expect(resolveContractResponse(entry, undefined)).toBeNull()
+    })
+
+    it('falls back to the sole descriptor when content-type is absent and strict is false', () => {
+      const entry = { content: { 'application/json': jsonSchema } }
+      expect(resolveContractResponse(entry, undefined, false)).toEqual({
+        kind: 'json',
+        schema: jsonSchema,
+      })
+    })
+
+    it('returns null on content-type mismatch (strict)', () => {
+      const entry = { content: { 'application/json': jsonSchema } }
+      expect(resolveContractResponse(entry, 'text/csv')).toBeNull()
+    })
+
+    it('falls back to the sole descriptor on mismatch when strict is false', () => {
+      const entry = { content: { 'application/json': jsonSchema } }
+      expect(resolveContractResponse(entry, 'text/csv', false)).toEqual({
+        kind: 'json',
+        schema: jsonSchema,
+      })
+    })
+
+    it('returns null on mismatch with multiple descriptors even when strict is false', () => {
+      const entry = { content: { 'application/json': jsonSchema, 'application/pdf': blobBody() } }
+      expect(resolveContractResponse(entry, 'text/csv', false)).toBeNull()
     })
   })
 })

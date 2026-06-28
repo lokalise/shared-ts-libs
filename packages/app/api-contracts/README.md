@@ -68,13 +68,55 @@ const downloadPhoto = defineApiContract({
 
 > **Deprecated:** `textResponse` is deprecated in favour of `blobResponse`. Both declare the same protocol fact (the response `content-type`); they differ only in whether the client materializes the body as `string` or `Blob` — a consumer concern, not part of the contract. Where a string is needed, call `.text()` on the returned `Blob`. `textResponse` will be removed in a future major release.
 
-### SSE and dual-mode routes
+### Multiple content types
 
-Use `sseResponse()` inside `responsesByStatusCode` to define SSE event schemas.
-For endpoints that can respond with either JSON or an SSE stream depending on the `Accept` header, use `anyOfResponses()` to declare both options on the same status code.
+When a single status code can return more than one media type, map it to a `content` object keyed
+by media type. Each value is a *body descriptor*: a bare Zod schema (JSON), `blobBody()` (opaque
+binary or text), or `sseBody()` (Server-Sent Events). Add `allowNoBody: true` to also accept an
+empty body.
 
 ```ts
-import { defineApiContract, sseResponse, anyOfResponses } from '@lokalise/api-contracts'
+import { defineApiContract, blobBody, sseBody } from '@lokalise/api-contracts'
+import { z } from 'zod/v4'
+
+const downloadReport = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/report',
+  responsesByStatusCode: {
+    200: {
+      description: 'Report in the requested format',
+      content: {
+        'application/json':         z.object({ rows: z.array(z.string()) }),
+        'application/vnd.api+json': z.object({ data: z.object({ rows: z.array(z.string()) }) }),
+        'text/csv':                 blobBody(),
+        'application/pdf':          blobBody(),
+        'text/event-stream':        sseBody({ row: z.object({ value: z.string() }) }),
+      },
+      allowNoBody: true,
+    },
+  },
+})
+```
+
+Media types are matched **exactly** — parameters stripped, case-insensitive — so distinct keys such
+as `application/json` and `application/vnd.api+json` never collide, and a single status code may
+expose any number of media types (including several JSON variants). The shape maps 1:1 to the
+OpenAPI Response Object. The matched media type is **not** surfaced on the client response; read it
+from `headers['content-type']` if you need to discriminate.
+
+> **Deprecated:** `anyOfResponses` is deprecated in favour of content maps. A flat list can't
+> declare multiple JSON media types, matches content-types by substring (false positives), and is
+> order-dependent — content maps fix all three. `anyOfResponses` still works and will be removed in
+> a future major release.
+
+### SSE and dual-mode routes
+
+Use `sseResponse()` inside `responsesByStatusCode` for an SSE-only response. For a route that
+returns either JSON or an SSE stream depending on the `Accept` header, use a content map (above)
+with both an `application/json` and a `text/event-stream` entry.
+
+```ts
+import { defineApiContract, sseResponse, sseBody } from '@lokalise/api-contracts'
 import { z } from 'zod/v4'
 
 // SSE-only
@@ -94,13 +136,15 @@ const chatCompletion = defineApiContract({
   pathResolver: () => '/chat/completions',
   requestBodySchema: z.object({ message: z.string() }),
   responsesByStatusCode: {
-    200: anyOfResponses([
-      sseResponse({
-        chunk: z.object({ delta: z.string() }),
-        done: z.object({ finish_reason: z.string() }),
-      }),
-      z.object({ text: z.string() }),
-    ]),
+    200: {
+      content: {
+        'application/json': z.object({ text: z.string() }),
+        'text/event-stream': sseBody({
+          chunk: z.object({ delta: z.string() }),
+          done: z.object({ finish_reason: z.string() }),
+        }),
+      },
+    },
   },
 })
 ```
@@ -156,13 +200,7 @@ The `'2xx'` range key participates in SSE detection and success/error type narro
 All response factories accept an optional `ResponseOptions` object as their last argument.
 
 ```ts
-import {
-  defineApiContract,
-  noBodyResponse,
-  blobResponse,
-  sseResponse,
-  anyOfResponses,
-} from '@lokalise/api-contracts'
+import { defineApiContract, noBodyResponse, blobBody, sseBody } from '@lokalise/api-contracts'
 import { z } from 'zod/v4'
 
 const contract = defineApiContract({
@@ -172,18 +210,21 @@ const contract = defineApiContract({
   responsesByStatusCode: {
     201: z.object({ id: z.string() }).describe('Created resource'),
     204: noBodyResponse({ description: 'Deleted — no content returned' }),
-    200: anyOfResponses(
-      [
-        z.object({ id: z.string() }).describe('JSON representation'),
-        blobResponse('text/csv', { description: 'CSV export' }),
-        blobResponse('application/pdf', { description: 'PDF report' }),
-        sseResponse({ update: z.object({ id: z.string() }) }, { description: 'Live update stream' }),
-      ],
-      { description: 'Multiple response formats available' },
-    ),
+    200: {
+      description: 'Multiple response formats available',
+      content: {
+        'application/json': z.object({ id: z.string() }).describe('JSON representation'),
+        'text/csv': blobBody(),
+        'application/pdf': blobBody(),
+        'text/event-stream': sseBody({ update: z.object({ id: z.string() }) }),
+      },
+    },
   },
 })
 ```
+
+A content-map entry carries a single `description` for the whole response; per-media descriptions
+aren't supported (a JSON descriptor can still carry its own via `.describe()`).
 
 `getSseSchemaByEventName(contract)` extracts SSE event schemas from a contract:
 
@@ -254,7 +295,7 @@ const contract = defineApiContract({
 
 ### Type utilities
 
-**`InferNonSseSuccessResponses<T>`** — TypeScript output type of all non-SSE 2xx responses. JSON schemas → `z.output<T>`, `textResponse` → `string`, `blobResponse` → `Blob`, `ContractNoBody`/`NoBodyResponse` → `undefined`, `sseResponse` → `never` (excluded). `anyOfResponses` entries are unpacked before mapping.
+**`InferNonSseSuccessResponses<T>`** — TypeScript output type of all non-SSE 2xx responses. JSON schemas → `z.output<T>`, `textResponse` → `string`, `blobResponse` → `Blob`, `ContractNoBody`/`NoBodyResponse` → `undefined`, `sseResponse` → `never` (excluded). `anyOfResponses` and content-map entries are unpacked before mapping.
 
 ```ts
 import type { InferNonSseSuccessResponses } from '@lokalise/api-contracts'
@@ -358,7 +399,7 @@ getIsEmptyResponseExpected(deleteUser) // true
 getIsEmptyResponseExpected(getUser)    // false
 ```
 
-**`hasAnySuccessSseResponse`** — `true` when any 2xx entry (exact code or `'2xx'` range key) is an SSE response (including inside `anyOfResponses`).
+**`hasAnySuccessSseResponse`** — `true` when any 2xx entry (exact code or `'2xx'` range key) is an SSE response (including inside `anyOfResponses` or a content map).
 
 ```ts
 import { hasAnySuccessSseResponse } from '@lokalise/api-contracts'

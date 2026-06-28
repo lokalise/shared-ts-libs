@@ -4,8 +4,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch from 'wretch'
 import {
   anyOfTextResponsesApiContract,
+  blobContentApiContract,
   blobResponseApiContract,
   deleteApiContractWithNoBodyResponse,
+  dualContentApiContract,
   dualModeApiContract,
   dualModeApiContractWithPathParams,
   getApiContract,
@@ -17,11 +19,14 @@ import {
   getApiContractWithPathAndQueryParams,
   getApiContractWithPathParams,
   getApiContractWithQueryParams,
+  jsonContentApiContract,
   noBodyApiContract,
+  noBodyContentApiContract,
   patchApiContract,
   postApiContract,
   postApiContractWithPathParams,
   putApiContract,
+  sseContentApiContract,
   sseGetApiContract,
   sseGetApiContractWithPathParams,
   sseGetApiContractWithQueryParams,
@@ -223,6 +228,84 @@ describe('ApiContractMockttpHelper', () => {
         streaming: false,
       })
       expect(result.result?.body).toEqual({ id: '2' })
+    })
+  })
+
+  describe('mockResponse — content-map contracts', () => {
+    it('mocks a JSON content entry', async () => {
+      await helper.mockResponse(jsonContentApiContract, {
+        responseStatus: 200,
+        responseJson: { id: '1' },
+      })
+      const result = await sendByApiContract(client(), jsonContentApiContract, {})
+      expect(result.result?.body).toEqual({ id: '1' })
+    })
+
+    it('mocks a blob content entry', async () => {
+      await helper.mockResponse(blobContentApiContract, {
+        responseStatus: 200,
+        responseBlob: 'binary-data',
+      })
+      const result = await sendByApiContract(client(), blobContentApiContract, {})
+      expect(await (result.result?.body as Blob).text()).toBe('binary-data')
+    })
+
+    it('mocks an SSE content entry', async () => {
+      await helper.mockResponse(sseContentApiContract, {
+        responseStatus: 200,
+        events: [
+          { event: 'item.updated', data: { items: [{ id: '1' }] } },
+          { event: 'completed', data: { totalCount: 1 } },
+        ],
+      })
+      const result = await sendByApiContract(client(), sseContentApiContract, {})
+      const events: unknown[] = []
+      for await (const event of result.result!.body) {
+        events.push(event)
+      }
+      expect(events).toHaveLength(2)
+    })
+
+    it('returns JSON for a dual content entry when not streaming', async () => {
+      await helper.mockResponse(dualContentApiContract, {
+        responseStatus: 200,
+        responseJson: { id: '1' },
+        events: [{ event: 'completed', data: { totalCount: 1 } }],
+      })
+      const result = await sendByApiContract(client(), dualContentApiContract, {
+        body: { name: 'test' },
+        streaming: false,
+      })
+      expect(result.result?.body).toEqual({ id: '1' })
+    })
+
+    it('returns SSE for a dual content entry when streaming', async () => {
+      await helper.mockResponse(dualContentApiContract, {
+        responseStatus: 200,
+        responseJson: { id: '1' },
+        events: [{ event: 'completed', data: { totalCount: 1 } }],
+      })
+      const result = await sendByApiContract<typeof dualContentApiContract, true>(
+        client(),
+        dualContentApiContract,
+        { body: { name: 'test' }, streaming: true },
+      )
+      const events: unknown[] = []
+      for await (const event of result.result!.body) {
+        events.push(event)
+      }
+      expect(events).toHaveLength(1)
+    })
+
+    it('mocks a no-body content entry', async () => {
+      await helper.mockResponse(noBodyContentApiContract, {
+        pathParams: { userId: '1' },
+        responseStatus: 204,
+      })
+      const result = await sendByApiContract(client(), noBodyContentApiContract, {
+        pathParams: { userId: '1' },
+      })
+      expect(result.result?.body).toBeNull()
     })
   })
 
