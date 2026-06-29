@@ -8,6 +8,8 @@ import {
   extractAllFieldValues,
   extractComparison,
   extractEqualityValue,
+  extractEqualityValues,
+  extractFieldValues,
   extractInclusiveRange,
   extractRange,
   findUnsupportedField,
@@ -191,6 +193,30 @@ describe('e2e: filter extractors', () => {
       const transformed = transformFilter(result.tree.$filter, result.binds)
 
       expect(extractEqualityValue(transformed, 'price')).toBeUndefined()
+    })
+  })
+
+  describe('extractEqualityValues', () => {
+    it('extracts all eq values joined by or', () => {
+      const result = parse("$filter=path eq 'root/a' or path eq 'root/b'", {
+        startRule: 'ProcessRule',
+        rule: 'QueryOptions',
+      })
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+
+      expect(extractEqualityValues<string>(transformed, 'path')).toEqual(['root/a', 'root/b'])
+    })
+  })
+
+  describe('extractFieldValues', () => {
+    it('returns all paths when filtered by multiple eq joined by or (CEX-1358)', () => {
+      const result = parse("$filter=(path eq 'root/a' or path eq 'root/b')", {
+        startRule: 'ProcessRule',
+        rule: 'QueryOptions',
+      })
+      const transformed = transformFilter(result.tree.$filter, result.binds)
+
+      expect(extractFieldValues<string>(transformed, 'path')).toEqual(['root/a', 'root/b'])
     })
   })
 
