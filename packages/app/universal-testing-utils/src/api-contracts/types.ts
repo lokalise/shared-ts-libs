@@ -1,15 +1,10 @@
 import type {
-  AnyOfResponses,
   ApiContract,
   ExpandStatusRangeKey,
   HttpStatusCode,
   InferSchemaInput,
-  NoBodyResponse,
   RequestPathParamsSchema,
   SseSchemaByEventName,
-  TypedBlobResponse,
-  TypedSseResponse,
-  TypedTextResponse,
   WildcardStatusCodeKey,
 } from '@lokalise/api-contracts'
 import type { z } from 'zod/v4'
@@ -41,40 +36,14 @@ type InferContentBodyParam<C> = ([Extract<C[keyof C], z.ZodType>] extends [never
   ([Extract<C[keyof C], { _tag: 'BlobBody' }>] extends [never] ? object : { responseBlob: string })
 
 // Maps a single responsesByStatusCode entry to the body field(s) needed for mocking.
-// symbol (ContractNoBody) → no body field
-// NoBodyResponse         → no body field
 // ZodType              → { responseJson: z.input<T> }
-// TypedSseResponse     → { events: SseMockEventInput[] }
-// TypedTextResponse    → { responseText: string }
-// TypedBlobResponse    → { responseBlob: string }
-// AnyOfResponses       → { responseJson: ...; events: ... } for dual-mode (SSE + JSON)
 // content-map entry    → body field(s) for its declared descriptors (see InferContentBodyParam)
-type InferBodyParam<T> = T extends symbol
-  ? { responseJson?: null }
-  : T extends NoBodyResponse
-    ? { responseJson?: null }
-    : T extends z.ZodType
-      ? { responseJson: z.input<T> }
-      : T extends TypedSseResponse<infer S extends SseSchemaByEventName>
-        ? { events: SseMockEventInput<S>[] }
-        : T extends TypedTextResponse
-          ? { responseText: string }
-          : T extends TypedBlobResponse
-            ? { responseBlob: string }
-            : T extends AnyOfResponses<infer Items>
-              ? (Extract<Items, z.ZodType> extends never
-                  ? object
-                  : { responseJson: z.input<Extract<Items, z.ZodType>> }) &
-                  ([Extract<Items, TypedSseResponse<any>>] extends [never]
-                    ? object
-                    : Extract<Items, TypedSseResponse<any>> extends TypedSseResponse<
-                          infer S extends SseSchemaByEventName
-                        >
-                      ? { events: SseMockEventInput<S>[] }
-                      : object)
-              : T extends { content: infer C }
-                ? InferContentBodyParam<C>
-                : object
+//                        (a no-body entry `{ allowNoBody: true }` falls through to no body field)
+type InferBodyParam<T> = T extends z.ZodType
+  ? { responseJson: z.input<T> }
+  : T extends { content: infer C }
+    ? InferContentBodyParam<C>
+    : object
 
 type ExactStatusCodePairs<TContract extends ApiContract> = {
   [K in keyof TContract['responsesByStatusCode'] & HttpStatusCode]: {

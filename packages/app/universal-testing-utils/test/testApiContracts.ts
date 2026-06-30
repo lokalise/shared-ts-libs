@@ -1,14 +1,4 @@
-import {
-  anyOfResponses,
-  blobBody,
-  blobResponse,
-  ContractNoBody,
-  defineApiContract,
-  noBodyResponse,
-  sseBody,
-  sseResponse,
-  textResponse,
-} from '@lokalise/api-contracts'
+import { blobBody, defineApiContract, noBodyResponse, sseBody } from '@lokalise/api-contracts'
 import { z } from 'zod/v4'
 
 const RESPONSE_BODY_SCHEMA = z.object({ id: z.string() })
@@ -24,12 +14,14 @@ const SSE_SCHEMAS = {
 }
 
 export const getApiContract = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/',
   responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
 })
 
 export const getApiContractWithPathParams = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
   pathResolver: ({ userId }) => `/users/${userId}`,
@@ -37,6 +29,7 @@ export const getApiContractWithPathParams = defineApiContract({
 })
 
 export const getApiContractWithQueryParams = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   requestQuerySchema: QUERY_PARAMS_SCHEMA,
   pathResolver: () => '/',
@@ -44,6 +37,7 @@ export const getApiContractWithQueryParams = defineApiContract({
 })
 
 export const getApiContractWithPathAndQueryParams = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
   requestQuerySchema: QUERY_PARAMS_SCHEMA,
@@ -52,6 +46,7 @@ export const getApiContractWithPathAndQueryParams = defineApiContract({
 })
 
 export const postApiContract = defineApiContract({
+  summary: 'Test contract',
   method: 'post',
   requestBodySchema: REQUEST_BODY_SCHEMA,
   pathResolver: () => '/',
@@ -59,6 +54,7 @@ export const postApiContract = defineApiContract({
 })
 
 export const postApiContractWithPathParams = defineApiContract({
+  summary: 'Test contract',
   method: 'post',
   requestBodySchema: REQUEST_BODY_SCHEMA,
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -67,58 +63,76 @@ export const postApiContractWithPathParams = defineApiContract({
 })
 
 export const sseGetApiContract = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/events/stream',
-  responsesByStatusCode: { 200: sseResponse(SSE_SCHEMAS) },
+  responsesByStatusCode: { 200: { content: { 'text/event-stream': sseBody(SSE_SCHEMAS) } } },
 })
 
 export const sseGetApiContractWithPathParams = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
   pathResolver: ({ userId }) => `/users/${userId}/events`,
-  responsesByStatusCode: { 200: sseResponse(SSE_SCHEMAS) },
+  responsesByStatusCode: { 200: { content: { 'text/event-stream': sseBody(SSE_SCHEMAS) } } },
 })
 
 export const sseGetApiContractWithQueryParams = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   requestQuerySchema: QUERY_PARAMS_SCHEMA,
   pathResolver: () => '/events/stream',
-  responsesByStatusCode: { 200: sseResponse(SSE_SCHEMAS) },
+  responsesByStatusCode: { 200: { content: { 'text/event-stream': sseBody(SSE_SCHEMAS) } } },
 })
 
 export const dualModeApiContract = defineApiContract({
+  summary: 'Test contract',
   method: 'post',
   requestBodySchema: REQUEST_BODY_SCHEMA,
   pathResolver: () => '/events/dual',
   responsesByStatusCode: {
-    200: anyOfResponses([sseResponse(SSE_SCHEMAS), RESPONSE_BODY_SCHEMA]),
+    200: {
+      content: {
+        'application/json': RESPONSE_BODY_SCHEMA,
+        'text/event-stream': sseBody(SSE_SCHEMAS),
+      },
+    },
   },
 })
 
 export const dualModeApiContractWithPathParams = defineApiContract({
+  summary: 'Test contract',
   method: 'post',
   requestBodySchema: REQUEST_BODY_SCHEMA,
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
   pathResolver: ({ userId }) => `/users/${userId}/events/dual`,
   responsesByStatusCode: {
-    200: anyOfResponses([sseResponse(SSE_SCHEMAS), RESPONSE_BODY_SCHEMA]),
+    200: {
+      content: {
+        'application/json': RESPONSE_BODY_SCHEMA,
+        'text/event-stream': sseBody(SSE_SCHEMAS),
+      },
+    },
   },
 })
 
 export const noBodyApiContract = defineApiContract({
+  summary: 'Test contract',
   method: 'delete',
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
   pathResolver: ({ userId }) => `/users/${userId}`,
-  responsesByStatusCode: { 204: ContractNoBody },
+  responsesByStatusCode: { 204: noBodyResponse() },
 })
 
 export const getApiContractWith2xxRange = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/range',
   responsesByStatusCode: { '2xx': RESPONSE_BODY_SCHEMA },
 })
 
 export const getApiContractWithDefault = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/default',
   responsesByStatusCode: { default: RESPONSE_BODY_SCHEMA },
@@ -127,6 +141,7 @@ export const getApiContractWithDefault = defineApiContract({
 const CREATED_BODY_SCHEMA = z.object({ id: z.string(), created: z.literal(true) })
 
 export const getApiContractWithExactAndRange = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/exact-and-range',
   responsesByStatusCode: {
@@ -136,12 +151,14 @@ export const getApiContractWithExactAndRange = defineApiContract({
 })
 
 export const deleteApiContractWithNoBodyResponse = defineApiContract({
+  summary: 'Test contract',
   method: 'delete',
   pathResolver: () => '/no-body',
   responsesByStatusCode: { 204: noBodyResponse() },
 })
 
 export const patchApiContract = defineApiContract({
+  summary: 'Test contract',
   method: 'patch',
   requestBodySchema: REQUEST_BODY_SCHEMA,
   pathResolver: () => '/patch',
@@ -149,49 +166,43 @@ export const patchApiContract = defineApiContract({
 })
 
 export const putApiContract = defineApiContract({
+  summary: 'Test contract',
   method: 'put',
   requestBodySchema: REQUEST_BODY_SCHEMA,
   pathResolver: () => '/put',
   responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
 })
 
-export const textResponseApiContract = defineApiContract({
-  method: 'get',
-  pathResolver: () => '/text',
-  responsesByStatusCode: { 200: textResponse('text/plain') },
-})
-
 export const blobResponseApiContract = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/blob',
-  responsesByStatusCode: { 200: blobResponse('application/octet-stream') },
-})
-
-export const anyOfTextResponsesApiContract = defineApiContract({
-  method: 'get',
-  pathResolver: () => '/any-of-text',
-  responsesByStatusCode: { 200: anyOfResponses([textResponse('text/plain')]) },
+  responsesByStatusCode: { 200: { content: { 'application/octet-stream': blobBody() } } },
 })
 
 export const jsonContentApiContract = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/content-json',
   responsesByStatusCode: { 200: { content: { 'application/json': RESPONSE_BODY_SCHEMA } } },
 })
 
 export const blobContentApiContract = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/content-blob',
   responsesByStatusCode: { 200: { content: { 'application/octet-stream': blobBody() } } },
 })
 
 export const sseContentApiContract = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/content-sse',
   responsesByStatusCode: { 200: { content: { 'text/event-stream': sseBody(SSE_SCHEMAS) } } },
 })
 
 export const dualContentApiContract = defineApiContract({
+  summary: 'Test contract',
   method: 'post',
   requestBodySchema: REQUEST_BODY_SCHEMA,
   pathResolver: () => '/content-dual',
@@ -206,6 +217,7 @@ export const dualContentApiContract = defineApiContract({
 })
 
 export const noBodyContentApiContract = defineApiContract({
+  summary: 'Test contract',
   method: 'delete',
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
   pathResolver: ({ userId }) => `/content-no-body/${userId}`,
@@ -213,12 +225,14 @@ export const noBodyContentApiContract = defineApiContract({
 })
 
 export const getApiContractWith4xxRange = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/not-found',
   responsesByStatusCode: { '4xx': RESPONSE_BODY_SCHEMA },
 })
 
 export const getApiContractWith5xxRange = defineApiContract({
+  summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/server-error',
   responsesByStatusCode: { '5xx': RESPONSE_BODY_SCHEMA },

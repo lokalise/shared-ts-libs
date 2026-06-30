@@ -50,7 +50,7 @@ export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> =
   /**
    * When true (default), throws if the response content-type doesn't match the contract entry.
    * When false, falls back to the contract entry's kind when content-type is absent or mismatched —
-   * only applies to single-entry responses (not anyOfResponses).
+   * only applies to single-entry responses.
    */
   strictContentType?: boolean
   /**
@@ -182,9 +182,6 @@ async function parseBody(body: Dispatcher.ResponseData['body'], resolvedEntry: R
       await body.dump()
       return null
     }
-    case 'text': {
-      return await body.text()
-    }
     case 'blob': {
       return await body.blob()
     }
@@ -281,7 +278,14 @@ export async function sendByApiContract<
 
   if (!resolvedResponseEntry) {
     const body = await response.body.text()
-    return { error: new UnexpectedResponseError(response.statusCode, normalizedHeaders, body) }
+    return {
+      error: new UnexpectedResponseError(
+        response.statusCode,
+        normalizedHeaders,
+        body,
+        apiContract.summary,
+      ),
+    }
   }
 
   const parsedBody = await parseBody(response.body, resolvedResponseEntry)

@@ -12,14 +12,7 @@ import type {
   InferNonSseClientResponse,
   InferSseClientResponse,
 } from './clientTypes.ts'
-import { ContractNoBody } from './constants.ts'
-import {
-  anyOfResponses,
-  blobResponse,
-  noBodyResponse,
-  sseResponse,
-  textResponse,
-} from './contractResponse.ts'
+import { blobBody, noBodyResponse, sseBody } from './contractResponse.ts'
 import { defineApiContract } from './defineApiContract.ts'
 
 type DefaultHeaders = Record<string, string>
@@ -28,6 +21,7 @@ describe('clientTypes', () => {
   describe('ClientRequestParams', () => {
     it('has no required fields for a minimal contract', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/ping',
         responsesByStatusCode: { 200: z.unknown() },
@@ -44,6 +38,7 @@ describe('clientTypes', () => {
 
     it('requires pathParams when requestPathParamsSchema is defined', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         requestPathParamsSchema: z.object({ id: z.string() }),
         pathResolver: ({ id }) => `/products/${id}`,
@@ -61,6 +56,7 @@ describe('clientTypes', () => {
 
     it('requires body when requestBodySchema is defined', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'post',
         pathResolver: () => '/products',
         requestBodySchema: z.object({ name: z.string() }),
@@ -78,6 +74,7 @@ describe('clientTypes', () => {
 
     it('requires queryParams when requestQuerySchema is defined', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products',
         requestQuerySchema: z.object({ limit: z.number() }),
@@ -95,6 +92,7 @@ describe('clientTypes', () => {
 
     it('requires headers when requestHeaderSchema is defined, accepting plain object or function', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products',
         requestHeaderSchema: z.object({ authorization: z.string() }),
@@ -112,6 +110,7 @@ describe('clientTypes', () => {
 
     it('pathPrefix is always optional', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products',
         responsesByStatusCode: { 200: z.unknown() },
@@ -123,6 +122,7 @@ describe('clientTypes', () => {
 
     it('forbids streaming field for non-SSE contracts', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products',
         responsesByStatusCode: { 200: z.unknown() },
@@ -134,40 +134,31 @@ describe('clientTypes', () => {
 
     it('forbids streaming field for SSE-only contracts', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
-        responsesByStatusCode: { 200: sseResponse({ update: z.object({ id: z.string() }) }) },
+        responsesByStatusCode: {
+          200: {
+            content: { 'text/event-stream': sseBody({ update: z.object({ id: z.string() }) }) },
+          },
+        },
       })
       expectTypeOf<ClientRequestParams<typeof contract, true>['streaming']>().toEqualTypeOf<
         never | undefined
       >()
-    })
-
-    it('requires streaming: true for dual-mode contracts with TIsStreaming=true', () => {
-      const contract = defineApiContract({
-        method: 'get',
-        pathResolver: () => '/feed',
-        responsesByStatusCode: {
-          200: anyOfResponses([
-            sseResponse({ update: z.object({ id: z.string() }) }),
-            z.object({ latest: z.string() }),
-          ]),
-        },
-      })
-      expectTypeOf<ClientRequestParams<typeof contract, true>['streaming']>().toEqualTypeOf<true>()
-      expectTypeOf<
-        ClientRequestParams<typeof contract, false>['streaming']
-      >().toEqualTypeOf<false>()
     })
   })
 
   describe('InferSseClientResponse', () => {
     it('maps success code to SSE body and error code to as-is body', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
         responsesByStatusCode: {
-          200: sseResponse({ update: z.object({ id: z.string() }) }),
+          200: {
+            content: { 'text/event-stream': sseBody({ update: z.object({ id: z.string() }) }) },
+          },
           404: z.object({ message: z.string() }),
         },
       })
@@ -187,36 +178,15 @@ describe('clientTypes', () => {
       >()
     })
 
-    it('extracts only SSE body for dual-mode success code', () => {
-      const contract = defineApiContract({
-        method: 'get',
-        pathResolver: () => '/events',
-        responsesByStatusCode: {
-          200: anyOfResponses([
-            sseResponse({ chunk: z.object({ delta: z.string() }) }),
-            z.object({ text: z.string() }),
-          ]),
-        },
-      })
-      type Result = InferSseClientResponse<typeof contract>
-      expectTypeOf<Result>().toEqualTypeOf<{
-        statusCode: 200
-        headers: DefaultHeaders
-        body: AsyncIterable<{
-          type: 'chunk'
-          data: { delta: string }
-          lastEventId: string
-          retry: number | undefined
-        }>
-      }>()
-    })
-
     it('returns a single entry for an SSE-only contract', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
         responsesByStatusCode: {
-          200: sseResponse({ tick: z.object({ count: z.number() }) }),
+          200: {
+            content: { 'text/event-stream': sseBody({ tick: z.object({ count: z.number() }) }) },
+          },
         },
       })
       type Result = InferSseClientResponse<typeof contract>
@@ -234,10 +204,13 @@ describe('clientTypes', () => {
 
     it('includes typed headers when responseHeaderSchema is defined', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
         responsesByStatusCode: {
-          200: sseResponse({ tick: z.object({ count: z.number() }) }),
+          200: {
+            content: { 'text/event-stream': sseBody({ tick: z.object({ count: z.number() }) }) },
+          },
         },
         responseHeaderSchema: z.object({ 'x-request-id': z.string() }),
       })
@@ -258,6 +231,7 @@ describe('clientTypes', () => {
   describe('InferNonSseClientResponse', () => {
     it('maps success code to non-SSE body and error code to as-is body', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: {
@@ -272,41 +246,9 @@ describe('clientTypes', () => {
       >()
     })
 
-    it('maps dual-mode success code to non-SSE body only', () => {
-      const contract = defineApiContract({
-        method: 'get',
-        pathResolver: () => '/events',
-        responsesByStatusCode: {
-          200: anyOfResponses([
-            sseResponse({ chunk: z.object({ delta: z.string() }) }),
-            z.object({ text: z.string() }),
-          ]),
-        },
-      })
-      type Result = InferNonSseClientResponse<typeof contract>
-      expectTypeOf<Result>().toEqualTypeOf<{
-        statusCode: 200
-        headers: DefaultHeaders
-        body: { text: string }
-      }>()
-    })
-
-    it('maps ContractNoBody success to null body', () => {
-      const contract = defineApiContract({
-        method: 'delete',
-        pathResolver: () => '/products/1',
-        responsesByStatusCode: { 204: ContractNoBody },
-      })
-      type Result = InferNonSseClientResponse<typeof contract>
-      expectTypeOf<Result>().toEqualTypeOf<{
-        statusCode: 204
-        headers: DefaultHeaders
-        body: null
-      }>()
-    })
-
     it('maps noBodyResponse() success to null body', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'delete',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 204: noBodyResponse() },
@@ -319,25 +261,12 @@ describe('clientTypes', () => {
       }>()
     })
 
-    it('maps text success response to string body', () => {
-      const contract = defineApiContract({
-        method: 'get',
-        pathResolver: () => '/export.csv',
-        responsesByStatusCode: { 200: textResponse('text/csv') },
-      })
-      type Result = InferNonSseClientResponse<typeof contract>
-      expectTypeOf<Result>().toEqualTypeOf<{
-        statusCode: 200
-        headers: DefaultHeaders
-        body: string
-      }>()
-    })
-
     it('maps blob success response to Blob body', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/photo.png',
-        responsesByStatusCode: { 200: blobResponse('image/png') },
+        responsesByStatusCode: { 200: { content: { 'image/png': blobBody() } } },
       })
       type Result = InferNonSseClientResponse<typeof contract>
       expectTypeOf<Result>().toEqualTypeOf<{
@@ -349,6 +278,7 @@ describe('clientTypes', () => {
 
     it('includes typed headers when responseHeaderSchema is defined', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 200: z.object({ id: z.number() }) },
@@ -366,6 +296,7 @@ describe('clientTypes', () => {
 
     it('allows non-string transformed header types without collapsing to never', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 200: z.object({ id: z.number() }) },
@@ -383,6 +314,7 @@ describe('clientTypes', () => {
 
     it('exact code takes precedence over 2xx range: narrowing by exact statusCode resolves only the exact body', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
         responsesByStatusCode: {
@@ -409,6 +341,7 @@ describe('clientTypes', () => {
 
     it('maps 2xx range key to SuccessfulHttpStatusCode with non-SSE body', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
         responsesByStatusCode: { '2xx': z.object({ id: z.number() }) },
@@ -423,6 +356,7 @@ describe('clientTypes', () => {
 
     it('maps 4xx range key to 4xx status codes with as-is body', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
         responsesByStatusCode: {
@@ -443,6 +377,7 @@ describe('clientTypes', () => {
 
     it('maps default key to split success/non-success statusCode entries', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
         responsesByStatusCode: { default: z.object({ message: z.string() }) },
@@ -464,6 +399,7 @@ describe('clientTypes', () => {
 
     it('range key takes precedence over default: range codes excluded from default statusCode', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
         responsesByStatusCode: {
@@ -482,6 +418,7 @@ describe('clientTypes', () => {
 
     it('exact code takes precedence over both range and default', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
         responsesByStatusCode: {
@@ -511,6 +448,7 @@ describe('clientTypes', () => {
   describe('InferNonSseClientResponse with range keys and captureAsError', () => {
     it('2xx range response ends up in result type (extends SuccessfulHttpStatusCode)', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
         responsesByStatusCode: { '2xx': z.object({ ok: z.boolean() }) },
@@ -523,6 +461,7 @@ describe('clientTypes', () => {
 
     it('4xx range response ends up in error type (not SuccessfulHttpStatusCode)', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
         responsesByStatusCode: { '4xx': z.object({ error: z.string() }) },
@@ -536,10 +475,13 @@ describe('clientTypes', () => {
   describe('InferSseClientResponse with range keys', () => {
     it('maps 2xx SSE range to AsyncIterable body for success codes', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
         responsesByStatusCode: {
-          '2xx': sseResponse({ tick: z.object({ count: z.number() }) }),
+          '2xx': {
+            content: { 'text/event-stream': sseBody({ tick: z.object({ count: z.number() }) }) },
+          },
         },
       })
       type Result = InferSseClientResponse<typeof contract>
