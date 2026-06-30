@@ -61,15 +61,19 @@ type InferClientResponseBody<T> = T extends z.ZodType ? InferSchemaOutput<T> : n
 /**
  * Like InferClientResponseBody but returns only SSE bodies — non-SSE entries resolve to never.
  */
-type SseInferClientResponseBody<T> = Extract<InferClientResponseBody<T>, AsyncIterable<unknown>>
+// An SSE body is the only response body that async-iterates event objects. A blob body is also
+// async-iterable (a ReadableStream), so SSE is discriminated by the SSE event's `lastEventId`.
+type SseBodyShape = AsyncIterable<{ lastEventId: string }>
+
+type SseInferClientResponseBody<T> = Extract<InferClientResponseBody<T>, SseBodyShape>
 
 /**
  * Like InferClientResponseBody but returns only non-SSE bodies — SSE entries resolve to never.
  */
-type NonSseInferClientResponseBody<T> = Exclude<InferClientResponseBody<T>, AsyncIterable<unknown>>
+type NonSseInferClientResponseBody<T> = Exclude<InferClientResponseBody<T>, SseBodyShape>
 
 type InferContentDescriptorBody<TDescriptor> = TDescriptor extends { _tag: 'BlobBody' }
-  ? Blob
+  ? ReadableStream<Uint8Array>
   : TDescriptor extends { _tag: 'SseBody'; schemaByEventName: infer S extends SseSchemaByEventName }
     ? AsyncIterable<SseEventOf<S>>
     : TDescriptor extends z.ZodType
@@ -90,14 +94,8 @@ type IsContentEntry<V> = V extends { content: object }
     ? true
     : false
 
-type SseContentVariants<TEntry> = Extract<
-  ContentEntryVariants<TEntry>,
-  { body: AsyncIterable<unknown> }
->
-type NonSseContentVariants<TEntry> = Exclude<
-  ContentEntryVariants<TEntry>,
-  { body: AsyncIterable<unknown> }
->
+type SseContentVariants<TEntry> = Extract<ContentEntryVariants<TEntry>, { body: SseBodyShape }>
+type NonSseContentVariants<TEntry> = Exclude<ContentEntryVariants<TEntry>, { body: SseBodyShape }>
 
 /** Response mode for a given status class: success codes filter by SSE/non-SSE; others pass all. */
 type ResponseBodyMode = 'sse' | 'non-sse' | 'all'

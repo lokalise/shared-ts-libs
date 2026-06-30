@@ -183,7 +183,9 @@ async function parseBody(body: Dispatcher.ResponseData['body'], resolvedEntry: R
       return null
     }
     case 'blob': {
-      return await body.blob()
+      // Hand back the raw stream; the caller decides whether to pipe it or aggregate it
+      // (e.g. `await new Response(body).blob()` / `.text()` / `.arrayBuffer()`).
+      return Readable.toWeb(body)
     }
     case 'json': {
       const json = await body.json()
