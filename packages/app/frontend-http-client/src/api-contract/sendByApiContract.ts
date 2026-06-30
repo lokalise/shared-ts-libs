@@ -130,8 +130,6 @@ async function parseBody(response: Response, resolvedEntry: ResponseKind) {
   switch (resolvedEntry.kind) {
     case 'noContent':
       return null
-    case 'text':
-      return await response.text()
     case 'blob':
       return await response.blob()
     case 'json': {
@@ -242,7 +240,14 @@ export async function sendByApiContract<
 
   if (!resolvedResponseEntry) {
     const body = await response.text()
-    return { error: new UnexpectedResponseError(response.status, normalizedHeaders, body) }
+    return {
+      error: new UnexpectedResponseError(
+        response.status,
+        normalizedHeaders,
+        body,
+        apiContract.summary,
+      ),
+    }
   }
 
   const parsedBody = await parseBody(response, resolvedResponseEntry)

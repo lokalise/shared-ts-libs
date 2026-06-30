@@ -322,7 +322,7 @@ export function buildGetRoute<
  *   method: 'delete',
  *   requestPathParamsSchema: z.object({ userId: z.string() }),
  *   pathResolver: ({ userId }) => `/api/users/${userId}`,
- *   responsesByStatusCode: { 204: ContractNoBody },
+ *   responsesByStatusCode: { 204: noBodyResponse() },
  * })
  * ```
  */

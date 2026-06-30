@@ -7,15 +7,23 @@ export class UnexpectedResponseError extends Error {
   readonly statusCode: number
   readonly headers: Record<string, string | undefined>
   readonly body: string
+  /** Contract `summary`, surfaced here for debugging unexpected responses. */
+  readonly summary: string
 
-  constructor(statusCode: number, headers: Record<string, string | undefined>, body: string) {
+  constructor(
+    statusCode: number,
+    headers: Record<string, string | undefined>,
+    body: string,
+    summary: string,
+  ) {
     super(
-      `Unexpected response: statusCode=${statusCode}, contentType=${headers['content-type'] ?? 'none'}`,
+      `Unexpected response for "${summary}": statusCode=${statusCode}, contentType=${headers['content-type'] ?? 'none'}`,
     )
     this.name = 'UnexpectedResponseError'
     this.statusCode = statusCode
     this.headers = headers
     this.body = body
+    this.summary = summary
 
     Object.defineProperty(this, unexpectedResponseErrorBrand, { value: true })
   }

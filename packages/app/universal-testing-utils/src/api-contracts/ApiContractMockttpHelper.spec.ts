@@ -3,7 +3,6 @@ import { getLocal } from 'mockttp'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import wretch from 'wretch'
 import {
-  anyOfTextResponsesApiContract,
   blobContentApiContract,
   blobResponseApiContract,
   deleteApiContractWithNoBodyResponse,
@@ -30,7 +29,6 @@ import {
   sseGetApiContract,
   sseGetApiContractWithPathParams,
   sseGetApiContractWithQueryParams,
-  textResponseApiContract,
 } from '../../test/testApiContracts.ts'
 import { ApiContractMockttpHelper } from './ApiContractMockttpHelper.ts'
 
@@ -373,17 +371,6 @@ describe('ApiContractMockttpHelper', () => {
   })
 
   describe('mockResponse — non-JSON response types', () => {
-    it('mocks text response', async () => {
-      await helper.mockResponse(textResponseApiContract, {
-        responseStatus: 200,
-        responseText: 'hello world',
-      })
-      const response = await client().url('/text').get().res()
-      expect(response.status).toBe(200)
-      expect(response.headers.get('content-type')).toBe('text/plain')
-      expect(await response.text()).toBe('hello world')
-    })
-
     it('mocks blob response', async () => {
       await helper.mockResponse(blobResponseApiContract, {
         responseStatus: 200,
@@ -392,12 +379,6 @@ describe('ApiContractMockttpHelper', () => {
       const response = await client().url('/blob').get().res()
       expect(response.status).toBe(200)
       expect(response.headers.get('content-type')).toBe('application/octet-stream')
-    })
-
-    it('replies with status only when anyOfResponses has no SSE or JSON entry', async () => {
-      await helper.mockResponse(anyOfTextResponsesApiContract, { responseStatus: 200 })
-      const response = await client().url('/any-of-text').get().res()
-      expect(response.status).toBe(200)
     })
   })
 

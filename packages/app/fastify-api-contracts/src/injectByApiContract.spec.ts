@@ -3,6 +3,7 @@ import {
   ContractNoBody,
   defineApiContract,
   mapApiContractToPath,
+  noBodyResponse,
 } from '@lokalise/api-contracts'
 import { copyWithoutUndefined } from '@lokalise/node-core'
 import { type FastifyInstance, fastify, type RouteHandlerMethod } from 'fastify'
@@ -70,6 +71,7 @@ describe('injectByApiContract', () => {
     it('injects a GET request with path and query params', async () => {
       expect.assertions(4)
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         requestQuerySchema: REQUEST_QUERY_SCHEMA,
@@ -96,6 +98,7 @@ describe('injectByApiContract', () => {
     it('injects a GET request with a header object', async () => {
       expect.assertions(2)
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         requestHeaderSchema: HEADERS_SCHEMA,
@@ -119,6 +122,7 @@ describe('injectByApiContract', () => {
     it('injects a GET request with a sync and async header factory', async () => {
       expect.assertions(4)
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         requestHeaderSchema: HEADERS_SCHEMA,
@@ -147,6 +151,7 @@ describe('injectByApiContract', () => {
     it('injects a GET request for a contract without any request schemas', async () => {
       expect.assertions(2)
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/ping',
         responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
@@ -163,6 +168,7 @@ describe('injectByApiContract', () => {
     it('prepends pathPrefix to the resolved path', async () => {
       expect.assertions(2)
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -190,6 +196,7 @@ describe('injectByApiContract', () => {
     it('normalizes a pathPrefix with a trailing slash without doubling the separator', async () => {
       expect.assertions(2)
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -217,6 +224,7 @@ describe('injectByApiContract', () => {
     it('normalizes a pathPrefix without a leading slash', async () => {
       expect.assertions(2)
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -246,10 +254,11 @@ describe('injectByApiContract', () => {
     it('injects a DELETE request returning no body', async () => {
       expect.assertions(2)
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'delete',
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-        responsesByStatusCode: { 204: ContractNoBody },
+        responsesByStatusCode: { 204: noBodyResponse() },
       })
 
       const app = await initAppForContract(contract, (req, reply) => {
@@ -269,6 +278,7 @@ describe('injectByApiContract', () => {
     it('injects a POST request with a body', async () => {
       expect.assertions(3)
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -293,6 +303,7 @@ describe('injectByApiContract', () => {
     it('injects a POST request with a body and an async header factory', async () => {
       expect.assertions(4)
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -320,6 +331,7 @@ describe('injectByApiContract', () => {
     it('prepends pathPrefix to the resolved path for a payload route', async () => {
       expect.assertions(3)
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -349,11 +361,12 @@ describe('injectByApiContract', () => {
     it('injects a POST request for a contract with a ContractNoBody request body', async () => {
       expect.assertions(2)
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'post',
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         requestBodySchema: ContractNoBody,
         pathResolver: (pathParams) => `/users/${pathParams.userId}/activate`,
-        responsesByStatusCode: { 204: ContractNoBody },
+        responsesByStatusCode: { 204: noBodyResponse() },
       })
 
       const app = await initAppForContract(contract, (req, reply) => {
@@ -373,6 +386,7 @@ describe('injectByApiContract', () => {
     it('injects a PUT request with a body', async () => {
       expect.assertions(2)
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'put',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -398,6 +412,7 @@ describe('injectByApiContract', () => {
     it('injects a PATCH request with a body', async () => {
       expect.assertions(2)
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'patch',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -422,6 +437,7 @@ describe('injectByApiContract', () => {
   describe('type-level params resolution', () => {
     it('requires pathParams and body for a payload contract, and forbids body for a GET', () => {
       const postContract = defineApiContract({
+        summary: 'Test contract',
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -437,6 +453,7 @@ describe('injectByApiContract', () => {
       }>()
 
       const getContract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         requestQuerySchema: REQUEST_QUERY_SCHEMA,
@@ -453,6 +470,7 @@ describe('injectByApiContract', () => {
 
     it('produces an all-optional params type for a contract without request schemas', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/ping',
         responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
@@ -468,6 +486,7 @@ describe('injectByApiContract', () => {
 
     it('always exposes an optional pathPrefix', () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/ping',
         responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },

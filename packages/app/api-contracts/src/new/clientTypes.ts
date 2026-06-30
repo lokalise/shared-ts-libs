@@ -8,7 +8,6 @@ import type {
   WildcardStatusCodeKey,
 } from '../HttpStatusCodes.ts'
 import type { Prettify } from '../typeUtils.ts'
-import type { ContractNoBody } from './constants.ts'
 import type { ResponsesByStatusCode, SseSchemaByEventName } from './contractResponse.ts'
 import type { ApiContract } from './defineApiContract.ts'
 import type { ContractResponseMode, SseEventOf } from './inferTypes.ts'
@@ -53,27 +52,11 @@ type InferClientResponseHeaders<TApiContract extends ApiContract> =
     : Record<string, string>
 
 /**
- * Maps a single responsesByStatusCode entry value to its TypeScript body type.
- * Both no-body forms (the ContractNoBody symbol and tagged noBodyResponse()) map to null.
+ * Maps a single (non-content-map) responsesByStatusCode entry to its TypeScript body type.
+ * Such entries are always a JSON Zod schema; no-body, blob, and SSE bodies are declared via
+ * content-map entries.
  */
-type InferClientResponseBody<T> = T extends typeof ContractNoBody
-  ? null
-  : T extends { _tag: 'NoBodyResponse' }
-    ? null
-    : T extends z.ZodType
-      ? InferSchemaOutput<T>
-      : T extends { _tag: 'TextResponse' }
-        ? string
-        : T extends { _tag: 'BlobResponse' }
-          ? Blob
-          : T extends {
-                _tag: 'SseResponse'
-                schemaByEventName: infer S extends SseSchemaByEventName
-              }
-            ? AsyncIterable<SseEventOf<S>>
-            : T extends { _tag: 'AnyOfResponses'; responses: Array<infer Item> }
-              ? InferClientResponseBody<Item>
-              : never
+type InferClientResponseBody<T> = T extends z.ZodType ? InferSchemaOutput<T> : never
 
 /**
  * Like InferClientResponseBody but returns only SSE bodies — non-SSE entries resolve to never.

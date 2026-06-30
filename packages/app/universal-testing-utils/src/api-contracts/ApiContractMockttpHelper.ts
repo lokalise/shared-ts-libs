@@ -1,18 +1,11 @@
 import {
   type ApiContract,
   type ApiContractResponse,
-  ContractNoBody,
   type HttpStatusCode,
-  isAnyOfResponses,
   isBlobBody,
-  isBlobResponse,
   isContentResponseEntry,
   isJsonBody,
-  isJsonResponse,
-  isNoBodyResponse,
   isSseBody,
-  isSseResponse,
-  isTextResponse,
   mapApiContractToPath,
   type ResponseEntry,
   type ResponsesByStatusCode,
@@ -107,7 +100,7 @@ export class ApiContractMockttpHelper {
       await mockRule.thenCallback((request) => {
         const accept = request.headers.accept ?? ''
 
-        // SSE wins only when the caller negotiates it via Accept (mirrors anyOfResponses).
+        // SSE wins only when the caller negotiates it via Accept.
         if (sseEntry && accept.includes('text/event-stream')) {
           return {
             statusCode,
@@ -143,62 +136,6 @@ export class ApiContractMockttpHelper {
 
         return { statusCode }
       })
-      return
-    }
-
-    if (responseEntry === ContractNoBody || isNoBodyResponse(responseEntry)) {
-      await mockRule.thenReply(statusCode)
-      return
-    }
-
-    if (isTextResponse(responseEntry)) {
-      await mockRule.thenReply(statusCode, anyParams.responseText, {
-        'content-type': responseEntry.contentType,
-      })
-      return
-    }
-
-    if (isBlobResponse(responseEntry)) {
-      await mockRule.thenReply(statusCode, anyParams.responseBlob, {
-        'content-type': responseEntry.contentType,
-      })
-      return
-    }
-
-    if (isSseResponse(responseEntry)) {
-      const body = formatSseResponse(anyParams.events)
-      await mockRule.thenCallback(() => ({
-        statusCode,
-        headers: { 'content-type': 'text/event-stream' },
-        body,
-      }))
-      return
-    }
-
-    if (isAnyOfResponses(responseEntry)) {
-      const sseEntry = responseEntry.responses.find(isSseResponse)
-      const jsonEntry = responseEntry.responses.find(isJsonResponse)
-
-      await mockRule.thenCallback((request) => {
-        const accept = request.headers.accept ?? ''
-
-        if (accept.includes('text/event-stream') && sseEntry) {
-          const body = formatSseResponse(anyParams.events)
-          return { statusCode, headers: { 'content-type': 'text/event-stream' }, body }
-        }
-
-        if (jsonEntry) {
-          const body = jsonEntry.parse(anyParams.responseJson)
-          return {
-            statusCode,
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify(body),
-          }
-        }
-
-        return { statusCode }
-      })
-
       return
     }
 
