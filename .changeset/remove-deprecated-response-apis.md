@@ -15,3 +15,5 @@ Remove the deprecated response APIs from the `defineApiContract` (new) API:
 - `noBodyResponse()`, `blobResponse()` and `sseResponse()` are kept as authoring helpers but now build **content-map entries** (`{ allowNoBody: true }` and `{ content: { … } }` respectively) instead of tagged objects — call sites are unchanged. The underlying tagged types and guards (`NoBodyResponse`, `TypedBlobResponse`, `TypedSseResponse`, `isNoBodyResponse`, `isBlobResponse`, `isSseResponse`) are removed; blob/SSE bodies live only in content maps, and JSON stays a bare Zod schema.
 
 The fe/be http clients no longer materialize `text` responses, and `ApiContractMockttpHelper` / `MockResponseParams` no longer accept `textResponse`/`anyOfResponses` entries (no `responseText` param). Content-map entries cover all of these cases.
+
+Blob responses are now delivered to the client as a raw `ReadableStream<Uint8Array>` (previously a buffered `Blob`), so the caller can pipe the stream or aggregate it on demand (`await new Response(body).blob()` / `.text()` / `.arrayBuffer()`).

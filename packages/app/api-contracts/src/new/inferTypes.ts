@@ -49,14 +49,14 @@ export type InferJsonSuccessResponses<T extends ResponsesByStatusCode> = JsonSch
 type NonSseBodyOf<T> = T extends { _tag: 'SseBody' }
   ? never
   : T extends { _tag: 'BlobBody' }
-    ? Blob
+    ? ReadableStream<Uint8Array>
     : T extends z.ZodType
       ? z.output<T>
       : undefined
 
 /**
  * Infers the TypeScript output type of all non-SSE success responses.
- * JSON schemas → z.output<T>. A blob entry → Blob. A no-body entry → undefined.
+ * JSON schemas → z.output<T>. A blob entry → ReadableStream<Uint8Array>. A no-body entry → undefined.
  * An SSE entry → never (excluded). Content-map entries are unpacked before mapping.
  */
 export type InferNonSseSuccessResponses<T extends ResponsesByStatusCode> = NonSseBodyOf<

@@ -261,7 +261,7 @@ describe('clientTypes', () => {
       }>()
     })
 
-    it('maps blob success response to Blob body', () => {
+    it('maps blob success response to a readable stream body', () => {
       const contract = defineApiContract({
         summary: 'Test contract',
         method: 'get',
@@ -272,7 +272,7 @@ describe('clientTypes', () => {
       expectTypeOf<Result>().toEqualTypeOf<{
         statusCode: 200
         headers: DefaultHeaders
-        body: Blob
+        body: ReadableStream<Uint8Array>
       }>()
     })
 

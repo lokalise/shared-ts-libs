@@ -131,7 +131,9 @@ async function parseBody(response: Response, resolvedEntry: ResponseKind) {
     case 'noContent':
       return null
     case 'blob':
-      return await response.blob()
+      // Hand back the raw stream; the caller decides whether to pipe it or aggregate it
+      // (e.g. `await new Response(body).blob()` / `.text()` / `.arrayBuffer()`).
+      return response.body
     case 'json': {
       const json = await response.json()
       return resolvedEntry.schema.parse(json)

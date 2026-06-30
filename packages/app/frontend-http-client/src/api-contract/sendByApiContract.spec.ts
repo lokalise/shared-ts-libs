@@ -546,7 +546,7 @@ describe('sendByApiContract', () => {
   })
 
   describe('blob', () => {
-    it('returns Blob body for blob response', async () => {
+    it('returns a readable stream body for a blob response', async () => {
       const contract = defineApiContract({
         summary: 'Test contract',
         method: 'get',
@@ -562,9 +562,9 @@ describe('sendByApiContract', () => {
 
       const result = await sendByApiContract(buildClient(), contract, {})
 
-      expectTypeOf(result.result).toMatchTypeOf<{ body: Blob } | undefined>()
-      expect(result.result?.body).toBeInstanceOf(Blob)
-      expect(result.result?.body.size).toBe(4)
+      expectTypeOf(result.result).toMatchTypeOf<{ body: ReadableStream<Uint8Array> } | undefined>()
+      const blob = await new Response(result.result?.body).blob()
+      expect(blob.size).toBe(4)
     })
   })
 
