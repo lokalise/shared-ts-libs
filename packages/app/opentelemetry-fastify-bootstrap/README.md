@@ -96,7 +96,7 @@ initOpenTelemetry({
 })
 ```
 
-For every span where `db.system: elasticsearch` (or, when `db.system` is absent, `peer.db.system: elasticsearch`), the exported payload gains:
+For every span where `db.system: elasticsearch`, the exported payload gains:
 
 - `db.namespace: lokalise` — the OTel-canonical, vendor-neutral attribute.
 

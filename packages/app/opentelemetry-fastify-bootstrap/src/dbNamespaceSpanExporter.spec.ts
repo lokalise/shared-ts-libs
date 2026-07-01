@@ -167,27 +167,16 @@ describe('DbNamespaceSpanExporter', () => {
       expect(view?.attributes['peer.db.name']).toBeUndefined()
     })
 
-    it('reads peer.db.system as a fallback when db.system is absent', () => {
+    it('passes through when db.system is an empty string', () => {
+      // The length-0 guard bails on the empty string so we never map '' to a
+      // namespace. We match only on the OTel `db.system` — no peer.* fallback,
+      // since nothing upstream of the exporter produces peer.* (Datadog derives
+      // those at ingestion).
       const exporter = new DbNamespaceSpanExporter(delegate, {
         dbNamespaceBySystem: { elasticsearch: 'lokalise' },
       })
 
-      exportOne(exporter, makeSpan({ 'peer.db.system': 'elasticsearch' }))
-
-      expect(delegate.received[0]?.attributes['db.namespace']).toBe('lokalise')
-    })
-
-    it('does NOT fall back to peer.db.system when db.system is an empty string', () => {
-      // Two guards combine here: the fallback uses `??` (only triggers on
-      // null/undefined, so `''` does not fall through to peer.db.system), and
-      // the subsequent length-0 check bails on the empty string. Pins the
-      // empty-vs-absent asymmetry so a later switch to `||` can't silently
-      // change it.
-      const exporter = new DbNamespaceSpanExporter(delegate, {
-        dbNamespaceBySystem: { elasticsearch: 'lokalise' },
-      })
-
-      exportOne(exporter, makeSpan({ 'db.system': '', 'peer.db.system': 'elasticsearch' }))
+      exportOne(exporter, makeSpan({ 'db.system': '' }))
 
       expect(delegate.received[0]?.attributes['db.namespace']).toBeUndefined()
     })

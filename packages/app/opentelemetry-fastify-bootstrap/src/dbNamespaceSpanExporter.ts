@@ -17,10 +17,9 @@ export interface DbNamespaceSpanExporterOptions {
 
 /**
  * A `SpanExporter` decorator that adds `db.namespace` to outbound DB spans in
- * the export payload — based on the OTel `db.system` value (falling back to
- * `peer.db.system` when `db.system` is absent) — then delegates to the wrapped
- * exporter. It exists so Datadog's APM catalog joins those spans to an existing
- * inferred-service entity for the cluster.
+ * the export payload — based on the OTel `db.system` value — then delegates to
+ * the wrapped exporter. It exists so Datadog's APM catalog joins those spans to
+ * an existing inferred-service entity for the cluster.
  *
  * Why (per Datadog inferred-services behavior as of 2026-06): a cluster reached
  * by raw IP can't be classified from `peer.hostname` and gets bucketed into the
@@ -74,7 +73,7 @@ export class DbNamespaceSpanExporter implements SpanExporter {
   private withDbNamespace(span: ReadableSpan): ReadableSpan {
     const attrs = span.attributes
 
-    const dbSystem = attrs['db.system'] ?? attrs['peer.db.system']
+    const dbSystem = attrs['db.system']
     if (typeof dbSystem !== 'string' || dbSystem.length === 0) return span
 
     const mapped = this.dbNamespaceBySystem.get(dbSystem)
