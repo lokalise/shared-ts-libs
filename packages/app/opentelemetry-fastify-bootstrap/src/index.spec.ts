@@ -1,4 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises'
+import { trace } from '@opentelemetry/api'
 import {
   InMemorySpanExporter,
   type ReadableSpan,
@@ -159,6 +160,26 @@ describe('opentelemetry-fastify-bootstrap', () => {
 
       expect(memoryExporter.getFinishedSpans()).toHaveLength(0)
     })
+
+    it('throws on a misconfigured dbNamespaceBySystem mapping even when OTEL is disabled', () => {
+      // Validation is hoisted above the enabled gate so a typo'd mapping
+      // fails in dev/CI (where OTEL is off) instead of only at prod startup.
+      process.env.NODE_ENV = 'test'
+
+      expect(() => initOpenTelemetry({ dbNamespaceBySystem: { elasticsearch: '' } })).toThrow(
+        /non-empty/,
+      )
+    })
+
+    it('warns when dbNamespaceBySystem is provided but empty', () => {
+      process.env.NODE_ENV = 'test'
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      initOpenTelemetry({ dbNamespaceBySystem: {} })
+
+      const warned = consoleWarnSpy.mock.calls.map((call: unknown[]) => String(call[0])).join('\n')
+      expect(warned).toContain('dbNamespaceBySystem was provided but contains no entries')
+    })
   })
 
   // ---------------------------------------------------------------------------
@@ -203,6 +224,7 @@ describe('opentelemetry-fastify-bootstrap', () => {
           new SimpleSpanProcessor(memoryExporter),
           new SimpleSpanProcessor(secondaryExporter),
         ],
+        dbNamespaceBySystem: { elasticsearch: 'lokalise' },
       })
     })
 
@@ -424,6 +446,33 @@ describe('opentelemetry-fastify-bootstrap', () => {
         expect(ctx.traceId).toMatch(/^[0-9a-f]{32}$/)
         expect(ctx.spanId).toMatch(/^[0-9a-f]{16}$/)
       }
+    })
+
+    // End-to-end: dbNamespaceBySystem only shapes the Datadog-bound OTLP payload;
+    // it must NOT mutate the shared span that user-supplied processors and other
+    // exporters observe. The actual db.namespace addition to the export payload
+    // is covered in isolation by dbNamespaceSpanExporter.spec.ts (the internal
+    // OTLP exporter here points at an unreachable port and can't be inspected).
+    it('does not leak db.namespace onto the shared span seen by user processors', async () => {
+      const tracer = trace.getTracer('verify-peer-db-name')
+      const span = tracer.startSpan('elasticsearch.query', {
+        attributes: { 'db.system': 'elasticsearch' },
+      })
+      span.end()
+
+      await vi.waitFor(
+        () => {
+          const dbSpan = memoryExporter
+            .getFinishedSpans()
+            .find((s) => s.attributes['db.system'] === 'elasticsearch')
+          expect(dbSpan).toBeDefined()
+          // The shared span is untouched — only the Datadog export view carries
+          // db.namespace, so any other consumer sees the real (absent) value.
+          expect(dbSpan?.attributes['db.namespace']).toBeUndefined()
+          expect(dbSpan?.attributes['peer.db.system']).toBeUndefined()
+        },
+        { timeout: 2000, interval: 10 },
+      )
     })
   })
 })
