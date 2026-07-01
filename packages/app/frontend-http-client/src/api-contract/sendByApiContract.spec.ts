@@ -32,9 +32,7 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: { 200: responseSchema },
       })
 
-      await mockServer
-        .forGet('/products/1')
-        .thenJson(200, { id: 1, title: 'Backpack' })
+      await mockServer.forGet('/products/1').thenJson(200, { id: 1, title: 'Backpack' })
 
       const result = await sendByApiContract(buildClient(), contract, {})
 
