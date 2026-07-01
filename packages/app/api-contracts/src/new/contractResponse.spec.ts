@@ -109,6 +109,19 @@ describe('resolveContractResponse', () => {
       const schema = z.object({ id: z.string() })
       expect(resolveContractResponse(schema, 'text/plain')).toBeNull()
     })
+
+    it('matches JSON ignoring content-type parameters and case', () => {
+      const schema = z.object({ id: z.string() })
+      expect(resolveContractResponse(schema, 'Application/JSON; charset=utf-8')).toEqual({
+        kind: 'json',
+        schema,
+      })
+    })
+
+    it('returns null for a look-alike media type', () => {
+      const schema = z.object({ id: z.string() })
+      expect(resolveContractResponse(schema, 'application/jsonx')).toBeNull()
+    })
   })
 
   describe('strict: false', () => {

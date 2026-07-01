@@ -135,19 +135,19 @@ export type ResponseKind =
   | { kind: 'json'; schema: z.ZodType }
   | { kind: 'sse'; schemaByEventName: SseSchemaByEventName }
 
+const normalizeMediaType = (contentType: string): string =>
+  (contentType.split(';')[0] ?? contentType).trim().toLowerCase()
+
 const matchTypedResponse = (
   entry: TypedApiContractResponse,
   contentType: string,
 ): ResponseKind | null =>
-  contentType.includes('application/json') ? { kind: 'json', schema: entry } : null
+  normalizeMediaType(contentType) === 'application/json' ? { kind: 'json', schema: entry } : null
 
 const resolveByKind = (entry: TypedApiContractResponse): ResponseKind => ({
   kind: 'json',
   schema: entry,
 })
-
-const normalizeMediaType = (contentType: string): string =>
-  (contentType.split(';')[0] ?? contentType).trim().toLowerCase()
 
 const descriptorToKind = (descriptor: BodyDescriptor): ResponseKind => {
   if (isBlobBody(descriptor)) {
