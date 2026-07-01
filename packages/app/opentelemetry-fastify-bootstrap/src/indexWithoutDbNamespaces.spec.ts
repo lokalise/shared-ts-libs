@@ -9,6 +9,9 @@ import { gracefulOtelShutdown, initOpenTelemetry } from './index.ts'
 describe('initOpenTelemetry enabled without dbNamespaceBySystem', () => {
   let app: FastifyInstance | undefined
   const memoryExporter = new InMemorySpanExporter()
+  const originalNodeEnv = process.env.NODE_ENV
+  const originalOtelEnabled = process.env.OTEL_ENABLED
+  const originalExporterUrl = process.env.OTEL_EXPORTER_URL
 
   beforeAll(() => {
     process.env.NODE_ENV = 'production'
@@ -22,6 +25,14 @@ describe('initOpenTelemetry enabled without dbNamespaceBySystem', () => {
 
   afterAll(async () => {
     await gracefulOtelShutdown()
+    // Restore the process-global env we mutated so this file can't influence
+    // another spec that shares the worker.
+    if (originalNodeEnv === undefined) delete process.env.NODE_ENV
+    else process.env.NODE_ENV = originalNodeEnv
+    if (originalOtelEnabled === undefined) delete process.env.OTEL_ENABLED
+    else process.env.OTEL_ENABLED = originalOtelEnabled
+    if (originalExporterUrl === undefined) delete process.env.OTEL_EXPORTER_URL
+    else process.env.OTEL_EXPORTER_URL = originalExporterUrl
     vi.restoreAllMocks()
   })
 
