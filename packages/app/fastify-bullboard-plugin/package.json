@@ -46,7 +46,7 @@
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/fastify-extras": "^31.0.0",
         "@lokalise/node-core": "^14.1.0",
-        "@types/node": "^25.9.3",
+        "@types/node": "^26.0.0",
         "@vitest/coverage-v8": "^4.1.9",
         "awilix": "^13.0.5",
         "awilix-manager": "^7.0.0",

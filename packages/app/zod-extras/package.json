@@ -42,7 +42,7 @@
         "@biomejs/biome": "^2.5.0",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",
-        "@types/node": "^25.9.3",
+        "@types/node": "^26.0.0",
         "@vitest/coverage-v8": "^4.1.9",
         "rimraf": "^6.0.1",
         "typescript": "6.0.3",

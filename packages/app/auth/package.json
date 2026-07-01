@@ -53,7 +53,7 @@
         "@lokalise/node-core": "^14.4.1",
         "@lokalise/tsconfig": "workspace:^",
         "@lokalise/universal-ts-utils": "workspace:^",
-        "@types/node": "^25.9.3",
+        "@types/node": "^26.0.0",
         "@vitest/coverage-v8": "^4.1.9",
         "jose": "^6.2.3",
         "mockttp": "^4.4.2",

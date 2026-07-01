@@ -51,7 +51,7 @@
         "@lokalise/api-contracts": "workspace:^",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",
-        "@types/node": "^25.9.3",
+        "@types/node": "^26.0.0",
         "@vitest/coverage-v8": "^4.1.9",
         "mock-xmlhttprequest": "^8.4.1",
         "mockttp": "^4.4.2",
