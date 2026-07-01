@@ -66,7 +66,7 @@ initOpenTelemetry()
 | `skippedPaths` | `string[]` | `['/health', '/metrics', '/']` | Paths to exclude from tracing |
 | `consoleSpans` | `boolean` | `false` | Enable console span exporter for debugging |
 | `spanProcessors` | `SpanProcessor[]` | `[]` | Additional span processors to register |
-| `peerDbNames` | `Record<string, string>` | `undefined` | Maps `db.system` values to database names, stamped as `db.namespace` on outbound DB spans so they join Datadog's existing inferred-service entity for the cluster. See [Joining a Datadog inferred-service entity](#joining-a-datadog-inferred-service-entity). |
+| `dbNamespaceBySystem` | `Record<string, string>` | `undefined` | Maps `db.system` values to the `db.namespace` to report for them. When set, the Datadog-bound trace exporter is wrapped so matching outbound DB spans carry `db.namespace` in the export payload, joining them to Datadog's existing inferred-service entity for the cluster. The shared span is left untouched. See [Joining a Datadog inferred-service entity](#joining-a-datadog-inferred-service-entity). |
 
 ### Debugging with Console Spans
 
@@ -88,21 +88,25 @@ Datadog's APM service catalog auto-creates inferred-service entities for downstr
 
 Some instrumentations don't set `db.namespace`. Notably the Node.js `@elastic/transport` (v8 Elasticsearch client) sets `db.system: elasticsearch` but never `db.namespace`, so outbound ES calls don't join the existing cluster entity.
 
-Pass `peerDbNames` to stamp `db.namespace` based on `db.system`:
+Pass `dbNamespaceBySystem` to add `db.namespace` based on `db.system`:
 
 ```ts
 initOpenTelemetry({
-  peerDbNames: { elasticsearch: 'lokalise' },
+  dbNamespaceBySystem: { elasticsearch: 'lokalise' },
 })
 ```
 
-For every span where `db.system: elasticsearch` (or, when `db.system` is absent, `peer.db.system: elasticsearch`), the processor sets:
+For every span where `db.system: elasticsearch` (or, when `db.system` is absent, `peer.db.system: elasticsearch`), the exported payload gains:
 
 - `db.namespace: lokalise` — the OTel-canonical, vendor-neutral attribute.
 
-Datadog adds the `peer.*` prefix itself, deriving `peer.db.name` from `db.namespace` and `peer.db.system` from `db.system`, so we only stamp the short-form attribute and never write `peer.*` tags directly. See [Datadog peer tags](https://docs.datadoghq.com/tracing/services/inferred_services/?tab=agentv7600#peer-tags).
+Datadog adds the `peer.*` prefix itself, deriving `peer.db.name` from `db.namespace` and `peer.db.system` from `db.system`, so we only set the short-form attribute and never write `peer.*` tags directly. See [Datadog peer tags](https://docs.datadoghq.com/tracing/services/inferred_services/?tab=agentv7600#peer-tags).
 
-The processor never overwrites an existing non-empty string `db.namespace`. `PeerDbNameSpanProcessor` is exported from the package if you want to use it as a custom processor directly.
+#### Why an exporter, not a span processor
+
+A constant such as `lokalise` is a Datadog entity-keying heuristic, not the span's true OTel `db.namespace`. Rather than mutate the single `ReadableSpan` shared by every processor and exporter — which would make any other consumer (a different dashboard, OTel-native tooling) read `lokalise` as the real namespace — `dbNamespaceBySystem` wraps **only** the Datadog-bound exporter. The attribute is added to that exporter's own payload via a non-mutating view of the span; the original is never written to, so it can't be broken by a future SDK that freezes span attributes, and every other consumer sees the unmodified span. An existing non-empty `db.namespace` is never replaced.
+
+`DbNamespaceSpanExporter` is exported from the package if you want to wrap an exporter directly.
 
 ### Adding Custom Span Processors
 
@@ -130,7 +134,7 @@ initOpenTelemetry({
 - Configurable path filtering
 - Optional console span exporter for debugging
 - Support for custom span processors
-- Optional `db.namespace` stamping to join Datadog inferred-service entities
+- Optional `db.namespace` enrichment of the Datadog export payload to join inferred-service entities
 - Graceful shutdown support
 
 ## Graceful Shutdown

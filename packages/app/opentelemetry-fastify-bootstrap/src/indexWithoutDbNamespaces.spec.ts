@@ -3,10 +3,10 @@ import { type FastifyInstance, fastify } from 'fastify'
 import { gracefulOtelShutdown, initOpenTelemetry } from './index.ts'
 
 // initOpenTelemetry can only run once per process (global SDK hooks don't
-// cleanly re-register), so the default path — SDK enabled, no peerDbNames —
+// cleanly re-register), so the default path — SDK enabled, no dbNamespaceBySystem —
 // gets its own spec file. This is the path every existing consumer takes;
-// it must never crash or change behavior because of the peerDbNames feature.
-describe('initOpenTelemetry enabled without peerDbNames', () => {
+// it must never crash or change behavior because of the dbNamespaceBySystem feature.
+describe('initOpenTelemetry enabled without dbNamespaceBySystem', () => {
   let app: FastifyInstance | undefined
   const memoryExporter = new InMemorySpanExporter()
 
@@ -30,7 +30,7 @@ describe('initOpenTelemetry enabled without peerDbNames', () => {
     app = undefined
   })
 
-  it('initializes and traces without a peer DB processor', async () => {
+  it('initializes and traces without the db.namespace exporter', async () => {
     expect(() =>
       initOpenTelemetry({
         spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
@@ -51,7 +51,7 @@ describe('initOpenTelemetry enabled without peerDbNames', () => {
       { timeout: 2000, interval: 10 },
     )
 
-    // No peer processor configured — nothing may stamp peer DB attributes.
+    // No dbNamespaceBySystem configured — nothing may add db.namespace.
     for (const span of memoryExporter.getFinishedSpans()) {
       expect(span.attributes['db.namespace']).toBeUndefined()
     }

@@ -8,12 +8,15 @@ import {
   SimpleSpanProcessor,
   type SpanProcessor,
 } from '@opentelemetry/sdk-trace-base'
-import { PeerDbNameSpanProcessor } from './peerDbNameSpanProcessor.ts'
+import {
+  assertValidDbNamespaceBySystem,
+  DbNamespaceSpanExporter,
+} from './dbNamespaceSpanExporter.ts'
 
 export {
-  PeerDbNameSpanProcessor,
-  type PeerDbNameSpanProcessorOptions,
-} from './peerDbNameSpanProcessor.ts'
+  DbNamespaceSpanExporter,
+  type DbNamespaceSpanExporterOptions,
+} from './dbNamespaceSpanExporter.ts'
 
 // Call initOpenTelemetry() before starting the server.
 // The application must be started with --import=@opentelemetry/instrumentation/hook.mjs
@@ -68,17 +71,20 @@ const logger = {
 
 const DEFAULT_SKIPPED_PATHS = ['/health', '/metrics', '/']
 
-function resolvePeerDbNameProcessor(
-  peerDbNames: Readonly<Record<string, string>> | undefined,
-): SpanProcessor | undefined {
-  if (!peerDbNames) return undefined
-  if (Object.keys(peerDbNames).length === 0) {
+function resolveDbNamespaceBySystem(
+  dbNamespaceBySystem: Readonly<Record<string, string>> | undefined,
+): Readonly<Record<string, string>> | undefined {
+  if (!dbNamespaceBySystem) return undefined
+  if (Object.keys(dbNamespaceBySystem).length === 0) {
     logger.warn(
-      '[OTEL] peerDbNames was provided but contains no entries; PeerDbNameSpanProcessor will not be registered',
+      '[OTEL] dbNamespaceBySystem was provided but contains no entries; db.namespace enrichment will not be enabled',
     )
     return undefined
   }
-  return new PeerDbNameSpanProcessor({ dbNames: peerDbNames })
+  // Validate eagerly so a misconfigured mapping throws in every environment
+  // (dev, CI), not only at production startup when the exporter is built.
+  assertValidDbNamespaceBySystem(dbNamespaceBySystem)
+  return dbNamespaceBySystem
 }
 
 export interface OpenTelemetryOptions {
@@ -101,17 +107,19 @@ export interface OpenTelemetryOptions {
   spanProcessors?: SpanProcessor[]
 
   /**
-   * Maps OTel `db.system` values to database names, stamped as `db.namespace`
-   * on matching outbound DB spans so they join Datadog's existing
-   * inferred-service entity for the cluster. See
-   * {@link PeerDbNameSpanProcessor} for the full mechanics.
+   * Maps OTel `db.system` values to the `db.namespace` to report for them. When
+   * set, the Datadog-bound trace exporter is wrapped so matching outbound DB
+   * spans carry `db.namespace` in the export payload, joining them to Datadog's
+   * existing inferred-service entity for the cluster. Only the export payload is
+   * shaped — the shared span other processors/exporters see is left untouched.
+   * See {@link DbNamespaceSpanExporter} for the full mechanics.
    *
    * @example
    * ```ts
-   * peerDbNames: { elasticsearch: 'lokalise' }
+   * dbNamespaceBySystem: { elasticsearch: 'lokalise' }
    * ```
    */
-  peerDbNames?: Readonly<Record<string, string>>
+  dbNamespaceBySystem?: Readonly<Record<string, string>>
 }
 
 let isInstrumentationRegistered = false
@@ -140,7 +148,7 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
     skippedPaths = DEFAULT_SKIPPED_PATHS,
     consoleSpans = false,
     spanProcessors = [],
-    peerDbNames,
+    dbNamespaceBySystem,
   } = options
 
   logger.info('[OTEL] initOpenTelemetry called')
@@ -156,14 +164,14 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
       skippedPaths,
       consoleSpans,
       additionalSpanProcessorsCount: spanProcessors.length,
-      peerDbNamesConfigured: peerDbNames ? Object.keys(peerDbNames) : [],
+      dbNamespaceSystemsConfigured: dbNamespaceBySystem ? Object.keys(dbNamespaceBySystem) : [],
     },
     '[OTEL] Configuration',
   )
 
-  // Constructed outside the enabled gate so a misconfigured mapping throws in
+  // Validated outside the enabled gate so a misconfigured mapping throws in
   // every environment (dev, CI) instead of only at production startup.
-  const peerDbNameProcessor = resolvePeerDbNameProcessor(peerDbNames)
+  const validatedDbNamespaceBySystem = resolveDbNamespaceBySystem(dbNamespaceBySystem)
 
   if (isOpenTelemetryEnabled && !isInstrumentationRegistered) {
     logger.info('[OTEL] Initializing OpenTelemetry SDK...')
@@ -171,21 +179,23 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
     const exporterUrl = process.env.OTEL_EXPORTER_URL || 'grpc://localhost:4317'
     logger.info({ exporterUrl }, '[OTEL] Configuring trace exporter')
 
-    const traceExporter = new OTLPTraceExporterGrpc({
+    const otlpExporter = new OTLPTraceExporterGrpc({
       // optional - url default value is http://localhost:4318/v1/traces (http)
       // or grpc://localhost:4317/opentelemetry.proto.collector.trace.v1.TraceService/Export (grpc)
       url: exporterUrl,
     })
 
-    // Registration order is load-bearing: MultiSpanProcessor invokes onEnd
-    // synchronously in registration order, so the peer processor must come
-    // BEFORE any processor whose exporter serializes the span eagerly (e.g.
-    // SimpleSpanProcessor wrapping an OTLP exporter), including user-supplied
-    // `spanProcessors`. Pinned by the "runs the peer processor before
-    // user-supplied span processors" test in index.spec.ts, which snapshots
-    // attributes synchronously in a later-registered processor's onEnd.
+    // Wrap ONLY the Datadog-bound exporter: db.namespace is added to its export
+    // payload, not to the shared span, so console/user processors and any other
+    // exporter still see the unmodified span. No ordering constraints — the
+    // transform happens entirely inside this exporter's own export().
+    const traceExporter = validatedDbNamespaceBySystem
+      ? new DbNamespaceSpanExporter(otlpExporter, {
+          dbNamespaceBySystem: validatedDbNamespaceBySystem,
+        })
+      : otlpExporter
+
     const allSpanProcessors: SpanProcessor[] = [
-      ...(peerDbNameProcessor ? [peerDbNameProcessor] : []),
       new BatchSpanProcessor(traceExporter),
       ...spanProcessors,
     ]
