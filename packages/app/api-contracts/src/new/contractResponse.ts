@@ -15,11 +15,7 @@ export type TypedJsonResponse = z.ZodType
 export const isJsonResponse = (
   value: ApiContractResponse | ResponseEntry,
 ): value is TypedJsonResponse =>
-  typeof value === 'object' &&
-  value !== null &&
-  !('_tag' in value) &&
-  !('content' in value) &&
-  !('allowNoBody' in value)
+  typeof value === 'object' && value !== null && !('content' in value) && !('allowNoBody' in value)
 
 export type TypedApiContractResponse = TypedJsonResponse
 
@@ -97,10 +93,7 @@ export type ResponseEntry = BodyContentResponseEntry | NoBodyContentResponseEntr
 export const isContentResponseEntry = (
   value: ApiContractResponse | ResponseEntry,
 ): value is ResponseEntry =>
-  typeof value === 'object' &&
-  value !== null &&
-  !('_tag' in value) &&
-  ('content' in value || 'allowNoBody' in value)
+  typeof value === 'object' && value !== null && ('content' in value || 'allowNoBody' in value)
 
 /**
  * Declares a no-body response (e.g. `204`).
