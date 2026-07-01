@@ -55,7 +55,7 @@
         "@biomejs/biome": "^2.5.0",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",
-        "@opentelemetry/api": "^1.9.0",
+        "@opentelemetry/api": "^1.9.1",
         "@opentelemetry/auto-instrumentations-node": "^0.76.0",
         "@opentelemetry/exporter-trace-otlp-grpc": "^0.218.0",
         "@opentelemetry/sdk-node": "^0.218.0",
