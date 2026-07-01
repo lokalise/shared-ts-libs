@@ -34,7 +34,7 @@ describe('sendByApiContract', () => {
 
       await mockServer
         .forGet('/products/1')
-        .thenJson(200, { id: 1, title: 'Backpack' }, JSON_HEADERS)
+        .thenJson(200, { id: 1, title: 'Backpack' })
 
       const result = await sendByApiContract(buildClient(), contract, {})
 
@@ -53,7 +53,7 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: { 200: z.unknown() },
       })
 
-      await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+      await mockServer.forGet('/products/1').thenJson(200, { id: 1 })
 
       const result = await sendByApiContract(buildClient(), contract, {
         pathParams: { productId: 1 },
@@ -74,7 +74,7 @@ describe('sendByApiContract', () => {
       await mockServer
         .forGet('/products')
         .withQuery({ limit: '3' })
-        .thenJson(200, [{ id: 1 }], JSON_HEADERS)
+        .thenJson(200, [{ id: 1 }])
 
       const result = await sendByApiContract(buildClient(), contract, { queryParams: { limit: 3 } })
 
@@ -93,7 +93,7 @@ describe('sendByApiContract', () => {
       await mockServer
         .forGet('/products/1')
         .withHeaders({ authorization: 'Bearer token' })
-        .thenJson(200, { id: 1 }, JSON_HEADERS)
+        .thenJson(200, { id: 1 })
 
       const result = await sendByApiContract(buildClient(), contract, {
         headers: { authorization: 'Bearer token' },
@@ -114,7 +114,7 @@ describe('sendByApiContract', () => {
       await mockServer
         .forGet('/products/1')
         .withHeaders({ authorization: 'Bearer token' })
-        .thenJson(200, { id: 1 }, JSON_HEADERS)
+        .thenJson(200, { id: 1 })
 
       const result = await sendByApiContract(buildClient(), contract, {
         headers: () => ({ authorization: 'Bearer token' }),
@@ -135,7 +135,7 @@ describe('sendByApiContract', () => {
       await mockServer
         .forGet('/products/1')
         .withHeaders({ authorization: 'Bearer token' })
-        .thenJson(200, { id: 1 }, JSON_HEADERS)
+        .thenJson(200, { id: 1 })
 
       const result = await sendByApiContract(buildClient(), contract, {
         headers: async () => ({ authorization: 'Bearer token' }),
@@ -152,7 +152,7 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: { 200: z.unknown() },
       })
 
-      await mockServer.forGet('/api/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+      await mockServer.forGet('/api/products/1').thenJson(200, { id: 1 })
 
       const result = await sendByApiContract(buildClient(), contract, { pathPrefix: 'api' })
 
@@ -167,7 +167,7 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: { 200: z.object({ id: z.string() }) },
       })
 
-      await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+      await mockServer.forGet('/products/1').thenJson(200, { id: 1 })
 
       await expect(sendByApiContract(buildClient(), contract, {})).rejects.toThrow()
     })
@@ -193,7 +193,7 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: {},
       })
 
-      await mockServer.forGet('/products/1').thenJson(500, { error: 'fail' }, JSON_HEADERS)
+      await mockServer.forGet('/products/1').thenJson(500, { error: 'fail' })
 
       const result = await sendByApiContract(buildClient(), contract, {})
 
@@ -213,7 +213,7 @@ describe('sendByApiContract', () => {
         },
       })
 
-      await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' }, JSON_HEADERS)
+      await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' })
 
       const response = await sendByApiContract(buildClient(), contract, { captureAsError: false })
 
@@ -240,7 +240,7 @@ describe('sendByApiContract', () => {
         },
       })
 
-      await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' }, JSON_HEADERS)
+      await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' })
 
       const response = await sendByApiContract(buildClient(), contract, {})
 
@@ -279,7 +279,7 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: { 201: z.object({ id: z.number() }) },
       })
 
-      await mockServer.forPost('/products').thenJson(201, { id: 21 }, JSON_HEADERS)
+      await mockServer.forPost('/products').thenJson(201, { id: 21 })
 
       const result = await sendByApiContract(buildClient(), contract, { body: { name: 'test' } })
 
@@ -297,7 +297,7 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: { 201: z.object({ id: z.string() }) },
       })
 
-      await mockServer.forPost('/orgs/acme/members').thenJson(201, { id: '1' }, JSON_HEADERS)
+      await mockServer.forPost('/orgs/acme/members').thenJson(201, { id: '1' })
 
       const result = await sendByApiContract(buildClient(), contract, {
         pathParams: { orgId: 'acme' },
@@ -319,7 +319,7 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: { 200: z.object({ id: z.number() }) },
       })
 
-      await mockServer.forPut('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+      await mockServer.forPut('/products/1').thenJson(200, { id: 1 })
 
       const result = await sendByApiContract(buildClient(), contract, {
         pathParams: { id: '1' },
@@ -342,7 +342,7 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: { 200: z.object({ id: z.number() }) },
       })
 
-      await mockServer.forPatch('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+      await mockServer.forPatch('/products/1').thenJson(200, { id: 1 })
 
       const result = await sendByApiContract(buildClient(), contract, {
         pathParams: { id: '1' },
