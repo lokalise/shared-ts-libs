@@ -1,65 +1,37 @@
 import type { z } from 'zod/v4'
 import type { SuccessfulHttpStatusCode } from '../HttpStatusCodes.ts'
 import type { ValueOf } from '../typeUtils.ts'
-import type { ContractNoBody } from './constants.ts'
-import type { NoBodyResponse, ResponseEntry, ResponsesByStatusCode } from './contractResponse.ts'
+import type { ResponseEntry, ResponsesByStatusCode } from './contractResponse.ts'
 
 type ExtractSuccessResponses<T extends ResponsesByStatusCode> = ValueOf<
   T,
   Extract<keyof T, SuccessfulHttpStatusCode | '2xx' | 'default'>
 >
 
-type UnpackAnyOf<T> = T extends { _tag: 'AnyOfResponses'; responses: Array<infer Item> } ? Item : T
-
-// Body descriptors of a content-map entry, normalized to the equivalent old-style tagged shape
-// so every downstream helper (SSE/JSON/blob/no-body extraction) works uniformly across both styles.
-type ContentDescriptorsOf<TEntry> = TEntry extends { content: infer TContent }
-  ? TContent[keyof TContent]
-  : never
-
-type NormalizeContentDescriptor<TDescriptor> = TDescriptor extends {
-  _tag: 'SseBody'
-  schemaByEventName: infer S
-}
-  ? { _tag: 'SseResponse'; schemaByEventName: S }
-  : TDescriptor extends { _tag: 'BlobBody' }
-    ? { _tag: 'BlobResponse' }
-    : TDescriptor
-
+// The body descriptors a content-map entry contributes: each media type's descriptor
+// (a Zod schema for JSON, `BlobBody`, or `SseBody`), plus `{ allowNoBody: true }` when it is set.
 type FlatContentSuccessResponses<TEntry> =
-  | NormalizeContentDescriptor<ContentDescriptorsOf<TEntry>>
-  | (TEntry extends { allowNoBody: true } ? typeof ContractNoBody : never)
+  | (TEntry extends { content: infer TContent } ? TContent[keyof TContent] : never)
+  | (TEntry extends { allowNoBody: true } ? { allowNoBody: true } : never)
 
 type FlatSuccessResponses<T extends ResponsesByStatusCode> =
-  | UnpackAnyOf<Exclude<ExtractSuccessResponses<T>, ResponseEntry>>
+  | Exclude<ExtractSuccessResponses<T>, ResponseEntry>
   | FlatContentSuccessResponses<Extract<ExtractSuccessResponses<T>, ResponseEntry>>
 
-/**
- * Returns true if all success responses have no body (ContractNoBody, noBodyResponse(),
- * a no-body content entry, or no success status codes defined).
- *
- * @deprecated No known consumers — will be removed in a future release.
- */
-export type IsNoBodySuccessResponse<T extends ResponsesByStatusCode> = [
-  FlatSuccessResponses<T>,
-] extends [typeof ContractNoBody | NoBodyResponse | undefined]
-  ? true
-  : false
-
-type SseSchemaOf<T> = T extends { _tag: 'SseResponse'; schemaByEventName: infer S } ? S : never
+type SseSchemaOf<T> = T extends { _tag: 'SseBody'; schemaByEventName: infer S } ? S : never
 
 /**
  * Extracts the merged SSE event schema map from a responsesByStatusCode map.
- * Returns the union of all `schemaByEventName` objects from TypedSseResponse entries,
- * including those nested inside AnyOfResponses.
+ * Returns the union of all `schemaByEventName` objects from SSE responses (content-map
+ * `sseBody` descriptors).
  */
 export type InferSseSuccessResponses<T extends ResponsesByStatusCode> = SseSchemaOf<
   FlatSuccessResponses<T>
 >
 
 /**
- * Returns true if any success status code entry is a JSON Zod schema,
- * or an AnyOfResponses containing one.
+ * Returns true if any success status code entry is a JSON Zod schema
+ * (a bare schema or a content-map JSON descriptor).
  */
 export type HasAnyJsonSuccessResponse<T extends ResponsesByStatusCode> =
   Extract<FlatSuccessResponses<T>, z.ZodType> extends never ? false : true
@@ -67,28 +39,25 @@ export type HasAnyJsonSuccessResponse<T extends ResponsesByStatusCode> =
 type JsonSchemaOf<T> = T extends z.ZodType ? T : never
 
 /**
- * Extracts the union of JSON Zod schemas from all success responses,
- * including those nested inside AnyOfResponses. Text, Blob, and SSE responses are excluded.
+ * Extracts the union of JSON Zod schemas from all success responses.
+ * Blob and SSE responses are excluded.
  */
 export type InferJsonSuccessResponses<T extends ResponsesByStatusCode> = JsonSchemaOf<
   FlatSuccessResponses<T>
 >
 
-type NonSseBodyOf<T> = T extends { _tag: 'SseResponse' }
+type NonSseBodyOf<T> = T extends { _tag: 'SseBody' }
   ? never
-  : T extends { _tag: 'BlobResponse' }
-    ? Blob
-    : T extends { _tag: 'TextResponse' }
-      ? string
-      : T extends z.ZodType
-        ? z.output<T>
-        : undefined
+  : T extends { _tag: 'BlobBody' }
+    ? ReadableStream<Uint8Array>
+    : T extends z.ZodType
+      ? z.output<T>
+      : undefined
 
 /**
  * Infers the TypeScript output type of all non-SSE success responses.
- * JSON schemas → z.output<T>. TextResponse → string. BlobResponse → Blob.
- * ContractNoBody and noBodyResponse() → undefined. SseResponse → never (excluded).
- * AnyOfResponses are unpacked before mapping.
+ * JSON schemas → z.output<T>. A blob entry → ReadableStream<Uint8Array>. A no-body entry → undefined.
+ * An SSE entry → never (excluded). Content-map entries are unpacked before mapping.
  */
 export type InferNonSseSuccessResponses<T extends ResponsesByStatusCode> = NonSseBodyOf<
   FlatSuccessResponses<T>
@@ -110,24 +79,24 @@ export type SseEventOf<S> = {
 }[keyof S]
 
 /**
- * Returns true if any success status code entry is TypedSseResponse,
- * or an AnyOfResponses containing a TypedSseResponse.
+ * Returns true if any success status code entry is an SSE response
+ * (a content-map `sseBody` descriptor).
  */
 export type HasAnySseSuccessResponse<T extends ResponsesByStatusCode> =
-  Extract<FlatSuccessResponses<T>, { _tag: 'SseResponse' }> extends never ? false : true
+  Extract<FlatSuccessResponses<T>, { _tag: 'SseBody' }> extends never ? false : true
 
 /**
  * Returns true if any success status code entry has a non-SSE response
- * (JSON, text, blob, or no-body). Mirrors HasAnySseSuccessResponse.
+ * (JSON, blob, or no-body). Mirrors HasAnySseSuccessResponse.
  */
 export type HasAnyNonSseSuccessResponse<T extends ResponsesByStatusCode> =
-  Exclude<FlatSuccessResponses<T>, { _tag: 'SseResponse' }> extends never ? false : true
+  Exclude<FlatSuccessResponses<T>, { _tag: 'SseBody' }> extends never ? false : true
 
 /**
  * Classifies a contract's response mode into one of three cases:
  * - 'dual'    — SSE + non-SSE success responses; caller chooses via streaming param
  * - 'sse'     — SSE-only success responses; always streams
- * - 'non-sse' — JSON / text / blob / no-body; never streams
+ * - 'non-sse' — JSON / blob / no-body; never streams
  */
 export type ContractResponseMode<T extends ResponsesByStatusCode> =
   HasAnySseSuccessResponse<T> extends true
@@ -142,11 +111,5 @@ export type ContractResponseMode<T extends ResponsesByStatusCode> =
 export type AvailableResponseModes<T extends ResponsesByStatusCode> =
   | (HasAnyJsonSuccessResponse<T> extends true ? 'json' : never)
   | (HasAnySseSuccessResponse<T> extends true ? 'sse' : never)
-  | (Extract<FlatSuccessResponses<T>, { _tag: 'BlobResponse' }> extends never ? never : 'blob')
-  | (Extract<FlatSuccessResponses<T>, { _tag: 'TextResponse' }> extends never ? never : 'text')
-  | (Extract<
-      FlatSuccessResponses<T>,
-      typeof ContractNoBody | { _tag: 'NoBodyResponse' }
-    > extends never
-      ? never
-      : 'noContent')
+  | (Extract<FlatSuccessResponses<T>, { _tag: 'BlobBody' }> extends never ? never : 'blob')
+  | (Extract<FlatSuccessResponses<T>, { allowNoBody: true }> extends never ? never : 'noContent')

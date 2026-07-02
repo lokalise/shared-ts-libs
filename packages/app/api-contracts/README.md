@@ -17,6 +17,7 @@ import { z } from 'zod/v4'
 
 // GET with path params
 const getUser = defineApiContract({
+  summary: 'Get user',
   method: 'get',
   requestPathParamsSchema: z.object({ userId: z.uuid() }),
   pathResolver: ({ userId }) => `/users/${userId}`,
@@ -27,6 +28,7 @@ const getUser = defineApiContract({
 
 // POST
 const createUser = defineApiContract({
+  summary: 'Get user',
   method: 'post',
   pathResolver: () => '/users',
   requestBodySchema: z.object({ name: z.string() }),
@@ -37,6 +39,7 @@ const createUser = defineApiContract({
 
 // DELETE with no response body
 const deleteUser = defineApiContract({
+  summary: 'Get user',
   method: 'delete',
   requestPathParamsSchema: z.object({ userId: z.uuid() }),
   pathResolver: ({ userId }) => `/users/${userId}`,
@@ -48,25 +51,25 @@ const deleteUser = defineApiContract({
 
 ### Non-JSON responses
 
-Use `blobResponse` for any non-JSON response — text-based (plain text, CSV, HTML, XML, YAML, etc.) or binary (images, PDFs, etc.). It records the response `content-type` in the contract and hands the consumer a `Blob`, leaving the decode choice to the call site via `.text()`, `.arrayBuffer()`, or `.stream()`:
+Use `blobResponse` for any non-JSON response — text-based (plain text, CSV, HTML, XML, YAML, etc.) or binary (images, PDFs, etc.). It records the response `content-type` in the contract and hands the consumer the raw response body as a `ReadableStream<Uint8Array>`, so the caller can pipe it somewhere or aggregate it at the call site (`await new Response(body).blob()` / `.text()` / `.arrayBuffer()`):
 
 ```ts
 import { defineApiContract, blobResponse } from '@lokalise/api-contracts'
 
 const exportCsv = defineApiContract({
+  summary: 'Get user',
   method: 'get',
   pathResolver: () => '/export.csv',
   responsesByStatusCode: { 200: blobResponse('text/csv') },
 })
 
 const downloadPhoto = defineApiContract({
+  summary: 'Get user',
   method: 'get',
   pathResolver: () => '/photo.png',
   responsesByStatusCode: { 200: blobResponse('image/png') },
 })
 ```
-
-> **Deprecated:** `textResponse` is deprecated in favour of `blobResponse`. Both declare the same protocol fact (the response `content-type`); they differ only in whether the client materializes the body as `string` or `Blob` — a consumer concern, not part of the contract. Where a string is needed, call `.text()` on the returned `Blob`. `textResponse` will be removed in a future major release.
 
 ### Multiple content types
 
@@ -80,6 +83,7 @@ import { defineApiContract, blobBody, sseBody } from '@lokalise/api-contracts'
 import { z } from 'zod/v4'
 
 const downloadReport = defineApiContract({
+  summary: 'Get user',
   method: 'get',
   pathResolver: () => '/report',
   responsesByStatusCode: {
@@ -104,11 +108,6 @@ expose any number of media types (including several JSON variants). The shape ma
 OpenAPI Response Object. The matched media type is **not** surfaced on the client response; read it
 from `headers['content-type']` if you need to discriminate.
 
-> **Deprecated:** `anyOfResponses` is deprecated in favour of content maps. A flat list can't
-> declare multiple JSON media types, matches content-types by substring (false positives), and is
-> order-dependent — content maps fix all three. `anyOfResponses` still works and will be removed in
-> a future major release.
-
 ### SSE and dual-mode routes
 
 Use `sseResponse()` inside `responsesByStatusCode` for an SSE-only response. For a route that
@@ -121,6 +120,7 @@ import { z } from 'zod/v4'
 
 // SSE-only
 const notifications = defineApiContract({
+  summary: 'Get user',
   method: 'get',
   pathResolver: () => '/notifications/stream',
   responsesByStatusCode: {
@@ -132,6 +132,7 @@ const notifications = defineApiContract({
 
 // Dual-mode: JSON response or SSE stream depending on Accept header
 const chatCompletion = defineApiContract({
+  summary: 'Get user',
   method: 'post',
   pathResolver: () => '/chat/completions',
   requestBodySchema: z.object({ message: z.string() }),
@@ -161,6 +162,7 @@ import { z } from 'zod/v4'
 
 // '2xx' covers all 200–299 responses
 const listItems = defineApiContract({
+  summary: 'Get user',
   method: 'get',
   pathResolver: () => '/items',
   responsesByStatusCode: {
@@ -171,6 +173,7 @@ const listItems = defineApiContract({
 
 // exact code takes precedence over the range key
 const createItem = defineApiContract({
+  summary: 'Get user',
   method: 'post',
   pathResolver: () => '/items',
   requestBodySchema: z.object({ name: z.string() }),
@@ -182,6 +185,7 @@ const createItem = defineApiContract({
 
 // 'default' matches any status code not covered by a more specific entry
 const flexible = defineApiContract({
+  summary: 'Get user',
   method: 'get',
   pathResolver: () => '/data',
   responsesByStatusCode: {
@@ -204,6 +208,7 @@ import { defineApiContract, noBodyResponse, blobBody, sseBody } from '@lokalise/
 import { z } from 'zod/v4'
 
 const contract = defineApiContract({
+  summary: 'Get user',
   method: 'post',
   pathResolver: () => '/files',
   requestBodySchema: z.object({ name: z.string() }),
@@ -245,12 +250,14 @@ type ApiContractOptions = {
   // Required
   method: 'get' | 'post' | 'put' | 'patch' | 'delete'
   pathResolver: (pathParams: Record<string, string>) => string
+  // Human-readable summary; surfaced in fe/be http-client errors for debugging.
+  summary: string
   // Accepts exact codes, OpenAPI-style range keys ('1xx'–'5xx'), and a catch-all 'default'.
   // Lookup precedence at runtime: exact code → range key → 'default'.
   responsesByStatusCode: Partial<
     Record<
       HttpStatusCode | '1xx' | '2xx' | '3xx' | '4xx' | '5xx' | 'default',
-      z.ZodType | NoBodyResponse | TypedTextResponse | TypedBlobResponse | TypedSseResponse | AnyOfResponses
+      z.ZodType | ResponseEntry
     >
   >
 
@@ -266,7 +273,6 @@ type ApiContractOptions = {
   responseHeaderSchema?: z.ZodObject<z.ZodRawShape>
 
   // Documentation
-  summary?: string
   description?: string
   tags?: readonly string[]
   metadata?: Record<string, unknown>
@@ -277,6 +283,7 @@ type ApiContractOptions = {
 
 ```ts
 const contract = defineApiContract({
+  summary: 'Get user',
   method: 'get',
   pathResolver: () => '/api/data',
   requestHeaderSchema: z.object({
@@ -295,7 +302,7 @@ const contract = defineApiContract({
 
 ### Type utilities
 
-**`InferNonSseSuccessResponses<T>`** — TypeScript output type of all non-SSE 2xx responses. JSON schemas → `z.output<T>`, `textResponse` → `string`, `blobResponse` → `Blob`, `ContractNoBody`/`NoBodyResponse` → `undefined`, `sseResponse` → `never` (excluded). `anyOfResponses` and content-map entries are unpacked before mapping.
+**`InferNonSseSuccessResponses<T>`** — TypeScript output type of all non-SSE 2xx responses. JSON schemas → `z.output<T>`, a blob entry → `ReadableStream<Uint8Array>`, a no-body entry → `undefined`, an SSE entry → `never` (excluded). Content-map entries are unpacked before mapping.
 
 ```ts
 import type { InferNonSseSuccessResponses } from '@lokalise/api-contracts'
@@ -304,24 +311,22 @@ type UserResponse = InferNonSseSuccessResponses<typeof getUser['responsesByStatu
 // { id: string; name: string }
 
 type CsvResponse = InferNonSseSuccessResponses<typeof exportCsv['responsesByStatusCode']>
-// Blob
+// ReadableStream<Uint8Array>
 ```
 
-**`InferJsonSuccessResponses<T>`** — union of Zod schema types for all JSON 2xx entries. Text, Blob, SSE, and `ContractNoBody` entries are excluded.
+**`InferJsonSuccessResponses<T>`** — union of Zod schema types for all JSON 2xx entries. Blob, SSE, and no-body entries are excluded.
 
 **`InferSseSuccessResponses<T>`** — extracts the SSE event schema map type from a `responsesByStatusCode` map. Returns `never` when no SSE schemas are present.
 
-**`HasAnySseSuccessResponse<T>`** — `true` if any 2xx entry (exact code or `'2xx'` range key) is a `TypedSseResponse` or an `AnyOfResponses` containing one.
+**`HasAnySseSuccessResponse<T>`** — `true` if any 2xx entry (exact code or `'2xx'` range key) is an SSE response (a `sseResponse()` / content-map SSE descriptor).
 
-**`HasAnyJsonSuccessResponse<T>`** — `true` if any 2xx entry is a JSON Zod schema or an `AnyOfResponses` containing one.
+**`HasAnyJsonSuccessResponse<T>`** — `true` if any 2xx entry is a JSON Zod schema or a content-map JSON descriptor.
 
-**`HasAnyNonSseSuccessResponse<T>`** — `true` if any 2xx entry is a non-SSE response (JSON, text, blob, or no-body).
+**`HasAnyNonSseSuccessResponse<T>`** — `true` if any 2xx entry is a non-SSE response (JSON, blob, or no-body).
 
-**`IsNoBodySuccessResponse<T>`** — `true` when all 2xx entries are `ContractNoBody`/`NoBodyResponse` or no 2xx status codes are defined.
+**`ContractResponseMode<T>`** — classifies a contract into `'dual'` (SSE + non-SSE), `'sse'` (SSE-only), or `'non-sse'` (JSON/blob/no-body).
 
-**`ContractResponseMode<T>`** — classifies a contract into `'dual'` (SSE + non-SSE), `'sse'` (SSE-only), or `'non-sse'` (JSON/text/blob/no-body).
-
-**`AvailableResponseModes<T>`** — union of mode literals available for a contract: `'json' | 'sse' | 'blob' | 'text' | 'noContent'`.
+**`AvailableResponseModes<T>`** — union of mode literals available for a contract: `'json' | 'sse' | 'blob' | 'noContent'`.
 
 **`SseEventOf<S>`** — discriminated union of SSE events inferred from a `schemaByEventName` map. Aligns with the browser `MessageEvent` shape: `{ type, data, lastEventId, retry }`.
 
@@ -341,7 +346,7 @@ These types are primarily consumed by HTTP client implementations.
 
 **`InferSseClientResponse<TApiContract>`** — discriminated union of `{ statusCode, headers, body }` for SSE mode. Exact 2xx codes and the `'2xx'` range key yield `AsyncIterable<SseEventOf<...>>`; error codes, other range keys, and `'default'` yield the declared body type. `'default'` is split into a `SuccessfulHttpStatusCode` half and a non-success half.
 
-**`InferNonSseClientResponse<TApiContract>`** — same shape as above for non-SSE mode. Exact 2xx codes and the `'2xx'` range key yield JSON / `string` / `Blob` / `null` (SSE excluded); error codes, other range keys, and `'default'` yield the declared body type as-is. `'default'` is split the same way.
+**`InferNonSseClientResponse<TApiContract>`** — same shape as above for non-SSE mode. Exact 2xx codes and the `'2xx'` range key yield JSON / `ReadableStream<Uint8Array>` / `null` (SSE excluded); error codes, other range keys, and `'default'` yield the declared body type as-is. `'default'` is split the same way.
 
 **`DefaultStreaming<T>`** — `true` for SSE-only contracts, `false` for everything else.
 
@@ -381,25 +386,7 @@ import { describeApiContract } from '@lokalise/api-contracts'
 describeApiContract(getUser) // "GET /users/:userId"
 ```
 
-**`getSuccessResponseSchema`** *(deprecated — no known consumers, will be removed in a future release)* — merged Zod schema from all 2xx JSON entries. `ContractNoBody`/`NoBodyResponse` and non-JSON entries are excluded. Returns `null` when no schema is present.
-
-```ts
-import { getSuccessResponseSchema } from '@lokalise/api-contracts'
-
-getSuccessResponseSchema(getUser)    // ZodObject
-getSuccessResponseSchema(deleteUser) // null
-```
-
-**`getIsEmptyResponseExpected`** *(deprecated — no known consumers, will be removed in a future release)* — `true` when no Zod schema exists among 2xx entries.
-
-```ts
-import { getIsEmptyResponseExpected } from '@lokalise/api-contracts'
-
-getIsEmptyResponseExpected(deleteUser) // true
-getIsEmptyResponseExpected(getUser)    // false
-```
-
-**`hasAnySuccessSseResponse`** — `true` when any 2xx entry (exact code or `'2xx'` range key) is an SSE response (including inside `anyOfResponses` or a content map).
+**`hasAnySuccessSseResponse`** — `true` when any 2xx entry (exact code or `'2xx'` range key) is an SSE response (including inside a content map).
 
 ```ts
 import { hasAnySuccessSseResponse } from '@lokalise/api-contracts'
@@ -446,6 +433,7 @@ Currently, HTTP clients default to `application/json` when a request body is pre
 
 ```ts
 defineApiContract({
+  summary: 'Get user',
   method: 'post',
   pathResolver: () => '/upload',
   requestBodySchema: z.object({ file: z.unknown() }),
