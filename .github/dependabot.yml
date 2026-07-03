@@ -39,3 +39,6 @@ updates:
       opentelemetry:
         patterns:
           - "@opentelemetry/*"
+      aws-sdk:
+        patterns:
+          - "@aws-sdk/*"
