@@ -1,5 +1,11 @@
 # @lokalise/background-jobs-common
 
+## 14.4.2
+
+### Patch Changes
+
+- 9f48046: Update dependencies, including `@lokalise/node-core` to 14.8.1 and `redis-semaphore` to 5.7.0.
+
 ## 14.4.1
 
 ### Patch Changes
