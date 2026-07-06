@@ -1,5 +1,11 @@
 # @lokalise/fastify-bullboard-plugin
 
+## 2.3.1
+
+### Patch Changes
+
+- cb71fd6: Retrigger release after fixing the changesets publish step, which failed with EBADDEVENGINES when npm validated the pnpm devEngines constraint.
+
 ## 2.3.0
 
 ### Minor Changes
