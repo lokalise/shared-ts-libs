@@ -73,9 +73,10 @@ describe('MswHelper', () => {
     })
 
     it('enforces POST request with path params contract', async () => {
-      // @ts-expect-error this should fail - wrong properties
       mswHelper.mockValidResponse(postContractWithPathParams, server, {
+        // @ts-expect-error this should fail - wrong properties
         pathParams: { userId: '3', invalid: 'invalid' },
+        // @ts-expect-error this should fail - wrong properties
         responseBody: { id: '2', invalidField: 'frfr' },
       })
 
@@ -454,17 +455,17 @@ describe('MswHelper', () => {
     })
 
     it('enforces dual-mode event name type safety', () => {
-      // @ts-expect-error invalid event name
       mswHelper.mockValidResponseWithImplementation(sseDualModeContract, server, {
         handleRequest: async () => ({ id: '1' }),
+        // @ts-expect-error invalid event name
         events: [{ event: 'nonexistent.event', data: { items: [{ id: '1' }] } }],
       })
     })
 
     it('enforces dual-mode event data type safety', () => {
-      // @ts-expect-error wrong data shape for completed
       mswHelper.mockValidResponseWithImplementation(sseDualModeContract, server, {
         handleRequest: async () => ({ id: '1' }),
+        // @ts-expect-error wrong data shape for completed
         events: [{ event: 'completed', data: { wrongField: 'value' } }],
       })
     })
@@ -733,8 +734,8 @@ describe('MswHelper', () => {
 
     it('validates response body against schema', () => {
       expect(() =>
-        // @ts-expect-error wrong response body shape
         mswHelper.mockValidResponse(sseDualModeContract, server, {
+          // @ts-expect-error wrong response body shape
           responseBody: { wrongField: 'value' },
           events: [],
         }),
@@ -764,9 +765,9 @@ describe('MswHelper', () => {
     })
 
     it('enforces event type safety', () => {
-      // @ts-expect-error invalid event name
       mswHelper.mockValidResponse(sseDualModeContract, server, {
         responseBody: { id: '1' },
+        // @ts-expect-error invalid event name
         events: [{ event: 'nonexistent.event', data: { items: [{ id: '1' }] } }],
       })
     })

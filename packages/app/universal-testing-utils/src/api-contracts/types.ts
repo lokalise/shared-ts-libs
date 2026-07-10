@@ -65,9 +65,11 @@ type InferBodyParam<T> = T extends symbol
               ? (Extract<Items, z.ZodType> extends never
                   ? object
                   : { responseJson: z.input<Extract<Items, z.ZodType>> }) &
+                  // biome-ignore lint/suspicious/noExplicitAny: it is ok
                   ([Extract<Items, TypedSseResponse<any>>] extends [never]
                     ? object
-                    : Extract<Items, TypedSseResponse<any>> extends TypedSseResponse<
+                    : // biome-ignore lint/suspicious/noExplicitAny: it is ok
+                      Extract<Items, TypedSseResponse<any>> extends TypedSseResponse<
                           infer S extends SseSchemaByEventName
                         >
                       ? { events: SseMockEventInput<S>[] }
