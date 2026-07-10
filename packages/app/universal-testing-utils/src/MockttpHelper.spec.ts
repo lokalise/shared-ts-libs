@@ -47,8 +47,8 @@ describe('MockttpHelper', () => {
     })
 
     it('enforces POST contract', async () => {
-      // @ts-expect-error this should fail - wrong property
       await mockttpHelper.mockValidResponse(postContract, {
+        // @ts-expect-error this should fail - wrong property
         responseBody: { id: '1', wrong: 'wrong' },
       })
 
@@ -458,8 +458,8 @@ describe('MockttpHelper', () => {
 
     it('validates response body against schema', async () => {
       await expect(
-        // @ts-expect-error wrong response body shape
         mockttpHelper.mockValidResponse(sseDualModeContract, {
+          // @ts-expect-error wrong response body shape
           responseBody: { wrongField: 'value' },
           events: [],
         }),
@@ -467,9 +467,9 @@ describe('MockttpHelper', () => {
     })
 
     it('enforces event type safety', async () => {
-      // @ts-expect-error invalid event name
       await mockttpHelper.mockValidResponse(sseDualModeContract, {
         responseBody: { id: '1' },
+        // @ts-expect-error invalid event name
         events: [{ event: 'nonexistent.event', data: { items: [{ id: '1' }] } }],
       })
     })
