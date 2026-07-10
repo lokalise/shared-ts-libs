@@ -59,7 +59,7 @@
         "@vitest/coverage-v8": "^4.1.9",
         "fastify-type-provider-zod": "^6.1.0",
         "rimraf": "^6.1.2",
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
         "vitest": "^4.1.9",
         "zod": "^4.3.6"
     }

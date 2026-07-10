@@ -51,6 +51,6 @@
         "@lokalise/tsconfig": "workspace:^",
         "dd-trace": "^5.108.0",
         "rimraf": "^6.1.2",
-        "typescript": "6.0.3"
+        "typescript": "7.0.2"
     }
 }
