@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/fastify-bullboard-plugin",
-    "version": "2.2.3",
+    "version": "2.3.1",
     "type": "module",
     "files": [
         "dist",
@@ -29,8 +29,8 @@
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
-        "@bull-board/api": "^7.1.5",
-        "@bull-board/fastify": "^7.1.5",
+        "@bull-board/api": "^8.1.0",
+        "@bull-board/fastify": "^8.1.0",
         "@fastify/auth": "^5.0.4",
         "@fastify/basic-auth": "^6.2.0",
         "@lokalise/tsconfig": "workspace:^"
@@ -39,22 +39,22 @@
         "@lokalise/background-jobs-common": ">=12.6.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.5.0",
+        "@biomejs/biome": "^2.5.2",
         "@fastify/awilix": "^8.0.0",
         "@fastify/schedule": "^6.0.0",
         "@lokalise/background-jobs-common": "workspace:^",
         "@lokalise/biome-config": "workspace:^",
-        "@lokalise/fastify-extras": "^31.0.0",
+        "@lokalise/fastify-extras": "^31.0.1",
         "@lokalise/node-core": "^14.1.0",
-        "@types/node": "^25.9.3",
+        "@types/node": "^26.1.0",
         "@vitest/coverage-v8": "^4.1.9",
         "awilix": "^13.0.5",
         "awilix-manager": "^7.0.0",
-        "bullmq": "5.78.1",
+        "bullmq": "5.79.2",
         "cross-env": "^10.0.0",
-        "fastify": "^5.7.4",
-        "fastify-graceful-shutdown": "^4.0.1",
-        "fastify-metrics": "^13.2.0",
+        "fastify": "^5.10.0",
+        "fastify-graceful-shutdown": "^5.0.0",
+        "fastify-metrics": "^13.2.1",
         "fastify-plugin": "^6.0.0",
         "ioredis": "^5.11.1",
         "pino": "^10.1.0",
@@ -62,7 +62,7 @@
         "rimraf": "^6.1.3",
         "toad-scheduler": "^4.0.1",
         "ts-deepmerge": "^8.0.0",
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
         "vitest": "^4.1.9"
     },
     "keywords": [
