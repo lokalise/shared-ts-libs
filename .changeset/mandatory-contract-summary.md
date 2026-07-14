@@ -2,6 +2,7 @@
 "@lokalise/api-contracts": major
 "@lokalise/frontend-http-client": major
 "@lokalise/backend-http-client": major
+"@lokalise/fastify-api-contracts": patch
 ---
 
 Make the contract `summary` field mandatory on `defineApiContract`, and surface it in the http-client `UnexpectedResponseError` for debugging.
