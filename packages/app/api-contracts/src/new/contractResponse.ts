@@ -40,6 +40,27 @@ export type BlobBody = {
 
 export const blobBody = (): BlobBody => ({ _tag: 'BlobBody' })
 
+/**
+ * Lazy, single-consume accessor over a `blobResponse()` body — the client-side value a blob
+ * response resolves to. Mirrors the accessor surface of Fetch's `Response`/`Blob`.
+ *
+ * The underlying body is a one-shot stream: the first accessor you call consumes it; calling a
+ * second throws. Pick one. Draining the body (any accessor except a lazy `stream()`, or `cancel()`)
+ * is also what releases the connection — a handle you never touch keeps it open.
+ */
+export interface BlobResponseHandle {
+  /** Raw stream, for piping/backpressure. You own draining or cancelling it. */
+  stream(): ReadableStream<Uint8Array>
+  /** Buffer the whole body into a `Blob`. The common case; echoes `blobResponse()`. */
+  blob(): Promise<Blob>
+  /** Buffer the whole body and decode it as UTF-8 text. */
+  text(): Promise<string>
+  /** Buffer the whole body into an `ArrayBuffer`. */
+  arrayBuffer(): Promise<ArrayBuffer>
+  /** Discard the body without materializing it, releasing the connection. */
+  cancel(): Promise<void>
+}
+
 export const isBlobBody = (value: BodyDescriptor): value is BlobBody =>
   typeof value === 'object' && value !== null && '_tag' in value && value._tag === 'BlobBody'
 

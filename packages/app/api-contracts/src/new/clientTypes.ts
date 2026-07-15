@@ -8,7 +8,11 @@ import type {
   WildcardStatusCodeKey,
 } from '../HttpStatusCodes.ts'
 import type { Prettify } from '../typeUtils.ts'
-import type { ResponsesByStatusCode, SseSchemaByEventName } from './contractResponse.ts'
+import type {
+  BlobResponseHandle,
+  ResponsesByStatusCode,
+  SseSchemaByEventName,
+} from './contractResponse.ts'
 import type { ApiContract } from './defineApiContract.ts'
 import type { ContractResponseMode, SseEventOf } from './inferTypes.ts'
 
@@ -61,8 +65,8 @@ type InferClientResponseBody<T> = T extends z.ZodType ? InferSchemaOutput<T> : n
 /**
  * Like InferClientResponseBody but returns only SSE bodies — non-SSE entries resolve to never.
  */
-// An SSE body is the only response body that async-iterates event objects. A blob body is also
-// async-iterable (a ReadableStream), so SSE is discriminated by the SSE event's `lastEventId`.
+// An SSE body is the only response body that async-iterates event objects (a blob body resolves to
+// a non-iterable `BlobResponseHandle`), so SSE is discriminated by the SSE event's `lastEventId`.
 type SseBodyShape = AsyncIterable<{ lastEventId: string }>
 
 type SseInferClientResponseBody<T> = Extract<InferClientResponseBody<T>, SseBodyShape>
@@ -73,7 +77,7 @@ type SseInferClientResponseBody<T> = Extract<InferClientResponseBody<T>, SseBody
 type NonSseInferClientResponseBody<T> = Exclude<InferClientResponseBody<T>, SseBodyShape>
 
 type InferContentDescriptorBody<TDescriptor> = TDescriptor extends { _tag: 'BlobBody' }
-  ? ReadableStream<Uint8Array>
+  ? BlobResponseHandle
   : TDescriptor extends { _tag: 'SseBody'; schemaByEventName: infer S extends SseSchemaByEventName }
     ? AsyncIterable<SseEventOf<S>>
     : TDescriptor extends z.ZodType

@@ -1,4 +1,10 @@
-import { blobBody, defineApiContract, noBodyResponse, sseBody } from '@lokalise/api-contracts'
+import {
+  type BlobResponseHandle,
+  blobBody,
+  defineApiContract,
+  noBodyResponse,
+  sseBody,
+} from '@lokalise/api-contracts'
 import { getLocal } from 'mockttp'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import wretch from 'wretch'
@@ -544,7 +550,7 @@ describe('sendByApiContract', () => {
   })
 
   describe('blob', () => {
-    it('returns a readable stream body for a blob response', async () => {
+    it('returns a lazy body handle for a blob response', async () => {
       const contract = defineApiContract({
         summary: 'Test contract',
         method: 'get',
@@ -560,9 +566,27 @@ describe('sendByApiContract', () => {
 
       const result = await sendByApiContract(buildClient(), contract, {})
 
-      expectTypeOf(result.result).toMatchTypeOf<{ body: ReadableStream<Uint8Array> } | undefined>()
-      const blob = await new Response(result.result?.body).blob()
+      expectTypeOf(result.result).toMatchTypeOf<{ body: BlobResponseHandle } | undefined>()
+      const blob = await result.result!.body.blob()
       expect(blob.size).toBe(4)
+    })
+
+    it('throws when the body handle is consumed twice', async () => {
+      const contract = defineApiContract({
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/photo.png',
+        responsesByStatusCode: { 200: { content: { 'image/png': blobBody() } } },
+      })
+
+      await mockServer
+        .forGet('/photo.png')
+        .thenReply(200, Buffer.from([0x89, 0x50]), { 'content-type': 'image/png' })
+
+      const result = await sendByApiContract(buildClient(), contract, {})
+
+      await result.result!.body.blob()
+      expect(() => result.result!.body.text()).toThrow('Response body already consumed')
     })
   })
 

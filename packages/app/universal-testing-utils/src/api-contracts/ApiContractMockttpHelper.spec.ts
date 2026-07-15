@@ -245,7 +245,7 @@ describe('ApiContractMockttpHelper', () => {
         responseBlob: 'binary-data',
       })
       const result = await sendByApiContract(client(), blobContentApiContract, {})
-      expect(await new Response(result.result?.body).text()).toBe('binary-data')
+      expect(await result.result!.body.text()).toBe('binary-data')
     })
 
     it('mocks an SSE content entry', async () => {

@@ -1,6 +1,7 @@
 import { Readable } from 'node:stream'
 import {
   type ApiContract,
+  type BlobResponseHandle,
   buildRequestPath,
   type ClientRequestParams,
   type DefaultStreaming,
@@ -176,6 +177,31 @@ async function* parseSseStream(
   }
 }
 
+/**
+ * Wraps an undici response body in a lazy, single-consume {@link BlobResponseHandle}. The
+ * materializing accessors delegate to undici's own `blob()`/`text()`/`arrayBuffer()` — the
+ * first-class drains that also release the connection back to the pool — rather than routing bytes
+ * through a `new Response(Readable.toWeb(body))` round-trip. `cancel()` maps to `dump()`, undici's
+ * "discard and release" path, so the leak-prone "forgot to consume" case has a discoverable verb.
+ */
+function toBlobHandle(body: Dispatcher.ResponseData['body']): BlobResponseHandle {
+  let consumed = false
+  const guard = <T>(read: () => T): T => {
+    if (consumed) {
+      throw new Error('Response body already consumed')
+    }
+    consumed = true
+    return read()
+  }
+  return {
+    stream: () => guard(() => Readable.toWeb(body)),
+    blob: () => guard(() => body.blob()),
+    text: () => guard(() => body.text()),
+    arrayBuffer: () => guard(() => body.arrayBuffer()),
+    cancel: () => guard(() => body.dump()),
+  }
+}
+
 async function parseBody(body: Dispatcher.ResponseData['body'], resolvedEntry: ResponseKind) {
   switch (resolvedEntry.kind) {
     case 'noContent': {
@@ -183,9 +209,9 @@ async function parseBody(body: Dispatcher.ResponseData['body'], resolvedEntry: R
       return null
     }
     case 'blob': {
-      // Hand back the raw stream; the caller decides whether to pipe it or aggregate it
-      // (e.g. `await new Response(body).blob()` / `.text()` / `.arrayBuffer()`).
-      return Readable.toWeb(body)
+      // Hand back a lazy handle; the caller decides whether to pipe the raw stream or aggregate it
+      // (e.g. `await body.blob()` / `.text()` / `.arrayBuffer()`).
+      return toBlobHandle(body)
     }
     case 'json': {
       const json = await body.json()

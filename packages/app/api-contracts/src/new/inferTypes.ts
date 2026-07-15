@@ -1,7 +1,11 @@
 import type { z } from 'zod/v4'
 import type { SuccessfulHttpStatusCode } from '../HttpStatusCodes.ts'
 import type { ValueOf } from '../typeUtils.ts'
-import type { ResponseEntry, ResponsesByStatusCode } from './contractResponse.ts'
+import type {
+  BlobResponseHandle,
+  ResponseEntry,
+  ResponsesByStatusCode,
+} from './contractResponse.ts'
 
 type ExtractSuccessResponses<T extends ResponsesByStatusCode> = ValueOf<
   T,
@@ -49,14 +53,14 @@ export type InferJsonSuccessResponses<T extends ResponsesByStatusCode> = JsonSch
 type NonSseBodyOf<T> = T extends { _tag: 'SseBody' }
   ? never
   : T extends { _tag: 'BlobBody' }
-    ? ReadableStream<Uint8Array>
+    ? BlobResponseHandle
     : T extends z.ZodType
       ? z.output<T>
       : undefined
 
 /**
  * Infers the TypeScript output type of all non-SSE success responses.
- * JSON schemas → z.output<T>. A blob entry → ReadableStream<Uint8Array>. A no-body entry → undefined.
+ * JSON schemas → z.output<T>. A blob entry → BlobResponseHandle. A no-body entry → undefined.
  * An SSE entry → never (excluded). Content-map entries are unpacked before mapping.
  */
 export type InferNonSseSuccessResponses<T extends ResponsesByStatusCode> = NonSseBodyOf<

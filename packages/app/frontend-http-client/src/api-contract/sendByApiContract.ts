@@ -1,5 +1,6 @@
 import {
   type ApiContract,
+  type BlobResponseHandle,
   buildRequestPath,
   type ClientRequestParams,
   type DefaultStreaming,
@@ -126,14 +127,41 @@ async function* parseSseStream(
   }
 }
 
+/**
+ * Wraps a Fetch {@link Response} — which already implements the accessor surface — in a lazy,
+ * single-consume {@link BlobResponseHandle}. The guard makes the one-shot nature explicit: the
+ * first accessor claims the body, a second throws instead of surfacing Fetch's less obvious
+ * "body already used" error.
+ */
+function toBlobHandle(response: Response): BlobResponseHandle {
+  let consumed = false
+  const guard = <T>(read: () => T): T => {
+    if (consumed) {
+      throw new Error('Response body already consumed')
+    }
+    consumed = true
+    return read()
+  }
+  return {
+    stream: () =>
+      guard(
+        () => response.body ?? new ReadableStream({ start: (controller) => controller.close() }),
+      ),
+    blob: () => guard(() => response.blob()),
+    text: () => guard(() => response.text()),
+    arrayBuffer: () => guard(() => response.arrayBuffer()),
+    cancel: () => guard(() => response.body?.cancel() ?? Promise.resolve()),
+  }
+}
+
 async function parseBody(response: Response, resolvedEntry: ResponseKind) {
   switch (resolvedEntry.kind) {
     case 'noContent':
       return null
     case 'blob':
-      // Hand back the raw stream; the caller decides whether to pipe it or aggregate it
-      // (e.g. `await new Response(body).blob()` / `.text()` / `.arrayBuffer()`).
-      return response.body
+      // Hand back a lazy handle; the caller decides whether to pipe the raw stream or aggregate it
+      // (e.g. `await body.blob()` / `.text()` / `.arrayBuffer()`).
+      return toBlobHandle(response)
     case 'json': {
       const json = await response.json()
       return resolvedEntry.schema.parse(json)

@@ -12,6 +12,7 @@ import type {
   InferNonSseClientResponse,
   InferSseClientResponse,
 } from './clientTypes.ts'
+import type { BlobResponseHandle } from './contractResponse.ts'
 import { blobBody, noBodyResponse, sseBody } from './contractResponse.ts'
 import { defineApiContract } from './defineApiContract.ts'
 
@@ -272,7 +273,7 @@ describe('clientTypes', () => {
       expectTypeOf<Result>().toEqualTypeOf<{
         statusCode: 200
         headers: DefaultHeaders
-        body: ReadableStream<Uint8Array>
+        body: BlobResponseHandle
       }>()
     })
 

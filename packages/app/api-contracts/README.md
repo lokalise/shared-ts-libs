@@ -51,7 +51,7 @@ const deleteUser = defineApiContract({
 
 ### Non-JSON responses
 
-Use `blobResponse` for any non-JSON response — text-based (plain text, CSV, HTML, XML, YAML, etc.) or binary (images, PDFs, etc.). It records the response `content-type` in the contract and hands the consumer the raw response body as a `ReadableStream<Uint8Array>`, so the caller can pipe it somewhere or aggregate it at the call site (`await new Response(body).blob()` / `.text()` / `.arrayBuffer()`):
+Use `blobResponse` for any non-JSON response — text-based (plain text, CSV, HTML, XML, YAML, etc.) or binary (images, PDFs, etc.). It records the response `content-type` in the contract and hands the consumer a lazy `BlobResponseHandle`, so the caller decides how to consume the body — aggregate it (`await body.blob()` / `.text()` / `.arrayBuffer()`), pipe the raw `body.stream()`, or `body.cancel()` it. The body is one-shot: the first accessor consumes it, a second throws.
 
 ```ts
 import { defineApiContract, blobResponse } from '@lokalise/api-contracts'
@@ -302,7 +302,7 @@ const contract = defineApiContract({
 
 ### Type utilities
 
-**`InferNonSseSuccessResponses<T>`** — TypeScript output type of all non-SSE 2xx responses. JSON schemas → `z.output<T>`, a blob entry → `ReadableStream<Uint8Array>`, a no-body entry → `undefined`, an SSE entry → `never` (excluded). Content-map entries are unpacked before mapping.
+**`InferNonSseSuccessResponses<T>`** — TypeScript output type of all non-SSE 2xx responses. JSON schemas → `z.output<T>`, a blob entry → `BlobResponseHandle`, a no-body entry → `undefined`, an SSE entry → `never` (excluded). Content-map entries are unpacked before mapping.
 
 ```ts
 import type { InferNonSseSuccessResponses } from '@lokalise/api-contracts'
@@ -311,7 +311,7 @@ type UserResponse = InferNonSseSuccessResponses<typeof getUser['responsesByStatu
 // { id: string; name: string }
 
 type CsvResponse = InferNonSseSuccessResponses<typeof exportCsv['responsesByStatusCode']>
-// ReadableStream<Uint8Array>
+// BlobResponseHandle
 ```
 
 **`InferJsonSuccessResponses<T>`** — union of Zod schema types for all JSON 2xx entries. Blob, SSE, and no-body entries are excluded.
@@ -346,7 +346,7 @@ These types are primarily consumed by HTTP client implementations.
 
 **`InferSseClientResponse<TApiContract>`** — discriminated union of `{ statusCode, headers, body }` for SSE mode. Exact 2xx codes and the `'2xx'` range key yield `AsyncIterable<SseEventOf<...>>`; error codes, other range keys, and `'default'` yield the declared body type. `'default'` is split into a `SuccessfulHttpStatusCode` half and a non-success half.
 
-**`InferNonSseClientResponse<TApiContract>`** — same shape as above for non-SSE mode. Exact 2xx codes and the `'2xx'` range key yield JSON / `ReadableStream<Uint8Array>` / `null` (SSE excluded); error codes, other range keys, and `'default'` yield the declared body type as-is. `'default'` is split the same way.
+**`InferNonSseClientResponse<TApiContract>`** — same shape as above for non-SSE mode. Exact 2xx codes and the `'2xx'` range key yield JSON / `BlobResponseHandle` / `null` (SSE excluded); error codes, other range keys, and `'default'` yield the declared body type as-is. `'default'` is split the same way.
 
 **`DefaultStreaming<T>`** — `true` for SSE-only contracts, `false` for everything else.
 
