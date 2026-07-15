@@ -63,9 +63,7 @@ export const stringifyLocale = (obj: LocaleObject): Locale =>
  * @throws {RangeError} If locale is structurally invalid or values are not in our supported values
  */
 export const parseLocale = (tag: Locale): Either<string, LocaleObject> => {
-  if (!isSupportedLocale(tag)) {
-    return { error: `Locale tag ${tag} is not supported` }
-  }
+  if (!isSupportedLocale(tag)) return { error: `Locale tag ${tag} is not supported` }
 
   const { language, script, region } = new Intl.Locale(tag)
 
