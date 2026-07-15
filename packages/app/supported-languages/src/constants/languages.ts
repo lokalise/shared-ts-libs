@@ -1,4 +1,3 @@
-/* eslint-disable max-lines -- irrelevant here */
 /**
  * List of all languages supported by CLDR43
  *
