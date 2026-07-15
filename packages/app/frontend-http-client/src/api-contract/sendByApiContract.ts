@@ -134,6 +134,15 @@ async function* parseSseStream(
  * "body already used" error.
  */
 function toBlobHandle(response: Response): BlobResponseHandle {
+  // A materialized fetch response always exposes a body stream; this only narrows the
+  // `ReadableStream | null` type and is unreachable in practice.
+  /* v8 ignore start */
+  if (!response.body) {
+    throw new Error('Response body is null')
+  }
+  /* v8 ignore stop */
+  const stream = response.body
+
   let consumed = false
   const guard = <T>(read: () => T): T => {
     if (consumed) {
@@ -142,30 +151,12 @@ function toBlobHandle(response: Response): BlobResponseHandle {
     consumed = true
     return read()
   }
-  // A materialized fetch response always exposes a body stream; the `!response.body` branches below
-  // only satisfy the `ReadableStream | null` type and are unreachable in practice.
   return {
-    stream: () =>
-      guard(() => {
-        /* v8 ignore start */
-        if (!response.body) {
-          return new ReadableStream({ start: (controller) => controller.close() })
-        }
-        /* v8 ignore stop */
-        return response.body
-      }),
+    stream: () => guard(() => stream),
     blob: () => guard(() => response.blob()),
     text: () => guard(() => response.text()),
     arrayBuffer: () => guard(() => response.arrayBuffer()),
-    cancel: () =>
-      guard(() => {
-        /* v8 ignore start */
-        if (!response.body) {
-          return Promise.resolve()
-        }
-        /* v8 ignore stop */
-        return response.body.cancel()
-      }),
+    cancel: () => guard(() => stream.cancel()),
   }
 }
 
