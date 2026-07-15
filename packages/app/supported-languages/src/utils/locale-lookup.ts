@@ -1,4 +1,4 @@
-import { standardLocales } from './constants/standard-locales.ts'
+import { standardLocales } from '../constants/standard-locales.ts'
 
 /**
  * Get common regions for a language, based on our standard locales.
