@@ -1,8 +1,8 @@
-import { languages } from './constants/languages.ts'
-import { regions } from './constants/regions.ts'
-import { rtlLanguages } from './constants/rtl-languages.ts'
-import { scripts } from './constants/scripts.ts'
-import { standardLocales } from './constants/standard-locales.ts'
+import { languages } from '../constants/languages.ts'
+import { regions } from '../constants/regions.ts'
+import { rtlLanguages } from '../constants/rtl-languages.ts'
+import { scripts } from '../constants/scripts.ts'
+import { standardLocales } from '../constants/standard-locales.ts'
 import type { Either } from './either.ts'
 
 /**
