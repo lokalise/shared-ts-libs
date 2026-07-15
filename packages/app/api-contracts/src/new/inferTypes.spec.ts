@@ -362,6 +362,24 @@ describe('inferTypes', () => {
       type Result = ContractResponseMode<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<Result>().toEqualTypeOf<'non-sse'>()
     })
+
+    it('returns dual for a content map carrying both JSON and SSE', () => {
+      const contract = defineApiContract({
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: {
+          200: {
+            content: {
+              'application/json': z.object({ latest: z.string() }),
+              'text/event-stream': sseBody({ update: z.object({ id: z.string() }) }),
+            },
+          },
+        },
+      })
+      type Result = ContractResponseMode<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<Result>().toEqualTypeOf<'dual'>()
+    })
   })
 
   describe('AvailableResponseModes', () => {

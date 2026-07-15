@@ -148,6 +148,26 @@ describe('clientTypes', () => {
         never | undefined
       >()
     })
+
+    it('requires streaming (= TIsStreaming) for dual-mode content-map contracts', () => {
+      const contract = defineApiContract({
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/feed',
+        responsesByStatusCode: {
+          200: {
+            content: {
+              'application/json': z.object({ latest: z.string() }),
+              'text/event-stream': sseBody({ update: z.object({ id: z.string() }) }),
+            },
+          },
+        },
+      })
+      expectTypeOf<ClientRequestParams<typeof contract, true>['streaming']>().toEqualTypeOf<true>()
+      expectTypeOf<
+        ClientRequestParams<typeof contract, false>['streaming']
+      >().toEqualTypeOf<false>()
+    })
   })
 
   describe('InferSseClientResponse', () => {
@@ -177,6 +197,33 @@ describe('clientTypes', () => {
           }
         | { statusCode: 404; headers: DefaultHeaders; body: { message: string } }
       >()
+    })
+
+    it('extracts only the SSE body for a dual-mode success code', () => {
+      const contract = defineApiContract({
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/events',
+        responsesByStatusCode: {
+          200: {
+            content: {
+              'application/json': z.object({ text: z.string() }),
+              'text/event-stream': sseBody({ chunk: z.object({ delta: z.string() }) }),
+            },
+          },
+        },
+      })
+      type Result = InferSseClientResponse<typeof contract>
+      expectTypeOf<Result>().toEqualTypeOf<{
+        statusCode: 200
+        headers: DefaultHeaders
+        body: AsyncIterable<{
+          type: 'chunk'
+          data: { delta: string }
+          lastEventId: string
+          retry: number | undefined
+        }>
+      }>()
     })
 
     it('returns a single entry for an SSE-only contract', () => {
@@ -274,6 +321,28 @@ describe('clientTypes', () => {
         statusCode: 200
         headers: DefaultHeaders
         body: BlobResponseHandle
+      }>()
+    })
+
+    it('maps a dual-mode success code to the non-SSE body only', () => {
+      const contract = defineApiContract({
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/events',
+        responsesByStatusCode: {
+          200: {
+            content: {
+              'application/json': z.object({ text: z.string() }),
+              'text/event-stream': sseBody({ chunk: z.object({ delta: z.string() }) }),
+            },
+          },
+        },
+      })
+      type Result = InferNonSseClientResponse<typeof contract>
+      expectTypeOf<Result>().toEqualTypeOf<{
+        statusCode: 200
+        headers: DefaultHeaders
+        body: { text: string }
       }>()
     })
 
