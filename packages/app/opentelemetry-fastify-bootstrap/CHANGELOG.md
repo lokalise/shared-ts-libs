@@ -1,5 +1,11 @@
 # @lokalise/opentelemetry-fastify-bootstrap
 
+## 3.1.0
+
+### Minor Changes
+
+- 6ecf25c: Added optional `dbNamespaceBySystem` option to `initOpenTelemetry` (e.g. `dbNamespaceBySystem: { elasticsearch: 'lokalise' }`). When configured, the Datadog-bound trace exporter is wrapped so matching outbound DB spans (by `db.system`) carry the OTel-canonical `db.namespace` in the export payload. Datadog adds the `peer.*` prefix itself (deriving `peer.db.name` from `db.namespace` and `peer.db.system` from `db.system`), so only the vendor-neutral short-form attribute is set. This joins those spans to Datadog's existing inferred-service entity for the cluster — useful for the Node.js `@elastic/transport` v8 client, which sets `db.system: elasticsearch` but never `db.namespace`, leaving outbound ES calls in Datadog's synthetic `blocked-ip-address` bucket. Only the export payload is shaped (via a non-mutating view of the span), so other processors/exporters still see the unmodified span. `DbNamespaceSpanExporter` is exported for wrapping an exporter directly.
+
 ## 3.0.0
 
 ### Major Changes

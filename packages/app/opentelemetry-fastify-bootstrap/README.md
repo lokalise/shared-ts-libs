@@ -66,6 +66,7 @@ initOpenTelemetry()
 | `skippedPaths` | `string[]` | `['/health', '/metrics', '/']` | Paths to exclude from tracing |
 | `consoleSpans` | `boolean` | `false` | Enable console span exporter for debugging |
 | `spanProcessors` | `SpanProcessor[]` | `[]` | Additional span processors to register |
+| `dbNamespaceBySystem` | `Record<string, string>` | `undefined` | Maps `db.system` values to the `db.namespace` to report for them. When set, the Datadog-bound trace exporter is wrapped so matching outbound DB spans carry `db.namespace` in the export payload, joining them to Datadog's existing inferred-service entity for the cluster. The shared span is left untouched. See [Joining a Datadog inferred-service entity](#joining-a-datadog-inferred-service-entity). |
 
 ### Debugging with Console Spans
 
@@ -80,6 +81,32 @@ initOpenTelemetry({
 ```
 
 When enabled, spans are printed to the console in addition to being sent to the OTLP exporter. This is useful for verifying that instrumentation is working correctly without needing to run a full observability stack.
+
+### Joining a Datadog inferred-service entity
+
+Datadog's APM service catalog auto-creates inferred-service entities for downstream clusters from peer tags such as `peer.db.system` and `peer.db.name`, deriving `peer.db.name` from the OTel-canonical `db.namespace` (see the [peer-tags precedence list](https://docs.datadoghq.com/tracing/services/inferred_services/?tab=agentv7600#peer-tags) for the authoritative set). When no usable peer tag is present, Datadog falls back to `peer.hostname` — and downstream clusters reached by raw IP (e.g. an Elasticsearch cluster on EC2 addressed by IP) then surface as the synthetic `blocked-ip-address` service in the dependency map.
+
+Some instrumentations don't set `db.namespace`. Notably the Node.js `@elastic/transport` (v8 Elasticsearch client) sets `db.system: elasticsearch` but never `db.namespace`, so outbound ES calls don't join the existing cluster entity.
+
+Pass `dbNamespaceBySystem` to add `db.namespace` based on `db.system`:
+
+```ts
+initOpenTelemetry({
+  dbNamespaceBySystem: { elasticsearch: 'lokalise' },
+})
+```
+
+For every span where `db.system: elasticsearch`, the exported payload gains:
+
+- `db.namespace: lokalise` — the OTel-canonical, vendor-neutral attribute.
+
+Datadog adds the `peer.*` prefix itself, deriving `peer.db.name` from `db.namespace` and `peer.db.system` from `db.system`, so we only set the short-form attribute and never write `peer.*` tags directly. See [Datadog peer tags](https://docs.datadoghq.com/tracing/services/inferred_services/?tab=agentv7600#peer-tags).
+
+#### Why an exporter, not a span processor
+
+A constant such as `lokalise` is a Datadog entity-keying heuristic, not the span's true OTel `db.namespace`. Rather than mutate the single `ReadableSpan` shared by every processor and exporter — which would make any other consumer (a different dashboard, OTel-native tooling) read `lokalise` as the real namespace — `dbNamespaceBySystem` wraps **only** the Datadog-bound exporter. The attribute is added to that exporter's own payload via a non-mutating view of the span; the original is never written to, so it can't be broken by a future SDK that freezes span attributes, and every other consumer sees the unmodified span. An existing non-empty `db.namespace` is never replaced.
+
+`DbNamespaceSpanExporter` is exported from the package if you want to wrap an exporter directly.
 
 ### Adding Custom Span Processors
 
@@ -107,6 +134,7 @@ initOpenTelemetry({
 - Configurable path filtering
 - Optional console span exporter for debugging
 - Support for custom span processors
+- Optional `db.namespace` enrichment of the Datadog export payload to join inferred-service entities
 - Graceful shutdown support
 
 ## Graceful Shutdown

@@ -19,6 +19,7 @@ export * from './public/array/uniqueByProperty.ts'
 export * from './public/iterable/collectFromIterable.ts'
 // object
 export * from './public/object/areDeepEqual.ts'
+export * from './public/object/concatObjectValues.ts'
 export * from './public/object/convertDateFieldsToIsoString.ts'
 export * from './public/object/copyWithoutEmpty.ts'
 export * from './public/object/copyWithoutNullish.ts'

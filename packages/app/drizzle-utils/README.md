@@ -14,7 +14,7 @@ Peer dependency: `drizzle-orm` (<2.0.0)
 
 ### markMigrationsApplied
 
-Sets the Drizzle migration baseline for an existing database.
+Sets the Drizzle migration baseline for an existing database, driving every query through a Drizzle `db` instance so it is driver-agnostic (postgres-js, mysql2, …).
 
 #### Problem
 
@@ -33,9 +33,10 @@ You need a way to tell Drizzle: "these migrations are already reflected in the d
 The function:
 - Reads migration files from your migrations folder — supports both the legacy journal format (`meta/_journal.json` with flat SQL files, from drizzle-kit 0.x) and the new folder-per-migration format (`<timestamp>_<name>/migration.sql`, from drizzle-kit 1.0.0-beta)
 - Computes the SHA-256 hash for each migration (matching Drizzle's internal algorithm)
-- Inserts tracking records into the `__drizzle_migrations` table
-- Is **idempotent** — safe to run multiple times; already-tracked migrations are skipped
-- Supports **PostgreSQL**, **MySQL**, and **CockroachDB**, with auto-detection from the journal or snapshot files
+- Inserts tracking records into the `__drizzle_migrations` table, **including the `name` column** required by drizzle-orm ≥ 1.0.0-rc to recognise a migration as applied
+- Is **idempotent** — safe to run multiple times before every `drizzle-kit migrate`; already-tracked migrations are skipped, and newly added baseline migrations are topped up
+- Optionally **creates the database** (`databaseName`) and **short-circuits on a fresh database** via a `legacySchemaProbeTable` so brand-new/empty databases let migrations run normally
+- Supports **PostgreSQL**, **MySQL**, and **CockroachDB**, with dialect auto-detection from the journal or snapshot files
 
 #### CLI
 
@@ -55,16 +56,16 @@ For a full step-by-step migration guide, see [Migrating from Prisma to Drizzle](
 
 ```typescript
 import { markMigrationsApplied } from '@lokalise/drizzle-utils'
+import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
 const sql = postgres(DATABASE_URL)
+const db = drizzle({ client: sql })
 
 const result = await markMigrationsApplied({
+  db,
   migrationsFolder: './drizzle/migrations',
-  executor: {
-    run: (query) => sql.unsafe(query).then(() => {}),
-    all: (query) => sql.unsafe(query) as Promise<Record<string, unknown>[]>,
-  },
+  // dialect is auto-detected from the journal/snapshot, or set explicitly.
 })
 
 console.log(`Applied: ${result.applied}, Skipped: ${result.skipped}`)
@@ -75,16 +76,15 @@ await sql.end()
 
 ```typescript
 import { markMigrationsApplied } from '@lokalise/drizzle-utils'
+import { drizzle } from 'drizzle-orm/mysql2'
 import mysql from 'mysql2/promise'
 
 const connection = await mysql.createConnection(DATABASE_URL)
+const db = drizzle({ client: connection })
 
 const result = await markMigrationsApplied({
+  db,
   migrationsFolder: './drizzle/migrations',
-  executor: {
-    run: (query) => connection.execute(query).then(() => {}),
-    all: (query) => connection.execute(query).then(([rows]) => rows as Record<string, unknown>[]),
-  },
 })
 
 console.log(`Applied: ${result.applied}, Skipped: ${result.skipped}`)
@@ -97,16 +97,15 @@ CockroachDB uses the PostgreSQL wire protocol, so you use the same `postgres` dr
 
 ```typescript
 import { markMigrationsApplied } from '@lokalise/drizzle-utils'
+import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
 const sql = postgres(COCKROACHDB_URL)
+const db = drizzle({ client: sql })
 
 const result = await markMigrationsApplied({
+  db,
   migrationsFolder: './drizzle/migrations',
-  executor: {
-    run: (query) => sql.unsafe(query).then(() => {}),
-    all: (query) => sql.unsafe(query) as Promise<Record<string, unknown>[]>,
-  },
   // dialect is auto-detected from the journal, or set explicitly:
   // dialect: 'cockroachdb',
 })
@@ -119,11 +118,16 @@ await sql.end()
 
 | Option | Type | Default | Description |
 |---|---|---|---|
+| `db` | `DrizzleExecutor` | *(required)* | A Drizzle `db` instance (any driver) — anything exposing `execute(sql)` |
 | `migrationsFolder` | `string` | *(required)* | Path to the Drizzle migrations folder. Supports both legacy format (with `meta/_journal.json`) and new folder-per-migration format (drizzle-kit 1.0.0-beta) |
-| `executor` | `SqlExecutor` | *(required)* | Object with `run(sql)` and `all(sql)` methods for executing raw SQL |
 | `dialect` | `'postgresql' \| 'mysql' \| 'cockroachdb'` | *(auto-detected)* | Database dialect. Auto-detected from the journal or snapshot files if omitted |
+| `databaseName` | `string` | *(skipped)* | If set, runs `CREATE DATABASE` (dialect-aware) before baselining |
+| `legacySchemaProbeTable` | `string` | *(skipped)* | If set, baselining is skipped unless this table exists — used to detect a fresh/empty database |
 | `migrationsTable` | `string` | `'__drizzle_migrations'` | Name of the migrations tracking table |
 | `migrationsSchema` | `string` | `'drizzle'` | Schema for the migrations table (PostgreSQL and CockroachDB only) |
+| `log` | `(message: string) => void` | *(no-op)* | Optional logger for human-readable progress lines |
+
+Returns `{ outcome, total, applied, skipped }`, where `outcome` is `'baselined'`, `'skipped-fresh'`, or `'skipped-no-migrations'`.
 
 #### Helper functions
 
@@ -216,7 +220,7 @@ Adding any of these is a reasonable follow-up; the snapshot type is structured t
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `executor` | `SqlExecutor` | *(required)* | Object with `run(sql)` and `all(sql)` — same shape as for `markMigrationsApplied` |
+| `executor` | `SqlExecutor` | *(required)* | Object with `run(sql)` and `all(sql)` methods for executing raw SQL |
 | `dialect` | `'postgresql' \| 'mysql' \| 'cockroachdb'` | *(required)* | Database dialect |
 | `schemas` | `string[]` | PG: `['public']`; MySQL: current database | Schemas to capture |
 | `excludeTables` | `string[]` | `['__drizzle_migrations', '_prisma_migrations']` | Tables to skip (by unqualified name). Override to add your own |

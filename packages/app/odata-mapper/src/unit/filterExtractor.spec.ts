@@ -6,6 +6,7 @@ import {
   extractAllFieldValues,
   extractComparison,
   extractEqualityValue,
+  extractEqualityValues,
   extractFieldValues,
   extractInValues,
   extractRange,
@@ -195,6 +196,49 @@ describe('filterExtractor', () => {
     })
   })
 
+  describe('extractEqualityValues', () => {
+    it('extracts all equality values joined by or', () => {
+      const filter: LogicalFilter = {
+        type: 'logical',
+        operator: 'or',
+        filters: [
+          { type: 'comparison', field: 'path', operator: 'eq', value: 'root/a' },
+          { type: 'comparison', field: 'path', operator: 'eq', value: 'root/b' },
+        ],
+      }
+
+      const result = extractEqualityValues<string>(filter, 'path')
+
+      expect(result).toEqual(['root/a', 'root/b'])
+    })
+
+    it('extracts a single equality value as an array', () => {
+      const filter: ComparisonFilter = {
+        type: 'comparison',
+        field: 'status',
+        operator: 'eq',
+        value: 'active',
+      }
+
+      const result = extractEqualityValues<string>(filter, 'status')
+
+      expect(result).toEqual(['active'])
+    })
+
+    it('returns an empty array when no equality filter exists for the field', () => {
+      const filter: ComparisonFilter = {
+        type: 'comparison',
+        field: 'price',
+        operator: 'gt',
+        value: 100,
+      }
+
+      const result = extractEqualityValues(filter, 'price')
+
+      expect(result).toEqual([])
+    })
+  })
+
   describe('extractInValues', () => {
     it('extracts in values', () => {
       const filter: InFilter = {
@@ -259,6 +303,21 @@ describe('filterExtractor', () => {
       const result = extractFieldValues(filter, 'other')
 
       expect(result).toBeUndefined()
+    })
+
+    it('extracts all equality values joined by or (CEX-1358 multi-folder)', () => {
+      const filter: LogicalFilter = {
+        type: 'logical',
+        operator: 'or',
+        filters: [
+          { type: 'comparison', field: 'path', operator: 'eq', value: 'root/a' },
+          { type: 'comparison', field: 'path', operator: 'eq', value: 'root/b' },
+        ],
+      }
+
+      const result = extractFieldValues<string>(filter, 'path')
+
+      expect(result).toEqual(['root/a', 'root/b'])
     })
 
     it('prefers in values over equality', () => {

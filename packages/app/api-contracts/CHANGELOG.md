@@ -1,5 +1,50 @@
 # Changelog
 
+## 7.0.0
+
+### Major Changes
+
+- dae7dc7: Make the contract `summary` field mandatory on `defineApiContract`, and surface it in the http-client `UnexpectedResponseError` for debugging.
+
+  - `summary` is now required on every contract (previously optional).
+  - `UnexpectedResponseError` (fe + be) gains a required `summary` constructor argument and a `readonly summary` field, and includes it in the error message (`Unexpected response for "<summary>": …`). `sendByApiContract` passes `contract.summary` through automatically.
+
+- dae7dc7: Remove the deprecated response APIs from the `defineApiContract` (new) API:
+
+  - `textResponse` / `TypedTextResponse` / `isTextResponse` — use `blobResponse` (or a content-map `blobBody()` entry) and decode with `.text()` at the call site.
+  - `anyOfResponses` / `AnyOfResponses` / `isAnyOfResponses` — use a content-map response entry (`{ content: { '<mediaType>': descriptor } }`).
+  - `getSuccessResponseSchema`, `getIsEmptyResponseExpected`, `IsNoBodySuccessResponse` — had no known consumers.
+  - The `'text'` `ResponseKind` variant is gone (kinds are now `noContent | blob | json | sse`).
+  - `ContractNoBody` is now a **request-body-only** sentinel — it is no longer part of `ApiContractResponse` and cannot be used as a `responsesByStatusCode` entry. Use `noBodyResponse()` for no-body responses. (`ContractNoBody` remains valid as a `requestBodySchema` value.)
+  - `noBodyResponse()`, `blobResponse()` and `sseResponse()` are kept as authoring helpers but now build **content-map entries** (`{ allowNoBody: true }` and `{ content: { … } }` respectively) instead of tagged objects — call sites are unchanged. The underlying tagged types and guards (`NoBodyResponse`, `TypedBlobResponse`, `TypedSseResponse`, `isNoBodyResponse`, `isBlobResponse`, `isSseResponse`) are removed; blob/SSE bodies live only in content maps, and JSON stays a bare Zod schema.
+
+  The fe/be http clients no longer materialize `text` responses, and `ApiContractMockttpHelper` / `MockResponseParams` no longer accept `textResponse`/`anyOfResponses` entries (no `responseText` param). Content-map entries cover all of these cases.
+
+  Blob responses are now delivered to the client as a lazy `BlobResponseHandle` (previously a buffered `Blob`), so the caller decides how to consume the body instead of the client buffering it unconditionally. The handle exposes `blob()` / `text()` / `arrayBuffer()` (buffer the whole body), `stream()` (raw `ReadableStream<Uint8Array>` for piping/backpressure), and `cancel()` (discard and release the connection). The underlying body is one-shot: the first accessor consumes it, a second throws. The materializing accessors delegate to each runtime's native drains (Fetch `Response` on the frontend, undici on the backend), which also release the connection.
+
+## 6.15.0
+
+### Minor Changes
+
+- 5990b2c: Add content-map response entries: a status code can now map to a `{ content }` object keyed by media type, exposing several media types at once — including multiple JSON variants (e.g. `application/json` and `application/json+01`) — each disambiguated by exact content-type matching. A JSON body is a bare Zod schema (e.g. `{ content: { 'application/json': mySchema } }`); use `blobBody()` / `sseBody()` for binary and SSE bodies. A `{ content }` entry may set `allowNoBody: true` to additionally accept an empty body, and a no-body entry is `{ allowNoBody: true }`. Guards: `isContentResponseEntry`/`isBlobBody`/`isSseBody`/`isJsonBody`.
+
+  Content-map members infer to the same `{ statusCode, headers, body }` shape as every other entry; the matched media type is not surfaced on the client response (read it from `headers['content-type']` when needed). `anyOfResponses` is deprecated in favour of content maps. This is fully additive: the existing per-status values (bare Zod schema, `textResponse`, `blobResponse`, `sseResponse`, `noBodyResponse`, `anyOfResponses`, `ContractNoBody`) are unchanged and may be freely mixed with content-map entries across status codes.
+
+## 6.14.0
+
+### Minor Changes
+
+- ed5ccae: Deprecate `textResponse` in favour of `blobResponse`. Both carry the same protocol fact (the response `content-type`) and differ only in the JS type the client materializes (`string` vs `Blob`) — a consumer decode preference that the shared contract should not force. `blobResponse` defers that choice to the call site via `.text()` / `.arrayBuffer()` / `.stream()`. `textResponse` continues to work and will be removed in a future major release.
+
+## 6.13.1
+
+### Patch Changes
+
+- 8b90918: Deprecate `IsNoBodySuccessResponse` — no known consumers; will be removed in a future release.
+- 8b90918: Fix `defineApiContract` not enforcing method/body rules: a non-distributive `Omit` collapsed the `ApiContract` discriminated union, allowing GET/DELETE contracts with a `requestBodySchema` and POST/PUT/PATCH contracts without one. Both are now compile-time errors.
+- 8b90918: Treat tagged `noBodyResponse()` the same as the `ContractNoBody` symbol in type-level inference: `IsNoBodySuccessResponse` now returns `true`, `AvailableResponseModes` includes `'noContent'`, and client response inference maps the body to `null` instead of `never`.
+- 8b90918: Type `pathResolver`'s parameter as `undefined` in `defineApiContract` when no `requestPathParamsSchema` is provided, matching the runtime call. Previously the parameter fell back to a loose `Record<string, unknown>`, allowing resolvers to read path params that are `undefined` at runtime.
+
 ## 6.13.0
 
 ### Minor Changes

@@ -3,8 +3,11 @@
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
-import type { Dialect, SqlExecutor } from '../markMigrationsApplied.ts'
-import { markMigrationsApplied } from '../markMigrationsApplied.ts'
+import {
+  type Dialect,
+  type DrizzleExecutor,
+  markMigrationsApplied,
+} from '../markMigrationsApplied.ts'
 
 interface DrizzleDbCredentials {
   url?: string
@@ -53,33 +56,22 @@ function buildConnectionUrl(credentials: DrizzleDbCredentials, dialect: string):
   return `${scheme}://${userPart}${credentials.host}${port}/${credentials.database}`
 }
 
-async function createPostgresExecutor(
+async function createPostgresDb(
   url: string,
-): Promise<{ executor: SqlExecutor; close: () => Promise<void> }> {
+): Promise<{ db: DrizzleExecutor; close: () => Promise<void> }> {
   const pg = await import('postgres')
+  const { drizzle } = await import('drizzle-orm/postgres-js')
   const sql = pg.default(url)
-  return {
-    executor: {
-      run: (query: string) => sql.unsafe(query).then(() => {}),
-      all: (query: string) => sql.unsafe(query) as Promise<Record<string, unknown>[]>,
-    },
-    close: () => sql.end(),
-  }
+  return { db: drizzle({ client: sql }), close: () => sql.end() }
 }
 
-async function createMysqlExecutor(
+async function createMysqlDb(
   url: string,
-): Promise<{ executor: SqlExecutor; close: () => Promise<void> }> {
+): Promise<{ db: DrizzleExecutor; close: () => Promise<void> }> {
   const mysql = await import('mysql2/promise')
+  const { drizzle } = await import('drizzle-orm/mysql2')
   const connection = await mysql.createConnection(url)
-  return {
-    executor: {
-      run: (query: string) => connection.execute(query).then(() => {}),
-      all: (query: string) =>
-        connection.execute(query).then(([rows]) => rows as Record<string, unknown>[]),
-    },
-    close: () => connection.end(),
-  }
+  return { db: drizzle({ client: connection }), close: () => connection.end() }
 }
 
 function printUsage(exitCode: number): never {
@@ -154,31 +146,28 @@ async function main() {
   log(`Dialect: ${dialect}`)
   log(`Migrations folder: ${migrationsFolder}`)
 
-  const createExecutor = {
-    postgresql: createPostgresExecutor,
-    cockroachdb: createPostgresExecutor,
-    mysql: createMysqlExecutor,
+  const createDb = {
+    postgresql: createPostgresDb,
+    cockroachdb: createPostgresDb,
+    mysql: createMysqlDb,
   }[dialect]
 
-  if (!createExecutor) {
-    throw new Error(`No executor available for dialect "${dialect}"`)
+  if (!createDb) {
+    throw new Error(`No database driver available for dialect "${dialect}"`)
   }
 
-  const { executor, close } = await createExecutor(url)
+  const { db, close } = await createDb(url)
 
   try {
     const result = await markMigrationsApplied({
+      db,
       migrationsFolder,
-      executor,
       dialect,
+      log,
     })
 
     log()
     log(`Done — Applied: ${result.applied}, Skipped: ${result.skipped}`)
-    for (const entry of result.entries) {
-      const marker = entry.status === 'applied' ? '+' : '='
-      log(`  ${marker} ${entry.tag}`)
-    }
   } finally {
     await close()
   }

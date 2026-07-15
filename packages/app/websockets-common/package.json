@@ -35,12 +35,12 @@
         "zod": ">=3.25.76 <5.0.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.4.16",
-        "@lokalise/biome-config": "^3.1.0",
-        "@lokalise/tsconfig": "^4.0.0",
+        "@biomejs/biome": "^2.5.0",
+        "@lokalise/biome-config": "workspace:^",
+        "@lokalise/tsconfig": "workspace:^",
         "rimraf": "^6.0.1",
-        "typescript": "6.0.3",
-        "vitest": "^4.1.8",
+        "typescript": "7.0.2",
+        "vitest": "^4.1.9",
         "zod": "^4.3.6"
     }
 }

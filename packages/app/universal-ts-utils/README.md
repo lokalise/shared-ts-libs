@@ -226,6 +226,20 @@ areDeepEqual([1, [2, 3]], [1, [2, 3]]) // true
 areDeepEqual([{ id: 1 }], [{ id: 1 }]) // true
 ```
 
+#### `concatObjectValues`
+
+Flattens a list of objects into a single array containing all of their values. A readable replacement for the
+`[...Object.values(a), ...Object.values(b)]` spread pattern, useful for combining several keyed-by-name definitions
+(e.g. event, queue or message maps) into one array. The result is typed as the union of every input object's values.
+
+```typescript
+const ImportEvents = { created: { name: 'import.created' }, failed: { name: 'import.failed' } }
+const ExportEvents = { done: { name: 'export.done' } }
+
+const supportedEvents = concatObjectValues([ImportEvents, ExportEvents])
+// Returns: [{ name: 'import.created' }, { name: 'import.failed' }, { name: 'export.done' }]
+```
+
 #### `convertDateFieldsToIsoString`
 
 Recursively converts all Date fields in an object or array of objects to ISO string format. This function retains the

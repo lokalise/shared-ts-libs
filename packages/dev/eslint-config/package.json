@@ -25,12 +25,12 @@
 	},
 	"dependencies": {
 		"@lokalise/eslint-config-frontend": "^4.6.1",
-		"@tanstack/eslint-plugin-query": "^5.100.14",
-		"@typescript-eslint/parser": "^8.60.1"
+		"@tanstack/eslint-plugin-query": "^5.101.0",
+		"@typescript-eslint/parser": "^8.62.0"
 	},
 	"devDependencies": {
-		"@lokalise/prettier-config": "latest",
-		"prettier": "^3.3.3"
+		"@lokalise/prettier-config": "workspace:^",
+		"prettier": "^3.8.4"
 	},
 	"prettier": "@lokalise/prettier-config"
 }

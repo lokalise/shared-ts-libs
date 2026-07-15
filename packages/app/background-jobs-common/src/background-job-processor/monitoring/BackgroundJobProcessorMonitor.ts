@@ -4,6 +4,7 @@ import {
   resolveGlobalErrorLogObject,
   type TransactionObservabilityManager,
 } from '@lokalise/node-core'
+import { isBullmqControlFlowError } from '../errors/utils.ts'
 import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger.ts'
 import type { BackgroundJobProcessorDependencies } from '../processors/types.ts'
 import type { BaseJobPayload, RequestContext, SafeJob } from '../types.ts'
@@ -98,6 +99,16 @@ export class BackgroundJobProcessorMonitor<
   }
 
   public jobAttemptError(job: JobType, error: unknown, requestContext: RequestContext): void {
+    // BullMQ control-flow errors (DelayedError, WaitingChildrenError, RateLimitError) are
+    // cooperative state-transition signals, not failures. Log them at debug level so they're
+    // visible when investigating but don't pollute prod logs at info+.
+    if (isBullmqControlFlowError(error)) {
+      requestContext.logger.debug(
+        this.buildLogParams(job, error),
+        `${job.name} deferred via ${(error as Error).name}`,
+      )
+      return
+    }
     requestContext.logger.error(this.buildLogParams(job, error), `${job.name} try failed`)
   }
 

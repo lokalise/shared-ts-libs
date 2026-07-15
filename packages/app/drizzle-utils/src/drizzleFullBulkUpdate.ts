@@ -19,6 +19,23 @@ export type BulkUpdateEntry<T> = {
   data: T
 }
 
+// Serializes a single value into a `<value>::<type>` SQL fragment.
+// - json/jsonb: must be stringified so Postgres parses it as a JSON literal.
+// - Date: must be converted to an ISO-8601 string; a raw Date bound parameter
+//   is rejected on the explicit-cast VALUES path. ISO strings cast cleanly to
+//   timestamp / timestamptz / date / time.
+const toSqlCastValue = (value: unknown, type: string) => {
+  if (type === 'json' || type === 'jsonb') {
+    return sql`${JSON.stringify(value)}::${sql.raw(type)}`
+  }
+
+  if (value instanceof Date) {
+    return sql`${value.toISOString()}::${sql.raw(type)}`
+  }
+
+  return sql`${value}::${sql.raw(type)}`
+}
+
 const getColumns = (table: PgTable, columnNames: string[]): Column[] => {
   const tableColumns = getTableColumns(table)
 
@@ -59,7 +76,7 @@ const prepareSqlValuesExpressions = (
         )
       }
 
-      return sql`${whereConditionValue}::${sql.raw(whereConditionColumn.type)}`
+      return toSqlCastValue(whereConditionValue, whereConditionColumn.type)
     })
 
     if (dataColumns.length !== Object.keys(entry.data).length) {
@@ -77,11 +94,7 @@ const prepareSqlValuesExpressions = (
         )
       }
 
-      if (setExpressionColumn.type === 'json' || setExpressionColumn.type === 'jsonb') {
-        return sql`${JSON.stringify(setExpressionValue)}::${sql.raw(setExpressionColumn.type)}`
-      }
-
-      return sql`${setExpressionValue}::${sql.raw(setExpressionColumn.type)}`
+      return toSqlCastValue(setExpressionValue, setExpressionColumn.type)
     })
 
     return sql`(${sql.join(sqlWhereValues, sql.raw(','))},${sql.join(sqlSetValues, sql.raw(','))})`

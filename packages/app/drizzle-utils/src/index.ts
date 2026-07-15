@@ -7,6 +7,7 @@ export { type BulkUpdateEntry, drizzleFullBulkUpdate } from './drizzleFullBulkUp
 export {
   computeMigrationHash,
   type Dialect,
+  type DrizzleExecutor,
   detectMigrationFormat,
   type MarkMigrationsAppliedOptions,
   type MarkMigrationsAppliedResult,
@@ -17,6 +18,7 @@ export {
   markMigrationsApplied,
   readMigrationEntries,
   readMigrationJournal,
+  readMigrationsWithDialect,
   type SqlExecutor,
 } from './markMigrationsApplied.ts'
 export {

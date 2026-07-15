@@ -1,9 +1,8 @@
 import type promClient from 'prom-client'
 import type { Counter } from 'prom-client'
-import type { LabeledMetricParams } from '../AbstractMetric.ts'
-import { AbstractLabeledMetric } from './AbstractLabeledMetric.ts'
+import { AbstractLabeledMetric, type LabeledMetricParams } from './AbstractLabeledMetric.ts'
 
-type CounterMetricConfiguration<
+export type CounterMetricConfiguration<
   TMetricLabel extends string,
   TMetricMeasurementKeys extends readonly string[],
 > = LabeledMetricParams & {
@@ -15,6 +14,15 @@ type CounterMeasurement<TMetricMeasurementKeys extends readonly string[]> = Part
   Record<TMetricMeasurementKeys[number], number>
 >
 
+/**
+ * Base class for counter metrics with **exactly one label whose possible values are known at construction time**.
+ *
+ * Every value declared in `measurementKeys` is pre-initialized to `0` at registration, so the corresponding
+ * time series exist from the start.
+ *
+ * Use {@link AbstractMultiLabeledCounterMetric} instead when you need more than one label, or when label values
+ * are only known at runtime.
+ */
 export abstract class AbstractLabeledCounterMetric<
   TMetricLabel extends string,
   TMetricMeasurementKeys extends readonly string[],
@@ -47,6 +55,11 @@ export abstract class AbstractLabeledCounterMetric<
     return counter
   }
 
+  /**
+   * Increments the counter for one or more of the declared `measurementKeys`.
+   *
+   * Pass an object mapping each measurement key to the amount to add. Keys with `undefined` values are skipped.
+   */
   public override registerMeasurement(
     measurement: CounterMeasurement<TMetricMeasurementKeys>,
   ): void {

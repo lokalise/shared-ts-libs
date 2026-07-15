@@ -3,6 +3,7 @@ import type { PrismaClient } from 'db-client/client.ts'
 export const DB_MODEL = {
   item1: 'item1',
   item2: 'item2',
+  bulkUpdateItem: 'bulkUpdateItem',
 } as const
 export type DbModel = (typeof DB_MODEL)[keyof typeof DB_MODEL]
 

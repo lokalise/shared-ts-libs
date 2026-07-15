@@ -36,13 +36,13 @@
         "@lokalise/node-core": ">=11.0.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.4.16",
-        "@lokalise/biome-config": "^3.1.0",
+        "@biomejs/biome": "^2.5.0",
+        "@lokalise/biome-config": "workspace:^",
         "@lokalise/node-core": "^14.0.0",
-        "@lokalise/tsconfig": "^4.0.0",
-        "@vitest/coverage-v8": "^4.1.8",
+        "@lokalise/tsconfig": "workspace:^",
+        "@vitest/coverage-v8": "^4.1.9",
         "rimraf": "^6.0.1",
-        "typescript": "6.0.3",
-        "vitest": "^4.1.8"
+        "typescript": "7.0.2",
+        "vitest": "^4.1.9"
     }
 }

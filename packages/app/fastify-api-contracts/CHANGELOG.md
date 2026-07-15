@@ -1,5 +1,14 @@
 # @lokalise/fastify-api-contracts
 
+## 5.4.1
+
+### Patch Changes
+
+- dae7dc7: Make the contract `summary` field mandatory on `defineApiContract`, and surface it in the http-client `UnexpectedResponseError` for debugging.
+
+  - `summary` is now required on every contract (previously optional).
+  - `UnexpectedResponseError` (fe + be) gains a required `summary` constructor argument and a `readonly summary` field, and includes it in the error message (`Unexpected response for "<summary>": …`). `sendByApiContract` passes `contract.summary` through automatically.
+
 ## 5.4.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/fastify-api-contracts",
-    "version": "5.4.0",
+    "version": "5.4.1",
     "type": "module",
     "files": [
         "dist",
@@ -53,16 +53,16 @@
         "zod": ">=3.25.56"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.4.16",
+        "@biomejs/biome": "^2.5.0",
         "@fastify/sse": "^0.4.0",
-        "@lokalise/api-contracts": "^6.13.0",
-        "@lokalise/biome-config": "^3.1.0",
-        "@lokalise/tsconfig": "^4.0.0",
-        "@vitest/coverage-v8": "^4.1.8",
+        "@lokalise/api-contracts": "workspace:^",
+        "@lokalise/biome-config": "workspace:^",
+        "@lokalise/tsconfig": "workspace:^",
+        "@vitest/coverage-v8": "^4.1.9",
         "fastify-type-provider-zod": "^6.1.0",
         "rimraf": "^6.1.2",
-        "typescript": "6.0.3",
-        "vitest": "^4.1.8",
+        "typescript": "7.0.2",
+        "vitest": "^4.1.9",
         "zod": "^4.3.6"
     }
 }

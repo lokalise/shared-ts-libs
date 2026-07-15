@@ -1,4 +1,4 @@
-import { jsonb, pgSchema, pgTable, smallint } from 'drizzle-orm/pg-core'
+import { jsonb, pgSchema, pgTable, smallint, timestamp } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
@@ -54,9 +54,15 @@ describe('drizzleFullBulkUpdate', () => {
     status: objectStatusDbEnum(),
   })
 
+  const timestampTableName = 'test_timestamp'
+  const timestampTable = pgTable(timestampTableName, {
+    id: smallint(),
+    updated_at: timestamp({ withTimezone: true }),
+  })
+
   beforeAll(async () => {
     await db.execute(
-      `DROP TABLE IF EXISTS ${surrogateTableName}, ${surrogateJsonTableName}, ${compositeTableName}, ${standardEnumTableName}, ${objectEnumTableName}`,
+      `DROP TABLE IF EXISTS ${surrogateTableName}, ${surrogateJsonTableName}, ${compositeTableName}, ${standardEnumTableName}, ${objectEnumTableName}, ${timestampTableName}`,
     )
     await db.execute(`DROP TYPE IF EXISTS ${enumSchema}.${standardStatusEnumName}`)
     await db.execute(`DROP TYPE IF EXISTS ${enumSchema}.${objectStatusEnumName}`)
@@ -83,6 +89,7 @@ describe('drizzleFullBulkUpdate', () => {
       db.execute(
         `CREATE TABLE ${objectEnumTableName} (id smallint, status ${enumSchema}.${objectStatusEnumName})`,
       ),
+      db.execute(`CREATE TABLE ${timestampTableName} (id smallint, updated_at timestamptz)`),
     ])
   })
 
@@ -93,6 +100,7 @@ describe('drizzleFullBulkUpdate', () => {
       db.delete(compositeTable),
       db.delete(standardEnumTable),
       db.delete(objectEnumTable),
+      db.delete(timestampTable),
     ])
   })
 
@@ -331,5 +339,28 @@ describe('drizzleFullBulkUpdate', () => {
         { id: 2, status: 'inactive' },
       ]),
     )
+  })
+
+  it('handles Date values in timestamp columns correctly', async () => {
+    await db.execute(`INSERT INTO ${timestampTableName} (id) values (1), (2)`)
+
+    const ts1 = new Date('2026-01-15T10:30:00.000Z')
+    const ts2 = new Date('2026-02-20T08:00:00.000Z')
+
+    await drizzleFullBulkUpdate(db, timestampTable, [
+      { where: { id: 1 }, data: { updated_at: ts1 } },
+      { where: { id: 2 }, data: { updated_at: ts2 } },
+    ])
+
+    const updatedData = (await db.execute(
+      `SELECT id, updated_at FROM ${timestampTableName} ORDER BY id`,
+    )) as unknown as { id: number; updated_at: string | Date }[]
+
+    expect(
+      updatedData.map((r) => ({ id: r.id, updated_at: new Date(r.updated_at).toISOString() })),
+    ).toEqual([
+      { id: 1, updated_at: ts1.toISOString() },
+      { id: 2, updated_at: ts2.toISOString() },
+    ])
   })
 })

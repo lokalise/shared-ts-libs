@@ -102,4 +102,46 @@ describe('extractTextBetweenTags', () => {
       }),
     ).toEqual([testcase.text])
   })
+
+  it.each([
+    // NT region glued to punctuation: original spacing must survive so that
+    // joining the pieces with '' does not invent or drop spaces
+    {
+      text: 'Through their \uE101{op:1}\uE102strategic partnership\uE101{cl:1}\uE102, the experts',
+      result: ['Through their ', 'strategic partnership', ', the experts'],
+    },
+    // Whitespace-only pieces between NT regions are kept
+    {
+      text: 'foo \uE101{op:1}\uE102 \uE101{cl:1}\uE102bar',
+      result: ['foo ', ' ', 'bar'],
+    },
+    // Leading and trailing whitespace is kept
+    {
+      text: ' Hello \uE101World!\uE102 ',
+      result: [' Hello ', ' '],
+    },
+    // Adjacent NT regions produce no empty pieces
+    {
+      text: 'experience\uE101{ph:1}\uE102\uE101{op:2}\uE1024 steps',
+      result: ['experience', '4 steps'],
+    },
+    // HTML tags are still split out when keepHtml is not set
+    {
+      text: 'Hello</br>world',
+      result: ['Hello', 'world'],
+    },
+  ])('should extract text pieces between tags (%#) preserving spacing', (testcase) => {
+    expect(extractTextBetweenTags(testcase.text, { preserveSpacing: true })).toEqual(
+      testcase.result,
+    )
+  })
+
+  it('should preserve spacing while keeping HTML', () => {
+    expect(
+      extractTextBetweenTags('Their \uE101{op:1}\uE102<b>partnership</b>\uE101{cl:1}\uE102, ok', {
+        keepHtml: true,
+        preserveSpacing: true,
+      }),
+    ).toEqual(['Their ', '<b>partnership</b>', ', ok'])
+  })
 })

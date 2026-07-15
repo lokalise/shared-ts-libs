@@ -128,6 +128,20 @@ To override either, set `rootDir` or `outDir` in your `tsconfig.build.json`:
 
 ## **Options That Can Be Disabled To Ease Adoption**
 
+### [strict](https://www.typescriptlang.org/tsconfig/#strict)
+
+Enables the full set of strict type-checking options. This is the default.
+
+To disable:
+```json
+{
+  "extends": "@lokalise/tsconfig/tsc",
+  "compilerOptions": {
+    "strict": false
+  }
+}
+```
+
 ### [erasableSyntaxOnly](https://www.typescriptlang.org/tsconfig/#erasableSyntaxOnly)
 
 It marks the following syntax as errors:

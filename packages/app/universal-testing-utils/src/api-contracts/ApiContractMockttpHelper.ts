@@ -1,18 +1,17 @@
 import {
   type ApiContract,
   type ApiContractResponse,
-  ContractNoBody,
   type HttpStatusCode,
-  isAnyOfResponses,
-  isBlobResponse,
-  isJsonResponse,
-  isNoBodyResponse,
-  isSseResponse,
-  isTextResponse,
+  isBlobBody,
+  isContentResponseEntry,
+  isJsonBody,
+  isSseBody,
   mapApiContractToPath,
+  type ResponseEntry,
   type ResponsesByStatusCode,
 } from '@lokalise/api-contracts'
 import type { Mockttp, RequestRuleBuilder } from 'mockttp'
+import type { z } from 'zod/v4'
 import { formatSseResponse, type MockResponseParams } from './types.ts'
 
 type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
@@ -28,7 +27,7 @@ function getRangeKey(statusCode: HttpStatusCode) {
 function resolveContractEntry(
   responsesByStatusCode: ResponsesByStatusCode,
   statusCode: HttpStatusCode,
-): ApiContractResponse | undefined {
+): ApiContractResponse | ResponseEntry | undefined {
   const rangeKey = getRangeKey(statusCode)
 
   return (
@@ -84,59 +83,59 @@ export class ApiContractMockttpHelper {
 
     const mockRule = this.resolveMethodBuilder(contract.method, path)
 
-    if (responseEntry === ContractNoBody || isNoBodyResponse(responseEntry)) {
-      await mockRule.thenReply(statusCode)
-      return
-    }
+    if (isContentResponseEntry(responseEntry)) {
+      // A no-body content entry (`{ allowNoBody: true }`) carries no `content`.
+      if (!responseEntry.content) {
+        await mockRule.thenReply(statusCode)
+        return
+      }
 
-    if (isTextResponse(responseEntry)) {
-      await mockRule.thenReply(statusCode, anyParams.responseText, {
-        'content-type': responseEntry.contentType,
-      })
-      return
-    }
-
-    if (isBlobResponse(responseEntry)) {
-      await mockRule.thenReply(statusCode, anyParams.responseBlob, {
-        'content-type': responseEntry.contentType,
-      })
-      return
-    }
-
-    if (isSseResponse(responseEntry)) {
-      const body = formatSseResponse(anyParams.events)
-      await mockRule.thenCallback(() => ({
-        statusCode,
-        headers: { 'content-type': 'text/event-stream' },
-        body,
-      }))
-      return
-    }
-
-    if (isAnyOfResponses(responseEntry)) {
-      const sseEntry = responseEntry.responses.find(isSseResponse)
-      const jsonEntry = responseEntry.responses.find(isJsonResponse)
+      const contentEntries = Object.entries(responseEntry.content)
+      const jsonEntry = contentEntries.find((entry): entry is [string, z.ZodType] =>
+        isJsonBody(entry[1]),
+      )
+      const sseEntry = contentEntries.find(([, descriptor]) => isSseBody(descriptor))
+      const blobEntry = contentEntries.find(([, descriptor]) => isBlobBody(descriptor))
 
       await mockRule.thenCallback((request) => {
         const accept = request.headers.accept ?? ''
 
-        if (accept.includes('text/event-stream') && sseEntry) {
-          const body = formatSseResponse(anyParams.events)
-          return { statusCode, headers: { 'content-type': 'text/event-stream' }, body }
+        // SSE wins only when the caller negotiates it via Accept.
+        if (sseEntry && accept.includes('text/event-stream')) {
+          return {
+            statusCode,
+            headers: { 'content-type': sseEntry[0] },
+            body: formatSseResponse(anyParams.events),
+          }
         }
 
         if (jsonEntry) {
-          const body = jsonEntry.parse(anyParams.responseJson)
+          const body = jsonEntry[1].parse(anyParams.responseJson)
           return {
             statusCode,
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': jsonEntry[0] },
             body: JSON.stringify(body),
+          }
+        }
+
+        if (blobEntry) {
+          return {
+            statusCode,
+            headers: { 'content-type': blobEntry[0] },
+            body: anyParams.responseBlob,
+          }
+        }
+
+        if (sseEntry) {
+          return {
+            statusCode,
+            headers: { 'content-type': sseEntry[0] },
+            body: formatSseResponse(anyParams.events),
           }
         }
 
         return { statusCode }
       })
-
       return
     }
 

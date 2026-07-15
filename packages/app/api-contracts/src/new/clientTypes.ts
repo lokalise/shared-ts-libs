@@ -8,8 +8,11 @@ import type {
   WildcardStatusCodeKey,
 } from '../HttpStatusCodes.ts'
 import type { Prettify } from '../typeUtils.ts'
-import type { ContractNoBody } from './constants.ts'
-import type { ResponsesByStatusCode, SseSchemaByEventName } from './contractResponse.ts'
+import type {
+  BlobResponseHandle,
+  ResponsesByStatusCode,
+  SseSchemaByEventName,
+} from './contractResponse.ts'
 import type { ApiContract } from './defineApiContract.ts'
 import type { ContractResponseMode, SseEventOf } from './inferTypes.ts'
 
@@ -53,45 +56,80 @@ type InferClientResponseHeaders<TApiContract extends ApiContract> =
     : Record<string, string>
 
 /**
- * Maps a single responsesByStatusCode entry value to its TypeScript body type.
+ * Maps a single (non-content-map) responsesByStatusCode entry to its TypeScript body type.
+ * Such entries are always a JSON Zod schema; no-body, blob, and SSE bodies are declared via
+ * content-map entries.
  */
-type InferClientResponseBody<T> = T extends typeof ContractNoBody
-  ? null
-  : T extends z.ZodType
-    ? InferSchemaOutput<T>
-    : T extends { _tag: 'TextResponse' }
-      ? string
-      : T extends { _tag: 'BlobResponse' }
-        ? Blob
-        : T extends { _tag: 'SseResponse'; schemaByEventName: infer S extends SseSchemaByEventName }
-          ? AsyncIterable<SseEventOf<S>>
-          : T extends { _tag: 'AnyOfResponses'; responses: Array<infer Item> }
-            ? InferClientResponseBody<Item>
-            : never
+type InferClientResponseBody<T> = T extends z.ZodType ? InferSchemaOutput<T> : never
 
 /**
  * Like InferClientResponseBody but returns only SSE bodies — non-SSE entries resolve to never.
  */
-type SseInferClientResponseBody<T> = Extract<InferClientResponseBody<T>, AsyncIterable<unknown>>
+// An SSE body is the only response body that async-iterates event objects (a blob body resolves to
+// a non-iterable `BlobResponseHandle`), so SSE is discriminated by the SSE event's `lastEventId`.
+type SseBodyShape = AsyncIterable<{ lastEventId: string }>
+
+type SseInferClientResponseBody<T> = Extract<InferClientResponseBody<T>, SseBodyShape>
 
 /**
  * Like InferClientResponseBody but returns only non-SSE bodies — SSE entries resolve to never.
  */
-type NonSseInferClientResponseBody<T> = Exclude<InferClientResponseBody<T>, AsyncIterable<unknown>>
+type NonSseInferClientResponseBody<T> = Exclude<InferClientResponseBody<T>, SseBodyShape>
 
-// Body helpers for non-'default' wildcard range keys (e.g. '2xx', '4xx', '5xx').
-// '2xx' maps to success mode (SSE-filtered or non-SSE-filtered); all other ranges use the full body
-// union because non-2xx range entries always land on the error side of captureAsError.
-// 'default' does not use these helpers — it inlines its own body logic in WildcardSseEntry /
-// WildcardNonSseEntry, where the success half is still SSE/non-SSE filtered and the non-success
-// half uses the full body union.
-type WildcardSseBody<V, K extends WildcardStatusCodeKey> = K extends '2xx'
+type InferContentDescriptorBody<TDescriptor> = TDescriptor extends { _tag: 'BlobBody' }
+  ? BlobResponseHandle
+  : TDescriptor extends { _tag: 'SseBody'; schemaByEventName: infer S extends SseSchemaByEventName }
+    ? AsyncIterable<SseEventOf<S>>
+    : TDescriptor extends z.ZodType
+      ? InferSchemaOutput<TDescriptor>
+      : never
+
+type ContentEntryVariants<TEntry> =
+  | (TEntry extends { content: infer C }
+      ? {
+          [CT in keyof C & string]: { body: InferContentDescriptorBody<C[CT]> }
+        }[keyof C & string]
+      : never)
+  | (TEntry extends { allowNoBody: true } ? { body: null } : never)
+
+type IsContentEntry<V> = V extends { content: object }
+  ? true
+  : V extends { allowNoBody: true }
+    ? true
+    : false
+
+type SseContentVariants<TEntry> = Extract<ContentEntryVariants<TEntry>, { body: SseBodyShape }>
+type NonSseContentVariants<TEntry> = Exclude<ContentEntryVariants<TEntry>, { body: SseBodyShape }>
+
+/** Response mode for a given status class: success codes filter by SSE/non-SSE; others pass all. */
+type ResponseBodyMode = 'sse' | 'non-sse' | 'all'
+
+type ContentVariantsForMode<TEntry, TMode extends ResponseBodyMode> = TMode extends 'sse'
+  ? SseContentVariants<TEntry>
+  : TMode extends 'non-sse'
+    ? NonSseContentVariants<TEntry>
+    : ContentEntryVariants<TEntry>
+
+type LegacyBodyForMode<V, TMode extends ResponseBodyMode> = TMode extends 'sse'
   ? SseInferClientResponseBody<V>
-  : InferClientResponseBody<V>
+  : TMode extends 'non-sse'
+    ? NonSseInferClientResponseBody<V>
+    : InferClientResponseBody<V>
 
-type WildcardNonSseBody<V, K extends WildcardStatusCodeKey> = K extends '2xx'
-  ? NonSseInferClientResponseBody<V>
-  : InferClientResponseBody<V>
+/** Attaches `statusCode` + `headers` to each `{ body }` variant. */
+type WithMeta<TStatusCode, THeaders, TVariant> = TVariant extends unknown
+  ? Prettify<{ statusCode: TStatusCode; headers: THeaders } & TVariant>
+  : never
+
+/**
+ * Builds the response union member(s) for a status code `K` holding value `V`.
+ * Content-map entries expand to one body variant per media type; legacy entries keep the original
+ * `{ statusCode, headers, body }` shape (so existing contracts are byte-for-byte unchanged).
+ */
+type ResponseMember<TStatusCode, THeaders, V, TMode extends ResponseBodyMode> =
+  IsContentEntry<V> extends true
+    ? WithMeta<TStatusCode, THeaders, ContentVariantsForMode<V, TMode>>
+    : { statusCode: TStatusCode; headers: THeaders; body: LegacyBodyForMode<V, TMode> }
 
 // Exact status codes explicitly defined in the contract — these take precedence over range keys.
 type ExactStatusCodes<TApiContract extends ApiContract> =
@@ -120,42 +158,48 @@ type WildcardSseEntry<
   K extends WildcardStatusCodeKey,
 > = K extends 'default'
   ?
-      | {
-          statusCode: DefaultSuccessStatusCodes<TApiContract>
-          headers: InferClientResponseHeaders<TApiContract>
-          body: SseInferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
-        }
-      | {
-          statusCode: DefaultNonSuccessStatusCodes<TApiContract>
-          headers: InferClientResponseHeaders<TApiContract>
-          body: InferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
-        }
-  : {
-      statusCode: Exclude<ExpandStatusRangeKey<K>, ExactStatusCodes<TApiContract>>
-      headers: InferClientResponseHeaders<TApiContract>
-      body: WildcardSseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>, K>
-    }
+      | ResponseMember<
+          DefaultSuccessStatusCodes<TApiContract>,
+          InferClientResponseHeaders<TApiContract>,
+          NonNullable<TApiContract['responsesByStatusCode'][K]>,
+          'sse'
+        >
+      | ResponseMember<
+          DefaultNonSuccessStatusCodes<TApiContract>,
+          InferClientResponseHeaders<TApiContract>,
+          NonNullable<TApiContract['responsesByStatusCode'][K]>,
+          'all'
+        >
+  : ResponseMember<
+      Exclude<ExpandStatusRangeKey<K>, ExactStatusCodes<TApiContract>>,
+      InferClientResponseHeaders<TApiContract>,
+      NonNullable<TApiContract['responsesByStatusCode'][K]>,
+      K extends '2xx' ? 'sse' : 'all'
+    >
 
 type WildcardNonSseEntry<
   TApiContract extends ApiContract,
   K extends WildcardStatusCodeKey,
 > = K extends 'default'
   ?
-      | {
-          statusCode: DefaultSuccessStatusCodes<TApiContract>
-          headers: InferClientResponseHeaders<TApiContract>
-          body: NonSseInferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
-        }
-      | {
-          statusCode: DefaultNonSuccessStatusCodes<TApiContract>
-          headers: InferClientResponseHeaders<TApiContract>
-          body: InferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
-        }
-  : {
-      statusCode: Exclude<ExpandStatusRangeKey<K>, ExactStatusCodes<TApiContract>>
-      headers: InferClientResponseHeaders<TApiContract>
-      body: WildcardNonSseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>, K>
-    }
+      | ResponseMember<
+          DefaultSuccessStatusCodes<TApiContract>,
+          InferClientResponseHeaders<TApiContract>,
+          NonNullable<TApiContract['responsesByStatusCode'][K]>,
+          'non-sse'
+        >
+      | ResponseMember<
+          DefaultNonSuccessStatusCodes<TApiContract>,
+          InferClientResponseHeaders<TApiContract>,
+          NonNullable<TApiContract['responsesByStatusCode'][K]>,
+          'all'
+        >
+  : ResponseMember<
+      Exclude<ExpandStatusRangeKey<K>, ExactStatusCodes<TApiContract>>,
+      InferClientResponseHeaders<TApiContract>,
+      NonNullable<TApiContract['responsesByStatusCode'][K]>,
+      K extends '2xx' ? 'non-sse' : 'all'
+    >
 
 /**
  * Infers a discriminated union of `{ statusCode, headers, body }` for SSE mode:
@@ -170,13 +214,12 @@ type WildcardNonSseEntry<
  */
 export type InferSseClientResponse<TApiContract extends ApiContract> =
   | {
-      [K in keyof TApiContract['responsesByStatusCode'] & HttpStatusCode]: {
-        statusCode: K
-        headers: InferClientResponseHeaders<TApiContract>
-        body: K extends SuccessfulHttpStatusCode
-          ? SseInferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
-          : InferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
-      }
+      [K in keyof TApiContract['responsesByStatusCode'] & HttpStatusCode]: ResponseMember<
+        K,
+        InferClientResponseHeaders<TApiContract>,
+        NonNullable<TApiContract['responsesByStatusCode'][K]>,
+        K extends SuccessfulHttpStatusCode ? 'sse' : 'all'
+      >
     }[keyof TApiContract['responsesByStatusCode'] & HttpStatusCode]
   | {
       [K in keyof TApiContract['responsesByStatusCode'] & WildcardStatusCodeKey]: WildcardSseEntry<
@@ -198,13 +241,12 @@ export type InferSseClientResponse<TApiContract extends ApiContract> =
  */
 export type InferNonSseClientResponse<TApiContract extends ApiContract> =
   | {
-      [K in keyof TApiContract['responsesByStatusCode'] & HttpStatusCode]: {
-        statusCode: K
-        headers: InferClientResponseHeaders<TApiContract>
-        body: K extends SuccessfulHttpStatusCode
-          ? NonSseInferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
-          : InferClientResponseBody<NonNullable<TApiContract['responsesByStatusCode'][K]>>
-      }
+      [K in keyof TApiContract['responsesByStatusCode'] & HttpStatusCode]: ResponseMember<
+        K,
+        InferClientResponseHeaders<TApiContract>,
+        NonNullable<TApiContract['responsesByStatusCode'][K]>,
+        K extends SuccessfulHttpStatusCode ? 'non-sse' : 'all'
+      >
     }[keyof TApiContract['responsesByStatusCode'] & HttpStatusCode]
   | {
       [K in keyof TApiContract['responsesByStatusCode'] &

@@ -59,6 +59,21 @@ export function extractEqualityValue<T extends FilterValue = FilterValue>(
 }
 
 /**
+ * Extracts ALL equality values for a field.
+ * Unlike `extractEqualityValue` (which returns only the first match), this collects
+ * every `eq` comparison for the field - e.g. `field eq 'a' or field eq 'b'` yields
+ * `['a', 'b']`. Returns an empty array if no equality filter exists for the field.
+ */
+export function extractEqualityValues<T extends FilterValue = FilterValue>(
+  filter: TransformedFilter,
+  fieldName: string,
+): T[] {
+  return getFiltersForField(filter, fieldName)
+    .filter((f): f is ComparisonFilter => f.type === 'comparison' && f.operator === 'eq')
+    .map((f) => f.value as T)
+}
+
+/**
  * Extracts values from an 'in' filter for a field.
  * Returns undefined if field is not filtered by 'in'.
  */
@@ -84,9 +99,9 @@ export function extractFieldValues<T extends FilterValue = FilterValue>(
     return inValues
   }
 
-  const eqValue = extractEqualityValue<T>(filter, fieldName)
-  if (eqValue !== undefined) {
-    return [eqValue]
+  const eqValues = extractEqualityValues<T>(filter, fieldName)
+  if (eqValues.length > 0) {
+    return eqValues
   }
 
   return undefined
