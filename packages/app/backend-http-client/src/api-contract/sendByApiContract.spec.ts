@@ -645,43 +645,53 @@ describe('sendByApiContract', () => {
   })
 
   describe('blob', () => {
-    it('returns a lazy body handle for a blob response', async () => {
-      const contract = defineApiContract({
-        summary: 'Test contract',
-        method: 'get',
-        pathResolver: () => '/photo.png',
-        responsesByStatusCode: { 200: { content: { 'image/png': blobBody() } } },
-      })
+    const blobContract = defineApiContract({
+      summary: 'Download photo',
+      method: 'get',
+      pathResolver: () => '/photo.png',
+      responsesByStatusCode: { 200: { content: { 'image/png': blobBody() } } },
+    })
 
-      const imageBytes = Buffer.from([0x89, 0x50, 0x4e, 0x47])
-
-      await mockServer
-        .forGet('/photo.png')
-        .thenReply(200, imageBytes, { 'content-type': 'image/png' })
-
-      const result = await sendByApiContract(client, contract, {})
-
+    const fetchBlobHandle = async (body: Buffer) => {
+      await mockServer.forGet('/photo.png').thenReply(200, body, { 'content-type': 'image/png' })
+      const result = await sendByApiContract(client, blobContract, {})
       expectTypeOf(result.result).toMatchTypeOf<{ body: BlobResponseHandle } | undefined>()
-      const blob = await result.result!.body.blob()
+      return result.result!.body
+    }
+
+    it('aggregates the body via blob()', async () => {
+      const handle = await fetchBlobHandle(Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+      const blob = await handle.blob()
       expect(blob.size).toBe(4)
     })
 
+    it('aggregates the body via text()', async () => {
+      const handle = await fetchBlobHandle(Buffer.from('hello', 'utf8'))
+      expect(await handle.text()).toBe('hello')
+    })
+
+    it('aggregates the body via arrayBuffer()', async () => {
+      const handle = await fetchBlobHandle(Buffer.from([0x01, 0x02, 0x03]))
+      expect((await handle.arrayBuffer()).byteLength).toBe(3)
+    })
+
+    it('exposes the raw body via stream()', async () => {
+      const handle = await fetchBlobHandle(Buffer.from([0x89, 0x50]))
+      const stream = handle.stream()
+      expectTypeOf(stream).toEqualTypeOf<ReadableStream<Uint8Array>>()
+      const bytes = new Uint8Array(await new Response(stream).arrayBuffer())
+      expect([...bytes]).toEqual([0x89, 0x50])
+    })
+
+    it('discards the body via cancel()', async () => {
+      const handle = await fetchBlobHandle(Buffer.from([0x89, 0x50]))
+      await expect(handle.cancel()).resolves.toBeUndefined()
+    })
+
     it('throws when the body handle is consumed twice', async () => {
-      const contract = defineApiContract({
-        summary: 'Test contract',
-        method: 'get',
-        pathResolver: () => '/photo.png',
-        responsesByStatusCode: { 200: { content: { 'image/png': blobBody() } } },
-      })
-
-      await mockServer
-        .forGet('/photo.png')
-        .thenReply(200, Buffer.from([0x89, 0x50]), { 'content-type': 'image/png' })
-
-      const result = await sendByApiContract(client, contract, {})
-
-      await result.result!.body.blob()
-      expect(() => result.result!.body.text()).toThrow('Response body already consumed')
+      const handle = await fetchBlobHandle(Buffer.from([0x89, 0x50]))
+      await handle.blob()
+      expect(() => handle.text()).toThrow('Response body already consumed')
     })
   })
 

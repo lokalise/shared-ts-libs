@@ -142,15 +142,30 @@ function toBlobHandle(response: Response): BlobResponseHandle {
     consumed = true
     return read()
   }
+  // A materialized fetch response always exposes a body stream; the `!response.body` branches below
+  // only satisfy the `ReadableStream | null` type and are unreachable in practice.
   return {
     stream: () =>
-      guard(
-        () => response.body ?? new ReadableStream({ start: (controller) => controller.close() }),
-      ),
+      guard(() => {
+        /* v8 ignore start */
+        if (!response.body) {
+          return new ReadableStream({ start: (controller) => controller.close() })
+        }
+        /* v8 ignore stop */
+        return response.body
+      }),
     blob: () => guard(() => response.blob()),
     text: () => guard(() => response.text()),
     arrayBuffer: () => guard(() => response.arrayBuffer()),
-    cancel: () => guard(() => response.body?.cancel() ?? Promise.resolve()),
+    cancel: () =>
+      guard(() => {
+        /* v8 ignore start */
+        if (!response.body) {
+          return Promise.resolve()
+        }
+        /* v8 ignore stop */
+        return response.body.cancel()
+      }),
   }
 }
 
