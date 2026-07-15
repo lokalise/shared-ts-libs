@@ -28,7 +28,7 @@ const getUser = defineApiContract({
 
 // POST
 const createUser = defineApiContract({
-  summary: 'Get user',
+  summary: 'Create user',
   method: 'post',
   pathResolver: () => '/users',
   requestBodySchema: z.object({ name: z.string() }),
@@ -39,7 +39,7 @@ const createUser = defineApiContract({
 
 // DELETE with no response body
 const deleteUser = defineApiContract({
-  summary: 'Get user',
+  summary: 'Delete user',
   method: 'delete',
   requestPathParamsSchema: z.object({ userId: z.uuid() }),
   pathResolver: ({ userId }) => `/users/${userId}`,
@@ -57,14 +57,14 @@ Use `blobResponse` for any non-JSON response — text-based (plain text, CSV, HT
 import { defineApiContract, blobResponse } from '@lokalise/api-contracts'
 
 const exportCsv = defineApiContract({
-  summary: 'Get user',
+  summary: 'Export users as CSV',
   method: 'get',
   pathResolver: () => '/export.csv',
   responsesByStatusCode: { 200: blobResponse('text/csv') },
 })
 
 const downloadPhoto = defineApiContract({
-  summary: 'Get user',
+  summary: 'Download user photo',
   method: 'get',
   pathResolver: () => '/photo.png',
   responsesByStatusCode: { 200: blobResponse('image/png') },
@@ -83,7 +83,7 @@ import { defineApiContract, blobBody, sseBody } from '@lokalise/api-contracts'
 import { z } from 'zod/v4'
 
 const downloadReport = defineApiContract({
-  summary: 'Get user',
+  summary: 'Download report',
   method: 'get',
   pathResolver: () => '/report',
   responsesByStatusCode: {
@@ -120,7 +120,7 @@ import { z } from 'zod/v4'
 
 // SSE-only
 const notifications = defineApiContract({
-  summary: 'Get user',
+  summary: 'Stream notifications',
   method: 'get',
   pathResolver: () => '/notifications/stream',
   responsesByStatusCode: {
@@ -132,7 +132,7 @@ const notifications = defineApiContract({
 
 // Dual-mode: JSON response or SSE stream depending on Accept header
 const chatCompletion = defineApiContract({
-  summary: 'Get user',
+  summary: 'Create chat completion',
   method: 'post',
   pathResolver: () => '/chat/completions',
   requestBodySchema: z.object({ message: z.string() }),
@@ -162,7 +162,7 @@ import { z } from 'zod/v4'
 
 // '2xx' covers all 200–299 responses
 const listItems = defineApiContract({
-  summary: 'Get user',
+  summary: 'List items',
   method: 'get',
   pathResolver: () => '/items',
   responsesByStatusCode: {
@@ -173,7 +173,7 @@ const listItems = defineApiContract({
 
 // exact code takes precedence over the range key
 const createItem = defineApiContract({
-  summary: 'Get user',
+  summary: 'Create item',
   method: 'post',
   pathResolver: () => '/items',
   requestBodySchema: z.object({ name: z.string() }),
@@ -185,7 +185,7 @@ const createItem = defineApiContract({
 
 // 'default' matches any status code not covered by a more specific entry
 const flexible = defineApiContract({
-  summary: 'Get user',
+  summary: 'Get data',
   method: 'get',
   pathResolver: () => '/data',
   responsesByStatusCode: {
@@ -208,7 +208,7 @@ import { defineApiContract, noBodyResponse, blobBody, sseBody } from '@lokalise/
 import { z } from 'zod/v4'
 
 const contract = defineApiContract({
-  summary: 'Get user',
+  summary: 'Upload file',
   method: 'post',
   pathResolver: () => '/files',
   requestBodySchema: z.object({ name: z.string() }),
@@ -283,7 +283,7 @@ type ApiContractOptions = {
 
 ```ts
 const contract = defineApiContract({
-  summary: 'Get user',
+  summary: 'Get data',
   method: 'get',
   pathResolver: () => '/api/data',
   requestHeaderSchema: z.object({
@@ -433,7 +433,7 @@ Currently, HTTP clients default to `application/json` when a request body is pre
 
 ```ts
 defineApiContract({
-  summary: 'Get user',
+  summary: 'Upload avatar',
   method: 'post',
   pathResolver: () => '/upload',
   requestBodySchema: z.object({ file: z.unknown() }),
