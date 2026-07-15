@@ -1,10 +1,9 @@
 import {
-  anyOfResponses,
-  blobResponse,
-  ContractNoBody,
+  type BlobResponseHandle,
+  blobBody,
   defineApiContract,
-  sseResponse,
-  textResponse,
+  noBodyResponse,
+  sseBody,
 } from '@lokalise/api-contracts'
 import { getLocal } from 'mockttp'
 import type { Client } from 'undici'
@@ -35,6 +34,7 @@ describe('sendByApiContract', () => {
       const responseSchema = z.object({ id: z.number(), title: z.string() })
 
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 200: responseSchema },
@@ -54,6 +54,7 @@ describe('sendByApiContract', () => {
 
     it('sends GET request with path params', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         requestPathParamsSchema: z.object({ productId: z.coerce.number() }),
         pathResolver: ({ productId }) => `/products/${productId}`,
@@ -69,6 +70,7 @@ describe('sendByApiContract', () => {
 
     it('sends GET request with query params', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products',
         requestQuerySchema: z.object({ limit: z.number() }),
@@ -87,6 +89,7 @@ describe('sendByApiContract', () => {
 
     it('sends GET request with headers', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         requestHeaderSchema: z.object({ authorization: z.string() }),
@@ -107,6 +110,7 @@ describe('sendByApiContract', () => {
 
     it('forwards x-request-id from reqContext', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 200: z.unknown() },
@@ -124,6 +128,7 @@ describe('sendByApiContract', () => {
 
     it('works with path prefix', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 200: z.unknown() },
@@ -138,6 +143,7 @@ describe('sendByApiContract', () => {
 
     it('validates response and throws on schema mismatch', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 200: z.object({ id: z.string() }) },
@@ -150,6 +156,7 @@ describe('sendByApiContract', () => {
 
     it('returns non-2xx response as Either.error by default', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: {},
@@ -165,6 +172,7 @@ describe('sendByApiContract', () => {
 
     it('returns error in Either.error when status is not in contract', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: {
@@ -183,6 +191,7 @@ describe('sendByApiContract', () => {
 
     it('returns 4xx defined in contract as Either.error when captureAsError is true (default)', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: {
@@ -201,6 +210,7 @@ describe('sendByApiContract', () => {
 
     it('returns 4xx defined in contract as Either.result when captureAsError is false', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: {
@@ -219,6 +229,7 @@ describe('sendByApiContract', () => {
 
     it('normalizes array-valued response headers', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 200: z.unknown() },
@@ -236,6 +247,7 @@ describe('sendByApiContract', () => {
 
     it('resolves headers when provided as a function', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         requestHeaderSchema: z.object({ authorization: z.string() }),
@@ -256,6 +268,7 @@ describe('sendByApiContract', () => {
 
     it('parses and merges response headers when responseHeaderSchema is defined', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 200: z.object({ id: z.number() }) },
@@ -278,6 +291,7 @@ describe('sendByApiContract', () => {
       const bodySchema = z.object({ name: z.string() })
 
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'post',
         pathResolver: () => '/products',
         requestBodySchema: bodySchema,
@@ -294,6 +308,7 @@ describe('sendByApiContract', () => {
 
     it('sends POST with path params and body', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'post',
         requestPathParamsSchema: z.object({ orgId: z.string() }),
         pathResolver: ({ orgId }) => `/orgs/${orgId}/members`,
@@ -315,6 +330,7 @@ describe('sendByApiContract', () => {
   describe('content-type request header', () => {
     it('sets content-type: application/json automatically when body is present', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'post',
         pathResolver: () => '/items',
         requestBodySchema: z.object({ name: z.string() }),
@@ -334,6 +350,7 @@ describe('sendByApiContract', () => {
 
     it('does not set content-type when no body is present', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/items',
         responsesByStatusCode: { 200: z.object({ id: z.number() }) },
@@ -352,6 +369,7 @@ describe('sendByApiContract', () => {
 
     it('preserves user-provided content-type (lowercase)', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'post',
         pathResolver: () => '/items',
         requestBodySchema: z.object({ name: z.string() }),
@@ -375,6 +393,7 @@ describe('sendByApiContract', () => {
 
     it('preserves user-provided content-type (Title-Case)', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'post',
         pathResolver: () => '/items',
         requestBodySchema: z.object({ name: z.string() }),
@@ -400,6 +419,7 @@ describe('sendByApiContract', () => {
   describe('PUT', () => {
     it('sends PUT request', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'put',
         requestPathParamsSchema: z.object({ id: z.string() }),
         pathResolver: ({ id }) => `/products/${id}`,
@@ -422,6 +442,7 @@ describe('sendByApiContract', () => {
   describe('PATCH', () => {
     it('sends PATCH request', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'patch',
         requestPathParamsSchema: z.object({ id: z.string() }),
         pathResolver: ({ id }) => `/products/${id}`,
@@ -442,12 +463,13 @@ describe('sendByApiContract', () => {
   })
 
   describe('DELETE', () => {
-    it('sends DELETE request with ContractNoBody and returns null on 204', async () => {
+    it('sends DELETE request with noBodyResponse() and returns null on 204', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'delete',
         requestPathParamsSchema: z.object({ id: z.string() }),
         pathResolver: ({ id }) => `/products/${id}`,
-        responsesByStatusCode: { 204: ContractNoBody },
+        responsesByStatusCode: { 204: noBodyResponse() },
       })
 
       await mockServer.forDelete('/products/1').thenReply(204)
@@ -462,19 +484,23 @@ describe('sendByApiContract', () => {
   describe('SSE', () => {
     it('returns async iterable of typed events', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
         responsesByStatusCode: {
-          200: sseResponse({ update: z.object({ id: z.string() }) }),
+          200: {
+            content: { 'text/event-stream': sseBody({ update: z.object({ id: z.string() }) }) },
+          },
         },
       })
 
-      const sseBody = 'event: update\ndata: {"id":"1"}\n\nevent: update\ndata: {"id":"2"}\n\n'
+      const sseStreamPayload =
+        'event: update\ndata: {"id":"1"}\n\nevent: update\ndata: {"id":"2"}\n\n'
 
       await mockServer
         .forGet('/events')
         .withHeaders({ accept: 'text/event-stream' })
-        .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
+        .thenReply(200, sseStreamPayload, { 'content-type': 'text/event-stream' })
 
       const response = await sendByApiContract(client, contract, {})
 
@@ -504,20 +530,25 @@ describe('sendByApiContract', () => {
 
     it('validates event data against contract schema', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
         responsesByStatusCode: {
-          200: sseResponse({ tick: z.object({ count: z.coerce.number() }) }),
+          200: {
+            content: {
+              'text/event-stream': sseBody({ tick: z.object({ count: z.coerce.number() }) }),
+            },
+          },
         },
       })
 
       // count arrives as a string — coerce.number() should transform it
-      const sseBody = 'event: tick\ndata: {"count":"42"}\n\n'
+      const sseStreamPayload = 'event: tick\ndata: {"count":"42"}\n\n'
 
       await mockServer
         .forGet('/events')
         .withHeaders({ accept: 'text/event-stream' })
-        .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
+        .thenReply(200, sseStreamPayload, { 'content-type': 'text/event-stream' })
 
       const response = await sendByApiContract(client, contract, {})
 
@@ -532,51 +563,24 @@ describe('sendByApiContract', () => {
       ])
     })
 
-    it('dual-mode: streaming: true infers AsyncIterable, streaming: false infers typed body', () => {
-      const contract = defineApiContract({
-        method: 'get',
-        pathResolver: () => '/events',
-        responsesByStatusCode: {
-          200: anyOfResponses([
-            sseResponse({ update: z.object({ id: z.string() }) }),
-            z.object({ latest: z.string() }),
-          ]),
-        },
-      })
-
-      type SseResult = Awaited<
-        ReturnType<() => ReturnType<typeof sendByApiContract<typeof contract, true>>>
-      >
-      type JsonResult = Awaited<
-        ReturnType<() => ReturnType<typeof sendByApiContract<typeof contract, false>>>
-      >
-
-      expectTypeOf<NonNullable<SseResult['result']>['body']>().toEqualTypeOf<
-        AsyncIterable<{
-          type: 'update'
-          data: { id: string }
-          lastEventId: string
-          retry: number | undefined
-        }>
-      >()
-      expectTypeOf<NonNullable<JsonResult['result']>['body']>().toEqualTypeOf<{ latest: string }>()
-    })
-
     it('throws when event data fails schema validation', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
         responsesByStatusCode: {
-          200: sseResponse({ update: z.object({ id: z.string() }) }),
+          200: {
+            content: { 'text/event-stream': sseBody({ update: z.object({ id: z.string() }) }) },
+          },
         },
       })
 
-      const sseBody = 'event: update\ndata: {"id":123}\n\n'
+      const sseStreamPayload = 'event: update\ndata: {"id":123}\n\n'
 
       await mockServer
         .forGet('/events')
         .withHeaders({ accept: 'text/event-stream' })
-        .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
+        .thenReply(200, sseStreamPayload, { 'content-type': 'text/event-stream' })
 
       const response = await sendByApiContract(client, contract, {})
 
@@ -592,11 +596,14 @@ describe('sendByApiContract', () => {
 
     it('throws when a conflicting Accept header is provided for an SSE contract', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
         requestHeaderSchema: z.object({ accept: z.string() }),
         responsesByStatusCode: {
-          200: sseResponse({ update: z.object({ id: z.string() }) }),
+          200: {
+            content: { 'text/event-stream': sseBody({ update: z.object({ id: z.string() }) }) },
+          },
         },
       })
 
@@ -607,19 +614,22 @@ describe('sendByApiContract', () => {
 
     it('throws when an unknown event type is received', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
         responsesByStatusCode: {
-          200: sseResponse({ update: z.object({ id: z.string() }) }),
+          200: {
+            content: { 'text/event-stream': sseBody({ update: z.object({ id: z.string() }) }) },
+          },
         },
       })
 
-      const sseBody = 'event: unknown\ndata: {"id":"1"}\n\n'
+      const sseStreamPayload = 'event: unknown\ndata: {"id":"1"}\n\n'
 
       await mockServer
         .forGet('/events')
         .withHeaders({ accept: 'text/event-stream' })
-        .thenReply(200, sseBody, { 'content-type': 'text/event-stream' })
+        .thenReply(200, sseStreamPayload, { 'content-type': 'text/event-stream' })
 
       const response = await sendByApiContract(client, contract, {})
 
@@ -634,50 +644,61 @@ describe('sendByApiContract', () => {
     })
   })
 
-  describe('text', () => {
-    it('returns string body for text response', async () => {
-      const contract = defineApiContract({
-        method: 'get',
-        pathResolver: () => '/export.csv',
-        responsesByStatusCode: { 200: textResponse('text/csv') },
-      })
-
-      await mockServer
-        .forGet('/export.csv')
-        .thenReply(200, 'id,name\n1,Backpack', { 'content-type': 'text/csv' })
-
-      const result = await sendByApiContract(client, contract, {})
-
-      expectTypeOf(result.result).toMatchTypeOf<{ body: string } | undefined>()
-      expect(result.result).toMatchObject({ body: 'id,name\n1,Backpack' })
-    })
-  })
-
   describe('blob', () => {
-    it('returns Blob body for blob response', async () => {
-      const contract = defineApiContract({
-        method: 'get',
-        pathResolver: () => '/photo.png',
-        responsesByStatusCode: { 200: blobResponse('image/png') },
-      })
+    const blobContract = defineApiContract({
+      summary: 'Download photo',
+      method: 'get',
+      pathResolver: () => '/photo.png',
+      responsesByStatusCode: { 200: { content: { 'image/png': blobBody() } } },
+    })
 
-      const imageBytes = Buffer.from([0x89, 0x50, 0x4e, 0x47])
+    const fetchBlobHandle = async (body: Buffer) => {
+      await mockServer.forGet('/photo.png').thenReply(200, body, { 'content-type': 'image/png' })
+      const result = await sendByApiContract(client, blobContract, {})
+      expectTypeOf(result.result).toMatchTypeOf<{ body: BlobResponseHandle } | undefined>()
+      return result.result!.body
+    }
 
-      await mockServer
-        .forGet('/photo.png')
-        .thenReply(200, imageBytes, { 'content-type': 'image/png' })
+    it('aggregates the body via blob()', async () => {
+      const handle = await fetchBlobHandle(Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+      const blob = await handle.blob()
+      expect(blob.size).toBe(4)
+    })
 
-      const result = await sendByApiContract(client, contract, {})
+    it('aggregates the body via text()', async () => {
+      const handle = await fetchBlobHandle(Buffer.from('hello', 'utf8'))
+      expect(await handle.text()).toBe('hello')
+    })
 
-      expectTypeOf(result.result).toMatchTypeOf<{ body: Blob } | undefined>()
-      expect(result.result?.body).toBeInstanceOf(Blob)
-      expect(result.result?.body.size).toBe(4)
+    it('aggregates the body via arrayBuffer()', async () => {
+      const handle = await fetchBlobHandle(Buffer.from([0x01, 0x02, 0x03]))
+      expect((await handle.arrayBuffer()).byteLength).toBe(3)
+    })
+
+    it('exposes the raw body via stream()', async () => {
+      const handle = await fetchBlobHandle(Buffer.from([0x89, 0x50]))
+      const stream = handle.stream()
+      expectTypeOf(stream).toEqualTypeOf<ReadableStream<Uint8Array>>()
+      const bytes = new Uint8Array(await new Response(stream).arrayBuffer())
+      expect([...bytes]).toEqual([0x89, 0x50])
+    })
+
+    it('discards the body via cancel()', async () => {
+      const handle = await fetchBlobHandle(Buffer.from([0x89, 0x50]))
+      await expect(handle.cancel()).resolves.toBeUndefined()
+    })
+
+    it('throws when the body handle is consumed twice', async () => {
+      const handle = await fetchBlobHandle(Buffer.from([0x89, 0x50]))
+      await handle.blob()
+      expect(() => handle.text()).toThrow('Response body already consumed')
     })
   })
 
   describe('request errors', () => {
     it('throws when server closes the connection', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 200: z.object({ id: z.number() }) },
@@ -692,6 +713,7 @@ describe('sendByApiContract', () => {
 
     it('throws when request is aborted', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 200: z.object({ id: z.number() }) },
@@ -704,6 +726,7 @@ describe('sendByApiContract', () => {
 
     it('throws TimeoutError when both signal and timeout are provided and timeout fires first', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 200: z.object({ id: z.number() }) },
@@ -723,6 +746,7 @@ describe('sendByApiContract', () => {
   describe('retry', () => {
     it('retries on configured status codes and returns success on recovery', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: { 200: z.object({ id: z.number() }) },
@@ -747,6 +771,7 @@ describe('sendByApiContract', () => {
 
     it('returns error after exhausting all retries', async () => {
       const contract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: {},
@@ -770,6 +795,7 @@ describe('sendByApiContract', () => {
 
     describe('Retry-After', () => {
       const retryAfterContract = defineApiContract({
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
         responsesByStatusCode: {
@@ -910,6 +936,7 @@ describe('sendByApiContract', () => {
 
       it('retries on connection close and succeeds on recovery', async () => {
         const contract = defineApiContract({
+          summary: 'Test contract',
           method: 'get',
           pathResolver: () => '/products/1',
           responsesByStatusCode: { 200: z.object({ id: z.number() }) },
@@ -929,6 +956,7 @@ describe('sendByApiContract', () => {
 
       it('throws UND_ERR_SOCKET after exhausting all retries', async () => {
         const contract = defineApiContract({
+          summary: 'Test contract',
           method: 'get',
           pathResolver: () => '/products/1',
           responsesByStatusCode: { 200: z.object({ id: z.number() }) },
@@ -945,6 +973,7 @@ describe('sendByApiContract', () => {
 
       it('does not retry network errors when retryOnNetworkError is false', async () => {
         const contract = defineApiContract({
+          summary: 'Test contract',
           method: 'get',
           pathResolver: () => '/products/1',
           responsesByStatusCode: { 200: z.object({ id: z.number() }) },
@@ -964,6 +993,7 @@ describe('sendByApiContract', () => {
 
       it('does not retry timeout errors when retryOnTimeout is false', async () => {
         const contract = defineApiContract({
+          summary: 'Test contract',
           method: 'get',
           pathResolver: () => '/products/1',
           responsesByStatusCode: { 200: z.object({ id: z.number() }) },

@@ -1,5 +1,6 @@
 import {
   type ApiContract,
+  type BlobResponseHandle,
   buildRequestPath,
   type ClientRequestParams,
   type DefaultStreaming,
@@ -126,14 +127,45 @@ async function* parseSseStream(
   }
 }
 
+/**
+ * Wraps a Fetch {@link Response} — which already implements the accessor surface — in a lazy,
+ * single-consume {@link BlobResponseHandle}. The guard makes the one-shot nature explicit: the
+ * first accessor claims the body, a second throws instead of surfacing Fetch's less obvious
+ * "body already used" error.
+ */
+function toBlobHandle(response: Response): BlobResponseHandle {
+  // A materialized fetch response always exposes a body stream; this only narrows the
+  // `ReadableStream | null` type and is unreachable in practice.
+  /* v8 ignore start */
+  if (!response.body) {
+    throw new Error('Response body is null')
+  }
+  /* v8 ignore stop */
+  const stream = response.body
+
+  let consumed = false
+  const guard = <T>(read: () => T): T => {
+    if (consumed) {
+      throw new Error('Response body already consumed')
+    }
+    consumed = true
+    return read()
+  }
+  return {
+    stream: () => guard(() => stream),
+    blob: () => guard(() => response.blob()),
+    text: () => guard(() => response.text()),
+    arrayBuffer: () => guard(() => response.arrayBuffer()),
+    cancel: () => guard(() => stream.cancel()),
+  }
+}
+
 async function parseBody(response: Response, resolvedEntry: ResponseKind) {
   switch (resolvedEntry.kind) {
     case 'noContent':
       return null
-    case 'text':
-      return await response.text()
     case 'blob':
-      return await response.blob()
+      return toBlobHandle(response)
     case 'json': {
       const json = await response.json()
       return resolvedEntry.schema.parse(json)
@@ -242,7 +274,14 @@ export async function sendByApiContract<
 
   if (!resolvedResponseEntry) {
     const body = await response.text()
-    return { error: new UnexpectedResponseError(response.status, normalizedHeaders, body) }
+    return {
+      error: new UnexpectedResponseError(
+        response.status,
+        normalizedHeaders,
+        body,
+        apiContract.summary,
+      ),
+    }
   }
 
   const parsedBody = await parseBody(response, resolvedResponseEntry)

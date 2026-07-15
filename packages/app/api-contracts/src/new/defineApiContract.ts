@@ -1,4 +1,4 @@
-import { z } from 'zod/v4'
+import type { z } from 'zod/v4'
 import type {
   CommonRouteDefinitionMetadata,
   InferSchemaOutput,
@@ -6,17 +6,11 @@ import type {
 } from '../apiContracts.ts'
 import { SUCCESSFUL_HTTP_STATUS_CODES } from '../HttpStatusCodes.ts'
 import type { DistributiveOmit, Exactly } from '../typeUtils.ts'
-import { ContractNoBody } from './constants.ts'
+import type { ContractNoBody } from './constants.ts'
 import {
   type ApiContractResponse,
-  isAnyOfResponses,
-  isBlobResponse,
   isContentResponseEntry,
-  isJsonBody,
-  isNoBodyResponse,
   isSseBody,
-  isSseResponse,
-  isTextResponse,
   type ResponseEntry,
   type ResponsesByStatusCode,
   type SseSchemaByEventName,
@@ -37,7 +31,8 @@ export type CommonApiContract = {
   responsesByStatusCode: ResponsesByStatusCode
 
   metadata?: CommonRouteDefinitionMetadata
-  summary?: string
+  /** Human-readable summary of the route. */
+  summary: string
   description?: string
   tags?: readonly string[]
 }
@@ -109,14 +104,6 @@ const collectSseSchemaMaps = (
     return maps
   }
 
-  if (isSseResponse(value)) {
-    return [value.schemaByEventName]
-  }
-
-  if (isAnyOfResponses(value)) {
-    return value.responses.filter(isSseResponse).map((response) => response.schemaByEventName)
-  }
-
   return []
 }
 
@@ -144,91 +131,4 @@ export const hasAnySuccessSseResponse = (apiContract: ApiContract): boolean => {
   }
 
   return false
-}
-
-/** @deprecated No known consumers — will be removed in a future release. */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it is acceptable
-export const getSuccessResponseSchema = (routeConfig: ApiContract): z.ZodType | null => {
-  const schemas: z.ZodType[] = []
-  let hasDirectNonJsonEntry = false
-
-  for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
-    const value = routeConfig.responsesByStatusCode[code]
-
-    if (!value) {
-      continue
-    }
-
-    if (isContentResponseEntry(value)) {
-      if (!value.content) {
-        hasDirectNonJsonEntry = true
-        continue
-      }
-      for (const descriptor of Object.values(value.content)) {
-        if (isJsonBody(descriptor)) {
-          schemas.push(descriptor)
-        } else {
-          hasDirectNonJsonEntry = true
-        }
-      }
-      continue
-    }
-
-    if (isAnyOfResponses(value)) {
-      for (const response of value.responses) {
-        if (!isSseResponse(response) && !isTextResponse(response) && !isBlobResponse(response)) {
-          schemas.push(response)
-        }
-      }
-    } else if (
-      value === ContractNoBody ||
-      isNoBodyResponse(value) ||
-      isSseResponse(value) ||
-      isTextResponse(value) ||
-      isBlobResponse(value)
-    ) {
-      hasDirectNonJsonEntry = true
-    } else {
-      schemas.push(value)
-    }
-  }
-
-  if (schemas.length > 1) {
-    return z.union(schemas)
-  }
-
-  const firstSchema = schemas.at(0)
-  if (firstSchema) {
-    return firstSchema
-  }
-
-  return hasDirectNonJsonEntry ? z.never() : null
-}
-
-/** @deprecated No known consumers — will be removed in a future release. */
-export const getIsEmptyResponseExpected = (routeConfig: ApiContract): boolean => {
-  let isEmptyResponseExpected = true
-
-  for (const code of SUCCESSFUL_HTTP_STATUS_CODES) {
-    const value = routeConfig.responsesByStatusCode[code]
-
-    if (!value) {
-      continue
-    }
-
-    if (isContentResponseEntry(value)) {
-      if (value.content) {
-        isEmptyResponseExpected = false
-        break
-      }
-      continue
-    }
-
-    if (value !== ContractNoBody && !isNoBodyResponse(value)) {
-      isEmptyResponseExpected = false
-      break
-    }
-  }
-
-  return isEmptyResponseExpected
 }

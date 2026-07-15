@@ -1,6 +1,7 @@
 import { Readable } from 'node:stream'
 import {
   type ApiContract,
+  type BlobResponseHandle,
   buildRequestPath,
   type ClientRequestParams,
   type DefaultStreaming,
@@ -50,7 +51,7 @@ export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> =
   /**
    * When true (default), throws if the response content-type doesn't match the contract entry.
    * When false, falls back to the contract entry's kind when content-type is absent or mismatched —
-   * only applies to single-entry responses (not anyOfResponses).
+   * only applies to single-entry responses.
    */
   strictContentType?: boolean
   /**
@@ -176,17 +177,41 @@ async function* parseSseStream(
   }
 }
 
+/**
+ * Wraps an undici response body in a lazy, single-consume {@link BlobResponseHandle}. The
+ * materializing accessors delegate to undici's own `blob()`/`text()`/`arrayBuffer()` — the
+ * first-class drains that also release the connection back to the pool — rather than routing bytes
+ * through a `new Response(Readable.toWeb(body))` round-trip. `cancel()` maps to `dump()`, undici's
+ * "discard and release" path, so the leak-prone "forgot to consume" case has a discoverable verb.
+ */
+function toBlobHandle(body: Dispatcher.ResponseData['body']): BlobResponseHandle {
+  let consumed = false
+  const guard = <T>(read: () => T): T => {
+    if (consumed) {
+      throw new Error('Response body already consumed')
+    }
+    consumed = true
+    return read()
+  }
+  return {
+    stream: () => guard(() => Readable.toWeb(body)),
+    blob: () => guard(() => body.blob()),
+    text: () => guard(() => body.text()),
+    arrayBuffer: () => guard(() => body.arrayBuffer()),
+    cancel: () => guard(() => body.dump()),
+  }
+}
+
 async function parseBody(body: Dispatcher.ResponseData['body'], resolvedEntry: ResponseKind) {
   switch (resolvedEntry.kind) {
     case 'noContent': {
       await body.dump()
       return null
     }
-    case 'text': {
-      return await body.text()
-    }
     case 'blob': {
-      return await body.blob()
+      // Hand back a lazy handle; the caller decides whether to pipe the raw stream or aggregate it
+      // (e.g. `await body.blob()` / `.text()` / `.arrayBuffer()`).
+      return toBlobHandle(body)
     }
     case 'json': {
       const json = await body.json()
@@ -281,7 +306,14 @@ export async function sendByApiContract<
 
   if (!resolvedResponseEntry) {
     const body = await response.body.text()
-    return { error: new UnexpectedResponseError(response.statusCode, normalizedHeaders, body) }
+    return {
+      error: new UnexpectedResponseError(
+        response.statusCode,
+        normalizedHeaders,
+        body,
+        apiContract.summary,
+      ),
+    }
   }
 
   const parsedBody = await parseBody(response.body, resolvedResponseEntry)
