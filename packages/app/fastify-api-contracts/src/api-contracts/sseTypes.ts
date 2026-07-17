@@ -3,15 +3,6 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 import type { z } from 'zod/v4'
 
 // ============================================================================
-// Dual-mode
-// ============================================================================
-
-/**
- * Response mode determined by the `Accept` header for a dual-mode route.
- */
-export type DualModeType = 'json' | 'sse'
-
-// ============================================================================
 // SSE primitives
 // ============================================================================
 
@@ -138,9 +129,6 @@ export type SSEContext<Events extends SSEEventSchemas = SSEEventSchemas> = {
     mode: SSESessionMode,
     options?: SSEStartOptions<Context>,
   ) => SSESession<Events, Context>
-
-  /** Escape hatch to the raw Fastify reply. Prefer the typed methods above. */
-  reply: FastifyReply
 }
 
 // ============================================================================
@@ -169,8 +157,9 @@ export type FastifySSERouteOptions = {
    */
   serializer?: (data: unknown) => string
   /**
-   * Heartbeat interval in milliseconds for this route. Set to 0 to disable.
-   * @default 30000
+   * Set to `false` to disable the SSE keep-alive heartbeat for this route.
+   * The heartbeat interval itself is configured at `@fastify/sse` plugin registration
+   * (`heartbeatInterval`, default 30000 ms).
    */
-  heartbeatInterval?: number
+  heartbeat?: boolean
 }

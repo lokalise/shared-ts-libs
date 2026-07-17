@@ -1,15 +1,16 @@
 import {
-  anyOfResponses,
+  blobBody,
   ContractNoBody,
   defineApiContract,
   type InferSseSuccessResponses,
-  sseResponse,
+  noBodyResponse,
+  sseBody,
 } from '@lokalise/api-contracts'
 import type { RouteOptions } from 'fastify'
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import type {
-  ApiHandlerReply,
+  ApiHandlerContext,
   InferApiHandler,
   InferApiHandlerRequest,
   InferApiHandlerResult,
@@ -31,6 +32,7 @@ describe('InferApiHandlerRequest', () => {
   it('infers path params, query and headers for a GET contract', () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Get a user',
       requestPathParamsSchema: z.object({ userId: z.string() }),
       requestQuerySchema: z.object({ limit: z.number() }),
       requestHeaderSchema: z.object({ authorization: z.string() }),
@@ -47,6 +49,7 @@ describe('InferApiHandlerRequest', () => {
   it('infers the body for a POST contract', () => {
     const contract = defineApiContract({
       method: 'post',
+      summary: 'Create a user',
       requestBodySchema: z.object({ name: z.string() }),
       pathResolver: () => '/users',
       responsesByStatusCode: { 201: userSchema },
@@ -59,9 +62,10 @@ describe('InferApiHandlerRequest', () => {
   it('infers an undefined body for a ContractNoBody payload contract', () => {
     const contract = defineApiContract({
       method: 'post',
+      summary: 'Ping',
       requestBodySchema: ContractNoBody,
       pathResolver: () => '/ping',
-      responsesByStatusCode: { 204: ContractNoBody },
+      responsesByStatusCode: { 204: noBodyResponse() },
     })
 
     // The route-level Body generic is `undefined`; Fastify surfaces an absent body
@@ -79,6 +83,7 @@ describe('InferApiHandlerResult', () => {
   it('builds a discriminated union of { status, body } pairs over JSON responses', () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'List users',
       pathResolver: () => '/users',
       responsesByStatusCode: {
         200: userSchema,
@@ -95,25 +100,82 @@ describe('InferApiHandlerResult', () => {
   it('infers an async-iterable body for an SSE response', () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Stream updates',
       pathResolver: () => '/stream',
-      responsesByStatusCode: { 200: sseResponse(sseEventsSchema) },
+      responsesByStatusCode: {
+        200: { content: { 'text/event-stream': sseBody(sseEventsSchema) } },
+      },
     })
 
-    // An SSE response surfaces as a { status, body } whose body streams the contract events.
+    // An SSE response surfaces as a { status, body } whose body streams the contract events;
+    // with a single declared media type the contentType is optional.
     expectTypeOf<InferApiHandlerResult<typeof contract>>().toEqualTypeOf<{
       status: 200
+      contentType?: 'text/event-stream'
       body: AsyncIterable<
         SSEStreamMessage<InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>>
       >
     }>()
   })
 
+  it('requires a contentType discriminating the body when a status declares several media types', () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Export in a chosen format',
+      pathResolver: () => '/export',
+      responsesByStatusCode: {
+        200: {
+          content: {
+            'application/json': z.object({ rows: z.number() }),
+            'application/vnd.report+json': z.object({ report: z.string() }),
+          },
+        },
+      },
+    })
+
+    type Response = InferApiHandlerResult<typeof contract>
+    expectTypeOf<Response>().toEqualTypeOf<
+      | { status: 200; contentType: 'application/json'; body: { rows: number } }
+      | { status: 200; contentType: 'application/vnd.report+json'; body: { report: string } }
+    >()
+
+    // Omitting contentType, or pairing it with the other variant's body, is rejected.
+    expectTypeOf<{ status: 200; body: { rows: number } }>().not.toMatchTypeOf<Response>()
+    expectTypeOf<{
+      status: 200
+      contentType: 'application/vnd.report+json'
+      body: { rows: number }
+    }>().not.toMatchTypeOf<Response>()
+  })
+
+  it('keeps contentType optional for a single-media-type content map', () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Export CSV',
+      pathResolver: () => '/export.csv',
+      responsesByStatusCode: {
+        200: { content: { 'text/csv': blobBody() } },
+      },
+    })
+
+    type Response = InferApiHandlerResult<typeof contract>
+    expectTypeOf<{ status: 200; body: string }>().toMatchTypeOf<Response>()
+    expectTypeOf<{ status: 200; contentType: 'text/csv'; body: string }>().toMatchTypeOf<Response>()
+    // A contentType the status does not declare is rejected.
+    expectTypeOf<{
+      status: 200
+      contentType: 'text/html'
+      body: string
+    }>().not.toMatchTypeOf<Response>()
+  })
+
   it('requires body: null for a no-body response', () => {
     const contract = defineApiContract({
       method: 'delete',
+      summary: 'Delete a user',
       requestPathParamsSchema: z.object({ id: z.string() }),
       pathResolver: (p) => `/users/${p.id}`,
-      responsesByStatusCode: { 204: ContractNoBody },
+      responsesByStatusCode: { 204: noBodyResponse() },
     })
 
     expectTypeOf<InferApiHandlerResult<typeof contract>>().toEqualTypeOf<{
@@ -134,43 +196,77 @@ describe('InferApiHandlerResult', () => {
 // ============================================================================
 
 describe('InferApiHandler', () => {
-  it('infers a (request, reply) handler with no sse context for a non-SSE contract', () => {
+  it('passes a context without sse for a non-SSE contract', () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'List users',
       pathResolver: () => '/users',
       responsesByStatusCode: { 200: userSchema },
     })
 
-    // Exactly two params — no sse context is added for non-SSE contracts.
-    expectTypeOf<Parameters<InferApiHandler<typeof contract>>>().toEqualTypeOf<
-      [InferApiHandlerRequest<typeof contract>, ApiHandlerReply]
-    >()
+    type Context = Parameters<InferApiHandler<typeof contract>>[2]
+    expectTypeOf<Context>().toEqualTypeOf<ApiHandlerContext<typeof contract>>()
+    expectTypeOf<Context>().toHaveProperty('expectedContentType')
+    expectTypeOf<Context>().not.toHaveProperty('sse')
   })
 
-  it('adds an sse context as the third arg for an SSE-only contract', () => {
+  it('extends the context with sse for an SSE-only contract', () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Stream updates',
       pathResolver: () => '/stream',
-      responsesByStatusCode: { 200: sseResponse(sseEventsSchema) },
-    })
-
-    expectTypeOf<Parameters<InferApiHandler<typeof contract>>[2]>().toEqualTypeOf<
-      SSEContext<InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>>
-    >()
-  })
-
-  it('adds an sse context as the third arg for a dual-mode contract', () => {
-    const contract = defineApiContract({
-      method: 'post',
-      requestBodySchema: z.object({ message: z.string() }),
-      pathResolver: () => '/chat',
       responsesByStatusCode: {
-        200: anyOfResponses([userSchema, sseResponse(sseEventsSchema)]),
+        200: { content: { 'text/event-stream': sseBody(sseEventsSchema) } },
       },
     })
 
-    expectTypeOf<Parameters<InferApiHandler<typeof contract>>[2]>().toEqualTypeOf<
+    type Context = Parameters<InferApiHandler<typeof contract>>[2]
+    expectTypeOf<Context['sse']>().toEqualTypeOf<
       SSEContext<InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>>
+    >()
+  })
+
+  it('extends the context with sse for a dual-mode contract', () => {
+    const contract = defineApiContract({
+      method: 'post',
+      summary: 'Chat',
+      requestBodySchema: z.object({ message: z.string() }),
+      pathResolver: () => '/chat',
+      responsesByStatusCode: {
+        200: {
+          content: {
+            'application/json': userSchema,
+            'text/event-stream': sseBody(sseEventsSchema),
+          },
+        },
+      },
+    })
+
+    type Context = Parameters<InferApiHandler<typeof contract>>[2]
+    expectTypeOf<Context['sse']>().toEqualTypeOf<
+      SSEContext<InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>>
+    >()
+  })
+
+  it('types expectedContentType as the union of the contract-declared content-types', () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Export data',
+      pathResolver: () => '/export',
+      responsesByStatusCode: {
+        200: {
+          content: {
+            'application/json': z.object({ rows: z.number() }),
+            'text/csv': blobBody(),
+          },
+        },
+        404: z.object({ error: z.string() }),
+      },
+    })
+
+    type Context = Parameters<InferApiHandler<typeof contract>>[2]
+    expectTypeOf<Context['expectedContentType']>().toEqualTypeOf<
+      'application/json' | 'text/csv' | undefined
     >()
   })
 })
@@ -183,6 +279,7 @@ describe('buildFastifyApiRoute typing', () => {
   it('returns a Fastify RouteOptions', () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'List users',
       pathResolver: () => '/users',
       responsesByStatusCode: { 200: userSchema },
     })
@@ -197,6 +294,7 @@ describe('buildFastifyApiRoute typing', () => {
   it('rejects a status code not declared on the contract', () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'List users',
       pathResolver: () => '/users',
       responsesByStatusCode: { 200: userSchema },
     })
@@ -211,34 +309,69 @@ describe('buildFastifyApiRoute typing', () => {
   it('accepts a single merged handler that returns JSON or streams for a dual-mode contract', () => {
     const contract = defineApiContract({
       method: 'post',
+      summary: 'Chat',
       requestBodySchema: z.object({ message: z.string() }),
       pathResolver: () => '/chat',
       responsesByStatusCode: {
-        200: anyOfResponses([userSchema, sseResponse(sseEventsSchema)]),
+        200: {
+          content: {
+            'application/json': userSchema,
+            'text/event-stream': sseBody(sseEventsSchema),
+          },
+        },
       },
     })
 
-    buildFastifyApiRoute(contract, (request, _reply, sse) => {
+    buildFastifyApiRoute(contract, (request, _reply, { expectedContentType, sse }) => {
       expectTypeOf(request.body).toEqualTypeOf<{ message: string }>()
-      if (request.headers.accept === 'text/event-stream') {
+      if (expectedContentType === 'text/event-stream') {
         sse.start('autoClose')
         return
       }
-      return { status: 200, body: { id: '1', name: 'A' } }
+      // The 200 status declares two media types, so the contentType is required.
+      return { status: 200, contentType: 'application/json', body: { id: '1', name: 'A' } }
     })
+  })
+
+  it('requires a contentType from a dual-mode handler returning JSON', () => {
+    const contract = defineApiContract({
+      method: 'post',
+      summary: 'Chat',
+      requestBodySchema: z.object({ message: z.string() }),
+      pathResolver: () => '/chat',
+      responsesByStatusCode: {
+        200: {
+          content: {
+            'application/json': userSchema,
+            'text/event-stream': sseBody(sseEventsSchema),
+          },
+        },
+      },
+    })
+
+    buildFastifyApiRoute(contract, (_request, _reply) =>
+      // @ts-expect-error contentType is required when the status declares several media types
+      ({ status: 200, body: { id: '1', name: 'A' } }),
+    )
   })
 
   it('rejects an undeclared status code from a dual-mode handler', () => {
     const contract = defineApiContract({
       method: 'post',
+      summary: 'Chat',
       requestBodySchema: z.object({ message: z.string() }),
       pathResolver: () => '/chat',
       responsesByStatusCode: {
-        200: anyOfResponses([userSchema, sseResponse(sseEventsSchema)]),
+        200: {
+          content: {
+            'application/json': userSchema,
+            'text/event-stream': sseBody(sseEventsSchema),
+          },
+        },
       },
     })
 
-    buildFastifyApiRoute(contract, (_request, _reply, _sse) =>
+    buildFastifyApiRoute(contract, (_request, _reply) =>
       // @ts-expect-error 418 is not a declared response status code
       ({ status: 418, body: { id: '1', name: 'A' } }),
     )
@@ -247,11 +380,14 @@ describe('buildFastifyApiRoute typing', () => {
   it('accepts a returned { status, body } whose body is an async iterable of contract events', () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Stream updates',
       pathResolver: () => '/stream',
-      responsesByStatusCode: { 200: sseResponse(sseEventsSchema) },
+      responsesByStatusCode: {
+        200: { content: { 'text/event-stream': sseBody(sseEventsSchema) } },
+      },
     })
 
-    buildFastifyApiRoute(contract, (_request, _reply, _sse) => ({
+    buildFastifyApiRoute(contract, (_request, _reply) => ({
       status: 200,
       // biome-ignore lint/suspicious/useAwait: async is required to satisfy AsyncIterable
       body: (async function* () {
@@ -264,8 +400,11 @@ describe('buildFastifyApiRoute typing', () => {
   it('types each streamed event against the contract event schemas', () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Stream updates',
       pathResolver: () => '/stream',
-      responsesByStatusCode: { 200: sseResponse(sseEventsSchema) },
+      responsesByStatusCode: {
+        200: { content: { 'text/event-stream': sseBody(sseEventsSchema) } },
+      },
     })
     type Event = SSEStreamMessage<
       InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>
@@ -279,6 +418,7 @@ describe('buildFastifyApiRoute typing', () => {
   it('infers request typing inside the handler', () => {
     const contract = defineApiContract({
       method: 'post',
+      summary: 'Create an org user',
       requestBodySchema: z.object({ name: z.string() }),
       requestPathParamsSchema: z.object({ orgId: z.string() }),
       pathResolver: (p) => `/orgs/${p.orgId}/users`,

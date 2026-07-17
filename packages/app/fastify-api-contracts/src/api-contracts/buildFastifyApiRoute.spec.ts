@@ -1,13 +1,6 @@
 import { Readable } from 'node:stream'
 import * as fastifySSEImport from '@fastify/sse'
-import {
-  anyOfResponses,
-  blobResponse,
-  ContractNoBody,
-  defineApiContract,
-  sseResponse,
-  textResponse,
-} from '@lokalise/api-contracts'
+import { blobBody, defineApiContract, noBodyResponse, sseBody } from '@lokalise/api-contracts'
 import fastify, { type FastifyInstance, type FastifyPluginAsync } from 'fastify'
 import {
   serializerCompiler,
@@ -16,7 +9,8 @@ import {
 } from 'fastify-type-provider-zod'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod/v4'
-import { buildFastifyApiRoute } from './buildFastifyApiRoute.ts'
+import { buildFastifyApiRoute, hasAnySseResponse } from './buildFastifyApiRoute.ts'
+import { buildFastifyApiSchema } from './buildFastifyApiSchema.ts'
 
 // ============================================================================
 // Shared test fixtures
@@ -26,6 +20,7 @@ const userSchema = z.object({ id: z.string(), name: z.string() })
 
 const getUserContract = defineApiContract({
   method: 'get',
+  summary: 'Get a user',
   pathResolver: (p: { userId: string }) => `/users/${p.userId}`,
   requestPathParamsSchema: z.object({ userId: z.string() }),
   responsesByStatusCode: { 200: userSchema },
@@ -33,6 +28,7 @@ const getUserContract = defineApiContract({
 
 const createUserContract = defineApiContract({
   method: 'post',
+  summary: 'Create a user',
   pathResolver: () => '/users',
   requestBodySchema: z.object({ name: z.string() }),
   responsesByStatusCode: { 201: userSchema },
@@ -40,9 +36,10 @@ const createUserContract = defineApiContract({
 
 const deleteUserContract = defineApiContract({
   method: 'delete',
+  summary: 'Delete a user',
   pathResolver: (p: { userId: string }) => `/users/${p.userId}`,
   requestPathParamsSchema: z.object({ userId: z.string() }),
-  responsesByStatusCode: { 204: ContractNoBody },
+  responsesByStatusCode: { 204: noBodyResponse() },
 })
 
 const sseEventsSchema = {
@@ -52,16 +49,23 @@ const sseEventsSchema = {
 
 const sseOnlyContract = defineApiContract({
   method: 'get',
+  summary: 'Stream updates',
   pathResolver: () => '/stream',
-  responsesByStatusCode: { 200: sseResponse(sseEventsSchema) },
+  responsesByStatusCode: { 200: { content: { 'text/event-stream': sseBody(sseEventsSchema) } } },
 })
 
 const dualModeContract = defineApiContract({
   method: 'post',
+  summary: 'Chat',
   pathResolver: () => '/chat',
   requestBodySchema: z.object({ message: z.string() }),
   responsesByStatusCode: {
-    200: anyOfResponses([userSchema, sseResponse(sseEventsSchema)]),
+    200: {
+      content: {
+        'application/json': userSchema,
+        'text/event-stream': sseBody(sseEventsSchema),
+      },
+    },
   },
 })
 
@@ -89,33 +93,14 @@ describe('buildFastifyApiRoute — non-SSE', () => {
     expect(routeOptions.url).toBe('/users/:userId')
   })
 
-  it('includes path params schema', () => {
-    const routeOptions = buildFastifyApiRoute(getUserContract, async () => ({
-      status: 200,
-      body: { id: '1', name: 'Alice' },
-    }))
-    expect((routeOptions.schema as { params?: unknown })?.params).toBe(
-      getUserContract.requestPathParamsSchema,
-    )
-  })
-
-  it('produces a POST route with body schema', () => {
+  it('derives the route schema from the contract', () => {
     const routeOptions = buildFastifyApiRoute(createUserContract, async () => ({
       status: 201,
       body: { id: '1', name: 'Alice' },
     }))
     expect(routeOptions.method).toBe('post')
-    expect((routeOptions.schema as { body?: unknown })?.body).toBe(
-      createUserContract.requestBodySchema,
-    )
-  })
-
-  it('excludes body schema for ContractNoBody', () => {
-    const routeOptions = buildFastifyApiRoute(deleteUserContract, async () => ({
-      status: 204,
-      body: null,
-    }))
-    expect((routeOptions.schema as { body?: unknown })?.body).toBeUndefined()
+    // Request/response schema mapping itself is covered by buildFastifyApiSchema.spec.ts.
+    expect(routeOptions.schema).toEqual(buildFastifyApiSchema(createUserContract))
   })
 
   it('does not set sse property on non-SSE routes', () => {
@@ -152,15 +137,15 @@ describe('buildFastifyApiRoute — non-SSE', () => {
 // ============================================================================
 
 describe('buildFastifyApiRoute — SSE-only', () => {
-  it('produces a route with sse: true', () => {
-    const routeOptions = buildFastifyApiRoute(sseOnlyContract, (_request, _reply, sse) => {
+  it("produces a route with sse: 'manual'", () => {
+    const routeOptions = buildFastifyApiRoute(sseOnlyContract, (_request, _reply, { sse }) => {
       sse.start('keepAlive')
     })
-    expect((routeOptions as { sse?: unknown }).sse).toBe(true)
+    expect((routeOptions as { sse?: unknown }).sse).toBe('manual')
   })
 
   it('produces correct url', () => {
-    const routeOptions = buildFastifyApiRoute(sseOnlyContract, (_request, _reply, sse) => {
+    const routeOptions = buildFastifyApiRoute(sseOnlyContract, (_request, _reply, { sse }) => {
       sse.start('keepAlive')
     })
     expect(routeOptions.url).toBe('/stream')
@@ -172,28 +157,19 @@ describe('buildFastifyApiRoute — SSE-only', () => {
 // ============================================================================
 
 describe('buildFastifyApiRoute — dual-mode', () => {
-  it('produces a route with sse: true', () => {
-    const routeOptions = buildFastifyApiRoute(dualModeContract, (_request, _reply, sse) => {
+  it("produces a route with sse: 'manual'", () => {
+    const routeOptions = buildFastifyApiRoute(dualModeContract, (_request, _reply, { sse }) => {
       sse.start('autoClose')
     })
-    expect((routeOptions as { sse?: unknown }).sse).toBe(true)
+    expect((routeOptions as { sse?: unknown }).sse).toBe('manual')
   })
 
   it('produces correct url and method', () => {
-    const routeOptions = buildFastifyApiRoute(dualModeContract, (_request, _reply, sse) => {
+    const routeOptions = buildFastifyApiRoute(dualModeContract, (_request, _reply, { sse }) => {
       sse.start('autoClose')
     })
     expect(routeOptions.method).toBe('post')
     expect(routeOptions.url).toBe('/chat')
-  })
-
-  it('includes body schema', () => {
-    const routeOptions = buildFastifyApiRoute(dualModeContract, (_request, _reply, sse) => {
-      sse.start('autoClose')
-    })
-    expect((routeOptions.schema as { body?: unknown })?.body).toBe(
-      dualModeContract.requestBodySchema,
-    )
   })
 })
 
@@ -206,90 +182,23 @@ describe('buildFastifyApiRoute — SSE config via options', () => {
     const serializer = (data: unknown) => JSON.stringify(data)
     const routeOptions = buildFastifyApiRoute(
       sseOnlyContract,
-      (_r, _reply, sse) => {
+      (_r, _reply, { sse }) => {
         sse.start('keepAlive')
       },
       { serializer },
     )
-    expect((routeOptions as { sse?: unknown }).sse).toEqual({ serializer })
+    expect((routeOptions as { sse?: unknown }).sse).toEqual({ kind: 'manual', serializer })
   })
 
-  it('passes heartbeatInterval into sse config', () => {
+  it('passes heartbeat: false into sse config', () => {
     const routeOptions = buildFastifyApiRoute(
       sseOnlyContract,
-      (_r, _reply, sse) => {
+      (_r, _reply, { sse }) => {
         sse.start('keepAlive')
       },
-      { heartbeatInterval: 10000 },
+      { heartbeat: false },
     )
-    expect((routeOptions as { sse?: unknown }).sse).toEqual({ heartbeatInterval: 10000 })
-  })
-})
-
-// ============================================================================
-// buildFastifyApiRoute — response schemas
-// ============================================================================
-
-describe('buildFastifyApiRoute — response schemas', () => {
-  it('includes JSON response schema for a GET route', () => {
-    const routeOptions = buildFastifyApiRoute(getUserContract, async () => ({
-      status: 200,
-      body: { id: '1', name: 'Alice' },
-    }))
-    expect(routeOptions).toEqual(
-      expect.objectContaining({
-        schema: expect.objectContaining({ response: { 200: userSchema } }),
-      }),
-    )
-  })
-
-  it('includes JSON response schema for a POST route', () => {
-    const routeOptions = buildFastifyApiRoute(createUserContract, async () => ({
-      status: 201,
-      body: { id: '1', name: 'Alice' },
-    }))
-    expect(routeOptions).toEqual(
-      expect.objectContaining({
-        schema: expect.objectContaining({ response: { 201: userSchema } }),
-      }),
-    )
-  })
-
-  it('omits ContractNoBody status codes from response schemas', () => {
-    const routeOptions = buildFastifyApiRoute(deleteUserContract, async () => ({
-      status: 204,
-      body: null,
-    }))
-    expect(routeOptions).toEqual(
-      expect.objectContaining({ schema: expect.objectContaining({ response: {} }) }),
-    )
-  })
-
-  it('omits SSE-only status codes from response schemas', () => {
-    const routeOptions = buildFastifyApiRoute(sseOnlyContract, (_request, _reply, sse) => {
-      sse.start('keepAlive')
-    })
-    expect(routeOptions).toEqual(
-      expect.objectContaining({ schema: expect.objectContaining({ response: {} }) }),
-    )
-  })
-
-  it('picks the JSON schema from anyOfResponses even when SSE variant comes first', () => {
-    const sseFirstContract = defineApiContract({
-      method: 'get',
-      pathResolver: () => '/mixed',
-      responsesByStatusCode: {
-        200: anyOfResponses([sseResponse(sseEventsSchema), userSchema]),
-      },
-    })
-    const routeOptions = buildFastifyApiRoute(sseFirstContract, (_request, _reply, sse) => {
-      sse.start('keepAlive')
-    })
-    expect(routeOptions).toEqual(
-      expect.objectContaining({
-        schema: expect.objectContaining({ response: { 200: userSchema } }),
-      }),
-    )
+    expect((routeOptions as { sse?: unknown }).sse).toEqual({ kind: 'manual', heartbeat: false })
   })
 })
 
@@ -304,7 +213,45 @@ describe('buildFastifyApiRoute — no path params', () => {
       body: { id: '1', name: 'Alice' },
     }))
     expect(routeOptions.url).toBe('/users')
-    expect((routeOptions.schema as { params?: unknown })?.params).toBeUndefined()
+  })
+})
+
+// ============================================================================
+// hasAnySseResponse
+// ============================================================================
+
+describe('hasAnySseResponse', () => {
+  it('returns true for an sseBody at a success code', () => {
+    expect(hasAnySseResponse(sseOnlyContract)).toBe(true)
+  })
+
+  it('returns true for an sseBody at any status code', () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Stream errors',
+      pathResolver: () => '/stream',
+      responsesByStatusCode: {
+        200: z.object({ id: z.string() }),
+        404: { content: { 'text/event-stream': sseBody({ error: z.string() }) } },
+      },
+    })
+
+    expect(hasAnySseResponse(contract)).toBe(true)
+  })
+
+  it('returns false when no SSE response is present', () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Get a user',
+      pathResolver: () => '/users',
+      responsesByStatusCode: {
+        200: userSchema,
+        204: noBodyResponse(),
+        404: { content: { 'text/csv': blobBody() } },
+      },
+    })
+
+    expect(hasAnySseResponse(contract)).toBe(false)
   })
 })
 
@@ -348,6 +295,7 @@ describe('buildFastifyApiRoute — runtime', () => {
   it('returns 500 when the handler body fails contract validation', async () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Get profile',
       pathResolver: () => '/profile',
       responsesByStatusCode: { 200: z.object({ id: z.string() }) },
     })
@@ -364,6 +312,7 @@ describe('buildFastifyApiRoute — runtime', () => {
   it('supports multiple status codes from a single handler', async () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Get a user',
       pathResolver: (p: { id: string }) => `/users/${p.id}`,
       requestPathParamsSchema: z.object({ id: z.string() }),
       responsesByStatusCode: {
@@ -390,11 +339,12 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(missing.json()).toEqual({ error: 'Not found' })
   })
 
-  it('sends a string body with the contract-declared text content-type', async () => {
+  it('sends a string body with the contract-declared blob content-type', async () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Export CSV',
       pathResolver: () => '/export.csv',
-      responsesByStatusCode: { 200: textResponse('text/csv') },
+      responsesByStatusCode: { 200: { content: { 'text/csv': blobBody() } } },
     })
     app = await buildApp()
     app.route(buildFastifyApiRoute(contract, () => ({ status: 200, body: 'a,b\n1,2' })))
@@ -406,43 +356,85 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(response.body).toBe('a,b\n1,2')
   })
 
-  it('selects the content-type by the returned body kind for a mixed anyOf response', async () => {
+  it('sends the explicit contentType returned for a mixed content-map response', async () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Export in a chosen format',
       pathResolver: (p: { format: string }) => `/export/${p.format}`,
       requestPathParamsSchema: z.object({ format: z.string() }),
       responsesByStatusCode: {
-        200: anyOfResponses([z.object({ rows: z.number() }), textResponse('text/csv')]),
+        200: {
+          content: {
+            'application/json': z.object({ rows: z.number() }),
+            'text/csv': blobBody(),
+          },
+        },
       },
     })
     app = await buildApp()
     app.route(
       buildFastifyApiRoute(contract, (request) =>
         request.params.format === 'csv'
-          ? { status: 200, body: 'a,b\n1,2' }
-          : { status: 200, body: { rows: 1 } },
+          ? { status: 200, contentType: 'text/csv', body: 'a,b\n1,2' }
+          : { status: 200, contentType: 'application/json', body: { rows: 1 } },
       ),
     )
     await app.ready()
 
-    // Object body → JSON, even though the same status also declares a text variant.
     const json = await app.inject({ method: 'GET', url: '/export/json' })
     expect(json.statusCode).toBe(200)
     expect(json.headers['content-type']).toContain('application/json')
     expect(json.json()).toEqual({ rows: 1 })
 
-    // String body → the declared text content-type.
     const csv = await app.inject({ method: 'GET', url: '/export/csv' })
     expect(csv.statusCode).toBe(200)
     expect(csv.headers['content-type']).toContain('text/csv')
     expect(csv.body).toBe('a,b\n1,2')
   })
 
-  it('streams a text response (e.g. text/html) via a Readable', async () => {
+  it('disambiguates two JSON variants at one status by the explicit contentType', async () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Get a report',
+      pathResolver: (p: { variant: string }) => `/report/${p.variant}`,
+      requestPathParamsSchema: z.object({ variant: z.string() }),
+      responsesByStatusCode: {
+        200: {
+          content: {
+            'application/json': z.object({ rows: z.number() }),
+            'application/vnd.report+json': z.object({ report: z.string() }),
+          },
+        },
+      },
+    })
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(contract, (request) =>
+        request.params.variant === 'plain'
+          ? { status: 200, contentType: 'application/json', body: { rows: 1 } }
+          : { status: 200, contentType: 'application/vnd.report+json', body: { report: 'ok' } },
+      ),
+    )
+    await app.ready()
+
+    // Both bodies are objects — only the explicit contentType can tell the variants apart.
+    const plain = await app.inject({ method: 'GET', url: '/report/plain' })
+    expect(plain.statusCode).toBe(200)
+    expect(plain.headers['content-type']).toContain('application/json')
+    expect(plain.json()).toEqual({ rows: 1 })
+
+    const vnd = await app.inject({ method: 'GET', url: '/report/vnd' })
+    expect(vnd.statusCode).toBe(200)
+    expect(vnd.headers['content-type']).toContain('application/vnd.report+json')
+    expect(vnd.json()).toEqual({ report: 'ok' })
+  })
+
+  it('streams a text/html blob response via a Readable', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Render page',
       pathResolver: () => '/page',
-      responsesByStatusCode: { 200: textResponse('text/html') },
+      responsesByStatusCode: { 200: { content: { 'text/html': blobBody() } } },
     })
     app = await buildApp()
     app.route(
@@ -462,8 +454,9 @@ describe('buildFastifyApiRoute — runtime', () => {
   it('sends a Buffer body with the contract-declared blob content-type', async () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Download report',
       pathResolver: () => '/report.pdf',
-      responsesByStatusCode: { 200: blobResponse('application/pdf') },
+      responsesByStatusCode: { 200: { content: { 'application/pdf': blobBody() } } },
     })
     app = await buildApp()
     app.route(
@@ -483,8 +476,9 @@ describe('buildFastifyApiRoute — runtime', () => {
   it('pipes a Readable stream body with the contract-declared blob content-type', async () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Download report',
       pathResolver: () => '/report.pdf',
-      responsesByStatusCode: { 200: blobResponse('application/pdf') },
+      responsesByStatusCode: { 200: { content: { 'application/pdf': blobBody() } } },
     })
     app = await buildApp()
     app.route(
@@ -504,7 +498,7 @@ describe('buildFastifyApiRoute — runtime', () => {
   it('streams events from an SSE-only autoClose handler', async () => {
     app = await buildApp()
     app.route(
-      buildFastifyApiRoute(sseOnlyContract, async (_request, _reply, sse) => {
+      buildFastifyApiRoute(sseOnlyContract, async (_request, _reply, { sse }) => {
         const session = sse.start('autoClose')
         await session.send('update', { value: 1 })
         await session.send('done', { total: 1 })
@@ -522,10 +516,26 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(response.body).toContain('event: done')
   })
 
+  it('streams without an Accept header — manual mode skips Accept negotiation', async () => {
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(sseOnlyContract, async (_request, _reply, { sse }) => {
+        const session = sse.start('autoClose')
+        await session.send('done', { total: 1 })
+      }),
+    )
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/stream' })
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['content-type']).toContain('text/event-stream')
+    expect(response.body).toContain('event: done')
+  })
+
   it('streams events from an async-iterable body', async () => {
     app = await buildApp()
     app.route(
-      buildFastifyApiRoute(sseOnlyContract, (_request, _reply, _sse) => ({
+      buildFastifyApiRoute(sseOnlyContract, (_request, _reply) => ({
         status: 200,
         // biome-ignore lint/suspicious/useAwait: async is required to satisfy AsyncIterable
         body: (async function* () {
@@ -552,7 +562,7 @@ describe('buildFastifyApiRoute — runtime', () => {
     app.route(
       buildFastifyApiRoute(
         sseOnlyContract,
-        async (_request, _reply, sse) => {
+        async (_request, _reply, { sse }) => {
           const session = sse.start('autoClose')
           await session.send('done', { total: 1 })
         },
@@ -577,16 +587,17 @@ describe('buildFastifyApiRoute — runtime', () => {
   it('shares a 404 then streams via async iterable for an SSE-capable contract', async () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Stream item updates',
       pathResolver: (p: { id: string }) => `/items/${p.id}`,
       requestPathParamsSchema: z.object({ id: z.string() }),
       responsesByStatusCode: {
-        200: sseResponse(sseEventsSchema),
+        200: { content: { 'text/event-stream': sseBody(sseEventsSchema) } },
         404: z.object({ error: z.string() }),
       },
     })
     app = await buildApp()
     app.route(
-      buildFastifyApiRoute(contract, (request, _reply, _sse) => {
+      buildFastifyApiRoute(contract, (request, _reply) => {
         if (request.params.id === 'missing') {
           return { status: 404, body: { error: 'Not found' } }
         }
@@ -617,15 +628,16 @@ describe('buildFastifyApiRoute — runtime', () => {
   it('returns an early { status, body } HTTP response instead of streaming', async () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Stream updates',
       pathResolver: () => '/stream',
       responsesByStatusCode: {
-        200: sseResponse(sseEventsSchema),
+        200: { content: { 'text/event-stream': sseBody(sseEventsSchema) } },
         503: z.object({ error: z.string() }),
       },
     })
     app = await buildApp()
     app.route(
-      buildFastifyApiRoute(contract, (_request, _reply, _sse) => ({
+      buildFastifyApiRoute(contract, (_request, _reply) => ({
         status: 503,
         body: { error: 'unavailable' },
       })),
@@ -641,16 +653,81 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(response.json()).toEqual({ error: 'unavailable' })
   })
 
+  it('streams an async-iterable body returned with an explicit text/event-stream contentType', async () => {
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(dualModeContract, (_request, _reply) => ({
+        status: 200,
+        contentType: 'text/event-stream',
+        // biome-ignore lint/suspicious/useAwait: async is required to satisfy AsyncIterable
+        body: (async function* () {
+          yield { event: 'done', data: { total: 3 } } as const
+        })(),
+      })),
+    )
+    await app.ready()
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/chat',
+      headers: { accept: 'text/event-stream' },
+      payload: { message: 'hi' },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['content-type']).toContain('text/event-stream')
+    expect(response.body).toContain('event: done')
+  })
+
+  it('negotiates the representation via context.expectedContentType', async () => {
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(
+        dualModeContract,
+        async (_request, _reply, { expectedContentType, sse }) => {
+          if (expectedContentType === 'text/event-stream') {
+            const session = sse.start('autoClose')
+            await session.send('done', { total: 5 })
+            return
+          }
+          return { status: 200, contentType: 'application/json', body: { id: '1', name: 'neg' } }
+        },
+      ),
+    )
+    await app.ready()
+
+    const stream = await app.inject({
+      method: 'POST',
+      url: '/chat',
+      headers: { accept: 'text/event-stream' },
+      payload: { message: 'hi' },
+    })
+    expect(stream.statusCode).toBe(200)
+    expect(stream.body).toContain('event: done')
+
+    const json = await app.inject({
+      method: 'POST',
+      url: '/chat',
+      headers: { accept: 'application/json' },
+      payload: { message: 'hi' },
+    })
+    expect(json.statusCode).toBe(200)
+    expect(json.json()).toEqual({ id: '1', name: 'neg' })
+  })
+
   it('lets a single dual-mode handler return JSON when the client wants JSON', async () => {
     app = await buildApp()
     app.route(
-      buildFastifyApiRoute(dualModeContract, async (request, _reply, sse) => {
+      buildFastifyApiRoute(dualModeContract, async (request, _reply, { sse }) => {
         if (request.headers.accept === 'text/event-stream') {
           const session = sse.start('autoClose')
           await session.send('done', { total: 0 })
           return
         }
-        return { status: 200, body: { id: '1', name: request.body.message } }
+        return {
+          status: 200,
+          contentType: 'application/json',
+          body: { id: '1', name: request.body.message },
+        }
       }),
     )
     await app.ready()
@@ -668,13 +745,13 @@ describe('buildFastifyApiRoute — runtime', () => {
   it('lets a single dual-mode handler stream when the client wants SSE', async () => {
     app = await buildApp()
     app.route(
-      buildFastifyApiRoute(dualModeContract, async (request, _reply, sse) => {
+      buildFastifyApiRoute(dualModeContract, async (request, _reply, { sse }) => {
         if (request.headers.accept === 'text/event-stream') {
           const session = sse.start('autoClose')
           await session.send('done', { total: 7 })
           return
         }
-        return { status: 200, body: { id: '1', name: 'sync' } }
+        return { status: 200, contentType: 'application/json', body: { id: '1', name: 'sync' } }
       }),
     )
     await app.ready()
@@ -692,16 +769,22 @@ describe('buildFastifyApiRoute — runtime', () => {
   it('shares logic across both representations before branching', async () => {
     const contract = defineApiContract({
       method: 'get',
+      summary: 'Get an item as JSON or a stream',
       pathResolver: (p: { id: string }) => `/items/${p.id}`,
       requestPathParamsSchema: z.object({ id: z.string() }),
       responsesByStatusCode: {
-        200: anyOfResponses([userSchema, sseResponse(sseEventsSchema)]),
+        200: {
+          content: {
+            'application/json': userSchema,
+            'text/event-stream': sseBody(sseEventsSchema),
+          },
+        },
         404: z.object({ error: z.string() }),
       },
     })
     app = await buildApp()
     app.route(
-      buildFastifyApiRoute(contract, async (request, _reply, sse) => {
+      buildFastifyApiRoute(contract, async (request, _reply, { sse }) => {
         // Shared lookup runs once for both the JSON and SSE representations.
         if (request.params.id === 'missing') {
           return { status: 404, body: { error: 'Not found' } }
@@ -711,7 +794,11 @@ describe('buildFastifyApiRoute — runtime', () => {
           await session.send('done', { total: 1 })
           return
         }
-        return { status: 200, body: { id: request.params.id, name: 'Alice' } }
+        return {
+          status: 200,
+          contentType: 'application/json',
+          body: { id: request.params.id, name: 'Alice' },
+        }
       }),
     )
     await app.ready()

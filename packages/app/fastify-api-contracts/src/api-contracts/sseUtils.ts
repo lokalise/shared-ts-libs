@@ -3,7 +3,6 @@ import type { SseSchemaByEventName } from '@lokalise/api-contracts'
 import { InternalError } from '@lokalise/node-core'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import type {
-  DualModeType,
   FastifySSERouteOptions,
   SSEContext,
   SSESession,
@@ -12,24 +11,42 @@ import type {
   SSEStreamMessage,
 } from './sseTypes.ts'
 
-/**
- * Determine the response mode from the `Accept` header for dual-mode routes.
- *
- * Parses the `Accept` header and determines whether to use JSON or SSE mode.
- * Supports quality values (`q=`) for content negotiation.
- *
- * @param accept - The `Accept` header value
- * @param defaultMode - Mode to use when no preference is specified
- * @returns The determined response mode
- */
-export function determineMode(
-  accept: string | undefined,
-  defaultMode: DualModeType = 'json',
-): DualModeType {
-  if (!accept) return defaultMode
+/** True when `candidate` satisfies an accepted media type — exact, `type/*`, or `*\/*` match. */
+const matchesMediaType = (candidate: string, accepted: string): boolean => {
+  if (accepted === '*/*') {
+    return true
+  }
+  const normalized = candidate.trim().toLowerCase()
+  if (accepted === normalized) {
+    return true
+  }
+  // `type/*` wildcard: "text/*" matches "text/event-stream", "text/csv", …
+  return accepted.endsWith('/*') && normalized.startsWith(accepted.slice(0, -1))
+}
 
-  // Split by comma and parse each media type with its quality value
-  const mediaTypes = accept
+/**
+ * Pick the response content-type the client prefers among the given candidates, based on the
+ * request's `Accept` header. Supports quality values (`q=`) and wildcards (`type/*`, `*\/*`)
+ * for content negotiation; candidates earlier in the list win ties (e.g. under `*\/*`).
+ *
+ * Returns `undefined` when the request carries no `Accept` header or none of the candidates
+ * is acceptable — the caller decides the fallback.
+ *
+ * @param request - The Fastify request whose `Accept` header drives the negotiation
+ * @param contentTypes - Candidate response content-types, in server preference order
+ * @returns The preferred candidate, or `undefined` when there is no acceptable match
+ */
+export function determineResponseContentType<TContentType extends string>(
+  request: FastifyRequest,
+  contentTypes: readonly TContentType[],
+): TContentType | undefined {
+  const accept = request.headers.accept
+  if (!accept) {
+    return undefined
+  }
+
+  // Split by comma and parse each accepted media type with its quality value
+  const acceptedMediaTypes = accept
     .split(',')
     .map((part) => {
       const [mediaType, ...params] = part.trim().split(';')
@@ -48,20 +65,16 @@ export function determineMode(
     .filter((entry) => entry.quality > 0)
 
   // Sort by quality (highest first)
-  mediaTypes.sort((a, b) => b.quality - a.quality)
+  acceptedMediaTypes.sort((a, b) => b.quality - a.quality)
 
-  // Find the first matching type
-  for (const { mediaType } of mediaTypes) {
-    if (mediaType === 'text/event-stream') {
-      return 'sse'
-    }
-    if (mediaType === 'application/json') {
-      return 'json'
+  for (const { mediaType } of acceptedMediaTypes) {
+    const match = contentTypes.find((candidate) => matchesMediaType(candidate, mediaType))
+    if (match !== undefined) {
+      return match
     }
   }
 
-  // If */* is present, fall back to the default mode
-  return defaultMode
+  return undefined
 }
 
 /**
@@ -175,8 +188,6 @@ export function buildApiSSEContext(
 
       return session
     },
-
-    reply,
   }
 
   return {

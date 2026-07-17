@@ -1,7 +1,6 @@
 import type { Readable } from 'node:stream'
 import type {
   ApiContract,
-  ContractNoBody,
   ContractResponseMode,
   InferSseSuccessResponses,
   PayloadApiContract,
@@ -12,31 +11,73 @@ import type { z } from 'zod/v4'
 import type { ApiContractMetadataToRouteMapper } from '../types.ts'
 import type { FastifySSERouteOptions, SSEContext, SSEStreamMessage } from './sseTypes.ts'
 
-/**
- * Maps a single `responsesByStatusCode` entry to its handler body type.
- */
-type HandlerResponseBody<T> = T extends z.ZodType
-  ? z.output<T>
-  : T extends { _tag: 'SseResponse'; schemaByEventName: infer S extends SSEEventSchemas }
-    ? AsyncIterable<SSEStreamMessage<S>>
-    : T extends { _tag: 'NoBodyResponse' } | typeof ContractNoBody
-      ? null
-      : T extends { _tag: 'TextResponse' }
-        ? string | Buffer | Readable
-        : T extends { _tag: 'BlobResponse' }
-          ? Buffer | Readable
-          : T extends { _tag: 'AnyOfResponses'; responses: Array<infer R> }
-            ? HandlerResponseBody<R>
-            : never
+/** True when `TUnion` has two or more members. */
+type IsUnion<TUnion, TFull = TUnion> = TUnion extends unknown
+  ? [TFull] extends [TUnion]
+    ? false
+    : true
+  : never
 
 /**
- * Discriminated union of `{ status, body }` pairs for every response a contract declares.
+ * Maps one content-map media-type descriptor to its handler body type: an `sseBody()` streams
+ * the contract events, a `blobBody()` is a raw body (`string`/`Buffer`/`Readable`, sent
+ * natively by Fastify), and a Zod schema is its JSON output.
+ */
+type BodyDescriptorBody<TDescriptor> = TDescriptor extends {
+  _tag: 'SseBody'
+  schemaByEventName: infer TSchemas extends SSEEventSchemas
+}
+  ? AsyncIterable<SSEStreamMessage<TSchemas>>
+  : TDescriptor extends { _tag: 'BlobBody' }
+    ? string | Buffer | Readable
+    : TDescriptor extends z.ZodType
+      ? z.output<TDescriptor>
+      : never
+
+/**
+ * Maps a content-map `content` object to the union of its handler result variants, one per
+ * media type. When the status declares a single media type, `contentType` is optional; when
+ * it declares several, `contentType` is required and discriminates which representation
+ * (and hence which `body` type) the handler chose.
+ */
+type ContentMapResults<TStatusCode, TContent> = {
+  [TMediaType in keyof TContent]: IsUnion<keyof TContent> extends true
+    ? {
+        status: TStatusCode
+        contentType: TMediaType
+        body: BodyDescriptorBody<TContent[TMediaType]>
+      }
+    : {
+        status: TStatusCode
+        contentType?: TMediaType
+        body: BodyDescriptorBody<TContent[TMediaType]>
+      }
+}[keyof TContent]
+
+/**
+ * Maps a single `responsesByStatusCode` entry to its handler result variants: a bare Zod
+ * schema is `{ status, body }` with its JSON output; a content-map entry contributes one
+ * variant per media type (see {@link ContentMapResults}); an empty-body entry
+ * (`noBodyResponse()` / `allowNoBody: true`) contributes `{ status, body: null }`.
+ */
+type ResponseEntryResults<TStatusCode, TEntry> = TEntry extends z.ZodType
+  ? { status: TStatusCode; body: z.output<TEntry> }
+  :
+      | (TEntry extends { content: infer TContent }
+          ? ContentMapResults<TStatusCode, TContent>
+          : never)
+      | (TEntry extends { allowNoBody: true } ? { status: TStatusCode; body: null } : never)
+
+/**
+ * Discriminated union of `{ status, contentType?, body }` results for every response a
+ * contract declares. `contentType` exists only for content-map responses — required (and a
+ * discriminant) when a status declares several media types, optional when it declares one.
  */
 export type InferApiHandlerResult<TApiContract extends ApiContract> = {
-  [TStatusCode in keyof TApiContract['responsesByStatusCode']]: {
-    status: TStatusCode
-    body: HandlerResponseBody<TApiContract['responsesByStatusCode'][TStatusCode]>
-  }
+  [TStatusCode in keyof TApiContract['responsesByStatusCode']]: ResponseEntryResults<
+    TStatusCode,
+    TApiContract['responsesByStatusCode'][TStatusCode]
+  >
 }[keyof TApiContract['responsesByStatusCode']]
 
 type InferOptSchema<T> = T extends z.ZodType ? z.output<T> : undefined
@@ -52,6 +93,44 @@ export type InferApiHandlerRequest<Contract extends ApiContract> = FastifyReques
   Headers: InferOptSchema<Contract['requestHeaderSchema']>
   Body: InferApiBodyType<Contract>
 }>
+
+/**
+ * Maps a single `responsesByStatusCode` entry to the response content-types it declares:
+ * a content-map entry contributes its media-type keys; a bare Zod schema is `application/json`.
+ */
+type ResponseEntryContentTypes<TEntry> = TEntry extends z.ZodType
+  ? 'application/json'
+  : TEntry extends { content: infer TContent }
+    ? keyof TContent & string
+    : never
+
+/** Union of all response content-types a contract declares across its status codes. */
+export type InferContractResponseContentTypes<TContract extends ApiContract> = {
+  [TStatusCode in keyof TContract['responsesByStatusCode']]: ResponseEntryContentTypes<
+    TContract['responsesByStatusCode'][TStatusCode]
+  >
+}[keyof TContract['responsesByStatusCode']]
+
+/**
+ * Context passed to every `ApiContract` handler as the third argument.
+ *
+ * `expectedContentType` is the response content-type the client prefers, negotiated from the
+ * request's `Accept` header (with `q=` quality values and wildcards) against the response
+ * content-types the contract declares — or `undefined` when the client expressed no
+ * acceptable preference, in which case the handler decides the fallback.
+ *
+ * Contracts that declare an SSE response are additionally extended with the `sse` context
+ * for imperative streaming (`sse.start()` for keep-alive, lifecycle hooks, or reconnection).
+ */
+export type ApiHandlerContext<TContract extends ApiContract> = {
+  expectedContentType: InferContractResponseContentTypes<TContract> | undefined
+} & ([ContractResponseMode<TContract['responsesByStatusCode']>] extends ['non-sse']
+  ? unknown
+  : {
+      sse: SSEContext<
+        Extract<InferSseSuccessResponses<TContract['responsesByStatusCode']>, SSEEventSchemas>
+      >
+    })
 
 type MaybePromise<T> = T | Promise<T>
 
@@ -84,25 +163,28 @@ export type ApiHandlerReply = Omit<FastifyReply, 'send' | FastifyReplyFluentKeys
 }
 
 /**
- * Handler for an `ApiContract`. Returns `{ status, body }` for any response the contract
- * declares. The `body` type follows the contract entry for that status: the JSON/text/blob payload, or an
- * `AsyncIterable` of events (e.g. an `async function*`) for an SSE status.
+ * Handler for an `ApiContract`: `(request, reply, context) => { status, body }` for any
+ * response the contract declares. The `body` type follows the contract entry for that status:
+ * the JSON/blob payload, or an `AsyncIterable` of events (e.g. an `async function*`) for an
+ * SSE status. When a status declares several media types, the result also requires a
+ * `contentType` naming the chosen representation (`{ status, contentType, body }`).
  *
- * Contracts that declare an SSE response also get an `sse` context as the third arg
- * (`(request, reply, sse)`) for imperative streaming — `sse.start()` for keep-alive, lifecycle
- * hooks, or reconnection; non-SSE contracts get just `(request, reply)`.
+ * The `context` (see {@link ApiHandlerContext}) always provides `expectedContentType` — the
+ * `Accept`-negotiated response content-type; contracts that declare an SSE response
+ * additionally get `context.sse` for imperative streaming — after `sse.start()` the handler
+ * returns nothing.
  *
  * @example
  * ```typescript
- * async (request, reply, sse) => {
+ * async (request, reply, { expectedContentType, sse }) => {
  *   const user = await findUser(request.params.id)
  *   if (!user) return { status: 404, body: { message: 'Not found' } }
- *   return {
- *     status: 200,
- *     body: (async function* () {
- *       yield { event: 'update', data: user }
- *     })(),
+ *   if (expectedContentType === 'text/event-stream') {
+ *     const session = sse.start('autoClose')
+ *     await session.send('update', user)
+ *     return
  *   }
+ *   return { status: 200, contentType: 'application/json', body: user }
  * }
  * ```
  */
@@ -112,11 +194,12 @@ export type InferApiHandler<Contract extends ApiContract> = [
   ? (
       request: InferApiHandlerRequest<Contract>,
       reply: ApiHandlerReply,
+      context: ApiHandlerContext<Contract>,
     ) => MaybePromise<InferApiHandlerResult<Contract>>
   : (
       request: InferApiHandlerRequest<Contract>,
       reply: ApiHandlerReply,
-      sse: SSEContext<InferSseSuccessResponses<Contract['responsesByStatusCode']>>,
+      context: ApiHandlerContext<Contract>,
       // biome-ignore lint/suspicious/noConfusingVoidType: void is intentional — handler returns nothing after sse.start()
     ) => MaybePromise<InferApiHandlerResult<Contract> | void>
 

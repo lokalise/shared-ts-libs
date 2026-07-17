@@ -1,13 +1,14 @@
 export type {
+  ApiHandlerContext,
   ApiHandlerReply,
   ApiRouteOptions,
   InferApiHandler,
   InferApiHandlerRequest,
   InferApiHandlerResult,
+  InferContractResponseContentTypes,
 } from './apiHandlerTypes.ts'
 export { buildFastifyApiRoute } from './buildFastifyApiRoute.ts'
 export type {
-  DualModeType,
   FastifySSERouteOptions,
   SSECloseInitiator,
   SSEContext,
@@ -18,4 +19,4 @@ export type {
   SSEStartOptions,
   SSEStreamMessage,
 } from './sseTypes.ts'
-export { determineMode } from './sseUtils.ts'
+export { determineResponseContentType } from './sseUtils.ts'
