@@ -21,7 +21,8 @@ type IsUnion<TUnion, TFull = TUnion> = TUnion extends unknown
 /**
  * Maps one content-map media-type descriptor to its handler body type: an `sseBody()` streams
  * the contract events, a `blobBody()` is a raw body (`string`/`Buffer`/`Readable`, sent
- * natively by Fastify), and a Zod schema is its JSON output.
+ * natively by Fastify), and a Zod schema is its JSON input — the handler's body is what the
+ * response serializer parses, so defaults/transforms are applied after the handler returns.
  */
 type BodyDescriptorBody<TDescriptor> = TDescriptor extends {
   _tag: 'SseBody'
@@ -31,7 +32,7 @@ type BodyDescriptorBody<TDescriptor> = TDescriptor extends {
   : TDescriptor extends { _tag: 'BlobBody' }
     ? string | Buffer | Readable
     : TDescriptor extends z.ZodType
-      ? z.output<TDescriptor>
+      ? z.input<TDescriptor>
       : never
 
 /**
@@ -56,12 +57,12 @@ type ContentMapResults<TStatusCode, TContent> = {
 
 /**
  * Maps a single `responsesByStatusCode` entry to its handler result variants: a bare Zod
- * schema is `{ status, body }` with its JSON output; a content-map entry contributes one
+ * schema is `{ status, body }` with its JSON input; a content-map entry contributes one
  * variant per media type (see {@link ContentMapResults}); an empty-body entry
  * (`noBodyResponse()` / `allowNoBody: true`) contributes `{ status, body: null }`.
  */
 type ResponseEntryResults<TStatusCode, TEntry> = TEntry extends z.ZodType
-  ? { status: TStatusCode; body: z.output<TEntry> }
+  ? { status: TStatusCode; body: z.input<TEntry> }
   :
       | (TEntry extends { content: infer TContent }
           ? ContentMapResults<TStatusCode, TContent>
