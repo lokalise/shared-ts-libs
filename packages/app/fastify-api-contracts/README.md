@@ -112,7 +112,7 @@ await app.ready()
 
 The `body` type is inferred from the contract entry for that status code: a Zod schema (bare or as a content-map JSON descriptor) → its `z.input` (the response serializer parses the body, so schema defaults/transforms are applied after the handler returns), `noBodyResponse()` / `allowNoBody: true` → `null`, and a `blobBody()` descriptor → `string | Buffer | Readable`. A blob body accepts a Node `Readable` stream — Fastify pipes it, ideal for serving large or file-backed bodies without buffering them in memory. The framework sets the response `content-type` from the content-map key of the chosen representation.
 
-When a status declares **several** media types in its content map, the handler result must also carry an explicit `contentType` naming the chosen representation — `{ status, contentType, body }` — and TypeScript ties the `body` type to that `contentType`. With a single declared media type the `contentType` is optional and the framework derives it from the contract (a raw `string`/`Buffer`/`Readable` body matches a `blobBody()` media type, everything else is JSON).
+When a status declares **several** media types in its content map, the handler result must also carry an explicit `contentType` naming the chosen representation — `{ status, contentType, body }` — and TypeScript ties the `body` type to that `contentType`. With a single declared media type the `contentType` is optional and the framework takes the status's one declared content-type from the contract (a bare Zod schema counts as `application/json`).
 
 ```ts
 const exportContract = defineApiContract({

@@ -36,8 +36,9 @@ function buildSseEventSchema(schemaByEventName: SseSchemaByEventName): z.ZodType
 
   const [firstEventSchema, ...restEventSchemas] = eventSchemas
   if (!firstEventSchema) {
-    return z.string().describe('Server-sent events stream')
+    throw new Error('An sseBody() must declare at least one event schema.')
   }
+
   return restEventSchemas.length === 0 ? firstEventSchema : z.union(eventSchemas)
 }
 

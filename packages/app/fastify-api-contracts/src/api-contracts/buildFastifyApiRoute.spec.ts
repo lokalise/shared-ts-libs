@@ -323,6 +323,52 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(response.statusCode).toBe(500)
   })
 
+  it('returns 500 when the handler returns an undeclared status code', async () => {
+    app = await buildApp()
+    const handler = (() => ({
+      status: 418,
+      body: { id: '1', name: 'A' },
+    })) as unknown as InferApiHandler<typeof getUserContract>
+    app.route(buildFastifyApiRoute(getUserContract, handler))
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/users/1' })
+    expect(response.statusCode).toBe(500)
+  })
+
+  it('returns 500 when the handler returns an undeclared contentType', async () => {
+    app = await buildApp()
+    const handler = (() => ({
+      status: 200,
+      contentType: 'text/plain',
+      body: { id: '1', name: 'A' },
+    })) as unknown as InferApiHandler<typeof dualModeContract>
+    app.route(buildFastifyApiRoute(dualModeContract, handler))
+    await app.ready()
+
+    const response = await app.inject({ method: 'POST', url: '/chat', payload: { message: 'hi' } })
+    expect(response.statusCode).toBe(500)
+  })
+
+  it('returns 500 when a status declares no content-type and the handler returns a body', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Empty content map',
+      pathResolver: () => '/empty',
+      responsesByStatusCode: { 200: { content: {} } },
+    })
+    app = await buildApp()
+    const handler = (() => ({
+      status: 200,
+      body: 'x',
+    })) as unknown as InferApiHandler<typeof contract>
+    app.route(buildFastifyApiRoute(contract, handler))
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/empty' })
+    expect(response.statusCode).toBe(500)
+  })
+
   it('supports multiple status codes from a single handler', async () => {
     const contract = defineApiContract({
       method: 'get',

@@ -163,6 +163,21 @@ describe('buildFastifyApiSchema — response schemas', () => {
     })
   })
 
+  it('throws for an sseBody() without any event schemas', () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Stream nothing',
+      pathResolver: () => '/stream',
+      responsesByStatusCode: {
+        200: { content: { 'text/event-stream': sseBody({}) } },
+      },
+    })
+
+    expect(() => buildFastifyApiSchema(contract)).toThrow(
+      'An sseBody() must declare at least one event schema.',
+    )
+  })
+
   it('describes a blob status code with its media type and forwards the description', () => {
     const contract = defineApiContract({
       method: 'get',

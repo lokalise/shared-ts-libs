@@ -1,11 +1,9 @@
-import type { Readable } from 'node:stream'
+import type { SSERouteOptions } from '@fastify/sse'
 import {
   type ApiContract,
   getSseSchemaByEventName,
   type HttpStatusCode,
-  isBlobBody,
   isContentResponseEntry,
-  isJsonBody,
   isJsonResponse,
   isSseBody,
   mapApiContractToPath,
@@ -25,27 +23,17 @@ import { buildApiSSEContext, determineResponseContentType } from './sseUtils.ts'
  * shape (and supporting clients that signal streaming via the request body rather than the
  * `Accept` header).
  */
-function buildSSERouteConfig(
-  options: ApiRouteOptions | undefined,
-): 'manual' | { kind: 'manual'; serializer?: (data: unknown) => string; heartbeat?: boolean } {
-  if (!options?.serializer && options?.heartbeat === undefined) {
-    return 'manual'
+function buildSSERouteOptions(options?: ApiRouteOptions): SSERouteOptions {
+  const sseOptions: SSERouteOptions = { kind: 'manual' }
+
+  if (options?.serializer) {
+    sseOptions.serializer = options.serializer
+  }
+  if (options?.heartbeat !== undefined) {
+    sseOptions.heartbeat = options.heartbeat
   }
 
-  const sseConfig: {
-    kind: 'manual'
-    serializer?: (data: unknown) => string
-    heartbeat?: boolean
-  } = { kind: 'manual' }
-
-  if (options.serializer) {
-    sseConfig.serializer = options.serializer
-  }
-  if (options.heartbeat !== undefined) {
-    sseConfig.heartbeat = options.heartbeat
-  }
-
-  return sseConfig
+  return sseOptions
 }
 
 /** Collects the response content-types a contract declares (a bare Zod schema is `application/json`). */
@@ -90,75 +78,64 @@ function validateApiResponseHeaders(contract: ApiContract, reply: FastifyReply):
   }
 }
 
-type StatusBody = { status: number; contentType?: string; body: unknown }
+/** The runtime shape of a handler's return value (`InferApiHandlerResult` erased of its generics). */
+type ApiHandlerResult = { status: number; contentType?: string; body: unknown }
 
-function isStatusBodyResult(value: unknown): value is StatusBody {
+function isApiHandlerResult(value: unknown): value is ApiHandlerResult {
   return typeof value === 'object' && value !== null && 'status' in value
 }
 
-function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
-  return typeof value === 'object' && value !== null && Symbol.asyncIterator in value
-}
-
-// Streams are detected by duck-typing (`pipe`), mirroring Fastify's own stream detection —
-// cross-realm safe, unlike `instanceof Readable`.
-function isStream(value: unknown): value is Readable {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'pipe' in value &&
-    typeof value.pipe === 'function'
-  )
+/** A handler result resolved against the contract, ready to be sent. */
+type ResolvedApiResponse = {
+  status: number
+  /** Effective response content-type; `null` for a body-less response. */
+  contentType: string | null
+  body: unknown
+  /** True when the selected representation is an SSE stream. */
+  isSse: boolean
 }
 
 /**
- * True when the contract declares `contentType` at this status as an `sseBody()` descriptor.
- */
-function isDeclaredSseContentType(
-  contract: ApiContract,
-  status: number,
-  contentType: string,
-): boolean {
-  const entry = contract.responsesByStatusCode[status as HttpStatusCode]
-  if (!entry || isJsonResponse(entry)) {
-    return false
-  }
-  const descriptor = entry.content?.[contentType]
-  return descriptor !== undefined && isSseBody(descriptor)
-}
-
-/**
- * Look up the `content-type` the contract declares for the response the handler returned —
- * the fallback used when the handler didn't return an explicit `contentType`.
+ * Resolve which representation a handler result selects on the contract: the effective
+ * response content-type and whether it is an SSE stream.
  *
- * The status code selects the entry; the body kind selects the matching media type within a
- * content-map entry — needed for content maps mixing JSON with a blob at one status, where the
- * declaration alone can't tell which representation the handler chose. A raw body (`string`/
- * `Buffer`/`Readable`) matches a `blobBody()` descriptor and uses its media-type key; any other
- * body matches a JSON schema. Returns `undefined` when nothing matches.
+ * An explicit `result.contentType` picks the representation directly — handlers must
+ * provide it when a status declares several media types. When omitted, the result must be
+ * unambiguous: a `body: null` on an `allowNoBody` entry, a bare Zod schema
+ * (`application/json`), or a content map's first declared content-type.
  */
-function getDeclaredContentType(
+function resolveResponseRepresentation(
   contract: ApiContract,
-  status: number,
-  body: unknown,
-): string | undefined {
+  { status, contentType, body }: ApiHandlerResult,
+): ResolvedApiResponse {
   const entry = contract.responsesByStatusCode[status as HttpStatusCode]
   if (!entry) {
-    return undefined
+    throw new Error(`Contract does not declare a response for status ${status}.`)
   }
 
-  const isRawBody = typeof body === 'string' || Buffer.isBuffer(body) || isStream(body)
+  if (contentType !== undefined) {
+    const descriptor = isContentResponseEntry(entry) ? entry.content?.[contentType] : undefined
+    if (descriptor === undefined) {
+      throw new Error(
+        `Contract does not declare content-type "${contentType}" for status ${status}.`,
+      )
+    }
+    return { status, body, contentType, isSse: isSseBody(descriptor) }
+  }
 
   if (isJsonResponse(entry)) {
-    return isRawBody ? undefined : 'application/json'
+    return { status, body, contentType: 'application/json', isSse: false }
   }
 
-  for (const [mediaType, descriptor] of Object.entries(entry.content ?? {})) {
-    if (isRawBody ? isBlobBody(descriptor) : isJsonBody(descriptor)) {
-      return mediaType
-    }
+  if (entry.allowNoBody && body === null) {
+    return { status, body, contentType: null, isSse: false }
   }
-  return undefined
+
+  const descriptorEntry = Object.entries(entry.content ?? {})[0]
+  if (descriptorEntry === undefined) {
+    throw new Error(`Contract does not declare a content-type for status ${status}.`)
+  }
+  return { status, body, contentType: descriptorEntry[0], isSse: isSseBody(descriptorEntry[1]) }
 }
 
 /**
@@ -166,27 +143,19 @@ function getDeclaredContentType(
  * non-streaming branch of an SSE-capable handler.
  *
  * The body is passed to Fastify as-is — a `string`, `Buffer` or `Readable` stream is sent
- * natively, everything else is serialized as JSON. The `content-type` (unless the handler
- * already set one via `reply`) is the explicit `contentType` from the handler result when
- * present — required when a status declares several media types, and what lets Fastify pick
- * the matching per-media-type response schema — otherwise it falls back to the body kind:
- * a raw body uses the contract's declared `blobBody()` media type, everything else is
- * `application/json`.
+ * natively, everything else is serialized as JSON. The resolved `contentType` is set on the
+ * reply — it is what lets Fastify pick the matching per-media-type response schema — unless
+ * the handler already set one via `reply`.
  */
 async function sendResponse(
   contract: ApiContract,
   reply: FastifyReply,
-  { status, contentType, body }: StatusBody,
+  { status, contentType, body }: ResolvedApiResponse,
 ): Promise<void> {
-  // Set the content-type when the handler hasn't set one. (@fastify/sse commits its
-  // `text/event-stream` headers lazily on stream start, so nothing is pre-set here on the
-  // non-streaming path of an SSE-capable route.)
-  if (reply.getHeader('content-type') === undefined) {
-    const resolvedContentType = contentType ?? getDeclaredContentType(contract, status, body)
-
-    if (resolvedContentType) {
-      reply.type(resolvedContentType)
-    }
+  // (@fastify/sse commits its `text/event-stream` headers lazily on stream start, so nothing
+  // is pre-set here on the non-streaming path of an SSE-capable route.)
+  if (contentType !== null && reply.getHeader('content-type') === undefined) {
+    reply.type(contentType)
   }
 
   // Response body validation is handled by the `fastify-type-provider-zod` serializer
@@ -243,24 +212,19 @@ async function handleApiRoute({
     return
   }
 
-  if (isStatusBodyResult(result)) {
-    // An SSE response carries an async iterable of events as its body: open the connection
-    // and pipe each event (validated against the contract's event schemas). An explicit
-    // `contentType` on the result settles which representation the handler chose — needed
-    // when a status mixes SSE with another async-iterable-looking body (e.g. a `Readable`
-    // blob); without one, an async-iterable body means SSE.
-    const streamsSse =
-      isAsyncIterable(result.body) &&
-      (result.contentType === undefined ||
-        isDeclaredSseContentType(contract, result.status, result.contentType))
-    if (apiSSEContext && streamsSse) {
+  if (isApiHandlerResult(result)) {
+    const resolved = resolveResponseRepresentation(contract, result)
+
+    // An SSE representation carries an async iterable of events as its body: open the
+    // connection and pipe each event (validated against the contract's event schemas).
+    if (apiSSEContext && resolved.isSse) {
       const session = apiSSEContext.sseContext.start('autoClose')
-      await session.sendStream(result.body as AsyncIterable<SSEStreamMessage>)
+      await session.sendStream(resolved.body as AsyncIterable<SSEStreamMessage>)
       apiSSEContext.markHandlerDone()
       return
     }
     // Any other status/body is sent as a regular HTTP response.
-    await sendResponse(contract, reply, result)
+    await sendResponse(contract, reply, resolved)
     return
   }
 
@@ -318,7 +282,7 @@ export function buildFastifyApiRoute<Contract extends ApiContract>(
     method: contract.method,
     url: mapApiContractToPath(contract),
     // `sse` is only set for SSE-capable contracts; non-SSE routes must not carry it.
-    ...(sseCapable ? { sse: buildSSERouteConfig(options) } : {}),
+    ...(sseCapable ? { sse: buildSSERouteOptions(options) } : {}),
     schema: buildFastifyApiSchema(contract),
     handler: async (request, reply) =>
       handleApiRoute({
