@@ -1046,7 +1046,7 @@ describe('InferApiHandler', () => {
 
     type Context = Parameters<InferApiHandler<typeof contract>>[2]
     expectTypeOf<Context['expectedContentType']>().toEqualTypeOf<
-      'application/json' | 'text/csv' | undefined
+      'application/json' | 'text/csv' | null
     >()
   })
 })

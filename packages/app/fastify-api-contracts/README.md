@@ -65,7 +65,7 @@ Pick the builder that matches how the contract was created:
 | **non-SSE** | all success responses are plain Zod schemas / `noBodyResponse()` / content-map entries with JSON or `blobBody()` descriptors | `(request, reply, context) => { status, body }` |
 | **SSE-capable** | at least one success response declares an `sseBody(...)` descriptor (SSE-only or mixed with JSON in one content map) | `(request, reply, context) => { status, body } \| stream`, with `context.sse` |
 
-Every handler receives a `context` as the third argument. It always provides `expectedContentType` — the response content-type the client prefers, negotiated from the request's `Accept` header (with `q=` quality values and wildcards) against the response content-types the contract declares — or `undefined` when the client expressed no acceptable preference, in which case the handler picks the fallback.
+Every handler receives a `context` as the third argument. It always provides `expectedContentType` — the response content-type the client prefers, negotiated from the request's `Accept` header (with `q=` quality values and wildcards) against the response content-types the contract declares — or `null` when the client expressed no acceptable preference, in which case the handler picks the fallback.
 
 A single handler covers both representations of an SSE-capable contract: it runs shared logic once and then either returns a non-SSE `{ status, body }` response (e.g. a `404` shared with the streaming path, or the JSON variant of a mixed contract) or calls `context.sse.start(...)` to stream. The context is only extended with `sse` when the contract actually declares an SSE response, so non-SSE routes never see it.
 

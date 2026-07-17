@@ -117,14 +117,14 @@ export type InferContractResponseContentTypes<TContract extends ApiContract> = {
  *
  * `expectedContentType` is the response content-type the client prefers, negotiated from the
  * request's `Accept` header (with `q=` quality values and wildcards) against the response
- * content-types the contract declares — or `undefined` when the client expressed no
- * acceptable preference, in which case the handler decides the fallback.
+ * content-types the contract declares — or `null` when the client expressed no acceptable
+ * preference, in which case the handler decides the fallback.
  *
  * Contracts that declare an SSE response are additionally extended with the `sse` context
  * for imperative streaming (`sse.start()` for keep-alive, lifecycle hooks, or reconnection).
  */
 export type ApiHandlerContext<TContract extends ApiContract> = {
-  expectedContentType: InferContractResponseContentTypes<TContract> | undefined
+  expectedContentType: InferContractResponseContentTypes<TContract> | null
 } & ([ContractResponseMode<TContract['responsesByStatusCode']>] extends ['non-sse']
   ? unknown
   : {

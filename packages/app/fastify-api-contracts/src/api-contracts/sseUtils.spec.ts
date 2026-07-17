@@ -60,6 +60,15 @@ describe('determineResponseContentType', () => {
     expect(contentType).toBe('text/event-stream')
   })
 
+  it('prefers a more specific accepted type over a wildcard at equal quality', () => {
+    const contentType = determineResponseContentType(requestWithAccept('*/*, text/event-stream'), [
+      'application/json',
+      'text/event-stream',
+    ])
+
+    expect(contentType).toBe('text/event-stream')
+  })
+
   it('matches media types case-insensitively', () => {
     const contentType = determineResponseContentType(requestWithAccept('Application/JSON'), [
       'application/json',
@@ -68,16 +77,16 @@ describe('determineResponseContentType', () => {
     expect(contentType).toBe('application/json')
   })
 
-  it('returns undefined when the request has no Accept header', () => {
-    expect(determineResponseContentType(requestWithAccept(), ['application/json'])).toBeUndefined()
+  it('returns null when the request has no Accept header', () => {
+    expect(determineResponseContentType(requestWithAccept(), ['application/json'])).toBeNull()
   })
 
-  it('returns undefined when no candidate is acceptable', () => {
+  it('returns null when no candidate is acceptable', () => {
     const contentType = determineResponseContentType(requestWithAccept('image/png'), [
       'application/json',
       'text/event-stream',
     ])
 
-    expect(contentType).toBeUndefined()
+    expect(contentType).toBeNull()
   })
 })

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { SseSchemaByEventName } from '@lokalise/api-contracts'
 import { InternalError } from '@lokalise/node-core'
 import type { FastifyReply, FastifyRequest } from 'fastify'
+import Negotiator from 'negotiator'
 import type {
   FastifySSERouteOptions,
   SSEContext,
@@ -11,70 +12,30 @@ import type {
   SSEStreamMessage,
 } from './sseTypes.ts'
 
-/** True when `candidate` satisfies an accepted media type — exact, `type/*`, or `*\/*` match. */
-const matchesMediaType = (candidate: string, accepted: string): boolean => {
-  if (accepted === '*/*') {
-    return true
-  }
-  const normalized = candidate.trim().toLowerCase()
-  if (accepted === normalized) {
-    return true
-  }
-  // `type/*` wildcard: "text/*" matches "text/event-stream", "text/csv", …
-  return accepted.endsWith('/*') && normalized.startsWith(accepted.slice(0, -1))
-}
-
 /**
  * Pick the response content-type the client prefers among the given candidates, based on the
- * request's `Accept` header. Supports quality values (`q=`) and wildcards (`type/*`, `*\/*`)
- * for content negotiation; candidates earlier in the list win ties (e.g. under `*\/*`).
+ * request's `Accept` header. Negotiation (quality values, wildcards, specificity precedence)
+ * is delegated to [negotiator](https://github.com/jshttp/negotiator); candidates earlier in
+ * the list win ties (e.g. under a full wildcard).
  *
- * Returns `undefined` when the request carries no `Accept` header or none of the candidates
+ * Returns `null` when the request carries no `Accept` header or none of the candidates
  * is acceptable — the caller decides the fallback.
  *
  * @param request - The Fastify request whose `Accept` header drives the negotiation
  * @param contentTypes - Candidate response content-types, in server preference order
- * @returns The preferred candidate, or `undefined` when there is no acceptable match
+ * @returns The preferred candidate, or `null` when there is no acceptable match
  */
 export function determineResponseContentType<TContentType extends string>(
   request: FastifyRequest,
   contentTypes: readonly TContentType[],
-): TContentType | undefined {
-  const accept = request.headers.accept
-  if (!accept) {
-    return undefined
+): TContentType | null {
+  // Without an Accept header the client expressed no preference — negotiator would treat
+  // this as `*/*` and pick the first candidate, so bail out explicitly instead.
+  if (!request.headers.accept) {
+    return null
   }
 
-  // Split by comma and parse each accepted media type with its quality value
-  const acceptedMediaTypes = accept
-    .split(',')
-    .map((part) => {
-      const [mediaType, ...params] = part.trim().split(';')
-      let quality = 1.0
-
-      for (const param of params) {
-        const [key, value] = param.trim().split('=')
-        if (key === 'q' && value) {
-          quality = Number.parseFloat(value)
-        }
-      }
-
-      return { mediaType: (mediaType ?? '').trim().toLowerCase(), quality }
-    })
-    // Filter out rejected types (quality <= 0)
-    .filter((entry) => entry.quality > 0)
-
-  // Sort by quality (highest first)
-  acceptedMediaTypes.sort((a, b) => b.quality - a.quality)
-
-  for (const { mediaType } of acceptedMediaTypes) {
-    const match = contentTypes.find((candidate) => matchesMediaType(candidate, mediaType))
-    if (match !== undefined) {
-      return match
-    }
-  }
-
-  return undefined
+  return (new Negotiator(request).mediaType([...contentTypes]) as TContentType | undefined) ?? null
 }
 
 /**

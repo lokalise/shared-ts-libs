@@ -675,6 +675,9 @@ importers:
       light-my-request:
         specifier: ^6.6.0
         version: 6.6.0
+      negotiator:
+        specifier: ^1.0.0
+        version: 1.0.0
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.5.0
@@ -691,6 +694,9 @@ importers:
       '@lokalise/tsconfig':
         specifier: workspace:^
         version: link:../../dev/tsconfig
+      '@types/negotiator':
+        specifier: ^0.6.4
+        version: 0.6.4
       '@vitest/coverage-v8':
         specifier: ^4.1.9
         version: 4.1.9(vitest@4.1.9)
@@ -3761,6 +3767,9 @@ packages:
 
   '@types/mysql@2.15.27':
     resolution: {integrity: sha512-YfWiV16IY0OeBfBCk8+hXKmdTKrKlwKN1MNKAPBu5JYxLwBEZl7QzeEpGnlZb3VMGJrrGmB84gXiH+ofs/TezA==}
+
+  '@types/negotiator@0.6.4':
+    resolution: {integrity: sha512-elf6BsTq+AkyNsb2h5cGNst2Mc7dPliVoAPm1fXglC/BM3f2pFA40BaSSv3E5lyHteEawVKLP+8TwiY1DMNb3A==}
 
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
@@ -10804,6 +10813,8 @@ snapshots:
   '@types/mysql@2.15.27':
     dependencies:
       '@types/node': 26.1.0
+
+  '@types/negotiator@0.6.4': {}
 
   '@types/node@12.20.55': {}
 
