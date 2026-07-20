@@ -151,11 +151,11 @@ describe('buildFastifyApiRoute — non-SSE', () => {
 // ============================================================================
 
 describe('buildFastifyApiRoute — SSE-only', () => {
-  it("produces a route with sse: 'manual'", () => {
+  it("produces a route with sse kind 'manual'", () => {
     const routeOptions = buildFastifyApiRoute(sseOnlyContract, (_request, _reply, { sse }) => {
       sse.start('keepAlive')
     })
-    expect((routeOptions as { sse?: unknown }).sse).toBe('manual')
+    expect((routeOptions as { sse?: unknown }).sse).toEqual({ kind: 'manual' })
   })
 
   it('produces correct url', () => {
@@ -171,11 +171,11 @@ describe('buildFastifyApiRoute — SSE-only', () => {
 // ============================================================================
 
 describe('buildFastifyApiRoute — dual-mode', () => {
-  it("produces a route with sse: 'manual'", () => {
+  it("produces a route with sse kind 'manual'", () => {
     const routeOptions = buildFastifyApiRoute(dualModeContract, (_request, _reply, { sse }) => {
       sse.start('autoClose')
     })
-    expect((routeOptions as { sse?: unknown }).sse).toBe('manual')
+    expect((routeOptions as { sse?: unknown }).sse).toEqual({ kind: 'manual' })
   })
 
   it('produces correct url and method', () => {
