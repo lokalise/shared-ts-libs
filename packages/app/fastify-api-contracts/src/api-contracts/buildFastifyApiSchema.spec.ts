@@ -163,6 +163,29 @@ describe('buildFastifyApiSchema — response schemas', () => {
     })
   })
 
+  it('describes a single-event sseBody as its event envelope directly (no union)', () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Stream ticks',
+      pathResolver: () => '/ticks',
+      responsesByStatusCode: {
+        200: { content: { 'text/event-stream': sseBody({ tick: z.object({ at: z.string() }) }) } },
+      },
+    })
+
+    const response = buildFastifyApiSchema(contract).response as ResponseSchemas
+    const sseSchema = response[200]!.content['text/event-stream']!.schema
+    const jsonSchema = z.toJSONSchema(sseSchema)
+    expect(jsonSchema).not.toHaveProperty('anyOf')
+    expect(jsonSchema).toMatchObject({
+      properties: {
+        event: { const: 'tick' },
+        data: { properties: { at: { type: 'string' } } },
+      },
+      required: ['event', 'data'],
+    })
+  })
+
   it('throws for an sseBody() without any event schemas', () => {
     const contract = defineApiContract({
       method: 'get',

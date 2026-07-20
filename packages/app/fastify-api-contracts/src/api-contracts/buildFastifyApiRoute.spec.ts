@@ -350,6 +350,47 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(response.statusCode).toBe(500)
   })
 
+  it('returns 500 when an explicit contentType targets a bare-Zod (JSON) response entry', async () => {
+    app = await buildApp()
+    const handler = (() => ({
+      status: 200,
+      contentType: 'text/plain',
+      body: { id: '1', name: 'A' },
+    })) as unknown as InferApiHandler<typeof getUserContract>
+    app.route(buildFastifyApiRoute(getUserContract, handler))
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/users/1' })
+    expect(response.statusCode).toBe(500)
+  })
+
+  it('returns 500 when an explicit contentType targets a no-body response entry', async () => {
+    app = await buildApp()
+    const handler = (() => ({
+      status: 204,
+      contentType: 'text/plain',
+      body: null,
+    })) as unknown as InferApiHandler<typeof deleteUserContract>
+    app.route(buildFastifyApiRoute(deleteUserContract, handler))
+    await app.ready()
+
+    const response = await app.inject({ method: 'DELETE', url: '/users/1' })
+    expect(response.statusCode).toBe(500)
+  })
+
+  it('returns 500 when the handler returns a non-null body for a no-body response entry', async () => {
+    app = await buildApp()
+    const handler = (() => ({
+      status: 204,
+      body: 'unexpected',
+    })) as unknown as InferApiHandler<typeof deleteUserContract>
+    app.route(buildFastifyApiRoute(deleteUserContract, handler))
+    await app.ready()
+
+    const response = await app.inject({ method: 'DELETE', url: '/users/1' })
+    expect(response.statusCode).toBe(500)
+  })
+
   it('returns 500 when a status declares no content-type and the handler returns a body', async () => {
     const contract = defineApiContract({
       method: 'get',
@@ -366,6 +407,74 @@ describe('buildFastifyApiRoute — runtime', () => {
     await app.ready()
 
     const response = await app.inject({ method: 'GET', url: '/empty' })
+    expect(response.statusCode).toBe(500)
+  })
+
+  it('sends the response when the reply headers match the responseHeaderSchema', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Get a user',
+      pathResolver: () => '/users',
+      responseHeaderSchema: z.object({ 'x-request-id': z.string() }),
+      responsesByStatusCode: { 200: userSchema },
+    })
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(contract, (_request, reply) => {
+        reply.header('x-request-id', 'req-1')
+        return { status: 200, body: { id: '1', name: 'Alice' } }
+      }),
+    )
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/users' })
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['x-request-id']).toBe('req-1')
+  })
+
+  it('returns 500 when the reply headers fail the responseHeaderSchema', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Get a user',
+      pathResolver: () => '/users',
+      responseHeaderSchema: z.object({ 'x-request-id': z.string() }),
+      responsesByStatusCode: { 200: userSchema },
+    })
+    app = await buildApp()
+    // The handler never sets x-request-id, so header validation fails.
+    app.route(
+      buildFastifyApiRoute(contract, async () => ({ status: 200, body: { id: '1', name: 'A' } })),
+    )
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/users' })
+    expect(response.statusCode).toBe(500)
+  })
+
+  it('does not send a second response when the handler already replied via reply.hijack()', async () => {
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(getUserContract, (_request, reply) => {
+        reply.hijack()
+        reply.raw.setHeader('content-type', 'application/json')
+        reply.raw.end(JSON.stringify({ id: 'direct', name: 'Direct' }))
+        return { status: 200, body: { id: 'ignored', name: 'Ignored' } }
+      }),
+    )
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/users/1' })
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({ id: 'direct', name: 'Direct' })
+  })
+
+  it('returns 500 when an SSE-capable handler neither returns a result nor starts a stream', async () => {
+    app = await buildApp()
+    const handler = (() => undefined) as unknown as InferApiHandler<typeof sseOnlyContract>
+    app.route(buildFastifyApiRoute(sseOnlyContract, handler))
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/stream' })
     expect(response.statusCode).toBe(500)
   })
 
