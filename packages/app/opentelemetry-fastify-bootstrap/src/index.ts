@@ -88,7 +88,8 @@ const DEFAULT_SKIPPED_PATHS = ['/health', '/metrics', '/']
  */
 const markStreamEndpointSpan = (span: Span, request: FastifyRequest): void => {
   const accept = request.headers.accept
-  if (typeof accept === 'string' && accept.includes('text/event-stream')) {
+  // Media types are case-insensitive (RFC 7231 §3.1.1.1), so normalize before matching.
+  if (typeof accept === 'string' && accept.toLowerCase().includes('text/event-stream')) {
     span.setAttribute(STREAM_ENDPOINT_SPAN_ATTRIBUTE, true)
   }
 }

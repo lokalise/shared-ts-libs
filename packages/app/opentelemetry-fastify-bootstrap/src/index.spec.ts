@@ -1,5 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises'
-import { trace } from '@opentelemetry/api'
+import { SpanKind, trace } from '@opentelemetry/api'
 import {
   InMemorySpanExporter,
   type ReadableSpan,
@@ -464,11 +464,31 @@ describe('opentelemetry-fastify-bootstrap', () => {
       const eventsSpans = memoryExporter
         .getFinishedSpans()
         .filter(isFastifySpan)
+        .filter((span) => span.kind === SpanKind.SERVER)
         .filter((span) => spanMentions(span, '/events'))
       expect(eventsSpans.length).toBeGreaterThan(0)
       expect(
         eventsSpans.some((span) => span.attributes[STREAM_ENDPOINT_SPAN_ATTRIBUTE] === true),
       ).toBe(true)
+    })
+
+    it('matches the Accept header case-insensitively (media types are case-insensitive)', async () => {
+      app = fastify()
+      app.get('/mixed-case', async () => 'data')
+      await app.ready()
+
+      await app.inject().headers({ accept: 'Text/Event-Stream' }).get('/mixed-case').end()
+      await waitForSpans(memoryExporter, 1)
+
+      const spans = memoryExporter
+        .getFinishedSpans()
+        .filter(isFastifySpan)
+        .filter((span) => span.kind === SpanKind.SERVER)
+        .filter((span) => spanMentions(span, '/mixed-case'))
+      expect(spans.length).toBeGreaterThan(0)
+      expect(spans.some((span) => span.attributes[STREAM_ENDPOINT_SPAN_ATTRIBUTE] === true)).toBe(
+        true,
+      )
     })
 
     it('does not tag non-streaming request spans', async () => {
@@ -482,6 +502,7 @@ describe('opentelemetry-fastify-bootstrap', () => {
       const plainSpans = memoryExporter
         .getFinishedSpans()
         .filter(isFastifySpan)
+        .filter((span) => span.kind === SpanKind.SERVER)
         .filter((span) => spanMentions(span, '/plain'))
       expect(plainSpans.length).toBeGreaterThan(0)
       expect(
