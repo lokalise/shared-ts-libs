@@ -1,4 +1,5 @@
 import { FastifyOtelInstrumentation } from '@fastify/otel'
+import type { Span } from '@opentelemetry/api'
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node'
 import { OTLPTraceExporter as OTLPTraceExporterGrpc } from '@opentelemetry/exporter-trace-otlp-grpc'
 import { NodeSDK } from '@opentelemetry/sdk-node'
@@ -6,12 +7,18 @@ import {
   BatchSpanProcessor,
   ConsoleSpanExporter,
   SimpleSpanProcessor,
+  type SpanExporter,
   type SpanProcessor,
 } from '@opentelemetry/sdk-trace-base'
+import type { FastifyRequest } from 'fastify'
 import {
   assertValidDbNamespaceBySystem,
   DbNamespaceSpanExporter,
 } from './dbNamespaceSpanExporter.ts'
+import {
+  STREAM_ENDPOINT_SPAN_ATTRIBUTE,
+  StreamSpanFilteringExporter,
+} from './streamSpanFilteringExporter.ts'
 
 export {
   DbNamespaceSpanExporter,
@@ -71,6 +78,67 @@ const logger = {
 
 const DEFAULT_SKIPPED_PATHS = ['/health', '/metrics', '/']
 
+/**
+ * Marks the request's HTTP server span as a streaming/SSE endpoint when the
+ * client negotiated SSE via `Accept: text/event-stream`. Runs as the
+ * FastifyOtel `requestHook`, so the span already exists; the marker is later
+ * consumed by {@link StreamSpanFilteringExporter} to drop the span before it is
+ * exported. Browser `EventSource` clients are required to send this header, and
+ * it is the same signal SSE content-negotiation keys on.
+ */
+const markStreamEndpointSpan = (span: Span, request: FastifyRequest): void => {
+  const accept = request.headers.accept
+  if (typeof accept === 'string' && accept.includes('text/event-stream')) {
+    span.setAttribute(STREAM_ENDPOINT_SPAN_ATTRIBUTE, true)
+  }
+}
+
+/**
+ * Builds the Fastify OpenTelemetry instrumentation.
+ */
+const createFastifyOtelInstrumentation = (
+  skippedPaths: string[],
+  skipStreamEndpoints: boolean,
+): FastifyOtelInstrumentation =>
+  new FastifyOtelInstrumentation({
+    registerOnInitialization: true,
+    ignorePaths: (req) => {
+      if (!req.url) return false
+      // Extract path without query string, normalize empty to '/'
+      const path = req.url.split('?')[0] || '/'
+      return skippedPaths.includes(path)
+    },
+    requestHook: skipStreamEndpoints ? markStreamEndpointSpan : undefined,
+  })
+
+/**
+ * Builds the OTLP trace exporter, optionally wrapped to add `db.namespace`
+ * and/or to drop streaming/SSE spans. Extracted from {@link initOpenTelemetry}
+ * to keep its cognitive complexity in check. Each wrapper shapes only its own
+ * export payload, leaving the shared span (seen by console / user span
+ * processors) untouched.
+ */
+const buildTraceExporter = (
+  exporterUrl: string,
+  validatedDbNamespaceBySystem: Readonly<Record<string, string>> | undefined,
+  skipStreamEndpoints: boolean,
+): SpanExporter => {
+  // Default url is grpc://localhost:4317 (see OTLPTraceExporter docs).
+  const otlpExporter = new OTLPTraceExporterGrpc({ url: exporterUrl })
+
+  // db.namespace is added to the export payload, not the shared span, so other
+  // processors/exporters still see the unmodified span.
+  const withDbNamespace = validatedDbNamespaceBySystem
+    ? new DbNamespaceSpanExporter(otlpExporter, {
+        dbNamespaceBySystem: validatedDbNamespaceBySystem,
+      })
+    : otlpExporter
+
+  // Drop SSE/streaming server spans so their multi-minute keep-alive durations
+  // don't pollute span-duration latency metrics/SLOs.
+  return skipStreamEndpoints ? new StreamSpanFilteringExporter(withDbNamespace) : withDbNamespace
+}
+
 function resolveDbNamespaceBySystem(
   dbNamespaceBySystem: Readonly<Record<string, string>> | undefined,
 ): Readonly<Record<string, string>> | undefined {
@@ -105,6 +173,25 @@ export interface OpenTelemetryOptions {
    * Additional span processors to register with the OpenTelemetry SDK.
    */
   spanProcessors?: SpanProcessor[]
+
+  /**
+   * When true, HTTP server spans for streaming / SSE responses are excluded
+   * from the exported traces — and therefore from any latency metric or SLO
+   * derived from their span duration. An SSE connection stays open for the
+   * whole stream lifetime, so its server span's duration reflects the keep-alive
+   * window (often minutes), not the time-to-first-byte, which otherwise skews
+   * those metrics.
+   *
+   * Streaming requests are detected by the `Accept: text/event-stream` request
+   * header (what browser `EventSource` clients are required to send, and the
+   * same signal SSE content-negotiation keys on); matching spans are tagged and
+   * dropped before export. The span still starts (so trace context propagates
+   * to child spans) and stays visible to console / user-supplied span
+   * processors.
+   *
+   * @default false
+   */
+  skipStreamEndpoints?: boolean
 
   /**
    * Maps OTel `db.system` values to the `db.namespace` to report for them. When
@@ -149,6 +236,7 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
     consoleSpans = false,
     spanProcessors = [],
     dbNamespaceBySystem,
+    skipStreamEndpoints = false,
   } = options
 
   logger.info('[OTEL] initOpenTelemetry called')
@@ -165,6 +253,7 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
       consoleSpans,
       additionalSpanProcessorsCount: spanProcessors.length,
       dbNamespaceSystemsConfigured: dbNamespaceBySystem ? Object.keys(dbNamespaceBySystem) : [],
+      skipStreamEndpoints,
     },
     '[OTEL] Configuration',
   )
@@ -179,21 +268,11 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
     const exporterUrl = process.env.OTEL_EXPORTER_URL || 'grpc://localhost:4317'
     logger.info({ exporterUrl }, '[OTEL] Configuring trace exporter')
 
-    const otlpExporter = new OTLPTraceExporterGrpc({
-      // optional - url default value is http://localhost:4318/v1/traces (http)
-      // or grpc://localhost:4317/opentelemetry.proto.collector.trace.v1.TraceService/Export (grpc)
-      url: exporterUrl,
-    })
-
-    // Wrap ONLY the Datadog-bound exporter: db.namespace is added to its export
-    // payload, not to the shared span, so console/user processors and any other
-    // exporter still see the unmodified span. No ordering constraints — the
-    // transform happens entirely inside this exporter's own export().
-    const traceExporter = validatedDbNamespaceBySystem
-      ? new DbNamespaceSpanExporter(otlpExporter, {
-          dbNamespaceBySystem: validatedDbNamespaceBySystem,
-        })
-      : otlpExporter
+    const traceExporter = buildTraceExporter(
+      exporterUrl,
+      validatedDbNamespaceBySystem,
+      skipStreamEndpoints,
+    )
 
     const allSpanProcessors: SpanProcessor[] = [
       new BatchSpanProcessor(traceExporter),
@@ -210,15 +289,7 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
       spanProcessors: allSpanProcessors,
       instrumentations: [
         getNodeAutoInstrumentations(),
-        new FastifyOtelInstrumentation({
-          registerOnInitialization: true,
-          ignorePaths: (req) => {
-            if (!req.url) return false
-            // Extract path without query string, normalize empty to '/'
-            const path = req.url.split('?')[0] || '/'
-            return skippedPaths.includes(path)
-          },
-        }),
+        createFastifyOtelInstrumentation(skippedPaths, skipStreamEndpoints),
       ],
     })
 

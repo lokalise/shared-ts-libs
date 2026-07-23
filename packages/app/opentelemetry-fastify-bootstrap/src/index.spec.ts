@@ -7,6 +7,7 @@ import {
 } from '@opentelemetry/sdk-trace-base'
 import { type FastifyInstance, fastify } from 'fastify'
 import { gracefulOtelShutdown, initOpenTelemetry } from './index.ts'
+import { STREAM_ENDPOINT_SPAN_ATTRIBUTE } from './streamSpanFilteringExporter.ts'
 
 const ORIGINAL_NODE_ENV = process.env.NODE_ENV
 const ORIGINAL_OTEL_ENABLED = process.env.OTEL_ENABLED
@@ -225,6 +226,10 @@ describe('opentelemetry-fastify-bootstrap', () => {
           new SimpleSpanProcessor(secondaryExporter),
         ],
         dbNamespaceBySystem: { elasticsearch: 'lokalise' },
+        // Enable SSE-span filtering so the marking requestHook is wired up. The
+        // filter only affects the Datadog-bound exporter, so the in-memory
+        // processors below still observe every span (marker included).
+        skipStreamEndpoints: true,
       })
     })
 
@@ -446,6 +451,42 @@ describe('opentelemetry-fastify-bootstrap', () => {
         expect(ctx.traceId).toMatch(/^[0-9a-f]{32}$/)
         expect(ctx.spanId).toMatch(/^[0-9a-f]{16}$/)
       }
+    })
+
+    it('tags streaming (Accept: text/event-stream) request spans with the stream marker', async () => {
+      app = fastify()
+      app.get('/events', async () => 'data')
+      await app.ready()
+
+      await app.inject().headers({ accept: 'text/event-stream' }).get('/events').end()
+      await waitForSpans(memoryExporter, 1)
+
+      const eventsSpans = memoryExporter
+        .getFinishedSpans()
+        .filter(isFastifySpan)
+        .filter((span) => spanMentions(span, '/events'))
+      expect(eventsSpans.length).toBeGreaterThan(0)
+      expect(
+        eventsSpans.some((span) => span.attributes[STREAM_ENDPOINT_SPAN_ATTRIBUTE] === true),
+      ).toBe(true)
+    })
+
+    it('does not tag non-streaming request spans', async () => {
+      app = fastify()
+      app.get('/plain', async () => 'data')
+      await app.ready()
+
+      await app.inject().get('/plain').end()
+      await waitForSpans(memoryExporter, 1)
+
+      const plainSpans = memoryExporter
+        .getFinishedSpans()
+        .filter(isFastifySpan)
+        .filter((span) => spanMentions(span, '/plain'))
+      expect(plainSpans.length).toBeGreaterThan(0)
+      expect(
+        plainSpans.every((span) => span.attributes[STREAM_ENDPOINT_SPAN_ATTRIBUTE] === undefined),
+      ).toBe(true)
     })
 
     // End-to-end: dbNamespaceBySystem only shapes the Datadog-bound OTLP payload;
