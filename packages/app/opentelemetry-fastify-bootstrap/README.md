@@ -67,6 +67,7 @@ initOpenTelemetry()
 | `consoleSpans` | `boolean` | `false` | Enable console span exporter for debugging |
 | `spanProcessors` | `SpanProcessor[]` | `[]` | Additional span processors to register |
 | `dbNamespaceBySystem` | `Record<string, string>` | `undefined` | Maps `db.system` values to the `db.namespace` to report for them. When set, the Datadog-bound trace exporter is wrapped so matching outbound DB spans carry `db.namespace` in the export payload, joining them to Datadog's existing inferred-service entity for the cluster. The shared span is left untouched. See [Joining a Datadog inferred-service entity](#joining-a-datadog-inferred-service-entity). |
+| `skipStreamEndpoints` | `boolean` | `false` | Exclude streaming/SSE server spans from exported traces (detected via the `Accept: text/event-stream` request header), so their long keep-alive durations don't skew latency metrics/SLOs. See [Excluding streaming / SSE endpoints](#excluding-streaming--sse-endpoints). |
 
 ### Debugging with Console Spans
 
@@ -107,6 +108,20 @@ Datadog adds the `peer.*` prefix itself, deriving `peer.db.name` from `db.namesp
 A constant such as `lokalise` is a Datadog entity-keying heuristic, not the span's true OTel `db.namespace`. Rather than mutate the single `ReadableSpan` shared by every processor and exporter — which would make any other consumer (a different dashboard, OTel-native tooling) read `lokalise` as the real namespace — `dbNamespaceBySystem` wraps **only** the Datadog-bound exporter. The attribute is added to that exporter's own payload via a non-mutating view of the span; the original is never written to, so it can't be broken by a future SDK that freezes span attributes, and every other consumer sees the unmodified span. An existing non-empty `db.namespace` is never replaced.
 
 `DbNamespaceSpanExporter` is exported from the package if you want to wrap an exporter directly.
+
+### Excluding streaming / SSE endpoints
+
+An SSE (Server-Sent Events) or other long-lived streaming response keeps the HTTP request open for the whole lifetime of the stream, so the auto-instrumented server span's duration reflects the keep-alive window (often minutes) rather than the time-to-first-byte. Any latency metric or SLO derived from that span's duration is then skewed by those multi-minute values.
+
+Set `skipStreamEndpoints` to drop those spans from the exported traces:
+
+```ts
+initOpenTelemetry({
+  skipStreamEndpoints: true,
+})
+```
+
+Streaming requests are detected by the `Accept: text/event-stream` request header — the header browser `EventSource` clients are required to send, and the same signal SSE content-negotiation keys on. Matching spans are tagged and dropped before export, generically for every streaming endpoint (no per-route list to maintain). The span still starts, so trace context still propagates to child spans, and it stays visible to console / user-supplied span processors — only the exported traces omit it.
 
 ### Adding Custom Span Processors
 
