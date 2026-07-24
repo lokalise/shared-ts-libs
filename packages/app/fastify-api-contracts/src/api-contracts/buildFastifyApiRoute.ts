@@ -41,11 +41,17 @@ function getContractResponseContentTypes(contract: ApiContract): string[] {
   const contentTypes = new Set<string>()
 
   for (const entry of Object.values(contract.responsesByStatusCode)) {
-    const entryContentTypes = isJsonResponse(entry)
-      ? ['application/json']
-      : Object.keys(entry.content ?? {})
+    if (isJsonResponse(entry)) {
+      contentTypes.add('application/json')
 
-    for (const contentType of entryContentTypes) {
+      continue
+    }
+
+    if (!entry.content) {
+      continue
+    }
+
+    for (const contentType of Object.keys(entry.content)) {
       contentTypes.add(contentType)
     }
   }
@@ -57,9 +63,9 @@ function getContractResponseContentTypes(contract: ApiContract): string[] {
 export const hasAnySseResponse = (apiContract: ApiContract): boolean =>
   Object.values(apiContract.responsesByStatusCode).some(
     (value) =>
-      value !== undefined &&
       isContentResponseEntry(value) &&
-      Object.values(value.content ?? {}).some(isSseBody),
+      value.content &&
+      Object.values(value.content).some(isSseBody),
   )
 
 function validateApiResponseHeaders(contract: ApiContract, reply: FastifyReply): void {
