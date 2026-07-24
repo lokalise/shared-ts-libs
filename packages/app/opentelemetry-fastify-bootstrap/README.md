@@ -121,7 +121,7 @@ initOpenTelemetry({
 })
 ```
 
-Streaming requests are detected by the `Accept: text/event-stream` request header — the header browser `EventSource` clients are required to send, and the same signal SSE content-negotiation keys on. Matching spans are tagged and dropped before export, generically for every streaming endpoint (no per-route list to maintain). The span still starts, so trace context still propagates to child spans, and it stays visible to console / user-supplied span processors — only the exported traces omit it.
+Streaming requests are detected by the `Accept: text/event-stream` request header — the header browser `EventSource` clients are required to send, and the same signal SSE content-negotiation keys on. Both request-level spans are tagged and dropped before export: the HTTP SERVER span from `@opentelemetry/instrumentation-http` (the service entry span that latency metrics/SLOs are derived from) and the fastify request span. This works generically for every streaming endpoint (no per-route list to maintain). The spans still start, so trace context still propagates to child spans, and they stay visible to console / user-supplied span processors — only the exported traces omit them.
 
 ### Adding Custom Span Processors
 

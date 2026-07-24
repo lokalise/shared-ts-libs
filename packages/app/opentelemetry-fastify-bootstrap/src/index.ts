@@ -1,3 +1,4 @@
+import type { ClientRequest, IncomingMessage } from 'node:http'
 import { FastifyOtelInstrumentation } from '@fastify/otel'
 import type { Span } from '@opentelemetry/api'
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node'
@@ -79,20 +80,33 @@ const logger = {
 const DEFAULT_SKIPPED_PATHS = ['/health', '/metrics', '/']
 
 /**
- * Marks the request's HTTP server span as a streaming/SSE endpoint when the
- * client negotiated SSE via `Accept: text/event-stream`. Runs as the
- * FastifyOtel `requestHook`, so the span already exists; the marker is later
- * consumed by {@link StreamSpanFilteringExporter} to drop the span before it is
+ * Marks a span as belonging to a streaming/SSE request when the client
+ * negotiated SSE via `Accept: text/event-stream`. The marker is later consumed
+ * by {@link StreamSpanFilteringExporter} to drop the span before it is
  * exported. Browser `EventSource` clients are required to send this header, and
  * it is the same signal SSE content-negotiation keys on.
  */
-const markStreamEndpointSpan = (span: Span, request: FastifyRequest): void => {
-  const accept = request.headers.accept
+const markSpanIfStreamNegotiated = (span: Span, accept: string | string[] | undefined): void => {
   // Media types are case-insensitive (RFC 7231 §3.1.1.1), so normalize before matching.
   if (typeof accept === 'string' && accept.toLowerCase().includes('text/event-stream')) {
     span.setAttribute(STREAM_ENDPOINT_SPAN_ATTRIBUTE, true)
   }
 }
+const markStreamEndpointSpan = (span: Span, request: FastifyRequest): void =>
+  markSpanIfStreamNegotiated(span, request.headers.accept)
+const markStreamEndpointHttpSpan = (span: Span, request: ClientRequest | IncomingMessage): void =>
+  'headers' in request ? markSpanIfStreamNegotiated(span, request.headers.accept) : undefined
+
+/**
+ * Builds the node auto-instrumentations, wiring the SSE-marking hook into the
+ * HTTP instrumentation when stream-endpoint filtering is enabled.
+ */
+const createNodeAutoInstrumentations = (skipStreamEndpoints: boolean) =>
+  getNodeAutoInstrumentations(
+    skipStreamEndpoints
+      ? { '@opentelemetry/instrumentation-http': { requestHook: markStreamEndpointHttpSpan } }
+      : undefined,
+  )
 
 /**
  * Builds the Fastify OpenTelemetry instrumentation.
@@ -289,7 +303,7 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
     sdk = new NodeSDK({
       spanProcessors: allSpanProcessors,
       instrumentations: [
-        getNodeAutoInstrumentations(),
+        createNodeAutoInstrumentations(skipStreamEndpoints),
         createFastifyOtelInstrumentation(skippedPaths, skipStreamEndpoints),
       ],
     })
