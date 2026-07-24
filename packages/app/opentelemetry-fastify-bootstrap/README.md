@@ -67,7 +67,7 @@ initOpenTelemetry()
 | `consoleSpans` | `boolean` | `false` | Enable console span exporter for debugging |
 | `spanProcessors` | `SpanProcessor[]` | `[]` | Additional span processors to register |
 | `dbNamespaceBySystem` | `Record<string, string>` | `undefined` | Maps `db.system` values to the `db.namespace` to report for them. When set, the Datadog-bound trace exporter is wrapped so matching outbound DB spans carry `db.namespace` in the export payload, joining them to Datadog's existing inferred-service entity for the cluster. The shared span is left untouched. See [Joining a Datadog inferred-service entity](#joining-a-datadog-inferred-service-entity). |
-| `skipStreamEndpoints` | `boolean` | `false` | Exclude streaming/SSE server spans from exported traces (detected via the `Accept: text/event-stream` request header), so their long keep-alive durations don't skew latency metrics/SLOs. See [Excluding streaming / SSE endpoints](#excluding-streaming--sse-endpoints). |
+| `skipStreamEndpoints` | `boolean` | `true` | Exclude streaming/SSE server spans from exported traces (detected via the `Accept: text/event-stream` request header), so their long keep-alive durations don't skew latency metrics/SLOs. See [Excluding streaming / SSE endpoints](#excluding-streaming--sse-endpoints). |
 
 ### Debugging with Console Spans
 
@@ -113,11 +113,11 @@ A constant such as `lokalise` is a Datadog entity-keying heuristic, not the span
 
 An SSE (Server-Sent Events) or other long-lived streaming response keeps the HTTP request open for the whole lifetime of the stream, so the auto-instrumented server span's duration reflects the keep-alive window (often minutes) rather than the time-to-first-byte. Any latency metric or SLO derived from that span's duration is then skewed by those multi-minute values.
 
-Set `skipStreamEndpoints` to drop those spans from the exported traces:
+This filtering is enabled by default (`skipStreamEndpoints: true`), so those spans are dropped from the exported traces out of the box. Opt out by setting it to `false`:
 
 ```ts
 initOpenTelemetry({
-  skipStreamEndpoints: true,
+  skipStreamEndpoints: false,
 })
 ```
 

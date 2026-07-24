@@ -190,7 +190,7 @@ export interface OpenTelemetryOptions {
    * to child spans) and stays visible to console / user-supplied span
    * processors.
    *
-   * @default false
+   * @default true
    */
   skipStreamEndpoints?: boolean
 
@@ -237,7 +237,7 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
     consoleSpans = false,
     spanProcessors = [],
     dbNamespaceBySystem,
-    skipStreamEndpoints = false,
+    skipStreamEndpoints = true,
   } = options
 
   logger.info('[OTEL] initOpenTelemetry called')
