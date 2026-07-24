@@ -87,8 +87,40 @@ export const isJsonBody = (value: BodyDescriptor): value is z.ZodType =>
  */
 export type BodyDescriptor = z.ZodType | BlobBody | SseBody
 
-/** Maps a response media type (e.g. `application/json`) to the body it carries. */
-export type ResponseContentMap = Record<string, BodyDescriptor>
+/** Commonly used response media types, offered as autocomplete suggestions. */
+export type CommonResponseContentType =
+  | 'application/json'
+  | 'application/octet-stream'
+  | 'application/pdf'
+  | 'application/x-ndjson'
+  | 'application/xml'
+  | 'application/zip'
+  | 'audio/mpeg'
+  | 'audio/ogg'
+  | 'image/gif'
+  | 'image/jpeg'
+  | 'image/png'
+  | 'image/svg+xml'
+  | 'image/webp'
+  | 'text/csv'
+  | 'text/event-stream'
+  | 'text/html'
+  | 'text/plain'
+  | 'video/mp4'
+  | 'video/webm'
+
+/**
+ * A response media type. Common values are autocompleted; any other string
+ * (e.g. a vendored variant like `application/json+01`) is accepted too.
+ */
+export type ResponseContentType = CommonResponseContentType | (string & {})
+
+/**
+ * Maps a response media type (e.g. `application/json`) to the body it carries.
+ * {@link CommonResponseContentType} keys are autocompleted; any other media type is accepted too.
+ */
+export type ResponseContentMap = Partial<Record<CommonResponseContentType, BodyDescriptor>> &
+  Record<string, BodyDescriptor>
 
 /** A content-map response carrying a body for one or more media types. */
 export type BodyContentResponseEntry = {
@@ -128,7 +160,7 @@ export const noBodyResponse = (options?: ResponseOptions): NoBodyContentResponse
  * Declares a binary/opaque response for a single media type.
  */
 export const blobResponse = (
-  contentType: string,
+  contentType: ResponseContentType,
   options?: ResponseOptions,
 ): BodyContentResponseEntry => ({
   content: { [contentType]: blobBody() },
