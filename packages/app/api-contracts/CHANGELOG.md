@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.1.0
+
+### Minor Changes
+
+- 43a0d6a: Add `ResponseContentType` and `CommonResponseContentType` types so well-known media types are autocompleted (with a string fallback) in `ResponseContentMap` keys and the `blobResponse()` content type argument.
+
 ## 7.0.0
 
 ### Major Changes
