@@ -46,6 +46,7 @@ jobs:
             ["packages/app/id-utils"]="@lokalise/id-utils"
             ["packages/app/metrics-utils"]="@lokalise/metrics-utils"
             ["packages/app/non-translatable-markup"]="@lokalise/non-translatable-markup"
+            ["packages/app/odata-filter"]="@lokalise/odata-filter"
             ["packages/app/odata-mapper"]="@lokalise/odata-mapper"
             ["packages/app/opentelemetry-fastify-bootstrap"]="@lokalise/opentelemetry-fastify-bootstrap"
             ["packages/app/polling"]="@lokalise/polling"
