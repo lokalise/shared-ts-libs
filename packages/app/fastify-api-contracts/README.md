@@ -371,6 +371,8 @@ const route = buildFastifyRoute(contract, (req) => {
 })
 ```
 
+The same applies to routes built with `buildFastifyApiRoute`: the contract is exposed as `config.apiContract`, merged into any `config` you pass explicitly or derive via `contractMetadataToRouteMapper`.
+
 ### Adding extra route options from contract metadata
 
 `buildFastifyRoute` accepts an optional third argument: a callback that receives the contract metadata and returns extra Fastify route options (such as `config`, `preHandler`, etc.). Use it to derive route options dynamically from the contract:

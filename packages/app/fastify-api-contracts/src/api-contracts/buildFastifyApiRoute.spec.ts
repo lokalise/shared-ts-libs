@@ -142,7 +142,44 @@ describe('buildFastifyApiRoute — non-SSE', () => {
       async () => ({ status: 200, body: { id: '1', name: 'Alice' } }),
       { contractMetadataToRouteMapper: () => ({ config }) },
     )
-    expect((routeOptions as { config?: unknown }).config).toBe(config)
+    expect(routeOptions.config).toEqual({ foo: 'bar', apiContract: getUserContract })
+  })
+
+  it('exposes the contract as config.apiContract', () => {
+    const routeOptions = buildFastifyApiRoute(getUserContract, async () => ({
+      status: 200,
+      body: { id: '1', name: 'Alice' },
+    }))
+    expect(routeOptions.config?.apiContract).toBe(getUserContract)
+  })
+
+  it('lets explicitly passed options override contractMetadataToRouteMapper output', () => {
+    const routeOptions = buildFastifyApiRoute(
+      getUserContract,
+      async () => ({ status: 200, body: { id: '1', name: 'Alice' } }),
+      {
+        bodyLimit: 2048,
+        contractMetadataToRouteMapper: () => ({ bodyLimit: 1024 }),
+      },
+    )
+    expect(routeOptions.bodyLimit).toBe(2048)
+  })
+
+  it('merges an explicitly passed config with mapper config, explicit keys winning', () => {
+    const explicitConfig = { shared: 'explicit' } as unknown as NonNullable<RouteOptions['config']>
+    const routeOptions = buildFastifyApiRoute(
+      getUserContract,
+      async () => ({ status: 200, body: { id: '1', name: 'Alice' } }),
+      {
+        config: explicitConfig,
+        contractMetadataToRouteMapper: () => ({ config: { foo: 'mapper', shared: 'mapper' } }),
+      },
+    )
+    expect(routeOptions.config).toEqual({
+      foo: 'mapper',
+      shared: 'explicit',
+      apiContract: getUserContract,
+    })
   })
 })
 

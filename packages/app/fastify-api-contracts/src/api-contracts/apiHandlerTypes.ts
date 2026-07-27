@@ -215,8 +215,10 @@ export type ApiRouteOptions = Omit<RouteOptions, 'method' | 'url' | 'schema' | '
      * Maps contract metadata to additional Fastify route options.
      *
      * Called with the contract's `metadata` field; its return value is merged into
-     * the Fastify route options as a base — useful for cross-cutting concerns (auth,
-     * rate limiting, tracing) driven by metadata declared on the contract.
+     * the Fastify route options as a base — explicitly passed options override it,
+     * except `config` objects, which are merged key-by-key (explicit keys win) —
+     * useful for cross-cutting concerns (auth, rate limiting, tracing) driven by
+     * metadata declared on the contract.
      */
     contractMetadataToRouteMapper?: ApiContractMetadataToRouteMapper
   }

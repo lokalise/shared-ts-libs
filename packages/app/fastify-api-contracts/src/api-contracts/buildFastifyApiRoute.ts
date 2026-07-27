@@ -258,6 +258,11 @@ async function handleApiRoute({
  * - SSE lifecycle hooks (`onConnect`, `onClose`, `onReconnect`, `serializer`, `heartbeat`)
  *   — applied only for contracts that declare an SSE response.
  *
+ * Options returned by `contractMetadataToRouteMapper` are a base layer: explicitly passed
+ * options override them, except `config` objects, which are merged (explicit keys win).
+ * The contract is always exposed as `config.apiContract`, reachable in hooks and handlers
+ * via `req.routeOptions.config.apiContract`.
+ *
  * @returns Fastify `RouteOptions` ready to pass to `app.route()`
  */
 export function buildFastifyApiRoute<Contract extends ApiContract>(
@@ -282,9 +287,19 @@ export function buildFastifyApiRoute<Contract extends ApiContract>(
   const contractMetadata = contractMetadataToRouteMapper?.(contract.metadata) ?? {}
   const sseCapable = hasAnySseResponse(contract)
 
+  // Mapper output is the base layer — explicitly passed options override it — except the
+  // `config` objects, which are merged key-by-key (explicit keys win). The contract itself
+  // is always exposed as `config.apiContract` for hooks and handlers.
+  const config = {
+    ...contractMetadata.config,
+    ...fastifyOptions.config,
+    apiContract: contract,
+  }
+
   return {
-    ...fastifyOptions,
     ...contractMetadata,
+    ...fastifyOptions,
+    config,
     method: contract.method,
     url: mapApiContractToPath(contract),
     // `sse` is only set for SSE-capable contracts; non-SSE routes must not carry it.
