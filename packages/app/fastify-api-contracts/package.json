@@ -51,7 +51,13 @@
         "@lokalise/api-contracts": ">=7.0.0",
         "@lokalise/node-core": ">=13.5.0",
         "fastify": ">=5.0.0",
+        "fastify-type-provider-zod": ">=7.0.0",
         "zod": ">=3.25.56"
+    },
+    "peerDependenciesMeta": {
+        "@fastify/sse": {
+            "optional": true
+        }
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.0",
@@ -61,7 +67,7 @@
         "@lokalise/tsconfig": "workspace:^",
         "@types/negotiator": "^0.6.4",
         "@vitest/coverage-v8": "^4.1.9",
-        "fastify-type-provider-zod": "^6.1.0",
+        "fastify-type-provider-zod": "^7.0.0",
         "rimraf": "^6.1.2",
         "typescript": "7.0.2",
         "vitest": "^4.1.9",
