@@ -112,7 +112,16 @@ export function buildApiSSEContext(
         getStream: () => reply.sse.stream(),
         sendStream: async (messages: AsyncIterable<SSEStreamMessage>) => {
           for await (const message of messages) {
-            await send(message.event, message.data, { id: message.id, retry: message.retry })
+            const sent = await send(message.event, message.data, {
+              id: message.id,
+              retry: message.retry,
+            })
+            // A failed write means the client is gone — stop pulling from the source
+            // instead of draining it into the void. Breaking calls the iterator's `return()`,
+            // so an `async function*` source runs its `finally` and cleans up.
+            if (!sent || !reply.sse.isConnected) {
+              break
+            }
           }
         },
         close: () => {

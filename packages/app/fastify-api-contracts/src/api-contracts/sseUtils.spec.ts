@@ -216,6 +216,79 @@ describe('buildApiSSEContext', () => {
     })
   })
 
+  describe('session.sendStream', () => {
+    it('sends every message from the iterable while the client stays connected', async () => {
+      const { reply, sse } = buildSseReply()
+      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, undefined)
+      const session = sseContext.start('autoClose')
+
+      async function* source() {
+        yield await Promise.resolve({ event: 'update', data: { value: 1 }, id: '1' })
+        yield await Promise.resolve({ event: 'update', data: { value: 2 }, id: '2' })
+      }
+
+      await session.sendStream(source())
+
+      expect(sse.send).toHaveBeenCalledTimes(2)
+      expect(sse.send).toHaveBeenLastCalledWith({
+        event: 'update',
+        data: { value: 2 },
+        id: '2',
+        retry: undefined,
+      })
+    })
+
+    it('stops pulling from the source when a write fails, letting it clean up', async () => {
+      const { reply, sse } = buildSseReply({
+        send: vi
+          .fn()
+          .mockResolvedValueOnce(undefined)
+          .mockRejectedValue(new Error('connection closed')),
+      })
+      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, undefined)
+      const session = sseContext.start('autoClose')
+
+      let pulled = 0
+      let cleanedUp = false
+      async function* source() {
+        try {
+          for (let value = 1; value <= 5; value++) {
+            pulled++
+            yield await Promise.resolve({ event: 'update', data: { value } })
+          }
+        } finally {
+          cleanedUp = true
+        }
+      }
+
+      await session.sendStream(source())
+
+      // The second write fails; the loop must not drain the remaining three messages.
+      expect(pulled).toBe(2)
+      expect(sse.send).toHaveBeenCalledTimes(2)
+      expect(cleanedUp).toBe(true)
+    })
+
+    it('stops pulling from the source when the client disconnects between writes', async () => {
+      const { reply, sse } = buildSseReply({ isConnected: false })
+      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, undefined)
+      const session = sseContext.start('autoClose')
+
+      let pulled = 0
+      async function* source() {
+        for (let value = 1; value <= 5; value++) {
+          pulled++
+          yield await Promise.resolve({ event: 'update', data: { value } })
+        }
+      }
+
+      await session.sendStream(source())
+
+      expect(pulled).toBe(1)
+      expect(sse.send).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe('close lifecycle', () => {
     const startWithOnClose = (onClose: (s: SSESession, i: SSECloseInitiator) => void) => {
       const { reply, sse } = buildSseReply()

@@ -102,7 +102,11 @@ export type SSESession<Events extends SSEEventSchemas = SSEEventSchemas, Context
   isConnected: () => boolean
   /** Get the underlying writable stream for advanced streaming operations. */
   getStream: () => NodeJS.WritableStream
-  /** Send multiple SSE messages from an async iterable, validating each against the event schemas. */
+  /**
+   * Send multiple SSE messages from an async iterable, validating each against the event
+   * schemas. Stops pulling from the iterable as soon as a write fails or the client
+   * disconnects — an `async function*` source gets to run its `finally` and clean up.
+   */
   sendStream: (messages: AsyncIterable<SSEStreamMessage<Events>>) => Promise<void>
   /** Close the connection from the server side (`onClose` fires with initiator `'server'`). */
   close: () => void
