@@ -244,7 +244,8 @@ async function handleApiRoute({
  *
  * The handler is `(request, reply, context) => { status, body }`. The `context` always
  * provides `expectedContentType` — the `Accept`-negotiated preference among the contract's
- * declared response content-types. For contracts with any SSE response the context is
+ * declared response content-types (across all status codes, error responses included —
+ * see {@link ApiHandlerContext}). For contracts with any SSE response the context is
  * extended with `context.sse`, and the single handler runs shared logic once and then
  * either returns a non-SSE `{ status, body }` response or calls `context.sse.start(...)`
  * to stream (returning nothing).

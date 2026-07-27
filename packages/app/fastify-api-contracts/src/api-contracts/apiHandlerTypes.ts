@@ -117,7 +117,9 @@ export type InferContractResponseContentTypes<TContract extends ApiContract> = {
  *
  * `expectedContentType` is the response content-type the client prefers, negotiated from the
  * request's `Accept` header (with `q=` quality values and wildcards) against the response
- * content-types the contract declares — or `null` when the client expressed no acceptable
+ * content-types the contract declares across all of its status codes, error responses
+ * included — so it reflects the client's preference, not necessarily a representation the
+ * success status can produce. It is `null` when the client expressed no acceptable
  * preference, in which case the handler decides the fallback.
  *
  * Contracts that declare an SSE response are additionally extended with the `sse` context
