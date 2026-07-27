@@ -22,6 +22,42 @@ type ResponseSchemas = Record<
 >
 
 // ============================================================================
+// OpenAPI metadata
+// ============================================================================
+
+describe('buildFastifyApiSchema — OpenAPI metadata', () => {
+  it('maps summary, description and tags', () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'List users',
+      description: 'Returns all users',
+      tags: ['users'],
+      pathResolver: () => '/users',
+      responsesByStatusCode: { 200: userSchema },
+    })
+
+    const schema = buildFastifyApiSchema(contract)
+    expect(schema.summary).toBe('List users')
+    expect(schema.description).toBe('Returns all users')
+    expect(schema.tags).toEqual(['users'])
+  })
+
+  it('omits description and tags the contract does not declare', () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'List users',
+      pathResolver: () => '/users',
+      responsesByStatusCode: { 200: userSchema },
+    })
+
+    const schema = buildFastifyApiSchema(contract)
+    expect(schema.summary).toBe('List users')
+    expect(schema).not.toHaveProperty('description')
+    expect(schema).not.toHaveProperty('tags')
+  })
+})
+
+// ============================================================================
 // Request schemas
 // ============================================================================
 
