@@ -1,5 +1,6 @@
+import type { IncomingMessage } from 'node:http'
 import { setTimeout as sleep } from 'node:timers/promises'
-import { SpanKind, trace } from '@opentelemetry/api'
+import { type Span, SpanKind, trace } from '@opentelemetry/api'
 import {
   InMemorySpanExporter,
   type ReadableSpan,
@@ -8,6 +9,47 @@ import {
 import { type FastifyInstance, fastify } from 'fastify'
 import { gracefulOtelShutdown, initOpenTelemetry } from './index.ts'
 import { STREAM_ENDPOINT_SPAN_ATTRIBUTE } from './streamSpanFilteringExporter.ts'
+
+// instrumentation-http patches node:http via module hooks that don't run under
+// vitest (no --import loader, and vite serves the modules), so a real-socket
+// request never produces an http SERVER span in these tests. To still cover the
+// SSE marking of that span — the service entry span latency metrics/SLOs are
+// derived from — we wrap getNodeAutoInstrumentations with a pass-through that
+// captures the config initOpenTelemetry hands it, and exercise the captured
+// requestHook directly. The real instrumentations are still constructed.
+const capturedAutoInstrumentations = vi.hoisted(() => ({ config: undefined as unknown }))
+
+vi.mock('@opentelemetry/auto-instrumentations-node', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@opentelemetry/auto-instrumentations-node')>()
+  const wrapped: typeof actual.getNodeAutoInstrumentations = (config) => {
+    capturedAutoInstrumentations.config = config
+    return actual.getNodeAutoInstrumentations(config)
+  }
+  return { ...actual, getNodeAutoInstrumentations: wrapped }
+})
+
+type HttpRequestHook = (span: Span, request: unknown) => void
+
+function capturedHttpRequestHook(): HttpRequestHook | undefined {
+  const config = capturedAutoInstrumentations.config as
+    | Record<string, { requestHook?: HttpRequestHook } | undefined>
+    | undefined
+  return config?.['@opentelemetry/instrumentation-http']?.requestHook
+}
+
+function fakeSpan(): { span: Span; attributes: Record<string, unknown> } {
+  const attributes: Record<string, unknown> = {}
+  const span = {
+    setAttribute: (key: string, value: unknown) => {
+      attributes[key] = value
+    },
+  } as unknown as Span
+  return { span, attributes }
+}
+
+function incomingMessageWithAccept(accept?: string): IncomingMessage {
+  return { headers: accept === undefined ? {} : { accept } } as IncomingMessage
+}
 
 const ORIGINAL_NODE_ENV = process.env.NODE_ENV
 const ORIGINAL_OTEL_ENABLED = process.env.OTEL_ENABLED
@@ -453,61 +495,110 @@ describe('opentelemetry-fastify-bootstrap', () => {
       }
     })
 
-    it('tags streaming (Accept: text/event-stream) request spans with the stream marker', async () => {
-      app = fastify()
-      app.get('/events', async () => 'data')
-      await app.ready()
+    describe('stream endpoint marking', () => {
+      describe('fastify request span', () => {
+        it('tags streaming (Accept: text/event-stream) request spans with the stream marker', async () => {
+          app = fastify()
+          app.get('/events', async () => 'data')
+          await app.ready()
 
-      await app.inject().headers({ accept: 'text/event-stream' }).get('/events').end()
-      await waitForSpans(memoryExporter, 1)
+          await app.inject().headers({ accept: 'text/event-stream' }).get('/events').end()
+          await waitForSpans(memoryExporter, 1)
 
-      const eventsSpans = memoryExporter
-        .getFinishedSpans()
-        .filter(isFastifySpan)
-        .filter((span) => span.kind === SpanKind.SERVER)
-        .filter((span) => spanMentions(span, '/events'))
-      expect(eventsSpans.length).toBeGreaterThan(0)
-      expect(
-        eventsSpans.some((span) => span.attributes[STREAM_ENDPOINT_SPAN_ATTRIBUTE] === true),
-      ).toBe(true)
-    })
+          const eventsSpans = memoryExporter
+            .getFinishedSpans()
+            .filter(isFastifySpan)
+            .filter((span) => span.kind === SpanKind.SERVER)
+            .filter((span) => spanMentions(span, '/events'))
+          expect(eventsSpans.length).toBeGreaterThan(0)
+          expect(
+            eventsSpans.some((span) => span.attributes[STREAM_ENDPOINT_SPAN_ATTRIBUTE] === true),
+          ).toBe(true)
+        })
 
-    it('matches the Accept header case-insensitively (media types are case-insensitive)', async () => {
-      app = fastify()
-      app.get('/mixed-case', async () => 'data')
-      await app.ready()
+        it('matches the Accept header case-insensitively (media types are case-insensitive)', async () => {
+          app = fastify()
+          app.get('/mixed-case', async () => 'data')
+          await app.ready()
 
-      await app.inject().headers({ accept: 'Text/Event-Stream' }).get('/mixed-case').end()
-      await waitForSpans(memoryExporter, 1)
+          await app.inject().headers({ accept: 'Text/Event-Stream' }).get('/mixed-case').end()
+          await waitForSpans(memoryExporter, 1)
 
-      const spans = memoryExporter
-        .getFinishedSpans()
-        .filter(isFastifySpan)
-        .filter((span) => span.kind === SpanKind.SERVER)
-        .filter((span) => spanMentions(span, '/mixed-case'))
-      expect(spans.length).toBeGreaterThan(0)
-      expect(spans.some((span) => span.attributes[STREAM_ENDPOINT_SPAN_ATTRIBUTE] === true)).toBe(
-        true,
-      )
-    })
+          const spans = memoryExporter
+            .getFinishedSpans()
+            .filter(isFastifySpan)
+            .filter((span) => span.kind === SpanKind.SERVER)
+            .filter((span) => spanMentions(span, '/mixed-case'))
+          expect(spans.length).toBeGreaterThan(0)
+          expect(
+            spans.some((span) => span.attributes[STREAM_ENDPOINT_SPAN_ATTRIBUTE] === true),
+          ).toBe(true)
+        })
 
-    it('does not tag non-streaming request spans', async () => {
-      app = fastify()
-      app.get('/plain', async () => 'data')
-      await app.ready()
+        it('does not tag non-streaming request spans', async () => {
+          app = fastify()
+          app.get('/plain', async () => 'data')
+          await app.ready()
 
-      await app.inject().get('/plain').end()
-      await waitForSpans(memoryExporter, 1)
+          await app.inject().get('/plain').end()
+          await waitForSpans(memoryExporter, 1)
 
-      const plainSpans = memoryExporter
-        .getFinishedSpans()
-        .filter(isFastifySpan)
-        .filter((span) => span.kind === SpanKind.SERVER)
-        .filter((span) => spanMentions(span, '/plain'))
-      expect(plainSpans.length).toBeGreaterThan(0)
-      expect(
-        plainSpans.every((span) => span.attributes[STREAM_ENDPOINT_SPAN_ATTRIBUTE] === undefined),
-      ).toBe(true)
+          const plainSpans = memoryExporter
+            .getFinishedSpans()
+            .filter(isFastifySpan)
+            .filter((span) => span.kind === SpanKind.SERVER)
+            .filter((span) => spanMentions(span, '/plain'))
+          expect(plainSpans.length).toBeGreaterThan(0)
+          expect(
+            plainSpans.every(
+              (span) => span.attributes[STREAM_ENDPOINT_SPAN_ATTRIBUTE] === undefined,
+            ),
+          ).toBe(true)
+        })
+      })
+
+      describe('http server span (instrumentation-http)', () => {
+        it('wires a requestHook into @opentelemetry/instrumentation-http', () => {
+          expect(capturedHttpRequestHook()).toBeTypeOf('function')
+        })
+
+        it('marks the span when the incoming request negotiated SSE', () => {
+          const hook = capturedHttpRequestHook()
+          const { span, attributes } = fakeSpan()
+
+          hook?.(span, incomingMessageWithAccept('text/event-stream'))
+
+          expect(attributes[STREAM_ENDPOINT_SPAN_ATTRIBUTE]).toBe(true)
+        })
+
+        it('matches the Accept header case-insensitively', () => {
+          const hook = capturedHttpRequestHook()
+          const { span, attributes } = fakeSpan()
+
+          hook?.(span, incomingMessageWithAccept('Text/Event-Stream'))
+
+          expect(attributes[STREAM_ENDPOINT_SPAN_ATTRIBUTE]).toBe(true)
+        })
+
+        it('does not mark the span for non-SSE requests', () => {
+          const hook = capturedHttpRequestHook()
+          const { span, attributes } = fakeSpan()
+
+          hook?.(span, incomingMessageWithAccept('application/json'))
+          hook?.(span, incomingMessageWithAccept())
+
+          expect(attributes).toEqual({})
+        })
+
+        it('ignores outgoing client requests (no headers map) without crashing', () => {
+          const hook = capturedHttpRequestHook()
+          const { span, attributes } = fakeSpan()
+
+          // ClientRequest has no `headers` property — only IncomingMessage does.
+          expect(() => hook?.(span, { getHeader: () => undefined })).not.toThrow()
+          expect(attributes).toEqual({})
+        })
+      })
     })
 
     // End-to-end: dbNamespaceBySystem only shapes the Datadog-bound OTLP payload;
