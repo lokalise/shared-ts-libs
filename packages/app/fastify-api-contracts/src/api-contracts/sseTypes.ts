@@ -117,23 +117,81 @@ export type SSESession<Events extends SSEEventSchemas = SSEEventSchemas, Context
 // ============================================================================
 
 /**
+ * One SSE representation a contract declares: the response status key it lives under
+ * (`200`, `'2xx'`, …), its media type, and its event schemas.
+ */
+export type SSESelection = {
+  statusCode: number | string
+  contentType: string
+  events: SSEEventSchemas
+}
+
+/** True when `TUnion` has two or more members. */
+type IsUnion<TUnion, TFull = TUnion> = TUnion extends unknown
+  ? [TFull] extends [TUnion]
+    ? false
+    : true
+  : never
+
+/**
+ * The members of `TSelections` whose status codes cover `StatusCode`. A selection under a
+ * wildcard contract key carries the expanded concrete status union, so a specific status
+ * (`202`) matches the `'2xx'` selection by inclusion, not by exact key equality.
+ */
+type MatchingSseSelections<
+  TSelections extends SSESelection,
+  StatusCode,
+> = TSelections extends unknown
+  ? Extract<StatusCode, TSelections['statusCode']> extends never
+    ? never
+    : TSelections
+  : never
+
+/**
  * Context object passed to SSE handlers for deferred header sending.
  *
  * Lets handlers validate before any headers are sent and then either return an early
  * HTTP response as `{ status, body }`, or explicitly start streaming (via `start()`).
  *
- * @template Events - Event schemas for type-safe sending
+ * `start()` sends HTTP 200 + SSE headers and returns a typed session; after the call a
+ * regular HTTP response can no longer be sent. When the contract declares a single SSE
+ * representation, that one's event schemas apply. When it declares several, `start()`
+ * requires a `{ statusCode, contentType }` selection naming which representation the
+ * session streams — the session's `send`/`sendStream` are typed by (and validate against)
+ * exactly that representation's event schemas.
+ *
+ * @template TSelections - The SSE representations the contract declares
  */
-export type SSEContext<Events extends SSEEventSchemas = SSEEventSchemas> = {
-  /**
-   * Start streaming — sends HTTP 200 + SSE headers and returns a typed session.
-   * After this call you can no longer send a regular HTTP response.
-   */
-  start: <Context = unknown>(
-    mode: SSESessionMode,
-    options?: SSEStartOptions<Context>,
-  ) => SSESession<Events, Context>
-}
+export type SSEContext<TSelections extends SSESelection = SSESelection> =
+  IsUnion<TSelections> extends true
+    ? {
+        start: <
+          Context = unknown,
+          StatusCode extends TSelections['statusCode'] = TSelections['statusCode'],
+          ContentType extends MatchingSseSelections<
+            TSelections,
+            StatusCode
+          >['contentType'] = MatchingSseSelections<TSelections, StatusCode>['contentType'],
+        >(
+          mode: SSESessionMode,
+          options: SSEStartOptions<Context> & { statusCode: StatusCode; contentType: ContentType },
+        ) => SSESession<
+          Extract<
+            MatchingSseSelections<TSelections, StatusCode>,
+            { contentType: ContentType }
+          >['events'],
+          Context
+        >
+      }
+    : {
+        start: <Context = unknown>(
+          mode: SSESessionMode,
+          options?: SSEStartOptions<Context> & {
+            statusCode?: TSelections['statusCode']
+            contentType?: TSelections['contentType']
+          },
+        ) => SSESession<TSelections['events'], Context>
+      }
 
 // ============================================================================
 // SSE route options

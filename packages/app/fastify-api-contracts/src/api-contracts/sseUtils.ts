@@ -62,6 +62,59 @@ export function validateApiResponseHeaders(
   }
 }
 
+/** Runtime shape of one SSE representation of the contract (the status key kept as its string form). */
+export type SseRuntimeSelection = {
+  statusCode: string
+  contentType: string
+  events: SseSchemaByEventName
+}
+
+/**
+ * Pick the SSE representation a `start()` call selects. With a single declared
+ * representation no selection is needed; with several, `{ statusCode, contentType }` is
+ * required and resolved with the contract lookup precedence (exact status → range key →
+ * `'default'`), so the session validates against exactly the selected event schemas
+ * instead of a flattened merge across all representations.
+ */
+function resolveSseSelection(
+  selections: SseRuntimeSelection[],
+  startOptions: { statusCode?: number | string; contentType?: string } | undefined,
+): SseRuntimeSelection {
+  const [firstSelection] = selections
+  if (!firstSelection) {
+    throw new Error('Contract does not declare any SSE response.')
+  }
+  if (selections.length === 1) {
+    return firstSelection
+  }
+
+  const { statusCode, contentType } = startOptions ?? {}
+  if (statusCode === undefined || contentType === undefined) {
+    throw new Error(
+      'The contract declares several SSE representations — sse.start() requires { statusCode, contentType } to select which event schemas apply.',
+    )
+  }
+
+  const exactKey = String(statusCode)
+  const rangeKey =
+    typeof statusCode === 'number' && statusCode >= 100 && statusCode < 600
+      ? `${Math.floor(statusCode / 100)}xx`
+      : undefined
+  const match =
+    selections.find((s) => s.statusCode === exactKey && s.contentType === contentType) ??
+    (rangeKey
+      ? selections.find((s) => s.statusCode === rangeKey && s.contentType === contentType)
+      : undefined) ??
+    selections.find((s) => s.statusCode === 'default' && s.contentType === contentType)
+
+  if (!match) {
+    throw new Error(
+      `Contract does not declare an SSE response for status ${exactKey} and content-type "${contentType}".`,
+    )
+  }
+  return match
+}
+
 /**
  * Build the `sse` context passed to SSE-capable handlers, plus the lifecycle probes the
  * route runtime needs (`isStarted`, `markHandlerDone`).
@@ -73,7 +126,7 @@ export function validateApiResponseHeaders(
 export function buildApiSSEContext(
   request: FastifyRequest,
   reply: FastifyReply,
-  eventSchemas: SseSchemaByEventName,
+  sseSelections: SseRuntimeSelection[],
   options: FastifySSERouteOptions | undefined,
   responseHeaderSchema?: ResponseHeaderSchema,
 ): {
@@ -82,12 +135,28 @@ export function buildApiSSEContext(
   isStarted: () => boolean
   markHandlerDone: () => void
 } {
+  // @fastify/sse is an optional peer and Fastify silently ignores the unknown `sse` route
+  // option when it is not registered — without this guard the request dies on an opaque
+  // `undefined` read the first time the route is hit.
+  if (!reply.sse) {
+    throw new Error(
+      "Contract declares an SSE response but the '@fastify/sse' plugin is not registered on this Fastify instance. Register it with `await app.register(fastifySSE)` before adding SSE-capable routes.",
+    )
+  }
+
   let started = false
   let sessionMode: SSESessionMode | undefined
   let closedByServer = false
 
   const sseContext: SSEContext = {
-    start: <Context = unknown>(mode: SSESessionMode, startOptions?: SSEStartOptions<Context>) => {
+    start: <Context = unknown>(
+      mode: SSESessionMode,
+      startOptions?: SSEStartOptions<Context> & {
+        statusCode?: number | string
+        contentType?: string
+      },
+    ) => {
+      const { events: eventSchemas } = resolveSseSelection(sseSelections, startOptions)
       validateApiResponseHeaders(responseHeaderSchema, reply)
 
       started = true

@@ -102,6 +102,10 @@ describe('buildApiSSEContext', () => {
     update: z.object({ value: z.number() }),
   }
 
+  const sseSelections = [
+    { statusCode: '200', contentType: 'text/event-stream', events: eventSchemas },
+  ]
+
   const buildSseReply = (
     sseOverrides: Record<string, unknown> = {},
     headers: Record<string, unknown> = {},
@@ -125,13 +129,21 @@ describe('buildApiSSEContext', () => {
 
   const flushMicrotasks = () => new Promise((resolve) => setImmediate(resolve))
 
+  it('throws a descriptive error when @fastify/sse is not registered', () => {
+    const reply = { raw: { flushHeaders: vi.fn() } } as unknown as FastifyReply
+
+    expect(() => buildApiSSEContext(requestWithAccept(), reply, sseSelections, undefined)).toThrow(
+      "'@fastify/sse' plugin is not registered",
+    )
+  })
+
   describe('start', () => {
     it('sends the SSE headers and marks the context as started', () => {
       const { reply, sse, raw } = buildSseReply()
       const { sseContext, isStarted } = buildApiSSEContext(
         requestWithAccept(),
         reply,
-        eventSchemas,
+        sseSelections,
         undefined,
       )
 
@@ -146,7 +158,12 @@ describe('buildApiSSEContext', () => {
 
     it("enables the plugin keep-alive for a 'keepAlive' session", () => {
       const { reply, sse } = buildSseReply()
-      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, undefined)
+      const { sseContext } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        sseSelections,
+        undefined,
+      )
 
       sseContext.start('keepAlive')
 
@@ -157,7 +174,7 @@ describe('buildApiSSEContext', () => {
       const stream = Symbol('stream')
       const request = requestWithAccept()
       const { reply } = buildSseReply({ stream: vi.fn(() => stream), isConnected: false })
-      const { sseContext } = buildApiSSEContext(request, reply, eventSchemas, undefined)
+      const { sseContext } = buildApiSSEContext(request, reply, sseSelections, undefined)
 
       const session = sseContext.start('autoClose', { context: { tenant: 'acme' } })
 
@@ -169,6 +186,87 @@ describe('buildApiSSEContext', () => {
     })
   })
 
+  describe('start — SSE representation selection', () => {
+    const multiSelections = [
+      {
+        statusCode: '200',
+        contentType: 'text/event-stream',
+        events: { tick: z.object({ value: z.number() }) },
+      },
+      {
+        statusCode: '202',
+        contentType: 'text/event-stream',
+        events: { tick: z.object({ label: z.string() }) },
+      },
+    ]
+
+    it('requires { statusCode, contentType } when several representations are declared', () => {
+      const { reply } = buildSseReply()
+      const { sseContext } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        multiSelections,
+        undefined,
+      )
+
+      expect(() => sseContext.start('autoClose')).toThrow('requires { statusCode, contentType }')
+    })
+
+    it('throws for a selection the contract does not declare', () => {
+      const { reply } = buildSseReply()
+      const { sseContext } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        multiSelections,
+        undefined,
+      )
+
+      expect(() =>
+        sseContext.start('autoClose', { statusCode: 500, contentType: 'text/event-stream' }),
+      ).toThrow('does not declare an SSE response for status 500')
+    })
+
+    it('validates events against exactly the selected representation', async () => {
+      const { reply, sse } = buildSseReply()
+      const { sseContext } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        multiSelections,
+        undefined,
+      )
+
+      const session = sseContext.start('autoClose', {
+        statusCode: '202',
+        contentType: 'text/event-stream',
+      })
+
+      await expect(session.send('tick', { label: 'a' })).resolves.toBe(true)
+      // Valid under the 200 representation, but the session streams the selected 202 one.
+      await expect(session.send('tick', { value: 1 })).rejects.toThrow(
+        'SSE event validation failed',
+      )
+      expect(sse.send).toHaveBeenCalledTimes(1)
+    })
+
+    it('resolves a concrete numeric status against a range-key representation', () => {
+      const rangeSelections = [
+        { statusCode: '2xx', contentType: 'text/event-stream', events: eventSchemas },
+        { statusCode: '4xx', contentType: 'text/event-stream', events: eventSchemas },
+      ]
+      const { reply } = buildSseReply()
+      const { sseContext } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        rangeSelections,
+        undefined,
+      )
+
+      expect(() =>
+        sseContext.start('autoClose', { statusCode: 200, contentType: 'text/event-stream' }),
+      ).not.toThrow()
+    })
+  })
+
   describe('start — response header validation', () => {
     const headerSchema = z.object({ 'x-request-id': z.string() })
 
@@ -177,7 +275,7 @@ describe('buildApiSSEContext', () => {
       const { sseContext, isStarted } = buildApiSSEContext(
         requestWithAccept(),
         reply,
-        eventSchemas,
+        sseSelections,
         undefined,
         headerSchema,
       )
@@ -193,7 +291,7 @@ describe('buildApiSSEContext', () => {
       const { sseContext, isStarted } = buildApiSSEContext(
         requestWithAccept(),
         reply,
-        eventSchemas,
+        sseSelections,
         undefined,
         headerSchema,
       )
@@ -208,7 +306,12 @@ describe('buildApiSSEContext', () => {
   describe('session.send', () => {
     it('forwards a schema-valid event and resolves true', async () => {
       const { reply, sse } = buildSseReply()
-      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, undefined)
+      const { sseContext } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        sseSelections,
+        undefined,
+      )
       const session = sseContext.start('autoClose')
 
       await expect(session.send('update', { value: 1 }, { id: '7', retry: 100 })).resolves.toBe(
@@ -224,7 +327,12 @@ describe('buildApiSSEContext', () => {
 
     it('sends an event without a declared schema unvalidated', async () => {
       const { reply, sse } = buildSseReply()
-      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, undefined)
+      const { sseContext } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        sseSelections,
+        undefined,
+      )
       const session = sseContext.start('autoClose')
 
       await expect(session.send('unschematized', { anything: true })).resolves.toBe(true)
@@ -238,7 +346,12 @@ describe('buildApiSSEContext', () => {
 
     it('rejects when the event data fails schema validation', async () => {
       const { reply, sse } = buildSseReply()
-      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, undefined)
+      const { sseContext } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        sseSelections,
+        undefined,
+      )
       const session = sseContext.start('autoClose')
 
       await expect(session.send('update', { value: 'not-a-number' })).rejects.toThrow(
@@ -251,7 +364,12 @@ describe('buildApiSSEContext', () => {
       const { reply } = buildSseReply({
         send: vi.fn().mockRejectedValue(new Error('connection closed')),
       })
-      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, undefined)
+      const { sseContext } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        sseSelections,
+        undefined,
+      )
       const session = sseContext.start('autoClose')
 
       await expect(session.send('update', { value: 1 })).resolves.toBe(false)
@@ -261,7 +379,12 @@ describe('buildApiSSEContext', () => {
   describe('session.sendStream', () => {
     it('sends every message from the iterable while the client stays connected', async () => {
       const { reply, sse } = buildSseReply()
-      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, undefined)
+      const { sseContext } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        sseSelections,
+        undefined,
+      )
       const session = sseContext.start('autoClose')
 
       async function* source() {
@@ -287,7 +410,12 @@ describe('buildApiSSEContext', () => {
           .mockResolvedValueOnce(undefined)
           .mockRejectedValue(new Error('connection closed')),
       })
-      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, undefined)
+      const { sseContext } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        sseSelections,
+        undefined,
+      )
       const session = sseContext.start('autoClose')
 
       let pulled = 0
@@ -313,7 +441,12 @@ describe('buildApiSSEContext', () => {
 
     it('stops pulling from the source when the client disconnects between writes', async () => {
       const { reply, sse } = buildSseReply({ isConnected: false })
-      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, undefined)
+      const { sseContext } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        sseSelections,
+        undefined,
+      )
       const session = sseContext.start('autoClose')
 
       let pulled = 0
@@ -335,7 +468,7 @@ describe('buildApiSSEContext', () => {
     const startWithOnClose = (onClose: (s: SSESession, i: SSECloseInitiator) => void) => {
       const request = requestWithAccept()
       const { reply, sse } = buildSseReply()
-      const { sseContext, markHandlerDone } = buildApiSSEContext(request, reply, eventSchemas, {
+      const { sseContext, markHandlerDone } = buildApiSSEContext(request, reply, sseSelections, {
         onClose,
       })
       const session = sseContext.start('keepAlive')
@@ -369,7 +502,7 @@ describe('buildApiSSEContext', () => {
       const { sseContext, markHandlerDone } = buildApiSSEContext(
         requestWithAccept(),
         reply,
-        eventSchemas,
+        sseSelections,
         { onClose },
       )
       const session = sseContext.start('autoClose')
@@ -406,7 +539,7 @@ describe('buildApiSSEContext', () => {
     it('invokes onConnect with the started session', () => {
       const onConnect = vi.fn()
       const { reply } = buildSseReply()
-      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, {
+      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, sseSelections, {
         onConnect,
       })
 
@@ -419,7 +552,7 @@ describe('buildApiSSEContext', () => {
       const onConnect = vi.fn().mockRejectedValue(new Error('boom'))
       const request = requestWithAccept()
       const { reply } = buildSseReply()
-      const { sseContext } = buildApiSSEContext(request, reply, eventSchemas, { onConnect })
+      const { sseContext } = buildApiSSEContext(request, reply, sseSelections, { onConnect })
 
       expect(() => sseContext.start('keepAlive')).not.toThrow()
       await flushMicrotasks()
@@ -438,7 +571,7 @@ describe('buildApiSSEContext', () => {
         .mockResolvedValue([
           { event: 'update', data: { value: 1 }, id: '43' },
         ] satisfies SSEMessage[])
-      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, {
+      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, sseSelections, {
         onReconnect,
       })
 
@@ -453,7 +586,7 @@ describe('buildApiSSEContext', () => {
     it('replays nothing when onReconnect handles the reconnection itself', async () => {
       const { reply, sse } = buildSseReply({ lastEventId: '42' })
       const onReconnect = vi.fn().mockResolvedValue(undefined)
-      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, {
+      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, sseSelections, {
         onReconnect,
       })
 
@@ -466,7 +599,7 @@ describe('buildApiSSEContext', () => {
 
     it('does not replay when the request carries no Last-Event-ID', () => {
       const { reply, sse } = buildSseReply()
-      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, {
+      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, sseSelections, {
         onReconnect: vi.fn(),
       })
 
@@ -482,7 +615,7 @@ describe('buildApiSSEContext', () => {
         replay: vi.fn((callback: () => Promise<void>) => callback()),
       })
       const onReconnect = vi.fn().mockRejectedValue(new Error('boom'))
-      const { sseContext } = buildApiSSEContext(request, reply, eventSchemas, { onReconnect })
+      const { sseContext } = buildApiSSEContext(request, reply, sseSelections, { onReconnect })
 
       expect(() => sseContext.start('keepAlive')).not.toThrow()
       await flushMicrotasks()

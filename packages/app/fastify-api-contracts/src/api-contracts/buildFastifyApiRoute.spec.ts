@@ -24,7 +24,7 @@ import type {
 } from './apiHandlerTypes.ts'
 import { buildFastifyApiRoute, hasAnySseResponse } from './buildFastifyApiRoute.ts'
 import { buildFastifyApiSchema } from './buildFastifyApiSchema.ts'
-import type { SSEContext, SSEStreamMessage } from './sseTypes.ts'
+import type { SSEStreamMessage } from './sseTypes.ts'
 
 // ============================================================================
 // Shared test fixtures
@@ -650,6 +650,23 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(logs.filter((line) => line.includes('RESPONSE_HEADERS_VALIDATION_FAILED'))).toEqual([])
   })
 
+  it('returns 500 with a descriptive message when an SSE route is hit without @fastify/sse registered', async () => {
+    app = fastify().withTypeProvider<ZodTypeProvider>()
+    app.setValidatorCompiler(validatorCompiler)
+    app.setSerializerCompiler(serializerCompiler)
+    // No fastifySSE registration — Fastify silently drops the unknown `sse` route option.
+    app.route(
+      buildFastifyApiRoute(sseOnlyContract, (_request, _reply, { sse }) => {
+        sse.start('autoClose')
+      }),
+    )
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/stream' })
+    expect(response.statusCode).toBe(500)
+    expect(response.json().message).toContain("'@fastify/sse' plugin is not registered")
+  })
+
   it('returns 500 when an SSE-capable handler neither returns a result nor starts a stream', async () => {
     app = await buildApp()
     const handler = (() => undefined) as unknown as InferApiHandler<typeof sseOnlyContract>
@@ -905,6 +922,72 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body).toContain('event: update')
     expect(response.body).toContain('event: done')
+  })
+
+  it('validates a streamed body against the SSE representation the result selects', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Stream ticks',
+      pathResolver: () => '/ticks',
+      responsesByStatusCode: {
+        200: {
+          content: { 'text/event-stream': sseBody({ tick: z.object({ value: z.number() }) }) },
+        },
+        202: {
+          content: { 'text/event-stream': sseBody({ tick: z.object({ label: z.string() }) }) },
+        },
+      },
+    })
+    app = await buildApp()
+    // With a flattened event map the 202 schema (last key) would win and reject this payload;
+    // per-selection validation accepts it against the 200 representation the result names.
+    app.route(
+      buildFastifyApiRoute(contract, (_request, _reply) => ({
+        status: 200,
+        contentType: 'text/event-stream',
+        // biome-ignore lint/suspicious/useAwait: async is required to satisfy AsyncIterable
+        body: (async function* () {
+          yield { event: 'tick', data: { value: 1 } } as const
+        })(),
+      })),
+    )
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/ticks' })
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toContain('event: tick')
+  })
+
+  it('streams via sse.start() with an explicit representation selection', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Stream ticks',
+      pathResolver: () => '/ticks',
+      responsesByStatusCode: {
+        200: {
+          content: { 'text/event-stream': sseBody({ tick: z.object({ value: z.number() }) }) },
+        },
+        '2xx': {
+          content: { 'text/event-stream': sseBody({ tick: z.object({ label: z.string() }) }) },
+        },
+      },
+    })
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(contract, async (_request, _reply, { sse }) => {
+        const session = sse.start('autoClose', {
+          statusCode: 202,
+          contentType: 'text/event-stream',
+        })
+        await session.send('tick', { label: 'x' })
+      }),
+    )
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/ticks' })
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toContain('event: tick')
+    expect(response.body).toContain('"label":"x"')
   })
 
   it("reports 'server' as the close initiator when an autoClose stream completes", async () => {
@@ -1393,16 +1476,82 @@ describe('InferApiHandler', () => {
 
   it('extends the context with sse for an SSE-only contract', () => {
     type Context = Parameters<InferApiHandler<typeof sseOnlyContract>>[2]
-    expectTypeOf<Context['sse']>().toEqualTypeOf<
-      SSEContext<InferSseSuccessResponses<(typeof sseOnlyContract)['responsesByStatusCode']>>
-    >()
+    // A single SSE representation — start() needs no selection.
+    expectTypeOf<Context['sse']['start']>().toBeCallableWith('autoClose')
   })
 
   it('extends the context with sse for a dual-mode contract', () => {
     type Context = Parameters<InferApiHandler<typeof dualModeContract>>[2]
-    expectTypeOf<Context['sse']>().toEqualTypeOf<
-      SSEContext<InferSseSuccessResponses<(typeof dualModeContract)['responsesByStatusCode']>>
-    >()
+    // The dual-mode contract declares one sseBody (mixed with JSON) — still a single selection.
+    expectTypeOf<Context['sse']['start']>().toBeCallableWith('keepAlive')
+  })
+
+  it('requires a { statusCode, contentType } selection and narrows send when several SSE bodies are declared', () => {
+    const multiSseContract = defineApiContract({
+      method: 'get',
+      summary: 'Stream ticks',
+      pathResolver: () => '/ticks',
+      responsesByStatusCode: {
+        200: {
+          content: { 'text/event-stream': sseBody({ tick: z.object({ value: z.number() }) }) },
+        },
+        202: {
+          content: { 'text/event-stream': sseBody({ tick: z.object({ label: z.string() }) }) },
+        },
+      },
+    })
+
+    const useContext = (ctx: Parameters<InferApiHandler<typeof multiSseContract>>[2]) => {
+      // @ts-expect-error — a selection is required when the contract declares several SSE bodies
+      ctx.sse.start('autoClose')
+
+      const session = ctx.sse.start('autoClose', {
+        statusCode: 200,
+        contentType: 'text/event-stream',
+      })
+      expectTypeOf(session.send).toBeCallableWith('tick', { value: 1 })
+      // @ts-expect-error — { label } belongs to the 202 selection, not the selected 200 one
+      void session.send('tick', { label: 'x' })
+    }
+    expectTypeOf(useContext).toBeFunction()
+  })
+
+  it('selects a wildcard SSE representation by a concrete status within its range', () => {
+    const wildcardSseContract = defineApiContract({
+      method: 'get',
+      summary: 'Stream ticks',
+      pathResolver: () => '/ticks',
+      responsesByStatusCode: {
+        200: {
+          content: { 'text/event-stream': sseBody({ tick: z.object({ value: z.number() }) }) },
+        },
+        '2xx': {
+          content: { 'text/event-stream': sseBody({ tick: z.object({ label: z.string() }) }) },
+        },
+      },
+    })
+
+    const useContext = (ctx: Parameters<InferApiHandler<typeof wildcardSseContract>>[2]) => {
+      // A concrete status within the range selects the '2xx' representation…
+      const rangeSession = ctx.sse.start('autoClose', {
+        statusCode: 202,
+        contentType: 'text/event-stream',
+      })
+      expectTypeOf(rangeSession.send).toBeCallableWith('tick', { label: 'x' })
+      // @ts-expect-error — { value } belongs to the exactly-declared 200 representation
+      void rangeSession.send('tick', { value: 1 })
+
+      // …while the exactly-declared 200 keeps its own representation.
+      const exactSession = ctx.sse.start('autoClose', {
+        statusCode: 200,
+        contentType: 'text/event-stream',
+      })
+      expectTypeOf(exactSession.send).toBeCallableWith('tick', { value: 1 })
+
+      // @ts-expect-error — the wildcard key itself is not a valid selection; use a concrete status
+      void ctx.sse.start('autoClose', { statusCode: '2xx', contentType: 'text/event-stream' })
+    }
+    expectTypeOf(useContext).toBeFunction()
   })
 
   it('types expectedContentType as the union of the contract-declared content-types', () => {

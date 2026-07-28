@@ -5,7 +5,6 @@ import type {
   ExpandStatusRangeKey,
   HttpStatusCode,
   HttpStatusCodeRange,
-  InferSseSuccessResponses,
   PayloadApiContract,
   SSEEventSchemas,
 } from '@lokalise/api-contracts'
@@ -149,16 +148,43 @@ export type InferContractResponseContentTypes<TContract extends ApiContract> = {
  *
  * Contracts that declare an SSE response are additionally extended with the `sse` context
  * for imperative streaming (`sse.start()` for keep-alive, lifecycle hooks, or reconnection).
+ * When the contract declares several SSE representations, `sse.start()` requires a
+ * `{ statusCode, contentType }` selection and the session's `send` is typed by exactly the
+ * selected representation's event schemas.
  */
 export type ApiHandlerContext<TContract extends ApiContract> = {
   expectedContentType: InferContractResponseContentTypes<TContract> | null
 } & ([ContractResponseMode<TContract['responsesByStatusCode']>] extends ['non-sse']
   ? unknown
   : {
-      sse: SSEContext<
-        Extract<InferSseSuccessResponses<TContract['responsesByStatusCode']>, SSEEventSchemas>
-      >
+      sse: SSEContext<ContractSseSelections<TContract>>
     })
+
+/**
+ * Every SSE representation a contract declares, as `{ statusCode, contentType, events }`
+ * selections — one member per `sseBody()` descriptor across all statuses and media types.
+ * A wildcard status key (`'2xx'`, `'default'`) expands to the concrete statuses it covers
+ * (minus the exactly-declared ones), so `sse.start()` selects with a specific status like
+ * `202`, never the wildcard key itself.
+ */
+type ContractSseSelections<TContract extends ApiContract> = {
+  [S in keyof TContract['responsesByStatusCode']]: TContract['responsesByStatusCode'][S] extends {
+    content: infer TContent
+  }
+    ? {
+        [M in keyof TContent]: TContent[M] extends {
+          _tag: 'SseBody'
+          schemaByEventName: infer TEvents extends SSEEventSchemas
+        }
+          ? {
+              statusCode: HandlerStatusesForKey<TContract, S>
+              contentType: M & string
+              events: TEvents
+            }
+          : never
+      }[keyof TContent]
+    : never
+}[keyof TContract['responsesByStatusCode']]
 
 type MaybePromise<T> = T | Promise<T>
 

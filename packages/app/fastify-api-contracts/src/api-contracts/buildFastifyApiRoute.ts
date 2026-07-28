@@ -1,14 +1,12 @@
 import type { SSERouteOptions } from '@fastify/sse'
 import {
   type ApiContract,
-  getSseSchemaByEventName,
   type HttpStatusCode,
   type HttpStatusCodeRange,
   isContentResponseEntry,
   isJsonResponse,
   isSseBody,
   mapApiContractToPath,
-  type SseSchemaByEventName,
 } from '@lokalise/api-contracts'
 import { InternalError } from '@lokalise/node-core'
 import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
@@ -18,6 +16,7 @@ import type { SSEStreamMessage } from './sseTypes.ts'
 import {
   buildApiSSEContext,
   determineResponseContentType,
+  type SseRuntimeSelection,
   validateApiResponseHeaders,
 } from './sseUtils.ts'
 
@@ -62,6 +61,29 @@ function getContractResponseContentTypes(contract: ApiContract): string[] {
   }
 
   return [...contentTypes]
+}
+
+/**
+ * Collects every SSE representation the contract declares — one selection per `sseBody()`
+ * descriptor, keyed by the status key it lives under and its media type. Unlike the
+ * flattened `getSseSchemaByEventName`, this keeps each representation's event schemas
+ * separate, so a session validates against exactly the representation it streams.
+ */
+function getSseSelections(contract: ApiContract): SseRuntimeSelection[] {
+  const selections: SseRuntimeSelection[] = []
+
+  for (const [statusCode, entry] of Object.entries(contract.responsesByStatusCode)) {
+    if (!isContentResponseEntry(entry) || !entry.content) {
+      continue
+    }
+    for (const [contentType, descriptor] of Object.entries(entry.content)) {
+      if (isSseBody(descriptor)) {
+        selections.push({ statusCode, contentType, events: descriptor.schemaByEventName })
+      }
+    }
+  }
+
+  return selections
 }
 
 /** True when any response entry of the contract (any status code) declares an SSE body. */
@@ -184,7 +206,7 @@ type HandleApiRouteParams = {
   contract: ApiContract
   // biome-ignore lint/suspicious/noExplicitAny: Handler types are validated by InferApiHandler at call site
   handler: (request: FastifyRequest, reply: FastifyReply, context: any) => any
-  eventSchemas: SseSchemaByEventName
+  sseSelections: SseRuntimeSelection[]
   responseContentTypes: string[]
   options: ApiRouteOptions | undefined
   sseCapable: boolean
@@ -195,7 +217,7 @@ type HandleApiRouteParams = {
 async function handleApiRoute({
   contract,
   handler,
-  eventSchemas,
+  sseSelections,
   responseContentTypes,
   options,
   sseCapable,
@@ -203,7 +225,7 @@ async function handleApiRoute({
   reply,
 }: HandleApiRouteParams): Promise<void> {
   const apiSSEContext = sseCapable
-    ? buildApiSSEContext(request, reply, eventSchemas, options, contract.responseHeaderSchema)
+    ? buildApiSSEContext(request, reply, sseSelections, options, contract.responseHeaderSchema)
     : undefined
 
   // Negotiating the Accept header allocates a Negotiator, and most handlers never read the
@@ -232,9 +254,13 @@ async function handleApiRoute({
     const resolved = resolveResponseRepresentation(contract, result)
 
     // An SSE representation carries an async iterable of events as its body: open the
-    // connection and pipe each event (validated against the contract's event schemas).
+    // connection and pipe each event, validated against the event schemas of exactly the
+    // representation the handler result selected.
     if (apiSSEContext && resolved.isSse) {
-      const session = apiSSEContext.sseContext.start('autoClose')
+      const session = apiSSEContext.sseContext.start('autoClose', {
+        statusCode: resolved.status,
+        contentType: resolved.contentType ?? undefined,
+      })
       await session.sendStream(resolved.body as AsyncIterable<SSEStreamMessage>)
       apiSSEContext.markHandlerDone()
       return
@@ -295,7 +321,7 @@ export function buildFastifyApiRoute<Contract extends ApiContract>(
     ...fastifyOptions
   } = options ?? {}
 
-  const eventSchemas = getSseSchemaByEventName(contract) ?? {}
+  const sseSelections = getSseSelections(contract)
   const responseContentTypes = getContractResponseContentTypes(contract)
   const contractMetadata = contractMetadataToRouteMapper?.(contract.metadata) ?? {}
   const sseCapable = hasAnySseResponse(contract)
@@ -323,7 +349,7 @@ export function buildFastifyApiRoute<Contract extends ApiContract>(
         contract,
         // biome-ignore lint/suspicious/noExplicitAny: Handler types are validated by InferApiHandler at call site
         handler: apiHandler as any,
-        eventSchemas,
+        sseSelections,
         responseContentTypes,
         options,
         sseCapable,
