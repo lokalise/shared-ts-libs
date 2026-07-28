@@ -6,7 +6,10 @@ import type { SSECloseInitiator, SSEMessage, SSESession } from './sseTypes.ts'
 import { buildApiSSEContext, determineResponseContentType } from './sseUtils.ts'
 
 const requestWithAccept = (accept?: string): FastifyRequest =>
-  ({ headers: accept === undefined ? {} : { accept } }) as FastifyRequest
+  ({
+    headers: accept === undefined ? {} : { accept },
+    log: { error: vi.fn() },
+  }) as unknown as FastifyRequest
 
 describe('determineResponseContentType', () => {
   it('returns the candidate the Accept header names exactly', () => {
@@ -110,7 +113,7 @@ describe('buildApiSSEContext', () => {
       stream: vi.fn(),
       close: vi.fn(),
       onClose: vi.fn(),
-      replay: vi.fn(),
+      replay: vi.fn().mockResolvedValue(undefined),
       isConnected: true,
       lastEventId: undefined as string | undefined,
       ...sseOverrides,
@@ -330,16 +333,14 @@ describe('buildApiSSEContext', () => {
 
   describe('close lifecycle', () => {
     const startWithOnClose = (onClose: (s: SSESession, i: SSECloseInitiator) => void) => {
+      const request = requestWithAccept()
       const { reply, sse } = buildSseReply()
-      const { sseContext, markHandlerDone } = buildApiSSEContext(
-        requestWithAccept(),
-        reply,
-        eventSchemas,
-        { onClose },
-      )
+      const { sseContext, markHandlerDone } = buildApiSSEContext(request, reply, eventSchemas, {
+        onClose,
+      })
       const session = sseContext.start('keepAlive')
       const fireClose = sse.onClose.mock.calls[0]?.[0] as () => void
-      return { session, sse, markHandlerDone, fireClose }
+      return { session, sse, markHandlerDone, fireClose, request }
     }
 
     it("session.close() closes the reply and reports 'server' as the initiator", () => {
@@ -389,11 +390,15 @@ describe('buildApiSSEContext', () => {
       expect(onClose).toHaveBeenCalledWith(session, 'client')
     })
 
-    it('swallows a rejecting onClose hook', async () => {
-      const { fireClose } = startWithOnClose(vi.fn().mockRejectedValue(new Error('boom')))
+    it('logs a rejecting onClose hook without tearing down the stream', async () => {
+      const { fireClose, request } = startWithOnClose(vi.fn().mockRejectedValue(new Error('boom')))
 
       expect(() => fireClose()).not.toThrow()
       await flushMicrotasks()
+      expect(request.log.error).toHaveBeenCalledWith(
+        { err: expect.any(Error) },
+        'SSE onClose hook failed',
+      )
     })
   })
 
@@ -410,15 +415,18 @@ describe('buildApiSSEContext', () => {
       expect(onConnect).toHaveBeenCalledWith(session)
     })
 
-    it('swallows a rejecting onConnect hook', async () => {
+    it('logs a rejecting onConnect hook without tearing down the stream', async () => {
       const onConnect = vi.fn().mockRejectedValue(new Error('boom'))
+      const request = requestWithAccept()
       const { reply } = buildSseReply()
-      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, eventSchemas, {
-        onConnect,
-      })
+      const { sseContext } = buildApiSSEContext(request, reply, eventSchemas, { onConnect })
 
       expect(() => sseContext.start('keepAlive')).not.toThrow()
       await flushMicrotasks()
+      expect(request.log.error).toHaveBeenCalledWith(
+        { err: expect.any(Error) },
+        'SSE onConnect hook failed',
+      )
     })
   })
 
@@ -465,6 +473,23 @@ describe('buildApiSSEContext', () => {
       sseContext.start('keepAlive')
 
       expect(sse.replay).not.toHaveBeenCalled()
+    })
+
+    it('logs a rejecting onReconnect replay instead of leaving it unhandled', async () => {
+      const request = requestWithAccept()
+      const { reply } = buildSseReply({
+        lastEventId: '42',
+        replay: vi.fn((callback: () => Promise<void>) => callback()),
+      })
+      const onReconnect = vi.fn().mockRejectedValue(new Error('boom'))
+      const { sseContext } = buildApiSSEContext(request, reply, eventSchemas, { onReconnect })
+
+      expect(() => sseContext.start('keepAlive')).not.toThrow()
+      await flushMicrotasks()
+      expect(request.log.error).toHaveBeenCalledWith(
+        { err: expect.any(Error) },
+        'SSE onReconnect replay failed',
+      )
     })
   })
 })

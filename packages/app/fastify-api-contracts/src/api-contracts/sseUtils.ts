@@ -162,14 +162,18 @@ export function buildApiSSEContext(
       }
 
       if (options?.onConnect) {
-        void Promise.resolve(options.onConnect(session)).catch(() => {})
+        void Promise.resolve(options.onConnect(session)).catch((err) => {
+          request.log.error({ err }, 'SSE onConnect hook failed')
+        })
       }
 
       if (options?.onClose) {
         const onClose = options.onClose
         reply.sse.onClose(() => {
           void Promise.resolve(onClose(session, closedByServer ? 'server' : 'client')).catch(
-            () => {},
+            (err) => {
+              request.log.error({ err }, 'SSE onClose hook failed')
+            },
           )
         })
       }
@@ -177,14 +181,18 @@ export function buildApiSSEContext(
       if (options?.onReconnect && reply.sse.lastEventId) {
         const onReconnect = options.onReconnect
         const lastEventId = reply.sse.lastEventId
-        void reply.sse.replay(async () => {
-          const replay = await onReconnect(session, lastEventId)
-          if (replay) {
-            for await (const msg of replay) {
-              await reply.sse.send(msg)
+        void reply.sse
+          .replay(async () => {
+            const replay = await onReconnect(session, lastEventId)
+            if (replay) {
+              for await (const msg of replay) {
+                await reply.sse.send(msg)
+              }
             }
-          }
-        })
+          })
+          .catch((err) => {
+            request.log.error({ err }, 'SSE onReconnect replay failed')
+          })
       }
 
       return session
