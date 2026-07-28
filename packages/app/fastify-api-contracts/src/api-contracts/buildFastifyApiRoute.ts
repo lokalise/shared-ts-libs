@@ -193,8 +193,16 @@ async function handleApiRoute({
     ? buildApiSSEContext(request, reply, eventSchemas, options, contract.responseHeaderSchema)
     : undefined
 
+  // Negotiating the Accept header allocates a Negotiator, and most handlers never read the
+  // result — a lazy, memoized getter makes it free for the common (plain JSON) case.
+  let negotiatedContentType: string | null | undefined
   const context = {
-    expectedContentType: determineResponseContentType(request, responseContentTypes),
+    get expectedContentType() {
+      if (negotiatedContentType === undefined) {
+        negotiatedContentType = determineResponseContentType(request, responseContentTypes)
+      }
+      return negotiatedContentType
+    },
     ...(apiSSEContext ? { sse: apiSSEContext.sseContext } : {}),
   }
 
