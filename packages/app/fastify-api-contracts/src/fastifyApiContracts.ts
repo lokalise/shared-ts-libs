@@ -1,4 +1,4 @@
-import type { CommonRouteDefinition, HttpStatusCode } from '@lokalise/api-contracts'
+import type { ApiContract, CommonRouteDefinition, HttpStatusCode } from '@lokalise/api-contracts'
 import {
   type DeleteRouteDefinition,
   type GetRouteDefinition,
@@ -22,7 +22,8 @@ import type {
 
 declare module 'fastify' {
   interface FastifyContextConfig {
-    apiContract: CommonRouteDefinition
+    /** The legacy (`buildFastifyRoute`) or `defineApiContract` (`buildFastifyApiRoute`) contract the route was built from. */
+    apiContract: CommonRouteDefinition | ApiContract
   }
 }
 

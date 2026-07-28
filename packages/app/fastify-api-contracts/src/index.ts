@@ -1,3 +1,4 @@
+export * from './api-contracts/index.ts'
 export {
   buildFastifyNoPayloadRoute,
   buildFastifyNoPayloadRouteHandler,

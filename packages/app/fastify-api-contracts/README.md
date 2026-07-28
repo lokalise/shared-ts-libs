@@ -6,6 +6,7 @@ This package adds support for generating fastify routes using universal API cont
 
 - [Requirements](#requirements)
 - [Builders](#builders)
+  - [`buildFastifyApiRoute`](#buildfastifyapiroute)
   - [`buildFastifyRoute`](#buildfastifyroute)
   - [`buildFastifyRouteHandler`](#buildfastifyroutehandler)
   - [Accessing the contract](#accessing-the-contract)
@@ -18,6 +19,14 @@ This package adds support for generating fastify routes using universal API cont
 ## Requirements
 
 This module requires the `fastify-type-provider-zod` type provider to work and is ESM-only.
+
+SSE-capable routes (see [`buildFastifyApiRoute`](#buildfastifyapiroute)) additionally require the [`@fastify/sse`](https://github.com/fastify/fastify-sse) plugin to be registered on the Fastify instance. It is a peer dependency and only needs to be installed when you use contracts that declare an SSE response. Plain JSON routes do not need it.
+
+```ts
+import fastifySSE from '@fastify/sse'
+
+await app.register(fastifySSE)
+```
 
 Register the Zod compilers on your Fastify instance and use the `ZodTypeProvider` when adding routes:
 
@@ -42,7 +51,234 @@ app.withTypeProvider<ZodTypeProvider>().route(route)
 
 Builders turn a universal API contract into a Fastify route (or just a route handler). They are meant for production code: you define the contract once with `@lokalise/api-contracts` and let the builders infer request/response types for you.
 
+Pick the builder that matches how the contract was created:
+
+- [`buildFastifyApiRoute`](#buildfastifyapiroute) — for contracts created with `defineApiContract` (the current `@lokalise/api-contracts` API).
+- [`buildFastifyRoute`](#buildfastifyroute) / [`buildFastifyRouteHandler`](#buildfastifyroutehandler) — for contracts created with the deprecated `buildRestContract`/`buildGetRoute`/`buildPayloadRoute` builders.
+
+### `buildFastifyApiRoute`
+
+`buildFastifyApiRoute` produces a complete Fastify `RouteOptions` from a contract created with `defineApiContract`. The HTTP method, URL, request schemas and response schema are all derived from the contract, and the handler shape is inferred from the contract's `responsesByStatusCode`:
+
+| Mode | Contract shape | Handler |
+|------|----------------|---------|
+| **non-SSE** | all success responses are plain Zod schemas / `noBodyResponse()` / content-map entries with JSON or `blobBody()` descriptors | `(request, reply, context) => { status, body }` |
+| **SSE-capable** | at least one success response declares an `sseBody(...)` descriptor (SSE-only or mixed with JSON in one content map) | `(request, reply, context) => { status, body } \| stream`, with `context.sse` |
+
+Every handler receives a `context` as the third argument. It always provides `expectedContentType` — the response content-type the client prefers, negotiated from the request's `Accept` header (with `q=` quality values and wildcards) against the content-types the contract's **success** entries declare (`2xx` codes, `'2xx'`, `'default'`; error responses are not offered as candidates) — or `null` when the client expressed no acceptable preference, in which case the handler picks the fallback. Candidates keep the contract's declaration order (numeric status keys ascending), and under `Accept: */*` — what most non-browser clients send — the first candidate wins.
+
+A single handler covers both representations of an SSE-capable contract: it runs shared logic once and then either returns a non-SSE `{ status, body }` response (e.g. a `404` shared with the streaming path, or the JSON variant of a mixed contract) or calls `context.sse.start(...)` to stream. The context is only extended with `sse` when the contract actually declares an SSE response, so non-SSE routes never see it.
+
+#### Non-SSE routes
+
+Non-SSE handlers always return `{ status, body }`. The `status` is the HTTP status code to send; `body` is validated against the schema declared for that status code. Use `reply.header()` to set response headers (do not call `reply.send()`).
+
+```ts
+import { buildFastifyApiRoute } from '@lokalise/fastify-api-contracts'
+import { defineApiContract, noBodyResponse } from '@lokalise/api-contracts'
+
+const getUserContract = defineApiContract({
+    method: 'get',
+    summary: 'Get a user',
+    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
+    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+    responsesByStatusCode: { 200: USER_SCHEMA, 404: NOT_FOUND_SCHEMA },
+})
+
+const deleteUserContract = defineApiContract({
+    method: 'delete',
+    summary: 'Delete a user',
+    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
+    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+    responsesByStatusCode: { 204: noBodyResponse() },
+})
+
+const getRoute = buildFastifyApiRoute(getUserContract, async (request) => {
+    const user = await userService.findById(request.params.userId)
+    if (!user) return { status: 404, body: { error: 'Not found' } }
+    return { status: 200, body: user }
+})
+
+const deleteRoute = buildFastifyApiRoute(deleteUserContract, async (request) => {
+    await userService.delete(request.params.userId)
+    return { status: 204, body: null }
+})
+
+app.withTypeProvider<ZodTypeProvider>().route(getRoute)
+app.withTypeProvider<ZodTypeProvider>().route(deleteRoute)
+
+await app.ready()
+```
+
+The `body` type is inferred from the contract entry for that status code: a Zod schema (bare or as a content-map JSON descriptor) → its `z.input` (the response serializer parses the body, so schema defaults/transforms are applied after the handler returns), `noBodyResponse()` / `allowNoBody: true` → `null`, and a `blobBody()` descriptor → `string | Buffer | Readable`. A blob body accepts a Node `Readable` stream — Fastify pipes it, ideal for serving large or file-backed bodies without buffering them in memory. The framework sets the response `content-type` from the content-map key of the chosen representation.
+
+When a status declares **several** media types in its content map, the handler result must also carry an explicit `contentType` naming the chosen representation — `{ status, contentType, body }` — and TypeScript ties the `body` type to that `contentType`. With a single declared media type the `contentType` is optional and the framework takes the status's one declared content-type from the contract (a bare Zod schema counts as `application/json`).
+
+```ts
+const exportContract = defineApiContract({
+    method: 'get',
+    summary: 'Export data',
+    pathResolver: () => '/export',
+    requestQuerySchema: z.object({ format: z.enum(['json', 'csv']) }),
+    responsesByStatusCode: {
+        200: {
+            content: {
+                'application/json': z.object({ rows: z.number() }),
+                'text/csv': blobBody(),
+            },
+        },
+    },
+})
+
+const exportRoute = buildFastifyApiRoute(exportContract, async (request) =>
+    request.query.format === 'csv'
+        ? { status: 200, contentType: 'text/csv', body: await exportCsv() }
+        : { status: 200, contentType: 'application/json', body: { rows: await countRows() } },
+)
+```
+
+```ts
+import { blobBody } from '@lokalise/api-contracts'
+import { createReadStream } from 'node:fs'
+
+const downloadContract = defineApiContract({
+    method: 'get',
+    summary: 'Download a file',
+    pathResolver: (p) => `/files/${p.id}`,
+    requestPathParamsSchema: z.object({ id: z.string() }),
+    responsesByStatusCode: { 200: { content: { 'application/pdf': blobBody() } } },
+})
+
+const downloadRoute = buildFastifyApiRoute(downloadContract, (request) => ({
+    status: 200,
+    body: createReadStream(`./files/${request.params.id}.pdf`), // or a Buffer
+}))
+```
+
+#### SSE-only routes
+
+Every handler returns `{ status, body }`. For an SSE response the `body` is an `AsyncIterable` of events — the handler streams in one of two ways:
+
+- **Declarative (preferred):** return `{ status, body }` where `body` is an `AsyncIterable` of events (e.g. an `async function*`). The framework opens the connection, validates and sends each event against the contract's event schemas, then closes it (`autoClose`).
+- **Imperative:** take `sse` from the handler context (the **third** argument) and call `sse.start(mode)` (`'autoClose'` closes when the handler returns; `'keepAlive'` keeps it open), then return nothing. The returned `session` exposes `send(event, data)`, `isConnected()`, `sendStream(iterable)` and `getStream()`. Use this when you need keep-alive, lifecycle hooks, or reconnection.
+
+When the contract declares **several** `sseBody(...)` descriptors (across statuses or media types), `sse.start()` additionally requires a `{ statusCode, contentType }` selection naming which representation the session streams — `sse.start('autoClose', { statusCode: 200, contentType: 'text/event-stream' })`. The session's `send`/`sendStream` are then typed by (and validate against) exactly the selected representation's event schemas; the declarative form selects the representation via the result's `status`/`contentType`. With a single `sseBody(...)` no selection is needed.
+
+To respond without streaming, return `{ status, body }` with a non-SSE body (the status must be a non-SSE response declared on the contract).
+
+SSE-capable routes are registered in `@fastify/sse` `'manual'` mode: there is no `Accept`-header negotiation — the handler alone decides at runtime whether to stream or send a regular HTTP response. This also supports clients that signal streaming via the request body (e.g. OpenAI-style `{ stream: true }`) instead of an `Accept: text/event-stream` header.
+
+```ts
+import { sseBody } from '@lokalise/api-contracts'
+
+const streamContract = defineApiContract({
+    method: 'get',
+    summary: 'Stream updates',
+    pathResolver: () => '/updates/stream',
+    responsesByStatusCode: {
+        200: {
+            content: {
+                'text/event-stream': sseBody({
+                    update: z.object({ value: z.number() }),
+                    done: z.object({ total: z.number() }),
+                }),
+            },
+        },
+    },
+})
+
+// Declarative: the body is an async iterable of events.
+const streamRoute = buildFastifyApiRoute(streamContract, (_request) => ({
+    status: 200,
+    body: (async function* () {
+        yield { event: 'update', data: { value: 1 } }
+        yield { event: 'done', data: { total: 1 } }
+    })(),
+}))
+
+// Imperative: drive the session via the context's sse (keep-alive, hooks, etc.).
+const streamRouteImperative = buildFastifyApiRoute(streamContract, async (_request, _reply, { sse }) => {
+    const session = sse.start('autoClose')
+    await session.send('update', { value: 1 })
+    await session.send('done', { total: 1 })
+})
+```
+
+#### Mixed (SSE + non-SSE) routes
+
+When a success response's content map mixes a JSON schema and an `sseBody(...)` descriptor, the contract is SSE-capable and uses the same single handler. That status declares several media types, so the handler returns `{ status, contentType, body }` — the `contentType` names the chosen representation and ties the `body` type to it (the JSON payload **or** an `AsyncIterable` of events). Shared logic (auth, loading, validation) runs once, then the handler decides. It is free to base that decision on anything; typically `context.expectedContentType` holds the client's `Accept`-header preference among the contract's declared content-types. (To negotiate against a custom candidate list instead, the underlying `determineResponseContentType(request, contentTypes)` helper is also exported.)
+
+```ts
+import { sseBody } from '@lokalise/api-contracts'
+
+const chatContract = defineApiContract({
+    method: 'post',
+    summary: 'Chat',
+    requestBodySchema: z.object({ message: z.string() }),
+    pathResolver: () => '/chat',
+    responsesByStatusCode: {
+        200: {
+            content: {
+                'application/json': z.object({ reply: z.string() }),
+                'text/event-stream': sseBody({ chunk: z.object({ delta: z.string() }), done: z.object({}) }),
+            },
+        },
+        404: z.object({ error: z.string() }),
+    },
+})
+
+const chatRoute = buildFastifyApiRoute(chatContract, async (request, _reply, { expectedContentType }) => {
+    const conversation = await conversations.find(request.body.message)
+    if (!conversation) return { status: 404, body: { error: 'Not found' } } // shared by both
+
+    if (expectedContentType === 'text/event-stream') {
+        return {
+            status: 200,
+            contentType: 'text/event-stream',
+            body: (async function* () {
+                for await (const chunk of stream(conversation)) {
+                    yield { event: 'chunk', data: { delta: chunk } }
+                }
+                yield { event: 'done', data: {} }
+            })(),
+        }
+    }
+
+    return { status: 200, contentType: 'application/json', body: { reply: await complete(conversation) } }
+})
+```
+
+> **Note:** `expectedContentType` is negotiated against the contract's **success** entries only. For a contract with an SSE-only success and a JSON error (`200: { content: { 'text/event-stream': … } }`, `404: z.object(…)`), a client sending `Accept: application/json` gets `expectedContentType: null` — the JSON declared on the 404 is never offered, so a branch like the one above cannot be steered onto a representation the success status can't produce. To negotiate against a custom candidate list instead, call the exported `determineResponseContentType(request, contentTypes)`.
+
+Every response entry contributes to `schema.response`, so the whole contract is visible in a generated OpenAPI spec. A bare Zod schema stays a plain JSON schema; a content-map entry maps to Fastify's per-media-type response schema (`{ content: { '<mediaType>': { schema } } }`, with the entry's `description` forwarded) — JSON descriptors keep their Zod schema and are matched by the response `content-type` for serialization, while `blobBody()` maps to a binary string and `sseBody()` to the union of its event envelopes (`{ event, data, id?, retry? }`, one object schema per event name, following the OpenAPI 3.x convention for `text/event-stream`). The blob/SSE schemas are purely descriptive — raw and SSE bodies bypass Fastify's serializer. A `noBodyResponse()` entry maps to `z.null()`, which `@fastify/swagger` renders as a body-less response (on OpenAPI 3.1). Generating the spec from content-map schemas requires `fastify-type-provider-zod` >= 7 (`jsonSchemaTransform`).
+
+#### Options
+
+`buildFastifyApiRoute` accepts an optional third argument. Any [Fastify `RouteOptions`](https://fastify.dev/docs/latest/Reference/Routes/) field (`preHandler`, `onRequest`, `config`, `bodyLimit`, …) is forwarded directly. In addition:
+
+| Option | Description |
+|--------|-------------|
+| `onConnect` / `onClose` / `onReconnect` | SSE connection lifecycle hooks (ignored for non-SSE routes) |
+| `serializer` | Custom serializer for SSE event data |
+| `heartbeat` | Set to `false` to disable SSE keep-alive heartbeats for this route (the interval is configured at `@fastify/sse` plugin registration) |
+| `contractMetadataToRouteMapper` | Maps the contract `metadata` to extra Fastify route options (e.g. `config`, `preHandler`) merged into the route |
+
+To define a handler separately from the route, type it with `InferApiHandler`:
+
+```ts
+import type { InferApiHandler } from '@lokalise/fastify-api-contracts'
+
+const createUser: InferApiHandler<typeof contract> = async (request) => ({
+    status: 201,
+    body: await userService.create(request.body),
+})
+
+const routes = [buildFastifyApiRoute(contract, createUser)]
+```
+
 ### `buildFastifyRoute`
+
+> This builder targets the deprecated `buildRestContract`/`buildGetRoute`/`buildPayloadRoute` contracts. For contracts created with `defineApiContract`, use [`buildFastifyApiRoute`](#buildfastifyapiroute) instead.
 
 `buildFastifyRoute` is the unified builder that produces a complete Fastify route definition from a contract. It automatically infers the correct handler type from the contract:
 
@@ -139,6 +375,8 @@ const route = buildFastifyRoute(contract, (req) => {
 })
 ```
 
+The same applies to routes built with `buildFastifyApiRoute`: the contract is exposed as `config.apiContract`, merged into any `config` you pass explicitly or derive via `contractMetadataToRouteMapper`.
+
 ### Adding extra route options from contract metadata
 
 `buildFastifyRoute` accepts an optional third argument: a callback that receives the contract metadata and returns extra Fastify route options (such as `config`, `preHandler`, etc.). Use it to derive route options dynamically from the contract:
@@ -187,6 +425,7 @@ import { ContractNoBody, defineApiContract } from '@lokalise/api-contracts'
 
 const createUserContract = defineApiContract({
     method: 'post',
+    summary: 'Create a user',
     requestBodySchema: REQUEST_BODY_SCHEMA,
     requestPathParamsSchema: PATH_PARAMS_SCHEMA,
     requestHeaderSchema: HEADERS_SCHEMA,
@@ -204,6 +443,7 @@ const postResponse = await injectByApiContract(app, createUserContract, {
 
 const pingContract = defineApiContract({
     method: 'get',
+    summary: 'Ping',
     pathResolver: () => '/ping',
     responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
 })
