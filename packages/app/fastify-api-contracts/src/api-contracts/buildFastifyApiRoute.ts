@@ -9,12 +9,15 @@ import {
   mapApiContractToPath,
   type SseSchemaByEventName,
 } from '@lokalise/api-contracts'
-import { InternalError } from '@lokalise/node-core'
 import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
 import type { ApiRouteOptions, InferApiHandler } from './apiHandlerTypes.ts'
 import { buildFastifyApiSchema } from './buildFastifyApiSchema.ts'
 import type { SSEStreamMessage } from './sseTypes.ts'
-import { buildApiSSEContext, determineResponseContentType } from './sseUtils.ts'
+import {
+  buildApiSSEContext,
+  determineResponseContentType,
+  validateApiResponseHeaders,
+} from './sseUtils.ts'
 
 /**
  * SSE-capable routes are registered in `@fastify/sse` `'manual'` mode: no `Accept`-header
@@ -67,22 +70,6 @@ export const hasAnySseResponse = (apiContract: ApiContract): boolean =>
       value.content &&
       Object.values(value.content).some(isSseBody),
   )
-
-function validateApiResponseHeaders(contract: ApiContract, reply: FastifyReply): void {
-  const schema = contract.responseHeaderSchema
-  if (!schema) {
-    return
-  }
-
-  const result = schema.safeParse(reply.getHeaders())
-  if (!result.success) {
-    throw new InternalError({
-      message: 'Internal Server Error',
-      errorCode: 'RESPONSE_HEADERS_VALIDATION_FAILED',
-      details: { validationError: result.error.message },
-    })
-  }
-}
 
 /** The runtime shape of a handler's return value (`InferApiHandlerResult` erased of its generics). */
 type ApiHandlerResult = { status: number; contentType?: string; body: unknown }
@@ -158,6 +145,12 @@ async function sendResponse(
   reply: FastifyReply,
   { status, contentType, body }: ResolvedApiResponse,
 ): Promise<void> {
+  // A hijacked reply already went out — there is nothing left to send, and throwing here
+  // (e.g. from header validation) would only make Fastify's error handler try to send again.
+  if (reply.sent) {
+    return
+  }
+
   // (@fastify/sse commits its `text/event-stream` headers lazily on stream start, so nothing
   // is pre-set here on the non-streaming path of an SSE-capable route.)
   if (contentType !== null && reply.getHeader('content-type') === undefined) {
@@ -169,11 +162,7 @@ async function sendResponse(
   // contract's schema for this status code and content-type (raw and SSE bodies bypass the
   // serializer). Response headers are not covered by the serializer, so they are validated
   // explicitly here.
-  validateApiResponseHeaders(contract, reply)
-
-  if (reply.sent) {
-    return
-  }
+  validateApiResponseHeaders(contract.responseHeaderSchema, reply)
 
   await reply.code(status).send(body)
 }
@@ -201,7 +190,7 @@ async function handleApiRoute({
   reply,
 }: HandleApiRouteParams): Promise<void> {
   const apiSSEContext = sseCapable
-    ? buildApiSSEContext(request, reply, eventSchemas, options)
+    ? buildApiSSEContext(request, reply, eventSchemas, options, contract.responseHeaderSchema)
     : undefined
 
   const context = {

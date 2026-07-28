@@ -99,7 +99,10 @@ describe('buildApiSSEContext', () => {
     update: z.object({ value: z.number() }),
   }
 
-  const buildSseReply = (sseOverrides: Record<string, unknown> = {}) => {
+  const buildSseReply = (
+    sseOverrides: Record<string, unknown> = {},
+    headers: Record<string, unknown> = {},
+  ) => {
     const sse = {
       keepAlive: vi.fn(),
       sendHeaders: vi.fn(),
@@ -113,7 +116,7 @@ describe('buildApiSSEContext', () => {
       ...sseOverrides,
     }
     const raw = { flushHeaders: vi.fn() }
-    const reply = { sse, raw } as unknown as FastifyReply
+    const reply = { sse, raw, getHeaders: () => headers } as unknown as FastifyReply
     return { reply, sse, raw }
   }
 
@@ -160,6 +163,42 @@ describe('buildApiSSEContext', () => {
       expect(session.context).toEqual({ tenant: 'acme' })
       expect(session.request).toBe(request)
       expect(session.id).toEqual(expect.any(String))
+    })
+  })
+
+  describe('start — response header validation', () => {
+    const headerSchema = z.object({ 'x-request-id': z.string() })
+
+    it('rejects start() before any headers are flushed when the reply headers fail the schema', () => {
+      const { reply, sse, raw } = buildSseReply()
+      const { sseContext, isStarted } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        eventSchemas,
+        undefined,
+        headerSchema,
+      )
+
+      expect(() => sseContext.start('autoClose')).toThrow('Internal Server Error')
+      expect(isStarted()).toBe(false)
+      expect(sse.sendHeaders).not.toHaveBeenCalled()
+      expect(raw.flushHeaders).not.toHaveBeenCalled()
+    })
+
+    it('starts the session when the reply headers satisfy the schema', () => {
+      const { reply, sse } = buildSseReply({}, { 'x-request-id': 'abc' })
+      const { sseContext, isStarted } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        eventSchemas,
+        undefined,
+        headerSchema,
+      )
+
+      sseContext.start('autoClose')
+
+      expect(isStarted()).toBe(true)
+      expect(sse.sendHeaders).toHaveBeenCalled()
     })
   })
 

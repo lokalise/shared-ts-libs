@@ -488,6 +488,57 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(response.statusCode).toBe(500)
   })
 
+  it('returns 500 instead of starting an SSE stream when the reply headers fail the responseHeaderSchema', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Stream updates',
+      pathResolver: () => '/stream',
+      responseHeaderSchema: z.object({ 'x-request-id': z.string() }),
+      responsesByStatusCode: {
+        200: { content: { 'text/event-stream': sseBody(sseEventsSchema) } },
+      },
+    })
+    app = await buildApp()
+    // The handler never sets x-request-id — validation must fail at sse.start(), before
+    // the stream headers are flushed, so the client gets a clean 500.
+    app.route(
+      buildFastifyApiRoute(contract, async (_request, _reply, { sse }) => {
+        const session = sse.start('autoClose')
+        await session.send('done', { total: 1 })
+      }),
+    )
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/stream' })
+    expect(response.statusCode).toBe(500)
+    expect(response.body).not.toContain('event: done')
+  })
+
+  it('streams when the reply headers satisfy the responseHeaderSchema at SSE start', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Stream updates',
+      pathResolver: () => '/stream',
+      responseHeaderSchema: z.object({ 'x-request-id': z.string() }),
+      responsesByStatusCode: {
+        200: { content: { 'text/event-stream': sseBody(sseEventsSchema) } },
+      },
+    })
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(contract, async (_request, reply, { sse }) => {
+        reply.header('x-request-id', 'req-1')
+        const session = sse.start('autoClose')
+        await session.send('done', { total: 1 })
+      }),
+    )
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/stream' })
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toContain('event: done')
+  })
+
   it('does not send a second response when the handler already replied via reply.hijack()', async () => {
     app = await buildApp()
     app.route(
@@ -503,6 +554,39 @@ describe('buildFastifyApiRoute — runtime', () => {
     const response = await app.inject({ method: 'GET', url: '/users/1' })
     expect(response.statusCode).toBe(200)
     expect(response.json()).toEqual({ id: 'direct', name: 'Direct' })
+  })
+
+  it('skips response-header validation when the handler already replied via reply.hijack()', async () => {
+    const logs: string[] = []
+    app = fastify({
+      logger: { level: 'error', stream: { write: (line: string) => void logs.push(line) } },
+    }).withTypeProvider<ZodTypeProvider>()
+    app.setValidatorCompiler(validatorCompiler)
+    app.setSerializerCompiler(serializerCompiler)
+
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Get a user',
+      pathResolver: () => '/users',
+      // The hijacked raw response never sets x-request-id — validating it after the
+      // response went out would throw into Fastify's error handler for nothing.
+      responseHeaderSchema: z.object({ 'x-request-id': z.string() }),
+      responsesByStatusCode: { 200: userSchema },
+    })
+    app.route(
+      buildFastifyApiRoute(contract, (_request, reply) => {
+        reply.hijack()
+        reply.raw.setHeader('content-type', 'application/json')
+        reply.raw.end(JSON.stringify({ id: 'direct', name: 'Direct' }))
+        return { status: 200, body: { id: 'ignored', name: 'Ignored' } }
+      }),
+    )
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/users' })
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({ id: 'direct', name: 'Direct' })
+    expect(logs.filter((line) => line.includes('RESPONSE_HEADERS_VALIDATION_FAILED'))).toEqual([])
   })
 
   it('returns 500 when an SSE-capable handler neither returns a result nor starts a stream', async () => {

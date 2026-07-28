@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { SseSchemaByEventName } from '@lokalise/api-contracts'
+import type { ResponseHeaderSchema, SseSchemaByEventName } from '@lokalise/api-contracts'
 import { InternalError } from '@lokalise/node-core'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import Negotiator from 'negotiator'
@@ -39,14 +39,43 @@ export function determineResponseContentType<TContentType extends string>(
 }
 
 /**
+ * Validate the reply's headers against the contract's `responseHeaderSchema` (a no-op when
+ * the contract declares none). Response headers are not covered by the
+ * `fastify-type-provider-zod` serializer, so they are validated explicitly — before the
+ * response goes out, while a violation can still surface as a 500.
+ */
+export function validateApiResponseHeaders(
+  schema: ResponseHeaderSchema | undefined,
+  reply: FastifyReply,
+): void {
+  if (!schema) {
+    return
+  }
+
+  const result = schema.safeParse(reply.getHeaders())
+  if (!result.success) {
+    throw new InternalError({
+      message: 'Internal Server Error',
+      errorCode: 'RESPONSE_HEADERS_VALIDATION_FAILED',
+      details: { validationError: result.error.message },
+    })
+  }
+}
+
+/**
  * Build the `sse` context passed to SSE-capable handlers, plus the lifecycle probes the
  * route runtime needs (`isStarted`, `markHandlerDone`).
+ *
+ * `start()` validates the reply's headers against `responseHeaderSchema` before flushing
+ * them — the only moment a violation can still become a 500 instead of going out on an
+ * already-committed stream.
  */
 export function buildApiSSEContext(
   request: FastifyRequest,
   reply: FastifyReply,
   eventSchemas: SseSchemaByEventName,
   options: FastifySSERouteOptions | undefined,
+  responseHeaderSchema?: ResponseHeaderSchema,
 ): {
   // biome-ignore lint/suspicious/noExplicitAny: SSE event schemas are contract-specific, cast at call site
   sseContext: SSEContext<any>
@@ -59,6 +88,8 @@ export function buildApiSSEContext(
 
   const sseContext: SSEContext = {
     start: <Context = unknown>(mode: SSESessionMode, startOptions?: SSEStartOptions<Context>) => {
+      validateApiResponseHeaders(responseHeaderSchema, reply)
+
       started = true
       sessionMode = mode
 
