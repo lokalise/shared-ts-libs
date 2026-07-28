@@ -2,6 +2,9 @@ import type { Readable } from 'node:stream'
 import type {
   ApiContract,
   ContractResponseMode,
+  ExpandStatusRangeKey,
+  HttpStatusCode,
+  HttpStatusCodeRange,
   InferSseSuccessResponses,
   PayloadApiContract,
   SSEEventSchemas,
@@ -69,14 +72,36 @@ type ResponseEntryResults<TStatusCode, TEntry> = TEntry extends z.ZodType
           : never)
       | (TEntry extends { allowNoBody: true } ? { status: TStatusCode; body: null } : never)
 
+/** The concrete status codes a contract declares exactly (non-wildcard keys). */
+type ExactStatusCodes<TApiContract extends ApiContract> =
+  keyof TApiContract['responsesByStatusCode'] & HttpStatusCode
+
+/** Status codes covered by any range key (e.g. `'2xx'`, `'4xx'`) the contract declares. */
+type RangeStatusCodes<TApiContract extends ApiContract> = {
+  [K in keyof TApiContract['responsesByStatusCode'] & HttpStatusCodeRange]: ExpandStatusRangeKey<K>
+}[keyof TApiContract['responsesByStatusCode'] & HttpStatusCodeRange]
+
+/**
+ * Maps a `responsesByStatusCode` key to the statuses a handler may return for it, mirroring
+ * the runtime lookup precedence (exact → range → `'default'`): a concrete key stays as-is; a
+ * range key expands to its status class minus the exactly-declared codes; `'default'` expands
+ * to every status not covered by an exact or range key.
+ */
+type HandlerStatusesForKey<TApiContract extends ApiContract, TKey> = TKey extends 'default'
+  ? Exclude<HttpStatusCode, ExactStatusCodes<TApiContract> | RangeStatusCodes<TApiContract>>
+  : TKey extends HttpStatusCodeRange
+    ? Exclude<ExpandStatusRangeKey<TKey>, ExactStatusCodes<TApiContract>>
+    : TKey
+
 /**
  * Discriminated union of `{ status, contentType?, body }` results for every response a
  * contract declares. `contentType` exists only for content-map responses — required (and a
  * discriminant) when a status declares several media types, optional when it declares one.
+ * Wildcard status keys (`'4xx'`, `'2xx'`, `'default'`) accept any concrete status they cover.
  */
 export type InferApiHandlerResult<TApiContract extends ApiContract> = {
   [TStatusCode in keyof TApiContract['responsesByStatusCode']]: ResponseEntryResults<
-    TStatusCode,
+    HandlerStatusesForKey<TApiContract, TStatusCode>,
     TApiContract['responsesByStatusCode'][TStatusCode]
   >
 }[keyof TApiContract['responsesByStatusCode']]

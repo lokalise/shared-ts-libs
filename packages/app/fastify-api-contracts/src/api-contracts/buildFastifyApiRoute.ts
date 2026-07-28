@@ -3,12 +3,14 @@ import {
   type ApiContract,
   getSseSchemaByEventName,
   type HttpStatusCode,
+  type HttpStatusCodeRange,
   isContentResponseEntry,
   isJsonResponse,
   isSseBody,
   mapApiContractToPath,
   type SseSchemaByEventName,
 } from '@lokalise/api-contracts'
+import { InternalError } from '@lokalise/node-core'
 import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
 import type { ApiRouteOptions, InferApiHandler } from './apiHandlerTypes.ts'
 import { buildFastifyApiSchema } from './buildFastifyApiSchema.ts'
@@ -101,7 +103,18 @@ function resolveResponseRepresentation(
   contract: ApiContract,
   { status, contentType, body }: ApiHandlerResult,
 ): ResolvedApiResponse {
-  const entry = contract.responsesByStatusCode[status as HttpStatusCode]
+  const responses = contract.responsesByStatusCode
+  const rangeKey =
+    status >= 100 && status < 600
+      ? (`${Math.floor(status / 100)}xx` as HttpStatusCodeRange)
+      : undefined
+
+  // Same lookup precedence as the contract helpers: exact status → range key ('4xx') → 'default'.
+  const entry =
+    responses[status as HttpStatusCode] ??
+    (rangeKey ? responses[rangeKey] : undefined) ??
+    responses.default
+
   if (!entry) {
     throw new Error(`Contract does not declare a response for status ${status}.`)
   }
@@ -231,9 +244,11 @@ async function handleApiRoute({
     return
   }
 
-  throw new Error(
-    'Handler must return { status, body } or call sse.start(). Handler returned without doing either.',
-  )
+  // The handler neither returned { status, body } nor called sse.start().
+  throw new InternalError({
+    message: 'Internal Server Error',
+    errorCode: 'INVALID_HANDLER_RESULT',
+  })
 }
 
 /**

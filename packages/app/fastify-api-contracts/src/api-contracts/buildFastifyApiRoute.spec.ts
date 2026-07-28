@@ -373,6 +373,67 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(response.statusCode).toBe(500)
   })
 
+  it('resolves a handler status against a 4xx range entry and serializes with its schema', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Get data',
+      pathResolver: () => '/data',
+      responsesByStatusCode: {
+        200: z.object({ ok: z.boolean() }),
+        '4xx': z.object({ error: z.string() }),
+      },
+    })
+    app = await buildApp()
+    // The extra key proves the '4xx' schema drives serialization (Zod strips unknown keys).
+    const body = { error: 'not found', internal: 'stripped' }
+    app.route(buildFastifyApiRoute(contract, async () => ({ status: 404, body })))
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/data' })
+    expect(response.statusCode).toBe(404)
+    expect(response.json()).toEqual({ error: 'not found' })
+  })
+
+  it("resolves a handler status against a 'default' entry and serializes with its schema", async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Get data',
+      pathResolver: () => '/data',
+      responsesByStatusCode: {
+        200: z.object({ ok: z.boolean() }),
+        default: z.object({ error: z.string() }),
+      },
+    })
+    app = await buildApp()
+    const body = { error: 'down', internal: 'stripped' }
+    app.route(buildFastifyApiRoute(contract, async () => ({ status: 503, body })))
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/data' })
+    expect(response.statusCode).toBe(503)
+    expect(response.json()).toEqual({ error: 'down' })
+  })
+
+  it('prefers an exact status entry over a covering range entry', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Get data',
+      pathResolver: () => '/data',
+      responsesByStatusCode: {
+        200: z.object({ ok: z.boolean() }),
+        404: z.object({ code: z.string() }),
+        '4xx': z.object({ error: z.string() }),
+      },
+    })
+    app = await buildApp()
+    app.route(buildFastifyApiRoute(contract, async () => ({ status: 404, body: { code: 'NF' } })))
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/data' })
+    expect(response.statusCode).toBe(404)
+    expect(response.json()).toEqual({ code: 'NF' })
+  })
+
   it('returns 500 when the handler returns an undeclared contentType', async () => {
     app = await buildApp()
     const handler = (() => ({
@@ -1174,6 +1235,46 @@ describe('InferApiHandlerResult', () => {
     expectTypeOf<Response>().toEqualTypeOf<
       { status: 200; body: { id: string; name: string } } | { status: 404; body: { error: string } }
     >()
+  })
+
+  it('expands a range status key to its concrete statuses, minus the exactly-declared ones', () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Get data',
+      pathResolver: () => '/data',
+      responsesByStatusCode: {
+        200: z.object({ ok: z.boolean() }),
+        404: z.object({ code: z.string() }),
+        '4xx': z.object({ error: z.string() }),
+      },
+    })
+
+    type Response = InferApiHandlerResult<typeof contract>
+    // Any 4xx status maps to the range entry's body…
+    expectTypeOf<{ status: 400; body: { error: string } }>().toExtend<Response>()
+    expectTypeOf<{ status: 418; body: { error: string } }>().toExtend<Response>()
+    // …except 404, which the contract declares exactly, so it keeps its own body.
+    expectTypeOf<{ status: 404; body: { code: string } }>().toExtend<Response>()
+    expectTypeOf<{ status: 404; body: { error: string } }>().not.toExtend<Response>()
+  })
+
+  it("expands a 'default' status key to the statuses no other key covers", () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Get data',
+      pathResolver: () => '/data',
+      responsesByStatusCode: {
+        200: z.object({ ok: z.boolean() }),
+        '4xx': z.object({ error: z.string() }),
+        default: z.object({ fallback: z.string() }),
+      },
+    })
+
+    type Response = InferApiHandlerResult<typeof contract>
+    expectTypeOf<{ status: 503; body: { fallback: string } }>().toExtend<Response>()
+    // Statuses covered by the exact 200 and the '4xx' range keep their own bodies.
+    expectTypeOf<{ status: 200; body: { fallback: string } }>().not.toExtend<Response>()
+    expectTypeOf<{ status: 404; body: { fallback: string } }>().not.toExtend<Response>()
   })
 
   it('infers an async-iterable body for an SSE response', () => {

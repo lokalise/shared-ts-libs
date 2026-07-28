@@ -124,6 +124,22 @@ describe('buildFastifyApiSchema — request schemas', () => {
 // ============================================================================
 
 describe('buildFastifyApiSchema — response schemas', () => {
+  it("passes wildcard status keys ('4xx', 'default') through verbatim", () => {
+    // Fastify's serializer recognizes both range keys ('4xx') and 'default'.
+    const rangeSchema = z.object({ error: z.string() })
+    const defaultSchema = z.object({ fallback: z.string() })
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Get data',
+      pathResolver: () => '/data',
+      responsesByStatusCode: { 200: userSchema, '4xx': rangeSchema, default: defaultSchema },
+    })
+
+    const response = buildFastifyApiSchema(contract).response as Record<string, z.ZodType>
+    expect(response['4xx']).toBe(rangeSchema)
+    expect(response.default).toBe(defaultSchema)
+  })
+
   it('passes a bare JSON schema through unchanged', () => {
     const contract = defineApiContract({
       method: 'get',
