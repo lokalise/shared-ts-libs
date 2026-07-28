@@ -98,12 +98,18 @@ function buildResponseSchemas(contract: ApiContract): Record<string, FastifyResp
   return schemas
 }
 
+export type ExtendedFastifySchema = FastifySchema & {
+  description?: string
+  summary?: string
+  tags?: readonly string[]
+}
+
 /**
  * Build the Fastify route `schema` from an `ApiContract`, driving both
  * runtime validation/serialization and the generated OpenAPI spec.
  */
-export function buildFastifyApiSchema(contract: ApiContract): FastifySchema {
-  const schema: FastifySchema = { summary: contract.summary }
+export function buildFastifyApiSchema(contract: ApiContract): ExtendedFastifySchema {
+  const schema: ExtendedFastifySchema = { summary: contract.summary }
 
   if (contract.description !== undefined) {
     schema.description = contract.description
