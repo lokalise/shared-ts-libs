@@ -272,7 +272,9 @@ async function handleApiRoute({
     if (apiSSEContext && resolved.isSse) {
       const session = apiSSEContext.sseContext.start('autoClose', {
         statusCode: resolved.status,
-        contentType: resolved.contentType ?? undefined,
+        // An SSE representation always carries a media type — `contentType` is only null
+        // for a no-body response, which resolves with `isSse: false`.
+        contentType: resolved.contentType as string,
       })
       await session.sendStream(resolved.body as AsyncIterable<SSEStreamMessage>)
       apiSSEContext.markHandlerDone()

@@ -200,6 +200,15 @@ describe('buildApiSSEContext', () => {
       },
     ]
 
+    it('rejects start() when the contract declares no SSE representation at all', () => {
+      const { reply } = buildSseReply()
+      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, [], undefined)
+
+      expect(() => sseContext.start('autoClose')).toThrow(
+        'Contract does not declare any SSE response.',
+      )
+    })
+
     it('requires { statusCode, contentType } when several representations are declared', () => {
       const { reply } = buildSseReply()
       const { sseContext } = buildApiSSEContext(
@@ -246,6 +255,24 @@ describe('buildApiSSEContext', () => {
         'SSE event validation failed',
       )
       expect(sse.send).toHaveBeenCalledTimes(1)
+    })
+
+    it("resolves a status against a 'default' representation when no exact or range key matches", () => {
+      const defaultSelections = [
+        { statusCode: '200', contentType: 'text/event-stream', events: eventSchemas },
+        { statusCode: 'default', contentType: 'text/event-stream', events: eventSchemas },
+      ]
+      const { reply } = buildSseReply()
+      const { sseContext } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        defaultSelections,
+        undefined,
+      )
+
+      expect(() =>
+        sseContext.start('autoClose', { statusCode: 503, contentType: 'text/event-stream' }),
+      ).not.toThrow()
     })
 
     it('resolves a concrete numeric status against a range-key representation', () => {

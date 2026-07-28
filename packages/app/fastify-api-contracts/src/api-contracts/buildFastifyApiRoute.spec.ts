@@ -380,6 +380,43 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(response.statusCode).toBe(500)
   })
 
+  it('returns 500 when the handler returns a status outside the 100-599 range', async () => {
+    app = await buildApp()
+    // No range key exists for such a status, so the lookup falls straight to 'default'.
+    const handler = (() => ({
+      status: 999,
+      body: { id: '1', name: 'A' },
+    })) as unknown as InferApiHandler<typeof getUserContract>
+    app.route(buildFastifyApiRoute(getUserContract, handler))
+    await app.ready()
+
+    const response = await app.inject({ method: 'GET', url: '/users/1' })
+    expect(response.statusCode).toBe(500)
+  })
+
+  it('memoizes expectedContentType across repeated reads within a request', async () => {
+    const seen: Array<string | null> = []
+    app = await buildApp()
+    app.route(
+      // Reading through the context object (not destructured) so each read hits the getter.
+      buildFastifyApiRoute(dualModeContract, (_request, _reply, context) => {
+        seen.push(context.expectedContentType)
+        seen.push(context.expectedContentType)
+        return { status: 200, contentType: 'application/json', body: { id: '1', name: 'memo' } }
+      }),
+    )
+    await app.ready()
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/chat',
+      headers: { accept: 'application/json' },
+      payload: { message: 'hi' },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(seen).toEqual(['application/json', 'application/json'])
+  })
+
   it('resolves a handler status against a 4xx range entry and serializes with its schema', async () => {
     const contract = defineApiContract({
       method: 'get',
