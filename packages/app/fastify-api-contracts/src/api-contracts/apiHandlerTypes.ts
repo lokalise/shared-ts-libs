@@ -7,6 +7,7 @@ import type {
   HttpStatusCodeRange,
   PayloadApiContract,
   SSEEventSchemas,
+  SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
 import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
 import type { z } from 'zod/v4'
@@ -129,21 +130,26 @@ type ResponseEntryContentTypes<TEntry> = TEntry extends z.ZodType
     ? keyof TContent & string
     : never
 
-/** Union of all response content-types a contract declares across its status codes. */
+/** The contract's `responsesByStatusCode` keys describing success responses: `2xx` codes, `'2xx'`, `'default'`. */
+type SuccessStatusKeys<TContract extends ApiContract> = keyof TContract['responsesByStatusCode'] &
+  (SuccessfulHttpStatusCode | '2xx' | 'default')
+
+/** Union of the response content-types the contract's success entries declare (error responses excluded). */
 export type InferContractResponseContentTypes<TContract extends ApiContract> = {
-  [TStatusCode in keyof TContract['responsesByStatusCode']]: ResponseEntryContentTypes<
+  [TStatusCode in SuccessStatusKeys<TContract>]: ResponseEntryContentTypes<
     TContract['responsesByStatusCode'][TStatusCode]
   >
-}[keyof TContract['responsesByStatusCode']]
+}[SuccessStatusKeys<TContract>]
 
 /**
  * Context passed to every `ApiContract` handler as the third argument.
  *
  * `expectedContentType` is the response content-type the client prefers, negotiated from the
- * request's `Accept` header (with `q=` quality values and wildcards) against the response
- * content-types the contract declares across all of its status codes, error responses
- * included — so it reflects the client's preference, not necessarily a representation the
- * success status can produce. It is `null` when the client expressed no acceptable
+ * request's `Accept` header (with `q=` quality values and wildcards) against the content-types
+ * the contract's success entries declare (`2xx` codes, `'2xx'`, `'default'`) — error responses
+ * are not offered as candidates. Candidates keep the contract's declaration order (numeric
+ * status keys ascending); under a full-wildcard `Accept` — what most non-browser clients
+ * send — the first candidate wins. It is `null` when the client expressed no acceptable
  * preference, in which case the handler decides the fallback.
  *
  * Contracts that declare an SSE response are additionally extended with the `sse` context

@@ -1148,6 +1148,32 @@ describe('buildFastifyApiRoute — runtime', () => {
     expect(json.json()).toEqual({ id: '1', name: 'neg' })
   })
 
+  it('does not offer content-types declared only on error responses as negotiation candidates', async () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'Stream updates',
+      pathResolver: () => '/stream',
+      responsesByStatusCode: {
+        200: { content: { 'text/event-stream': sseBody(sseEventsSchema) } },
+        404: z.object({ error: z.string() }),
+      },
+    })
+    const seen: Array<string | null> = []
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(contract, (_request, _reply, { expectedContentType, sse }) => {
+        seen.push(expectedContentType)
+        sse.start('autoClose')
+      }),
+    )
+    await app.ready()
+
+    // The 404's JSON must not be offered: only the success SSE representation is a candidate.
+    await app.inject({ method: 'GET', url: '/stream', headers: { accept: 'application/json' } })
+    await app.inject({ method: 'GET', url: '/stream', headers: { accept: 'text/event-stream' } })
+    expect(seen).toEqual([null, 'text/event-stream'])
+  })
+
   it('lets a single dual-mode handler return JSON when the client wants JSON', async () => {
     app = await buildApp()
     app.route(
@@ -1554,7 +1580,7 @@ describe('InferApiHandler', () => {
     expectTypeOf(useContext).toBeFunction()
   })
 
-  it('types expectedContentType as the union of the contract-declared content-types', () => {
+  it('types expectedContentType as the union of the success-declared content-types', () => {
     const contract = defineApiContract({
       method: 'get',
       summary: 'Export data',
@@ -1566,7 +1592,8 @@ describe('InferApiHandler', () => {
             'text/csv': blobBody(),
           },
         },
-        404: z.object({ error: z.string() }),
+        // Declared only on an error status — must not appear among the candidates.
+        404: { content: { 'application/problem+json': z.object({ error: z.string() }) } },
       },
     })
 

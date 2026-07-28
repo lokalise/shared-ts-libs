@@ -40,11 +40,28 @@ function buildSSERouteOptions(options?: ApiRouteOptions): SSERouteOptions {
   return sseOptions
 }
 
-/** Collects the response content-types a contract declares (a bare Zod schema is `application/json`). */
+/** True for a `responsesByStatusCode` key describing a success response: `2xx` codes, `'2xx'`, `'default'`. */
+const isSuccessStatusKey = (statusKey: string): boolean =>
+  statusKey === '2xx' || statusKey === 'default' || /^2\d\d$/.test(statusKey)
+
+/**
+ * Collects the response content-types the contract's success entries declare (a bare Zod
+ * schema is `application/json`) — the candidate list `context.expectedContentType` is
+ * negotiated against. Error responses are excluded: the value exists to pick which success
+ * representation to emit, and offering a content-type only an error can produce would make
+ * handlers take the wrong branch. Candidate order follows the contract's key iteration
+ * order (numeric status codes ascending, then `'2xx'`/`'default'` in declaration order) and
+ * each content map's declaration order — under a full-wildcard `Accept` header (what most
+ * non-browser clients send) the first candidate wins.
+ */
 function getContractResponseContentTypes(contract: ApiContract): string[] {
   const contentTypes = new Set<string>()
 
-  for (const entry of Object.values(contract.responsesByStatusCode)) {
+  for (const [statusKey, entry] of Object.entries(contract.responsesByStatusCode)) {
+    if (!isSuccessStatusKey(statusKey)) {
+      continue
+    }
+
     if (isJsonResponse(entry)) {
       contentTypes.add('application/json')
 
@@ -281,9 +298,9 @@ async function handleApiRoute({
  * Build a Fastify `RouteOptions` object from an `ApiContract` + handler.
  *
  * The handler is `(request, reply, context) => { status, body }`. The `context` always
- * provides `expectedContentType` — the `Accept`-negotiated preference among the contract's
- * declared response content-types (across all status codes, error responses included —
- * see {@link ApiHandlerContext}). For contracts with any SSE response the context is
+ * provides `expectedContentType` — the `Accept`-negotiated preference among the content-types
+ * the contract's success entries declare (error responses are not offered — see
+ * {@link ApiHandlerContext}). For contracts with any SSE response the context is
  * extended with `context.sse`, and the single handler runs shared logic once and then
  * either returns a non-SSE `{ status, body }` response or calls `context.sse.start(...)`
  * to stream (returning nothing).
