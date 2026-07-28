@@ -22,7 +22,7 @@ import type {
   InferApiHandlerRequest,
   InferApiHandlerResult,
 } from './apiHandlerTypes.ts'
-import { buildFastifyApiRoute, hasAnySseResponse } from './buildFastifyApiRoute.ts'
+import { buildFastifyApiRoute } from './buildFastifyApiRoute.ts'
 import { buildFastifyApiSchema } from './buildFastifyApiSchema.ts'
 import type { SSEStreamMessage } from './sseTypes.ts'
 
@@ -268,15 +268,11 @@ describe('buildFastifyApiRoute — no path params', () => {
 })
 
 // ============================================================================
-// hasAnySseResponse
+// SSE capability detection
 // ============================================================================
 
-describe('hasAnySseResponse', () => {
-  it('returns true for an sseBody at a success code', () => {
-    expect(hasAnySseResponse(sseOnlyContract)).toBe(true)
-  })
-
-  it('returns true for an sseBody at any status code', () => {
+describe('SSE capability detection', () => {
+  it('marks the route SSE-capable for an sseBody at any status code, not just success', () => {
     const contract = defineApiContract({
       method: 'get',
       summary: 'Stream errors',
@@ -286,11 +282,17 @@ describe('hasAnySseResponse', () => {
         404: { content: { 'text/event-stream': sseBody({ error: z.string() }) } },
       },
     })
+    const handler = (() => ({
+      status: 200,
+      body: { id: '1' },
+    })) as unknown as InferApiHandler<typeof contract>
 
-    expect(hasAnySseResponse(contract)).toBe(true)
+    const routeOptions = buildFastifyApiRoute(contract, handler)
+
+    expect((routeOptions as { sse?: unknown }).sse).toEqual({ kind: 'manual' })
   })
 
-  it('returns false when no SSE response is present', () => {
+  it('does not mark the route SSE-capable when no SSE response is present', () => {
     const contract = defineApiContract({
       method: 'get',
       summary: 'Get a user',
@@ -302,7 +304,12 @@ describe('hasAnySseResponse', () => {
       },
     })
 
-    expect(hasAnySseResponse(contract)).toBe(false)
+    const routeOptions = buildFastifyApiRoute(contract, async () => ({
+      status: 200,
+      body: { id: '1', name: 'Alice' },
+    }))
+
+    expect((routeOptions as { sse?: unknown }).sse).toBeUndefined()
   })
 })
 

@@ -103,15 +103,6 @@ function getSseSelections(contract: ApiContract): SseRuntimeSelection[] {
   return selections
 }
 
-/** True when any response entry of the contract (any status code) declares an SSE body. */
-export const hasAnySseResponse = (apiContract: ApiContract): boolean =>
-  Object.values(apiContract.responsesByStatusCode).some(
-    (value) =>
-      isContentResponseEntry(value) &&
-      value.content &&
-      Object.values(value.content).some(isSseBody),
-  )
-
 /** The runtime shape of a handler's return value (`InferApiHandlerResult` erased of its generics). */
 type ApiHandlerResult = { status: number; contentType?: string; body: unknown }
 
@@ -341,7 +332,8 @@ export function buildFastifyApiRoute<Contract extends ApiContract>(
   const sseSelections = getSseSelections(contract)
   const responseContentTypes = getContractResponseContentTypes(contract)
   const contractMetadata = contractMetadataToRouteMapper?.(contract.metadata) ?? {}
-  const sseCapable = hasAnySseResponse(contract)
+  // An SSE body at any status code (success or error) makes the route SSE-capable.
+  const sseCapable = sseSelections.length > 0
 
   // Mapper output is the base layer — explicitly passed options override it — except the
   // `config` objects, which are merged key-by-key (explicit keys win). The contract itself
