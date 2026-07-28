@@ -107,7 +107,12 @@ function getSseSelections(contract: ApiContract): SseRuntimeSelection[] {
 type ApiHandlerResult = { status: number; contentType?: string; body: unknown }
 
 function isApiHandlerResult(value: unknown): value is ApiHandlerResult {
-  return typeof value === 'object' && value !== null && 'status' in value
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'status' in value &&
+    typeof value.status === 'number'
+  )
 }
 
 /** A handler result resolved against the contract, ready to be sent. */
