@@ -21,6 +21,6 @@
     },
     "private": false,
     "devDependencies": {
-        "@biomejs/biome": "^2.5.0"
+        "@biomejs/biome": "^2.5.6"
     }
 }

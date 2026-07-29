@@ -428,52 +428,51 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
         `)
       })
 
-      it.each([
-        'production',
-        'staging',
-      ] as const)('should use %s startupResourcePolling config', (appEnv) => {
-        const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
-          system: 'my-system',
-          project,
-          appEnv,
-        })
+      it.each(['production', 'staging'] as const)(
+        'should use %s startupResourcePolling config',
+        (appEnv) => {
+          const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+            system: 'my-system',
+            project,
+            appEnv,
+          })
 
-        const result = nonDevResolver.resolvePublisherOptions(topicName, {
-          awsConfig: buildAwsConfig(),
-          messageSchemas: [],
-        })
+          const result = nonDevResolver.resolvePublisherOptions(topicName, {
+            awsConfig: buildAwsConfig(),
+            messageSchemas: [],
+          })
 
-        expect(result.locatorConfig?.startupResourcePolling).toEqual({
-          enabled: true,
-          nonBlocking: true,
-          pollingIntervalMs: 30000,
-          throwOnTimeout: false,
-          timeoutMs: 300000,
-        })
-      })
+          expect(result.locatorConfig?.startupResourcePolling).toEqual({
+            enabled: true,
+            nonBlocking: true,
+            pollingIntervalMs: 30000,
+            throwOnTimeout: false,
+            timeoutMs: 300000,
+          })
+        },
+      )
     })
 
     describe('forceTagUpdate behavior', () => {
       const topicName = EventRouting.topic1.topicName
 
-      it.each([
-        'development',
-        'production',
-        'staging',
-      ] as const)('should default to true for development, and false in other envs. env: %s', (appEnv) => {
-        const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
-          system: 'my-system',
-          project,
-          appEnv,
-        })
+      it.each(['development', 'production', 'staging'] as const)(
+        'should default to true for development, and false in other envs. env: %s',
+        (appEnv) => {
+          const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+            system: 'my-system',
+            project,
+            appEnv,
+          })
 
-        const result = resolver.resolvePublisherOptions(topicName, {
-          awsConfig: buildAwsConfig(),
-          messageSchemas: [],
-        })
+          const result = resolver.resolvePublisherOptions(topicName, {
+            awsConfig: buildAwsConfig(),
+            messageSchemas: [],
+          })
 
-        expect(result.creationConfig?.forceTagUpdate).toBe(appEnv === 'development')
-      })
+          expect(result.creationConfig?.forceTagUpdate).toBe(appEnv === 'development')
+        },
+      )
 
       it('should respect explicit true value regardless of environment', () => {
         const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
@@ -964,55 +963,54 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
         `)
       })
 
-      it.each([
-        'production',
-        'staging',
-      ] as const)('should use %s startupResourcePolling config', (appEnv) => {
-        const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
-          system: 'my-system',
-          project,
-          appEnv,
-        })
+      it.each(['production', 'staging'] as const)(
+        'should use %s startupResourcePolling config',
+        (appEnv) => {
+          const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+            system: 'my-system',
+            project,
+            appEnv,
+          })
 
-        const result = nonDevResolver.resolveConsumerOptions(topicName, queueName, {
-          logger,
-          handlers: [],
-          awsConfig: buildAwsConfig(),
-        })
+          const result = nonDevResolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig(),
+          })
 
-        expect(result.locatorConfig?.startupResourcePolling).toEqual({
-          enabled: true,
-          nonBlocking: true,
-          pollingIntervalMs: 30000,
-          throwOnTimeout: false,
-          timeoutMs: 300000,
-        })
-      })
+          expect(result.locatorConfig?.startupResourcePolling).toEqual({
+            enabled: true,
+            nonBlocking: true,
+            pollingIntervalMs: 30000,
+            throwOnTimeout: false,
+            timeoutMs: 300000,
+          })
+        },
+      )
     })
 
     describe('forceTagUpdate behavior', () => {
       const topicName = EventRouting.topic1.topicName
       const queueName = EventRouting.topic1.queues.topic1Queue1.queueName
 
-      it.each([
-        'development',
-        'production',
-        'staging',
-      ] as const)('should default to true for development, and false in other envs. env: %s', (appEnv) => {
-        const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
-          system: 'my-system',
-          project,
-          appEnv,
-        })
+      it.each(['development', 'production', 'staging'] as const)(
+        'should default to true for development, and false in other envs. env: %s',
+        (appEnv) => {
+          const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+            system: 'my-system',
+            project,
+            appEnv,
+          })
 
-        const result = resolver.resolveConsumerOptions(topicName, queueName, {
-          logger,
-          handlers: [],
-          awsConfig: buildAwsConfig(),
-        })
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig(),
+          })
 
-        expect(result.creationConfig?.forceTagUpdate).toBe(appEnv === 'development')
-      })
+          expect(result.creationConfig?.forceTagUpdate).toBe(appEnv === 'development')
+        },
+      )
 
       it('should respect explicit true value regardless of environment', () => {
         const resolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
