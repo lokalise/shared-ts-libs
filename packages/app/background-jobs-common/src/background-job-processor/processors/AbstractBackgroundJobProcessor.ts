@@ -366,6 +366,11 @@ export abstract class AbstractBackgroundJobProcessor<
       requestContext,
       async (job, requestContext) => await this.onSuccess(job, requestContext),
     )
+
+    // Purge after the onSuccess hook so it still sees the full job data. Enabled by default.
+    if (this.config.purgeJobDataOnSuccess !== false) {
+      await this.internalOnHook(job, requestContext, (job) => this.purgeJobData(job))
+    }
   }
 
   private async internalOnFailed(job: JobType, error: Error): Promise<void> {
