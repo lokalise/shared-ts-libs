@@ -535,7 +535,7 @@ describe('buildApiSSEContext', () => {
       const session = sseContext.start('autoClose')
 
       markHandlerDone()
-      ;(sse.onClose.mock.calls[0]?.[0] as () => void)()
+      ;(sse.onClose.mock.calls[0]![0] as () => void)()
 
       expect(onClose).toHaveBeenCalledWith(session, 'server')
     })
@@ -618,7 +618,7 @@ describe('buildApiSSEContext', () => {
       })
 
       sseContext.start('keepAlive')
-      await (sse.replay.mock.calls[0]?.[0] as () => Promise<void>)()
+      await (sse.replay.mock.calls[0]![0] as () => Promise<void>)()
 
       expect(onReconnect).toHaveBeenCalled()
       expect(sse.send).not.toHaveBeenCalled()
