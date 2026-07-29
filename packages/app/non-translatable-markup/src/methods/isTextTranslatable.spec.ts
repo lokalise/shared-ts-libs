@@ -155,7 +155,10 @@ describe('isTextTranslatable', () => {
     '🎺',
     '🎻',
     '🥁',
-  ])('should return false if text contains only non-translatable content (test case: %s)', (testCase) => {
-    expect(isTextTranslatable(testCase)).toBe(false)
-  })
+  ])(
+    'should return false if text contains only non-translatable content (test case: %s)',
+    (testCase) => {
+      expect(isTextTranslatable(testCase)).toBe(false)
+    },
+  )
 })

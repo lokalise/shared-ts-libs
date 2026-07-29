@@ -409,52 +409,51 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
         `)
       })
 
-      it.each([
-        'production',
-        'staging',
-      ] as const)('should use %s startupResourcePolling config', (appEnv) => {
-        const nonDevResolver = new MessageQueueToolkitSqsOptionsResolver(config, {
-          system: 'my-system',
-          project,
-          appEnv,
-        })
+      it.each(['production', 'staging'] as const)(
+        'should use %s startupResourcePolling config',
+        (appEnv) => {
+          const nonDevResolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+            system: 'my-system',
+            project,
+            appEnv,
+          })
 
-        const result = nonDevResolver.resolvePublisherOptions(queueName, {
-          awsConfig: buildAwsConfig(),
-          messageSchemas: [],
-        })
+          const result = nonDevResolver.resolvePublisherOptions(queueName, {
+            awsConfig: buildAwsConfig(),
+            messageSchemas: [],
+          })
 
-        expect(result.locatorConfig?.startupResourcePolling).toEqual({
-          enabled: true,
-          nonBlocking: true,
-          pollingIntervalMs: 30000,
-          throwOnTimeout: false,
-          timeoutMs: 300000,
-        })
-      })
+          expect(result.locatorConfig?.startupResourcePolling).toEqual({
+            enabled: true,
+            nonBlocking: true,
+            pollingIntervalMs: 30000,
+            throwOnTimeout: false,
+            timeoutMs: 300000,
+          })
+        },
+      )
     })
 
     describe('forceTagUpdate behavior', () => {
       const queueName = config.queue1.queueName
 
-      it.each([
-        'development',
-        'staging',
-        'production',
-      ] as const)('should default to true in development environment and false for others, env: %s', (appEnv) => {
-        const resolver = new MessageQueueToolkitSqsOptionsResolver(config, {
-          system: 'my-system',
-          project,
-          appEnv,
-        })
+      it.each(['development', 'staging', 'production'] as const)(
+        'should default to true in development environment and false for others, env: %s',
+        (appEnv) => {
+          const resolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+            system: 'my-system',
+            project,
+            appEnv,
+          })
 
-        const result = resolver.resolvePublisherOptions(queueName, {
-          awsConfig: buildAwsConfig(),
-          messageSchemas: [],
-        })
+          const result = resolver.resolvePublisherOptions(queueName, {
+            awsConfig: buildAwsConfig(),
+            messageSchemas: [],
+          })
 
-        expect(result.creationConfig?.forceTagUpdate).toBe(appEnv === 'development')
-      })
+          expect(result.creationConfig?.forceTagUpdate).toBe(appEnv === 'development')
+        },
+      )
 
       it('should respect explicit true value regardless of environment', () => {
         const resolver = new MessageQueueToolkitSqsOptionsResolver(config, {
@@ -910,54 +909,53 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
         `)
       })
 
-      it.each([
-        'production',
-        'staging',
-      ] as const)('should use %s startupResourcePolling config', (appEnv) => {
-        const nonDevResolver = new MessageQueueToolkitSqsOptionsResolver(config, {
-          system: 'my-system',
-          project,
-          appEnv,
-        })
+      it.each(['production', 'staging'] as const)(
+        'should use %s startupResourcePolling config',
+        (appEnv) => {
+          const nonDevResolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+            system: 'my-system',
+            project,
+            appEnv,
+          })
 
-        const result = nonDevResolver.resolveConsumerOptions(queueName, {
-          logger,
-          handlers: [],
-          awsConfig: buildAwsConfig(),
-        })
+          const result = nonDevResolver.resolveConsumerOptions(queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig(),
+          })
 
-        expect(result.locatorConfig?.startupResourcePolling).toEqual({
-          enabled: true,
-          nonBlocking: true,
-          pollingIntervalMs: 30000,
-          throwOnTimeout: false,
-          timeoutMs: 300000,
-        })
-      })
+          expect(result.locatorConfig?.startupResourcePolling).toEqual({
+            enabled: true,
+            nonBlocking: true,
+            pollingIntervalMs: 30000,
+            throwOnTimeout: false,
+            timeoutMs: 300000,
+          })
+        },
+      )
     })
 
     describe('forceTagUpdate behavior', () => {
       const queueName = config.queue1.queueName
 
-      it.each([
-        'development',
-        'staging',
-        'production',
-      ] as const)('should default to true in development environment and false for others, env: %s', (appEnv) => {
-        const resolver = new MessageQueueToolkitSqsOptionsResolver(config, {
-          system: 'my-system',
-          project,
-          appEnv,
-        })
+      it.each(['development', 'staging', 'production'] as const)(
+        'should default to true in development environment and false for others, env: %s',
+        (appEnv) => {
+          const resolver = new MessageQueueToolkitSqsOptionsResolver(config, {
+            system: 'my-system',
+            project,
+            appEnv,
+          })
 
-        const result = resolver.resolveConsumerOptions(queueName, {
-          logger,
-          awsConfig: buildAwsConfig(),
-          handlers: [],
-        })
+          const result = resolver.resolveConsumerOptions(queueName, {
+            logger,
+            awsConfig: buildAwsConfig(),
+            handlers: [],
+          })
 
-        expect(result.creationConfig?.forceTagUpdate).toBe(appEnv === 'development')
-      })
+          expect(result.creationConfig?.forceTagUpdate).toBe(appEnv === 'development')
+        },
+      )
 
       it('should respect explicit true value regardless of environment', () => {
         const resolver = new MessageQueueToolkitSqsOptionsResolver(config, {
