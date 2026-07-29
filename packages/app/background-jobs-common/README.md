@@ -99,6 +99,31 @@ To set up a queue configuration, you need to define a list of objects containing
 - **`jobPayloadSchema`**: A Zod schema that defines the structure of the jobs payload for this queue.
 - **`jobOptions`**: Default options for jobs in this queue. Can be a function that will be resolved when a job is 
    scheduled. See [BullMQ documentation](https://docs.bullmq.io/guide/job-options).
+- **`purgeJobDataOnSuccess`**: Optional boolean, **defaults to `true`**. See [Purging job data on success](#purging-job-data-on-success).
+
+### Purging job data on success
+
+By default, once a job completes successfully its `data` is automatically purged, keeping only `metadata` (which
+includes the `correlationId`). This keeps completed jobs from occupying space in Redis. The purge runs **after** the
+`onSuccess` hook, so the hook still sees the full job data.
+
+Set `purgeJobDataOnSuccess: false` on the queue configuration to keep the full job data in Redis:
+
+```typescript
+const supportedQueues = [
+  {
+    queueId: 'queue1',
+    purgeJobDataOnSuccess: false, // keep full job data after completion
+    jobPayloadSchema: z.object({
+      id: z.string(),
+      value: z.string(),
+      metadata: z.object({ correlationId: z.string() }),
+    }),
+  },
+] as const satisfies QueueConfiguration[]
+```
+
+Jobs configured with `removeOnComplete: true` (or `1`) are unaffected, since BullMQ already removes them on completion.
 
 ### Bull Dashboard Grouping
 
