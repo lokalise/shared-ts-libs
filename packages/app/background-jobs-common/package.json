@@ -51,11 +51,11 @@
         "zod": ">=3.25.67"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.5.2",
+        "@biomejs/biome": "^2.5.0",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",
         "@types/node": "^26.1.0",
-        "@vitest/coverage-v8": "^4.1.10",
+        "@vitest/coverage-v8": "^4.1.9",
         "bullmq": "^5.79.2",
         "ioredis": "^5.11.1",
         "pino": "^10.3.1",
