@@ -338,6 +338,8 @@ describe('AbstractBackgroundJobProcessor', () => {
         'TestSuccessBackgroundJobProcessor',
         factory.getRedisConfig(),
       )
+      const returnValue = { processed: true }
+      successBackgroundJobProcessor.returnValue = returnValue
 
       // Spy on the job's updateData to observe the automatic purge (it rewrites data to metadata).
       let updateDataSpy: ReturnType<typeof vi.spyOn> | undefined
@@ -348,7 +350,10 @@ describe('AbstractBackgroundJobProcessor', () => {
       await successBackgroundJobProcessor.start()
       const jobId = await successBackgroundJobProcessor.schedule(jobData)
 
-      await successBackgroundJobProcessor.spy.waitForJobWithId(jobId, 'completed')
+      const completedJob = await successBackgroundJobProcessor.spy.waitForJobWithId(
+        jobId,
+        'completed',
+      )
       // Disposing waits for the background purge running promises to settle.
       await successBackgroundJobProcessor.dispose()
 
@@ -357,6 +362,8 @@ describe('AbstractBackgroundJobProcessor', () => {
       expect(successBackgroundJobProcessor.jobDataResult).toStrictEqual(jobData)
       expect(updateDataSpy).toHaveBeenCalledWith({ metadata: jobData.metadata })
       expect(successBackgroundJobProcessor.runningPromisesSet).toHaveLength(0)
+      // The purge must not wipe the job return value, only the job data.
+      expect(completedJob.returnvalue).toStrictEqual(returnValue)
     })
 
     it('does not purge job data when purgeJobDataOnSuccess is false', async () => {

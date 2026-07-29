@@ -13,10 +13,11 @@ type TestSuccessBackgroundJobProcessorData = {
 } & BaseJobPayload
 export class TestSuccessBackgroundJobProcessor<
   T extends TestSuccessBackgroundJobProcessorData,
-> extends AbstractBackgroundJobProcessor<T> {
+> extends AbstractBackgroundJobProcessor<T, object | undefined> {
   private onSuccessCounter = 0
   private onSuccessCall: (job: Job<T>) => void | Promise<void> = () => {}
   private _jobDataResult!: TestSuccessBackgroundJobProcessorData
+  private _returnValue: object | undefined = undefined
 
   constructor(
     dependencies: Omit<
@@ -57,8 +58,13 @@ export class TestSuccessBackgroundJobProcessor<
     return super.schedule(jobData, { attempts: 1, removeOnComplete: false })
   }
 
-  protected override process(): Promise<void> {
-    return Promise.resolve()
+  protected override process(): Promise<object | undefined> {
+    return Promise.resolve(this._returnValue)
+  }
+
+  /** Configures the value returned by `process`, persisted by BullMQ as the job return value. */
+  set returnValue(value: object | undefined) {
+    this._returnValue = value
   }
 
   protected override async onSuccess(job: Job<T>, requestContext: RequestContext): Promise<void> {

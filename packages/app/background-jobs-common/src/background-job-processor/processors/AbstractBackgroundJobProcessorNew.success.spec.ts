@@ -48,7 +48,7 @@ type SupportedQueues = typeof supportedQueues
 
 describe('AbstractBackgroundJobProcessorNew - success', () => {
   let factory: TestDependencyFactory
-  let deps: BackgroundJobProcessorDependenciesNew<SupportedQueues, 'queue1' | 'queue2'>
+  let deps: BackgroundJobProcessorDependenciesNew<SupportedQueues, 'queue1' | 'queue2', any>
 
   let simpleProcessor: FakeBackgroundJobProcessorNew<SupportedQueues, 'queue1'>
   let processorWithSuccessHook: TestSuccessBackgroundJobProcessorNew<SupportedQueues, 'queue2'>
@@ -178,6 +178,8 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
       value2: 'jobPayload2 test',
       metadata: { correlationId: generateMonotonicUuid() },
     }
+    const returnValue = { processed: true }
+    processorWithSuccessHook.returnValue = returnValue
 
     // When
     const jobId = await queueManager.schedule('queue2', jobData)
@@ -192,6 +194,8 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
 
     const persistedJob = await queueManager.getQueue('queue2').getJob(jobId)
     expect(persistedJob?.data).toStrictEqual({ metadata: jobData.metadata })
+    // The purge must not wipe the job return value, only the job data.
+    expect(persistedJob?.returnvalue).toStrictEqual(returnValue)
   })
 
   it('does not purge job data when purgeJobDataOnSuccess is false', async () => {
