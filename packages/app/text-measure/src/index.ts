@@ -1,2 +1,2 @@
-// TODO: Public API for @lokalise/text-measure — exports go here.
-export {}
+// TODO: Implement package
+export const hello = 'world'
