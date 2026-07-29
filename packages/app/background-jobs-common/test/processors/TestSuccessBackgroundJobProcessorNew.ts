@@ -11,19 +11,19 @@ export class TestSuccessBackgroundJobProcessorNew<
   T extends SupportedQueueIds<Q>,
 > extends FakeBackgroundJobProcessorNew<Q, T> {
   private onSuccessCounter = 0
-  private onSuccessCall!: (job: Job<JobPayloadForQueue<Q, T>>) => void
+  private onSuccessCall: (job: Job<JobPayloadForQueue<Q, T>>) => void | Promise<void> = () => {}
   private _jobDataResult!: unknown
 
   protected override process(): Promise<void> {
     return Promise.resolve()
   }
 
-  protected override onSuccess(
+  protected override async onSuccess(
     job: Job<JobPayloadForQueue<Q, T>>,
     requestContext: RequestContext,
   ): Promise<void> {
     this.onSuccessCounter += 1
-    this.onSuccessCall(job)
+    await this.onSuccessCall(job)
     this._jobDataResult = job.data
     return super.onSuccess(job, requestContext)
   }
@@ -32,11 +32,7 @@ export class TestSuccessBackgroundJobProcessorNew<
     return this._jobDataResult
   }
 
-  override purgeJobData(job: Job<JobPayloadForQueue<Q, T>>): Promise<void> {
-    return super.purgeJobData(job)
-  }
-
-  set onSuccessHook(hook: (job: Job<JobPayloadForQueue<Q, T>>) => void) {
+  set onSuccessHook(hook: (job: Job<JobPayloadForQueue<Q, T>>) => void | Promise<void>) {
     this.onSuccessCall = hook
   }
 

@@ -290,7 +290,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
       requestContext,
       async (job, requestContext) => await this.onSuccess(job, requestContext),
     )
-    
+
     this._spy?.addJob(job, 'completed')
 
     // Purge after the onSuccess hook so it still sees the full job data. Enabled by default.

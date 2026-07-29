@@ -1,4 +1,5 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
+import { waitAndRetry } from '@lokalise/node-core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod/v4'
 import { TestSuccessBackgroundJobProcessorNew } from '../../../test/processors/TestSuccessBackgroundJobProcessorNew.ts'
@@ -29,6 +30,18 @@ const supportedQueues = [
       }),
     }),
   },
+  {
+    // Dedicated queue for asserting the opt-out behaviour of the flag itself.
+    queueId: 'queue3',
+    purgeJobDataOnSuccess: false,
+    jobPayloadSchema: z.object({
+      id: z.string(),
+      value2: z.string(),
+      metadata: z.object({
+        correlationId: z.string(),
+      }),
+    }),
+  },
 ] as const satisfies QueueConfiguration[]
 
 type SupportedQueues = typeof supportedQueues
@@ -39,6 +52,7 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
 
   let simpleProcessor: FakeBackgroundJobProcessorNew<SupportedQueues, 'queue1'>
   let processorWithSuccessHook: TestSuccessBackgroundJobProcessorNew<SupportedQueues, 'queue2'>
+  let processorWithoutPurge: TestSuccessBackgroundJobProcessorNew<SupportedQueues, 'queue3'>
   let queueManager: FakeQueueManager<SupportedQueues>
 
   beforeEach(async () => {
@@ -55,11 +69,17 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
       'queue2',
     )
     await processorWithSuccessHook.start()
+    processorWithoutPurge = new TestSuccessBackgroundJobProcessorNew<SupportedQueues, 'queue3'>(
+      deps,
+      'queue3',
+    )
+    await processorWithoutPurge.start()
   })
 
   afterEach(async () => {
     await simpleProcessor.dispose()
     await processorWithSuccessHook.dispose()
+    await processorWithoutPurge.dispose()
     await factory.dispose()
   })
 
@@ -83,7 +103,7 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
     expect(job.data).toMatchObject(jobData)
 
     const resolvedJob = await queueManager.getQueue('queue1').getJob(job.id!)
-    expect(resolvedJob!.data).toMatchObject(jobData)
+    expect(resolvedJob!.data).toMatchObject({ metadata: jobData.metadata })
 
     // @ts-expect-error executing protected method for testing
     expect(simpleProcessor.worker.isRunning()).toBe(true)
@@ -151,34 +171,7 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
     expect(processorWithSuccessHook.onSuccessCallsCounter).toBe(1)
   })
 
-  it('should clear job data onSuccess', async () => {
-    const jobData = {
-      id: generateMonotonicUuid(),
-      value2: 'jobPayload2 test',
-      metadata: { correlationId: generateMonotonicUuid() },
-    }
-
-    processorWithSuccessHook.onSuccessHook = (job) => {
-      void processorWithSuccessHook.purgeJobData(job)
-    }
-
-    await processorWithSuccessHook.start()
-    const jobId = await queueManager.schedule('queue2', jobData)
-
-    const job = await processorWithSuccessHook.spy.waitForJobWithId(jobId, 'completed')
-
-    await processorWithSuccessHook.dispose()
-
-    // Then
-    expect(processorWithSuccessHook.onSuccessCallsCounter).toBe(1)
-    expect(processorWithSuccessHook.jobDataResult).toStrictEqual({
-      metadata: jobData.metadata,
-    })
-    expect(job.data).toStrictEqual(jobData)
-    expect(processorWithSuccessHook.runningPromisesSet).toHaveLength(0)
-  })
-
-  it('ignores missing job error during data purging', async () => {
+  it('purges job data on success by default', async () => {
     // Given
     const jobData = {
       id: generateMonotonicUuid(),
@@ -186,27 +179,22 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
       metadata: { correlationId: generateMonotonicUuid() },
     }
 
-    const purgePromise = new Promise<void>((resolve) => {
-      processorWithSuccessHook.onSuccessHook = async (job) => {
-        // Dropping the job right before purging will cause a job deleted error during purging.
-        await job.remove()
-        // Run the purging. It should ignore the error and continue.
-        await processorWithSuccessHook.purgeJobData(job)
-        resolve()
-      }
-    })
-
-    const jobId = await queueManager.schedule('queue2', jobData)
-
     // When
+    const jobId = await queueManager.schedule('queue2', jobData)
     await processorWithSuccessHook.spy.waitForJobWithId(jobId, 'completed')
 
-    // Then
-    await expect(purgePromise).resolves.not.toThrow()
+    // Then - the onSuccess hook still saw the full data, but the persisted job is purged.
+    await waitAndRetry(() => processorWithSuccessHook.runningPromisesSet.size === 0, 10, 5)
     expect(processorWithSuccessHook.runningPromisesSet).toHaveLength(0)
+
+    expect(processorWithSuccessHook.onSuccessCallsCounter).toBe(1)
+    expect(processorWithSuccessHook.jobDataResult).toStrictEqual(jobData)
+
+    const persistedJob = await queueManager.getQueue('queue2').getJob(jobId)
+    expect(persistedJob?.data).toStrictEqual({ metadata: jobData.metadata })
   })
 
-  it('throws an error if job data purge fails', async () => {
+  it('does not purge job data when purgeJobDataOnSuccess is false', async () => {
     // Given
     const jobData = {
       id: generateMonotonicUuid(),
@@ -214,21 +202,69 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
       metadata: { correlationId: generateMonotonicUuid() },
     }
 
-    const purgeExecutionPromise = new Promise<void>((resolve) => {
-      processorWithSuccessHook.onSuccessHook = (job) => {
-        const jobClearLogsSpy = vi.spyOn(job, 'clearLogs')
-        jobClearLogsSpy.mockRejectedValueOnce(new Error('Simulated'))
-        resolve(processorWithSuccessHook.purgeJobData(job))
-      }
-    })
+    // When
+    const jobId = await queueManager.schedule('queue3', jobData)
+    await processorWithoutPurge.spy.waitForJobWithId(jobId, 'completed')
+
+    // Then - job data is preserved in full.
+    await waitAndRetry(() => processorWithSuccessHook.runningPromisesSet.size === 0, 10, 5)
+    expect(processorWithSuccessHook.runningPromisesSet).toHaveLength(0)
+
+    expect(processorWithoutPurge.onSuccessCallsCounter).toBe(1)
+    const persistedJob = await queueManager.getQueue('queue3').getJob(jobId)
+    expect(persistedJob?.data).toStrictEqual(jobData)
+  })
+
+  it('ignores missing job error during automatic purging', async () => {
+    // Given
+    const jobData = {
+      id: generateMonotonicUuid(),
+      value2: 'jobPayload2 test',
+      metadata: { correlationId: generateMonotonicUuid() },
+    }
+    // Dropping the job in the onSuccess hook
+    processorWithSuccessHook.onSuccessHook = async (job) => {
+      await job.remove()
+    }
+    const reportSpy = vi.mocked(deps.errorReporter.report)
 
     // When
-    await queueManager.schedule('queue2', jobData)
+    const jobId = await queueManager.schedule('queue2', jobData)
+    await processorWithSuccessHook.spy.waitForJobWithId(jobId, 'completed')
 
-    // Then
-    await expect(purgeExecutionPromise).rejects.toThrowError(
-      /Job data purge failed: {"type":"Error","message":"Simulated"/,
-    )
+    // Then - the purge ran and swallowed the job-missing error.
+    await waitAndRetry(() => processorWithSuccessHook.runningPromisesSet.size === 0, 10, 5)
     expect(processorWithSuccessHook.runningPromisesSet).toHaveLength(0)
+
+    expect(reportSpy).not.toHaveBeenCalled()
+  })
+
+  it('reports an error if automatic purging fails', async () => {
+    // Given
+    const jobData = {
+      id: generateMonotonicUuid(),
+      value2: 'jobPayload2 test',
+      metadata: { correlationId: generateMonotonicUuid() },
+    }
+    // Force clearLogs to fail so the automatic purge throws.
+    processorWithSuccessHook.onSuccessHook = (job) => {
+      vi.spyOn(job, 'clearLogs').mockRejectedValueOnce(new Error('Simulated'))
+    }
+    const reportSpy = vi.mocked(deps.errorReporter.report)
+
+    // When
+    const jobId = await queueManager.schedule('queue2', jobData)
+    await processorWithSuccessHook.spy.waitForJobWithId(jobId, 'completed')
+    await processorWithSuccessHook.dispose()
+
+    // Then - the purge failure is reported through the error reporter.
+    expect(processorWithSuccessHook.runningPromisesSet).toHaveLength(0)
+    expect(reportSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({
+          message: expect.stringMatching(/Job data purge failed.*Simulated/),
+        }),
+      }),
+    )
   })
 })

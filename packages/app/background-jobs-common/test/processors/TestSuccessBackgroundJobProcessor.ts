@@ -1,29 +1,56 @@
 import type { RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 import {
+  AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
-  FakeBackgroundJobProcessor,
+  CommonBullmqFactory,
   type RequestContext,
 } from '../../src/index.ts'
 
 type TestSuccessBackgroundJobProcessorData = {
   id?: string
 } & BaseJobPayload
-
 export class TestSuccessBackgroundJobProcessor<
   T extends TestSuccessBackgroundJobProcessorData,
-> extends FakeBackgroundJobProcessor<T> {
+> extends AbstractBackgroundJobProcessor<T> {
   private onSuccessCounter = 0
-  private onSuccessCall!: (job: Job<T>) => void
+  private onSuccessCall: (job: Job<T>) => void | Promise<void> = () => {}
   private _jobDataResult!: TestSuccessBackgroundJobProcessorData
 
   constructor(
-    dependencies: BackgroundJobProcessorDependencies<T>,
+    dependencies: Omit<
+      BackgroundJobProcessorDependencies<T>,
+      'bullmqFactory' | 'transactionObservabilityManager'
+    >,
     queueName: string,
     redisConfig: RedisConfig,
+    purgeJobDataOnSuccess?: boolean,
   ) {
-    super(dependencies, queueName, redisConfig, true)
+    super(
+      {
+        transactionObservabilityManager: {
+          /* v8 ignore start */
+          start: () => {},
+          startWithGroup: () => {},
+          stop: () => {},
+          addCustomAttributes: () => {},
+          /* v8 ignore stop */
+        },
+        logger: dependencies.logger,
+        errorReporter: dependencies.errorReporter,
+        bullmqFactory: new CommonBullmqFactory(),
+      },
+      {
+        queueId: queueName,
+        ownerName: 'testOwner',
+        isTest: true,
+        workerOptions: { concurrency: 1 },
+        lazyInitEnabled: false,
+        redisConfig,
+        purgeJobDataOnSuccess,
+      },
+    )
   }
 
   override schedule(jobData: T): Promise<string> {
@@ -34,9 +61,9 @@ export class TestSuccessBackgroundJobProcessor<
     return Promise.resolve()
   }
 
-  protected override onSuccess(job: Job<T>, requestContext: RequestContext): Promise<void> {
+  protected override async onSuccess(job: Job<T>, requestContext: RequestContext): Promise<void> {
     this.onSuccessCounter += 1
-    this.onSuccessCall(job)
+    await this.onSuccessCall(job)
     this._jobDataResult = job.data
     return super.onSuccess(job, requestContext)
   }
@@ -45,11 +72,7 @@ export class TestSuccessBackgroundJobProcessor<
     return this._jobDataResult
   }
 
-  override purgeJobData(job: Job<T>): Promise<void> {
-    return super.purgeJobData(job)
-  }
-
-  set onSuccessHook(hook: (job: Job<T>) => void) {
+  set onSuccessHook(hook: (job: Job<T>) => void | Promise<void>) {
     this.onSuccessCall = hook
   }
 
