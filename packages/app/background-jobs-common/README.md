@@ -107,6 +107,9 @@ By default, once a job completes successfully its `data` is automatically purged
 includes the `correlationId`). This keeps completed jobs from occupying space in Redis. The purge runs **after** the
 `onSuccess` hook, so the hook still sees the full job data.
 
+The purge only clears the job `data` and logs — the job **return value is preserved** and remains available on the
+completed job.
+
 Set `purgeJobDataOnSuccess: false` on the queue configuration to keep the full job data in Redis:
 
 ```typescript
