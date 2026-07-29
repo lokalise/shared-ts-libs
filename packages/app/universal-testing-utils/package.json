@@ -59,7 +59,7 @@
         "@vitest/coverage-v8": "^4.1.9",
         "mockttp": "^4.4.2",
         "msw": "^2.13.2",
-        "rimraf": "^6.0.1",
+        "rimraf": "^6.1.3",
         "typescript": "7.0.2",
         "vitest": "^4.1.9",
         "wretch": "^2.8.0",
