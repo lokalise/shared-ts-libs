@@ -61,6 +61,11 @@ export type BackgroundJobProcessorConfig<
   barrier?: BarrierCallback<JobPayload, ExecutionContext, JobReturn, JobType>
   lazyInitEnabled?: boolean
   workerAutoRunEnabled?: boolean
+  /**
+   * When enabled (default), job data is automatically purged after a successful run,
+   * keeping only `metadata`. Set to `false` to preserve the full job data in Redis.
+   */
+  purgeJobDataOnSuccess?: boolean
 }
 
 export type BackgroundJobProcessorDependenciesNew<
