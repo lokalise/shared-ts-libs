@@ -360,12 +360,13 @@ export abstract class AbstractBackgroundJobProcessor<
   private async internalOnSuccess(job: JobType): Promise<void> {
     const requestContext = this.monitor.getRequestContext(job)
 
-    this._spy?.addJob(job, 'completed') // this should be executed before the hook to not be affected by it
     await this.internalOnHook(
       job,
       requestContext,
       async (job, requestContext) => await this.onSuccess(job, requestContext),
     )
+
+    this._spy?.addJob(job, 'completed')
 
     // Purge after the onSuccess hook so it still sees the full job data. Enabled by default.
     if (this.config.purgeJobDataOnSuccess !== false) {
@@ -429,12 +430,12 @@ export abstract class AbstractBackgroundJobProcessor<
 
   /**
    * Removes all data associated with the job, keeps only correlationId.
-   * This method only works if the result of the job is not removed right after it is finished.
+   * Runs automatically after a successful job unless `purgeJobDataOnSuccess` is `false` on the
+   * processor configuration. This only works if the job is not removed right after it is finished.
    *
    * @param job
-   * @protected
    */
-  protected async purgeJobData(job: JobType): Promise<void> {
+  private async purgeJobData(job: JobType): Promise<void> {
     const jobOptsRemoveOnComplete = job.opts.removeOnComplete
     if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
 
