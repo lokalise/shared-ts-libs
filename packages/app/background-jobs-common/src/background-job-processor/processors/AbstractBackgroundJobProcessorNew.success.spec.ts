@@ -103,7 +103,7 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
     expect(job.data).toMatchObject(jobData)
 
     const resolvedJob = await queueManager.getQueue('queue1').getJob(job.id!)
-    expect(resolvedJob!.data).toMatchObject({ metadata: jobData.metadata })
+    expect(resolvedJob!.data).toStrictEqual({ metadata: jobData.metadata })
 
     // @ts-expect-error executing protected method for testing
     expect(simpleProcessor.worker.isRunning()).toBe(true)
@@ -207,8 +207,8 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
     await processorWithoutPurge.spy.waitForJobWithId(jobId, 'completed')
 
     // Then - job data is preserved in full.
-    await waitAndRetry(() => processorWithSuccessHook.runningPromisesSet.size === 0, 10, 5)
-    expect(processorWithSuccessHook.runningPromisesSet).toHaveLength(0)
+    await waitAndRetry(() => processorWithoutPurge.runningPromisesSet.size === 0, 10, 5)
+    expect(processorWithoutPurge.runningPromisesSet).toHaveLength(0)
 
     expect(processorWithoutPurge.onSuccessCallsCounter).toBe(1)
     const persistedJob = await queueManager.getQueue('queue3').getJob(jobId)
