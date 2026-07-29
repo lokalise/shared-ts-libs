@@ -56,7 +56,7 @@
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/frontend-http-client": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",
-        "@vitest/coverage-v8": "^4.1.9",
+        "@vitest/coverage-v8": "^4.1.10",
         "mockttp": "^4.4.2",
         "msw": "^2.13.2",
         "rimraf": "^6.1.3",
