@@ -1,3 +1,4 @@
+import { NoopObservabilityManager } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 import type { QueueConfiguration, RequestContext } from '../../src/index.ts'
 import {
@@ -26,14 +27,7 @@ export class TestSuccessBackgroundJobProcessorNew<
   ) {
     super(
       {
-        transactionObservabilityManager: {
-          /* v8 ignore start */
-          start: () => {},
-          startWithGroup: () => {},
-          stop: () => {},
-          addCustomAttributes: () => {},
-          /* v8 ignore stop */
-        },
+        transactionObservabilityManager: new NoopObservabilityManager(),
         logger: dependencies.logger,
         errorReporter: dependencies.errorReporter,
         queueManager: dependencies.queueManager,

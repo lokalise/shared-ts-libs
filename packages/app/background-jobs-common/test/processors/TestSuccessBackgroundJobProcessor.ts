@@ -1,4 +1,4 @@
-import type { RedisConfig } from '@lokalise/node-core'
+import { NoopObservabilityManager, type RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 import {
   AbstractBackgroundJobProcessor,
@@ -30,14 +30,7 @@ export class TestSuccessBackgroundJobProcessor<
   ) {
     super(
       {
-        transactionObservabilityManager: {
-          /* v8 ignore start */
-          start: () => {},
-          startWithGroup: () => {},
-          stop: () => {},
-          addCustomAttributes: () => {},
-          /* v8 ignore stop */
-        },
+        transactionObservabilityManager: new NoopObservabilityManager(),
         logger: dependencies.logger,
         errorReporter: dependencies.errorReporter,
         bullmqFactory: new CommonBullmqFactory(),
