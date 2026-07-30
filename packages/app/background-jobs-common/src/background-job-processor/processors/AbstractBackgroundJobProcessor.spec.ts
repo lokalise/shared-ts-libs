@@ -231,8 +231,13 @@ describe('AbstractBackgroundJobProcessor', () => {
       const job = await processor.spy.waitForJobWithId(jobId, 'completed')
       expect(job.data).toMatchObject(jobData)
 
-      // @ts-expect-error executing protected method for testing
-      const resolvedJob = await processor.queue.getJob(job.id)
+      // The spy resolves before the purge is issued, so poll the persisted job until the
+      // payload is actually gone instead of racing the purge.
+      const resolvedJob = await waitAndRetry(async () => {
+        // @ts-expect-error executing protected method for testing
+        const persisted = await processor.queue.getJob(job.id)
+        return persisted && !('value' in persisted.data) ? persisted : undefined
+      })
       expect(resolvedJob!.data).toStrictEqual({ metadata: jobData.metadata })
 
       // @ts-expect-error executing protected method for testing
@@ -354,7 +359,8 @@ describe('AbstractBackgroundJobProcessor', () => {
         jobId,
         'completed',
       )
-      // Disposing waits for the background purge running promises to settle.
+      // dispose() drains the tracked internalOnSuccess promise (including the purge) before
+      // returning, so the assertions below run after the purge has settled.
       await successBackgroundJobProcessor.dispose()
 
       // Then - the onSuccess hook saw the full data, and the purge stripped it to metadata.

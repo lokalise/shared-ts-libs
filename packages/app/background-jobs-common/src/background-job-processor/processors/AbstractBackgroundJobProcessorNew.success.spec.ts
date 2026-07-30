@@ -102,7 +102,12 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
     const job = await simpleProcessor.spy.waitForJobWithId(jobId, 'completed')
     expect(job.data).toMatchObject(jobData)
 
-    const resolvedJob = await queueManager.getQueue('queue1').getJob(job.id!)
+    // The spy resolves before the purge is issued, so poll the persisted job until the
+    // payload is actually gone instead of racing the purge.
+    const resolvedJob = await waitAndRetry(async () => {
+      const persisted = await queueManager.getQueue('queue1').getJob(job.id!)
+      return persisted && !('value' in persisted.data) ? persisted : undefined
+    })
     expect(resolvedJob!.data).toStrictEqual({ metadata: jobData.metadata })
 
     // @ts-expect-error executing protected method for testing
@@ -186,13 +191,15 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
     await processorWithSuccessHook.spy.waitForJobWithId(jobId, 'completed')
 
     // Then - the onSuccess hook still saw the full data, but the persisted job is purged.
-    await waitAndRetry(() => processorWithSuccessHook.runningPromisesSet.size === 0, 10, 5)
-    expect(processorWithSuccessHook.runningPromisesSet).toHaveLength(0)
+    // The spy resolves before the purge is issued, so poll the persisted job until purged.
+    const persistedJob = await waitAndRetry(async () => {
+      const persisted = await queueManager.getQueue('queue2').getJob(jobId)
+      return persisted && !('value2' in persisted.data) ? persisted : undefined
+    })
 
     expect(processorWithSuccessHook.onSuccessCallsCounter).toBe(1)
     expect(processorWithSuccessHook.jobDataResult).toStrictEqual(jobData)
 
-    const persistedJob = await queueManager.getQueue('queue2').getJob(jobId)
     expect(persistedJob?.data).toStrictEqual({ metadata: jobData.metadata })
     // The purge must not wipe the job return value, only the job data.
     expect(persistedJob?.returnvalue).toStrictEqual(returnValue)
@@ -210,9 +217,9 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
     const jobId = await queueManager.schedule('queue3', jobData)
     await processorWithoutPurge.spy.waitForJobWithId(jobId, 'completed')
 
-    // Then - job data is preserved in full.
-    await waitAndRetry(() => processorWithoutPurge.runningPromisesSet.size === 0, 10, 5)
-    expect(processorWithoutPurge.runningPromisesSet).toHaveLength(0)
+    // Then - job data is preserved in full. dispose() drains internalOnSuccess, so once it
+    // returns we know no purge is pending and can assert the flag was honoured.
+    await processorWithoutPurge.dispose()
 
     expect(processorWithoutPurge.onSuccessCallsCounter).toBe(1)
     const persistedJob = await queueManager.getQueue('queue3').getJob(jobId)
@@ -236,9 +243,9 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
     const jobId = await queueManager.schedule('queue2', jobData)
     await processorWithSuccessHook.spy.waitForJobWithId(jobId, 'completed')
 
-    // Then - the purge ran and swallowed the job-missing error.
-    await waitAndRetry(() => processorWithSuccessHook.runningPromisesSet.size === 0, 10, 5)
-    expect(processorWithSuccessHook.runningPromisesSet).toHaveLength(0)
+    // Then - the purge ran and swallowed the job-missing error. dispose() drains the purge,
+    // so the assertion runs after it has completed instead of racing it.
+    await processorWithSuccessHook.dispose()
 
     expect(reportSpy).not.toHaveBeenCalled()
   })
