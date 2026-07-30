@@ -9,8 +9,8 @@ describe('countCharacters', () => {
     const text = '👨‍👩‍👧' //counts differently under every algorithm
     const defaultAlgResult = countCharacters(text)
 
-    expect(countCharacters(text, {algorithm: "utf16"})).toBe(defaultAlgResult)
-    expect(countCharacters(text, {algorithm: "codePoints"})).not.toBe(defaultAlgResult)
+    expect(countCharacters(text, { algorithm: 'utf16' })).toBe(defaultAlgResult)
+    expect(countCharacters(text, { algorithm: 'codePoints' })).not.toBe(defaultAlgResult)
   })
 
   // Simple strings and NTC handling — algorithm-agnostic (same result for every algorithm).
