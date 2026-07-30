@@ -63,7 +63,7 @@
         "toad-scheduler": "^4.0.1",
         "ts-deepmerge": "^8.0.0",
         "typescript": "7.0.2",
-        "vitest": "^4.1.9"
+        "vitest": "^4.1.10"
     },
     "keywords": [
         "fastify",
