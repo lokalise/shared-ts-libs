@@ -19,14 +19,19 @@ import {
   isStalledJobError,
   isUnrecoverableJobError,
 } from '../errors/utils.ts'
-import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory.ts'
+import type { AbstractBullmqFactory } from '../factories/index.ts'
 import type { JobsPaginatedResponse, ProtectedQueue } from '../managers/index.ts'
 import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
 import { enrichRedisConfig, sanitizeRedisConfig } from '../public-utils/index.ts'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
 import type { BaseJobPayload, BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
-import { prepareJobOptions, resolveJobId, resolveQueueId } from '../utils.ts'
+import {
+  isJobRemovedOnComplete,
+  prepareJobOptions,
+  resolveJobId,
+  resolveQueueId,
+} from '../utils.ts'
 import type {
   BackgroundJobProcessorConfig,
   BackgroundJobProcessorDependencies,
@@ -443,8 +448,7 @@ export abstract class AbstractBackgroundJobProcessor<
    * @param job
    */
   private async purgeJobData(job: JobType): Promise<void> {
-    const jobOptsRemoveOnComplete = job.opts.removeOnComplete
-    if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
+    if (isJobRemovedOnComplete(job.opts.removeOnComplete)) return
 
     // @ts-expect-error
     const updateDataPromise = job.updateData({ metadata: job.data.metadata })

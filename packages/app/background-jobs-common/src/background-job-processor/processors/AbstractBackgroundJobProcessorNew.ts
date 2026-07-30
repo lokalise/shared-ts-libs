@@ -33,7 +33,7 @@ import { enrichRedisConfig, sanitizeRedisConfig } from '../public-utils/index.ts
 import type { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
 import type { BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
-import { resolveJobId, resolveQueueId } from '../utils.ts'
+import { isJobRemovedOnComplete, resolveJobId, resolveQueueId } from '../utils.ts'
 import type {
   BackgroundJobProcessorConfigNew,
   BackgroundJobProcessorDependenciesNew,
@@ -367,10 +367,11 @@ export abstract class AbstractBackgroundJobProcessorNew<
    * @param job
    */
   private async purgeJobData(job: JobType): Promise<void> {
-    const jobOptsRemoveOnComplete = job.opts.removeOnComplete
-    if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
+    if (isJobRemovedOnComplete(job.opts.removeOnComplete)) return
 
-    const updateDataPromise = job.updateData({metadata: job.data.metadata } as SupportedJobPayloads<Queues>)
+    const updateDataPromise = job.updateData({
+      metadata: job.data.metadata,
+    } as SupportedJobPayloads<Queues>)
     const clearLogsPromise = job.clearLogs()
 
     // Purging will fail if the job is already removed (job can be removed manually, by user, or by BullMQ in certain scenarios),
