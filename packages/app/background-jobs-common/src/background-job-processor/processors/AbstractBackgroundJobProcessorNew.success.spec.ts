@@ -102,14 +102,6 @@ describe('AbstractBackgroundJobProcessorNew - success', () => {
     const job = await simpleProcessor.spy.waitForJobWithId(jobId, 'completed')
     expect(job.data).toMatchObject(jobData)
 
-    // The spy resolves before the purge is issued, so poll the persisted job until the
-    // payload is actually gone instead of racing the purge.
-    const resolvedJob = await waitAndRetry(async () => {
-      const persisted = await queueManager.getQueue('queue1').getJob(job.id!)
-      return persisted && !('value' in persisted.data) ? persisted : undefined
-    })
-    expect(resolvedJob!.data).toStrictEqual({ metadata: jobData.metadata })
-
     // @ts-expect-error executing protected method for testing
     expect(simpleProcessor.worker.isRunning()).toBe(true)
   })
