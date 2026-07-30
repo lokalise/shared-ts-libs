@@ -230,12 +230,18 @@ export abstract class AbstractBackgroundJobProcessor<
     this._worker?.on('failed', (job, error) => {
       if (!job) return // Should not be possible with our current config, check 'failed' for more info
       // @ts-expect-error
-      this.internalOnFailed(job, error).catch(() => undefined) // nothing to do
+      const promise = this.internalOnFailed(job, error)
+        .catch(() => undefined) // nothing to do
+        .finally(() => this.runningPromises.delete(promise))
+      this.runningPromises.add(promise)
     })
 
     this._worker?.on('completed', (job) => {
       // @ts-expect-error
-      this.internalOnSuccess(job, job.requestContext).catch(() => undefined) // nothing to do
+      const promise = this.internalOnSuccess(job, job.requestContext)
+        .catch(() => undefined) // nothing to do
+        .finally(() => this.runningPromises.delete(promise))
+      this.runningPromises.add(promise)
     })
   }
 
@@ -245,8 +251,9 @@ export abstract class AbstractBackgroundJobProcessor<
     try {
       // On test forcing the worker to close to not wait for current job to finish
       await this._worker?.close(this.config.isTest)
-      await this._queue?.close()
+      // Drain pending work
       await Promise.allSettled(this.runningPromises)
+      await this._queue?.close()
     } catch {
       //do nothing
     }
@@ -439,18 +446,9 @@ export abstract class AbstractBackgroundJobProcessor<
     const jobOptsRemoveOnComplete = job.opts.removeOnComplete
     if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
 
-    const updateDataPromise = job
-      // @ts-expect-error
-      .updateData({ metadata: job.data.metadata })
-      .finally(() => this.runningPromises.delete(updateDataPromise))
-
-    this.runningPromises.add(updateDataPromise)
-
-    const clearLogsPromise = job
-      .clearLogs()
-      .finally(() => this.runningPromises.delete(clearLogsPromise))
-
-    this.runningPromises.add(clearLogsPromise)
+    // @ts-expect-error
+    const updateDataPromise = job.updateData({ metadata: job.data.metadata })
+    const clearLogsPromise = job.clearLogs()
 
     // Purging will fail if the job is already removed (job can be removed manually, by user, or by BullMQ in certain scenarios),
     // Since this is expected and should not be considered an error, we will silence down such errors.

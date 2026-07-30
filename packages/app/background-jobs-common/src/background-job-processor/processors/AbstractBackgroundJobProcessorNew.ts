@@ -224,12 +224,18 @@ export abstract class AbstractBackgroundJobProcessorNew<
     this._worker?.on('failed', (job, error) => {
       if (!job) return // Should not be possible with our current config, check 'failed' for more info
       // @ts-expect-error
-      this.internalOnFailed(job, error).catch(() => undefined) // nothing to do
+      const promise = this.internalOnFailed(job, error)
+        .catch(() => undefined) // nothing to do
+        .finally(() => this.runningPromises.delete(promise))
+      this.runningPromises.add(promise)
     })
 
     this._worker?.on('completed', (job) => {
       // @ts-expect-error
-      this.internalOnSuccess(job, job.requestContext).catch(() => undefined) // nothing to do
+      const promise = this.internalOnSuccess(job, job.requestContext)
+        .catch(() => undefined) // nothing to do
+        .finally(() => this.runningPromises.delete(promise))
+      this.runningPromises.add(promise)
     })
   }
 
@@ -364,17 +370,8 @@ export abstract class AbstractBackgroundJobProcessorNew<
     const jobOptsRemoveOnComplete = job.opts.removeOnComplete
     if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
 
-    const updateDataPromise = job
-      .updateData({ metadata: job.data.metadata } as SupportedJobPayloads<Queues>)
-      .finally(() => this.runningPromises.delete(updateDataPromise))
-
-    this.runningPromises.add(updateDataPromise)
-
-    const clearLogsPromise = job
-      .clearLogs()
-      .finally(() => this.runningPromises.delete(clearLogsPromise))
-
-    this.runningPromises.add(clearLogsPromise)
+    const updateDataPromise = job.updateData({metadata: job.data.metadata } as SupportedJobPayloads<Queues>)
+    const clearLogsPromise = job.clearLogs()
 
     // Purging will fail if the job is already removed (job can be removed manually, by user, or by BullMQ in certain scenarios),
     // Since this is expected and should not be considered an error, we will silence down such errors.
