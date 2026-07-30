@@ -110,6 +110,11 @@ includes the `correlationId`). This keeps completed jobs from occupying space in
 The purge only clears the job `data` and logs — the job **return value is preserved** and remains available on the
 completed job.
 
+For the new processor the flag lives on the queue configuration only, so it is **queue-wide**:
+`BackgroundJobProcessorConfigNew` has no per-processor override, and multiple processors on the same queue cannot opt
+out independently. (The deprecated `AbstractBackgroundJobProcessor` carries the flag on its own
+`BackgroundJobProcessorConfig` instead.)
+
 Set `purgeJobDataOnSuccess: false` on the queue configuration to keep the full job data in Redis:
 
 ```typescript
@@ -126,7 +131,17 @@ const supportedQueues = [
 ] as const satisfies QueueConfiguration[]
 ```
 
-Jobs configured with `removeOnComplete: true` (or `1`) are unaffected, since BullMQ already removes them on completion.
+#### Caveats
+
+- **Retrying a purged job fails payload validation.** Once a job's data is purged to `{ metadata }`, retrying it (e.g.
+  the Bull Board *Retry* button or `job.retry()`) re-runs it with only `metadata`, which fails `jobPayloadSchema`
+  validation. Set `purgeJobDataOnSuccess: false` on queues whose completed jobs may be retried.
+- **Throughput cost.** Purging adds two Redis round trips per completed job (an `hset` to rewrite `data` plus a log-key
+  delete). This is negligible for most queues, but on very high-throughput queues `purgeJobDataOnSuccess: false` is also
+  a throughput lever.
+
+Jobs that BullMQ already removes on completion are unaffected: `removeOnComplete: true`, a keep-count of `0` or `1`, or
+`{ count: 0 }` all drop the job on completion, so there is nothing left to purge.
 
 ### Bull Dashboard Grouping
 
