@@ -367,7 +367,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
    * @param job
    */
   private async purgeJobData(job: JobType): Promise<void> {
-    if (isJobRemovedOnComplete(job.opts.removeOnComplete)) return
+    if (isJobRemovedOnComplete(job.opts)) return
 
     const updateDataPromise = job.updateData({
       metadata: job.data.metadata,

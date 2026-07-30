@@ -96,7 +96,7 @@ describe('utils', () => {
       [{ count: 1 }, false],
       [{ age: 3600 }, false],
     ])('returns %o -> %s', (removeOnComplete, expected) => {
-      expect(isJobRemovedOnComplete(removeOnComplete)).toBe(expected)
+      expect(isJobRemovedOnComplete({ removeOnComplete })).toBe(expected)
     })
   })
 })
