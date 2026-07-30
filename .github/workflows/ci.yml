@@ -52,6 +52,7 @@ jobs:
             ["packages/app/prisma-utils"]="@lokalise/prisma-utils"
             ["packages/app/script-utils"]="@lokalise/script-utils"
             ["packages/app/supported-languages"]="@lokalise/supported-languages"
+            ["packages/app/text-measure"]="@lokalise/text-measure"
             ["packages/app/universal-testing-utils"]="@lokalise/universal-testing-utils"
             ["packages/app/universal-ts-utils"]="@lokalise/universal-ts-utils"
             ["packages/app/websockets-common"]="@lokalise/websockets-common"

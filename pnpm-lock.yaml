@@ -43,7 +43,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
@@ -73,7 +73,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
@@ -131,7 +131,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/aws-config:
@@ -191,7 +191,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
@@ -234,7 +234,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
@@ -362,7 +362,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.0)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/datadog-fastify-bootstrap:
@@ -431,7 +431,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/error-utils:
@@ -462,7 +462,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/fastify-api-contracts:
@@ -511,7 +511,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
@@ -608,7 +608,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/frontend-http-client:
@@ -654,7 +654,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
@@ -706,7 +706,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/id-utils:
@@ -740,7 +740,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/metrics-utils:
@@ -771,7 +771,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/non-translatable-markup:
@@ -795,7 +795,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/odata-mapper:
@@ -826,7 +826,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/opentelemetry-fastify-bootstrap:
@@ -871,7 +871,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/polling:
@@ -898,7 +898,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/prisma-utils:
@@ -944,7 +944,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/script-utils:
@@ -972,7 +972,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/supported-languages:
@@ -996,7 +996,31 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+
+  packages/app/text-measure:
+    devDependencies:
+      '@biomejs/biome':
+        specifier: ^2.5.6
+        version: 2.5.6
+      '@lokalise/biome-config':
+        specifier: workspace:^
+        version: link:../../dev/biome-config
+      '@lokalise/tsconfig':
+        specifier: workspace:^
+        version: link:../../dev/tsconfig
+      '@vitest/coverage-v8':
+        specifier: ^4.1.10
+        version: 4.1.10(vitest@4.1.10)
+      rimraf:
+        specifier: ^6.1.3
+        version: 6.1.3
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/universal-testing-utils:
@@ -1032,7 +1056,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
       wretch:
         specifier: ^2.8.0
@@ -1062,7 +1086,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/websockets-common:
@@ -1087,7 +1111,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
@@ -1117,7 +1141,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: ^4.1.9
+        specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
