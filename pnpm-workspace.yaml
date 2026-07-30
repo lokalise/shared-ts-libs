@@ -17,6 +17,10 @@ allowBuilds:
   protobufjs: true
   unrs-resolver: true
 minimumReleaseAgeExclude:
+  - "@lokalise/*"
+  - "@message-queue-toolkit/*"
+  - "opinionated-machine"
+  - "@opinionated-machine/*"
   - '@vitest/coverage-v8@4.1.10'
   - '@vitest/expect@4.1.10'
   - '@vitest/mocker@4.1.10'

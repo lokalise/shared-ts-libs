@@ -39,15 +39,15 @@
         "@lokalise/background-jobs-common": ">=12.6.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.5.2",
+        "@biomejs/biome": "^2.5.6",
         "@fastify/awilix": "^8.0.0",
         "@fastify/schedule": "^6.0.0",
         "@lokalise/background-jobs-common": "workspace:^",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/fastify-extras": "^31.0.1",
         "@lokalise/node-core": "^14.1.0",
-        "@types/node": "^26.1.0",
-        "@vitest/coverage-v8": "^4.1.9",
+        "@types/node": "^26.1.1",
+        "@vitest/coverage-v8": "^4.1.10",
         "awilix": "^13.0.5",
         "awilix-manager": "^7.0.0",
         "bullmq": "5.79.2",
@@ -63,7 +63,7 @@
         "toad-scheduler": "^4.0.1",
         "ts-deepmerge": "^8.0.0",
         "typescript": "7.0.2",
-        "vitest": "^4.1.9"
+        "vitest": "^4.1.10"
     },
     "keywords": [
         "fastify",
