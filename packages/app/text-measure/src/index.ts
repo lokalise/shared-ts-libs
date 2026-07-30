@@ -1,2 +1,1 @@
-// TODO: Implement package
-export const hello = 'world'
+export * from './methods/countTranslatableWords.ts'
