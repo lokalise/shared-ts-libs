@@ -292,7 +292,6 @@ export function buildFastifyRoute(
       describe: apiContract.description,
       description: apiContract.description,
       summary: apiContract.summary,
-      tags: apiContract.tags,
       response: apiContract.responseSchemasByStatusCode,
     } satisfies ExtendedFastifySchema),
   }

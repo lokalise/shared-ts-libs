@@ -540,40 +540,4 @@ describe('buildFastifyRoute', () => {
       })
     })
   })
-
-  describe('OpenAPI metadata', () => {
-    it('maps summary, description and tags to the route schema', () => {
-      const contract = buildRestContract({
-        method: 'get',
-        successResponseBodySchema: BODY_SCHEMA,
-        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
-        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-        summary: 'Get user',
-        description: 'Returns a single user',
-        tags: ['users'],
-      })
-
-      const route = buildFastifyRoute(contract, () => Promise.resolve({}))
-
-      expect(route.schema).toMatchObject({
-        summary: 'Get user',
-        description: 'Returns a single user',
-        tags: ['users'],
-      })
-    })
-
-    it('omits tags the contract does not declare', () => {
-      const contract = buildRestContract({
-        method: 'get',
-        successResponseBodySchema: BODY_SCHEMA,
-        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
-        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-        summary: 'Get user',
-      })
-
-      const route = buildFastifyRoute(contract, () => Promise.resolve({}))
-
-      expect(route.schema).not.toHaveProperty('tags')
-    })
-  })
 })

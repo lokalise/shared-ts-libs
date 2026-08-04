@@ -26,7 +26,6 @@ export type ExtendedFastifySchema = FastifySchema & {
   describe?: string
   description?: string
   summary?: string
-  tags?: readonly string[]
 }
 
 export type RouteType<
