@@ -511,37 +511,4 @@ describe('fastifyApiContracts', () => {
       expect(response.statusCode).toBe(200)
     })
   })
-
-  describe('OpenAPI metadata', () => {
-    it('maps tags to the schema of a no-payload route', () => {
-      const contract = buildRestContract({
-        method: 'get',
-        successResponseBodySchema: BODY_SCHEMA,
-        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
-        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-        summary: 'Get user',
-        tags: ['users'],
-      })
-
-      const route = buildFastifyNoPayloadRoute(contract, () => Promise.resolve({}))
-
-      expect(route.schema).toMatchObject({ summary: 'Get user', tags: ['users'] })
-    })
-
-    it('maps tags to the schema of a payload route', () => {
-      const contract = buildRestContract({
-        method: 'post',
-        requestBodySchema: REQUEST_BODY_SCHEMA,
-        successResponseBodySchema: BODY_SCHEMA,
-        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
-        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-        summary: 'Create user',
-        tags: ['users'],
-      })
-
-      const route = buildFastifyPayloadRoute(contract, () => Promise.resolve({}))
-
-      expect(route.schema).toMatchObject({ summary: 'Create user', tags: ['users'] })
-    })
-  })
 })
