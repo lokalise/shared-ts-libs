@@ -1,42 +1,68 @@
-import type { RedisConfig } from '@lokalise/node-core'
+import { NoopObservabilityManager, type RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
 import {
+  AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
-  FakeBackgroundJobProcessor,
+  CommonBullmqFactory,
   type RequestContext,
 } from '../../src/index.ts'
 
 type TestSuccessBackgroundJobProcessorData = {
   id?: string
 } & BaseJobPayload
-
 export class TestSuccessBackgroundJobProcessor<
   T extends TestSuccessBackgroundJobProcessorData,
-> extends FakeBackgroundJobProcessor<T> {
+> extends AbstractBackgroundJobProcessor<T, object | undefined> {
   private onSuccessCounter = 0
-  private onSuccessCall!: (job: Job<T>) => void
+  private onSuccessCall: (job: Job<T>) => void | Promise<void> = () => {}
   private _jobDataResult!: TestSuccessBackgroundJobProcessorData
+  private _returnValue: object | undefined = undefined
 
   constructor(
-    dependencies: BackgroundJobProcessorDependencies<T>,
+    dependencies: Omit<
+      BackgroundJobProcessorDependencies<T>,
+      'bullmqFactory' | 'transactionObservabilityManager'
+    >,
     queueName: string,
     redisConfig: RedisConfig,
+    purgeJobDataOnSuccess?: boolean,
   ) {
-    super(dependencies, queueName, redisConfig, true)
+    super(
+      {
+        transactionObservabilityManager: new NoopObservabilityManager(),
+        logger: dependencies.logger,
+        errorReporter: dependencies.errorReporter,
+        bullmqFactory: new CommonBullmqFactory(),
+      },
+      {
+        queueId: queueName,
+        ownerName: 'testOwner',
+        isTest: true,
+        workerOptions: { concurrency: 1 },
+        lazyInitEnabled: false,
+        redisConfig,
+        purgeJobDataOnSuccess,
+      },
+    )
   }
 
   override schedule(jobData: T): Promise<string> {
     return super.schedule(jobData, { attempts: 1, removeOnComplete: false })
   }
 
-  protected override process(): Promise<void> {
-    return Promise.resolve()
+  protected override process(): Promise<object | undefined> {
+    return Promise.resolve(this._returnValue)
   }
 
-  protected override onSuccess(job: Job<T>, requestContext: RequestContext): Promise<void> {
+  /** Configures the value returned by `process`, persisted by BullMQ as the job return value. */
+  set returnValue(value: object | undefined) {
+    this._returnValue = value
+  }
+
+  protected override async onSuccess(job: Job<T>, requestContext: RequestContext): Promise<void> {
     this.onSuccessCounter += 1
-    this.onSuccessCall(job)
+    await this.onSuccessCall(job)
     this._jobDataResult = job.data
     return super.onSuccess(job, requestContext)
   }
@@ -45,11 +71,7 @@ export class TestSuccessBackgroundJobProcessor<
     return this._jobDataResult
   }
 
-  override purgeJobData(job: Job<T>): Promise<void> {
-    return super.purgeJobData(job)
-  }
-
-  set onSuccessHook(hook: (job: Job<T>) => void) {
+  set onSuccessHook(hook: (job: Job<T>) => void | Promise<void>) {
     this.onSuccessCall = hook
   }
 

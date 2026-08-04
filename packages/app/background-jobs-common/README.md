@@ -99,6 +99,49 @@ To set up a queue configuration, you need to define a list of objects containing
 - **`jobPayloadSchema`**: A Zod schema that defines the structure of the jobs payload for this queue.
 - **`jobOptions`**: Default options for jobs in this queue. Can be a function that will be resolved when a job is 
    scheduled. See [BullMQ documentation](https://docs.bullmq.io/guide/job-options).
+- **`purgeJobDataOnSuccess`**: Optional boolean, **defaults to `true`**. See [Purging job data on success](#purging-job-data-on-success).
+
+### Purging job data on success
+
+By default, once a job completes successfully its `data` is automatically purged, keeping only `metadata` (which
+includes the `correlationId`). This keeps completed jobs from occupying space in Redis. The purge runs **after** the
+`onSuccess` hook, so the hook still sees the full job data.
+
+The purge only clears the job `data` and logs — the job **return value is preserved** and remains available on the
+completed job.
+
+For the new processor the flag lives on the queue configuration only, so it is **queue-wide**:
+`BackgroundJobProcessorConfigNew` has no per-processor override, and multiple processors on the same queue cannot opt
+out independently. (The deprecated `AbstractBackgroundJobProcessor` carries the flag on its own
+`BackgroundJobProcessorConfig` instead.)
+
+Set `purgeJobDataOnSuccess: false` on the queue configuration to keep the full job data in Redis:
+
+```typescript
+const supportedQueues = [
+  {
+    queueId: 'queue1',
+    purgeJobDataOnSuccess: false, // keep full job data after completion
+    jobPayloadSchema: z.object({
+      id: z.string(),
+      value: z.string(),
+      metadata: z.object({ correlationId: z.string() }),
+    }),
+  },
+] as const satisfies QueueConfiguration[]
+```
+
+#### Caveats
+
+- **Retrying a purged job fails payload validation.** Once a job's data is purged to `{ metadata }`, retrying it (e.g.
+  the Bull Board *Retry* button or `job.retry()`) re-runs it with only `metadata`, which fails `jobPayloadSchema`
+  validation. Set `purgeJobDataOnSuccess: false` on queues whose completed jobs may be retried.
+- **Throughput cost.** Purging adds two Redis round trips per completed job (an `hset` to rewrite `data` plus a log-key
+  delete). This is negligible for most queues, but on very high-throughput queues `purgeJobDataOnSuccess: false` is also
+  a throughput lever.
+
+Jobs that BullMQ already removes on completion are unaffected: `removeOnComplete: true`, a keep-count of `0` or `1`, or
+`{ count: 0 }` all drop the job on completion, so there is nothing left to purge.
 
 ### Bull Dashboard Grouping
 

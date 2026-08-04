@@ -21,6 +21,18 @@ export const isRedisClient = (redis: RedisConfig | Redis): redis is Redis => 'op
 export const resolveJobId = (job?: SafeJob<unknown>): string => job?.id ?? 'unknown'
 
 /**
+ * Whether BullMQ already removes the job from Redis on successful completion, based on its
+ * `removeOnComplete` option.
+ */
+export const isJobRemovedOnComplete = (options: Pick<JobsOptions, 'removeOnComplete'>): boolean =>
+  options.removeOnComplete === true ||
+  options.removeOnComplete === 0 ||
+  options.removeOnComplete === 1 ||
+  (typeof options.removeOnComplete === 'object' &&
+    options.removeOnComplete !== null &&
+    options.removeOnComplete.count === 0)
+
+/**
  * Default config
  *    - Retry config: 3 retries with 30s of total amount of wait time between retries using
  *            exponential strategy https://docs.bullmq.io/guide/retrying-failing-jobs#built-in-backoff-strategies

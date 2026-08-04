@@ -30,6 +30,12 @@ export type QueueConfiguration<
   /** Used to compose the queue name and allow bull dashboard grouping feature */
   bullDashboardGrouping?: string[]
   queueOptions?: Omit<QueueOptionsType, 'connection' | 'prefix'>
+  /**
+   * When enabled (default), job data is automatically purged after a job on this queue
+   * completes successfully, keeping only `metadata`. Set to `false` to preserve the full
+   * job data in Redis.
+   */
+  purgeJobDataOnSuccess?: boolean
   jobPayloadSchema: z.ZodType<BaseJobPayload>
   jobOptions?:
     | JobOptionsWithDeduplicationIdBuilder<JobOptionsType>

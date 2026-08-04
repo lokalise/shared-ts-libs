@@ -33,7 +33,7 @@ import { enrichRedisConfig, sanitizeRedisConfig } from '../public-utils/index.ts
 import type { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
 import type { BullmqProcessor, RequestContext, SafeJob } from '../types.ts'
-import { resolveJobId, resolveQueueId } from '../utils.ts'
+import { isJobRemovedOnComplete, resolveJobId, resolveQueueId } from '../utils.ts'
 import type {
   BackgroundJobProcessorConfigNew,
   BackgroundJobProcessorDependenciesNew,
@@ -224,12 +224,18 @@ export abstract class AbstractBackgroundJobProcessorNew<
     this._worker?.on('failed', (job, error) => {
       if (!job) return // Should not be possible with our current config, check 'failed' for more info
       // @ts-expect-error
-      this.internalOnFailed(job, error).catch(() => undefined) // nothing to do
+      const promise = this.internalOnFailed(job, error)
+        .catch(() => undefined) // nothing to do
+        .finally(() => this.runningPromises.delete(promise))
+      this.runningPromises.add(promise)
     })
 
     this._worker?.on('completed', (job) => {
       // @ts-expect-error
-      this.internalOnSuccess(job, job.requestContext).catch(() => undefined) // nothing to do
+      const promise = this.internalOnSuccess(job, job.requestContext)
+        .catch(() => undefined) // nothing to do
+        .finally(() => this.runningPromises.delete(promise))
+      this.runningPromises.add(promise)
     })
   }
 
@@ -285,12 +291,18 @@ export abstract class AbstractBackgroundJobProcessorNew<
   private async internalOnSuccess(job: JobType): Promise<void> {
     const requestContext = this.monitor.getRequestContext(job)
 
-    this._spy?.addJob(job, 'completed') // this should be executed before the hook to not be affected by it
     await this.internalOnHook(
       job,
       requestContext,
       async (job, requestContext) => await this.onSuccess(job, requestContext),
     )
+
+    this._spy?.addJob(job, 'completed')
+
+    // Purge after the onSuccess hook so it still sees the full job data. Enabled by default.
+    if (this.queueManager.getQueueConfig(this.queueId).purgeJobDataOnSuccess !== false) {
+      await this.internalOnHook(job, requestContext, (job) => this.purgeJobData(job))
+    }
   }
 
   private async internalOnFailed(job: JobType, error: Error): Promise<void> {
@@ -349,26 +361,18 @@ export abstract class AbstractBackgroundJobProcessorNew<
 
   /**
    * Removes all data associated with the job, keeps only correlationId.
-   * This method only works if the result of the job is not removed right after it is finished.
+   * Runs automatically after a successful job unless `purgeJobDataOnSuccess` is `false` on the
+   * queue configuration. This only works if the job is not removed right after it is finished.
    *
    * @param job
-   * @protected
    */
-  protected async purgeJobData(job: JobType): Promise<void> {
-    const jobOptsRemoveOnComplete = job.opts.removeOnComplete
-    if (jobOptsRemoveOnComplete === true || jobOptsRemoveOnComplete === 1) return
+  private async purgeJobData(job: JobType): Promise<void> {
+    if (isJobRemovedOnComplete(job.opts)) return
 
-    const updateDataPromise = job
-      .updateData({ metadata: job.data.metadata } as SupportedJobPayloads<Queues>)
-      .finally(() => this.runningPromises.delete(updateDataPromise))
-
-    this.runningPromises.add(updateDataPromise)
-
-    const clearLogsPromise = job
-      .clearLogs()
-      .finally(() => this.runningPromises.delete(clearLogsPromise))
-
-    this.runningPromises.add(clearLogsPromise)
+    const updateDataPromise = job.updateData({
+      metadata: job.data.metadata,
+    } as SupportedJobPayloads<Queues>)
+    const clearLogsPromise = job.clearLogs()
 
     // Purging will fail if the job is already removed (job can be removed manually, by user, or by BullMQ in certain scenarios),
     // Since this is expected and should not be considered an error, we will silence down such errors.
