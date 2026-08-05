@@ -50,7 +50,7 @@
         "@vitest/coverage-v8": "^4.1.10",
         "awilix": "^13.0.5",
         "awilix-manager": "^7.0.0",
-        "bullmq": "5.79.2",
+        "bullmq": "5.81.2",
         "cross-env": "^10.0.0",
         "fastify": "^5.10.0",
         "fastify-graceful-shutdown": "^5.0.0",
