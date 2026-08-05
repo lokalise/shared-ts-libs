@@ -719,8 +719,8 @@ importers:
   packages/app/fastify-bullboard-plugin:
     dependencies:
       '@bull-board/api':
-        specifier: ^8.1.0
-        version: 8.3.2(@bull-board/ui@8.3.2(bullmq@5.81.2))(bullmq@5.81.2)
+        specifier: ^8.4.0
+        version: 8.4.0(@bull-board/ui@8.4.0(bullmq@5.81.2))(bullmq@5.81.2)
       '@bull-board/fastify':
         specifier: ^8.1.0
         version: 8.3.2(bullmq@5.81.2)
@@ -1643,11 +1643,26 @@ packages:
       bullmq:
         optional: true
 
+  '@bull-board/api@8.4.0':
+    resolution: {integrity: sha512-RUAqQ4Y6G2k4eIzKJgYHs8qx2nCRiOfCNUEwfnz6SCrHwRZ5TKJ9ZlYBjIuGY9kA5s1et+jm0xwfiVJWNwflKA==}
+    peerDependencies:
+      '@bull-board/ui': 8.4.0
+      bull: ^4.16.5
+      bullmq: ^5.79.2
+    peerDependenciesMeta:
+      bull:
+        optional: true
+      bullmq:
+        optional: true
+
   '@bull-board/fastify@8.3.2':
     resolution: {integrity: sha512-8llMoZS/3onHEgnB1UTbh4bPP/oaYmMdjKrYdN5Z55JrwPI3X3rmaTgS+TVaeFcI4QhkBiGGJKBIn/h6QoMowQ==}
 
   '@bull-board/ui@8.3.2':
     resolution: {integrity: sha512-Mr68M//St5BZ5OQ3X8lm4BjTwsBeEE7vo5n+5szxckmgJGBgYnY4GiEVOjGRfMCUErPP5kNdmMgKOLUmU1GH+Q==}
+
+  '@bull-board/ui@8.4.0':
+    resolution: {integrity: sha512-N35K90lCAz2URwBtCXS1O/bOyU4/d7qeEZ7cx/qWWu0rn3NakwLC/oHNuU6L8R1qKBy2wVl8i5AxHdp2Mg3KNA==}
 
   '@changesets/apply-release-plan@7.1.1':
     resolution: {integrity: sha512-9qPCm/rLx/xoOFXIHGB229+4GOL76S4MC+7tyOuTsR6+1jYlfFDQORdvwR5hDA6y4FL2BPt3qpbcQIS+dW85LA==}
@@ -7857,6 +7872,13 @@ snapshots:
     optionalDependencies:
       bullmq: 5.81.2
 
+  '@bull-board/api@8.4.0(@bull-board/ui@8.4.0(bullmq@5.81.2))(bullmq@5.81.2)':
+    dependencies:
+      '@bull-board/ui': 8.4.0(bullmq@5.81.2)
+      redis-info: 3.1.0
+    optionalDependencies:
+      bullmq: 5.81.2
+
   '@bull-board/fastify@8.3.2(bullmq@5.81.2)':
     dependencies:
       '@bull-board/api': 8.3.2(@bull-board/ui@8.3.2(bullmq@5.81.2))(bullmq@5.81.2)
@@ -7871,6 +7893,13 @@ snapshots:
   '@bull-board/ui@8.3.2(bullmq@5.81.2)':
     dependencies:
       '@bull-board/api': 8.3.2(@bull-board/ui@8.3.2(bullmq@5.81.2))(bullmq@5.81.2)
+    transitivePeerDependencies:
+      - bull
+      - bullmq
+
+  '@bull-board/ui@8.4.0(bullmq@5.81.2)':
+    dependencies:
+      '@bull-board/api': 8.4.0(@bull-board/ui@8.4.0(bullmq@5.81.2))(bullmq@5.81.2)
     transitivePeerDependencies:
       - bull
       - bullmq
