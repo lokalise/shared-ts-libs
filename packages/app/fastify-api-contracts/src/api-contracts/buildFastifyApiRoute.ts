@@ -10,6 +10,7 @@ import {
 } from '@lokalise/api-contracts'
 import { InternalError } from '@lokalise/node-core'
 import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
+import { buildApiRouteErrorHandler } from './apiErrorHandler.ts'
 import type { ApiRouteOptions, InferApiHandler } from './apiHandlerTypes.ts'
 import { buildFastifyApiSchema } from './buildFastifyApiSchema.ts'
 import type { SSEStreamMessage } from './sseTypes.ts'
@@ -254,11 +255,14 @@ async function handleApiRoute({
     ...(apiSSEContext ? { sse: apiSSEContext.sseContext } : {}),
   }
 
+  // Errors are not handled here: the route errorHandler is the single error path (the SSE
+  // session holds the plugin-level keep-alive on, so a rejection reaches it with the
+  // stream still live and it can send a terminal `error` event).
   const result = await handler(request, reply, context)
 
   if (apiSSEContext?.isStarted()) {
-    // The handler drove the session imperatively via sse.start(); @fastify/sse manages
-    // the rest of the connection lifecycle.
+    // The handler drove the session imperatively via sse.start(); markHandlerDone closes
+    // an autoClose session, a keepAlive one stays open.
     apiSSEContext.markHandlerDone()
     return
   }
@@ -328,6 +332,7 @@ export function buildFastifyApiRoute<Contract extends ApiContract>(
   // passthrough options spread directly onto the route.
   const {
     contractMetadataToRouteMapper,
+    resolveErrorResponse,
     serializer: _serializer,
     heartbeat: _heartbeat,
     onConnect: _onConnect,
@@ -355,6 +360,12 @@ export function buildFastifyApiRoute<Contract extends ApiContract>(
     ...contractMetadata,
     ...fastifyOptions,
     config,
+    // Contract routes always carry this error handler (a raw `errorHandler` option is not
+    // accepted — it would never see mid-stream SSE errors and only half-replace this): it
+    // applies the configured error resolver (route option, or the `fastifyApiContracts`
+    // plugin) and invokes the app's error handler (`fastify.errorHandler`) when none is
+    // configured.
+    errorHandler: buildApiRouteErrorHandler(resolveErrorResponse),
     method: contract.method,
     url: mapApiContractToPath(contract),
     // `sse` is only set for SSE-capable contracts; non-SSE routes must not carry it.

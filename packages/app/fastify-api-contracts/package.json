@@ -43,6 +43,7 @@
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
+        "fastify-plugin": "^6.0.0",
         "light-my-request": "^6.6.0",
         "negotiator": "^1.0.0"
     },

@@ -7,6 +7,7 @@ This package adds support for generating fastify routes using universal API cont
 - [Requirements](#requirements)
 - [Builders](#builders)
   - [`buildFastifyApiRoute`](#buildfastifyapiroute)
+    - [Error handling](#error-handling)
   - [`buildFastifyRoute`](#buildfastifyroute)
   - [`buildFastifyRouteHandler`](#buildfastifyroutehandler)
   - [Accessing the contract](#accessing-the-contract)
@@ -262,6 +263,7 @@ Every response entry contributes to `schema.response`, so the whole contract is 
 | `serializer` | Custom serializer for SSE event data |
 | `heartbeat` | Set to `false` to disable SSE keep-alive heartbeats for this route (the interval is configured at `@fastify/sse` plugin registration) |
 | `contractMetadataToRouteMapper` | Maps the contract `metadata` to extra Fastify route options (e.g. `config`, `preHandler`) merged into the route |
+| `resolveErrorResponse` | Resolves an error thrown by this route to the response to send (and is the place to report it) — see [Error handling](#error-handling) |
 
 To define a handler separately from the route, type it with `InferApiHandler`:
 
@@ -275,6 +277,29 @@ const createUser: InferApiHandler<typeof contract> = async (request) => ({
 
 const routes = [buildFastifyApiRoute(contract, createUser)]
 ```
+
+#### Error handling
+
+Without any configuration, errors from contract routes go through the regular Fastify error handling chain (`fastify.setErrorHandler` or the default handler). Once an SSE stream is live a status code can no longer be sent, so there the configured error handler is invoked directly — an SSE-aware one (checking `reply.sse?.isConnected`) can emit its own terminal `error` event, while a non-aware one still runs its reporting side effects — and the stream is closed afterwards.
+
+To control how errors are serialized — and to report them — provide a `ResolveApiErrorResponse`, a function from the thrown error to `{ statusCode, payload, headers? }`:
+
+- **Per route** via the `resolveErrorResponse` option of `buildFastifyApiRoute`.
+- **App-wide for all contract routes** via the `fastifyApiContracts` plugin (a route-level `resolveErrorResponse` overrides it):
+
+```ts
+import { fastifyApiContracts } from '@lokalise/fastify-api-contracts'
+
+await app.register(fastifyApiContracts, {
+    resolveErrorResponse: (error, request) => {
+        errorReporter.report({ error, request })
+        const { statusCode, payload } = errorObjectResolver(error)
+        return { statusCode, payload }
+    },
+})
+```
+
+With a resolver configured, a regular response is sent as `reply.headers(headers).status(statusCode).send(payload)` (this replaces `setErrorHandler` for contract routes, including request validation errors), while on a live SSE stream the `payload` is sent as the data of the terminal `error` event before the stream closes — `statusCode` and `headers` are ignored there, since the response headers are already on the wire. A raw Fastify `errorHandler` route option is deliberately not accepted: mid-stream SSE errors never reach a route `errorHandler` (`@fastify/sse` closes the connection first), so it could only half-replace the built-in behavior — `resolveErrorResponse` is the single customization point.
 
 ### `buildFastifyRoute`
 

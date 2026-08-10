@@ -62,6 +62,31 @@ export function validateApiResponseHeaders(
   }
 }
 
+const kApiSseRuntime = Symbol('@lokalise/fastify-api-contracts/apiSseRuntime')
+
+/**
+ * The per-request SSE runtime this library attaches to the reply (the same way
+ * `@fastify/sse` attaches `reply.sse`) — the route error path uses it instead of the raw
+ * plugin API, so all server-initiated closes flow through one place and the `onClose`
+ * hook's `'server' | 'client'` initiator stays a plain closure variable of
+ * `buildApiSSEContext`.
+ */
+export type ApiSseRuntime = {
+  /** True while the SSE stream is live. */
+  isConnected: () => boolean
+  /** Send the terminal `error` event carrying the resolved payload. */
+  sendErrorEvent: (payload: unknown) => Promise<void>
+  /** Close the stream as a server-initiated close. */
+  close: () => void
+}
+
+type WithApiSseRuntime = { [kApiSseRuntime]?: ApiSseRuntime }
+
+/** The SSE runtime of this request, present once `buildApiSSEContext` ran (SSE-capable routes only). */
+export function getApiSseRuntime(reply: FastifyReply): ApiSseRuntime | undefined {
+  return (reply as WithApiSseRuntime)[kApiSseRuntime]
+}
+
 /** Runtime shape of one SSE representation of the contract (the status key kept as its string form). */
 export type SseRuntimeSelection = {
   statusCode: string
@@ -148,6 +173,17 @@ export function buildApiSSEContext(
   let sessionMode: SSESessionMode | undefined
   let closedByServer = false
 
+  const closeAsServer = () => {
+    closedByServer = true
+    reply.sse.close()
+  }
+
+  ;(reply as WithApiSseRuntime)[kApiSseRuntime] = {
+    isConnected: () => reply.sse.isConnected,
+    sendErrorEvent: (payload) => reply.sse.send({ event: 'error', data: payload }),
+    close: closeAsServer,
+  }
+
   const sseContext: SSEContext = {
     start: <Context = unknown>(
       mode: SSESessionMode,
@@ -162,9 +198,12 @@ export function buildApiSSEContext(
       started = true
       sessionMode = mode
 
-      if (mode === 'keepAlive') {
-        reply.sse.keepAlive()
-      }
+      // The plugin-level keep-alive is always enabled so `@fastify/sse` never tears the
+      // stream down on a handler rejection before Fastify's error path runs — the route
+      // errorHandler is the single place errors are handled, and it needs the stream live
+      // to send a terminal `error` event. Session lifetime is managed by the route runtime
+      // instead: `markHandlerDone()` closes `autoClose` sessions when the handler completes.
+      reply.sse.keepAlive()
 
       // sendHeaders() calls writeHead(200) but only queues headers in the buffer.
       // flushHeaders() forces them onto the wire so the client's fetch() returns.
@@ -224,10 +263,7 @@ export function buildApiSSEContext(
             }
           }
         },
-        close: () => {
-          closedByServer = true
-          reply.sse.close()
-        },
+        close: closeAsServer,
       }
 
       if (options?.onConnect) {
@@ -271,12 +307,12 @@ export function buildApiSSEContext(
   return {
     sseContext,
     isStarted: () => started,
-    // An autoClose session is closed by @fastify/sse when the handler completes — that close
-    // is server-initiated. Called after the handler resolves, before the close fires; if the
-    // client already disconnected mid-stream, onClose has fired with 'client' and this is moot.
+    // Called after the handler resolves: an `autoClose` session ends with the handler, and
+    // that close is server-initiated (the plugin-level keep-alive is always on, so the
+    // route runtime owns the close). A `keepAlive` session stays open.
     markHandlerDone: () => {
       if (sessionMode === 'autoClose') {
-        closedByServer = true
+        closeAsServer()
       }
     },
   }

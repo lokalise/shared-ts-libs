@@ -1,3 +1,9 @@
+export {
+  type ApiErrorResponse,
+  type FastifyApiContractsOptions,
+  fastifyApiContracts,
+  type ResolveApiErrorResponse,
+} from './apiErrorHandler.ts'
 export type {
   ApiHandlerContext,
   ApiHandlerReply,
