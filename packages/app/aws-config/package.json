@@ -54,7 +54,7 @@
         "@aws-sdk/client-sns": "^3.1097.0",
         "@aws-sdk/client-sqs": "^3.1097.0",
         "@aws-sdk/credential-providers": "^3.1097.0",
-        "@biomejs/biome": "^2.5.6",
+        "@biomejs/biome": "^2.5.7",
         "@smithy/types": "^4.14.4",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/fastify-extras": "^31.0.0",
