@@ -2,7 +2,7 @@ import { removeNonTranslatableTags } from '@lokalise/non-translatable-markup'
 
 export const CharacterCountAlgorithmEnum = {
   UTF_16: 'utf16',
-  CODE_POINTS: 'codePoints'
+  CODE_POINTS: 'codePoints',
 } as const
 /**
  * How characters are counted:
@@ -11,7 +11,8 @@ export const CharacterCountAlgorithmEnum = {
  *
  * Pluggable for future algorithms too.
  */
-export type CharacterCountAlgorithm = typeof CharacterCountAlgorithmEnum[keyof typeof CharacterCountAlgorithmEnum]
+export type CharacterCountAlgorithm =
+  (typeof CharacterCountAlgorithmEnum)[keyof typeof CharacterCountAlgorithmEnum]
 
 export type CountCharactersOptions = {
   /** The counting algorithm to use. Defaults to `utf16`. */
