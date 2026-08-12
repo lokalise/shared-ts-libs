@@ -1,5 +1,11 @@
 # @lokalise/text-measure
 
+## 1.1.0
+
+### Minor Changes
+
+- eca389f: Export `CharacterCountAlgorithmEnum` const object and derive `CharacterCountAlgorithm` type from it.
+
 ## 1.0.0
 
 ### Major Changes
