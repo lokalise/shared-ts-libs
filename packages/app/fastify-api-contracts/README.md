@@ -12,6 +12,7 @@ This package adds support for generating fastify routes using universal API cont
   - [`buildFastifyRouteHandler`](#buildfastifyroutehandler)
   - [Accessing the contract](#accessing-the-contract)
   - [Adding extra route options from contract metadata](#adding-extra-route-options-from-contract-metadata)
+- [The `fastifyApiContracts` plugin](#the-fastifyapicontracts-plugin)
 - [Test helpers](#test-helpers)
   - [`injectByApiContract`](#injectbyapicontract)
   - [`injectByContract`](#injectbycontract)
@@ -420,6 +421,30 @@ const route = buildFastifyRoute(
     }),
 )
 ```
+
+## The `fastifyApiContracts` plugin
+
+The `fastifyApiContracts` plugin is the app-wide configuration point for every contract route built with `buildFastifyApiRoute`. It is built with [`fastify-plugin`](https://github.com/fastify/fastify-plugin), so registering it once on the root instance applies to all contract routes regardless of encapsulation:
+
+```ts
+import { fastifyApiContracts } from '@lokalise/fastify-api-contracts'
+
+await app.register(fastifyApiContracts, {
+    resolveErrorResponse: (error, request) => {
+        errorReporter.report({ error, request })
+        const { statusCode, payload } = errorObjectResolver(error)
+        return { statusCode, payload }
+    },
+})
+```
+
+Options:
+
+| Option | Description |
+|--------|-------------|
+| `resolveErrorResponse` | App-wide `ResolveApiErrorResponse` — how contract route errors are serialized and reported; see [Error handling](#error-handling). A route-level `resolveErrorResponse` overrides it per route. |
+
+Registering the plugin is optional: without it (and without route-level options), contract routes fall back to the regular Fastify defaults. The options object is expected to grow as more app-wide contract configuration is added.
 
 ## Test helpers
 
