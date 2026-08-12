@@ -115,6 +115,7 @@ export const standardLocales = new Set([
   'hi-IN', // Hindi
   'hr-BA', // Croatian (Bosnia/Herzegovina)
   'hr-HR', // Croatian
+  'ht-HT', // Haitian Creole - Haiti
   'hu-HU', // Hungarian
   'hy-AM', // Armenian - Armenia
   'ibb-NG', // Ibibio - Nigeria
@@ -197,6 +198,7 @@ export const standardLocales = new Set([
   'ti-ER', // Tigrigna - Ethiopia
   'ti-ET', // Tigrigna - Eritrea
   'tk-TM', // Turkmen
+  'tl-PH', // Tagalog - Philippines
   'tn-ZA', // Tswana
   'tr-TR', // Turkish
   'ts-ZA', // Tsonga

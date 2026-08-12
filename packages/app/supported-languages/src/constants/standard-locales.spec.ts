@@ -6,7 +6,7 @@ import { standardLocales } from './standard-locales.ts'
 
 describe('standard-locales', () => {
   it('all languages are part of our central list', () => {
-    expect.assertions(219)
+    expect.assertions(221)
 
     for (const tag of standardLocales) {
       const locale = new Intl.Locale(tag)
@@ -28,7 +28,7 @@ describe('standard-locales', () => {
   })
 
   it('all regions are part of our central list', () => {
-    expect.assertions(216)
+    expect.assertions(218)
 
     for (const tag of standardLocales) {
       const locale = new Intl.Locale(tag)
