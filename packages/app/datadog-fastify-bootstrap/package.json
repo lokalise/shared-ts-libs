@@ -49,7 +49,7 @@
         "@types/node": "^26.1.1",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",
-        "dd-trace": "^6.4.0",
+        "dd-trace": "^6.8.0",
         "rimraf": "^6.1.3",
         "typescript": "7.0.2"
     }
