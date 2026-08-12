@@ -1,6 +1,6 @@
 import { sendByApiContract } from '@lokalise/frontend-http-client'
-import { getLocal } from 'mockttp'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { setupServer } from 'msw/node'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import wretch from 'wretch'
 import {
   blobContentApiContract,
@@ -32,30 +32,37 @@ import {
   sseGetApiContractWithPathParams,
   sseGetApiContractWithQueryParams,
 } from '../../test/testApiContracts.ts'
-import { ApiContractMockttpHelper } from './ApiContractMockttpHelper.ts'
+import { ApiContractMswHelper } from './ApiContractMswHelper.ts'
 
-describe('ApiContractMockttpHelper', () => {
-  const mockServer = getLocal()
-  const helper = new ApiContractMockttpHelper(mockServer)
+const BASE_URL = 'http://localhost:8080'
 
-  beforeEach(async () => {
-    await mockServer.start()
+describe('ApiContractMswHelper', () => {
+  const server = setupServer()
+  const helper = new ApiContractMswHelper(server, BASE_URL)
+
+  beforeAll(() => {
+    server.listen({ onUnhandledRequest: 'error' })
   })
-  afterEach(() => mockServer.stop())
+  afterEach(() => {
+    server.resetHandlers()
+  })
+  afterAll(() => {
+    server.close()
+  })
 
   function client() {
-    return wretch(mockServer.url)
+    return wretch(BASE_URL)
   }
 
   describe('mockResponse — REST contracts', () => {
     it('mocks GET without path params', async () => {
-      await helper.mockResponse(getApiContract, { responseStatus: 200, responseJson: { id: '1' } })
+      helper.mockResponse(getApiContract, { responseStatus: 200, responseJson: { id: '1' } })
       const result = await sendByApiContract(client(), getApiContract, {})
       expect(result.result?.body).toEqual({ id: '1' })
     })
 
     it('enforces GET contract schema (strips unknown properties)', async () => {
-      await helper.mockResponse(getApiContract, {
+      helper.mockResponse(getApiContract, {
         responseStatus: 200,
         // @ts-expect-error wrong property on responseJson
         responseJson: { id: '1', wrong: 'x' },
@@ -65,7 +72,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('mocks GET with path params', async () => {
-      await helper.mockResponse(getApiContractWithPathParams, {
+      helper.mockResponse(getApiContractWithPathParams, {
         pathParams: { userId: '3' },
         responseStatus: 200,
         responseJson: { id: '3' },
@@ -77,7 +84,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('mocks GET with query params', async () => {
-      await helper.mockResponse(getApiContractWithQueryParams, {
+      helper.mockResponse(getApiContractWithQueryParams, {
         responseStatus: 200,
         responseJson: { id: '1' },
       })
@@ -88,7 +95,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('mocks GET with path and query params', async () => {
-      await helper.mockResponse(getApiContractWithPathAndQueryParams, {
+      helper.mockResponse(getApiContractWithPathAndQueryParams, {
         pathParams: { userId: '3' },
         responseStatus: 200,
         responseJson: { id: '3' },
@@ -101,13 +108,13 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('mocks POST without path params', async () => {
-      await helper.mockResponse(postApiContract, { responseStatus: 200, responseJson: { id: '1' } })
+      helper.mockResponse(postApiContract, { responseStatus: 200, responseJson: { id: '1' } })
       const result = await sendByApiContract(client(), postApiContract, { body: { name: 'test' } })
       expect(result.result?.body).toEqual({ id: '1' })
     })
 
     it('mocks POST with path params', async () => {
-      await helper.mockResponse(postApiContractWithPathParams, {
+      helper.mockResponse(postApiContractWithPathParams, {
         pathParams: { userId: '3' },
         responseStatus: 200,
         responseJson: { id: '2' },
@@ -120,7 +127,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('mocks no-body DELETE response (204)', async () => {
-      await helper.mockResponse(noBodyApiContract, {
+      helper.mockResponse(noBodyApiContract, {
         pathParams: { userId: '1' },
         responseStatus: 204,
       })
@@ -133,7 +140,7 @@ describe('ApiContractMockttpHelper', () => {
 
   describe('mockResponse — SSE contracts', () => {
     it('mocks SSE-only GET response', async () => {
-      await helper.mockResponse(sseGetApiContract, {
+      helper.mockResponse(sseGetApiContract, {
         responseStatus: 200,
         events: [
           { event: 'item.updated', data: { items: [{ id: '1' }] } },
@@ -149,7 +156,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('mocks SSE with path params', async () => {
-      await helper.mockResponse(sseGetApiContractWithPathParams, {
+      helper.mockResponse(sseGetApiContractWithPathParams, {
         pathParams: { userId: '5' },
         responseStatus: 200,
         events: [{ event: 'completed', data: { totalCount: 5 } }],
@@ -165,7 +172,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('mocks SSE with query params', async () => {
-      await helper.mockResponse(sseGetApiContractWithQueryParams, {
+      helper.mockResponse(sseGetApiContractWithQueryParams, {
         responseStatus: 200,
         events: [{ event: 'completed', data: { totalCount: 3 } }],
       })
@@ -182,7 +189,7 @@ describe('ApiContractMockttpHelper', () => {
 
   describe('mockResponse — dual-mode contracts', () => {
     it('returns JSON when no SSE Accept header', async () => {
-      await helper.mockResponse(dualModeApiContract, {
+      helper.mockResponse(dualModeApiContract, {
         responseStatus: 200,
         responseJson: { id: '1' },
         events: [{ event: 'completed', data: { totalCount: 1 } }],
@@ -195,7 +202,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('returns SSE when Accept: text/event-stream', async () => {
-      await helper.mockResponse(dualModeApiContract, {
+      helper.mockResponse(dualModeApiContract, {
         responseStatus: 200,
         responseJson: { id: '1' },
         events: [{ event: 'completed', data: { totalCount: 1 } }],
@@ -216,7 +223,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('mocks dual-mode with path params', async () => {
-      await helper.mockResponse(dualModeApiContractWithPathParams, {
+      helper.mockResponse(dualModeApiContractWithPathParams, {
         pathParams: { userId: '2' },
         responseStatus: 200,
         responseJson: { id: '2' },
@@ -233,7 +240,7 @@ describe('ApiContractMockttpHelper', () => {
 
   describe('mockResponse — content-map contracts', () => {
     it('mocks a JSON content entry', async () => {
-      await helper.mockResponse(jsonContentApiContract, {
+      helper.mockResponse(jsonContentApiContract, {
         responseStatus: 200,
         responseJson: { id: '1' },
       })
@@ -242,7 +249,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('mocks a blob content entry', async () => {
-      await helper.mockResponse(blobContentApiContract, {
+      helper.mockResponse(blobContentApiContract, {
         responseStatus: 200,
         responseBlob: 'binary-data',
       })
@@ -251,7 +258,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('mocks an SSE content entry', async () => {
-      await helper.mockResponse(sseContentApiContract, {
+      helper.mockResponse(sseContentApiContract, {
         responseStatus: 200,
         events: [
           { event: 'item.updated', data: { items: [{ id: '1' }] } },
@@ -267,7 +274,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('returns JSON for a dual content entry when not streaming', async () => {
-      await helper.mockResponse(dualContentApiContract, {
+      helper.mockResponse(dualContentApiContract, {
         responseStatus: 200,
         responseJson: { id: '1' },
         events: [{ event: 'completed', data: { totalCount: 1 } }],
@@ -280,7 +287,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('returns SSE for a dual content entry when streaming', async () => {
-      await helper.mockResponse(dualContentApiContract, {
+      helper.mockResponse(dualContentApiContract, {
         responseStatus: 200,
         responseJson: { id: '1' },
         events: [{ event: 'completed', data: { totalCount: 1 } }],
@@ -298,7 +305,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('mocks a no-body content entry', async () => {
-      await helper.mockResponse(noBodyContentApiContract, {
+      helper.mockResponse(noBodyContentApiContract, {
         pathParams: { userId: '1' },
         responseStatus: 204,
       })
@@ -311,55 +318,55 @@ describe('ApiContractMockttpHelper', () => {
 
   describe('mockResponse — explicit contentType', () => {
     it('serves the selected JSON content type', async () => {
-      await helper.mockResponse(multiJsonContentApiContract, {
+      helper.mockResponse(multiJsonContentApiContract, {
         responseStatus: 200,
         contentType: 'application/problem+json',
         responseJson: { title: 'Invalid', detail: 'Something went wrong' },
       })
-      const response = await fetch(`${mockServer.url}/content-multi-json`)
+      const response = await fetch(`${BASE_URL}/content-multi-json`)
       expect(response.headers.get('content-type')).toBe('application/problem+json')
       expect(await response.json()).toEqual({ title: 'Invalid', detail: 'Something went wrong' })
     })
 
     it('serves the first JSON content type when contentType is omitted', async () => {
-      await helper.mockResponse(multiJsonContentApiContract, {
+      helper.mockResponse(multiJsonContentApiContract, {
         responseStatus: 200,
         responseJson: { id: '1' },
       })
-      const response = await fetch(`${mockServer.url}/content-multi-json`)
+      const response = await fetch(`${BASE_URL}/content-multi-json`)
       expect(response.headers.get('content-type')).toBe('application/json')
       expect(await response.json()).toEqual({ id: '1' })
     })
 
     it('serves the blob entry when selected over JSON', async () => {
-      await helper.mockResponse(jsonAndBlobContentApiContract, {
+      helper.mockResponse(jsonAndBlobContentApiContract, {
         responseStatus: 200,
         contentType: 'application/octet-stream',
         responseBlob: 'binary-data',
       })
-      const response = await fetch(`${mockServer.url}/content-json-blob`)
+      const response = await fetch(`${BASE_URL}/content-json-blob`)
       expect(response.headers.get('content-type')).toBe('application/octet-stream')
       expect(await response.text()).toBe('binary-data')
     })
 
     it('serves the JSON entry when selected next to a blob entry', async () => {
-      await helper.mockResponse(jsonAndBlobContentApiContract, {
+      helper.mockResponse(jsonAndBlobContentApiContract, {
         responseStatus: 200,
         contentType: 'application/json',
         responseJson: { id: '9' },
       })
-      const response = await fetch(`${mockServer.url}/content-json-blob`)
+      const response = await fetch(`${BASE_URL}/content-json-blob`)
       expect(response.headers.get('content-type')).toBe('application/json')
       expect(await response.json()).toEqual({ id: '9' })
     })
 
     it('serves SSE without Accept negotiation when text/event-stream is selected', async () => {
-      await helper.mockResponse(dualContentApiContract, {
+      helper.mockResponse(dualContentApiContract, {
         responseStatus: 200,
         contentType: 'text/event-stream',
         events: [{ event: 'completed', data: { totalCount: 1 } }],
       })
-      const response = await fetch(`${mockServer.url}/content-dual`, {
+      const response = await fetch(`${BASE_URL}/content-dual`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name: 'test' }),
@@ -369,7 +376,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('mocks only the JSON entry of a dual content map', async () => {
-      await helper.mockResponse(dualContentApiContract, {
+      helper.mockResponse(dualContentApiContract, {
         responseStatus: 200,
         contentType: 'application/json',
         responseJson: { id: '1' },
@@ -381,21 +388,21 @@ describe('ApiContractMockttpHelper', () => {
       expect(result.result?.body).toEqual({ id: '1' })
     })
 
-    it('throws when contentType is not declared in the contract', async () => {
-      await expect(
+    it('throws when contentType is not declared in the contract', () => {
+      expect(() =>
         helper.mockResponse(multiJsonContentApiContract, {
           responseStatus: 200,
           // @ts-expect-error contentType not declared in the contract
           contentType: 'text/plain',
           responseJson: { id: '1' },
         }),
-      ).rejects.toThrow('Specified contentType cannot be mapped with contract')
+      ).toThrow('Specified contentType cannot be mapped with contract')
     })
   })
 
   describe('mockResponse — range / wildcard status key fallback', () => {
     it('resolves response entry via range key when exact code is absent', async () => {
-      await helper.mockResponse(getApiContractWith2xxRange, {
+      helper.mockResponse(getApiContractWith2xxRange, {
         responseStatus: 201,
         responseJson: { id: '42' },
       })
@@ -404,7 +411,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('resolves response entry via default key when no exact or range key matches', async () => {
-      await helper.mockResponse(getApiContractWithDefault, {
+      helper.mockResponse(getApiContractWithDefault, {
         responseStatus: 200,
         responseJson: { id: '7' },
       })
@@ -413,7 +420,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('exact key takes priority over range key', async () => {
-      await helper.mockResponse(getApiContractWithExactAndRange, {
+      helper.mockResponse(getApiContractWithExactAndRange, {
         responseStatus: 200,
         responseJson: { id: 'exact' },
       })
@@ -422,7 +429,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('range key is used when exact code is absent but range matches', async () => {
-      await helper.mockResponse(getApiContractWithExactAndRange, {
+      helper.mockResponse(getApiContractWithExactAndRange, {
         responseStatus: 201,
         responseJson: { id: 'range', created: true },
       })
@@ -433,7 +440,7 @@ describe('ApiContractMockttpHelper', () => {
 
   describe('mockResponse — NoBodyResponse', () => {
     it('replies with no body for noBodyResponse() entry', async () => {
-      await helper.mockResponse(deleteApiContractWithNoBodyResponse, { responseStatus: 204 })
+      helper.mockResponse(deleteApiContractWithNoBodyResponse, { responseStatus: 204 })
       const response = await client().url('/no-body').delete().res()
       expect(response.status).toBe(204)
     })
@@ -441,7 +448,7 @@ describe('ApiContractMockttpHelper', () => {
 
   describe('mockResponse — HTTP methods', () => {
     it('mocks PATCH request', async () => {
-      await helper.mockResponse(patchApiContract, {
+      helper.mockResponse(patchApiContract, {
         responseStatus: 200,
         responseJson: { id: '1' },
       })
@@ -450,7 +457,7 @@ describe('ApiContractMockttpHelper', () => {
     })
 
     it('mocks PUT request', async () => {
-      await helper.mockResponse(putApiContract, { responseStatus: 200, responseJson: { id: '2' } })
+      helper.mockResponse(putApiContract, { responseStatus: 200, responseJson: { id: '2' } })
       const result = await sendByApiContract(client(), putApiContract, { body: { name: 'test' } })
       expect(result.result?.body).toEqual({ id: '2' })
     })
@@ -458,7 +465,7 @@ describe('ApiContractMockttpHelper', () => {
 
   describe('mockResponse — non-JSON response types', () => {
     it('mocks blob response', async () => {
-      await helper.mockResponse(blobResponseApiContract, {
+      helper.mockResponse(blobResponseApiContract, {
         responseStatus: 200,
         responseBlob: 'binary-data',
       })
@@ -469,30 +476,30 @@ describe('ApiContractMockttpHelper', () => {
   })
 
   describe('mockResponse — error handling', () => {
-    it('throws when responseStatus cannot be mapped with contract', async () => {
-      await expect(
+    it('throws when responseStatus cannot be mapped with contract', () => {
+      expect(() =>
         // @ts-expect-error testing runtime error path with status code not in contract
         helper.mockResponse(getApiContract, { responseStatus: 999, responseJson: { id: 'x' } }),
-      ).rejects.toThrow('Specified responseStatus cannot be mapped with contract')
+      ).toThrow('Specified responseStatus cannot be mapped with contract')
     })
   })
 
   describe('mockResponse — extended range / wildcard status key fallback', () => {
     it('resolves response entry via 4xx range key', async () => {
-      await helper.mockResponse(getApiContractWith4xxRange, {
+      helper.mockResponse(getApiContractWith4xxRange, {
         responseStatus: 404,
         responseJson: { id: 'not-found' },
       })
-      const response = await fetch(`${mockServer.url}/not-found`)
+      const response = await fetch(`${BASE_URL}/not-found`)
       expect(response.status).toBe(404)
     })
 
     it('resolves response entry via 5xx range key', async () => {
-      await helper.mockResponse(getApiContractWith5xxRange, {
+      helper.mockResponse(getApiContractWith5xxRange, {
         responseStatus: 503,
         responseJson: { id: 'error' },
       })
-      const response = await fetch(`${mockServer.url}/server-error`)
+      const response = await fetch(`${BASE_URL}/server-error`)
       expect(response.status).toBe(503)
     })
   })

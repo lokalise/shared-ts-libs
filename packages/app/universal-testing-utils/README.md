@@ -7,6 +7,7 @@ Reusable testing utilities that are potentially relevant for both backend and fr
 | Helper | Contract API |
 |---|---|
 | `ApiContractMockttpHelper` | `defineApiContract` |
+| `ApiContractMswHelper` | `defineApiContract` |
 | `MswHelper` | `buildRestContract` / `buildSseContract` |
 | `MockttpHelper` *(deprecated)* | `buildRestContract` / `buildSseContract` |
 
@@ -16,6 +17,7 @@ Reusable testing utilities that are potentially relevant for both backend and fr
   - [Setup](#setup)
   - [mockResponse](#mockresponse)
   - [Type safety](#type-safety)
+- [ApiContractMswHelper](#apicontractmswhelper)
 - [msw integration with API contracts](#msw-integration-with-api-contracts)
   - [Basic usage](#basic-usage)
   - [SSE contracts](#msw-sse-contracts)
@@ -164,6 +166,33 @@ await helper.mockResponse(contract, {
 - Requests with `Accept: text/event-stream` receive the SSE stream.
 - All other requests receive the JSON body.
 
+#### Selecting a content type
+
+When a status code declares multiple content types, pass `contentType` to pin the mock to one specific entry — only that entry's body field is required, and the response always uses that content type (no `Accept` negotiation). This is the only way to mock an entry that negotiation would never pick, e.g. a second JSON content type or a blob entry that sits next to a JSON one.
+
+```ts
+const contract = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/report',
+  responsesByStatusCode: {
+    200: {
+      content: {
+        'application/json': z.object({ id: z.string() }),
+        'application/problem+json': z.object({ title: z.string(), detail: z.string() }),
+      },
+    },
+  },
+})
+
+await helper.mockResponse(contract, {
+  responseStatus: 200,
+  contentType: 'application/problem+json',
+  responseJson: { title: 'Invalid', detail: 'Something went wrong' },
+})
+```
+
+Without `contentType`, the existing behavior applies: SSE is served when the request negotiates it via `Accept`, otherwise the first JSON entry wins, then blob.
+
 #### Range and wildcard status keys
 
 Contracts may use range keys (`'1xx'`–`'5xx'`) or `'default'` in `responsesByStatusCode` instead of exact codes. Pass any concrete numeric code covered by that range as `responseStatus`; the helper resolves the contract entry using the same **exact → range → `'default'`** precedence as the runtime client.
@@ -231,6 +260,27 @@ import type { MockResponseParams } from '@lokalise/universal-testing-utils'
 function mockUser(params: MockResponseParams<typeof getUserContract>) {
   return helper.mockResponse(getUserContract, params)
 }
+```
+
+## ApiContractMswHelper
+
+The [msw](https://mswjs.io/)-based counterpart to [`ApiContractMockttpHelper`](#apicontractmockttphelper) for contracts defined with `defineApiContract`. `mockResponse` accepts the same `MockResponseParams` and follows the same rules — response entry resolution with **exact → range → `'default'`** precedence, Zod validation of `responseJson`, SSE/JSON negotiation via the `Accept` header, blob and no-body entries. The only differences are the setup (an msw `SetupServer` plus a base URL, since msw matches absolute URLs) and that `mockResponse` is synchronous.
+
+```ts
+import { setupServer } from 'msw/node'
+import { ApiContractMswHelper } from '@lokalise/universal-testing-utils'
+
+const server = setupServer()
+const helper = new ApiContractMswHelper(server, 'http://localhost:8080')
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+afterEach(() => server.resetHandlers())
+afterAll(() => server.close())
+
+helper.mockResponse(contract, {
+  responseStatus: 200,
+  responseJson: { id: '1' },
+})
 ```
 
 ## msw integration with API contracts
