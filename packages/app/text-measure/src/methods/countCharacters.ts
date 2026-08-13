@@ -1,4 +1,7 @@
-import { extractTextBetweenTags, removeNonTranslatableTags } from '@lokalise/non-translatable-markup'
+import {
+  extractTextBetweenTags,
+  removeNonTranslatableTags,
+} from '@lokalise/non-translatable-markup'
 
 export const CharacterCountAlgorithmEnum = {
   UTF_16: 'utf16',
