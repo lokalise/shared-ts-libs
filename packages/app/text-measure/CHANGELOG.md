@@ -1,5 +1,11 @@
 # @lokalise/text-measure
 
+## 1.2.0
+
+### Minor Changes
+
+- 6b54732: Add `excludeNtc` option to `countCharacters` to exclude non-translatable content (text wrapped between NTC tags) from the count. Defaults to `false`, preserving the current behavior of counting the wrapped content.
+
 ## 1.1.0
 
 ### Minor Changes
