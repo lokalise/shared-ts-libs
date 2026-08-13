@@ -12,7 +12,6 @@ This package adds support for generating fastify routes using universal API cont
   - [`buildFastifyRouteHandler`](#buildfastifyroutehandler)
   - [Accessing the contract](#accessing-the-contract)
   - [Adding extra route options from contract metadata](#adding-extra-route-options-from-contract-metadata)
-- [The `fastifyApiContracts` plugin](#the-fastifyapicontracts-plugin)
 - [Test helpers](#test-helpers)
   - [`injectByApiContract`](#injectbyapicontract)
   - [`injectByContract`](#injectbycontract)
@@ -264,7 +263,6 @@ Every response entry contributes to `schema.response`, so the whole contract is 
 | `serializer` | Custom serializer for SSE event data |
 | `heartbeat` | Set to `false` to disable SSE keep-alive heartbeats for this route (the interval is configured at `@fastify/sse` plugin registration) |
 | `contractMetadataToRouteMapper` | Maps the contract `metadata` to extra Fastify route options (e.g. `config`, `preHandler`) merged into the route |
-| `resolveErrorResponse` | Resolves an error thrown by this route to the response to send (and is the place to report it) — see [Error handling](#error-handling) |
 
 To define a handler separately from the route, type it with `InferApiHandler`:
 
@@ -281,26 +279,29 @@ const routes = [buildFastifyApiRoute(contract, createUser)]
 
 #### Error handling
 
-Without any configuration, errors from contract routes go through the regular Fastify error handling chain (`fastify.setErrorHandler` or the default handler). Once an SSE stream is live a status code can no longer be sent, so there the configured error handler is invoked directly — an SSE-aware one (checking `reply.sse?.isConnected`) can emit its own terminal `error` event, while a non-aware one still runs its reporting side effects — and the stream is closed afterwards.
+Errors from contract routes go through the regular Fastify error handling chain (`fastify.setErrorHandler` or the default handler) — contract routes behave exactly like any other route. The exception is a **live SSE stream**: once the stream started, the status line and headers are on the wire, so a standard `reply.status().send()` can no longer work.
 
-To control how errors are serialized — and to report them — provide a `ResolveApiErrorResponse`, a function from the thrown error to `{ statusCode, payload, headers? }`:
-
-- **Per route** via the `resolveErrorResponse` option of `buildFastifyApiRoute`.
-- **App-wide for all contract routes** via the `fastifyApiContracts` plugin (a route-level `resolveErrorResponse` overrides it):
+- For an `autoClose` session (including the declarative `{ status, body: asyncIterable }` form), a handler error closes the stream without reaching the error handler — the client detects the failure by the missing terminal event (e.g. `done`).
+- For a `keepAlive` session, a handler rejection reaches the error handler with the stream still open. The only correct error signal there is a terminal `error` event sent over the stream before closing it, so a global `setErrorHandler` serving SSE routes must branch on the stream state:
 
 ```ts
-import { fastifyApiContracts } from '@lokalise/fastify-api-contracts'
+app.setErrorHandler(async (error, request, reply) => {
+    const { statusCode, payload } = errorObjectResolver(error)
+    errorReporter.report({ error, request })
 
-await app.register(fastifyApiContracts, {
-    resolveErrorResponse: (error, request) => {
-        errorReporter.report({ error, request })
-        const { statusCode, payload } = errorObjectResolver(error)
-        return { statusCode, payload }
-    },
+    // The stream is live: headers are committed, only a terminal event can be sent.
+    // (`isConnected` alone is not enough — @fastify/sse sets it before the handler runs.)
+    if (reply.sse?.isConnected && reply.raw.headersSent) {
+        await reply.sse.send({ event: 'error', data: payload })
+        reply.sse.close()
+        return
+    }
+
+    return reply.status(statusCode).send(payload)
 })
 ```
 
-With a resolver configured, a regular response is sent as `reply.headers(headers).status(statusCode).send(payload)` (this replaces `setErrorHandler` for contract routes, including request validation errors), while on a live SSE stream the `payload` is sent as the data of the terminal `error` event before the stream closes — `statusCode` and `headers` are ignored there, since the response headers are already on the wire. A raw Fastify `errorHandler` route option is deliberately not accepted: mid-stream SSE errors never reach a route `errorHandler` (`@fastify/sse` closes the connection first), so it could only half-replace the built-in behavior — `resolveErrorResponse` is the single customization point.
+(The shared `@lokalise/fastify-extras` error handler is the natural home for this logic.)
 
 ### `buildFastifyRoute`
 
@@ -421,30 +422,6 @@ const route = buildFastifyRoute(
     }),
 )
 ```
-
-## The `fastifyApiContracts` plugin
-
-The `fastifyApiContracts` plugin is the app-wide configuration point for every contract route built with `buildFastifyApiRoute`. It is built with [`fastify-plugin`](https://github.com/fastify/fastify-plugin), so registering it once on the root instance applies to all contract routes regardless of encapsulation:
-
-```ts
-import { fastifyApiContracts } from '@lokalise/fastify-api-contracts'
-
-await app.register(fastifyApiContracts, {
-    resolveErrorResponse: (error, request) => {
-        errorReporter.report({ error, request })
-        const { statusCode, payload } = errorObjectResolver(error)
-        return { statusCode, payload }
-    },
-})
-```
-
-Options:
-
-| Option | Description |
-|--------|-------------|
-| `resolveErrorResponse` | App-wide `ResolveApiErrorResponse` — how contract route errors are serialized and reported; see [Error handling](#error-handling). A route-level `resolveErrorResponse` overrides it per route. |
-
-Registering the plugin is optional: without it (and without route-level options), contract routes fall back to the regular Fastify defaults. The options object is expected to grow as more app-wide contract configuration is added.
 
 ## Test helpers
 

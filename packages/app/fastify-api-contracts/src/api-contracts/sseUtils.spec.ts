@@ -153,9 +153,7 @@ describe('buildApiSSEContext', () => {
       expect(isStarted()).toBe(true)
       expect(sse.sendHeaders).toHaveBeenCalled()
       expect(raw.flushHeaders).toHaveBeenCalled()
-      // The plugin-level keep-alive is always on — the route runtime owns session lifetime
-      // so the route errorHandler can terminate a live stream on rejection.
-      expect(sse.keepAlive).toHaveBeenCalled()
+      expect(sse.keepAlive).not.toHaveBeenCalled()
     })
 
     it("enables the plugin keep-alive for a 'keepAlive' session", () => {

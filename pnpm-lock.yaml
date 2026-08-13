@@ -672,9 +672,6 @@ importers:
       fastify:
         specifier: '>=5.0.0'
         version: 5.10.0
-      fastify-plugin:
-        specifier: ^6.0.0
-        version: 6.0.0
       light-my-request:
         specifier: ^6.6.0
         version: 6.6.0

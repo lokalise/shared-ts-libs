@@ -12,7 +12,6 @@ import type {
 import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
 import type { z } from 'zod/v4'
 import type { ApiContractMetadataToRouteMapper } from '../types.ts'
-import type { ResolveApiErrorResponse } from './apiErrorHandler.ts'
 import type { FastifySSERouteOptions, SSEContext, SSEStreamMessage } from './sseTypes.ts'
 
 /** True when `TUnion` has two or more members. */
@@ -266,16 +265,10 @@ export type InferApiHandler<Contract extends ApiContract> = [
 
 /**
  * Extra options for an `ApiContract` route: any Fastify `RouteOptions` field except the ones
- * the contract provides (`method`, `url`, `schema`, `handler`, `sse`, `errorHandler` —
- * error handling is customized via `resolveErrorResponse` instead, since a raw
- * `errorHandler` never sees mid-stream SSE errors and would only half-replace the built-in
- * behavior), plus the SSE lifecycle options (`onConnect`/`onClose`/`onReconnect`, …) that
- * apply only to SSE-capable contracts.
+ * the contract provides (`method`, `url`, `schema`, `handler`, `sse`), plus the SSE lifecycle
+ * options (`onConnect`/`onClose`/`onReconnect`, …) that apply only to SSE-capable contracts.
  */
-export type ApiRouteOptions = Omit<
-  RouteOptions,
-  'method' | 'url' | 'schema' | 'handler' | 'sse' | 'errorHandler'
-> &
+export type ApiRouteOptions = Omit<RouteOptions, 'method' | 'url' | 'schema' | 'handler' | 'sse'> &
   FastifySSERouteOptions & {
     /**
      * Maps contract metadata to additional Fastify route options.
@@ -287,15 +280,4 @@ export type ApiRouteOptions = Omit<
      * metadata declared on the contract.
      */
     contractMetadataToRouteMapper?: ApiContractMetadataToRouteMapper
-    /**
-     * Maps an error thrown by this route (handler, hooks, or request validation) to the
-     * response to send — `reply.status(statusCode).send(payload)` for a regular response,
-     * or the payload of a terminal `error` event when an SSE stream is already live (the
-     * stream is then closed). Overrides the app-wide resolver registered via the
-     * `fastifyApiContracts` plugin. Without either, errors are delegated to the Fastify
-     * error handling chain (`setErrorHandler` or the default handler) — for a live stream
-     * the handler is invoked directly (an SSE-aware one can emit its own terminal event)
-     * and the stream is closed afterwards.
-     */
-    resolveErrorResponse?: ResolveApiErrorResponse
   }
