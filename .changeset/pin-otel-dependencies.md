@@ -1,6 +1,6 @@
 ---
 "@lokalise/opentelemetry-fastify-bootstrap": minor
-"@lokalise/context-fastify-plugins": minor
+"@lokalise/context-fastify-plugins": major
 ---
 
 Pin OpenTelemetry dependency versions so all services track a single validated set instead of resolving their own.
