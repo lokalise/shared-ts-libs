@@ -1056,7 +1056,7 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@opentelemetry/api':
-        specifier: ^1.9.1
+        specifier: 1.9.1
         version: 1.9.1
       '@vitest/coverage-v8':
         specifier: ^4.1.10
