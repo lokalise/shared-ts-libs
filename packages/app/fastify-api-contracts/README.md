@@ -7,6 +7,7 @@ This package adds support for generating fastify routes using universal API cont
 - [Requirements](#requirements)
 - [Builders](#builders)
   - [`buildFastifyApiRoute`](#buildfastifyapiroute)
+    - [Error handling](#error-handling)
   - [`buildFastifyRoute`](#buildfastifyroute)
   - [`buildFastifyRouteHandler`](#buildfastifyroutehandler)
   - [Accessing the contract](#accessing-the-contract)
@@ -274,6 +275,30 @@ const createUser: InferApiHandler<typeof contract> = async (request) => ({
 })
 
 const routes = [buildFastifyApiRoute(contract, createUser)]
+```
+
+#### Error handling
+
+Errors from contract routes go through the regular Fastify error handling chain (`fastify.setErrorHandler` or the default handler) — contract routes behave exactly like any other route. The exception is a **live SSE stream**: once the stream started, the status line and headers are on the wire, so a standard `reply.status().send()` can no longer work.
+
+- For an `autoClose` session (including the declarative `{ status, body: asyncIterable }` form), a handler error closes the stream without reaching the error handler — the client detects the failure by the missing terminal event (e.g. `done`).
+- For a `keepAlive` session, a handler rejection reaches the error handler with the stream still open. The only correct error signal there is a terminal `error` event sent over the stream before closing it, so a global `setErrorHandler` serving SSE routes must branch on the stream state:
+
+```ts
+app.setErrorHandler(async (error, request, reply) => {
+    const { statusCode, payload } = errorObjectResolver(error)
+    errorReporter.report({ error, request })
+
+    // The stream is live: headers are committed, only a terminal event can be sent.
+    // (`isConnected` alone is not enough — @fastify/sse sets it before the handler runs.)
+    if (reply.sse?.isConnected && reply.raw.headersSent) {
+        await reply.sse.send({ event: 'error', data: payload })
+        reply.sse.close()
+        return
+    }
+
+    return reply.status(statusCode).send(payload)
+})
 ```
 
 ### `buildFastifyRoute`
