@@ -27,6 +27,18 @@ countCharacters('👍', { algorithm: 'codePoints' }) // 1
 
 More algorithms (e.g. UTF-8 bytes, glyphs — à la XLIFF size-units) can be added over time.
 
+By default the content wrapped between NTC tags is counted (only the marker tags are excluded). Set
+`options.excludeNtc` to `true` to drop non-translatable content — the whole region, tags and wrapped
+content — from the count:
+
+```typescript
+// NTC markers are two private-use code points: U+E101 (start) and U+E102 (end).
+const text = 'a\uE101bc\uE102d' // "bc" is wrapped in NTC markers
+
+countCharacters(text) // 4 — NTC content "bc" is counted
+countCharacters(text, { excludeNtc: true }) // 2 — only "a" and "d" counted
+```
+
 ## `countTranslatableWords`
 
 Counts the translatable words in a text, excluding non-translatable content (NTC) and tags. Backed
