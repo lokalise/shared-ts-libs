@@ -301,8 +301,6 @@ app.setErrorHandler(async (error, request, reply) => {
 })
 ```
 
-(The shared `@lokalise/fastify-extras` error handler is the natural home for this logic.)
-
 ### `buildFastifyRoute`
 
 > This builder targets the deprecated `buildRestContract`/`buildGetRoute`/`buildPayloadRoute` contracts. For contracts created with `defineApiContract`, use [`buildFastifyApiRoute`](#buildfastifyapiroute) instead.
