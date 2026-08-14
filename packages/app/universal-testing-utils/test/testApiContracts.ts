@@ -216,6 +216,36 @@ export const dualContentApiContract = defineApiContract({
   },
 })
 
+const PROBLEM_BODY_SCHEMA = z.object({ title: z.string(), detail: z.string() })
+
+export const multiJsonContentApiContract = defineApiContract({
+  summary: 'Test contract',
+  method: 'get',
+  pathResolver: () => '/content-multi-json',
+  responsesByStatusCode: {
+    200: {
+      content: {
+        'application/json': RESPONSE_BODY_SCHEMA,
+        'application/problem+json': PROBLEM_BODY_SCHEMA,
+      },
+    },
+  },
+})
+
+export const jsonAndBlobContentApiContract = defineApiContract({
+  summary: 'Test contract',
+  method: 'get',
+  pathResolver: () => '/content-json-blob',
+  responsesByStatusCode: {
+    200: {
+      content: {
+        'application/json': RESPONSE_BODY_SCHEMA,
+        'application/octet-stream': blobBody(),
+      },
+    },
+  },
+})
+
 export const noBodyContentApiContract = defineApiContract({
   summary: 'Test contract',
   method: 'delete',

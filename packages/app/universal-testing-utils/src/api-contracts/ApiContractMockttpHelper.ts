@@ -1,41 +1,21 @@
 import {
   type ApiContract,
-  type ApiContractResponse,
-  type HttpStatusCode,
   isBlobBody,
   isContentResponseEntry,
   isJsonBody,
   isSseBody,
   mapApiContractToPath,
-  type ResponseEntry,
-  type ResponsesByStatusCode,
 } from '@lokalise/api-contracts'
 import type { Mockttp, RequestRuleBuilder } from 'mockttp'
 import type { z } from 'zod/v4'
-import { formatSseResponse, type MockResponseParams } from './types.ts'
+import {
+  formatSseResponse,
+  type MockResponseParams,
+  resolveContractEntry,
+  resolveExplicitContentBody,
+} from './types.ts'
 
 type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
-
-function getRangeKey(statusCode: HttpStatusCode) {
-  if (statusCode >= 100 && statusCode < 200) return '1xx'
-  if (statusCode >= 200 && statusCode < 300) return '2xx'
-  if (statusCode >= 300 && statusCode < 400) return '3xx'
-  if (statusCode >= 400 && statusCode < 500) return '4xx'
-  if (statusCode >= 500 && statusCode < 600) return '5xx'
-}
-
-function resolveContractEntry(
-  responsesByStatusCode: ResponsesByStatusCode,
-  statusCode: HttpStatusCode,
-): ApiContractResponse | ResponseEntry | undefined {
-  const rangeKey = getRangeKey(statusCode)
-
-  return (
-    responsesByStatusCode[statusCode] ??
-    (rangeKey ? responsesByStatusCode[rangeKey] : undefined) ??
-    responsesByStatusCode.default
-  )
-}
 
 export class ApiContractMockttpHelper {
   private readonly mockServer: Mockttp
@@ -87,6 +67,17 @@ export class ApiContractMockttpHelper {
       // A no-body content entry (`{ allowNoBody: true }`) carries no `content`.
       if (!responseEntry.content) {
         await mockRule.thenReply(statusCode)
+        return
+      }
+
+      // An explicit contentType pins the mock to that single content entry, skipping negotiation.
+      if (anyParams.contentType) {
+        const body = resolveExplicitContentBody(
+          responseEntry.content,
+          anyParams.contentType,
+          anyParams,
+        )
+        await mockRule.thenReply(statusCode, body, { 'content-type': anyParams.contentType })
         return
       }
 
