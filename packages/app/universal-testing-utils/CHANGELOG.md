@@ -1,5 +1,12 @@
 # @lokalise/universal-testing-utils
 
+## 4.1.0
+
+### Minor Changes
+
+- 4f11d14: Add ApiContractMswHelper — an MSW-based counterpart to ApiContractMockttpHelper for mocking new-style ApiContract responses (JSON, SSE, blob, dual-mode content maps, no-body entries, and range/default status-code keys).
+- 4f11d14: Support explicit contentType selection in MockResponseParams for ApiContractMockttpHelper and ApiContractMswHelper. When a response entry declares multiple content types, passing contentType pins the mock to that single entry (skipping Accept negotiation) and only that entry's body field is required — making it possible to mock entries negotiation would never pick, such as a second JSON content type or a blob entry next to a JSON one.
+
 ## 4.0.0
 
 ### Major Changes
