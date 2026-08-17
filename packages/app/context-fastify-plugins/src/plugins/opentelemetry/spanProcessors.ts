@@ -14,6 +14,7 @@ import { REQUEST_ID_STORE_KEY } from '../requestContextProviderPlugin.ts'
 export class LokaliseSimpleSpanProcessor extends SimpleSpanProcessor {
   override onStart(span: Span) {
     const requestId = requestContext.get(REQUEST_ID_STORE_KEY)
+    if (requestId === undefined) return
     span.setAttribute(REQUEST_ID_STORE_KEY, requestId)
   }
 }
@@ -21,6 +22,7 @@ export class LokaliseSimpleSpanProcessor extends SimpleSpanProcessor {
 export class LokaliseBatchSpanProcessor extends BatchSpanProcessor {
   override onStart(span: Span) {
     const requestId = requestContext.get(REQUEST_ID_STORE_KEY)
+    if (requestId === undefined) return
     span.setAttribute(REQUEST_ID_STORE_KEY, requestId)
   }
 }

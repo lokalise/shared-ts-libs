@@ -209,7 +209,7 @@ importers:
     devDependencies:
       '@changesets/cli':
         specifier: ^2.27.0
-        version: 2.31.1(@types/node@26.1.2)
+        version: 2.31.1(@types/node@26.2.0)
       turbo:
         specifier: ^2.10.8
         version: 2.10.8
@@ -231,7 +231,7 @@ importers:
         version: link:../../dev/tsconfig
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -243,7 +243,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -261,7 +261,7 @@ importers:
         version: link:../../dev/tsconfig
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -273,7 +273,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -282,7 +282,7 @@ importers:
     dependencies:
       fast-jwt:
         specifier: ^6.0.2
-        version: 6.3.0
+        version: 6.3.2
       fastify:
         specifier: ^5.6.0
         version: 5.10.0
@@ -313,7 +313,7 @@ importers:
         version: link:../universal-ts-utils
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -331,7 +331,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/aws-config:
     devDependencies:
@@ -376,7 +376,7 @@ importers:
         version: 4.16.1
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -391,7 +391,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -422,7 +422,7 @@ importers:
         version: link:../../dev/tsconfig
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -434,7 +434,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -465,7 +465,7 @@ importers:
         version: link:../../dev/tsconfig
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -489,7 +489,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -499,27 +499,24 @@ importers:
       '@lokalise/node-core':
         specifier: ^14.0.0
         version: 14.8.1(zod@4.4.3)
-      '@opentelemetry/api':
-        specifier: 1.9.0
-        version: 1.9.0
       '@opentelemetry/exporter-trace-otlp-grpc':
-        specifier: 0.57.2
-        version: 0.57.2(@opentelemetry/api@1.9.0)
+        specifier: 0.221.0
+        version: 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation':
-        specifier: 0.57.2
-        version: 0.57.2(@opentelemetry/api@1.9.0)
+        specifier: 0.221.0
+        version: 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/resources':
-        specifier: 1.30.1
-        version: 1.30.1(@opentelemetry/api@1.9.0)
+        specifier: 2.10.0
+        version: 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace-base':
-        specifier: 1.30.1
-        version: 1.30.1(@opentelemetry/api@1.9.0)
+        specifier: 2.10.0
+        version: 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace-node':
-        specifier: 1.30.1
-        version: 1.30.1(@opentelemetry/api@1.9.0)
+        specifier: 2.10.0
+        version: 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions':
-        specifier: 1.30.0
-        version: 1.30.0
+        specifier: 1.43.0
+        version: 1.43.0
       fastify-plugin:
         specifier: ^6.0.0
         version: 6.0.0
@@ -538,10 +535,10 @@ importers:
         version: link:../../dev/tsconfig
       '@prisma/instrumentation':
         specifier: ^7.0.1
-        version: 7.9.1(@opentelemetry/api@1.9.0)
+        version: 7.9.1(@opentelemetry/api@1.9.1)
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -562,7 +559,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.0)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/datadog-fastify-bootstrap:
     devDependencies:
@@ -577,7 +574,7 @@ importers:
         version: link:../../dev/tsconfig
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       dd-trace:
         specifier: ^6.8.0
         version: 6.8.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0))
@@ -601,7 +598,7 @@ importers:
         version: link:../../dev/tsconfig
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -616,10 +613,10 @@ importers:
         version: 1.0.0-rc.4
       drizzle-orm:
         specifier: 1.0.0-rc.4-273829f
-        version: 1.0.0-rc.4-273829f(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.23.2(@types/node@26.1.2))(pg@8.22.0)(postgres@3.4.9)(valibot@1.4.2(typescript@7.0.2))(zod@4.4.3)
+        version: 1.0.0-rc.4-273829f(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.23.2(@types/node@26.2.0))(pg@8.22.0)(postgres@3.4.9)(valibot@1.4.2(typescript@7.0.2))(zod@4.4.3)
       mysql2:
         specifier: ^3.22.5
-        version: 3.23.2(@types/node@26.1.2)
+        version: 3.23.2(@types/node@26.2.0)
       postgres:
         specifier: ^3.4.9
         version: 3.4.9
@@ -631,7 +628,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/error-utils:
     dependencies:
@@ -662,7 +659,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/fastify-api-contracts:
     dependencies:
@@ -711,7 +708,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -757,7 +754,7 @@ importers:
         version: 14.8.1(zod@4.4.3)
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -808,7 +805,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/frontend-http-client:
     dependencies:
@@ -836,7 +833,7 @@ importers:
         version: link:../../dev/tsconfig
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -854,7 +851,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -906,7 +903,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/id-utils:
     dependencies:
@@ -940,7 +937,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/metrics-utils:
     dependencies:
@@ -971,7 +968,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/non-translatable-markup:
     devDependencies:
@@ -995,7 +992,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/odata-mapper:
     dependencies:
@@ -1026,16 +1023,29 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/opentelemetry-fastify-bootstrap:
+    dependencies:
+      '@fastify/otel':
+        specifier: 0.20.1
+        version: 0.20.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/auto-instrumentations-node':
+        specifier: 0.79.0
+        version: 0.79.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))
+      '@opentelemetry/exporter-trace-otlp-grpc':
+        specifier: 0.221.0
+        version: 0.221.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-node':
+        specifier: 0.221.0
+        version: 0.221.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-trace-base':
+        specifier: 2.10.0
+        version: 2.10.0(@opentelemetry/api@1.9.1)
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.5.7
         version: 2.5.7
-      '@fastify/otel':
-        specifier: 0.20.1
-        version: 0.20.1(@opentelemetry/api@1.9.1)
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1043,20 +1053,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@opentelemetry/api':
-        specifier: ^1.9.1
+        specifier: 1.9.1
         version: 1.9.1
-      '@opentelemetry/auto-instrumentations-node':
-        specifier: ^0.79.0
-        version: 0.79.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))
-      '@opentelemetry/exporter-trace-otlp-grpc':
-        specifier: ^0.221.0
-        version: 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/sdk-node':
-        specifier: ^0.221.0
-        version: 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/sdk-trace-base':
-        specifier: ^2.10.0
-        version: 2.10.0(@opentelemetry/api@1.9.1)
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -1071,7 +1069,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/polling:
     devDependencies:
@@ -1086,7 +1084,7 @@ importers:
         version: link:../../dev/tsconfig
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -1098,7 +1096,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/prisma-utils:
     dependencies:
@@ -1144,7 +1142,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/script-utils:
     dependencies:
@@ -1172,7 +1170,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/supported-languages:
     devDependencies:
@@ -1196,7 +1194,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/text-measure:
     dependencies:
@@ -1227,7 +1225,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/universal-testing-utils:
     devDependencies:
@@ -1263,7 +1261,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
       wretch:
         specifier: ^2.8.0
         version: 2.11.1
@@ -1284,7 +1282,7 @@ importers:
         version: link:../../dev/tsconfig
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -1293,7 +1291,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/websockets-common:
     dependencies:
@@ -1318,7 +1316,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -1336,7 +1334,7 @@ importers:
         version: link:../../dev/tsconfig
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -1348,7 +1346,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -1382,13 +1380,13 @@ importers:
     dependencies:
       vite:
         specifier: ^6.2.0
-        version: 6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0)
+        version: 6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0)
       vite-plugin-dts:
         specifier: ^4.5.3
-        version: 4.5.4(@types/node@26.1.2)(rollup@4.62.4)(typescript@7.0.2)(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.5.4(@types/node@26.2.0)(rollup@4.62.4)(typescript@7.0.2)(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
       vitest:
         specifier: ^4.0.15
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.5.7
@@ -1401,7 +1399,7 @@ importers:
         version: link:../tsconfig
       '@types/node':
         specifier: ^26.1.1
-        version: 26.1.2
+        version: 26.2.0
       rimraf:
         specifier: ^6.1.3
         version: 6.1.3
@@ -1523,11 +1521,6 @@ packages:
     resolution: {integrity: sha512-qehxGkRj55h/ff8EMaJ+cYhyaKlHIxqYDn682wQD7RNp9UujOQsHog2uS0r2vzr4pW+sXf90NeeayjcNaX3fFg==}
     engines: {node: '>=6.9.0'}
 
-  '@babel/parser@7.29.7':
-    resolution: {integrity: sha512-hnORnjP/1P/zFEndoeX+n+t1RwWRJiJpM/jO7FW32Kn9r5+sJB2JWOdYo4L6k78j15eCwY3Gm/7364B1EMwtNg==}
-    engines: {node: '>=6.0.0'}
-    hasBin: true
-
   '@babel/parser@7.29.8':
     resolution: {integrity: sha512-E8lTAYNB1KW+FH+VGJuZM1ioAx2E6oVlvQFRrf5P8ZZmsiJXYAD9vTFV7yyEURNzgh1dFqMZuO6tUwcARbqFCA==}
     engines: {node: '>=6.0.0'}
@@ -1535,10 +1528,6 @@ packages:
 
   '@babel/runtime@7.29.7':
     resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/types@7.29.7':
-    resolution: {integrity: sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA==}
     engines: {node: '>=6.9.0'}
 
   '@babel/types@7.29.8':
@@ -2332,14 +2321,6 @@ packages:
     resolution: {integrity: sha512-OlanaW1vv7ufTqQ3/fPLI4arGt5ZoM+P8abOMki6uEYnpRazepSWDwDnnw+la7kE26SHVC18//SMccrDvLKOXQ==}
     engines: {node: '>=8.0.0'}
 
-  '@opentelemetry/api-logs@0.57.2':
-    resolution: {integrity: sha512-uIX52NnTM0iBh84MShlpouI7UKqkZ7MrUszTmaypHBu4r7NofznSnQRfJ+uUeDtQDj6w8eFGg5KBLDAwAPz1+A==}
-    engines: {node: '>=14'}
-
-  '@opentelemetry/api@1.9.0':
-    resolution: {integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==}
-    engines: {node: '>=8.0.0'}
-
   '@opentelemetry/api@1.9.1':
     resolution: {integrity: sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==}
     engines: {node: '>=8.0.0'}
@@ -2357,21 +2338,9 @@ packages:
     peerDependencies:
       '@opentelemetry/api': ^1.9.0
 
-  '@opentelemetry/context-async-hooks@1.30.1':
-    resolution: {integrity: sha512-s5vvxXPVdjqS3kTLKMeBMvop9hbWkwzBpu+mUO2M7sZtlkyDJGwFe33wRKnbaYDo8ExRVBIIdwIGrqpxHuKttA==}
-    engines: {node: '>=14'}
-    peerDependencies:
-      '@opentelemetry/api': '>=1.0.0 <1.10.0'
-
   '@opentelemetry/context-async-hooks@2.10.0':
     resolution: {integrity: sha512-bvyMcgLEkozzSzpEEEo1OMoeQ97bxj6Qs2uN3mPrSdDvObMI1myffD/BPqcLlzZO9//d1SqQA/WPw7Cz2AiqhA==}
     engines: {node: ^18.19.0 || >=20.6.0}
-    peerDependencies:
-      '@opentelemetry/api': '>=1.0.0 <1.10.0'
-
-  '@opentelemetry/core@1.30.1':
-    resolution: {integrity: sha512-OOCM2C/QIURhJMuKaekP3TRBxBKxG/TWWA0TL2J6nXUtDnuCtccy49LUJF8xPFXMX+0LMcxFpCo8M9cGY1W6rQ==}
-    engines: {node: '>=14'}
     peerDependencies:
       '@opentelemetry/api': '>=1.0.0 <1.10.0'
 
@@ -2426,12 +2395,6 @@ packages:
   '@opentelemetry/exporter-trace-otlp-grpc@0.221.0':
     resolution: {integrity: sha512-zXminlZedtq9LvOW64CnNkOqk15zV75k8JgtdTuWFge6+jk2m4GmAUm6L2eIiG1o2a2bZxXw2PDrszm+bps0IA==}
     engines: {node: ^18.19.0 || >=20.6.0}
-    peerDependencies:
-      '@opentelemetry/api': ^1.3.0
-
-  '@opentelemetry/exporter-trace-otlp-grpc@0.57.2':
-    resolution: {integrity: sha512-gHU1vA3JnHbNxEXg5iysqCWxN9j83d7/epTYBZflqQnTyCC4N7yZXn/dMM+bEmyhQPGjhCkNZLx4vZuChH1PYw==}
-    engines: {node: '>=14'}
     peerDependencies:
       '@opentelemetry/api': ^1.3.0
 
@@ -2717,21 +2680,9 @@ packages:
     peerDependencies:
       '@opentelemetry/api': ^1.3.0
 
-  '@opentelemetry/instrumentation@0.57.2':
-    resolution: {integrity: sha512-BdBGhQBh8IjZ2oIIX6F2/Q3LKm/FDDKi6ccYKcBTeilh6SNdNKveDOLk73BkSJjQLJk6qe4Yh+hHw1UPhCDdrg==}
-    engines: {node: '>=14'}
-    peerDependencies:
-      '@opentelemetry/api': ^1.3.0
-
   '@opentelemetry/otlp-exporter-base@0.221.0':
     resolution: {integrity: sha512-UFPIq80OH3Ns/oPFHRj14d4DTOxUo+MUFU8hUiCq5jTqFhdeJnfVSANHT+xp92409cA+oxzvlZCe6NM1wvCuBA==}
     engines: {node: ^18.19.0 || >=20.6.0}
-    peerDependencies:
-      '@opentelemetry/api': ^1.3.0
-
-  '@opentelemetry/otlp-exporter-base@0.57.2':
-    resolution: {integrity: sha512-XdxEzL23Urhidyebg5E6jZoaiW5ygP/mRjxLHixogbqwDy2Faduzb5N0o/Oi+XTIJu+iyxXdVORjXax+Qgfxag==}
-    engines: {node: '>=14'}
     peerDependencies:
       '@opentelemetry/api': ^1.3.0
 
@@ -2741,21 +2692,9 @@ packages:
     peerDependencies:
       '@opentelemetry/api': ^1.3.0
 
-  '@opentelemetry/otlp-grpc-exporter-base@0.57.2':
-    resolution: {integrity: sha512-USn173KTWy0saqqRB5yU9xUZ2xdgb1Rdu5IosJnm9aV4hMTuFFRTUsQxbgc24QxpCHeoKzzCSnS/JzdV0oM2iQ==}
-    engines: {node: '>=14'}
-    peerDependencies:
-      '@opentelemetry/api': ^1.3.0
-
   '@opentelemetry/otlp-transformer@0.221.0':
     resolution: {integrity: sha512-lg6lkOU08Az23jVcn/0Els9HP+V8PnR4Km6p0KgpTggS0n/WuhnmY64rSh83Of9iR9nD+dpWr6adlcX8KzAwjg==}
     engines: {node: ^18.19.0 || >=20.6.0}
-    peerDependencies:
-      '@opentelemetry/api': ^1.3.0
-
-  '@opentelemetry/otlp-transformer@0.57.2':
-    resolution: {integrity: sha512-48IIRj49gbQVK52jYsw70+Jv+JbahT8BqT2Th7C4H7RCM9d0gZ5sgNPoMpWldmfjvIsSgiGJtjfk9MeZvjhoig==}
-    engines: {node: '>=14'}
     peerDependencies:
       '@opentelemetry/api': ^1.3.0
 
@@ -2765,21 +2704,9 @@ packages:
     peerDependencies:
       '@opentelemetry/api': '>=1.0.0 <1.10.0'
 
-  '@opentelemetry/propagator-b3@1.30.1':
-    resolution: {integrity: sha512-oATwWWDIJzybAZ4pO76ATN5N6FFbOA1otibAVlS8v90B4S1wClnhRUk7K+2CHAwN1JKYuj4jh/lpCEG5BAqFuQ==}
-    engines: {node: '>=14'}
-    peerDependencies:
-      '@opentelemetry/api': '>=1.0.0 <1.10.0'
-
   '@opentelemetry/propagator-b3@2.10.0':
     resolution: {integrity: sha512-GnA5B24H+1w8BO21J0q+IWNB0z1v+AGbcquTdIt/dufibhnhgxaA8YKvz0I3akRZhB1jHT+/tlzK+qlAjEDybQ==}
     engines: {node: ^18.19.0 || >=20.6.0}
-    peerDependencies:
-      '@opentelemetry/api': '>=1.0.0 <1.10.0'
-
-  '@opentelemetry/propagator-jaeger@1.30.1':
-    resolution: {integrity: sha512-Pj/BfnYEKIOImirH76M4hDaBSx6HyZ2CXUqk+Kj02m6BB80c/yo4BdWkn/1gDFfU+YPY+bPR2U0DKBfdxCKwmg==}
-    engines: {node: '>=14'}
     peerDependencies:
       '@opentelemetry/api': '>=1.0.0 <1.10.0'
 
@@ -2823,12 +2750,6 @@ packages:
     peerDependencies:
       '@opentelemetry/api': ^1.0.0
 
-  '@opentelemetry/resources@1.30.1':
-    resolution: {integrity: sha512-5UxZqiAgLYGFjS4s9qm5mBVo433u+dSPUFWVWXmLAD4wB65oMCoXaJP1KJa9DIYYMeHu3z4BZcStG3LC593cWA==}
-    engines: {node: '>=14'}
-    peerDependencies:
-      '@opentelemetry/api': '>=1.0.0 <1.10.0'
-
   '@opentelemetry/resources@2.10.0':
     resolution: {integrity: sha512-q6MMm2zhggzsHVNbabYwut+a6nbuQQe3URUoxaojM/8K1IBfwwPzvxIjNi2/lI1TFe+fMHMW9MWhrtDLEXEnkA==}
     engines: {node: ^18.19.0 || >=20.6.0}
@@ -2840,18 +2761,6 @@ packages:
     engines: {node: ^18.19.0 || >=20.6.0}
     peerDependencies:
       '@opentelemetry/api': '>=1.4.0 <1.10.0'
-
-  '@opentelemetry/sdk-logs@0.57.2':
-    resolution: {integrity: sha512-TXFHJ5c+BKggWbdEQ/inpgIzEmS2BGQowLE9UhsMd7YYlUfBQJ4uax0VF/B5NYigdM/75OoJGhAV3upEhK+3gg==}
-    engines: {node: '>=14'}
-    peerDependencies:
-      '@opentelemetry/api': '>=1.4.0 <1.10.0'
-
-  '@opentelemetry/sdk-metrics@1.30.1':
-    resolution: {integrity: sha512-q9zcZ0Okl8jRgmy7eNW3Ku1XSgg3sDLa5evHZpCwjspw7E8Is4K/haRPDJrBcX3YSn/Y7gUvFnByNYEKQNbNog==}
-    engines: {node: '>=14'}
-    peerDependencies:
-      '@opentelemetry/api': '>=1.3.0 <1.10.0'
 
   '@opentelemetry/sdk-metrics@2.10.0':
     resolution: {integrity: sha512-t6r1VSvXNtSDnPXU1FbZeetJb7yyovHmgu0wRSoftxtE0g2rSNhQZQUy69sRUCL+iioJpX8SN/S6wq6ZtvLySQ==}
@@ -2865,23 +2774,11 @@ packages:
     peerDependencies:
       '@opentelemetry/api': '>=1.3.0 <1.10.0'
 
-  '@opentelemetry/sdk-trace-base@1.30.1':
-    resolution: {integrity: sha512-jVPgBbH1gCy2Lb7X0AVQ8XAfgg0pJ4nvl8/IiQA6nxOsPvS+0zMJaFSs2ltXe0J6C8dqjcnpyqINDJmU30+uOg==}
-    engines: {node: '>=14'}
-    peerDependencies:
-      '@opentelemetry/api': '>=1.0.0 <1.10.0'
-
   '@opentelemetry/sdk-trace-base@2.10.0':
     resolution: {integrity: sha512-GuYQQT7QD2EeO8lcZLRQzcbOyhqAzL+6WWTKTU9mSUBYBazkEDl+VrQcXQhbB08OWM9anD1aHleVadzulpOaUQ==}
     engines: {node: ^18.19.0 || >=20.6.0}
     peerDependencies:
       '@opentelemetry/api': '>=1.3.0 <1.10.0'
-
-  '@opentelemetry/sdk-trace-node@1.30.1':
-    resolution: {integrity: sha512-cBjYOINt1JxXdpw1e5MlHmFRc5fgj4GW/86vsKFxJCJ8AL4PdVtYH41gWwl4qd4uQjqEL1oJVrXkSy5cnduAnQ==}
-    engines: {node: '>=14'}
-    peerDependencies:
-      '@opentelemetry/api': '>=1.0.0 <1.10.0'
 
   '@opentelemetry/sdk-trace-node@2.10.0':
     resolution: {integrity: sha512-GZK/G6oZyBLGlH1pUgeDch7D91KoHd2uotUGIkWCPi9GI5T9X0p4L7nNAMDR1BQjkRYoDqo+ddfVx9t5Uhys+Q==}
@@ -2894,14 +2791,6 @@ packages:
     engines: {node: ^18.19.0 || >=20.6.0}
     peerDependencies:
       '@opentelemetry/api': '>=1.3.0 <1.10.0'
-
-  '@opentelemetry/semantic-conventions@1.28.0':
-    resolution: {integrity: sha512-lp4qAiMTD4sNWW4DbKLBkfiMZ4jbAboJIGOQr5DvciMRI494OapieI9qiODpOt0XBr1LjIDy1xAGAnVs5supTA==}
-    engines: {node: '>=14'}
-
-  '@opentelemetry/semantic-conventions@1.30.0':
-    resolution: {integrity: sha512-4VlGgo32k2EQ2wcCY3vEU28A0O13aOtHz3Xt2/2U5FAh9EfhD6t6DqL5Z6yAnRCntbTFDU4YfbpyzSlHNWycPw==}
-    engines: {node: '>=14'}
 
   '@opentelemetry/semantic-conventions@1.43.0':
     resolution: {integrity: sha512-eSYWTm620tTk45EKSedaUL8MFYI8hW164hIXsgIHyxu3VobUB3fFCu5t0hQby6OoWRPsG1KkKUG2M5UadiLiVg==}
@@ -3614,9 +3503,6 @@ packages:
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
 
-  '@types/node@26.1.2':
-    resolution: {integrity: sha512-Vu4a5UFA9rIIFJ7rB/Vaafh9lrCQszopTCx6KjFboXTGQbPNasehVR5TEiithSDGyd1DEiUByggTZsg8jukeIg==}
-
   '@types/node@26.2.0':
     resolution: {integrity: sha512-5IviulTZeRNp2vAJ514cc/HUlY5nZ9fCbq9DMyC52BrhFZACo3nI0R7qBxhQmo/d27NFe96ur/b7Wwxklda+kg==}
 
@@ -3643,9 +3529,6 @@ packages:
 
   '@types/set-cookie-parser@2.4.10':
     resolution: {integrity: sha512-GGmQVGpQWUe5qglJozEjZV/5dyxbOOZ0LHe/lqyWssB88Y4svNfst0uqBVscdDeIKl5Jy5+aPSvy7mI9tYRguw==}
-
-  '@types/shimmer@1.2.0':
-    resolution: {integrity: sha512-UE7oxhQLLd9gub6JKIAhDq06T0F6FnztwMNRvYgjeQSBeMc1ZG/tA47EwfduvkuQS8apbkM/lpLpWsaCeYsXVg==}
 
   '@types/statuses@2.0.6':
     resolution: {integrity: sha512-xMAgYwceFhRA2zY+XbEA7mxYbA093wdiW8Vu6gZPGWy9cmOyU9XesH1tNcEWsKFd5Vzrqx5T3D38PWx1FIIXkA==}
@@ -4489,9 +4372,6 @@ packages:
     resolution: {integrity: sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw==}
     engines: {node: '>= 20.19.0'}
 
-  cjs-module-lexer@1.4.3:
-    resolution: {integrity: sha512-9z8TZaGM1pfswYeXrUpzPrkx8UnWYdhJclsiYMm6x/w5+nN+8Tf/LnAgfLGQCm59qAOxU8WwHEq2vNwF6i4j+Q==}
-
   cjs-module-lexer@2.2.0:
     resolution: {integrity: sha512-4bHTS2YuzUvtoLjdy+98ykbNB5jS0+07EvFNXerqZQJ89F7DI6ET7OQo/HJuW6K0aVsKA9hj9/RVb2kQVOrPDQ==}
 
@@ -5264,10 +5144,6 @@ packages:
   fast-json-stringify@7.0.1:
     resolution: {integrity: sha512-eRSayARSbbwlBjpP4vnTTIRD5QPcIrmihPxDeN1DtKnHPg66UuJLx+8hlK1kaFdjvzyQ/dzALoi4vwAQ+T+iZA==}
 
-  fast-jwt@6.3.0:
-    resolution: {integrity: sha512-qFVn4V6rdsqUVOr6WoSF8rt569SdWvORlPKhT4fh3vMeMN6pmkGdWcSfKdLM/G9B2KZp/9E/EOgsYbJUaaT2rQ==}
-    engines: {node: '>=20'}
-
   fast-jwt@6.3.2:
     resolution: {integrity: sha512-JTQImpkXVvj+eq7tJImtsHRt1K6ngloEzIx62Qbf9x4tEM2P2EqGpYJSeUoPf/kMn78rImSHfhf08KShR8PauA==}
     engines: {node: '>=20'}
@@ -5286,9 +5162,6 @@ packages:
 
   fast-string-width@3.0.2:
     resolution: {integrity: sha512-gX8LrtNEI5hq8DVUfRQMbr5lpaS4nMIWV+7XEbXk2b8kiQIizgnlr12B4dA3ZEx3308ze0O4Q1R+cHts8kyUJg==}
-
-  fast-uri@3.1.4:
-    resolution: {integrity: sha512-8JnbkQ4juDyvYs4mgFGQqg4yCYtFDtUtmp2QIQq11ZZe5CFQ5wcqm1rqDgAh/QdMySuBnPzMUiJUNZG5N/AiQw==}
 
   fast-uri@3.1.5:
     resolution: {integrity: sha512-gHwA1O9LDIcKunMKhObS/HimwtehO1nPUECKAu5TpKgaO19fcWEl4bliWe1jWxVFvIXztJjjQ4L8XQ1EU9f7Jw==}
@@ -5647,9 +5520,6 @@ packages:
     resolution: {integrity: sha512-TR3KfrTZTYLPB6jUjfx6MF9WcWrHL9su5TObK4ZkYgBdWKPOFoSoQIdEuTuR82pmtxH2spWG9h6etwfr1pLBqQ==}
     engines: {node: '>=6'}
 
-  import-in-the-middle@1.15.0:
-    resolution: {integrity: sha512-bpQy+CrsRmYmoPMAE/0G33iwRqwW4ouqdRg8jgbH3aKuCtOc8lxgmYXg2dMM92CRiGP660EtBcymH/eVUpCSaA==}
-
   import-in-the-middle@2.0.6:
     resolution: {integrity: sha512-3vZV3jX0XRFW3EJDTwzWoZa+RH1b8eTTx6YOCjglrLyPuepwoBti1k3L2dKwdCUrnVEfc5CuRuGstaC/uQJJaw==}
 
@@ -5900,10 +5770,6 @@ packages:
 
   js-yaml@3.15.0:
     resolution: {integrity: sha512-ttBQIIQPDeLjpPOohtUdXuXUVoA2uIB6fEH9HyJ7234s5mBJ5wTx20njxplLZQgLaOfpmPQA7X2t5AX6tIPbog==}
-    hasBin: true
-
-  js-yaml@4.3.0:
-    resolution: {integrity: sha512-1td788aAnnZ5qs7V2QIRl1owjtYpbKt749Y3xauqQgwIIGF/xXWz1wMTEBx5O3LK3lXLVuqXPdPxj2BoFHaW9Q==}
     hasBin: true
 
   js-yaml@4.3.1:
@@ -6728,10 +6594,6 @@ packages:
     resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
     engines: {node: '>=0.10.0'}
 
-  require-in-the-middle@7.5.2:
-    resolution: {integrity: sha512-gAZ+kLqBdHarXB64XpAe2VCjB7rIRv+mU8tfRWziHRJ5umKsIHN2tLLv6EtMw7WCdP19S0ERVMldNvxYCHnhSQ==}
-    engines: {node: '>=8.6.0'}
-
   require-in-the-middle@8.0.1:
     resolution: {integrity: sha512-QT7FVMXfWOYFbeRBF6nu+I6tr2Tf3u0q8RIEjNob/heKY/nh7drD/k7eeMFmSQgnTtCzLDcCu/XEnpW2wk4xCQ==}
     engines: {node: '>=9.3.0 || >=8.10.0 <9.0.0'}
@@ -6905,9 +6767,6 @@ packages:
   shebang-regex@3.0.0:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
-
-  shimmer@1.2.1:
-    resolution: {integrity: sha512-sQTKC1Re/rM6XyFM6fIAGHRPVGvyXfgzIDvzoq608vM+jeyVD0Tu1E6Np0Kc2zAIFWIj963V2800iF/9LPieQw==}
 
   side-channel-list@1.0.1:
     resolution: {integrity: sha512-mjn/0bi/oUURjc5Xl7IaWi/OJJJumuoJFQJfDDyO46+hBWsfaVM65TBHq2eoZBhzl9EchxOijpkbRC8SVBQU0w==}
@@ -7776,20 +7635,11 @@ snapshots:
 
   '@babel/helper-validator-identifier@7.29.7': {}
 
-  '@babel/parser@7.29.7':
-    dependencies:
-      '@babel/types': 7.29.7
-
   '@babel/parser@7.29.8':
     dependencies:
       '@babel/types': 7.29.8
 
   '@babel/runtime@7.29.7': {}
-
-  '@babel/types@7.29.7':
-    dependencies:
-      '@babel/helper-string-parser': 7.29.7
-      '@babel/helper-validator-identifier': 7.29.7
 
   '@babel/types@7.29.8':
     dependencies:
@@ -7919,7 +7769,7 @@ snapshots:
     dependencies:
       '@changesets/types': 6.1.0
 
-  '@changesets/cli@2.31.1(@types/node@26.1.2)':
+  '@changesets/cli@2.31.1(@types/node@26.2.0)':
     dependencies:
       '@changesets/apply-release-plan': 7.1.1
       '@changesets/assemble-release-plan': 6.0.10
@@ -7935,7 +7785,7 @@ snapshots:
       '@changesets/should-skip-package': 0.1.2
       '@changesets/types': 6.1.0
       '@changesets/write': 0.4.0
-      '@inquirer/external-editor': 1.0.3(@types/node@26.1.2)
+      '@inquirer/external-editor': 1.0.3(@types/node@26.2.0)
       '@manypkg/get-packages': 1.1.3
       ansi-colors: 4.1.3
       enquirer: 2.4.1
@@ -7998,7 +7848,7 @@ snapshots:
   '@changesets/parse@0.4.3':
     dependencies:
       '@changesets/types': 6.1.0
-      js-yaml: 4.3.0
+      js-yaml: 4.3.1
 
   '@changesets/pre@2.0.2':
     dependencies:
@@ -8215,7 +8065,7 @@ snapshots:
     dependencies:
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
-      fast-uri: 3.1.4
+      fast-uri: 3.1.5
 
   '@fastify/auth@5.0.4':
     dependencies:
@@ -8259,7 +8109,7 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation': 0.219.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
       minimatch: 10.2.6
     transitivePeerDependencies:
       - supports-color
@@ -8356,7 +8206,7 @@ snapshots:
 
   '@httptoolkit/httpolyglot@3.1.0':
     dependencies:
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
 
   '@httptoolkit/subscriptions-transport-ws@0.11.2(graphql@16.14.2)':
     dependencies:
@@ -8400,33 +8250,12 @@ snapshots:
 
   '@inquirer/ansi@2.0.7': {}
 
-  '@inquirer/confirm@6.1.1(@types/node@26.1.2)':
-    dependencies:
-      '@inquirer/core': 11.2.1(@types/node@26.1.2)
-      '@inquirer/type': 4.0.7(@types/node@26.1.2)
-    optionalDependencies:
-      '@types/node': 26.1.2
-    optional: true
-
   '@inquirer/confirm@6.1.1(@types/node@26.2.0)':
     dependencies:
       '@inquirer/core': 11.2.1(@types/node@26.2.0)
       '@inquirer/type': 4.0.7(@types/node@26.2.0)
     optionalDependencies:
       '@types/node': 26.2.0
-
-  '@inquirer/core@11.2.1(@types/node@26.1.2)':
-    dependencies:
-      '@inquirer/ansi': 2.0.7
-      '@inquirer/figures': 2.0.7
-      '@inquirer/type': 4.0.7(@types/node@26.1.2)
-      cli-width: 4.1.0
-      fast-wrap-ansi: 0.2.2
-      mute-stream: 3.0.0
-      signal-exit: 4.1.0
-    optionalDependencies:
-      '@types/node': 26.1.2
-    optional: true
 
   '@inquirer/core@11.2.1(@types/node@26.2.0)':
     dependencies:
@@ -8440,19 +8269,14 @@ snapshots:
     optionalDependencies:
       '@types/node': 26.2.0
 
-  '@inquirer/external-editor@1.0.3(@types/node@26.1.2)':
+  '@inquirer/external-editor@1.0.3(@types/node@26.2.0)':
     dependencies:
       chardet: 2.2.0
       iconv-lite: 0.7.3
     optionalDependencies:
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
 
   '@inquirer/figures@2.0.7': {}
-
-  '@inquirer/type@4.0.7(@types/node@26.1.2)':
-    optionalDependencies:
-      '@types/node': 26.1.2
-    optional: true
 
   '@inquirer/type@4.0.7(@types/node@26.2.0)':
     optionalDependencies:
@@ -8662,23 +8486,23 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@microsoft/api-extractor-model@7.33.10(@types/node@26.1.2)':
+  '@microsoft/api-extractor-model@7.33.10(@types/node@26.2.0)':
     dependencies:
       '@microsoft/tsdoc': 0.16.0
       '@microsoft/tsdoc-config': 0.18.1
-      '@rushstack/node-core-library': 5.23.3(@types/node@26.1.2)
+      '@rushstack/node-core-library': 5.23.3(@types/node@26.2.0)
     transitivePeerDependencies:
       - '@types/node'
 
-  '@microsoft/api-extractor@7.58.12(@types/node@26.1.2)':
+  '@microsoft/api-extractor@7.58.12(@types/node@26.2.0)':
     dependencies:
-      '@microsoft/api-extractor-model': 7.33.10(@types/node@26.1.2)
+      '@microsoft/api-extractor-model': 7.33.10(@types/node@26.2.0)
       '@microsoft/tsdoc': 0.16.0
       '@microsoft/tsdoc-config': 0.18.1
-      '@rushstack/node-core-library': 5.23.3(@types/node@26.1.2)
+      '@rushstack/node-core-library': 5.23.3(@types/node@26.2.0)
       '@rushstack/rig-package': 0.7.3
-      '@rushstack/terminal': 0.24.2(@types/node@26.1.2)
-      '@rushstack/ts-command-line': 5.3.12(@types/node@26.1.2)
+      '@rushstack/terminal': 0.24.2(@types/node@26.2.0)
+      '@rushstack/ts-command-line': 5.3.12(@types/node@26.2.0)
       diff: 8.0.4
       minimatch: 10.2.3
       resolve: 1.22.12
@@ -8779,12 +8603,6 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
 
-  '@opentelemetry/api-logs@0.57.2':
-    dependencies:
-      '@opentelemetry/api': 1.9.1
-
-  '@opentelemetry/api@1.9.0': {}
-
   '@opentelemetry/api@1.9.1': {}
 
   '@opentelemetry/auto-instrumentations-node@0.79.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))':
@@ -8849,23 +8667,14 @@ snapshots:
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       yaml: 2.9.0
 
-  '@opentelemetry/context-async-hooks@1.30.1(@opentelemetry/api@1.9.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.0
-
   '@opentelemetry/context-async-hooks@2.10.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
 
-  '@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/semantic-conventions': 1.28.0
-
   '@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
 
   '@opentelemetry/exporter-logs-otlp-grpc@0.221.0(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -8918,7 +8727,7 @@ snapshots:
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/resources': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-metrics': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
 
   '@opentelemetry/exporter-trace-otlp-grpc@0.221.0(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -8927,17 +8736,6 @@ snapshots:
       '@opentelemetry/otlp-grpc-exporter-base': 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/otlp-transformer': 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace': 2.10.0(@opentelemetry/api@1.9.1)
-
-  '@opentelemetry/exporter-trace-otlp-grpc@0.57.2(@opentelemetry/api@1.9.0)':
-    dependencies:
-      '@grpc/grpc-js': 1.14.4
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/otlp-exporter-base': 0.57.2(@opentelemetry/api@1.9.0)
-      '@opentelemetry/otlp-grpc-exporter-base': 0.57.2(@opentelemetry/api@1.9.0)
-      '@opentelemetry/otlp-transformer': 0.57.2(@opentelemetry/api@1.9.0)
-      '@opentelemetry/resources': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-trace-base': 1.30.1(@opentelemetry/api@1.9.0)
 
   '@opentelemetry/exporter-trace-otlp-http@0.221.0(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -8959,7 +8757,7 @@ snapshots:
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/resources': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
 
   '@opentelemetry/instrumentation-amqplib@0.68.0(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -8975,7 +8773,7 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/propagator-aws-xray': 2.2.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
       '@types/aws-lambda': 8.10.162
     transitivePeerDependencies:
       - supports-color
@@ -9012,7 +8810,7 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
       '@types/connect': 3.4.38
     transitivePeerDependencies:
       - supports-color
@@ -9021,7 +8819,7 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
     transitivePeerDependencies:
       - supports-color
 
@@ -9044,7 +8842,7 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
     transitivePeerDependencies:
       - supports-color
 
@@ -9074,7 +8872,7 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
     transitivePeerDependencies:
       - supports-color
 
@@ -9083,7 +8881,7 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
     transitivePeerDependencies:
       - supports-color
 
@@ -9100,7 +8898,7 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
       forwarded-parse: 2.1.2
     transitivePeerDependencies:
       - supports-color
@@ -9118,7 +8916,7 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
     transitivePeerDependencies:
       - supports-color
 
@@ -9194,7 +8992,7 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
     transitivePeerDependencies:
       - supports-color
 
@@ -9251,7 +9049,7 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/redis-common': 0.38.3
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
     transitivePeerDependencies:
       - supports-color
 
@@ -9260,7 +9058,7 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
     transitivePeerDependencies:
       - supports-color
 
@@ -9268,7 +9066,7 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
     transitivePeerDependencies:
       - supports-color
 
@@ -9302,7 +9100,7 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
     transitivePeerDependencies:
       - supports-color
 
@@ -9314,9 +9112,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@opentelemetry/instrumentation@0.207.0(@opentelemetry/api@1.9.0)':
+  '@opentelemetry/instrumentation@0.207.0(@opentelemetry/api@1.9.1)':
     dependencies:
-      '@opentelemetry/api': 1.9.0
+      '@opentelemetry/api': 1.9.1
       '@opentelemetry/api-logs': 0.207.0
       import-in-the-middle: 2.0.6
       require-in-the-middle: 8.0.1
@@ -9341,29 +9139,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@opentelemetry/instrumentation@0.57.2(@opentelemetry/api@1.9.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/api-logs': 0.57.2
-      '@types/shimmer': 1.2.0
-      import-in-the-middle: 1.15.0
-      require-in-the-middle: 7.5.2
-      semver: 7.8.5
-      shimmer: 1.2.1
-    transitivePeerDependencies:
-      - supports-color
-
   '@opentelemetry/otlp-exporter-base@0.221.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/otlp-transformer': 0.221.0(@opentelemetry/api@1.9.1)
-
-  '@opentelemetry/otlp-exporter-base@0.57.2(@opentelemetry/api@1.9.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/otlp-transformer': 0.57.2(@opentelemetry/api@1.9.0)
 
   '@opentelemetry/otlp-grpc-exporter-base@0.221.0(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -9372,14 +9152,6 @@ snapshots:
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/otlp-exporter-base': 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/otlp-transformer': 0.221.0(@opentelemetry/api@1.9.1)
-
-  '@opentelemetry/otlp-grpc-exporter-base@0.57.2(@opentelemetry/api@1.9.0)':
-    dependencies:
-      '@grpc/grpc-js': 1.14.4
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/otlp-exporter-base': 0.57.2(@opentelemetry/api@1.9.0)
-      '@opentelemetry/otlp-transformer': 0.57.2(@opentelemetry/api@1.9.0)
 
   '@opentelemetry/otlp-transformer@0.221.0(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -9391,35 +9163,14 @@ snapshots:
       '@opentelemetry/sdk-metrics': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace': 2.10.0(@opentelemetry/api@1.9.1)
 
-  '@opentelemetry/otlp-transformer@0.57.2(@opentelemetry/api@1.9.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/api-logs': 0.57.2
-      '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/resources': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-logs': 0.57.2(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-metrics': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-trace-base': 1.30.1(@opentelemetry/api@1.9.0)
-      protobufjs: 7.6.5
-
   '@opentelemetry/propagator-aws-xray@2.2.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-
-  '@opentelemetry/propagator-b3@1.30.1(@opentelemetry/api@1.9.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.0)
 
   '@opentelemetry/propagator-b3@2.10.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
-
-  '@opentelemetry/propagator-jaeger@1.30.1(@opentelemetry/api@1.9.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.0)
 
   '@opentelemetry/propagator-jaeger@2.10.0(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -9439,7 +9190,7 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/resources': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
 
   '@opentelemetry/resource-detector-azure@0.29.0(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -9463,17 +9214,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@opentelemetry/resources@1.30.1(@opentelemetry/api@1.9.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/semantic-conventions': 1.28.0
-
   '@opentelemetry/resources@2.10.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
 
   '@opentelemetry/sdk-logs@0.221.0(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -9481,20 +9226,7 @@ snapshots:
       '@opentelemetry/api-logs': 0.221.0
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/resources': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
-
-  '@opentelemetry/sdk-logs@0.57.2(@opentelemetry/api@1.9.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/api-logs': 0.57.2
-      '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/resources': 1.30.1(@opentelemetry/api@1.9.0)
-
-  '@opentelemetry/sdk-metrics@1.30.1(@opentelemetry/api@1.9.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/resources': 1.30.1(@opentelemetry/api@1.9.0)
+      '@opentelemetry/semantic-conventions': 1.43.0
 
   '@opentelemetry/sdk-metrics@2.10.0(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -9531,16 +9263,9 @@ snapshots:
       '@opentelemetry/sdk-trace': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace-base': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace-node': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
+      '@opentelemetry/semantic-conventions': 1.43.0
     transitivePeerDependencies:
       - supports-color
-
-  '@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/resources': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/semantic-conventions': 1.28.0
 
   '@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -9548,17 +9273,7 @@ snapshots:
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/resources': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
-
-  '@opentelemetry/sdk-trace-node@1.30.1(@opentelemetry/api@1.9.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/context-async-hooks': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/propagator-b3': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/propagator-jaeger': 1.30.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-trace-base': 1.30.1(@opentelemetry/api@1.9.0)
-      semver: 7.8.5
+      '@opentelemetry/semantic-conventions': 1.43.0
 
   '@opentelemetry/sdk-trace-node@2.10.0(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -9572,11 +9287,7 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/resources': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.30.0
-
-  '@opentelemetry/semantic-conventions@1.28.0': {}
-
-  '@opentelemetry/semantic-conventions@1.30.0': {}
+      '@opentelemetry/semantic-conventions': 1.43.0
 
   '@opentelemetry/semantic-conventions@1.43.0': {}
 
@@ -9825,10 +9536,10 @@ snapshots:
     dependencies:
       '@prisma/debug': 7.9.1
 
-  '@prisma/instrumentation@7.9.1(@opentelemetry/api@1.9.0)':
+  '@prisma/instrumentation@7.9.1(@opentelemetry/api@1.9.1)':
     dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/instrumentation': 0.207.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/instrumentation': 0.207.0(@opentelemetry/api@1.9.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -10019,7 +9730,7 @@ snapshots:
 
   '@rtsao/scc@1.1.0': {}
 
-  '@rushstack/node-core-library@5.23.3(@types/node@26.1.2)':
+  '@rushstack/node-core-library@5.23.3(@types/node@26.2.0)':
     dependencies:
       ajv: 8.20.0
       ajv-draft-04: 1.0.0(ajv@8.20.0)
@@ -10030,28 +9741,28 @@ snapshots:
       resolve: 1.22.12
       semver: 7.7.4
     optionalDependencies:
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
 
-  '@rushstack/problem-matcher@0.2.1(@types/node@26.1.2)':
+  '@rushstack/problem-matcher@0.2.1(@types/node@26.2.0)':
     optionalDependencies:
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
 
   '@rushstack/rig-package@0.7.3':
     dependencies:
       jju: 1.4.0
       resolve: 1.22.12
 
-  '@rushstack/terminal@0.24.2(@types/node@26.1.2)':
+  '@rushstack/terminal@0.24.2(@types/node@26.2.0)':
     dependencies:
-      '@rushstack/node-core-library': 5.23.3(@types/node@26.1.2)
-      '@rushstack/problem-matcher': 0.2.1(@types/node@26.1.2)
+      '@rushstack/node-core-library': 5.23.3(@types/node@26.2.0)
+      '@rushstack/problem-matcher': 0.2.1(@types/node@26.2.0)
       supports-color: 8.1.1
     optionalDependencies:
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
 
-  '@rushstack/ts-command-line@5.3.12(@types/node@26.1.2)':
+  '@rushstack/ts-command-line@5.3.12(@types/node@26.2.0)':
     dependencies:
-      '@rushstack/terminal': 0.24.2(@types/node@26.1.2)
+      '@rushstack/terminal': 0.24.2(@types/node@26.2.0)
       '@types/argparse': 1.0.38
       argparse: 1.0.10
       string-argv: 0.3.2
@@ -10105,7 +9816,7 @@ snapshots:
       '@splitsoftware/splitio-commons': 2.12.1(ioredis@5.11.1)
       bloom-filters: 3.0.4
       ioredis: 5.11.1
-      js-yaml: 4.3.0
+      js-yaml: 4.3.1
       node-fetch: 2.7.0
       tslib: 2.8.1
       unfetch: 4.2.0
@@ -10170,7 +9881,7 @@ snapshots:
 
   '@types/cors@2.8.19':
     dependencies:
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
 
   '@types/d3-array@3.0.3': {}
 
@@ -10219,7 +9930,7 @@ snapshots:
   '@types/jsonwebtoken@9.0.10':
     dependencies:
       '@types/ms': 2.1.0
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
 
   '@types/lodash@4.17.24': {}
 
@@ -10236,10 +9947,6 @@ snapshots:
   '@types/negotiator@0.6.4': {}
 
   '@types/node@12.20.55': {}
-
-  '@types/node@26.1.2':
-    dependencies:
-      undici-types: 8.3.0
 
   '@types/node@26.2.0':
     dependencies:
@@ -10277,8 +9984,6 @@ snapshots:
     dependencies:
       '@types/node': 26.2.0
 
-  '@types/shimmer@1.2.0': {}
-
   '@types/statuses@2.0.6': {}
 
   '@types/tedious@4.0.14':
@@ -10287,7 +9992,7 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
 
   '@types/zen-observable@0.8.3': {}
 
@@ -10737,7 +10442,7 @@ snapshots:
       obug: 2.1.4
       std-env: 4.2.0
       tinyrainbow: 3.1.1
-      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
+      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
   '@vitest/expect@4.1.10':
     dependencies:
@@ -10747,15 +10452,6 @@ snapshots:
       '@vitest/utils': 4.1.10
       chai: 6.2.2
       tinyrainbow: 3.1.1
-
-  '@vitest/mocker@4.1.10(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))':
-    dependencies:
-      '@vitest/spy': 4.1.10
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      msw: 2.15.0(@types/node@26.1.2)(typescript@7.0.2)
-      vite: 6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0)
 
   '@vitest/mocker@4.1.10(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))':
     dependencies:
@@ -10804,7 +10500,7 @@ snapshots:
 
   '@vue/compiler-core@3.5.40':
     dependencies:
-      '@babel/parser': 7.29.7
+      '@babel/parser': 7.29.8
       '@vue/shared': 3.5.40
       entities: 7.0.1
       estree-walker: 2.0.2
@@ -10881,14 +10577,14 @@ snapshots:
   ajv@8.18.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.4
+      fast-uri: 3.1.5
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
   ajv@8.20.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.4
+      fast-uri: 3.1.5
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -11183,8 +10879,6 @@ snapshots:
     dependencies:
       readdirp: 5.0.0
 
-  cjs-module-lexer@1.4.3: {}
-
   cjs-module-lexer@2.2.0: {}
 
   classnames@2.5.1: {}
@@ -11423,7 +11117,7 @@ snapshots:
 
   destroyable-server@1.1.1:
     dependencies:
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
 
   detect-indent@6.1.0: {}
 
@@ -11464,12 +11158,12 @@ snapshots:
       get-tsconfig: 4.14.1
       jiti: 2.7.0
 
-  drizzle-orm@1.0.0-rc.4-273829f(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.23.2(@types/node@26.1.2))(pg@8.22.0)(postgres@3.4.9)(valibot@1.4.2(typescript@7.0.2))(zod@4.4.3):
+  drizzle-orm@1.0.0-rc.4-273829f(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.23.2(@types/node@26.2.0))(pg@8.22.0)(postgres@3.4.9)(valibot@1.4.2(typescript@7.0.2))(zod@4.4.3):
     optionalDependencies:
       '@electric-sql/pglite': 0.4.3
       '@opentelemetry/api': 1.9.1
       '@types/pg': 8.20.0
-      mysql2: 3.23.2(@types/node@26.1.2)
+      mysql2: 3.23.2(@types/node@26.2.0)
       pg: 8.22.0
       postgres: 3.4.9
       valibot: 1.4.2(typescript@7.0.2)
@@ -11524,7 +11218,7 @@ snapshots:
   engine.io@6.6.9:
     dependencies:
       '@types/cors': 2.8.19
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
       '@types/ws': 8.18.1
       accepts: 1.3.8
       base64id: 2.0.0
@@ -12010,14 +11704,6 @@ snapshots:
       json-schema-ref-resolver: 3.0.0
       rfdc: 1.4.1
 
-  fast-jwt@6.3.0:
-    dependencies:
-      '@lukeed/ms': 2.0.2
-      asn1.js: 5.4.1
-      ecdsa-sig-formatter: 1.0.11
-      mnemonist: 0.40.4
-      safe-regex2: 5.1.1
-
   fast-jwt@6.3.2:
     dependencies:
       '@lukeed/ms': 2.0.2
@@ -12039,8 +11725,6 @@ snapshots:
   fast-string-width@3.0.2:
     dependencies:
       fast-string-truncated-width: 3.0.3
-
-  fast-uri@3.1.4: {}
 
   fast-uri@3.1.5: {}
 
@@ -12456,13 +12140,6 @@ snapshots:
       parent-module: 1.0.1
       resolve-from: 4.0.0
 
-  import-in-the-middle@1.15.0:
-    dependencies:
-      acorn: 8.18.0
-      acorn-import-attributes: 1.9.5(acorn@8.18.0)
-      cjs-module-lexer: 1.4.3
-      module-details-from-path: 1.0.4
-
   import-in-the-middle@2.0.6:
     dependencies:
       acorn: 8.18.0
@@ -12710,10 +12387,6 @@ snapshots:
       argparse: 1.0.10
       esprima: 4.0.1
 
-  js-yaml@4.3.0:
-    dependencies:
-      argparse: 2.0.1
-
   js-yaml@4.3.1:
     dependencies:
       argparse: 2.0.1
@@ -12952,7 +12625,7 @@ snapshots:
       '@peculiar/asn1-x509-attr': 2.6.1
       '@peculiar/x509': 1.14.3
       '@types/cors': 2.8.19
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
       async-mutex: 0.5.0
       base64-arraybuffer: 1.0.2
       cacheable-lookup: 6.1.0
@@ -13012,32 +12685,6 @@ snapshots:
     optionalDependencies:
       msgpackr-extract: 3.0.4
 
-  msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2):
-    dependencies:
-      '@inquirer/confirm': 6.1.1(@types/node@26.1.2)
-      '@mswjs/interceptors': 0.41.9
-      '@open-draft/deferred-promise': 3.0.0
-      '@types/statuses': 2.0.6
-      cookie: 1.1.1
-      graphql: 16.14.2
-      headers-polyfill: 5.0.1
-      is-node-process: 1.2.0
-      outvariant: 1.4.3
-      path-to-regexp: 6.3.0
-      picocolors: 1.1.1
-      rettime: 0.11.11
-      statuses: 2.0.2
-      strict-event-emitter: 0.5.1
-      tough-cookie: 6.0.2
-      type-fest: 5.8.0
-      until-async: 3.0.2
-      yargs: 17.7.3
-    optionalDependencies:
-      typescript: 7.0.2
-    transitivePeerDependencies:
-      - '@types/node'
-    optional: true
-
   msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2):
     dependencies:
       '@inquirer/confirm': 6.1.1(@types/node@26.2.0)
@@ -13079,9 +12726,9 @@ snapshots:
       seq-queue: 0.0.5
       sqlstring: 2.3.3
 
-  mysql2@3.23.2(@types/node@26.1.2):
+  mysql2@3.23.2(@types/node@26.2.0):
     dependencies:
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
       aws-ssl-profiles: 1.1.2
       denque: 2.1.0
       generate-function: 2.3.1
@@ -13521,7 +13168,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.2
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
       long: 5.3.2
 
   proxy-addr@2.0.7:
@@ -13582,7 +13229,7 @@ snapshots:
 
   read-tls-client-hello@2.0.0:
     dependencies:
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
 
   read-yaml-file@1.1.0:
     dependencies:
@@ -13654,14 +13301,6 @@ snapshots:
   require-directory@2.1.1: {}
 
   require-from-string@2.0.2: {}
-
-  require-in-the-middle@7.5.2:
-    dependencies:
-      debug: 4.4.3
-      module-details-from-path: 1.0.4
-      resolve: 1.22.12
-    transitivePeerDependencies:
-      - supports-color
 
   require-in-the-middle@8.0.1:
     dependencies:
@@ -13872,8 +13511,6 @@ snapshots:
       shebang-regex: 3.0.0
 
   shebang-regex@3.0.0: {}
-
-  shimmer@1.2.1: {}
 
   side-channel-list@1.0.1:
     dependencies:
@@ -14367,9 +14004,9 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vite-plugin-dts@4.5.4(@types/node@26.1.2)(rollup@4.62.4)(typescript@7.0.2)(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0)):
+  vite-plugin-dts@4.5.4(@types/node@26.2.0)(rollup@4.62.4)(typescript@7.0.2)(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0)):
     dependencies:
-      '@microsoft/api-extractor': 7.58.12(@types/node@26.1.2)
+      '@microsoft/api-extractor': 7.58.12(@types/node@26.2.0)
       '@rollup/pluginutils': 5.4.0(rollup@4.62.4)
       '@volar/typescript': 2.4.28
       '@vue/language-core': 2.2.0(typescript@7.0.2)
@@ -14380,25 +14017,11 @@ snapshots:
       magic-string: 0.30.21
       typescript: 7.0.2
     optionalDependencies:
-      vite: 6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0)
+      vite: 6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0)
     transitivePeerDependencies:
       - '@types/node'
       - rollup
       - supports-color
-
-  vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0):
-    dependencies:
-      esbuild: 0.25.12
-      fdir: 6.5.0(picomatch@4.0.5)
-      picomatch: 4.0.5
-      postcss: 8.5.26
-      rollup: 4.62.4
-      tinyglobby: 0.2.17
-    optionalDependencies:
-      '@types/node': 26.1.2
-      fsevents: 2.3.3
-      jiti: 2.7.0
-      yaml: 2.9.0
 
   vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0):
     dependencies:
@@ -14413,93 +14036,6 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.7.0
       yaml: 2.9.0
-
-  vitest@4.1.10(@opentelemetry/api@1.9.0)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0)):
-    dependencies:
-      '@vitest/expect': 4.1.10
-      '@vitest/mocker': 4.1.10(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
-      '@vitest/pretty-format': 4.1.10
-      '@vitest/runner': 4.1.10
-      '@vitest/snapshot': 4.1.10
-      '@vitest/spy': 4.1.10
-      '@vitest/utils': 4.1.10
-      es-module-lexer: 2.3.1
-      expect-type: 1.4.0
-      magic-string: 0.30.21
-      obug: 2.1.4
-      pathe: 2.0.3
-      picomatch: 4.0.5
-      std-env: 4.2.0
-      tinybench: 2.9.0
-      tinyexec: 1.3.0
-      tinyglobby: 0.2.17
-      tinyrainbow: 3.1.1
-      vite: 6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@opentelemetry/api': 1.9.0
-      '@types/node': 26.1.2
-      '@vitest/coverage-v8': 4.1.10(vitest@4.1.10)
-    transitivePeerDependencies:
-      - msw
-
-  vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0)):
-    dependencies:
-      '@vitest/expect': 4.1.10
-      '@vitest/mocker': 4.1.10(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
-      '@vitest/pretty-format': 4.1.10
-      '@vitest/runner': 4.1.10
-      '@vitest/snapshot': 4.1.10
-      '@vitest/spy': 4.1.10
-      '@vitest/utils': 4.1.10
-      es-module-lexer: 2.3.1
-      expect-type: 1.4.0
-      magic-string: 0.30.21
-      obug: 2.1.4
-      pathe: 2.0.3
-      picomatch: 4.0.5
-      std-env: 4.2.0
-      tinybench: 2.9.0
-      tinyexec: 1.3.0
-      tinyglobby: 0.2.17
-      tinyrainbow: 3.1.1
-      vite: 6.4.3(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@opentelemetry/api': 1.9.1
-      '@types/node': 26.1.2
-      '@vitest/coverage-v8': 4.1.10(vitest@4.1.10)
-    transitivePeerDependencies:
-      - msw
-
-  vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0)):
-    dependencies:
-      '@vitest/expect': 4.1.10
-      '@vitest/mocker': 4.1.10(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
-      '@vitest/pretty-format': 4.1.10
-      '@vitest/runner': 4.1.10
-      '@vitest/snapshot': 4.1.10
-      '@vitest/spy': 4.1.10
-      '@vitest/utils': 4.1.10
-      es-module-lexer: 2.3.1
-      expect-type: 1.4.0
-      magic-string: 0.30.21
-      obug: 2.1.4
-      pathe: 2.0.3
-      picomatch: 4.0.5
-      std-env: 4.2.0
-      tinybench: 2.9.0
-      tinyexec: 1.3.0
-      tinyglobby: 0.2.17
-      tinyrainbow: 3.1.1
-      vite: 6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@opentelemetry/api': 1.9.1
-      '@types/node': 26.1.2
-      '@vitest/coverage-v8': 4.1.10(vitest@4.1.10)
-    transitivePeerDependencies:
-      - msw
 
   vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0)):
     dependencies:
@@ -14529,7 +14065,6 @@ snapshots:
       '@vitest/coverage-v8': 4.1.10(vitest@4.1.10)
     transitivePeerDependencies:
       - msw
-    optional: true
 
   vscode-uri@3.1.0: {}
 

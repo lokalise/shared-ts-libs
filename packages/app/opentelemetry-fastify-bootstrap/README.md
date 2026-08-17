@@ -20,6 +20,8 @@ When the `--import` hook is used, strict import sequencing is **not** required �
 npm install @lokalise/opentelemetry-fastify-bootstrap
 ```
 
+> **This package owns the OpenTelemetry SDK versions.** It pins the `@opentelemetry/*` SDK packages (e.g. `sdk-node`, `sdk-trace-base`) as exact `dependencies` so every service tracks a single validated set. Because of that, **services should not declare their own direct `@opentelemetry/*` SDK dependencies** — let this package own them. If a service also depends on, say, `@opentelemetry/sdk-trace-base@^2.x` at a different resolved version, the package manager installs a second copy, and objects passed across the boundary (span processors, samplers, exporters) then fail cross-copy `instanceof` checks in confusing ways. If you genuinely need a direct OTel SDK dep, align it to the exact version pinned here (or pin it via a package-manager `override`). The only exception is `@opentelemetry/api`, which is a process-wide singleton and is declared as a `peerDependency` — provide/share a single copy of it.
+
 ## Usage
 
 With the `--import` hook in place, use regular static imports and call `initOpenTelemetry` before starting your server:
