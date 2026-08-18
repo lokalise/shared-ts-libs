@@ -110,6 +110,7 @@ export type DualModeGetContractConfig<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
+  IsEmptyResponseExpected extends boolean = false,
 > = {
   method: 'get'
   pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
@@ -153,7 +154,7 @@ export type DualModeGetContractConfig<
   // Optional in the config; the builder stamps it on the contract, defaulting to 'public'
   visibility?: RouteVisibility
   // Whether the sync (JSON) response may be empty (204); the builder stamps it, defaulting to false
-  isEmptyResponseExpected?: boolean
+  isEmptyResponseExpected?: IsEmptyResponseExpected
 }
 
 /**
@@ -171,6 +172,7 @@ export type DualModePayloadContractConfig<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
+  IsEmptyResponseExpected extends boolean = false,
 > = {
   method: 'post' | 'put' | 'patch'
   pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
@@ -214,7 +216,7 @@ export type DualModePayloadContractConfig<
   // Optional in the config; the builder stamps it on the contract, defaulting to 'public'
   visibility?: RouteVisibility
   // Whether the sync (JSON) response may be empty (204); the builder stamps it, defaulting to false
-  isEmptyResponseExpected?: boolean
+  isEmptyResponseExpected?: IsEmptyResponseExpected
 }
 
 /**
@@ -343,6 +345,7 @@ export function buildSseContract<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
+  IsEmptyResponseExpected extends boolean = false,
 >(
   config: DualModeGetContractConfig<
     Params,
@@ -351,7 +354,8 @@ export function buildSseContract<
     JsonResponse,
     Events,
     ResponseHeaders,
-    ResponseSchemasByStatusCode
+    ResponseSchemasByStatusCode,
+    IsEmptyResponseExpected
   >,
 ): DualModeContractDefinition<
   'get',
@@ -362,7 +366,8 @@ export function buildSseContract<
   JsonResponse,
   Events,
   ResponseHeaders,
-  ResponseSchemasByStatusCode
+  ResponseSchemasByStatusCode,
+  IsEmptyResponseExpected
 >
 
 // Overload 2: SSE GET (no requestBodySchema, no successResponseBodySchema)
@@ -398,6 +403,7 @@ export function buildSseContract<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
+  IsEmptyResponseExpected extends boolean = false,
 >(
   config: DualModePayloadContractConfig<
     Params,
@@ -407,7 +413,8 @@ export function buildSseContract<
     JsonResponse,
     Events,
     ResponseHeaders,
-    ResponseSchemasByStatusCode
+    ResponseSchemasByStatusCode,
+    IsEmptyResponseExpected
   >,
 ): DualModeContractDefinition<
   'post' | 'put' | 'patch',
@@ -418,7 +425,8 @@ export function buildSseContract<
   JsonResponse,
   Events,
   ResponseHeaders,
-  ResponseSchemasByStatusCode
+  ResponseSchemasByStatusCode,
+  IsEmptyResponseExpected
 >
 
 // Overload 4: SSE with body (has requestBodySchema, no successResponseBodySchema)

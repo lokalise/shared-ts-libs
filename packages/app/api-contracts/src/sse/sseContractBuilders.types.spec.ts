@@ -424,6 +424,29 @@ describe('buildSseContract type inference', () => {
 
       expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
     })
+
+    it('isEmptyResponseExpected defaults to false type when omitted', () => {
+      const contract = buildSseContract({
+        method: 'get' as const,
+        pathResolver: () => '/api/status',
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEventSchemas: { update: z.object({ progress: z.number() }) },
+      })
+
+      expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false>()
+    })
+
+    it('isEmptyResponseExpected reflects explicit true value in type', () => {
+      const contract = buildSseContract({
+        method: 'get' as const,
+        pathResolver: () => '/api/status',
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEventSchemas: { update: z.object({ progress: z.number() }) },
+        isEmptyResponseExpected: true,
+      })
+
+      expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true>()
+    })
   })
 
   // ============================================================================
