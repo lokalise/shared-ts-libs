@@ -1,5 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
+import type { RouteVisibility } from '../apiContracts.ts'
 import { ContractNoBody } from './constants.ts'
 import { sseBody } from './contractResponse.ts'
 import {
@@ -24,6 +25,30 @@ describe('defineApiContract', () => {
 
       type Result = InferJsonSuccessResponses<typeof route.responsesByStatusCode>
       expectTypeOf<Result>().toEqualTypeOf<typeof schema>()
+    })
+
+    it('accepts and carries visibility', () => {
+      const route = defineApiContract({
+        summary: 'Internal contract',
+        method: 'get',
+        pathResolver: () => '/users',
+        responsesByStatusCode: { 200: z.object({}) },
+        visibility: 'internal',
+      })
+
+      expect(route.visibility).toBe('internal')
+    })
+
+    it('defaults visibility to public when omitted', () => {
+      const route = defineApiContract({
+        summary: 'Public contract',
+        method: 'get',
+        pathResolver: () => '/users',
+        responsesByStatusCode: { 200: z.object({}) },
+      })
+
+      expectTypeOf(route.visibility).toEqualTypeOf<RouteVisibility>()
+      expect(route.visibility).toBe('public')
     })
 
     it('infers pathResolver param type from requestPathParamsSchema', () => {

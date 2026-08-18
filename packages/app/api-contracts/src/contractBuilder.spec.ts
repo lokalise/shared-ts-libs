@@ -42,6 +42,27 @@ describe('buildContract', () => {
       expect('isSSE' in contract).toBe(false)
       expect('isDualMode' in contract).toBe(false)
     })
+
+    it('defaults visibility to public when omitted', () => {
+      const contract = buildContract({
+        method: 'get',
+        successResponseBodySchema: z.object({}),
+        pathResolver: () => '/api/users',
+      })
+
+      expect(contract.visibility).toBe('public')
+    })
+
+    it('reflects explicit visibility value', () => {
+      const contract = buildContract({
+        method: 'get',
+        successResponseBodySchema: z.object({}),
+        pathResolver: () => '/api/users',
+        visibility: 'internal',
+      })
+
+      expect(contract.visibility).toBe('internal')
+    })
   })
 
   describe('SSE contracts', () => {
@@ -80,6 +101,37 @@ describe('buildContract', () => {
       expect(contract.isSSE).toBe(true)
       expect('isDualMode' in contract).toBe(false)
       expect(contract.requestBodySchema).toBeDefined()
+    })
+
+    it('defaults visibility to public when omitted', () => {
+      const contract = buildContract({
+        method: 'get',
+        pathResolver: () => '/api/stream',
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        serverSentEventSchemas: {
+          message: z.object({ text: z.string() }),
+        },
+      })
+
+      expect(contract.visibility).toBe('public')
+    })
+
+    it('reflects explicit visibility value', () => {
+      const contract = buildContract({
+        method: 'get',
+        pathResolver: () => '/api/stream',
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        serverSentEventSchemas: {
+          message: z.object({ text: z.string() }),
+        },
+        visibility: 'internal',
+      })
+
+      expect(contract.visibility).toBe('internal')
     })
   })
 

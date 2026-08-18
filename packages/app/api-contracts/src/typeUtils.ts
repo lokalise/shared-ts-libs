@@ -21,6 +21,12 @@ export type Exactly<T, U> = T & {
 }
 
 /**
+ * Makes the keys K of T optional, leaving the rest unchanged.
+ * (Same shape as `MayOmit` from `@lokalise/universal-ts-utils`.)
+ */
+export type MayOmit<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>
+
+/**
  * Distributed `keyof`: the union of keys across all members of a union type.
  * (Plain `keyof` over a union yields only the keys common to every member.)
  */

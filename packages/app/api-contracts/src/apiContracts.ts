@@ -1,5 +1,6 @@
 import type { ZodSchema, z } from 'zod/v4'
 import type { HttpStatusCode } from './HttpStatusCodes.ts'
+import type { MayOmit } from './typeUtils.ts'
 
 const EMPTY_PARAMS = {}
 
@@ -19,6 +20,15 @@ export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
 
 export interface CommonRouteDefinitionMetadata extends Record<string, unknown> {}
 
+/**
+ * Who a route is intended for. Absent means 'public'.
+ *
+ * 'internal' marks routes (e.g. backend-for-frontend endpoints) that must not be part of
+ * the published API surface: OpenAPI generators exclude them from the generated document.
+ * It has no effect on runtime behavior — the route is registered and served as usual.
+ */
+export type RouteVisibility = 'public' | 'internal'
+
 export type CommonRouteDefinition<
   ResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
@@ -31,8 +41,10 @@ export type CommonRouteDefinition<
     | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
 > = {
-  isNonJSONResponseExpected?: IsNonJSONResponseExpected
-  isEmptyResponseExpected?: IsEmptyResponseExpected
+  // Whether a non-JSON response body is expected; builders default it to false
+  isNonJSONResponseExpected: IsNonJSONResponseExpected
+  // Whether an empty response body is expected; builders default it to false (true for DELETE routes)
+  isEmptyResponseExpected: IsEmptyResponseExpected
   successResponseBodySchema: ResponseBodySchema
   requestPathParamsSchema?: PathParamsSchema
   requestQuerySchema?: RequestQuerySchema
@@ -80,6 +92,8 @@ export type CommonRouteDefinition<
   summary?: string
   // Used for organizing endpoints into groups
   tags?: readonly string[]
+  // 'internal' excludes the route from generated OpenAPI docs; builders default it to 'public'
+  visibility: RouteVisibility
   /*
   The end of primarily OpenAPI fields
    */
@@ -193,16 +207,19 @@ export function buildPayloadRoute<
     | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
 >(
-  params: PayloadRouteDefinition<
-    RequestBodySchema,
-    SuccessResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+  params: MayOmit<
+    PayloadRouteDefinition<
+      RequestBodySchema,
+      SuccessResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >,
+    'visibility' | 'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
   >,
 ): PayloadRouteDefinition<
   RequestBodySchema,
@@ -232,6 +249,7 @@ export function buildPayloadRoute<
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
     metadata: params.metadata,
     tags: params.tags,
+    visibility: params.visibility ?? 'public',
   }
 }
 
@@ -265,18 +283,21 @@ export function buildGetRoute<
     | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
 >(
-  params: Omit<
-    GetRouteDefinition<
-      SuccessResponseBodySchema,
-      PathParamsSchema,
-      RequestQuerySchema,
-      RequestHeaderSchema,
-      ResponseHeaderSchema,
-      IsNonJSONResponseExpected,
-      IsEmptyResponseExpected,
-      ResponseSchemasByStatusCode
+  params: MayOmit<
+    Omit<
+      GetRouteDefinition<
+        SuccessResponseBodySchema,
+        PathParamsSchema,
+        RequestQuerySchema,
+        RequestHeaderSchema,
+        ResponseHeaderSchema,
+        IsNonJSONResponseExpected,
+        IsEmptyResponseExpected,
+        ResponseSchemasByStatusCode
+      >,
+      'method'
     >,
-    'method'
+    'visibility' | 'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
   >,
 ): GetRouteDefinition<
   SuccessResponseBodySchema,
@@ -304,6 +325,7 @@ export function buildGetRoute<
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
     metadata: params.metadata,
     tags: params.tags,
+    visibility: params.visibility ?? 'public',
   }
 }
 
@@ -338,18 +360,21 @@ export function buildDeleteRoute<
     | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
 >(
-  params: Omit<
-    DeleteRouteDefinition<
-      SuccessResponseBodySchema,
-      PathParamsSchema,
-      RequestQuerySchema,
-      RequestHeaderSchema,
-      ResponseHeaderSchema,
-      IsNonJSONResponseExpected,
-      IsEmptyResponseExpected,
-      ResponseSchemasByStatusCode
+  params: MayOmit<
+    Omit<
+      DeleteRouteDefinition<
+        SuccessResponseBodySchema,
+        PathParamsSchema,
+        RequestQuerySchema,
+        RequestHeaderSchema,
+        ResponseHeaderSchema,
+        IsNonJSONResponseExpected,
+        IsEmptyResponseExpected,
+        ResponseSchemasByStatusCode
+      >,
+      'method'
     >,
-    'method'
+    'visibility' | 'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
   >,
 ): DeleteRouteDefinition<
   SuccessResponseBodySchema,
@@ -377,6 +402,7 @@ export function buildDeleteRoute<
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
     metadata: params.metadata,
     tags: params.tags,
+    visibility: params.visibility ?? 'public',
   }
 }
 

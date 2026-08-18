@@ -1,5 +1,9 @@
 import type { z } from 'zod/v4'
-import type { CommonRouteDefinitionMetadata, RoutePathResolver } from '../apiContracts.ts'
+import type {
+  CommonRouteDefinitionMetadata,
+  RoutePathResolver,
+  RouteVisibility,
+} from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 import type { SSEMethod } from './sseContracts.ts'
 import type { SSEEventSchemas } from './sseTypes.ts'
@@ -17,6 +21,7 @@ import type { SSEEventSchemas } from './sseTypes.ts'
  * @template Events - SSE event schemas (for Accept: text/event-stream)
  * @template ResponseHeaders - Response headers schema (for sync mode)
  * @template ResponseSchemasByStatusCode - Alternative response schemas by HTTP status code
+ * @template IsEmptyResponseExpected - Whether the sync (JSON) response may be empty (204)
  */
 export type DualModeContractDefinition<
   Method extends SSEMethod = SSEMethod,
@@ -30,6 +35,7 @@ export type DualModeContractDefinition<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.ZodTypeAny>>
     | undefined = undefined,
+  IsEmptyResponseExpected extends boolean = false,
 > = {
   method: Method
   pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
@@ -59,6 +65,12 @@ export type DualModeContractDefinition<
   description?: string
   summary?: string
   tags?: readonly string[]
+  // 'internal' excludes the route from generated OpenAPI docs; builders default it to 'public'
+  visibility: RouteVisibility
+  // Whether the sync (JSON) response may be empty (204); builder defaults it to false
+  isEmptyResponseExpected: IsEmptyResponseExpected
+  // Whether the sync response of a dual-mode route may have non-JSON format; carried for REST-contract compatibility
+  isNonJSONResponseExpected: false
 }
 
 /**
@@ -83,4 +95,10 @@ export type AnyDualModeContractDefinition = {
   description?: string
   summary?: string
   tags?: readonly string[]
+  // 'internal' excludes the route from generated OpenAPI docs; builders default it to 'public'
+  visibility: RouteVisibility
+  // Whether the sync (JSON) response may be empty (204); builder defaults it to false
+  isEmptyResponseExpected: boolean
+  // Whether the sync response of a dual-mode route may have non-JSON format; carried for REST-contract compatibility
+  isNonJSONResponseExpected: false
 }

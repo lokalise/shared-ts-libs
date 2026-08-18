@@ -6,6 +6,7 @@ import type {
   PayloadRouteDefinition,
 } from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
+import type { MayOmit } from '../typeUtils.ts'
 
 // ============================================================================
 // Unified REST Contract Builder - Configuration Types
@@ -26,18 +27,21 @@ export type GetContractConfig<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
-> = Omit<
-  CommonRouteDefinition<
-    SuccessResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+> = MayOmit<
+  Omit<
+    CommonRouteDefinition<
+      SuccessResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >,
+    'method'
   >,
-  'method'
+  'visibility' | 'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
 > & {
   method: 'get'
   requestBodySchema?: never
@@ -60,18 +64,21 @@ export type DeleteContractConfig<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
-> = Omit<
-  CommonRouteDefinition<
-    SuccessResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+> = MayOmit<
+  Omit<
+    CommonRouteDefinition<
+      SuccessResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >,
+    'method'
   >,
-  'method'
+  'visibility' | 'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
 > & {
   method: 'delete'
   requestBodySchema?: never
@@ -95,15 +102,18 @@ export type PayloadContractConfig<
   ResponseSchemasByStatusCode extends
     | Partial<Record<HttpStatusCode, z.Schema>>
     | undefined = undefined,
-> = CommonRouteDefinition<
-  SuccessResponseBodySchema,
-  PathParamsSchema,
-  RequestQuerySchema,
-  RequestHeaderSchema,
-  ResponseHeaderSchema,
-  IsNonJSONResponseExpected,
-  IsEmptyResponseExpected,
-  ResponseSchemasByStatusCode
+> = MayOmit<
+  CommonRouteDefinition<
+    SuccessResponseBodySchema,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    ResponseHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected,
+    ResponseSchemasByStatusCode
+  >,
+  'visibility' | 'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
 > & {
   method: 'post' | 'put' | 'patch'
   requestBodySchema: RequestBodySchema
@@ -333,6 +343,7 @@ export function buildRestContract(
     responseSchemasByStatusCode: config.responseSchemasByStatusCode,
     metadata: config.metadata,
     tags: config.tags,
+    visibility: config.visibility ?? 'public',
   }
 
   if (method === 'post' || method === 'put' || method === 'patch') {
