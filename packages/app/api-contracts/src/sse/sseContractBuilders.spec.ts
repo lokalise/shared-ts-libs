@@ -291,6 +291,8 @@ describe('contractBuilders', () => {
       expect(route.isDualMode).toBe(true)
       expect(route.requestBodySchema).toBeUndefined()
       expect(route.visibility).toBe('public')
+      expect(route.isEmptyResponseExpected).toBe(false)
+      expect(route.isNonJSONResponseExpected).toBe(false)
     })
 
     it('includes responseBodySchemasByStatusCode for GET dual-mode', () => {
@@ -330,6 +332,23 @@ describe('contractBuilders', () => {
       })
 
       expect(route.visibility).toBe('internal')
+    })
+
+    it('reflects explicit isEmptyResponseExpected value', () => {
+      const route = buildSseContract({
+        method: 'get',
+        pathResolver: () => '/api/status',
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEventSchemas: {
+          update: z.object({ progress: z.number() }),
+        },
+        isEmptyResponseExpected: true,
+      })
+
+      expect(route.isEmptyResponseExpected).toBe(true)
     })
   })
 

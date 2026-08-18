@@ -152,6 +152,8 @@ export type DualModeGetContractConfig<
   tags?: readonly string[]
   // Optional in the config; the builder stamps it on the contract, defaulting to 'public'
   visibility?: RouteVisibility
+  // Whether the sync (JSON) response may be empty (204); the builder stamps it, defaulting to false
+  isEmptyResponseExpected?: boolean
 }
 
 /**
@@ -211,6 +213,8 @@ export type DualModePayloadContractConfig<
   tags?: readonly string[]
   // Optional in the config; the builder stamps it on the contract, defaulting to 'public'
   visibility?: RouteVisibility
+  // Whether the sync (JSON) response may be empty (204); the builder stamps it, defaulting to false
+  isEmptyResponseExpected?: boolean
 }
 
 /**
@@ -474,6 +478,10 @@ export function buildSseContract(
       responseBodySchemasByStatusCode: (config as { responseBodySchemasByStatusCode?: unknown })
         .responseBodySchemasByStatusCode,
       isDualMode: true,
+      isEmptyResponseExpected:
+        (config as { isEmptyResponseExpected?: boolean }).isEmptyResponseExpected ?? false,
+      // The sync response of a dual-mode route is always JSON
+      isNonJSONResponseExpected: false,
     }
   }
 

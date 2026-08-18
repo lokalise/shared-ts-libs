@@ -65,6 +65,10 @@ export type DualModeContractDefinition<
   tags?: readonly string[]
   // 'internal' excludes the route from generated OpenAPI docs; builders default it to 'public'
   visibility: RouteVisibility
+  // Whether the sync (JSON) response may be empty (204); builder defaults it to false
+  isEmptyResponseExpected: boolean
+  // The sync response of a dual-mode route is always JSON; carried for REST-contract compatibility
+  isNonJSONResponseExpected: false
 }
 
 /**
@@ -91,4 +95,8 @@ export type AnyDualModeContractDefinition = {
   tags?: readonly string[]
   // 'internal' excludes the route from generated OpenAPI docs; builders default it to 'public'
   visibility: RouteVisibility
+  // Whether the sync (JSON) response may be empty (204); builder defaults it to false
+  isEmptyResponseExpected: boolean
+  // The sync response of a dual-mode route is always JSON; carried for REST-contract compatibility
+  isNonJSONResponseExpected: false
 }
