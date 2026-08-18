@@ -243,6 +243,29 @@ getSseSchemaByEventName(chatCompletion)
 // { chunk: ZodObject<...>, done: ZodObject<...> }
 ```
 
+### Route visibility
+
+`visibility` marks who a route is intended for: `'public'` (the default) or `'internal'`.
+Internal routes (e.g. backend-for-frontend endpoints consumed only by our own frontends) are
+excluded by OpenAPI generators from the published API document. Visibility has no runtime
+effect — the route is registered and served as usual.
+
+```ts
+const contract = defineApiContract({
+  summary: 'Editor autosave (BFF)',
+  method: 'post',
+  pathResolver: () => '/editor/autosave',
+  requestBodySchema: z.object({ content: z.string() }),
+  responsesByStatusCode: { 204: noBodyResponse() },
+  visibility: 'internal', // excluded from generated OpenAPI docs
+})
+```
+
+The field is optional in every builder input, but every built contract carries it: all builders
+(`defineApiContract`, `buildContract`, `buildRestContract`, `buildSseContract`, and the legacy
+`buildGetRoute` / `buildPayloadRoute` / `buildDeleteRoute`) stamp `visibility: 'public'` when it
+is omitted.
+
 ### All fields
 
 ```ts
