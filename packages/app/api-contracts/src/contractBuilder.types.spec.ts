@@ -140,7 +140,7 @@ describe('buildContract type inference', () => {
         pathResolver: () => '/api/resource',
       })
 
-      expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true | undefined>()
+      expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true>()
     })
   })
 
@@ -275,7 +275,7 @@ describe('buildContract type inference', () => {
           pathResolver: () => '/api/data',
         })
 
-        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false | undefined>()
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false>()
       })
 
       it('defaults to false type for POST routes', () => {
@@ -286,7 +286,7 @@ describe('buildContract type inference', () => {
           pathResolver: () => '/api/data',
         })
 
-        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false | undefined>()
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false>()
       })
 
       it('defaults to true type for DELETE routes', () => {
@@ -296,7 +296,7 @@ describe('buildContract type inference', () => {
           pathResolver: () => '/api/resource',
         })
 
-        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true | undefined>()
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true>()
       })
 
       it('reflects explicit true value in type for GET', () => {
@@ -307,7 +307,7 @@ describe('buildContract type inference', () => {
           isEmptyResponseExpected: true,
         })
 
-        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true | undefined>()
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true>()
       })
 
       it('reflects explicit false value in type for DELETE', () => {
@@ -318,7 +318,7 @@ describe('buildContract type inference', () => {
           isEmptyResponseExpected: false,
         })
 
-        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false | undefined>()
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false>()
       })
     })
 
@@ -330,7 +330,7 @@ describe('buildContract type inference', () => {
           pathResolver: () => '/api/data',
         })
 
-        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false | undefined>()
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false>()
       })
 
       it('defaults to false type for POST routes', () => {
@@ -341,7 +341,7 @@ describe('buildContract type inference', () => {
           pathResolver: () => '/api/data',
         })
 
-        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false | undefined>()
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false>()
       })
 
       it('defaults to false type for DELETE routes', () => {
@@ -351,7 +351,7 @@ describe('buildContract type inference', () => {
           pathResolver: () => '/api/resource',
         })
 
-        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false | undefined>()
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false>()
       })
 
       it('reflects explicit true value in type', () => {
@@ -362,7 +362,7 @@ describe('buildContract type inference', () => {
           isNonJSONResponseExpected: true,
         })
 
-        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<true | undefined>()
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<true>()
       })
 
       it('reflects explicit false value in type', () => {
@@ -373,7 +373,7 @@ describe('buildContract type inference', () => {
           isNonJSONResponseExpected: false,
         })
 
-        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false | undefined>()
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false>()
       })
     })
   })
