@@ -144,6 +144,17 @@ describe('buildRestContract', () => {
       expect(contract.method).toBe('get')
     })
 
+    it('propagates visibility to the contract', () => {
+      const contract = buildRestContract({
+        method: 'get',
+        successResponseBodySchema: BODY_SCHEMA,
+        pathResolver: () => '/api/users',
+        visibility: 'internal',
+      })
+
+      expect(contract.visibility).toBe('internal')
+    })
+
     it('defaults isEmptyResponseExpected to false for GET', () => {
       const contract = buildRestContract({
         method: 'get',

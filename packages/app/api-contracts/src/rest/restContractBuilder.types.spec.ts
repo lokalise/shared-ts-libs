@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import type { GetRouteDefinition } from '../apiContracts.ts'
+import type { GetRouteDefinition, RouteVisibility } from '../apiContracts.ts'
 import { buildRestContract } from './restContractBuilder.ts'
 
 describe('buildRestContract type inference', () => {
@@ -145,7 +145,7 @@ describe('buildRestContract type inference', () => {
       })
 
       // DELETE routes should have isEmptyResponseExpected default to true
-      expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true | undefined>()
+      expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true>()
     })
   })
 
@@ -355,7 +355,7 @@ describe('buildRestContract type inference', () => {
           pathResolver: () => '/api/data',
         })
 
-        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false | undefined>()
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false>()
       })
 
       it('defaults to false type for POST routes', () => {
@@ -366,7 +366,7 @@ describe('buildRestContract type inference', () => {
           pathResolver: () => '/api/data',
         })
 
-        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false | undefined>()
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false>()
       })
 
       it('defaults to true type for DELETE routes', () => {
@@ -376,7 +376,7 @@ describe('buildRestContract type inference', () => {
           pathResolver: () => '/api/resource',
         })
 
-        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true | undefined>()
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true>()
       })
 
       it('reflects explicit true value in type for GET', () => {
@@ -387,7 +387,7 @@ describe('buildRestContract type inference', () => {
           isEmptyResponseExpected: true,
         })
 
-        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true | undefined>()
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<true>()
       })
 
       it('reflects explicit false value in type for DELETE', () => {
@@ -398,7 +398,7 @@ describe('buildRestContract type inference', () => {
           isEmptyResponseExpected: false,
         })
 
-        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false | undefined>()
+        expectTypeOf(contract.isEmptyResponseExpected).toEqualTypeOf<false>()
       })
     })
 
@@ -410,7 +410,7 @@ describe('buildRestContract type inference', () => {
           pathResolver: () => '/api/data',
         })
 
-        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false | undefined>()
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false>()
       })
 
       it('defaults to false type for POST routes', () => {
@@ -421,7 +421,7 @@ describe('buildRestContract type inference', () => {
           pathResolver: () => '/api/data',
         })
 
-        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false | undefined>()
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false>()
       })
 
       it('defaults to false type for DELETE routes', () => {
@@ -431,7 +431,7 @@ describe('buildRestContract type inference', () => {
           pathResolver: () => '/api/resource',
         })
 
-        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false | undefined>()
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false>()
       })
 
       it('reflects explicit true value in type', () => {
@@ -442,7 +442,7 @@ describe('buildRestContract type inference', () => {
           isNonJSONResponseExpected: true,
         })
 
-        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<true | undefined>()
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<true>()
       })
 
       it('reflects explicit false value in type', () => {
@@ -453,8 +453,41 @@ describe('buildRestContract type inference', () => {
           isNonJSONResponseExpected: false,
         })
 
-        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false | undefined>()
+        expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false>()
       })
+    })
+  })
+
+  describe('visibility types', () => {
+    it('is non-optional when omitted for GET routes', () => {
+      const contract = buildRestContract({
+        method: 'get',
+        successResponseBodySchema: z.object({}),
+        pathResolver: () => '/api/data',
+      })
+
+      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
+    })
+
+    it('is non-optional when omitted for POST routes', () => {
+      const contract = buildRestContract({
+        method: 'post',
+        requestBodySchema: z.object({}),
+        successResponseBodySchema: z.object({}),
+        pathResolver: () => '/api/data',
+      })
+
+      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
+    })
+
+    it('is non-optional when omitted for DELETE routes', () => {
+      const contract = buildRestContract({
+        method: 'delete',
+        successResponseBodySchema: z.undefined(),
+        pathResolver: () => '/api/resource',
+      })
+
+      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
     })
   })
 })
