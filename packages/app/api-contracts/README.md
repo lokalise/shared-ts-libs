@@ -299,6 +299,8 @@ type ApiContractOptions = {
   description?: string
   tags?: readonly string[]
   metadata?: Record<string, unknown>
+  // Defaults to 'public'; 'internal' excludes the route from generated OpenAPI docs
+  visibility?: RouteVisibility
 }
 ```
 
