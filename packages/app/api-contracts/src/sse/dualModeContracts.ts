@@ -67,7 +67,7 @@ export type DualModeContractDefinition<
   visibility: RouteVisibility
   // Whether the sync (JSON) response may be empty (204); builder defaults it to false
   isEmptyResponseExpected: boolean
-  // The sync response of a dual-mode route is always JSON; carried for REST-contract compatibility
+  // Whether the sync response of a dual-mode route may have non-JSON format; carried for REST-contract compatibility
   isNonJSONResponseExpected: false
 }
 
@@ -97,6 +97,6 @@ export type AnyDualModeContractDefinition = {
   visibility: RouteVisibility
   // Whether the sync (JSON) response may be empty (204); builder defaults it to false
   isEmptyResponseExpected: boolean
-  // The sync response of a dual-mode route is always JSON; carried for REST-contract compatibility
+  // Whether the sync response of a dual-mode route may have non-JSON format; carried for REST-contract compatibility
   isNonJSONResponseExpected: false
 }
