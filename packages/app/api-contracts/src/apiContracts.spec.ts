@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import {
   buildDeleteRoute,
@@ -6,6 +6,7 @@ import {
   buildPayloadRoute,
   describeContract,
   mapRouteToPath,
+  type RouteVisibility,
 } from './apiContracts.ts'
 
 const BODY_SCHEMA = z.object({})
@@ -43,6 +44,19 @@ describe('apiContracts', () => {
 
       expect(contract).toMatchSnapshot()
     })
+
+    it('propagates visibility to the contract', () => {
+      const contract = buildPayloadRoute({
+        successResponseBodySchema: BODY_SCHEMA,
+        requestBodySchema: BODY_SCHEMA,
+        method: 'post',
+        pathResolver: () => '/',
+        visibility: 'internal',
+      })
+
+      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
+      expect(contract.visibility).toBe('internal')
+    })
   })
 
   describe('buildGetRoute', () => {
@@ -70,6 +84,16 @@ describe('apiContracts', () => {
 
       expect(contract).toMatchSnapshot()
     })
+
+    it('propagates visibility to the contract', () => {
+      const contract = buildGetRoute({
+        successResponseBodySchema: BODY_SCHEMA,
+        pathResolver: () => '/',
+        visibility: 'public',
+      })
+
+      expect(contract.visibility).toBe('public')
+    })
   })
 
   describe('buildDeleteRoute', () => {
@@ -81,6 +105,16 @@ describe('apiContracts', () => {
       })
 
       expect(contract).toMatchSnapshot()
+    })
+
+    it('propagates visibility to the contract', () => {
+      const contract = buildDeleteRoute({
+        successResponseBodySchema: BODY_SCHEMA,
+        pathResolver: () => '/',
+        visibility: 'internal',
+      })
+
+      expect(contract.visibility).toBe('internal')
     })
   })
 
