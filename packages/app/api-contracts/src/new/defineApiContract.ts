@@ -3,6 +3,7 @@ import type {
   CommonRouteDefinitionMetadata,
   InferSchemaOutput,
   RoutePathResolver,
+  RouteVisibility,
 } from '../apiContracts.ts'
 import { SUCCESSFUL_HTTP_STATUS_CODES } from '../HttpStatusCodes.ts'
 import type { DistributiveOmit, Exactly } from '../typeUtils.ts'
@@ -35,6 +36,8 @@ export type CommonApiContract = {
   summary: string
   description?: string
   tags?: readonly string[]
+  // 'internal' excludes the route from generated OpenAPI docs; defineApiContract defaults it to 'public'
+  visibility: RouteVisibility
 }
 
 export type GetApiContract = CommonApiContract & {
@@ -54,21 +57,29 @@ export type PayloadApiContract = CommonApiContract & {
 
 export type ApiContract = GetApiContract | DeleteApiContract | PayloadApiContract
 
-type TypedPathApiContract<TPathParamsSchema extends RequestPathParamsSchema | undefined> =
-  DistributiveOmit<ApiContract, 'pathResolver' | 'requestPathParamsSchema'> & {
+/**
+ * Input shape accepted by `defineApiContract`.
+ */
+type ApiContractConfig<TPathParamsSchema extends RequestPathParamsSchema | undefined> =
+  DistributiveOmit<ApiContract, 'pathResolver' | 'requestPathParamsSchema' | 'visibility'> & {
     pathResolver: RoutePathResolver<InferSchemaOutput<TPathParamsSchema>>
     requestPathParamsSchema?: TPathParamsSchema
+    // Optional in the config; defineApiContract stamps it on the contract, defaulting to 'public'
+    visibility?: RouteVisibility
   }
 
 export const defineApiContract = <
   TPathParamsSchema extends RequestPathParamsSchema | undefined = undefined,
   const TContract extends
-    TypedPathApiContract<TPathParamsSchema> = TypedPathApiContract<TPathParamsSchema>,
+    ApiContractConfig<TPathParamsSchema> = ApiContractConfig<TPathParamsSchema>,
 >(
-  contract: Exactly<TContract, TypedPathApiContract<TPathParamsSchema>> & {
+  contract: Exactly<TContract, ApiContractConfig<TPathParamsSchema>> & {
     requestPathParamsSchema?: TPathParamsSchema
   },
-): TContract => contract
+): TContract & { visibility: RouteVisibility } =>
+  ({ ...contract, visibility: contract.visibility ?? 'public' }) as TContract & {
+    visibility: RouteVisibility
+  }
 
 export const mapApiContractToPath = (routeConfig: ApiContract): string => {
   if (!routeConfig.requestPathParamsSchema) {
