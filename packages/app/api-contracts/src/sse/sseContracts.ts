@@ -1,5 +1,9 @@
 import type { z } from 'zod/v4'
-import type { CommonRouteDefinitionMetadata, RoutePathResolver } from '../apiContracts.ts'
+import type {
+  CommonRouteDefinitionMetadata,
+  RoutePathResolver,
+  RouteVisibility,
+} from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 import type { SSEEventSchemas } from './sseTypes.ts'
 
@@ -62,6 +66,8 @@ export type SSEContractDefinition<
   description?: string
   summary?: string
   tags?: readonly string[]
+  // 'internal' excludes the route from generated OpenAPI docs; builders default it to 'public'
+  visibility: RouteVisibility
 }
 
 /**
@@ -83,4 +89,6 @@ export type AnySSEContractDefinition = {
   description?: string
   summary?: string
   tags?: readonly string[]
+  // 'internal' excludes the route from generated OpenAPI docs; builders default it to 'public'
+  visibility: RouteVisibility
 }

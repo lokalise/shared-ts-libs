@@ -1,5 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
+import type { RouteVisibility } from '../apiContracts.ts'
 import type {
   AnyDualModeContractDefinition,
   DualModeContractDefinition,
@@ -117,6 +118,17 @@ describe('buildSseContract type inference', () => {
 
       expectTypeOf(contract).toMatchTypeOf<AnySSEContractDefinition>()
     })
+
+    it('visibility stays non-optional with explicit value', () => {
+      const contract = buildSseContract({
+        method: 'get' as const,
+        pathResolver: () => '/api/stream',
+        serverSentEventSchemas: { message: z.object({ text: z.string() }) },
+        visibility: 'internal',
+      })
+
+      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
+    })
   })
 
   // ============================================================================
@@ -188,6 +200,16 @@ describe('buildSseContract type inference', () => {
       expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestQuerySchema>()
       expectTypeOf(contract.requestHeaderSchema).toEqualTypeOf<typeof headersSchema | undefined>()
       expectTypeOf(contract).toMatchTypeOf<AnySSEContractDefinition>()
+    })
+
+    it('visibility is non-optional when omitted', () => {
+      const contract = buildSseContract({
+        method: 'get' as const,
+        pathResolver: () => '/api/stream',
+        serverSentEventSchemas: { message: z.object({ text: z.string() }) },
+      })
+
+      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
     })
   })
 
@@ -274,6 +296,17 @@ describe('buildSseContract type inference', () => {
       })
 
       expectTypeOf(contract).toMatchTypeOf<AnySSEContractDefinition>()
+    })
+
+    it('visibility is non-optional when omitted', () => {
+      const contract = buildSseContract({
+        method: 'post' as const,
+        pathResolver: () => '/api/process',
+        requestBodySchema: z.object({ data: z.string() }),
+        serverSentEventSchemas: { progress: z.object({ percent: z.number() }) },
+      })
+
+      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
     })
   })
 
@@ -379,6 +412,17 @@ describe('buildSseContract type inference', () => {
       expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestQuerySchema>()
       expectTypeOf<undefined>().toMatchTypeOf<typeof contract.requestHeaderSchema>()
       expectTypeOf(contract).toMatchTypeOf<AnyDualModeContractDefinition>()
+    })
+
+    it('visibility is non-optional when omitted', () => {
+      const contract = buildSseContract({
+        method: 'get' as const,
+        pathResolver: () => '/api/status',
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEventSchemas: { update: z.object({ progress: z.number() }) },
+      })
+
+      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
     })
   })
 

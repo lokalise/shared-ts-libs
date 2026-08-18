@@ -88,6 +88,7 @@ describe('contractBuilders', () => {
       expect(route.pathResolver({})).toBe('/api/stream')
       expect(route.isSSE).toBe(true)
       expect(route.requestBodySchema).toBeUndefined()
+      expect(route.visibility).toBe('public')
     })
 
     it('includes responseBodySchemasByStatusCode for SSE GET', () => {
@@ -110,6 +111,22 @@ describe('contractBuilders', () => {
       expect(route.responseBodySchemasByStatusCode).toBeDefined()
       expect(route.responseBodySchemasByStatusCode?.[401]).toBeDefined()
       expect(route.responseBodySchemasByStatusCode?.[404]).toBeDefined()
+    })
+
+    it('reflects explicit visibility value', () => {
+      const route = buildSseContract({
+        method: 'get',
+        pathResolver: () => '/api/stream',
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        serverSentEventSchemas: {
+          message: z.object({ text: z.string() }),
+        },
+        visibility: 'internal',
+      })
+
+      expect(route.visibility).toBe('internal')
     })
   })
 
@@ -273,6 +290,7 @@ describe('contractBuilders', () => {
       expect(route.pathResolver({ jobId: '123' })).toBe('/api/jobs/123/status')
       expect(route.isDualMode).toBe(true)
       expect(route.requestBodySchema).toBeUndefined()
+      expect(route.visibility).toBe('public')
     })
 
     it('includes responseBodySchemasByStatusCode for GET dual-mode', () => {
@@ -295,6 +313,23 @@ describe('contractBuilders', () => {
 
       expect(route.responseBodySchemasByStatusCode).toBeDefined()
       expect(route.responseBodySchemasByStatusCode?.[404]).toBeDefined()
+    })
+
+    it('reflects explicit visibility value', () => {
+      const route = buildSseContract({
+        method: 'get',
+        pathResolver: () => '/api/status',
+        requestPathParamsSchema: z.object({}),
+        requestQuerySchema: z.object({}),
+        requestHeaderSchema: z.object({}),
+        successResponseBodySchema: z.object({ status: z.string() }),
+        serverSentEventSchemas: {
+          update: z.object({ progress: z.number() }),
+        },
+        visibility: 'internal',
+      })
+
+      expect(route.visibility).toBe('internal')
     })
   })
 

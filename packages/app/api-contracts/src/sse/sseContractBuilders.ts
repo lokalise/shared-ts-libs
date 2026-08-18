@@ -1,5 +1,9 @@
 import type { z } from 'zod/v4'
-import type { CommonRouteDefinitionMetadata, RoutePathResolver } from '../apiContracts.ts'
+import type {
+  CommonRouteDefinitionMetadata,
+  RoutePathResolver,
+  RouteVisibility,
+} from '../apiContracts.ts'
 import type { HttpStatusCode } from '../HttpStatusCodes.ts'
 import type { DualModeContractDefinition } from './dualModeContracts.ts'
 import type { SSEContractDefinition } from './sseContracts.ts'
@@ -44,6 +48,8 @@ export type SSEGetContractConfig<
   description?: string
   summary?: string
   tags?: readonly string[]
+  // Optional in the config; the builder stamps it on the contract, defaulting to 'public'
+  visibility?: RouteVisibility
 }
 
 /**
@@ -86,6 +92,8 @@ export type SSEPayloadContractConfig<
   description?: string
   summary?: string
   tags?: readonly string[]
+  // Optional in the config; the builder stamps it on the contract, defaulting to 'public'
+  visibility?: RouteVisibility
 }
 
 /**
@@ -142,6 +150,8 @@ export type DualModeGetContractConfig<
   description?: string
   summary?: string
   tags?: readonly string[]
+  // Optional in the config; the builder stamps it on the contract, defaulting to 'public'
+  visibility?: RouteVisibility
 }
 
 /**
@@ -199,6 +209,8 @@ export type DualModePayloadContractConfig<
   description?: string
   summary?: string
   tags?: readonly string[]
+  // Optional in the config; the builder stamps it on the contract, defaulting to 'public'
+  visibility?: RouteVisibility
 }
 
 /**
@@ -307,6 +319,7 @@ function buildBaseFields(config: any, hasBody: boolean) {
     description: config.description,
     summary: config.summary,
     tags: config.tags,
+    visibility: config.visibility ?? 'public',
   }
 }
 
