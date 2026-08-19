@@ -10,6 +10,7 @@ This package adds support for generating fastify routes using universal API cont
     - [Error handling](#error-handling)
   - [`buildFastifyRoute`](#buildfastifyroute)
   - [`buildFastifyRouteHandler`](#buildfastifyroutehandler)
+  - [Route visibility](#route-visibility)
   - [Accessing the contract](#accessing-the-contract)
   - [Adding extra route options from contract metadata](#adding-extra-route-options-from-contract-metadata)
 - [Test helpers](#test-helpers)
@@ -389,6 +390,20 @@ const routes = [
     buildFastifyRoute(contract, handler),
 ]
 ```
+
+### Route visibility
+
+Every route builder derives the fastify-swagger `schema.hide` flag from the contract's `visibility` field (`'public' | 'internal'`, always stamped by the contract builders): routes from `visibility: 'internal'` contracts get `hide: true` and are excluded from the generated OpenAPI document, while still being registered and served as usual. Public routes carry an explicit `hide: false`.
+
+```ts
+const contract = buildGetRoute({
+    successResponseBodySchema: BODY_SCHEMA,
+    pathResolver: () => '/editor/autosave',
+    visibility: 'internal', // excluded from generated OpenAPI docs
+})
+```
+
+`hide` is only a derived rendering instruction for OpenAPI generators. Anything that needs the semantic value (auth hooks, gateways, custom doc tooling) should read it from the contract — `req.routeOptions.config.apiContract.visibility` — not from the schema flag (see [Accessing the contract](#accessing-the-contract)). Routes defined without contracts can opt out of the docs with fastify-swagger's native `schema: { hide: true }`.
 
 ### Accessing the contract
 
