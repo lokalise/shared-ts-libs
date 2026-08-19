@@ -59,7 +59,7 @@
         "@prisma/instrumentation": "^7.0.1",
         "@types/node": "^26.1.1",
         "@vitest/coverage-v8": "^4.1.10",
-        "fastify": "^5.0.0",
+        "fastify": "^5.11.3",
         "pino": "^10.1.0",
         "pino-pretty": "^13.0.0",
         "rimraf": "^6.1.3",
