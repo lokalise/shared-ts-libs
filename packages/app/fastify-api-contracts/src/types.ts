@@ -27,6 +27,8 @@ export type ExtendedFastifySchema = FastifySchema & {
   description?: string
   summary?: string
   tags?: readonly string[]
+  /* When true, the route will not be added to the OpenAPI docs */
+  hide?: boolean
 }
 
 export type RouteType<

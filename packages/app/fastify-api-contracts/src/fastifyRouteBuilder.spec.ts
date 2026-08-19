@@ -575,5 +575,32 @@ describe('buildFastifyRoute', () => {
 
       expect(route.schema).not.toHaveProperty('tags')
     })
+
+    it('maps internal visibility to schema.hide true', () => {
+      const contract = buildRestContract({
+        method: 'get',
+        successResponseBodySchema: BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+        visibility: 'internal',
+      })
+
+      const route = buildFastifyRoute(contract, () => Promise.resolve({}))
+
+      expect(route.schema.hide).toBe(true)
+    })
+
+    it('stamps schema.hide false for public routes', () => {
+      const contract = buildRestContract({
+        method: 'get',
+        successResponseBodySchema: BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const route = buildFastifyRoute(contract, () => Promise.resolve({}))
+
+      expect(route.schema.hide).toBe(false)
+    })
   })
 })
