@@ -23,7 +23,6 @@ interface FastifyContractRouteInterface<ReplyType, BodyType, ParamsType, QueryTy
  * Default fastify fields + fastify-swagger fields
  */
 export type ExtendedFastifySchema = FastifySchema & {
-  describe?: string
   description?: string
   summary?: string
   tags?: readonly string[]
