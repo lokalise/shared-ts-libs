@@ -396,9 +396,11 @@ const routes = [
 Every route builder derives the fastify-swagger `schema.hide` flag from the contract's `visibility` field (`'public' | 'internal'`, always stamped by the contract builders): routes from `visibility: 'internal'` contracts get `hide: true` and are excluded from the generated OpenAPI document, while still being registered and served as usual. Public routes carry an explicit `hide: false`.
 
 ```ts
-const contract = buildGetRoute({
-    successResponseBodySchema: BODY_SCHEMA,
+const contract = defineApiContract({
+    method: 'get',
+    summary: 'Editor autosave state',
     pathResolver: () => '/editor/autosave',
+    responsesByStatusCode: { 200: BODY_SCHEMA },
     visibility: 'internal', // excluded from generated OpenAPI docs
 })
 ```
