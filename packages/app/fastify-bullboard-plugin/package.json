@@ -31,8 +31,8 @@
     "dependencies": {
         "@bull-board/api": "^8.1.0",
         "@bull-board/fastify": "^8.1.0",
-        "@fastify/auth": "^5.0.4",
-        "@fastify/basic-auth": "^6.2.0",
+        "@fastify/auth": "^5.1.0",
+        "@fastify/basic-auth": "^6.3.0",
         "@lokalise/tsconfig": "workspace:^"
     },
     "peerDependencies": {
@@ -52,7 +52,7 @@
         "awilix-manager": "^7.0.0",
         "bullmq": "5.81.2",
         "cross-env": "^10.0.0",
-        "fastify": "^5.10.0",
+        "fastify": "^5.11.3",
         "fastify-graceful-shutdown": "^5.0.0",
         "fastify-metrics": "^13.2.1",
         "fastify-plugin": "^6.0.0",
