@@ -102,6 +102,8 @@ export type ExtendedFastifySchema = FastifySchema & {
   description?: string
   summary?: string
   tags?: readonly string[]
+  /* When true, the route will not be added to the OpenAPI docs */
+  hide?: boolean
 }
 
 /**
@@ -109,7 +111,10 @@ export type ExtendedFastifySchema = FastifySchema & {
  * runtime validation/serialization and the generated OpenAPI spec.
  */
 export function buildFastifyApiSchema(contract: ApiContract): ExtendedFastifySchema {
-  const schema: ExtendedFastifySchema = { summary: contract.summary }
+  const schema: ExtendedFastifySchema = {
+    summary: contract.summary,
+    hide: contract.visibility === 'internal',
+  }
 
   if (contract.description !== undefined) {
     schema.description = contract.description

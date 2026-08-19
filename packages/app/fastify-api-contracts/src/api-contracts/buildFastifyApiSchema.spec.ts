@@ -55,6 +55,31 @@ describe('buildFastifyApiSchema — OpenAPI metadata', () => {
     expect(schema).not.toHaveProperty('description')
     expect(schema).not.toHaveProperty('tags')
   })
+
+  it('maps internal visibility to hide true', () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'List users',
+      pathResolver: () => '/users',
+      responsesByStatusCode: { 200: userSchema },
+      visibility: 'internal',
+    })
+
+    const schema = buildFastifyApiSchema(contract)
+    expect(schema.hide).toBe(true)
+  })
+
+  it('stamps hide false for public contracts', () => {
+    const contract = defineApiContract({
+      method: 'get',
+      summary: 'List users',
+      pathResolver: () => '/users',
+      responsesByStatusCode: { 200: userSchema },
+    })
+
+    const schema = buildFastifyApiSchema(contract)
+    expect(schema.hide).toBe(false)
+  })
 })
 
 // ============================================================================
