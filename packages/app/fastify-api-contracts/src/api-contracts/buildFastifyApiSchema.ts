@@ -7,8 +7,8 @@ import {
   isJsonResponse,
   type SseSchemaByEventName,
 } from '@lokalise/api-contracts'
-import type { FastifySchema } from 'fastify'
 import { z } from 'zod/v4'
+import type { ExtendedFastifySchema } from '../types.ts'
 
 // Schemas for non-JSON media types. Raw bodies (`string`/`Buffer`/`Readable`) and SSE streams
 // bypass Fastify's serializer, so these are never parsed at runtime — they only describe the
@@ -96,14 +96,6 @@ function buildResponseSchemas(contract: ApiContract): Record<string, FastifyResp
   }
 
   return schemas
-}
-
-export type ExtendedFastifySchema = FastifySchema & {
-  description?: string
-  summary?: string
-  tags?: readonly string[]
-  /* When true, the route will not be added to the OpenAPI docs */
-  hide?: boolean
 }
 
 /**
