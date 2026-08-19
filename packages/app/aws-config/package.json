@@ -62,7 +62,7 @@
         "@lokalise/tsconfig": "workspace:^",
         "@lokalise/universal-ts-utils": "workspace:^",
         "@message-queue-toolkit/core": "^26.1.1",
-        "@message-queue-toolkit/sns": "^26.2.1",
+        "@message-queue-toolkit/sns": "^27.0.0",
         "@message-queue-toolkit/sqs": "^26.1.1",
         "@types/node": "^26.1.1",
         "@vitest/coverage-v8": "^4.1.10",
