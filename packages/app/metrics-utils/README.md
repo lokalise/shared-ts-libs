@@ -417,6 +417,51 @@ request_duration_failed:histogram
 
 `registerMeasurement` takes a single object containing the target `dimension` and either a direct `time` value or a `startTime`/`endTime` pair. A measurement for a dimension that was not declared is silently ignored (see [Lazy initialization](#lazy-initialization) for relaxing this).
 
+### Optional labels
+
+By default each dimension is registered as a plain label-free metric. When you need to, you can attach optional Prometheus labels to every per-dimension metric by declaring `labelNames` in the config and supplying values via a `labels` sub-object on the measurement. This works uniformly across all three dimensional classes; label values are optional per measurement.
+
+```typescript
+export class RequestDurationMetric extends AbstractDimensionalHistogramMetric<
+  ['successful', 'failed'],
+  ['region']
+> {
+  constructor({ promClient }: Deps) {
+    super(
+      {
+        helpDescription: 'Duration of requests in seconds',
+        dimensions: ['successful', 'failed'],
+        labelNames: ['region'],
+        buckets: [0.1, 0.5, 1, 5],
+        buildMetricName: (dimension) => `request_duration_${dimension}:histogram`,
+      },
+      promClient,
+    )
+  }
+}
+
+const requestDurationMetric = new RequestDurationMetric({ appMetrics })
+
+// Histogram — labels sit in the `labels` sub-object alongside `dimension` and the duration:
+requestDurationMetric.registerMeasurement({ dimension: 'successful', labels: { region: 'eu' }, time: 0.32 })
+```
+
+Counter and gauge take the same `labels` sub-object; because their measurement keys are the dimensions, the `labels` object applies to every dimension incremented/set in that call:
+
+```typescript
+// Counter
+pizzaDeliveryCountMetric.registerMeasurement({
+  delivered_to_customer: 1,
+  delivered_to_pickup_point: 2,
+  labels: { region: 'eu' },
+})
+
+// Gauge
+connectionPoolMetric.registerMeasurement({ active: 7, idle: 3, labels: { region: 'eu' } })
+```
+
+> ⚠️ For counter and gauge, `labels` is a reserved key in the measurement object. If you use lazy-unbounded string dimensions, avoid a dimension literally named `labels`, as it would be interpreted as the label sub-object rather than a dimension. Histogram is unaffected — its dimension lives in the dedicated `dimension` field.
+
 ### Lazy initialization
 
 By default, all Dimensional classes (`AbstractDimensionalCounterMetric`, `AbstractDimensionalGaugeMetric` and `AbstractDimensionalHistogramMetric`) operate in **eager mode**: every declared dimension is registered at construction time, and a measurement targeting a dimension that was not listed in `dimensions` is silently ignored — a metrics utility must not throw into the caller's path.

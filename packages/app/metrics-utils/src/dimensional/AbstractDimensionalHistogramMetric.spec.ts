@@ -51,6 +51,24 @@ class LazyUnboundedDimensionalHistogramMetric extends AbstractDimensionalHistogr
   }
 }
 
+class LabeledConcreteDimensionalHistogramMetric extends AbstractDimensionalHistogramMetric<
+  ['successful', 'failed'],
+  ['region']
+> {
+  constructor(client?: typeof promClient) {
+    super(
+      {
+        helpDescription: 'Labeled histogram',
+        dimensions: ['successful', 'failed'],
+        labelNames: ['region'],
+        buckets: [1, 2, 3],
+        buildMetricName: (dimension) => `labeled_${dimension}:histogram`,
+      },
+      client,
+    )
+  }
+}
+
 describe('AbstractDimensionalHistogramMetric', () => {
   let observeMock: Mock
   let histogramMock: Mock
@@ -284,6 +302,49 @@ describe('AbstractDimensionalHistogramMetric', () => {
         expect(histogramMock).toHaveBeenCalledTimes(1)
         expect(observeMock).toHaveBeenCalledTimes(2)
       })
+    })
+  })
+
+  describe('labels', () => {
+    it('registers the metric with the declared label names', () => {
+      // Given
+      getSingleMetricMock.mockReturnValue(undefined)
+
+      // When
+      const metric = new LabeledConcreteDimensionalHistogramMetric(client)
+      metric.registerMeasurement({ dimension: 'successful', labels: { region: 'eu' }, time: 100 })
+
+      // Then
+      expect(histogramMock).toHaveBeenCalledWith({
+        name: 'labeled_successful:histogram',
+        help: 'Labeled histogram',
+        buckets: [1, 2, 3],
+        labelNames: ['region'],
+      })
+    })
+
+    it('observes with the provided label values', () => {
+      // Given
+      getSingleMetricMock.mockReturnValue(undefined)
+      const metric = new LabeledConcreteDimensionalHistogramMetric(client)
+
+      // When
+      metric.registerMeasurement({ dimension: 'successful', labels: { region: 'eu' }, time: 100 })
+
+      // Then
+      expect(observeMock).toHaveBeenCalledWith({ region: 'eu' }, 100)
+    })
+
+    it('observes with an empty label object when labels are omitted', () => {
+      // Given
+      getSingleMetricMock.mockReturnValue(undefined)
+      const metric = new LabeledConcreteDimensionalHistogramMetric(client)
+
+      // When
+      metric.registerMeasurement({ dimension: 'failed', startTime: 100, endTime: 150 })
+
+      // Then
+      expect(observeMock).toHaveBeenCalledWith({}, 50)
     })
   })
 })

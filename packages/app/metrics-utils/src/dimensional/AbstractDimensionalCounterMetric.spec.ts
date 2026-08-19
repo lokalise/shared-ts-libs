@@ -48,6 +48,23 @@ class LazyUnboundedDimensionalCounterMetric extends AbstractDimensionalCounterMe
   }
 }
 
+class LabeledConcreteDimensionalCounterMetric extends AbstractDimensionalCounterMetric<
+  ['successful', 'failed'],
+  ['region']
+> {
+  constructor(client?: typeof promClient) {
+    super(
+      {
+        helpDescription: 'Labeled counter',
+        dimensions: ['successful', 'failed'],
+        labelNames: ['region'],
+        buildMetricName: (dimension) => `labeled_${dimension}:counter`,
+      },
+      client,
+    )
+  }
+}
+
 describe('AbstractDimensionalCounterMetric', () => {
   let incMock: Mock
   let counterMock: Mock
@@ -320,6 +337,52 @@ describe('AbstractDimensionalCounterMetric', () => {
         expect(counterMock).toHaveBeenCalledTimes(1)
         expect(incMock).toHaveBeenCalledTimes(2)
       })
+    })
+  })
+
+  describe('labels', () => {
+    it('registers the metric with the declared label names', () => {
+      // Given
+      getSingleMetricMock.mockReturnValue(undefined)
+
+      // When
+      new LabeledConcreteDimensionalCounterMetric(client)
+
+      // Then
+      expect(counterMock).toHaveBeenCalledWith({
+        name: 'labeled_successful:counter',
+        help: 'Labeled counter',
+        labelNames: ['region'],
+      })
+    })
+
+    it('increments with the provided label values, applied to every dimension', () => {
+      // Given
+      getSingleMetricMock.mockReturnValue(undefined)
+      const metric = new LabeledConcreteDimensionalCounterMetric(client)
+      incMock.mockClear()
+
+      // When
+      metric.registerMeasurement({ successful: 20, failed: 10, labels: { region: 'eu' } })
+
+      // Then
+      expect(incMock).toHaveBeenCalledTimes(2)
+      expect(incMock).toHaveBeenCalledWith({ region: 'eu' }, 20)
+      expect(incMock).toHaveBeenCalledWith({ region: 'eu' }, 10)
+    })
+
+    it('increments without labels when labels are omitted', () => {
+      // Given
+      getSingleMetricMock.mockReturnValue(undefined)
+      const metric = new LabeledConcreteDimensionalCounterMetric(client)
+      incMock.mockClear()
+
+      // When
+      metric.registerMeasurement({ successful: 20 })
+
+      // Then
+      expect(incMock).toHaveBeenCalledTimes(1)
+      expect(incMock).toHaveBeenCalledWith(20)
     })
   })
 })

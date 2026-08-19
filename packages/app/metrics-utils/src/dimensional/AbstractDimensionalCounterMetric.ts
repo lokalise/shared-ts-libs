@@ -5,9 +5,12 @@ import {
   type DimensionalMetricParams,
 } from './AbstractDimensionalMetric.ts'
 
-type DimensionalCounterMeasurement<TDimensions extends readonly string[]> = Partial<
-  Record<TDimensions[number], number>
->
+type DimensionalCounterMeasurement<
+  TDimensions extends readonly string[],
+  TLabels extends readonly string[],
+> = Partial<Record<TDimensions[number], number>> & {
+  labels?: Partial<Record<TLabels[number], string | number>>
+}
 
 /**
  * Base class for counter metrics where each dimension is registered as a **separate label-free Prometheus Counter**.
@@ -21,24 +24,28 @@ type DimensionalCounterMeasurement<TDimensions extends readonly string[]> = Part
  */
 export abstract class AbstractDimensionalCounterMetric<
   TDimensions extends readonly string[],
+  TLabels extends readonly string[] = [],
 > extends AbstractDimensionalMetric<
-  Counter,
+  Counter<TLabels[number]>,
   TDimensions,
-  DimensionalMetricParams<TDimensions>,
-  DimensionalCounterMeasurement<TDimensions>
+  DimensionalMetricParams<TDimensions, TLabels>,
+  DimensionalCounterMeasurement<TDimensions, TLabels>
 > {
   protected constructor(
-    metricConfig: DimensionalMetricParams<TDimensions>,
+    metricConfig: DimensionalMetricParams<TDimensions, TLabels>,
     client?: typeof promClient,
   ) {
     super(metricConfig, client)
   }
 
-  protected override createMetric(name: string, client: typeof promClient): Counter {
+  protected override createMetric(
+    name: string,
+    client: typeof promClient,
+  ): Counter<TLabels[number]> {
     const counter = new client.Counter({
       name,
       help: this.metricConfig.helpDescription,
-      labelNames: [],
+      labelNames: this.metricConfig.labelNames ?? [],
     })
     // Eager mode: pre-init to 0 so the series is exposed in scrapes before any measurement.
     // Lazy mode: the metric is created on the first measurement, pre-init is not needed.
@@ -51,18 +58,25 @@ export abstract class AbstractDimensionalCounterMetric<
    * Increments the per-dimension counter for one or more dimensions.
    *
    * Pass an object mapping each dimension to the amount to add. Keys with `undefined` values are skipped.
+   * Optional Prometheus label values can be supplied via `labels`, applied to every dimension in the call.
    * A measurement targeting a dimension outside the declared set is silently ignored.
    */
   public override registerMeasurement(
-    measurement: DimensionalCounterMeasurement<TDimensions>,
+    measurement: DimensionalCounterMeasurement<TDimensions, TLabels>,
   ): void {
     if (!this.client) return
 
-    const entries = Object.entries(measurement) as [string, number | undefined][]
+    const { labels, ...dimensions } = measurement
+    const hasLabels = labels && Object.keys(labels).length > 0
+    const entries = Object.entries(dimensions) as [string, number | undefined][]
     for (const [dimension, value] of entries) {
       if (value === undefined) continue
 
-      this.getOrRegisterMetric(dimension)?.inc(value)
+      const counter = this.getOrRegisterMetric(dimension)
+      if (!counter) continue
+
+      if (hasLabels) counter.inc(labels as object, value)
+      else counter.inc(value)
     }
   }
 }
