@@ -83,6 +83,22 @@ describe('buildFastifyApiSchema — OpenAPI metadata', () => {
     const schema = buildFastifyApiSchema(contract)
     expect(schema.hide).toBe(false)
   })
+
+  it('fails closed: hides contracts that lack visibility at runtime', () => {
+    // Simulates a contract built without visibility (plain-JS consumer, hand-written
+    // literal, or a contract package compiled against pre-visibility api-contracts)
+    const contract = defineApiContract({
+      visibility: 'public',
+      method: 'get',
+      summary: 'List users',
+      pathResolver: () => '/users',
+      responsesByStatusCode: { 200: userSchema },
+    })
+    delete (contract as { visibility?: unknown }).visibility
+
+    const schema = buildFastifyApiSchema(contract)
+    expect(schema.hide).toBe(true)
+  })
 })
 
 // ============================================================================

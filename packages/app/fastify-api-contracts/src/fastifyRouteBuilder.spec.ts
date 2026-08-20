@@ -621,5 +621,22 @@ describe('buildFastifyRoute', () => {
 
       expect(route.schema.hide).toBe(false)
     })
+
+    it('fails closed: hides routes whose contract lacks visibility at runtime', () => {
+      // Simulates a contract built without visibility (plain-JS consumer, hand-written
+      // literal, or a contract package compiled against pre-visibility api-contracts)
+      const contract = buildRestContract({
+        visibility: 'public',
+        method: 'get',
+        successResponseBodySchema: BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+      delete (contract as Partial<typeof contract>).visibility
+
+      const route = buildFastifyRoute(contract, () => Promise.resolve({}))
+
+      expect(route.schema.hide).toBe(true)
+    })
   })
 })
