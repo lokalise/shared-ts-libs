@@ -159,13 +159,16 @@ export const noBodyResponse = (options?: ResponseOptions): NoBodyContentResponse
 /**
  * Declares a binary/opaque response for a single media type.
  */
-export const blobResponse = (
-  contentType: ResponseContentType,
+export const blobResponse = <TContentType extends ResponseContentType>(
+  contentType: TContentType,
   options?: ResponseOptions,
-): BodyContentResponseEntry => ({
-  content: { [contentType]: blobBody() },
-  ...(options?.description !== undefined && { description: options.description }),
-})
+) =>
+  ({
+    // A computed property with a generic key widens to `{ [x: string]: ... }`, losing the literal
+    // media type — assert the single-key record shape to keep `TContentType` in the entry type.
+    content: { [contentType]: blobBody() } as { readonly [K in TContentType]: BlobBody },
+    ...(options?.description !== undefined && { description: options.description }),
+  }) as const satisfies BodyContentResponseEntry
 
 /**
  * Declares a Server-Sent Events response.
@@ -173,10 +176,11 @@ export const blobResponse = (
 export const sseResponse = <T extends SseSchemaByEventName>(
   schemaByEventName: T,
   options?: ResponseOptions,
-): BodyContentResponseEntry => ({
-  content: { 'text/event-stream': sseBody(schemaByEventName) },
-  ...(options?.description !== undefined && { description: options.description }),
-})
+) =>
+  ({
+    content: { 'text/event-stream': sseBody(schemaByEventName) },
+    ...(options?.description !== undefined && { description: options.description }),
+  }) as const satisfies BodyContentResponseEntry
 
 export type ResponsesByStatusCode = Partial<
   Record<HttpStatusCode | WildcardStatusCodeKey, ApiContractResponse | ResponseEntry>
