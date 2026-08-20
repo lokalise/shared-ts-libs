@@ -17,6 +17,7 @@ import { z } from 'zod/v4'
 
 // GET with path params
 const getUser = defineApiContract({
+  visibility: 'public',
   summary: 'Get user',
   method: 'get',
   requestPathParamsSchema: z.object({ userId: z.uuid() }),
@@ -28,6 +29,7 @@ const getUser = defineApiContract({
 
 // POST
 const createUser = defineApiContract({
+  visibility: 'public',
   summary: 'Create user',
   method: 'post',
   pathResolver: () => '/users',
@@ -39,6 +41,7 @@ const createUser = defineApiContract({
 
 // DELETE with no response body
 const deleteUser = defineApiContract({
+  visibility: 'public',
   summary: 'Delete user',
   method: 'delete',
   requestPathParamsSchema: z.object({ userId: z.uuid() }),
@@ -57,6 +60,7 @@ Use `blobResponse` for any non-JSON response — text-based (plain text, CSV, HT
 import { defineApiContract, blobResponse } from '@lokalise/api-contracts'
 
 const exportCsv = defineApiContract({
+  visibility: 'public',
   summary: 'Export users as CSV',
   method: 'get',
   pathResolver: () => '/export.csv',
@@ -64,6 +68,7 @@ const exportCsv = defineApiContract({
 })
 
 const downloadPhoto = defineApiContract({
+  visibility: 'public',
   summary: 'Download user photo',
   method: 'get',
   pathResolver: () => '/photo.png',
@@ -83,6 +88,7 @@ import { defineApiContract, blobBody, sseBody } from '@lokalise/api-contracts'
 import { z } from 'zod/v4'
 
 const downloadReport = defineApiContract({
+  visibility: 'public',
   summary: 'Download report',
   method: 'get',
   pathResolver: () => '/report',
@@ -120,6 +126,7 @@ import { z } from 'zod/v4'
 
 // SSE-only
 const notifications = defineApiContract({
+  visibility: 'public',
   summary: 'Stream notifications',
   method: 'get',
   pathResolver: () => '/notifications/stream',
@@ -132,6 +139,7 @@ const notifications = defineApiContract({
 
 // Dual-mode: JSON response or SSE stream depending on Accept header
 const chatCompletion = defineApiContract({
+  visibility: 'public',
   summary: 'Create chat completion',
   method: 'post',
   pathResolver: () => '/chat/completions',
@@ -162,6 +170,7 @@ import { z } from 'zod/v4'
 
 // '2xx' covers all 200–299 responses
 const listItems = defineApiContract({
+  visibility: 'public',
   summary: 'List items',
   method: 'get',
   pathResolver: () => '/items',
@@ -173,6 +182,7 @@ const listItems = defineApiContract({
 
 // exact code takes precedence over the range key
 const createItem = defineApiContract({
+  visibility: 'public',
   summary: 'Create item',
   method: 'post',
   pathResolver: () => '/items',
@@ -185,6 +195,7 @@ const createItem = defineApiContract({
 
 // 'default' matches any status code not covered by a more specific entry
 const flexible = defineApiContract({
+  visibility: 'public',
   summary: 'Get data',
   method: 'get',
   pathResolver: () => '/data',
@@ -208,6 +219,7 @@ import { defineApiContract, noBodyResponse, blobBody, sseBody } from '@lokalise/
 import { z } from 'zod/v4'
 
 const contract = defineApiContract({
+  visibility: 'public',
   summary: 'Upload file',
   method: 'post',
   pathResolver: () => '/files',
@@ -245,7 +257,7 @@ getSseSchemaByEventName(chatCompletion)
 
 ### Route visibility
 
-`visibility` marks who a route is intended for: `'public'` (the default) or `'internal'`.
+`visibility` marks who a route is intended for: `'public'` or `'internal'`.
 Internal routes (e.g. backend-for-frontend endpoints consumed only by our own frontends) are
 excluded by OpenAPI generators from the published API document. Visibility has no runtime
 effect — the route is registered and served as usual.
@@ -261,10 +273,10 @@ const contract = defineApiContract({
 })
 ```
 
-The field is optional in every builder input, but every built contract carries it: all builders
+The field is required in every builder input — there is no default. All builders
 (`defineApiContract`, `buildContract`, `buildRestContract`, `buildSseContract`, and the legacy
-`buildGetRoute` / `buildPayloadRoute` / `buildDeleteRoute`) stamp `visibility: 'public'` when it
-is omitted.
+`buildGetRoute` / `buildPayloadRoute` / `buildDeleteRoute`) demand an explicit choice between
+`'public'` and `'internal'`.
 
 ### All fields
 
@@ -299,8 +311,8 @@ type ApiContractOptions = {
   description?: string
   tags?: readonly string[]
   metadata?: Record<string, unknown>
-  // Defaults to 'public'; 'internal' excludes the route from generated OpenAPI docs
-  visibility?: RouteVisibility
+  // Required; 'internal' excludes the route from generated OpenAPI docs
+  visibility: RouteVisibility
 }
 ```
 
@@ -308,6 +320,7 @@ type ApiContractOptions = {
 
 ```ts
 const contract = defineApiContract({
+  visibility: 'public',
   summary: 'Get data',
   method: 'get',
   pathResolver: () => '/api/data',
@@ -458,6 +471,7 @@ Currently, HTTP clients default to `application/json` when a request body is pre
 
 ```ts
 defineApiContract({
+  visibility: 'public',
   summary: 'Upload avatar',
   method: 'post',
   pathResolver: () => '/upload',
