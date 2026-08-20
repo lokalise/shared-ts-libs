@@ -21,7 +21,10 @@ import {
 } from '../errors/utils.ts'
 import type { AbstractBullmqFactory } from '../factories/index.ts'
 import type { JobsPaginatedResponse, ProtectedQueue } from '../managers/index.ts'
-import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
+import {
+  BackgroundJobProcessorMonitor,
+  type JobFailure,
+} from '../monitoring/BackgroundJobProcessorMonitor.ts'
 import { enrichRedisConfig, sanitizeRedisConfig } from '../public-utils/index.ts'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
@@ -343,13 +346,13 @@ export abstract class AbstractBackgroundJobProcessor<
 
   private async processInternal(job: JobType): Promise<JobReturn> {
     const requestContext = this.monitor.getRequestContext(job)
-    let jobError: unknown
+    this.monitor.jobStart(job, requestContext)
 
-    try {
-      this.monitor.jobStart(job, requestContext)
+    // everything below is traced as part of the transaction started above
+    return await this.monitor.runInJobContext(job, async () => {
+      let jobFailure: JobFailure | undefined
 
-      // everything the job does is traced as part of the transaction started above
-      return await this.monitor.runInJobContext(job, async () => {
+      try {
         if (this.config.barrier) {
           const barrierResult = await this.config.barrier(job, this.executionContext)
           if (!barrierResult.isPassing) {
@@ -364,14 +367,14 @@ export abstract class AbstractBackgroundJobProcessor<
         const result = await this.process(job, requestContext)
         await job.updateProgress(100)
         return result
-      })
-    } catch (error) {
-      jobError = error
-      this.monitor.jobAttemptError(job, error, requestContext)
-      throw error
-    } finally {
-      this.monitor.jobEnd(job, requestContext, jobError)
-    }
+      } catch (error) {
+        jobFailure = { error }
+        this.monitor.jobAttemptError(job, error, requestContext)
+        throw error
+      } finally {
+        this.monitor.jobEnd(job, requestContext, jobFailure)
+      }
+    })
   }
 
   private async internalOnSuccess(job: JobType): Promise<void> {

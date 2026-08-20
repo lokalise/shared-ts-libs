@@ -14,6 +14,14 @@ import { registerActiveQueueIds } from './registerActiveQueueIds.ts'
 
 const queueIdsWithActiveProcessorsSet = new Set<string>()
 
+/**
+ * Whatever a job threw, if it threw at all.
+ *
+ * A wrapper rather than the bare value, because a job can throw a falsy one (`throw undefined`,
+ * `Promise.reject()`), which must still be recorded as a failure.
+ */
+export type JobFailure = { error: unknown }
+
 type BackgroundJobProcessorMonitorConfig = {
   queueId: string
   ownerName: string
@@ -122,7 +130,7 @@ export class BackgroundJobProcessorMonitor<
     return runInTransactionContext(this.transactionObservabilityManager, resolveJobId(job), fn)
   }
 
-  public jobEnd(job: JobType, requestContext: RequestContext, error?: unknown): void {
+  public jobEnd(job: JobType, requestContext: RequestContext, failure?: JobFailure): void {
     requestContext.logger.info(
       {
         ...this.buildLogParams(job),
@@ -134,7 +142,7 @@ export class BackgroundJobProcessorMonitor<
      * BullMQ control-flow errors are cooperative deferrals (delayed, waiting for children,
      * rate limited) rather than failures, so the transaction did not actually fail.
      */
-    const wasSuccessful = !error || isBullmqControlFlowError(error)
+    const wasSuccessful = !failure || isBullmqControlFlowError(failure.error)
     this.transactionObservabilityManager.stop(resolveJobId(job), wasSuccessful)
   }
 

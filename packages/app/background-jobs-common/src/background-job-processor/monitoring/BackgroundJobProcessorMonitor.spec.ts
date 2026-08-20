@@ -328,17 +328,28 @@ describe('BackgroundJobProcessorMonitor', () => {
     it('should stop transaction as failed when the job errored', () => {
       const job = createFakeJob('test-correlation-id')
 
-      monitor.jobEnd(job, buildRequestContext(), new Error('job failed'))
+      monitor.jobEnd(job, buildRequestContext(), { error: new Error('job failed') })
 
       expect(transactionManagerSpy).toHaveBeenCalledWith(job.id, false)
     })
+
+    it.each([[undefined], [null], [0], ['']])(
+      'should stop transaction as failed when the job threw a falsy value - %s',
+      (error) => {
+        const job = createFakeJob('test-correlation-id')
+
+        monitor.jobEnd(job, buildRequestContext(), { error })
+
+        expect(transactionManagerSpy).toHaveBeenCalledWith(job.id, false)
+      },
+    )
 
     it.each([[new DelayedError()], [new WaitingChildrenError()], [new RateLimitError()]])(
       'should stop transaction as successful when the job was deferred - %s',
       (error) => {
         const job = createFakeJob('test-correlation-id')
 
-        monitor.jobEnd(job, buildRequestContext(), error)
+        monitor.jobEnd(job, buildRequestContext(), { error })
 
         expect(transactionManagerSpy).toHaveBeenCalledWith(job.id, true)
       },

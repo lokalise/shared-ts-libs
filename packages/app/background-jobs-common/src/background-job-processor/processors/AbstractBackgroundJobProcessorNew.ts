@@ -28,7 +28,10 @@ import type {
   SupportedJobPayloads,
   SupportedQueueIds,
 } from '../managers/types.ts'
-import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
+import {
+  BackgroundJobProcessorMonitor,
+  type JobFailure,
+} from '../monitoring/BackgroundJobProcessorMonitor.ts'
 import { enrichRedisConfig, sanitizeRedisConfig } from '../public-utils/index.ts'
 import type { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
@@ -257,13 +260,13 @@ export abstract class AbstractBackgroundJobProcessorNew<
 
   private async processInternal(job: JobType): Promise<JobReturn> {
     const requestContext = this.monitor.getRequestContext(job)
-    let jobError: unknown
+    this.monitor.jobStart(job, requestContext)
 
-    try {
-      this.monitor.jobStart(job, requestContext)
+    // everything below is traced as part of the transaction started above
+    return await this.monitor.runInJobContext(job, async () => {
+      let jobFailure: JobFailure | undefined
 
-      // everything the job does is traced as part of the transaction started above
-      return await this.monitor.runInJobContext(job, async () => {
+      try {
         const parsedData = this.queueManager
           .getQueueConfig(this.queueId)
           .jobPayloadSchema.safeParse(job.data)
@@ -283,14 +286,14 @@ export abstract class AbstractBackgroundJobProcessorNew<
         const result = await this.process(job, requestContext)
         await job.updateProgress(100)
         return result
-      })
-    } catch (error) {
-      jobError = error
-      this.monitor.jobAttemptError(job, error, requestContext)
-      throw error
-    } finally {
-      this.monitor.jobEnd(job, requestContext, jobError)
-    }
+      } catch (error) {
+        jobFailure = { error }
+        this.monitor.jobAttemptError(job, error, requestContext)
+        throw error
+      } finally {
+        this.monitor.jobEnd(job, requestContext, jobFailure)
+      }
+    })
   }
 
   private async internalOnSuccess(job: JobType): Promise<void> {
