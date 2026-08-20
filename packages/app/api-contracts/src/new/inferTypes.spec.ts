@@ -1,6 +1,13 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import { blobBody, noBodyResponse, sseBody } from './contractResponse.ts'
+import {
+  type BlobBody,
+  blobBody,
+  blobResponse,
+  noBodyResponse,
+  sseBody,
+  sseResponse,
+} from './contractResponse.ts'
 import { defineApiContract } from './defineApiContract.ts'
 import type {
   AvailableResponseModes,
@@ -474,6 +481,69 @@ describe('inferTypes', () => {
       })
       type Result = InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>
       expectTypeOf<keyof Result>().toEqualTypeOf<'chunk' | 'done'>()
+    })
+
+    it('extracts schemas object from sseResponse()', () => {
+      const translationSchema = z.object({ text: z.string() })
+      const errorSchema = z.object({ message: z.string() })
+      const contract = defineApiContract({
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: {
+          200: sseResponse({ translation: translationSchema, error: errorSchema }),
+        },
+      })
+      type Result = InferSseSuccessResponses<(typeof contract)['responsesByStatusCode']>
+      expectTypeOf<keyof Result>().toEqualTypeOf<'translation' | 'error'>()
+      expectTypeOf<Result['translation']>().toEqualTypeOf<typeof translationSchema>()
+      expectTypeOf<Result['error']>().toEqualTypeOf<typeof errorSchema>()
+    })
+  })
+
+  describe('response factories narrow like their content-map equivalents', () => {
+    it('sseResponse() yields sse mode only', () => {
+      const contract = defineApiContract({
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: {
+          200: sseResponse({ chunk: z.object({ delta: z.string() }) }),
+          400: z.object({ message: z.string() }),
+        },
+      })
+      type Responses = (typeof contract)['responsesByStatusCode']
+      expectTypeOf<ContractResponseMode<Responses>>().toEqualTypeOf<'sse'>()
+      expectTypeOf<AvailableResponseModes<Responses>>().toEqualTypeOf<'sse'>()
+      expectTypeOf<HasAnyJsonSuccessResponse<Responses>>().toEqualTypeOf<false>()
+      expectTypeOf<InferNonSseSuccessResponses<Responses>>().toEqualTypeOf<never>()
+    })
+
+    it('blobResponse() yields blob mode only', () => {
+      const contract = defineApiContract({
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 200: blobResponse('image/png') },
+      })
+      type Responses = (typeof contract)['responsesByStatusCode']
+
+      expectTypeOf<ContractResponseMode<Responses>>().toEqualTypeOf<'non-sse'>()
+      expectTypeOf<AvailableResponseModes<Responses>>().toEqualTypeOf<'blob'>()
+      expectTypeOf<HasAnySseSuccessResponse<Responses>>().toEqualTypeOf<false>()
+      expectTypeOf<InferSseSuccessResponses<Responses>>().toEqualTypeOf<never>()
+    })
+
+    it('blobResponse() preserves the literal media-type key in the content map', () => {
+      const contract = defineApiContract({
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/test',
+        responsesByStatusCode: { 200: blobResponse('image/png') },
+      })
+      type Content = (typeof contract)['responsesByStatusCode'][200]['content']
+      expectTypeOf<keyof Content>().toEqualTypeOf<'image/png'>()
+      expectTypeOf<Content['image/png']>().toEqualTypeOf<BlobBody>()
     })
   })
 })
