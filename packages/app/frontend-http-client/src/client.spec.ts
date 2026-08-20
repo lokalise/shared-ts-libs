@@ -64,6 +64,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
@@ -104,6 +105,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
@@ -151,6 +153,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         requestQuerySchema: querySchema,
@@ -214,6 +217,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         requestQuerySchema: querySchema,
@@ -255,6 +259,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         requestQuerySchema: undefined,
@@ -296,6 +301,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         requestHeaderSchema: HEADERS_SCHEMA,
@@ -338,6 +344,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         requestHeaderSchema: HEADERS_SCHEMA,
@@ -369,6 +376,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildDeleteRoute({
+        visibility: 'public',
         isEmptyResponseExpected: true,
         successResponseBodySchema: undefined,
         requestPathParamsSchema: pathSchema,
@@ -406,6 +414,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildDeleteRoute({
+        visibility: 'public',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         requestHeaderSchema: HEADERS_SCHEMA,
@@ -452,6 +461,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         requestBodySchema,
         successResponseBodySchema: responseBodySchema,
@@ -490,6 +500,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         isEmptyResponseExpected: false,
         isNonJSONResponseExpected: false,
@@ -522,6 +533,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -552,6 +564,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
@@ -580,6 +593,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildDeleteRoute({
+        visibility: 'public',
         successResponseBodySchema: undefined,
         requestPathParamsSchema: pathSchema,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -2105,6 +2119,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -2144,6 +2159,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         requestQuerySchema: querySchema,
@@ -2187,6 +2203,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
@@ -2231,6 +2248,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildPayloadRoute({
+        visibility: 'public',
         method: 'put',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
@@ -2275,6 +2293,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildPayloadRoute({
+        visibility: 'public',
         method: 'patch',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
@@ -2309,6 +2328,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildDeleteRoute({
+        visibility: 'public',
         isEmptyResponseExpected: true,
         successResponseBodySchema: undefined,
         requestPathParamsSchema: pathSchema,
@@ -2349,6 +2369,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         requestBodySchema,
         successResponseBodySchema: responseBodySchema,
@@ -2388,6 +2409,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -2418,6 +2440,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         successResponseBodySchema: responseBodySchema,
         requestPathParamsSchema: pathSchema,
@@ -2446,6 +2469,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildDeleteRoute({
+        visibility: 'public',
         successResponseBodySchema: undefined,
         requestPathParamsSchema: pathSchema,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,

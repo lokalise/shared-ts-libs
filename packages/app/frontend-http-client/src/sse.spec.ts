@@ -35,6 +35,7 @@ describe('connectSseByContract', () => {
   })
 
   const getSseContract = buildSseContract({
+    visibility: 'public',
     method: 'get',
     pathResolver: () => '/events/stream',
     serverSentEventSchemas: {
@@ -44,6 +45,7 @@ describe('connectSseByContract', () => {
   })
 
   const getDualModeContract = buildSseContract({
+    visibility: 'public',
     method: 'get',
     pathResolver: () => '/items',
     successResponseBodySchema: z.object({ items: z.array(z.string()) }),
@@ -54,6 +56,7 @@ describe('connectSseByContract', () => {
   })
 
   const postSseContract = buildSseContract({
+    visibility: 'public',
     method: 'post',
     pathResolver: () => '/process',
     requestBodySchema: z.object({ input: z.string() }),
@@ -64,6 +67,7 @@ describe('connectSseByContract', () => {
   })
 
   const getWithPathParamsContract = buildSseContract({
+    visibility: 'public',
     method: 'get',
     pathResolver: (params: { projectId: string }) => `/projects/${params.projectId}/stream`,
     requestPathParamsSchema: z.object({ projectId: z.string() }),
@@ -73,6 +77,7 @@ describe('connectSseByContract', () => {
   })
 
   const getWithQueryContract = buildSseContract({
+    visibility: 'public',
     method: 'get',
     pathResolver: () => '/events/stream',
     requestQuerySchema: z.object({ limit: z.number() }),
@@ -533,6 +538,7 @@ describe('connectSseByContract', () => {
 
   it('calls onError when query params fail validation', () => {
     const strictQueryContract = buildSseContract({
+      visibility: 'public',
       method: 'get',
       pathResolver: () => '/events/stream',
       requestQuerySchema: z.object({ limit: z.number().min(1) }),
@@ -663,6 +669,7 @@ describe('connectSseByContract', () => {
     const headersFn = () => ({ 'x-custom': 'test-value' })
 
     const headerContract = buildSseContract({
+      visibility: 'public',
       method: 'get',
       pathResolver: () => '/events/stream',
       requestHeaderSchema: z.object({ 'x-custom': z.string() }),
@@ -697,6 +704,7 @@ describe('connectSseByContract', () => {
     const asyncHeadersFn = async () => ({ 'x-custom': 'async-value' })
 
     const headerContract = buildSseContract({
+      visibility: 'public',
       method: 'get',
       pathResolver: () => '/events/stream',
       requestHeaderSchema: z.object({ 'x-custom': z.string() }),
