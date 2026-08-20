@@ -105,7 +105,7 @@ function buildResponseSchemas(contract: ApiContract): Record<string, FastifyResp
 export function buildFastifyApiSchema(contract: ApiContract): ExtendedFastifySchema {
   const schema: ExtendedFastifySchema = {
     summary: contract.summary,
-    hide: contract.visibility === 'internal',
+    hide: contract.visibility !== 'public',
   }
 
   if (contract.description !== undefined) {
