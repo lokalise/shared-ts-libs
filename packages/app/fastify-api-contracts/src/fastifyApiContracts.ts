@@ -157,7 +157,7 @@ export function buildFastifyNoPayloadRoute<
       description: apiContract.description,
       summary: apiContract.summary,
       tags: apiContract.tags,
-      hide: apiContract.visibility === 'internal',
+      hide: apiContract.visibility !== 'public',
       response: apiContract.responseSchemasByStatusCode,
     } satisfies ExtendedFastifySchema),
   }
@@ -282,7 +282,7 @@ export function buildFastifyPayloadRoute<
       description: apiContract.description,
       summary: apiContract.summary,
       tags: apiContract.tags,
-      hide: apiContract.visibility === 'internal',
+      hide: apiContract.visibility !== 'public',
       response: apiContract.responseSchemasByStatusCode,
     } satisfies ExtendedFastifySchema),
   }
