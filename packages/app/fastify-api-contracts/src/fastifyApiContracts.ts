@@ -154,10 +154,10 @@ export function buildFastifyNoPayloadRoute<
       params: apiContract.requestPathParamsSchema,
       querystring: apiContract.requestQuerySchema,
       headers: apiContract.requestHeaderSchema,
-      describe: apiContract.description,
       description: apiContract.description,
       summary: apiContract.summary,
       tags: apiContract.tags,
+      hide: apiContract.visibility !== 'public',
       response: apiContract.responseSchemasByStatusCode,
     } satisfies ExtendedFastifySchema),
   }
@@ -279,10 +279,10 @@ export function buildFastifyPayloadRoute<
       params: apiContract.requestPathParamsSchema,
       querystring: apiContract.requestQuerySchema,
       headers: apiContract.requestHeaderSchema,
-      describe: apiContract.description,
       description: apiContract.description,
       summary: apiContract.summary,
       tags: apiContract.tags,
+      hide: apiContract.visibility !== 'public',
       response: apiContract.responseSchemasByStatusCode,
     } satisfies ExtendedFastifySchema),
   }

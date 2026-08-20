@@ -48,7 +48,7 @@
     },
     "peerDependencies": {
         "@fastify/sse": ">=0.5.0",
-        "@lokalise/api-contracts": ">=7.0.0",
+        "@lokalise/api-contracts": ">=7.2.0",
         "@lokalise/node-core": ">=13.5.0",
         "fastify": ">=5.0.0",
         "fastify-type-provider-zod": ">=7.0.0",
@@ -62,6 +62,7 @@
     "devDependencies": {
         "@biomejs/biome": "^2.5.7",
         "@fastify/sse": "^0.6.0",
+        "@fastify/swagger": "^9.8.1",
         "@lokalise/api-contracts": "workspace:^",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",

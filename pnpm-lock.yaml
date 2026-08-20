@@ -682,6 +682,9 @@ importers:
       '@fastify/sse':
         specifier: ^0.6.0
         version: 0.6.0(fastify@5.11.3)
+      '@fastify/swagger':
+        specifier: ^9.8.1
+        version: 9.8.1
       '@lokalise/api-contracts':
         specifier: workspace:^
         version: link:../api-contracts

@@ -23,10 +23,11 @@ interface FastifyContractRouteInterface<ReplyType, BodyType, ParamsType, QueryTy
  * Default fastify fields + fastify-swagger fields
  */
 export type ExtendedFastifySchema = FastifySchema & {
-  describe?: string
   description?: string
   summary?: string
   tags?: readonly string[]
+  /** When true, the route will not be added to the OpenAPI docs */
+  hide?: boolean
 }
 
 export type RouteType<

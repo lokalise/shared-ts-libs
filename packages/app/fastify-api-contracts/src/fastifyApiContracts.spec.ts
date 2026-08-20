@@ -543,5 +543,61 @@ describe('fastifyApiContracts', () => {
 
       expect(route.schema).toMatchObject({ summary: 'Create user', tags: ['users'] })
     })
+
+    it('maps internal visibility to schema.hide true on a no-payload route', () => {
+      const contract = buildRestContract({
+        method: 'get',
+        successResponseBodySchema: BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+        visibility: 'internal',
+      })
+
+      const route = buildFastifyNoPayloadRoute(contract, () => Promise.resolve({}))
+
+      expect(route.schema.hide).toBe(true)
+    })
+
+    it('stamps schema.hide false on a public payload route', () => {
+      const contract = buildRestContract({
+        method: 'post',
+        requestBodySchema: REQUEST_BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const route = buildFastifyPayloadRoute(contract, () => Promise.resolve({}))
+
+      expect(route.schema.hide).toBe(false)
+    })
+
+    it('stamps schema.hide false on a public no-payload route', () => {
+      const contract = buildRestContract({
+        method: 'get',
+        successResponseBodySchema: BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const route = buildFastifyNoPayloadRoute(contract, () => Promise.resolve({}))
+
+      expect(route.schema.hide).toBe(false)
+    })
+
+    it('maps internal visibility to schema.hide true on a payload route', () => {
+      const contract = buildRestContract({
+        method: 'post',
+        requestBodySchema: REQUEST_BODY_SCHEMA,
+        successResponseBodySchema: BODY_SCHEMA,
+        requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+        visibility: 'internal',
+      })
+
+      const route = buildFastifyPayloadRoute(contract, () => Promise.resolve({}))
+
+      expect(route.schema.hide).toBe(true)
+    })
   })
 })
