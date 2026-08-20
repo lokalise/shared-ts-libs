@@ -284,6 +284,7 @@ export type DualModePayloadContractConfig<
  * // SSE-only: Pure streaming endpoint (e.g., live notifications)
  * const notificationsStream = buildSseContract({
  *   visibility: 'public',
+ *   method: 'get',
  *   pathResolver: () => '/api/notifications/stream',
  *   requestPathParamsSchema: z.object({}),
  *   requestQuerySchema: z.object({ userId: z.string().optional() }),
@@ -298,7 +299,7 @@ export type DualModePayloadContractConfig<
  * // - Accept: text/event-stream → streams chunk events, then done event
  * const chatCompletion = buildSseContract({
  *   visibility: 'public',
- *   method: 'POST',
+ *   method: 'post',
  *   pathResolver: () => '/api/chat/completions',
  *   requestPathParamsSchema: z.object({}),
  *   requestQuerySchema: z.object({}),
