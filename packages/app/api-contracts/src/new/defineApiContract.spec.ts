@@ -1,5 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
+import type { RouteVisibility } from '../apiContracts.ts'
 import { ContractNoBody } from './constants.ts'
 import { sseBody } from './contractResponse.ts'
 import {
@@ -26,6 +27,35 @@ describe('defineApiContract', () => {
       type Result = InferJsonSuccessResponses<typeof route.responsesByStatusCode>
       expectTypeOf<Result>().toEqualTypeOf<typeof schema>()
       expect(route.visibility).toBe('internal')
+    })
+
+    it('widens visibility so it can be compared against both members', () => {
+      const route = defineApiContract({
+        visibility: 'public',
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/users',
+        responsesByStatusCode: { 200: z.object({}) },
+      })
+
+      expectTypeOf(route.visibility).toEqualTypeOf<RouteVisibility>()
+      // Must compile: with a literal 'public' type this comparison is a TS2367 error
+      expect(route.visibility === 'internal').toBe(false)
+    })
+
+    it('returns a shallow copy instead of the caller-owned config object', () => {
+      const config = {
+        visibility: 'public',
+        summary: 'Original',
+        method: 'get',
+        pathResolver: () => '/users',
+        responsesByStatusCode: { 200: z.object({}) },
+      } as const
+
+      const route = defineApiContract(config)
+      ;(config as { summary: string }).summary = 'Mutated'
+
+      expect(route.summary).toBe('Original')
     })
 
     it('infers pathResolver param type from requestPathParamsSchema', () => {

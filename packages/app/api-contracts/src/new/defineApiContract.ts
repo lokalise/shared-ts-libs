@@ -74,7 +74,12 @@ export const defineApiContract = <
   contract: Exactly<TContract, ApiContractConfig<TPathParamsSchema>> & {
     requestPathParamsSchema?: TPathParamsSchema
   },
-): TContract => contract as TContract
+  // The return type widens `visibility` back to RouteVisibility (a `const` TContract would
+  // otherwise carry the literal, breaking consumer comparisons against the other member), and
+  // the spread keeps the documented shallow-copy semantics: later mutations of the caller's
+  // config object must not leak into the contract.
+): Omit<TContract, 'visibility'> & { visibility: RouteVisibility } =>
+  ({ ...contract }) as Omit<TContract, 'visibility'> & { visibility: RouteVisibility }
 
 export const mapApiContractToPath = (routeConfig: ApiContract): string => {
   if (!routeConfig.requestPathParamsSchema) {
