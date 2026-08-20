@@ -13,6 +13,7 @@ import { buildFastifyRoute } from './fastifyRouteBuilder.ts'
 const BODY_SCHEMA = z.object({})
 
 const publicContract = buildRestContract({
+  visibility: 'public',
   method: 'get',
   successResponseBodySchema: BODY_SCHEMA,
   pathResolver: () => '/public-resource',

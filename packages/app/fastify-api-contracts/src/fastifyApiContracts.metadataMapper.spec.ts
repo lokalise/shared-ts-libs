@@ -17,6 +17,7 @@ describe('fastifyApiContracts - api contract metadata mapper', () => {
   describe('buildFastifyNoPayloadRoute', () => {
     it('should use metadata mapper to build the route', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: SCHEMA,
         requestPathParamsSchema: SCHEMA,
@@ -49,6 +50,7 @@ describe('fastifyApiContracts - api contract metadata mapper', () => {
   describe('buildFastifyPayloadRoute', () => {
     it('should use metadata mapper to build the route', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: SCHEMA,
         successResponseBodySchema: SCHEMA,

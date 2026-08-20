@@ -46,6 +46,7 @@ async function initApp<Route extends RouteType>(route: Route) {
 describe('buildFastifyRouteHandler', () => {
   it('builds a GET handler', () => {
     const contract = buildRestContract({
+      visibility: 'public',
       method: 'get',
       successResponseBodySchema: BODY_SCHEMA,
       requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -59,6 +60,7 @@ describe('buildFastifyRouteHandler', () => {
 
   it('builds a DELETE handler', () => {
     const contract = buildRestContract({
+      visibility: 'public',
       method: 'delete',
       successResponseBodySchema: BODY_SCHEMA,
       requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -71,6 +73,7 @@ describe('buildFastifyRouteHandler', () => {
 
   it('builds a POST handler', () => {
     const contract = buildRestContract({
+      visibility: 'public',
       method: 'post',
       requestBodySchema: REQUEST_BODY_SCHEMA,
       successResponseBodySchema: BODY_SCHEMA,
@@ -88,6 +91,7 @@ describe('buildFastifyRoute', () => {
     it('builds valid GET route in fastify app', async () => {
       expect.assertions(6)
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -126,6 +130,7 @@ describe('buildFastifyRoute', () => {
     it('builds GET route with headers', async () => {
       expect.assertions(3)
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -165,6 +170,7 @@ describe('buildFastifyRoute', () => {
     it('builds GET route with empty response', async () => {
       expect.assertions(4)
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -194,6 +200,7 @@ describe('buildFastifyRoute', () => {
     it('builds valid DELETE route in fastify app', async () => {
       expect.assertions(2)
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -226,6 +233,7 @@ describe('buildFastifyRoute', () => {
     it('builds DELETE route with headers', async () => {
       expect.assertions(4)
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -269,6 +277,7 @@ describe('buildFastifyRoute', () => {
     it('builds valid POST route in fastify app', async () => {
       expect.assertions(5)
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: BODY_SCHEMA,
@@ -306,6 +315,7 @@ describe('buildFastifyRoute', () => {
     it('builds POST route with headers', async () => {
       expect.assertions(4)
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: BODY_SCHEMA,
@@ -346,6 +356,7 @@ describe('buildFastifyRoute', () => {
     it('supports isNonJSONResponseExpected and isEmptyResponseExpected', async () => {
       expect.assertions(4)
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: z.undefined(),
@@ -380,6 +391,7 @@ describe('buildFastifyRoute', () => {
     it('builds valid PATCH route in fastify app', async () => {
       expect.assertions(3)
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'patch',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: BODY_SCHEMA,
@@ -407,6 +419,7 @@ describe('buildFastifyRoute', () => {
     it('builds valid PUT route in fastify app', async () => {
       expect.assertions(3)
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'put',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: BODY_SCHEMA,
@@ -432,6 +445,7 @@ describe('buildFastifyRoute', () => {
     it('builds PUT route with headers', async () => {
       expect.assertions(8)
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'put',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: BODY_SCHEMA,
@@ -485,6 +499,7 @@ describe('buildFastifyRoute', () => {
       const SCHEMA = z.object({ id: z.string() })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: SCHEMA,
         requestPathParamsSchema: SCHEMA,
@@ -517,6 +532,7 @@ describe('buildFastifyRoute', () => {
       const SCHEMA = z.object({ id: z.string() })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: SCHEMA,
         successResponseBodySchema: SCHEMA,
@@ -544,6 +560,7 @@ describe('buildFastifyRoute', () => {
   describe('OpenAPI metadata', () => {
     it('maps summary, description and tags to the route schema', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -564,6 +581,7 @@ describe('buildFastifyRoute', () => {
 
     it('omits tags the contract does not declare', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -592,6 +610,7 @@ describe('buildFastifyRoute', () => {
 
     it('stamps schema.hide false for public routes', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
