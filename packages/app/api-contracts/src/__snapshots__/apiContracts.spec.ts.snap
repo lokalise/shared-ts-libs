@@ -435,7 +435,7 @@ exports[`apiContracts > buildPayloadRoute > sets default change route values 1`]
   },
   "summary": undefined,
   "tags": undefined,
-  "visibility": "public",
+  "visibility": "internal",
 }
 `;
 

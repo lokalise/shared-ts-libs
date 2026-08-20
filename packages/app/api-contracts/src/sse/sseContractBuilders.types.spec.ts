@@ -1,6 +1,5 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import type { RouteVisibility } from '../apiContracts.ts'
 import type {
   AnyDualModeContractDefinition,
   DualModeContractDefinition,
@@ -16,6 +15,7 @@ describe('buildSseContract type inference', () => {
   describe('SSE GET with all schemas provided', () => {
     it('returns SSEContractDefinition with isSSE: true', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -32,6 +32,7 @@ describe('buildSseContract type inference', () => {
       const paramsSchema = z.object({ channelId: z.string() })
 
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
         requestPathParamsSchema: paramsSchema,
@@ -49,6 +50,7 @@ describe('buildSseContract type inference', () => {
       const querySchema = z.object({ userId: z.string().optional() })
 
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -64,6 +66,7 @@ describe('buildSseContract type inference', () => {
       const headersSchema = z.object({ authorization: z.string() })
 
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -82,6 +85,7 @@ describe('buildSseContract type inference', () => {
       }
 
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -95,6 +99,7 @@ describe('buildSseContract type inference', () => {
 
     it('has undefined requestBody for GET routes', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -108,6 +113,7 @@ describe('buildSseContract type inference', () => {
 
     it('satisfies AnySSEContractDefinition', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -118,17 +124,6 @@ describe('buildSseContract type inference', () => {
 
       expectTypeOf(contract).toMatchTypeOf<AnySSEContractDefinition>()
     })
-
-    it('visibility stays non-optional with explicit value', () => {
-      const contract = buildSseContract({
-        method: 'get' as const,
-        pathResolver: () => '/api/stream',
-        serverSentEventSchemas: { message: z.object({ text: z.string() }) },
-        visibility: 'internal',
-      })
-
-      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
-    })
   })
 
   // ============================================================================
@@ -138,6 +133,7 @@ describe('buildSseContract type inference', () => {
   describe('SSE GET with schemas omitted', () => {
     it('compiles without requestPathParamsSchema, requestQuerySchema, requestHeaderSchema', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         serverSentEventSchemas: { message: z.object({ text: z.string() }) },
@@ -148,6 +144,7 @@ describe('buildSseContract type inference', () => {
 
     it('omitted schemas accept undefined', () => {
       const _contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         serverSentEventSchemas: { message: z.object({ text: z.string() }) },
@@ -160,6 +157,7 @@ describe('buildSseContract type inference', () => {
 
     it('satisfies AnySSEContractDefinition when schemas are omitted', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         serverSentEventSchemas: { message: z.object({ text: z.string() }) },
@@ -172,6 +170,7 @@ describe('buildSseContract type inference', () => {
       const paramsSchema = z.object({ id: z.string() })
 
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: (params) => `/api/items/${params.id}/stream`,
         requestPathParamsSchema: paramsSchema,
@@ -190,6 +189,7 @@ describe('buildSseContract type inference', () => {
       const headersSchema = z.object({ authorization: z.string() })
 
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         requestHeaderSchema: headersSchema,
@@ -201,16 +201,6 @@ describe('buildSseContract type inference', () => {
       expectTypeOf(contract.requestHeaderSchema).toEqualTypeOf<typeof headersSchema | undefined>()
       expectTypeOf(contract).toMatchTypeOf<AnySSEContractDefinition>()
     })
-
-    it('visibility is non-optional when omitted', () => {
-      const contract = buildSseContract({
-        method: 'get' as const,
-        pathResolver: () => '/api/stream',
-        serverSentEventSchemas: { message: z.object({ text: z.string() }) },
-      })
-
-      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
-    })
   })
 
   // ============================================================================
@@ -220,6 +210,7 @@ describe('buildSseContract type inference', () => {
   describe('SSE POST with all schemas provided', () => {
     it('returns SSEContractDefinition with isSSE: true', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/process',
         requestPathParamsSchema: z.object({}),
@@ -240,6 +231,7 @@ describe('buildSseContract type inference', () => {
       const bodySchema = z.object({ data: z.string() })
 
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: (params) => `/api/projects/${params.projectId}/process`,
         requestPathParamsSchema: paramsSchema,
@@ -259,6 +251,7 @@ describe('buildSseContract type inference', () => {
 
     it('satisfies AnySSEContractDefinition', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/process',
         requestPathParamsSchema: z.object({}),
@@ -275,6 +268,7 @@ describe('buildSseContract type inference', () => {
   describe('SSE POST with schemas omitted', () => {
     it('compiles without optional schemas', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post' as const,
         pathResolver: () => '/api/process',
         requestBodySchema: z.object({ data: z.string() }),
@@ -289,6 +283,7 @@ describe('buildSseContract type inference', () => {
 
     it('satisfies AnySSEContractDefinition when schemas are omitted', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post' as const,
         pathResolver: () => '/api/process',
         requestBodySchema: z.object({ data: z.string() }),
@@ -296,17 +291,6 @@ describe('buildSseContract type inference', () => {
       })
 
       expectTypeOf(contract).toMatchTypeOf<AnySSEContractDefinition>()
-    })
-
-    it('visibility is non-optional when omitted', () => {
-      const contract = buildSseContract({
-        method: 'post' as const,
-        pathResolver: () => '/api/process',
-        requestBodySchema: z.object({ data: z.string() }),
-        serverSentEventSchemas: { progress: z.object({ percent: z.number() }) },
-      })
-
-      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
     })
   })
 
@@ -317,6 +301,7 @@ describe('buildSseContract type inference', () => {
   describe('Dual-mode GET with all schemas provided', () => {
     it('returns DualModeContractDefinition with isDualMode: true', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/status',
         requestPathParamsSchema: z.object({}),
@@ -337,6 +322,7 @@ describe('buildSseContract type inference', () => {
       const syncResponseSchema = z.object({ status: z.string() })
 
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
         requestPathParamsSchema: paramsSchema,
@@ -356,6 +342,7 @@ describe('buildSseContract type inference', () => {
 
     it('satisfies AnyDualModeContractDefinition', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/status',
         requestPathParamsSchema: z.object({}),
@@ -372,6 +359,7 @@ describe('buildSseContract type inference', () => {
   describe('Dual-mode GET with schemas omitted', () => {
     it('compiles without optional schemas', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/status',
         successResponseBodySchema: z.object({ status: z.string() }),
@@ -386,6 +374,7 @@ describe('buildSseContract type inference', () => {
 
     it('satisfies AnyDualModeContractDefinition when schemas are omitted', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/status',
         successResponseBodySchema: z.object({ status: z.string() }),
@@ -399,6 +388,7 @@ describe('buildSseContract type inference', () => {
       const paramsSchema = z.object({ jobId: z.string() })
 
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
         requestPathParamsSchema: paramsSchema,
@@ -414,19 +404,9 @@ describe('buildSseContract type inference', () => {
       expectTypeOf(contract).toMatchTypeOf<AnyDualModeContractDefinition>()
     })
 
-    it('visibility is non-optional when omitted', () => {
-      const contract = buildSseContract({
-        method: 'get' as const,
-        pathResolver: () => '/api/status',
-        successResponseBodySchema: z.object({ status: z.string() }),
-        serverSentEventSchemas: { update: z.object({ progress: z.number() }) },
-      })
-
-      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
-    })
-
     it('isEmptyResponseExpected defaults to false type when omitted', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/status',
         successResponseBodySchema: z.object({ status: z.string() }),
@@ -438,6 +418,7 @@ describe('buildSseContract type inference', () => {
 
     it('isEmptyResponseExpected reflects explicit true value in type', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/status',
         successResponseBodySchema: z.object({ status: z.string() }),
@@ -456,6 +437,7 @@ describe('buildSseContract type inference', () => {
   describe('Dual-mode POST with all schemas provided', () => {
     it('returns DualModeContractDefinition with isDualMode: true', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/chat/completions',
         requestPathParamsSchema: z.object({}),
@@ -478,6 +460,7 @@ describe('buildSseContract type inference', () => {
       const syncResponseSchema = z.object({ reply: z.string() })
 
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: (params) => `/api/chats/${params.chatId}/completions`,
         requestPathParamsSchema: paramsSchema,
@@ -499,6 +482,7 @@ describe('buildSseContract type inference', () => {
 
     it('satisfies AnyDualModeContractDefinition', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/chat/completions',
         requestPathParamsSchema: z.object({}),
@@ -516,6 +500,7 @@ describe('buildSseContract type inference', () => {
   describe('Dual-mode POST with schemas omitted', () => {
     it('compiles without optional schemas', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post' as const,
         pathResolver: () => '/api/chat/completions',
         requestBodySchema: z.object({ message: z.string() }),
@@ -531,6 +516,7 @@ describe('buildSseContract type inference', () => {
 
     it('satisfies AnyDualModeContractDefinition when schemas are omitted', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post' as const,
         pathResolver: () => '/api/chat/completions',
         requestBodySchema: z.object({ message: z.string() }),
@@ -549,6 +535,7 @@ describe('buildSseContract type inference', () => {
   describe('z.infer on optional schema properties', () => {
     it('z.infer resolves correctly when params schema is provided', () => {
       const _contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: (params) => `/api/items/${params.id}/stream`,
         requestPathParamsSchema: z.object({ id: z.string() }),
@@ -563,6 +550,7 @@ describe('buildSseContract type inference', () => {
 
     it('z.infer resolves correctly when header schema is provided', () => {
       const _contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         requestHeaderSchema: z.object({ authorization: z.string() }),
@@ -576,6 +564,7 @@ describe('buildSseContract type inference', () => {
 
     it('z.infer resolves correctly when query schema is provided', () => {
       const _contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         requestQuerySchema: z.object({ limit: z.number() }),
@@ -591,6 +580,7 @@ describe('buildSseContract type inference', () => {
       // Without NonNullable, the conditional pattern always gives unknown
       // because `ZodObject | undefined` does not extend `ZodTypeAny`
       const _contractWithSchemas = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: (params) => `/api/items/${params.id}/stream`,
         requestPathParamsSchema: z.object({ id: z.string() }),
@@ -609,6 +599,7 @@ describe('buildSseContract type inference', () => {
 
     it('NonNullable + conditional z.infer pattern resolves correctly when schema is provided', () => {
       const _contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: (params) => `/api/items/${params.id}/stream`,
         requestPathParamsSchema: z.object({ id: z.string() }),
@@ -640,6 +631,7 @@ describe('buildSseContract type inference', () => {
 
     it('NonNullable + conditional z.infer resolves to never when schema is omitted', () => {
       const _contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         serverSentEventSchemas: { data: z.object({ value: z.string() }) },
@@ -674,6 +666,7 @@ describe('buildSseContract type inference', () => {
   describe('responseBodySchemasByStatusCode type inference', () => {
     it('infers status code schemas for SSE contracts', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -691,6 +684,7 @@ describe('buildSseContract type inference', () => {
 
     it('infers status code schemas for dual-mode contracts', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/chat',
         requestPathParamsSchema: z.object({}),
@@ -715,6 +709,7 @@ describe('buildSseContract type inference', () => {
   describe('contract type discrimination', () => {
     it('SSE contracts have isSSE but not isDualMode', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -729,6 +724,7 @@ describe('buildSseContract type inference', () => {
 
     it('Dual-mode contracts have isDualMode but not isSSE', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/status',
         requestPathParamsSchema: z.object({}),
@@ -744,6 +740,7 @@ describe('buildSseContract type inference', () => {
 
     it('SSE contract with omitted schemas still has isSSE', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         serverSentEventSchemas: { message: z.object({ text: z.string() }) },
@@ -754,6 +751,7 @@ describe('buildSseContract type inference', () => {
 
     it('Dual-mode contract with omitted schemas still has isDualMode', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/status',
         successResponseBodySchema: z.object({ status: z.string() }),
@@ -778,6 +776,7 @@ describe('buildSseContract type inference', () => {
 
     it('contract without path params accepts undefined for requestPathParamsSchema', () => {
       const _contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         serverSentEventSchemas: { message: z.object({ text: z.string() }) },
@@ -789,6 +788,7 @@ describe('buildSseContract type inference', () => {
     it('contract with path params infers the schema type', () => {
       const paramsSchema = z.object({ userId: z.string() })
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: (params) => `/users/${params.userId}/stream`,
         requestPathParamsSchema: paramsSchema,
@@ -802,6 +802,7 @@ describe('buildSseContract type inference', () => {
 
     it('contract without query params accepts undefined for requestQuerySchema', () => {
       const _contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         serverSentEventSchemas: { message: z.object({ text: z.string() }) },
@@ -813,6 +814,7 @@ describe('buildSseContract type inference', () => {
     it('contract with query params infers the schema type', () => {
       const querySchema = z.object({ limit: z.number() })
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         requestQuerySchema: querySchema,
@@ -833,6 +835,7 @@ describe('buildSseContract type inference', () => {
 
     it('dual-mode contract without path params accepts undefined for requestPathParamsSchema', () => {
       const _contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/status',
         successResponseBodySchema: z.object({ status: z.string() }),
@@ -845,6 +848,7 @@ describe('buildSseContract type inference', () => {
     it('dual-mode contract with path params infers the schema type', () => {
       const paramsSchema = z.object({ id: z.string() })
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: (params) => `/api/items/${params.id}/status`,
         requestPathParamsSchema: paramsSchema,

@@ -1,4 +1,4 @@
-import { describe, expect, expectTypeOf, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { z } from 'zod/v4'
 import {
   buildDeleteRoute,
@@ -6,7 +6,6 @@ import {
   buildPayloadRoute,
   describeContract,
   mapRouteToPath,
-  type RouteVisibility,
 } from './apiContracts.ts'
 
 const BODY_SCHEMA = z.object({})
@@ -31,6 +30,7 @@ describe('apiContracts', () => {
   describe('buildPayloadRoute', () => {
     it('sets default change route values', () => {
       const contract = buildPayloadRoute({
+        visibility: 'internal',
         successResponseBodySchema: BODY_SCHEMA,
         requestBodySchema: BODY_SCHEMA,
         method: 'post',
@@ -44,24 +44,12 @@ describe('apiContracts', () => {
 
       expect(contract).toMatchSnapshot()
     })
-
-    it('propagates visibility to the contract', () => {
-      const contract = buildPayloadRoute({
-        successResponseBodySchema: BODY_SCHEMA,
-        requestBodySchema: BODY_SCHEMA,
-        method: 'post',
-        pathResolver: () => '/',
-        visibility: 'internal',
-      })
-
-      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
-      expect(contract.visibility).toBe('internal')
-    })
   })
 
   describe('buildGetRoute', () => {
     it('sets default get route values', () => {
       const contract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
         responseSchemasByStatusCode: {
@@ -77,6 +65,7 @@ describe('apiContracts', () => {
 
     it('resolves path params', () => {
       const contract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -84,21 +73,12 @@ describe('apiContracts', () => {
 
       expect(contract).toMatchSnapshot()
     })
-
-    it('propagates visibility to the contract', () => {
-      const contract = buildGetRoute({
-        successResponseBodySchema: BODY_SCHEMA,
-        pathResolver: () => '/',
-        visibility: 'public',
-      })
-
-      expect(contract.visibility).toBe('public')
-    })
   })
 
   describe('buildDeleteRoute', () => {
     it('sets default delete route values', () => {
       const contract = buildDeleteRoute({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
         description: 'some description',
@@ -106,21 +86,12 @@ describe('apiContracts', () => {
 
       expect(contract).toMatchSnapshot()
     })
-
-    it('propagates visibility to the contract', () => {
-      const contract = buildDeleteRoute({
-        successResponseBodySchema: BODY_SCHEMA,
-        pathResolver: () => '/',
-        visibility: 'internal',
-      })
-
-      expect(contract.visibility).toBe('internal')
-    })
   })
 
   describe('mapRouteToPath', () => {
     it('returns path without params', () => {
       const contract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
       })
@@ -131,6 +102,7 @@ describe('apiContracts', () => {
 
     it('returns path with one param', () => {
       const contract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -142,6 +114,7 @@ describe('apiContracts', () => {
 
     it('returns path with multiple params', () => {
       const contract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_MULTI_SCHEMA,
         pathResolver: (pathParams) => `/orgs/${pathParams.orgId}/users/${pathParams.userId}`,
@@ -155,6 +128,7 @@ describe('apiContracts', () => {
   describe('describeContract', () => {
     it('returns path without params', () => {
       const contract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
       })
@@ -164,6 +138,7 @@ describe('apiContracts', () => {
 
     it('returns path with one param', () => {
       const contract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -174,6 +149,7 @@ describe('apiContracts', () => {
 
     it('returns path with multiple params', () => {
       const contract = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: z.undefined(),
         successResponseBodySchema: BODY_SCHEMA,
@@ -189,6 +165,7 @@ describe('apiContracts', () => {
     describe('buildPayloadRoute', () => {
       it('includes responseHeaderSchema in the contract', () => {
         const contract = buildPayloadRoute({
+          visibility: 'public',
           successResponseBodySchema: BODY_SCHEMA,
           requestBodySchema: BODY_SCHEMA,
           method: 'post',
@@ -202,6 +179,7 @@ describe('apiContracts', () => {
 
       it('works with both request and response header schemas', () => {
         const contract = buildPayloadRoute({
+          visibility: 'public',
           successResponseBodySchema: BODY_SCHEMA,
           requestBodySchema: BODY_SCHEMA,
           method: 'post',
@@ -219,6 +197,7 @@ describe('apiContracts', () => {
     describe('buildGetRoute', () => {
       it('includes responseHeaderSchema in the contract', () => {
         const contract = buildGetRoute({
+          visibility: 'public',
           successResponseBodySchema: BODY_SCHEMA,
           pathResolver: () => '/api/data',
           responseHeaderSchema: RESPONSE_HEADER_SCHEMA,
@@ -230,6 +209,7 @@ describe('apiContracts', () => {
 
       it('works with both request and response header schemas', () => {
         const contract = buildGetRoute({
+          visibility: 'public',
           successResponseBodySchema: BODY_SCHEMA,
           pathResolver: () => '/api/data',
           requestHeaderSchema: REQUEST_HEADER_SCHEMA,
@@ -244,6 +224,7 @@ describe('apiContracts', () => {
 
       it('validates response header schema with path params', () => {
         const contract = buildGetRoute({
+          visibility: 'public',
           successResponseBodySchema: BODY_SCHEMA,
           requestPathParamsSchema: PATH_PARAMS_SCHEMA,
           pathResolver: (pathParams) => `/users/${pathParams.userId}`,
@@ -259,6 +240,7 @@ describe('apiContracts', () => {
     describe('buildDeleteRoute', () => {
       it('includes responseHeaderSchema in the contract', () => {
         const contract = buildDeleteRoute({
+          visibility: 'public',
           successResponseBodySchema: BODY_SCHEMA,
           pathResolver: () => '/api/data',
           responseHeaderSchema: RESPONSE_HEADER_SCHEMA,
@@ -270,6 +252,7 @@ describe('apiContracts', () => {
 
       it('works with both request and response header schemas', () => {
         const contract = buildDeleteRoute({
+          visibility: 'public',
           successResponseBodySchema: BODY_SCHEMA,
           pathResolver: () => '/api/data',
           requestHeaderSchema: REQUEST_HEADER_SCHEMA,
@@ -286,6 +269,7 @@ describe('apiContracts', () => {
     describe('type inference', () => {
       it('correctly infers response header types', () => {
         const contract = buildGetRoute({
+          visibility: 'public',
           successResponseBodySchema: BODY_SCHEMA,
           pathResolver: () => '/api/data',
           responseHeaderSchema: z.object({

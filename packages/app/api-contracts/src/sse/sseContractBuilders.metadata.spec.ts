@@ -18,6 +18,7 @@ describe('buildSseContract metadata augmentation', () => {
   describe('SSE GET route', () => {
     it('should respect metadata type and reflect it on contract', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/',
         serverSentEventSchemas: EVENTS,
@@ -38,6 +39,7 @@ describe('buildSseContract metadata augmentation', () => {
 
     it('should reflect description, summary, and tags on contract', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/',
         serverSentEventSchemas: EVENTS,
@@ -55,6 +57,7 @@ describe('buildSseContract metadata augmentation', () => {
   describe('SSE POST route', () => {
     it('should respect metadata type and reflect it on contract', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/',
         requestBodySchema: SCHEMA,
@@ -76,6 +79,7 @@ describe('buildSseContract metadata augmentation', () => {
 
     it('should reflect description, summary, and tags on contract', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/',
         requestBodySchema: SCHEMA,
@@ -94,6 +98,7 @@ describe('buildSseContract metadata augmentation', () => {
   describe('Dual-mode GET route', () => {
     it('should respect metadata type and reflect it on contract', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/',
         successResponseBodySchema: SCHEMA,
@@ -115,6 +120,7 @@ describe('buildSseContract metadata augmentation', () => {
 
     it('should reflect description, summary, and tags on contract', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/',
         successResponseBodySchema: SCHEMA,
@@ -133,6 +139,7 @@ describe('buildSseContract metadata augmentation', () => {
   describe('Dual-mode POST route', () => {
     it('should respect metadata type and reflect it on contract', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/',
         requestBodySchema: SCHEMA,
@@ -155,6 +162,7 @@ describe('buildSseContract metadata augmentation', () => {
 
     it('should reflect description, summary, and tags on contract', () => {
       const contract = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/',
         requestBodySchema: SCHEMA,

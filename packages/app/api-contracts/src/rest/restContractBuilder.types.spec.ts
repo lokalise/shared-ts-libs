@@ -1,12 +1,13 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import type { GetRouteDefinition, RouteVisibility } from '../apiContracts.ts'
+import type { GetRouteDefinition } from '../apiContracts.ts'
 import { buildRestContract } from './restContractBuilder.ts'
 
 describe('buildRestContract type inference', () => {
   describe('GET route types', () => {
     it('returns GetRouteDefinition for GET routes', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({ id: z.string() }),
         pathResolver: () => '/api/users',
@@ -23,6 +24,7 @@ describe('buildRestContract type inference', () => {
       })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({ id: z.string() }),
         requestPathParamsSchema: pathParamsSchema,
@@ -42,6 +44,7 @@ describe('buildRestContract type inference', () => {
       })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({ items: z.array(z.string()) }),
         requestQuerySchema: querySchema,
@@ -59,6 +62,7 @@ describe('buildRestContract type inference', () => {
       })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: responseSchema,
         pathResolver: () => '/api/users',
@@ -75,6 +79,7 @@ describe('buildRestContract type inference', () => {
       })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({}),
         requestHeaderSchema: headerSchema,
@@ -92,6 +97,7 @@ describe('buildRestContract type inference', () => {
       })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({}),
         responseHeaderSchema: responseHeaderSchema,
@@ -108,6 +114,7 @@ describe('buildRestContract type inference', () => {
   describe('DELETE route types', () => {
     it('returns DeleteRouteDefinition for DELETE routes', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: z.undefined(),
         pathResolver: () => '/api/users/123',
@@ -125,6 +132,7 @@ describe('buildRestContract type inference', () => {
       const pathParamsSchema = z.object({ userId: z.string() })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: z.undefined(),
         requestPathParamsSchema: pathParamsSchema,
@@ -139,6 +147,7 @@ describe('buildRestContract type inference', () => {
 
     it('defaults isEmptyResponseExpected to true type', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: z.undefined(),
         pathResolver: () => '/api/resource',
@@ -155,6 +164,7 @@ describe('buildRestContract type inference', () => {
       const responseSchema = z.object({ id: z.string() })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: bodySchema,
         successResponseBodySchema: responseSchema,
@@ -171,6 +181,7 @@ describe('buildRestContract type inference', () => {
       const bodySchema = z.object({ name: z.string() })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'put',
         requestBodySchema: bodySchema,
         successResponseBodySchema: z.object({ id: z.string() }),
@@ -186,6 +197,7 @@ describe('buildRestContract type inference', () => {
       const bodySchema = z.object({ name: z.string().optional() })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'patch',
         requestBodySchema: bodySchema,
         successResponseBodySchema: z.object({ id: z.string() }),
@@ -205,6 +217,7 @@ describe('buildRestContract type inference', () => {
       })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema,
         successResponseBodySchema: z.object({ id: z.string() }),
@@ -222,6 +235,7 @@ describe('buildRestContract type inference', () => {
       })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: z.object({ data: z.string() }),
         successResponseBodySchema: responseSchema,
@@ -236,6 +250,7 @@ describe('buildRestContract type inference', () => {
       const bodySchema = z.object({ data: z.string() })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: bodySchema,
         successResponseBodySchema: z.object({ id: z.string() }),
@@ -248,6 +263,7 @@ describe('buildRestContract type inference', () => {
 
     it('returns PayloadRouteDefinition for POST with undefined requestBodySchema', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: undefined,
         successResponseBodySchema: z.object({ id: z.string() }),
@@ -261,6 +277,7 @@ describe('buildRestContract type inference', () => {
 
     it('returns PayloadRouteDefinition for PATCH with undefined requestBodySchema', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'patch',
         requestBodySchema: undefined,
         successResponseBodySchema: z.object({ ok: z.boolean() }),
@@ -274,6 +291,7 @@ describe('buildRestContract type inference', () => {
 
     it('returns PayloadRouteDefinition for PUT with undefined requestBodySchema', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'put',
         requestBodySchema: undefined,
         successResponseBodySchema: z.object({ updated: z.boolean() }),
@@ -289,6 +307,7 @@ describe('buildRestContract type inference', () => {
   describe('responseSchemasByStatusCode types', () => {
     it('infers status code response types', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({ data: z.string() }),
         pathResolver: () => '/api/data',
@@ -312,6 +331,7 @@ describe('buildRestContract type inference', () => {
 
       // This should compile without errors
       buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({}),
         requestPathParamsSchema: pathParamsSchema,
@@ -326,6 +346,7 @@ describe('buildRestContract type inference', () => {
     it('allows empty params when no path params schema', () => {
       // This should compile without errors
       buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({}),
         pathResolver: () => '/api/users',
@@ -336,6 +357,7 @@ describe('buildRestContract type inference', () => {
   describe('metadata type augmentation', () => {
     it('preserves metadata type', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({}),
         pathResolver: () => '/api/data',
@@ -350,6 +372,7 @@ describe('buildRestContract type inference', () => {
     describe('isEmptyResponseExpected', () => {
       it('defaults to false type for GET routes', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'get',
           successResponseBodySchema: z.object({}),
           pathResolver: () => '/api/data',
@@ -360,6 +383,7 @@ describe('buildRestContract type inference', () => {
 
       it('defaults to false type for POST routes', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'post',
           requestBodySchema: z.object({}),
           successResponseBodySchema: z.object({}),
@@ -371,6 +395,7 @@ describe('buildRestContract type inference', () => {
 
       it('defaults to true type for DELETE routes', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'delete',
           successResponseBodySchema: z.undefined(),
           pathResolver: () => '/api/resource',
@@ -381,6 +406,7 @@ describe('buildRestContract type inference', () => {
 
       it('reflects explicit true value in type for GET', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'get',
           successResponseBodySchema: z.undefined(),
           pathResolver: () => '/api/void',
@@ -392,6 +418,7 @@ describe('buildRestContract type inference', () => {
 
       it('reflects explicit false value in type for DELETE', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'delete',
           successResponseBodySchema: z.object({ deleted: z.boolean() }),
           pathResolver: () => '/api/resource',
@@ -405,6 +432,7 @@ describe('buildRestContract type inference', () => {
     describe('isNonJSONResponseExpected', () => {
       it('defaults to false type for GET routes', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'get',
           successResponseBodySchema: z.object({}),
           pathResolver: () => '/api/data',
@@ -415,6 +443,7 @@ describe('buildRestContract type inference', () => {
 
       it('defaults to false type for POST routes', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'post',
           requestBodySchema: z.object({}),
           successResponseBodySchema: z.object({}),
@@ -426,6 +455,7 @@ describe('buildRestContract type inference', () => {
 
       it('defaults to false type for DELETE routes', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'delete',
           successResponseBodySchema: z.undefined(),
           pathResolver: () => '/api/resource',
@@ -436,6 +466,7 @@ describe('buildRestContract type inference', () => {
 
       it('reflects explicit true value in type', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'get',
           successResponseBodySchema: z.string(),
           pathResolver: () => '/api/file',
@@ -447,6 +478,7 @@ describe('buildRestContract type inference', () => {
 
       it('reflects explicit false value in type', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'get',
           successResponseBodySchema: z.object({}),
           pathResolver: () => '/api/data',
@@ -455,39 +487,6 @@ describe('buildRestContract type inference', () => {
 
         expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<false>()
       })
-    })
-  })
-
-  describe('visibility types', () => {
-    it('is non-optional when omitted for GET routes', () => {
-      const contract = buildRestContract({
-        method: 'get',
-        successResponseBodySchema: z.object({}),
-        pathResolver: () => '/api/data',
-      })
-
-      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
-    })
-
-    it('is non-optional when omitted for POST routes', () => {
-      const contract = buildRestContract({
-        method: 'post',
-        requestBodySchema: z.object({}),
-        successResponseBodySchema: z.object({}),
-        pathResolver: () => '/api/data',
-      })
-
-      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
-    })
-
-    it('is non-optional when omitted for DELETE routes', () => {
-      const contract = buildRestContract({
-        method: 'delete',
-        successResponseBodySchema: z.undefined(),
-        pathResolver: () => '/api/resource',
-      })
-
-      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
     })
   })
 })

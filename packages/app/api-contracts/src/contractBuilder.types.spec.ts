@@ -11,6 +11,7 @@ describe('buildContract type inference', () => {
   describe('REST GET route types', () => {
     it('returns GetRouteDefinition for GET routes', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({ id: z.string() }),
         pathResolver: () => '/api/users',
@@ -27,6 +28,7 @@ describe('buildContract type inference', () => {
       })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({ id: z.string() }),
         requestPathParamsSchema: pathParamsSchema,
@@ -45,6 +47,7 @@ describe('buildContract type inference', () => {
       })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({ items: z.array(z.string()) }),
         requestQuerySchema: querySchema,
@@ -61,6 +64,7 @@ describe('buildContract type inference', () => {
       })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: responseSchema,
         pathResolver: () => '/api/users',
@@ -76,6 +80,7 @@ describe('buildContract type inference', () => {
       })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({}),
         requestHeaderSchema: headerSchema,
@@ -92,6 +97,7 @@ describe('buildContract type inference', () => {
       })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({}),
         responseHeaderSchema: responseHeaderSchema,
@@ -107,6 +113,7 @@ describe('buildContract type inference', () => {
   describe('REST DELETE route types', () => {
     it('returns DeleteRouteDefinition for DELETE routes', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: z.undefined(),
         pathResolver: () => '/api/users/123',
@@ -122,6 +129,7 @@ describe('buildContract type inference', () => {
       const pathParamsSchema = z.object({ userId: z.string() })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: z.undefined(),
         requestPathParamsSchema: pathParamsSchema,
@@ -135,6 +143,7 @@ describe('buildContract type inference', () => {
 
     it('defaults isEmptyResponseExpected to true type', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: z.undefined(),
         pathResolver: () => '/api/resource',
@@ -150,6 +159,7 @@ describe('buildContract type inference', () => {
       const responseSchema = z.object({ id: z.string() })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: bodySchema,
         successResponseBodySchema: responseSchema,
@@ -164,6 +174,7 @@ describe('buildContract type inference', () => {
       const bodySchema = z.object({ name: z.string() })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'put',
         requestBodySchema: bodySchema,
         successResponseBodySchema: z.object({ id: z.string() }),
@@ -178,6 +189,7 @@ describe('buildContract type inference', () => {
       const bodySchema = z.object({ name: z.string().optional() })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'patch',
         requestBodySchema: bodySchema,
         successResponseBodySchema: z.object({ id: z.string() }),
@@ -196,6 +208,7 @@ describe('buildContract type inference', () => {
       })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema,
         successResponseBodySchema: z.object({ id: z.string() }),
@@ -212,6 +225,7 @@ describe('buildContract type inference', () => {
       })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: z.object({ data: z.string() }),
         successResponseBodySchema: responseSchema,
@@ -225,6 +239,7 @@ describe('buildContract type inference', () => {
   describe('REST responseSchemasByStatusCode types', () => {
     it('infers status code response types', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({ data: z.string() }),
         pathResolver: () => '/api/data',
@@ -247,6 +262,7 @@ describe('buildContract type inference', () => {
       })
 
       buildContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({}),
         requestPathParamsSchema: pathParamsSchema,
@@ -259,6 +275,7 @@ describe('buildContract type inference', () => {
 
     it('allows empty params when no path params schema', () => {
       buildContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({}),
         pathResolver: () => '/api/users',
@@ -270,6 +287,7 @@ describe('buildContract type inference', () => {
     describe('isEmptyResponseExpected', () => {
       it('defaults to false type for GET routes', () => {
         const contract = buildContract({
+          visibility: 'public',
           method: 'get',
           successResponseBodySchema: z.object({}),
           pathResolver: () => '/api/data',
@@ -280,6 +298,7 @@ describe('buildContract type inference', () => {
 
       it('defaults to false type for POST routes', () => {
         const contract = buildContract({
+          visibility: 'public',
           method: 'post',
           requestBodySchema: z.object({}),
           successResponseBodySchema: z.object({}),
@@ -291,6 +310,7 @@ describe('buildContract type inference', () => {
 
       it('defaults to true type for DELETE routes', () => {
         const contract = buildContract({
+          visibility: 'public',
           method: 'delete',
           successResponseBodySchema: z.undefined(),
           pathResolver: () => '/api/resource',
@@ -301,6 +321,7 @@ describe('buildContract type inference', () => {
 
       it('reflects explicit true value in type for GET', () => {
         const contract = buildContract({
+          visibility: 'public',
           method: 'get',
           successResponseBodySchema: z.undefined(),
           pathResolver: () => '/api/void',
@@ -312,6 +333,7 @@ describe('buildContract type inference', () => {
 
       it('reflects explicit false value in type for DELETE', () => {
         const contract = buildContract({
+          visibility: 'public',
           method: 'delete',
           successResponseBodySchema: z.object({ deleted: z.boolean() }),
           pathResolver: () => '/api/resource',
@@ -325,6 +347,7 @@ describe('buildContract type inference', () => {
     describe('isNonJSONResponseExpected', () => {
       it('defaults to false type for GET routes', () => {
         const contract = buildContract({
+          visibility: 'public',
           method: 'get',
           successResponseBodySchema: z.object({}),
           pathResolver: () => '/api/data',
@@ -335,6 +358,7 @@ describe('buildContract type inference', () => {
 
       it('defaults to false type for POST routes', () => {
         const contract = buildContract({
+          visibility: 'public',
           method: 'post',
           requestBodySchema: z.object({}),
           successResponseBodySchema: z.object({}),
@@ -346,6 +370,7 @@ describe('buildContract type inference', () => {
 
       it('defaults to false type for DELETE routes', () => {
         const contract = buildContract({
+          visibility: 'public',
           method: 'delete',
           successResponseBodySchema: z.undefined(),
           pathResolver: () => '/api/resource',
@@ -356,6 +381,7 @@ describe('buildContract type inference', () => {
 
       it('reflects explicit true value in type', () => {
         const contract = buildContract({
+          visibility: 'public',
           method: 'get',
           successResponseBodySchema: z.string(),
           pathResolver: () => '/api/file',
@@ -367,6 +393,7 @@ describe('buildContract type inference', () => {
 
       it('reflects explicit false value in type', () => {
         const contract = buildContract({
+          visibility: 'public',
           method: 'get',
           successResponseBodySchema: z.object({}),
           pathResolver: () => '/api/data',
@@ -385,6 +412,7 @@ describe('buildContract type inference', () => {
   describe('SSE GET route types', () => {
     it('returns SSEContractDefinition for SSE GET routes', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -403,6 +431,7 @@ describe('buildContract type inference', () => {
       const paramsSchema = z.object({ channelId: z.string() })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
         requestPathParamsSchema: paramsSchema,
@@ -422,6 +451,7 @@ describe('buildContract type inference', () => {
       const querySchema = z.object({ userId: z.string().optional() })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -439,6 +469,7 @@ describe('buildContract type inference', () => {
       const headersSchema = z.object({ authorization: z.string() })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -459,6 +490,7 @@ describe('buildContract type inference', () => {
       }
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -472,6 +504,7 @@ describe('buildContract type inference', () => {
 
     it('has undefined requestBody for GET routes', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -487,6 +520,7 @@ describe('buildContract type inference', () => {
 
     it('allows omitting requestPathParamsSchema, requestQuerySchema, requestHeaderSchema', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         serverSentEventSchemas: {
@@ -505,6 +539,7 @@ describe('buildContract type inference', () => {
   describe('SSE POST route types', () => {
     it('returns SSEContractDefinition for SSE POST routes', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/process',
         requestPathParamsSchema: z.object({}),
@@ -527,6 +562,7 @@ describe('buildContract type inference', () => {
       const bodySchema = z.object({ message: z.string(), count: z.number() })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/process',
         requestPathParamsSchema: z.object({}),
@@ -547,6 +583,7 @@ describe('buildContract type inference', () => {
       const headersSchema = z.object({ authorization: z.string() })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: (params) => `/api/projects/${params.projectId}/process`,
         requestPathParamsSchema: paramsSchema,
@@ -567,6 +604,7 @@ describe('buildContract type inference', () => {
 
     it('allows omitting requestPathParamsSchema, requestQuerySchema, requestHeaderSchema', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'post' as const,
         pathResolver: () => '/api/process',
         requestBodySchema: z.object({ data: z.string() }),
@@ -584,6 +622,7 @@ describe('buildContract type inference', () => {
 
     it('allows explicit method specification', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'put',
         pathResolver: () => '/api/process',
         requestPathParamsSchema: z.object({}),
@@ -602,6 +641,7 @@ describe('buildContract type inference', () => {
   describe('SSE responseBodySchemasByStatusCode types', () => {
     it('infers status code response types for SSE routes', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -627,6 +667,7 @@ describe('buildContract type inference', () => {
   describe('Dual-mode GET route types', () => {
     it('returns DualModeContractDefinition for dual-mode GET routes', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/status',
         requestPathParamsSchema: z.object({}),
@@ -649,6 +690,7 @@ describe('buildContract type inference', () => {
       })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/status',
         requestPathParamsSchema: z.object({}),
@@ -670,6 +712,7 @@ describe('buildContract type inference', () => {
       })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/status',
         requestPathParamsSchema: z.object({}),
@@ -693,6 +736,7 @@ describe('buildContract type inference', () => {
       const headersSchema = z.object({ authorization: z.string() })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
         requestPathParamsSchema: paramsSchema,
@@ -713,6 +757,7 @@ describe('buildContract type inference', () => {
 
     it('allows omitting requestPathParamsSchema, requestQuerySchema, requestHeaderSchema', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/status',
         successResponseBodySchema: z.object({ status: z.string() }),
@@ -729,6 +774,7 @@ describe('buildContract type inference', () => {
 
     it('has undefined requestBody for GET routes', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/status',
         requestPathParamsSchema: z.object({}),
@@ -747,6 +793,7 @@ describe('buildContract type inference', () => {
   describe('Dual-mode POST route types', () => {
     it('returns DualModeContractDefinition for dual-mode POST routes', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/chat/completions',
         requestPathParamsSchema: z.object({}),
@@ -774,6 +821,7 @@ describe('buildContract type inference', () => {
       })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/chat/completions',
         requestPathParamsSchema: z.object({}),
@@ -796,6 +844,7 @@ describe('buildContract type inference', () => {
       })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/chat/completions',
         requestPathParamsSchema: z.object({}),
@@ -817,6 +866,7 @@ describe('buildContract type inference', () => {
       const headersSchema = z.object({ authorization: z.string() })
 
       const contract = buildContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: (params) => `/api/chats/${params.chatId}/completions`,
         requestPathParamsSchema: paramsSchema,
@@ -838,6 +888,7 @@ describe('buildContract type inference', () => {
 
     it('allows omitting requestPathParamsSchema, requestQuerySchema, requestHeaderSchema', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'post' as const,
         pathResolver: () => '/api/chat/completions',
         requestBodySchema: z.object({ message: z.string() }),
@@ -855,6 +906,7 @@ describe('buildContract type inference', () => {
 
     it('allows explicit method specification', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'put',
         pathResolver: () => '/api/chat/completions',
         requestPathParamsSchema: z.object({}),
@@ -874,6 +926,7 @@ describe('buildContract type inference', () => {
   describe('Dual-mode responseBodySchemasByStatusCode types', () => {
     it('infers status code response types for dual-mode routes', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/chat/completions',
         requestPathParamsSchema: z.object({}),
@@ -901,6 +954,7 @@ describe('buildContract type inference', () => {
   describe('contract type discrimination', () => {
     it('REST contracts do not have isSSE property', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({ id: z.string() }),
         pathResolver: () => '/api/users',
@@ -912,6 +966,7 @@ describe('buildContract type inference', () => {
 
     it('REST contracts do not have isDualMode property', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({ id: z.string() }),
         pathResolver: () => '/api/users',
@@ -923,6 +978,7 @@ describe('buildContract type inference', () => {
 
     it('SSE contracts have isSSE: true', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -938,6 +994,7 @@ describe('buildContract type inference', () => {
 
     it('SSE contracts do not have isDualMode property', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -954,6 +1011,7 @@ describe('buildContract type inference', () => {
 
     it('Dual-mode contracts have isDualMode: true', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/status',
         requestPathParamsSchema: z.object({}),
@@ -970,6 +1028,7 @@ describe('buildContract type inference', () => {
 
     it('Dual-mode contracts do not have isSSE property', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/status',
         requestPathParamsSchema: z.object({}),
@@ -995,6 +1054,7 @@ describe('buildContract type inference', () => {
       const pathParamsSchema = z.object({ userId: z.string() })
 
       buildContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({}),
         requestPathParamsSchema: pathParamsSchema,
@@ -1006,6 +1066,7 @@ describe('buildContract type inference', () => {
       const paramsSchema = z.object({ channelId: z.string() })
 
       buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
         requestPathParamsSchema: paramsSchema,
@@ -1021,6 +1082,7 @@ describe('buildContract type inference', () => {
       const paramsSchema = z.object({ jobId: z.string() })
 
       buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
         requestPathParamsSchema: paramsSchema,

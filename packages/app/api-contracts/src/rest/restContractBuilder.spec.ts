@@ -25,6 +25,7 @@ describe('buildRestContract', () => {
   describe('POST route (payload)', () => {
     it('sets default payload route values', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         requestBodySchema: BODY_SCHEMA,
         method: 'post',
@@ -41,6 +42,7 @@ describe('buildRestContract', () => {
 
     it('supports PUT method', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         requestBodySchema: BODY_SCHEMA,
         method: 'put',
@@ -52,6 +54,7 @@ describe('buildRestContract', () => {
 
     it('supports PATCH method', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         requestBodySchema: BODY_SCHEMA,
         method: 'patch',
@@ -63,6 +66,7 @@ describe('buildRestContract', () => {
 
     it('preserves method when requestBodySchema is undefined', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         requestBodySchema: undefined,
         method: 'post',
@@ -74,6 +78,7 @@ describe('buildRestContract', () => {
 
     it('preserves PATCH method when requestBodySchema is undefined', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         requestBodySchema: undefined,
         method: 'patch',
@@ -85,6 +90,7 @@ describe('buildRestContract', () => {
 
     it('defaults isEmptyResponseExpected to false for POST', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         requestBodySchema: BODY_SCHEMA,
         method: 'post',
@@ -96,6 +102,7 @@ describe('buildRestContract', () => {
 
     it('defaults isNonJSONResponseExpected to false for POST', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         successResponseBodySchema: BODY_SCHEMA,
         requestBodySchema: BODY_SCHEMA,
         method: 'post',
@@ -109,6 +116,7 @@ describe('buildRestContract', () => {
   describe('GET route', () => {
     it('sets default get route values', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
@@ -125,6 +133,7 @@ describe('buildRestContract', () => {
 
     it('resolves path params', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -136,27 +145,19 @@ describe('buildRestContract', () => {
 
     it('sets method to get when method is get', () => {
       const contract = buildRestContract({
+        visibility: 'internal',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/api/users',
       })
 
       expect(contract.method).toBe('get')
-    })
-
-    it('propagates visibility to the contract', () => {
-      const contract = buildRestContract({
-        method: 'get',
-        successResponseBodySchema: BODY_SCHEMA,
-        pathResolver: () => '/api/users',
-        visibility: 'internal',
-      })
-
       expect(contract.visibility).toBe('internal')
     })
 
     it('defaults isEmptyResponseExpected to false for GET', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/api/users',
@@ -167,6 +168,7 @@ describe('buildRestContract', () => {
 
     it('defaults isNonJSONResponseExpected to false for GET', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/api/users',
@@ -179,6 +181,7 @@ describe('buildRestContract', () => {
   describe('DELETE route', () => {
     it('sets default delete route values', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
@@ -190,6 +193,7 @@ describe('buildRestContract', () => {
 
     it('defaults isEmptyResponseExpected to true for DELETE', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/api/users/123',
@@ -200,6 +204,7 @@ describe('buildRestContract', () => {
 
     it('can override isEmptyResponseExpected for DELETE', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/api/users/123',
@@ -213,6 +218,7 @@ describe('buildRestContract', () => {
   describe('mapRouteToPath compatibility', () => {
     it('returns path without params', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
@@ -224,6 +230,7 @@ describe('buildRestContract', () => {
 
     it('returns path with one param', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -236,6 +243,7 @@ describe('buildRestContract', () => {
 
     it('returns path with multiple params', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_MULTI_SCHEMA,
@@ -250,6 +258,7 @@ describe('buildRestContract', () => {
   describe('describeContract compatibility', () => {
     it('returns path without params', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/',
@@ -260,6 +269,7 @@ describe('buildRestContract', () => {
 
     it('returns path with one param', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -271,6 +281,7 @@ describe('buildRestContract', () => {
 
     it('returns path with multiple params for POST', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: z.undefined(),
         successResponseBodySchema: BODY_SCHEMA,
@@ -283,6 +294,7 @@ describe('buildRestContract', () => {
 
     it('returns DELETE method correctly', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -297,6 +309,7 @@ describe('buildRestContract', () => {
     describe('POST route', () => {
       it('includes responseHeaderSchema in the contract', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           successResponseBodySchema: BODY_SCHEMA,
           requestBodySchema: BODY_SCHEMA,
           method: 'post',
@@ -310,6 +323,7 @@ describe('buildRestContract', () => {
 
       it('works with both request and response header schemas', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           successResponseBodySchema: BODY_SCHEMA,
           requestBodySchema: BODY_SCHEMA,
           method: 'post',
@@ -327,6 +341,7 @@ describe('buildRestContract', () => {
     describe('GET route', () => {
       it('includes responseHeaderSchema in the contract', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'get',
           successResponseBodySchema: BODY_SCHEMA,
           pathResolver: () => '/api/data',
@@ -339,6 +354,7 @@ describe('buildRestContract', () => {
 
       it('works with both request and response header schemas', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'get',
           successResponseBodySchema: BODY_SCHEMA,
           pathResolver: () => '/api/data',
@@ -354,6 +370,7 @@ describe('buildRestContract', () => {
 
       it('validates response header schema with path params', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'get',
           successResponseBodySchema: BODY_SCHEMA,
           requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -370,6 +387,7 @@ describe('buildRestContract', () => {
     describe('DELETE route', () => {
       it('includes responseHeaderSchema in the contract', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'delete',
           successResponseBodySchema: BODY_SCHEMA,
           pathResolver: () => '/api/data',
@@ -382,6 +400,7 @@ describe('buildRestContract', () => {
 
       it('works with both request and response header schemas', () => {
         const contract = buildRestContract({
+          visibility: 'public',
           method: 'delete',
           successResponseBodySchema: BODY_SCHEMA,
           pathResolver: () => '/api/data',
@@ -400,6 +419,7 @@ describe('buildRestContract', () => {
   describe('optional fields', () => {
     it('supports summary field', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/api/users',
@@ -411,6 +431,7 @@ describe('buildRestContract', () => {
 
     it('supports tags field', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/api/users',
@@ -427,6 +448,7 @@ describe('buildRestContract', () => {
       })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         pathResolver: () => '/api/users',
@@ -438,6 +460,7 @@ describe('buildRestContract', () => {
 
     it('supports isNonJSONResponseExpected', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.string(),
         pathResolver: () => '/api/file',

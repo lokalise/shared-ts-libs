@@ -23,6 +23,7 @@ describe('inferTypes', () => {
   describe('InferJsonSuccessResponses', () => {
     it('returns never when no success response schemas are defined', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -36,6 +37,7 @@ describe('inferTypes', () => {
       const schema200 = z.object({ name: z.string() })
       const schema201 = z.object({ id: z.string() })
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -51,6 +53,7 @@ describe('inferTypes', () => {
 
     it('returns never for noBodyResponse()', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'delete',
         pathResolver: () => '/test',
@@ -62,6 +65,7 @@ describe('inferTypes', () => {
 
     it('returns never for blobBody', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -73,6 +77,7 @@ describe('inferTypes', () => {
 
     it('returns never for sseBody', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -89,6 +94,7 @@ describe('inferTypes', () => {
     it('extracts JSON schema from the 2xx range key', () => {
       const schema = z.object({ id: z.string() })
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -102,6 +108,7 @@ describe('inferTypes', () => {
   describe('HasAnySseSuccessResponse', () => {
     it('returns false for JSON schema responses', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -113,6 +120,7 @@ describe('inferTypes', () => {
 
     it('returns false for noBodyResponse()', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'delete',
         pathResolver: () => '/test',
@@ -124,6 +132,7 @@ describe('inferTypes', () => {
 
     it('returns true for sseBody', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -139,6 +148,7 @@ describe('inferTypes', () => {
 
     it('returns false for error-only status codes with sseBody', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -154,6 +164,7 @@ describe('inferTypes', () => {
 
     it('returns true for sseBody under the 2xx range key', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -169,6 +180,7 @@ describe('inferTypes', () => {
 
     it('returns false for sseBody under a non-success range key', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -184,6 +196,7 @@ describe('inferTypes', () => {
 
     it('returns true for sseBody under the default key', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -199,6 +212,7 @@ describe('inferTypes', () => {
 
     it('returns false for non-SSE response under the default key', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -212,6 +226,7 @@ describe('inferTypes', () => {
   describe('HasAnyJsonSuccessResponse', () => {
     it('returns true for a JSON schema at an exact success code', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -223,6 +238,7 @@ describe('inferTypes', () => {
 
     it('returns false for SSE-only response', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -238,6 +254,7 @@ describe('inferTypes', () => {
 
     it('returns true for 2xx: JSON schema', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -249,6 +266,7 @@ describe('inferTypes', () => {
 
     it('returns false for 2xx: sseBody', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -266,6 +284,7 @@ describe('inferTypes', () => {
   describe('InferNonSseSuccessResponses', () => {
     it('returns the output type of a JSON success schema', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -277,6 +296,7 @@ describe('inferTypes', () => {
 
     it('returns never for SSE-only response', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -292,6 +312,7 @@ describe('inferTypes', () => {
 
     it('returns the output type for 2xx: JSON schema', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -303,6 +324,7 @@ describe('inferTypes', () => {
 
     it('returns never for 2xx: sseBody', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -320,6 +342,7 @@ describe('inferTypes', () => {
   describe('ContractResponseMode', () => {
     it('returns non-sse for a JSON-only contract', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -331,6 +354,7 @@ describe('inferTypes', () => {
 
     it('returns sse for an SSE-only contract', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -346,6 +370,7 @@ describe('inferTypes', () => {
 
     it('returns sse for 2xx: sseBody', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -361,6 +386,7 @@ describe('inferTypes', () => {
 
     it('returns non-sse for 2xx: JSON schema', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -372,6 +398,7 @@ describe('inferTypes', () => {
 
     it('returns dual for a content map carrying both JSON and SSE', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -392,6 +419,7 @@ describe('inferTypes', () => {
   describe('AvailableResponseModes', () => {
     it('includes json for a JSON success response', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -403,6 +431,7 @@ describe('inferTypes', () => {
 
     it('includes sse for an SSE-only response', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -418,6 +447,7 @@ describe('inferTypes', () => {
 
     it('includes json for 2xx: JSON schema', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -429,6 +459,7 @@ describe('inferTypes', () => {
 
     it('includes sse for 2xx: sseBody', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -444,6 +475,7 @@ describe('inferTypes', () => {
 
     it('includes noContent for noBodyResponse()', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'delete',
         pathResolver: () => '/test',
@@ -457,6 +489,7 @@ describe('inferTypes', () => {
   describe('InferSseSuccessResponses', () => {
     it('returns never for JSON schema responses', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -470,6 +503,7 @@ describe('inferTypes', () => {
       const chunkSchema = z.object({ delta: z.string() })
       const doneSchema = z.object({ finish_reason: z.string() })
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -487,6 +521,7 @@ describe('inferTypes', () => {
       const translationSchema = z.object({ text: z.string() })
       const errorSchema = z.object({ message: z.string() })
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -504,6 +539,7 @@ describe('inferTypes', () => {
   describe('response factories narrow like their content-map equivalents', () => {
     it('sseResponse() yields sse mode only', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -521,6 +557,7 @@ describe('inferTypes', () => {
 
     it('blobResponse() yields blob mode only', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -536,6 +573,7 @@ describe('inferTypes', () => {
 
     it('blobResponse() preserves the literal media-type key in the content map', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',

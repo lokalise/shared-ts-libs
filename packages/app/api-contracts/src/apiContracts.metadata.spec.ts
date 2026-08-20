@@ -17,6 +17,7 @@ describe('apiContracts metadata augmentation', () => {
   describe('buildPayloadRoute', () => {
     it('should respect metadata type and reflect it on contract', () => {
       const contract = buildPayloadRoute({
+        visibility: 'public',
         successResponseBodySchema: SCHEMA,
         requestBodySchema: SCHEMA,
         method: 'post',
@@ -41,6 +42,7 @@ describe('apiContracts metadata augmentation', () => {
   describe('buildGetRoute', () => {
     it('should respect metadata type and reflect it on contract', () => {
       const contract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: SCHEMA,
         pathResolver: () => '/',
         metadata: {
@@ -62,6 +64,7 @@ describe('apiContracts metadata augmentation', () => {
   describe('buildDeleteRoute', () => {
     it('should respect metadata type', () => {
       const contract = buildDeleteRoute({
+        visibility: 'public',
         successResponseBodySchema: SCHEMA,
         pathResolver: () => '/',
         metadata: {

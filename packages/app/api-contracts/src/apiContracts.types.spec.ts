@@ -1,16 +1,12 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import {
-  buildDeleteRoute,
-  buildGetRoute,
-  buildPayloadRoute,
-  type RouteVisibility,
-} from './apiContracts.ts'
+import { buildDeleteRoute, buildGetRoute, buildPayloadRoute } from './apiContracts.ts'
 
 describe('legacy builders type inference', () => {
   describe('isEmptyResponseExpected types', () => {
     it('buildGetRoute defaults to false type', () => {
       const contract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: z.object({}),
         pathResolver: () => '/api/data',
       })
@@ -20,6 +16,7 @@ describe('legacy builders type inference', () => {
 
     it('buildPayloadRoute defaults to false type', () => {
       const contract = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: z.object({}),
         successResponseBodySchema: z.object({}),
@@ -31,6 +28,7 @@ describe('legacy builders type inference', () => {
 
     it('buildDeleteRoute defaults to true type', () => {
       const contract = buildDeleteRoute({
+        visibility: 'public',
         successResponseBodySchema: z.undefined(),
         pathResolver: () => '/api/resource',
       })
@@ -40,6 +38,7 @@ describe('legacy builders type inference', () => {
 
     it('buildGetRoute reflects explicit true value in type', () => {
       const contract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: z.undefined(),
         pathResolver: () => '/api/void',
         isEmptyResponseExpected: true,
@@ -50,6 +49,7 @@ describe('legacy builders type inference', () => {
 
     it('buildDeleteRoute reflects explicit false value in type', () => {
       const contract = buildDeleteRoute({
+        visibility: 'public',
         successResponseBodySchema: z.object({ deleted: z.boolean() }),
         pathResolver: () => '/api/resource',
         isEmptyResponseExpected: false,
@@ -62,6 +62,7 @@ describe('legacy builders type inference', () => {
   describe('isNonJSONResponseExpected types', () => {
     it('buildGetRoute defaults to false type', () => {
       const contract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: z.object({}),
         pathResolver: () => '/api/data',
       })
@@ -71,6 +72,7 @@ describe('legacy builders type inference', () => {
 
     it('buildPayloadRoute defaults to false type', () => {
       const contract = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: z.object({}),
         successResponseBodySchema: z.object({}),
@@ -82,6 +84,7 @@ describe('legacy builders type inference', () => {
 
     it('buildDeleteRoute defaults to false type', () => {
       const contract = buildDeleteRoute({
+        visibility: 'public',
         successResponseBodySchema: z.undefined(),
         pathResolver: () => '/api/resource',
       })
@@ -91,53 +94,13 @@ describe('legacy builders type inference', () => {
 
     it('buildGetRoute reflects explicit true value in type', () => {
       const contract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: z.string(),
         pathResolver: () => '/api/file',
         isNonJSONResponseExpected: true,
       })
 
       expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<true>()
-    })
-  })
-
-  describe('visibility types', () => {
-    it('buildGetRoute output is non-optional when visibility is omitted', () => {
-      const contract = buildGetRoute({
-        successResponseBodySchema: z.object({}),
-        pathResolver: () => '/api/data',
-      })
-
-      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
-    })
-
-    it('buildPayloadRoute output is non-optional when visibility is omitted', () => {
-      const contract = buildPayloadRoute({
-        method: 'post',
-        requestBodySchema: z.object({}),
-        successResponseBodySchema: z.object({}),
-        pathResolver: () => '/api/data',
-      })
-
-      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
-    })
-
-    it('buildDeleteRoute output is non-optional when visibility is omitted', () => {
-      const contract = buildDeleteRoute({
-        successResponseBodySchema: z.undefined(),
-        pathResolver: () => '/api/resource',
-      })
-
-      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
-    })
-
-    it('buildGetRoute output stays non-optional with explicit visibility', () => {
-      const contract = buildGetRoute({
-        successResponseBodySchema: z.object({}),
-        pathResolver: () => '/api/data',
-        visibility: 'internal',
-      })
-
-      expectTypeOf(contract.visibility).toEqualTypeOf<RouteVisibility>()
     })
   })
 })
