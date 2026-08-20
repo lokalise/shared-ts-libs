@@ -278,6 +278,25 @@ The field is required in every builder input — there is no default. All builde
 `buildGetRoute` / `buildPayloadRoute` / `buildDeleteRoute`) demand an explicit choice between
 `'public'` and `'internal'`.
 
+#### Contracts for external (third-party) APIs
+
+Contracts are also used to describe APIs we only *consume*, not serve. Mirror the endpoint's own
+nature: use `visibility: 'public'` for publicly exposed endpoints, and `visibility: 'internal'`
+when you were granted access to a private endpoint (e.g. as a partner with access to private or
+beta APIs). Visibility is only ever acted upon by the serving side — the HTTP clients ignore the
+field entirely, so it has no effect on a contract used purely as a client.
+
+```ts
+const createResource = defineApiContract({
+  summary: 'Create a resource in the external service',
+  method: 'post',
+  pathResolver: () => '/v1/resources',
+  requestBodySchema: createResourceRequestSchema,
+  responsesByStatusCode: { 201: createResourceResponseSchema },
+  visibility: 'public', // external API we consume — always 'public'
+})
+```
+
 ### All fields
 
 ```ts
