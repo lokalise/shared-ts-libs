@@ -368,14 +368,17 @@ describe('BackgroundJobProcessorMonitor', () => {
 
     it('should delegate to the manager when it can propagate context', async () => {
       const job = createFakeJob('test-correlation-id')
-      const runInSpanContext = vi.fn((_key: string, fn: () => unknown) => fn())
+      const contextKeys: string[] = []
       const contextAwareMonitor = new BackgroundJobProcessorMonitor(
         {
           ...deps,
           transactionObservabilityManager: {
             ...deps.transactionObservabilityManager,
-            runInSpanContext,
-          } as typeof deps.transactionObservabilityManager,
+            runInSpanContext: <T>(uniqueTransactionKey: string, fn: () => T): T => {
+              contextKeys.push(uniqueTransactionKey)
+              return fn()
+            },
+          },
         },
         {
           isNewProcessor: false,
@@ -389,7 +392,7 @@ describe('BackgroundJobProcessorMonitor', () => {
       await expect(
         contextAwareMonitor.runInJobContext(job, () => Promise.resolve('result')),
       ).resolves.toBe('result')
-      expect(runInSpanContext).toHaveBeenCalledWith(job.id, expect.any(Function))
+      expect(contextKeys).toEqual([job.id])
     })
   })
 })

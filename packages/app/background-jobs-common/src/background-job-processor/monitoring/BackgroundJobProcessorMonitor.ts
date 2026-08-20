@@ -2,9 +2,9 @@ import {
   type CommonLogger,
   type RedisConfig,
   resolveGlobalErrorLogObject,
+  runInTransactionContext,
   type TransactionObservabilityManager,
 } from '@lokalise/node-core'
-import { runInTransactionContext } from '../../observability/transactionContext.ts'
 import { isBullmqControlFlowError } from '../errors/utils.ts'
 import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger.ts'
 import type { BackgroundJobProcessorDependencies } from '../processors/types.ts'

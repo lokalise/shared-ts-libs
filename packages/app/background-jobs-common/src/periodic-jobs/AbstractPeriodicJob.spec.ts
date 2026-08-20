@@ -1,9 +1,5 @@
 import { setTimeout } from 'node:timers/promises'
-import type {
-  ErrorReport,
-  ErrorReporter,
-  TransactionObservabilityManager,
-} from '@lokalise/node-core'
+import type { ErrorReport, ErrorReporter } from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
 import { ToadScheduler } from 'toad-scheduler'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -113,14 +109,16 @@ describe('AbstractPeriodicJob', () => {
       let isSpanContextActive = false
       let ranWithinContext = false
 
-      const runInSpanContext = vi.fn((_key: string, fn: () => unknown) => {
+      const contextKeys: string[] = []
+      const runInSpanContext = <T>(uniqueTransactionKey: string, fn: () => T): T => {
+        contextKeys.push(uniqueTransactionKey)
         isSpanContextActive = true
         try {
           return fn()
         } finally {
           isSpanContextActive = false
         }
-      })
+      }
 
       const job = new FakePeriodicJob(
         () => {
@@ -132,7 +130,7 @@ describe('AbstractPeriodicJob', () => {
           transactionObservabilityManager: {
             ...transactionObservabilityManager,
             runInSpanContext,
-          } as TransactionObservabilityManager,
+          },
         },
       )
 
@@ -140,7 +138,7 @@ describe('AbstractPeriodicJob', () => {
       await job.dispose()
 
       const executorId = transactionObservabilityManager.start.mock.calls[0]?.[1]
-      expect(runInSpanContext).toHaveBeenCalledWith(executorId, expect.any(Function))
+      expect(contextKeys[0]).toBe(executorId)
       expect(ranWithinContext).toBe(true)
     })
   })

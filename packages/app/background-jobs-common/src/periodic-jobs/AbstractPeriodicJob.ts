@@ -6,13 +6,13 @@ import {
   InternalError,
   isError,
   resolveGlobalErrorLogObject,
+  runInTransactionContext,
   type TransactionObservabilityManager,
 } from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
 import type { LockLostCallback, LockOptions } from 'redis-semaphore'
 import { Mutex } from 'redis-semaphore'
 import { CronJob, SimpleIntervalJob, type ToadScheduler } from 'toad-scheduler'
-import { runInTransactionContext } from '../observability/transactionContext.ts'
 import type {
   BackgroundJobConfiguration,
   JobExecutionContext,
