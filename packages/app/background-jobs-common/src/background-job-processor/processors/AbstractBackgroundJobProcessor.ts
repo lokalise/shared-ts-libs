@@ -21,7 +21,10 @@ import {
 } from '../errors/utils.ts'
 import type { AbstractBullmqFactory } from '../factories/index.ts'
 import type { JobsPaginatedResponse, ProtectedQueue } from '../managers/index.ts'
-import { BackgroundJobProcessorMonitor } from '../monitoring/BackgroundJobProcessorMonitor.ts'
+import {
+  BackgroundJobProcessorMonitor,
+  type JobFailure,
+} from '../monitoring/BackgroundJobProcessorMonitor.ts'
 import { enrichRedisConfig, sanitizeRedisConfig } from '../public-utils/index.ts'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
@@ -343,30 +346,35 @@ export abstract class AbstractBackgroundJobProcessor<
 
   private async processInternal(job: JobType): Promise<JobReturn> {
     const requestContext = this.monitor.getRequestContext(job)
+    this.monitor.jobStart(job, requestContext)
 
-    try {
-      this.monitor.jobStart(job, requestContext)
+    // everything below is traced as part of the transaction started above
+    return await this.monitor.runInJobContext(job, async () => {
+      let jobFailure: JobFailure | undefined
 
-      if (this.config.barrier) {
-        const barrierResult = await this.config.barrier(job, this.executionContext)
-        if (!barrierResult.isPassing) {
-          const nextTryTimestamp = Date.now() + barrierResult.delayAmountInMs
-          requestContext.logger.debug({ nextTryTimestamp }, 'Did not pass the barrier')
+      try {
+        if (this.config.barrier) {
+          const barrierResult = await this.config.barrier(job, this.executionContext)
+          if (!barrierResult.isPassing) {
+            const nextTryTimestamp = Date.now() + barrierResult.delayAmountInMs
+            requestContext.logger.debug({ nextTryTimestamp }, 'Did not pass the barrier')
 
-          await job.moveToDelayed(nextTryTimestamp, job.token)
-          throw new DelayedError()
+            await job.moveToDelayed(nextTryTimestamp, job.token)
+            throw new DelayedError()
+          }
         }
-      }
 
-      const result = await this.process(job, requestContext)
-      await job.updateProgress(100)
-      return result
-    } catch (error) {
-      this.monitor.jobAttemptError(job, error, requestContext)
-      throw error
-    } finally {
-      this.monitor.jobEnd(job, requestContext)
-    }
+        const result = await this.process(job, requestContext)
+        await job.updateProgress(100)
+        return result
+      } catch (error) {
+        jobFailure = { error }
+        this.monitor.jobAttemptError(job, error, requestContext)
+        throw error
+      } finally {
+        this.monitor.jobEnd(job, requestContext, jobFailure)
+      }
+    })
   }
 
   private async internalOnSuccess(job: JobType): Promise<void> {

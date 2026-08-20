@@ -1,4 +1,9 @@
-import { type CommonLogger, type ErrorReporter, globalLogger } from '@lokalise/node-core'
+import {
+  type CommonLogger,
+  type ErrorReporter,
+  globalLogger,
+  type TransactionObservabilityManager,
+} from '@lokalise/node-core'
 import {
   AbstractPeriodicJob,
   type BackgroundJobConfiguration,
@@ -12,6 +17,7 @@ export type FakePeriodicJobDependencies = Omit<
 > & {
   logger?: CommonLogger
   errorReporter?: ErrorReporter
+  transactionObservabilityManager?: TransactionObservabilityManager
 }
 
 export class FakePeriodicJob extends AbstractPeriodicJob {

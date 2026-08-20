@@ -6,6 +6,7 @@ import {
   InternalError,
   isError,
   resolveGlobalErrorLogObject,
+  runInTransactionContext,
   type TransactionObservabilityManager,
 } from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
@@ -161,16 +162,22 @@ export abstract class AbstractPeriodicJob {
       }
     }
 
+    let wasSuccessful = true
+
     try {
       this.transactionObservabilityManager?.start(this.jobId, executorId)
       if (this.options.shouldLogExecution) logger.info('Periodic job started')
 
-      await this.processInternal({
-        logger,
-        executorId,
-        reqId: correlationId,
-      })
+      // everything the job does is traced as part of the transaction started above
+      await runInTransactionContext(this.transactionObservabilityManager, executorId, () =>
+        this.processInternal({
+          logger,
+          executorId,
+          reqId: correlationId,
+        }),
+      )
     } catch (err) {
+      wasSuccessful = false
       logger.error({
         ...resolveGlobalErrorLogObject(err, executorId),
         msg: 'Error during periodic job execution',
@@ -188,7 +195,7 @@ export abstract class AbstractPeriodicJob {
       await this.updateLockPostExecution()
 
       if (this.options.shouldLogExecution) logger.info('Periodic job finished')
-      this.transactionObservabilityManager?.stop(executorId)
+      this.transactionObservabilityManager?.stop(executorId, wasSuccessful)
     }
   }
 

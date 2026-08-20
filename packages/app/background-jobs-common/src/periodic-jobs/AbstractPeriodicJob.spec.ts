@@ -64,6 +64,85 @@ describe('AbstractPeriodicJob', () => {
     await job.dispose()
   })
 
+  describe('observability', () => {
+    const buildObservabilityManager = () => ({
+      start: vi.fn(),
+      startWithGroup: vi.fn(),
+      stop: vi.fn(),
+      addCustomAttributes: vi.fn(),
+    })
+
+    it('should stop the transaction as successful', async () => {
+      const transactionObservabilityManager = buildObservabilityManager()
+      const job = new FakePeriodicJob(() => Promise.resolve(), {
+        scheduler,
+        transactionObservabilityManager,
+      })
+
+      await job.asyncRegister()
+      await job.dispose()
+
+      const executorId = transactionObservabilityManager.start.mock.calls[0]?.[1]
+      expect(transactionObservabilityManager.start).toHaveBeenCalledWith(
+        FakePeriodicJob.name,
+        executorId,
+      )
+      expect(transactionObservabilityManager.stop).toHaveBeenCalledWith(executorId, true)
+    })
+
+    it('should stop the transaction as failed when processing throws', async () => {
+      const transactionObservabilityManager = buildObservabilityManager()
+      const job = new FakePeriodicJob(() => Promise.reject(new Error('processing failed')), {
+        scheduler,
+        transactionObservabilityManager,
+      })
+
+      await job.asyncRegister()
+      await job.dispose()
+
+      const executorId = transactionObservabilityManager.start.mock.calls[0]?.[1]
+      expect(transactionObservabilityManager.stop).toHaveBeenCalledWith(executorId, false)
+    })
+
+    it('should run processing within the transaction context when supported', async () => {
+      const transactionObservabilityManager = buildObservabilityManager()
+      let isSpanContextActive = false
+      let ranWithinContext = false
+
+      const contextKeys: string[] = []
+      const runInSpanContext = <T>(uniqueTransactionKey: string, fn: () => T): T => {
+        contextKeys.push(uniqueTransactionKey)
+        isSpanContextActive = true
+        try {
+          return fn()
+        } finally {
+          isSpanContextActive = false
+        }
+      }
+
+      const job = new FakePeriodicJob(
+        () => {
+          ranWithinContext ||= isSpanContextActive
+          return Promise.resolve()
+        },
+        {
+          scheduler,
+          transactionObservabilityManager: {
+            ...transactionObservabilityManager,
+            runInSpanContext,
+          },
+        },
+      )
+
+      await job.asyncRegister()
+      await job.dispose()
+
+      const executorId = transactionObservabilityManager.start.mock.calls[0]?.[1]
+      expect(contextKeys[0]).toBe(executorId)
+      expect(ranWithinContext).toBe(true)
+    })
+  })
+
   it('should await first processing when using asyncRegister', async () => {
     let counter = 0
     const processMock = async () => {

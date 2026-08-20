@@ -2,6 +2,7 @@ import {
   type CommonLogger,
   type RedisConfig,
   resolveGlobalErrorLogObject,
+  runInTransactionContext,
   type TransactionObservabilityManager,
 } from '@lokalise/node-core'
 import { isBullmqControlFlowError } from '../errors/utils.ts'
@@ -12,6 +13,14 @@ import { resolveJobId } from '../utils.ts'
 import { registerActiveQueueIds } from './registerActiveQueueIds.ts'
 
 const queueIdsWithActiveProcessorsSet = new Set<string>()
+
+/**
+ * Whatever a job threw, if it threw at all.
+ *
+ * A wrapper rather than the bare value, because a job can throw a falsy one (`throw undefined`,
+ * `Promise.reject()`), which must still be recorded as a failure.
+ */
+export type JobFailure = { error: unknown }
 
 type BackgroundJobProcessorMonitorConfig = {
   queueId: string
@@ -112,7 +121,16 @@ export class BackgroundJobProcessorMonitor<
     requestContext.logger.error(this.buildLogParams(job, error), `${job.name} try failed`)
   }
 
-  public jobEnd(job: JobType, requestContext: RequestContext): void {
+  /**
+   * Runs the given function within the observability context of the transaction started by
+   * `jobStart`, so that spans produced while the job executes become children of the job
+   * transaction instead of detached roots. Must be called after `jobStart`.
+   */
+  public runInJobContext<T>(job: JobType, fn: () => T): T {
+    return runInTransactionContext(this.transactionObservabilityManager, resolveJobId(job), fn)
+  }
+
+  public jobEnd(job: JobType, requestContext: RequestContext, failure?: JobFailure): void {
     requestContext.logger.info(
       {
         ...this.buildLogParams(job),
@@ -120,7 +138,12 @@ export class BackgroundJobProcessorMonitor<
       },
       `Finished job ${job.name}`,
     )
-    this.transactionObservabilityManager.stop(resolveJobId(job))
+    /**
+     * BullMQ control-flow errors are cooperative deferrals (delayed, waiting for children,
+     * rate limited) rather than failures, so the transaction did not actually fail.
+     */
+    const wasSuccessful = !failure || isBullmqControlFlowError(failure.error)
+    this.transactionObservabilityManager.stop(resolveJobId(job), wasSuccessful)
   }
 
   private buildLogParams(job: JobType, error?: unknown) {
