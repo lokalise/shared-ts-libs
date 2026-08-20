@@ -313,7 +313,7 @@ describe('BackgroundJobProcessorMonitor', () => {
 
         monitor.jobEnd(job, requestContext)
 
-        expect(transactionManagerSpy).toHaveBeenCalledWith(job.id)
+        expect(transactionManagerSpy).toHaveBeenCalledWith(job.id, true)
         expect(loggerSpy).toHaveBeenCalledWith(
           {
             origin: 'BackgroundJobProcessorMonitor tests',
@@ -324,8 +324,81 @@ describe('BackgroundJobProcessorMonitor', () => {
         )
       },
     )
+
+    it('should stop transaction as failed when the job errored', () => {
+      const job = createFakeJob('test-correlation-id')
+
+      monitor.jobEnd(job, buildRequestContext(), new Error('job failed'))
+
+      expect(transactionManagerSpy).toHaveBeenCalledWith(job.id, false)
+    })
+
+    it.each([[new DelayedError()], [new WaitingChildrenError()], [new RateLimitError()]])(
+      'should stop transaction as successful when the job was deferred - %s',
+      (error) => {
+        const job = createFakeJob('test-correlation-id')
+
+        monitor.jobEnd(job, buildRequestContext(), error)
+
+        expect(transactionManagerSpy).toHaveBeenCalledWith(job.id, true)
+      },
+    )
+  })
+
+  describe('runInJobContext', () => {
+    let monitor: BackgroundJobProcessorMonitor
+
+    beforeAll(() => {
+      monitor = new BackgroundJobProcessorMonitor(deps, {
+        isNewProcessor: false,
+        queueId: 'test-queue-runInJobContext',
+        processorName: 'BackgroundJobProcessorMonitor tests',
+        ownerName: 'test-owner',
+        redisConfig: factory.getRedisConfig(),
+      })
+    })
+
+    it('should execute the given function when the manager cannot propagate context', async () => {
+      const job = createFakeJob('test-correlation-id')
+
+      await expect(monitor.runInJobContext(job, () => Promise.resolve('result'))).resolves.toBe(
+        'result',
+      )
+    })
+
+    it('should delegate to the manager when it can propagate context', async () => {
+      const job = createFakeJob('test-correlation-id')
+      const runInSpanContext = vi.fn((_key: string, fn: () => unknown) => fn())
+      const contextAwareMonitor = new BackgroundJobProcessorMonitor(
+        {
+          ...deps,
+          transactionObservabilityManager: {
+            ...deps.transactionObservabilityManager,
+            runInSpanContext,
+          } as typeof deps.transactionObservabilityManager,
+        },
+        {
+          isNewProcessor: false,
+          queueId: 'test-queue-runInJobContext-delegating',
+          processorName: 'BackgroundJobProcessorMonitor tests',
+          ownerName: 'test-owner',
+          redisConfig: factory.getRedisConfig(),
+        },
+      )
+
+      await expect(
+        contextAwareMonitor.runInJobContext(job, () => Promise.resolve('result')),
+      ).resolves.toBe('result')
+      expect(runInSpanContext).toHaveBeenCalledWith(job.id, expect.any(Function))
+    })
   })
 })
+
+const buildRequestContext = () =>
+  ({
+    reqId: 'test-req-id',
+    logger: { info: (_obj: unknown, _msg: unknown) => undefined },
+  }) as RequestContext
 
 const createFakeJob = (correlationId: string, progress?: number, id?: string) =>
   ({

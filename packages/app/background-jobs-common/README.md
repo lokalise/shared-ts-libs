@@ -619,6 +619,20 @@ export class Processor extends AbstractBackgroundJobProcessor<Data> {
 }
 ```
 
+## Observability
+
+Both persisted and periodic jobs report their execution to the `TransactionObservabilityManager` provided via
+dependencies: a transaction is started before the job runs and stopped when it finishes, and the outcome is passed to
+`stop()` - a job that threw is reported as failed, while a job deferred through a BullMQ control-flow error
+(`DelayedError`, `WaitingChildrenError`, `RateLimitError`) is reported as successful, since it did not fail.
+
+Starting and stopping a transaction are two separate calls, which cannot express a scope, so an observability manager
+may additionally expose `runInSpanContext(uniqueTransactionKey, fn)` to make its transaction the active one for the
+duration of a callback. When the manager supports it, job execution is wrapped in it, so anything traced while the job
+runs (database queries, outgoing HTTP calls, nested spans) is attached to the job transaction instead of ending up as a
+detached root. The OpenTelemetry manager from `@lokalise/fastify-extras` supports this; managers that do not are used
+as before.
+
 ## In-memory periodic jobs
 
 ### Usage

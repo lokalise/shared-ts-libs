@@ -1,5 +1,9 @@
 import { setTimeout } from 'node:timers/promises'
-import type { ErrorReport, ErrorReporter } from '@lokalise/node-core'
+import type {
+  ErrorReport,
+  ErrorReporter,
+  TransactionObservabilityManager,
+} from '@lokalise/node-core'
 import type { Redis } from 'ioredis'
 import { ToadScheduler } from 'toad-scheduler'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -62,6 +66,83 @@ describe('AbstractPeriodicJob', () => {
     expect(executionIds).toMatchObject([expect.any(String), expect.any(String), expect.any(String)])
 
     await job.dispose()
+  })
+
+  describe('observability', () => {
+    const buildObservabilityManager = () => ({
+      start: vi.fn(),
+      startWithGroup: vi.fn(),
+      stop: vi.fn(),
+      addCustomAttributes: vi.fn(),
+    })
+
+    it('should stop the transaction as successful', async () => {
+      const transactionObservabilityManager = buildObservabilityManager()
+      const job = new FakePeriodicJob(() => Promise.resolve(), {
+        scheduler,
+        transactionObservabilityManager,
+      })
+
+      await job.asyncRegister()
+      await job.dispose()
+
+      const executorId = transactionObservabilityManager.start.mock.calls[0]?.[1]
+      expect(transactionObservabilityManager.start).toHaveBeenCalledWith(
+        FakePeriodicJob.name,
+        executorId,
+      )
+      expect(transactionObservabilityManager.stop).toHaveBeenCalledWith(executorId, true)
+    })
+
+    it('should stop the transaction as failed when processing throws', async () => {
+      const transactionObservabilityManager = buildObservabilityManager()
+      const job = new FakePeriodicJob(() => Promise.reject(new Error('processing failed')), {
+        scheduler,
+        transactionObservabilityManager,
+      })
+
+      await job.asyncRegister()
+      await job.dispose()
+
+      const executorId = transactionObservabilityManager.start.mock.calls[0]?.[1]
+      expect(transactionObservabilityManager.stop).toHaveBeenCalledWith(executorId, false)
+    })
+
+    it('should run processing within the transaction context when supported', async () => {
+      const transactionObservabilityManager = buildObservabilityManager()
+      let isSpanContextActive = false
+      let ranWithinContext = false
+
+      const runInSpanContext = vi.fn((_key: string, fn: () => unknown) => {
+        isSpanContextActive = true
+        try {
+          return fn()
+        } finally {
+          isSpanContextActive = false
+        }
+      })
+
+      const job = new FakePeriodicJob(
+        () => {
+          ranWithinContext ||= isSpanContextActive
+          return Promise.resolve()
+        },
+        {
+          scheduler,
+          transactionObservabilityManager: {
+            ...transactionObservabilityManager,
+            runInSpanContext,
+          } as TransactionObservabilityManager,
+        },
+      )
+
+      await job.asyncRegister()
+      await job.dispose()
+
+      const executorId = transactionObservabilityManager.start.mock.calls[0]?.[1]
+      expect(runInSpanContext).toHaveBeenCalledWith(executorId, expect.any(Function))
+      expect(ranWithinContext).toBe(true)
+    })
   })
 
   it('should await first processing when using asyncRegister', async () => {

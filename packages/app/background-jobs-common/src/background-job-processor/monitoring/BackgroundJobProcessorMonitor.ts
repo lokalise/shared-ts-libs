@@ -4,6 +4,7 @@ import {
   resolveGlobalErrorLogObject,
   type TransactionObservabilityManager,
 } from '@lokalise/node-core'
+import { runInTransactionContext } from '../../observability/transactionContext.ts'
 import { isBullmqControlFlowError } from '../errors/utils.ts'
 import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger.ts'
 import type { BackgroundJobProcessorDependencies } from '../processors/types.ts'
@@ -112,7 +113,16 @@ export class BackgroundJobProcessorMonitor<
     requestContext.logger.error(this.buildLogParams(job, error), `${job.name} try failed`)
   }
 
-  public jobEnd(job: JobType, requestContext: RequestContext): void {
+  /**
+   * Runs the given function within the observability context of the transaction started by
+   * `jobStart`, so that spans produced while the job executes become children of the job
+   * transaction instead of detached roots. Must be called after `jobStart`.
+   */
+  public runInJobContext<T>(job: JobType, fn: () => T): T {
+    return runInTransactionContext(this.transactionObservabilityManager, resolveJobId(job), fn)
+  }
+
+  public jobEnd(job: JobType, requestContext: RequestContext, error?: unknown): void {
     requestContext.logger.info(
       {
         ...this.buildLogParams(job),
@@ -120,7 +130,12 @@ export class BackgroundJobProcessorMonitor<
       },
       `Finished job ${job.name}`,
     )
-    this.transactionObservabilityManager.stop(resolveJobId(job))
+    /**
+     * BullMQ control-flow errors are cooperative deferrals (delayed, waiting for children,
+     * rate limited) rather than failures, so the transaction did not actually fail.
+     */
+    const wasSuccessful = !error || isBullmqControlFlowError(error)
+    this.transactionObservabilityManager.stop(resolveJobId(job), wasSuccessful)
   }
 
   private buildLogParams(job: JobType, error?: unknown) {

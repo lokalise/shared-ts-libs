@@ -343,29 +343,34 @@ export abstract class AbstractBackgroundJobProcessor<
 
   private async processInternal(job: JobType): Promise<JobReturn> {
     const requestContext = this.monitor.getRequestContext(job)
+    let jobError: unknown
 
     try {
       this.monitor.jobStart(job, requestContext)
 
-      if (this.config.barrier) {
-        const barrierResult = await this.config.barrier(job, this.executionContext)
-        if (!barrierResult.isPassing) {
-          const nextTryTimestamp = Date.now() + barrierResult.delayAmountInMs
-          requestContext.logger.debug({ nextTryTimestamp }, 'Did not pass the barrier')
+      // everything the job does is traced as part of the transaction started above
+      return await this.monitor.runInJobContext(job, async () => {
+        if (this.config.barrier) {
+          const barrierResult = await this.config.barrier(job, this.executionContext)
+          if (!barrierResult.isPassing) {
+            const nextTryTimestamp = Date.now() + barrierResult.delayAmountInMs
+            requestContext.logger.debug({ nextTryTimestamp }, 'Did not pass the barrier')
 
-          await job.moveToDelayed(nextTryTimestamp, job.token)
-          throw new DelayedError()
+            await job.moveToDelayed(nextTryTimestamp, job.token)
+            throw new DelayedError()
+          }
         }
-      }
 
-      const result = await this.process(job, requestContext)
-      await job.updateProgress(100)
-      return result
+        const result = await this.process(job, requestContext)
+        await job.updateProgress(100)
+        return result
+      })
     } catch (error) {
+      jobError = error
       this.monitor.jobAttemptError(job, error, requestContext)
       throw error
     } finally {
-      this.monitor.jobEnd(job, requestContext)
+      this.monitor.jobEnd(job, requestContext, jobError)
     }
   }
 
