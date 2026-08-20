@@ -103,4 +103,28 @@ describe('legacy builders type inference', () => {
       expectTypeOf(contract.isNonJSONResponseExpected).toEqualTypeOf<true>()
     })
   })
+
+  describe('visibility is required', () => {
+    it('rejects legacy builder configs without visibility', () => {
+      // @ts-expect-error - visibility is mandatory
+      buildGetRoute({
+        successResponseBodySchema: z.object({}),
+        pathResolver: () => '/api/data',
+      })
+
+      // @ts-expect-error - visibility is mandatory
+      buildPayloadRoute({
+        method: 'post',
+        requestBodySchema: z.object({}),
+        successResponseBodySchema: z.object({}),
+        pathResolver: () => '/api/data',
+      })
+
+      // @ts-expect-error - visibility is mandatory
+      buildDeleteRoute({
+        successResponseBodySchema: z.undefined(),
+        pathResolver: () => '/api/resource',
+      })
+    })
+  })
 })

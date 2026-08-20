@@ -861,4 +861,16 @@ describe('buildSseContract type inference', () => {
       >()
     })
   })
+
+  describe('visibility is required', () => {
+    it('rejects configs without visibility', () => {
+      const config = {
+        method: 'get' as const,
+        pathResolver: () => '/s',
+        serverSentEventSchemas: { m: z.object({}) },
+      }
+      // @ts-expect-error - visibility is mandatory (surfaces as a method-overload mismatch on GET)
+      buildSseContract(config)
+    })
+  })
 })
