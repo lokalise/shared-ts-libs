@@ -25,6 +25,7 @@ export type SSEGetContractConfig<
   method: 'get'
   pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
   requestPathParamsSchema?: Params
+  visibility: RouteVisibility
   requestQuerySchema?: Query
   requestHeaderSchema?: RequestHeaders
   serverSentEventSchemas: Events
@@ -48,8 +49,6 @@ export type SSEGetContractConfig<
   description?: string
   summary?: string
   tags?: readonly string[]
-  // Optional in the config; the builder stamps it on the contract, defaulting to 'public'
-  visibility?: RouteVisibility
 }
 
 /**
@@ -69,6 +68,7 @@ export type SSEPayloadContractConfig<
   method: 'post' | 'put' | 'patch'
   pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
   requestPathParamsSchema?: Params
+  visibility: RouteVisibility
   requestQuerySchema?: Query
   requestHeaderSchema?: RequestHeaders
   requestBodySchema: Body
@@ -92,8 +92,6 @@ export type SSEPayloadContractConfig<
   description?: string
   summary?: string
   tags?: readonly string[]
-  // Optional in the config; the builder stamps it on the contract, defaulting to 'public'
-  visibility?: RouteVisibility
 }
 
 /**
@@ -115,6 +113,7 @@ export type DualModeGetContractConfig<
   method: 'get'
   pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
   requestPathParamsSchema?: Params
+  visibility: RouteVisibility
   requestQuerySchema?: Query
   requestHeaderSchema?: RequestHeaders
   /** Single sync response schema */
@@ -151,8 +150,6 @@ export type DualModeGetContractConfig<
   description?: string
   summary?: string
   tags?: readonly string[]
-  // Optional in the config; the builder stamps it on the contract, defaulting to 'public'
-  visibility?: RouteVisibility
   // Whether the sync (JSON) response may be empty (204); the builder stamps it, defaulting to false
   isEmptyResponseExpected?: IsEmptyResponseExpected
 }
@@ -177,6 +174,7 @@ export type DualModePayloadContractConfig<
   method: 'post' | 'put' | 'patch'
   pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
   requestPathParamsSchema?: Params
+  visibility: RouteVisibility
   requestQuerySchema?: Query
   requestHeaderSchema?: RequestHeaders
   requestBodySchema: Body
@@ -213,8 +211,6 @@ export type DualModePayloadContractConfig<
   description?: string
   summary?: string
   tags?: readonly string[]
-  // Optional in the config; the builder stamps it on the contract, defaulting to 'public'
-  visibility?: RouteVisibility
   // Whether the sync (JSON) response may be empty (204); the builder stamps it, defaulting to false
   isEmptyResponseExpected?: IsEmptyResponseExpected
 }
@@ -225,6 +221,7 @@ export type DualModePayloadContractConfig<
  * ```typescript
  * // SSE-only — Before (deprecated):
  * const contract = buildSseContract({
+ *   visibility: 'public',
  *   method: 'get',
  *   pathResolver: () => '/stream',
  *   serverSentEventSchemas: { event: eventSchema },
@@ -232,6 +229,7 @@ export type DualModePayloadContractConfig<
  *
  * // SSE-only — After (recommended):
  * const contract = defineApiContract({
+ *   visibility: 'public',
  *   method: 'get',
  *   pathResolver: () => '/stream',
  *   responsesByStatusCode: { 200: sseResponse({ event: eventSchema }) },
@@ -239,6 +237,7 @@ export type DualModePayloadContractConfig<
  *
  * // Dual-mode — Before (deprecated):
  * const contract = buildSseContract({
+ *   visibility: 'public',
  *   method: 'post',
  *   pathResolver: () => '/stream',
  *   requestBodySchema: bodySchema,
@@ -248,6 +247,7 @@ export type DualModePayloadContractConfig<
  *
  * // Dual-mode — After (recommended):
  * const contract = defineApiContract({
+ *   visibility: 'public',
  *   method: 'post',
  *   pathResolver: () => '/stream',
  *   requestBodySchema: bodySchema,
@@ -283,6 +283,7 @@ export type DualModePayloadContractConfig<
  * ```typescript
  * // SSE-only: Pure streaming endpoint (e.g., live notifications)
  * const notificationsStream = buildSseContract({
+ *   visibility: 'public',
  *   pathResolver: () => '/api/notifications/stream',
  *   requestPathParamsSchema: z.object({}),
  *   requestQuerySchema: z.object({ userId: z.string().optional() }),
@@ -296,6 +297,7 @@ export type DualModePayloadContractConfig<
  * // - Accept: application/json → returns { reply, usage } immediately
  * // - Accept: text/event-stream → streams chunk events, then done event
  * const chatCompletion = buildSseContract({
+ *   visibility: 'public',
  *   method: 'POST',
  *   pathResolver: () => '/api/chat/completions',
  *   requestPathParamsSchema: z.object({}),
@@ -317,6 +319,7 @@ function buildBaseFields(config: any, hasBody: boolean) {
   return {
     pathResolver: config.pathResolver,
     requestPathParamsSchema: config.requestPathParamsSchema,
+    visibility: config.visibility,
     requestQuerySchema: config.requestQuerySchema,
     requestHeaderSchema: config.requestHeaderSchema,
     requestBodySchema: hasBody ? config.requestBodySchema : undefined,
@@ -325,7 +328,6 @@ function buildBaseFields(config: any, hasBody: boolean) {
     description: config.description,
     summary: config.summary,
     tags: config.tags,
-    visibility: config.visibility ?? 'public',
   }
 }
 

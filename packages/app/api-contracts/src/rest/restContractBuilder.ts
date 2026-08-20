@@ -41,7 +41,7 @@ export type GetContractConfig<
     >,
     'method'
   >,
-  'visibility' | 'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
+  'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
 > & {
   method: 'get'
   requestBodySchema?: never
@@ -78,7 +78,7 @@ export type DeleteContractConfig<
     >,
     'method'
   >,
-  'visibility' | 'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
+  'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
 > & {
   method: 'delete'
   requestBodySchema?: never
@@ -113,7 +113,7 @@ export type PayloadContractConfig<
     IsEmptyResponseExpected,
     ResponseSchemasByStatusCode
   >,
-  'visibility' | 'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
+  'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
 > & {
   method: 'post' | 'put' | 'patch'
   requestBodySchema: RequestBodySchema
@@ -131,6 +131,7 @@ export type PayloadContractConfig<
  * ```typescript
  * // Before (deprecated):
  * const contract = buildRestContract({
+ *   visibility: 'public',
  *   method: 'get',
  *   pathResolver: (params) => `/users/${params.userId}`,
  *   requestPathParamsSchema: z.object({ userId: z.string() }),
@@ -139,6 +140,7 @@ export type PayloadContractConfig<
  *
  * // After (recommended):
  * const contract = defineApiContract({
+ *   visibility: 'public',
  *   method: 'get',
  *   pathResolver: ({ userId }) => `/users/${userId}`,
  *   requestPathParamsSchema: z.object({ userId: z.string() }),
@@ -163,6 +165,7 @@ export type PayloadContractConfig<
  * ```typescript
  * // GET route - method: 'get' is required
  * const getUsers = buildRestContract({
+ *   visibility: 'public',
  *   method: 'get',
  *   pathResolver: () => '/api/users',
  *   successResponseBodySchema: z.array(userSchema),
@@ -170,6 +173,7 @@ export type PayloadContractConfig<
  *
  * // GET route with path params
  * const getUser = buildRestContract({
+ *   visibility: 'public',
  *   method: 'get',
  *   pathResolver: (params) => `/api/users/${params.userId}`,
  *   requestPathParamsSchema: z.object({ userId: z.string() }),
@@ -178,6 +182,7 @@ export type PayloadContractConfig<
  *
  * // POST route - requires method and requestBodySchema
  * const createUser = buildRestContract({
+ *   visibility: 'public',
  *   method: 'post',
  *   pathResolver: () => '/api/users',
  *   requestBodySchema: createUserSchema,
@@ -186,6 +191,7 @@ export type PayloadContractConfig<
  *
  * // PUT route
  * const updateUser = buildRestContract({
+ *   visibility: 'public',
  *   method: 'put',
  *   pathResolver: (params) => `/api/users/${params.userId}`,
  *   requestPathParamsSchema: z.object({ userId: z.string() }),
@@ -195,6 +201,7 @@ export type PayloadContractConfig<
  *
  * // PATCH route
  * const patchUser = buildRestContract({
+ *   visibility: 'public',
  *   method: 'patch',
  *   pathResolver: (params) => `/api/users/${params.userId}`,
  *   requestPathParamsSchema: z.object({ userId: z.string() }),
@@ -204,6 +211,7 @@ export type PayloadContractConfig<
  *
  * // DELETE route - method is 'delete', no body
  * const deleteUser = buildRestContract({
+ *   visibility: 'public',
  *   method: 'delete',
  *   pathResolver: (params) => `/api/users/${params.userId}`,
  *   requestPathParamsSchema: z.object({ userId: z.string() }),
@@ -333,9 +341,10 @@ export function buildRestContract(
     isEmptyResponseExpected: config.isEmptyResponseExpected ?? method === 'delete',
     isNonJSONResponseExpected: config.isNonJSONResponseExpected ?? false,
     pathResolver: config.pathResolver,
+    visibility: config.visibility,
+    requestPathParamsSchema: config.requestPathParamsSchema,
     requestHeaderSchema: config.requestHeaderSchema,
     responseHeaderSchema: config.responseHeaderSchema,
-    requestPathParamsSchema: config.requestPathParamsSchema,
     requestQuerySchema: config.requestQuerySchema,
     successResponseBodySchema: config.successResponseBodySchema,
     description: config.description,
@@ -343,7 +352,6 @@ export function buildRestContract(
     responseSchemasByStatusCode: config.responseSchemasByStatusCode,
     metadata: config.metadata,
     tags: config.tags,
-    visibility: config.visibility ?? 'public',
   }
 
   if (method === 'post' || method === 'put' || method === 'patch') {

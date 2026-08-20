@@ -40,6 +40,7 @@ export type DualModeContractDefinition<
   method: Method
   pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
   requestPathParamsSchema?: Params
+  visibility: RouteVisibility
   requestQuerySchema?: Query
   requestHeaderSchema?: RequestHeaders
   requestBodySchema: Body
@@ -65,8 +66,6 @@ export type DualModeContractDefinition<
   description?: string
   summary?: string
   tags?: readonly string[]
-  // 'internal' excludes the route from generated OpenAPI docs; builders default it to 'public'
-  visibility: RouteVisibility
   // Whether the sync (JSON) response may be empty (204); builder defaults it to false
   isEmptyResponseExpected: IsEmptyResponseExpected
   // Whether the sync response of a dual-mode route may have non-JSON format; carried for REST-contract compatibility
@@ -82,6 +81,7 @@ export type AnyDualModeContractDefinition = {
   // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with all param types
   pathResolver: RoutePathResolver<any>
   requestPathParamsSchema?: z.ZodTypeAny
+  visibility: RouteVisibility
   requestQuerySchema?: z.ZodTypeAny
   requestHeaderSchema?: z.ZodTypeAny
   requestBodySchema: z.ZodTypeAny | undefined
@@ -95,8 +95,6 @@ export type AnyDualModeContractDefinition = {
   description?: string
   summary?: string
   tags?: readonly string[]
-  // 'internal' excludes the route from generated OpenAPI docs; builders default it to 'public'
-  visibility: RouteVisibility
   // Whether the sync (JSON) response may be empty (204); builder defaults it to false
   isEmptyResponseExpected: boolean
   // Whether the sync response of a dual-mode route may have non-JSON format; carried for REST-contract compatibility

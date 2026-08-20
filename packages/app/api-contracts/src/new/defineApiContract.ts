@@ -36,7 +36,7 @@ export type CommonApiContract = {
   summary: string
   description?: string
   tags?: readonly string[]
-  // 'internal' excludes the route from generated OpenAPI docs; defineApiContract defaults it to 'public'
+  // Who the route is intended for
   visibility: RouteVisibility
 }
 
@@ -61,11 +61,9 @@ export type ApiContract = GetApiContract | DeleteApiContract | PayloadApiContrac
  * Input shape accepted by `defineApiContract`.
  */
 type ApiContractConfig<TPathParamsSchema extends RequestPathParamsSchema | undefined> =
-  DistributiveOmit<ApiContract, 'pathResolver' | 'requestPathParamsSchema' | 'visibility'> & {
+  DistributiveOmit<ApiContract, 'pathResolver' | 'requestPathParamsSchema'> & {
     pathResolver: RoutePathResolver<InferSchemaOutput<TPathParamsSchema>>
     requestPathParamsSchema?: TPathParamsSchema
-    // Optional in the config; defineApiContract stamps it on the contract, defaulting to 'public'
-    visibility?: RouteVisibility
   }
 
 export const defineApiContract = <
@@ -76,10 +74,7 @@ export const defineApiContract = <
   contract: Exactly<TContract, ApiContractConfig<TPathParamsSchema>> & {
     requestPathParamsSchema?: TPathParamsSchema
   },
-): TContract & { visibility: RouteVisibility } =>
-  ({ ...contract, visibility: contract.visibility ?? 'public' }) as TContract & {
-    visibility: RouteVisibility
-  }
+): TContract => contract as TContract
 
 export const mapApiContractToPath = (routeConfig: ApiContract): string => {
   if (!routeConfig.requestPathParamsSchema) {
