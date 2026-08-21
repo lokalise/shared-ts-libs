@@ -9,7 +9,10 @@ import type {
  * Contract fields that only the serving side acts upon; the testing helpers never read them.
  * Add future mandatory server-side fields here.
  */
-export type ServerOnlyContractFields = Pick<ApiContract, 'visibility'>
+// The `Extract` keeps this resolvable against pre-visibility `@lokalise/api-contracts` peers
+// (<7.2), where `ApiContract` has no `visibility` key: the type degrades to `{}` there, so
+// `ClientCompatibleContract` becomes a no-op instead of a compile error.
+export type ServerOnlyContractFields = Pick<ApiContract, Extract<keyof ApiContract, 'visibility'>>
 
 /**
  * Loosens a route definition's server-only fields to optional, so contracts compiled against
