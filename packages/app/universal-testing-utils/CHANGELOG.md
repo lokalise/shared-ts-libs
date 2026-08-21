@@ -1,5 +1,14 @@
 # @lokalise/universal-testing-utils
 
+## 4.1.1
+
+### Patch Changes
+
+- 2ae86ff: Raise the `@lokalise/api-contracts` peer dependency floor to `>=7.2.0`, the first version where
+  contract `visibility` exists. Older floors were already inaccurate — the packages reference types
+  introduced in the 7.x line — and pre-7.2 peers cannot resolve the visibility-aware compatibility
+  types.
+
 ## 4.1.0
 
 ### Minor Changes
