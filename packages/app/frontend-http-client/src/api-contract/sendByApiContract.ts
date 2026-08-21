@@ -4,10 +4,13 @@ import {
   buildRequestPath,
   type ClientRequestParams,
   type DefaultStreaming,
+  type DeleteApiContract,
+  type GetApiContract,
   type HeadersParam,
   hasAnySuccessSseResponse,
   type InferNonSseClientResponse,
   type InferSseClientResponse,
+  type PayloadApiContract,
   type ResponseKind,
   resolveResponseEntry,
   type SseSchemaByEventName,
@@ -16,7 +19,11 @@ import {
 import { stringify } from 'fast-querystring'
 import { ServerSentEventTransformStream } from 'parse-sse'
 import type { ConfiguredMiddleware } from 'wretch'
-import type { WretchInstance } from '../types.ts'
+import type {
+  ClientCompatibleContract,
+  ServerOnlyContractFields,
+  WretchInstance,
+} from '../types.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
 export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> = {
@@ -45,16 +52,33 @@ type Either<TError, TResult> =
   | { error: TError; result?: never }
   | { error?: never; result: TResult }
 
+// `ApiContract` accepted as client input: `ClientCompatibleContract` applied per union member
+// so the method/body discrimination is preserved (an `Omit` over the whole union would
+// collapse it to the common keys).
+type ApiContractInput =
+  | ClientCompatibleContract<GetApiContract>
+  | ClientCompatibleContract<DeleteApiContract>
+  | ClientCompatibleContract<PayloadApiContract>
+
+// Re-tightens a loosened contract type back to a full `ApiContract` by completing the
+// server-only fields, so it satisfies the `extends ApiContract` constraint of the
+// api-contracts infer helpers. The `infer C extends ApiContract` indirection defers the
+// check until instantiation, where the intersection always completes the missing fields.
+type CompleteApiContract<T extends ApiContractInput> = T &
+  ServerOnlyContractFields extends infer C extends ApiContract
+  ? C
+  : never
+
 type AllContractResponses<
-  TApiContract extends ApiContract,
+  TApiContract extends ApiContractInput,
   TIsStreaming extends boolean,
 > = TIsStreaming extends true
-  ? InferSseClientResponse<TApiContract>
-  : InferNonSseClientResponse<TApiContract>
+  ? InferSseClientResponse<CompleteApiContract<TApiContract>>
+  : InferNonSseClientResponse<CompleteApiContract<TApiContract>>
 
 // captureAsError: true → success codes only; captureAsError: false → all codes from contract
 type ContractResultType<
-  TApiContract extends ApiContract,
+  TApiContract extends ApiContractInput,
   TIsStreaming extends boolean,
   TDoCaptureAsError extends boolean,
 > = TDoCaptureAsError extends true
@@ -67,7 +91,7 @@ type ContractResultType<
 // captureAsError: true → UnexpectedResponseError | <error-status-code responses from contract>
 // captureAsError: false → only UnexpectedResponseError (all contract responses go to result)
 type ContractErrorType<
-  TApiContract extends ApiContract,
+  TApiContract extends ApiContractInput,
   TIsStreaming extends boolean,
   TDoCaptureAsError extends boolean,
 > = TDoCaptureAsError extends true
@@ -80,7 +104,7 @@ type ContractErrorType<
   : UnexpectedResponseError
 
 type ReturnTypeForContract<
-  TApiContract extends ApiContract,
+  TApiContract extends ApiContractInput,
   TIsStreaming extends boolean,
   TDoCaptureAsError extends boolean,
 > = Either<
@@ -190,15 +214,17 @@ async function parseBody(response: Response, resolvedEntry: ResponseKind) {
  */
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it is acceptable
 export async function sendByApiContract<
-  TApiContract extends ApiContract,
+  TApiContract extends ApiContractInput,
   TIsStreaming extends boolean = DefaultStreaming<TApiContract['responsesByStatusCode']>,
   TCaptureAsError extends boolean = true,
 >(
   wretch: WretchInstance,
   apiContract: TApiContract,
-  params: ClientRequestParams<TApiContract, TIsStreaming> & ContractRequestOptions<TCaptureAsError>,
+  params: ClientRequestParams<CompleteApiContract<TApiContract>, TIsStreaming> &
+    ContractRequestOptions<TCaptureAsError>,
 ): Promise<ReturnTypeForContract<TApiContract, TIsStreaming, TCaptureAsError>> {
-  const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(apiContract)
+  const useStreaming: boolean =
+    params.streaming ?? hasAnySuccessSseResponse(apiContract as ApiContract)
 
   const captureAsError = params.captureAsError ?? true
   const strictContentType = params.strictContentType ?? true

@@ -759,4 +759,34 @@ describe('connectSseByContract', () => {
     expect(onItemUpdated).toHaveBeenCalledWith({ items: [{ id: '1' }] })
     connection.close()
   })
+
+  it('accepts contracts typed without visibility (pre-visibility api-contracts)', async () => {
+    const { visibility: _visibility, ...legacyContract } = buildSseContract({
+      visibility: 'public',
+      method: 'get',
+      pathResolver: () => '/events/stream',
+      serverSentEventSchemas: { done: doneSchema },
+    })
+
+    await mockServer.forGet('/events/stream').thenCallback(() => ({
+      statusCode: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+      body: sseResponse([{ event: 'done', data: JSON.stringify({ total: 1 }) }]),
+    }))
+
+    const onDone = vi.fn()
+    const client = wretch(mockServer.url)
+    const connection = connectSseByContract(
+      client,
+      legacyContract,
+      {},
+      {
+        onEvent: { done: onDone },
+      },
+    )
+
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
+    expect(onDone).toHaveBeenCalledWith({ total: 1 })
+    connection.close()
+  })
 })

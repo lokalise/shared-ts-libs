@@ -609,6 +609,66 @@ describe('frontend-http-client', () => {
       expectTypeOf(responseBody).toEqualTypeOf<null>()
       expect(responseBody).toBeNull()
     })
+
+    it('accepts GET contracts typed without visibility (pre-visibility api-contracts)', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const { visibility: _visibility, ...legacyContract } = buildGetRoute({
+        visibility: 'public',
+        successResponseBodySchema: z.object({ data: z.object({ code: z.number() }) }),
+        requestPathParamsSchema: z.object({ userId: z.number() }),
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByGetRoute(client, legacyContract, {
+        pathParams: { userId: 1 },
+      })
+
+      expect(responseBody).toEqual({ data: { code: 99 } })
+    })
+
+    it('accepts POST contracts typed without visibility (pre-visibility api-contracts)', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPost('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const { visibility: _visibility, ...legacyContract } = buildPayloadRoute({
+        visibility: 'public',
+        method: 'post',
+        successResponseBodySchema: z.object({ data: z.object({ code: z.number() }) }),
+        requestPathParamsSchema: z.object({ userId: z.number() }),
+        requestBodySchema: z.object({ isActive: z.boolean() }),
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByPayloadRoute(client, legacyContract, {
+        pathParams: { userId: 1 },
+        body: { isActive: true },
+      })
+
+      expect(responseBody).toEqual({ data: { code: 99 } })
+    })
+
+    it('accepts DELETE contracts typed without visibility (pre-visibility api-contracts)', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forDelete('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const { visibility: _visibility, ...legacyContract } = buildDeleteRoute({
+        visibility: 'public',
+        successResponseBodySchema: z.object({ data: z.object({ code: z.number() }) }),
+        requestPathParamsSchema: z.object({ userId: z.number() }),
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByDeleteRoute(client, legacyContract, {
+        pathParams: { userId: 1 },
+      })
+
+      expect(responseBody).toEqual({ data: { code: 99 } })
+    })
   })
 
   describe('sendPost', () => {
@@ -2484,6 +2544,25 @@ describe('frontend-http-client', () => {
 
       expectTypeOf(responseBody).toEqualTypeOf<null>()
       expect(responseBody).toBeNull()
+    })
+
+    it('accepts contracts typed without visibility (pre-visibility api-contracts)', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const { visibility: _visibility, ...legacyContract } = buildGetRoute({
+        visibility: 'public',
+        successResponseBodySchema: z.object({ data: z.object({ code: z.number() }) }),
+        requestPathParamsSchema: z.object({ userId: z.number() }),
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByContract(client, legacyContract, {
+        pathParams: { userId: 1 },
+      })
+
+      expect(responseBody).toEqual({ data: { code: 99 } })
     })
   })
 })

@@ -10,6 +10,7 @@ import { buildRequestPath } from '@lokalise/api-contracts'
 import type { WretchResponse } from 'wretch'
 import { type ZodSchema, z } from 'zod/v4'
 import type {
+  ClientCompatibleContract,
   DeleteParams,
   FreeDeleteParams,
   FreeHeadersParams,
@@ -410,16 +411,18 @@ export function sendByPayloadRoute<
     | undefined = undefined,
 >(
   wretch: T,
-  routeDefinition: PayloadRouteDefinition<
-    RequestBodySchema,
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    PayloadRouteDefinition<
+      RequestBodySchema,
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: PayloadRouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -472,15 +475,17 @@ export function sendByGetRoute<
     | undefined = undefined,
 >(
   wretch: T,
-  routeDefinition: GetRouteDefinition<
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    GetRouteDefinition<
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -528,15 +533,17 @@ export function sendByDeleteRoute<
     | undefined = undefined,
 >(
   wretch: T,
-  routeDefinition: DeleteRouteDefinition<
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    DeleteRouteDefinition<
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -597,15 +604,17 @@ export function sendByContract<
     | undefined = undefined,
 >(
   wretch: T,
-  routeDefinition: GetRouteDefinition<
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    GetRouteDefinition<
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -636,16 +645,18 @@ export function sendByContract<
     | undefined = undefined,
 >(
   wretch: T,
-  routeDefinition: PayloadRouteDefinition<
-    RequestBodySchema,
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    PayloadRouteDefinition<
+      RequestBodySchema,
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: PayloadRouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -676,15 +687,17 @@ export function sendByContract<
     | undefined = undefined,
 >(
   wretch: T,
-  routeDefinition: DeleteRouteDefinition<
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    DeleteRouteDefinition<
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -703,11 +716,11 @@ export function sendByContract<
 export function sendByContract(
   wretch: WretchInstance,
   routeDefinition: // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
-    | GetRouteDefinition<any, any, any, any, any, any, any, any>
+    | ClientCompatibleContract<GetRouteDefinition<any, any, any, any, any, any, any, any>>
     // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
-    | PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>
+    | ClientCompatibleContract<PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>>
     // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
-    | DeleteRouteDefinition<any, any, any, any, any, any, any, any>,
+    | ClientCompatibleContract<DeleteRouteDefinition<any, any, any, any, any, any, any, any>>,
   // biome-ignore lint/suspicious/noExplicitAny: params type depends on overload
   params: any,
   // biome-ignore lint/suspicious/noExplicitAny: return type depends on overload

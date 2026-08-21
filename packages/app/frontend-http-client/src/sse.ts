@@ -5,7 +5,12 @@ import type {
 } from '@lokalise/api-contracts'
 import { buildRequestPath } from '@lokalise/api-contracts'
 import type { z } from 'zod/v4'
-import type { HeadersObject, HeadersSource, WretchInstance } from './types.ts'
+import type {
+  ClientCompatibleContract,
+  HeadersObject,
+  HeadersSource,
+  WretchInstance,
+} from './types.ts'
 import { parseRequestBody } from './utils/bodyUtils.ts'
 import { isFailure } from './utils/either.ts'
 import { isError } from './utils/errorUtils.ts'
@@ -31,7 +36,9 @@ export type SseCallbacks<Events extends SSEEventSchemas> = {
   onClose?: () => void
 }
 
-type AnyContract = AnyDualModeContractDefinition | AnySSEContractDefinition
+type AnyContract =
+  | ClientCompatibleContract<AnyDualModeContractDefinition>
+  | ClientCompatibleContract<AnySSEContractDefinition>
 
 // Resolves the input type for a schema field, handling optional properties (T | undefined)
 // and filtering out unspecified schemas that default to z.ZodTypeAny
