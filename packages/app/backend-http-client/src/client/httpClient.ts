@@ -14,7 +14,11 @@ import { Client } from 'undici'
 import type { ZodError, ZodSchema, z } from 'zod/v4'
 import type { InternalRequestError } from '../errors/InternalRequestError.ts'
 import { ResponseStatusError } from '../errors/ResponseStatusError.ts'
-import type { PayloadRouteRequestParams, RouteRequestParams } from './apiContractTypes.ts'
+import type {
+  ClientCompatibleContract,
+  PayloadRouteRequestParams,
+  RouteRequestParams,
+} from './apiContractTypes.ts'
 import { DEFAULT_OPTIONS, defaultClientOptions, REQUEST_ID_HEADER } from './constants.ts'
 import { executeRequest, executeStreamRequest, isRequestResult } from './requestExecutor.ts'
 import type {
@@ -530,16 +534,18 @@ export function sendByPayloadRoute<
     | undefined = undefined,
 >(
   client: Client,
-  routeDefinition: PayloadRouteDefinition<
-    RequestBodySchema,
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    PayloadRouteDefinition<
+      RequestBodySchema,
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: PayloadRouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -595,15 +601,17 @@ export function sendByGetRoute<
     | undefined = undefined,
 >(
   client: Client,
-  routeDefinition: GetRouteDefinition<
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    GetRouteDefinition<
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -656,15 +664,17 @@ export function sendByDeleteRoute<
     | undefined = undefined,
 >(
   client: Client,
-  routeDefinition: DeleteRouteDefinition<
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    DeleteRouteDefinition<
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -713,15 +723,17 @@ export function sendByGetRouteWithStreamedResponse<
     | undefined = undefined,
 >(
   client: Client,
-  routeDefinition: GetRouteDefinition<
-    undefined,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    undefined,
-    false,
-    false,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    GetRouteDefinition<
+      undefined,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      undefined,
+      false,
+      false,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -768,16 +780,18 @@ export function sendByPayloadRouteWithStreamedResponse<
     | undefined = undefined,
 >(
   client: Client,
-  routeDefinition: PayloadRouteDefinition<
-    RequestBodySchema,
-    undefined,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    undefined,
-    false,
-    false,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    PayloadRouteDefinition<
+      RequestBodySchema,
+      undefined,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      undefined,
+      false,
+      false,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: PayloadRouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -846,15 +860,17 @@ export function sendByContract<
     | undefined = undefined,
 >(
   client: Client,
-  routeDefinition: GetRouteDefinition<
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    GetRouteDefinition<
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -889,16 +905,18 @@ export function sendByContract<
     | undefined = undefined,
 >(
   client: Client,
-  routeDefinition: PayloadRouteDefinition<
-    RequestBodySchema,
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    PayloadRouteDefinition<
+      RequestBodySchema,
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: PayloadRouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -933,15 +951,17 @@ export function sendByContract<
     | undefined = undefined,
 >(
   client: Client,
-  routeDefinition: DeleteRouteDefinition<
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    DeleteRouteDefinition<
+      ResponseBodySchema,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      ResponseHeaderSchema,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -964,11 +984,11 @@ export function sendByContract<
 export function sendByContract(
   client: Client,
   routeDefinition: // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
-    | GetRouteDefinition<any, any, any, any, any, any, any, any>
+    | ClientCompatibleContract<GetRouteDefinition<any, any, any, any, any, any, any, any>>
     // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
-    | PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>
+    | ClientCompatibleContract<PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>>
     // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
-    | DeleteRouteDefinition<any, any, any, any, any, any, any, any>,
+    | ClientCompatibleContract<DeleteRouteDefinition<any, any, any, any, any, any, any, any>>,
   // biome-ignore lint/suspicious/noExplicitAny: params type depends on overload
   params: any,
   // biome-ignore lint/suspicious/noExplicitAny: options type depends on overload
@@ -1018,15 +1038,17 @@ export function sendByContractWithStreamedResponse<
     | undefined = undefined,
 >(
   client: Client,
-  routeDefinition: GetRouteDefinition<
-    undefined,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    undefined,
-    false,
-    false,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    GetRouteDefinition<
+      undefined,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      undefined,
+      false,
+      false,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: RouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -1058,16 +1080,18 @@ export function sendByContractWithStreamedResponse<
     | undefined = undefined,
 >(
   client: Client,
-  routeDefinition: PayloadRouteDefinition<
-    RequestBodySchema,
-    undefined,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    undefined,
-    false,
-    false,
-    ResponseSchemasByStatusCode
+  routeDefinition: ClientCompatibleContract<
+    PayloadRouteDefinition<
+      RequestBodySchema,
+      undefined,
+      PathParamsSchema,
+      RequestQuerySchema,
+      RequestHeaderSchema,
+      undefined,
+      false,
+      false,
+      ResponseSchemasByStatusCode
+    >
   >,
   params: PayloadRouteRequestParams<
     InferSchemaInput<PathParamsSchema>,
@@ -1092,9 +1116,9 @@ export function sendByContractWithStreamedResponse<
 export function sendByContractWithStreamedResponse(
   client: Client,
   routeDefinition: // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
-    | GetRouteDefinition<any, any, any, any, any, any, any, any>
+    | ClientCompatibleContract<GetRouteDefinition<any, any, any, any, any, any, any, any>>
     // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
-    | PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>,
+    | ClientCompatibleContract<PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>>,
   // biome-ignore lint/suspicious/noExplicitAny: params type depends on overload
   params: any,
   // biome-ignore lint/suspicious/noExplicitAny: options type depends on overload

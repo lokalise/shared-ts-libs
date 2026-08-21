@@ -53,6 +53,29 @@ describe('sendByApiContract', () => {
       expect(result.result).toMatchObject({ body: { id: 1, title: 'Backpack' } })
     })
 
+    it('accepts contracts typed without visibility (pre-visibility api-contracts)', async () => {
+      const responseSchema = z.object({ id: z.number(), title: z.string() })
+      // the shape of a contract compiled against pre-visibility api-contracts (<7.2)
+      const { visibility: _visibility, ...legacyContract } = defineApiContract({
+        visibility: 'public',
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: responseSchema },
+      })
+
+      await mockServer
+        .forGet('/products/1')
+        .thenJson(200, { id: 1, title: 'Backpack' }, JSON_HEADERS)
+
+      const result = await sendByApiContract(client, legacyContract, {})
+
+      expectTypeOf(result.result).toMatchTypeOf<
+        { body: { id: number; title: string } } | undefined
+      >()
+      expect(result.result).toMatchObject({ body: { id: 1, title: 'Backpack' } })
+    })
+
     it('sends GET request with path params', async () => {
       const contract = defineApiContract({
         visibility: 'public',
@@ -341,6 +364,24 @@ describe('sendByApiContract', () => {
 
       expect(result.result).toMatchObject({ body: { id: '1' } })
     })
+
+    it('accepts contracts typed without visibility (pre-visibility api-contracts)', async () => {
+      const { visibility: _visibility, ...legacyContract } = defineApiContract({
+        visibility: 'public',
+        summary: 'Test contract',
+        method: 'post',
+        pathResolver: () => '/products',
+        requestBodySchema: z.object({ name: z.string() }),
+        responsesByStatusCode: { 201: z.object({ id: z.number() }) },
+      })
+
+      await mockServer.forPost('/products').thenJson(201, { id: 21 }, JSON_HEADERS)
+
+      const result = await sendByApiContract(client, legacyContract, { body: { name: 'test' } })
+
+      expectTypeOf(result.result).toMatchTypeOf<{ body: { id: number } } | undefined>()
+      expect(result.result).toMatchObject({ body: { id: 21 } })
+    })
   })
 
   describe('content-type request header', () => {
@@ -500,6 +541,23 @@ describe('sendByApiContract', () => {
       const result = await sendByApiContract(client, contract, { pathParams: { id: '1' } })
 
       expectTypeOf(result.result).toMatchTypeOf<{ body: null } | undefined>()
+      expect(result.result).toMatchObject({ statusCode: 204, body: null })
+    })
+
+    it('accepts contracts typed without visibility (pre-visibility api-contracts)', async () => {
+      const { visibility: _visibility, ...legacyContract } = defineApiContract({
+        visibility: 'public',
+        summary: 'Test contract',
+        method: 'delete',
+        requestPathParamsSchema: z.object({ id: z.string() }),
+        pathResolver: ({ id }) => `/products/${id}`,
+        responsesByStatusCode: { 204: noBodyResponse() },
+      })
+
+      await mockServer.forDelete('/products/1').thenReply(204)
+
+      const result = await sendByApiContract(client, legacyContract, { pathParams: { id: '1' } })
+
       expect(result.result).toMatchObject({ statusCode: 204, body: null })
     })
   })
@@ -669,6 +727,39 @@ describe('sendByApiContract', () => {
           // consume
         }
       }).rejects.toThrow('Schema for event "unknown" not found.')
+    })
+
+    it('accepts contracts typed without visibility (pre-visibility api-contracts)', async () => {
+      const { visibility: _visibility, ...legacyContract } = defineApiContract({
+        visibility: 'public',
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/events',
+        responsesByStatusCode: {
+          200: {
+            content: { 'text/event-stream': sseBody({ update: z.object({ id: z.string() }) }) },
+          },
+        },
+      })
+
+      const sseStreamPayload = 'event: update\ndata: {"id":"1"}\n\n'
+
+      await mockServer
+        .forGet('/events')
+        .withHeaders({ accept: 'text/event-stream' })
+        .thenReply(200, sseStreamPayload, { 'content-type': 'text/event-stream' })
+
+      const response = await sendByApiContract(client, legacyContract, {})
+
+      if (!response.result) throw new Error('Expected result')
+      const events: unknown[] = []
+      for await (const event of response.result.body) {
+        events.push(event)
+      }
+
+      expect(events).toEqual([
+        { type: 'update', data: { id: '1' }, lastEventId: '', retry: undefined },
+      ])
     })
   })
 

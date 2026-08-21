@@ -669,6 +669,28 @@ describe('httpClient', () => {
       expectTypeOf(result.result.body).toEqualTypeOf<z.output<typeof schema>>()
       expect(result.result.body).toEqual(mockProduct1)
     })
+
+    it('accepts contracts without visibility (pre-visibility api-contracts)', async () => {
+      const { visibility: _, ...legacyContract } = buildGetRoute({
+        visibility: 'public',
+        successResponseBodySchema: z.object({ id: z.number() }),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const response = await sendByGetRoute(
+        client,
+        legacyContract,
+        {},
+        {
+          requestLabel: 'Test request',
+        },
+      )
+
+      expect(response.result?.body).toEqual({ id: 1 })
+    })
   })
 
   describe('DELETE', () => {
@@ -967,6 +989,26 @@ describe('httpClient', () => {
       expectTypeOf(result.result.body).toEqualTypeOf<{ id: number } | null>()
       expect(result.result.body).toEqual({ id: 1 })
     })
+
+    it('accepts contracts without visibility (pre-visibility api-contracts)', async () => {
+      const { visibility: _, ...legacyContract } = buildDeleteRoute({
+        visibility: 'public',
+        successResponseBodySchema: z.object({ id: z.number() }),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      await mockServer.forDelete('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const response = await sendByDeleteRoute(
+        client,
+        legacyContract,
+        {},
+        { requestLabel: 'Test request' },
+      )
+
+      expect(response.result?.body).toEqual({ id: 1 })
+    })
   })
 
   describe('sendByPayloadRoute', () => {
@@ -1113,6 +1155,28 @@ describe('httpClient', () => {
 
       expectTypeOf(result.result.body).toEqualTypeOf<{ id: number }>()
       expect(result.result.body).toEqual({ id: 1 })
+    })
+
+    it('accepts contracts without visibility (pre-visibility api-contracts)', async () => {
+      const { visibility: _, ...legacyContract } = buildPayloadRoute({
+        visibility: 'public',
+        successResponseBodySchema: z.object({ id: z.number() }),
+        requestPathParamsSchema: z.undefined(),
+        method: 'post',
+        requestBodySchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      await mockServer.forPost('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const response = await sendByPayloadRoute(
+        client,
+        legacyContract,
+        {},
+        { requestLabel: 'Test request' },
+      )
+
+      expect(response.result?.body).toEqual({ id: 1 })
     })
   })
 
@@ -2279,6 +2343,28 @@ describe('httpClient', () => {
       const body = await streamToString(result.result.body)
       expect(JSON.parse(body)).toEqual(mockProduct1)
     })
+
+    it('accepts contracts without visibility (pre-visibility api-contracts)', async () => {
+      const { visibility: _, ...legacyContract } = buildGetRoute({
+        visibility: 'public',
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      await mockServer.forGet('/products/1').thenReply(200, JSON.stringify({ id: 1 }), JSON_HEADERS)
+
+      const result = await sendByGetRouteWithStreamedResponse(
+        client,
+        legacyContract,
+        {},
+        { requestLabel: 'dummy' },
+      )
+
+      expect(result.result.statusCode).toBe(200)
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual({ id: 1 })
+    })
   })
 
   describe('sendPostWithStreamedResponse', () => {
@@ -2564,6 +2650,30 @@ describe('httpClient', () => {
 
       expect(result.result).toBeUndefined()
       expect(isInternalRequestError(result.error)).toBe(true)
+    })
+
+    it('accepts contracts without visibility (pre-visibility api-contracts)', async () => {
+      const { visibility: _, ...legacyContract } = buildPayloadRoute({
+        visibility: 'public',
+        method: 'post',
+        successResponseBodySchema: undefined,
+        requestBodySchema: z.undefined(),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products',
+      })
+
+      await mockServer.forPost('/products').thenReply(200, JSON.stringify({ id: 1 }), JSON_HEADERS)
+
+      const result = await sendByPayloadRouteWithStreamedResponse(
+        client,
+        legacyContract,
+        {},
+        { requestLabel: 'dummy' },
+      )
+
+      expect(result.result.statusCode).toBe(200)
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual({ id: 1 })
     })
   })
 
@@ -3376,6 +3486,26 @@ describe('httpClient', () => {
         ),
       ).rejects.toThrow()
     })
+
+    it('accepts contracts without visibility (pre-visibility api-contracts)', async () => {
+      const { visibility: _, ...legacyContract } = buildGetRoute({
+        visibility: 'public',
+        successResponseBodySchema: z.object({ id: z.number() }),
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      await mockServer.forGet('/products/1').thenJson(200, { id: 1 }, JSON_HEADERS)
+
+      const result = await sendByContract(
+        client,
+        legacyContract,
+        {},
+        { throwOnError: true, requestLabel: 'dummy' },
+      )
+
+      expect(result.result.body).toEqual({ id: 1 })
+    })
   })
 
   describe('sendByContractWithStreamedResponse', () => {
@@ -3594,6 +3724,28 @@ describe('httpClient', () => {
         message: 'Response status code 500',
         errorCode: 'REQUEST_ERROR',
       })
+    })
+
+    it('accepts contracts without visibility (pre-visibility api-contracts)', async () => {
+      const { visibility: _, ...legacyContract } = buildGetRoute({
+        visibility: 'public',
+        successResponseBodySchema: undefined,
+        requestPathParamsSchema: z.undefined(),
+        pathResolver: () => '/products/1',
+      })
+
+      await mockServer.forGet('/products/1').thenReply(200, JSON.stringify({ id: 1 }), JSON_HEADERS)
+
+      const result = await sendByContractWithStreamedResponse(
+        client,
+        legacyContract,
+        {},
+        { requestLabel: 'dummy' },
+      )
+
+      expect(result.result.statusCode).toBe(200)
+      const body = await streamToString(result.result.body)
+      expect(JSON.parse(body)).toEqual({ id: 1 })
     })
   })
 })
