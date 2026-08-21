@@ -5,7 +5,6 @@ import {
   type InferSchemaInput,
   type InferSchemaOutput,
   mapRouteToPath,
-  type PayloadRouteDefinition,
   type SSEContractDefinition,
   type SSEEventSchemas,
 } from '@lokalise/api-contracts'
@@ -19,6 +18,7 @@ import {
 } from 'msw'
 import type { SetupServer } from 'msw/node'
 import type { ZodObject, z } from 'zod/v4'
+import type { ClientCompatibleContract } from './apiContractTypes.ts'
 import { formatSseResponse, type SseMockEvent } from './MockttpHelper.ts'
 
 export type CommonMockParams = {
@@ -97,9 +97,9 @@ function joinURL(base: string, path: string): string {
 
 export type MockEndpointParams<PathParamsSchema extends z.Schema | undefined> = {
   server: SetupServer
-  contract:
-    | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any, any>
-    | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any, any>
+  contract: ClientCompatibleContract<
+    CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any, any>
+  >
   pathParams: InferSchemaOutput<PathParamsSchema>
   responseBody: any
   responseCode: number
@@ -138,14 +138,14 @@ export class MswHelper {
   }
 
   private resolveParams<PathParamsSchema extends z.Schema | undefined>(
-    contract:
-      | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any, any>
-      | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any, any>,
+    contract: ClientCompatibleContract<
+      CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any, any>
+    >,
     pathParams: InferSchemaOutput<PathParamsSchema>,
   ) {
     const path = contract.requestPathParamsSchema
       ? contract.pathResolver(pathParams)
-      : mapRouteToPath(contract)
+      : mapRouteToPath(contract as CommonRouteDefinition<any, any, any, any, any, any, any, any>)
 
     const resolvedPath = joinURL(this.baseUrl, path)
     const method = ('method' in contract ? contract.method : 'get') as HttpMethod
@@ -202,16 +202,18 @@ export class MswHelper {
     PathParamsSchema extends z.Schema | undefined = undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract: DualModeContractDefinition<
-      any,
-      PathParamsSchema,
-      RequestQuerySchema,
-      any,
-      any,
-      ResponseBodySchema,
-      Events,
-      any,
-      any
+    contract: ClientCompatibleContract<
+      DualModeContractDefinition<
+        any,
+        PathParamsSchema,
+        RequestQuerySchema,
+        any,
+        any,
+        ResponseBodySchema,
+        Events,
+        any,
+        any
+      >
     >,
     server: SetupServer,
     params: PathParamsSchema extends z.Schema
@@ -234,14 +236,8 @@ export class MswHelper {
     PathParamsSchema extends z.Schema | undefined = undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract: SSEContractDefinition<
-      any,
-      PathParamsSchema,
-      RequestQuerySchema,
-      any,
-      any,
-      Events,
-      any
+    contract: ClientCompatibleContract<
+      SSEContractDefinition<any, PathParamsSchema, RequestQuerySchema, any, any, Events, any>
     >,
     server: SetupServer,
     params: PathParamsSchema extends z.Schema
@@ -258,28 +254,18 @@ export class MswHelper {
     ResponseBodySchema extends z.Schema<JsonBodyType>,
     PathParamsSchema extends z.Schema | undefined,
   >(
-    contract:
-      | CommonRouteDefinition<
-          ResponseBodySchema,
-          PathParamsSchema,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          boolean,
-          boolean,
-          any
-        >
-      | PayloadRouteDefinition<
-          z.Schema | undefined,
-          ResponseBodySchema,
-          PathParamsSchema,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          boolean,
-          boolean,
-          any
-        >,
+    contract: ClientCompatibleContract<
+      CommonRouteDefinition<
+        ResponseBodySchema,
+        PathParamsSchema,
+        any,
+        any,
+        any,
+        boolean,
+        boolean,
+        any
+      >
+    >,
     server: SetupServer,
     params: PathParamsSchema extends undefined
       ? MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>
@@ -340,16 +326,18 @@ export class MswHelper {
     Events extends SSEEventSchemas,
     RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract: DualModeContractDefinition<
-      any,
-      z.Schema | undefined,
-      RequestQuerySchema,
-      any,
-      any,
-      ResponseBodySchema,
-      Events,
-      any,
-      any
+    contract: ClientCompatibleContract<
+      DualModeContractDefinition<
+        any,
+        any,
+        RequestQuerySchema,
+        any,
+        any,
+        ResponseBodySchema,
+        Events,
+        any,
+        any
+      >
     >,
     server: SetupServer,
     params: MswDualModeMockParamsNoPath<
@@ -364,14 +352,8 @@ export class MswHelper {
     Events extends SSEEventSchemas,
     RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract: SSEContractDefinition<
-      any,
-      z.Schema | undefined,
-      RequestQuerySchema,
-      any,
-      any,
-      Events,
-      any
+    contract: ClientCompatibleContract<
+      SSEContractDefinition<any, any, RequestQuerySchema, any, any, Events, any>
     >,
     server: SetupServer,
     params: MswSseMockParamsNoPath<InferSchemaInput<RequestQuerySchema>, Events>,
@@ -379,28 +361,9 @@ export class MswHelper {
 
   // Overload: REST contract
   mockValidResponseWithAnyPath<ResponseBodySchema extends z.Schema<JsonBodyType>>(
-    contract:
-      | CommonRouteDefinition<
-          ResponseBodySchema,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          boolean,
-          boolean,
-          any
-        >
-      | PayloadRouteDefinition<
-          z.Schema | undefined,
-          ResponseBodySchema,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          boolean,
-          boolean,
-          any
-        >,
+    contract: ClientCompatibleContract<
+      CommonRouteDefinition<ResponseBodySchema, any, any, any, any, boolean, boolean, any>
+    >,
     server: SetupServer,
     params: MockParamsNoPath<InferSchemaInput<ResponseBodySchema>>,
   ): void
@@ -427,16 +390,18 @@ export class MswHelper {
     PathParamsSchema extends z.Schema | undefined = undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract: DualModeContractDefinition<
-      any,
-      PathParamsSchema,
-      RequestQuerySchema,
-      any,
-      any,
-      ResponseBodySchema,
-      Events,
-      any,
-      any
+    contract: ClientCompatibleContract<
+      DualModeContractDefinition<
+        any,
+        PathParamsSchema,
+        RequestQuerySchema,
+        any,
+        any,
+        ResponseBodySchema,
+        Events,
+        any,
+        any
+      >
     >,
     server: SetupServer,
     params: (PathParamsSchema extends z.Schema
@@ -452,30 +417,19 @@ export class MswHelper {
   mockValidResponseWithImplementation<
     ResponseBodySchema extends z.Schema,
     PathParamsSchema extends z.Schema | undefined,
-    RequestBodySchema extends z.Schema | undefined = undefined,
   >(
-    contract:
-      | CommonRouteDefinition<
-          ResponseBodySchema,
-          PathParamsSchema,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          boolean,
-          boolean,
-          any
-        >
-      | PayloadRouteDefinition<
-          RequestBodySchema,
-          ResponseBodySchema,
-          PathParamsSchema,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          boolean,
-          boolean,
-          any
-        >,
+    contract: ClientCompatibleContract<
+      CommonRouteDefinition<
+        ResponseBodySchema,
+        PathParamsSchema,
+        any,
+        any,
+        any,
+        boolean,
+        boolean,
+        any
+      >
+    >,
     server: SetupServer,
     params: PathParamsSchema extends undefined
       ? MockWithImplementationParamsNoPath<any, any, any>
@@ -528,16 +482,18 @@ export class MswHelper {
     PathParamsSchema extends z.Schema | undefined = undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract: DualModeContractDefinition<
-      any,
-      PathParamsSchema,
-      RequestQuerySchema,
-      any,
-      any,
-      any,
-      Events,
-      any,
-      any
+    contract: ClientCompatibleContract<
+      DualModeContractDefinition<
+        any,
+        PathParamsSchema,
+        RequestQuerySchema,
+        any,
+        any,
+        any,
+        Events,
+        any,
+        any
+      >
     >,
     server: SetupServer,
     params: PathParamsSchema extends z.Schema
@@ -552,9 +508,9 @@ export class MswHelper {
 
   // Overload: REST contract — requires responseBody, no validation
   mockAnyResponse<PathParamsSchema extends z.Schema | undefined>(
-    contract:
-      | CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any, any>
-      | PayloadRouteDefinition<any, any, PathParamsSchema, any, any, any, any, any, any>,
+    contract: ClientCompatibleContract<
+      CommonRouteDefinition<any, PathParamsSchema, any, any, any, any, any, any>
+    >,
     server: SetupServer,
     params: PathParamsSchema extends undefined
       ? MockParamsNoPath<InferSchemaInput<any>>
@@ -601,16 +557,18 @@ export class MswHelper {
     PathParamsSchema extends z.Schema | undefined = undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract: DualModeContractDefinition<
-      any,
-      PathParamsSchema,
-      RequestQuerySchema,
-      any,
-      any,
-      ResponseBodySchema,
-      Events,
-      any,
-      any
+    contract: ClientCompatibleContract<
+      DualModeContractDefinition<
+        any,
+        PathParamsSchema,
+        RequestQuerySchema,
+        any,
+        any,
+        ResponseBodySchema,
+        Events,
+        any,
+        any
+      >
     >,
     server: SetupServer,
     params: (PathParamsSchema extends z.Schema
@@ -629,14 +587,8 @@ export class MswHelper {
     PathParamsSchema extends z.Schema | undefined = undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract: SSEContractDefinition<
-      any,
-      PathParamsSchema,
-      RequestQuerySchema,
-      any,
-      any,
-      Events,
-      any
+    contract: ClientCompatibleContract<
+      SSEContractDefinition<any, PathParamsSchema, RequestQuerySchema, any, any, Events, any>
     >,
     server: SetupServer,
     params?: (PathParamsSchema extends z.Schema

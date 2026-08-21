@@ -1,12 +1,14 @@
 import {
-  type ApiContract,
   type ApiContractResponse,
   type BodyDescriptor,
+  type DeleteApiContract,
   type ExpandStatusRangeKey,
+  type GetApiContract,
   type HttpStatusCode,
   type InferSchemaInput,
   isBlobBody,
   isSseBody,
+  type PayloadApiContract,
   type RequestPathParamsSchema,
   type ResponseEntry,
   type ResponsesByStatusCode,
@@ -14,6 +16,7 @@ import {
   type WildcardStatusCodeKey,
 } from '@lokalise/api-contracts'
 import type { z } from 'zod/v4'
+import type { ClientCompatibleContract } from '../apiContractTypes.ts'
 
 export type SseMockEventInput<S extends SseSchemaByEventName> = {
   [K in keyof S & string]: { event: K; data: z.input<NonNullable<S[K]>> }
@@ -107,13 +110,21 @@ type InferBodyParam<T> = T extends z.ZodType
     ? ({ contentType?: never } & InferContentBodyParam<C>) | PerContentTypeBodyParam<C>
     : object
 
-type ExactStatusCodePairs<TContract extends ApiContract> = {
+// `ApiContract` accepted as mock-helper input: `ClientCompatibleContract` applied per union
+// member so the method/body discrimination is preserved (an `Omit` over the whole union would
+// collapse it to the common keys).
+export type ApiContractInput =
+  | ClientCompatibleContract<GetApiContract>
+  | ClientCompatibleContract<DeleteApiContract>
+  | ClientCompatibleContract<PayloadApiContract>
+
+type ExactStatusCodePairs<TContract extends ApiContractInput> = {
   [K in keyof TContract['responsesByStatusCode'] & HttpStatusCode]: {
     responseStatus: K
   } & InferBodyParam<NonNullable<TContract['responsesByStatusCode'][K]>>
 }[keyof TContract['responsesByStatusCode'] & HttpStatusCode]
 
-type RangeStatusCodePairs<TContract extends ApiContract> = {
+type RangeStatusCodePairs<TContract extends ApiContractInput> = {
   [K in keyof TContract['responsesByStatusCode'] & WildcardStatusCodeKey]: {
     responseStatus: Exclude<
       ExpandStatusRangeKey<K>,
@@ -122,14 +133,14 @@ type RangeStatusCodePairs<TContract extends ApiContract> = {
   } & InferBodyParam<NonNullable<TContract['responsesByStatusCode'][K]>>
 }[keyof TContract['responsesByStatusCode'] & WildcardStatusCodeKey]
 
-type StatusCodeBodyPair<TContract extends ApiContract> =
+type StatusCodeBodyPair<TContract extends ApiContractInput> =
   | ExactStatusCodePairs<TContract>
   | RangeStatusCodePairs<TContract>
 
-type PathParamsField<TContract extends ApiContract> =
+type PathParamsField<TContract extends ApiContractInput> =
   TContract['requestPathParamsSchema'] extends RequestPathParamsSchema
     ? { pathParams: InferSchemaInput<TContract['requestPathParamsSchema']> }
     : { pathParams?: never }
 
-export type MockResponseParams<TContract extends ApiContract> = PathParamsField<TContract> &
+export type MockResponseParams<TContract extends ApiContractInput> = PathParamsField<TContract> &
   StatusCodeBodyPair<TContract>

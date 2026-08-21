@@ -10,6 +10,7 @@ import { HttpResponse, http, type JsonBodyType } from 'msw'
 import type { SetupServer } from 'msw/node'
 import type { z } from 'zod/v4'
 import {
+  type ApiContractInput,
   formatSseResponse,
   type MockResponseParams,
   resolveContractEntry,
@@ -31,16 +32,16 @@ export class ApiContractMswHelper {
     this.baseUrl = baseUrl
   }
 
-  private resolvePath(contract: ApiContract, pathParams: unknown): string {
+  private resolvePath(contract: ApiContractInput, pathParams: unknown): string {
     const path =
       contract.requestPathParamsSchema && pathParams
         ? contract.pathResolver(pathParams)
-        : mapApiContractToPath(contract)
+        : mapApiContractToPath(contract as ApiContract)
 
     return joinURL(this.baseUrl, path)
   }
 
-  mockResponse<TContract extends ApiContract>(
+  mockResponse<TContract extends ApiContractInput>(
     contract: TContract,
     params: MockResponseParams<TContract>,
   ): void {

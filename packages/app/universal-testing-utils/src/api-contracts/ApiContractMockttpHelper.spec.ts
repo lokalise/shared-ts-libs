@@ -129,6 +129,19 @@ describe('ApiContractMockttpHelper', () => {
       })
       expect(result.result?.body).toBeNull()
     })
+
+    it('accepts contracts typed without visibility (pre-visibility api-contracts)', async () => {
+      // the shape of a contract compiled against pre-visibility api-contracts (<7.2)
+      const { visibility: _visibility, ...legacyContract } = getApiContract
+
+      await helper.mockResponse(legacyContract, {
+        responseStatus: 200,
+        responseJson: { id: '1' },
+      })
+
+      const result = await sendByApiContract(client(), legacyContract, {})
+      expect(result.result?.body).toEqual({ id: '1' })
+    })
   })
 
   describe('mockResponse — SSE contracts', () => {

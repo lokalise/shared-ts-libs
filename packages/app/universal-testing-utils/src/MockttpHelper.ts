@@ -4,12 +4,12 @@ import {
   type DualModeContractDefinition,
   type InferSchemaInput,
   mapRouteToPath,
-  type PayloadRouteDefinition,
   type SSEContractDefinition,
   type SSEEventSchemas,
 } from '@lokalise/api-contracts'
 import type { Mockttp, RequestRuleBuilder } from 'mockttp'
 import type { z } from 'zod/v4'
+import type { ClientCompatibleContract } from './apiContractTypes.ts'
 
 export type PayloadMockParams<PathParams, QueryParams, ResponseBody> = {
   pathParams: PathParams
@@ -93,16 +93,18 @@ export class MockttpHelper {
     PathParamsSchema extends z.Schema | undefined = undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract: DualModeContractDefinition<
-      any,
-      PathParamsSchema,
-      RequestQuerySchema,
-      any,
-      any,
-      any,
-      Events,
-      any,
-      any
+    contract: ClientCompatibleContract<
+      DualModeContractDefinition<
+        any,
+        PathParamsSchema,
+        RequestQuerySchema,
+        any,
+        any,
+        any,
+        Events,
+        any,
+        any
+      >
     >,
     params: PathParamsSchema extends z.Schema
       ? DualModeMockParams<
@@ -120,28 +122,18 @@ export class MockttpHelper {
     PathParamsSchema extends z.Schema | undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract:
-      | CommonRouteDefinition<
-          ResponseBodySchema,
-          PathParamsSchema,
-          RequestQuerySchema,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          boolean,
-          boolean,
-          any
-        >
-      | PayloadRouteDefinition<
-          z.Schema | undefined,
-          ResponseBodySchema,
-          PathParamsSchema,
-          RequestQuerySchema,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          boolean,
-          boolean,
-          any
-        >,
+    contract: ClientCompatibleContract<
+      CommonRouteDefinition<
+        ResponseBodySchema,
+        PathParamsSchema,
+        RequestQuerySchema,
+        any,
+        any,
+        boolean,
+        boolean,
+        any
+      >
+    >,
     params: PathParamsSchema extends undefined
       ? PayloadMockParamsNoPath<InferSchemaInput<RequestQuerySchema>, any>
       : PayloadMockParams<
@@ -196,7 +188,7 @@ export class MockttpHelper {
     const path =
       contract.requestPathParamsSchema && pathParams && contract.pathResolver
         ? contract.pathResolver(pathParams)
-        : mapRouteToPath(contract)
+        : mapRouteToPath(contract as CommonRouteDefinition<any, any, any, any, any, any, any, any>)
 
     const method = ('method' in contract ? contract.method : 'get') as HttpMethod
     let mockttp = this.resolveMethodBuilder(method, path)
@@ -216,16 +208,18 @@ export class MockttpHelper {
     PathParamsSchema extends z.Schema | undefined = undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract: DualModeContractDefinition<
-      any,
-      PathParamsSchema,
-      RequestQuerySchema,
-      any,
-      any,
-      ResponseBodySchema,
-      Events,
-      any,
-      any
+    contract: ClientCompatibleContract<
+      DualModeContractDefinition<
+        any,
+        PathParamsSchema,
+        RequestQuerySchema,
+        any,
+        any,
+        ResponseBodySchema,
+        Events,
+        any,
+        any
+      >
     >,
     params: PathParamsSchema extends z.Schema
       ? DualModeMockParams<
@@ -247,14 +241,8 @@ export class MockttpHelper {
     PathParamsSchema extends z.Schema | undefined = undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract: SSEContractDefinition<
-      any,
-      PathParamsSchema,
-      RequestQuerySchema,
-      any,
-      any,
-      Events,
-      any
+    contract: ClientCompatibleContract<
+      SSEContractDefinition<any, PathParamsSchema, RequestQuerySchema, any, any, Events, any>
     >,
     params: PathParamsSchema extends z.Schema
       ? SseMockParams<
@@ -271,28 +259,18 @@ export class MockttpHelper {
     PathParamsSchema extends z.Schema | undefined,
     RequestQuerySchema extends z.Schema | undefined = undefined,
   >(
-    contract:
-      | CommonRouteDefinition<
-          ResponseBodySchema,
-          PathParamsSchema,
-          RequestQuerySchema,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          boolean,
-          boolean,
-          any
-        >
-      | PayloadRouteDefinition<
-          z.Schema | undefined,
-          ResponseBodySchema,
-          PathParamsSchema,
-          RequestQuerySchema,
-          z.Schema | undefined,
-          z.Schema | undefined,
-          boolean,
-          boolean,
-          any
-        >,
+    contract: ClientCompatibleContract<
+      CommonRouteDefinition<
+        ResponseBodySchema,
+        PathParamsSchema,
+        RequestQuerySchema,
+        any,
+        any,
+        boolean,
+        boolean,
+        any
+      >
+    >,
     params: PathParamsSchema extends undefined
       ? PayloadMockParamsNoPath<
           InferSchemaInput<RequestQuerySchema>,

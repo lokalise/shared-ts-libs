@@ -126,6 +126,21 @@ describe('MswHelper', () => {
               }
             `)
     })
+
+    it('accepts contracts typed without visibility (pre-visibility api-contracts)', async () => {
+      // the shape of a contract compiled against pre-visibility api-contracts (<7.2)
+      const { visibility: _visibility, ...legacyContract } = postContract
+
+      mswHelper.mockValidResponse(legacyContract, server, {
+        responseBody: { id: '1' },
+      })
+
+      const response = await sendByContract(wretchClient, legacyContract, {
+        body: { name: 'frf' },
+      })
+
+      expect(response).toEqual({ id: '1' })
+    })
   })
 
   describe('mockValidResponseWithAnyPath', () => {

@@ -9,6 +9,7 @@ import {
 import type { Mockttp, RequestRuleBuilder } from 'mockttp'
 import type { z } from 'zod/v4'
 import {
+  type ApiContractInput,
   formatSseResponse,
   type MockResponseParams,
   resolveContractEntry,
@@ -41,13 +42,13 @@ export class ApiContractMockttpHelper {
     }
   }
 
-  private resolvePath(contract: ApiContract, pathParams: unknown): string {
+  private resolvePath(contract: ApiContractInput, pathParams: unknown): string {
     return contract.requestPathParamsSchema && pathParams
       ? contract.pathResolver(pathParams)
-      : mapApiContractToPath(contract)
+      : mapApiContractToPath(contract as ApiContract)
   }
 
-  async mockResponse<TContract extends ApiContract>(
+  async mockResponse<TContract extends ApiContractInput>(
     contract: TContract,
     params: MockResponseParams<TContract>,
   ): Promise<void> {
