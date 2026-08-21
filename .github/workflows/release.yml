@@ -44,18 +44,18 @@ jobs:
 
       - name: Create Release Pull Request or Publish
         id: changesets
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
         with:
-          publish: pnpm run ci:publish
-          title: "Release Packages"
-          commit: "chore: update versions"
+          publish-script: pnpm run ci:publish
+          pr-title: 'Release Packages'
+          commit-message: 'chore: update versions'
 
       - name: Auto-merge Changesets PR
-        if: steps.changesets.outputs.hasChangesets == 'true'
+        if: steps.changesets.outputs.has-changesets == 'true'
         run: |
           gh pr merge --squash "$PR_NUMBER"
           gh api --method POST /repos/$REPO/dispatches -f 'event_type=release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ steps.changesets.outputs.pullRequestNumber }}
+          PR_NUMBER: ${{ steps.changesets.outputs.pr-number }}
