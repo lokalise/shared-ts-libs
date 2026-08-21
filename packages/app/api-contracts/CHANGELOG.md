@@ -1,5 +1,14 @@
 # Changelog
 
+## 8.0.0
+
+### Major Changes
+
+- bbb4601: Make `visibility` mandatory in every contract builder. `defineApiContract`, `buildContract`,
+  `buildRestContract`, `buildSseContract`, and the legacy `buildGetRoute` / `buildPayloadRoute` /
+  `buildDeleteRoute` no longer default it to `'public'` — an explicit `'public'` or `'internal'`
+  value is now required in every builder config.
+
 ## 7.2.1
 
 ### Patch Changes

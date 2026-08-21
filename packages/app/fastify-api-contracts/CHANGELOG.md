@@ -1,5 +1,23 @@
 # @lokalise/fastify-api-contracts
 
+## 7.0.0
+
+### Major Changes
+
+- bbb4601: Raise the `@lokalise/api-contracts` peer dependency floor to `>=8.0.0`, the version that makes
+  contract `visibility` mandatory in every builder.
+- bbb4601: Unify OpenAPI visibility handling to fail closed: `buildFastifyRoute` and `buildFastifyApiSchema`
+  now hide any route whose contract `visibility` is not explicitly `'public'` (`hide: visibility !==
+  'public'`), matching the existing `buildFastify*Route` handlers.
+  
+  Behavior change: with the `?? 'public'` fallback removed from every `@lokalise/api-contracts`
+  builder, a contract whose `visibility` is `undefined` at runtime — e.g. built by a plain-JS
+  consumer, a hand-written contract literal cast to the contract type, or a contract package
+  compiled against pre-visibility `@lokalise/api-contracts` (<7.2) — is now **excluded from the
+  generated OpenAPI document** instead of being exposed. This is intentional: an unclassified
+  route stays private until its visibility is declared. Set `visibility: 'public'` explicitly to
+  publish such routes.
+
 ## 6.2.0
 
 ### Minor Changes
