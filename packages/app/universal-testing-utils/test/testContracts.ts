@@ -15,6 +15,7 @@ const QUERY_PARAMS_SCHEMA = z.object({
 })
 
 export const postContract = buildRestContract({
+  visibility: 'public',
   method: 'post',
   successResponseBodySchema: RESPONSE_BODY_SCHEMA,
   requestBodySchema: REQUEST_BODY_SCHEMA,
@@ -26,6 +27,7 @@ export const postContract = buildRestContract({
 })
 
 export const getContract = buildRestContract({
+  visibility: 'public',
   method: 'get',
   successResponseBodySchema: RESPONSE_BODY_SCHEMA,
   description: 'some description',
@@ -36,6 +38,7 @@ export const getContract = buildRestContract({
 })
 
 export const getContractWithQueryParams = buildRestContract({
+  visibility: 'public',
   method: 'get',
   successResponseBodySchema: RESPONSE_BODY_SCHEMA,
   description: 'some description',
@@ -47,6 +50,7 @@ export const getContractWithQueryParams = buildRestContract({
 })
 
 export const postContractWithPathParams = buildRestContract({
+  visibility: 'public',
   method: 'post',
   successResponseBodySchema: RESPONSE_BODY_SCHEMA,
   requestBodySchema: REQUEST_BODY_SCHEMA,
@@ -59,6 +63,7 @@ export const postContractWithPathParams = buildRestContract({
 })
 
 export const getContractWithPathParams = buildRestContract({
+  visibility: 'public',
   method: 'get',
   successResponseBodySchema: RESPONSE_BODY_SCHEMA,
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -70,6 +75,7 @@ export const getContractWithPathParams = buildRestContract({
 })
 
 export const getContractWithPathAndQueryParams = buildRestContract({
+  visibility: 'public',
   method: 'get',
   successResponseBodySchema: RESPONSE_BODY_SCHEMA,
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -91,6 +97,7 @@ const SSE_COMPLETED_SCHEMA = z.object({
 })
 
 export const sseGetContract = buildSseContract({
+  visibility: 'public',
   method: 'get',
   description: 'SSE GET contract',
   pathResolver: () => '/events/stream',
@@ -101,6 +108,7 @@ export const sseGetContract = buildSseContract({
 })
 
 export const ssePostContract = buildSseContract({
+  visibility: 'public',
   method: 'post',
   description: 'SSE POST contract',
   pathResolver: () => '/events/stream',
@@ -112,6 +120,7 @@ export const ssePostContract = buildSseContract({
 })
 
 export const sseGetContractWithPathParams = buildSseContract({
+  visibility: 'public',
   method: 'get',
   description: 'SSE GET contract with path params',
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -123,6 +132,7 @@ export const sseGetContractWithPathParams = buildSseContract({
 })
 
 export const sseGetContractWithQueryParams = buildSseContract({
+  visibility: 'public',
   method: 'get',
   description: 'SSE GET contract with query params',
   pathResolver: () => '/events/stream',
@@ -134,6 +144,7 @@ export const sseGetContractWithQueryParams = buildSseContract({
 })
 
 export const sseDualModeContract = buildSseContract({
+  visibility: 'public',
   method: 'post',
   description: 'Dual mode SSE contract',
   pathResolver: () => '/events/dual',
@@ -146,6 +157,7 @@ export const sseDualModeContract = buildSseContract({
 })
 
 export const sseDualModeContractWithPathParams = buildSseContract({
+  visibility: 'public',
   method: 'post',
   description: 'Dual mode SSE contract with path params',
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,

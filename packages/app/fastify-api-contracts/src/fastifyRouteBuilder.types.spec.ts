@@ -8,6 +8,7 @@ describe('buildFastifyRouteHandler type inference', () => {
   describe('GET route handler types', () => {
     it('accepts GET contract and returns no-payload handler', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({ id: z.string() }),
         pathResolver: () => '/api/users',
@@ -22,6 +23,7 @@ describe('buildFastifyRouteHandler type inference', () => {
 
     it('infers path params in GET handler', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({ id: z.string() }),
         requestPathParamsSchema: z.object({ userId: z.string() }),
@@ -35,6 +37,7 @@ describe('buildFastifyRouteHandler type inference', () => {
 
     it('infers query params in GET handler', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({}),
         requestQuerySchema: z.object({ limit: z.number() }),
@@ -48,6 +51,7 @@ describe('buildFastifyRouteHandler type inference', () => {
 
     it('infers headers in GET handler', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({}),
         requestHeaderSchema: z.object({ authorization: z.string() }),
@@ -64,6 +68,7 @@ describe('buildFastifyRouteHandler type inference', () => {
   describe('DELETE route handler types', () => {
     it('accepts DELETE contract and returns no-payload handler', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: z.undefined(),
         pathResolver: () => '/api/users/123',
@@ -76,6 +81,7 @@ describe('buildFastifyRouteHandler type inference', () => {
 
     it('infers path params in DELETE handler', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: z.undefined(),
         requestPathParamsSchema: z.object({ userId: z.string() }),
@@ -89,6 +95,7 @@ describe('buildFastifyRouteHandler type inference', () => {
 
     it('accepts DELETE contract with path params and headers', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: z.undefined(),
         requestPathParamsSchema: z.object({ id: z.string() }),
@@ -107,6 +114,7 @@ describe('buildFastifyRouteHandler type inference', () => {
   describe('Payload route handler types (POST/PUT/PATCH)', () => {
     it('accepts POST contract and returns payload handler', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: z.object({ name: z.string() }),
         successResponseBodySchema: z.object({ id: z.string() }),
@@ -123,6 +131,7 @@ describe('buildFastifyRouteHandler type inference', () => {
 
     it('infers body type in PUT handler', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'put',
         requestBodySchema: z.object({ name: z.string(), age: z.number() }),
         successResponseBodySchema: z.object({ id: z.string() }),
@@ -136,6 +145,7 @@ describe('buildFastifyRouteHandler type inference', () => {
 
     it('infers body type in PATCH handler', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'patch',
         requestBodySchema: z.object({ name: z.string().optional() }),
         successResponseBodySchema: z.object({ id: z.string() }),
@@ -149,6 +159,7 @@ describe('buildFastifyRouteHandler type inference', () => {
 
     it('infers path params in POST handler', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: z.object({ name: z.string() }),
         successResponseBodySchema: z.object({ id: z.string() }),
@@ -171,6 +182,7 @@ describe('buildFastifyRoute type inference', () => {
       const QUERY_SCHEMA = z.object({ limit: z.number() })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -193,6 +205,7 @@ describe('buildFastifyRoute type inference', () => {
 
     it('returns RouteType with undefined body for GET routes', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({ id: z.string() }),
         pathResolver: () => '/api/users',
@@ -209,6 +222,7 @@ describe('buildFastifyRoute type inference', () => {
       const HEADERS_SCHEMA = z.object({ authorization: z.string() })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: BODY_SCHEMA,
         requestHeaderSchema: HEADERS_SCHEMA,
@@ -235,6 +249,7 @@ describe('buildFastifyRoute type inference', () => {
       const PATH_PARAMS_SCHEMA = z.object({ userId: z.string() })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: BODY_SCHEMA,
         requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -256,6 +271,7 @@ describe('buildFastifyRoute type inference', () => {
 
     it('returns RouteType with undefined body for DELETE routes', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: z.undefined(),
         pathResolver: () => '/api/users/123',
@@ -274,6 +290,7 @@ describe('buildFastifyRoute type inference', () => {
       const PATH_PARAMS_SCHEMA = z.object({ orgId: z.string() })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: RESPONSE_SCHEMA,
@@ -299,6 +316,7 @@ describe('buildFastifyRoute type inference', () => {
       const RESPONSE_SCHEMA = z.object({ id: z.string() })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'put',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: RESPONSE_SCHEMA,
@@ -323,6 +341,7 @@ describe('buildFastifyRoute type inference', () => {
       const RESPONSE_SCHEMA = z.object({ id: z.string() })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'patch',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: RESPONSE_SCHEMA,
@@ -350,6 +369,7 @@ describe('buildFastifyRoute type inference', () => {
       })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: REQUEST_BODY_SCHEMA,
         successResponseBodySchema: z.object({}),
@@ -370,6 +390,7 @@ describe('buildFastifyRoute type inference', () => {
       const ErrorSchema = z.object({ error: z.string() })
 
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: SuccessSchema,
         pathResolver: () => '/api/test',

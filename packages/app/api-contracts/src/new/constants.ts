@@ -3,6 +3,7 @@
  *
  * @example
  * defineApiContract({
+ *   visibility: 'public',
  *   summary: 'Trigger reindex',
  *   method: 'post',
  *   requestBodySchema: ContractNoBody,

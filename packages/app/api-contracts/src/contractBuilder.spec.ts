@@ -6,6 +6,7 @@ describe('buildContract', () => {
   describe('REST contracts', () => {
     it('creates REST GET contract when no serverSentEventSchemas is provided', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: z.object({ id: z.string() }),
         pathResolver: () => '/api/users',
@@ -19,6 +20,7 @@ describe('buildContract', () => {
 
     it('creates REST POST contract when method is post and requestBodySchema is provided', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'post',
         requestBodySchema: z.object({ name: z.string() }),
         successResponseBodySchema: z.object({ id: z.string() }),
@@ -33,41 +35,23 @@ describe('buildContract', () => {
 
     it('creates REST DELETE contract when method is delete', () => {
       const contract = buildContract({
+        visibility: 'internal',
         method: 'delete',
         successResponseBodySchema: z.undefined(),
         pathResolver: () => '/api/users/123',
       })
 
       expect(contract.method).toBe('delete')
+      expect(contract.visibility).toBe('internal')
       expect('isSSE' in contract).toBe(false)
       expect('isDualMode' in contract).toBe(false)
-    })
-
-    it('defaults visibility to public when omitted', () => {
-      const contract = buildContract({
-        method: 'get',
-        successResponseBodySchema: z.object({}),
-        pathResolver: () => '/api/users',
-      })
-
-      expect(contract.visibility).toBe('public')
-    })
-
-    it('reflects explicit visibility value', () => {
-      const contract = buildContract({
-        method: 'get',
-        successResponseBodySchema: z.object({}),
-        pathResolver: () => '/api/users',
-        visibility: 'internal',
-      })
-
-      expect(contract.visibility).toBe('internal')
     })
   })
 
   describe('SSE contracts', () => {
     it('creates SSE GET contract when serverSentEventSchemas is provided without requestBodySchema', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -86,6 +70,7 @@ describe('buildContract', () => {
 
     it('creates SSE POST contract when serverSentEventSchemas and requestBodySchema are provided', () => {
       const contract = buildContract({
+        visibility: 'internal',
         method: 'post',
         pathResolver: () => '/api/process',
         requestPathParamsSchema: z.object({}),
@@ -99,45 +84,16 @@ describe('buildContract', () => {
 
       expect(contract.method).toBe('post')
       expect(contract.isSSE).toBe(true)
+      expect(contract.visibility).toBe('internal')
       expect('isDualMode' in contract).toBe(false)
       expect(contract.requestBodySchema).toBeDefined()
-    })
-
-    it('defaults visibility to public when omitted', () => {
-      const contract = buildContract({
-        method: 'get',
-        pathResolver: () => '/api/stream',
-        requestPathParamsSchema: z.object({}),
-        requestQuerySchema: z.object({}),
-        requestHeaderSchema: z.object({}),
-        serverSentEventSchemas: {
-          message: z.object({ text: z.string() }),
-        },
-      })
-
-      expect(contract.visibility).toBe('public')
-    })
-
-    it('reflects explicit visibility value', () => {
-      const contract = buildContract({
-        method: 'get',
-        pathResolver: () => '/api/stream',
-        requestPathParamsSchema: z.object({}),
-        requestQuerySchema: z.object({}),
-        requestHeaderSchema: z.object({}),
-        serverSentEventSchemas: {
-          message: z.object({ text: z.string() }),
-        },
-        visibility: 'internal',
-      })
-
-      expect(contract.visibility).toBe('internal')
     })
   })
 
   describe('Dual-mode contracts', () => {
     it('creates dual-mode GET contract when serverSentEventSchemas and successResponseBodySchema are provided', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/status',
         requestPathParamsSchema: z.object({}),
@@ -158,6 +114,7 @@ describe('buildContract', () => {
 
     it('creates dual-mode POST contract when serverSentEventSchemas, successResponseBodySchema, and requestBodySchema are provided', () => {
       const contract = buildContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/chat/completions',
         requestPathParamsSchema: z.object({}),

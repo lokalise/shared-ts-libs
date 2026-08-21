@@ -446,6 +446,7 @@ describe('httpClient', () => {
         id: z.string(),
       })
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: schema,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -492,6 +493,7 @@ describe('httpClient', () => {
       })
 
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: schema,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -520,6 +522,7 @@ describe('httpClient', () => {
         id: z.string(),
       })
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: schema,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -545,6 +548,7 @@ describe('httpClient', () => {
 
     it('unexpected 204, with validation', async () => {
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: z.number(),
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -577,6 +581,7 @@ describe('httpClient', () => {
     it('unexpected 204, with validation, without schema', async () => {
       //@ts-expect-error - testing missing param
       const apiContract = buildGetRoute({
+        visibility: 'public',
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
       })
@@ -600,6 +605,7 @@ describe('httpClient', () => {
 
     it('expected 204', async () => {
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: z.undefined(),
         requestPathParamsSchema: z.undefined(),
         isEmptyResponseExpected: true,
@@ -638,6 +644,7 @@ describe('httpClient', () => {
       })
 
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: schema,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -771,6 +778,7 @@ describe('httpClient', () => {
         id: z.string(),
       })
       const apiContract = buildDeleteRoute({
+        visibility: 'public',
         successResponseBodySchema: schema,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -817,6 +825,7 @@ describe('httpClient', () => {
       })
 
       const apiContract = buildDeleteRoute({
+        visibility: 'public',
         successResponseBodySchema: schema,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -845,6 +854,7 @@ describe('httpClient', () => {
         id: z.string(),
       })
       const apiContract = buildDeleteRoute({
+        visibility: 'public',
         successResponseBodySchema: schema,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -870,6 +880,7 @@ describe('httpClient', () => {
 
     it('expected 204', async () => {
       const apiContract = buildDeleteRoute({
+        visibility: 'public',
         successResponseBodySchema: z.undefined(),
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -894,6 +905,7 @@ describe('httpClient', () => {
 
     it('unexpected 204, with validation', async () => {
       const apiContract = buildDeleteRoute({
+        visibility: 'public',
         isEmptyResponseExpected: false,
         successResponseBodySchema: z.number(),
         requestPathParamsSchema: z.undefined(),
@@ -930,6 +942,7 @@ describe('httpClient', () => {
       })
 
       const apiContract = buildDeleteRoute({
+        visibility: 'public',
         successResponseBodySchema: schema,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -962,6 +975,7 @@ describe('httpClient', () => {
         id: z.string(),
       })
       const apiContract = buildPayloadRoute({
+        visibility: 'public',
         successResponseBodySchema: schema,
         requestPathParamsSchema: z.undefined(),
         method: 'post',
@@ -1010,6 +1024,7 @@ describe('httpClient', () => {
       })
 
       const apiContract = buildPayloadRoute({
+        visibility: 'public',
         successResponseBodySchema: schema,
         requestPathParamsSchema: z.undefined(),
         method: 'post',
@@ -1040,6 +1055,7 @@ describe('httpClient', () => {
         id: z.string(),
       })
       const apiContract = buildPayloadRoute({
+        visibility: 'public',
         successResponseBodySchema: schema,
         requestPathParamsSchema: z.undefined(),
         method: 'post',
@@ -1071,6 +1087,7 @@ describe('httpClient', () => {
       })
 
       const apiContract = buildPayloadRoute({
+        visibility: 'public',
         successResponseBodySchema: schema,
         requestPathParamsSchema: z.undefined(),
         method: 'post',
@@ -2005,6 +2022,7 @@ describe('httpClient', () => {
   describe('sendByGetRouteWithStreamedResponse', () => {
     it('returns streamed response body', async () => {
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: undefined,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -2040,6 +2058,7 @@ describe('httpClient', () => {
         limit: z.number(),
       })
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: undefined,
         requestPathParamsSchema: pathParamsSchema,
         requestQuerySchema: queryParamsSchema,
@@ -2076,6 +2095,7 @@ describe('httpClient', () => {
     it('throws an error when throwOnError is true and request fails', async () => {
       expect.assertions(1)
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: undefined,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -2103,6 +2123,7 @@ describe('httpClient', () => {
 
     it('returns error when throwOnError is false and request fails', async () => {
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: undefined,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -2128,6 +2149,7 @@ describe('httpClient', () => {
 
     it('returns internal error when connection fails with throwOnError false', async () => {
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: undefined,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -2151,6 +2173,7 @@ describe('httpClient', () => {
 
     it('supports retry configuration', async () => {
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: undefined,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -2360,6 +2383,7 @@ describe('httpClient', () => {
   describe('sendByPayloadRouteWithStreamedResponse', () => {
     it('returns streamed response body', async () => {
       const apiContract = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         successResponseBodySchema: undefined,
         requestBodySchema: z.undefined(),
@@ -2392,6 +2416,7 @@ describe('httpClient', () => {
       const queryParamsSchema = z.object({ limit: z.number() })
       const requestBodySchema = z.object({ foo: z.string() })
       const apiContract = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         successResponseBodySchema: undefined,
         requestBodySchema,
@@ -2429,6 +2454,7 @@ describe('httpClient', () => {
       const responseData = JSON.stringify(mockProduct1)
 
       const putContract = buildPayloadRoute({
+        visibility: 'public',
         method: 'put',
         successResponseBodySchema: undefined,
         requestBodySchema: z.undefined(),
@@ -2446,6 +2472,7 @@ describe('httpClient', () => {
       expect(JSON.parse(await streamToString(putResult.result.body))).toEqual(mockProduct1)
 
       const patchContract = buildPayloadRoute({
+        visibility: 'public',
         method: 'patch',
         successResponseBodySchema: undefined,
         requestBodySchema: z.undefined(),
@@ -2466,6 +2493,7 @@ describe('httpClient', () => {
     it('throws an error when throwOnError is true and request fails', async () => {
       expect.assertions(1)
       const apiContract = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         successResponseBodySchema: undefined,
         requestBodySchema: z.undefined(),
@@ -2492,6 +2520,7 @@ describe('httpClient', () => {
 
     it('returns error when throwOnError is false and request fails', async () => {
       const apiContract = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         successResponseBodySchema: undefined,
         requestBodySchema: z.undefined(),
@@ -2516,6 +2545,7 @@ describe('httpClient', () => {
 
     it('returns internal error when connection fails with throwOnError false', async () => {
       const apiContract = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         successResponseBodySchema: undefined,
         requestBodySchema: z.undefined(),
@@ -2716,6 +2746,7 @@ describe('httpClient', () => {
     describe('route definition isEmptyResponseExpected', () => {
       it('sendByGetRoute with explicit isEmptyResponseExpected true', async () => {
         const apiContract = buildGetRoute({
+          visibility: 'public',
           successResponseBodySchema: z.number(),
           requestPathParamsSchema: z.undefined(),
           pathResolver: () => '/products/1',
@@ -2739,6 +2770,7 @@ describe('httpClient', () => {
 
       it('sendByGetRoute without isEmptyResponseExpected defaults to false', async () => {
         const apiContract = buildGetRoute({
+          visibility: 'public',
           successResponseBodySchema: UNKNOWN_RESPONSE_SCHEMA,
           requestPathParamsSchema: z.undefined(),
           pathResolver: () => '/products/1',
@@ -2761,6 +2793,7 @@ describe('httpClient', () => {
 
       it('sendByDeleteRoute with explicit isEmptyResponseExpected false', async () => {
         const apiContract = buildDeleteRoute({
+          visibility: 'public',
           successResponseBodySchema: UNKNOWN_RESPONSE_SCHEMA,
           requestPathParamsSchema: z.undefined(),
           pathResolver: () => '/products/1',
@@ -2784,6 +2817,7 @@ describe('httpClient', () => {
 
       it('sendByDeleteRoute without isEmptyResponseExpected defaults to true', async () => {
         const apiContract = buildDeleteRoute({
+          visibility: 'public',
           successResponseBodySchema: z.number(),
           requestPathParamsSchema: z.undefined(),
           pathResolver: () => '/products/1',
@@ -2806,6 +2840,7 @@ describe('httpClient', () => {
 
       it('sendByGetRoute with timeout', async () => {
         const apiContract = buildGetRoute({
+          visibility: 'public',
           successResponseBodySchema: UNKNOWN_RESPONSE_SCHEMA,
           requestPathParamsSchema: z.undefined(),
           pathResolver: () => '/products/1',
@@ -2829,6 +2864,7 @@ describe('httpClient', () => {
 
       it('sendByDeleteRoute with timeout', async () => {
         const apiContract = buildDeleteRoute({
+          visibility: 'public',
           successResponseBodySchema: z.number(),
           requestPathParamsSchema: z.undefined(),
           pathResolver: () => '/products/1',
@@ -2852,6 +2888,7 @@ describe('httpClient', () => {
 
       it('sendByGetRoute without validateResponse uses default', async () => {
         const apiContract = buildGetRoute({
+          visibility: 'public',
           successResponseBodySchema: UNKNOWN_RESPONSE_SCHEMA,
           requestPathParamsSchema: z.undefined(),
           pathResolver: () => '/products/1',
@@ -2873,6 +2910,7 @@ describe('httpClient', () => {
 
       it('sendByDeleteRoute without validateResponse uses default', async () => {
         const apiContract = buildDeleteRoute({
+          visibility: 'public',
           successResponseBodySchema: z.number(),
           requestPathParamsSchema: z.undefined(),
           pathResolver: () => '/products/1',
@@ -3089,6 +3127,7 @@ describe('httpClient', () => {
       })
 
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: schema,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -3122,6 +3161,7 @@ describe('httpClient', () => {
       })
 
       const apiContract = buildPayloadRoute({
+        visibility: 'public',
         successResponseBodySchema: responseSchema,
         requestPathParamsSchema: z.undefined(),
         method: 'post',
@@ -3159,6 +3199,7 @@ describe('httpClient', () => {
       })
 
       const apiContract = buildPayloadRoute({
+        visibility: 'public',
         successResponseBodySchema: responseSchema,
         requestPathParamsSchema: z.undefined(),
         method: 'put',
@@ -3195,6 +3236,7 @@ describe('httpClient', () => {
       })
 
       const apiContract = buildPayloadRoute({
+        visibility: 'public',
         successResponseBodySchema: responseSchema,
         requestPathParamsSchema: z.undefined(),
         method: 'patch',
@@ -3223,6 +3265,7 @@ describe('httpClient', () => {
 
     it('sends DELETE request via contract', async () => {
       const apiContract = buildDeleteRoute({
+        visibility: 'public',
         successResponseBodySchema: z.undefined(),
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -3254,6 +3297,7 @@ describe('httpClient', () => {
       })
 
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: UNKNOWN_RESPONSE_SCHEMA,
         requestPathParamsSchema: pathParamsSchema,
         requestQuerySchema: queryParamsSchema,
@@ -3282,6 +3326,7 @@ describe('httpClient', () => {
 
     it('works with path prefix', async () => {
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: UNKNOWN_RESPONSE_SCHEMA,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -3311,6 +3356,7 @@ describe('httpClient', () => {
       })
 
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: schema,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -3335,6 +3381,7 @@ describe('httpClient', () => {
   describe('sendByContractWithStreamedResponse', () => {
     it('returns streamed response body', async () => {
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: undefined,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -3369,6 +3416,7 @@ describe('httpClient', () => {
         limit: z.number(),
       })
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: undefined,
         requestPathParamsSchema: pathParamsSchema,
         requestQuerySchema: queryParamsSchema,
@@ -3404,6 +3452,7 @@ describe('httpClient', () => {
     it('throws an error when throwOnError is true and request fails', async () => {
       expect.assertions(1)
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: undefined,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -3431,6 +3480,7 @@ describe('httpClient', () => {
 
     it('returns error when throwOnError is false and request fails', async () => {
       const apiContract = buildGetRoute({
+        visibility: 'public',
         successResponseBodySchema: undefined,
         requestPathParamsSchema: z.undefined(),
         pathResolver: () => '/products/1',
@@ -3456,6 +3506,7 @@ describe('httpClient', () => {
 
     it('accepts contracts with responseSchemasByStatusCode', async () => {
       const apiContract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: undefined,
         requestPathParamsSchema: z.undefined(),
@@ -3489,6 +3540,7 @@ describe('httpClient', () => {
     it('routes payload contracts to streamed POST', async () => {
       const requestBody = { foo: 'bar' }
       const apiContract = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         successResponseBodySchema: undefined,
         requestBodySchema: z.object({ foo: z.string() }),
@@ -3519,6 +3571,7 @@ describe('httpClient', () => {
     it('throws on payload contract when throwOnError is true and request fails', async () => {
       expect.assertions(1)
       const apiContract = buildPayloadRoute({
+        visibility: 'public',
         method: 'post',
         successResponseBodySchema: undefined,
         requestBodySchema: z.undefined(),

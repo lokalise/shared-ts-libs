@@ -14,6 +14,7 @@ const SSE_SCHEMAS = {
 }
 
 export const getApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/',
@@ -21,6 +22,7 @@ export const getApiContract = defineApiContract({
 })
 
 export const getApiContractWithPathParams = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -29,6 +31,7 @@ export const getApiContractWithPathParams = defineApiContract({
 })
 
 export const getApiContractWithQueryParams = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   requestQuerySchema: QUERY_PARAMS_SCHEMA,
@@ -37,6 +40,7 @@ export const getApiContractWithQueryParams = defineApiContract({
 })
 
 export const getApiContractWithPathAndQueryParams = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -46,6 +50,7 @@ export const getApiContractWithPathAndQueryParams = defineApiContract({
 })
 
 export const postApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'post',
   requestBodySchema: REQUEST_BODY_SCHEMA,
@@ -54,6 +59,7 @@ export const postApiContract = defineApiContract({
 })
 
 export const postApiContractWithPathParams = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'post',
   requestBodySchema: REQUEST_BODY_SCHEMA,
@@ -63,6 +69,7 @@ export const postApiContractWithPathParams = defineApiContract({
 })
 
 export const sseGetApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/events/stream',
@@ -70,6 +77,7 @@ export const sseGetApiContract = defineApiContract({
 })
 
 export const sseGetApiContractWithPathParams = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -78,6 +86,7 @@ export const sseGetApiContractWithPathParams = defineApiContract({
 })
 
 export const sseGetApiContractWithQueryParams = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   requestQuerySchema: QUERY_PARAMS_SCHEMA,
@@ -86,6 +95,7 @@ export const sseGetApiContractWithQueryParams = defineApiContract({
 })
 
 export const dualModeApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'post',
   requestBodySchema: REQUEST_BODY_SCHEMA,
@@ -101,6 +111,7 @@ export const dualModeApiContract = defineApiContract({
 })
 
 export const dualModeApiContractWithPathParams = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'post',
   requestBodySchema: REQUEST_BODY_SCHEMA,
@@ -117,6 +128,7 @@ export const dualModeApiContractWithPathParams = defineApiContract({
 })
 
 export const noBodyApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'delete',
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -125,6 +137,7 @@ export const noBodyApiContract = defineApiContract({
 })
 
 export const getApiContractWith2xxRange = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/range',
@@ -132,6 +145,7 @@ export const getApiContractWith2xxRange = defineApiContract({
 })
 
 export const getApiContractWithDefault = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/default',
@@ -141,6 +155,7 @@ export const getApiContractWithDefault = defineApiContract({
 const CREATED_BODY_SCHEMA = z.object({ id: z.string(), created: z.literal(true) })
 
 export const getApiContractWithExactAndRange = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/exact-and-range',
@@ -151,6 +166,7 @@ export const getApiContractWithExactAndRange = defineApiContract({
 })
 
 export const deleteApiContractWithNoBodyResponse = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'delete',
   pathResolver: () => '/no-body',
@@ -158,6 +174,7 @@ export const deleteApiContractWithNoBodyResponse = defineApiContract({
 })
 
 export const patchApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'patch',
   requestBodySchema: REQUEST_BODY_SCHEMA,
@@ -166,6 +183,7 @@ export const patchApiContract = defineApiContract({
 })
 
 export const putApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'put',
   requestBodySchema: REQUEST_BODY_SCHEMA,
@@ -174,6 +192,7 @@ export const putApiContract = defineApiContract({
 })
 
 export const blobResponseApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/blob',
@@ -181,6 +200,7 @@ export const blobResponseApiContract = defineApiContract({
 })
 
 export const jsonContentApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/content-json',
@@ -188,6 +208,7 @@ export const jsonContentApiContract = defineApiContract({
 })
 
 export const blobContentApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/content-blob',
@@ -195,6 +216,7 @@ export const blobContentApiContract = defineApiContract({
 })
 
 export const sseContentApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/content-sse',
@@ -202,6 +224,7 @@ export const sseContentApiContract = defineApiContract({
 })
 
 export const dualContentApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'post',
   requestBodySchema: REQUEST_BODY_SCHEMA,
@@ -219,6 +242,7 @@ export const dualContentApiContract = defineApiContract({
 const PROBLEM_BODY_SCHEMA = z.object({ title: z.string(), detail: z.string() })
 
 export const multiJsonContentApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/content-multi-json',
@@ -233,6 +257,7 @@ export const multiJsonContentApiContract = defineApiContract({
 })
 
 export const jsonAndBlobContentApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/content-json-blob',
@@ -247,6 +272,7 @@ export const jsonAndBlobContentApiContract = defineApiContract({
 })
 
 export const noBodyContentApiContract = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'delete',
   requestPathParamsSchema: PATH_PARAMS_SCHEMA,
@@ -255,6 +281,7 @@ export const noBodyContentApiContract = defineApiContract({
 })
 
 export const getApiContractWith4xxRange = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/not-found',
@@ -262,6 +289,7 @@ export const getApiContractWith4xxRange = defineApiContract({
 })
 
 export const getApiContractWith5xxRange = defineApiContract({
+  visibility: 'public',
   summary: 'Test contract',
   method: 'get',
   pathResolver: () => '/server-error',

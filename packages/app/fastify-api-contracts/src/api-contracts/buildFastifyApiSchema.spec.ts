@@ -28,6 +28,7 @@ type ResponseSchemas = Record<
 describe('buildFastifyApiSchema — OpenAPI metadata', () => {
   it('maps summary, description and tags', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'List users',
       description: 'Returns all users',
@@ -44,6 +45,7 @@ describe('buildFastifyApiSchema — OpenAPI metadata', () => {
 
   it('omits description and tags the contract does not declare', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'List users',
       pathResolver: () => '/users',
@@ -71,6 +73,7 @@ describe('buildFastifyApiSchema — OpenAPI metadata', () => {
 
   it('stamps hide false for public contracts', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'List users',
       pathResolver: () => '/users',
@@ -79,6 +82,22 @@ describe('buildFastifyApiSchema — OpenAPI metadata', () => {
 
     const schema = buildFastifyApiSchema(contract)
     expect(schema.hide).toBe(false)
+  })
+
+  it('fails closed: hides contracts that lack visibility at runtime', () => {
+    // Simulates a contract built without visibility (plain-JS consumer, hand-written
+    // literal, or a contract package compiled against pre-visibility api-contracts)
+    const contract = defineApiContract({
+      visibility: 'public',
+      method: 'get',
+      summary: 'List users',
+      pathResolver: () => '/users',
+      responsesByStatusCode: { 200: userSchema },
+    })
+    delete (contract as { visibility?: unknown }).visibility
+
+    const schema = buildFastifyApiSchema(contract)
+    expect(schema.hide).toBe(true)
   })
 })
 
@@ -89,6 +108,7 @@ describe('buildFastifyApiSchema — OpenAPI metadata', () => {
 describe('buildFastifyApiSchema — request schemas', () => {
   it('maps path params, query and header schemas', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get a user',
       pathResolver: (p: { userId: string }) => `/users/${p.userId}`,
@@ -106,6 +126,7 @@ describe('buildFastifyApiSchema — request schemas', () => {
 
   it('maps the request body schema', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'post',
       summary: 'Create a user',
       pathResolver: () => '/users',
@@ -118,6 +139,7 @@ describe('buildFastifyApiSchema — request schemas', () => {
 
   it('omits the body schema for a ContractNoBody request body', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'post',
       summary: 'Ping',
       pathResolver: () => '/ping',
@@ -130,6 +152,7 @@ describe('buildFastifyApiSchema — request schemas', () => {
 
   it('omits request schemas the contract does not declare', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'List users',
       pathResolver: () => '/users',
@@ -154,6 +177,7 @@ describe('buildFastifyApiSchema — response schemas', () => {
     const rangeSchema = z.object({ error: z.string() })
     const defaultSchema = z.object({ fallback: z.string() })
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get data',
       pathResolver: () => '/data',
@@ -167,6 +191,7 @@ describe('buildFastifyApiSchema — response schemas', () => {
 
   it('passes a bare JSON schema through unchanged', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'List users',
       pathResolver: () => '/users',
@@ -183,6 +208,7 @@ describe('buildFastifyApiSchema — response schemas', () => {
 
   it('maps a no-body status code to a null schema', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'delete',
       summary: 'Delete a user',
       pathResolver: () => '/users',
@@ -195,6 +221,7 @@ describe('buildFastifyApiSchema — response schemas', () => {
 
   it('forwards a no-body description into the null schema', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'delete',
       summary: 'Delete a user',
       pathResolver: () => '/users',
@@ -210,6 +237,7 @@ describe('buildFastifyApiSchema — response schemas', () => {
 
   it('describes an SSE status code as a union of event envelopes', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Stream updates',
       pathResolver: () => '/stream',
@@ -242,6 +270,7 @@ describe('buildFastifyApiSchema — response schemas', () => {
 
   it('describes a single-event sseBody as its event envelope directly (no union)', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Stream ticks',
       pathResolver: () => '/ticks',
@@ -265,6 +294,7 @@ describe('buildFastifyApiSchema — response schemas', () => {
 
   it('throws for an sseBody() without any event schemas', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Stream nothing',
       pathResolver: () => '/stream',
@@ -280,6 +310,7 @@ describe('buildFastifyApiSchema — response schemas', () => {
 
   it('describes a blob status code with its media type and forwards the description', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Download report',
       pathResolver: () => '/report.pdf',
@@ -298,6 +329,7 @@ describe('buildFastifyApiSchema — response schemas', () => {
 
   it('keeps each media type of a mixed content map with the JSON schema intact', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Mixed SSE/JSON endpoint',
       pathResolver: () => '/mixed',

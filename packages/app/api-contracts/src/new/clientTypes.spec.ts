@@ -22,6 +22,7 @@ describe('clientTypes', () => {
   describe('ClientRequestParams', () => {
     it('has no required fields for a minimal contract', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/ping',
@@ -39,6 +40,7 @@ describe('clientTypes', () => {
 
     it('requires pathParams when requestPathParamsSchema is defined', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         requestPathParamsSchema: z.object({ id: z.string() }),
@@ -57,6 +59,7 @@ describe('clientTypes', () => {
 
     it('requires body when requestBodySchema is defined', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'post',
         pathResolver: () => '/products',
@@ -75,6 +78,7 @@ describe('clientTypes', () => {
 
     it('requires queryParams when requestQuerySchema is defined', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products',
@@ -93,6 +97,7 @@ describe('clientTypes', () => {
 
     it('requires headers when requestHeaderSchema is defined, accepting plain object or function', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products',
@@ -111,6 +116,7 @@ describe('clientTypes', () => {
 
     it('pathPrefix is always optional', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products',
@@ -123,6 +129,7 @@ describe('clientTypes', () => {
 
     it('forbids streaming field for non-SSE contracts', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products',
@@ -135,6 +142,7 @@ describe('clientTypes', () => {
 
     it('forbids streaming field for SSE-only contracts', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
@@ -151,6 +159,7 @@ describe('clientTypes', () => {
 
     it('requires streaming (= TIsStreaming) for dual-mode content-map contracts', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/feed',
@@ -173,6 +182,7 @@ describe('clientTypes', () => {
   describe('InferSseClientResponse', () => {
     it('maps success code to SSE body and error code to as-is body', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
@@ -201,6 +211,7 @@ describe('clientTypes', () => {
 
     it('extracts only the SSE body for a dual-mode success code', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
@@ -228,6 +239,7 @@ describe('clientTypes', () => {
 
     it('returns a single entry for an SSE-only contract', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
@@ -252,6 +264,7 @@ describe('clientTypes', () => {
 
     it('includes typed headers when responseHeaderSchema is defined', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
@@ -279,6 +292,7 @@ describe('clientTypes', () => {
   describe('InferNonSseClientResponse', () => {
     it('maps success code to non-SSE body and error code to as-is body', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
@@ -296,6 +310,7 @@ describe('clientTypes', () => {
 
     it('maps noBodyResponse() success to null body', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'delete',
         pathResolver: () => '/products/1',
@@ -311,6 +326,7 @@ describe('clientTypes', () => {
 
     it('maps blob success response to a readable stream body', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/photo.png',
@@ -326,6 +342,7 @@ describe('clientTypes', () => {
 
     it('maps a dual-mode success code to the non-SSE body only', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
@@ -348,6 +365,7 @@ describe('clientTypes', () => {
 
     it('includes typed headers when responseHeaderSchema is defined', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
@@ -366,6 +384,7 @@ describe('clientTypes', () => {
 
     it('allows non-string transformed header types without collapsing to never', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
@@ -384,6 +403,7 @@ describe('clientTypes', () => {
 
     it('exact code takes precedence over 2xx range: narrowing by exact statusCode resolves only the exact body', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -411,6 +431,7 @@ describe('clientTypes', () => {
 
     it('maps 2xx range key to SuccessfulHttpStatusCode with non-SSE body', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -426,6 +447,7 @@ describe('clientTypes', () => {
 
     it('maps 4xx range key to 4xx status codes with as-is body', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -447,6 +469,7 @@ describe('clientTypes', () => {
 
     it('maps default key to split success/non-success statusCode entries', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -469,6 +492,7 @@ describe('clientTypes', () => {
 
     it('range key takes precedence over default: range codes excluded from default statusCode', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -488,6 +512,7 @@ describe('clientTypes', () => {
 
     it('exact code takes precedence over both range and default', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -518,6 +543,7 @@ describe('clientTypes', () => {
   describe('InferNonSseClientResponse with range keys and captureAsError', () => {
     it('2xx range response ends up in result type (extends SuccessfulHttpStatusCode)', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -531,6 +557,7 @@ describe('clientTypes', () => {
 
     it('4xx range response ends up in error type (not SuccessfulHttpStatusCode)', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/test',
@@ -545,6 +572,7 @@ describe('clientTypes', () => {
   describe('InferSseClientResponse with range keys', () => {
     it('maps 2xx SSE range to AsyncIterable body for success codes', () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',

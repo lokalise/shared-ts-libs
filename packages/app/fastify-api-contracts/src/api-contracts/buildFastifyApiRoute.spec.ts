@@ -33,6 +33,7 @@ import type { SSEStreamMessage } from './sseTypes.ts'
 const userSchema = z.object({ id: z.string(), name: z.string() })
 
 const getUserContract = defineApiContract({
+  visibility: 'public',
   method: 'get',
   summary: 'Get a user',
   pathResolver: (p: { userId: string }) => `/users/${p.userId}`,
@@ -41,6 +42,7 @@ const getUserContract = defineApiContract({
 })
 
 const createUserContract = defineApiContract({
+  visibility: 'public',
   method: 'post',
   summary: 'Create a user',
   pathResolver: () => '/users',
@@ -49,6 +51,7 @@ const createUserContract = defineApiContract({
 })
 
 const deleteUserContract = defineApiContract({
+  visibility: 'public',
   method: 'delete',
   summary: 'Delete a user',
   pathResolver: (p: { userId: string }) => `/users/${p.userId}`,
@@ -62,6 +65,7 @@ const sseEventsSchema = {
 }
 
 const sseOnlyContract = defineApiContract({
+  visibility: 'public',
   method: 'get',
   summary: 'Stream updates',
   pathResolver: () => '/stream',
@@ -69,6 +73,7 @@ const sseOnlyContract = defineApiContract({
 })
 
 const dualModeContract = defineApiContract({
+  visibility: 'public',
   method: 'post',
   summary: 'Chat',
   pathResolver: () => '/chat',
@@ -274,6 +279,7 @@ describe('buildFastifyApiRoute — no path params', () => {
 describe('SSE capability detection', () => {
   it('marks the route SSE-capable for an sseBody at any status code, not just success', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Stream errors',
       pathResolver: () => '/stream',
@@ -294,6 +300,7 @@ describe('SSE capability detection', () => {
 
   it('does not mark the route SSE-capable when no SSE response is present', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get a user',
       pathResolver: () => '/users',
@@ -352,6 +359,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('returns 500 when the handler body fails contract validation', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get profile',
       pathResolver: () => '/profile',
@@ -419,6 +427,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('resolves a handler status against a 4xx range entry and serializes with its schema', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get data',
       pathResolver: () => '/data',
@@ -440,6 +449,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it("resolves a handler status against a 'default' entry and serializes with its schema", async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get data',
       pathResolver: () => '/data',
@@ -460,6 +470,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('prefers an exact status entry over a covering range entry', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get data',
       pathResolver: () => '/data',
@@ -535,6 +546,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('returns 500 when a status declares no content-type and the handler returns a body', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Empty content map',
       pathResolver: () => '/empty',
@@ -554,6 +566,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('sends the response when the reply headers match the responseHeaderSchema', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get a user',
       pathResolver: () => '/users',
@@ -576,6 +589,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('returns 500 when the reply headers fail the responseHeaderSchema', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get a user',
       pathResolver: () => '/users',
@@ -595,6 +609,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('returns 500 instead of starting an SSE stream when the reply headers fail the responseHeaderSchema', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Stream updates',
       pathResolver: () => '/stream',
@@ -621,6 +636,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('streams when the reply headers satisfy the responseHeaderSchema at SSE start', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Stream updates',
       pathResolver: () => '/stream',
@@ -670,6 +686,7 @@ describe('buildFastifyApiRoute — runtime', () => {
     app.setSerializerCompiler(serializerCompiler)
 
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get a user',
       pathResolver: () => '/users',
@@ -723,6 +740,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('supports multiple status codes from a single handler', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get a user',
       pathResolver: (p: { id: string }) => `/users/${p.id}`,
@@ -753,6 +771,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('sends a string body with the contract-declared blob content-type', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Export CSV',
       pathResolver: () => '/export.csv',
@@ -770,6 +789,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('sends the explicit contentType returned for a mixed content-map response', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Export in a chosen format',
       pathResolver: (p: { format: string }) => `/export/${p.format}`,
@@ -806,6 +826,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('disambiguates two JSON variants at one status by the explicit contentType', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get a report',
       pathResolver: (p: { variant: string }) => `/report/${p.variant}`,
@@ -843,6 +864,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('streams a text/html blob response via a Readable', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Render page',
       pathResolver: () => '/page',
@@ -865,6 +887,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('sends a Buffer body with the contract-declared blob content-type', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Download report',
       pathResolver: () => '/report.pdf',
@@ -887,6 +910,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('pipes a Readable stream body with the contract-declared blob content-type', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Download report',
       pathResolver: () => '/report.pdf',
@@ -970,6 +994,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('validates a streamed body against the SSE representation the result selects', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Stream ticks',
       pathResolver: () => '/ticks',
@@ -1004,6 +1029,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('streams via sse.start() with an explicit representation selection', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Stream ticks',
       pathResolver: () => '/ticks',
@@ -1064,6 +1090,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('shares a 404 then streams via async iterable for an SSE-capable contract', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Stream item updates',
       pathResolver: (p: { id: string }) => `/items/${p.id}`,
@@ -1105,6 +1132,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('returns an early { status, body } HTTP response instead of streaming', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Stream updates',
       pathResolver: () => '/stream',
@@ -1194,6 +1222,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('does not offer content-types declared only on error responses as negotiation candidates', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Stream updates',
       pathResolver: () => '/stream',
@@ -1272,6 +1301,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('shares logic across both representations before branching', async () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get an item as JSON or a stream',
       pathResolver: (p: { id: string }) => `/items/${p.id}`,
@@ -1332,6 +1362,7 @@ describe('buildFastifyApiRoute — runtime', () => {
 describe('InferApiHandlerRequest', () => {
   it('infers path params, query and headers for a GET contract', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get a user',
       requestPathParamsSchema: z.object({ userId: z.string() }),
@@ -1354,6 +1385,7 @@ describe('InferApiHandlerRequest', () => {
 
   it('infers an undefined body for a ContractNoBody payload contract', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'post',
       summary: 'Ping',
       requestBodySchema: ContractNoBody,
@@ -1375,6 +1407,7 @@ describe('InferApiHandlerRequest', () => {
 describe('InferApiHandlerResult', () => {
   it('builds a discriminated union of { status, body } pairs over JSON responses', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'List users',
       pathResolver: () => '/users',
@@ -1392,6 +1425,7 @@ describe('InferApiHandlerResult', () => {
 
   it('expands a range status key to its concrete statuses, minus the exactly-declared ones', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get data',
       pathResolver: () => '/data',
@@ -1413,6 +1447,7 @@ describe('InferApiHandlerResult', () => {
 
   it("expands a 'default' status key to the statuses no other key covers", () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get data',
       pathResolver: () => '/data',
@@ -1446,6 +1481,7 @@ describe('InferApiHandlerResult', () => {
 
   it('requires a contentType discriminating the body when a status declares several media types', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Export in a chosen format',
       pathResolver: () => '/export',
@@ -1476,6 +1512,7 @@ describe('InferApiHandlerResult', () => {
 
   it('keeps contentType optional for a single-media-type content map', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Export CSV',
       pathResolver: () => '/export.csv',
@@ -1497,6 +1534,7 @@ describe('InferApiHandlerResult', () => {
 
   it('types the body as the schema input — defaults/transforms are applied by the serializer', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Get settings',
       pathResolver: () => '/settings',
@@ -1558,6 +1596,7 @@ describe('InferApiHandler', () => {
 
   it('requires a { statusCode, contentType } selection and narrows send when several SSE bodies are declared', () => {
     const multiSseContract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Stream ticks',
       pathResolver: () => '/ticks',
@@ -1588,6 +1627,7 @@ describe('InferApiHandler', () => {
 
   it('selects a wildcard SSE representation by a concrete status within its range', () => {
     const wildcardSseContract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Stream ticks',
       pathResolver: () => '/ticks',
@@ -1626,6 +1666,7 @@ describe('InferApiHandler', () => {
 
   it('types expectedContentType as the union of the success-declared content-types', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'get',
       summary: 'Export data',
       pathResolver: () => '/export',
@@ -1718,6 +1759,7 @@ describe('buildFastifyApiRoute typing', () => {
 
   it('infers request typing inside the handler', () => {
     const contract = defineApiContract({
+      visibility: 'public',
       method: 'post',
       summary: 'Create an org user',
       requestBodySchema: z.object({ name: z.string() }),

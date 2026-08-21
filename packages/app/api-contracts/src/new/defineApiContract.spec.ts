@@ -17,6 +17,7 @@ describe('defineApiContract', () => {
     it('preserves responsesByStatusCode for success schema inference', () => {
       const schema = z.object({ name: z.string() })
       const route = defineApiContract({
+        visibility: 'internal',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/users',
@@ -25,34 +26,41 @@ describe('defineApiContract', () => {
 
       type Result = InferJsonSuccessResponses<typeof route.responsesByStatusCode>
       expectTypeOf<Result>().toEqualTypeOf<typeof schema>()
-    })
-
-    it('accepts and carries visibility', () => {
-      const route = defineApiContract({
-        summary: 'Internal contract',
-        method: 'get',
-        pathResolver: () => '/users',
-        responsesByStatusCode: { 200: z.object({}) },
-        visibility: 'internal',
-      })
-
       expect(route.visibility).toBe('internal')
     })
 
-    it('defaults visibility to public when omitted', () => {
+    it('widens visibility so it can be compared against both members', () => {
       const route = defineApiContract({
-        summary: 'Public contract',
+        visibility: 'public',
+        summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/users',
         responsesByStatusCode: { 200: z.object({}) },
       })
 
       expectTypeOf(route.visibility).toEqualTypeOf<RouteVisibility>()
-      expect(route.visibility).toBe('public')
+      // Must compile: with a literal 'public' type this comparison is a TS2367 error
+      expect(route.visibility === 'internal').toBe(false)
+    })
+
+    it('returns a shallow copy instead of the caller-owned config object', () => {
+      const config = {
+        visibility: 'public',
+        summary: 'Original',
+        method: 'get',
+        pathResolver: () => '/users',
+        responsesByStatusCode: { 200: z.object({}) },
+      } as const
+
+      const route = defineApiContract(config)
+      ;(config as { summary: string }).summary = 'Mutated'
+
+      expect(route.summary).toBe('Original')
     })
 
     it('infers pathResolver param type from requestPathParamsSchema', () => {
       defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         requestPathParamsSchema: z.object({ userId: z.string(), orgId: z.string() }),
@@ -67,6 +75,7 @@ describe('defineApiContract', () => {
 
     it('accepts pathResolver without params when no requestPathParamsSchema', () => {
       const route = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/users',
@@ -78,6 +87,7 @@ describe('defineApiContract', () => {
 
     it('types pathResolver param as undefined when no requestPathParamsSchema', () => {
       defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: (params) => {
@@ -90,6 +100,7 @@ describe('defineApiContract', () => {
 
     it('rejects pathResolver that declares params when no requestPathParamsSchema', () => {
       defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         // @ts-expect-error pathResolver cannot take params without requestPathParamsSchema
@@ -100,6 +111,7 @@ describe('defineApiContract', () => {
 
     it('preserves method literal type', () => {
       const route = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'post',
         pathResolver: () => '/users',
@@ -113,6 +125,7 @@ describe('defineApiContract', () => {
     it('rejects requestBodySchema on GET contracts', () => {
       // @ts-expect-error GET must not accept a request body
       defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/users',
@@ -124,6 +137,7 @@ describe('defineApiContract', () => {
     it('rejects requestBodySchema on DELETE contracts', () => {
       // @ts-expect-error DELETE must not accept a request body
       defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'delete',
         pathResolver: () => '/users/1',
@@ -135,6 +149,7 @@ describe('defineApiContract', () => {
     it('requires requestBodySchema on POST contracts', () => {
       // @ts-expect-error POST requires requestBodySchema
       defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'post',
         pathResolver: () => '/users',
@@ -144,6 +159,7 @@ describe('defineApiContract', () => {
 
     it('accepts ContractNoBody as requestBodySchema on POST contracts', () => {
       const route = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'post',
         pathResolver: () => '/users',
@@ -159,6 +175,7 @@ describe('defineApiContract', () => {
 describe('mapApiContractToPath', () => {
   it('returns static path when no requestPathParamsSchema', () => {
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'get',
       pathResolver: () => '/users',
@@ -170,6 +187,7 @@ describe('mapApiContractToPath', () => {
 
   it('replaces path params with :param placeholders', () => {
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'get',
       requestPathParamsSchema: z.object({ userId: z.string() }),
@@ -182,6 +200,7 @@ describe('mapApiContractToPath', () => {
 
   it('replaces multiple path params', () => {
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'get',
       requestPathParamsSchema: z.object({ orgId: z.string(), userId: z.string() }),
@@ -196,6 +215,7 @@ describe('mapApiContractToPath', () => {
 describe('describeApiContract', () => {
   it('returns uppercased method and path', () => {
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'get',
       requestPathParamsSchema: z.object({ userId: z.string() }),
@@ -208,6 +228,7 @@ describe('describeApiContract', () => {
 
   it('works for POST routes', () => {
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'post',
       pathResolver: () => '/users',
@@ -223,6 +244,7 @@ describe('getSseSchemaByEventName with content-map entries', () => {
   it('extracts the SSE schema from a content-map sseBody descriptor', () => {
     const schemaByEventName = { tick: z.object({ n: z.number() }) }
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'get',
       pathResolver: () => '/stream',
@@ -241,6 +263,7 @@ describe('getSseSchemaByEventName with content-map entries', () => {
 
   it('hasAnySuccessSseResponse is true for a content-map sseBody descriptor', () => {
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'get',
       pathResolver: () => '/stream',
@@ -256,6 +279,7 @@ describe('getSseSchemaByEventName with content-map entries', () => {
 describe('hasAnySuccessSseResponse', () => {
   it('returns true for an sseBody at a success code', () => {
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'get',
       pathResolver: () => '/stream',
@@ -271,6 +295,7 @@ describe('hasAnySuccessSseResponse', () => {
 
   it('returns false when sseBody is only at an error status code', () => {
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'get',
       pathResolver: () => '/stream',
@@ -285,6 +310,7 @@ describe('hasAnySuccessSseResponse', () => {
 
   it('returns false when no SSE response is present', () => {
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'get',
       pathResolver: () => '/users',
@@ -296,6 +322,7 @@ describe('hasAnySuccessSseResponse', () => {
 
   it('returns true for sseBody under the default key', () => {
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'get',
       pathResolver: () => '/stream',
@@ -311,6 +338,7 @@ describe('hasAnySuccessSseResponse', () => {
 
   it('returns false for non-SSE response under the default key', () => {
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'get',
       pathResolver: () => '/users',
@@ -324,6 +352,7 @@ describe('hasAnySuccessSseResponse', () => {
 describe('getSseSchemaByEventName', () => {
   it('returns null when no SSE schemas are present', () => {
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'get',
       pathResolver: () => '/users',
@@ -335,6 +364,7 @@ describe('getSseSchemaByEventName', () => {
 
   it('returns null when responsesByStatusCode is not defined', () => {
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'get',
       pathResolver: () => '/users',
@@ -348,6 +378,7 @@ describe('getSseSchemaByEventName', () => {
     const chunkSchema = z.object({ delta: z.string() })
     const doneSchema = z.object({ finish_reason: z.string() })
     const route = defineApiContract({
+      visibility: 'public',
       summary: 'Test contract',
       method: 'get',
       pathResolver: () => '/stream',

@@ -43,6 +43,8 @@ export type SSEContractDefinition<
    */
   pathResolver: Params extends z.ZodTypeAny ? RoutePathResolver<z.infer<Params>> : () => string
   requestPathParamsSchema?: Params
+  // Who the route is intended for
+  visibility: RouteVisibility
   requestQuerySchema?: Query
   requestHeaderSchema?: RequestHeaders
   requestBodySchema: Body
@@ -66,8 +68,6 @@ export type SSEContractDefinition<
   description?: string
   summary?: string
   tags?: readonly string[]
-  // 'internal' excludes the route from generated OpenAPI docs; builders default it to 'public'
-  visibility: RouteVisibility
 }
 
 /**
@@ -79,6 +79,7 @@ export type AnySSEContractDefinition = {
   // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with all param types
   pathResolver: RoutePathResolver<any>
   requestPathParamsSchema?: z.ZodTypeAny
+  visibility: RouteVisibility
   requestQuerySchema?: z.ZodTypeAny
   requestHeaderSchema?: z.ZodTypeAny
   requestBodySchema: z.ZodTypeAny | undefined
@@ -89,6 +90,4 @@ export type AnySSEContractDefinition = {
   description?: string
   summary?: string
   tags?: readonly string[]
-  // 'internal' excludes the route from generated OpenAPI docs; builders default it to 'public'
-  visibility: RouteVisibility
 }

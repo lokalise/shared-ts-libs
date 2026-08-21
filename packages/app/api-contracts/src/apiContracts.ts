@@ -21,7 +21,7 @@ export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
 export interface CommonRouteDefinitionMetadata extends Record<string, unknown> {}
 
 /**
- * Who a route is intended for. Absent means 'public'.
+ * Who a route is intended for.
  *
  * 'internal' marks routes (e.g. backend-for-frontend endpoints) that must not be part of
  * the published API surface: OpenAPI generators exclude them from the generated document.
@@ -46,7 +46,6 @@ export type CommonRouteDefinition<
   // Whether an empty response body is expected; builders default it to false (true for DELETE routes)
   isEmptyResponseExpected: IsEmptyResponseExpected
   successResponseBodySchema: ResponseBodySchema
-  requestPathParamsSchema?: PathParamsSchema
   requestQuerySchema?: RequestQuerySchema
   /**
    * Schema for validating request headers.
@@ -79,6 +78,9 @@ export type CommonRouteDefinition<
    */
   responseHeaderSchema?: ResponseHeaderSchema
   pathResolver: RoutePathResolver<InferSchemaOutput<PathParamsSchema>>
+  requestPathParamsSchema?: PathParamsSchema
+  // Who a route is intended for
+  visibility: RouteVisibility
   responseSchemasByStatusCode?: ResponseSchemasByStatusCode
   metadata?: CommonRouteDefinitionMetadata
 
@@ -92,8 +94,6 @@ export type CommonRouteDefinition<
   summary?: string
   // Used for organizing endpoints into groups
   tags?: readonly string[]
-  // 'internal' excludes the route from generated OpenAPI docs; builders default it to 'public'
-  visibility: RouteVisibility
   /*
   The end of primarily OpenAPI fields
    */
@@ -179,6 +179,7 @@ export type DeleteRouteDefinition<
  * ```typescript
  * // Before (deprecated):
  * const route = buildPayloadRoute({
+ *   visibility: 'public',
  *   method: 'post',
  *   requestBodySchema: bodySchema,
  *   successResponseBodySchema: responseSchema,
@@ -187,6 +188,7 @@ export type DeleteRouteDefinition<
  *
  * // After (recommended):
  * const route = defineApiContract({
+ *   visibility: 'public',
  *   method: 'post',
  *   requestBodySchema: bodySchema,
  *   pathResolver: () => '/api/users',
@@ -219,7 +221,7 @@ export function buildPayloadRoute<
       IsEmptyResponseExpected,
       ResponseSchemasByStatusCode
     >,
-    'visibility' | 'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
+    'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
   >,
 ): PayloadRouteDefinition<
   RequestBodySchema,
@@ -238,10 +240,11 @@ export function buildPayloadRoute<
       params.isNonJSONResponseExpected ?? (false as IsNonJSONResponseExpected),
     method: params.method,
     pathResolver: params.pathResolver,
+    requestPathParamsSchema: params.requestPathParamsSchema,
+    visibility: params.visibility,
     requestBodySchema: params.requestBodySchema,
     requestHeaderSchema: params.requestHeaderSchema,
     responseHeaderSchema: params.responseHeaderSchema,
-    requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
     successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
@@ -249,7 +252,6 @@ export function buildPayloadRoute<
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
     metadata: params.metadata,
     tags: params.tags,
-    visibility: params.visibility ?? 'public',
   }
 }
 
@@ -259,12 +261,14 @@ export function buildPayloadRoute<
  * ```typescript
  * // Before (deprecated):
  * const route = buildGetRoute({
+ *   visibility: 'public',
  *   successResponseBodySchema: responseSchema,
  *   pathResolver: () => '/api/users',
  * })
  *
  * // After (recommended):
  * const route = defineApiContract({
+ *   visibility: 'public',
  *   method: 'get',
  *   pathResolver: () => '/api/users',
  *   responsesByStatusCode: { 200: responseSchema },
@@ -297,7 +301,7 @@ export function buildGetRoute<
       >,
       'method'
     >,
-    'visibility' | 'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
+    'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
   >,
 ): GetRouteDefinition<
   SuccessResponseBodySchema,
@@ -315,9 +319,10 @@ export function buildGetRoute<
       params.isNonJSONResponseExpected ?? (false as IsNonJSONResponseExpected),
     method: 'get',
     pathResolver: params.pathResolver,
+    requestPathParamsSchema: params.requestPathParamsSchema,
+    visibility: params.visibility,
     requestHeaderSchema: params.requestHeaderSchema,
     responseHeaderSchema: params.responseHeaderSchema,
-    requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
     successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
@@ -325,7 +330,6 @@ export function buildGetRoute<
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
     metadata: params.metadata,
     tags: params.tags,
-    visibility: params.visibility ?? 'public',
   }
 }
 
@@ -335,12 +339,14 @@ export function buildGetRoute<
  * ```typescript
  * // Before (deprecated):
  * const route = buildDeleteRoute({
+ *   visibility: 'public',
  *   requestPathParamsSchema: z.object({ userId: z.string() }),
  *   pathResolver: (params) => `/api/users/${params.userId}`,
  * })
  *
  * // After (recommended):
  * const route = defineApiContract({
+ *   visibility: 'public',
  *   method: 'delete',
  *   requestPathParamsSchema: z.object({ userId: z.string() }),
  *   pathResolver: ({ userId }) => `/api/users/${userId}`,
@@ -374,7 +380,7 @@ export function buildDeleteRoute<
       >,
       'method'
     >,
-    'visibility' | 'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
+    'isEmptyResponseExpected' | 'isNonJSONResponseExpected'
   >,
 ): DeleteRouteDefinition<
   SuccessResponseBodySchema,
@@ -392,9 +398,10 @@ export function buildDeleteRoute<
       params.isNonJSONResponseExpected ?? (false as IsNonJSONResponseExpected),
     method: 'delete',
     pathResolver: params.pathResolver,
+    requestPathParamsSchema: params.requestPathParamsSchema,
+    visibility: params.visibility,
     requestHeaderSchema: params.requestHeaderSchema,
     responseHeaderSchema: params.responseHeaderSchema,
-    requestPathParamsSchema: params.requestPathParamsSchema,
     requestQuerySchema: params.requestQuerySchema,
     successResponseBodySchema: params.successResponseBodySchema,
     description: params.description,
@@ -402,7 +409,6 @@ export function buildDeleteRoute<
     responseSchemasByStatusCode: params.responseSchemasByStatusCode,
     metadata: params.metadata,
     tags: params.tags,
-    visibility: params.visibility ?? 'public',
   }
 }
 

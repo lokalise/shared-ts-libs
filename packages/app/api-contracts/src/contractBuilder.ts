@@ -32,6 +32,7 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
  * ```typescript
  * // Before (deprecated):
  * const contract = buildContract({
+ *   visibility: 'public',
  *   method: 'post',
  *   requestBodySchema: bodySchema,
  *   successResponseBodySchema: responseSchema,
@@ -40,6 +41,7 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
  *
  * // After (recommended):
  * const contract = defineApiContract({
+ *   visibility: 'public',
  *   method: 'post',
  *   requestBodySchema: bodySchema,
  *   pathResolver: () => '/api/resource',
@@ -69,6 +71,7 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
  * ```typescript
  * // REST GET route
  * const getUsers = buildContract({
+ *   visibility: 'public',
  *   method: 'get',
  *   successResponseBodySchema: z.array(userSchema),
  *   pathResolver: () => '/api/users',
@@ -76,6 +79,7 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
  *
  * // REST POST route
  * const createUser = buildContract({
+ *   visibility: 'public',
  *   method: 'post',
  *   requestBodySchema: createUserSchema,
  *   successResponseBodySchema: userSchema,
@@ -84,6 +88,7 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
  *
  * // REST DELETE route
  * const deleteUser = buildContract({
+ *   visibility: 'public',
  *   method: 'delete',
  *   pathResolver: (params) => `/api/users/${params.userId}`,
  *   requestPathParamsSchema: z.object({ userId: z.string() }),
@@ -91,6 +96,7 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
  *
  * // SSE-only streaming endpoint
  * const notifications = buildContract({
+ *   visibility: 'public',
  *   method: 'get',
  *   pathResolver: () => '/api/notifications/stream',
  *   requestPathParamsSchema: z.object({}),
@@ -103,6 +109,7 @@ import type { SSEEventSchemas } from './sse/sseTypes.ts'
  *
  * // Dual-mode endpoint (supports both JSON and SSE)
  * const chatCompletion = buildContract({
+ *   visibility: 'public',
  *   method: 'post',
  *   pathResolver: () => '/api/chat/completions',
  *   requestPathParamsSchema: z.object({}),

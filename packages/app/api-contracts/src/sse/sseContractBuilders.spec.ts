@@ -5,6 +5,7 @@ import { buildSseContract } from './sseContractBuilders.ts'
 describe('contractBuilders', () => {
   describe('buildSseContract (SSE with body)', () => {
     const baseConfig = {
+      visibility: 'public' as const,
       method: 'post' as const,
       pathResolver: () => '/api/test',
       requestBodySchema: z.object({ message: z.string() }),
@@ -16,6 +17,7 @@ describe('contractBuilders', () => {
     it('requires serverSentEventSchemas - missing serverSentEventSchemas produces clear error', () => {
       // @ts-expect-error - serverSentEventSchemas is required for SSE contracts
       const _postChatStreamByIdContractMalformed = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/',
         requestPathParamsSchema: z.object({
@@ -55,6 +57,7 @@ describe('contractBuilders', () => {
 
     it('allows omitting requestPathParamsSchema, requestQuerySchema, requestHeaderSchema', () => {
       const route = buildSseContract({
+        visibility: 'public',
         method: 'post' as const,
         pathResolver: () => '/api/test',
         requestBodySchema: z.object({ message: z.string() }),
@@ -74,6 +77,7 @@ describe('contractBuilders', () => {
   describe('buildSseContract (SSE GET)', () => {
     it('creates GET SSE route', () => {
       const route = buildSseContract({
+        visibility: 'internal',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -88,11 +92,12 @@ describe('contractBuilders', () => {
       expect(route.pathResolver({})).toBe('/api/stream')
       expect(route.isSSE).toBe(true)
       expect(route.requestBodySchema).toBeUndefined()
-      expect(route.visibility).toBe('public')
+      expect(route.visibility).toBe('internal')
     })
 
     it('includes responseBodySchemasByStatusCode for SSE GET', () => {
       const route = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
         requestPathParamsSchema: z.object({ channelId: z.string() }),
@@ -112,27 +117,12 @@ describe('contractBuilders', () => {
       expect(route.responseBodySchemasByStatusCode?.[401]).toBeDefined()
       expect(route.responseBodySchemasByStatusCode?.[404]).toBeDefined()
     })
-
-    it('reflects explicit visibility value', () => {
-      const route = buildSseContract({
-        method: 'get',
-        pathResolver: () => '/api/stream',
-        requestPathParamsSchema: z.object({}),
-        requestQuerySchema: z.object({}),
-        requestHeaderSchema: z.object({}),
-        serverSentEventSchemas: {
-          message: z.object({ text: z.string() }),
-        },
-        visibility: 'internal',
-      })
-
-      expect(route.visibility).toBe('internal')
-    })
   })
 
   describe('buildSseContract (SSE GET without optional schemas)', () => {
     it('allows omitting requestPathParamsSchema, requestQuerySchema, requestHeaderSchema for GET', () => {
       const route = buildSseContract({
+        visibility: 'public',
         method: 'get' as const,
         pathResolver: () => '/api/stream',
         serverSentEventSchemas: {
@@ -151,6 +141,7 @@ describe('contractBuilders', () => {
   describe('buildSseContract (SSE POST with responseBodySchemasByStatusCode)', () => {
     it('includes responseBodySchemasByStatusCode for SSE POST', () => {
       const route = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/process/stream',
         requestPathParamsSchema: z.object({}),
@@ -178,6 +169,7 @@ describe('contractBuilders', () => {
 
   describe('buildSseContract (Dual-mode with body)', () => {
     const baseConfig = {
+      visibility: 'public' as const,
       method: 'post' as const,
       pathResolver: () => '/api/chat/completions',
       requestPathParamsSchema: z.object({}),
@@ -234,6 +226,7 @@ describe('contractBuilders', () => {
 
     it('allows omitting requestPathParamsSchema, requestQuerySchema, requestHeaderSchema', () => {
       const route = buildSseContract({
+        visibility: 'public',
         method: 'post' as const,
         pathResolver: () => '/api/chat/completions',
         requestBodySchema: z.object({ message: z.string() }),
@@ -270,6 +263,7 @@ describe('contractBuilders', () => {
   describe('buildSseContract (Dual-mode GET)', () => {
     it('creates GET dual-mode route', () => {
       const route = buildSseContract({
+        visibility: 'internal',
         method: 'get',
         pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
         requestPathParamsSchema: z.object({ jobId: z.string().uuid() }),
@@ -290,13 +284,14 @@ describe('contractBuilders', () => {
       expect(route.pathResolver({ jobId: '123' })).toBe('/api/jobs/123/status')
       expect(route.isDualMode).toBe(true)
       expect(route.requestBodySchema).toBeUndefined()
-      expect(route.visibility).toBe('public')
+      expect(route.visibility).toBe('internal')
       expect(route.isEmptyResponseExpected).toBe(false)
       expect(route.isNonJSONResponseExpected).toBe(false)
     })
 
     it('includes responseBodySchemasByStatusCode for GET dual-mode', () => {
       const route = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: (params) => `/api/jobs/${params.jobId}/status`,
         requestPathParamsSchema: z.object({ jobId: z.string().uuid() }),
@@ -317,25 +312,9 @@ describe('contractBuilders', () => {
       expect(route.responseBodySchemasByStatusCode?.[404]).toBeDefined()
     })
 
-    it('reflects explicit visibility value', () => {
-      const route = buildSseContract({
-        method: 'get',
-        pathResolver: () => '/api/status',
-        requestPathParamsSchema: z.object({}),
-        requestQuerySchema: z.object({}),
-        requestHeaderSchema: z.object({}),
-        successResponseBodySchema: z.object({ status: z.string() }),
-        serverSentEventSchemas: {
-          update: z.object({ progress: z.number() }),
-        },
-        visibility: 'internal',
-      })
-
-      expect(route.visibility).toBe('internal')
-    })
-
     it('reflects explicit isEmptyResponseExpected value', () => {
       const route = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/status',
         requestPathParamsSchema: z.object({}),
@@ -355,6 +334,7 @@ describe('contractBuilders', () => {
   describe('type safety', () => {
     it('cannot use method GET with requestBodySchema', () => {
       buildSseContract({
+        visibility: 'public',
         // @ts-expect-error - GET method is not allowed when requestBodySchema is provided
         method: 'get',
         pathResolver: () => '/api/test',
@@ -370,6 +350,7 @@ describe('contractBuilders', () => {
 
     it('types path params correctly', () => {
       const route = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: (params) => `/api/channels/${params.channelId}/stream`,
         requestPathParamsSchema: z.object({ channelId: z.string() }),
@@ -387,6 +368,7 @@ describe('contractBuilders', () => {
 
     it('types request body correctly', () => {
       const route = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/test',
         requestPathParamsSchema: z.object({}),
@@ -406,6 +388,7 @@ describe('contractBuilders', () => {
 
     it('types SSE events correctly', () => {
       const route = buildSseContract({
+        visibility: 'public',
         method: 'get',
         pathResolver: () => '/api/stream',
         requestPathParamsSchema: z.object({}),
@@ -424,6 +407,7 @@ describe('contractBuilders', () => {
 
     it('types sync response correctly for dual-mode', () => {
       const route = buildSseContract({
+        visibility: 'public',
         method: 'post',
         pathResolver: () => '/api/chat',
         requestPathParamsSchema: z.object({}),

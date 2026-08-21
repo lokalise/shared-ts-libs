@@ -32,6 +32,7 @@ describe('sendByApiContract', () => {
       const responseSchema = z.object({ id: z.number(), title: z.string() })
 
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
@@ -50,6 +51,7 @@ describe('sendByApiContract', () => {
 
     it('sends GET request with path params', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         requestPathParamsSchema: z.object({ productId: z.coerce.number() }),
@@ -68,6 +70,7 @@ describe('sendByApiContract', () => {
 
     it('sends GET request with query params', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products',
@@ -87,6 +90,7 @@ describe('sendByApiContract', () => {
 
     it('sends GET request with headers', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
@@ -108,6 +112,7 @@ describe('sendByApiContract', () => {
 
     it('resolves headers from a sync function', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
@@ -129,6 +134,7 @@ describe('sendByApiContract', () => {
 
     it('resolves headers from an async function', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
@@ -150,6 +156,7 @@ describe('sendByApiContract', () => {
 
     it('works with path prefix', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
@@ -165,6 +172,7 @@ describe('sendByApiContract', () => {
 
     it('validates response and throws on schema mismatch', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
@@ -178,6 +186,7 @@ describe('sendByApiContract', () => {
 
     it('throws on network failure (no HTTP response)', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
@@ -191,6 +200,7 @@ describe('sendByApiContract', () => {
 
     it('returns UnexpectedResponseError when status is not in contract', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
@@ -208,6 +218,7 @@ describe('sendByApiContract', () => {
 
     it('returns typed body for non-2xx response when status is in contract', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
@@ -235,6 +246,7 @@ describe('sendByApiContract', () => {
 
     it('returns non-2xx response as Either.error by default', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
@@ -257,6 +269,7 @@ describe('sendByApiContract', () => {
 
     it('parses and merges response headers when responseHeaderSchema is defined', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
@@ -276,6 +289,7 @@ describe('sendByApiContract', () => {
   describe('POST', () => {
     it('sends POST request with body and returns typed response', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'post',
         pathResolver: () => '/products',
@@ -293,6 +307,7 @@ describe('sendByApiContract', () => {
 
     it('sends POST with path params and body', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'post',
         requestPathParamsSchema: z.object({ orgId: z.string() }),
@@ -315,6 +330,7 @@ describe('sendByApiContract', () => {
   describe('PUT', () => {
     it('sends PUT request', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'put',
         requestPathParamsSchema: z.object({ id: z.string() }),
@@ -338,6 +354,7 @@ describe('sendByApiContract', () => {
   describe('PATCH', () => {
     it('sends PATCH request', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'patch',
         requestPathParamsSchema: z.object({ id: z.string() }),
@@ -361,6 +378,7 @@ describe('sendByApiContract', () => {
   describe('DELETE', () => {
     it('sends DELETE request with noBodyResponse() and returns null on 204', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'delete',
         requestPathParamsSchema: z.object({ id: z.string() }),
@@ -380,6 +398,7 @@ describe('sendByApiContract', () => {
   describe('SSE', () => {
     it('returns async iterable of typed events', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
@@ -431,6 +450,7 @@ describe('sendByApiContract', () => {
 
     it('validates event data against contract schema', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
@@ -471,6 +491,7 @@ describe('sendByApiContract', () => {
 
     it('throws when a conflicting Accept header is provided for an SSE contract', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
@@ -489,6 +510,7 @@ describe('sendByApiContract', () => {
 
     it('throws when SSE event type is not in the contract schema', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
@@ -519,6 +541,7 @@ describe('sendByApiContract', () => {
 
     it('throws when event data fails schema validation', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/events',
@@ -551,6 +574,7 @@ describe('sendByApiContract', () => {
 
   describe('blob', () => {
     const blobContract = defineApiContract({
+      visibility: 'public',
       summary: 'Download photo',
       method: 'get',
       pathResolver: () => '/photo.png',
@@ -603,6 +627,7 @@ describe('sendByApiContract', () => {
   describe('content-type request header', () => {
     it('sets content-type: application/json automatically when body is present', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'post',
         pathResolver: () => '/items',
@@ -623,6 +648,7 @@ describe('sendByApiContract', () => {
 
     it('does not set content-type when no body is present', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/items',
@@ -642,6 +668,7 @@ describe('sendByApiContract', () => {
 
     it('preserves user-provided content-type (lowercase)', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'post',
         pathResolver: () => '/items',
@@ -666,6 +693,7 @@ describe('sendByApiContract', () => {
 
     it('preserves user-provided content-type (Title-Case)', async () => {
       const contract = defineApiContract({
+        visibility: 'public',
         summary: 'Test contract',
         method: 'post',
         pathResolver: () => '/items',

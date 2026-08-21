@@ -17,6 +17,7 @@ describe('buildRestContract metadata augmentation', () => {
   describe('GET route', () => {
     it('should respect metadata type and reflect it on contract', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'get',
         successResponseBodySchema: SCHEMA,
         pathResolver: () => '/',
@@ -40,6 +41,7 @@ describe('buildRestContract metadata augmentation', () => {
   describe('POST route', () => {
     it('should respect metadata type and reflect it on contract', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         successResponseBodySchema: SCHEMA,
         requestBodySchema: SCHEMA,
         method: 'post',
@@ -63,6 +65,7 @@ describe('buildRestContract metadata augmentation', () => {
   describe('DELETE route', () => {
     it('should respect metadata type', () => {
       const contract = buildRestContract({
+        visibility: 'public',
         method: 'delete',
         successResponseBodySchema: SCHEMA,
         pathResolver: () => '/',
