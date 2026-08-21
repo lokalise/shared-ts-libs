@@ -42,7 +42,7 @@
         "parse-sse": "^0.1.0"
     },
     "peerDependencies": {
-        "@lokalise/api-contracts": ">=6.9.0",
+        "@lokalise/api-contracts": ">=7.2.0",
         "wretch": "^2.8.0",
         "zod": ">=3.25.56"
     },
