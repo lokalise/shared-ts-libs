@@ -5,14 +5,20 @@ import {
   type DimensionalMetricParams,
 } from './AbstractDimensionalMetric.ts'
 
-export type DimensionalHistogramMetricConfiguration<TDimensions extends readonly string[]> =
-  DimensionalMetricParams<TDimensions> & {
-    buckets: number[]
-  }
+export type DimensionalHistogramMetricConfiguration<
+  TDimensions extends readonly string[],
+  TLabels extends readonly string[] = [],
+> = DimensionalMetricParams<TDimensions, TLabels> & {
+  buckets: number[]
+}
 
-type DimensionalHistogramMeasurement<TDimensions extends readonly string[]> =
+type DimensionalHistogramMeasurement<
+  TDimensions extends readonly string[],
+  TLabels extends readonly string[],
+> = { labels?: Partial<Record<TLabels[number], string | number>> } & (
   | { dimension: TDimensions[number]; time: number; startTime?: never; endTime?: never }
   | { dimension: TDimensions[number]; time?: never; startTime: number; endTime: number }
+)
 
 /**
  * Base class for histogram metrics where each dimension is registered as a **separate label-free Prometheus Histogram**.
@@ -26,25 +32,29 @@ type DimensionalHistogramMeasurement<TDimensions extends readonly string[]> =
  */
 export abstract class AbstractDimensionalHistogramMetric<
   TDimensions extends readonly string[],
+  TLabels extends readonly string[] = [],
 > extends AbstractDimensionalMetric<
-  Histogram,
+  Histogram<TLabels[number]>,
   TDimensions,
-  DimensionalHistogramMetricConfiguration<TDimensions>,
-  DimensionalHistogramMeasurement<TDimensions>
+  DimensionalHistogramMetricConfiguration<TDimensions, TLabels>,
+  DimensionalHistogramMeasurement<TDimensions, TLabels>
 > {
   protected constructor(
-    metricConfig: DimensionalHistogramMetricConfiguration<TDimensions>,
+    metricConfig: DimensionalHistogramMetricConfiguration<TDimensions, TLabels>,
     client?: typeof promClient,
   ) {
     super(metricConfig, client)
   }
 
-  protected override createMetric(name: string, client: typeof promClient): Histogram {
+  protected override createMetric(
+    name: string,
+    client: typeof promClient,
+  ): Histogram<TLabels[number]> {
     return new client.Histogram({
       name,
       help: this.metricConfig.helpDescription,
       buckets: this.metricConfig.buckets,
-      labelNames: [],
+      labelNames: this.metricConfig.labelNames ?? [],
     })
   }
 
@@ -52,16 +62,17 @@ export abstract class AbstractDimensionalHistogramMetric<
    * Records an observation on the histogram for the given `dimension`.
    *
    * Provide the duration as either `time` directly, or as a `startTime`/`endTime` pair from which the duration
-   * is computed. A measurement targeting a dimension outside the declared set is silently ignored.
+   * is computed. Optional Prometheus label values can be supplied via `labels`. A measurement targeting a
+   * dimension outside the declared set is silently ignored.
    */
   public override registerMeasurement(
-    measurement: DimensionalHistogramMeasurement<TDimensions>,
+    measurement: DimensionalHistogramMeasurement<TDimensions, TLabels>,
   ): void {
     const histogram = this.getOrRegisterMetric(measurement.dimension)
     if (!histogram) return
 
-    const { time, startTime, endTime } = measurement
+    const { time, startTime, endTime, labels } = measurement
     const duration = time ?? endTime - startTime
-    histogram.observe({}, duration)
+    histogram.observe((labels ?? {}) as object, duration)
   }
 }

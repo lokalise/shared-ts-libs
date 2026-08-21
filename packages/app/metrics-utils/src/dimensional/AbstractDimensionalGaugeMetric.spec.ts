@@ -46,6 +46,23 @@ class LazyUnboundedDimensionalGaugeMetric extends AbstractDimensionalGaugeMetric
   }
 }
 
+class LabeledConcreteDimensionalGaugeMetric extends AbstractDimensionalGaugeMetric<
+  ['active', 'idle'],
+  ['region']
+> {
+  constructor(client?: typeof promClient) {
+    super(
+      {
+        helpDescription: 'Labeled gauge',
+        dimensions: ['active', 'idle'],
+        labelNames: ['region'],
+        buildMetricName: (dimension) => `labeled_${dimension}:gauge`,
+      },
+      client,
+    )
+  }
+}
+
 describe('AbstractDimensionalGaugeMetric', () => {
   let setMock: Mock
   let gaugeMock: Mock
@@ -312,6 +329,52 @@ describe('AbstractDimensionalGaugeMetric', () => {
         expect(gaugeMock).toHaveBeenCalledTimes(1)
         expect(setMock).toHaveBeenCalledTimes(2)
       })
+    })
+  })
+
+  describe('labels', () => {
+    it('registers the metric with the declared label names', () => {
+      // Given
+      getSingleMetricMock.mockReturnValue(undefined)
+
+      // When
+      new LabeledConcreteDimensionalGaugeMetric(client)
+
+      // Then
+      expect(gaugeMock).toHaveBeenCalledWith({
+        name: 'labeled_active:gauge',
+        help: 'Labeled gauge',
+        labelNames: ['region'],
+      })
+    })
+
+    it('sets with the provided label values, applied to every dimension', () => {
+      // Given
+      getSingleMetricMock.mockReturnValue(undefined)
+      const metric = new LabeledConcreteDimensionalGaugeMetric(client)
+      setMock.mockClear()
+
+      // When
+      metric.registerMeasurement({ active: 7, idle: 3, labels: { region: 'eu' } })
+
+      // Then
+      expect(setMock).toHaveBeenCalledTimes(2)
+      expect(setMock).toHaveBeenCalledWith({ region: 'eu' }, 7)
+      expect(setMock).toHaveBeenCalledWith({ region: 'eu' }, 3)
+    })
+
+    it('sets without labels when labels are omitted', () => {
+      // Given
+      getSingleMetricMock.mockReturnValue(undefined)
+      const metric = new LabeledConcreteDimensionalGaugeMetric(client)
+      setMock.mockClear()
+
+      // When
+      metric.registerMeasurement({ active: 7 })
+
+      // Then
+      expect(setMock).toHaveBeenCalledTimes(1)
+      expect(setMock).toHaveBeenCalledWith(7)
     })
   })
 })

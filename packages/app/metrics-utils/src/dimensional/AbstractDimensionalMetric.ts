@@ -3,8 +3,16 @@ import type { Metric } from 'prom-client'
 import { AbstractMetric, type CommonMetricParams } from '../AbstractMetric.ts'
 import { getOrCreateMetric } from '../getOrCreateMetric.ts'
 
-export type DimensionalMetricParams<TDimensions extends readonly string[]> = CommonMetricParams & {
+export type DimensionalMetricParams<
+  TDimensions extends readonly string[],
+  TLabels extends readonly string[] = [],
+> = CommonMetricParams & {
   buildMetricName: (dimension: TDimensions[number]) => string
+  /**
+   * Optional Prometheus label names carried by every per-dimension metric. When omitted, each dimension
+   * is registered as a plain label-free metric.
+   */
+  labelNames?: TLabels
 } & (
     | {
         /**
@@ -32,7 +40,7 @@ export type DimensionalMetricParams<TDimensions extends readonly string[]> = Com
 export abstract class AbstractDimensionalMetric<
   MetricType extends Metric,
   TDimensions extends readonly string[],
-  MetricsParams extends DimensionalMetricParams<TDimensions>,
+  MetricsParams extends DimensionalMetricParams<TDimensions, readonly string[]>,
   TMeasurement,
 > extends AbstractMetric<MetricType, MetricsParams, TMeasurement> {
   protected readonly metrics: Map<TDimensions[number], MetricType>
