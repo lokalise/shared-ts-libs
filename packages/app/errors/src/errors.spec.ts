@@ -1,6 +1,6 @@
 import { z } from 'zod/v4'
 import { describe, expect, it } from 'vitest'
-import { BaseError } from './BaseError.ts'
+import { EnhancedError } from './EnhancedError.ts'
 import { InternalError } from './InternalError.ts'
 import { PublicError, definePublicError } from './PublicError.ts'
 import { ErrorType } from './constants.ts'
@@ -49,10 +49,10 @@ class ProjectNameAlreadyExistsError extends PublicError.from(projectConflictDef)
 // ─── InternalError ───────────────────────────────────────────────────────────
 
 describe('InternalError', () => {
-  it('is an instance of Error and BaseError', () => {
+  it('is an instance of Error and EnhancedError', () => {
     const err = new TranslatorTimeoutError('t-1')
     expect(err).toBeInstanceOf(Error)
-    expect(err).toBeInstanceOf(BaseError)
+    expect(err).toBeInstanceOf(EnhancedError)
     expect(err).toBeInstanceOf(InternalError)
   })
 
@@ -89,10 +89,10 @@ describe('InternalError', () => {
 // ─── PublicError ─────────────────────────────────────────────────────────────
 
 describe('PublicError', () => {
-  it('is an instance of Error and BaseError', () => {
+  it('is an instance of Error and EnhancedError', () => {
     const err = new ProjectNameAlreadyExistsError('foo')
     expect(err).toBeInstanceOf(Error)
-    expect(err).toBeInstanceOf(BaseError)
+    expect(err).toBeInstanceOf(EnhancedError)
     expect(err).toBeInstanceOf(PublicError)
   })
 
@@ -156,6 +156,48 @@ describe('definePublicError schema', () => {
       code: 'PROJECT_NAME_ALREADY_EXISTS',
     })
     expect(result.success).toBe(false)
+  })
+})
+
+// ─── Cross-realm instanceof (Symbol.hasInstance) ─────────────────────────────
+
+describe('cross-realm instanceof', () => {
+  it('recognizes an object carrying the shared path symbols without a prototype link', () => {
+    // Simulates an instance created in another realm (or by a duplicated copy
+    // of this package): same Symbol.for markers, unrelated prototype chain.
+    const foreign = {}
+    const paths = [
+      'EnhancedError',
+      'EnhancedError.InternalError',
+      'EnhancedError.InternalError.TranslatorTimeoutError',
+    ]
+    for (const path of paths) {
+      Object.defineProperty(foreign, Symbol.for(path), { value: true })
+    }
+
+    expect(foreign instanceof TranslatorTimeoutError).toBe(true)
+    expect(foreign instanceof InternalError).toBe(true)
+    expect(foreign instanceof EnhancedError).toBe(true)
+    expect(foreign instanceof DatabaseQueryError).toBe(false)
+  })
+
+  it('rejects primitives and unrelated objects', () => {
+    expect((null as unknown) instanceof EnhancedError).toBe(false)
+    expect(('oops' as unknown) instanceof EnhancedError).toBe(false)
+    expect(new Error('plain') instanceof EnhancedError).toBe(false)
+  })
+
+  it('sibling error classes do not match each other', () => {
+    expect(new TranslatorTimeoutError('t-1') instanceof DatabaseQueryError).toBe(false)
+    expect(new ProjectNotFoundError('123') instanceof ProjectNameAlreadyExistsError).toBe(false)
+  })
+
+  it('bound public error classes from different definitions do not match', () => {
+    const OtherBound = PublicError.from(projectConflictDef)
+    expect(new ProjectNotFoundError('123') instanceof OtherBound).toBe(false)
+    expect(
+      new OtherBound({ message: 'conflict', details: { name: 'foo' } }) instanceof OtherBound,
+    ).toBe(true)
   })
 })
 
