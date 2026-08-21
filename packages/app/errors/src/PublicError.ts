@@ -1,6 +1,6 @@
 import { z } from 'zod/v4'
-import { BaseError } from './BaseError.ts'
-import type { BaseErrorOptions } from './BaseError.ts'
+import type { EnhancedErrorOptions } from './EnhancedError.ts'
+import { EnhancedError } from './EnhancedError.ts'
 import { httpStatusByErrorType } from './constants.ts'
 import type { InferDetails, PublicErrorDefinition } from './types.ts'
 
@@ -41,7 +41,7 @@ import type { InferDetails, PublicErrorDefinition } from './types.ts'
  * }
  * ```
  */
-export abstract class PublicError<T extends PublicErrorDefinition> extends BaseError<
+export abstract class PublicError<T extends PublicErrorDefinition> extends EnhancedError<
   InferDetails<T>
 > {
   readonly code: T['code']
@@ -52,7 +52,7 @@ export abstract class PublicError<T extends PublicErrorDefinition> extends BaseE
     return httpStatusByErrorType[this.type]
   }
 
-  protected constructor(definition: T, options: BaseErrorOptions<InferDetails<T>>) {
+  protected constructor(definition: T, options: EnhancedErrorOptions<InferDetails<T>>) {
     super(options)
     this.code = definition.code
     this.type = definition.type
@@ -66,11 +66,16 @@ export abstract class PublicError<T extends PublicErrorDefinition> extends BaseE
    * required when the definition includes a `detailsSchema`.
    */
   static from<const T extends PublicErrorDefinition>(definition: T) {
-    return class BoundPublicError extends PublicError<T> {
-      constructor(options: BaseErrorOptions<InferDetails<T>>) {
+    class BoundPublicError extends PublicError<T> {
+      constructor(options: EnhancedErrorOptions<InferDetails<T>>) {
         super(definition, options)
       }
     }
+    // A per-definition class name keeps the Symbol.hasInstance prototype paths
+    // distinct — otherwise bound classes of different definitions would all
+    // share the 'BoundPublicError' path segment and match each other.
+    Object.defineProperty(BoundPublicError, 'name', { value: `PublicError<${definition.code}>` })
+    return BoundPublicError
   }
 }
 

@@ -22,10 +22,25 @@ compile errors.
 ## Error hierarchy
 
 ```
-BaseError (abstract)          — shared base: code, details, cause
+EnhancedError (abstract)      — shared base: code, details, cause, cross-realm instanceof
 ├── InternalError (abstract)  — non-public operational errors
 └── PublicError   (abstract)  — client-facing errors; has type + httpStatusCode
 ```
+
+### Reliable `instanceof` across realms and package copies
+
+`EnhancedError` overrides `Symbol.hasInstance`: on instantiation each error tags
+itself with `Symbol.for` symbols derived from its inheritance path (e.g.
+`'EnhancedError.InternalError.TranslatorTimeoutError'`), and `instanceof`
+checks for those symbols instead of walking the prototype chain. Because
+`Symbol.for` symbols are shared globally, `instanceof` keeps working across
+realms (workers, VM contexts) and across duplicated copies of this package in
+`node_modules` — situations where prototype-based `instanceof` silently fails.
+
+One caveat: the symbols are derived from **class names**, so two unrelated
+classes with the same name and inheritance path will match each other. Keep
+concrete error class names unique, and don't minify/mangle class names in code
+that crosses these boundaries.
 
 ## InternalError
 
@@ -66,10 +81,10 @@ generation on the contract layer.
 
 ```ts
 import { z } from 'zod/v4'
-import { PublicError, ErrorType, defineError } from '@lokalise/errors'
+import { PublicError, ErrorType, definePublicError } from '@lokalise/errors'
 
 // 1. Define the error (reusable for OpenAPI contracts too)
-const projectNotFoundDef = defineError({
+const projectNotFoundDef = definePublicError({
   code: 'PROJECT_NOT_FOUND',
   type: ErrorType.NOT_FOUND,
   detailsSchema: z.object({ id: z.string() }),
@@ -94,7 +109,7 @@ Without a details schema, `details` is `undefined` and the constructor does not
 accept a `details` field:
 
 ```ts
-const rateLimitDef = defineError({ code: 'RATE_LIMIT_EXCEEDED', type: ErrorType.RATE_LIMIT })
+const rateLimitDef = definePublicError({ code: 'RATE_LIMIT_EXCEEDED', type: ErrorType.RATE_LIMIT })
 
 class RateLimitError extends PublicError.from(rateLimitDef) {
   constructor() { super({ message: 'Too many requests' }) }
@@ -104,16 +119,16 @@ class RateLimitError extends PublicError.from(rateLimitDef) {
 ## Protocol mapping
 
 `PublicError` instances expose `httpStatusCode` as a getter. For cases where
-you only have an `ErrorType` value, use the standalone `toHttpStatus()` utility.
+you only have an `ErrorType` value, use the exported `httpStatusByErrorType` map.
 
 ```ts
-import { toHttpStatus } from '@lokalise/errors'
+import { httpStatusByErrorType } from '@lokalise/errors'
 
 // On an instance
 reply.status(error.httpStatusCode).send({ code: error.code, message: error.message })
 
 // From an ErrorType value
-reply.status(toHttpStatus(someType)).send(...)
+reply.status(httpStatusByErrorType[someType]).send(...)
 ```
 
 | ErrorType           | HTTP |
@@ -125,6 +140,7 @@ reply.status(toHttpStatus(someType)).send(...)
 | `conflict`          | 409  |
 | `rate-limit`        | 429  |
 | `internal`          | 500  |
+| `unimplemented`     | 501  |
 | `unavailable`       | 503  |
 
 For other protocols (gRPC, message queues) create a similar mapping using the
