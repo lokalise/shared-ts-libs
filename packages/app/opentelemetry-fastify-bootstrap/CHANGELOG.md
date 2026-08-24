@@ -1,5 +1,11 @@
 # @lokalise/opentelemetry-fastify-bootstrap
 
+## 4.1.1
+
+### Patch Changes
+
+- c8ec4b2: Document how to trace Drizzle ORM queries with `@kubiks/otel-drizzle`, covering drivers like postgres.js that the node auto-instrumentations don't patch.
+
 ## 4.1.0
 
 ### Minor Changes
