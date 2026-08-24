@@ -1,5 +1,6 @@
 import type { JobState, JobsOptions, Queue, QueueOptions } from 'bullmq'
 import { merge } from 'ts-deepmerge'
+import { PENDING_JOB_TYPES } from '../constants.ts'
 import type { BullmqQueueFactory } from '../factories/BullmqQueueFactory.ts'
 import { BackgroundJobProcessorSpy } from '../spy/BackgroundJobProcessorSpy.ts'
 import type { BackgroundJobProcessorSpyInterface } from '../spy/types.ts'
@@ -119,14 +120,7 @@ export class QueueManager<
 
   public async getJobCount(queueId: SupportedQueueIds<Queues>): Promise<number> {
     await this.startIfNotStarted(queueId)
-    return this.getQueue(queueId)?.getJobCountByTypes(
-      'active',
-      'waiting',
-      'paused',
-      'delayed',
-      'prioritized',
-      'waiting-children',
-    )
+    return this.getQueue(queueId)?.getJobCountByTypes(...PENDING_JOB_TYPES)
   }
 
   /**

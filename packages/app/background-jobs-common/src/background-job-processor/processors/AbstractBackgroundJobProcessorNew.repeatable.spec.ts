@@ -44,26 +44,24 @@ describe('AbstractBackgroundJobProcessorNew - repeatable', () => {
 
   it('schedules repeatable job', async () => {
     // When
-    const scheduledJobId = await queueManager.schedule(
-      'queue',
+    await queueManager.start()
+    const queue = queueManager.getQueue('queue')
+    const scheduledJob = await queue.upsertJobScheduler(
+      'test_scheduler',
+      { every: 10, immediately: true, limit: 5 },
       {
-        id: 'test_id',
-        value: 'test',
-        metadata: { correlationId: 'correlation_id' },
-      },
-      {
-        repeat: {
-          every: 10,
-          immediately: true,
-          limit: 5,
+        data: {
+          id: 'test_id',
+          value: 'test',
+          metadata: { correlationId: 'correlation_id' },
         },
       },
     )
 
     // Then
-    await processor.spy.waitForJobWithId(scheduledJobId, 'completed')
+    await processor.spy.waitForJobWithId(scheduledJob.id, 'completed')
 
-    const schedulers = await queueManager.getQueue('queue').getJobSchedulers()
+    const schedulers = await queue.getJobSchedulers()
     expect(schedulers).toHaveLength(1)
     expect(schedulers[0]!.every).toBe(10)
 

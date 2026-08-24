@@ -1,5 +1,4 @@
 import type {
-  FlowChildJob,
   FlowJob,
   FlowOpts,
   FlowProducer,
@@ -29,13 +28,22 @@ import type {
   SupportedQueueIds,
 } from './types.ts'
 
+/**
+ * A node below the flow root. BullMQ v5 exports this as `FlowChildJob`, v6 as
+ * `FlowJobNode`; reading it off `FlowJob` gives the same shape on both majors.
+ */
+type BullmqFlowChildJob = NonNullable<FlowJob['children']>[number]
+
 const stripChildOnlyFields = (opts: JobsOptions): JobsOptions => {
-  const next: JobsOptions = { ...opts }
+  // `debounce` and `repeat` were dropped from JobsOptions in BullMQ v6, so
+  // delete through a record: TypeScript no longer knows those keys, but a JS
+  // caller can still pass them in.
+  const next = { ...opts } as Record<string, unknown>
   delete next.deduplication
   delete next.debounce
   delete next.parent
   delete next.repeat
-  return next
+  return next as JobsOptions
 }
 
 /**
@@ -236,7 +244,7 @@ export class FlowManager<
 
   private buildChildFlowJob<QueueId extends SupportedQueueIds<Queues>>(
     flow: FlowChildJobInput<Queues, QueueId>,
-  ): FlowChildJob {
+  ): BullmqFlowChildJob {
     const { queueId, name, data, opts, children } = flow
     const queueConfig = this.queueManager.queueRegistry.getQueueConfig(queueId)
     const parsedData = queueConfig.jobPayloadSchema.parse(data) as SupportedJobPayloads<Queues>

@@ -10,7 +10,7 @@ export const backgroundJobProcessorGetActiveQueueIds = async (
 
   await cleanOldQueueIds(redisClient)
 
-  const queueIds = await redisClient.zrange(QUEUE_IDS_KEY, 0, -1)
+  const queueIds = await redisClient.zrange(QUEUE_IDS_KEY, 0, '-1')
   if (!isRedisClient(redis)) redisClient.disconnect()
 
   return queueIds.sort()
