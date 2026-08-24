@@ -167,9 +167,9 @@ describe('cross-realm instanceof', () => {
     // of this package): same Symbol.for markers, unrelated prototype chain.
     const foreign = {}
     const paths = [
-      'EnhancedError',
-      'EnhancedError.InternalError',
-      'EnhancedError.InternalError.TranslatorTimeoutError',
+      '@lokalise/errors.EnhancedError',
+      '@lokalise/errors.EnhancedError.InternalError',
+      '@lokalise/errors.EnhancedError.InternalError.TranslatorTimeoutError',
     ]
     for (const path of paths) {
       Object.defineProperty(foreign, Symbol.for(path), { value: true })

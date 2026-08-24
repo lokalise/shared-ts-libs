@@ -31,7 +31,7 @@ EnhancedError (abstract)      — shared base: code, details, cause, cross-realm
 
 `EnhancedError` overrides `Symbol.hasInstance`: on instantiation each error tags
 itself with `Symbol.for` symbols derived from its inheritance path (e.g.
-`'EnhancedError.InternalError.TranslatorTimeoutError'`), and `instanceof`
+`'@lokalise/errors.EnhancedError.InternalError.TranslatorTimeoutError'`), and `instanceof`
 checks for those symbols instead of walking the prototype chain. Because
 `Symbol.for` symbols are shared globally, `instanceof` keeps working across
 realms (workers, VM contexts) and across duplicated copies of this package in

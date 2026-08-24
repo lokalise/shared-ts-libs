@@ -1,4 +1,11 @@
+// Namespaces the global Symbol.for registry keys so they can only collide with
+// other copies of this package, not with unrelated code using the same pattern.
+const PROTOTYPE_PATH_NAMESPACE = '@lokalise/errors'
+
 const PROTOTYPE_PATH_DELIMITER = '.'
+
+const getSymbolKey = (prototypePath: string): string =>
+  `${PROTOTYPE_PATH_NAMESPACE}${PROTOTYPE_PATH_DELIMITER}${prototypePath}`
 
 const getPrototypeNamesPostError = (input: unknown): string[] => {
   const names: string[] = []
@@ -63,9 +70,9 @@ export type EnhancedErrorOptions<TDetails> = {
  * (i.e., `error.name` is set to the subclass name instead of `EnhancedError`).
  *
  * It works by creating unique symbols for each inheritance path, such as:
- * - 'EnhancedError'
- * - 'EnhancedError.Subclass1'
- * - 'EnhancedError.Subclass1.Subclass2',
+ * - '@lokalise/errors.EnhancedError'
+ * - '@lokalise/errors.EnhancedError.Subclass1'
+ * - '@lokalise/errors.EnhancedError.Subclass1.Subclass2',
  * assigning them to the instance using `Symbol.for` on instantiation.
  * The custom `instanceof` logic (overriding `Symbol.hasInstance`) checks if the
  * corresponding symbol for the constructor's prototype path exists on the
@@ -96,7 +103,7 @@ export abstract class EnhancedError<TDetails = undefined> extends Error {
     const prototypePaths = generatePrototypePaths(prototypeNames)
 
     for (const prototypePath of prototypePaths) {
-      const symbol = Symbol.for(prototypePath)
+      const symbol = Symbol.for(getSymbolKey(prototypePath))
 
       Object.defineProperty(this, symbol, { value: true })
     }
@@ -109,7 +116,7 @@ export abstract class EnhancedError<TDetails = undefined> extends Error {
 
     // biome-ignore lint/complexity/noThisInStatic: intentional to support subclasses
     const prototypeNames = getPrototypeNamesPostError(this)
-    const symbol = Symbol.for(prototypeNames.join(PROTOTYPE_PATH_DELIMITER))
+    const symbol = Symbol.for(getSymbolKey(prototypeNames.join(PROTOTYPE_PATH_DELIMITER)))
 
     return symbol in val && val[symbol] === true
   }
