@@ -34,16 +34,20 @@ import type {
  */
 type BullmqFlowChildJob = NonNullable<FlowJob['children']>[number]
 
+/**
+ * Job options that BullMQ v5 has on `JobsOptions` but v6 removed. Widening the
+ * local by these keys lets one `delete` list serve both majors: on v5 it hits
+ * the real properties, on v6 the keys are absent and the delete is a no-op.
+ */
+type RemovedInBullmq6JobOptions = { debounce?: unknown; repeat?: unknown }
+
 const stripChildOnlyFields = (opts: JobsOptions): JobsOptions => {
-  // `debounce` and `repeat` were dropped from JobsOptions in BullMQ v6, so
-  // delete through a record: TypeScript no longer knows those keys, but a JS
-  // caller can still pass them in.
-  const next = { ...opts } as Record<string, unknown>
+  const next: JobsOptions & RemovedInBullmq6JobOptions = { ...opts }
   delete next.deduplication
   delete next.debounce
   delete next.parent
   delete next.repeat
-  return next as JobsOptions
+  return next
 }
 
 /**
