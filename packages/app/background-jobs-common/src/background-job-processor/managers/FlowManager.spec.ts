@@ -243,6 +243,24 @@ describe('FlowManager', () => {
 
       expect(node.job.opts.deduplication?.id).toBe('42:x')
     })
+
+    it('strips queue-level child-only defaults from children', async () => {
+      // `dedup_queue` carries a queue-level `deduplication` default for
+      // `QueueManager.schedule`. BullMQ rejects it on a flow child, so the same
+      // config must reach a child without it.
+      const node = await flowManager.addFlow({
+        queueId: 'parent_queue',
+        data: { id: 'p', value: 'vp', metadata: { correlationId: 'c' } },
+        children: [
+          {
+            queueId: 'dedup_queue',
+            data: { id: '42', value: 'x', metadata: { correlationId: 'c' } },
+          },
+        ],
+      })
+
+      expect(node.children?.[0]?.job.opts.deduplication).toBeUndefined()
+    })
   })
 
   describe('addFlowBulk', () => {

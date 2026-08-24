@@ -843,27 +843,25 @@ describe('AbstractBackgroundJobProcessor', () => {
       await processor.start()
 
       // When
-      const scheduledJobId = await processor.schedule(
+      // @ts-expect-error accessing protected member for testing
+      const queue = processor.queue
+      const scheduledJob = await queue.upsertJobScheduler(
+        'test_scheduler',
+        { every: 10, immediately: true, limit: 5 },
         {
-          id: 'test_id',
-          value: 'test',
-          metadata: { correlationId: 'correlation_id' },
-        },
-        {
-          repeat: {
-            every: 10,
-            immediately: true,
-            limit: 5,
+          data: {
+            id: 'test_id',
+            value: 'test',
+            metadata: { correlationId: 'correlation_id' },
           },
         },
       )
 
       // Then
-      await processor.spy.waitForJobWithId(scheduledJobId, 'completed')
-      // @ts-expect-error executing protected method for testing
-      const repeatableJobs = await processor.queue.getRepeatableJobs()
-      expect(repeatableJobs).toHaveLength(1)
-      expect(repeatableJobs[0]!.every).toBe('10')
+      await processor.spy.waitForJobWithId(scheduledJob.id, 'completed')
+      const schedulers = await queue.getJobSchedulers()
+      expect(schedulers).toHaveLength(1)
+      expect(schedulers[0]!.every).toBe(10)
 
       await processor.dispose()
     })

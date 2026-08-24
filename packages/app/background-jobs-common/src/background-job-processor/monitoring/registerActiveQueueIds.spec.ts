@@ -25,7 +25,7 @@ describe('registerActiveQueueIds', () => {
   it('should not fail if queues array is empty', async () => {
     await registerActiveQueueIds(factory.getRedisConfig(), [])
 
-    const result = await redis.zrange('queueIds', 0, -1)
+    const result = await redis.zrange('queueIds', 0, '-1')
     expect(result).toEqual([])
   })
 
@@ -33,7 +33,7 @@ describe('registerActiveQueueIds', () => {
     await registerActiveQueueIds(factory.getRedisConfig(), [{ queueId: 'queue1' }])
 
     const today = new Date()
-    const [queueId, score] = await redis.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
+    const [queueId, score] = await redis.zrange(QUEUE_IDS_KEY, 0, '-1', 'WITHSCORES')
     expect(queueId).toStrictEqual('queue1')
 
     // Comparing timestamps in seconds
@@ -47,13 +47,13 @@ describe('registerActiveQueueIds', () => {
     const queues = [{ queueId: 'queue1' }]
 
     await registerActiveQueueIds(factory.getRedisConfig(), queues)
-    const [queueId, score] = await redis.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
+    const [queueId, score] = await redis.zrange(QUEUE_IDS_KEY, 0, '-1', 'WITHSCORES')
     expect(queueId).toStrictEqual('queue1')
 
     await setTimeout(10)
 
     await registerActiveQueueIds(factory.getRedisConfig(), queues)
-    const [_, scoreUpdated] = await redis.zrange(QUEUE_IDS_KEY, 0, -1, 'WITHSCORES')
+    const [_, scoreUpdated] = await redis.zrange(QUEUE_IDS_KEY, 0, '-1', 'WITHSCORES')
     expect(queueId).toStrictEqual('queue1')
 
     const initialScoreDate = new Date(Number.parseInt(score!, 10))
@@ -68,7 +68,7 @@ describe('registerActiveQueueIds', () => {
       { queueId: 'queue1', bullDashboardGrouping: ['group'] },
     ])
 
-    const result = await redis.zrange(QUEUE_IDS_KEY, 0, -1)
+    const result = await redis.zrange(QUEUE_IDS_KEY, 0, '-1')
     expect(result).toEqual(['group.queue1'])
   })
 
@@ -78,7 +78,7 @@ describe('registerActiveQueueIds', () => {
       { queueId: 'queue2' },
     ])
 
-    const result = await redis.zrange(QUEUE_IDS_KEY, 0, -1)
+    const result = await redis.zrange(QUEUE_IDS_KEY, 0, '-1')
     expect(result).toEqual(['group.queue1', 'queue2'])
   })
 })

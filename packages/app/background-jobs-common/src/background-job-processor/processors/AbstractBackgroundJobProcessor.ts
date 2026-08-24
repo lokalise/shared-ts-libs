@@ -12,7 +12,7 @@ import {
 } from 'bullmq'
 import pino, { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
-import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS } from '../constants.ts'
+import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS, PENDING_JOB_TYPES } from '../constants.ts'
 import {
   isJobMissingError,
   isMutedUnrecoverableJobError,
@@ -131,14 +131,7 @@ export abstract class AbstractBackgroundJobProcessor<
 
   public async getJobCount(): Promise<number> {
     await this.startIfNotStarted()
-    return this.queue.getJobCountByTypes(
-      'active',
-      'waiting',
-      'paused',
-      'delayed',
-      'prioritized',
-      'waiting-children',
-    )
+    return this.queue.getJobCountByTypes(...PENDING_JOB_TYPES)
   }
 
   protected get queue(): ProtectedQueue<JobPayload, JobReturn, QueueType> {
