@@ -1,4 +1,5 @@
 import vm from 'node:vm'
+import { describe, expect, it } from 'vitest'
 import { EnhancedError } from './EnhancedError.ts'
 
 class A extends EnhancedError {
