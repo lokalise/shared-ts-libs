@@ -81,6 +81,11 @@ export type EnhancedErrorOptions<TDetails> = {
  * This technique allows `instanceof` to succeed across realms where normal
  * prototype chain checks fail, because symbols created via `Symbol.for` are
  * shared globally and can be reliably compared.
+ *
+ * Since the symbols are derived from class names, every class in the chain
+ * must have one. The constructor throws when it encounters an unnamed class
+ * (e.g. a class expression returned from a factory). Name such classes
+ * explicitly with `Object.defineProperty(TheClass, 'name', { value: '...' })`.
  */
 export abstract class EnhancedError<TDetails = undefined> extends Error {
   /**
@@ -100,6 +105,15 @@ export abstract class EnhancedError<TDetails = undefined> extends Error {
     this.details = options.details as TDetails
 
     const prototypeNames = getPrototypeNamesPostError(this)
+
+    // An unnamed class anywhere in the chain truncates the walk, which would
+    // silently stamp wrong or no symbols and break instanceof for this instance.
+    if (prototypeNames[0] !== EnhancedError.name) {
+      throw new Error(
+        `Cannot derive instanceof symbols for '${new.target.name || '(anonymous class)'}': every class in the prototype chain must have a name. Name factory-created classes explicitly, e.g. Object.defineProperty(TheClass, 'name', { value: 'TheClass' }).`,
+      )
+    }
+
     const prototypePaths = generatePrototypePaths(prototypeNames)
 
     for (const prototypePath of prototypePaths) {

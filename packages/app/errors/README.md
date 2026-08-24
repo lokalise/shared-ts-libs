@@ -42,6 +42,11 @@ classes with the same name and inheritance path will match each other. Keep
 concrete error class names unique, and don't minify/mangle class names in code
 that crosses these boundaries.
 
+For the same reason every class in the chain must have a name: constructing an
+error with an unnamed class in its hierarchy throws. Class expressions returned
+from factories are unnamed — name them explicitly with
+`Object.defineProperty(TheClass, 'name', { value: '...' })`.
+
 ## InternalError
 
 For runtime errors that should never be surfaced to clients (timeouts, lock

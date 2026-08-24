@@ -62,6 +62,42 @@ describe('EnhancedError', () => {
     })
   })
 
+  describe('unnamed classes in the prototype chain', () => {
+    // Assigning the result of a call does not trigger JS name inference,
+    // so the returned class expression has name === ''.
+    const createAnonymousError = () =>
+      class extends EnhancedError {
+        override readonly code = 'ANONYMOUS'
+      }
+
+    it('throws when the instantiated class is unnamed', () => {
+      const AnonymousError = createAnonymousError()
+
+      expect(AnonymousError.name).toBe('')
+      expect(() => new AnonymousError({ message: 'test' })).toThrow(
+        /every class in the prototype chain must have a name/,
+      )
+    })
+
+    it('throws when an unnamed class sits in the middle of the chain', () => {
+      class NamedLeafError extends createAnonymousError() {}
+
+      expect(() => new NamedLeafError({ message: 'test' })).toThrow(
+        /every class in the prototype chain must have a name/,
+      )
+    })
+
+    it('works when a factory-created class is explicitly named', () => {
+      const NamedError = createAnonymousError()
+      Object.defineProperty(NamedError, 'name', { value: 'NamedError' })
+
+      const err = new NamedError({ message: 'test' })
+
+      expect(err instanceof NamedError).toBe(true)
+      expect(err instanceof EnhancedError).toBe(true)
+    })
+  })
+
   describe('cause', () => {
     it('has no own cause property when cause is not provided', () => {
       expect('cause' in new A({ message: 'test' })).toBe(false)
