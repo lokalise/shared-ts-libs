@@ -148,7 +148,7 @@ const users = await db.select().from(usersTable)
 
 `@kubiks/otel-drizzle` only depends on `@opentelemetry/api` (as a peer), so it doesn't conflict with the OTel SDK versions this package owns. The wrapper emits through the global tracer that `initOpenTelemetry` registers — no extra setup here is needed, and when OpenTelemetry is disabled it produces no-op spans with negligible overhead.
 
-**Compatibility with the drizzle-orm v1 release candidates:** the official docs only state support for `drizzle-orm >= 0.28.0`, but we have verified it also works with the v1 RC line our services use (tested with `drizzle-orm@1.0.0-rc.4`). Note that semver ranges exclude prereleases by default, so `>= 0.28.0` technically doesn't match `1.0.0-rc.x` and your package manager may report an unmet peer dependency — that warning is safe to ignore.
+**Compatibility with the drizzle-orm v1 release candidates:** the official docs only state support for `drizzle-orm >= 0.28.0`, but we have verified it also works with the v1 RC line our services use (tested with `drizzle-orm@1.0.0-rc.4`).
 
 Each span carries `db.system`, `db.statement` (the parameterized SQL, truncated to 1000 chars by default), `db.operation` and — when configured — `db.name` / `net.peer.name` / `net.peer.port`. Because the spans carry `db.system`, they also participate in [`dbNamespaceBySystem` enrichment](#joining-a-datadog-inferred-service-entity). See `InstrumentDrizzleConfig` for all options, e.g. `captureQueryText: false` to omit SQL text.
 
