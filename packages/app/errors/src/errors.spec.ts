@@ -1,9 +1,9 @@
-import { z } from 'zod/v4'
 import { describe, expect, it } from 'vitest'
+import { z } from 'zod/v4'
+import { ErrorType } from './constants.ts'
 import { EnhancedError } from './EnhancedError.ts'
 import { InternalError } from './InternalError.ts'
-import { PublicError, definePublicError } from './PublicError.ts'
-import { ErrorType } from './constants.ts'
+import { definePublicError, PublicError } from './PublicError.ts'
 
 // ─── Concrete test errors ────────────────────────────────────────────────────
 
@@ -132,7 +132,10 @@ describe('PublicError', () => {
 
 describe('definePublicError schema', () => {
   it('schema validates a correct payload without details', () => {
-    const result = projectNotFoundDef.schema.safeParse({ message: 'not found', code: 'PROJECT_NOT_FOUND' })
+    const result = projectNotFoundDef.schema.safeParse({
+      message: 'not found',
+      code: 'PROJECT_NOT_FOUND',
+    })
     expect(result.success).toBe(true)
   })
 

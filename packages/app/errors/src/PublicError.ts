@@ -1,7 +1,7 @@
 import { z } from 'zod/v4'
+import { httpStatusByErrorType } from './constants.ts'
 import type { EnhancedErrorOptions } from './EnhancedError.ts'
 import { EnhancedError } from './EnhancedError.ts'
-import { httpStatusByErrorType } from './constants.ts'
 import type { InferDetails, PublicErrorDefinition } from './types.ts'
 
 /**
@@ -117,13 +117,17 @@ export abstract class PublicError<T extends PublicErrorDefinition> extends Enhan
  */
 export const definePublicError = <const T extends PublicErrorDefinition>(def: T) => {
   type Schema = T['detailsSchema'] extends z.ZodObject
-    ? z.ZodObject<{ message: z.ZodString; code: z.ZodLiteral<T['code']>; details: NonNullable<T['detailsSchema']> }>
+    ? z.ZodObject<{
+        message: z.ZodString
+        code: z.ZodLiteral<T['code']>
+        details: NonNullable<T['detailsSchema']>
+      }>
     : z.ZodObject<{ message: z.ZodString; code: z.ZodLiteral<T['code']> }>
 
   const base = { message: z.string(), code: z.literal(def.code) }
-  const schema = (def.detailsSchema
-    ? z.object({ ...base, details: def.detailsSchema })
-    : z.object(base)) as Schema
+  const schema = (
+    def.detailsSchema ? z.object({ ...base, details: def.detailsSchema }) : z.object(base)
+  ) as Schema
 
   return { ...def, schema }
 }

@@ -18,6 +18,4 @@ export interface PublicErrorDefinition {
 
 /** Infers the TypeScript type of error details from a Zod schema. */
 export type InferDetails<TDef extends PublicErrorDefinition> =
-  TDef['detailsSchema'] extends z.ZodObject
-    ? z.infer<TDef['detailsSchema']>
-    : undefined
+  TDef['detailsSchema'] extends z.ZodObject ? z.infer<TDef['detailsSchema']> : undefined

@@ -1,4 +1,3 @@
-import type { EnhancedErrorOptions } from './EnhancedError.ts'
 import { EnhancedError } from './EnhancedError.ts'
 import type { ErrorDetails } from './types.ts'
 
@@ -33,8 +32,4 @@ import type { ErrorDetails } from './types.ts'
  */
 export abstract class InternalError<
   TDetails extends ErrorDetails | undefined = undefined,
-> extends EnhancedError<TDetails> {
-  constructor(options: EnhancedErrorOptions<TDetails>) {
-    super(options)
-  }
-}
+> extends EnhancedError<TDetails> {}

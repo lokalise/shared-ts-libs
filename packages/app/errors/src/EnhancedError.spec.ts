@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { EnhancedError } from './EnhancedError.ts'
 
 class A extends EnhancedError {
-  override readonly code = 'A';
+  override readonly code = 'A'
 }
 
 class B extends A {}
@@ -114,11 +114,11 @@ describe('EnhancedError', () => {
     const context = vm.createContext({ Error })
 
     vm.runInContext(
-        `
+      `
       class TestError extends Error {}
       globalThis.error = new TestError('from vm');
     `,
-        context,
+      context,
     )
 
     const { error } = context
@@ -128,19 +128,21 @@ describe('EnhancedError', () => {
   })
 
   it('supports instanceof across vm contexts when using EnhancedError subclass', () => {
-    const context = vm.createContext({ EnhancedError: EnhancedError })
+    const context = vm.createContext({ EnhancedError })
 
     vm.runInContext(
-        `
+      `
       class A extends EnhancedError {}
       class B extends A {}
-      globalThis.error = new B('from vm');
+      globalThis.error = new B({ message: 'from vm' });
     `,
-        context,
+      context,
     )
 
     const { error } = context
 
+    // The outer A and B match the vm's A and B by symbol name path, not by
+    // reference. That name-based matching is the mechanism under test.
     expect(error instanceof EnhancedError).toBe(true)
     expect(error instanceof A).toBe(true)
     expect(error instanceof B).toBe(true)
