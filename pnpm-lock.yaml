@@ -719,11 +719,11 @@ importers:
   packages/app/fastify-bullboard-plugin:
     dependencies:
       '@bull-board/api':
-        specifier: ^8.1.0
-        version: 8.6.1(@bull-board/ui@8.6.1(bullmq@5.81.2(supports-color@8.1.1)))(bullmq@5.81.2(supports-color@8.1.1))
+        specifier: ^9.4.0
+        version: 9.4.0(@bull-board/ui@9.4.0(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)))(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
       '@bull-board/fastify':
-        specifier: ^8.1.0
-        version: 8.6.1(bullmq@5.81.2(supports-color@8.1.1))
+        specifier: ^9.4.0
+        version: 9.4.0(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
       '@fastify/auth':
         specifier: ^5.1.0
         version: 5.1.0
@@ -751,7 +751,7 @@ importers:
         version: link:../../dev/biome-config
       '@lokalise/fastify-extras':
         specifier: ^31.0.1
-        version: 31.0.1(@fastify/jwt@10.2.1)(@lokalise/api-contracts@8.0.0(zod@4.4.3))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@5.81.2(supports-color@8.1.1))(dd-trace@6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0)))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1(supports-color@8.1.1))(fastify@5.11.3)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.11.3)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(zod@4.4.3)
+        version: 31.0.1(@fastify/jwt@10.2.1)(@lokalise/api-contracts@8.0.0(zod@4.4.3))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0)))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1(supports-color@8.1.1))(fastify@5.11.3)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.11.3)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(zod@4.4.3)
       '@lokalise/node-core':
         specifier: ^14.1.0
         version: 14.8.1(zod@4.4.3)
@@ -768,8 +768,8 @@ importers:
         specifier: ^7.0.0
         version: 7.0.0(awilix@13.0.5)
       bullmq:
-        specifier: 5.81.2
-        version: 5.81.2(supports-color@8.1.1)
+        specifier: 6.2.0
+        version: 6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
       cross-env:
         specifier: ^10.0.0
         version: 10.1.0
@@ -869,7 +869,7 @@ importers:
         version: 3.3.0
       redis-semaphore:
         specifier: ^5.6.2
-        version: 5.7.0(ioredis@5.11.1(supports-color@8.1.1))(supports-color@8.1.1)
+        version: 5.7.0(ioredis@6.0.0(supports-color@8.1.1))(supports-color@8.1.1)
       toad-cache:
         specifier: ^3.7.1
         version: 3.7.4
@@ -890,8 +890,8 @@ importers:
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
       ioredis:
-        specifier: ^5.11.1
-        version: 5.11.1(supports-color@8.1.1)
+        specifier: ^6.0.0
+        version: 6.0.0(supports-color@8.1.1)
       prom-client:
         specifier: ^15.1.3
         version: 15.1.3
@@ -1672,10 +1672,10 @@ packages:
   '@bugsnag/safe-json-stringify@6.1.0':
     resolution: {integrity: sha512-ImA35rnM7bGr+J30R979FQ95BhRB4UO1KfJA0J2sVqc8nwnrS9hhE5mkTmQWMs8Vh1Da+hkLKs5jJB4JjNZp4A==}
 
-  '@bull-board/api@8.6.1':
-    resolution: {integrity: sha512-v5GLzMpss8e+3AnnKRGry+9PKlm6MKU2VFxveJCSoT5+/no7WZTM5zVyjPJSG29Xwgf6CujThche6v3j4ZrmrA==}
+  '@bull-board/api@9.4.0':
+    resolution: {integrity: sha512-poPku55iQd/VS65BUD8yn/uIHUruDwOVOiPEbThzjCd1nHAzEUEj/D+LWW1t9vzRsvN6xBr5jXlbJDapBnz7aw==}
     peerDependencies:
-      '@bull-board/ui': 8.6.1
+      '@bull-board/ui': 9.4.0
       bull: ^4.16.5
       bullmq: ^5.79.2 || ^6.0.0
     peerDependenciesMeta:
@@ -1684,11 +1684,11 @@ packages:
       bullmq:
         optional: true
 
-  '@bull-board/fastify@8.6.1':
-    resolution: {integrity: sha512-a1y1HlQo8bX70797wDMV6VXYNZKF35gOuzQvzKYluwGXSRyeglNp80wF1PzeUABqSCTwDbku0Syrt03wTy/q1Q==}
+  '@bull-board/fastify@9.4.0':
+    resolution: {integrity: sha512-N8kvvHfnCnohu44MglXT0LHlo5KncHd0tHNqE+Y9OEMfdRJseCKJujtb/FnzAgB+VRxsMI+Y8O9PN9x8g2+IsA==}
 
-  '@bull-board/ui@8.6.1':
-    resolution: {integrity: sha512-RV7oDopOJEUxzjmfKoqGcYDeHZGmpnpG+h/4DOVSSGYBtK87/8tlwAuLca9SPZqYTQjbviv7qOZ4jSjke/rUmQ==}
+  '@bull-board/ui@9.4.0':
+    resolution: {integrity: sha512-oRuCjMawEdpwFpHWWT6tzZLVqaqP+sK7xs1C1AhvTGm4pViNyPKwV7chtSExFOdVZuXJnJOl74WTXsHRfKMF3A==}
 
   '@changesets/apply-release-plan@8.0.0':
     resolution: {integrity: sha512-kUd2pbf1w5/AYmBMb0Tt+rkIPCjFJdT0SZMrkOjJT/WV/QbtmvkyB5jkV0oaNPheavprZk+SfUiozUti7TIL2w==}
@@ -4409,15 +4409,6 @@ packages:
     resolution: {integrity: sha512-U3K72/JAi3jITpdhZBqzSUq+DUY697tLxOuFXB+FpAE/Ug+5C3VZrv4uA674EUZHxNAuQ9wETXNqQkxZD6oL4A==}
     engines: {node: '>=v18.0.0'}
 
-  bullmq@5.81.2:
-    resolution: {integrity: sha512-Hi9GaVCC6HE9bQP65j/FNv1aL1fcEukTF99ezS5pl1Ud+joCFpNWiPCV45mWdkEmpuacS0XJdMMFGKPIHCwoPg==}
-    engines: {node: '>=12.22.0'}
-    peerDependencies:
-      redis: '>=5.0.0'
-    peerDependenciesMeta:
-      redis:
-        optional: true
-
   bullmq@5.81.3:
     resolution: {integrity: sha512-Q7uEH2G92rVjX3Yl2qw3+6VEO15uxehC6DfeTHQBQTehddcRDSDuquD9zuvDjxiCffXsPUaBwrRlvlbVcgKs7g==}
     engines: {node: '>=12.22.0'}
@@ -6146,9 +6137,6 @@ packages:
   msgpackr-extract@3.0.4:
     resolution: {integrity: sha512-4kmO/MdyUIkLIvTPr8VHLil4AtoKIoniWPIEk5+CDy0xnWC84azhSFmuJ7PxZdsYtiP5kEeQsORAVIeMgxT+Hw==}
     hasBin: true
-
-  msgpackr@2.0.4:
-    resolution: {integrity: sha512-o1C5KRmuRt+apqMr1HuGSqWStZoRBUpEsCsl15uM9VdAF1qHLtvMOU2En747EnTyEl6c4pzPewRMFF31s1CNbA==}
 
   msgpackr@2.0.5:
     resolution: {integrity: sha512-cef05H/dSYpLpqp3sj/qyZh5vhUYCalnaLO7j1yOmpsR0y/XwLVtK7r5gn+U/F7CTEfMowcGhlUQJDLcLf7jcA==}
@@ -7930,17 +7918,17 @@ snapshots:
 
   '@bugsnag/safe-json-stringify@6.1.0': {}
 
-  '@bull-board/api@8.6.1(@bull-board/ui@8.6.1(bullmq@5.81.2(supports-color@8.1.1)))(bullmq@5.81.2(supports-color@8.1.1))':
+  '@bull-board/api@9.4.0(@bull-board/ui@9.4.0(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)))(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))':
     dependencies:
-      '@bull-board/ui': 8.6.1(bullmq@5.81.2(supports-color@8.1.1))
+      '@bull-board/ui': 9.4.0(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
       redis-info: 3.1.0
     optionalDependencies:
-      bullmq: 5.81.2(supports-color@8.1.1)
+      bullmq: 6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
 
-  '@bull-board/fastify@8.6.1(bullmq@5.81.2(supports-color@8.1.1))':
+  '@bull-board/fastify@9.4.0(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))':
     dependencies:
-      '@bull-board/api': 8.6.1(@bull-board/ui@8.6.1(bullmq@5.81.2(supports-color@8.1.1)))(bullmq@5.81.2(supports-color@8.1.1))
-      '@bull-board/ui': 8.6.1(bullmq@5.81.2(supports-color@8.1.1))
+      '@bull-board/api': 9.4.0(@bull-board/ui@9.4.0(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)))(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
+      '@bull-board/ui': 9.4.0(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
       '@fastify/static': 10.1.3
       '@fastify/view': 12.0.0
       ejs: 6.0.1
@@ -7948,9 +7936,9 @@ snapshots:
       - bull
       - bullmq
 
-  '@bull-board/ui@8.6.1(bullmq@5.81.2(supports-color@8.1.1))':
+  '@bull-board/ui@9.4.0(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))':
     dependencies:
-      '@bull-board/api': 8.6.1(@bull-board/ui@8.6.1(bullmq@5.81.2(supports-color@8.1.1)))(bullmq@5.81.2(supports-color@8.1.1))
+      '@bull-board/api': 9.4.0(@bull-board/ui@9.4.0(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)))(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
     transitivePeerDependencies:
       - bull
       - bullmq
@@ -8565,7 +8553,7 @@ snapshots:
       - encoding
       - supports-color
 
-  '@lokalise/fastify-extras@31.0.1(@fastify/jwt@10.2.1)(@lokalise/api-contracts@8.0.0(zod@4.4.3))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@5.81.2(supports-color@8.1.1))(dd-trace@6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0)))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1(supports-color@8.1.1))(fastify@5.11.3)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.11.3)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(zod@4.4.3)':
+  '@lokalise/fastify-extras@31.0.1(@fastify/jwt@10.2.1)(@lokalise/api-contracts@8.0.0(zod@4.4.3))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0)))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1(supports-color@8.1.1))(fastify@5.11.3)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.11.3)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(zod@4.4.3)':
     dependencies:
       '@amplitude/analytics-node': 1.5.68
       '@bugsnag/js': 8.10.0
@@ -8579,7 +8567,7 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@splitsoftware/splitio': 11.11.2(supports-color@8.1.1)
       '@supercharge/promise-pool': 3.3.0
-      bullmq: 5.81.2(supports-color@8.1.1)
+      bullmq: 6.2.0(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
       dd-trace: 6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0))
       fastify: 5.11.3
       fastify-metrics: 13.2.1(fastify@5.11.3)
@@ -11074,17 +11062,6 @@ snapshots:
 
   brotli-wasm@3.0.1: {}
 
-  bullmq@5.81.2(supports-color@8.1.1):
-    dependencies:
-      cron-parser: 4.9.0
-      ioredis: 5.11.1(supports-color@8.1.1)
-      msgpackr: 2.0.4
-      node-abort-controller: 3.1.1
-      semver: 7.8.5
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - supports-color
-
   bullmq@5.81.3(supports-color@8.1.1):
     dependencies:
       cron-parser: 4.9.0
@@ -12945,10 +12922,6 @@ snapshots:
       '@msgpackr-extract/msgpackr-extract-linux-x64': 3.0.4
       '@msgpackr-extract/msgpackr-extract-win32-x64': 3.0.4
     optional: true
-
-  msgpackr@2.0.4:
-    optionalDependencies:
-      msgpackr-extract: 3.0.4
 
   msgpackr@2.0.5:
     optionalDependencies:

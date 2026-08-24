@@ -11,7 +11,7 @@ import {
   sanitizeRedisConfig,
 } from '@lokalise/background-jobs-common'
 import { type RedisConfig, resolveGlobalErrorLogObject } from '@lokalise/node-core'
-import type { Queue, QueueOptions, RedisConnection } from 'bullmq'
+import type { Queue, QueueOptions } from 'bullmq'
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
 import { Redis } from 'ioredis'
@@ -45,7 +45,7 @@ export interface QueueProConstructor {
 }
 
 export interface QueueConstructor {
-  new (name: string, opts?: QueueOptions, Connection?: typeof RedisConnection): Queue
+  new (name: string, opts?: QueueOptions): Queue
 }
 
 type ResolvedRedis = {
