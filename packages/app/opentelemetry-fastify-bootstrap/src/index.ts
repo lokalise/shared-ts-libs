@@ -21,16 +21,6 @@ import {
   StreamSpanFilteringExporter,
 } from './streamSpanFilteringExporter.ts'
 
-// Drizzle queries are not covered by the node auto-instrumentations when the
-// underlying driver is postgres.js (they only patch pg/pg-pool). Instrumenting
-// at the Drizzle layer is driver-agnostic: wrap the db instance once with
-// `instrumentDrizzleClient(db)` and every query emits a db client span via the
-// global tracer this package's SDK registers — nothing else to configure.
-export {
-  type InstrumentDrizzleConfig,
-  instrumentDrizzle,
-  instrumentDrizzleClient,
-} from '@kubiks/otel-drizzle'
 export {
   DbNamespaceSpanExporter,
   type DbNamespaceSpanExporterOptions,

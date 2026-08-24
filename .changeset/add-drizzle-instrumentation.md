@@ -1,5 +1,5 @@
 ---
-"@lokalise/opentelemetry-fastify-bootstrap": minor
+"@lokalise/opentelemetry-fastify-bootstrap": patch
 ---
 
-Add Drizzle ORM query tracing via `@kubiks/otel-drizzle` (re-exported `instrumentDrizzleClient` / `instrumentDrizzle`), covering drivers like postgres.js that the node auto-instrumentations don't patch.
+Document how to trace Drizzle ORM queries with `@kubiks/otel-drizzle`, covering drivers like postgres.js that the node auto-instrumentations don't patch.

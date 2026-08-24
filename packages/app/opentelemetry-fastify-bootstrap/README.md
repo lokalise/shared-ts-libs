@@ -127,12 +127,16 @@ Streaming requests are detected by the `Accept: text/event-stream` request heade
 
 ### Tracing Drizzle queries
 
-The node auto-instrumentations only cover the `pg` / `pg-pool` drivers, so Drizzle services on [postgres.js](https://github.com/porsager/postgres) (the `postgres` npm package) produce no DB query spans out of the box. To close that gap this package re-exports [`@kubiks/otel-drizzle`](https://github.com/kubiks-inc/otel), which instruments at the Drizzle layer and therefore works the same regardless of the underlying driver.
+The node auto-instrumentations only cover the `pg` / `pg-pool` drivers, so Drizzle services on [postgres.js](https://github.com/porsager/postgres) (the `postgres` npm package) produce no DB query spans out of the box. To close that gap, install [`@kubiks/otel-drizzle`](https://github.com/kubiks-inc/otel) directly in your service — it instruments at the Drizzle layer and therefore works the same regardless of the underlying driver. It is intentionally **not** bundled in this package: it only takes effect when the service explicitly wraps its Drizzle instance, so services that need it should declare it themselves.
+
+```bash
+pnpm add @kubiks/otel-drizzle
+```
 
 Wrap your Drizzle instance once where it is created:
 
 ```ts
-import { instrumentDrizzleClient } from '@lokalise/opentelemetry-fastify-bootstrap'
+import { instrumentDrizzleClient } from '@kubiks/otel-drizzle'
 import { drizzle } from 'drizzle-orm/postgres-js'
 
 const db = drizzle(process.env.DATABASE_URL)
@@ -142,9 +146,9 @@ instrumentDrizzleClient(db, { dbSystem: 'postgresql', dbName: 'myapp' })
 const users = await db.select().from(usersTable)
 ```
 
-Each span carries `db.system`, `db.statement` (the parameterized SQL, truncated to 1000 chars by default), `db.operation` and — when configured — `db.name` / `net.peer.name` / `net.peer.port`. Because the spans carry `db.system`, they also participate in [`dbNamespaceBySystem` enrichment](#joining-a-datadog-inferred-service-entity). See `InstrumentDrizzleConfig` (also re-exported) for all options, e.g. `captureQueryText: false` to omit SQL text.
+`@kubiks/otel-drizzle` only depends on `@opentelemetry/api` (as a peer), so it doesn't conflict with the OTel SDK versions this package owns. The wrapper emits through the global tracer that `initOpenTelemetry` registers — no extra setup here is needed, and when OpenTelemetry is disabled it produces no-op spans with negligible overhead.
 
-The wrapper emits through the global tracer that `initOpenTelemetry` registers, so when OpenTelemetry is disabled it produces no-op spans with negligible overhead. Services not using Drizzle are unaffected — nothing is registered globally.
+Each span carries `db.system`, `db.statement` (the parameterized SQL, truncated to 1000 chars by default), `db.operation` and — when configured — `db.name` / `net.peer.name` / `net.peer.port`. Because the spans carry `db.system`, they also participate in [`dbNamespaceBySystem` enrichment](#joining-a-datadog-inferred-service-entity). See `InstrumentDrizzleConfig` for all options, e.g. `captureQueryText: false` to omit SQL text.
 
 ### Adding Custom Span Processors
 
@@ -168,7 +172,7 @@ initOpenTelemetry({
 
 - Automatic instrumentation for Node.js applications via `@opentelemetry/auto-instrumentations-node`
 - Fastify-specific instrumentation via `@fastify/otel`
-- Drizzle ORM instrumentation via `@kubiks/otel-drizzle` (wrap your db instance with the re-exported `instrumentDrizzleClient`) — driver-agnostic, covers postgres.js which the auto-instrumentations don't
+- Documented recipe for Drizzle ORM query tracing via `@kubiks/otel-drizzle` — driver-agnostic, covers postgres.js which the auto-instrumentations don't (see [Tracing Drizzle queries](#tracing-drizzle-queries))
 - OTLP gRPC trace exporter
 - Configurable path filtering
 - Optional console span exporter for debugging
