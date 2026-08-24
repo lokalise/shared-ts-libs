@@ -92,7 +92,7 @@ export abstract class EnhancedError<TDetails = undefined> extends Error {
   readonly details: TDetails
 
   constructor(options: EnhancedErrorOptions<TDetails>) {
-    super(options.message, { cause: options.cause })
+    super(options.message, options.cause !== undefined ? { cause: options.cause } : undefined)
 
     // Set the error's name to the name of the class that was instantiated
     this.name = new.target.name

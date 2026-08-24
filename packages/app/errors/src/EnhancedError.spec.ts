@@ -62,6 +62,17 @@ describe('EnhancedError', () => {
     })
   })
 
+  describe('cause', () => {
+    it('has no own cause property when cause is not provided', () => {
+      expect('cause' in new A({ message: 'test' })).toBe(false)
+    })
+
+    it('forwards cause when provided', () => {
+      const cause = new Error('root')
+      expect(new A({ message: 'test', cause }).cause).toBe(cause)
+    })
+  })
+
   it('fails instanceof across vm contexts when using Error subclass', () => {
     const context = vm.createContext({ Error })
 
