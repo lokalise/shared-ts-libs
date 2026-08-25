@@ -17,9 +17,19 @@ export interface PublicErrorDefinition {
   detailsSchema?: z.ZodObject
 }
 
-/** Infers the TypeScript type of error details from a Zod schema. */
+/**
+ * Infers the TypeScript type of error details from a Zod schema.
+ *
+ * For the wide {@link PublicErrorDefinition} type (where `detailsSchema` may or
+ * may not be present), details resolve to `Record<string, unknown> | undefined`
+ * so generic error handlers can still inspect them.
+ */
 export type InferPublicErrorDetails<TDef extends PublicErrorDefinition> =
-  TDef['detailsSchema'] extends z.ZodObject ? z.infer<TDef['detailsSchema']> : undefined
+  TDef['detailsSchema'] extends z.ZodObject
+    ? z.infer<TDef['detailsSchema']>
+    : [Extract<TDef['detailsSchema'], z.ZodObject>] extends [never]
+      ? undefined
+      : z.infer<Extract<TDef['detailsSchema'], z.ZodObject>> | undefined
 
 /**
  * Options accepted by {@link PublicError} subclass constructors.
@@ -68,7 +78,9 @@ export type PublicErrorOptions<T extends PublicErrorDefinition> = EnhancedErrorO
  * }
  * ```
  */
-export abstract class PublicError<T extends PublicErrorDefinition> extends EnhancedError<
+export abstract class PublicError<
+  T extends PublicErrorDefinition = PublicErrorDefinition,
+> extends EnhancedError<
   InferPublicErrorDetails<T>
 > {
   readonly code: T['code']
