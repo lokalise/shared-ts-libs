@@ -37,15 +37,35 @@ checks for those symbols instead of walking the prototype chain. Because
 realms (workers, VM contexts) and across duplicated copies of this package in
 `node_modules` — situations where prototype-based `instanceof` silently fails.
 
-One caveat: the symbols are derived from **class names**, so two unrelated
-classes with the same name and inheritance path will match each other. Keep
-concrete error class names unique, and don't minify/mangle class names in code
-that crosses these boundaries.
+### Class naming rules
 
-For the same reason every class in the chain must have a name: constructing an
-error with an unnamed class in its hierarchy throws. Class expressions returned
-from factories are unnamed — name them explicitly with
-`Object.defineProperty(TheClass, 'name', { value: '...' })`.
+The symbols are derived from **class names and inheritance structure** — they
+*are* the cross-realm identity. This has a few consequences:
+
+- **Renaming is a breaking change.** Renaming an error class (or moving it in
+  the hierarchy) changes its identity: errors stamped by an older copy of the
+  code stop matching `instanceof` checks in a newer copy, and vice versa. What
+  looks like a pure refactor (`NotFoundError` → `ResourceNotFoundError`) changes
+  runtime behavior across these boundaries.
+- **Same name + same path = same class.** Two classes with the same name and
+  inheritance path match each other's `instanceof`. That is deliberate — it is
+  what makes duplicated package copies interoperable — but it also means
+  unrelated classes that happen to share a name and path are indistinguishable.
+  Keep concrete error class names unique across your codebase.
+- **Names must survive to runtime.** Minifiers that mangle class names (terser
+  without `keep_classnames`, esbuild `--minify` without `--keep-names`) mangle
+  each bundle independently, silently breaking `instanceof` across realms and
+  package copies — and can even make unrelated classes collide on the same
+  mangled name. A single consistently-minified bundle keeps working, but that
+  is exactly the case where plain prototype-based `instanceof` works anyway.
+- **Every class in the chain must have a name.** An anonymous class has nothing
+  stable to derive an identity from, so constructing an error with an unnamed
+  class in its hierarchy throws. Class expressions returned from factories are
+  unnamed — name them explicitly:
+
+  ```ts
+  Object.defineProperty(TheClass, 'name', { value: 'TheClass' })
+  ```
 
 ## InternalError
 

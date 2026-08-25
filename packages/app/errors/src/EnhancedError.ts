@@ -78,6 +78,18 @@ export type EnhancedErrorOptions<TDetails> = {
  * prototype chain checks fail, because symbols created via `Symbol.for` are
  * shared globally and can be reliably compared.
  *
+ * **Class names are the identity.** The symbols are derived from class names
+ * and inheritance structure, which has three consequences:
+ * - Renaming an error class (or moving it in the hierarchy) changes its
+ *   identity — a breaking change for instanceof across realms and package
+ *   copies.
+ * - Any class with the same name and inheritance path is treated as the same
+ *   class. That is deliberate — it is what makes duplicated package copies
+ *   interoperable — so keep concrete error class names unique.
+ * - Names must survive to runtime: minifiers that mangle class names (terser
+ *   without `keep_classnames`, esbuild minify without `keep-names`) break
+ *   instanceof across realms and package copies.
+ *
  * Since the symbols are derived from class names, every class in the chain
  * must have one. The constructor throws when it encounters an unnamed class
  * (e.g. a class expression returned from a factory). Name such classes
