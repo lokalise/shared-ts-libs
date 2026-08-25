@@ -426,7 +426,7 @@ try {
 }
 ```
 
-Recognized codes: `UND_ERR_HEADERS_TIMEOUT`, `UND_ERR_BODY_TIMEOUT`, `UND_ERR_CONNECT_TIMEOUT`, `UND_ERR_SOCKET`, `ECONNREFUSED`, `ECONNRESET`, `ETIMEDOUT`, `EPIPE`, `EAI_AGAIN`. Detection also walks the error's `cause` chain (depth-capped), so errors wrapped by `InternalRequestError` or `fetch` are recognized too.
+Recognized codes: `UND_ERR_HEADERS_TIMEOUT`, `UND_ERR_BODY_TIMEOUT`, `UND_ERR_CONNECT_TIMEOUT`, `UND_ERR_SOCKET`, `UND_ERR_PRX_CONN`, `ECONNREFUSED`, `ECONNRESET`, `EHOSTUNREACH`, `EHOSTDOWN`, `ENETUNREACH`, `ENETDOWN`, `EADDRNOTAVAIL`, `ETIMEDOUT`, `EPIPE`, `EAI_AGAIN`, `ERR_SOCKET_CONNECTION_TIMEOUT`. Detection also walks the error's `cause` chain (depth-capped), so errors wrapped by `InternalRequestError` or `fetch` are recognized too.
 
 ### Options
 

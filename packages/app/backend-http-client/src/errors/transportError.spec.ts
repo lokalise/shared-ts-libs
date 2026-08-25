@@ -8,11 +8,18 @@ describe('getTransportErrorCode', () => {
     'UND_ERR_BODY_TIMEOUT',
     'UND_ERR_CONNECT_TIMEOUT',
     'UND_ERR_SOCKET',
+    'UND_ERR_PRX_CONN',
     'ECONNREFUSED',
     'ECONNRESET',
+    'EHOSTUNREACH',
+    'EHOSTDOWN',
+    'ENETUNREACH',
+    'ENETDOWN',
+    'EADDRNOTAVAIL',
     'ETIMEDOUT',
     'EPIPE',
     'EAI_AGAIN',
+    'ERR_SOCKET_CONNECTION_TIMEOUT',
   ])('detects %s on the error itself', (code) => {
     const error = Object.assign(new Error('request failed'), { code })
 
