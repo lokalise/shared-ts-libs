@@ -7,22 +7,18 @@ const PROTOTYPE_PATH_DELIMITER = '.'
 const getSymbolKey = (prototypePath: string): string =>
   `${PROTOTYPE_PATH_NAMESPACE}${PROTOTYPE_PATH_DELIMITER}${prototypePath}`
 
-const getPrototypeNamesPostError = (input: unknown): string[] => {
+// Returns the class names below `Error` in the given constructor's inheritance
+// chain, ordered from `Error`'s direct subclass down to the constructor itself.
+// biome-ignore lint/complexity/noBannedTypes: walks a constructor chain
+const getConstructorNamesPostError = (ctor: Function): string[] => {
   const names: string[] = []
 
-  const isFunction = typeof input === 'function'
+  // biome-ignore lint/complexity/noBannedTypes: walks a constructor chain
+  let current: Function | null = ctor
 
-  // biome-ignore lint/complexity/noBannedTypes: describes prototype
-  let current: Function = isFunction ? input : Object.getPrototypeOf(input)
-
-  while (current !== null) {
-    const name = isFunction ? current.name : current.constructor.name
-
-    if (!name) {
-      break
-    }
-
-    names.push(name)
+  // The walk terminates at Function.prototype, whose name is ''.
+  while (current?.name) {
+    names.push(current.name)
     current = Object.getPrototypeOf(current)
   }
 
@@ -104,7 +100,7 @@ export abstract class EnhancedError<TDetails = undefined> extends Error {
     // Cast needed because the conditional type is not narrowed by the compiler here.
     this.details = options.details as TDetails
 
-    const prototypeNames = getPrototypeNamesPostError(this)
+    const prototypeNames = getConstructorNamesPostError(new.target)
 
     // An unnamed class anywhere in the chain truncates the walk, which would
     // silently stamp wrong or no symbols and break instanceof for this instance.
@@ -129,7 +125,7 @@ export abstract class EnhancedError<TDetails = undefined> extends Error {
     }
 
     // biome-ignore lint/complexity/noThisInStatic: intentional to support subclasses
-    const prototypeNames = getPrototypeNamesPostError(this)
+    const prototypeNames = getConstructorNamesPostError(this)
     const symbol = Symbol.for(getSymbolKey(prototypeNames.join(PROTOTYPE_PATH_DELIMITER)))
 
     return symbol in val && val[symbol] === true
