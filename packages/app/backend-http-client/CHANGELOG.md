@@ -1,5 +1,11 @@
 # Changelog
 
+## 12.2.0
+
+### Minor Changes
+
+- 07d9573: Export `TRANSPORT_ERROR_CODES` (the authoritative transport-error code list, previously internal) and the `HttpClient` type (the handle returned by `buildClient`), so consumers can iterate the code list instead of copying it and can type client instances without importing `Client` from `undici` directly.
+
 ## 12.1.0
 
 ### Minor Changes
