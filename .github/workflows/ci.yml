@@ -39,6 +39,7 @@ jobs:
             ["packages/app/datadog-fastify-bootstrap"]="@lokalise/datadog-fastify-bootstrap"
             ["packages/app/drizzle-utils"]="@lokalise/drizzle-utils"
             ["packages/app/error-utils"]="@lokalise/error-utils"
+            ["packages/app/errors"]="@lokalise/errors"
             ["packages/app/fastify-api-contracts"]="@lokalise/fastify-api-contracts"
             ["packages/app/fastify-bullboard-plugin"]="@lokalise/fastify-bullboard-plugin"
             ["packages/app/frontend-http-client"]="@lokalise/frontend-http-client"
