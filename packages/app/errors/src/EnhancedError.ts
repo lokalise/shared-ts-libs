@@ -128,6 +128,6 @@ export abstract class EnhancedError<TDetails = undefined> extends Error {
     const prototypeNames = getConstructorNamesPostError(this)
     const symbol = Symbol.for(getSymbolKey(prototypeNames.join(PROTOTYPE_PATH_DELIMITER)))
 
-    return symbol in val && val[symbol] === true
+    return Object.hasOwn(val, symbol)
   }
 }
