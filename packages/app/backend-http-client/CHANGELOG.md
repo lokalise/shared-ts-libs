@@ -1,5 +1,11 @@
 # Changelog
 
+## 12.1.0
+
+### Minor Changes
+
+- e64f7c2: Add `isTransportError` and `getTransportErrorCode` helpers detecting transport-level request failures without an HTTP response (undici timeouts and socket errors, connection refused/reset, DNS backoff), including errors wrapped in a `cause` chain. Useful for classifying such failures as retryable.
+
 ## 12.0.1
 
 ### Patch Changes
