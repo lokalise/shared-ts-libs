@@ -32,6 +32,31 @@ describe('InternalError', () => {
     expect(new TranslatorTimeoutError('t-1') instanceof DatabaseQueryError).toBe(false)
   })
 
+  describe('isInstance', () => {
+    it('matches the family and the concrete class', () => {
+      const err: unknown = new DatabaseQueryError('SELECT 1')
+      expect(InternalError.isInstance(err)).toBe(true)
+      expect(DatabaseQueryError.isInstance(err)).toBe(true)
+    })
+
+    it('rejects sibling classes, plain errors, and non-objects', () => {
+      expect(DatabaseQueryError.isInstance(new TranslatorTimeoutError('t-1'))).toBe(false)
+      expect(InternalError.isInstance(new Error('boom'))).toBe(false)
+      expect(InternalError.isInstance(null)).toBe(false)
+      expect(InternalError.isInstance('boom')).toBe(false)
+    })
+
+    it('narrows to the class it is called on', () => {
+      const err: unknown = new DatabaseQueryError('SELECT 1')
+      if (DatabaseQueryError.isInstance(err)) {
+        // narrowed — details.query is typed as string
+        expect(err.details.query).toBe('SELECT 1')
+      } else {
+        expect.unreachable()
+      }
+    })
+  })
+
   describe('nominal typing', () => {
     it('InternalError subclasses are not interchangeable', () => {
       const getTranslatorError = (): TranslatorTimeoutError => {

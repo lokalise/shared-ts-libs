@@ -74,6 +74,42 @@ describe('PublicError', () => {
   })
 })
 
+describe('isInstance', () => {
+  it('matches the family and the concrete class', () => {
+    const err: unknown = new ProjectNameAlreadyExistsError('foo')
+    expect(PublicError.isInstance(err)).toBe(true)
+    expect(ProjectNameAlreadyExistsError.isInstance(err)).toBe(true)
+  })
+
+  it('does not match the InternalError family or sibling classes', () => {
+    const err: unknown = new ProjectNameAlreadyExistsError('foo')
+    expect(InternalError.isInstance(err)).toBe(false)
+    expect(ProjectNotFoundError.isInstance(err)).toBe(false)
+  })
+
+  it('rejects plain errors and non-objects', () => {
+    expect(PublicError.isInstance(new Error('boom'))).toBe(false)
+    expect(PublicError.isInstance(null)).toBe(false)
+    expect(PublicError.isInstance(undefined)).toBe(false)
+  })
+
+  it('narrows to the class it is called on', () => {
+    const err: unknown = new ProjectNameAlreadyExistsError('foo')
+    if (PublicError.isInstance(err)) {
+      // narrowed to the family — httpStatusCode is available
+      expect(err.httpStatusCode).toBe(409)
+    } else {
+      expect.unreachable()
+    }
+    if (ProjectNameAlreadyExistsError.isInstance(err)) {
+      // narrowed to the concrete class — details.name is typed as string
+      expect(err.details.name).toBe('foo')
+    } else {
+      expect.unreachable()
+    }
+  })
+})
+
 describe('toPayload', () => {
   it('returns message, code and details when a details schema is defined', () => {
     expect(new ProjectNameAlreadyExistsError('foo').toPayload()).toEqual({

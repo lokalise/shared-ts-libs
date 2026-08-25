@@ -1,10 +1,9 @@
 // Namespaces the global Symbol.for registry keys to minimize collisions with unrelated code.
-const PROTOTYPE_PATH_NAMESPACE = '@lokalise/errors'
+const SYMBOL_NAMESPACE = '@lokalise/errors'
 
 const PROTOTYPE_PATH_DELIMITER = '.'
 
-const getSymbolKey = (prototypePath: string): string =>
-  `${PROTOTYPE_PATH_NAMESPACE}${PROTOTYPE_PATH_DELIMITER}${prototypePath}`
+const getSymbolKey = (key: string): string => `${SYMBOL_NAMESPACE}${PROTOTYPE_PATH_DELIMITER}${key}`
 
 // Returns the class names below `Error` in the given constructor's inheritance
 // chain, ordered from `Error`'s direct subclass down to the constructor itself.
@@ -60,7 +59,7 @@ export type EnhancedErrorOptions<TDetails> = {
  * {@link InternalError} for non-public operational errors or {@link PublicError}
  * for errors surfaced to clients.
  *
- * Enables reliable instanceof checks across realms and across duplicated
+ * Enables reliable `isInstance` checks across realms and across duplicated
  * copies of this package in `node_modules`.
  * Also ensures subclasses like `NotFoundError` have a consistent error name
  * (i.e., `error.name` is set to the subclass name instead of `EnhancedError`).
@@ -70,25 +69,25 @@ export type EnhancedErrorOptions<TDetails> = {
  * - '@lokalise/errors.EnhancedError.Subclass1'
  * - '@lokalise/errors.EnhancedError.Subclass1.Subclass2',
  * assigning them to the instance using `Symbol.for` on instantiation.
- * The custom `instanceof` logic (overriding `Symbol.hasInstance`) checks if the
- * corresponding symbol for the constructor's prototype path exists on the
- * tested object.
+ * The `isInstance` guard (via the `Symbol.hasInstance` override backing it)
+ * checks if the corresponding symbol for the constructor's prototype path
+ * exists on the tested object.
  *
- * This technique allows `instanceof` to succeed across realms where normal
+ * This technique allows `isInstance` to succeed across realms where normal
  * prototype chain checks fail, because symbols created via `Symbol.for` are
  * shared globally and can be reliably compared.
  *
  * **Class names are the identity.** The symbols are derived from class names
  * and inheritance structure, which has three consequences:
  * - Renaming an error class (or moving it in the hierarchy) changes its
- *   identity — a breaking change for instanceof across realms and package
+ *   identity — a breaking change for isInstance across realms and package
  *   copies.
  * - Any class with the same name and inheritance path is treated as the same
  *   class. That is deliberate — it is what makes duplicated package copies
  *   interoperable — so keep concrete error class names unique.
  * - Names must survive to runtime: minifiers that mangle class names (terser
  *   without `keep_classnames`, esbuild minify without `keep-names`) break
- *   instanceof across realms and package copies.
+ *   isInstance across realms and package copies.
  *
  * Since the symbols are derived from class names, every class in the chain
  * must have one. The constructor throws when it encounters an unnamed class
@@ -117,10 +116,10 @@ export abstract class EnhancedError<TDetails = undefined> extends Error {
     const prototypeNames = getConstructorNamesPostError(new.target)
 
     // An unnamed class anywhere in the chain truncates the walk, which would
-    // silently stamp wrong or no symbols and break instanceof for this instance.
+    // silently stamp wrong or no symbols and break isInstance for this instance.
     if (prototypeNames[0] !== EnhancedError.name) {
       throw new Error(
-        `Cannot derive instanceof symbols for '${new.target.name || '(anonymous class)'}': every class in the prototype chain must have a name. Name factory-created classes explicitly, e.g. Object.defineProperty(TheClass, 'name', { value: 'TheClass' }).`,
+        `Cannot derive identity symbols for '${new.target.name || '(anonymous class)'}': every class in the prototype chain must have a name. Name factory-created classes explicitly, e.g. Object.defineProperty(TheClass, 'name', { value: 'TheClass' }).`,
       )
     }
 
@@ -131,6 +130,19 @@ export abstract class EnhancedError<TDetails = undefined> extends Error {
 
       Object.defineProperty(this, symbol, { value: true })
     }
+  }
+
+  /**
+   * Type guard for this error class — the preferred way to check errors.
+   *
+   * Inherited by every subclass and narrows to the subclass it is called on.
+   */
+  static isInstance<T>(
+    this: { prototype: T; [Symbol.hasInstance](value: unknown): boolean },
+    value: unknown,
+  ): value is T {
+    // biome-ignore lint/complexity/noThisInStatic: intentional to support subclasses
+    return value instanceof this
   }
 
   static override [Symbol.hasInstance](val: unknown): boolean {
