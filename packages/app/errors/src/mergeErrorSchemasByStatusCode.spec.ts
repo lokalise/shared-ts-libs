@@ -50,19 +50,27 @@ describe('mergeErrorSchemasByStatusCode', () => {
       responses[409].safeParse({
         message: 'conflict',
         code: 'PROJECT_NAME_ALREADY_EXISTS',
+        errorCode: 'PROJECT_NAME_ALREADY_EXISTS',
         details: { name: 'foo' },
       }).success,
     ).toBe(true)
-    expect(responses[409].safeParse({ message: 'locked', code: 'PROJECT_LOCKED' }).success).toBe(
-      true,
-    )
+    expect(
+      responses[409].safeParse({
+        message: 'locked',
+        code: 'PROJECT_LOCKED',
+        errorCode: 'PROJECT_LOCKED',
+      }).success,
+    ).toBe(true)
     expect(responses[409].safeParse({ message: 'conflict', code: 'UNRELATED_CODE' }).success).toBe(
       false,
     )
     expect(
       // details required by the matched union member
-      responses[409].safeParse({ message: 'conflict', code: 'PROJECT_NAME_ALREADY_EXISTS' })
-        .success,
+      responses[409].safeParse({
+        message: 'conflict',
+        code: 'PROJECT_NAME_ALREADY_EXISTS',
+        errorCode: 'PROJECT_NAME_ALREADY_EXISTS',
+      }).success,
     ).toBe(false)
   })
 

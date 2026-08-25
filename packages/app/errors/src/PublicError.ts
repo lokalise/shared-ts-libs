@@ -49,6 +49,8 @@ export type PublicErrorOptions<T extends PublicErrorDefinition> = EnhancedErrorO
 export type PublicErrorPayload<T extends PublicErrorDefinition> = {
   message: string
   code: T['code']
+  /** @deprecated Use {@link code} instead — node-core compatibility alias. */
+  errorCode: T['code']
 } & (T['detailsSchema'] extends z.ZodObject
   ? { details: InferPublicErrorDetails<T> }
   : { details?: never })
@@ -105,11 +107,15 @@ export abstract class PublicError<
    * Returns the client-facing payload: `message`, `code`, and `details` when
    * the definition declares a `detailsSchema`. Excludes non-public fields
    * (`stack`, `cause`, `name`) and always satisfies the definition's `schema`.
+   *
+   * Also includes the deprecated `errorCode` alias of `code` for
+   * `@lokalise/node-core` compatibility; it will be dropped in a future major.
    */
   toPayload(): PublicErrorPayload<T> {
     return {
       message: this.message,
       code: this.code,
+      errorCode: this.code,
       ...(this.details !== undefined && { details: this.details }),
     } as PublicErrorPayload<T>
   }
@@ -149,9 +155,10 @@ export abstract class PublicError<
  * to `string`), which is what enables TypeScript discrimination between
  * different error classes.
  *
- * `schema` is a Zod object with `{ message, code: z.literal(...) }`, plus a
- * typed `details` field when `detailsSchema` is provided. Use it for
- * client-side parsing and discriminated unions:
+ * `schema` is a Zod object with `{ message, code: z.literal(...) }` (plus a
+ * typed `details` field when `detailsSchema` is provided, and an `errorCode`
+ * alias of `code` for node-core compatibility, marked deprecated in the schema
+ * metadata). Use it for client-side parsing and discriminated unions:
  *
  * ```ts
  * const errorSchema = z.discriminatedUnion('code', [
@@ -182,11 +189,22 @@ export const definePublicError = <const T extends PublicErrorDefinition>(def: T)
     ? z.ZodObject<{
         message: z.ZodString
         code: z.ZodLiteral<T['code']>
+        errorCode: z.ZodLiteral<T['code']>
         details: NonNullable<T['detailsSchema']>
       }>
-    : z.ZodObject<{ message: z.ZodString; code: z.ZodLiteral<T['code']> }>
+    : z.ZodObject<{
+        message: z.ZodString
+        code: z.ZodLiteral<T['code']>
+        errorCode: z.ZodLiteral<T['code']>
+      }>
 
-  const base = { message: z.string(), code: z.literal(def.code) }
+  const base = {
+    message: z.string(),
+    code: z.literal(def.code),
+    // Deprecated node-core compatibility alias of `code`; the metadata flows
+    // into generated JSON Schema / OpenAPI output.
+    errorCode: z.literal(def.code).meta({ deprecated: true }),
+  }
   const schema = (
     def.detailsSchema ? z.object({ ...base, details: def.detailsSchema }) : z.object(base)
   ) as Schema

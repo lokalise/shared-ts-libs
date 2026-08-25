@@ -191,10 +191,10 @@ class RateLimitError extends PublicError.from(rateLimitErrorDefinition) {
 
 ```ts
 new ProjectNotFoundError('abc').toPayload()
-// { message: 'Project abc not found', code: 'PROJECT_NOT_FOUND', details: { id: 'abc' } }
+// { message: 'Project abc not found', code: 'PROJECT_NOT_FOUND', errorCode: 'PROJECT_NOT_FOUND', details: { id: 'abc' } }
 
 new RateLimitError().toPayload()
-// { message: 'Too many requests', code: 'RATE_LIMIT_EXCEEDED' } — no details key
+// { message: 'Too many requests', code: 'RATE_LIMIT_EXCEEDED', errorCode: 'RATE_LIMIT_EXCEEDED' } — no details key
 ```
 
 The return type (`PublicErrorPayload`) keeps `code` as a literal and `details`
@@ -205,6 +205,20 @@ the schema:
 ```ts
 reply.status(error.httpStatusCode).send(error.toPayload())
 ```
+
+### Migrating from `@lokalise/node-core`: the deprecated `errorCode` alias
+
+To ease migrating consumers of `@lokalise/node-core` errors, every error also
+exposes a **deprecated** `errorCode` getter that mirrors `code`. It appears in
+`toPayload()` output, and the companion `schema` includes it as a required
+field marked `deprecated` in its metadata (`.meta({ deprecated: true })`), so
+generated OpenAPI output flags it accordingly.
+
+Do not use `errorCode` in new code — read `code` instead. The alias will be
+removed in a future major version once the node-core migration is complete.
+Note it is a getter, so it does not appear in `JSON.stringify(error)` or
+own-property log serializers — log pipelines keyed on `errorCode` should move
+to `code`.
 
 ### Response schemas by status code (API contracts)
 

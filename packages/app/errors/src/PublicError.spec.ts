@@ -115,13 +115,18 @@ describe('toPayload', () => {
     expect(new ProjectNameAlreadyExistsError('foo').toPayload()).toEqual({
       message: 'A project named "foo" already exists.',
       code: 'PROJECT_NAME_ALREADY_EXISTS',
+      errorCode: 'PROJECT_NAME_ALREADY_EXISTS',
       details: { name: 'foo' },
     })
   })
 
   it('omits the details key when no details schema is defined', () => {
     const payload = new ProjectNotFoundError('123').toPayload()
-    expect(payload).toEqual({ message: 'Project 123 not found', code: 'PROJECT_NOT_FOUND' })
+    expect(payload).toEqual({
+      message: 'Project 123 not found',
+      code: 'PROJECT_NOT_FOUND',
+      errorCode: 'PROJECT_NOT_FOUND',
+    })
     expect('details' in payload).toBe(false)
   })
 
@@ -164,6 +169,7 @@ describe('definePublicError schema', () => {
     const result = projectNotFoundErrorDefinition.schema.safeParse({
       message: 'not found',
       code: 'PROJECT_NOT_FOUND',
+      errorCode: 'PROJECT_NOT_FOUND',
     })
     expect(result.success).toBe(true)
   })
@@ -180,6 +186,7 @@ describe('definePublicError schema', () => {
     const result = projectNameAlreadyExistsErrorDefinition.schema.safeParse({
       message: 'conflict',
       code: 'PROJECT_NAME_ALREADY_EXISTS',
+      errorCode: 'PROJECT_NAME_ALREADY_EXISTS',
       details: { name: 'foo' },
     })
     expect(result.success).toBe(true)
@@ -189,8 +196,32 @@ describe('definePublicError schema', () => {
     const result = projectNameAlreadyExistsErrorDefinition.schema.safeParse({
       message: 'conflict',
       code: 'PROJECT_NAME_ALREADY_EXISTS',
+      errorCode: 'PROJECT_NAME_ALREADY_EXISTS',
     })
     expect(result.success).toBe(false)
+  })
+
+  it('schema marks the deprecated errorCode alias as deprecated in its metadata', () => {
+    expect(projectNotFoundErrorDefinition.schema.shape.errorCode.meta()).toEqual({
+      deprecated: true,
+    })
+  })
+
+  it('schema rejects an errorCode alias that does not match the code literal', () => {
+    const result = projectNotFoundErrorDefinition.schema.safeParse({
+      message: 'not found',
+      code: 'PROJECT_NOT_FOUND',
+      errorCode: 'WRONG_CODE',
+    })
+    expect(result.success).toBe(false)
+  })
+})
+
+describe('deprecated errorCode alias', () => {
+  it('mirrors code on instances', () => {
+    const err = new ProjectNotFoundError('123')
+    expect(err.errorCode).toBe('PROJECT_NOT_FOUND')
+    expect(err.errorCode).toBe(err.code)
   })
 })
 

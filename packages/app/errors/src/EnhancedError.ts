@@ -105,6 +105,18 @@ export abstract class EnhancedError<TDetails = undefined> extends Error {
 
   readonly details: TDetails
 
+  /**
+   * Compatibility alias for {@link code}, matching the error shape of
+   * `@lokalise/node-core`.
+   *
+   * @deprecated Use {@link code} instead. This alias only exists to ease the
+   * migration from `@lokalise/node-core` errors and will be removed in a
+   * future major version.
+   */
+  get errorCode(): string {
+    return this.code
+  }
+
   constructor(options: EnhancedErrorOptions<TDetails>) {
     super(options.message, options.cause !== undefined ? { cause: options.cause } : undefined)
 

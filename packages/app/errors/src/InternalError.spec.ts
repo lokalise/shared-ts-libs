@@ -28,6 +28,10 @@ describe('InternalError', () => {
     expect(new TranslatorTimeoutError('t-1').code).toBe('TRANSLATOR_TIMEOUT')
   })
 
+  it('exposes the deprecated errorCode alias mirroring code', () => {
+    expect(new TranslatorTimeoutError('t-1').errorCode).toBe('TRANSLATOR_TIMEOUT')
+  })
+
   it('sibling internal error classes do not match each other', () => {
     expect(new TranslatorTimeoutError('t-1') instanceof DatabaseQueryError).toBe(false)
   })
