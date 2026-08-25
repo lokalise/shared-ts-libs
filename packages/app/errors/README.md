@@ -167,6 +167,52 @@ the schema:
 reply.status(error.httpStatusCode).send(error.toPayload())
 ```
 
+### Response schemas by status code (API contracts)
+
+`mergeErrorSchemasByStatusCode()` groups public error definitions by the HTTP
+status code derived from their `type` and returns `{ [statusCode]: payloadSchema }`,
+ready to be spread into an API contract's `responsesByStatusCode`
+(`@lokalise/api-contracts`):
+
+```ts
+import { mergeErrorSchemasByStatusCode } from '@lokalise/errors'
+import { defineApiContract } from '@lokalise/api-contracts'
+
+const getProjectContract = defineApiContract({
+  method: 'get',
+  summary: 'Get project',
+  visibility: 'public',
+  requestPathParamsSchema: z.object({ id: z.string() }),
+  pathResolver: ({ id }) => `/projects/${id}`,
+  responsesByStatusCode: {
+    200: projectSchema,
+    ...mergeErrorSchemasByStatusCode([
+      projectNotFoundErrorDefinition, // not-found  → 404
+      projectNameAlreadyExistsErrorDefinition, // conflict → 409
+      projectLockedErrorDefinition, // conflict → 409
+    ]),
+    // → { 404: <PROJECT_NOT_FOUND schema>,
+    //     409: z.discriminatedUnion('code', [<PROJECT_NAME_ALREADY_EXISTS>, <PROJECT_LOCKED>]) }
+  },
+})
+```
+
+Behavior:
+
+- A status code claimed by a **single** definition maps to that definition's
+  `schema` as-is.
+- A status code **shared** by several definitions maps to a
+  `z.discriminatedUnion('code', ...)` of their schemas — so error codes must be
+  unique within a status code.
+- Both the status code keys and the payload types are preserved at the type
+  level: `z.infer` of a mapped schema yields the payload union with literal
+  `code` and typed `details`, letting contract consumers discriminate error
+  responses by `code`. Accessing a status code no definition maps to is a
+  compile error.
+
+Combined with `toPayload()`, the server response provably matches the contract:
+the payload an error serializes to is exactly what the mapped schema validates.
+
 ## Protocol mapping
 
 `PublicError` instances expose `httpStatusCode` as a getter. For cases where

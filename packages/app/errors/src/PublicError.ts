@@ -92,9 +92,7 @@ export type PublicErrorPayload<T extends PublicErrorDefinition> = {
  */
 export abstract class PublicError<
   T extends PublicErrorDefinition = PublicErrorDefinition,
-> extends EnhancedError<
-  InferPublicErrorDetails<T>
-> {
+> extends EnhancedError<InferPublicErrorDetails<T>> {
   readonly code: T['code']
   readonly type: T['type']
 
