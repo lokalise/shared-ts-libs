@@ -1,4 +1,4 @@
-import { z } from 'zod/v4'
+import { z } from 'zod'
 import { httpStatusByErrorType } from './constants.ts'
 import type { EnhancedErrorOptions } from './EnhancedError.ts'
 import { EnhancedError } from './EnhancedError.ts'
@@ -24,13 +24,13 @@ export type PublicErrorOptions<T extends PublicErrorDefinition> = EnhancedErrorO
  *
  * @example
  * ```ts
- * const projectNotFoundDef = definePublicError({
+ * const projectNotFoundErrorDefinition = definePublicError({
  *   code: 'PROJECT_NOT_FOUND',
  *   type: ErrorType.NOT_FOUND,
  *   detailsSchema: z.object({ id: z.string() }),
  * })
  *
- * class ProjectNotFoundError extends PublicError.from(projectNotFoundDef) {
+ * class ProjectNotFoundError extends PublicError.from(projectNotFoundErrorDefinition) {
  *   constructor(id: string) {
  *     super({ message: `Project ${id} not found`, details: { id } })
  *   }
@@ -45,8 +45,8 @@ export type PublicErrorOptions<T extends PublicErrorDefinition> = EnhancedErrorO
  *
  * @example Without details schema
  * ```ts
- * const rateLimitDef = definePublicError({ code: 'RATE_LIMIT_EXCEEDED', type: ErrorType.RATE_LIMIT })
- * class RateLimitError extends PublicError.from(rateLimitDef) {
+ * const rateLimitErrorDefinition = definePublicError({ code: 'RATE_LIMIT_EXCEEDED', type: ErrorType.RATE_LIMIT })
+ * class RateLimitError extends PublicError.from(rateLimitErrorDefinition) {
  *   constructor() { super({ message: 'Too many requests' }) }
  * }
  * ```
@@ -103,8 +103,8 @@ export abstract class PublicError<T extends PublicErrorDefinition> extends Enhan
  *
  * ```ts
  * const errorSchema = z.discriminatedUnion('code', [
- *   projectNotFoundDef.schema,
- *   rateLimitDef.schema,
+ *   projectNotFoundErrorDefinition.schema,
+ *   rateLimitErrorDefinition.schema,
  * ])
  * ```
  *
@@ -112,13 +112,13 @@ export abstract class PublicError<T extends PublicErrorDefinition> extends Enhan
  *
  * @example
  * ```ts
- * const projectNotFoundDef = definePublicError({
+ * const projectNotFoundErrorDefinition = definePublicError({
  *   code: 'PROJECT_NOT_FOUND',
  *   type: ErrorType.NOT_FOUND,
  *   detailsSchema: z.object({ id: z.string() }),
  * })
  *
- * class ProjectNotFoundError extends PublicError.from(projectNotFoundDef) {
+ * class ProjectNotFoundError extends PublicError.from(projectNotFoundErrorDefinition) {
  *   constructor(id: string) {
  *     super({ message: `Project ${id} not found`, details: { id } })
  *   }

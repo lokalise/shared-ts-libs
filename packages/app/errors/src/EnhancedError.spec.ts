@@ -16,6 +16,7 @@ describe('EnhancedError', () => {
       const a = new A({ message: 'test' })
 
       expect(a.constructor.name).toBe('A')
+      expect(a instanceof Error).toBe(true)
       expect(a instanceof EnhancedError).toBe(true)
       expect(a instanceof A).toBe(true)
       expect(a instanceof B).toBe(false)
@@ -99,6 +100,34 @@ describe('EnhancedError', () => {
     })
   })
 
+  describe('constructor behavior', () => {
+    class WithDetails extends EnhancedError<{ query: string }> {
+      override readonly code = 'WITH_DETAILS'
+    }
+
+    it('sets message', () => {
+      expect(new A({ message: 'boom' }).message).toBe('boom')
+    })
+
+    it('sets name to the concrete class name', () => {
+      expect(new B({ message: 'test' }).name).toBe('B')
+    })
+
+    it('includes a stack trace', () => {
+      expect(new A({ message: 'test' }).stack).toBeDefined()
+    })
+
+    it('details is undefined when not provided', () => {
+      expect(new A({ message: 'test' }).details).toBeUndefined()
+    })
+
+    it('carries typed details when provided', () => {
+      expect(new WithDetails({ message: 'test', details: { query: 'SELECT 1' } }).details).toEqual({
+        query: 'SELECT 1',
+      })
+    })
+  })
+
   describe('cause', () => {
     it('has no own cause property when cause is not provided', () => {
       expect('cause' in new A({ message: 'test' })).toBe(false)
@@ -108,6 +137,29 @@ describe('EnhancedError', () => {
       const cause = new Error('root')
       expect(new A({ message: 'test', cause }).cause).toBe(cause)
     })
+  })
+
+  it('recognizes an object carrying the shared path symbols without a prototype link', () => {
+    // Simulates an instance created in another realm (or by a duplicated copy
+    // of this package): same Symbol.for markers, unrelated prototype chain.
+    class Unstamped extends EnhancedError {
+      override readonly code = 'UNSTAMPED'
+    }
+
+    const foreign = {}
+    const paths = [
+      '@lokalise/errors.EnhancedError',
+      '@lokalise/errors.EnhancedError.A',
+      '@lokalise/errors.EnhancedError.A.B',
+    ]
+    for (const path of paths) {
+      Object.defineProperty(foreign, Symbol.for(path), { value: true })
+    }
+
+    expect(foreign instanceof B).toBe(true)
+    expect(foreign instanceof A).toBe(true)
+    expect(foreign instanceof EnhancedError).toBe(true)
+    expect(foreign instanceof Unstamped).toBe(false)
   })
 
   it('fails instanceof across vm contexts when using Error subclass', () => {

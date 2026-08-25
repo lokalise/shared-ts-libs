@@ -112,14 +112,14 @@ import { z } from 'zod/v4'
 import { PublicError, ErrorType, definePublicError } from '@lokalise/errors'
 
 // 1. Define the error (reusable for OpenAPI contracts too)
-const projectNotFoundDef = definePublicError({
+const projectNotFoundErrorDefinition = definePublicError({
   code: 'PROJECT_NOT_FOUND',
   type: ErrorType.NOT_FOUND,
   detailsSchema: z.object({ id: z.string() }),
 })
 
 // 2. Create the error class
-class ProjectNotFoundError extends PublicError.from(projectNotFoundDef) {
+class ProjectNotFoundError extends PublicError.from(projectNotFoundErrorDefinition) {
   constructor(id: string) {
     super({ message: `Project ${id} not found`, details: { id } })
   }
@@ -137,9 +137,9 @@ Without a details schema, `details` is `undefined` and the constructor does not
 accept a `details` field:
 
 ```ts
-const rateLimitDef = definePublicError({ code: 'RATE_LIMIT_EXCEEDED', type: ErrorType.RATE_LIMIT })
+const rateLimitErrorDefinition = definePublicError({ code: 'RATE_LIMIT_EXCEEDED', type: ErrorType.RATE_LIMIT })
 
-class RateLimitError extends PublicError.from(rateLimitDef) {
+class RateLimitError extends PublicError.from(rateLimitErrorDefinition) {
   constructor() { super({ message: 'Too many requests' }) }
 }
 ```
