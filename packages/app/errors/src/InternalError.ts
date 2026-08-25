@@ -1,5 +1,15 @@
+import type { EnhancedErrorOptions } from './EnhancedError.ts'
 import { EnhancedError } from './EnhancedError.ts'
 import type { ErrorDetails } from './types.ts'
+
+/**
+ * Options accepted by {@link InternalError} subclass constructors.
+ *
+ * `details` is required when `TDetails` is a concrete type, and optional
+ * (or absent) when `TDetails` is `undefined`.
+ */
+export type InternalErrorOptions<TDetails extends ErrorDetails | undefined = undefined> =
+  EnhancedErrorOptions<TDetails>
 
 /**
  * Base class for non-public, operational errors.

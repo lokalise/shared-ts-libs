@@ -5,6 +5,16 @@ import { EnhancedError } from './EnhancedError.ts'
 import type { InferDetails, PublicErrorDefinition } from './types.ts'
 
 /**
+ * Options accepted by {@link PublicError} subclass constructors.
+ *
+ * `details` is required (and typed) when the definition includes a
+ * `detailsSchema`, and absent otherwise.
+ */
+export type PublicErrorOptions<T extends PublicErrorDefinition> = EnhancedErrorOptions<
+  InferDetails<T>
+>
+
+/**
  * Base class for errors that may be surfaced to clients.
  *
  * Use {@link definePublicError} to create a definition and {@link PublicError.from}
@@ -52,7 +62,7 @@ export abstract class PublicError<T extends PublicErrorDefinition> extends Enhan
     return httpStatusByErrorType[this.type]
   }
 
-  protected constructor(definition: T, options: EnhancedErrorOptions<InferDetails<T>>) {
+  protected constructor(definition: T, options: PublicErrorOptions<T>) {
     super(options)
     this.code = definition.code
     this.type = definition.type
@@ -67,7 +77,7 @@ export abstract class PublicError<T extends PublicErrorDefinition> extends Enhan
    */
   static from<const T extends PublicErrorDefinition>(definition: T) {
     class BoundPublicError extends PublicError<T> {
-      constructor(options: EnhancedErrorOptions<InferDetails<T>>) {
+      constructor(options: PublicErrorOptions<T>) {
         super(definition, options)
       }
     }

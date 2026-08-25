@@ -22,7 +22,7 @@ compile errors.
 ## Error hierarchy
 
 ```
-EnhancedError (abstract)      — shared base: code, details, cause, cross-realm instanceof
+EnhancedError (abstract, not exported) — shared base: code, details, cause, cross-realm instanceof
 ├── InternalError (abstract)  — non-public operational errors
 └── PublicError   (abstract)  — client-facing errors; has type + httpStatusCode
 ```

@@ -56,8 +56,9 @@ export type EnhancedErrorOptions<TDetails> = {
 /**
  * Shared abstract base for all application errors.
  *
- * Do NOT extend this directly — use {@link InternalError} for non-public
- * operational errors or {@link PublicError} for errors surfaced to clients.
+ * Not exported from the package and not meant to be extended directly — use
+ * {@link InternalError} for non-public operational errors or {@link PublicError}
+ * for errors surfaced to clients.
  *
  * Enables reliable instanceof checks across realms (e.g., iframes, workers,
  * Node.js VM) and across duplicated copies of this package in `node_modules`.
