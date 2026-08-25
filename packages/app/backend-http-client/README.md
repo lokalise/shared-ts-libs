@@ -405,6 +405,29 @@ retry: {
 
 `retryOnTimeout` only has effect when `timeout` is set. With `retryOnTimeout: true` and `timeout: 5000`, each attempt gets a fresh 5 s timer and a timed-out attempt is retried just like a network error.
 
+#### Transport-error helpers
+
+When the client's inline retries are exhausted (or disabled), the transport error escapes to the caller. The helpers themselves do not retry anything - they only classify, so a caller with its own retry machinery (a job queue, a scheduler, a per-item retry loop) can decide whether re-running the operation later makes sense:
+
+```ts
+import { getTransportErrorCode, isTransportError, type TransportErrorCode } from '@lokalise/backend-http-client'
+
+try {
+  // Inline retries happen here (see Retry above); a sustained outage still throws.
+  await sendGet(client, { path: '/items', requestLabel: 'List items', retryConfig: true })
+} catch (err) {
+  if (isTransportError(err)) {
+    // The server never responded - typically temporary, so re-schedule the job
+    // in the caller's own retry machinery instead of failing it permanently.
+    const code: TransportErrorCode | undefined = getTransportErrorCode(err) // e.g. 'UND_ERR_HEADERS_TIMEOUT'
+    throw new RetryLaterError(code)
+  }
+  throw err // anything else is treated as permanent
+}
+```
+
+Recognized codes: `UND_ERR_HEADERS_TIMEOUT`, `UND_ERR_BODY_TIMEOUT`, `UND_ERR_CONNECT_TIMEOUT`, `UND_ERR_SOCKET`, `UND_ERR_PRX_CONN`, `ECONNREFUSED`, `ECONNRESET`, `EHOSTUNREACH`, `EHOSTDOWN`, `ENETUNREACH`, `ENETDOWN`, `EADDRNOTAVAIL`, `ETIMEDOUT`, `EPIPE`, `EAI_AGAIN`, `ERR_SOCKET_CONNECTION_TIMEOUT`. Detection also walks the error's `cause` chain (depth-capped), so errors wrapped by `InternalRequestError` or `fetch` are recognized too.
+
 ### Options
 
 | Option | Type | Default | Description |
