@@ -11,7 +11,7 @@ class B extends A {}
 class TestError extends Error {}
 
 describe('EnhancedError', () => {
-  describe('instanceof behavior in the same realm', () => {
+  describe('instanceof and isInstance behavior in the same realm', () => {
     it('recognizes direct subclass', () => {
       const a = new A({ message: 'test' })
 
@@ -20,6 +20,9 @@ describe('EnhancedError', () => {
       expect(a instanceof EnhancedError).toBe(true)
       expect(a instanceof A).toBe(true)
       expect(a instanceof B).toBe(false)
+      expect(EnhancedError.isInstance(a)).toBe(true)
+      expect(A.isInstance(a)).toBe(true)
+      expect(B.isInstance(a)).toBe(false)
     })
 
     it('recognizes nested subclass', () => {
@@ -29,6 +32,9 @@ describe('EnhancedError', () => {
       expect(b instanceof EnhancedError).toBe(true)
       expect(b instanceof A).toBe(true)
       expect(b instanceof B).toBe(true)
+      expect(EnhancedError.isInstance(b)).toBe(true)
+      expect(A.isInstance(b)).toBe(true)
+      expect(B.isInstance(b)).toBe(true)
     })
 
     it('is falsy for non error and unrelated values', () => {
@@ -60,6 +66,9 @@ describe('EnhancedError', () => {
         expect(val instanceof EnhancedError).toBe(false)
         expect(val instanceof A).toBe(false)
         expect(val instanceof B).toBe(false)
+        expect(EnhancedError.isInstance(val)).toBe(false)
+        expect(A.isInstance(val)).toBe(false)
+        expect(B.isInstance(val)).toBe(false)
       }
     })
   })
@@ -97,6 +106,8 @@ describe('EnhancedError', () => {
 
       expect(err instanceof NamedError).toBe(true)
       expect(err instanceof EnhancedError).toBe(true)
+      expect(NamedError.isInstance(err)).toBe(true)
+      expect(EnhancedError.isInstance(err)).toBe(true)
     })
   })
 
@@ -160,6 +171,10 @@ describe('EnhancedError', () => {
     expect(foreign instanceof A).toBe(true)
     expect(foreign instanceof EnhancedError).toBe(true)
     expect(foreign instanceof Unstamped).toBe(false)
+    expect(B.isInstance(foreign)).toBe(true)
+    expect(A.isInstance(foreign)).toBe(true)
+    expect(EnhancedError.isInstance(foreign)).toBe(true)
+    expect(Unstamped.isInstance(foreign)).toBe(false)
   })
 
   it('fails instanceof across vm contexts when using Error subclass', () => {
@@ -198,5 +213,8 @@ describe('EnhancedError', () => {
     expect(error instanceof EnhancedError).toBe(true)
     expect(error instanceof A).toBe(true)
     expect(error instanceof B).toBe(true)
+    expect(EnhancedError.isInstance(error)).toBe(true)
+    expect(A.isInstance(error)).toBe(true)
+    expect(B.isInstance(error)).toBe(true)
   })
 })
