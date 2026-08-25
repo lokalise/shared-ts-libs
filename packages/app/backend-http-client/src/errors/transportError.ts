@@ -28,7 +28,7 @@ const MAX_CAUSE_DEPTH = 5
  */
 export function getTransportErrorCode(error: unknown): TransportErrorCode | undefined {
   let current: unknown = error
-  for (let depth = 0; depth <= MAX_CAUSE_DEPTH; depth++) {
+  for (let depth = 0; depth < MAX_CAUSE_DEPTH; depth++) {
     if (typeof current !== 'object' || current === null) return undefined
     const code = (current as { code?: unknown }).code
     if (typeof code === 'string' && TRANSPORT_ERROR_CODE_SET.has(code)) {
