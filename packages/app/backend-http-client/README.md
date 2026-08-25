@@ -405,6 +405,25 @@ retry: {
 
 `retryOnTimeout` only has effect when `timeout` is set. With `retryOnTimeout: true` and `timeout: 5000`, each attempt gets a fresh 5 s timer and a timed-out attempt is retried just like a network error.
 
+#### Transport-error helpers
+
+When retries are exhausted (or disabled), the transport error escapes to the caller. `isTransportError` and `getTransportErrorCode` let catch-sites tell "the server never responded" (typically temporary, worth retrying at a higher level) apart from other failures:
+
+```ts
+import { getTransportErrorCode, isTransportError, type TransportErrorCode } from '@lokalise/backend-http-client'
+
+try {
+  await sendGet(client, { path: '/items', requestLabel: 'List items' })
+} catch (err) {
+  if (isTransportError(err)) {
+    // undici timeout/socket error or node connection failure - safe to retry later
+    const code: TransportErrorCode | undefined = getTransportErrorCode(err) // e.g. 'UND_ERR_HEADERS_TIMEOUT'
+  }
+}
+```
+
+Recognized codes: `UND_ERR_HEADERS_TIMEOUT`, `UND_ERR_BODY_TIMEOUT`, `UND_ERR_CONNECT_TIMEOUT`, `UND_ERR_SOCKET`, `ECONNREFUSED`, `ECONNRESET`, `ETIMEDOUT`, `EPIPE`, `EAI_AGAIN`. Detection also walks the error's `cause` chain (depth-capped), so errors wrapped by `InternalRequestError` or `fetch` are recognized too.
+
 ### Options
 
 | Option | Type | Default | Description |
