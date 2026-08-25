@@ -42,6 +42,18 @@ export type PublicErrorOptions<T extends PublicErrorDefinition> = EnhancedErrorO
 >
 
 /**
+ * Client-facing payload of a {@link PublicError} — the shape validated by the
+ * definition's companion `schema`. `details` is present exactly when the
+ * definition declares a `detailsSchema`.
+ */
+export type PublicErrorPayload<T extends PublicErrorDefinition> = {
+  message: string
+  code: T['code']
+} & (T['detailsSchema'] extends z.ZodObject
+  ? { details: InferPublicErrorDetails<T> }
+  : { details?: never })
+
+/**
  * Base class for errors that may be surfaced to clients.
  *
  * Use {@link definePublicError} to create a definition and {@link PublicError.from}
@@ -89,6 +101,19 @@ export abstract class PublicError<
   /** HTTP status code derived from {@link type}. */
   get httpStatusCode(): number {
     return httpStatusByErrorType[this.type]
+  }
+
+  /**
+   * Returns the client-facing payload: `message`, `code`, and `details` when
+   * the definition declares a `detailsSchema`. Excludes non-public fields
+   * (`stack`, `cause`, `name`) and always satisfies the definition's `schema`.
+   */
+  toPayload(): PublicErrorPayload<T> {
+    return {
+      message: this.message,
+      code: this.code,
+      ...(this.details !== undefined && { details: this.details }),
+    } as PublicErrorPayload<T>
   }
 
   protected constructor(definition: T, options: PublicErrorOptions<T>) {

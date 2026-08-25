@@ -144,6 +144,29 @@ class RateLimitError extends PublicError.from(rateLimitErrorDefinition) {
 }
 ```
 
+### Serializing to a client-facing payload
+
+`toPayload()` returns the part of the error that is safe to send to clients:
+`message`, `code`, and — when the definition declares a `detailsSchema` —
+`details`. Non-public fields (`stack`, `cause`, `name`) are never included.
+
+```ts
+new ProjectNotFoundError('abc').toPayload()
+// { message: 'Project abc not found', code: 'PROJECT_NOT_FOUND', details: { id: 'abc' } }
+
+new RateLimitError().toPayload()
+// { message: 'Too many requests', code: 'RATE_LIMIT_EXCEEDED' } — no details key
+```
+
+The return type (`PublicErrorPayload`) keeps `code` as a literal and `details`
+typed, and the payload always satisfies the definition's companion `schema` —
+so servers can respond with it directly and clients can parse responses with
+the schema:
+
+```ts
+reply.status(error.httpStatusCode).send(error.toPayload())
+```
+
 ## Protocol mapping
 
 `PublicError` instances expose `httpStatusCode` as a getter. For cases where
@@ -153,7 +176,7 @@ you only have an `ErrorType` value, use the exported `httpStatusByErrorType` map
 import { httpStatusByErrorType } from '@lokalise/errors'
 
 // On an instance
-reply.status(error.httpStatusCode).send({ code: error.code, message: error.message })
+reply.status(error.httpStatusCode).send(error.toPayload())
 
 // From an ErrorType value
 reply.status(httpStatusByErrorType[someType]).send(...)

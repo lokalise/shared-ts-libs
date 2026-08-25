@@ -74,6 +74,55 @@ describe('PublicError', () => {
   })
 })
 
+describe('toPayload', () => {
+  it('returns message, code and details when a details schema is defined', () => {
+    expect(new ProjectNameAlreadyExistsError('foo').toPayload()).toEqual({
+      message: 'A project named "foo" already exists.',
+      code: 'PROJECT_NAME_ALREADY_EXISTS',
+      details: { name: 'foo' },
+    })
+  })
+
+  it('omits the details key when no details schema is defined', () => {
+    const payload = new ProjectNotFoundError('123').toPayload()
+    expect(payload).toEqual({ message: 'Project 123 not found', code: 'PROJECT_NOT_FOUND' })
+    expect('details' in payload).toBe(false)
+  })
+
+  it('excludes non-public fields', () => {
+    const error = new ProjectNameAlreadyExistsError('foo')
+    const payload = error.toPayload()
+    expect('stack' in payload).toBe(false)
+    expect('cause' in payload).toBe(false)
+    expect('name' in payload).toBe(false)
+    expect('type' in payload).toBe(false)
+  })
+
+  it('satisfies the definition schema', () => {
+    expect(
+      projectNameAlreadyExistsErrorDefinition.schema.safeParse(
+        new ProjectNameAlreadyExistsError('foo').toPayload(),
+      ).success,
+    ).toBe(true)
+    expect(
+      projectNotFoundErrorDefinition.schema.safeParse(new ProjectNotFoundError('123').toPayload())
+        .success,
+    ).toBe(true)
+  })
+
+  it('preserves literal code and typed details in the payload type', () => {
+    const payload = new ProjectNameAlreadyExistsError('foo').toPayload()
+    const code: 'PROJECT_NAME_ALREADY_EXISTS' = payload.code
+    const name: string = payload.details.name
+    expect(code).toBe('PROJECT_NAME_ALREADY_EXISTS')
+    expect(name).toBe('foo')
+
+    const noDetailsPayload = new ProjectNotFoundError('123').toPayload()
+    // @ts-expect-error — details is absent when the definition has no detailsSchema
+    expect(noDetailsPayload.details?.name).toBeUndefined()
+  })
+})
+
 describe('definePublicError schema', () => {
   it('schema validates a correct payload without details', () => {
     const result = projectNotFoundErrorDefinition.schema.safeParse({
