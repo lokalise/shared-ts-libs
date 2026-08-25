@@ -34,8 +34,8 @@ itself with `Symbol.for` symbols derived from its inheritance path (e.g.
 `'@lokalise/errors.EnhancedError.InternalError.TranslatorTimeoutError'`), and `instanceof`
 checks for those symbols instead of walking the prototype chain. Because
 `Symbol.for` symbols are shared globally, `instanceof` keeps working across
-realms (workers, VM contexts) and across duplicated copies of this package in
-`node_modules` — situations where prototype-based `instanceof` silently fails.
+realms and across duplicated copies of this package in `node_modules` —
+situations where prototype-based `instanceof` silently fails.
 
 ### Class naming rules
 

@@ -60,8 +60,8 @@ export type EnhancedErrorOptions<TDetails> = {
  * {@link InternalError} for non-public operational errors or {@link PublicError}
  * for errors surfaced to clients.
  *
- * Enables reliable instanceof checks across realms (e.g., iframes, workers,
- * Node.js VM) and across duplicated copies of this package in `node_modules`.
+ * Enables reliable instanceof checks across realms and across duplicated
+ * copies of this package in `node_modules`.
  * Also ensures subclasses like `NotFoundError` have a consistent error name
  * (i.e., `error.name` is set to the subclass name instead of `EnhancedError`).
  *
