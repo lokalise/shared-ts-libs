@@ -37,6 +37,13 @@ export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
   })
 }
 
+/**
+ * The HTTP client handle returned by `buildClient`. Type client instances with
+ * this instead of importing `Client` from `undici` directly, so the undici
+ * major version stays an implementation detail of this package.
+ */
+export type HttpClient = ReturnType<typeof buildClient>
+
 export async function sendGet<
   T extends ZodSchema,
   IsEmptyResponseExpected extends boolean = false,

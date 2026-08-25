@@ -6,7 +6,7 @@ Opinionated HTTP client for the Node.js backend
 
 The library provides methods to implement the client side of HTTP protocols. Public methods available are:
 
-- `buildClient()`, which returns a [Client](https://undici.nodejs.org/#/docs/api/Client) instance and should be called before any of the following methods with parameters:
+- `buildClient()`, which returns a [Client](https://undici.nodejs.org/#/docs/api/Client) instance and should be called before any of the following methods. Type client handles with the exported `HttpClient` type instead of importing `Client` from `undici`, so the undici major version stays an implementation detail of this package. Parameters:
   - `baseUrl`;
   - `clientOptions` – set of [ClientOptions](https://undici.nodejs.org/#/docs/api/Client?id=parameter-clientoptions) (optional). If none are provided, the following default options will be used to instantiate the client:
     ```
@@ -426,7 +426,7 @@ try {
 }
 ```
 
-Recognized codes: `UND_ERR_HEADERS_TIMEOUT`, `UND_ERR_BODY_TIMEOUT`, `UND_ERR_CONNECT_TIMEOUT`, `UND_ERR_SOCKET`, `UND_ERR_PRX_CONN`, `ECONNREFUSED`, `ECONNRESET`, `EHOSTUNREACH`, `EHOSTDOWN`, `ENETUNREACH`, `ENETDOWN`, `EADDRNOTAVAIL`, `ETIMEDOUT`, `EPIPE`, `EAI_AGAIN`, `ERR_SOCKET_CONNECTION_TIMEOUT`. Detection also walks the error's `cause` chain (depth-capped), so errors wrapped by `InternalRequestError` or `fetch` are recognized too.
+Recognized codes: `UND_ERR_HEADERS_TIMEOUT`, `UND_ERR_BODY_TIMEOUT`, `UND_ERR_CONNECT_TIMEOUT`, `UND_ERR_SOCKET`, `UND_ERR_PRX_CONN`, `ECONNREFUSED`, `ECONNRESET`, `EHOSTUNREACH`, `EHOSTDOWN`, `ENETUNREACH`, `ENETDOWN`, `EADDRNOTAVAIL`, `ETIMEDOUT`, `EPIPE`, `EAI_AGAIN`, `ERR_SOCKET_CONNECTION_TIMEOUT`. The list is exported as `TRANSPORT_ERROR_CODES` (with the `TransportErrorCode` union type), so consumers and their tests can iterate the authoritative list instead of copying it. Detection also walks the error's `cause` chain (depth-capped), so errors wrapped by `InternalRequestError` or `fetch` are recognized too.
 
 ### Options
 
