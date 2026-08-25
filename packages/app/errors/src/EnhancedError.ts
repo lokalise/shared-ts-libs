@@ -1,5 +1,4 @@
-// Namespaces the global Symbol.for registry keys so they can only collide with
-// other copies of this package, not with unrelated code using the same pattern.
+// Namespaces the global Symbol.for registry keys to minimize collisions with unrelated code.
 const PROTOTYPE_PATH_NAMESPACE = '@lokalise/errors'
 
 const PROTOTYPE_PATH_DELIMITER = '.'
@@ -94,6 +93,8 @@ export type EnhancedErrorOptions<TDetails> = {
  * must have one. The constructor throws when it encounters an unnamed class
  * (e.g. a class expression returned from a factory). Name such classes
  * explicitly with `Object.defineProperty(TheClass, 'name', { value: '...' })`.
+ * Avoid '.' in such custom names — it is the path delimiter, so a name like
+ * 'Foo.Bar' produces the same identity as a `Foo` → `Bar` chain.
  */
 export abstract class EnhancedError<TDetails = undefined> extends Error {
   /**

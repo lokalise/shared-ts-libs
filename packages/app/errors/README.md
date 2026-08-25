@@ -67,6 +67,9 @@ The symbols are derived from **class names and inheritance structure** — they
   Object.defineProperty(TheClass, 'name', { value: 'TheClass' })
   ```
 
+  Avoid `.` in such custom names — it is the path delimiter, so a class named
+  `'Foo.Bar'` produces the same identity as a `Foo` → `Bar` inheritance chain.
+
 ## InternalError
 
 For runtime errors that should never be surfaced to clients (timeouts, lock
