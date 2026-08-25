@@ -1,9 +1,10 @@
 /**
  * Transport-level failures without an HTTP response: undici timeouts/socket
  * errors and node connection errors. Typically temporary, so callers usually
- * want to retry them.
+ * want to retry them. Exported so consumers can iterate the authoritative
+ * list instead of copying it.
  */
-const TRANSPORT_ERROR_CODES = [
+export const TRANSPORT_ERROR_CODES = [
   'UND_ERR_HEADERS_TIMEOUT',
   'UND_ERR_BODY_TIMEOUT',
   'UND_ERR_CONNECT_TIMEOUT',

@@ -18,6 +18,7 @@ export {
   TEST_OPTIONS,
   UNKNOWN_RESPONSE_SCHEMA,
 } from './client/constants.ts'
+export type { HttpClient } from './client/httpClient.ts'
 export {
   buildClient,
   httpClient,
@@ -49,4 +50,8 @@ export {
   ResponseStatusError,
 } from './errors/ResponseStatusError.ts'
 export type { TransportErrorCode } from './errors/transportError.ts'
-export { getTransportErrorCode, isTransportError } from './errors/transportError.ts'
+export {
+  getTransportErrorCode,
+  isTransportError,
+  TRANSPORT_ERROR_CODES,
+} from './errors/transportError.ts'
