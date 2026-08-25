@@ -1,8 +1,25 @@
 import { z } from 'zod'
+import type { ErrorType } from './constants.ts'
 import { httpStatusByErrorType } from './constants.ts'
 import type { EnhancedErrorOptions } from './EnhancedError.ts'
 import { EnhancedError } from './EnhancedError.ts'
-import type { InferDetails, PublicErrorDefinition } from './types.ts'
+
+/**
+ * Reusable specification for a public error: unique code, error category, and
+ * an optional Zod schema for type-safe details and OpenAPI schema generation.
+ */
+export interface PublicErrorDefinition {
+  /** Unique error code — becomes a literal type for TS discrimination */
+  code: string
+  /** Error category for protocol-agnostic error handling */
+  type: ErrorType
+  /** Optional Zod object schema — makes `details` required and typed when provided */
+  detailsSchema?: z.ZodObject
+}
+
+/** Infers the TypeScript type of error details from a Zod schema. */
+export type InferPublicErrorDetails<TDef extends PublicErrorDefinition> =
+  TDef['detailsSchema'] extends z.ZodObject ? z.infer<TDef['detailsSchema']> : undefined
 
 /**
  * Options accepted by {@link PublicError} subclass constructors.
@@ -11,7 +28,7 @@ import type { InferDetails, PublicErrorDefinition } from './types.ts'
  * `detailsSchema`, and absent otherwise.
  */
 export type PublicErrorOptions<T extends PublicErrorDefinition> = EnhancedErrorOptions<
-  InferDetails<T>
+  InferPublicErrorDetails<T>
 >
 
 /**
@@ -52,7 +69,7 @@ export type PublicErrorOptions<T extends PublicErrorDefinition> = EnhancedErrorO
  * ```
  */
 export abstract class PublicError<T extends PublicErrorDefinition> extends EnhancedError<
-  InferDetails<T>
+  InferPublicErrorDetails<T>
 > {
   readonly code: T['code']
   readonly type: T['type']

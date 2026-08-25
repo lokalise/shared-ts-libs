@@ -1,6 +1,7 @@
 import type { EnhancedErrorOptions } from './EnhancedError.ts'
 import { EnhancedError } from './EnhancedError.ts'
-import type { ErrorDetails } from './types.ts'
+
+export type ErrorDetails = Record<string, unknown>
 
 /**
  * Options accepted by {@link InternalError} subclass constructors.
