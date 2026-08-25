@@ -407,18 +407,22 @@ retry: {
 
 #### Transport-error helpers
 
-When retries are exhausted (or disabled), the transport error escapes to the caller. `isTransportError` and `getTransportErrorCode` let catch-sites tell "the server never responded" (typically temporary, worth retrying at a higher level) apart from other failures:
+When the client's inline retries are exhausted (or disabled), the transport error escapes to the caller. The helpers themselves do not retry anything - they only classify, so a caller with its own retry machinery (a job queue, a scheduler, a per-item retry loop) can decide whether re-running the operation later makes sense:
 
 ```ts
 import { getTransportErrorCode, isTransportError, type TransportErrorCode } from '@lokalise/backend-http-client'
 
 try {
-  await sendGet(client, { path: '/items', requestLabel: 'List items' })
+  // Inline retries happen here (see Retry above); a sustained outage still throws.
+  await sendGet(client, { path: '/items', requestLabel: 'List items', retryConfig: true })
 } catch (err) {
   if (isTransportError(err)) {
-    // undici timeout/socket error or node connection failure - safe to retry later
+    // The server never responded - typically temporary, so re-schedule the job
+    // in the caller's own retry machinery instead of failing it permanently.
     const code: TransportErrorCode | undefined = getTransportErrorCode(err) // e.g. 'UND_ERR_HEADERS_TIMEOUT'
+    throw new RetryLaterError(code)
   }
+  throw err // anything else is treated as permanent
 }
 ```
 
