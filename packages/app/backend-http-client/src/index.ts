@@ -48,4 +48,5 @@ export {
   isResponseStatusError,
   ResponseStatusError,
 } from './errors/ResponseStatusError.ts'
+export type { TransportErrorCode } from './errors/transportError.ts'
 export { getTransportErrorCode, isTransportError } from './errors/transportError.ts'
