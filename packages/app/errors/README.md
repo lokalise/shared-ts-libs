@@ -21,7 +21,7 @@ compile errors.
 
 ## Error hierarchy
 
-```
+```text
 EnhancedError (abstract, not exported) — shared base: code, details, cause, cross-realm isInstance
 ├── InternalError (abstract)  — non-public operational errors
 └── PublicError   (abstract)  — client-facing errors; has type + httpStatusCode
