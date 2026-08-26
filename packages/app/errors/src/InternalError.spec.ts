@@ -1,17 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { InternalError } from './InternalError.ts'
 
-class TranslatorTimeoutError extends InternalError {
-  override readonly code = 'TRANSLATOR_TIMEOUT'
-
+class TranslatorTimeoutError extends InternalError.from('TRANSLATOR_TIMEOUT') {
   constructor(translatorId: string) {
     super({ message: `Translator ${translatorId} timed out` })
   }
 }
 
-class DatabaseQueryError extends InternalError<{ query: string }> {
-  override readonly code = 'DATABASE_QUERY_ERROR'
-
+class DatabaseQueryError extends InternalError.from('DATABASE_QUERY_ERROR')<{ query: string }> {
   constructor(query: string, cause?: unknown) {
     super({ message: 'Database query failed', details: { query }, cause })
   }
@@ -61,6 +57,14 @@ describe('InternalError', () => {
     })
   })
 
+  it('cannot be extended directly — from is the only creation path', () => {
+    // @ts-expect-error — the constructor is private; use InternalError.from
+    class DirectlyExtendedError extends InternalError {
+      override readonly code = 'DIRECTLY_EXTENDED'
+    }
+    expect(DirectlyExtendedError).toBeDefined()
+  })
+
   describe('nominal typing', () => {
     it('InternalError subclasses are not interchangeable', () => {
       const getTranslatorError = (): TranslatorTimeoutError => {
@@ -73,6 +77,89 @@ describe('InternalError', () => {
     it('correct error can be returned without a compile error', () => {
       const getError = (): TranslatorTimeoutError => new TranslatorTimeoutError('t-1')
       expect(getError().code).toBe('TRANSLATOR_TIMEOUT')
+    })
+  })
+
+  describe('from', () => {
+    class LockAcquisitionError extends InternalError.from('LOCK_ACQUISITION_FAILED') {
+      constructor(lockName: string) {
+        super({ message: `Failed to acquire lock ${lockName}` })
+      }
+    }
+
+    class CacheReadError extends InternalError.from('CACHE_READ_ERROR')<{ key: string }> {
+      constructor(key: string, cause?: unknown) {
+        super({ message: 'Cache read failed', details: { key }, cause })
+      }
+    }
+
+    it('preserves the literal code without a manual readonly override', () => {
+      const err = new LockAcquisitionError('l-1')
+      const literalCode: 'LOCK_ACQUISITION_FAILED' = err.code
+      expect(literalCode).toBe('LOCK_ACQUISITION_FAILED')
+    })
+
+    it('makes code readonly', () => {
+      const err = new LockAcquisitionError('l-1')
+      // @ts-expect-error — code is readonly
+      err.code = 'SOMETHING_ELSE'
+    })
+
+    it('is an instance of InternalError, the bound class, and the concrete class', () => {
+      const err: unknown = new LockAcquisitionError('l-1')
+      expect(err).toBeInstanceOf(InternalError)
+      expect(err).toBeInstanceOf(LockAcquisitionError)
+      expect(InternalError.isInstance(err)).toBe(true)
+      expect(LockAcquisitionError.isInstance(err)).toBe(true)
+    })
+
+    it('types details via the type argument in the extends clause', () => {
+      const err: unknown = new CacheReadError('user:1')
+      if (CacheReadError.isInstance(err)) {
+        // narrowed — details.key is typed as string
+        expect(err.details.key).toBe('user:1')
+      } else {
+        expect.unreachable()
+      }
+    })
+
+    it('names the bound class after the code', () => {
+      expect(Object.getPrototypeOf(LockAcquisitionError).name).toBe(
+        'InternalError<LOCK_ACQUISITION_FAILED>',
+      )
+    })
+
+    it('sibling bound classes do not match each other', () => {
+      const err = new LockAcquisitionError('l-1')
+      expect(err instanceof CacheReadError).toBe(false)
+      expect(CacheReadError.isInstance(err)).toBe(false)
+    })
+
+    it('can be instantiated directly without subclassing', () => {
+      const DirectError = InternalError.from('DIRECT_ERROR')
+      const err = new DirectError({ message: 'boom' })
+      expect(err.code).toBe('DIRECT_ERROR')
+      expect(err.name).toBe('InternalError<DIRECT_ERROR>')
+      expect(InternalError.isInstance(err)).toBe(true)
+      expect(DirectError.isInstance(err)).toBe(true)
+    })
+
+    it('classes created via from are not interchangeable', () => {
+      const getLockError = (): LockAcquisitionError => {
+        // @ts-expect-error — CacheReadError is not assignable to LockAcquisitionError
+        return new CacheReadError('user:1')
+      }
+      expect(getLockError).toBeDefined()
+    })
+
+    it('discriminating a union by code narrows details', () => {
+      const err: LockAcquisitionError | CacheReadError = new CacheReadError('user:1')
+      if (err.code === 'CACHE_READ_ERROR') {
+        const key: string = err.details.key
+        expect(key).toBe('user:1')
+      } else {
+        expect.unreachable()
+      }
     })
   })
 })

@@ -65,6 +65,12 @@ describe('PublicError', () => {
     expect(new ProjectNotFoundError('123') instanceof ProjectNameAlreadyExistsError).toBe(false)
   })
 
+  it('cannot be extended directly — from is the only creation path', () => {
+    // @ts-expect-error — the constructor is private; use PublicError.from
+    class DirectlyExtendedError extends PublicError {}
+    expect(DirectlyExtendedError).toBeDefined()
+  })
+
   it('bound public error classes from different definitions do not match', () => {
     const OtherBound = PublicError.from(projectNameAlreadyExistsErrorDefinition)
     expect(new ProjectNotFoundError('123') instanceof OtherBound).toBe(false)
@@ -228,9 +234,7 @@ describe('deprecated errorCode alias', () => {
 // The @ts-expect-error annotations are validated by `tsc`: the literal `code`
 // on each class is what creates the nominal distinction that rejects wrong types.
 describe('nominal typing', () => {
-  class TranslatorTimeoutError extends InternalError {
-    override readonly code = 'TRANSLATOR_TIMEOUT'
-
+  class TranslatorTimeoutError extends InternalError.from('TRANSLATOR_TIMEOUT') {
     constructor() {
       super({ message: 'Translator timed out' })
     }

@@ -51,9 +51,7 @@ called on — custom error classes get their own fully-typed guard with no extra
 code:
 
 ```ts
-class DatabaseQueryError extends InternalError<{ query: string }> {
-  override readonly code = 'DATABASE_QUERY_ERROR'
-
+class DatabaseQueryError extends InternalError.from('DATABASE_QUERY_ERROR')<{ query: string }> {
   constructor(query: string, cause?: unknown) {
     super({ message: 'Database query failed', details: { query }, cause })
   }
@@ -112,36 +110,52 @@ The symbols are derived from **class names and inheritance structure** — they
 ## InternalError
 
 For runtime errors that should never be surfaced to clients (timeouts, lock
-failures, unexpected states). Extend and `override readonly code`.
+failures, unexpected states). Use the **`InternalError.from()` factory** — like
+`PublicError.from()`, it bakes the literal `code` type in automatically.
+There is no `defineInternalError` counterpart: internal errors carry no schema
+or error type, so the code string is the whole definition. (The same pattern is
+used by [`@fastify/error`](https://www.npmjs.com/package/@fastify/error), whose
+`createError()` factory builds the error class so authors never touch `code`.)
 
 ```ts
 import { InternalError } from '@lokalise/errors'
 
 // Without details
-class TranslatorTimeoutError extends InternalError {
-  override readonly code = 'TRANSLATOR_TIMEOUT'
-
+class TranslatorTimeoutError extends InternalError.from('TRANSLATOR_TIMEOUT') {
   constructor(translatorId: string) {
     super({ message: `Translator ${translatorId} timed out` })
   }
 }
 
-// With typed details
-class DatabaseQueryError extends InternalError<{ query: string }> {
-  override readonly code = 'DATABASE_QUERY_ERROR'
-
+// With typed details — pass the details type as a type argument
+class DatabaseQueryError extends InternalError.from('DATABASE_QUERY_ERROR')<{ query: string }> {
   constructor(query: string, cause?: unknown) {
     super({ message: 'Database query failed', details: { query }, cause })
   }
 }
 ```
 
+The factory result can also be used directly when no custom constructor is
+needed:
+
+```ts
+const TranslatorTimeoutError = InternalError.from('TRANSLATOR_TIMEOUT')
+throw new TranslatorTimeoutError({ message: 'Translator t-1 timed out' })
+```
+
+Extending `InternalError` directly is a compile error — its constructor is
+private, making the factory the only path. This is deliberate: a direct
+subclass would have to declare `code` as `override readonly` itself, and
+**omitting `readonly` widens the literal type to `string` without a compile
+error**, silently disabling the nominal typing guarantee.
+
 ## PublicError
 
 For errors that may be surfaced to clients. Use the **`PublicError.from()`
-factory** rather than extending and overriding `code`/`type` manually — the
-factory bakes literal types in from the definition automatically, avoiding the
-footgun of accidentally omitting `readonly` on an override.
+factory** — like `InternalError`, the constructor is private, so the factory is
+the only way to create concrete classes. It bakes literal types in from the
+definition automatically, avoiding the footgun of accidentally omitting
+`readonly` on an override.
 
 Details are typed via an optional Zod schema, which also enables OpenAPI schema
 generation on the contract layer.
@@ -308,7 +322,7 @@ const getProject = (): ProjectNotFoundError => {
 }
 ```
 
-> **Note for `InternalError`:** Always declare `code` as `override readonly`.
-> Omitting `readonly` widens the literal type and breaks TS discrimination.
-> This is the reason `PublicError` uses the factory pattern — it preserves
-> literal types automatically with no risk of the footgun.
+> **Note:** This guarantee is why both classes ship a `from()` factory and keep
+> their constructors private — the factory preserves literal types
+> automatically, while a direct subclass could widen `code` to `string` by
+> omitting `readonly` on the override, breaking TS discrimination.

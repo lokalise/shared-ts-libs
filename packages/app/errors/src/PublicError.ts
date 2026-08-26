@@ -59,7 +59,8 @@ export type PublicErrorPayload<T extends PublicErrorDefinition> = {
  * Base class for errors that may be surfaced to clients.
  *
  * Use {@link definePublicError} to create a definition and {@link PublicError.from}
- * to bind it to a class. The factory preserves literal types for `code` and
+ * to bind it to a class. The constructor is private, so the factory is the only
+ * way to create concrete classes. It preserves literal types for `code` and
  * `type` automatically, avoiding the footgun of accidentally omitting `readonly`
  * on an override.
  *
@@ -120,7 +121,9 @@ export abstract class PublicError<
     } as PublicErrorPayload<T>
   }
 
-  protected constructor(definition: T, options: PublicErrorOptions<T>) {
+  // Private so `from` is the only extension point — a direct subclass could
+  // silently widen `code`/`type` by omitting `readonly` on the overrides.
+  private constructor(definition: T, options: PublicErrorOptions<T>) {
     super(options)
     this.code = definition.code
     this.type = definition.type
