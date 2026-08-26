@@ -270,11 +270,12 @@ if (DatabaseQueryError.isInstance(err)) {
 }
 ```
 
-The `instanceof` operator runs the same check at runtime, because the package
-overrides `Symbol.hasInstance` (see [How it works](#how-it-works)). Prefer
-`isInstance` anyway: it is an explicit type guard whose narrowing is
-guaranteed by this package, while `instanceof` narrowing around a
-`Symbol.hasInstance` override has changed across TypeScript versions.
+Do not use the `instanceof` operator. It currently runs the same check at
+runtime, because the package overrides `Symbol.hasInstance` (see
+[How it works](#how-it-works)), but consider that behavior deprecated: the
+override may be removed in a future release, at which point `instanceof`
+silently reverts to prototype-chain checks that fail across realms and
+package copies. `isInstance` is the supported API.
 
 Override `isInstance` in a subclass only if you need custom matching logic;
 the default inherited guard covers the standard cases.

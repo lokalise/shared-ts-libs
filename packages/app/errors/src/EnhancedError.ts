@@ -157,6 +157,12 @@ export abstract class EnhancedError<TDetails = undefined> extends Error {
     return value instanceof this
   }
 
+  /**
+   * Backs {@link isInstance}. Do not rely on the `instanceof` operator itself:
+   * direct `instanceof` support is deprecated and this override may be removed
+   * in a future release, silently reverting `instanceof` to prototype-chain
+   * checks that fail across realms and package copies.
+   */
   static override [Symbol.hasInstance](val: unknown): boolean {
     if (val === null || typeof val !== 'object') {
       return false
