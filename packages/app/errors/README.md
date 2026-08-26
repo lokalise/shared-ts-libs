@@ -147,7 +147,7 @@ Details are typed via an optional Zod schema, which also enables OpenAPI schema
 generation on the contract layer.
 
 ```ts
-import { z } from 'zod/v4'
+import { z } from 'zod'
 import { PublicError, ErrorType, definePublicError } from '@lokalise/errors'
 
 // 1. Define the error (reusable for OpenAPI contracts too)
