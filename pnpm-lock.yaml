@@ -738,8 +738,8 @@ importers:
         specifier: ^2.5.7
         version: 2.5.7
       '@fastify/awilix':
-        specifier: ^8.0.0
-        version: 8.2.0(awilix@13.0.5)(fastify@5.12.1)
+        specifier: ^8.2.1
+        version: 8.2.1(awilix@13.0.5)(fastify@5.12.1)
       '@fastify/schedule':
         specifier: ^7.0.0
         version: 7.0.0(toad-scheduler@4.1.0)
@@ -2002,8 +2002,8 @@ packages:
   '@fastify/auth@5.1.0':
     resolution: {integrity: sha512-j5ZXWeVrMJjWv6sBK+SXiuZxvNTj6i33IHRAeIdGKjqEOTQE7CuTltwigevqlGnIzlNxHoOwRkI/TEqsDOyf+A==}
 
-  '@fastify/awilix@8.2.0':
-    resolution: {integrity: sha512-U5yygVXY8WJajDXE3w3FdU839NXaYJusxjTrcJGB82oUOeYvDpawB749aSCEJ+XFGE8QpB42Qtr4FI4z0wfXBw==}
+  '@fastify/awilix@8.2.1':
+    resolution: {integrity: sha512-6evAIgJWJdgfhU/s0A8ht3k0FlFOSM/ckACaSkpBNp/eGb0ywBL//mcovIcEePM/j0U+vRuHd9IcRFW2o64wXA==}
     peerDependencies:
       awilix: '>=9.0.0'
       fastify: ^5.0.0
@@ -4449,12 +4449,6 @@ packages:
 
   avvio@9.3.0:
     resolution: {integrity: sha512-g2tQ7LE7oOSqDfwEm3M+ZCMTJc7KiZCdJ4UwyZJb5ckTKyYu50OYmvv0mCFXPuYXoM4zkSt8zM9XQ9KCvxA74A==}
-
-  awilix-manager@6.4.0:
-    resolution: {integrity: sha512-8YBhrtxlhMyFwvZRT+BeLlrBNF6KSzdUTeXZBdX5B7IcjqB6xDQ8cdkfSixJEsjMBS4P3NvbodUTDAikG7rQqQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      awilix: '>=9.0.0'
 
   awilix-manager@7.0.0:
     resolution: {integrity: sha512-dl9ubYXn+rDFV+h3cFujcA5zLDrSrgo5XFU4Vaz3JYawZoUPq8F4gb+p8EgxmuJ5nGRktpMLKAtN34x4srHPyA==}
@@ -8383,12 +8377,12 @@ snapshots:
       fastify-plugin: 6.0.0
       reusify: 1.1.0
 
-  '@fastify/awilix@8.2.0(awilix@13.0.5)(fastify@5.12.1)':
+  '@fastify/awilix@8.2.1(awilix@13.0.5)(fastify@5.12.1)':
     dependencies:
       awilix: 13.0.5
-      awilix-manager: 6.4.0(awilix@13.0.5)
+      awilix-manager: 7.0.0(awilix@13.0.5)
       fastify: 5.12.1
-      fastify-plugin: 5.1.0
+      fastify-plugin: 6.0.0
 
   '@fastify/basic-auth@6.3.0':
     dependencies:
@@ -11185,10 +11179,6 @@ snapshots:
     dependencies:
       '@fastify/error': 4.2.0
       fastq: 1.20.1
-
-  awilix-manager@6.4.0(awilix@13.0.5):
-    dependencies:
-      awilix: 13.0.5
 
   awilix-manager@7.0.0(awilix@13.0.5):
     dependencies:
