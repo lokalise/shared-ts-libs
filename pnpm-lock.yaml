@@ -285,7 +285,7 @@ importers:
         version: 6.3.2
       fastify:
         specifier: ^5.6.0
-        version: 5.11.3
+        version: 5.12.1
       jwks-rsa:
         specifier: ^3.2.0
         version: 3.2.2(supports-color@8.1.1)
@@ -301,7 +301,7 @@ importers:
         version: link:../../dev/biome-config
       '@lokalise/fastify-extras':
         specifier: ^31.0.0
-        version: 31.0.1(@fastify/jwt@10.2.1)(@lokalise/api-contracts@8.0.0(zod@4.4.3))(@lokalise/background-jobs-common@15.2.0(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(ioredis@6.0.0)(pino@10.3.1)(toad-scheduler@4.1.0)(zod@4.4.3))(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(dd-trace@6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0)))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1)(fastify@5.11.3)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.11.3)(ioredis@6.0.0)(pino@10.3.1)(zod@4.4.3)
+        version: 31.0.1(@fastify/jwt@10.2.1)(@lokalise/api-contracts@8.0.0(zod@4.4.3))(@lokalise/background-jobs-common@15.2.0(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(ioredis@6.0.0)(pino@10.3.1)(toad-scheduler@4.1.0)(zod@4.4.3))(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(dd-trace@6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0)))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1)(fastify@5.12.1)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.12.1)(ioredis@6.0.0)(pino@10.3.1)(zod@4.4.3)
       '@lokalise/node-core':
         specifier: ^14.4.1
         version: 14.8.1(zod@4.4.3)
@@ -352,7 +352,7 @@ importers:
         version: link:../../dev/biome-config
       '@lokalise/fastify-extras':
         specifier: ^31.0.0
-        version: 31.0.1(@fastify/jwt@10.2.1)(@lokalise/api-contracts@8.0.0(zod@4.4.3))(@lokalise/background-jobs-common@15.2.0(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(ioredis@6.0.0)(pino@10.3.1)(toad-scheduler@4.1.0)(zod@4.4.3))(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(dd-trace@6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0)))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1)(fastify@5.11.3)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.11.3)(ioredis@6.0.0)(pino@10.3.1)(zod@4.4.3)
+        version: 31.0.1(@fastify/jwt@10.2.1)(@lokalise/api-contracts@8.0.0(zod@4.4.3))(@lokalise/background-jobs-common@15.2.0(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(ioredis@6.0.0)(pino@10.3.1)(toad-scheduler@4.1.0)(zod@4.4.3))(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(dd-trace@6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0)))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1)(fastify@5.12.1)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.12.1)(ioredis@6.0.0)(pino@10.3.1)(zod@4.4.3)
       '@lokalise/node-core':
         specifier: ^14.0.0
         version: 14.8.1(zod@4.4.3)
@@ -543,8 +543,8 @@ importers:
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
       fastify:
-        specifier: ^5.11.3
-        version: 5.11.3
+        specifier: ^5.12.1
+        version: 5.12.1
       pino:
         specifier: ^10.1.0
         version: 10.3.1
@@ -668,7 +668,7 @@ importers:
         version: 14.8.1(zod@4.4.3)
       fastify:
         specifier: '>=5.0.0'
-        version: 5.11.3
+        version: 5.12.1
       light-my-request:
         specifier: ^6.6.0
         version: 6.6.0
@@ -681,7 +681,7 @@ importers:
         version: 2.5.7
       '@fastify/sse':
         specifier: ^0.6.0
-        version: 0.6.0(fastify@5.11.3)
+        version: 0.6.0(fastify@5.12.1)
       '@fastify/swagger':
         specifier: ^9.8.1
         version: 9.8.1
@@ -702,7 +702,7 @@ importers:
         version: 4.1.10(vitest@4.1.10)
       fastify-type-provider-zod:
         specifier: ^7.0.0
-        version: 7.0.0(@fastify/swagger@9.8.1)(fastify@5.11.3)(openapi-types@12.1.3)(zod@4.4.3)
+        version: 7.0.0(@fastify/swagger@9.8.1)(fastify@5.12.1)(openapi-types@12.1.3)(zod@4.4.3)
       rimraf:
         specifier: ^6.1.3
         version: 6.1.3
@@ -739,7 +739,7 @@ importers:
         version: 2.5.7
       '@fastify/awilix':
         specifier: ^8.0.0
-        version: 8.2.0(awilix@13.0.5)(fastify@5.11.3)
+        version: 8.2.0(awilix@13.0.5)(fastify@5.12.1)
       '@fastify/schedule':
         specifier: ^7.0.0
         version: 7.0.0(toad-scheduler@4.1.0)
@@ -751,7 +751,7 @@ importers:
         version: link:../../dev/biome-config
       '@lokalise/fastify-extras':
         specifier: ^31.0.1
-        version: 31.0.1(@fastify/jwt@10.2.1)(@lokalise/api-contracts@8.0.0(zod@4.4.3))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(dd-trace@6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0)))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1)(fastify@5.11.3)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.11.3)(ioredis@6.0.0)(pino@10.3.1)(zod@4.4.3)
+        version: 31.0.1(@fastify/jwt@10.2.1)(@lokalise/api-contracts@8.0.0(zod@4.4.3))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(dd-trace@6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0)))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1)(fastify@5.12.1)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.12.1)(ioredis@6.0.0)(pino@10.3.1)(zod@4.4.3)
       '@lokalise/node-core':
         specifier: ^14.1.0
         version: 14.8.1(zod@4.4.3)
@@ -774,14 +774,14 @@ importers:
         specifier: ^10.0.0
         version: 10.1.0
       fastify:
-        specifier: ^5.11.3
-        version: 5.11.3
+        specifier: ^5.12.1
+        version: 5.12.1
       fastify-graceful-shutdown:
         specifier: ^5.0.0
         version: 5.0.0
       fastify-metrics:
         specifier: ^13.2.1
-        version: 13.2.1(fastify@5.11.3)
+        version: 13.2.1(fastify@5.12.1)
       fastify-plugin:
         specifier: ^6.0.0
         version: 6.0.0
@@ -1062,8 +1062,8 @@ importers:
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
       fastify:
-        specifier: ^5.11.3
-        version: 5.11.3
+        specifier: ^5.12.1
+        version: 5.12.1
       rimraf:
         specifier: ^6.1.3
         version: 6.1.3
@@ -2124,8 +2124,8 @@ packages:
     resolution: {integrity: sha512-3eTuUO1vH2cZm2ZKHeQxnOqlTi9EfZDGgIe3BL3I4u+rJHocr9Fz86M4fjYABPvFnQG/gGK551HqDiIcETwU6Q==}
     engines: {node: '>=23.5.0 || ^22.13.0 || ^20.17.0'}
 
-  '@inquirer/confirm@6.1.1':
-    resolution: {integrity: sha512-eb8DBZcz/2qHWQda4rk2JiQk5h9QV/cVHi1yjt0f69WFZMRFn0sJTye3EAP8icut8UDMjQPsaH5KbcOogefrFQ==}
+  '@inquirer/confirm@6.2.0':
+    resolution: {integrity: sha512-SKXarWrYhtpqOEctf9XGCGy29QjsvJAM0Aq9ZR9z4Ns94OmpqudOly+aSEfNqUf9SwsQaUgY9+Z8hyzG0xX8fw==}
     engines: {node: '>=23.5.0 || ^22.13.0 || ^20.17.0'}
     peerDependencies:
       '@types/node': '>=18'
@@ -2133,8 +2133,8 @@ packages:
       '@types/node':
         optional: true
 
-  '@inquirer/core@11.2.1':
-    resolution: {integrity: sha512-Qd6GJT1yVyrZZCfN8W2qKF5ApmqryXRhRKCuip8h01x2w/esJQ2XIYc6f9abMIHgKQdBfFTSOdbHRLAhuM09UA==}
+  '@inquirer/core@12.0.0':
+    resolution: {integrity: sha512-+nnvFEXIB08CZNVXpvW3B+zHW96QXvGUjNKJ8NJIPqAZi5Kd4WhYt2S3C234ReepG1qw2HOlEUbjYVHBowXObA==}
     engines: {node: '>=23.5.0 || ^22.13.0 || ^20.17.0'}
     peerDependencies:
       '@types/node': '>=18'
@@ -2142,8 +2142,8 @@ packages:
       '@types/node':
         optional: true
 
-  '@inquirer/figures@2.0.7':
-    resolution: {integrity: sha512-aJ8TBPOGB6f/2qziPfElISTCEd5XOYTFckA2SGjhNmiKzfK/u4ot3v0DUzGVdUnKjN10EqnnEPck36BkyfLnJw==}
+  '@inquirer/figures@2.0.8':
+    resolution: {integrity: sha512-tApbon79GM9ry56ja/Ud3SY2CL4TQsao9fIwDQbgTeNY55025GdMzQ2+UdegV/lx51VNGUB59M0v0nMpybYY4Q==}
     engines: {node: '>=23.5.0 || ^22.13.0 || ^20.17.0'}
 
   '@inquirer/type@4.0.7':
@@ -5471,8 +5471,8 @@ packages:
       openapi-types: ^12.1.3
       zod: '>=4.1.5'
 
-  fastify@5.11.3:
-    resolution: {integrity: sha512-W6hzDP8s0iSeL7LGwY6Oc/ZxuXWOvFEMs6p2L0Si415YRo27W5pBKdOTXxhemBDeSTAcpYf5evRA9onF2OYhPA==}
+  fastify@5.12.1:
+    resolution: {integrity: sha512-FWi+tQvwxR/PeRX7Z2mhfEF5ozJ3jn9asiiclzKXNSzJRHAYcU924aIOKAdHFJ+YIKieh3cqr1IwCOvTr41B3Q==}
 
   fastparallel@2.4.1:
     resolution: {integrity: sha512-qUmhxPgNHmvRjZKBFUNI0oZuuH9OlSIOXmJ98lhKPxMZZ7zS/Fi0wRHOihDSz0R1YiIOjxzOY4bq65YTcdBi2Q==}
@@ -5514,6 +5514,10 @@ packages:
 
   find-my-way@9.7.0:
     resolution: {integrity: sha512-f2JHn75x2JlwUwLenZypgczR7YWMb/uO9BvUXtus+JMgkbIkLADd38cI4EiV+OQqrGo1Zlq6V8wnqMJ8e62wUQ==}
+    engines: {node: '>=20'}
+
+  find-my-way@9.8.0:
+    resolution: {integrity: sha512-JtyUgATO7qxRp2zKhrmWof74Mqxc1ikbwpwMY97p8ipuTj2QtreA4gK2JNAF6SOqqHnYYkwMUvsgQVi2AJxIyw==}
     engines: {node: '>=20'}
 
   find-up@5.0.0:
@@ -8383,11 +8387,11 @@ snapshots:
       fastify-plugin: 6.0.0
       reusify: 1.1.0
 
-  '@fastify/awilix@8.2.0(awilix@13.0.5)(fastify@5.11.3)':
+  '@fastify/awilix@8.2.0(awilix@13.0.5)(fastify@5.12.1)':
     dependencies:
       awilix: 13.0.5
       awilix-manager: 6.4.0(awilix@13.0.5)
-      fastify: 5.11.3
+      fastify: 5.12.1
       fastify-plugin: 5.1.0
 
   '@fastify/basic-auth@6.3.0':
@@ -8447,10 +8451,10 @@ snapshots:
       http-errors: 2.0.1
       mime: 3.0.0
 
-  '@fastify/sse@0.6.0(fastify@5.11.3)':
+  '@fastify/sse@0.6.0(fastify@5.12.1)':
     dependencies:
       '@fastify/error': 4.2.0
-      fastify: 5.11.3
+      fastify: 5.12.1
       fastify-plugin: 6.0.0
 
   '@fastify/static@10.1.3':
@@ -8561,25 +8565,25 @@ snapshots:
 
   '@inquirer/ansi@2.0.7': {}
 
-  '@inquirer/confirm@6.1.1(@types/node@26.2.0)':
+  '@inquirer/confirm@6.2.0(@types/node@26.2.0)':
     dependencies:
-      '@inquirer/core': 11.2.1(@types/node@26.2.0)
+      '@inquirer/core': 12.0.0(@types/node@26.2.0)
       '@inquirer/type': 4.0.7(@types/node@26.2.0)
     optionalDependencies:
       '@types/node': 26.2.0
     optional: true
 
-  '@inquirer/confirm@6.1.1(@types/node@26.3.0)':
+  '@inquirer/confirm@6.2.0(@types/node@26.3.0)':
     dependencies:
-      '@inquirer/core': 11.2.1(@types/node@26.3.0)
+      '@inquirer/core': 12.0.0(@types/node@26.3.0)
       '@inquirer/type': 4.0.7(@types/node@26.3.0)
     optionalDependencies:
       '@types/node': 26.3.0
 
-  '@inquirer/core@11.2.1(@types/node@26.2.0)':
+  '@inquirer/core@12.0.0(@types/node@26.2.0)':
     dependencies:
       '@inquirer/ansi': 2.0.7
-      '@inquirer/figures': 2.0.7
+      '@inquirer/figures': 2.0.8
       '@inquirer/type': 4.0.7(@types/node@26.2.0)
       cli-width: 4.1.0
       fast-wrap-ansi: 0.2.2
@@ -8589,10 +8593,10 @@ snapshots:
       '@types/node': 26.2.0
     optional: true
 
-  '@inquirer/core@11.2.1(@types/node@26.3.0)':
+  '@inquirer/core@12.0.0(@types/node@26.3.0)':
     dependencies:
       '@inquirer/ansi': 2.0.7
-      '@inquirer/figures': 2.0.7
+      '@inquirer/figures': 2.0.8
       '@inquirer/type': 4.0.7(@types/node@26.3.0)
       cli-width: 4.1.0
       fast-wrap-ansi: 0.2.2
@@ -8601,7 +8605,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 26.3.0
 
-  '@inquirer/figures@2.0.7': {}
+  '@inquirer/figures@2.0.8': {}
 
   '@inquirer/type@4.0.7(@types/node@26.2.0)':
     optionalDependencies:
@@ -8684,7 +8688,7 @@ snapshots:
       - typescript
       - vitest
 
-  '@lokalise/fastify-extras@31.0.1(@fastify/jwt@10.2.1)(@lokalise/api-contracts@8.0.0(zod@4.4.3))(@lokalise/background-jobs-common@15.2.0(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(ioredis@6.0.0)(pino@10.3.1)(toad-scheduler@4.1.0)(zod@4.4.3))(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(dd-trace@6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0)))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1)(fastify@5.11.3)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.11.3)(ioredis@6.0.0)(pino@10.3.1)(zod@4.4.3)':
+  '@lokalise/fastify-extras@31.0.1(@fastify/jwt@10.2.1)(@lokalise/api-contracts@8.0.0(zod@4.4.3))(@lokalise/background-jobs-common@15.2.0(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(ioredis@6.0.0)(pino@10.3.1)(toad-scheduler@4.1.0)(zod@4.4.3))(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(dd-trace@6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0)))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1)(fastify@5.12.1)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.12.1)(ioredis@6.0.0)(pino@10.3.1)(zod@4.4.3)':
     dependencies:
       '@amplitude/analytics-node': 1.5.68
       '@bugsnag/js': 8.10.0
@@ -8700,10 +8704,10 @@ snapshots:
       '@supercharge/promise-pool': 3.3.0
       bullmq: 6.2.0(ioredis@6.0.0)(pg@8.22.0)
       dd-trace: 6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0))
-      fastify: 5.11.3
-      fastify-metrics: 13.2.1(fastify@5.11.3)
+      fastify: 5.12.1
+      fastify-metrics: 13.2.1(fastify@5.12.1)
       fastify-plugin: 5.1.0
-      fastify-type-provider-zod: 7.0.0(@fastify/swagger@9.8.1)(fastify@5.11.3)(openapi-types@12.1.3)(zod@4.4.3)
+      fastify-type-provider-zod: 7.0.0(@fastify/swagger@9.8.1)(fastify@5.12.1)(openapi-types@12.1.3)(zod@4.4.3)
       ioredis: 6.0.0
       pino: 10.3.1
       prom-client: 15.1.3
@@ -8714,7 +8718,7 @@ snapshots:
       - encoding
       - supports-color
 
-  '@lokalise/fastify-extras@31.0.1(@fastify/jwt@10.2.1)(@lokalise/api-contracts@8.0.0(zod@4.4.3))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(dd-trace@6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0)))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1)(fastify@5.11.3)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.11.3)(ioredis@6.0.0)(pino@10.3.1)(zod@4.4.3)':
+  '@lokalise/fastify-extras@31.0.1(@fastify/jwt@10.2.1)(@lokalise/api-contracts@8.0.0(zod@4.4.3))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/node-core@14.8.1(zod@4.4.3))(@opentelemetry/api@1.9.1)(bullmq@6.2.0(ioredis@6.0.0)(pg@8.22.0))(dd-trace@6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0)))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1)(fastify@5.12.1)(openapi-types@12.1.3)(zod@4.4.3))(fastify@5.12.1)(ioredis@6.0.0)(pino@10.3.1)(zod@4.4.3)':
     dependencies:
       '@amplitude/analytics-node': 1.5.68
       '@bugsnag/js': 8.10.0
@@ -8730,10 +8734,10 @@ snapshots:
       '@supercharge/promise-pool': 3.3.0
       bullmq: 6.2.0(ioredis@6.0.0)(pg@8.22.0)
       dd-trace: 6.10.0(@openfeature/server-sdk@1.22.0(@openfeature/core@1.11.0))
-      fastify: 5.11.3
-      fastify-metrics: 13.2.1(fastify@5.11.3)
+      fastify: 5.12.1
+      fastify-metrics: 13.2.1(fastify@5.12.1)
       fastify-plugin: 5.1.0
-      fastify-type-provider-zod: 7.0.0(@fastify/swagger@9.8.1)(fastify@5.11.3)(openapi-types@12.1.3)(zod@4.4.3)
+      fastify-type-provider-zod: 7.0.0(@fastify/swagger@9.8.1)(fastify@5.12.1)(openapi-types@12.1.3)(zod@4.4.3)
       ioredis: 6.0.0
       pino: 10.3.1
       prom-client: 15.1.3
@@ -12198,9 +12202,9 @@ snapshots:
     dependencies:
       fastify-plugin: 5.1.0
 
-  fastify-metrics@13.2.1(fastify@5.11.3):
+  fastify-metrics@13.2.1(fastify@5.12.1):
     dependencies:
-      fastify: 5.11.3
+      fastify: 5.12.1
       fastify-plugin: 6.0.0
       prom-client: 15.1.3
 
@@ -12208,15 +12212,15 @@ snapshots:
 
   fastify-plugin@6.0.0: {}
 
-  fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1)(fastify@5.11.3)(openapi-types@12.1.3)(zod@4.4.3):
+  fastify-type-provider-zod@7.0.0(@fastify/swagger@9.8.1)(fastify@5.12.1)(openapi-types@12.1.3)(zod@4.4.3):
     dependencies:
       '@fastify/error': 4.2.0
       '@fastify/swagger': 9.8.1
-      fastify: 5.11.3
+      fastify: 5.12.1
       openapi-types: 12.1.3
       zod: 4.4.3
 
-  fastify@5.11.3:
+  fastify@5.12.1:
     dependencies:
       '@fastify/ajv-compiler': 4.0.6
       '@fastify/error': 4.2.0
@@ -12225,7 +12229,7 @@ snapshots:
       abstract-logging: 2.0.1
       avvio: 9.3.0
       fast-json-stringify: 7.0.1
-      find-my-way: 9.7.0
+      find-my-way: 9.8.0
       light-my-request: 6.6.0
       pino: 10.3.1
       process-warning: 5.1.0
@@ -12289,6 +12293,12 @@ snapshots:
       - supports-color
 
   find-my-way@9.7.0:
+    dependencies:
+      fast-deep-equal: 3.1.3
+      fast-querystring: 1.1.2
+      safe-regex2: 5.1.1
+
+  find-my-way@9.8.0:
     dependencies:
       fast-deep-equal: 3.1.3
       fast-querystring: 1.1.2
@@ -13123,7 +13133,7 @@ snapshots:
 
   msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2):
     dependencies:
-      '@inquirer/confirm': 6.1.1(@types/node@26.2.0)
+      '@inquirer/confirm': 6.2.0(@types/node@26.2.0)
       '@mswjs/interceptors': 0.41.9
       '@open-draft/deferred-promise': 3.0.0
       '@types/statuses': 2.0.6
@@ -13149,7 +13159,7 @@ snapshots:
 
   msw@2.15.0(@types/node@26.3.0)(typescript@7.0.2):
     dependencies:
-      '@inquirer/confirm': 6.1.1(@types/node@26.3.0)
+      '@inquirer/confirm': 6.2.0(@types/node@26.3.0)
       '@mswjs/interceptors': 0.41.9
       '@open-draft/deferred-promise': 3.0.0
       '@types/statuses': 2.0.6
