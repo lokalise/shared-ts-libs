@@ -260,7 +260,6 @@ async function handleApiRoute({
     if (apiSSEContext?.isStarted()) {
       // The handler drove the session imperatively via sse.start(); @fastify/sse manages
       // the rest of the connection lifecycle.
-      apiSSEContext.markHandlerDone()
       return
     }
 
@@ -278,7 +277,6 @@ async function handleApiRoute({
           contentType: resolved.contentType as string,
         })
         await session.sendStream(resolved.body as AsyncIterable<SSEStreamMessage>)
-        apiSSEContext.markHandlerDone()
         return
       }
       // Any other status/body is sent as a regular HTTP response.

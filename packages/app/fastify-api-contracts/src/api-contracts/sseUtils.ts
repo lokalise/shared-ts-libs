@@ -117,7 +117,7 @@ function resolveSseSelection(
 
 /**
  * Build the `sse` context passed to SSE-capable handlers, plus the lifecycle probes the
- * route runtime needs (`isStarted`, `markHandlerDone`, `preserveStreamOnError`).
+ * route runtime needs (`isStarted`, `preserveStreamOnError`).
  *
  * `start()` validates the reply's headers against `responseHeaderSchema` before flushing
  * them — the only moment a violation can still become a 500 instead of going out on an
@@ -133,7 +133,6 @@ export function buildApiSSEContext(
   // biome-ignore lint/suspicious/noExplicitAny: SSE event schemas are contract-specific, cast at call site
   sseContext: SSEContext<any>
   isStarted: () => boolean
-  markHandlerDone: () => void
   preserveStreamOnError: () => void
 } {
   // @fastify/sse is an optional peer and Fastify silently ignores the unknown `sse` route
@@ -146,7 +145,6 @@ export function buildApiSSEContext(
   }
 
   let started = false
-  let sessionMode: SSESessionMode | undefined
   let closedByServer = false
 
   const sseContext: SSEContext = {
@@ -161,7 +159,18 @@ export function buildApiSSEContext(
       validateApiResponseHeaders(responseHeaderSchema, reply)
 
       started = true
-      sessionMode = mode
+
+      // Every server-initiated close funnels through reply.sse.close() — session.close(),
+      // a global error handler ending an errored stream, and @fastify/sse's own close of a
+      // non-keepAlive session after the handler completes. Wrapping it attributes the close
+      // to the server at the moment it actually happens. A client disconnect never calls
+      // close() (the plugin reacts to the raw socket 'close' event directly), so it keeps
+      // reporting 'client'.
+      const pluginClose = reply.sse.close.bind(reply.sse)
+      reply.sse.close = () => {
+        closedByServer = true
+        pluginClose()
+      }
 
       if (mode === 'keepAlive') {
         reply.sse.keepAlive()
@@ -226,7 +235,6 @@ export function buildApiSSEContext(
           }
         },
         close: () => {
-          closedByServer = true
           reply.sse.close()
         },
       }
@@ -272,27 +280,16 @@ export function buildApiSSEContext(
   return {
     sseContext,
     isStarted: () => started,
-    // An autoClose session is closed by @fastify/sse when the handler completes — that close
-    // is server-initiated. Called after the handler resolves, before the close fires; if the
-    // client already disconnected mid-stream, onClose has fired with 'client' and this is moot.
-    markHandlerDone: () => {
-      if (sessionMode === 'autoClose') {
-        closedByServer = true
-      }
-    },
     // An error escaping the handler after the stream is committed must not tear the
     // connection down: @fastify/sse closes non-keepAlive sessions before rethrowing, so
     // the error would reach the global error handler on an already-ended stream. Flagging
     // keep-alive hands the still-open stream to the error handler, which owns serializing
-    // the error into a terminal SSE event and closing the connection (a server-initiated
-    // close). A no-op before `start()` — an uncommitted reply goes through the regular
-    // HTTP error path.
+    // the error into a terminal SSE event and closing the stream. A no-op before `start()`
+    // — an uncommitted reply goes through the regular HTTP error path.
     preserveStreamOnError: () => {
-      if (!started) {
-        return
+      if (started) {
+        reply.sse.keepAlive()
       }
-      closedByServer = true
-      reply.sse.keepAlive()
     },
   }
 }
