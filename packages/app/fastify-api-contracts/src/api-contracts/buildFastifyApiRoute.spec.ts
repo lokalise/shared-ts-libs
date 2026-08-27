@@ -1090,8 +1090,8 @@ describe('buildFastifyApiRoute — runtime', () => {
 
   it('keeps the stream open for the global error handler when the handler throws after sse.start()', async () => {
     app = await buildApp()
-    // Mimics an SSE-aware global error handler (fastify-extras): the stream is still
-    // connected when the error arrives, so it goes out as a terminal SSE event.
+    // Mimics an SSE-aware global error handler: the stream is still connected when the
+    // error arrives, so it goes out as a terminal SSE event.
     app.setErrorHandler<Error>(async (error, _request, reply) => {
       expect(reply.sse.isConnected).toBe(true)
       await reply.sse.send({ event: 'error', data: { message: error.message } })
