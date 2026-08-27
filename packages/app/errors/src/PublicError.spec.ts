@@ -157,6 +157,20 @@ describe('toPayload', () => {
     ).toBe(true)
   })
 
+  it('exposes optional, inspectable details on the payload seen by a generic handler', () => {
+    const errors: PublicError[] = [
+      new ProjectNameAlreadyExistsError('foo'),
+      new ProjectNotFoundError('123'),
+    ]
+
+    for (const err of errors) {
+      const payload = err.toPayload()
+      // For the wide PublicError type, details types as Record<string, unknown> | undefined
+      const details: Record<string, unknown> | undefined = payload.details
+      expect(details).toEqual(err.details)
+    }
+  })
+
   it('preserves literal code and typed details in the payload type', () => {
     const payload = new ProjectNameAlreadyExistsError('foo').toPayload()
     const code: 'PROJECT_NAME_ALREADY_EXISTS' = payload.code

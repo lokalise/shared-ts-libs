@@ -45,6 +45,11 @@ export type PublicErrorOptions<T extends PublicErrorDefinition> = EnhancedErrorO
  * Client-facing payload of a {@link PublicError} — the shape validated by the
  * definition's companion `schema`. `details` is present exactly when the
  * definition declares a `detailsSchema`.
+ *
+ * For the wide {@link PublicErrorDefinition} type (where `detailsSchema` may or
+ * may not be present, e.g. in a generic `PublicError` handler), `details` is
+ * optional and resolves to `Record<string, unknown> | undefined`, matching
+ * {@link InferPublicErrorDetails}.
  */
 export type PublicErrorPayload<T extends PublicErrorDefinition> = {
   message: string
@@ -53,7 +58,9 @@ export type PublicErrorPayload<T extends PublicErrorDefinition> = {
   errorCode: T['code']
 } & (T['detailsSchema'] extends z.ZodObject
   ? { details: InferPublicErrorDetails<T> }
-  : { details?: never })
+  : [Extract<T['detailsSchema'], z.ZodObject>] extends [never]
+    ? { details?: never }
+    : { details?: InferPublicErrorDetails<T> })
 
 /**
  * Base class for errors that may be surfaced to clients.
