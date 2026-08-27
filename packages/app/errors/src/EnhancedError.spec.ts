@@ -150,6 +150,35 @@ describe('EnhancedError', () => {
     })
   })
 
+  describe('isInstance used detached from its class', () => {
+    it('works as an array callback', () => {
+      const values: unknown[] = [
+        new A({ message: 'a' }),
+        new B({ message: 'b' }),
+        new Error('boom'),
+        null,
+      ]
+
+      expect(values.filter(EnhancedError.isInstance)).toHaveLength(2)
+      expect(values.filter(A.isInstance)).toHaveLength(2)
+      expect(values.filter(B.isInstance)).toHaveLength(1)
+    })
+
+    it('works when stored in a variable', () => {
+      const isA: (value: unknown) => boolean = A.isInstance
+
+      expect(isA(new A({ message: 'a' }))).toBe(true)
+      expect(isA(new Error('boom'))).toBe(false)
+    })
+
+    it('stays bound to the subclass it was accessed on, not the declaring class', () => {
+      const isB: (value: unknown) => boolean = B.isInstance
+
+      expect(isB(new B({ message: 'b' }))).toBe(true)
+      expect(isB(new A({ message: 'a' }))).toBe(false)
+    })
+  })
+
   it('recognizes an object carrying the shared path symbols without a prototype link', () => {
     // Simulates an instance created in another realm (or by a duplicated copy
     // of this package): same Symbol.for markers, unrelated prototype chain.

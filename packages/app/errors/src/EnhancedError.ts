@@ -147,14 +147,28 @@ export abstract class EnhancedError<TDetails = undefined> extends Error {
   /**
    * Type guard for this error class — the preferred way to check errors.
    *
-   * Inherited by every subclass and narrows to the subclass it is called on.
+   * Inherited by every subclass and narrows to the subclass it is accessed on.
+   * Safe to pass around detached, e.g. `errors.filter(DatabaseQueryError.isInstance)`
+   * (note that TS cannot carry the narrowing through such a detached reference;
+   * write `errors.filter((e) => DatabaseQueryError.isInstance(e))` when the
+   * narrowed array type matters).
    */
-  static isInstance<T>(
+  declare static readonly isInstance: <T>(
     this: { prototype: T; [Symbol.hasInstance](value: unknown): boolean },
     value: unknown,
-  ): value is T {
-    // biome-ignore lint/complexity/noThisInStatic: intentional to support subclasses
-    return value instanceof this
+  ) => value is T
+
+  static {
+    // A plain method would read the class from `this` at call time and throw
+    // when detached from it (e.g. passed to Array#filter as a callback). This
+    // accessor instead closes over the class the property is accessed on, so
+    // the returned guard keeps working detached while subclasses still get a
+    // guard for themselves rather than for the class that declared it.
+    Object.defineProperty(EnhancedError, 'isInstance', {
+      get(this: typeof EnhancedError) {
+        return (value: unknown): boolean => value instanceof this
+      },
+    })
   }
 
   /**
