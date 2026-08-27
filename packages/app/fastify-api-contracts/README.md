@@ -30,6 +30,9 @@ import fastifySSE from '@fastify/sse'
 await app.register(fastifySSE)
 ```
 
+> [!IMPORTANT]
+> SSE-capable routes also require an **SSE-aware global error handler**: once a stream is committed, an error can only be reported as a terminal event over the stream — a plain `reply.status().send()` error handler runs into already-sent headers and leaves the response unfinished. See [Error handling](#error-handling); the [`errorHandler` in `fastify-extras`](https://github.com/lokalise/fastify-extras/blob/main/lib/errors/errorHandler.ts) supports this out of the box.
+
 Register the Zod compilers on your Fastify instance and use the `ZodTypeProvider` when adding routes:
 
 ```ts
@@ -170,6 +173,8 @@ To respond without streaming, return `{ status, body }` with a non-SSE body (the
 
 SSE-capable routes are registered in `@fastify/sse` `'manual'` mode: there is no `Accept`-header negotiation — the handler alone decides at runtime whether to stream or send a regular HTTP response. This also supports clients that signal streaming via the request body (e.g. OpenAI-style `{ stream: true }`) instead of an `Accept: text/event-stream` header.
 
+An error thrown after the stream started reaches the global error handler with the stream still open, so the Fastify instance **must** register an SSE-aware `setErrorHandler` — see [Error handling](#error-handling).
+
 ```ts
 import { sseBody } from '@lokalise/api-contracts'
 
@@ -282,8 +287,12 @@ const routes = [buildFastifyApiRoute(contract, createUser)]
 
 Errors from contract routes go through the regular Fastify error handling chain (`fastify.setErrorHandler` or the default handler) — contract routes behave exactly like any other route. The exception is a **live SSE stream**: once the stream started, the status line and headers are on the wire, so a standard `reply.status().send()` can no longer work.
 
-- For an `autoClose` session (including the declarative `{ status, body: asyncIterable }` form), a handler error closes the stream without reaching the error handler — the client detects the failure by the missing terminal event (e.g. `done`).
-- For a `keepAlive` session, a handler rejection reaches the error handler with the stream still open. The only correct error signal there is a terminal `error` event sent over the stream before closing it, so a global `setErrorHandler` serving SSE routes must branch on the stream state:
+An error escaping the handler after the stream started — whether the session is `autoClose` or `keepAlive`, imperative (`sse.start()`) or declarative (`{ status, body: asyncIterable }`) — reaches the global error handler with the stream **still open**. Errors thrown before the stream starts take the regular HTTP error path.
+
+> [!IMPORTANT]
+> A Fastify instance serving SSE-capable routes **must** set an SSE-aware `setErrorHandler`. The only correct error signal on a committed stream is a terminal `error` event sent over the stream before closing it; an error handler that unconditionally calls `reply.status().send()` runs into already-sent headers, leaving the stream open and the error unreported to the client. The [`errorHandler` in `fastify-extras`](https://github.com/lokalise/fastify-extras/blob/main/lib/errors/errorHandler.ts) is a ready-made SSE-aware implementation.
+
+An SSE-aware error handler branches on the stream state:
 
 ```ts
 app.setErrorHandler(async (error, request, reply) => {
