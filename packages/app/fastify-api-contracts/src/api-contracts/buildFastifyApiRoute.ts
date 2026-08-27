@@ -254,42 +254,48 @@ async function handleApiRoute({
     ...(apiSSEContext ? { sse: apiSSEContext.sseContext } : {}),
   }
 
-  const result = await handler(request, reply, context)
+  try {
+    const result = await handler(request, reply, context)
 
-  if (apiSSEContext?.isStarted()) {
-    // The handler drove the session imperatively via sse.start(); @fastify/sse manages
-    // the rest of the connection lifecycle.
-    apiSSEContext.markHandlerDone()
-    return
-  }
-
-  if (isApiHandlerResult(result)) {
-    const resolved = resolveResponseRepresentation(contract, result)
-
-    // An SSE representation carries an async iterable of events as its body: open the
-    // connection and pipe each event, validated against the event schemas of exactly the
-    // representation the handler result selected.
-    if (apiSSEContext && resolved.isSse) {
-      const session = apiSSEContext.sseContext.start('autoClose', {
-        statusCode: resolved.status,
-        // An SSE representation always carries a media type — `contentType` is only null
-        // for a no-body response, which resolves with `isSse: false`.
-        contentType: resolved.contentType as string,
-      })
-      await session.sendStream(resolved.body as AsyncIterable<SSEStreamMessage>)
-      apiSSEContext.markHandlerDone()
+    if (apiSSEContext?.isStarted()) {
+      // The handler drove the session imperatively via sse.start(); @fastify/sse manages
+      // the rest of the connection lifecycle.
       return
     }
-    // Any other status/body is sent as a regular HTTP response.
-    await sendResponse(contract, reply, resolved)
-    return
-  }
 
-  // The handler neither returned { status, body } nor called sse.start().
-  throw new InternalError({
-    message: 'Internal Server Error',
-    errorCode: 'INVALID_HANDLER_RESULT',
-  })
+    if (isApiHandlerResult(result)) {
+      const resolved = resolveResponseRepresentation(contract, result)
+
+      // An SSE representation carries an async iterable of events as its body: open the
+      // connection and pipe each event, validated against the event schemas of exactly the
+      // representation the handler result selected.
+      if (apiSSEContext && resolved.isSse) {
+        const session = apiSSEContext.sseContext.start('autoClose', {
+          statusCode: resolved.status,
+          // An SSE representation always carries a media type — `contentType` is only null
+          // for a no-body response, which resolves with `isSse: false`.
+          contentType: resolved.contentType as string,
+        })
+        await session.sendStream(resolved.body as AsyncIterable<SSEStreamMessage>)
+        return
+      }
+      // Any other status/body is sent as a regular HTTP response.
+      await sendResponse(contract, reply, resolved)
+      return
+    }
+
+    // The handler neither returned { status, body } nor called sse.start().
+    throw new InternalError({
+      message: 'Internal Server Error',
+      errorCode: 'INVALID_HANDLER_RESULT',
+    })
+  } catch (err) {
+    // When the stream is already committed, keep the connection open while the error
+    // propagates — the global error handler is responsible for serializing the error into
+    // a terminal SSE event and closing the stream. A no-op before sse.start().
+    apiSSEContext?.preserveStreamOnError()
+    throw err
+  }
 }
 
 /**

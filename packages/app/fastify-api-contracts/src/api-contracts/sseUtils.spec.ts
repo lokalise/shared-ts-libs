@@ -495,22 +495,30 @@ describe('buildApiSSEContext', () => {
     const startWithOnClose = (onClose: (s: SSESession, i: SSECloseInitiator) => void) => {
       const request = requestWithAccept()
       const { reply, sse } = buildSseReply()
-      const { sseContext, markHandlerDone } = buildApiSSEContext(request, reply, sseSelections, {
-        onClose,
-      })
+      const { sseContext, preserveStreamOnError } = buildApiSSEContext(
+        request,
+        reply,
+        sseSelections,
+        {
+          onClose,
+        },
+      )
+      // start() wraps reply.sse.close to attribute server-initiated closes — keep a handle
+      // on the underlying plugin mock for call assertions.
+      const pluginClose = sse.close
       const session = sseContext.start('keepAlive')
       const fireClose = sse.onClose.mock.calls[0]?.[0] as () => void
-      return { session, sse, markHandlerDone, fireClose, request }
+      return { session, sse, pluginClose, preserveStreamOnError, fireClose, request }
     }
 
     it("session.close() closes the reply and reports 'server' as the initiator", () => {
       const onClose = vi.fn()
-      const { session, sse, fireClose } = startWithOnClose(onClose)
+      const { session, pluginClose, fireClose } = startWithOnClose(onClose)
 
       session.close()
       fireClose()
 
-      expect(sse.close).toHaveBeenCalled()
+      expect(pluginClose).toHaveBeenCalled()
       expect(onClose).toHaveBeenCalledWith(session, 'server')
     })
 
@@ -523,31 +531,72 @@ describe('buildApiSSEContext', () => {
       expect(onClose).toHaveBeenCalledWith(session, 'client')
     })
 
-    it('markHandlerDone() marks an autoClose session close as server-initiated', () => {
+    it("attributes @fastify/sse's autoClose close after handler completion as server-initiated", () => {
       const onClose = vi.fn()
       const { reply, sse } = buildSseReply()
-      const { sseContext, markHandlerDone } = buildApiSSEContext(
-        requestWithAccept(),
-        reply,
-        sseSelections,
-        { onClose },
-      )
+      const { sseContext } = buildApiSSEContext(requestWithAccept(), reply, sseSelections, {
+        onClose,
+      })
       const session = sseContext.start('autoClose')
 
-      markHandlerDone()
+      // After the route handler resolves, @fastify/sse closes the non-keepAlive session
+      // via context.close() — which goes through the wrapper installed at start().
+      sse.close()
       ;(sse.onClose.mock.calls[0]![0] as () => void)()
 
       expect(onClose).toHaveBeenCalledWith(session, 'server')
     })
 
-    it('markHandlerDone() leaves a keepAlive session close client-initiated', () => {
+    it("reports 'server' when server-side code closes via reply.sse.close() directly", () => {
       const onClose = vi.fn()
-      const { markHandlerDone, fireClose, session } = startWithOnClose(onClose)
+      const { session, sse, fireClose } = startWithOnClose(onClose)
 
-      markHandlerDone()
+      // A global error handler (or any hook holding the reply) ends the stream through
+      // the plugin API, not session.close().
+      sse.close()
+      fireClose()
+
+      expect(onClose).toHaveBeenCalledWith(session, 'server')
+    })
+
+    it("preserveStreamOnError() keeps a later client disconnect reported as 'client'", () => {
+      const onClose = vi.fn()
+      const { session, preserveStreamOnError, fireClose } = startWithOnClose(onClose)
+
+      preserveStreamOnError()
+      // The error handler left the stream open; the client disconnects afterwards.
       fireClose()
 
       expect(onClose).toHaveBeenCalledWith(session, 'client')
+    })
+
+    it('preserveStreamOnError() flags an autoClose session keep-alive so the plugin skips its error-path close', () => {
+      const { reply, sse } = buildSseReply()
+      const { sseContext, preserveStreamOnError } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        sseSelections,
+        undefined,
+      )
+      sseContext.start('autoClose')
+
+      expect(sse.keepAlive).not.toHaveBeenCalled()
+      preserveStreamOnError()
+      expect(sse.keepAlive).toHaveBeenCalled()
+    })
+
+    it('preserveStreamOnError() is a no-op before the stream starts', () => {
+      const { reply, sse } = buildSseReply()
+      const { preserveStreamOnError } = buildApiSSEContext(
+        requestWithAccept(),
+        reply,
+        sseSelections,
+        undefined,
+      )
+
+      preserveStreamOnError()
+
+      expect(sse.keepAlive).not.toHaveBeenCalled()
     })
 
     it('logs a rejecting onClose hook without tearing down the stream', async () => {
