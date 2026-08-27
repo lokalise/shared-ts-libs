@@ -117,7 +117,7 @@ function resolveSseSelection(
 
 /**
  * Build the `sse` context passed to SSE-capable handlers, plus the lifecycle probes the
- * route runtime needs (`isStarted`, `markHandlerDone`).
+ * route runtime needs (`isStarted`, `markHandlerDone`, `preserveStreamOnError`).
  *
  * `start()` validates the reply's headers against `responseHeaderSchema` before flushing
  * them — the only moment a violation can still become a 500 instead of going out on an
@@ -134,6 +134,7 @@ export function buildApiSSEContext(
   sseContext: SSEContext<any>
   isStarted: () => boolean
   markHandlerDone: () => void
+  preserveStreamOnError: () => void
 } {
   // @fastify/sse is an optional peer and Fastify silently ignores the unknown `sse` route
   // option when it is not registered — without this guard the request dies on an opaque
@@ -278,6 +279,20 @@ export function buildApiSSEContext(
       if (sessionMode === 'autoClose') {
         closedByServer = true
       }
+    },
+    // An error escaping the handler after the stream is committed must not tear the
+    // connection down: @fastify/sse closes non-keepAlive sessions before rethrowing, so
+    // the error would reach the global error handler on an already-ended stream. Flagging
+    // keep-alive hands the still-open stream to the error handler, which owns serializing
+    // the error into a terminal SSE event and closing the connection (a server-initiated
+    // close). A no-op before `start()` — an uncommitted reply goes through the regular
+    // HTTP error path.
+    preserveStreamOnError: () => {
+      if (!started) {
+        return
+      }
+      closedByServer = true
+      reply.sse.keepAlive()
     },
   }
 }

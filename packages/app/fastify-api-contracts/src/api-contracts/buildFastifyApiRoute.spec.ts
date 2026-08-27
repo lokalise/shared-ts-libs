@@ -1088,6 +1088,117 @@ describe('buildFastifyApiRoute — runtime', () => {
     await vi.waitFor(() => expect(closeInitiator).toBe('server'))
   })
 
+  it('keeps the stream open for the global error handler when the handler throws after sse.start()', async () => {
+    app = await buildApp()
+    // Mimics an SSE-aware global error handler (fastify-extras): the stream is still
+    // connected when the error arrives, so it goes out as a terminal SSE event.
+    app.setErrorHandler<Error>(async (error, _request, reply) => {
+      expect(reply.sse.isConnected).toBe(true)
+      await reply.sse.send({ event: 'error', data: { message: error.message } })
+      reply.sse.close()
+    })
+    app.route(
+      buildFastifyApiRoute(sseOnlyContract, async (_request, _reply, { sse }) => {
+        const session = sse.start('autoClose')
+        await session.send('update', { value: 1 })
+        throw new Error('stream blew up')
+      }),
+    )
+    await app.ready()
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/stream',
+      headers: { accept: 'text/event-stream' },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toContain('event: update')
+    expect(response.body).toContain('event: error')
+    expect(response.body).toContain('stream blew up')
+  })
+
+  it('keeps the stream open for the global error handler when an async-iterable body throws mid-stream', async () => {
+    app = await buildApp()
+    app.setErrorHandler<Error>(async (error, _request, reply) => {
+      expect(reply.sse.isConnected).toBe(true)
+      await reply.sse.send({ event: 'error', data: { message: error.message } })
+      reply.sse.close()
+    })
+    app.route(
+      buildFastifyApiRoute(sseOnlyContract, (_request, _reply) => ({
+        status: 200,
+        // biome-ignore lint/suspicious/useAwait: async is required to satisfy AsyncIterable
+        body: (async function* (): AsyncGenerator<SSEStreamMessage<typeof sseEventsSchema>> {
+          yield { event: 'update', data: { value: 1 } }
+          throw new Error('source failed')
+        })(),
+      })),
+    )
+    await app.ready()
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/stream',
+      headers: { accept: 'text/event-stream' },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toContain('event: update')
+    expect(response.body).toContain('event: error')
+    expect(response.body).toContain('source failed')
+  })
+
+  it("reports 'server' as the close initiator when the global error handler closes an errored stream", async () => {
+    let closeInitiator: string | undefined
+    app = await buildApp()
+    app.setErrorHandler<Error>(async (error, _request, reply) => {
+      await reply.sse.send({ event: 'error', data: { message: error.message } })
+      reply.sse.close()
+    })
+    app.route(
+      buildFastifyApiRoute(
+        sseOnlyContract,
+        async (_request, _reply, { sse }) => {
+          const session = sse.start('autoClose')
+          await session.send('update', { value: 1 })
+          throw new Error('stream blew up')
+        },
+        {
+          onClose: (_session, initiator) => {
+            closeInitiator = initiator
+          },
+        },
+      ),
+    )
+    await app.ready()
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/stream',
+      headers: { accept: 'text/event-stream' },
+    })
+    expect(response.statusCode).toBe(200)
+    await vi.waitFor(() => expect(closeInitiator).toBe('server'))
+  })
+
+  it('returns a regular 500 when an SSE-capable handler throws before sse.start()', async () => {
+    app = await buildApp()
+    app.route(
+      buildFastifyApiRoute(sseOnlyContract, () => {
+        throw new Error('failed before streaming')
+      }),
+    )
+    await app.ready()
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/stream',
+      headers: { accept: 'text/event-stream' },
+    })
+    expect(response.statusCode).toBe(500)
+    expect(response.headers['content-type']).toContain('application/json')
+    expect(response.json()).toMatchObject({ message: 'failed before streaming' })
+  })
+
   it('shares a 404 then streams via async iterable for an SSE-capable contract', async () => {
     const contract = defineApiContract({
       visibility: 'public',
