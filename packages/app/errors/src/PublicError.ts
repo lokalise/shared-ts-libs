@@ -142,6 +142,11 @@ export abstract class PublicError<
    * The returned class can be extended or instantiated directly. Its
    * constructor accepts `{ message, details?, cause? }` where `details` is
    * required when the definition includes a `detailsSchema`.
+   *
+   * The bound class is named `PublicError<CODE>`, making the definition's
+   * code part of the cross-realm identity path (see {@link EnhancedError}).
+   * Changing a code therefore breaks `isInstance` across realms and package
+   * copies, exactly like renaming a class.
    */
   static from<const T extends PublicErrorDefinition>(definition: T) {
     class BoundPublicError extends PublicError<T> {

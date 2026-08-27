@@ -64,6 +64,11 @@ export abstract class InternalError<
    * The `const` type parameter keeps `code` a literal type (not widened to
    * `string`), so cross-error assignments stay compile errors — without
    * relying on subclass authors remembering `override readonly`.
+   *
+   * The bound class is named `InternalError<CODE>`, making the code part of
+   * the cross-realm identity path (see {@link EnhancedError}). Changing a
+   * code therefore breaks `isInstance` across realms and package copies,
+   * exactly like renaming a class.
    */
   static from<const TCode extends string>(code: TCode) {
     class BoundInternalError<

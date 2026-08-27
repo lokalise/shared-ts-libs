@@ -286,8 +286,11 @@ the default inherited guard covers the standard cases.
 ### Cross-realm identity via `Symbol.for`
 
 On instantiation each error tags itself with `Symbol.for` symbols derived from
-its inheritance path, e.g.
-`'@lokalise/errors.EnhancedError.InternalError.TranslatorTimeoutError'`.
+its inheritance path. The `from()` factories name the bound class after the
+error code (`InternalError<CODE>` / `PublicError<CODE>`), and that name is a
+segment of the path. The `TranslatorTimeoutError` class from the example above
+stamps
+`'@lokalise/errors.EnhancedError.InternalError.InternalError<TRANSLATOR_TIMEOUT>.TranslatorTimeoutError'`.
 `isInstance` checks for those symbols instead of walking the prototype chain.
 Because `Symbol.for` symbols are shared globally, `isInstance` keeps working
 across realms and across duplicated copies of this package in `node_modules`,
@@ -303,6 +306,11 @@ the cross-realm identity. This has a few consequences:
   code stop matching `isInstance` checks in a newer copy, and vice versa. What
   looks like a pure refactor (`NotFoundError` → `ResourceNotFoundError`)
   changes runtime behavior across these boundaries.
+- **Changing an error code is a rename.** The `from()` factories bake the code
+  into the bound class name, so the code string is part of the identity path of
+  the bound class and every subclass under it. Changing a code breaks
+  `isInstance` across realms and package copies exactly like renaming the
+  class.
 - **Same name + same path = same class.** Two classes with the same name and
   inheritance path match each other's `isInstance`. That is deliberate, since
   it is what makes duplicated package copies interoperable, but it also means
