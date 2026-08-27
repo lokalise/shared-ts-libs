@@ -46,7 +46,9 @@ export type MergedErrorSchemasByStatusCode<
  * A status code claimed by a single definition maps to that definition's
  * `schema` as-is; a status code shared by several definitions maps to a
  * `z.discriminatedUnion('code', ...)` of their schemas, so error codes must be
- * unique within a status code.
+ * unique within a status code. Duplicate codes throw here, at merge time —
+ * zod builds the discriminator map lazily, so without this check the
+ * duplicate would only surface on the first parse.
  *
  * Both the status code keys and the payload types (literal `code`, typed
  * `details`) are preserved at the type level, so clients consuming the
@@ -72,18 +74,24 @@ export const mergeErrorSchemasByStatusCode = <
 >(
   definitions: TDefinitions,
 ): MergedErrorSchemasByStatusCode<TDefinitions> => {
-  const schemasByStatusCode = new Map<number, z.ZodObject[]>()
+  const groupsByStatusCode = new Map<number, { codes: Set<string>; schemas: z.ZodObject[] }>()
 
   for (const definition of definitions) {
     const statusCode = httpStatusByErrorType[definition.type]
-    const schemas = schemasByStatusCode.get(statusCode) ?? []
-    schemas.push(definition.schema)
-    schemasByStatusCode.set(statusCode, schemas)
+    const group = groupsByStatusCode.get(statusCode) ?? { codes: new Set<string>(), schemas: [] }
+    if (group.codes.has(definition.code)) {
+      throw new Error(
+        `Duplicate error code '${definition.code}' for status code ${statusCode}: error codes must be unique within a status code`,
+      )
+    }
+    group.codes.add(definition.code)
+    group.schemas.push(definition.schema)
+    groupsByStatusCode.set(statusCode, group)
   }
 
   const result: Record<number, z.ZodType> = {}
 
-  for (const [statusCode, schemas] of schemasByStatusCode) {
+  for (const [statusCode, { schemas }] of groupsByStatusCode) {
     const [firstSchema] = schemas
     result[statusCode] =
       schemas.length === 1 && firstSchema

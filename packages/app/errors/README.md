@@ -200,7 +200,8 @@ Behavior:
   `schema` as-is.
 - A status code shared by several definitions maps to a
   `z.discriminatedUnion('code', ...)` of their schemas, so error codes must be
-  unique within a status code.
+  unique within a status code. A duplicate code throws at merge time, i.e.
+  when the contract is defined, not on the first parse.
 - Both the status code keys and the payload types are preserved at the type
   level. `z.infer` of a mapped schema yields the payload union with literal
   `code` and typed `details`, letting contract consumers discriminate error

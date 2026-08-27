@@ -92,6 +92,41 @@ describe('mergeErrorSchemasByStatusCode', () => {
     ).toBe(true)
   })
 
+  describe('duplicate error codes', () => {
+    it('throws at merge time for a duplicate code within a status code', () => {
+      const duplicateLockedDefinition = definePublicError({
+        code: 'PROJECT_LOCKED',
+        type: ErrorType.CONFLICT,
+        detailsSchema: z.object({ reason: z.string() }),
+      })
+
+      // Without the merge-time check, zod's lazy discriminator map would only
+      // surface the duplicate on the first parse.
+      expect(() =>
+        mergeErrorSchemasByStatusCode([projectLockedErrorDefinition, duplicateLockedDefinition]),
+      ).toThrow("Duplicate error code 'PROJECT_LOCKED' for status code 409")
+    })
+
+    it('throws when the same definition is passed twice', () => {
+      expect(() =>
+        mergeErrorSchemasByStatusCode([projectLockedErrorDefinition, projectLockedErrorDefinition]),
+      ).toThrow("Duplicate error code 'PROJECT_LOCKED' for status code 409")
+    })
+
+    it('allows the same code under different status codes', () => {
+      const lockedAsBadRequestDefinition = definePublicError({
+        code: 'PROJECT_LOCKED',
+        type: ErrorType.BAD_REQUEST,
+      })
+
+      const responses = mergeErrorSchemasByStatusCode([
+        projectLockedErrorDefinition,
+        lockedAsBadRequestDefinition,
+      ])
+      expect(Object.keys(responses).sort()).toEqual(['400', '409'])
+    })
+  })
+
   it('preserves literal status code keys and payload types', () => {
     const responses = mergeErrorSchemasByStatusCode([
       projectNotFoundErrorDefinition,
