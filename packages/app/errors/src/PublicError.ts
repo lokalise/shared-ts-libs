@@ -124,7 +124,7 @@ export abstract class PublicError<
       message: this.message,
       code: this.code,
       errorCode: this.code,
-      ...(this.details !== undefined && { details: this.details }),
+      ...(this.details !== undefined && { details: structuredClone(this.details) }),
     } as PublicErrorPayload<T>
   }
 
