@@ -25,11 +25,11 @@ export interface PublicErrorDefinition {
  * so generic error handlers can still inspect them.
  */
 export type InferPublicErrorDetails<TDef extends PublicErrorDefinition> =
-  TDef['detailsSchema'] extends z.ZodObject
-    ? z.infer<TDef['detailsSchema']>
-    : [Extract<TDef['detailsSchema'], z.ZodObject>] extends [never]
-      ? undefined
-      : z.infer<Extract<TDef['detailsSchema'], z.ZodObject>> | undefined
+  TDef['detailsSchema'] extends infer TSchema
+    ? TSchema extends z.ZodObject
+      ? z.infer<TSchema>
+      : undefined
+    : never
 
 /**
  * Options accepted by {@link PublicError} subclass constructors.
@@ -51,16 +51,22 @@ export type PublicErrorOptions<T extends PublicErrorDefinition> = EnhancedErrorO
  * optional and resolves to `Record<string, unknown> | undefined`, matching
  * {@link InferPublicErrorDetails}.
  */
+// The details slot of a payload, derived from the resolved details type:
+// absent when there is no schema, required for a concrete schema, optional for
+// the wide definition type. The tuple check keeps the first branch from
+// distributing over the wide `Record<string, unknown> | undefined` union.
+type PayloadDetailsField<TDetails> = [TDetails] extends [undefined]
+  ? { details?: never }
+  : undefined extends TDetails
+    ? { details?: TDetails }
+    : { details: TDetails }
+
 export type PublicErrorPayload<T extends PublicErrorDefinition> = {
   message: string
   code: T['code']
   /** @deprecated Use {@link code} instead — node-core compatibility alias. */
   errorCode: T['code']
-} & (T['detailsSchema'] extends z.ZodObject
-  ? { details: InferPublicErrorDetails<T> }
-  : [Extract<T['detailsSchema'], z.ZodObject>] extends [never]
-    ? { details?: never }
-    : { details?: InferPublicErrorDetails<T> })
+} & PayloadDetailsField<InferPublicErrorDetails<T>>
 
 /**
  * Base class for errors that may be surfaced to clients.
@@ -200,18 +206,16 @@ export abstract class PublicError<
  * ```
  */
 export const definePublicError = <const T extends PublicErrorDefinition>(def: T) => {
-  type Schema = T['detailsSchema'] extends z.ZodObject
-    ? z.ZodObject<{
-        message: z.ZodString
-        code: z.ZodLiteral<T['code']>
-        errorCode: z.ZodLiteral<T['code']>
-        details: NonNullable<T['detailsSchema']>
-      }>
-    : z.ZodObject<{
-        message: z.ZodString
-        code: z.ZodLiteral<T['code']>
-        errorCode: z.ZodLiteral<T['code']>
-      }>
+  type BaseSchemaShape = {
+    message: z.ZodString
+    code: z.ZodLiteral<T['code']>
+    errorCode: z.ZodLiteral<T['code']>
+  }
+  type Schema = z.ZodObject<
+    T['detailsSchema'] extends z.ZodObject
+      ? BaseSchemaShape & { details: T['detailsSchema'] }
+      : BaseSchemaShape
+  >
 
   const base = {
     message: z.string(),
