@@ -25,18 +25,39 @@ type DefinitionsForStatusCode<
     : never
   : never
 
+// Schema type for one status code key: its output is the union of the
+// payloads of the definitions sharing that status code.
+type MergedSchemaForStatusCode<
+  TDefinition extends PublicErrorDefinitionWithSchema,
+  TStatusCode extends number,
+> = z.ZodType<z.output<DefinitionsForStatusCode<TDefinition, TStatusCode>['schema']>>
+
 /**
  * Return type of {@link mergeErrorSchemasByStatusCode}: literal status code
  * keys, each mapping to a schema whose output is the union of the payloads of
  * the definitions sharing that status code.
+ *
+ * For a tuple (the usual inline-array call, inferred `const`) every derivable
+ * status code is guaranteed to be present, so keys are required. For a
+ * non-tuple array (definitions collected dynamically), the element type only
+ * bounds which status codes may appear — nothing guarantees any of them is
+ * actually present — so keys are optional and access must narrow `undefined`.
  */
 export type MergedErrorSchemasByStatusCode<
   TDefinitions extends readonly PublicErrorDefinitionWithSchema[],
-> = {
-  [TStatusCode in StatusCodeOf<TDefinitions[number]>]: z.ZodType<
-    z.output<DefinitionsForStatusCode<TDefinitions[number], TStatusCode>['schema']>
-  >
-}
+> = number extends TDefinitions['length']
+  ? {
+      [TStatusCode in StatusCodeOf<TDefinitions[number]>]?: MergedSchemaForStatusCode<
+        TDefinitions[number],
+        TStatusCode
+      >
+    }
+  : {
+      [TStatusCode in StatusCodeOf<TDefinitions[number]>]: MergedSchemaForStatusCode<
+        TDefinitions[number],
+        TStatusCode
+      >
+    }
 
 /**
  * Groups public error definitions by the HTTP status code derived from their

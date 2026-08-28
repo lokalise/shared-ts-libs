@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { ErrorType } from './constants.ts'
-import { mergeErrorSchemasByStatusCode } from './mergeErrorSchemasByStatusCode.ts'
+import {
+  mergeErrorSchemasByStatusCode,
+  type PublicErrorDefinitionWithSchema,
+} from './mergeErrorSchemasByStatusCode.ts'
 import { definePublicError, PublicError } from './PublicError.ts'
 
 const projectNotFoundErrorDefinition = definePublicError({
@@ -149,5 +152,26 @@ describe('mergeErrorSchemasByStatusCode', () => {
       return responses[500]
     }
     expect(accessMissingStatusCode()).toBeUndefined()
+  })
+
+  it('types status codes as optional when the definitions array is not a literal tuple', () => {
+    const definitions: PublicErrorDefinitionWithSchema[] = [projectNameAlreadyExistsErrorDefinition]
+    const responses = mergeErrorSchemasByStatusCode(definitions)
+
+    const unnarrowedAccess = () => {
+      // @ts-expect-error — the schema may be absent for a non-tuple definitions array
+      return responses[404].safeParse({})
+    }
+    expect(unnarrowedAccess).toThrow(TypeError)
+
+    expect(responses[404]).toBeUndefined()
+    expect(
+      responses[409]?.safeParse({
+        message: 'A project named "foo" already exists.',
+        code: 'PROJECT_NAME_ALREADY_EXISTS',
+        errorCode: 'PROJECT_NAME_ALREADY_EXISTS',
+        details: { name: 'foo' },
+      }).success,
+    ).toBe(true)
   })
 })

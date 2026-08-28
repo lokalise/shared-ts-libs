@@ -208,6 +208,14 @@ Behavior:
   responses by `code`. Accessing a status code no definition maps to is a
   compile error.
 
+> [!IMPORTANT]
+> Always pass the definitions as an inline array literal, as in the example
+> above. The type-level guarantees only hold when TypeScript sees exactly
+> which definitions you passed. With a non-literal array (e.g. definitions
+> collected dynamically into a `PublicErrorDefinitionWithSchema[]`), the type
+> system cannot know which status codes are actually present at runtime:
+> every status code key becomes optional and payload types degrade.
+
 Combined with `toPayload()`, the server response provably matches the
 contract. The payload an error serializes to is exactly what the mapped
 schema validates.
