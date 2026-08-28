@@ -65,11 +65,11 @@
         "@message-queue-toolkit/sns": "^27.0.0",
         "@message-queue-toolkit/sqs": "^27.0.0",
         "@types/node": "^26.1.1",
-        "@vitest/coverage-v8": "^4.1.10",
+        "@vitest/coverage-v8": "^4.1.11",
         "envase": "^1.5.0",
         "rimraf": "^6.1.3",
         "typescript": "7.0.2",
-        "vitest": "^4.1.10",
+        "vitest": "^4.1.11",
         "zod": "^4.3.6"
     }
 }
