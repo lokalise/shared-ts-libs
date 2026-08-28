@@ -32,6 +32,9 @@
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
     },
+    "dependencies": {
+        "@lokalise/non-translatable-markup": "workspace:^"
+    },
     "devDependencies": {
         "@biomejs/biome": "^2.5.9",
         "@lokalise/biome-config": "workspace:^",
