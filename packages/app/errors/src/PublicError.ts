@@ -20,6 +20,11 @@ export interface PublicErrorDefinition {
 /**
  * Infers the TypeScript type of error details from a Zod schema.
  *
+ * Resolves to the schema's *input* type (`z.input`, not `z.output`). The error
+ * never runs the schema, so `error.details` and the `toPayload()` result hold
+ * input-typed values. Transforms only run when the server serializes the
+ * response, outside this package.
+ *
  * For the wide {@link PublicErrorDefinition} type (where `detailsSchema` may or
  * may not be present), details resolve to `Record<string, unknown> | undefined`
  * so generic error handlers can still inspect them.
@@ -27,7 +32,7 @@ export interface PublicErrorDefinition {
 export type InferPublicErrorDetails<TDef extends PublicErrorDefinition> =
   TDef['detailsSchema'] extends infer TSchema
     ? TSchema extends z.ZodObject
-      ? z.infer<TSchema>
+      ? z.input<TSchema>
       : undefined
     : never
 

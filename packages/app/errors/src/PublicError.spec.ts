@@ -171,6 +171,25 @@ describe('toPayload', () => {
     }
   })
 
+  it('types details with the schema input type when input and output differ', () => {
+    const transformDetailsErrorDefinition = definePublicError({
+      code: 'TRANSFORM_DETAILS',
+      type: ErrorType.BAD_REQUEST,
+      detailsSchema: z.object({ count: z.string().transform(Number) }),
+    })
+    const TransformDetailsError = PublicError.from(transformDetailsErrorDefinition)
+
+    // The error never runs the schema, so details and the payload hold
+    // input-typed values. A transform only executes when the server
+    // serializes the response, outside this package.
+    const error = new TransformDetailsError({ message: 'count invalid', details: { count: '5' } })
+    const detailsCount: string = error.details.count
+    expect(detailsCount).toBe('5')
+
+    const payloadCount: string = error.toPayload().details.count
+    expect(payloadCount).toBe('5')
+  })
+
   it('preserves literal code and typed details in the payload type', () => {
     const payload = new ProjectNameAlreadyExistsError('foo').toPayload()
     const code: 'PROJECT_NAME_ALREADY_EXISTS' = payload.code
