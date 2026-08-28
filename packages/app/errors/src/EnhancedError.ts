@@ -41,6 +41,43 @@ const generatePrototypePaths = (arr: string[]): string[] => {
   }, [])
 }
 
+// Identity symbols are a pure function of the constructor, so they are
+// computed once per class and reused across instantiations and isInstance
+// checks. Keys are held weakly, letting dynamically created `from()` classes
+// be garbage-collected together with their cache entries.
+// biome-ignore lint/complexity/noBannedTypes: keyed by constructor
+const identitySymbolsByConstructor = new WeakMap<Function, readonly symbol[]>()
+
+// Returns the Symbol.for symbols for every path in the constructor's
+// inheritance chain, ordered base-first and ending with the constructor's own
+// full path. Returns null when the chain contains an unnamed class — a
+// truncated walk would derive wrong or no symbols. The chain is captured at
+// first use: a later `name` reassignment on a cached class is ignored, so
+// factory-created classes must be named before their first instantiation or
+// isInstance check.
+// biome-ignore lint/complexity/noBannedTypes: walks a constructor chain
+const getIdentitySymbols = (ctor: Function): readonly symbol[] | null => {
+  const cached = identitySymbolsByConstructor.get(ctor)
+
+  if (cached) {
+    return cached
+  }
+
+  const prototypeNames = getConstructorNamesPostError(ctor)
+
+  if (prototypeNames[0] !== EnhancedError.name) {
+    return null
+  }
+
+  const symbols = generatePrototypePaths(prototypeNames).map((path) =>
+    Symbol.for(getSymbolKey(path)),
+  )
+
+  identitySymbolsByConstructor.set(ctor, symbols)
+
+  return symbols
+}
+
 /**
  * Options accepted by every error constructor.
  *
@@ -125,21 +162,15 @@ export abstract class EnhancedError<TDetails = undefined> extends Error {
     // Cast needed because the conditional type is not narrowed by the compiler here.
     this.details = options.details as TDetails
 
-    const prototypeNames = getConstructorNamesPostError(new.target)
+    const symbols = getIdentitySymbols(new.target)
 
-    // An unnamed class anywhere in the chain truncates the walk, which would
-    // silently stamp wrong or no symbols and break isInstance for this instance.
-    if (prototypeNames[0] !== EnhancedError.name) {
+    if (!symbols) {
       throw new Error(
         `Cannot derive identity symbols for '${new.target.name || '(anonymous class)'}': every class in the prototype chain must have a name. Name factory-created classes explicitly, e.g. Object.defineProperty(TheClass, 'name', { value: 'TheClass' }).`,
       )
     }
 
-    const prototypePaths = generatePrototypePaths(prototypeNames)
-
-    for (const prototypePath of prototypePaths) {
-      const symbol = Symbol.for(getSymbolKey(prototypePath))
-
+    for (const symbol of symbols) {
       Object.defineProperty(this, symbol, { value: true })
     }
   }
@@ -183,9 +214,8 @@ export abstract class EnhancedError<TDetails = undefined> extends Error {
     }
 
     // biome-ignore lint/complexity/noThisInStatic: intentional to support subclasses
-    const prototypeNames = getConstructorNamesPostError(this)
-    const symbol = Symbol.for(getSymbolKey(prototypeNames.join(PROTOTYPE_PATH_DELIMITER)))
+    const ownPathSymbol = getIdentitySymbols(this)?.at(-1)
 
-    return Object.hasOwn(val, symbol)
+    return ownPathSymbol !== undefined && Object.hasOwn(val, ownPathSymbol)
   }
 }
