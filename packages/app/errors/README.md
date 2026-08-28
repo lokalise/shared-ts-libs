@@ -79,6 +79,21 @@ const TranslatorTimeoutError = InternalError.from('TRANSLATOR_TIMEOUT')
 throw new TranslatorTimeoutError({ message: 'Translator t-1 timed out' })
 ```
 
+For one-off errors whose code is only read generically (e.g. in logging),
+`InternalError.create()` builds an instance without declaring a class:
+
+```ts
+throw InternalError.create({
+  code: 'LQA_REVIEW_MISSING',
+  message: 'LQA produced no review for the segment',
+})
+```
+
+`code` keeps its literal type and `details` is typed from the provided value.
+Prefer a dedicated class when handlers or tests need to match the error (e.g.
+`expect(x).toThrow(CustomError)`). Created instances can only be
+checked with `InternalError.isInstance` plus a `code` comparison.
+
 ## PublicError
 
 For errors that may be surfaced to clients. Creation is two-step:

@@ -162,4 +162,50 @@ describe('InternalError', () => {
       }
     })
   })
+
+  describe('create', () => {
+    it('builds an instance without declaring a class', () => {
+      const err = InternalError.create({
+        code: 'LQA_REVIEW_MISSING',
+        message: 'LQA produced no review for the segment',
+      })
+      expect(err.message).toBe('LQA produced no review for the segment')
+      expect(err.name).toBe('InternalError<LQA_REVIEW_MISSING>')
+      expect(InternalError.isInstance(err)).toBe(true)
+    })
+
+    it('preserves the literal code', () => {
+      const err = InternalError.create({ code: 'ONE_OFF', message: 'boom' })
+      const literalCode: 'ONE_OFF' = err.code
+      expect(literalCode).toBe('ONE_OFF')
+    })
+
+    it('types details from the provided value', () => {
+      const err = InternalError.create({
+        code: 'WITH_DETAILS',
+        message: 'boom',
+        details: { attempt: 1 },
+      })
+      const attempt: number = err.details.attempt
+      expect(attempt).toBe(1)
+    })
+
+    it('accepts a cause', () => {
+      const cause = new Error('root')
+      const err = InternalError.create({ code: 'WITH_CAUSE', message: 'boom', cause })
+      expect(err.cause).toBe(cause)
+    })
+
+    it('reuses one class per code', () => {
+      const first = InternalError.create({ code: 'SHARED_CODE', message: 'first' })
+      const second = InternalError.create({ code: 'SHARED_CODE', message: 'second' })
+      expect(Object.getPrototypeOf(first)).toBe(Object.getPrototypeOf(second))
+    })
+
+    it('shares identity with a from class of the same code', () => {
+      const created = InternalError.create({ code: 'SHARED_WITH_FROM', message: 'boom' })
+      expect(InternalError.from('SHARED_WITH_FROM').isInstance(created)).toBe(true)
+      expect(InternalError.from('OTHER_CODE').isInstance(created)).toBe(false)
+    })
+  })
 })

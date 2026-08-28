@@ -12,6 +12,16 @@ export type ErrorDetails = Record<string, unknown>
 export type InternalErrorOptions<TDetails extends ErrorDetails | undefined = undefined> =
   EnhancedErrorOptions<TDetails>
 
+// Bound classes used by `create`, one per code. Reusing the class keeps
+// repeated create() calls with the same code from minting a new class (and
+// recomputing its identity symbols) on every throw.
+const boundClassesByCode = new Map<
+  string,
+  new (
+    options: InternalErrorOptions<ErrorDetails | undefined>,
+  ) => InternalError<ErrorDetails | undefined>
+>()
+
 /**
  * Base class for non-public, operational errors.
  *
@@ -24,6 +34,9 @@ export type InternalErrorOptions<TDetails extends ErrorDetails | undefined = und
  * automatically. A direct subclass would have to declare `code` as
  * `override readonly` itself; omitting `readonly` widens the literal to
  * `string` without a compile error, silently breaking TS discrimination.
+ *
+ * For one-off errors where a dedicated class is not worth maintaining,
+ * {@link InternalError.create} builds an instance directly.
  *
  * @example Without details
  * ```ts
@@ -50,6 +63,50 @@ export abstract class InternalError<
   // silently widen `code` to `string` by omitting `readonly` on the override.
   private constructor(options: InternalErrorOptions<TDetails>) {
     super(options)
+  }
+
+  /**
+   * Creates a one-off error instance without declaring a dedicated class.
+   *
+   * Use for internal errors whose code is only read generically (e.g. in
+   * logging), where a named class is not worth maintaining:
+   *
+   * ```ts
+   * throw InternalError.create({
+   *   code: 'LQA_REVIEW_MISSING',
+   *   message: 'LQA produced no review for the segment',
+   * })
+   * ```
+   *
+   * `code` keeps its literal type and `details` is typed from the provided
+   * value. Prefer {@link from} when handlers or tests need to match the error
+   * by class — created instances can only be checked with
+   * `InternalError.isInstance` plus a `code` comparison. Identity matches
+   * {@link from}: instances sharing a code share one class named
+   * `InternalError<CODE>`, so `InternalError.from(code).isInstance(err)` also
+   * matches errors created with the same code.
+   */
+  static create<
+    const TCode extends string,
+    TDetails extends ErrorDetails | undefined = undefined,
+  >(options: {
+    code: TCode
+    message: string
+    details?: TDetails
+    cause?: unknown
+  }): InternalError<TDetails> & { readonly code: TCode } {
+    const { code, ...constructorOptions } = options
+
+    let BoundClass = boundClassesByCode.get(code)
+
+    if (!BoundClass) {
+      BoundClass = InternalError.from(code)
+      boundClassesByCode.set(code, BoundClass)
+    }
+
+    return new BoundClass(constructorOptions) as InternalError<TDetails> & {
+      readonly code: TCode
+    }
   }
 
   /**
