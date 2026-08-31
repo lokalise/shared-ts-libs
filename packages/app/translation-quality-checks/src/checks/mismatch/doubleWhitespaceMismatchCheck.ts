@@ -1,5 +1,6 @@
 import { extractTextBetweenTags } from '@lokalise/non-translatable-markup'
 import type { MismatchCheck, QualityIssueShape } from '../../utils.ts'
+import { multisetDiff } from '../utils/multisetDiff.ts'
 
 export type DoubleWhitespaceMismatchIssue = QualityIssueShape<{
   error: 'DOUBLE_WHITESPACE_MISMATCH'
@@ -29,22 +30,10 @@ export const doubleWhitespaceMismatchCheck: MismatchCheck = (
   text: string,
   compareWith: string,
 ): DoubleWhitespaceMismatchIssue | undefined => {
-  const unpairedCompareWithRuns = new Map<string, number>()
-  for (const run of doubleWhitespaceRuns(compareWith)) {
-    unpairedCompareWithRuns.set(run, (unpairedCompareWithRuns.get(run) ?? 0) + 1)
-  }
-
-  const added: string[] = []
-  for (const run of doubleWhitespaceRuns(text)) {
-    const count = unpairedCompareWithRuns.get(run) ?? 0
-    if (count > 0) unpairedCompareWithRuns.set(run, count - 1)
-    else added.push(run)
-  }
-
-  const missing: string[] = []
-  for (const [run, count] of unpairedCompareWithRuns) {
-    missing.push(...Array.from({ length: count }, () => run))
-  }
+  const { missing, added } = multisetDiff(
+    doubleWhitespaceRuns(compareWith),
+    doubleWhitespaceRuns(text),
+  )
 
   if (missing.length === 0 && added.length === 0) return undefined
 

@@ -7,6 +7,10 @@ import {
   leadingWhitespaceMismatchCheck,
 } from './checks/mismatch/leadingWhitespaceMismatchCheck.ts'
 import {
+  type NonTranslatableTagsMismatchIssue,
+  nonTranslatableTagsMismatchCheck,
+} from './checks/mismatch/nonTranslatableTagsMismatchCheck.ts'
+import {
   type TrailingWhitespaceMismatchIssue,
   trailingWhitespaceMismatchCheck,
 } from './checks/mismatch/trailingWhitespaceMismatchCheck.ts'
@@ -45,7 +49,10 @@ export type SingleTextQualityIssue = QualityIssueShape<
  * Issues detectable only by comparing the text against a reference text
  */
 export type MismatchQualityIssue = QualityIssueShape<
-  LeadingWhitespaceMismatchIssue | TrailingWhitespaceMismatchIssue | DoubleWhitespaceMismatchIssue
+  | LeadingWhitespaceMismatchIssue
+  | TrailingWhitespaceMismatchIssue
+  | DoubleWhitespaceMismatchIssue
+  | NonTranslatableTagsMismatchIssue
 >
 
 /**
@@ -76,4 +83,5 @@ export const mismatchChecksByError = {
   LEADING_WHITESPACE_MISMATCH: leadingWhitespaceMismatchCheck,
   TRAILING_WHITESPACE_MISMATCH: trailingWhitespaceMismatchCheck,
   DOUBLE_WHITESPACE_MISMATCH: doubleWhitespaceMismatchCheck,
+  NON_TRANSLATABLE_TAGS_MISMATCH: nonTranslatableTagsMismatchCheck,
 } as const satisfies ByError<MismatchQualityIssue, MismatchCheck>
