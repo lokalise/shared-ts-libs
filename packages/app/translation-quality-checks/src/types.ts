@@ -11,8 +11,10 @@ export type QualityIssue = SingleTextQualityIssue | MismatchQualityIssue
 export const QualityIssueErrorEnum = {
   LEADING_WHITESPACE_MISMATCH: 'LEADING_WHITESPACE_MISMATCH',
   TRAILING_WHITESPACE_MISMATCH: 'TRAILING_WHITESPACE_MISMATCH',
+  DOUBLE_WHITESPACE_MISMATCH: 'DOUBLE_WHITESPACE_MISMATCH',
   LEADING_WHITESPACE: 'LEADING_WHITESPACE',
   TRAILING_WHITESPACE: 'TRAILING_WHITESPACE',
+  DOUBLE_WHITESPACE: 'DOUBLE_WHITESPACE',
 } as const satisfies { [K in QualityIssue['error']]: K }
 
 export type QualityIssueError = QualityIssue['error']

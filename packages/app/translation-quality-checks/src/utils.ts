@@ -1,4 +1,8 @@
 import {
+  type DoubleWhitespaceMismatchIssue,
+  doubleWhitespaceMismatchCheck,
+} from './checks/mismatch/doubleWhitespaceMismatchCheck.ts'
+import {
   type LeadingWhitespaceMismatchIssue,
   leadingWhitespaceMismatchCheck,
 } from './checks/mismatch/leadingWhitespaceMismatchCheck.ts'
@@ -6,6 +10,10 @@ import {
   type TrailingWhitespaceMismatchIssue,
   trailingWhitespaceMismatchCheck,
 } from './checks/mismatch/trailingWhitespaceMismatchCheck.ts'
+import {
+  type DoubleWhitespaceIssue,
+  doubleWhitespaceCheck,
+} from './checks/singleText/doubleWhitespaceCheck.ts'
 import {
   type LeadingWhitespaceIssue,
   leadingWhitespaceCheck,
@@ -30,14 +38,14 @@ export type QualityIssueShape<T extends QualityIssueBase> = T
  * Issues detectable on a single text in isolation.
  */
 export type SingleTextQualityIssue = QualityIssueShape<
-  LeadingWhitespaceIssue | TrailingWhitespaceIssue
+  LeadingWhitespaceIssue | TrailingWhitespaceIssue | DoubleWhitespaceIssue
 >
 
 /**
  * Issues detectable only by comparing the text against a reference text
  */
 export type MismatchQualityIssue = QualityIssueShape<
-  LeadingWhitespaceMismatchIssue | TrailingWhitespaceMismatchIssue
+  LeadingWhitespaceMismatchIssue | TrailingWhitespaceMismatchIssue | DoubleWhitespaceMismatchIssue
 >
 
 /**
@@ -58,6 +66,7 @@ type ByError<Issue extends QualityIssueBase, Value> = { [K in Issue['error']]: V
 export const singleTextChecksByError = {
   LEADING_WHITESPACE: leadingWhitespaceCheck,
   TRAILING_WHITESPACE: trailingWhitespaceCheck,
+  DOUBLE_WHITESPACE: doubleWhitespaceCheck,
 } as const satisfies ByError<SingleTextQualityIssue, SingleTextCheck>
 
 /**
@@ -66,4 +75,5 @@ export const singleTextChecksByError = {
 export const mismatchChecksByError = {
   LEADING_WHITESPACE_MISMATCH: leadingWhitespaceMismatchCheck,
   TRAILING_WHITESPACE_MISMATCH: trailingWhitespaceMismatchCheck,
+  DOUBLE_WHITESPACE_MISMATCH: doubleWhitespaceMismatchCheck,
 } as const satisfies ByError<MismatchQualityIssue, MismatchCheck>
