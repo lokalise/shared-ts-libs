@@ -1,7 +1,4 @@
-import {
-  NON_TRANSLATABLE_END_TAG,
-  NON_TRANSLATABLE_START_TAG,
-} from '@lokalise/non-translatable-markup'
+import { extractNTCTagsWithContent } from '@lokalise/non-translatable-markup'
 import type { MismatchCheck, QualityIssueShape } from '../../utils.ts'
 import { multisetDiff } from '../utils/multisetDiff.ts'
 
@@ -15,14 +12,9 @@ export type NonTranslatableTagsMismatchIssue = QualityIssueShape<{
   }
 }>
 
-const ntcTokenRegexp = new RegExp(
-  `${NON_TRANSLATABLE_START_TAG}.+?${NON_TRANSLATABLE_END_TAG}`,
-  'g',
-)
-
 // The NTC markers are single characters, so slicing them off yields the wrapped token.
 const nonTranslatableTokens = (text: string): string[] =>
-  (text.match(ntcTokenRegexp) ?? []).map((region) => region.slice(1, -1))
+  extractNTCTagsWithContent(text).map((region) => region.slice(1, -1))
 
 /**
  * Mismatch check: reports the non-translatable tokens (placeholders, tags — the content wrapped
