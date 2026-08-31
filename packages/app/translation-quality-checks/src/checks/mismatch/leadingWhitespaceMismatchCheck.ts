@@ -10,8 +10,6 @@ export type LeadingWhitespaceMismatchIssue = QualityIssueShape<{
   }
 }>
 
-const leadingWhitespaceRegexp = /^\s*/
-
 /**
  * Mismatch check: reports when the leading whitespace of the text differs from the leading
  * whitespace of the reference text.
@@ -20,8 +18,11 @@ export const leadingWhitespaceMismatchCheck: MismatchCheck = (
   text: string,
   compareWith: string,
 ): LeadingWhitespaceMismatchIssue | undefined => {
-  const textLeading = text.match(leadingWhitespaceRegexp)?.[0] ?? ''
-  const compareWithLeading = compareWith.match(leadingWhitespaceRegexp)?.[0] ?? ''
+  const textLeading = text.slice(0, text.length - text.trimStart().length)
+  const compareWithLeading = compareWith.slice(
+    0,
+    compareWith.length - compareWith.trimStart().length,
+  )
 
   if (textLeading === compareWithLeading) return undefined
 

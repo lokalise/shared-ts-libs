@@ -10,8 +10,6 @@ export type TrailingWhitespaceMismatchIssue = QualityIssueShape<{
   }
 }>
 
-const trailingWhitespaceRegexp = /\s*$/
-
 /**
  * Mismatch check: reports when the trailing whitespace of the text differs from the trailing
  * whitespace of the reference text.
@@ -20,8 +18,8 @@ export const trailingWhitespaceMismatchCheck: MismatchCheck = (
   text: string,
   compareWith: string,
 ): TrailingWhitespaceMismatchIssue | undefined => {
-  const textTrailing = text.match(trailingWhitespaceRegexp)?.[0] ?? ''
-  const compareWithTrailing = compareWith.match(trailingWhitespaceRegexp)?.[0] ?? ''
+  const textTrailing = text.slice(text.trimEnd().length)
+  const compareWithTrailing = compareWith.slice(compareWith.trimEnd().length)
 
   if (textTrailing === compareWithTrailing) return undefined
 

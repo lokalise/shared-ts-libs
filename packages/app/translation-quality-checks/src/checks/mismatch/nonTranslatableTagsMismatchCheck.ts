@@ -16,12 +16,13 @@ export type NonTranslatableTagsMismatchIssue = QualityIssueShape<{
 }>
 
 const ntcTokenRegexp = new RegExp(
-  `${NON_TRANSLATABLE_START_TAG}(.+?)${NON_TRANSLATABLE_END_TAG}`,
+  `${NON_TRANSLATABLE_START_TAG}.+?${NON_TRANSLATABLE_END_TAG}`,
   'g',
 )
 
+// The NTC markers are single characters, so slicing them off yields the wrapped token.
 const nonTranslatableTokens = (text: string): string[] =>
-  [...text.matchAll(ntcTokenRegexp)].map((match) => match[1] ?? '')
+  (text.match(ntcTokenRegexp) ?? []).map((region) => region.slice(1, -1))
 
 /**
  * Mismatch check: reports the non-translatable tokens (placeholders, tags — the content wrapped
