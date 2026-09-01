@@ -36,6 +36,10 @@ export type QueueConfiguration<
    * job data in Redis.
    */
   purgeJobDataOnSuccess?: boolean
+  /**
+   * Zod schema every job payload on this queue is parsed with. Registration precompiles it, so the
+   * schema the library actually parses with is a compiled clone of the one you pass here.
+   */
   jobPayloadSchema: z.ZodType<BaseJobPayload>
   jobOptions?:
     | JobOptionsWithDeduplicationIdBuilder<JobOptionsType>
