@@ -19,6 +19,16 @@ describe('doubleWhitespaceMismatchCheck', () => {
       text: `a${NTC_START}x  y${NTC_END}b`,
       compareWith: 'x y',
     },
+    {
+      name: 'differing line-ending styles are not double whitespace',
+      text: 'Hola\nmundo',
+      compareWith: 'Hello\r\nworld',
+    },
+    {
+      name: 'a paragraph break on one side only is not double whitespace',
+      text: 'a\n\nb',
+      compareWith: 'x\ny',
+    },
   ])('reports no issue: $name', ({ text, compareWith }) => {
     expect(doubleWhitespaceMismatchCheck(text, compareWith)).toBeNull()
   })

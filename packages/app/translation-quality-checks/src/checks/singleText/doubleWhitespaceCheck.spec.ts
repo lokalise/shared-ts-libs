@@ -16,6 +16,8 @@ describe('doubleWhitespaceCheck', () => {
       name: 'whitespace around an NTC region does not form a run',
       text: `a ${NTC_START}x${NTC_END} b`,
     },
+    { name: 'CRLF line ending is not double whitespace', text: 'Line one\r\nLine two' },
+    { name: 'paragraph break is not double whitespace', text: 'a\n\nb' },
   ])('reports no issue: $name', ({ text }) => {
     expect(doubleWhitespaceCheck(text)).toBeNull()
   })

@@ -9,12 +9,14 @@ export type DoubleWhitespaceIssue = QualityIssueShape<{
   }
 }>
 
-const doubleWhitespaceRegexp = /\s{2,}/g
+// Horizontal whitespace only: line terminators are legitimate formatting, not double whitespace.
+const doubleWhitespaceRegexp = /[^\S\r\n]{2,}/g
 
 /**
- * Single-text check: reports every run of two or more consecutive whitespace characters found in
- * the given text. Content inside NTC regions is not checked: the text is split by NTC region and
- * every piece is evaluated on its own, so a run can never span a region boundary.
+ * Single-text check: reports every run of two or more consecutive horizontal whitespace
+ * characters found in the given text. Content inside NTC regions is not checked: the text is
+ * split by NTC region and every piece is evaluated on its own, so a run can never span a region
+ * boundary.
  */
 export const doubleWhitespaceCheck: SingleTextCheck = (
   text: string,

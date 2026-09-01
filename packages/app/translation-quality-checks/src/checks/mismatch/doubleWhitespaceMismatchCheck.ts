@@ -12,7 +12,8 @@ export type DoubleWhitespaceMismatchIssue = QualityIssueShape<{
   }
 }>
 
-const doubleWhitespaceRegexp = /\s{2,}/g
+// Horizontal whitespace only: line terminators are legitimate formatting, not double whitespace.
+const doubleWhitespaceRegexp = /[^\S\r\n]{2,}/g
 
 const doubleWhitespaceRuns = (text: string): string[] =>
   extractTextBetweenTags(text, { keepHtml: true, preserveSpacing: true }).flatMap(
