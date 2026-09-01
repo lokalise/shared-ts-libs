@@ -497,3 +497,148 @@ describe('ApiContractMockttpHelper', () => {
     })
   })
 })
+
+describe('ApiContractMockttpHelper.mockResponseWithImplementation', () => {
+  const mockServer = getLocal()
+  const helper = new ApiContractMockttpHelper(mockServer)
+
+  beforeEach(async () => {
+    await mockServer.start()
+  })
+  afterEach(() => mockServer.stop())
+
+  function client() {
+    return wretch(mockServer.url)
+  }
+
+  it('derives the response body from the request body', async () => {
+    await helper.mockResponseWithImplementation(postApiContract, {
+      responseStatus: 200,
+      handleRequest: async (request) => {
+        const body = (await request.body.getJson()) as { name: string }
+        return { id: `id-${body.name}` }
+      },
+    })
+
+    const result = await sendByApiContract(client(), postApiContract, {
+      body: { name: 'ragnarok' },
+    })
+
+    expect(result.result?.body).toEqual({ id: 'id-ragnarok' })
+  })
+
+  it('derives the response body from the request path', async () => {
+    await helper.mockResponseWithImplementation(getApiContractWithPathParams, {
+      pathParams: { userId: '7' },
+      responseStatus: 200,
+      handleRequest: (request) => ({ id: request.path.split('/').pop() ?? '' }),
+    })
+
+    const result = await sendByApiContract(client(), getApiContractWithPathParams, {
+      pathParams: { userId: '7' },
+    })
+
+    expect(result.result?.body).toEqual({ id: '7' })
+  })
+
+  it('enforces the contract schema on the handler result', async () => {
+    await helper.mockResponseWithImplementation(getApiContract, {
+      responseStatus: 200,
+      // @ts-expect-error handler must return the contract response body
+      handleRequest: () => ({ wrong: 'x' }),
+    })
+
+    const result = await sendByApiContract(client(), getApiContract, {})
+
+    expect(result.error).toBeDefined()
+  })
+
+  it('strips unknown properties from the handler result', async () => {
+    await helper.mockResponseWithImplementation(getApiContract, {
+      responseStatus: 200,
+      handleRequest: () => ({ id: '1', extra: 'x' }),
+    })
+
+    const result = await sendByApiContract(client(), getApiContract, {})
+
+    expect(result.result?.body).toEqual({ id: '1' })
+  })
+
+  it('varies the status code per call via response()', async () => {
+    let callCount = 0
+    await helper.mockResponseWithImplementation(getApiContractWithExactAndRange, {
+      responseStatus: 200,
+      handleRequest: () => {
+        callCount++
+        if (callCount === 1) {
+          return ApiContractMockttpHelper.response({ id: 'first' }, { status: 500 })
+        }
+        return { id: 'second' }
+      },
+    })
+
+    const first = await sendByApiContract(client(), getApiContractWithExactAndRange, {})
+    const second = await sendByApiContract(client(), getApiContractWithExactAndRange, {})
+
+    expect(first.error).toBeDefined()
+    expect(second.result?.statusCode).toBe(200)
+    expect(second.result?.body).toEqual({ id: 'second' })
+  })
+
+  it('resolves the body schema through a range status key', async () => {
+    await helper.mockResponseWithImplementation(getApiContractWith4xxRange, {
+      responseStatus: 404,
+      handleRequest: () => ({ id: 'missing' }),
+    })
+
+    const response = await fetch(`${mockServer.url}/not-found`)
+
+    expect(response.status).toBe(404)
+    await expect(response.json()).resolves.toEqual({ id: 'missing' })
+  })
+
+  it('resolves the body schema from a JSON content map', async () => {
+    await helper.mockResponseWithImplementation(jsonContentApiContract, {
+      responseStatus: 200,
+      handleRequest: () => ({ id: 'from-content-map' }),
+    })
+
+    const result = await sendByApiContract(client(), jsonContentApiContract, {})
+
+    expect(result.result?.body).toEqual({ id: 'from-content-map' })
+  })
+
+  it('rejects a status the contract does not declare', async () => {
+    await expect(
+      helper.mockResponseWithImplementation(getApiContract, {
+        // @ts-expect-error 418 is not declared on the contract
+        responseStatus: 418,
+        handleRequest: () => ({ id: '1' }),
+      }),
+    ).rejects.toThrow('Specified responseStatus cannot be mapped with contract')
+  })
+
+  it('rejects an SSE-only status at the type level', async () => {
+    await expect(
+      helper.mockResponseWithImplementation(
+        sseGetApiContract,
+        // @ts-expect-error an SSE-only status leaves no JSON body for handleRequest to return
+        { responseStatus: 200, handleRequest: () => ({ id: '1' }) },
+      ),
+    ).rejects.toThrow('use mockResponse for SSE and blob responses')
+  })
+
+  it('rejects a status whose body has no JSON representation at runtime', async () => {
+    // Guards untyped callers, for whom the type-level rejection above does not apply.
+    const untypedHelper = helper as unknown as {
+      mockResponseWithImplementation: (contract: unknown, params: unknown) => Promise<void>
+    }
+
+    await expect(
+      untypedHelper.mockResponseWithImplementation(sseGetApiContract, {
+        responseStatus: 200,
+        handleRequest: () => ({ id: '1' }),
+      }),
+    ).rejects.toThrow('use mockResponse for SSE and blob responses')
+  })
+})

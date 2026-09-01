@@ -16,6 +16,7 @@ Reusable testing utilities that are potentially relevant for both backend and fr
 - [ApiContractMockttpHelper](#apicontractmockttphelper)
   - [Setup](#setup)
   - [mockResponse](#mockresponse)
+  - [mockResponseWithImplementation](#mockresponsewithimplementation)
   - [Type safety](#type-safety)
 - [ApiContractMswHelper](#apicontractmswhelper)
 - [msw integration with API contracts](#msw-integration-with-api-contracts)
@@ -250,6 +251,61 @@ await helper.mockResponse(contract, { responseStatus: 201, responseJson: { id: '
 - **`ExactStatusCodePairs`** — one member per exact numeric key in `responsesByStatusCode`. `responseStatus` is that literal number and the body fields come from the entry at that key.
 - **`RangeStatusCodePairs`** — one member per wildcard key (`'1xx'`–`'5xx'`, `'default'`). `ExpandStatusRangeKey<K>` expands the key to its numeric union (e.g. `'2xx'` → `200|201|…|299`), then exact codes already covered by `ExactStatusCodePairs` are excluded via `Exclude` so the discriminated union stays unambiguous.
 
+### mockResponseWithImplementation
+
+`mockResponse` takes a fixed body. When the response has to depend on what the caller sent, use `mockResponseWithImplementation` and return the body from a handler.
+
+`responseStatus` still selects the contract entry, which is what types `handleRequest`'s return value and supplies the Zod schema the result is validated against. Only JSON entries are addressable this way: SSE and blob responses stay static, via `mockResponse`.
+
+```ts
+// mockttp: the handler receives the mockttp CompletedRequest
+await helper.mockResponseWithImplementation(postUserContract, {
+  responseStatus: 200,
+  handleRequest: async (request) => {
+    const body = await request.body.getJson()
+    return { id: `id-${body.name}` }
+  },
+})
+
+// msw: the handler receives the msw request info
+helper.mockResponseWithImplementation(postUserContract, {
+  responseStatus: 200,
+  handleRequest: async ({ request }) => {
+    const body = await request.json()
+    return { id: `id-${body.name}` }
+  },
+})
+
+// with path params
+await helper.mockResponseWithImplementation(getUserContract, {
+  pathParams: { userId: '7' },
+  responseStatus: 200,
+  handleRequest: (request) => ({ id: request.path.split('/').pop() }),
+})
+```
+
+#### Per-call status codes with `response()`
+
+By default every call replies with `responseStatus`. To vary it per call, wrap the returned body with the helper's static `response()`:
+
+```ts
+let callCount = 0
+await helper.mockResponseWithImplementation(getUserContract, {
+  responseStatus: 200,
+  handleRequest: () => {
+    callCount++
+    if (callCount === 1) {
+      return ApiContractMockttpHelper.response({ id: 'first' }, { status: 500 })
+    }
+    return { id: 'second' } // a plain body still replies with responseStatus
+  },
+})
+```
+
+`ApiContractMswHelper.response()` is the msw equivalent, and both share the wrapper with `MswHelper.response()`.
+
+Status code priority: `response({ status })` > `responseStatus`.
+
 ### Type safety
 
 `MockResponseParams<TContract>` is exported for cases where you need to type the params object separately:
@@ -282,6 +338,8 @@ helper.mockResponse(contract, {
   responseJson: { id: '1' },
 })
 ```
+
+[`mockResponseWithImplementation`](#mockresponsewithimplementation) and the static `response()` are available here too, with `handleRequest` receiving msw's request info instead of a mockttp `CompletedRequest`.
 
 ## msw integration with API contracts
 

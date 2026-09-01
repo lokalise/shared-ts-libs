@@ -1,6 +1,6 @@
 export { ApiContractMockttpHelper } from './api-contracts/ApiContractMockttpHelper.ts'
-export { ApiContractMswHelper } from './api-contracts/ApiContractMswHelper.ts'
-export type { MockResponseParams } from './api-contracts/types.ts'
+export { ApiContractMswHelper, type MswRequestInfo } from './api-contracts/ApiContractMswHelper.ts'
+export type { MockImplementationParams, MockResponseParams } from './api-contracts/types.ts'
 export {
   type DualModeMockParams,
   type DualModeMockParamsNoPath,

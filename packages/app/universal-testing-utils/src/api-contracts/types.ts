@@ -6,6 +6,8 @@ import {
   type HttpStatusCode,
   type InferSchemaInput,
   isBlobBody,
+  isContentResponseEntry,
+  isJsonBody,
   isSseBody,
   type RequestPathParamsSchema,
   type ResponseEntry,
@@ -14,6 +16,7 @@ import {
   type WildcardStatusCodeKey,
 } from '@lokalise/api-contracts'
 import type { z } from 'zod/v4'
+import type { MockResponseWrapper } from '../responseWrapper.ts'
 
 export type SseMockEventInput<S extends SseSchemaByEventName> = {
   [K in keyof S & string]: { event: K; data: z.input<NonNullable<S[K]>> }
@@ -62,6 +65,26 @@ export function resolveContractEntry(
     responsesByStatusCode[statusCode] ??
     (rangeKey ? responsesByStatusCode[rangeKey] : undefined) ??
     responsesByStatusCode.default
+  )
+}
+
+/**
+ * JSON schema a resolved status entry validates its body against, for both bare-schema entries
+ * and content maps. Returns `undefined` when the entry has no JSON representation.
+ */
+export function resolveJsonSchema(
+  responseEntry: ApiContractResponse | ResponseEntry,
+): z.ZodType | undefined {
+  if (!isContentResponseEntry(responseEntry)) {
+    return responseEntry
+  }
+
+  if (!responseEntry.content) {
+    return undefined
+  }
+
+  return Object.values(responseEntry.content).find((descriptor): descriptor is z.ZodType =>
+    isJsonBody(descriptor),
   )
 }
 
@@ -133,3 +156,61 @@ type PathParamsField<TContract extends ApiContract> =
 
 export type MockResponseParams<TContract extends ApiContract> = PathParamsField<TContract> &
   StatusCodeBodyPair<TContract>
+
+/**
+ * JSON body type a status entry accepts, whether it is a bare schema or a content map.
+ * Resolves to `never` for entries with no JSON representation (SSE-only, blob-only, no-body).
+ */
+type InferJsonBody<T> = T extends z.ZodType
+  ? z.input<T>
+  : T extends { content: infer C }
+    ? [Extract<C[keyof C], z.ZodType>] extends [never]
+      ? never
+      : z.input<Extract<C[keyof C], z.ZodType>>
+    : never
+
+type HandleRequestField<TRequestInfo, TBody> = [TBody] extends [never]
+  ? never
+  : {
+      handleRequest: (
+        requestInfo: TRequestInfo,
+      ) => TBody | MockResponseWrapper<TBody> | Promise<TBody | MockResponseWrapper<TBody>>
+    }
+
+type ExactStatusCodeImplementationPairs<TContract extends ApiContract, TRequestInfo> = {
+  [K in keyof TContract['responsesByStatusCode'] & HttpStatusCode]: {
+    responseStatus: K
+  } & HandleRequestField<
+    TRequestInfo,
+    InferJsonBody<NonNullable<TContract['responsesByStatusCode'][K]>>
+  >
+}[keyof TContract['responsesByStatusCode'] & HttpStatusCode]
+
+type RangeStatusCodeImplementationPairs<TContract extends ApiContract, TRequestInfo> = {
+  [K in keyof TContract['responsesByStatusCode'] & WildcardStatusCodeKey]: {
+    responseStatus: Exclude<
+      ExpandStatusRangeKey<K>,
+      keyof TContract['responsesByStatusCode'] & HttpStatusCode
+    >
+  } & HandleRequestField<
+    TRequestInfo,
+    InferJsonBody<NonNullable<TContract['responsesByStatusCode'][K]>>
+  >
+}[keyof TContract['responsesByStatusCode'] & WildcardStatusCodeKey]
+
+/**
+ * Params for a mock whose JSON body is computed per request.
+ *
+ * `responseStatus` selects the contract entry, which types `handleRequest`'s return value.
+ * The handler may wrap its result with the helper's static `response()` to override the status
+ * on a single call. Only JSON entries are addressable: SSE and blob responses stay static, via
+ * `mockResponse`.
+ */
+export type MockImplementationParams<
+  TContract extends ApiContract,
+  TRequestInfo,
+> = PathParamsField<TContract> &
+  (
+    | ExactStatusCodeImplementationPairs<TContract, TRequestInfo>
+    | RangeStatusCodeImplementationPairs<TContract, TRequestInfo>
+  )

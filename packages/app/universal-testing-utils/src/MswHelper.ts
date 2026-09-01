@@ -20,6 +20,13 @@ import {
 import type { SetupServer } from 'msw/node'
 import type { ZodObject, z } from 'zod/v4'
 import { formatSseResponse, type SseMockEvent } from './MockttpHelper.ts'
+import {
+  type MockResponseWrapper,
+  unwrapMockResponse,
+  wrapMockResponse,
+} from './responseWrapper.ts'
+
+export type { MockResponseWrapper } from './responseWrapper.ts'
 
 export type CommonMockParams = {
   responseCode?: number
@@ -111,14 +118,6 @@ export type SseEventController<Events extends SSEEventSchemas> = {
   close(): void
 }
 
-const RESPONSE_BRAND = Symbol('MswHelperResponse')
-
-export type MockResponseWrapper<T> = {
-  readonly [RESPONSE_BRAND]: true
-  readonly body: T
-  readonly status?: number
-}
-
 export class MswHelper {
   private readonly baseUrl: string
 
@@ -127,14 +126,11 @@ export class MswHelper {
   }
 
   static response<T>(body: T, options?: { status?: number }): MockResponseWrapper<T> {
-    return { [RESPONSE_BRAND]: true, body, status: options?.status }
+    return wrapMockResponse(body, options)
   }
 
   private static unwrapResponse(result: any): { body: any; status?: number } {
-    if (result && typeof result === 'object' && RESPONSE_BRAND in result) {
-      return { body: result.body, status: result.status }
-    }
-    return { body: result }
+    return unwrapMockResponse(result)
   }
 
   private resolveParams<PathParamsSchema extends z.Schema | undefined>(

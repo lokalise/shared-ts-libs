@@ -1,18 +1,26 @@
 import {
   type ApiContract,
+  type HttpStatusCode,
   isBlobBody,
   isContentResponseEntry,
   isJsonBody,
   isSseBody,
   mapApiContractToPath,
 } from '@lokalise/api-contracts'
-import type { Mockttp, RequestRuleBuilder } from 'mockttp'
+import type { CompletedRequest, Mockttp, RequestRuleBuilder } from 'mockttp'
 import type { z } from 'zod/v4'
 import {
+  type MockResponseWrapper,
+  unwrapMockResponse,
+  wrapMockResponse,
+} from '../responseWrapper.ts'
+import {
   formatSseResponse,
+  type MockImplementationParams,
   type MockResponseParams,
   resolveContractEntry,
   resolveExplicitContentBody,
+  resolveJsonSchema,
 } from './types.ts'
 
 type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
@@ -22,6 +30,14 @@ export class ApiContractMockttpHelper {
 
   constructor(mockServer: Mockttp) {
     this.mockServer = mockServer
+  }
+
+  /**
+   * Wraps a body returned from `handleRequest` so it carries its own status code, overriding
+   * the mock's `responseStatus` for that call.
+   */
+  static response<T>(body: T, options?: { status?: number }): MockResponseWrapper<T> {
+    return wrapMockResponse(body, options)
   }
 
   private resolveMethodBuilder(method: HttpMethod, path: string): RequestRuleBuilder {
@@ -133,6 +149,46 @@ export class ApiContractMockttpHelper {
     const body = responseEntry.parse(anyParams.responseJson)
     await mockRule.thenReply(statusCode, JSON.stringify(body), {
       'content-type': 'application/json',
+    })
+  }
+
+  /**
+   * Mocks a JSON response whose body is computed from the incoming request.
+   *
+   * `responseStatus` picks the contract entry that types `handleRequest`'s return value. Return a
+   * bare body to reply with that status, or wrap it with {@link ApiContractMockttpHelper.response}
+   * to override the status for a single call.
+   */
+  async mockResponseWithImplementation<TContract extends ApiContract>(
+    contract: TContract,
+    params: MockImplementationParams<TContract, CompletedRequest>,
+  ): Promise<void> {
+    // biome-ignore lint/suspicious/noExplicitAny: field access is safe, the public signature enforces the type
+    const anyParams = params as any
+    const path = this.resolvePath(contract, params.pathParams)
+    const statusCode = anyParams.responseStatus as HttpStatusCode
+    const responseEntry = resolveContractEntry(contract.responsesByStatusCode, statusCode)
+
+    if (!responseEntry) {
+      throw new Error('Specified responseStatus cannot be mapped with contract')
+    }
+
+    const jsonSchema = resolveJsonSchema(responseEntry)
+    if (!jsonSchema) {
+      throw new Error(
+        'Specified responseStatus has no JSON response body; use mockResponse for SSE and blob responses',
+      )
+    }
+
+    await this.resolveMethodBuilder(contract.method, path).thenCallback(async (request) => {
+      const result = await anyParams.handleRequest(request)
+      const { body, status } = unwrapMockResponse(result)
+
+      return {
+        statusCode: status ?? statusCode,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(jsonSchema.parse(body)),
+      }
     })
   }
 }

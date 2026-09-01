@@ -504,3 +504,130 @@ describe('ApiContractMswHelper', () => {
     })
   })
 })
+
+describe('ApiContractMswHelper.mockResponseWithImplementation', () => {
+  const server = setupServer()
+  const helper = new ApiContractMswHelper(server, BASE_URL)
+
+  beforeAll(() => {
+    server.listen({ onUnhandledRequest: 'error' })
+  })
+  afterEach(() => {
+    server.resetHandlers()
+  })
+  afterAll(() => {
+    server.close()
+  })
+
+  function client() {
+    return wretch(BASE_URL)
+  }
+
+  it('derives the response body from the request body', async () => {
+    helper.mockResponseWithImplementation(postApiContract, {
+      responseStatus: 200,
+      handleRequest: async ({ request }) => {
+        const body = (await request.json()) as { name: string }
+        return { id: `id-${body.name}` }
+      },
+    })
+
+    const result = await sendByApiContract(client(), postApiContract, {
+      body: { name: 'ragnarok' },
+    })
+
+    expect(result.result?.body).toEqual({ id: 'id-ragnarok' })
+  })
+
+  it('derives the response body from the request path params', async () => {
+    helper.mockResponseWithImplementation(getApiContractWithPathParams, {
+      pathParams: { userId: '7' },
+      responseStatus: 200,
+      handleRequest: ({ request }) => ({
+        id: new URL(request.url).pathname.split('/').pop() ?? '',
+      }),
+    })
+
+    const result = await sendByApiContract(client(), getApiContractWithPathParams, {
+      pathParams: { userId: '7' },
+    })
+
+    expect(result.result?.body).toEqual({ id: '7' })
+  })
+
+  it('enforces the contract schema on the handler result', async () => {
+    helper.mockResponseWithImplementation(getApiContract, {
+      responseStatus: 200,
+      // @ts-expect-error handler must return the contract response body
+      handleRequest: () => ({ wrong: 'x' }),
+    })
+
+    const result = await sendByApiContract(client(), getApiContract, {})
+
+    expect(result.error).toBeDefined()
+  })
+
+  it('varies the status code per call via response()', async () => {
+    let callCount = 0
+    helper.mockResponseWithImplementation(getApiContractWithExactAndRange, {
+      responseStatus: 200,
+      handleRequest: () => {
+        callCount++
+        if (callCount === 1) {
+          return ApiContractMswHelper.response({ id: 'first' }, { status: 500 })
+        }
+        return { id: 'second' }
+      },
+    })
+
+    const first = await sendByApiContract(client(), getApiContractWithExactAndRange, {})
+    const second = await sendByApiContract(client(), getApiContractWithExactAndRange, {})
+
+    expect(first.error).toBeDefined()
+    expect(second.result?.statusCode).toBe(200)
+    expect(second.result?.body).toEqual({ id: 'second' })
+  })
+
+  it('resolves the body schema through a range status key', async () => {
+    helper.mockResponseWithImplementation(getApiContractWith4xxRange, {
+      responseStatus: 404,
+      handleRequest: () => ({ id: 'missing' }),
+    })
+
+    const response = await fetch(`${BASE_URL}/not-found`)
+
+    expect(response.status).toBe(404)
+    await expect(response.json()).resolves.toEqual({ id: 'missing' })
+  })
+
+  it('resolves the body schema from a JSON content map', async () => {
+    helper.mockResponseWithImplementation(jsonContentApiContract, {
+      responseStatus: 200,
+      handleRequest: () => ({ id: 'from-content-map' }),
+    })
+
+    const result = await sendByApiContract(client(), jsonContentApiContract, {})
+
+    expect(result.result?.body).toEqual({ id: 'from-content-map' })
+  })
+
+  it('rejects a status the contract does not declare', () => {
+    expect(() =>
+      helper.mockResponseWithImplementation(getApiContract, {
+        // @ts-expect-error 418 is not declared on the contract
+        responseStatus: 418,
+        handleRequest: () => ({ id: '1' }),
+      }),
+    ).toThrow('Specified responseStatus cannot be mapped with contract')
+  })
+
+  it('rejects an SSE-only status at the type level', () => {
+    expect(() =>
+      helper.mockResponseWithImplementation(
+        sseGetApiContract,
+        // @ts-expect-error an SSE-only status leaves no JSON body for handleRequest to return
+        { responseStatus: 200, handleRequest: () => ({ id: '1' }) },
+      ),
+    ).toThrow('use mockResponse for SSE and blob responses')
+  })
+})
