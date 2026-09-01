@@ -9,21 +9,38 @@ import {
 } from '@lokalise/api-contracts'
 import type { CompletedRequest, Mockttp, RequestRuleBuilder } from 'mockttp'
 import type { z } from 'zod/v4'
-import {
-  type MockResponseWrapper,
-  unwrapMockResponse,
-  wrapMockResponse,
-} from '../responseWrapper.ts'
+import { type MockResponseWrapper, wrapMockResponse } from '../responseWrapper.ts'
 import {
   formatSseResponse,
   type MockImplementationParams,
   type MockResponseParams,
   resolveContractEntry,
   resolveExplicitContentBody,
-  resolveJsonSchema,
+  resolveJsonTargetForStatus,
+  runMockImplementation,
 } from './types.ts'
 
 type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
+
+/** Request body type the contract declares, or `unknown` for a contract that declares none. */
+type InferRequestBody<TContract extends ApiContract> =
+  TContract['requestBodySchema'] extends z.ZodType
+    ? z.output<TContract['requestBodySchema']>
+    : unknown
+
+/** mockttp's request, with `body.getJson()` typed by the contract's request body schema. */
+export type ApiContractCompletedRequest<TContract extends ApiContract> = Omit<
+  CompletedRequest,
+  'body'
+> & {
+  body: Omit<CompletedRequest['body'], 'getJson'> & {
+    getJson: () => Promise<InferRequestBody<TContract>>
+  }
+}
+
+function normalizeAccept(accept: string | string[] | undefined): string {
+  return Array.isArray(accept) ? accept.join(',') : (accept ?? '')
+}
 
 export class ApiContractMockttpHelper {
   private readonly mockServer: Mockttp
@@ -155,40 +172,36 @@ export class ApiContractMockttpHelper {
   /**
    * Mocks a JSON response whose body is computed from the incoming request.
    *
-   * `responseStatus` picks the contract entry that types `handleRequest`'s return value. Return a
-   * bare body to reply with that status, or wrap it with {@link ApiContractMockttpHelper.response}
-   * to override the status for a single call.
+   * `responseStatus` picks the contract entry that types `handleRequest`'s return value, and
+   * `contentType` picks between JSON media types when that entry declares more than one. Return a
+   * bare body to reply with `responseStatus`, or wrap it with
+   * {@link ApiContractMockttpHelper.response} to override the status for a single call.
    */
   async mockResponseWithImplementation<TContract extends ApiContract>(
     contract: TContract,
-    params: MockImplementationParams<TContract, CompletedRequest>,
+    params: MockImplementationParams<TContract, ApiContractCompletedRequest<TContract>>,
   ): Promise<void> {
     // biome-ignore lint/suspicious/noExplicitAny: field access is safe, the public signature enforces the type
     const anyParams = params as any
     const path = this.resolvePath(contract, params.pathParams)
-    const statusCode = anyParams.responseStatus as HttpStatusCode
-    const responseEntry = resolveContractEntry(contract.responsesByStatusCode, statusCode)
-
-    if (!responseEntry) {
-      throw new Error('Specified responseStatus cannot be mapped with contract')
-    }
-
-    const jsonSchema = resolveJsonSchema(responseEntry)
-    if (!jsonSchema) {
-      throw new Error(
-        'Specified responseStatus has no JSON response body; use mockResponse for SSE and blob responses',
-      )
-    }
+    const responseStatus = anyParams.responseStatus as HttpStatusCode
+    const target = resolveJsonTargetForStatus(
+      contract.responsesByStatusCode,
+      responseStatus,
+      anyParams.contentType,
+    )
 
     await this.resolveMethodBuilder(contract.method, path).thenCallback(async (request) => {
-      const result = await anyParams.handleRequest(request)
-      const { body, status } = unwrapMockResponse(result)
+      const { statusCode, mediaType, body } = await runMockImplementation({
+        helperName: 'ApiContractMockttpHelper',
+        contract,
+        responseStatus,
+        target,
+        accept: normalizeAccept(request.headers.accept),
+        handleRequest: () => anyParams.handleRequest(request),
+      })
 
-      return {
-        statusCode: status ?? statusCode,
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(jsonSchema.parse(body)),
-      }
+      return { statusCode, headers: { 'content-type': mediaType }, body }
     })
   }
 }

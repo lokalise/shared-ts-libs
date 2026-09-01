@@ -7,27 +7,41 @@ import {
   isSseBody,
   mapApiContractToPath,
 } from '@lokalise/api-contracts'
-import { HttpResponse, type HttpResponseResolver, http, type JsonBodyType } from 'msw'
+import {
+  type DefaultBodyType,
+  HttpResponse,
+  type HttpResponseResolver,
+  http,
+  type JsonBodyType,
+  type PathParams,
+} from 'msw'
 import type { SetupServer } from 'msw/node'
 import type { z } from 'zod/v4'
-import {
-  type MockResponseWrapper,
-  unwrapMockResponse,
-  wrapMockResponse,
-} from '../responseWrapper.ts'
+import { type MockResponseWrapper, wrapMockResponse } from '../responseWrapper.ts'
 import {
   formatSseResponse,
   type MockImplementationParams,
   type MockResponseParams,
   resolveContractEntry,
   resolveExplicitContentBody,
-  resolveJsonSchema,
+  resolveJsonTargetForStatus,
+  runMockImplementation,
 } from './types.ts'
 
 type HttpMethod = 'get' | 'delete' | 'post' | 'patch' | 'put'
 
-/** Request info msw passes to a route resolver. */
-export type MswRequestInfo = Parameters<HttpResponseResolver>[0]
+/** Request info msw passes to a route resolver, optionally typed by the request body. */
+export type MswRequestInfo<TRequestBody extends DefaultBodyType = DefaultBodyType> = Parameters<
+  HttpResponseResolver<PathParams, TRequestBody>
+>[0]
+
+/** Request body type the contract declares, or msw's default for a contract that declares none. */
+type InferRequestBody<TContract extends ApiContract> =
+  TContract['requestBodySchema'] extends z.ZodType
+    ? z.output<TContract['requestBodySchema']> extends DefaultBodyType
+      ? z.output<TContract['requestBodySchema']>
+      : DefaultBodyType
+    : DefaultBodyType
 
 function joinURL(base: string, path: string): string {
   return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
@@ -156,40 +170,40 @@ export class ApiContractMswHelper {
   /**
    * Mocks a JSON response whose body is computed from the incoming request.
    *
-   * `responseStatus` picks the contract entry that types `handleRequest`'s return value. Return a
-   * bare body to reply with that status, or wrap it with {@link ApiContractMswHelper.response}
-   * to override the status for a single call.
+   * `responseStatus` picks the contract entry that types `handleRequest`'s return value, and
+   * `contentType` picks between JSON media types when that entry declares more than one. Return a
+   * bare body to reply with `responseStatus`, or wrap it with
+   * {@link ApiContractMswHelper.response} to override the status for a single call.
    */
   mockResponseWithImplementation<TContract extends ApiContract>(
     contract: TContract,
-    params: MockImplementationParams<TContract, MswRequestInfo>,
+    params: MockImplementationParams<TContract, MswRequestInfo<InferRequestBody<TContract>>>,
   ): void {
     // biome-ignore lint/suspicious/noExplicitAny: field access is safe, the public signature enforces the type
     const anyParams = params as any
     const path = this.resolvePath(contract, params.pathParams)
-    const statusCode = anyParams.responseStatus as HttpStatusCode
-    const responseEntry = resolveContractEntry(contract.responsesByStatusCode, statusCode)
-
-    if (!responseEntry) {
-      throw new Error('Specified responseStatus cannot be mapped with contract')
-    }
-
-    const jsonSchema = resolveJsonSchema(responseEntry)
-    if (!jsonSchema) {
-      throw new Error(
-        'Specified responseStatus has no JSON response body; use mockResponse for SSE and blob responses',
-      )
-    }
-
+    const responseStatus = anyParams.responseStatus as HttpStatusCode
+    const target = resolveJsonTargetForStatus(
+      contract.responsesByStatusCode,
+      responseStatus,
+      anyParams.contentType,
+    )
     const method = contract.method as HttpMethod
 
     this.server.use(
       http[method](path, async (requestInfo) => {
-        const result = await anyParams.handleRequest(requestInfo)
-        const { body, status } = unwrapMockResponse(result)
+        const reply = await runMockImplementation({
+          helperName: 'ApiContractMswHelper',
+          contract,
+          responseStatus,
+          target,
+          accept: requestInfo.request.headers.get('accept') ?? '',
+          handleRequest: () => anyParams.handleRequest(requestInfo),
+        })
 
-        return HttpResponse.json(jsonSchema.parse(body) as JsonBodyType, {
-          status: status ?? statusCode,
+        return new HttpResponse(reply.body, {
+          status: reply.statusCode,
+          headers: { 'content-type': reply.mediaType },
         })
       }),
     )

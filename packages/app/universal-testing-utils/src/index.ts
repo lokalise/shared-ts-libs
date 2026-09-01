@@ -1,4 +1,7 @@
-export { ApiContractMockttpHelper } from './api-contracts/ApiContractMockttpHelper.ts'
+export {
+  type ApiContractCompletedRequest,
+  ApiContractMockttpHelper,
+} from './api-contracts/ApiContractMockttpHelper.ts'
 export { ApiContractMswHelper, type MswRequestInfo } from './api-contracts/ApiContractMswHelper.ts'
 export type { MockImplementationParams, MockResponseParams } from './api-contracts/types.ts'
 export {

@@ -1,4 +1,8 @@
-const RESPONSE_BRAND = Symbol('MockResponseWrapper')
+// Registry symbol, not a module-local one: two copies of this package in a single dependency tree
+// (version skew, or a dual ESM/CJS load) must still recognise each other's wrappers.
+const RESPONSE_BRAND: unique symbol = Symbol.for(
+  '@lokalise/universal-testing-utils/MockResponseWrapper',
+)
 
 export type MockResponseWrapper<T> = {
   readonly [RESPONSE_BRAND]: true
