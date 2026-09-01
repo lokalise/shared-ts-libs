@@ -72,4 +72,5 @@ between languages) with duplicates counted — dropping one of two `<br>` tokens
 `missing` entry.
 
 The relevant types are exported: `QualityIssue` (the union of every issue),
-`QualityIssueErrorEnum`/`QualityIssueError` (the error codes), and `DetectQualityIssuesOptions`.
+`QualityIssueErrorEnum`/`QualityIssueError` (the error codes), and the options for each call
+shape (`SingleTextDetectQualityIssuesOptions` and `PairDetectQualityIssuesOptions`).

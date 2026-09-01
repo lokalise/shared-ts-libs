@@ -8,14 +8,14 @@ import {
   singleTextChecksByError,
 } from './utils.ts'
 
-type SingleTextDetectQualityIssuesOptions = {
+export type SingleTextDetectQualityIssuesOptions = {
   /** Checks to run; defaults to all when omitted, while an empty array runs none. */
   checksToInclude?: SingleTextQualityIssue['error'][]
   /** Checks to skip; wins over `checksToInclude` on overlap. */
   checksToExclude?: SingleTextQualityIssue['error'][]
 }
 
-type PairDetectQualityIssuesOptions = {
+export type PairDetectQualityIssuesOptions = {
   /** Checks to run; defaults to all when omitted, while an empty array runs none. */
   checksToInclude?: QualityIssueError[]
   /** Checks to skip; wins over `checksToInclude` on overlap. */
