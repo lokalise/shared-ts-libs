@@ -1261,6 +1261,10 @@ importers:
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.4.0)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.4.0)(typescript@7.0.2))(vite@6.4.3(@types/node@26.4.0)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/app/translation-quality-checks:
+    dependencies:
+      '@lokalise/non-translatable-markup':
+        specifier: workspace:^
+        version: link:../non-translatable-markup
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.5.9
