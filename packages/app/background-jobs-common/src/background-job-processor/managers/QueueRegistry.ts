@@ -4,6 +4,7 @@ import { merge } from 'ts-deepmerge'
 import { DEFAULT_QUEUE_OPTIONS } from '../constants.ts'
 import type { BullmqQueueFactory } from '../factories/index.ts'
 import { registerActiveQueueIds } from '../monitoring/registerActiveQueueIds.ts'
+import { precompileSchema } from '../precompileUtils.ts'
 import { enrichRedisConfig, sanitizeRedisConfig } from '../public-utils/index.ts'
 import { resolveQueueId } from '../utils.ts'
 import type { QueueConfiguration, SupportedQueueIds } from './types.ts'
@@ -14,6 +15,9 @@ import type { QueueConfiguration, SupportedQueueIds } from './types.ts'
  * Holds no Bull queue instances and has no lifecycle — use this when you only
  * need typed access to {@link QueueConfiguration} entries (for example, from a
  * FlowManager that publishes through a shared FlowProducer).
+ *
+ * Registering a configuration precompiles its `jobPayloadSchema`, so every payload
+ * validation done through the registry takes zod's generated fast path.
  */
 export class QueueConfigRegistry<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
@@ -27,11 +31,20 @@ export class QueueConfigRegistry<
   constructor(supportedQueues: Queues) {
     this.queueIds = new Set<string>()
     for (const queue of supportedQueues) {
-      this.queuesConfig[queue.queueId] = queue
+      // Every payload scheduled to or processed from this queue is parsed with the schema, so it is
+      // worth compiling. The stored config is a shallow copy: the caller's object is left untouched.
+      this.queuesConfig[queue.queueId] = {
+        ...queue,
+        jobPayloadSchema: precompileSchema(queue.jobPayloadSchema),
+      } as Queues[number]
       this.queueIds.add(queue.queueId)
     }
   }
 
+  /**
+   * The registered configuration, whose `jobPayloadSchema` is the precompiled counterpart of the
+   * one that was passed in. It is a shallow copy of the caller's config, not the same object.
+   */
   public getQueueConfig(queueId: SupportedQueueIds<Queues>): Queues[number] {
     if (!this.isSupportedQueue(queueId) || !this.queuesConfig[queueId]) {
       throw new Error(`Queue with id ${queueId} is not supported`)

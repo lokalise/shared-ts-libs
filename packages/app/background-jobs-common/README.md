@@ -96,10 +96,41 @@ To set up a queue configuration, you need to define a list of objects containing
    a nested subgroup. The delimiter is `QUEUE_GROUP_DELIMITER`. See [Bull Dashboard Grouping](#bull-dashboard-grouping)
    below for usage and migration guidance — **the grouping is encoded into the queue name, so changing it on an existing
    queue effectively creates a new queue.**
-- **`jobPayloadSchema`**: A Zod schema that defines the structure of the jobs payload for this queue.
+- **`jobPayloadSchema`**: A Zod schema that defines the structure of the jobs payload for this queue. It is
+   precompiled on registration, see [Schema precompilation](#schema-precompilation).
 - **`jobOptions`**: Default options for jobs in this queue. Can be a function that will be resolved when a job is 
    scheduled. See [BullMQ documentation](https://docs.bullmq.io/guide/job-options).
 - **`purgeJobDataOnSuccess`**: Optional boolean, **defaults to `true`**. See [Purging job data on success](#purging-job-data-on-success).
+
+### Schema precompilation
+
+`zod` can compile a schema ahead of time into a generated fast path, which parses noticeably faster than the
+interpreted parser (roughly 3x on a typical job payload). Registering a queue configuration precompiles its
+`jobPayloadSchema`, so every payload validation the library runs takes that fast path: `QueueManager.schedule` and
+`scheduleBulk`, `FlowManager.addFlow` and `addFlowBulk` (each node in the tree), and the check a processor does on
+`job.data` before `process` runs. Nothing is required on your side.
+
+Because the library handles this, passing a schema you precompiled yourself is a type error:
+
+```typescript
+import { precompileSchema } from '@lokalise/background-jobs-common'
+
+const supportedQueues = [
+  {
+    queueId: 'queue1',
+    // Rejected at compile time: the library precompiles it for you
+    jobPayloadSchema: precompileSchema(JOB_PAYLOAD_SCHEMA),
+  },
+] as const satisfies QueueConfiguration[]
+```
+
+Compiling returns a clone, so the schema the library parses with is not the object you passed in, and
+`getQueueConfig(queueId)` hands back a shallow copy of your configuration carrying that clone. Your own config object
+and schema are left untouched, and parsing behavior is identical: a schema `zod` cannot compile (one with an async
+refinement, say) keeps using the regular parser. `isPrecompiledSchema` tells the two apart if you need it.
+
+`precompileSchema` is exported for schemas you parse with yourself elsewhere. It is never needed on a queue
+configuration.
 
 ### Purging job data on success
 

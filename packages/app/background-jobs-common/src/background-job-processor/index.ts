@@ -3,6 +3,12 @@ export * from './factories/index.ts'
 export * from './logger/BackgroundJobProcessorLogger.ts'
 export * from './managers/index.ts'
 export * from './monitoring/backgroundJobProcessorGetActiveQueueIds.ts'
+export {
+  isPrecompiledSchema,
+  type NonPrecompiledSchema,
+  type PrecompiledSchema,
+  precompileSchema,
+} from './precompileUtils.ts'
 export * from './processors/index.ts'
 export * from './public-utils/index.ts'
 export * from './spy/types.ts'
