@@ -20,7 +20,7 @@ describe('doubleWhitespaceMismatchCheck', () => {
       compareWith: 'x y',
     },
   ])('reports no issue: $name', ({ text, compareWith }) => {
-    expect(doubleWhitespaceMismatchCheck(text, compareWith)).toBeUndefined()
+    expect(doubleWhitespaceMismatchCheck(text, compareWith)).toBeNull()
   })
 
   it.each([

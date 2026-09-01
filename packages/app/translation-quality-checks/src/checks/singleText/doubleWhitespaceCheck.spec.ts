@@ -17,7 +17,7 @@ describe('doubleWhitespaceCheck', () => {
       text: `a ${NTC_START}x${NTC_END} b`,
     },
   ])('reports no issue: $name', ({ text }) => {
-    expect(doubleWhitespaceCheck(text)).toBeUndefined()
+    expect(doubleWhitespaceCheck(text)).toBeNull()
   })
 
   it.each([

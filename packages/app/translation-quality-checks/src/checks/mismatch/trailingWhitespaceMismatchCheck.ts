@@ -17,11 +17,11 @@ export type TrailingWhitespaceMismatchIssue = QualityIssueShape<{
 export const trailingWhitespaceMismatchCheck: MismatchCheck = (
   text: string,
   compareWith: string,
-): TrailingWhitespaceMismatchIssue | undefined => {
+): TrailingWhitespaceMismatchIssue | null => {
   const textTrailing = text.slice(text.trimEnd().length)
   const compareWithTrailing = compareWith.slice(compareWith.trimEnd().length)
 
-  if (textTrailing === compareWithTrailing) return undefined
+  if (textTrailing === compareWithTrailing) return null
 
   return {
     error: 'TRAILING_WHITESPACE_MISMATCH',

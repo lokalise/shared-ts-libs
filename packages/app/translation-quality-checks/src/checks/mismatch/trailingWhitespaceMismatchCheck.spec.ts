@@ -6,7 +6,7 @@ describe('trailingWhitespaceMismatchCheck', () => {
     { name: 'identical trailing whitespace', text: 'Hola ', compareWith: 'Hello ' },
     { name: 'empty strings', text: '', compareWith: '' },
   ])('reports no issue: $name', ({ text, compareWith }) => {
-    expect(trailingWhitespaceMismatchCheck(text, compareWith)).toBeUndefined()
+    expect(trailingWhitespaceMismatchCheck(text, compareWith)).toBeNull()
   })
 
   it.each([

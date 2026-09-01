@@ -17,14 +17,14 @@ export type LeadingWhitespaceMismatchIssue = QualityIssueShape<{
 export const leadingWhitespaceMismatchCheck: MismatchCheck = (
   text: string,
   compareWith: string,
-): LeadingWhitespaceMismatchIssue | undefined => {
+): LeadingWhitespaceMismatchIssue | null => {
   const textLeading = text.slice(0, text.length - text.trimStart().length)
   const compareWithLeading = compareWith.slice(
     0,
     compareWith.length - compareWith.trimStart().length,
   )
 
-  if (textLeading === compareWithLeading) return undefined
+  if (textLeading === compareWithLeading) return null
 
   return {
     error: 'LEADING_WHITESPACE_MISMATCH',

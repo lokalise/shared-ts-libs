@@ -12,8 +12,8 @@ const leadingWhitespaceRegexp = /^\s/
  */
 export const leadingWhitespaceCheck: SingleTextCheck = (
   text: string,
-): LeadingWhitespaceIssue | undefined => {
-  if (!leadingWhitespaceRegexp.test(text)) return undefined
+): LeadingWhitespaceIssue | null => {
+  if (!leadingWhitespaceRegexp.test(text)) return null
 
   return { error: 'LEADING_WHITESPACE', details: undefined }
 }

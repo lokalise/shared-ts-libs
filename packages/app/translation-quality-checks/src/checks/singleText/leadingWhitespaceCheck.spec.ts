@@ -7,7 +7,7 @@ describe('leadingWhitespaceCheck', () => {
     { name: 'inner whitespace only', text: 'Hello world' },
     { name: 'trailing whitespace only', text: 'Hello ' },
   ])('reports no issue: $name', ({ text }) => {
-    expect(leadingWhitespaceCheck(text)).toBeUndefined()
+    expect(leadingWhitespaceCheck(text)).toBeNull()
   })
 
   it.each([

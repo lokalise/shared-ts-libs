@@ -58,12 +58,12 @@ export type MismatchQualityIssue = QualityIssueShape<
 /**
  * Contract of a single-text check.
  */
-export type SingleTextCheck = (text: string) => SingleTextQualityIssue | undefined
+export type SingleTextCheck = (text: string) => SingleTextQualityIssue | null
 
 /**
  * Contract of a mismatch check.
  */
-export type MismatchCheck = (text: string, compareWith: string) => MismatchQualityIssue | undefined
+export type MismatchCheck = (text: string, compareWith: string) => MismatchQualityIssue | null
 
 type ByError<Issue extends QualityIssueBase, Value> = { [K in Issue['error']]: Value }
 

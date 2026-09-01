@@ -25,13 +25,13 @@ const nonTranslatableTokens = (text: string): string[] =>
 export const nonTranslatableTagsMismatchCheck: MismatchCheck = (
   text: string,
   compareWith: string,
-): NonTranslatableTagsMismatchIssue | undefined => {
+): NonTranslatableTagsMismatchIssue | null => {
   const { missing, added } = multisetDiff(
     nonTranslatableTokens(compareWith),
     nonTranslatableTokens(text),
   )
 
-  if (missing.length === 0 && added.length === 0) return undefined
+  if (missing.length === 0 && added.length === 0) return null
 
   return {
     error: 'NON_TRANSLATABLE_TAGS_MISMATCH',

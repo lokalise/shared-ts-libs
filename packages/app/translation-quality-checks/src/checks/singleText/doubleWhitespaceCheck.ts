@@ -18,13 +18,13 @@ const doubleWhitespaceRegexp = /\s{2,}/g
  */
 export const doubleWhitespaceCheck: SingleTextCheck = (
   text: string,
-): DoubleWhitespaceIssue | undefined => {
+): DoubleWhitespaceIssue | null => {
   const whitespaces = extractTextBetweenTags(text, {
     keepHtml: true,
     preserveSpacing: true,
   }).flatMap((piece) => piece.match(doubleWhitespaceRegexp) ?? [])
 
-  if (whitespaces.length === 0) return undefined
+  if (whitespaces.length === 0) return null
 
   return {
     error: 'DOUBLE_WHITESPACE',

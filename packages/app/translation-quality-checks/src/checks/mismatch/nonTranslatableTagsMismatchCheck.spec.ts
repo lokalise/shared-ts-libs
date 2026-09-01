@@ -26,7 +26,7 @@ describe('nonTranslatableTagsMismatchCheck', () => {
     },
     { name: 'empty strings', text: '', compareWith: '' },
   ])('reports no issue: $name', ({ text, compareWith }) => {
-    expect(nonTranslatableTagsMismatchCheck(text, compareWith)).toBeUndefined()
+    expect(nonTranslatableTagsMismatchCheck(text, compareWith)).toBeNull()
   })
 
   it.each([

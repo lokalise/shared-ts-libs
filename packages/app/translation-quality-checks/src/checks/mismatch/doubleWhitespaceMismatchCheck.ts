@@ -29,13 +29,13 @@ const doubleWhitespaceRuns = (text: string): string[] =>
 export const doubleWhitespaceMismatchCheck: MismatchCheck = (
   text: string,
   compareWith: string,
-): DoubleWhitespaceMismatchIssue | undefined => {
+): DoubleWhitespaceMismatchIssue | null => {
   const { missing, added } = multisetDiff(
     doubleWhitespaceRuns(compareWith),
     doubleWhitespaceRuns(text),
   )
 
-  if (missing.length === 0 && added.length === 0) return undefined
+  if (missing.length === 0 && added.length === 0) return null
 
   return {
     error: 'DOUBLE_WHITESPACE_MISMATCH',

@@ -12,8 +12,8 @@ const trailingWhitespaceRegexp = /\s$/
  */
 export const trailingWhitespaceCheck: SingleTextCheck = (
   text: string,
-): TrailingWhitespaceIssue | undefined => {
-  if (!trailingWhitespaceRegexp.test(text)) return undefined
+): TrailingWhitespaceIssue | null => {
+  if (!trailingWhitespaceRegexp.test(text)) return null
 
   return {
     error: 'TRAILING_WHITESPACE',

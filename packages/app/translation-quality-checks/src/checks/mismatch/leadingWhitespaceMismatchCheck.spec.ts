@@ -6,7 +6,7 @@ describe('leadingWhitespaceMismatchCheck', () => {
     { name: 'identical leading whitespace', text: ' Hola', source: ' Hello' },
     { name: 'empty strings', text: '', source: '' },
   ])('reports no issue: $name', ({ text, source }) => {
-    expect(leadingWhitespaceMismatchCheck(text, source)).toBeUndefined()
+    expect(leadingWhitespaceMismatchCheck(text, source)).toBeNull()
   })
 
   it.each([
