@@ -1,8 +1,8 @@
 # Translation quality checks
 
 Deterministic, code-based quality checks for translations — the rule-based counterpart to AI
-scoring. Pure and dependency-light: same input, same issues, no I/O — runs in the browser, in a
-backend, or inside Polyglot with identical results.
+scoring. Pure and dependency-light: same input, same issues, no I/O — runs in the browser or in
+any backend with identical results.
 
 Checks come in two families:
 
