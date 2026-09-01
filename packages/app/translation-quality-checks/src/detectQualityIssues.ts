@@ -9,14 +9,14 @@ import {
 } from './utils.ts'
 
 type SingleTextDetectQualityIssuesOptions = {
-  /** Checks to run; defaults to all. Only single-text checks can run on a single text. */
+  /** Checks to run; defaults to all when omitted, while an empty array runs none. */
   checksToInclude?: SingleTextQualityIssue['error'][]
   /** Checks to skip; wins over `checksToInclude` on overlap. */
   checksToExclude?: SingleTextQualityIssue['error'][]
 }
 
 type PairDetectQualityIssuesOptions = {
-  /** Checks to run; defaults to all. */
+  /** Checks to run; defaults to all when omitted, while an empty array runs none. */
   checksToInclude?: QualityIssueError[]
   /** Checks to skip; wins over `checksToInclude` on overlap. */
   checksToExclude?: QualityIssueError[]
@@ -51,7 +51,8 @@ export function detectQualityIssues(
   third?: DetectQualityIssuesOptions,
 ): QualityIssue[] {
   const compareWith = typeof second === 'string' ? second : undefined
-  const checksToRun = resolveChecksToRun(typeof second === 'string' ? third : second)
+  // JS callers can pass `undefined` in second position; the options then arrive third.
+  const checksToRun = resolveChecksToRun(typeof second === 'string' ? third : (second ?? third))
 
   const issues: QualityIssue[] = []
 
@@ -69,11 +70,7 @@ export function detectQualityIssues(
 }
 
 const resolveChecksToRun = (options?: DetectQualityIssuesOptions): QualityIssueError[] => {
-  const checksToInclude = new Set(
-    options?.checksToInclude?.length
-      ? options.checksToInclude
-      : Object.values(QualityIssueErrorEnum),
-  )
+  const checksToInclude = new Set(options?.checksToInclude ?? Object.values(QualityIssueErrorEnum))
   const checksToExclude = new Set(options?.checksToExclude ?? [])
 
   if (options && 'skipSingleTextChecks' in options && options.skipSingleTextChecks) {

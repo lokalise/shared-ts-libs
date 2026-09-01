@@ -41,7 +41,8 @@ An empty result means the text passed every check.
 
 Both call shapes accept an options object:
 
-- `checksToInclude` — checks to run; defaults to all of them.
+- `checksToInclude` — checks to run; defaults to all of them when omitted, while an empty array
+  runs none.
 - `checksToExclude` — checks to skip; wins over `checksToInclude` on overlap.
 - `skipSingleTextChecks` *(pair call only)* — shortcut for excluding every single-text check, so
   only the mismatch checks run.

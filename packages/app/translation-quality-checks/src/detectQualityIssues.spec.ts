@@ -39,10 +39,8 @@ describe('detectQualityIssues', () => {
       ).toEqual([])
     })
 
-    it('an empty checksToInclude falls back to running every check', () => {
-      expect(detectQualityIssues(' Hola', { checksToInclude: [] })).toEqual([
-        { error: 'LEADING_WHITESPACE', details: undefined },
-      ])
+    it('an explicitly empty checksToInclude runs no checks', () => {
+      expect(detectQualityIssues(' Hola', { checksToInclude: [] })).toEqual([])
     })
 
     it('duplicated entries in checksToInclude run the check only once', () => {
@@ -114,6 +112,14 @@ describe('detectQualityIssues', () => {
       expect(detectQualityIssues(' Hola', 'Hello', { skipSingleTextChecks: true })).toEqual([
         { error: 'LEADING_WHITESPACE_MISMATCH', details: { source: '', target: ' ' } },
       ])
+    })
+
+    it('reads the options from third position when compareWith is undefined at runtime', () => {
+      const compareWith = undefined as unknown as string
+
+      expect(
+        detectQualityIssues(' Hola', compareWith, { checksToExclude: ['LEADING_WHITESPACE'] }),
+      ).toEqual([])
     })
 
     it('skipSingleTextChecks composes with checksToExclude', () => {
