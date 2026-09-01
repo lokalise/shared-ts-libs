@@ -1,5 +1,5 @@
 import { extractTextBetweenTags } from '@lokalise/non-translatable-markup'
-import type { MismatchCheck, QualityIssueShape } from '../../utils.ts'
+import type { QualityIssueShape } from '../../utils.ts'
 import { multisetDiff } from '../utils/multisetDiff.ts'
 
 export type DoubleWhitespaceMismatchIssue = QualityIssueShape<{
@@ -27,7 +27,7 @@ const doubleWhitespaceRuns = (text: string): string[] =>
  * reported as `missing`, unpaired text runs as `added`. Content inside NTC regions is not
  * checked.
  */
-export const doubleWhitespaceMismatchCheck: MismatchCheck = (
+export const doubleWhitespaceMismatchCheck = (
   text: string,
   compareWith: string,
 ): DoubleWhitespaceMismatchIssue | null => {

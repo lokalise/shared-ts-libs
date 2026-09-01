@@ -1,4 +1,4 @@
-import type { MismatchCheck, QualityIssueShape } from '../../utils.ts'
+import type { QualityIssueShape } from '../../utils.ts'
 
 export type LeadingWhitespaceMismatchIssue = QualityIssueShape<{
   error: 'LEADING_WHITESPACE_MISMATCH'
@@ -14,7 +14,7 @@ export type LeadingWhitespaceMismatchIssue = QualityIssueShape<{
  * Mismatch check: reports when the leading whitespace of the text differs from the leading
  * whitespace of the reference text.
  */
-export const leadingWhitespaceMismatchCheck: MismatchCheck = (
+export const leadingWhitespaceMismatchCheck = (
   text: string,
   compareWith: string,
 ): LeadingWhitespaceMismatchIssue | null => {

@@ -65,7 +65,14 @@ export type SingleTextCheck = (text: string) => SingleTextQualityIssue | null
  */
 export type MismatchCheck = (text: string, compareWith: string) => MismatchQualityIssue | null
 
-type ByError<Issue extends QualityIssueBase, Value> = { [K in Issue['error']]: Value }
+/**
+ * Map keyed by every error code of the given issues, where each key must hold the check that
+ * reports exactly that error: a missing key, an extra key, or a check wired under the wrong
+ * error is a compile error.
+ */
+type ByError<Issue extends QualityIssueBase, Args extends unknown[]> = {
+  [K in Issue['error']]: (...args: Args) => Extract<Issue, { error: K }> | null
+}
 
 /**
  * Single-text checks keyed by the error they report.
@@ -74,7 +81,7 @@ export const singleTextChecksByError = {
   LEADING_WHITESPACE: leadingWhitespaceCheck,
   TRAILING_WHITESPACE: trailingWhitespaceCheck,
   DOUBLE_WHITESPACE: doubleWhitespaceCheck,
-} as const satisfies ByError<SingleTextQualityIssue, SingleTextCheck>
+} as const satisfies ByError<SingleTextQualityIssue, [text: string]>
 
 /**
  * Mismatch checks keyed by the error they report.
@@ -84,4 +91,4 @@ export const mismatchChecksByError = {
   TRAILING_WHITESPACE_MISMATCH: trailingWhitespaceMismatchCheck,
   DOUBLE_WHITESPACE_MISMATCH: doubleWhitespaceMismatchCheck,
   NON_TRANSLATABLE_TAGS_MISMATCH: nonTranslatableTagsMismatchCheck,
-} as const satisfies ByError<MismatchQualityIssue, MismatchCheck>
+} as const satisfies ByError<MismatchQualityIssue, [text: string, compareWith: string]>

@@ -1,4 +1,4 @@
-import type { QualityIssueShape, SingleTextCheck } from '../../utils.ts'
+import type { QualityIssueShape } from '../../utils.ts'
 
 export type TrailingWhitespaceIssue = QualityIssueShape<{
   error: 'TRAILING_WHITESPACE'
@@ -10,9 +10,7 @@ const trailingWhitespaceRegexp = /\s$/
 /**
  * Single-text check: reports when the given text ends with whitespace.
  */
-export const trailingWhitespaceCheck: SingleTextCheck = (
-  text: string,
-): TrailingWhitespaceIssue | null => {
+export const trailingWhitespaceCheck = (text: string): TrailingWhitespaceIssue | null => {
   if (!trailingWhitespaceRegexp.test(text)) return null
 
   return {

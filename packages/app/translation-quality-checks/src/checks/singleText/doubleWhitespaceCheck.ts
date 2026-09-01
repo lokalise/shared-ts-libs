@@ -1,5 +1,5 @@
 import { extractTextBetweenTags } from '@lokalise/non-translatable-markup'
-import type { QualityIssueShape, SingleTextCheck } from '../../utils.ts'
+import type { QualityIssueShape } from '../../utils.ts'
 
 export type DoubleWhitespaceIssue = QualityIssueShape<{
   error: 'DOUBLE_WHITESPACE'
@@ -18,9 +18,7 @@ const doubleWhitespaceRegexp = /[^\S\r\n]{2,}/g
  * split by NTC region and every piece is evaluated on its own, so a run can never span a region
  * boundary.
  */
-export const doubleWhitespaceCheck: SingleTextCheck = (
-  text: string,
-): DoubleWhitespaceIssue | null => {
+export const doubleWhitespaceCheck = (text: string): DoubleWhitespaceIssue | null => {
   const whitespaces = extractTextBetweenTags(text, {
     keepHtml: true,
     preserveSpacing: true,

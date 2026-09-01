@@ -1,4 +1,4 @@
-import type { MismatchCheck, QualityIssueShape } from '../../utils.ts'
+import type { QualityIssueShape } from '../../utils.ts'
 
 export type TrailingWhitespaceMismatchIssue = QualityIssueShape<{
   error: 'TRAILING_WHITESPACE_MISMATCH'
@@ -14,7 +14,7 @@ export type TrailingWhitespaceMismatchIssue = QualityIssueShape<{
  * Mismatch check: reports when the trailing whitespace of the text differs from the trailing
  * whitespace of the reference text.
  */
-export const trailingWhitespaceMismatchCheck: MismatchCheck = (
+export const trailingWhitespaceMismatchCheck = (
   text: string,
   compareWith: string,
 ): TrailingWhitespaceMismatchIssue | null => {

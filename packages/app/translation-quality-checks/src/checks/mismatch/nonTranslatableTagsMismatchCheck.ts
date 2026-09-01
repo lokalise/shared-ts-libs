@@ -1,5 +1,5 @@
 import { extractNTCTagsWithContent } from '@lokalise/non-translatable-markup'
-import type { MismatchCheck, QualityIssueShape } from '../../utils.ts'
+import type { QualityIssueShape } from '../../utils.ts'
 import { multisetDiff } from '../utils/multisetDiff.ts'
 
 export type NonTranslatableTagsMismatchIssue = QualityIssueShape<{
@@ -22,7 +22,7 @@ const nonTranslatableTokens = (text: string): string[] =>
  * multiset (position-independent, duplicates counted, exact content): unpaired reference tokens
  * are reported as `missing`, unpaired text tokens as `added`.
  */
-export const nonTranslatableTagsMismatchCheck: MismatchCheck = (
+export const nonTranslatableTagsMismatchCheck = (
   text: string,
   compareWith: string,
 ): NonTranslatableTagsMismatchIssue | null => {
