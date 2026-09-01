@@ -15,7 +15,13 @@ describe('detectQualityIssues', () => {
     })
 
     it('never runs the mismatch checks', () => {
-      expect(detectQualityIssues('Hola', { checksToInclude: ['LEADING_WHITESPACE'] })).toEqual([])
+      const issues = detectQualityIssues(' Hola  mundo ')
+
+      expect(issues.map((issue) => issue.error)).toEqual([
+        'LEADING_WHITESPACE',
+        'TRAILING_WHITESPACE',
+        'DOUBLE_WHITESPACE',
+      ])
     })
 
     it('checksToExclude skips the given checks', () => {
