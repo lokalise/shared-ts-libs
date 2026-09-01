@@ -5,7 +5,7 @@ import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
 import { getTestRedisConfig } from '../../../test/TestRedis.ts'
 import { CommonBullmqFactory } from '../factories/index.ts'
 import { backgroundJobProcessorGetActiveQueueIds } from '../monitoring/backgroundJobProcessorGetActiveQueueIds.ts'
-import { isPrecompiledSchema } from '../precompileUtils.ts'
+import { isPrecompiledSchema, precompileSchema } from '../precompileUtils.ts'
 import { QueueRegistry } from './QueueRegistry.ts'
 import type { QueueConfiguration } from './types.ts'
 
@@ -86,7 +86,12 @@ describe('QueueRegistry', () => {
     )
     const config = extendedRegistry.getQueueConfig('queue')
     // registration precompiles the payload schema, so the stored config is a copy
-    expect(config).toEqual({ ...extendedQueues[0], jobPayloadSchema: config.jobPayloadSchema })
+    expect(config).not.toBe(extendedQueues[0])
+    expect(config.jobPayloadSchema).not.toBe(extendedQueues[0].jobPayloadSchema)
+    expect(config).toEqual({
+      ...extendedQueues[0],
+      jobPayloadSchema: precompileSchema(extendedQueues[0].jobPayloadSchema),
+    })
     expect(isPrecompiledSchema(config.jobPayloadSchema)).toBe(true)
     expectTypeOf(config).toMatchTypeOf<ExtendedQueueConfig>()
   })
@@ -161,12 +166,22 @@ describe('QueueRegistry', () => {
       const queue1Payload = { id: 'id', value: 'value', metadata: { correlationId: 'correlation' } }
 
       const config1 = registry.getQueueConfig('queue1')
-      expect(config1).toEqual({ ...QUEUES[0], jobPayloadSchema: config1.jobPayloadSchema })
+      expect(config1).not.toBe(QUEUES[0])
+      expect(config1.jobPayloadSchema).not.toBe(QUEUES[0].jobPayloadSchema)
+      expect(config1).toEqual({
+        ...QUEUES[0],
+        jobPayloadSchema: precompileSchema(QUEUES[0].jobPayloadSchema),
+      })
       expect(isPrecompiledSchema(config1.jobPayloadSchema)).toBe(true)
       expect(config1.jobPayloadSchema.safeParse(queue1Payload).success).toBe(true)
 
       const config2 = registry.getQueueConfig('queue2')
-      expect(config2).toEqual({ ...QUEUES[1], jobPayloadSchema: config2.jobPayloadSchema })
+      expect(config2).not.toBe(QUEUES[1])
+      expect(config2.jobPayloadSchema).not.toBe(QUEUES[1].jobPayloadSchema)
+      expect(config2).toEqual({
+        ...QUEUES[1],
+        jobPayloadSchema: precompileSchema(QUEUES[1].jobPayloadSchema),
+      })
       expect(isPrecompiledSchema(config2.jobPayloadSchema)).toBe(true)
       // queue2 requires `value2`, so its schema rejects a queue1 payload
       expect(config2.jobPayloadSchema.safeParse(queue1Payload).success).toBe(false)

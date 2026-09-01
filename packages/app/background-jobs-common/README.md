@@ -106,31 +106,25 @@ To set up a queue configuration, you need to define a list of objects containing
 
 `zod` can compile a schema ahead of time into a generated fast path, which parses noticeably faster than the
 interpreted parser (roughly 3x on a typical job payload). Registering a queue configuration precompiles its
-`jobPayloadSchema`, so every payload validation the library runs takes that fast path: `QueueManager.schedule` and
+`jobPayloadSchema`, so the payload validations the library runs take that fast path: `QueueManager.schedule` and
 `scheduleBulk`, `FlowManager.addFlow` and `addFlowBulk` (each node in the tree), and the check a processor does on
 `job.data` before `process` runs. Nothing is required on your side.
 
-Because the library handles this, passing a schema you precompiled yourself is a type error:
-
-```typescript
-import { precompileSchema } from '@lokalise/background-jobs-common'
-
-const supportedQueues = [
-  {
-    queueId: 'queue1',
-    // Rejected at compile time: the library precompiles it for you
-    jobPayloadSchema: precompileSchema(JOB_PAYLOAD_SCHEMA),
-  },
-] as const satisfies QueueConfiguration[]
-```
-
 Compiling returns a clone, so the schema the library parses with is not the object you passed in, and
 `getQueueConfig(queueId)` hands back a shallow copy of your configuration carrying that clone. Your own config object
-and schema are left untouched, and parsing behavior is identical: a schema `zod` cannot compile (one with an async
-refinement, say) keeps using the regular parser. `isPrecompiledSchema` tells the two apart if you need it.
+and schema are left untouched.
 
-`precompileSchema` is exported for schemas you parse with yourself elsewhere. It is never needed on a queue
-configuration.
+Some schemas are handed back uncompiled and keep using the regular parser. Async refinements and recursive
+(self-referential) schemas are the two shapes `zod` refuses; nothing breaks, that queue simply does not get the
+speedup. `z.compile(schema, { strict: true })` reports the reason for a given schema.
+
+One behavior does change. The generated fast path only signals that input is invalid, so `zod` re-runs the original
+parser to build the error, and a synchronous `refine`, `superRefine` or `transform` runs **twice for a payload that
+fails validation** (once for a payload that passes). Parse results are the same either way, so this matters only when
+one of those callbacks has a side effect outside the parse, such as incrementing a metric or writing a log line.
+
+To turn precompilation off, set `z.config({ jitless: true })` before your queue configurations are registered. That
+is also what a CSP or no-eval runtime needs, since compiling goes through `new Function`.
 
 ### Purging job data on success
 

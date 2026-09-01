@@ -2,7 +2,6 @@ import type { RedisConfig } from '@lokalise/node-core'
 import type { FlowProducer, Job, JobsOptions, Queue, QueueBaseOptions, QueueOptions } from 'bullmq'
 import type { z } from 'zod/v4'
 import type { BullmqFlowProducerFactory } from '../factories/BullmqFlowProducerFactory.ts'
-import type { NonPrecompiledSchema } from '../precompileUtils.ts'
 import type { BaseJobPayload } from '../types.ts'
 import type { QueueManager } from './QueueManager.ts'
 
@@ -38,10 +37,10 @@ export type QueueConfiguration<
    */
   purgeJobDataOnSuccess?: boolean
   /**
-   * Zod schema every job payload on this queue is parsed with. It is precompiled on registration,
-   * so pass the schema as you wrote it: an already precompiled one is rejected at compile time.
+   * Zod schema every job payload on this queue is parsed with. Registration precompiles it, so the
+   * schema the library actually parses with is a compiled clone of the one you pass here.
    */
-  jobPayloadSchema: NonPrecompiledSchema<z.ZodType<BaseJobPayload>>
+  jobPayloadSchema: z.ZodType<BaseJobPayload>
   jobOptions?:
     | JobOptionsWithDeduplicationIdBuilder<JobOptionsType>
     // biome-ignore lint/suspicious/noExplicitAny: We cannot infer type of payload, but we have run time validation

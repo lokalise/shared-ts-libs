@@ -1,76 +1,81 @@
-import { compile, type ZodType } from 'zod/v4'
+import { compile, config, type ZodType } from 'zod/v4'
 
 /**
- * Set on every schema returned by {@link precompileSchema}. Registered on the global symbol
- * registry so that two copies of this package within one dependency tree recognize each other's
- * work instead of compiling the same schema twice.
+ * Set on every compiled clone produced by {@link precompileSchema}. Registered on the global symbol
+ * registry so that a clone built by one copy of this package is recognized by another copy in the
+ * same dependency tree, instead of being handed to `compile` a second time.
  */
 const PRECOMPILED_SCHEMA_MARKER = Symbol.for('@lokalise/background-jobs-common/precompiledSchema')
 
 /**
- * Schemas that zod's fast path cannot model (async refinements, unsupported features). `compile`
- * hands those back untouched, and there is no place to put the marker without mutating a schema
- * the caller owns, so they are remembered here to keep repeated registrations cheap.
+ * Keyed on the schema handed to {@link precompileSchema}, holding whatever came back for it: the
+ * compiled clone, or the schema itself when zod refused to compile it. Two queues sharing one
+ * schema, or the same configuration array registered by several managers, then compile once.
  */
-const nonCompilableSchemas = new WeakSet<ZodType>()
-
-/**
- * Phantom property, never present at runtime. It exists so that a precompiled schema is
- * distinguishable from a plain one at the type level.
- */
-type PrecompiledSchemaBrand = {
-  readonly __precompiledSchema: true
-}
-
-/** A schema whose validation fast path has already been built by {@link precompileSchema}. */
-export type PrecompiledSchema<Schema> = Schema & PrecompiledSchemaBrand
-
-/**
- * Marks an API position that takes a schema this library has not seen yet. Every registered schema
- * is precompiled on registration, so handing over an already precompiled one is duplicated work;
- * this type turns that into a compile error.
- */
-export type NonPrecompiledSchema<Schema> = Schema & {
-  readonly __precompiledSchema?: 'this schema is already precompiled, pass the original one instead'
-}
+const precompiledSchemas = new WeakMap<ZodType, ZodType>()
 
 /**
  * Reports whether the schema is a compiled clone produced by {@link precompileSchema}. A schema
- * zod refused to compile is not one: it is handed back as the caller's own object, which is left
- * untouched.
+ * zod refused to compile is not one: it is handed back as the caller's own object, untouched.
  */
-export const isPrecompiledSchema = <Schema extends ZodType>(
-  schema: Schema,
-): schema is PrecompiledSchema<Schema> =>
+export const isPrecompiledSchema = (schema: ZodType): boolean =>
   (schema as unknown as Record<symbol, unknown>)[PRECOMPILED_SCHEMA_MARKER] === true
 
 /**
  * Builds an ahead-of-time compiled clone of the given schema, which parses noticeably faster than
- * the interpreted one. Users of this library never need to call it: every `jobPayloadSchema` on a
- * queue configuration is precompiled when the configuration is registered.
+ * the interpreted one. Every `jobPayloadSchema` on a queue configuration goes through this when the
+ * configuration is registered; nothing else needs to call it.
  *
- * The original schema is left untouched, and the call is idempotent: a schema that already went
- * through it is returned as is. A schema zod refuses to compile keeps using the regular runtime
- * parser, with no observable difference for the caller.
+ * The original schema is left untouched, and asking twice for the same schema returns the same
+ * clone. Two cases hand the input straight back, and the caller keeps using the runtime parser:
+ *
+ * - `z.config({ jitless: true })` is set. The flag exists so that CSP/no-eval environments never
+ *   reach `new Function`, and it doubles as the way to turn precompilation off.
+ * - zod refuses the schema. Async refinements and recursive (self-referential) schemas are the two
+ *   shapes to expect; `z.compile(schema, { strict: true })` reports the reason for a given schema.
+ *
+ * One behavior does change on a compiled clone. The generated fast path only signals that input is
+ * invalid, so zod re-runs the original parser to build the error, and a synchronous `refine`,
+ * `superRefine` or `transform` therefore runs twice for input that fails validation (once for input
+ * that passes). Parse results are identical either way, but a callback with a side effect outside
+ * the parse, incrementing a metric for instance, fires twice.
  */
-export const precompileSchema = <Schema extends ZodType>(
-  schema: Schema,
-): PrecompiledSchema<Schema> => {
+export const precompileSchema = <Schema extends ZodType>(schema: Schema): Schema => {
   if (isPrecompiledSchema(schema)) return schema
-  if (nonCompilableSchemas.has(schema)) return schema as PrecompiledSchema<Schema>
 
-  const precompiled = compile(schema)
-  if (precompiled === schema) {
-    nonCompilableSchemas.add(schema)
-    return schema as PrecompiledSchema<Schema>
+  const known = precompiledSchemas.get(schema)
+  if (known) return known as Schema
+
+  // Deliberately not cached: the flag can be flipped between calls, and honoring it is the point.
+  if (config().jitless) return schema
+
+  const precompiled = compileAndMark(schema)
+  precompiledSchemas.set(schema, precompiled)
+
+  return precompiled
+}
+
+/**
+ * Registering a queue configuration could not fail before payload schemas were compiled, and it
+ * still cannot. `compile` documents that it never throws, and anything that escapes it anyway, or
+ * escapes marking the clone, costs the fast path rather than the boot.
+ */
+const compileAndMark = <Schema extends ZodType>(schema: Schema): Schema => {
+  try {
+    const precompiled = compile(schema)
+    if (precompiled === schema) return schema
+
+    Object.defineProperty(precompiled, PRECOMPILED_SCHEMA_MARKER, {
+      value: true,
+      enumerable: false,
+      writable: false,
+      configurable: false,
+    })
+
+    return precompiled
+    /* v8 ignore start */
+  } catch {
+    return schema
   }
-
-  Object.defineProperty(precompiled, PRECOMPILED_SCHEMA_MARKER, {
-    value: true,
-    enumerable: false,
-    writable: false,
-    configurable: false,
-  })
-
-  return precompiled as PrecompiledSchema<Schema>
+  /* v8 ignore stop */
 }

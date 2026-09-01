@@ -16,8 +16,9 @@ import type { QueueConfiguration, SupportedQueueIds } from './types.ts'
  * need typed access to {@link QueueConfiguration} entries (for example, from a
  * FlowManager that publishes through a shared FlowProducer).
  *
- * Registering a configuration precompiles its `jobPayloadSchema`, so every payload
- * validation done through the registry takes zod's generated fast path.
+ * Registering a configuration precompiles its `jobPayloadSchema`, so payload validation done
+ * through the registry takes zod's generated fast path. A schema zod cannot compile keeps using
+ * the regular parser.
  */
 export class QueueConfigRegistry<
   Queues extends QueueConfiguration<QueueOptionsType, JobOptionsType>[],
@@ -32,7 +33,8 @@ export class QueueConfigRegistry<
     this.queueIds = new Set<string>()
     for (const queue of supportedQueues) {
       // Every payload scheduled to or processed from this queue is parsed with the schema, so it is
-      // worth compiling. The stored config is a shallow copy: the caller's object is left untouched.
+      // worth compiling. The stored config is a shallow copy, so replacing a top-level field on the
+      // caller's object afterwards does not reach the registry. Nested values are shared.
       this.queuesConfig[queue.queueId] = {
         ...queue,
         jobPayloadSchema: precompileSchema(queue.jobPayloadSchema),
@@ -43,7 +45,8 @@ export class QueueConfigRegistry<
 
   /**
    * The registered configuration, whose `jobPayloadSchema` is the precompiled counterpart of the
-   * one that was passed in. It is a shallow copy of the caller's config, not the same object.
+   * one that was passed in. It is a shallow copy of the caller's config, not the same object, and
+   * it shares nested values such as `bullDashboardGrouping` with it.
    */
   public getQueueConfig(queueId: SupportedQueueIds<Queues>): Queues[number] {
     if (!this.isSupportedQueue(queueId) || !this.queuesConfig[queueId]) {
