@@ -1,5 +1,5 @@
-import { extractTextBetweenTags } from '@lokalise/non-translatable-markup'
 import type { QualityIssueShape } from '../../utils.ts'
+import { doubleWhitespaceRuns } from '../utils/doubleWhitespaceRuns.ts'
 
 export type DoubleWhitespaceIssue = QualityIssueShape<{
   error: 'DOUBLE_WHITESPACE'
@@ -9,20 +9,12 @@ export type DoubleWhitespaceIssue = QualityIssueShape<{
   }
 }>
 
-// Horizontal whitespace only: line terminators are legitimate formatting, not double whitespace.
-const doubleWhitespaceRegexp = /[^\S\r\n]{2,}/g
-
 /**
  * Single-text check: reports every run of two or more consecutive horizontal whitespace
- * characters found in the given text. Content inside NTC regions is not checked: the text is
- * split by NTC region and every piece is evaluated on its own, so a run can never span a region
- * boundary.
+ * characters found in the given text. Content inside NTC regions is not checked.
  */
 export const doubleWhitespaceCheck = (text: string): DoubleWhitespaceIssue | null => {
-  const whitespaces = extractTextBetweenTags(text, {
-    keepHtml: true,
-    preserveSpacing: true,
-  }).flatMap((piece) => piece.match(doubleWhitespaceRegexp) ?? [])
+  const whitespaces = doubleWhitespaceRuns(text)
 
   if (whitespaces.length === 0) return null
 

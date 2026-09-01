@@ -1,5 +1,5 @@
-import { extractTextBetweenTags } from '@lokalise/non-translatable-markup'
 import type { QualityIssueShape } from '../../utils.ts'
+import { doubleWhitespaceRuns } from '../utils/doubleWhitespaceRuns.ts'
 import { multisetDiff } from '../utils/multisetDiff.ts'
 
 export type DoubleWhitespaceMismatchIssue = QualityIssueShape<{
@@ -11,14 +11,6 @@ export type DoubleWhitespaceMismatchIssue = QualityIssueShape<{
     added: string[]
   }
 }>
-
-// Horizontal whitespace only: line terminators are legitimate formatting, not double whitespace.
-const doubleWhitespaceRegexp = /[^\S\r\n]{2,}/g
-
-const doubleWhitespaceRuns = (text: string): string[] =>
-  extractTextBetweenTags(text, { keepHtml: true, preserveSpacing: true }).flatMap(
-    (piece) => piece.match(doubleWhitespaceRegexp) ?? [],
-  )
 
 /**
  * Mismatch check: reports the double-whitespace runs on which the text and the reference text
