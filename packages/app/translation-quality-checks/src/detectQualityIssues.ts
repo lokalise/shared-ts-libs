@@ -37,7 +37,7 @@ export function detectQualityIssues(
 ): SingleTextQualityIssue[]
 /**
  * Runs the single-text quality checks on the text, plus the mismatch checks comparing it against
- * `compareWith` — typically the text it was translated from, but any reference text works (e.g.
+ * `compareWith` (typically the text it was translated from, but any reference text works, e.g.
  * another version of the same translation).
  */
 export function detectQualityIssues(

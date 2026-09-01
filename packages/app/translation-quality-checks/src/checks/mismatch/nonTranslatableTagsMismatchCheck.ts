@@ -23,7 +23,7 @@ const nonTranslatableTokens = (text: string): string[] =>
   )
 
 /**
- * Mismatch check: reports the non-translatable tokens (placeholders, tags — the content wrapped
+ * Mismatch check: reports the non-translatable tokens (placeholders, tags: the content wrapped
  * in NTC markers) on which the text and the reference text disagree. Tokens are paired as a
  * multiset (position-independent, duplicates counted, exact content): unpaired reference tokens
  * are reported as `missing`, unpaired text tokens as `added`.
