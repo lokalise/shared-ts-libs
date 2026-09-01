@@ -57,8 +57,13 @@ export function detectQualityIssues(
   const issues: QualityIssue[] = []
 
   for (const check of checksToRun) {
-    const singleTextIssue = singleTextChecks[check]?.(text)
-    if (singleTextIssue) issues.push(singleTextIssue)
+    const singleTextCheck = singleTextChecks[check]
+    if (singleTextCheck) {
+      const issue = singleTextCheck(text)
+      if (issue) issues.push(issue)
+
+      continue
+    }
 
     if (compareWith === undefined) continue
 

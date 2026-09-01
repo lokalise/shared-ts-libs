@@ -5,8 +5,10 @@ const doubleWhitespaceRegexp = /[^\S\r\n]{2,}/g
 
 /**
  * Extracts every run of two or more consecutive horizontal whitespace characters found in the
- * text. Content inside NTC regions is not checked: the text is split by NTC region and every
- * piece is scanned on its own, so a run can never span a region boundary.
+ * text. An NTC region is treated as a content token, no matter what it wraps: its inside is
+ * never checked, and whitespace on either side of it does not add up to a run, exactly as the
+ * spaces around a placeholder in `a %{x} b` are not consecutive whitespace. Only whitespace the
+ * author can actually see and edit as adjacent counts.
  */
 export const doubleWhitespaceRuns = (text: string): string[] =>
   extractTextBetweenTags(text, { keepHtml: true, preserveSpacing: true }).flatMap(
