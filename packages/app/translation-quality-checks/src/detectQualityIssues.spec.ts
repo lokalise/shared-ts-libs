@@ -44,6 +44,28 @@ describe('detectQualityIssues', () => {
         { error: 'LEADING_WHITESPACE', details: undefined },
       ])
     })
+
+    it('duplicated entries in checksToInclude run the check only once', () => {
+      expect(
+        detectQualityIssues(' Hola', {
+          checksToInclude: ['LEADING_WHITESPACE', 'LEADING_WHITESPACE'],
+        }),
+      ).toEqual([{ error: 'LEADING_WHITESPACE', details: undefined }])
+    })
+
+    it('runs every check listed in checksToInclude, in no guaranteed order', () => {
+      const issues = detectQualityIssues(' Hola ', {
+        checksToInclude: ['TRAILING_WHITESPACE', 'LEADING_WHITESPACE'],
+      })
+
+      expect(issues).toHaveLength(2)
+      expect(issues).toEqual(
+        expect.arrayContaining([
+          { error: 'LEADING_WHITESPACE', details: undefined },
+          { error: 'TRAILING_WHITESPACE', details: undefined },
+        ]),
+      )
+    })
   })
 
   describe('text/compareWith pair call', () => {

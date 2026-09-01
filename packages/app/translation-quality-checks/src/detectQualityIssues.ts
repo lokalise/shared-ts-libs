@@ -69,10 +69,12 @@ export function detectQualityIssues(
 }
 
 const resolveChecksToRun = (options?: DetectQualityIssuesOptions): QualityIssueError[] => {
-  const checksToInclude: QualityIssueError[] = options?.checksToInclude?.length
-    ? options.checksToInclude
-    : Object.values(QualityIssueErrorEnum)
-  const checksToExclude = new Set<QualityIssueError>(options?.checksToExclude ?? [])
+  const checksToInclude = new Set(
+    options?.checksToInclude?.length
+      ? options.checksToInclude
+      : Object.values(QualityIssueErrorEnum),
+  )
+  const checksToExclude = new Set(options?.checksToExclude ?? [])
 
   if (options && 'skipSingleTextChecks' in options && options.skipSingleTextChecks) {
     for (const error of Object.keys(singleTextChecksByError)) {
@@ -80,7 +82,7 @@ const resolveChecksToRun = (options?: DetectQualityIssuesOptions): QualityIssueE
     }
   }
 
-  return checksToInclude.filter((check) => !checksToExclude.has(check))
+  return Array.from(checksToInclude).filter((check) => !checksToExclude.has(check))
 }
 
 // Widened views of the registries so they can be indexed by any error code
