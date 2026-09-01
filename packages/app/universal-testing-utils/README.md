@@ -16,6 +16,7 @@ Reusable testing utilities that are potentially relevant for both backend and fr
 - [ApiContractMockttpHelper](#apicontractmockttphelper)
   - [Setup](#setup)
   - [mockResponse](#mockresponse)
+  - [mockResponseWithImplementation](#mockresponsewithimplementation)
   - [Type safety](#type-safety)
 - [ApiContractMswHelper](#apicontractmswhelper)
 - [msw integration with API contracts](#msw-integration-with-api-contracts)
@@ -250,6 +251,100 @@ await helper.mockResponse(contract, { responseStatus: 201, responseJson: { id: '
 - **`ExactStatusCodePairs`** — one member per exact numeric key in `responsesByStatusCode`. `responseStatus` is that literal number and the body fields come from the entry at that key.
 - **`RangeStatusCodePairs`** — one member per wildcard key (`'1xx'`–`'5xx'`, `'default'`). `ExpandStatusRangeKey<K>` expands the key to its numeric union (e.g. `'2xx'` → `200|201|…|299`), then exact codes already covered by `ExactStatusCodePairs` are excluded via `Exclude` so the discriminated union stays unambiguous.
 
+### mockResponseWithImplementation
+
+`mockResponse` takes a fixed body. When the response has to depend on what the caller sent, use `mockResponseWithImplementation` and return the body from a handler.
+
+`responseStatus` still selects the contract entry, which is what types `handleRequest`'s return value and supplies the Zod schema the result is validated against. The handler's request argument is typed from the contract too, so `request.body.getJson()` (mockttp) and `request.json()` (msw) hand back the output of the contract's `requestBodySchema` rather than `unknown`. Only JSON entries are addressable this way: SSE and blob responses stay static, via `mockResponse`.
+
+```ts
+// mockttp: the handler receives the mockttp CompletedRequest
+await helper.mockResponseWithImplementation(postUserContract, {
+  responseStatus: 200,
+  handleRequest: async (request) => {
+    const body = await request.body.getJson() // typed by requestBodySchema
+    return { id: `id-${body.name}` }
+  },
+})
+
+// msw: the handler receives the msw request info
+helper.mockResponseWithImplementation(postUserContract, {
+  responseStatus: 200,
+  handleRequest: async ({ request }) => {
+    const body = await request.json() // typed by requestBodySchema
+    return { id: `id-${body.name}` }
+  },
+})
+
+// with path params
+await helper.mockResponseWithImplementation(getUserContract, {
+  pathParams: { userId: '7' },
+  responseStatus: 200,
+  handleRequest: (request) => ({ id: request.path.split('/').pop() ?? '' }),
+})
+```
+
+#### Picking the media type with `contentType`
+
+The response goes out under the media type the contract declares it for, so an `application/problem+json` entry is served as `application/problem+json` rather than `application/json`. When a status entry declares more than one JSON media type, pass `contentType` to say which one the handler is answering with; the selected descriptor then types the handler's result:
+
+```ts
+const contract = defineApiContract({
+  method: 'get',
+  pathResolver: () => '/items',
+  responsesByStatusCode: {
+    200: {
+      content: {
+        'application/json': z.object({ id: z.string() }),
+        'application/problem+json': z.object({ title: z.string(), detail: z.string() }),
+      },
+    },
+  },
+})
+
+await helper.mockResponseWithImplementation(contract, {
+  responseStatus: 200,
+  contentType: 'application/problem+json',
+  handleRequest: () => ({ title: 'Invalid', detail: 'Something went wrong' }),
+})
+```
+
+`contentType` is required whenever the choice would be ambiguous and optional otherwise. It only names JSON entries: pointing it at an SSE or blob descriptor throws, as does a status entry with no JSON body at all. A status that also declares `text/event-stream` still serves JSON here, but a request negotiating the SSE branch through `Accept` gets a 406 rather than a JSON body it cannot read. Mock that branch with `mockResponse`.
+
+#### Per-call status codes with `response()`
+
+By default every call replies with `responseStatus`. To vary it per call, wrap the returned body with the helper's static `response()`:
+
+```ts
+let callCount = 0
+await helper.mockResponseWithImplementation(getUserContract, {
+  responseStatus: 200,
+  handleRequest: () => {
+    callCount++
+    if (callCount === 1) {
+      return ApiContractMockttpHelper.response({ message: 'nope' }, { status: 404 })
+    }
+    return { id: 'second' } // a plain body still replies with responseStatus
+  },
+})
+```
+
+An overridden status selects its own contract entry, so the wrapped body is validated against the schema declared for the status actually being sent: `{ message: 'nope' }` above has to satisfy the contract's `'4xx'` entry, not its `200` one. Overriding to a status the contract does not declare is an error.
+
+`ApiContractMswHelper.response()` is the msw equivalent, and both share the wrapper with `MswHelper.response()`.
+
+Status code priority: `response({ status })` > `responseStatus`.
+
+#### When a handler fails
+
+mockttp and msw both turn a throwing route callback into a bare 500, which reaches the test as a client-side parse failure with the cause nowhere in sight. A handler that throws, or that returns a body the contract schema rejects, instead produces a 500 whose body carries the reason, logged through `console.error` alongside the contract it came from:
+
+```
+[ApiContractMockttpHelper.mockResponseWithImplementation] POST /users/:userId: ZodError: ...
+```
+
+Setup-time problems (an unmapped status, a status with no JSON body, an ambiguous or unmatched `contentType`) still throw from `mockResponseWithImplementation` itself, where the stack points at the test that set the mock up.
+
 ### Type safety
 
 `MockResponseParams<TContract>` is exported for cases where you need to type the params object separately:
@@ -282,6 +377,8 @@ helper.mockResponse(contract, {
   responseJson: { id: '1' },
 })
 ```
+
+[`mockResponseWithImplementation`](#mockresponsewithimplementation) and the static `response()` are available here too, with `handleRequest` receiving msw's request info instead of a mockttp `CompletedRequest`.
 
 ## msw integration with API contracts
 

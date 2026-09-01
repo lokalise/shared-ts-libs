@@ -1,6 +1,6 @@
 import { sendByApiContract } from '@lokalise/frontend-http-client'
 import { getLocal } from 'mockttp'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest'
 import wretch from 'wretch'
 import {
   blobContentApiContract,
@@ -18,6 +18,7 @@ import {
   getApiContractWithPathAndQueryParams,
   getApiContractWithPathParams,
   getApiContractWithQueryParams,
+  getApiContractWithSuccessAndErrorStatuses,
   jsonAndBlobContentApiContract,
   jsonContentApiContract,
   multiJsonContentApiContract,
@@ -26,6 +27,7 @@ import {
   patchApiContract,
   postApiContract,
   postApiContractWithPathParams,
+  problemJsonContentApiContract,
   putApiContract,
   sseContentApiContract,
   sseGetApiContract,
@@ -494,6 +496,320 @@ describe('ApiContractMockttpHelper', () => {
       })
       const response = await fetch(`${mockServer.url}/server-error`)
       expect(response.status).toBe(503)
+    })
+  })
+
+  describe('mockResponseWithImplementation', () => {
+    // The helper reports handler and validation failures through console.error, since the
+    // frameworks would otherwise bury them in an opaque 500.
+    let failureLog: MockInstance<typeof console.error>
+
+    beforeEach(() => {
+      failureLog = vi.spyOn(console, 'error').mockImplementation(() => {})
+    })
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    function loggedFailure(): string {
+      return failureLog.mock.calls.map(([message]) => String(message)).join('\n')
+    }
+
+    it('derives the response body from the request body', async () => {
+      await helper.mockResponseWithImplementation(postApiContract, {
+        responseStatus: 200,
+        handleRequest: async (request) => {
+          const body = await request.body.getJson()
+          return { id: `id-${body.name}` }
+        },
+      })
+
+      const result = await sendByApiContract(client(), postApiContract, {
+        body: { name: 'ragnarok' },
+      })
+
+      expect(result.result?.body).toEqual({ id: 'id-ragnarok' })
+    })
+
+    it('derives the response body from the request path', async () => {
+      await helper.mockResponseWithImplementation(getApiContractWithPathParams, {
+        pathParams: { userId: '7' },
+        responseStatus: 200,
+        handleRequest: (request) => ({ id: request.path.split('/').pop() ?? '' }),
+      })
+
+      const result = await sendByApiContract(client(), getApiContractWithPathParams, {
+        pathParams: { userId: '7' },
+      })
+
+      expect(result.result?.body).toEqual({ id: '7' })
+    })
+
+    it('strips unknown properties from the handler result', async () => {
+      await helper.mockResponseWithImplementation(getApiContract, {
+        responseStatus: 200,
+        handleRequest: () => ({ id: '1', extra: 'x' }),
+      })
+
+      const result = await sendByApiContract(client(), getApiContract, {})
+
+      expect(result.result?.body).toEqual({ id: '1' })
+    })
+
+    it('replies with the declared JSON media type, not application/json', async () => {
+      await helper.mockResponseWithImplementation(problemJsonContentApiContract, {
+        responseStatus: 200,
+        handleRequest: () => ({ title: 'Invalid', detail: 'Something went wrong' }),
+      })
+
+      const response = await fetch(`${mockServer.url}/content-problem-json`)
+      expect(response.headers.get('content-type')).toBe('application/problem+json')
+
+      const result = await sendByApiContract(client(), problemJsonContentApiContract, {})
+      expect(result.result?.body).toEqual({ title: 'Invalid', detail: 'Something went wrong' })
+    })
+
+    it('serves the JSON media type selected via contentType', async () => {
+      await helper.mockResponseWithImplementation(multiJsonContentApiContract, {
+        responseStatus: 200,
+        contentType: 'application/problem+json',
+        handleRequest: () => ({ title: 'Invalid', detail: 'Something went wrong' }),
+      })
+
+      const response = await fetch(`${mockServer.url}/content-multi-json`)
+
+      expect(response.headers.get('content-type')).toBe('application/problem+json')
+      await expect(response.json()).resolves.toEqual({
+        title: 'Invalid',
+        detail: 'Something went wrong',
+      })
+    })
+
+    it('requires contentType when the status declares several JSON media types', async () => {
+      await expect(
+        helper.mockResponseWithImplementation(
+          multiJsonContentApiContract,
+          // @ts-expect-error contentType is required when the choice of media type is ambiguous
+          { responseStatus: 200, handleRequest: () => ({ id: '1' }) },
+        ),
+      ).rejects.toThrow(
+        'Status 200 declares more than one JSON content type (application/json, application/problem+json); pass contentType to select one',
+      )
+    })
+
+    it('serves the JSON entry of a content map that also declares a blob', async () => {
+      await helper.mockResponseWithImplementation(jsonAndBlobContentApiContract, {
+        responseStatus: 200,
+        handleRequest: () => ({ id: 'from-json-side' }),
+      })
+
+      const response = await fetch(`${mockServer.url}/content-json-blob`)
+
+      expect(response.headers.get('content-type')).toBe('application/json')
+      await expect(response.json()).resolves.toEqual({ id: 'from-json-side' })
+    })
+
+    it('resolves the body schema through a range status key', async () => {
+      await helper.mockResponseWithImplementation(getApiContractWith4xxRange, {
+        responseStatus: 404,
+        handleRequest: () => ({ id: 'missing' }),
+      })
+
+      const response = await fetch(`${mockServer.url}/not-found`)
+
+      expect(response.status).toBe(404)
+      await expect(response.json()).resolves.toEqual({ id: 'missing' })
+    })
+
+    it('resolves the body schema from a JSON content map', async () => {
+      await helper.mockResponseWithImplementation(jsonContentApiContract, {
+        responseStatus: 200,
+        handleRequest: () => ({ id: 'from-content-map' }),
+      })
+
+      const result = await sendByApiContract(client(), jsonContentApiContract, {})
+
+      expect(result.result?.body).toEqual({ id: 'from-content-map' })
+    })
+
+    describe('per-call status codes', () => {
+      it('validates the body against the entry for the overridden status', async () => {
+        let callCount = 0
+        await helper.mockResponseWithImplementation(getApiContractWithSuccessAndErrorStatuses, {
+          responseStatus: 200,
+          handleRequest: () => {
+            callCount++
+            if (callCount === 1) {
+              return ApiContractMockttpHelper.response({ message: 'nope' }, { status: 404 })
+            }
+            return { id: 'second' }
+          },
+        })
+
+        const first = await fetch(`${mockServer.url}/success-or-error`)
+        expect(first.status).toBe(404)
+        await expect(first.json()).resolves.toEqual({ message: 'nope' })
+
+        const second = await fetch(`${mockServer.url}/success-or-error`)
+        expect(second.status).toBe(200)
+        await expect(second.json()).resolves.toEqual({ id: 'second' })
+        expect(failureLog).not.toHaveBeenCalled()
+      })
+
+      it('reports an overridden status the contract does not declare', async () => {
+        await helper.mockResponseWithImplementation(getApiContract, {
+          responseStatus: 200,
+          handleRequest: () => ApiContractMockttpHelper.response({ id: '1' }, { status: 503 }),
+        })
+
+        const response = await fetch(mockServer.url)
+
+        expect(response.status).toBe(500)
+        expect(loggedFailure()).toContain(
+          'Status 503 passed to response() cannot be mapped with contract',
+        )
+      })
+    })
+
+    describe('failure reporting', () => {
+      it('reports a handler result the contract schema rejects', async () => {
+        await helper.mockResponseWithImplementation(getApiContract, {
+          responseStatus: 200,
+          // @ts-expect-error handler must return the contract response body
+          handleRequest: () => ({ wrong: 'x' }),
+        })
+
+        const response = await fetch(mockServer.url)
+
+        expect(response.status).toBe(500)
+        expect(loggedFailure()).toContain(
+          '[ApiContractMockttpHelper.mockResponseWithImplementation]',
+        )
+        expect(loggedFailure()).toContain('GET /')
+        expect(loggedFailure()).toContain('ZodError')
+      })
+
+      it('reports an exception thrown by the handler', async () => {
+        await helper.mockResponseWithImplementation(getApiContract, {
+          responseStatus: 200,
+          handleRequest: () => {
+            throw new Error('boom from handler')
+          },
+        })
+
+        const response = await fetch(mockServer.url)
+
+        expect(response.status).toBe(500)
+        expect(loggedFailure()).toContain('boom from handler')
+        await expect(response.json()).resolves.toEqual({
+          message: expect.stringContaining('boom from handler'),
+        })
+      })
+
+      it('refuses a request that negotiated the status entry SSE branch', async () => {
+        await helper.mockResponseWithImplementation(dualContentApiContract, {
+          responseStatus: 200,
+          handleRequest: () => ({ id: 'json-side' }),
+        })
+
+        const negotiated = await fetch(`${mockServer.url}/content-dual`, {
+          method: 'POST',
+          headers: { accept: 'text/event-stream' },
+          body: JSON.stringify({ name: 'x' }),
+        })
+
+        expect(negotiated.status).toBe(406)
+        expect(loggedFailure()).toContain('use mockResponse for the SSE branch')
+      })
+
+      it('serves the JSON branch of a dual content map to a plain request', async () => {
+        await helper.mockResponseWithImplementation(dualContentApiContract, {
+          responseStatus: 200,
+          handleRequest: () => ({ id: 'json-side' }),
+        })
+
+        const result = await sendByApiContract(client(), dualContentApiContract, {
+          streaming: false,
+          body: { name: 'x' },
+        })
+
+        expect(result.result?.body).toEqual({ id: 'json-side' })
+        expect(failureLog).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('statuses it refuses to mock', () => {
+      // Guards untyped callers, for whom the type-level rejections do not apply.
+      const untypedHelper = helper as unknown as {
+        mockResponseWithImplementation: (contract: unknown, params: unknown) => Promise<void>
+      }
+
+      it('rejects a status the contract does not declare', async () => {
+        await expect(
+          helper.mockResponseWithImplementation(getApiContract, {
+            // @ts-expect-error 418 is not declared on the contract
+            responseStatus: 418,
+            handleRequest: () => ({ id: '1' }),
+          }),
+        ).rejects.toThrow('Specified responseStatus cannot be mapped with contract')
+      })
+
+      it('rejects an SSE-only status at the type level', async () => {
+        await expect(
+          helper.mockResponseWithImplementation(
+            sseGetApiContract,
+            // @ts-expect-error an SSE-only status leaves no JSON body for handleRequest to return
+            { responseStatus: 200, handleRequest: () => ({ id: '1' }) },
+          ),
+        ).rejects.toThrow(
+          'Status 200 has no JSON response body; use mockResponse for SSE and blob responses',
+        )
+      })
+
+      it('rejects a status whose body has no JSON representation at runtime', async () => {
+        await expect(
+          untypedHelper.mockResponseWithImplementation(blobContentApiContract, {
+            responseStatus: 200,
+            handleRequest: () => ({ id: '1' }),
+          }),
+        ).rejects.toThrow(
+          'Status 200 has no JSON response body; use mockResponse for SSE and blob responses',
+        )
+      })
+
+      it('rejects a no-body status without blaming SSE or blob', async () => {
+        await expect(
+          untypedHelper.mockResponseWithImplementation(noBodyContentApiContract, {
+            pathParams: { userId: '7' },
+            responseStatus: 204,
+            handleRequest: () => ({ id: '1' }),
+          }),
+        ).rejects.toThrow(
+          'Status 204 declares no response body; mockResponseWithImplementation needs a JSON body to return',
+        )
+      })
+
+      it('rejects a contentType the status does not declare', async () => {
+        await expect(
+          untypedHelper.mockResponseWithImplementation(jsonContentApiContract, {
+            responseStatus: 200,
+            contentType: 'text/plain',
+            handleRequest: () => ({ id: '1' }),
+          }),
+        ).rejects.toThrow('Specified contentType cannot be mapped with contract')
+      })
+
+      it('rejects a contentType that names a non-JSON descriptor', async () => {
+        await expect(
+          untypedHelper.mockResponseWithImplementation(jsonAndBlobContentApiContract, {
+            responseStatus: 200,
+            contentType: 'application/octet-stream',
+            handleRequest: () => ({ id: '1' }),
+          }),
+        ).rejects.toThrow(
+          'Specified contentType application/octet-stream is not a JSON body; use mockResponse for SSE and blob responses',
+        )
+      })
     })
   })
 })

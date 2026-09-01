@@ -165,6 +165,19 @@ export const getApiContractWithExactAndRange = defineApiContract({
   },
 })
 
+const ERROR_BODY_SCHEMA = z.object({ message: z.string() })
+
+export const getApiContractWithSuccessAndErrorStatuses = defineApiContract({
+  visibility: 'public',
+  summary: 'Test contract',
+  method: 'get',
+  pathResolver: () => '/success-or-error',
+  responsesByStatusCode: {
+    200: RESPONSE_BODY_SCHEMA,
+    '4xx': ERROR_BODY_SCHEMA,
+  },
+})
+
 export const deleteApiContractWithNoBodyResponse = defineApiContract({
   visibility: 'public',
   summary: 'Test contract',
@@ -253,6 +266,16 @@ export const multiJsonContentApiContract = defineApiContract({
         'application/problem+json': PROBLEM_BODY_SCHEMA,
       },
     },
+  },
+})
+
+export const problemJsonContentApiContract = defineApiContract({
+  visibility: 'public',
+  summary: 'Test contract',
+  method: 'get',
+  pathResolver: () => '/content-problem-json',
+  responsesByStatusCode: {
+    200: { content: { 'application/problem+json': PROBLEM_BODY_SCHEMA } },
   },
 })
 
