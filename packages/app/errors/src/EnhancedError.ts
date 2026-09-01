@@ -1,0 +1,221 @@
+// Namespaces the global Symbol.for registry keys to minimize collisions with unrelated code.
+const SYMBOL_NAMESPACE = '@lokalise/errors'
+
+const PROTOTYPE_PATH_DELIMITER = '.'
+
+const getSymbolKey = (key: string): string => `${SYMBOL_NAMESPACE}${PROTOTYPE_PATH_DELIMITER}${key}`
+
+// Returns the class names below `Error` in the given constructor's inheritance
+// chain, ordered from `Error`'s direct subclass down to the constructor itself.
+// biome-ignore lint/complexity/noBannedTypes: walks a constructor chain
+const getConstructorNamesPostError = (ctor: Function): string[] => {
+  const names: string[] = []
+
+  // biome-ignore lint/complexity/noBannedTypes: walks a constructor chain
+  let current: Function | null = ctor
+
+  // The walk terminates at Function.prototype, whose name is ''.
+  while (current?.name) {
+    names.push(current.name)
+    current = Object.getPrototypeOf(current)
+  }
+
+  const reversedNames = names.reverse()
+
+  const errorIndex = reversedNames.indexOf(Error.name)
+
+  return reversedNames.slice(errorIndex + 1)
+}
+
+const generatePrototypePaths = (arr: string[]): string[] => {
+  return arr.reduce<string[]>((acc, element) => {
+    const prev = acc.at(-1)
+
+    if (!prev) {
+      acc.push(element)
+    } else {
+      acc.push(`${prev}${PROTOTYPE_PATH_DELIMITER}${element}`)
+    }
+
+    return acc
+  }, [])
+}
+
+// Identity symbols are a pure function of the constructor, so they are
+// computed once per class and reused across instantiations and isInstance
+// checks. Keys are held weakly, letting dynamically created `from()` classes
+// be garbage-collected together with their cache entries.
+// biome-ignore lint/complexity/noBannedTypes: keyed by constructor
+const identitySymbolsByConstructor = new WeakMap<Function, readonly symbol[]>()
+
+// Returns the Symbol.for symbols for every path in the constructor's
+// inheritance chain, ordered base-first and ending with the constructor's own
+// full path. Returns null when the chain contains an unnamed class — a
+// truncated walk would derive wrong or no symbols. The chain is captured at
+// first use: a later `name` reassignment on a cached class is ignored, so
+// factory-created classes must be named before their first instantiation or
+// isInstance check.
+// biome-ignore lint/complexity/noBannedTypes: walks a constructor chain
+const getIdentitySymbols = (ctor: Function): readonly symbol[] | null => {
+  const cached = identitySymbolsByConstructor.get(ctor)
+
+  if (cached) {
+    return cached
+  }
+
+  const prototypeNames = getConstructorNamesPostError(ctor)
+
+  if (prototypeNames[0] !== EnhancedError.name) {
+    return null
+  }
+
+  const symbols = generatePrototypePaths(prototypeNames).map((path) =>
+    Symbol.for(getSymbolKey(path)),
+  )
+
+  identitySymbolsByConstructor.set(ctor, symbols)
+
+  return symbols
+}
+
+/**
+ * Options accepted by every error constructor.
+ *
+ * `details` is required when `TDetails` is a concrete type, and optional
+ * (or absent) when `TDetails` is `undefined`.
+ */
+export type EnhancedErrorOptions<TDetails> = {
+  message: string
+  cause?: unknown
+} & (undefined extends TDetails ? { details?: TDetails } : { details: TDetails })
+
+/**
+ * Shared abstract base for all application errors.
+ *
+ * Not exported from the package and not meant to be extended directly — use
+ * {@link InternalError} for non-public operational errors or {@link PublicError}
+ * for errors surfaced to clients.
+ *
+ * Enables reliable `isInstance` checks across realms and across duplicated
+ * copies of this package in `node_modules`.
+ * Also ensures subclasses like `NotFoundError` have a consistent error name
+ * (i.e., `error.name` is set to the subclass name instead of `EnhancedError`).
+ *
+ * It works by creating unique symbols for each inheritance path, such as:
+ * - '@lokalise/errors.EnhancedError'
+ * - '@lokalise/errors.EnhancedError.Subclass1'
+ * - '@lokalise/errors.EnhancedError.Subclass1.Subclass2',
+ * assigning them to the instance using `Symbol.for` on instantiation.
+ * The `isInstance` guard (via the `Symbol.hasInstance` override backing it)
+ * checks if the corresponding symbol for the constructor's prototype path
+ * exists on the tested object.
+ *
+ * This technique allows `isInstance` to succeed across realms where normal
+ * prototype chain checks fail, because symbols created via `Symbol.for` are
+ * shared globally and can be reliably compared.
+ *
+ * **Class names are the identity.** The symbols are derived from class names
+ * and inheritance structure, which has three consequences:
+ * - Renaming an error class (or moving it in the hierarchy) changes its
+ *   identity — a breaking change for isInstance across realms and package
+ *   copies.
+ * - Any class with the same name and inheritance path is treated as the same
+ *   class. That is deliberate — it is what makes duplicated package copies
+ *   interoperable — so keep concrete error class names unique.
+ * - Names must survive to runtime: minifiers that mangle class names (terser
+ *   without `keep_classnames`, esbuild minify without `keep-names`) break
+ *   isInstance across realms and package copies.
+ *
+ * Since the symbols are derived from class names, every class in the chain
+ * must have one. The constructor throws when it encounters an unnamed class
+ * (e.g. a class expression returned from a factory). Name such classes
+ * explicitly with `Object.defineProperty(TheClass, 'name', { value: '...' })`.
+ * Avoid '.' in such custom names — it is the path delimiter, so a name like
+ * 'Foo.Bar' produces the same identity as a `Foo` → `Bar` chain.
+ */
+export abstract class EnhancedError<TDetails = undefined> extends Error {
+  /**
+   * Stable, unique string identifier for this error class.
+   * Must be declared `readonly` in every subclass to enable TS narrowing.
+   */
+  abstract readonly code: string
+
+  readonly details: TDetails
+
+  /**
+   * Compatibility alias for {@link code}, matching the error shape of
+   * `@lokalise/node-core`.
+   *
+   * @deprecated Use {@link code} instead. This alias only exists to ease the
+   * migration from `@lokalise/node-core` errors and will be removed in a
+   * future major version.
+   */
+  get errorCode(): string {
+    return this.code
+  }
+
+  constructor(options: EnhancedErrorOptions<TDetails>) {
+    super(options.message, options.cause !== undefined ? { cause: options.cause } : undefined)
+
+    // Set the error's name to the name of the class that was instantiated
+    this.name = new.target.name
+    // Cast needed because the conditional type is not narrowed by the compiler here.
+    this.details = options.details as TDetails
+
+    const symbols = getIdentitySymbols(new.target)
+
+    if (!symbols) {
+      throw new Error(
+        `Cannot derive identity symbols for '${new.target.name || '(anonymous class)'}': every class in the prototype chain must have a name. Name factory-created classes explicitly, e.g. Object.defineProperty(TheClass, 'name', { value: 'TheClass' }).`,
+      )
+    }
+
+    for (const symbol of symbols) {
+      Object.defineProperty(this, symbol, { value: true })
+    }
+  }
+
+  /**
+   * Type guard for this error class — the preferred way to check errors.
+   *
+   * Inherited by every subclass and narrows to the subclass it is accessed on.
+   * Safe to pass around detached, e.g. `errors.filter(DatabaseQueryError.isInstance)`
+   * (note that TS cannot carry the narrowing through such a detached reference;
+   * write `errors.filter((e) => DatabaseQueryError.isInstance(e))` when the
+   * narrowed array type matters).
+   */
+  declare static readonly isInstance: <T>(
+    this: { prototype: T; [Symbol.hasInstance](value: unknown): boolean },
+    value: unknown,
+  ) => value is T
+
+  static {
+    // A plain method would read the class from `this` at call time and throw
+    // when detached from it (e.g. passed to Array#filter as a callback). This
+    // accessor instead closes over the class the property is accessed on, so
+    // the returned guard keeps working detached while subclasses still get a
+    // guard for themselves rather than for the class that declared it.
+    Object.defineProperty(EnhancedError, 'isInstance', {
+      get(this: typeof EnhancedError) {
+        return (value: unknown): boolean => value instanceof this
+      },
+    })
+  }
+
+  /**
+   * Backs {@link isInstance}. Do not rely on the `instanceof` operator itself:
+   * direct `instanceof` support is deprecated and this override may be removed
+   * in a future release, silently reverting `instanceof` to prototype-chain
+   * checks that fail across realms and package copies.
+   */
+  static override [Symbol.hasInstance](val: unknown): boolean {
+    if (val === null || typeof val !== 'object') {
+      return false
+    }
+
+    // biome-ignore lint/complexity/noThisInStatic: intentional to support subclasses
+    const ownPathSymbol = getIdentitySymbols(this)?.at(-1)
+
+    return ownPathSymbol !== undefined && Object.hasOwn(val, ownPathSymbol)
+  }
+}
