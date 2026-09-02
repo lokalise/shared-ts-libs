@@ -112,10 +112,64 @@ Why this is the right first cut:
 - Both services carry timezone and DST risk here. One implementation with both services' fixtures is stronger than two.
 - CTENG can adopt it by making `computeNextRunAt` a thin wrapper, with zero change to storage or runner. That is a safe first consumer.
 
-Open design point: `rrule-rust` versus a pure-JS engine. Maestro has run `rrule-rust` in production, so it is proven. But it is a native binary, and CTENG today has no such dependency. Options, in order of preference:
+Two design decisions sit inside this layer and deserve a full treatment: which library computes occurrences, and what the canonical definition model is. They are related but separable, and the section "Engine and model: trade-offs" below works through both.
 
-1. Keep the engine's public API independent of the RRULE library, implement it on `rrule-rust` first, and make the RRULE dependency swappable later if the native build becomes a problem.
-2. Port the CTENG Intl-based arithmetic to cover the full model. More work, no native dependency, but re-implements what RRULE libraries already do well (month-end, intervals, week start).
+#### Engine and model: trade-offs
+
+**Decision 1: what computes the next occurrence**
+
+Candidates, with the facts that matter:
+
+| Candidate | What it is | Timezone and DST handling | Dependency footprint | Production evidence here |
+| --- | --- | --- | --- | --- |
+| `rrule-rust` 3.1.1 | N-API binding to the Rust `rrule` crate. Full RFC 5545 recurrence: `RRuleSet`, `EXRULE`, `RDATE`, `EXDATE`, `WKST`, `BYSETPOS`, month-end (`BYMONTHDAY=-1`). | Native `DTSTART;TZID=` support, computed in Rust with the crate's own tz database. Maestro still wraps it with a UTC shift and a one-hour DST bump in `getNextOccurrence`, which suggests the wrapping code, not the library, is where the doubt lives. | Prebuilt binaries as optional platform packages (14 targets, including `linux-x64-musl`, `linux-arm64-gnu`, `wasm32-wasi` as a fallback). No compile step on install. Maestro's Dockerfile has no special handling and runs it in production. Adds ~14 lockfile entries and a binary per image. | Maestro, all scheduled workflows, since the RRULE migration. |
+| `rrule` 2.8.1 (pure JS) | The long-standing JS port of python-dateutil's rrule. `tslib` only. | Weak by design: computes in "floating" time and expects the caller to convert. `TZID` support has been partial and bug-prone across versions; DST transition results depend on the host timezone unless carefully wrapped. This is the reason maestro chose `rrule-rust` in the first place. | Zero native code. | None. |
+| `rrule-temporal` 2.2.2 (pure JS) | RRULE on top of the `Temporal` API (`temporal-spec`). Correct zoned arithmetic falls out of `Temporal.ZonedDateTime`. | Strong: DST and calendar math are Temporal's job. | Requires `Temporal` at runtime. Node 24 does not ship it unflagged, so a polyfill (`@js-temporal/polyfill`, several hundred KB, slow first load) is needed until the runtime catches up. Young project, small user base. | None. |
+| Own Intl-based arithmetic (CTENG's `computeNextRunAt`, extended) | Hand-written candidate enumeration using `Intl.DateTimeFormat` to resolve local wall time to UTC, including the spring-forward gap rule. | Correct for what it covers, and CTENG runs it in production. Correctness for new features (monthly `last`, `INTERVAL` across weeks, `WKST`) has to be built and tested by us. | Zero dependencies. | CTENG, all schedules. |
+
+Trade-offs, beyond the table:
+
+- **Correctness risk concentrates in DST edges and calendar arithmetic**, and both are solved problems in mature RRULE implementations. Writing them again is the highest-risk option even though it looks like the cleanest. CTENG's implementation is roughly 300 lines for three frequencies with no intervals; maestro's model adds minutely windows, hourly windows, `repeatEvery`, and month-day positions. Covering that in hand-written code and proving it over DST transitions in every customer timezone is a real project, not a port.
+- **The native binary cost is real but already paid once.** Every consumer's CI and Docker image gains a platform binary and the lockfile gains the platform matrix. The failure modes are known (a missing target, a musl/glibc mismatch, a pnpm `supportedArchitectures` misconfiguration) and they fail loudly at install time, not at 3 a.m. CTENG on `linux-x64` is a covered target. The `wasm32-wasi` fallback also covers unexpected targets at a performance cost.
+- **The BullMQ compatibility period forces an RRULE string somewhere.** BullMQ's `repeatStrategy` receives `opts.pattern`, a string, and the adapter must parse it on every fire. Whatever the engine, it needs a string parser for that period. `rrule-rust` has one; a hand-written engine would need us to write an RFC 5545 parser too, or to smuggle JSON into `pattern`. This pushes towards an RRULE-capable library for as long as BullMQ is in scope.
+- **pg-boss Proposal 1 makes the engine a registered parser.** The parser runs on every instance with `schedule: true`, so its dependency footprint lands on every service that runs the timekeeper. That argues for keeping the footprint modest, but it does not disqualify a prebuilt native module.
+- **Lock-in is controllable.** If the library's public API is `ScheduleDefinition` in, `Date` out, with RRULE text only as a serialisation format, the engine can be swapped without touching consumers. The tests are the asset: build the fixture corpus (both services' existing tests, plus a generated sweep of a year of occurrences per timezone) so that a future swap to `rrule-temporal` when Temporal ships unflagged is a green-suite exercise.
+
+Recommendation for decision 1: **`rrule-rust` behind a library-agnostic API**, with the fixture corpus as the swap guarantee. Revisit when Node ships Temporal unflagged and `rrule-temporal` has a year of production use somewhere. Do not write our own calendar arithmetic.
+
+**Decision 2: what the canonical definition model is**
+
+The two services describe schedules differently, and the choice is whether the library's `ScheduleDefinition` is RRULE-shaped or product-shaped.
+
+Option A: **RRULE is the model.** `ScheduleDefinition` is an `RRuleSet` (one or more `RRULE`s plus `DTSTART` with `TZID`), serialised as RFC 5545 text. Product models compile down to it. CTENG's "daily at 09:00 and 18:30" becomes two `RRULE`s in one set (`FREQ=DAILY;BYHOUR=9;BYMINUTE=0` and `FREQ=DAILY;BYHOUR=18;BYMINUTE=30`), because a single `RRULE` with `BYHOUR=9,18;BYMINUTE=0,30` is a cross product of four times.
+
+Option B: **A product-neutral native model.** A zod schema with `frequency`, `interval`, `weekdays`, `times: {hour, minute}[]`, `hourWindow`, `monthDayPosition`, `timezone`, `startAt`. The engine consumes it directly. RRULE text is produced only where a backend needs a string (BullMQ's `pattern`), and only for the BullMQ compatibility period.
+
+| Concern | A: RRULE is the model | B: native model, RRULE as an export |
+| --- | --- | --- |
+| Expressiveness | Anything RFC 5545 allows. Also anything RFC 5545 allows that neither product wants (`BYSETPOS`, `BYYEARDAY`, `EXDATE`), which then has to be validated away or shown to users somehow. | Exactly what the products need. Adding a feature means a schema change plus engine support, which is a visible, reviewable step. |
+| Round trip to the UI | Lossy. Maestro's form has `timeFrom`/`timeTo` windows and `monthDayPosition: 'current'`; CTENG has `times[]`. Recovering those from RRULE text is possible for the shapes we emit but is reverse engineering, and any RRULE not produced by our compiler has no form representation. This is why both products already keep their own structured record. | Lossless by construction. The definition is what the form edits. `get()` returns something a UI can bind to. |
+| Time pairs | Needs an `RRuleSet` with one `RRULE` per time. Works in `rrule-rust`. Makes the string longer and the "next occurrence" a union over N rules. | `times[]` is a field. The engine can still evaluate it as N rules internally. |
+| Whole-hour minutely windows | Maestro's comment on `MINUTELY_END_OF_DAY_TIME` explains that under `FREQ=MINUTELY`, `BYMINUTE` filters rather than expands, so half-hour window boundaries can produce a rule that never fires. The RRULE model leaks that semantic into the product. | The model says `hourWindow: { from: 9, to: 17 }`; the compiler decides how to express it and the trap stays inside the library. |
+| Validation | RFC 5545 parse plus a policy layer to reject what products do not support. | Zod schema plus per-product refinements (maestro's 15-minute floor lives in maestro, not here). |
+| Equality and change detection | String compare, which is what maestro does today and is brittle to formatting (`BYDAY=MO,TU` versus `BYDAY=TU,MO`). | Structural compare on normalised fields. |
+| BullMQ compatibility | Natural fit: `pattern` is the model. | Needs the compiler to RRULE text and a parser back on fire, or the adapter stores the definition in job data and ignores `pattern` for the strategy. Either is confined to the BullMQ adapter. |
+| pg-boss chain and Proposal 1 | Chain payload carries the string; Proposal 1's `expression` is the string. | Chain payload carries JSON; Proposal 1's `expression` would be the JSON string, or the compiled RRULE text with the parser owning both directions. Either works because the parser is ours. |
+| Migration of stored data | Maestro's `triggerSchedulerExpression` already is RRULE or cron text. No transform. | Maestro's layout already stores the structured form fields; the library model is a superset, so it is a mapping, not a migration. CTENG's row maps field for field. |
+| Interop | RRULE is a standard; calendars, other teams and tooling can read it. | Proprietary, but trivially exportable to RRULE when needed. |
+
+Trade-offs, beyond the table:
+
+- **The round-trip row decides it.** The requirement that users see and edit their recurrence means the structured form is what has to survive storage and come back out of `get()`. Under Option A the library would carry a second, structured representation anyway, at which point RRULE is a serialisation, not a model.
+- **Option A is cheaper for maestro this quarter and more expensive for everyone after.** Maestro's stored strings stay as they are, and the BullMQ adapter is a passthrough. But every product decision becomes an RRULE semantics discussion, and CTENG's `times[]` and future monthly features have to be expressed as sets of rules that the UI then has to disassemble.
+- **Option B's cost is the compiler**, and maestro has already written it: `rruleUtils.ts#convertToRRule` is precisely "native fields to `RRuleSet`". Extending it with `times[]` (one `RRULE` per time) is small. Under Option B that compiler is internal to the BullMQ adapter and to any RRULE export, not a concept consumers deal with.
+- **Option B does not preclude accepting RRULE.** An `importRRule(text)` helper for the legacy cron and RRULE strings maestro has in the database keeps migration mechanical, with the explicit caveat that arbitrary RRULE text outside the compiler's output is rejected.
+
+Recommendation for decision 2: **Option B, a product-neutral native model**, with RRULE text as an export used by the BullMQ adapter and available for interop, and an import helper limited to the shapes we ourselves emit. This is the choice that makes "show and change the recurrence" a direct read and write rather than a decompilation.
+
+**How the two decisions combine**
+
+Native model in, `rrule-rust` computing, RRULE text only at the BullMQ boundary. The engine is `ScheduleDefinition` to `RRuleSet` (the existing maestro compiler, extended) to `rrule-rust` for iteration, wrapped in a timezone-safe `nextOccurrence`. When BullMQ is retired, the string disappears from the runtime path entirely and lives on only as an export format. When Temporal is generally available, the iteration step can move to a pure-JS engine behind the same tests.
 
 ### Layer 2: trigger delivery (share, behind an adapter)
 
@@ -412,8 +466,8 @@ Dependencies of core: `zod`, the RRULE engine (initially `rrule-rust`), `cron-pa
 
 ## Risks and things to settle early
 
-- **Model unification.** Explicit `times` pairs versus RRULE `BYHOUR`/`BYMINUTE` cross products. Decide whether the library model is "RRULE plus an `RRuleSet` per time pair" or a native model that renders to RRULE only for BullMQ payloads. The second is cleaner once BullMQ is gone; the first is cheaper for maestro now.
-- **Native dependency.** `rrule-rust` in a shared package puts a native build on every consumer's CI and Docker image. Maestro already pays this; CTENG would start to. Keep the engine API library-agnostic so this can be revisited.
+- **Model unification.** Recommended: a product-neutral native model with RRULE as an export (decision 2 in "Engine and model: trade-offs"). The remaining work is agreeing the schema fields and writing the `times[]` extension to maestro's existing compiler.
+- **Native dependency.** Recommended: `rrule-rust` behind a library-agnostic API (decision 1). Prebuilt binaries for 14 targets, no compile on install, already in maestro's production image. CTENG starts paying the image and lockfile cost. The fixture corpus is the swap guarantee if a pure-JS engine becomes preferable.
 - **Behavioural drift during migration.** Maestro's DST one-hour bump and CTENG's Intl resolution can disagree at transition instants. The side-by-side test in step 2 is the guard.
 - **pg-boss is new infrastructure in both services.** A `pgboss` schema in each service database, automatic migrations on `start()` (pin the version and disable `migrate` on all but one instance during upgrades), a `pg` pool alongside the existing driver, and poll-interval fire precision. Runbooks change: CUJ-002's recovery steps for maestro become "check pending jobs in `pgboss`, run reconcile".
 - **Chain breakage is silent without reconcile.** `reconcile` ships in the first release and both services run it periodically. Alert on schedules present in the domain table with no pending job.
