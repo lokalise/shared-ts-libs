@@ -1,4 +1,5 @@
 export { areNonTranslatableTagsComplementary } from './methods/areNonTranslatableTagsComplementary.ts'
+export { extractNTCTagsWithContent } from './methods/extractNTCTagsWithContent.ts'
 export {
   type ExtractTextBetweenTagsOptions,
   extractTextBetweenTags,

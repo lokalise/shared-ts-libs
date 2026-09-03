@@ -1,5 +1,13 @@
 # @lokalise/non-translatable-markup
 
+## 3.3.0
+
+### Minor Changes
+
+- b2b7df8: Export `extractNTCTagsWithContent`, which extracts every non-translatable region of a text (the
+  NTC tags and the content they wrap) in order of appearance. Previously an internal helper of
+  `isAttemptToEditNonTranslatableContent`.
+
 ## 3.2.0
 
 ### Minor Changes

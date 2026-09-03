@@ -1,4 +1,4 @@
-import { nonTranslatableTextRegexpG } from './utils.ts'
+import { extractNTCTagsWithContent } from './extractNTCTagsWithContent.ts'
 
 /**
  * Compares two strings and returns true if the new string tries to edit the non-translatable content within
@@ -28,16 +28,4 @@ export const isAttemptToEditNonTranslatableContent = (
   }
 
   return false
-}
-
-const extractNTCTagsWithContent = (text: string): string[] => {
-  const matches = []
-
-  let match = nonTranslatableTextRegexpG.exec(text)
-  while (match !== null) {
-    matches.push(match[0])
-    match = nonTranslatableTextRegexpG.exec(text)
-  }
-
-  return matches
 }
