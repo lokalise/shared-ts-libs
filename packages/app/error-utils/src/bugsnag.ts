@@ -5,6 +5,24 @@ import { isError, isInternalError, isPublicNonRecoverableError } from '@lokalise
 const hasDetails = (
   error: NotifiableError,
 ): error is NotifiableError & { details: FreeformRecord } => isError(error) && 'details' in error
+
+/**
+ * `error.cause` is dropped by Bugsnag (and by pino's default error serializer), so a wrapping
+ * error's own `details` never surfaces the details of what actually caused it (e.g. an HTTP
+ * response body on a lower-level `ResponseStatusError`). Walk the chain and carry those along.
+ */
+const collectCauseDetails = (error: NotifiableError): FreeformRecord[] => {
+  const causeDetails: FreeformRecord[] = []
+  let cause: unknown = isError(error) ? error.cause : undefined
+  while (isError(cause)) {
+    if (hasDetails(cause)) {
+      causeDetails.push(cause.details)
+    }
+    cause = cause.cause
+  }
+  return causeDetails
+}
+
 const BugsnagClient = Bugsnag.default
 
 export type Severity = Event['severity']
@@ -40,6 +58,11 @@ export const reportErrorToBugsnag = ({
         ...computedContext,
         errorDetails: error.details,
       }
+    }
+
+    const causeDetails = collectCauseDetails(error)
+    if (causeDetails.length > 0) {
+      computedContext = { ...computedContext, causeDetails }
     }
 
     event.addMetadata('Context', computedContext)

@@ -325,7 +325,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
           jobId: resolveJobId(job),
           jobName: job.name,
           'x-request-id': job.data.metadata.correlationId,
-          errorJson: JSON.stringify(pino.stdSerializers.err(error)),
+          errorJson: JSON.stringify(pino.stdSerializers.errWithCause(error)),
         },
       })
     }
@@ -361,7 +361,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
           jobId,
           jobName: job.name,
           'x-request-id': job.data.metadata.correlationId,
-          error: JSON.stringify(isError(error) ? pino.stdSerializers.err(error) : error),
+          error: JSON.stringify(isError(error) ? pino.stdSerializers.errWithCause(error) : error),
         },
       })
     }
@@ -390,7 +390,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
 
     if (purgeErrors.length > 0) {
       const serializedPurgeErrors = purgeErrors.map((error) =>
-        JSON.stringify(isError(error) ? stdSerializers.err(error) : error),
+        JSON.stringify(isError(error) ? stdSerializers.errWithCause(error) : error),
       )
       throw new Error(`Job data purge failed: ${serializedPurgeErrors.join(', ')}`)
     }

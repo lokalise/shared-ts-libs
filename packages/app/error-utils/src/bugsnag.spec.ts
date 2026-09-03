@@ -124,6 +124,50 @@ describe('bugsnag', () => {
       })
     })
 
+    it('error caused by another error with details', async () => {
+      // Given
+      vi.spyOn(BugsnagClient, 'isStarted').mockReturnValue(true)
+      const notifySpy = vi.spyOn(BugsnagClient, 'notify').mockReturnValue(undefined)
+
+      const rootCause = new CustomError('root cause', { statusCode: 400, body: 'invalid payload' })
+      const intermediateCause = new InternalError({
+        errorCode: 'INTERMEDIATE_ERROR_CODE',
+        message: 'intermediate',
+        details: { step: 'intermediate' },
+        cause: rootCause,
+      })
+
+      // When
+      reportErrorToBugsnag({
+        error: new PublicNonRecoverableError({
+          errorCode: 'TEST_ERROR_CODE',
+          message: 'test',
+          details: { hello: 'world' },
+          cause: intermediateCause,
+        }),
+        context: { good: 'bye' },
+      })
+
+      // Then
+      expect(notifySpy).toHaveBeenCalled()
+
+      const callback = notifySpy.mock.calls[0]![1]
+      let context: unknown = {}
+      const event = {
+        addMetadata: (key: unknown, obj: unknown) => {
+          if (key === 'Context') context = obj
+          else throw new Error('wrong key')
+        },
+      } as any
+      await callback!(event, () => {})
+      expect(context).toMatchObject({
+        good: 'bye',
+        errorCode: 'TEST_ERROR_CODE',
+        errorDetails: { hello: 'world' },
+        causeDetails: [{ step: 'intermediate' }, { statusCode: 400, body: 'invalid payload' }],
+      })
+    })
+
     it('unknown error with details field', async () => {
       // Given
       vi.spyOn(BugsnagClient, 'isStarted').mockReturnValue(true)
