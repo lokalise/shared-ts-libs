@@ -16,7 +16,7 @@ export class TestFailingBackgroundJobProcessor<
 > extends FakeBackgroundJobProcessor<T> {
   private _errorsOnProcess: Error[] = []
   private _errorsToThrowOnProcess: Error[] = []
-  private _errorToThrowOnFailed: Error | undefined
+  private _errorToThrowOnFailed: unknown
 
   constructor(
     dependencies: BackgroundJobProcessorDependencies<T>,
@@ -38,7 +38,7 @@ export class TestFailingBackgroundJobProcessor<
     this._errorsToThrowOnProcess = errors
   }
 
-  set errorToThrowOnFailed(error: Error | undefined) {
+  set errorToThrowOnFailed(error: unknown) {
     this._errorToThrowOnFailed = error
   }
 

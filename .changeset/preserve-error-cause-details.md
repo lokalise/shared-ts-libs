@@ -20,4 +20,7 @@ error's `details` and job processors serialized errors with `pino.stdSerializers
 
 `AbstractBackgroundJobProcessor` and `AbstractBackgroundJobProcessorNew` no longer duplicate error
 serialization in the `context` passed to the error reporter (`errorJson`/`error` fields), since
-Bugsnag reporting now serializes the full error (including `cause`) itself.
+Bugsnag reporting now serializes the full error (including `cause`) itself. Non-`Error` values
+thrown from `onSuccess`/`onFailed` hooks are still reported with a `nonErrorValue` context field,
+since in that case the `error` passed to the reporter is a synthetic placeholder with nothing for
+Bugsnag to extract.

@@ -360,6 +360,9 @@ export abstract class AbstractBackgroundJobProcessorNew<
           jobId,
           jobName: job.name,
           'x-request-id': job.data.metadata.correlationId,
+          // isError(error) is handled by the error reporter itself; a non-Error throw has no
+          // other carrier for its value, since `error` above is a synthetic placeholder.
+          ...(isError(error) ? {} : { nonErrorValue: JSON.stringify(error) }),
         },
       })
     }
