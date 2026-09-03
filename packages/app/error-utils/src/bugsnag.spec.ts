@@ -81,7 +81,7 @@ describe('bugsnag', () => {
       expect(event).toMatchObject({ severity: 'info', unhandled: false })
     })
 
-    it('internal error', async () => {
+    it('error with own errorCode and details fields', async () => {
       // Given
       vi.spyOn(BugsnagClient, 'isStarted').mockReturnValue(true)
       const notifySpy = vi.spyOn(BugsnagClient, 'notify').mockReturnValue(undefined)
@@ -104,36 +104,6 @@ describe('bugsnag', () => {
         },
       } as any
       await callback!(event, () => {})
-      expect(event).toMatchObject({ severity: 'error', unhandled: true })
-      expect(context).toMatchObject({
-        good: 'bye',
-        err: { errorCode: 'TEST_ERROR_CODE', details: { hello: 'world' } },
-      })
-    })
-
-    it('public non recoverable error', async () => {
-      // Given
-      vi.spyOn(BugsnagClient, 'isStarted').mockReturnValue(true)
-      const notifySpy = vi.spyOn(BugsnagClient, 'notify').mockReturnValue(undefined)
-
-      // When
-      reportErrorToBugsnag({
-        error: new CustomErrorWithCode('test', { hello: 'world' }, 'TEST_ERROR_CODE'),
-        context: { good: 'bye' },
-      })
-
-      // Then
-      expect(notifySpy).toHaveBeenCalled()
-
-      const callback = notifySpy.mock.calls[0]![1]!
-      let context: unknown = {}
-      const event = {
-        addMetadata: (key: unknown, obj: unknown) => {
-          if (key === 'Context') context = obj
-          else throw new Error('wrong key')
-        },
-      } as any
-      await callback(event, () => {})
       expect(event).toMatchObject({ severity: 'error', unhandled: true })
       expect(context).toMatchObject({
         good: 'bye',
@@ -193,7 +163,7 @@ describe('bugsnag', () => {
       })
     })
 
-    it('unknown error with details field', async () => {
+    it('error with own details field but no errorCode', async () => {
       // Given
       vi.spyOn(BugsnagClient, 'isStarted').mockReturnValue(true)
       const notifySpy = vi.spyOn(BugsnagClient, 'notify').mockReturnValue(undefined)
