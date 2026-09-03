@@ -1,8 +1,6 @@
 # Extracting scheduling from maestro into a shared library
 
-Analysis date: 2026-09-02. Repositories inspected: `maestro`, `content-type-app-engine` (CTENG), `shared-ts-libs`. pg-boss facts checked against 12.29.0.
-
-Status: the upstream change this document recommends, Proposal 1 in "Upstream pg-boss API proposals", is implemented and open as [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886).
+Analysis date: 2026-09-02. Repositories inspected: `maestro`, `content-type-app-engine` (CTENG), `shared-ts-libs`. pg-boss facts checked against 12.29.0 and against [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886), the pluggable-recurrence change queued for 12.30.0 that this design assumes.
 
 ## Summary
 
