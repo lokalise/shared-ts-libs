@@ -17,10 +17,10 @@ class CustomErrorWithCode extends CustomError {
   public readonly errorCode: string
 
   constructor(
-      message: string,
-      details: Record<string, unknown>,
-      errorCode: string,
-      cause?: unknown,
+    message: string,
+    details: Record<string, unknown>,
+    errorCode: string,
+    cause?: unknown,
   ) {
     super(message, details, cause)
     this.errorCode = errorCode
