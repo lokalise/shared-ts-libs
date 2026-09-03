@@ -80,7 +80,6 @@ describe('AbstractBackgroundJobProcessorNew - stalled', () => {
         jobId,
         jobName: 'queue',
         'x-request-id': jobData.metadata.correlationId,
-        errorJson: expect.stringContaining(onFailedCall!.error.message),
       },
     })
   })

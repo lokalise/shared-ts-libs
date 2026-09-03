@@ -153,7 +153,41 @@ describe('AbstractBackgroundJobProcessorNew - error', () => {
         jobId: job.id,
         jobName: 'queue',
         'x-request-id': 'correlation_id',
-        error: expect.stringContaining(onFailedError.message),
+      },
+    })
+  })
+
+  it('non-Error value thrown from failed hook is reported with nonErrorValue in context', async () => {
+    // Given
+    processor.errorToThrowOnFailed = 'redis timeout'
+    processor.errorsToThrowOnProcess = [new UnrecoverableError('unrecoverable error')]
+
+    const reportSpy = vi.spyOn(deps.errorReporter, 'report')
+
+    // When
+    const jobId = await queueManager.schedule(
+      'queue',
+      {
+        id: 'test_id',
+        value: 'test',
+        metadata: { correlationId: 'correlation_id' },
+      },
+      { attempts: 3, delay: 0 },
+    )
+
+    // Then
+    const job = await processor.spy.waitForJobWithId(jobId, 'failed')
+
+    expect(processor.errorsOnProcess).length(1)
+    expect(reportSpy).toHaveBeenCalledWith({
+      error: expect.objectContaining({
+        message: 'TestFailingBackgroundJobProcessorNew onFailed non-error exception',
+      }),
+      context: {
+        jobId: job.id,
+        jobName: 'queue',
+        'x-request-id': 'correlation_id',
+        nonErrorValue: JSON.stringify('redis timeout'),
       },
     })
   })

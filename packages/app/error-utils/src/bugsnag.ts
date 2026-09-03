@@ -1,10 +1,7 @@
 import Bugsnag, { type Event, type NodeConfig, type NotifiableError } from '@bugsnag/node'
-import type { ErrorReporter, FreeformRecord } from '@lokalise/node-core'
-import { isError, isInternalError, isPublicNonRecoverableError } from '@lokalise/node-core'
+import type { ErrorReporter } from '@lokalise/node-core'
+import { errWithCause } from 'pino-std-serializers'
 
-const hasDetails = (
-  error: NotifiableError,
-): error is NotifiableError & { details: FreeformRecord } => isError(error) && 'details' in error
 const BugsnagClient = Bugsnag.default
 
 export type Severity = Event['severity']
@@ -24,22 +21,9 @@ export const reportErrorToBugsnag = ({
 }: ErrorReport) =>
   BugsnagClient.isStarted() &&
   BugsnagClient.notify(error, (event) => {
-    let computedContext = { ...(context ?? {}) }
-    if (isPublicNonRecoverableError(error) || isInternalError(error)) {
-      computedContext = {
-        ...computedContext,
-        errorDetails: error.details,
-        errorCode: error.errorCode,
-      }
-    } else if (hasDetails(error)) {
-      /**
-       * This is a special case for other errors that have details but are not `PublicNonRecoverableError`
-       * or `InternalError`
-       */
-      computedContext = {
-        ...computedContext,
-        errorDetails: error.details,
-      }
+    const computedContext = {
+      ...(context ?? {}),
+      ...(Error.isError(error) ? { err: errWithCause(error) } : {}),
     }
 
     event.addMetadata('Context', computedContext)

@@ -13,7 +13,7 @@ export class TestFailingBackgroundJobProcessorNew<
 > extends FakeBackgroundJobProcessorNew<Q, T> {
   private _errorsOnProcess: Error[] = []
   private _errorsToThrowOnProcess: Error[] = []
-  private _errorToThrowOnFailed: Error | undefined
+  private _errorToThrowOnFailed: unknown
 
   protected override async process(job: Job<unknown>): Promise<void> {
     await super.process(job)
@@ -27,7 +27,7 @@ export class TestFailingBackgroundJobProcessorNew<
     this._errorsToThrowOnProcess = errors
   }
 
-  set errorToThrowOnFailed(error: Error | undefined) {
+  set errorToThrowOnFailed(error: unknown) {
     this._errorToThrowOnFailed = error
   }
 
