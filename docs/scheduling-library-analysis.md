@@ -2,12 +2,14 @@
 
 Analysis date: 2026-09-02. Repositories inspected: `maestro`, `content-type-app-engine` (CTENG), `shared-ts-libs`. pg-boss facts checked against 12.29.0.
 
+Status: the upstream change this document recommends, Proposal 1 in "Upstream pg-boss API proposals", is implemented and open as [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886).
+
 ## Summary
 
 - **CTENG already has a scheduling mechanism in production.** It stores schedules in Postgres with a `next_run_at` column, and a single-consumer periodic job ticks on a cron and dispatches whatever is due. Maestro uses BullMQ job schedulers with a custom RRULE repeat strategy. The two designs differ at every layer: recurrence model, next-occurrence engine, storage, trigger delivery, and execution tracking.
 - **The layer worth sharing first is the recurrence engine**: a schedule definition plus "next occurrence after T in timezone Z". It is pure logic with no infrastructure dependency, and it is where both services carry the hardest code (DST, timezone conversion, start boundaries) and the most tests.
 - **Trigger delivery goes behind one adapter interface with two implementations and a clear direction.** pg-boss is the target for both services because Redis is inherently less durable than PostgreSQL. Redis persistence is best-effort (an RDB snapshot loses everything since the last dump, AOF with `everysec` still loses up to a second, and a failover to a replica can lose acknowledged writes), while Postgres commits are synchronously durable and covered by the same backup, point-in-time recovery and replication guarantees as the rest of the service's data. For mission-critical background jobs such as scheduled workflow runs, the safer pick is the store whose durability we already trust with the domain data. With pg-boss, schedules fire from Postgres, survive Redis loss, and the next occurrence can be enqueued in the same transaction as the service's own write. BullMQ is a compatibility adapter so maestro can adopt the library without changing runtime behaviour on day one, and it is retired once maestro moves to pg-boss. There is no library-owned schedule table: the service's domain table stays the canonical registry, and the pending job is the runtime record.
-- **pg-boss cannot compute custom recurrences natively** (its `schedule()` is cron only, minute granularity, no hook), so the library owns next-occurrence computation and drives pg-boss with a self-perpetuating chain of deferred jobs. Research against 12.29.0 confirms every operation in the model maps to a public API: deferred `send`, `singletonKey` under the `short` queue policy, `upsert` and `findJobs` by key, and transactional `send` through `fromDrizzle`. No upstream change is a prerequisite. The chain is a workaround, though, and the section "Upstream pg-boss API proposals" lays out changes (pluggable recurrence kinds on `schedule()`, `nextRunAt` on `getSchedules`, transactional `work()`) that would reduce the adapter to direct calls and drop the `reconcile` requirement. They are worth filing and offering to implement in parallel.
+- **pg-boss cannot compute custom recurrences natively** (its `schedule()` is cron only, minute granularity, no hook), so the library owns next-occurrence computation and drives pg-boss with a self-perpetuating chain of deferred jobs. Research against 12.29.0 confirms every operation in the model maps to a public API: deferred `send`, `singletonKey` under the `short` queue policy, `upsert` and `findJobs` by key, and transactional `send` through `fromDrizzle`. No upstream change is a prerequisite. The chain is a workaround, though, and the section "Upstream pg-boss API proposals" lays out changes (pluggable recurrence kinds on `schedule()`, `nextRunAt` on `getSchedules`, transactional `work()`) that would reduce the adapter to direct calls and drop the `reconcile` requirement. Proposal 1, the one that removes the chain, is implemented and open upstream as [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886); if it lands, the adapter becomes direct `boss.schedule` calls and the chain never ships to a second consumer.
 - **Showing the end user the current recurrence, and letting them change it, is a first-class requirement.** The structured definition the user entered is what the library stores in the job payload and returns on read, together with the next fire time. Change is recreation (`reschedule`), which pg-boss makes a single `upsert` statement.
 - **Recommendation**: extract the engine now and adopt it in both services; build the facade with the pg-boss adapter as the primary implementation and the BullMQ adapter as a thin compatibility layer; migrate maestro to pg-boss first (it has the most to gain in durability), then CTENG (replacing its tick-based runner with per-occurrence deferred jobs). Do not build a second parallel mechanism inside CTENG: it already has one, and a third design would make convergence harder.
 
@@ -328,9 +330,11 @@ No. Every operation maps to a public, documented pg-boss 12 API, so the chain ad
 
 ## Upstream pg-boss API proposals
 
-Ranked by how much of the chain they remove. Each is grounded in how the current code works, so the cost estimate is realistic. pg-boss is a single-maintainer project that accepts sponsorship and PRs; the realistic path is to file the design as an issue and offer the implementation, while the chain adapter ships in the meantime. The `DeliveryAdapter` interface does not change under any of these; only the adapter's internals shrink.
+Ranked by how much of the chain they remove. Each is grounded in how the current code works, so the cost estimate is realistic. pg-boss is a single-maintainer project that accepts sponsorship and PRs, so the path taken was to write the change rather than only file it: Proposal 1 is open as [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886) and awaiting review. The chain adapter still ships in the meantime, since nothing here is a prerequisite. The `DeliveryAdapter` interface does not change under any of these; only the adapter's internals shrink.
 
 ### Proposal 1: pluggable recurrence kinds on `schedule()` (removes the chain entirely)
+
+**Status: implemented and submitted as [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886)** (19 files, migration v40, tests and docs). The submitted implementation follows the design below, with four refinements found while writing it: the due-row claim is a single CTE statement rather than a lock-then-update pair (details under "Storage change"); a repair step at the top of each pass re-anchors schedules left with no pending occurrence, whether from a v39 upgrade or from a process that died between claiming and rescheduling, and never replays the parked occurrence; `missed: 'all'` is capped at 1000 occurrences per schedule with a `missed_occurrences_capped` warning; and `schedule()` anchors the first occurrence one grace window back so a just-passed cron occurrence still fires immediately, except for expressions recurring faster than that window, which anchor ahead instead of starting life owing a backlog.
 
 **Problem.** `schedule()` accepts only a cron string. The timekeeper evaluates `cron-parser`'s `prev()` against database time every 30 seconds and sends when `prevDiff < 60`, deduplicating across instances with `singletonSeconds: 60`. There is no place to plug in another expression language, and pg-boss should not take on RRULE dependencies (the good ones are native or heavy).
 
@@ -360,14 +364,21 @@ A plain string stays `{ kind: 'cron' }` for backward compatibility, and `cron` i
 **Storage change.** Add `kind text NOT NULL DEFAULT 'cron'`, `next_run_at timestamptz` and `last_run_at timestamptz` to the `schedule` table. `schedule()` computes `next_run_at` with the registered parser at insert time. The timekeeper replaces "does `prev()` fall within the last 60 seconds" with:
 
 ```sql
-UPDATE pgboss.schedule
-SET last_run_at = next_run_at, next_run_at = NULL
-WHERE next_run_at <= now()
-RETURNING *
-FOR UPDATE SKIP LOCKED
+WITH due AS (
+  SELECT name, key, next_run_at, last_run_at AS prior_run_at
+  FROM pgboss.schedule
+  WHERE next_run_at IS NOT NULL AND next_run_at <= now() AND kind = ANY($1::text[])
+  ORDER BY next_run_at
+  FOR UPDATE SKIP LOCKED
+)
+UPDATE pgboss.schedule s
+SET last_run_at = due.next_run_at, next_run_at = NULL
+FROM due
+WHERE s.name = due.name AND s.key = due.key AND s.next_run_at = due.next_run_at
+RETURNING ...
 ```
 
-then, per row, `send(name, data, { ...options, singletonKey: key })` and `UPDATE ... SET next_run_at = <parser.next(expression, last_run_at, tz)>`. Cross-instance dedup comes from row locking instead of `singletonSeconds: 60`, which also lifts the minute granularity for kinds that want it. Instances without a parser for a stored kind skip those rows and emit a warning, mirroring how a queue with no `work()` handler simply is not fetched.
+then, per row, `send(name, data, { ...options, singletonKey: key })` and a write-back of `next_run_at` from `parser.next(expression, last_run_at, tz)`. Cross-instance dedup comes from the row claim instead of `singletonSeconds: 60`, which also lifts the minute granularity for kinds that want it. The `s.next_run_at = due.next_run_at` re-check is what makes the claim exclusive, so backends without `SKIP LOCKED` (CockroachDB) run the same statement with no locking clause. Instances without a parser for a stored kind skip those rows and emit a warning, mirroring how a queue with no `work()` handler simply is not fetched.
 
 **`missed` policy.** With `next_run_at` persisted, the timekeeper knows exactly which occurrences were skipped while no instance ran. Expose it: `missed: 'skip' | 'once' | 'all'`, default `skip` to preserve today's behaviour. Our services want `once`.
 
@@ -380,6 +391,8 @@ then, per row, `send(name, data, { ...options, singletonKey: key })` and `UPDATE
 **Problem.** `getSchedules()` returns the stored row only: `name, key, cron, timezone, data, options`. Nothing tells you when it fires next or when it last fired, so a UI or a health check has to compute it or scrape jobs.
 
 **Proposal.** Return `nextRunAt`, `lastRunAt`, `lastJobId` and `kind` on each schedule (all available once Proposal 1 lands; `nextRunAt` for cron is computable today), add `getSchedule(name, key)` returning one row or null, and add `previewSchedule(kind, expression, tz, { from, count })` that runs the registered parser without persisting anything.
+
+**Status: partly covered by [#886](https://github.com/timgit/pg-boss/pull/886)**, which reports `kind`, `nextRunAt`, `lastRunAt` and the expression as `expression` alongside the legacy `cron` field on `getSchedules()`. Left to file: `getSchedule(name, key)`, `lastJobId` and `previewSchedule`.
 
 **What it removes on our side.** `previewOccurrences` becomes a passthrough, `get()` becomes one call with no payload parsing, and "next run" in either product's UI is a straight read.
 
@@ -396,7 +409,7 @@ await boss.send('run-workflow', data, {
 
 When a job carrying `repeat` is fetched, pg-boss computes the next occurrence with the registered parser and inserts the successor in the same transaction as the fetch (or as `complete`, configurable). Successors inherit `repeat` and `singletonKey`. Cancelling the pending successor stops the series. This is what our adapter does by hand today, minus the race window between fetch and the handler's `send`, and minus the need for `reconcile`.
 
-Compared with Proposal 1 it gives no registry (`getSchedules` does not see these), so `get()` still scrapes the pending job. It is the weaker option, but it is a smaller change and fits pg-boss's existing "everything is a job" model. If the maintainer prefers this shape, it is still a large DX gain over the hand-rolled chain.
+Compared with Proposal 1 it gives no registry (`getSchedules` does not see these), so `get()` still scrapes the pending job. It is the weaker option, but it is a smaller change and fits pg-boss's existing "everything is a job" model. If the maintainer prefers this shape, it is still a large DX gain over the hand-rolled chain. Not submitted: [#886](https://github.com/timgit/pg-boss/pull/886) takes Proposal 1's shape, and this stays the fallback to offer if that review goes against it.
 
 ### Proposal 4: `work()` with a transactional handler
 
@@ -429,9 +442,9 @@ Rollback on throw returns the job to `retry` with nothing half-written. This ben
 ### How this changes the plan
 
 - Ship the chain adapter now against 12.x; it needs nothing upstream.
-- File Proposal 1 with Proposal 2 as one design issue, with an offer to implement. File Proposals 4, 5 and 6 as independent small PRs; they are uncontroversial and each improves the chain adapter on its own.
+- Proposal 1 is filed as an implementation, [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886), and carries the `getSchedules` half of Proposal 2 with it. File Proposals 4, 5 and 6 as independent small PRs; they are uncontroversial and each improves the chain adapter on its own.
 - Design the pg-boss adapter so that "native recurrence" is an internal strategy switched on by a capability check (`boss.schedule` accepting an object), not a second adapter. Consumers never see the difference.
-- If Proposal 1 is declined, Proposal 3 is the fallback to push for; if both are declined, the chain stays and Proposals 4 and 5 make it safe and cheap enough to live with.
+- If [#886](https://github.com/timgit/pg-boss/pull/886) is declined, Proposal 3 is the fallback to push for; if both are declined, the chain stays and Proposals 4 and 5 make it safe and cheap enough to live with.
 
 ## Extract versus a parallel mechanism in CTENG
 
@@ -460,7 +473,7 @@ Dependencies of core: `zod`, the RRULE engine (initially `rrule-rust`), `cron-pa
 
 1. **Engine package.** Move `rruleUtils.ts`, `rruleRepeatStrategy.ts` (minus the metric coupling) and `RRULE_CONFIGURATION_SCHEMA` into the new package. Extend the model with explicit time pairs and CTENG's weekday numbering. Port both services' test fixtures. Maestro adopts by import swap; `maestro-common` re-exports the schema for the frontend contract.
 2. **CTENG adopts the engine.** `computeNextRunAt` delegates to `nextOccurrence`. Storage and runner unchanged. Run both implementations side by side in tests over a year of dates in the timezones CTENG customers use, then delete the local implementation.
-3. **Facade, pg-boss adapter, BullMQ adapter.** Build the pg-boss adapter first with the full test suite (chain, `upsert` reschedule, retention, transactional send, reconcile), structured so a native-recurrence strategy can replace the chain internally later. Build the BullMQ adapter as a thin wrapper carrying maestro's pattern-compare-then-remove logic. In parallel, file the upstream pg-boss proposals and offer the implementation.
+3. **Facade, pg-boss adapter, BullMQ adapter.** Build the pg-boss adapter first with the full test suite (chain, `upsert` reschedule, retention, transactional send, reconcile), structured so a native-recurrence strategy can replace the chain internally later. Build the BullMQ adapter as a thin wrapper carrying maestro's pattern-compare-then-remove logic. Upstream, Proposal 1 is already open as [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886); the remaining proposals get filed alongside it.
 4. **Maestro on the BullMQ adapter.** Replace `RunWorkflowJobScheduler`, `DetectStuckWorkflowRunsJobScheduler` and `TasksAboutToExpireJobScheduler` with facade calls. Add the periodic `reconcile` fed from Live scheduled workflows. The CLI script switches to `scheduler.list()`. No runtime behaviour change; CUJ-002's missing-scheduler failure mode gains a recovery path.
 5. **Maestro on pg-boss.** Add pg-boss to maestro (schema in the service database, worker in the same process as today's BullMQ worker). Cut over per workflow: on next activation or edit, register on pg-boss and unregister from BullMQ; run `reconcile` to migrate the remainder in a controlled batch. Housekeeping schedulers move to native pg-boss cron. Remove the BullMQ adapter dependency and the dead `SCHEDULER_REDIS_*` config.
 6. **CTENG on pg-boss.** Replace `ScheduleRunnerJobProcessor` and `ScheduleNextRunRecomputeJobProcessor` with the facade: on save, `schedule` or `reschedule`; the `onFire` handler runs today's `executeScheduleInTransaction` logic and `schedule_execution` tracking unchanged. `next_run_at` becomes a cached display value populated from `get()`, or is dropped. Fire precision improves from tick granularity to per-occurrence.
