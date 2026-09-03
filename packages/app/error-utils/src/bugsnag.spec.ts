@@ -1,6 +1,11 @@
 import Bugsnag from '@bugsnag/node'
 import { describe, expect, it, vi } from 'vitest'
-import { reportErrorToBugsnag } from './bugsnag.ts'
+import {
+  addFeatureFlag,
+  bugsnagErrorReporter,
+  reportErrorToBugsnag,
+  startBugsnag,
+} from './bugsnag.ts'
 
 const BugsnagClient = Bugsnag.default
 
@@ -216,6 +221,59 @@ describe('bugsnag', () => {
         good: 'bye',
         err: { details: { hello: 'world' } },
       })
+    })
+  })
+
+  describe('startBugsnag', () => {
+    it('starts Bugsnag when not already started', () => {
+      // Given
+      vi.spyOn(BugsnagClient, 'isStarted').mockReturnValue(false)
+      const startSpy = vi.spyOn(BugsnagClient, 'start').mockReturnValue(undefined as never)
+
+      // When
+      startBugsnag({ apiKey: 'test' })
+
+      // Then
+      expect(startSpy).toHaveBeenCalledWith({ apiKey: 'test' })
+    })
+
+    it('does not start Bugsnag when already started', () => {
+      // Given
+      vi.spyOn(BugsnagClient, 'isStarted').mockReturnValue(true)
+      const startSpy = vi.spyOn(BugsnagClient, 'start')
+
+      // When
+      startBugsnag({ apiKey: 'test' })
+
+      // Then
+      expect(startSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('addFeatureFlag', () => {
+    it('delegates to the Bugsnag client', () => {
+      // Given
+      const addFeatureFlagSpy = vi.spyOn(BugsnagClient, 'addFeatureFlag').mockReturnValue(undefined)
+
+      // When
+      addFeatureFlag('my-flag', 'variant-a')
+
+      // Then
+      expect(addFeatureFlagSpy).toHaveBeenCalledWith('my-flag', 'variant-a')
+    })
+  })
+
+  describe('bugsnagErrorReporter', () => {
+    it('reports via reportErrorToBugsnag', () => {
+      // Given
+      vi.spyOn(BugsnagClient, 'isStarted').mockReturnValue(true)
+      const notifySpy = vi.spyOn(BugsnagClient, 'notify').mockReturnValue(undefined)
+
+      // When
+      bugsnagErrorReporter.report({ error: new Error('test') })
+
+      // Then
+      expect(notifySpy).toHaveBeenCalled()
     })
   })
 })
