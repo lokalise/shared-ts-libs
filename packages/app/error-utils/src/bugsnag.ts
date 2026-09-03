@@ -1,27 +1,6 @@
 import Bugsnag, { type Event, type NodeConfig, type NotifiableError } from '@bugsnag/node'
-import type { ErrorReporter, FreeformRecord } from '@lokalise/node-core'
-import { isError, isInternalError, isPublicNonRecoverableError } from '@lokalise/node-core'
-
-const hasDetails = (
-  error: NotifiableError,
-): error is NotifiableError & { details: FreeformRecord } => isError(error) && 'details' in error
-
-/**
- * `error.cause` is dropped by Bugsnag (and by pino's default error serializer), so a wrapping
- * error's own `details` never surfaces the details of what actually caused it (e.g. an HTTP
- * response body on a lower-level `ResponseStatusError`). Walk the chain and carry those along.
- */
-const collectCauseDetails = (error: NotifiableError): FreeformRecord[] => {
-  const causeDetails: FreeformRecord[] = []
-  let cause: unknown = isError(error) ? error.cause : undefined
-  while (isError(cause)) {
-    if (hasDetails(cause)) {
-      causeDetails.push(cause.details)
-    }
-    cause = cause.cause
-  }
-  return causeDetails
-}
+import type { ErrorReporter } from '@lokalise/node-core'
+import { errWithCause } from 'pino-std-serializers'
 
 const BugsnagClient = Bugsnag.default
 
@@ -42,27 +21,9 @@ export const reportErrorToBugsnag = ({
 }: ErrorReport) =>
   BugsnagClient.isStarted() &&
   BugsnagClient.notify(error, (event) => {
-    let computedContext = { ...(context ?? {}) }
-    if (isPublicNonRecoverableError(error) || isInternalError(error)) {
-      computedContext = {
-        ...computedContext,
-        errorDetails: error.details,
-        errorCode: error.errorCode,
-      }
-    } else if (hasDetails(error)) {
-      /**
-       * This is a special case for other errors that have details but are not `PublicNonRecoverableError`
-       * or `InternalError`
-       */
-      computedContext = {
-        ...computedContext,
-        errorDetails: error.details,
-      }
-    }
-
-    const causeDetails = collectCauseDetails(error)
-    if (causeDetails.length > 0) {
-      computedContext = { ...computedContext, causeDetails }
+    const computedContext = {
+      ...(context ?? {}),
+      ...(Error.isError(error) ? { err: errWithCause(error) } : {}),
     }
 
     event.addMetadata('Context', computedContext)

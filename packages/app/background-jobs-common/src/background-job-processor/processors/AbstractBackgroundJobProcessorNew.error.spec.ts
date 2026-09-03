@@ -153,7 +153,6 @@ describe('AbstractBackgroundJobProcessorNew - error', () => {
         jobId: job.id,
         jobName: 'queue',
         'x-request-id': 'correlation_id',
-        error: expect.stringContaining(onFailedError.message),
       },
     })
   })
