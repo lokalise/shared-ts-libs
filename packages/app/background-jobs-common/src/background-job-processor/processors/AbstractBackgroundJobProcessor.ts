@@ -10,7 +10,7 @@ import {
   type Worker,
   type WorkerOptions,
 } from 'bullmq'
-import pino, { stdSerializers } from 'pino'
+import { stdSerializers } from 'pino'
 import { merge } from 'ts-deepmerge'
 import { DEFAULT_QUEUE_OPTIONS, DEFAULT_WORKER_OPTIONS, PENDING_JOB_TYPES } from '../constants.ts'
 import {
@@ -399,7 +399,6 @@ export abstract class AbstractBackgroundJobProcessor<
           jobId: resolveJobId(job),
           jobName: job.name,
           'x-request-id': job.data.metadata.correlationId,
-          errorJson: JSON.stringify(pino.stdSerializers.errWithCause(error)),
         },
       })
     }
@@ -435,7 +434,6 @@ export abstract class AbstractBackgroundJobProcessor<
           jobId,
           jobName: job.name,
           'x-request-id': job.data.metadata.correlationId,
-          error: JSON.stringify(isError(error) ? pino.stdSerializers.errWithCause(error) : error),
         },
       })
     }

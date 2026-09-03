@@ -18,6 +18,6 @@ error's `details` and job processors serialized errors with `pino.stdSerializers
 `@lokalise/error-utils` now uses the native `Error.isError` and requires Node `>=24.3.0`
 (declared via `engines.node`), a breaking change for consumers on older Node versions.
 
-`AbstractBackgroundJobProcessorNew` no longer duplicates error serialization in the `context`
-passed to the error reporter (`errorJson`/`error` fields), since Bugsnag reporting now serializes
-the full error (including `cause`) itself.
+`AbstractBackgroundJobProcessor` and `AbstractBackgroundJobProcessorNew` no longer duplicate error
+serialization in the `context` passed to the error reporter (`errorJson`/`error` fields), since
+Bugsnag reporting now serializes the full error (including `cause`) itself.
