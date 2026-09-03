@@ -8,10 +8,9 @@ Status: the upstream change this document recommends, Proposal 1 in "Upstream pg
 
 - **CTENG already has a scheduling mechanism in production.** It stores schedules in Postgres with a `next_run_at` column, and a single-consumer periodic job ticks on a cron and dispatches whatever is due. Maestro uses BullMQ job schedulers with a custom RRULE repeat strategy. The two designs differ at every layer: recurrence model, next-occurrence engine, storage, trigger delivery, and execution tracking.
 - **The layer worth sharing first is the recurrence engine**: a schedule definition plus "next occurrence after T in timezone Z". It is pure logic with no infrastructure dependency, and it is where both services carry the hardest code (DST, timezone conversion, start boundaries) and the most tests.
-- **The definition is RFC 5545, not a model of our own.** Checked against both products rather than assumed: everything maestro and CTENG express needs six of RRULE's fourteen rule parts (`FREQ`, `INTERVAL`, `BYDAY`, `BYHOUR`, `BYMINUTE`, `BYMONTHDAY`), none of the hard ones, and CTENG's 1-to-4 times per day are a recurrence set of up to four rules. So RRULE is the lingua franca, narrowed by a published profile, with a codec in core: the forward half already exists in maestro (~90 lines) and needs about 50 more for CTENG's `times[]` and weekday numbering, and the reverse half is one bounded decision tree (~150 lines) guaranteed by a `decode(encode(form))` property test. Each product keeps its own form schema as its API contract; what changes is only what the library stores and computes on.
+- **The definition is RFC 5545 rather than a model of our own.** Both products' capabilities were read off the code and mapped part by part: everything maestro and CTENG express needs six of RRULE's fourteen rule parts (`FREQ`, `INTERVAL`, `BYDAY`, `BYHOUR`, `BYMINUTE`, `BYMONTHDAY`), none of the hard ones, and CTENG's 1-to-4 times per day are a recurrence set of up to four rules. So RRULE is the lingua franca, narrowed by a published profile, with a codec in core: the forward half already exists in maestro (~90 lines) and needs about 50 more for CTENG's `times[]` and weekday numbering, and the reverse half is one bounded decision tree (~150 lines) guaranteed by a `decode(encode(form))` property test. Each product keeps its own form schema as its API contract; what changes is only what the library stores and computes on.
 - **Trigger delivery goes behind one adapter interface, with pg-boss and BullMQ as equally supported implementations.** This document does not pick a winner between them, and neither does the library: which backend a service runs is a service-level choice until there is a broader org architectural decision on which paths are supported and officially recommended. What the analysis records as input to that decision is the durability difference. Redis persistence is best-effort (an RDB snapshot loses everything since the last dump, AOF with `everysec` still loses up to a second, and a failover to a replica can lose acknowledged writes), while Postgres commits are synchronously durable and covered by the same backup, point-in-time recovery and replication guarantees as the rest of the service's data, and pg-boss can enqueue the next occurrence in the same transaction as the service's own write. Against that, BullMQ fires with lower latency, is already in production in maestro, and is the queue `background-jobs-common` supports today, so a service on BullMQ adds no infrastructure to adopt the library. Neither adapter owns a schedule table: the service's domain table stays the canonical registry, and the pending job or job scheduler is the runtime record.
-- **pg-boss cannot compute custom recurrences natively** (its `schedule()` is cron only, minute granularity, no hook), so the library owns next-occurrence computation and drives pg-boss with a self-perpetuating chain of deferred jobs. Research against 12.29.0 confirms every operation in the model maps to a public API: deferred `send`, `singletonKey` under the `short` queue policy, `upsert` and `findJobs` by key, and transactional `send` through `fromDrizzle`. No upstream change is a prerequisite. The chain is a workaround, though, and the section "Upstream pg-boss API proposals" lays out changes (pluggable recurrence kinds on `schedule()`, `nextRunAt` on `getSchedules`, transactional `work()`) that would reduce the adapter to direct calls and drop the `reconcile` requirement. Proposal 1, the one that removes the chain, is implemented and open upstream as [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886); if it lands, the adapter becomes direct `boss.schedule` calls and the chain never ships to a second consumer.
-- **Starting on the chain and switching to the native path later is transparent, and no schedule already running needs migrating.** Three rules make it so: the facade never hands out a pg-boss job id, the `catchUp` option set is one the chain can honour in full from day one, and the adapter keeps every key in exactly one mechanism. Conversion then happens on fire, on write and on reconcile, so existing series keep running on the chain and convert themselves as they go, with new ones registered natively from the start. What does not resolve itself is the code: an open-ended series never drains, so the dual path needs an end date with `reconcile` forcing the tail. Because the switch is cheap but not free, the plan is reordered to build the pg-boss adapter last, which puts the build-or-wait decision where the review outcome is known and costs nothing under any outcome.
+- **pg-boss's `schedule()` is cron-only today, and the fix is already written.** [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886) adds pluggable recurrence kinds in 12.30.0: parsers are registered on the instance the way `work()` handlers are, `next_run_at` and `last_run_at` move onto the schedule row, and the missed-occurrence policy becomes an option. The plan assumes it is adopted, which makes the adapter a direct mapping onto `boss.schedule`, `boss.unschedule` and `boss.getSchedules`, with the schedule row as the runtime registry. If the adapter is due before that release, it ships the same public surface over a self-perpetuating chain of deferred jobs and switches internally later: no caller change and no migration of running schedules, given three rules held from the first commit (no backend identifier crosses the facade, the option surface is one both strategies honour, one mechanism per key). Existing series convert on their next fire, write or reconcile. The plan therefore builds the pg-boss adapter last, when the release state is known.
 - **Showing the end user the current recurrence, and letting them change it, is a first-class requirement.** The structured definition the user entered is what the library stores in the job payload and returns on read, together with the next fire time. Change is recreation (`reschedule`), which pg-boss makes a single `upsert` statement.
 - **Recommendation**: extract the engine now and adopt it in both services; build the facade with both adapters behind one conformance suite, so that adopting the library never forces a backend change; let each service keep or choose its backend on its own constraints (maestro is already on BullMQ and stays there with no runtime change, CTENG is Postgres-only today and would add Redis to use the BullMQ adapter). Any move of a service from one backend to the other is a separate decision, waiting on the org-level call, and the library is what makes it a config change rather than a rewrite. Do not build a second parallel mechanism inside CTENG: it already has one, and a third design would make convergence harder.
 
@@ -40,7 +39,7 @@ How it works:
 
 Observations:
 
-- The source of truth for "which workflows are scheduled" is Redis, not Postgres. `docs/cujs/CUJ-002` names the failure mode: if the scheduler entry is missing, the workflow is Live in the database but never fires, and recovery is "re-activate the workflow". There is no reconciliation job.
+- The source of truth for "which workflows are scheduled" is Redis, not Postgres. Maestro's own critical-user-journey document for this path, `docs/cujs/CUJ-002-scheduled-workflow-triggering.md` in the maestro repository (referred to below as CUJ-002), records the failure mode and its business impact: if the scheduler entry is missing, the workflow is Live in the database but never fires, no user-facing error is raised, and "revenue-generating automated workflows do not run" until someone notices the output is missing. Stated recovery is "re-activate the workflow". There is no reconciliation job.
 - Every scheduler class is its own `QueueManager` subclass with its own Redis connections, and `repeatStrategy` has to be injected into both the queue options and the worker options. Three copies of that wiring exist in `WorkflowsModule` and `TasksModule`.
 - `getNextOccurrence` contains a one-hour bump to survive DST transitions and throws if that is not enough. It converts between timezones by shifting UTC components, which works but is the kind of code that benefits from a single well-tested home.
 - `SCHEDULER_REDIS_*` config is defined in `config.ts` and `.env.default` but nothing consumes it. Dead config, worth removing independently of this work.
@@ -165,12 +164,12 @@ Read off maestro's compiler (`rruleUtils.ts#translateFilters`) and CTENG's schem
 | `COUNT`, `UNTIL` | not in stored rules (`UNTIL` only inside the next-occurrence call) | not used | excluded |
 | `BYSETPOS`, `BYWEEKNO`, `BYYEARDAY`, `BYMONTH`, `RDATE`, `EXDATE`, `EXRULE` | not used | not used | excluded |
 
-That is six of RFC 5545's fourteen rule parts, and none of the hard ones: no `BYSETPOS`, no ordinal `BYDAY` ("second Tuesday"), no week-number arithmetic. Everything CTENG expresses today, including its 1-to-4 `times[]` and its `startAt` boundary, lands inside the profile, and so does everything maestro expresses. RFC 5545 is a superset of both, with room for the features either product will plausibly ask for next (last weekday of the month, "every second Friday", an end date) at no modelling cost.
+Six of RFC 5545's fourteen rule parts, and none of the awkward ones: no `BYSETPOS`, no ordinal `BYDAY` ("second Tuesday"), no week-number arithmetic. Everything CTENG expresses today, including its 1-to-4 `times[]` and its `startAt` boundary, lands inside the profile, and so does everything maestro expresses. RFC 5545 is a superset of both, with room for what either product will plausibly ask for next: last weekday of the month, "every second Friday", an end date.
 
-Two encoding details are worth naming, since they are the only places the mapping is not literal:
+Two places where the mapping is not literal:
 
-- **Multiple times of day are a recurrence set, not a rule.** `times: [09:15, 17:45]` cannot be one `RRULE`, because `BYHOUR=9,17;BYMINUTE=15,45` is the cross product of four times. RFC 5545's own answer is a set: one `RRULE` per distinct time (or per group of times sharing a minute), which `rrule-rust`'s `RRuleSet` takes as an array and unions when iterating. Honest limit: RFC 5545 says `RRULE` SHOULD NOT appear more than once in a component, so while every RRULE library handles a multi-rule set, strict third-party calendar interop on that shape is not guaranteed. If that ever matters, the alternative is one component per time.
-- **CTENG's hourly minute is a local minute.** `FREQ=HOURLY;BYMINUTE=M` with a `TZID` is the same semantics, including in zones with 30 or 45 minute offsets, which is exactly what its `computeNextHourlyRunAt` searches for by hand today.
+- **Multiple times of day need a recurrence set.** `times: [09:15, 17:45]` cannot be one `RRULE`, because `BYHOUR=9,17;BYMINUTE=15,45` is the cross product of four times. RFC 5545's own answer is a set: one `RRULE` per distinct time (or per group of times sharing a minute), which `rrule-rust`'s `RRuleSet` takes as an array and unions when iterating. Limit: RFC 5545 says `RRULE` SHOULD NOT appear more than once in a component, so while every RRULE library handles a multi-rule set, strict third-party calendar interop on that shape is not guaranteed. If that ever matters, the alternative is one component per time.
+- **CTENG's hourly minute is a local minute.** `FREQ=HOURLY;BYMINUTE=M` with a `TZID` carries the same semantics, including in zones with 30 or 45 minute offsets, which its `computeNextHourlyRunAt` searches for by hand today.
 
 **How easy is the translator?**
 
@@ -195,16 +194,16 @@ Option B: **A product-neutral native model.** A zod schema with `frequency`, `in
 | --- | --- | --- |
 | Expressiveness | Anything RFC 5545 allows, narrowed to the profile. Growing it is an edit to a validator, and the ceiling is the standard's, not ours. | Exactly what the products need today. Every new capability is a schema change plus engine support, and the ceiling is whatever we thought of. |
 | Round trip to the UI | Deterministic inside the profile: `decode(encode(form))` is the identity over the fixture corpus, and out-of-profile text decodes to `custom` for read-only display. Costs a decoder, roughly 150 lines and its tests. | Lossless by construction, no decoder needed. |
-| Time pairs | An `RRuleSet` with one rule per time, which is what a recurrence set is for. Longer string, and `RRULE` more than once in a component is discouraged by the spec. | `times[]` is a field. |
+| Time pairs | An `RRuleSet` with one rule per time, the standard's own encoding for this. Longer string, and `RRULE` more than once in a component is discouraged by the spec. | `times[]` is a field. |
 | Whole-hour minutely windows | The `BYMINUTE`-under-`MINUTELY` trap becomes a profile rule, enforced by the validator and visible in the fixtures. | The trap stays inside the library behind `hourWindow`. |
 | Validation | Profile validator, plus per-product refinements (maestro's 15-minute floor stays in maestro). | Zod schema plus the same per-product refinements. |
 | Equality and change detection | String compare, made exact by canonical serialisation rather than brittle as maestro's current compare is. | Structural compare on normalised fields. |
 | Adapters | One string for all transports: BullMQ's `pattern`, the pg-boss chain payload, and #886's `expression`. | Every transport needs the encoder anyway, so the same string exists, just derived. |
 | Migration of stored data | Maestro's `triggerSchedulerExpression` already is RRULE text, no transform. CTENG keeps its columns and encodes on write. | Maestro maps its layout fields; CTENG maps field for field. Neither migrates storage. |
-| Interop | A standard others can read: calendars, other teams, future tooling. The profile is a documented narrowing, not a dialect. | Proprietary. Exportable, but every consumer outside our code has to be handed a converter. |
+| Interop | A standard others can read: calendars, other teams, future tooling. The profile narrows what we emit and is published with the package. | Proprietary. Exportable, but every consumer outside our code has to be handed a converter. |
 | Cost of being wrong | If the profile turns out too narrow, widen the validator. | If the model turns out too narrow, change the schema, the engine, both products' contracts and the stored rows. |
 
-Recommendation for decision 2, revised: **Option A, RRULE as the lingua franca**, with a published profile, a canonical encoder, a decoder that returns `custom` outside the profile, and the round-trip property test as the guarantee. The earlier version of this document recommended Option B on the strength of the round-trip argument. That argument does not survive contact with the numbers: the subset in play is six rule parts, the decoder is one bounded decision tree over them, and RFC 5545 covers everything both products do today with room left over. Inventing a schema to avoid writing 150 lines of decoder buys a ceiling we would then own forever.
+Recommendation for decision 2: **Option A, RRULE as the lingua franca**, with a published profile, a canonical encoder, a decoder that returns `custom` outside the profile, and the round-trip property test as the guarantee. The round-trip argument is what favours Option B, and the numbers undercut it: the subset in play is six rule parts, the decoder is one bounded decision tree over them, and RFC 5545 covers everything both products do today with room left over. Inventing a schema to avoid 150 lines of decoder means owning a ceiling forever.
 
 What stays product-owned: CTENG's `frequency`/`days`/`times` REST contract and maestro's `RRULE_CONFIGURATION_SCHEMA` frontend contract. Neither changes. The library's job is the codec between those forms and the canonical rule, so a form remains what the UI edits and RRULE remains what the system stores, computes on and hands to a backend.
 
@@ -242,42 +241,48 @@ A `Scheduler` facade composes the engine and one adapter and adds `previewOccurr
 
 #### pg-boss adapter
 
-What it gives, stated as a trade-off rather than a verdict, because the choice of backend is not this document's to make. The scheduling record is mission-critical: a lost entry means a revenue-generating workflow silently stops running, which is CUJ-002's failure mode. Redis persistence is best-effort by design (RDB snapshots lose everything since the last dump, AOF with the default `everysec` fsync still loses up to a second of acknowledged writes, and a failover promotes a replica that may be behind the primary), while Postgres commits are synchronously durable and the service's Postgres already carries backups, point-in-time recovery, replication and monitoring that the Redis instance does not match. Keeping the schedule next to the domain data means one durability story, one backup to restore, and the option of enqueuing the next occurrence in the same transaction as the domain write. What it costs: a new dependency and a `pgboss` schema in any service that does not already run it, fire precision bounded by the poll interval instead of Redis latency, and (until [#886](https://github.com/timgit/pg-boss/pull/886) lands) the chain below. Speed is not the deciding factor for schedules that fire minutes to months apart, but the operational surface is a real cost and lands on whoever adopts it.
+**What it gives**
 
-pg-boss cannot run a custom recurrence, so the adapter uses a **self-perpetuating chain of deferred jobs** on a dedicated queue with the `short` policy:
+- **Durability.** A lost schedule means a revenue-generating workflow silently stops running, which is CUJ-002's failure mode. Redis persistence is best-effort by design: RDB snapshots lose everything since the last dump, AOF at the default `everysec` loses up to a second of acknowledged writes, and a failover promotes a replica that may be behind. Postgres commits are synchronously durable.
+- **One backup story.** The schedule sits in the database that already has backups, point-in-time recovery, replication and monitoring, so there is one thing to restore rather than two.
+- **Transactional enqueue.** The next occurrence can commit in the same transaction as the domain write.
 
-1. `schedule(job)` computes the first occurrence with the engine and calls `boss.send(queue, { id, definition, payload }, { startAfter: fireAt, singletonKey: id })`.
-2. The worker handler, before doing any domain work, computes the next occurrence from the `definition` carried in the job data and sends the next job with the same `singletonKey`. Then it invokes `onFire`. Under the `short` policy at most one job per key may sit in `created`, while the current one is `active` or in `retry`, so a retried handler cannot double-book.
-3. `reschedule(job)` is `boss.upsert(queue, newData, { singletonKey: id, startAfter: newFireAt })`: a single statement that rewrites the pending occurrence in place. This is the recreation path the ask allows.
-4. `unschedule(id)` is `findJobs({ key: id, queued: true })` then `cancel`.
-5. `get(id)` reads the pending job's `data.definition` and `startAfter`. The definition rides in the payload, so the read requirement is met with no extra table.
-6. Sending the next occurrence can share a transaction with the service's own write via `{ db: fromDrizzle(tx, sql) }`, which works for both drizzle drivers in use (postgres-js in maestro, node-postgres in CTENG).
+**What it costs**
 
-No daily DST recompute is needed: every fire recomputes from the definition in the timezone it carries. Retention is anchored to `start_after`, so month-ahead occurrences are not garbage-collected before firing.
+- A new dependency and a `pgboss` schema for any service that does not already run it.
+- Fire precision bounded by the poll interval rather than Redis latency. Not the deciding factor for schedules that fire minutes to months apart, but real.
+- Before 12.30.0, the chain described under "If 12.30.0 is not released when the adapter is due".
 
-`reconcile(desired)` is part of the first release, not a follow-up. If a handler exhausts retries before it managed to send the next occurrence, the chain dies silently, and the only thing to recover from is the service's domain table. Each service feeds `reconcile` from "Live scheduled workflows" or "enabled schedules" on a periodic job; the library diffs against `findJobs` and sends or cancels as needed. This also closes maestro's CUJ-002 failure mode, which has no equivalent today.
+**How it works**
 
-Fixed housekeeping jobs (maestro's `detect_stuck_workflow_runs` and `tasks_about_to_expire`, CTENG's cleanup jobs) do not need the chain: pg-boss's native cron `schedule()` covers them.
+1. `schedule(job)` encodes the definition and calls `boss.schedule(queue, { kind: 'rrule', expression }, payload, { key: id, missed })`.
+2. pg-boss maintains `next_run_at` on the schedule row and forwards a job to the queue at each occurrence; the worker handler invokes `onFire`.
+3. `reschedule(job)` is the same call again, an upsert on `(name, key)`. `unschedule(id)` is `boss.unschedule(queue, id)`. `get(id)` is `boss.getSchedules(queue, id)`.
+4. The fire handler can commit domain work together with pg-boss's own state through `{ db: fromDrizzle(tx, sql) }`, for both drizzle drivers in use (postgres-js in maestro, node-postgres in CTENG).
+
+No daily DST recompute is needed: every occurrence is computed from the rule in the timezone it carries. Retention is anchored to `start_after`, so month-ahead occurrences survive until they fire. Fixed housekeeping jobs (maestro's `detect_stuck_workflow_runs` and `tasks_about_to_expire`, CTENG's cleanup jobs) use native cron with `{ kind: 'cron' }`.
+
+`reconcile(desired)` ships in the first release. Each service feeds it from "Live scheduled workflows" or "enabled schedules" on a periodic job, and the library diffs against what the backend holds, then sends or cancels. It is what closes CUJ-002's silent-missing-schedule failure mode, which has no equivalent today, and it is mandatory rather than merely useful on the chain, where a series can die with a handler.
 
 #### BullMQ adapter
 
-Wraps BullMQ job schedulers as maestro does today, with the engine's `nextOccurrence` supplied as `repeatStrategy`. Maestro adopts the library through it and deletes its three hand-rolled `QueueManager` subclasses without changing what fires when. It is a supported adapter, not a stepping stone, and carries no deprecation.
+Wraps BullMQ job schedulers as maestro does today, with the engine's `nextOccurrence` supplied as `repeatStrategy`. Maestro adopts the library through it and deletes its three hand-rolled `QueueManager` subclasses without changing what fires when. It is supported on the same terms as the pg-boss adapter, with no deprecation.
 
 - `get()` returns the structured definition and the next fire time, the same as the pg-boss adapter, by carrying the definition in the job scheduler's template data. Confirmed against the bullmq 6 job-scheduler API that `background-jobs-common` develops against: `getScheduler(key)` returns `template.data` alongside `next`, `pattern` and `tz`. This requires `upsertJobScheduler`, not the legacy repeatable path, which stores the pattern only.
 - The pattern-compare-then-remove logic for edits moves into the adapter so the dedup edge case is handled once.
 - Redis is the firing source of truth here, so `reconcile` matters more on this adapter than on pg-boss, where the pending row is covered by the service's own backups. It ships in the first release for both.
-- No transactional enqueue: a fire cannot be committed with the service's domain write. This is inherent to the backend and is a documented capability gap, not a defect to fix in the adapter.
+- No transactional enqueue: a fire cannot be committed with the service's domain write. That is inherent to Redis plus Postgres, so it belongs in the capability matrix rather than in the adapter's backlog.
 - Housekeeping cron schedules stay on BullMQ's own repeat handling, matching what pg-boss's native `schedule()` does on the other side.
 
-#### Parity is a contract, not an accident
+#### Keeping the two adapters interchangeable
 
-Two equally supported backends only stay equal if parity is enforced in the library:
+Two equally supported backends stay equal only if the library enforces it:
 
 - **One conformance suite, run against every backend.** The same test file, parameterised over adapters (Redis container, Postgres container), covering register, reschedule, unschedule, read, list, missed occurrences, DST boundaries and reconcile. This is the mechanism that keeps "adopting the library does not commit you to a backend" true.
 - **The facade never leaks a backend identifier.** No pg-boss job id, no BullMQ scheduler key, in any return type. Callers key on their own schedule id.
 - **The option surface is what both adapters can honour**, `catchUp` included. An option only one backend can implement goes in the capability matrix and is rejected at call time by the other, rather than silently behaving differently.
 - **Capability matrix, published with the package.** Transactional enqueue is pg-boss only. Sub-second precision, batching semantics, retention and what the read path returns are all matrix rows, filled from the conformance suite rather than from prose.
-- Anything pg-boss-specific stays inside its adapter. The 24-hour `expireInSeconds` cap on `active` time is a pg-boss constraint, so "enqueue domain work, do not run it inline" is adapter guidance in the docs, not a rule the core imposes on BullMQ users.
+- **Backend-specific constraints stay inside their adapter.** The 24-hour cap on `active` time is pg-boss's, so "enqueue domain work rather than running it inline" is guidance in that adapter's docs, and core imposes it on nobody.
 
 ### Showing and changing the recurrence for the end user
 
@@ -309,249 +314,88 @@ Both services already treat the structured definition as canonical and the runti
 
 ### Layer 3: execution tracking and domain dispatch (do not share)
 
-CTENG's `schedule_execution` model (conflict keys, queued drains, Autopilot correlation, TTL recovery) and maestro's `RunWorkflowJob` (start a workflow run, entitlement checks, delay histograms) are domain code. The library exposes `onFire` and `onDispatchFailed` and leaves the rest to the service. Because pg-boss caps `active` time at 24 hours (`expireInSeconds`), the fire handler should enqueue domain work rather than run it inline.
+CTENG's `schedule_execution` model (conflict keys, queued drains, Autopilot correlation, TTL recovery) and maestro's `RunWorkflowJob` (start a workflow run, entitlement checks, delay histograms) are domain code. The library exposes `onFire` and `onDispatchFailed` and leaves the rest to the service.
 
-## pg-boss research: what it supports and whether it fits
+## pg-boss: the primitives the adapter uses
 
-Checked against pg-boss 12.29.0 (released 2026-08-30), its type definitions, `src/plans.ts`, `src/timekeeper.ts` and the docs at pgboss.io. Requirements: Node 22.12 or newer, PostgreSQL 13 or newer. Runtime dependencies: `pg`, `cron-parser` 5, `serialize-error`. Both services satisfy the Node floor.
+Checked against 12.29.0 and [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886). Only what shapes the design is listed.
 
-**Native cron scheduling (`schedule`)**
-
-| Fact | Source |
+| Primitive | What the adapter does with it |
 | --- | --- |
-| `schedule(name, cron, data, options)` stores `(name, key, cron, timezone, data, options)` in a `schedule` table with primary key `(name, key)`. Re-calling updates in place. | `plans.ts`, scheduling docs |
-| Cron only, 5-field, minute precision. 6-field (seconds) is discouraged. Parsed by `cron-parser` with `tz`. Unknown timezones are rejected at `schedule()` time. | scheduling docs |
-| Due check: `prev()` of the cron relative to database time, due if `prevDiff < 60`. Evaluated every 30 seconds by default (`cronMonitorIntervalSeconds`). | `timekeeper.ts` |
-| Cross-instance dedup: the tick sends with `singletonKey: "${name}__${key}", singletonSeconds: 60`. | `timekeeper.ts` |
-| Missed slots while no instance was running are skipped, not caught up. | `timekeeper.ts`, scheduling docs |
-| Clock skew versus the database is measured every 10 minutes and warned about above 60 seconds. | `timekeeper.ts` |
-| There is no hook to supply a custom next-occurrence function. | type definitions |
-
-Verdict: the native scheduler cannot host RRULE, intervals such as "every 2 weeks", or CTENG's explicit time pairs. It is right for fixed housekeeping jobs and nothing else in this design.
-
-**Deferred jobs and dedup (`send`, `startAfter`, `singletonKey`, queue policies)**
-
-| Fact | Source |
-| --- | --- |
-| `startAfter` accepts a `Date`, an ISO string (with offsets since 12.28.0) or seconds. No documented upper bound on how far ahead. | jobs docs, releases |
-| `keep_until = start_after + retentionSeconds` (default 14 days). Retention is anchored to the fire time, not creation. Maintenance deletes `state < 'active' AND keep_until < now()`. | `plans.ts` |
-| Queue policies decide what `singletonKey` means. `short`: one job in `created` per key, unlimited active (index `job_i1`, `WHERE state = 'created'`). `exclusive`: one job in `created`, `retry` or `active` per key (`job_i6`). `standard`: no key uniqueness unless `singletonSeconds` is set (`job_i4`). | `plans.ts`, queues docs |
-| A `send` rejected by a singleton index resolves `null`; it does not throw. | jobs docs |
-| `update(name, data, { singletonKey, startAfter, ... })` and `upsert(...)` modify jobs in `state < 'active'` by `singletonKey`, in one statement. | jobs docs, `plans.ts`, `index.d.ts` |
-| `findJobs(name, { key, queued: true })` looks up by `singletonKey` restricted to `created`/`retry`. `getJobById` is deprecated in favour of it. | jobs docs, `types.ts` |
-| `cancel` applies to `state < 'completed'`; `deleteJob` removes rows. | `plans.ts` |
-| Fire precision is the worker's `pollingIntervalSeconds` (minimum 0.5 s) or LISTEN/NOTIFY wake-up. `useListenNotify` needs a session-pinned connection and does not work through PgBouncer in transaction mode. | `types.ts` |
-| `expireInSeconds` (time a job may stay `active`) defaults to 15 minutes, maximum 24 hours. | jobs docs |
-
-Verdict: exactly the primitive set the chain needs. `short` policy with `singletonKey = id` allows the next occurrence to be queued while the current one runs or retries, and refuses a duplicate. `upsert` gives `reschedule` in one statement; `findJobs` gives `get`.
-
-**Transactions**
+| `schedule(name, { kind, expression }, data, { key, missed })` with a registered `rrule` parser (12.30.0) | The registry itself: one row per schedule keyed `(name, key)`, re-callable as an upsert, `next_run_at` maintained by pg-boss. |
+| `getSchedules(name, key)` reporting `kind`, `expression`, `nextRunAt`, `lastRunAt` (12.30.0) | `get()` and `list()` as a straight read. |
+| `missed` policy on `schedule()` (12.30.0) | `catchUp` maps onto it directly. |
+| `send(name, data, { startAfter, singletonKey })` on a `short` queue | The bridge if 12.30.0 is not out yet: one pending occurrence per key, unlimited concurrent actives, a duplicate send resolving `null` instead of throwing. |
+| `upsert`, `findJobs(name, { key, queued: true })`, `cancel` | Reschedule in one statement, read the pending occurrence, stop a series. |
+| `{ db: fromDrizzle(tx, sql) }` on every write | The next occurrence commits with the service's domain write. Covers both drizzle drivers in use: postgres-js in maestro, node-postgres in CTENG. |
+| `keep_until = start_after + retentionSeconds` | A month-ahead occurrence is not garbage-collected before it fires. |
 
-| Fact | Source |
-| --- | --- |
-| `send`, `insert`, `fetch`, `complete`, `fail`, `cancel`, `update`, `upsert`, `findJobs` accept `{ db }` where `db` implements `executeSql(text, values)`. | `types.ts` (`ConnectionOptions`) |
-| Shipped adapters: `fromDrizzle(tx, sql)` (node-postgres and postgres-js), `fromKnex`, `fromKysely`, `fromPrisma`, `fromPglite`. A rollback of the ORM transaction rolls back the pg-boss statements. | adapters docs, `index.d.ts` |
+Two constraints to design around:
 
-Verdict: both services can enqueue the next occurrence in the same transaction as their domain write. BullMQ cannot offer this; a Redis write and a Postgres write are never atomic.
+- `expireInSeconds` caps `active` time at 24 hours, so the fire handler enqueues domain work instead of running it inline.
+- `useListenNotify` needs a session-pinned connection and does not work through PgBouncer in transaction mode. Accept poll-interval precision, or give pg-boss a direct connection.
 
-**Operations**
+## Upstream: native recurrence lands in 12.30.0
 
-| Fact | Source |
-| --- | --- |
-| `migrate` (default true) runs schema migrations on `start()`. `supervise` (default true) runs maintenance daily, index bloat detection and `REINDEX CONCURRENTLY` (12.29.0), queue monitoring every 60 s. `schedule` (default true) runs the cron timekeeper. Each can be disabled per instance. | constructor docs, releases |
-| Schema defaults to `pgboss`, quoted names supported since 12.27.0. Queues can be partitioned into their own tables (`partition: true`). | constructor docs, releases |
-| Dead-letter queues with `redrive`, retry with exponential backoff, job dependencies (`flow`), pub/sub. | jobs docs |
-| A dashboard package (`@pg-boss/dashboard`) exists for inspection, comparable to bull-board. | repository README |
-| Pool size defaults to 10 connections per instance. | constructor docs |
+In 12.29.0 `schedule()` takes a cron string and nothing else: the timekeeper evaluates `cron-parser`'s `prev()` against database time every 30 seconds, sends when `prevDiff < 60`, and deduplicates across instances with `singletonSeconds: 60`. There is no hook for another expression language, and that throttle also caps a schedule at one job a minute.
 
-**Fit against the model**
+The change that fixes it is written and open as [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886) (19 files, migration v40, tests and docs). **This document plans on it being adopted.**
 
-| Operation | pg-boss primitive | Fit |
-| --- | --- | --- |
-| `schedule(job)` | engine computes first occurrence, `send(queue, data, { startAfter, singletonKey: id })` on a `short` queue | Full |
-| Fire and self-perpetuate | `work()` handler: `send` next first, then `onFire`; or `fetch` + `complete` with `db` for a fully transactional step | Full |
-| `unschedule(id)` | `findJobs({ key: id, queued: true })` then `cancel` | Full |
-| `reschedule(job)` | `upsert(queue, newData, { singletonKey: id, startAfter: newFireAt })` | Full, single statement |
-| `get(id)` | `findJobs({ key: id, queued: true })`, read `data.definition` and `startAfter` | Full |
-| `list(owner)` | `findJobs({ data: { owner } })` | Adequate for admin tooling |
-| `reconcile(desired)` | `findJobs` per id, `send` for missing, `cancel` for stale | Full, library code |
-| Missed occurrence while no worker ran | job fires on first fetch after `startAfter`; handler computes next from now | Equivalent to CTENG's "run once, advance" |
-| Fixed housekeeping crons | native `schedule()` | Full |
+What it changes upstream:
 
-**Does anything need to change upstream first?**
+- Recurrence parsers are registered on the instance, the way `work()` handlers are, so our engine plugs in and pg-boss takes on no RRULE dependency. A plain string stays `{ kind: 'cron' }`, the one built-in kind.
+- `kind`, `next_run_at` and `last_run_at` join the `schedule` row. Each pass claims the due rows in one statement, so dedup across instances is the row claim rather than `singletonSeconds: 60`, which also lifts the minute floor.
+- `missed: 'skip' | 'once' | 'all'` becomes explicit on `schedule()`, with `all` capped at 1000 occurrences per schedule.
+- `getSchedules()` reports `kind`, `expression`, `nextRunAt` and `lastRunAt`.
 
-No. Every operation maps to a public, documented pg-boss 12 API, so the chain adapter can ship without waiting on anyone. But the chain is a workaround: the library re-implements, in application code, the "recurring job" concept that pg-boss already has for cron, and pays for it with `singletonKey` discipline, a mandatory `reconcile`, and a `get()` that scrapes job payloads. The next section proposes public API changes that would remove most of that. Two constraints stay regardless: `expireInSeconds` caps handler time at 24 hours (dispatch should enqueue domain work, not run it), and `useListenNotify` is incompatible with PgBouncer transaction pooling (accept polling precision or give pg-boss a direct connection).
+What the adapter becomes on top of it: `schedule` and `reschedule` are `boss.schedule`, `unschedule` is `boss.unschedule`, `get` is `boss.getSchedules`. The schedule row is the registry, so there is no chain, no `singletonKey` bookkeeping and no payload scraping, and `reconcile` narrows to a consistency check against the service's own table. Ours to keep: the recurrence engine, registered as the `rrule` parser, and `previewOccurrences`.
 
-## Upstream pg-boss API proposals
+### If 12.30.0 is not released when the adapter is due
 
-Ranked by how much of the chain they remove. Each is grounded in how the current code works, so the cost estimate is realistic. pg-boss is a single-maintainer project that accepts sponsorship and PRs, so the path taken was to write the change rather than only file it: Proposal 1 is open as [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886) and awaiting review. The chain adapter still ships in the meantime, since nothing here is a prerequisite. The `DeliveryAdapter` interface does not change under any of these; only the adapter's internals shrink.
+The adapter ships the same public surface over a self-perpetuating chain of deferred jobs, then switches to native recurrence internally:
 
-### Proposal 1: pluggable recurrence kinds on `schedule()` (removes the chain entirely)
+1. `schedule(job)` computes the first occurrence and calls `send(queue, { id, definition, payload }, { startAfter: fireAt, singletonKey: id })`.
+2. The handler computes the next occurrence from the definition in the job data, sends the successor with the same `singletonKey`, then invokes `onFire`. Under the `short` policy at most one job per key sits in `created`, so a retried handler cannot double-book.
+3. `reschedule` is `upsert` by `singletonKey`; `unschedule` is `findJobs` then `cancel`; `get` reads the pending job's `data.definition` and `startAfter`.
+4. `reconcile` is mandatory here rather than merely useful: if a handler exhausts its retries before sending the successor, the series dies silently and only the domain table can recover it.
 
-**Status: implemented and submitted as [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886)** (19 files, migration v40, tests and docs). The submitted implementation follows the design below, with four refinements found while writing it: the due-row claim is a single CTE statement rather than a lock-then-update pair (details under "Storage change"); a repair step at the top of each pass re-anchors schedules left with no pending occurrence, whether from a v39 upgrade or from a process that died between claiming and rescheduling, and never replays the parked occurrence; `missed: 'all'` is capped at 1000 occurrences per schedule with a `missed_occurrences_capped` warning; and `schedule()` anchors the first occurrence one grace window back so a just-passed cron occurrence still fires immediately, except for expressions recurring faster than that window, which anchor ahead instead of starting life owing a backlog.
+Switching later costs no caller change and no migration of running schedules, provided three rules hold from the first commit:
 
-**Problem.** `schedule()` accepts only a cron string. The timekeeper evaluates `cron-parser`'s `prev()` against database time every 30 seconds and sends when `prevDiff < 60`, deduplicating across instances with `singletonSeconds: 60`. There is no place to plug in another expression language, and pg-boss should not take on RRULE dependencies (the good ones are native or heavy).
+1. **No backend identifier crosses the facade.** A schedule's identity is a pending job id on the chain and a `(name, key)` row natively. Neither may reach a domain column, a log line or a dashboard query.
+2. **The option surface is what both strategies honour in full**, `catchUp` included. Shipping `once` only and adding `skip` and `all` with the native path would change behaviour under callers who took the default.
+3. **One mechanism per key, enforced by the adapter.** A pending chain job lives in `pgboss.job` and a native schedule in `pgboss.schedule`, so nothing in the database stops a key existing in both, and a key in both fires twice. `reconcile` is where the check belongs.
 
-**Proposal.** Make the expression kind explicit and let the process register parsers, the same way it registers `work()` handlers:
+Existing series convert themselves, in one transaction per key:
 
-```ts
-const boss = new PgBoss({
-  connectionString,
-  recurrences: {
-    rrule: {
-      // pure function; pg-boss never stores or serialises it
-      next: (expression: string, after: Date, tz: string) => Date | null,
-      validate: (expression: string, tz: string) => void,   // throw to reject at schedule() time
-    },
-  },
-})
+- **On fire.** The handler writes the schedule row instead of sending a successor, in the transaction that completes the fired job.
+- **On write.** Any `schedule` or `reschedule` cancels the pending chain job and inserts the schedule row.
+- **On reconcile.** The periodic pass converts the remainder, which is what forces the tail instead of waiting a year for an annual schedule.
 
-await boss.schedule('run-workflow',
-  { kind: 'rrule', expression: 'DTSTART;TZID=Europe/Berlin:20260901T090000\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR' },
-  { workflowId, groupId },
-  { key: workflowId, missed: 'once' },
-)
-```
+A job already `active` at conversion time fires once more on the chain and converts on completion. What needs a deadline is the code, not the jobs: a chain series has no natural end, so only `UNTIL` and `COUNT` definitions drain by themselves. Run the adapter suite twice, once per strategy, the way step 2 runs both engine implementations side by side.
 
-A plain string stays `{ kind: 'cron' }` for backward compatibility, and `cron` is the one built-in kind (already implemented on `cron-parser`).
+The version gate is deployment-wide, not per-process:
 
-**Storage change.** Add `kind text NOT NULL DEFAULT 'cron'`, `next_run_at timestamptz` and `last_run_at timestamptz` to the `schedule` table. `schedule()` computes `next_run_at` with the registered parser at insert time. The timekeeper replaces "does `prev()` fall within the last 60 seconds" with:
+- Migration v40 ships in 12.30.0 with a rollback plan.
+- 12.29.0's `contractor.start()` migrates only when the library's schema version is ahead of the stored one, so an older pg-boss against a v40 schema runs rather than erroring.
+- 12.29.0's cron pass catches a per-row expression failure, warns `INVALID_SCHEDULE` and skips the row, so an `rrule` row in front of an old instance is skipped rather than fatal. [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886) does the same for a kind it has no parser for (`unsupported_recurrence`).
+- For `cron` rows, [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886) keeps `singletonSeconds: 60` with an occurrence-aligned `singletonOffset`, so an old instance and a new one forwarding the same occurrence collide on one slot during a rolling upgrade.
 
-```sql
-WITH due AS (
-  SELECT name, key, next_run_at, last_run_at AS prior_run_at
-  FROM pgboss.schedule
-  WHERE next_run_at IS NOT NULL AND next_run_at <= now() AND kind = ANY($1::text[])
-  ORDER BY next_run_at
-  FOR UPDATE SKIP LOCKED
-)
-UPDATE pgboss.schedule s
-SET last_run_at = due.next_run_at, next_run_at = NULL
-FROM due
-WHERE s.name = due.name AND s.key = due.key AND s.next_run_at = due.next_run_at
-RETURNING ...
-```
+A natively registered schedule fires only while at least one upgraded instance runs the timekeeper, so flip the strategy by config once the dependency bump has rolled out everywhere, and treat capability detection as an assertion.
 
-then, per row, `send(name, data, { ...options, singletonKey: key })` and a write-back of `next_run_at` from `parser.next(expression, last_run_at, tz)`. Cross-instance dedup comes from the row claim instead of `singletonSeconds: 60`, which also lifts the minute granularity for kinds that want it. The `s.next_run_at = due.next_run_at` re-check is what makes the claim exclusive, so backends without `SKIP LOCKED` (CockroachDB) run the same statement with no locking clause. Instances without a parser for a stored kind skip those rows and emit a warning, mirroring how a queue with no `work()` handler simply is not fetched.
+### Smaller upstream follow-ups
 
-**`missed` policy.** With `next_run_at` persisted, the timekeeper knows exactly which occurrences were skipped while no instance ran. Expose it: `missed: 'skip' | 'once' | 'all'`, default `skip` to preserve today's behaviour. Our services want `once`.
+Independent of [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886), each useful on its own:
 
-**What it removes on our side.** The self-perpetuating chain, the `short` policy and `singletonKey` bookkeeping, `reconcile` for the pg-boss backend (the schedule row is the registry), and payload scraping for `get()`. The adapter becomes a direct mapping: `schedule` and `reschedule` call `boss.schedule` (already an upsert on `(name, key)`), `unschedule` calls `boss.unschedule(name, key)`, `get` calls `boss.getSchedules(name, key)`. Still ours: the recurrence engine (registered as the `rrule` parser) and `previewOccurrences`.
+- `getSchedule(name, key)`, `previewSchedule(kind, expression, tz, { from, count })` and `lastJobId`, which make `get()` and `previewOccurrences` one call each.
+- `work(name, { transactional: true }, (job, tx) => ...)`. Today, running fetch, side effects and `complete` in one transaction means bypassing `work()` and reimplementing its polling, batching, heartbeats and error handling.
+- `findJobs` filters: `states`, `limit`, `orderBy`, a cursor, and a `getJobByKey(name, key)`. Without them `list(owner)` is unbounded and a busy key returns history.
+- Docs: `keep_until` anchoring to `start_after`; which job states each queue policy's `singletonKey` index covers; the cron scheduler's missed-slot behaviour.
 
-**Cost upstream.** One migration, roughly 80 lines in `timekeeper.ts`, types for the registration option, docs. No new dependency. The main design conversation is whether the maintainer accepts parsers-as-process-config; the precedent is that `work()` handlers are exactly that.
+### How this shapes the plan
 
-### Proposal 2: richer `getSchedules` and a `getSchedule(name, key)`
-
-**Problem.** `getSchedules()` returns the stored row only: `name, key, cron, timezone, data, options`. Nothing tells you when it fires next or when it last fired, so a UI or a health check has to compute it or scrape jobs.
-
-**Proposal.** Return `nextRunAt`, `lastRunAt`, `lastJobId` and `kind` on each schedule (all available once Proposal 1 lands; `nextRunAt` for cron is computable today), add `getSchedule(name, key)` returning one row or null, and add `previewSchedule(kind, expression, tz, { from, count })` that runs the registered parser without persisting anything.
-
-**Status: partly covered by [#886](https://github.com/timgit/pg-boss/pull/886)**, which reports `kind`, `nextRunAt`, `lastRunAt` and the expression as `expression` alongside the legacy `cron` field on `getSchedules()`. Left to file: `getSchedule(name, key)`, `lastJobId` and `previewSchedule`.
-
-**What it removes on our side.** `previewOccurrences` becomes a passthrough, `get()` becomes one call with no payload parsing, and "next run" in either product's UI is a straight read.
-
-### Proposal 3: `repeat` option on `send()` with atomic next-occurrence insertion
-
-An alternative to Proposal 1 for maintainers who would rather not touch the timekeeper. It keeps the chain but moves it inside pg-boss where it can be atomic:
-
-```ts
-await boss.send('run-workflow', data, {
-  singletonKey: workflowId,
-  repeat: { kind: 'rrule', expression, tz, missed: 'once' },
-})
-```
-
-When a job carrying `repeat` is fetched, pg-boss computes the next occurrence with the registered parser and inserts the successor in the same transaction as the fetch (or as `complete`, configurable). Successors inherit `repeat` and `singletonKey`. Cancelling the pending successor stops the series. This is what our adapter does by hand today, minus the race window between fetch and the handler's `send`, and minus the need for `reconcile`.
-
-Compared with Proposal 1 it gives no registry (`getSchedules` does not see these), so `get()` still scrapes the pending job. It is the weaker option, but it is a smaller change and fits pg-boss's existing "everything is a job" model. If the maintainer prefers this shape, it is still a large DX gain over the hand-rolled chain. Not submitted: [#886](https://github.com/timgit/pg-boss/pull/886) takes Proposal 1's shape, and this stays the fallback to offer if that review goes against it.
-
-### Proposal 4: `work()` with a transactional handler
-
-**Problem.** Today the only way to run fetch, handler side effects and `complete` in one transaction is to bypass `work()` and call `fetch` and `complete` yourself with `{ db }`. `work()` is where polling, batching, heartbeats and error handling live, so bypassing it means re-implementing those.
-
-**Proposal.**
-
-```ts
-await boss.work('run-workflow', { transactional: true }, async (job, tx) => {
-  // tx implements IDatabase; the fetch that claimed `job` ran in it, and complete/fail will too
-  await scheduler.sendNextOccurrence(job, { db: tx })   // if still on the chain
-  await runs.insert(job.data, { db: tx })
-})
-```
-
-Rollback on throw returns the job to `retry` with nothing half-written. This benefits the chain adapter immediately (the send-next-then-dispatch sequence becomes atomic) and stays useful after Proposal 1 for the domain write.
-
-### Proposal 5: `findJobs` filters and a `getJobByKey`
-
-**Problem.** `findJobs` filters by `id`, `key`, top-level `data` match and `queued`. There is no `states`, `limit`, ordering or cursor, so on a busy key it returns history, and `list(owner)` over many schedules is unbounded.
-
-**Proposal.** Add `states?: JobState[]`, `limit?: number`, `orderBy?: 'createdOn' | 'startAfter'`, `after?: cursor`, and a convenience `getJobByKey(name, key)` returning the single pending job or null. Small change to one query in `plans.ts`.
-
-### Proposal 6: documentation fixes
-
-- State that `keep_until` is anchored to `start_after`, so deferrals longer than `retentionSeconds` are safe. Today this is only visible in `plans.ts`.
-- State per queue policy which job states the `singletonKey` uniqueness index covers (`short`: `created`; `exclusive`: up to `active`; `standard`: none without `singletonSeconds`). Today you read the index definitions to learn this.
-- Document `missed`-slot behaviour of the cron scheduler explicitly (currently: skipped).
-
-### How this changes the plan
-
-- The chain adapter needs nothing upstream and can ship against 12.x, but build it last. The section "Adopting the chain now versus waiting for 12.30.0" reorders the plan so the build-or-wait decision is taken when the pg-boss adapter is the next thing to write.
-- Proposal 1 is filed as an implementation, [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886), and carries the `getSchedules` half of Proposal 2 with it. File Proposals 4, 5 and 6 as independent small PRs; they are uncontroversial and each improves the chain adapter on its own.
-- Design the pg-boss adapter so that "native recurrence" is an internal strategy, not a second adapter, gated on the whole deployment running 12.30.0 or newer rather than on a per-process capability check. Consumers never see the difference.
-- If [#886](https://github.com/timgit/pg-boss/pull/886) is declined, Proposal 3 is the fallback to push for; if both are declined, the chain stays and Proposals 4 and 5 make it safe and cheap enough to live with.
-
-## Adopting the chain now versus waiting for 12.30.0
-
-Two questions, worth separating. Can the library replace the chain with the native path later without callers noticing and without migrating the schedules already running? And if it can, is it still better to hold pg-boss adoption until the native path is released?
-
-### The swap is transparent, under three rules
-
-The facade is the same under both strategies (`schedule`, `reschedule`, `unschedule`, `get`, `list`, `previewOccurrences`, `reconcile`), so "nothing changes for the caller" is achievable. It is not automatic. Three rules have to hold from the first commit, and each one is free then and expensive later:
-
-1. **The facade never returns a backend identifier.** `get()` returns the structured definition and `nextRunAt`, never a pg-boss job id, job object or schedule row. A schedule's identity on the chain is a pending job id; natively it is a `(name, key)` schedule row. Nothing that outlives a call may be keyed on either. One job id persisted into a domain column, a log line teams grep for, or a dashboard query, and the strategy has stopped being internal.
-2. **The day-one option surface is the one the chain can honour in full.** `catchUp: 'skip' | 'once' | 'all'` maps onto #886's `missed`, and the chain has to implement all three itself: `once` is its natural behaviour, `skip` computes the next occurrence from now on a late fire, `all` sends the backlog under the same kind of cap #886 applies. Shipping the chain with `once` only and letting the native path introduce the other two would change behaviour under callers who took the default. Sub-minute recurrence is not a cliff in either direction: the chain can always do it, and #886 applies its throttle only to the `cron` kind.
-3. **Per-key exclusivity is the adapter's job.** A pending chain job lives in `pgboss.job`, a native schedule in `pgboss.schedule`, so nothing in the database stops a key existing in both, and a key in both fires twice. The adapter has to enforce one or the other, and `reconcile` is where the check belongs. `reconcile` already has to exist for the chain, so this adds an assertion, not a mechanism.
-
-### No schedule needs migrating, but draining alone does not finish
-
-Keep the old series running and register only new ones natively: that is the right shape, and it needs one addition. A chain series has no natural end, because each fire sends its own successor. Only finite definitions (`UNTIL`, `COUNT`) drain on their own; an open-ended weekly schedule sits on the chain until something converts it. Left purely to drain, the chain code and the dual read path stay alive indefinitely, and that is the real cost, not the jobs.
-
-Conversion happens at three points, all inside the library, none of them a caller change or an operator batch:
-
-- **On fire.** The handler that would have sent the successor writes the schedule row instead, in the transaction that completes the fired job. Each series converts at its next occurrence, so the tail is bounded by the longest interval in the corpus.
-- **On write.** Any `schedule` or `reschedule` for a key converts it: cancel the pending chain job and insert the schedule row in one transaction. Activations, edits, pauses and re-activations convert their own keys as a side effect, with no separate code path.
-- **On reconcile.** The periodic pass converts whatever is left, in controlled batches. This is what forces the tail, rather than waiting a year for an annual schedule to come round.
-
-Both writes are available inside a caller transaction (`fromDrizzle`, `{ db: tx }`), so each conversion is atomic per key and no key is ever in both mechanisms or in neither. Convert either from inside the handler, where the job is already claimed, or from `reconcile` after cancelling the pending successor. A job that is already `active` when conversion runs fires once more on the chain and converts on completion, which is correct rather than a special case.
-
-One thing has to be tested rather than argued: run the adapter suite twice, once per strategy, the way step 2 runs both engine implementations side by side. Proven equivalence is the whole basis of "nothing changes for the caller".
-
-### The version gate is deployment-wide, not per-process
-
-Checked against #886 and 12.29.0:
-
-- Migration v40 ships in **pg-boss 12.30.0**, with install and rollback plans, so the schema step is reversible.
-- 12.29.0's `contractor.start()` migrates only when the library's schema version is ahead of the stored one. An older pg-boss attached to a v40 schema is not an error, it runs.
-- 12.29.0's cron pass catches a per-row expression failure, warns `INVALID_SCHEDULE` and skips the row. An `rrule` row in front of an old instance is skipped, not fatal to the pass, and #886 does the same for a kind it has no parser for (`unsupported_recurrence`).
-- For `cron` rows, #886 keeps `singletonSeconds: 60` with an occurrence-aligned `singletonOffset` precisely so that an old instance and a new one forwarding the same occurrence collide on one slot during a rolling upgrade.
-
-A mixed-version window is therefore safe, but it degrades: a natively registered schedule fires only while at least one upgraded instance is running the timekeeper. Gate on "every instance is on 12.30.0 or newer with the parser registered", via a config flag flipped once the dependency bump has fully rolled out, and treat capability detection as an assertion rather than the trigger. That is stricter than "`boss.schedule` accepts an object", which is what this document proposed before.
-
-### Recommendation on sequencing
-
-Neither extreme. Do not gate pg-boss adoption on one maintainer's review of a 2300-line PR with no committed date, and do not write the chain first when its replacement may land in the same quarter. Reorder so the decision arrives as late as it can for free:
-
-- Steps 1 and 2 (engine package, CTENG on the engine) are unaffected by #886 and carry most of the near-term value. Start there.
-- Facade plus BullMQ adapter, then maestro on it (steps 3 and 4), touch no pg-boss. Step 4 on its own gives CUJ-002's silent-missing-scheduler failure mode a recovery path through `reconcile`, with no new infrastructure and no backend change. That is the cheapest reliability win on the list, and it does not prejudge the org decision.
-- Build the pg-boss adapter last (step 5) and read the review state at that point:
-
-| State of [#886](https://github.com/timgit/pg-boss/pull/886) when the adapter is next | What to build |
-| --- | --- |
-| Merged and released | Native strategy only. No chain, no dual read, no conversion path. |
-| Still open | The chain, under the three rules above, plus the conversion path. The cost of switching later is known and bounded. |
-| Declined | The chain, and push Proposal 3 as the atomic replacement. |
-
-The reorder costs nothing under all three outcomes, which is why the build-or-wait question does not have to be answered today. The chain is worth building only if the review is still open when we reach it, because the chain is most of the pg-boss adapter's complexity (`singletonKey` bookkeeping, the mandatory `reconcile`, `get()` scraping payloads, the race between fire and successor send), and all of it is throwaway alongside a conversion path that is also throwaway. What stops the wait being open-ended is step 6: CTENG needs a working pg-boss adapter to move off its tick-based runner, so if the review is still open when the adapter is next, the chain gets built rather than blocking CTENG on someone else's merge queue.
+- The pg-boss adapter is built last (step 5 of the migration outline). By then 12.30.0 is the likely target and the chain may never be written.
+- Native recurrence is an internal strategy of the one pg-boss adapter, never a second adapter, gated on the whole deployment running 12.30.0 or newer.
+- Nothing in steps 1 to 4 depends on the review: they are the engine, the codec, the facade and the BullMQ adapter.
 
 ## Extract versus a parallel mechanism in CTENG
 
@@ -582,7 +426,7 @@ Dependencies of core: `zod`, the RRULE engine (initially `rrule-rust`), `cron-pa
 2. **CTENG adopts the engine.** `computeNextRunAt` delegates to `nextOccurrence`. Storage and runner unchanged. Run both implementations side by side in tests over a year of dates in the timezones CTENG customers use, then delete the local implementation.
 3. **Facade and BullMQ adapter.** Build the `Scheduler` facade, the `DeliveryAdapter` interface and `reconcile`, then the BullMQ adapter as a thin wrapper carrying maestro's pattern-compare-then-remove logic. No pg-boss yet. Settle the `catchUp` option set here, since it is what keeps the later pg-boss strategy switch invisible.
 4. **Maestro on the BullMQ adapter.** Replace `RunWorkflowJobScheduler`, `DetectStuckWorkflowRunsJobScheduler` and `TasksAboutToExpireJobScheduler` with facade calls. Add the periodic `reconcile` fed from Live scheduled workflows. The CLI script switches to `scheduler.list()`. No runtime behaviour change; CUJ-002's missing-scheduler failure mode gains a recovery path.
-5. **pg-boss adapter, strategy decided on arrival.** Native strategy only if [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886) is released by then; otherwise the chain under the three rules in "Adopting the chain now versus waiting for 12.30.0", plus the conversion path and its end date. Full test suite either way (`upsert` reschedule, retention, transactional send, reconcile), run once per strategy the release contains. The conformance suite starts running against both adapters here. The remaining upstream proposals get filed alongside.
+5. **pg-boss adapter, strategy decided on arrival.** Native strategy only if [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886) is released by then; otherwise the chain under the three rules in "If 12.30.0 is not released when the adapter is due", plus the conversion path and its end date. Full test suite either way (`upsert` reschedule, retention, transactional send, reconcile), run once per strategy the release contains. The conformance suite starts running against both adapters here. The remaining upstream proposals get filed alongside.
 6. **CTENG on the facade.** Replace `ScheduleRunnerJobProcessor` and `ScheduleNextRunRecomputeJobProcessor` with the facade: on save, `schedule` or `reschedule`; the `onFire` handler runs today's `executeScheduleInTransaction` logic and `schedule_execution` tracking unchanged. `next_run_at` becomes a cached display value populated from `get()`, or is dropped. Fire precision improves from tick granularity to per-occurrence. On the pg-boss adapter, since CTENG runs no Redis for this and the schedule stays in the database it already backs up; that is CTENG's call to make, and the BullMQ adapter would work too at the cost of new infrastructure.
 7. **Backend changes are available, not scheduled.** Maestro on pg-boss is one config swap plus a cutover (register on pg-boss and unregister from BullMQ on next activation or edit, then `reconcile` the remainder in a controlled batch), and CTENG on BullMQ is the mirror image. Neither is planned here. Both wait on the org-level decision about which paths are recommended, and the point of steps 1 to 6 is that whichever way it goes, the work is a cutover rather than a rewrite. Independently of it: delete maestro's dead `SCHEDULER_REDIS_*` config.
 
@@ -596,5 +440,5 @@ Dependencies of core: `zod`, the RRULE engine (initially `rrule-rust`), `cron-pa
 - **Chain breakage is silent without reconcile.** `reconcile` ships in the first release and both services run it periodically. Alert on schedules present in the domain table with no pending job.
 - **If the chain ships, its dual path needs an end date up front.** Converting a key on fire, on write or on reconcile keeps callers untouched, but an open-ended series never drains by itself, so without a date the chain code and the dual read outlive their purpose. Set the date when `reconcile` force-converts the remainder in the same release that ships the chain.
 - **Read path on the BullMQ adapter.** Returning the structured definition depends on `upsertJobScheduler` template data and on maestro's adapter not falling back to the legacy repeatable path. Verify it against the bullmq version each consumer pins, in the conformance suite, before promising callers a uniform `get()`. If it does not hold on a pinned version, the definition comes from the service's own row on that adapter, as it does in maestro today.
-- **Missed-occurrence policy.** CTENG collapses missed fires; BullMQ effectively does too; the pg-boss chain fires the overdue job once and computes the next from now. Make it an explicit option (`catchUp: 'skip' | 'once' | 'all'`) rather than an accident of the backend. Settle the set before the first release: it is what keeps both a later switch from the chain to the native path and a switch between adapters invisible to callers. Any value one backend cannot implement is rejected there and listed in the capability matrix, never quietly reinterpreted.
+- **Missed-occurrence policy.** CTENG collapses missed fires; BullMQ effectively does too; the pg-boss chain fires the overdue job once and computes the next from now. Make it an explicit option (`catchUp: 'skip' | 'once' | 'all'`); today each backend decides it by accident. Settle the set before the first release: it is what keeps both a later switch from the chain to the native path and a switch between adapters invisible to callers. Any value one backend cannot implement is rejected there and listed in the capability matrix, never quietly reinterpreted.
 - **Ownership.** A shared scheduler touches revenue-critical paths in two teams' services. Agree on a code owner in `shared-ts-libs` before step 3.
