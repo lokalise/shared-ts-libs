@@ -10,6 +10,7 @@ Status: the upstream change this document recommends, Proposal 1 in "Upstream pg
 - **The layer worth sharing first is the recurrence engine**: a schedule definition plus "next occurrence after T in timezone Z". It is pure logic with no infrastructure dependency, and it is where both services carry the hardest code (DST, timezone conversion, start boundaries) and the most tests.
 - **Trigger delivery goes behind one adapter interface with two implementations and a clear direction.** pg-boss is the target for both services because Redis is inherently less durable than PostgreSQL. Redis persistence is best-effort (an RDB snapshot loses everything since the last dump, AOF with `everysec` still loses up to a second, and a failover to a replica can lose acknowledged writes), while Postgres commits are synchronously durable and covered by the same backup, point-in-time recovery and replication guarantees as the rest of the service's data. For mission-critical background jobs such as scheduled workflow runs, the safer pick is the store whose durability we already trust with the domain data. With pg-boss, schedules fire from Postgres, survive Redis loss, and the next occurrence can be enqueued in the same transaction as the service's own write. BullMQ is a compatibility adapter so maestro can adopt the library without changing runtime behaviour on day one, and it is retired once maestro moves to pg-boss. There is no library-owned schedule table: the service's domain table stays the canonical registry, and the pending job is the runtime record.
 - **pg-boss cannot compute custom recurrences natively** (its `schedule()` is cron only, minute granularity, no hook), so the library owns next-occurrence computation and drives pg-boss with a self-perpetuating chain of deferred jobs. Research against 12.29.0 confirms every operation in the model maps to a public API: deferred `send`, `singletonKey` under the `short` queue policy, `upsert` and `findJobs` by key, and transactional `send` through `fromDrizzle`. No upstream change is a prerequisite. The chain is a workaround, though, and the section "Upstream pg-boss API proposals" lays out changes (pluggable recurrence kinds on `schedule()`, `nextRunAt` on `getSchedules`, transactional `work()`) that would reduce the adapter to direct calls and drop the `reconcile` requirement. Proposal 1, the one that removes the chain, is implemented and open upstream as [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886); if it lands, the adapter becomes direct `boss.schedule` calls and the chain never ships to a second consumer.
+- **Starting on the chain and switching to the native path later is transparent, and no schedule already running needs migrating.** Three rules make it so: the facade never hands out a pg-boss job id, the `catchUp` option set is one the chain can honour in full from day one, and the adapter keeps every key in exactly one mechanism. Conversion then happens on fire, on write and on reconcile, so existing series keep running on the chain and convert themselves as they go, with new ones registered natively from the start. What does not resolve itself is the code: an open-ended series never drains, so the dual path needs an end date with `reconcile` forcing the tail. Because the switch is cheap but not free, the plan is reordered to build the pg-boss adapter last, which puts the build-or-wait decision where the review outcome is known and costs nothing under any outcome.
 - **Showing the end user the current recurrence, and letting them change it, is a first-class requirement.** The structured definition the user entered is what the library stores in the job payload and returns on read, together with the next fire time. Change is recreation (`reschedule`), which pg-boss makes a single `upsert` statement.
 - **Recommendation**: extract the engine now and adopt it in both services; build the facade with the pg-boss adapter as the primary implementation and the BullMQ adapter as a thin compatibility layer; migrate maestro to pg-boss first (it has the most to gain in durability), then CTENG (replacing its tick-based runner with per-occurrence deferred jobs). Do not build a second parallel mechanism inside CTENG: it already has one, and a third design would make convergence harder.
 
@@ -441,10 +442,63 @@ Rollback on throw returns the job to `retry` with nothing half-written. This ben
 
 ### How this changes the plan
 
-- Ship the chain adapter now against 12.x; it needs nothing upstream.
+- The chain adapter needs nothing upstream and can ship against 12.x, but build it last. The section "Adopting the chain now versus waiting for 12.30.0" reorders the plan so the build-or-wait decision is taken when the pg-boss adapter is the next thing to write.
 - Proposal 1 is filed as an implementation, [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886), and carries the `getSchedules` half of Proposal 2 with it. File Proposals 4, 5 and 6 as independent small PRs; they are uncontroversial and each improves the chain adapter on its own.
-- Design the pg-boss adapter so that "native recurrence" is an internal strategy switched on by a capability check (`boss.schedule` accepting an object), not a second adapter. Consumers never see the difference.
+- Design the pg-boss adapter so that "native recurrence" is an internal strategy, not a second adapter, gated on the whole deployment running 12.30.0 or newer rather than on a per-process capability check. Consumers never see the difference.
 - If [#886](https://github.com/timgit/pg-boss/pull/886) is declined, Proposal 3 is the fallback to push for; if both are declined, the chain stays and Proposals 4 and 5 make it safe and cheap enough to live with.
+
+## Adopting the chain now versus waiting for 12.30.0
+
+Two questions, worth separating. Can the library replace the chain with the native path later without callers noticing and without migrating the schedules already running? And if it can, is it still better to hold pg-boss adoption until the native path is released?
+
+### The swap is transparent, under three rules
+
+The facade is the same under both strategies (`schedule`, `reschedule`, `unschedule`, `get`, `list`, `previewOccurrences`, `reconcile`), so "nothing changes for the caller" is achievable. It is not automatic. Three rules have to hold from the first commit, and each one is free then and expensive later:
+
+1. **The facade never returns a backend identifier.** `get()` returns the structured definition and `nextRunAt`, never a pg-boss job id, job object or schedule row. A schedule's identity on the chain is a pending job id; natively it is a `(name, key)` schedule row. Nothing that outlives a call may be keyed on either. One job id persisted into a domain column, a log line teams grep for, or a dashboard query, and the strategy has stopped being internal.
+2. **The day-one option surface is the one the chain can honour in full.** `catchUp: 'skip' | 'once' | 'all'` maps onto #886's `missed`, and the chain has to implement all three itself: `once` is its natural behaviour, `skip` computes the next occurrence from now on a late fire, `all` sends the backlog under the same kind of cap #886 applies. Shipping the chain with `once` only and letting the native path introduce the other two would change behaviour under callers who took the default. Sub-minute recurrence is not a cliff in either direction: the chain can always do it, and #886 applies its throttle only to the `cron` kind.
+3. **Per-key exclusivity is the adapter's job.** A pending chain job lives in `pgboss.job`, a native schedule in `pgboss.schedule`, so nothing in the database stops a key existing in both, and a key in both fires twice. The adapter has to enforce one or the other, and `reconcile` is where the check belongs. `reconcile` already has to exist for the chain, so this adds an assertion, not a mechanism.
+
+### No schedule needs migrating, but draining alone does not finish
+
+Keep the old series running and register only new ones natively: that is the right shape, and it needs one addition. A chain series has no natural end, because each fire sends its own successor. Only finite definitions (`UNTIL`, `COUNT`) drain on their own; an open-ended weekly schedule sits on the chain until something converts it. Left purely to drain, the chain code and the dual read path stay alive indefinitely, and that is the real cost, not the jobs.
+
+Conversion happens at three points, all inside the library, none of them a caller change or an operator batch:
+
+- **On fire.** The handler that would have sent the successor writes the schedule row instead, in the transaction that completes the fired job. Each series converts at its next occurrence, so the tail is bounded by the longest interval in the corpus.
+- **On write.** Any `schedule` or `reschedule` for a key converts it: cancel the pending chain job and insert the schedule row in one transaction. Activations, edits, pauses and re-activations convert their own keys as a side effect, with no separate code path.
+- **On reconcile.** The periodic pass converts whatever is left, in controlled batches. This is what forces the tail, rather than waiting a year for an annual schedule to come round.
+
+Both writes are available inside a caller transaction (`fromDrizzle`, `{ db: tx }`), so each conversion is atomic per key and no key is ever in both mechanisms or in neither. Convert either from inside the handler, where the job is already claimed, or from `reconcile` after cancelling the pending successor. A job that is already `active` when conversion runs fires once more on the chain and converts on completion, which is correct rather than a special case.
+
+One thing has to be tested rather than argued: run the adapter suite twice, once per strategy, the way step 2 runs both engine implementations side by side. Proven equivalence is the whole basis of "nothing changes for the caller".
+
+### The version gate is deployment-wide, not per-process
+
+Checked against #886 and 12.29.0:
+
+- Migration v40 ships in **pg-boss 12.30.0**, with install and rollback plans, so the schema step is reversible.
+- 12.29.0's `contractor.start()` migrates only when the library's schema version is ahead of the stored one. An older pg-boss attached to a v40 schema is not an error, it runs.
+- 12.29.0's cron pass catches a per-row expression failure, warns `INVALID_SCHEDULE` and skips the row. An `rrule` row in front of an old instance is skipped, not fatal to the pass, and #886 does the same for a kind it has no parser for (`unsupported_recurrence`).
+- For `cron` rows, #886 keeps `singletonSeconds: 60` with an occurrence-aligned `singletonOffset` precisely so that an old instance and a new one forwarding the same occurrence collide on one slot during a rolling upgrade.
+
+A mixed-version window is therefore safe, but it degrades: a natively registered schedule fires only while at least one upgraded instance is running the timekeeper. Gate on "every instance is on 12.30.0 or newer with the parser registered", via a config flag flipped once the dependency bump has fully rolled out, and treat capability detection as an assertion rather than the trigger. That is stricter than "`boss.schedule` accepts an object", which is what this document proposed before.
+
+### Recommendation on sequencing
+
+Neither extreme. Do not gate pg-boss adoption on one maintainer's review of a 2300-line PR with no committed date, and do not write the chain first when its replacement may land in the same quarter. Reorder so the decision arrives as late as it can for free:
+
+- Steps 1 and 2 (engine package, CTENG on the engine) are unaffected by #886 and carry most of the near-term value. Start there.
+- Facade plus BullMQ adapter, then maestro on it (steps 3 and 4), touch no pg-boss. Step 4 on its own gives CUJ-002's silent-missing-scheduler failure mode a recovery path through `reconcile`, with no new infrastructure. That is the cheapest durability win available.
+- Build the pg-boss adapter last (step 5) and read the review state at that point:
+
+| State of [#886](https://github.com/timgit/pg-boss/pull/886) when the adapter is next | What to build |
+| --- | --- |
+| Merged and released | Native strategy only. No chain, no dual read, no conversion path. |
+| Still open | The chain, under the three rules above, plus the conversion path. The cost of switching later is known and bounded. |
+| Declined | The chain, and push Proposal 3 as the atomic replacement. |
+
+The reorder costs nothing under all three outcomes, which is why the build-or-wait question does not have to be answered today. The chain is worth building only if the review is still open when we reach it, because the chain is most of the pg-boss adapter's complexity (`singletonKey` bookkeeping, the mandatory `reconcile`, `get()` scraping payloads, the race between fire and successor send), and all of it is throwaway alongside a conversion path that is also throwaway. Waiting instead is an unbounded delay on maestro's durability fix, with the Redis exposure live today.
 
 ## Extract versus a parallel mechanism in CTENG
 
@@ -473,11 +527,12 @@ Dependencies of core: `zod`, the RRULE engine (initially `rrule-rust`), `cron-pa
 
 1. **Engine package.** Move `rruleUtils.ts`, `rruleRepeatStrategy.ts` (minus the metric coupling) and `RRULE_CONFIGURATION_SCHEMA` into the new package. Extend the model with explicit time pairs and CTENG's weekday numbering. Port both services' test fixtures. Maestro adopts by import swap; `maestro-common` re-exports the schema for the frontend contract.
 2. **CTENG adopts the engine.** `computeNextRunAt` delegates to `nextOccurrence`. Storage and runner unchanged. Run both implementations side by side in tests over a year of dates in the timezones CTENG customers use, then delete the local implementation.
-3. **Facade, pg-boss adapter, BullMQ adapter.** Build the pg-boss adapter first with the full test suite (chain, `upsert` reschedule, retention, transactional send, reconcile), structured so a native-recurrence strategy can replace the chain internally later. Build the BullMQ adapter as a thin wrapper carrying maestro's pattern-compare-then-remove logic. Upstream, Proposal 1 is already open as [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886); the remaining proposals get filed alongside it.
+3. **Facade and BullMQ adapter.** Build the `Scheduler` facade, the `DeliveryAdapter` interface and `reconcile`, then the BullMQ adapter as a thin wrapper carrying maestro's pattern-compare-then-remove logic. No pg-boss yet. Settle the `catchUp` option set here, since it is what keeps the later pg-boss strategy switch invisible.
 4. **Maestro on the BullMQ adapter.** Replace `RunWorkflowJobScheduler`, `DetectStuckWorkflowRunsJobScheduler` and `TasksAboutToExpireJobScheduler` with facade calls. Add the periodic `reconcile` fed from Live scheduled workflows. The CLI script switches to `scheduler.list()`. No runtime behaviour change; CUJ-002's missing-scheduler failure mode gains a recovery path.
-5. **Maestro on pg-boss.** Add pg-boss to maestro (schema in the service database, worker in the same process as today's BullMQ worker). Cut over per workflow: on next activation or edit, register on pg-boss and unregister from BullMQ; run `reconcile` to migrate the remainder in a controlled batch. Housekeeping schedulers move to native pg-boss cron. Remove the BullMQ adapter dependency and the dead `SCHEDULER_REDIS_*` config.
-6. **CTENG on pg-boss.** Replace `ScheduleRunnerJobProcessor` and `ScheduleNextRunRecomputeJobProcessor` with the facade: on save, `schedule` or `reschedule`; the `onFire` handler runs today's `executeScheduleInTransaction` logic and `schedule_execution` tracking unchanged. `next_run_at` becomes a cached display value populated from `get()`, or is dropped. Fire precision improves from tick granularity to per-occurrence.
-7. **Retire the BullMQ adapter** once no consumer depends on it.
+5. **pg-boss adapter, strategy decided on arrival.** Native strategy only if [timgit/pg-boss#886](https://github.com/timgit/pg-boss/pull/886) is released by then; otherwise the chain under the three rules in "Adopting the chain now versus waiting for 12.30.0", plus the conversion path and its end date. Full test suite either way (`upsert` reschedule, retention, transactional send, reconcile), run once per strategy the release contains. The remaining upstream proposals get filed alongside.
+6. **Maestro on pg-boss.** Add pg-boss to maestro (schema in the service database, worker in the same process as today's BullMQ worker). Cut over per workflow: on next activation or edit, register on pg-boss and unregister from BullMQ; run `reconcile` to migrate the remainder in a controlled batch. Housekeeping schedulers move to native pg-boss cron. Remove the BullMQ adapter dependency and the dead `SCHEDULER_REDIS_*` config.
+7. **CTENG on pg-boss.** Replace `ScheduleRunnerJobProcessor` and `ScheduleNextRunRecomputeJobProcessor` with the facade: on save, `schedule` or `reschedule`; the `onFire` handler runs today's `executeScheduleInTransaction` logic and `schedule_execution` tracking unchanged. `next_run_at` becomes a cached display value populated from `get()`, or is dropped. Fire precision improves from tick granularity to per-occurrence.
+8. **Retire the BullMQ adapter** once no consumer depends on it.
 
 ## Risks and things to settle early
 
@@ -486,6 +541,7 @@ Dependencies of core: `zod`, the RRULE engine (initially `rrule-rust`), `cron-pa
 - **Behavioural drift during migration.** Maestro's DST one-hour bump and CTENG's Intl resolution can disagree at transition instants. The side-by-side test in step 2 is the guard.
 - **pg-boss is new infrastructure in both services.** A `pgboss` schema in each service database, automatic migrations on `start()` (pin the version and disable `migrate` on all but one instance during upgrades), a `pg` pool alongside the existing driver, and poll-interval fire precision. Runbooks change: CUJ-002's recovery steps for maestro become "check pending jobs in `pgboss`, run reconcile".
 - **Chain breakage is silent without reconcile.** `reconcile` ships in the first release and both services run it periodically. Alert on schedules present in the domain table with no pending job.
-- **Read path on the BullMQ adapter.** During step 4, `get()` returns only the compiled pattern and next fire time; the structured definition still comes from the workflow layout row. That is the status quo, not a regression, and it ends at step 5.
-- **Missed-occurrence policy.** CTENG collapses missed fires; BullMQ effectively does too; the pg-boss chain fires the overdue job once and computes the next from now. Make it an explicit option (`catchUp: 'skip' | 'once' | 'all'`) rather than an accident of the backend.
+- **If the chain ships, its dual path needs an end date up front.** Converting a key on fire, on write or on reconcile keeps callers untouched, but an open-ended series never drains by itself, so without a date the chain code and the dual read outlive their purpose. Set the date when `reconcile` force-converts the remainder in the same release that ships the chain.
+- **Read path on the BullMQ adapter.** During step 4, `get()` returns only the compiled pattern and next fire time; the structured definition still comes from the workflow layout row. That is the status quo, not a regression, and it ends at step 6.
+- **Missed-occurrence policy.** CTENG collapses missed fires; BullMQ effectively does too; the pg-boss chain fires the overdue job once and computes the next from now. Make it an explicit option (`catchUp: 'skip' | 'once' | 'all'`) rather than an accident of the backend. Settle the set before the first pg-boss release: it is also what keeps a later switch from the chain to the native path invisible to callers.
 - **Ownership.** A shared scheduler touches revenue-critical paths in two teams' services. Agree on a code owner in `shared-ts-libs` before step 3.
