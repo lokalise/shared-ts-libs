@@ -1,5 +1,6 @@
-import type promClient from 'prom-client'
-import type { Histogram } from 'prom-client'
+import type promClient from '@prometheus-io/client'
+import type { Histogram } from '@prometheus-io/client'
+import type { StringLabelValues } from '../metricLabels.ts'
 import { AbstractLabeledMetric, type LabeledMetricParams } from './AbstractLabeledMetric.ts'
 
 export type HistogramMetricConfiguration<Labels extends readonly string[]> = LabeledMetricParams & {
@@ -67,6 +68,6 @@ export abstract class AbstractLabeledHistogramMetric<
 
     const duration = time ?? endTime - startTime
 
-    this.metric.observe(labels as object, duration)
+    ;(this.metric as Histogram<string>).observe(labels as StringLabelValues, duration)
   }
 }

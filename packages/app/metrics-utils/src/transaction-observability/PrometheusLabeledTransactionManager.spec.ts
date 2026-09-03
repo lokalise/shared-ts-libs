@@ -1,4 +1,4 @@
-import type promClient from 'prom-client'
+import type promClient from '@prometheus-io/client'
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import { PrometheusLabeledTransactionManager } from './PrometheusLabeledTransactionManager.ts'
 

@@ -1,5 +1,6 @@
-import type promClient from 'prom-client'
-import type { Gauge } from 'prom-client'
+import type promClient from '@prometheus-io/client'
+import type { Gauge } from '@prometheus-io/client'
+import type { StringLabelValues } from '../metricLabels.ts'
 import { AbstractLabeledMetric, type LabeledMetricParams } from './AbstractLabeledMetric.ts'
 
 export type GaugeMetricConfiguration<
@@ -48,8 +49,8 @@ export abstract class AbstractLabeledGaugeMetric<
 
     // Initializing the metric with default values, so that they are present even if no data was registered yet.
     for (const measurementKey of this.metricConfig.measurementKeys) {
-      gauge
-        .labels({ [this.metricConfig.label]: measurementKey } as Record<TMetricLabel, string>)
+      ;(gauge as Gauge<string>)
+        .labels({ [this.metricConfig.label]: measurementKey } as StringLabelValues)
         .set(0)
     }
 
@@ -66,8 +67,8 @@ export abstract class AbstractLabeledGaugeMetric<
 
     for (const [measurementKey, value] of Object.entries(measurement)) {
       if (value === undefined) continue
-      this.metric
-        .labels({ [this.metricConfig.label]: measurementKey } as Record<TMetricLabel, string>)
+      ;(this.metric as Gauge<string>)
+        .labels({ [this.metricConfig.label]: measurementKey } as StringLabelValues)
         .set(value as number)
     }
   }

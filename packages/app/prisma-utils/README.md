@@ -30,7 +30,7 @@ const prisma = prismaClientFactory(PrismaClient, {
 ```typescript
 import { prismaClientFactory } from '@lokalise/prisma-utils'
 import { PrismaClient } from '@prisma/client'
-import * as promClient from 'prom-client'
+import * as promClient from '@prometheus-io/client'
 
 const prisma = prismaClientFactory(
   PrismaClient,

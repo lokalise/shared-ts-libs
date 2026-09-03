@@ -1,4 +1,4 @@
-import type promClient from 'prom-client'
+import type promClient from '@prometheus-io/client'
 import { AbstractDimensionalCounterMetric } from '../dimensional/AbstractDimensionalCounterMetric.ts'
 import {
   AbstractDimensionalHistogramMetric,
