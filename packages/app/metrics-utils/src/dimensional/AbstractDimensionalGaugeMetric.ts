@@ -1,5 +1,6 @@
-import type promClient from 'prom-client'
-import type { Gauge } from 'prom-client'
+import type promClient from '@prometheus-io/client'
+import type { Gauge } from '@prometheus-io/client'
+import type { StringLabelValues } from '../metricLabels.ts'
 import {
   AbstractDimensionalMetric,
   type DimensionalMetricParams,
@@ -74,7 +75,7 @@ export abstract class AbstractDimensionalGaugeMetric<
       const gauge = this.getOrRegisterMetric(dimension)
       if (!gauge) continue
 
-      if (hasLabels) gauge.set(labels as object, value)
+      if (hasLabels) (gauge as Gauge<string>).set(labels as StringLabelValues, value)
       else gauge.set(value)
     }
   }

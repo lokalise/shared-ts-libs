@@ -1,5 +1,6 @@
-import type promClient from 'prom-client'
-import type { Gauge } from 'prom-client'
+import type promClient from '@prometheus-io/client'
+import type { Gauge } from '@prometheus-io/client'
+import type { StringLabelValues } from '../metricLabels.ts'
 import { AbstractLabeledMetric, type LabeledMetricParams } from './AbstractLabeledMetric.ts'
 
 export type MultiLabeledGaugeMetricConfiguration<Labels extends readonly string[]> =
@@ -56,6 +57,6 @@ export abstract class AbstractMultiLabeledGaugeMetric<
     if (!this.metric) return
 
     const { value, ...labels } = measurement
-    this.metric.set(labels as object, value)
+    ;(this.metric as Gauge<string>).set(labels as StringLabelValues, value)
   }
 }

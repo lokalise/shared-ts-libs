@@ -1,5 +1,6 @@
-import type promClient from 'prom-client'
-import type { Counter } from 'prom-client'
+import type promClient from '@prometheus-io/client'
+import type { Counter } from '@prometheus-io/client'
+import type { StringLabelValues } from '../metricLabels.ts'
 import { AbstractLabeledMetric, type LabeledMetricParams } from './AbstractLabeledMetric.ts'
 
 export type MultiLabeledCounterMetricConfiguration<Labels extends readonly string[]> =
@@ -57,6 +58,6 @@ export abstract class AbstractMultiLabeledCounterMetric<
     if (!this.metric) return
 
     const { increment, ...labels } = measurement
-    this.metric.inc(labels as object, increment)
+    ;(this.metric as Counter<string>).inc(labels as StringLabelValues, increment)
   }
 }

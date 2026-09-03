@@ -1,5 +1,5 @@
 import type { Either } from '@lokalise/node-core'
-import { Gauge } from 'prom-client'
+import { Gauge } from '@prometheus-io/client'
 import type { HealthcheckResultsStore } from './HealthcheckResultsStore.ts'
 
 export type Healthcheck = {

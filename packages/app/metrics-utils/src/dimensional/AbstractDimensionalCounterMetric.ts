@@ -1,5 +1,6 @@
-import type promClient from 'prom-client'
-import type { Counter } from 'prom-client'
+import type promClient from '@prometheus-io/client'
+import type { Counter } from '@prometheus-io/client'
+import type { StringLabelValues } from '../metricLabels.ts'
 import {
   AbstractDimensionalMetric,
   type DimensionalMetricParams,
@@ -75,7 +76,7 @@ export abstract class AbstractDimensionalCounterMetric<
       const counter = this.getOrRegisterMetric(dimension)
       if (!counter) continue
 
-      if (hasLabels) counter.inc(labels as object, value)
+      if (hasLabels) (counter as Counter<string>).inc(labels as StringLabelValues, value)
       else counter.inc(value)
     }
   }

@@ -1,5 +1,6 @@
-import type promClient from 'prom-client'
-import type { Histogram } from 'prom-client'
+import type promClient from '@prometheus-io/client'
+import type { Histogram } from '@prometheus-io/client'
+import type { StringLabelValues } from '../metricLabels.ts'
 import {
   AbstractDimensionalMetric,
   type DimensionalMetricParams,
@@ -73,6 +74,6 @@ export abstract class AbstractDimensionalHistogramMetric<
 
     const { time, startTime, endTime, labels } = measurement
     const duration = time ?? endTime - startTime
-    histogram.observe((labels ?? {}) as object, duration)
+    ;(histogram as Histogram<string>).observe((labels ?? {}) as StringLabelValues, duration)
   }
 }

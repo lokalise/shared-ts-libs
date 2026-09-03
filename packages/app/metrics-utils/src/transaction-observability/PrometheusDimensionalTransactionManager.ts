@@ -1,4 +1,4 @@
-import type promClient from 'prom-client'
+import type promClient from '@prometheus-io/client'
 import { AbstractPrometheusTransactionManager } from './AbstractPrometheusTransactionManager.ts'
 import {
   type ManagerDimensionalBuildMetricName,

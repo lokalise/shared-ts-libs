@@ -1,5 +1,5 @@
-import type promClient from 'prom-client'
-import type { Metric } from 'prom-client'
+import type promClient from '@prometheus-io/client'
+import type { Metric } from '@prometheus-io/client'
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import { getOrCreateMetric } from './getOrCreateMetric.ts'
 
