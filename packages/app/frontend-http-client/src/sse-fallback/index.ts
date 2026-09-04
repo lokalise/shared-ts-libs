@@ -15,7 +15,7 @@ export {
   FallbackUnexpectedSnapshotError,
   FallbackUnsupportedParamError,
 } from './errors.ts'
-export { SseFramer } from './framer.ts'
+export { SseFramer, type SseFramerOptions } from './framer.ts'
 export { buildFallbackParams, type FallbackContractParams } from './params.ts'
 export type {
   FallbackChannel,

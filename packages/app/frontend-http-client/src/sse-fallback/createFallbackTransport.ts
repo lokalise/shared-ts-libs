@@ -62,7 +62,10 @@ export type FallbackStreamMode =
   /**
    * Frames, framed here. Comment frames are consumed by the framing, so the
    * stale-connection watchdog degrades from byte-level to event-level — the
-   * price of validating payloads before the core sees them.
+   * price of validating payloads before the core sees them. An `id:` or
+   * `retry:` that arrives without a frame to ride on is carried into the next
+   * connect rather than lost, which is the one other thing the core's own
+   * parser would have done for itself.
    */
   | 'events'
 
@@ -153,6 +156,33 @@ type PreparedRequest = {
   bodyString: string | undefined
 }
 
+/**
+ * What a framed connection leaves behind that none of its frames could carry.
+ *
+ * In `streamMode: 'events'` the core only ever sees frames, so the two
+ * stream-scoped fields SSE lets arrive on their own — an `id:` with no `data:`,
+ * and a `retry:` hint — are lost when no frame dispatches after them. In
+ * `chunks` mode the core's own parser reads both per chunk regardless; carrying
+ * the residue into the next connect is what keeps `'events'` level with it.
+ */
+/** Where a framed connection starts, once the residue above is applied. */
+type StreamResume = {
+  key: string
+  resumedFrom: string | undefined
+  retry: number | undefined
+}
+
+type StreamCarry = {
+  /** Which stream the residue belongs to; another stream must not inherit it. */
+  key: string
+  /** Cursor as of the last frame the core was actually handed. */
+  deliveredCursor: string | undefined
+  /** Cursor the framer reached afterwards, from frames that dispatched nothing. */
+  trailingCursor: string | undefined
+  /** A `retry:` hint no frame ever carried. */
+  retry: number | undefined
+}
+
 type ExecuteOutcome =
   | { ok: true; response: Response }
   | { ok: false; status: number; headers: Record<string, string>; body: unknown }
@@ -192,6 +222,25 @@ function fromWretchError(error: WretchError): ExecuteOutcome {
 async function* emptyChunks(): AsyncGenerator<string> {
   // A refused connect carries no stream; the core counts it as a connect
   // failure the moment it sees the status.
+}
+
+/**
+ * Release the socket behind a response we are about to reject.
+ *
+ * `cancel()` rather than draining with `text()`: the poll can be answered with
+ * the stream branch, whose body never ends, and buffering that would hang a
+ * request the caller has already given up on. Doing nothing is not an option
+ * either — the core's `executePoll` only aborts a poll on timeout or on stop,
+ * never one it rejected, so an unread body is a connection held for the life
+ * of the page.
+ */
+async function releaseBody(response: Response): Promise<void> {
+  try {
+    await response.body?.cancel()
+  } catch {
+    // Already consumed, already errored, or cancellation raced the close —
+    // either way nothing is left holding the connection.
+  }
 }
 
 /**
@@ -439,25 +488,37 @@ export function createFallbackTransport(
     }
   }
 
-  function rejectUnusableSnapshot(entry: ResponseKind, path: string, status: number): void {
+  /**
+   * The error a response kind that cannot be a snapshot deserves, if any.
+   *
+   * Returned rather than thrown so the caller can release the body it is about
+   * to walk away from — the SSE case in particular would otherwise hold a
+   * stream that never ends.
+   */
+  function unusableSnapshotError(
+    entry: ResponseKind,
+    path: string,
+    status: number,
+  ): FallbackUnexpectedSnapshotError | undefined {
     if (entry.kind === 'sse') {
-      throw new FallbackUnexpectedSnapshotError(
+      return new FallbackUnexpectedSnapshotError(
         `The poll of "${path}" was answered with an SSE stream instead of a snapshot. The Accept negotiation reached the wrong branch — check that the route (and any gateway in front of it) serves JSON for "Accept: ${snapshotAccept}".`,
         { channel: 'poll', path, status, contentType: SSE_ACCEPT },
       )
     }
     if (entry.kind === 'blob') {
-      throw new FallbackUnexpectedSnapshotError(
+      return new FallbackUnexpectedSnapshotError(
         `The poll of "${path}" resolved to a binary response, which cannot be a snapshot: the fallback version gate needs a JSON body carrying a version.`,
         { channel: 'poll', path, status },
       )
     }
     if (entry.kind === 'noContent') {
-      throw new FallbackUnexpectedSnapshotError(
+      return new FallbackUnexpectedSnapshotError(
         `The poll of "${path}" returned status ${status} with no body. A snapshot must carry state and a version — a bodyless response cannot advance the watermark, and treating it as an empty snapshot would report the resource as newly empty.`,
         { channel: 'poll', path, status },
       )
     }
+    return undefined
   }
 
   async function readSnapshotJson(
@@ -503,15 +564,20 @@ export function createFallbackTransport(
       strictContentType,
     )
     if (!entry) {
+      await releaseBody(response)
       throw new FallbackUnexpectedSnapshotError(
         `The poll of "${path}" returned status ${response.status} with content-type "${contentType ?? '<none>'}", which "${snapshotContract.summary}" does not declare for that status.`,
         { channel: 'poll', path, status: response.status, contentType },
       )
     }
-    rejectUnusableSnapshot(entry, path, response.status)
+    const unusable = unusableSnapshotError(entry, path, response.status)
+    if (unusable) {
+      await releaseBody(response)
+      throw unusable
+    }
 
     const json = await readSnapshotJson(response, path, contentType)
-    // Only the JSON representation survives `rejectUnusableSnapshot`.
+    // Only the JSON representation survives `unusableSnapshotError`.
     if (entry.kind !== 'json' || !validateSnapshot) return json
 
     const result = entry.schema.safeParse(json)
@@ -583,15 +649,78 @@ export function createFallbackTransport(
     }
   }
 
+  /**
+   * Residue of the last framed connection — see {@link StreamCarry}. One slot
+   * rather than a map: reconnects for a stream are consecutive, so a slot
+   * covers them, while a transport shared across several streams simply finds
+   * nothing to inherit instead of inheriting another stream's cursor. It is
+   * only ever written in `streamMode: 'events'`, and read exactly once.
+   */
+  let carry: StreamCarry | undefined
+
+  /** Stream identity across reconnects: the request the binding rebuilds each time. */
+  const streamKeyOf = (request: FallbackTransportRequest): string =>
+    `${request.method} ${request.path} ${JSON.stringify(request.query ?? null)}`
+
+  /**
+   * Where to resume this connection from, and which `retry:` hint it inherits.
+   *
+   * The core's cursor wins unless the previous connection framed an `id:` past
+   * it that no frame could report. The upgrade applies only when the core is
+   * exactly where the last delivered frame left it: anywhere else it held the
+   * cursor back on purpose — an unreadable frame, or one `eventValidation:
+   * 'drop'` withheld — and moving past that frame would make the replay skip
+   * it for good.
+   */
+  function resumeStream(
+    request: FallbackTransportRequest,
+    coreCursor: string | undefined,
+  ): StreamResume {
+    const key = streamKeyOf(request)
+    const previous = carry
+    carry = undefined
+    // An empty cursor is "no cursor" on the wire, so normalize before comparing.
+    const cursor = coreCursor === '' ? undefined : coreCursor
+    if (streamMode !== 'events' || !previous || previous.key !== key) {
+      return { key, resumedFrom: cursor, retry: undefined }
+    }
+    return {
+      key,
+      resumedFrom: cursor === previous.deliveredCursor ? previous.trailingCursor : cursor,
+      retry: previous.retry,
+    }
+  }
+
   async function* frameChunks(
     chunks: AsyncIterable<string>,
     path: string,
+    stream: StreamResume,
   ): AsyncGenerator<FallbackParsedSseFrame> {
-    const framer = new SseFramer()
-    for await (const chunk of chunks) {
-      for (const frame of framer.push(chunk)) {
-        if (validateFrame(frame, path) && eventValidation === 'drop') continue
-        yield frame
+    const framer = new SseFramer({ lastEventId: stream.resumedFrom, retry: stream.retry })
+    // Both start where the connection opened: with no frames yet, that is
+    // exactly where the core's cursor is.
+    let cursorAtLastFrame = stream.resumedFrom
+    let cursorAtLastDelivery = stream.resumedFrom
+    try {
+      for await (const chunk of chunks) {
+        for (const frame of framer.push(chunk)) {
+          cursorAtLastFrame = frame.lastEventId
+          if (validateFrame(frame, path) && eventValidation === 'drop') continue
+          cursorAtLastDelivery = frame.lastEventId
+          yield frame
+        }
+      }
+    } finally {
+      carry = {
+        key: stream.key,
+        deliveredCursor: cursorAtLastDelivery,
+        // Only an advance that happened *after* the last frame is inheritable.
+        // A cursor sitting past a frame the core never received (a dropped
+        // payload) is one the next connect must not skip over — that frame is
+        // exactly what the repair poll, or a replay, still owes us.
+        trailingCursor:
+          cursorAtLastDelivery === cursorAtLastFrame ? framer.lastEventId : cursorAtLastDelivery,
+        retry: framer.pendingRetry,
       }
     }
   }
@@ -633,14 +762,15 @@ export function createFallbackTransport(
     request: FallbackTransportRequest,
     opts: { signal: AbortSignal; lastEventId?: string },
   ): Promise<FallbackStreamResponse> {
+    const stream = resumeStream(request, opts.lastEventId)
     const channelHeaders: Record<string, string> = {
       accept: SSE_ACCEPT,
       'cache-control': 'no-cache',
     }
     // An empty cursor is "no cursor": sending `Last-Event-ID:` with no value
     // asks a spec-following server to replay from the start of the stream.
-    if (opts.lastEventId !== undefined && opts.lastEventId !== '') {
-      channelHeaders['last-event-id'] = opts.lastEventId
+    if (stream.resumedFrom !== undefined && stream.resumedFrom !== '') {
+      channelHeaders['last-event-id'] = stream.resumedFrom
     }
 
     const prepared = await prepare(request, 'stream', channelHeaders)
@@ -651,7 +781,7 @@ export function createFallbackTransport(
       path: prepared.path,
       status,
       contentType: headers['content-type'],
-      lastEventId: opts.lastEventId,
+      lastEventId: stream.resumedFrom,
     })
 
     // A refused connect resolves with no stream: the core reads the status,
@@ -663,7 +793,7 @@ export function createFallbackTransport(
 
     const chunks = readTextChunks(outcome.response.body, opts.signal)
     if (streamMode === 'events') {
-      return { status, headers, events: frameChunks(chunks, prepared.path) }
+      return { status, headers, events: frameChunks(chunks, prepared.path, stream) }
     }
     return {
       status,

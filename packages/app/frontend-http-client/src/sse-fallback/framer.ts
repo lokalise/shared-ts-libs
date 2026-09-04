@@ -4,6 +4,21 @@ const NULL_CHARACTER = '\u0000'
 const DIGITS_ONLY = /^\d+$/
 
 /**
+ * What a framer starts a connection with.
+ *
+ * A reconnect continues one logical stream, and both fields are stream-scoped
+ * rather than connection-scoped: seeding them is what lets `streamMode:
+ * 'events'` carry an `id:` or `retry:` that the previous connection received
+ * but never got to report — see `createFallbackTransport`'s stream carry.
+ */
+export type SseFramerOptions = {
+  /** Last-Event-ID the connection resumed from. */
+  lastEventId?: string
+  /** A `retry:` hint the previous connection never stamped onto a frame. */
+  retry?: number
+}
+
+/**
  * Incremental Server-Sent Events framer.
  *
  * Exists because the two things this package needs from a stream are not
@@ -35,12 +50,26 @@ export class SseFramer {
    * only `retry:` dispatches nothing — so the hint is held and stamped onto the
    * next frame that does dispatch.
    */
-  private pendingRetry: number | undefined
+  private retryHint: number | undefined
   private cursor: string | undefined
+
+  constructor(options: SseFramerOptions = {}) {
+    this.cursor = options.lastEventId
+    this.retryHint = options.retry
+  }
 
   /** The Last-Event-ID cursor as of the last processed frame. */
   get lastEventId(): string | undefined {
     return this.cursor
+  }
+
+  /**
+   * A `retry:` hint no dispatched frame has carried yet. Non-`undefined` at the
+   * end of a connection means the hint would be lost unless it is carried into
+   * the next one.
+   */
+  get pendingRetry(): number | undefined {
+    return this.retryHint
   }
 
   /**
@@ -100,7 +129,7 @@ export class SseFramer {
         this.cursor = value
       }
     } else if (field === 'retry' && DIGITS_ONLY.test(value)) {
-      this.pendingRetry = Number(value)
+      this.retryHint = Number(value)
     }
     // Any other field name is ignored, as the spec requires.
     return undefined
@@ -116,8 +145,8 @@ export class SseFramer {
 
     if (dataLines.length === 0) return undefined
 
-    const retry = this.pendingRetry
-    this.pendingRetry = undefined
+    const retry = this.retryHint
+    this.retryHint = undefined
 
     return {
       data: dataLines.join('\n'),

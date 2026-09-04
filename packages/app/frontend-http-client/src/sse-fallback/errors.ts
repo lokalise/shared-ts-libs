@@ -77,7 +77,7 @@ export class FallbackUnexpectedSnapshotError extends FallbackTransportError {
   }
 }
 
-export type FallbackParamsPart = 'pathParams' | 'queryParams' | 'body'
+export type FallbackParamsPart = 'pathParams' | 'queryParams' | 'headers' | 'body'
 
 /**
  * Subscription params did not match the contract's request schemas. Thrown by

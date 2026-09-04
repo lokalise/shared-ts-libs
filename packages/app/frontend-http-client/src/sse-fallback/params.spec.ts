@@ -63,6 +63,41 @@ const listContract = defineApiContract({
   responsesByStatusCode: { 200: snapshotSchema },
 })
 
+const sinceContract = defineApiContract({
+  visibility: 'public',
+  summary: 'Changes since',
+  method: 'get',
+  pathResolver: () => '/changes',
+  requestQuerySchema: z.object({
+    since: z.coerce.date().optional(),
+    page: z.coerce.number().default(1),
+  }),
+  responsesByStatusCode: { 200: snapshotSchema },
+})
+
+const defaultedDateContract = defineApiContract({
+  visibility: 'public',
+  summary: 'Changes since epoch',
+  method: 'get',
+  pathResolver: () => '/changes',
+  requestQuerySchema: z.object({
+    since: z.coerce.date().default(() => new Date('2020-01-01T00:00:00.000Z')),
+  }),
+  responsesByStatusCode: { 200: snapshotSchema },
+})
+
+const tenantContract = defineApiContract({
+  visibility: 'public',
+  summary: 'Tenant status',
+  method: 'get',
+  pathResolver: () => '/status',
+  requestHeaderSchema: z.object({
+    authorization: z.string(),
+    'x-tenant': z.string().min(2),
+  }),
+  responsesByStatusCode: { 200: snapshotSchema },
+})
+
 describe('buildFallbackParams', () => {
   it('returns the params the binding needs, with Zod defaults applied', () => {
     const params = buildFallbackParams(uploadStatusContract, {
@@ -96,6 +131,31 @@ describe('buildFallbackParams', () => {
 
   it('accepts a contract that declares no request schemas at all', () => {
     expect(buildFallbackParams(bodylessContract, {})).toEqual({})
+  })
+
+  describe('query values a flat string map has to carry', () => {
+    it('sends what the caller supplied when the schema parses it into a Date', () => {
+      const params = buildFallbackParams(sinceContract, {
+        queryParams: { since: '2024-05-01T00:00:00.000Z' },
+      })
+
+      // The contract accepts the string, so there is no scalar the caller
+      // could have passed instead — and it is what `sendByApiContract` would
+      // have put on the query string for the same contract.
+      expect(params.queryParams).toEqual({ since: '2024-05-01T00:00:00.000Z', page: 1 })
+    })
+
+    it('serializes a Date the caller never supplied, so a default still reaches the wire', () => {
+      const params = buildFallbackParams(defaultedDateContract, { queryParams: {} })
+
+      expect(params.queryParams).toEqual({ since: '2020-01-01T00:00:00.000Z' })
+    })
+
+    it('keeps a coercion whose output is already a scalar', () => {
+      const params = buildFallbackParams(sinceContract, { queryParams: { page: '3' } })
+
+      expect(params.queryParams).toEqual({ page: 3 })
+    })
   })
 
   describe('validation', () => {
@@ -159,13 +219,58 @@ describe('buildFallbackParams', () => {
         buildFallbackParams(filterContract, { queryParams: { filter: { status: 'pending' } } }),
       ).toThrowError(/is structured, which a fallback subscription request cannot carry/)
     })
+
+    describe('headers', () => {
+      it('rejects a supplied header the contract schema refuses', () => {
+        let caught: unknown
+        try {
+          buildFallbackParams(tenantContract, {
+            headers: { authorization: 'Bearer t', 'x-tenant': 'a' },
+          })
+        } catch (error) {
+          caught = error
+        }
+
+        expect(caught).toBeInstanceOf(FallbackParamsValidationError)
+        expect((caught as FallbackParamsValidationError).part).toBe('headers')
+        expect((caught as FallbackParamsValidationError).message).toContain(
+          'Invalid headers for subscription to "Tenant status"',
+        )
+      })
+
+      it('does not demand a header the transport supplies fresh per request', () => {
+        // `authorization` belongs on the transport's own `headers` option,
+        // which is what lets `onAuthChallenge` recover an expired token —
+        // demanding it here would reject the setup this module recommends.
+        expect(buildFallbackParams(tenantContract, { headers: { 'x-tenant': 'acme' } })).toEqual({
+          headers: { 'x-tenant': 'acme' },
+        })
+      })
+
+      it('passes a header the contract does not declare through untouched', () => {
+        const params = buildFallbackParams(tenantContract, {
+          // @ts-expect-error — the contract declares no x-trace header
+          headers: { 'x-tenant': 'acme', 'x-trace': 'abc' },
+        })
+
+        expect(params.headers).toEqual({ 'x-tenant': 'acme', 'x-trace': 'abc' })
+      })
+    })
   })
 
   describe('types', () => {
     it('requires the params the contract declares', () => {
       expectTypeOf(buildFallbackParams<typeof startImportContract>)
         .parameter(1)
-        .toExtend<{ body: { fileId: string }; headers: { 'x-tenant': string } }>()
+        .toExtend<{ body: { fileId: string } }>()
+    })
+
+    it('lets the transport layer supply part of the declared headers', () => {
+      // Not `{ headers: { authorization, 'x-tenant' } }`: a request's headers
+      // come from two layers, and the rotating one belongs on the transport.
+      expectTypeOf(buildFallbackParams<typeof tenantContract>)
+        .parameter(1)
+        .toExtend<{ headers?: { authorization?: string; 'x-tenant'?: string } }>()
     })
   })
 })

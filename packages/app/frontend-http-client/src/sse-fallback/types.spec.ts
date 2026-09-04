@@ -88,6 +88,19 @@ const dualModeContract = defineApiContract({
   },
 })
 
+/**
+ * The JSON-only shape the README recommends for adopting the fallback before
+ * an SSE endpoint exists: a success status mapped straight to a schema, with
+ * no content map to look inside.
+ */
+const jsonOnlyContract = defineApiContract({
+  visibility: 'public',
+  summary: 'Upload snapshot',
+  method: 'get',
+  pathResolver: () => '/uploads/u-1/status',
+  responsesByStatusCode: { 200: snapshotSchema },
+})
+
 describe('the fallback transport seam', () => {
   it('produces a transport the fallback client core accepts', () => {
     const transport = createFallbackTransport(wretch('https://example.com'), {
@@ -108,6 +121,17 @@ describe('the fallback transport seam', () => {
       version: number
       status: 'pending' | 'done'
     }>()
+  })
+
+  it('derives the snapshot type from a contract with no content map', () => {
+    expectTypeOf<FallbackSnapshotOf<typeof jsonOnlyContract>>().toEqualTypeOf<{
+      version: number
+      status: 'pending' | 'done'
+    }>()
+  })
+
+  it('derives no events from a contract with no SSE branch', () => {
+    expectTypeOf<FallbackEventsOf<typeof jsonOnlyContract>>().toEqualTypeOf<Record<never, never>>()
   })
 
   it('derives the binding event payload map from the contract', () => {

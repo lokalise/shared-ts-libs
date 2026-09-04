@@ -886,6 +886,201 @@ describe('createFallbackTransport', () => {
     })
   })
 
+  describe('stream state a frame could not carry (events mode)', () => {
+    /** Open a framed stream, drain it, and report the request it sent. */
+    async function drain(
+      transport: ReturnType<typeof createFallbackTransport>,
+      lastEventId?: string,
+    ): Promise<void> {
+      const stream = await transport.openStream(
+        getRequest,
+        lastEventId === undefined ? signalOf() : { ...signalOf(), lastEventId },
+      )
+      await collectFrames((stream as { events: AsyncIterable<FallbackParsedSseFrame> }).events)
+    }
+
+    // In `chunks` mode the core's own parser reads `id:` and `retry:` per
+    // chunk whether or not they dispatch an event. Framing here is what takes
+    // that away, so the residue has to survive to the next connect.
+    it('resumes from an id the last connection framed but no frame reported', async () => {
+      const endpoint = await mockServer
+        .forGet('/uploads/u-1/status')
+        .thenReply(
+          200,
+          `${frameOf('progress', { version: 1, percent: 10 }, 'e-1')}id: e-2\n\n`,
+          SSE_HEADERS,
+        )
+
+      const transport = transportFor({ contract: dualModeContract, streamMode: 'events' })
+      await drain(transport)
+      // The core saw one frame, so its cursor is that frame's id.
+      await drain(transport, 'e-1')
+
+      const requests = await endpoint.getSeenRequests()
+      expect(requests[1]?.headers['last-event-id']).toBe('e-2')
+    })
+
+    it('stamps a retry hint the last connection never got to deliver', async () => {
+      await mockServer
+        .forGet('/uploads/u-1/status')
+        .once()
+        .thenReply(200, 'retry: 9000\n\n', SSE_HEADERS)
+      await mockServer
+        .forGet('/uploads/u-1/status')
+        .thenReply(200, frameOf('progress', { version: 1, percent: 10 }, 'e-1'), SSE_HEADERS)
+
+      const transport = transportFor({ contract: dualModeContract, streamMode: 'events' })
+      await drain(transport)
+
+      const stream = await transport.openStream(getRequest, signalOf())
+      const frames = await collectFrames(
+        (stream as { events: AsyncIterable<FallbackParsedSseFrame> }).events,
+      )
+      expect(frames[0]?.retry).toBe(9000)
+    })
+
+    it('does not resume past a frame the core never received', async () => {
+      const endpoint = await mockServer
+        .forGet('/uploads/u-1/status')
+        .thenReply(
+          200,
+          `${frameOf('progress', { version: 1, percent: 10 }, 'e-1')}${frameOf(
+            'uploadFinished',
+            { version: 2, result: 42 },
+            'e-2',
+          )}`,
+          SSE_HEADERS,
+        )
+
+      const transport = transportFor({
+        contract: dualModeContract,
+        streamMode: 'events',
+        eventValidation: 'drop',
+      })
+      await drain(transport)
+      await drain(transport, 'e-1')
+
+      // `e-2` was withheld, so replaying from it would skip it for good — the
+      // repair the drop counts on is exactly a re-delivery.
+      const requests = await endpoint.getSeenRequests()
+      expect(requests[1]?.headers['last-event-id']).toBe('e-1')
+    })
+
+    it('defers to a cursor the core moved on its own', async () => {
+      const endpoint = await mockServer
+        .forGet('/uploads/u-1/status')
+        .thenReply(
+          200,
+          `${frameOf('progress', { version: 1, percent: 10 }, 'e-1')}${frameOf(
+            'progress',
+            { version: 2, percent: 20 },
+            'e-2',
+          )}`,
+          SSE_HEADERS,
+        )
+
+      const transport = transportFor({ contract: dualModeContract, streamMode: 'events' })
+      await drain(transport)
+      // The core is behind the last frame it was handed, so it held the cursor
+      // back on purpose — a frame it could not read. Overriding that would make
+      // the replay skip that frame for good.
+      await drain(transport, 'e-1')
+
+      const requests = await endpoint.getSeenRequests()
+      expect(requests[1]?.headers['last-event-id']).toBe('e-1')
+    })
+
+    it('does not hand one stream the residue of another', async () => {
+      await mockServer.forGet('/uploads/u-1/status').thenReply(200, 'id: e-2\n\n', SSE_HEADERS)
+      const other = await mockServer.forGet('/uploads/u-2/status').thenReply(200, '', SSE_HEADERS)
+
+      const transport = transportFor({ contract: dualModeContract, streamMode: 'events' })
+      await drain(transport)
+
+      const stream = await transport.openStream(
+        { path: '/uploads/u-2/status', method: 'get' },
+        { ...signalOf(), lastEventId: 'other-1' },
+      )
+      await collectFrames((stream as { events: AsyncIterable<FallbackParsedSseFrame> }).events)
+
+      const requests = await other.getSeenRequests()
+      expect(requests[0]?.headers['last-event-id']).toBe('other-1')
+    })
+  })
+
+  describe('releasing a body it walks away from', () => {
+    /** A body that never ends, and tells us whether it was released. */
+    function endlessBody(text: string) {
+      let released = false
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(text))
+        },
+        cancel() {
+          released = true
+        },
+      })
+      return { stream, wasReleased: () => released }
+    }
+
+    const transportRespondingWith = (
+      body: BodyInit,
+      init: ResponseInit,
+      options: Parameters<typeof createFallbackTransport>[1],
+    ) =>
+      createFallbackTransport(
+        wretch(mockServer.url).polyfills({
+          fetch: () => Promise.resolve(new Response(body, init)),
+        }),
+        options,
+      )
+
+    // The core's `executePoll` aborts a poll on timeout or on stopping, never
+    // one the transport rejected — so a body left unread here is a connection
+    // held for the life of the page, once per failing poll.
+    it('releases an SSE stream that reached the poll branch', async () => {
+      const { stream, wasReleased } = endlessBody(': open\n\n')
+
+      await expect(
+        transportRespondingWith(
+          stream,
+          { status: 200, headers: SSE_HEADERS },
+          { contract: dualModeContract },
+        ).fetchSnapshot(getRequest, signalOf()),
+      ).rejects.toThrowError(FallbackUnexpectedSnapshotError)
+
+      expect(wasReleased()).toBe(true)
+    })
+
+    it('releases a binary body it cannot read as a snapshot', async () => {
+      const { stream, wasReleased } = endlessBody('binary')
+
+      await expect(
+        transportRespondingWith(
+          stream,
+          { status: 200, headers: { 'content-type': 'application/octet-stream' } },
+          { contract: blobContract },
+        ).fetchSnapshot(getRequest, signalOf()),
+      ).rejects.toThrowError(FallbackUnexpectedSnapshotError)
+
+      expect(wasReleased()).toBe(true)
+    })
+
+    it('releases a body whose content type the contract does not declare', async () => {
+      const { stream, wasReleased } = endlessBody('<html></html>')
+
+      await expect(
+        transportRespondingWith(
+          stream,
+          { status: 200, headers: { 'content-type': 'text/html' } },
+          { contract: dualModeContract },
+        ).fetchSnapshot(getRequest, signalOf()),
+      ).rejects.toThrowError(FallbackUnexpectedSnapshotError)
+
+      expect(wasReleased()).toBe(true)
+    })
+  })
+
   describe('separate poll and stream contracts', () => {
     it('validates each channel against its own contract', async () => {
       const streamContract = defineApiContract({

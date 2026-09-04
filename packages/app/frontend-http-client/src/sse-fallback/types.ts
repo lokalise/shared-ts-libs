@@ -127,9 +127,20 @@ type SuccessEntriesOf<TContract extends ApiContract> = NonNullable<
   >]
 >
 
+/**
+ * The body descriptors a response entry declares.
+ *
+ * A content-map entry contributes one descriptor per media type. A bare Zod
+ * schema — the JSON-only shape a poll-only contract uses, and the one this
+ * package's README recommends for adopting the fallback before an SSE endpoint
+ * exists — *is* the descriptor, so it has to be picked up too; reading only
+ * `content` would resolve those contracts to `never`.
+ */
 type ContentDescriptorsOf<TEntry> = TEntry extends { content: infer TContent }
   ? TContent[keyof TContent]
-  : never
+  : TEntry extends z.ZodType
+    ? TEntry
+    : never
 
 /**
  * The snapshot type a dual-mode contract's JSON branch resolves to — the

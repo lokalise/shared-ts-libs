@@ -509,6 +509,8 @@ await subscription.waitFor('uploadFinished')
 | A non-2xx response **resolves** with its status | The core owns what a status means: `unretryableStatuses`, and handing a 401 to `onAuthChallenge` |
 | Only an unusable outcome rejects — network failure, schema violation, wrong representation | A rejected poll is a recoverable poll failure; a snapshot the version gate cannot trust is not |
 | Raw text chunks by default, comment frames included | Keeps the core's `staleConnectionTimeoutMs` watchdog byte-level, so a silently dead connection is caught |
+| A snapshot it refuses has its body released | The core aborts a poll on timeout or on stopping, never one the transport rejected — an unread body (an SSE stream reached by a bad `Accept` negotiation never ends) would hold a socket per failing poll |
+| In `streamMode: 'events'`, an `id:` or `retry:` with no frame to ride on is carried into the next connect | The core's own parser reads both per chunk in `'chunks'` mode; framing here would otherwise drop a cursor advance or a server backoff hint |
 | No deadline of its own | The core bounds every wait (`pollTimeoutMs`, `connectTimeoutMs`) through the `signal` it passes |
 | Header source resolved per request | What makes the one retry `onAuthChallenge` grants actually carry a refreshed token |
 | Abort ends stream iteration quietly; a mid-stream death throws | The core aborts on purpose (stale watchdog, stop); a real failure has to surface so it backs off and polls |
@@ -551,7 +553,10 @@ Passing `contract` turns on the checks this package exists for:
 anything. With raw chunks the core frames the stream itself, so by the time a payload could be
 withheld its version has already been gated — and the repair poll would read the snapshot as a
 duplicate and drop it. `'events'` costs byte-level liveness (comment frames are consumed by the
-framing), which is why `'chunks'` + `'report'` is the default.
+framing), which is why `'chunks'` + `'report'` is the default. A cursor advance the core would
+otherwise miss is not part of that cost: an `id:` or `retry:` that no frame carried is inherited by
+the next connect, except past a frame `'drop'` withheld — replaying from there would skip for good
+the very event the repair poll is owed.
 
 An event the contract does not declare is reported to `diagnostics.onUndeclaredEvent` and never
 dropped: it usually means a newer server, not a broken one.
@@ -605,8 +610,8 @@ snapshot being a retried poll failure rather than a poisoned watermark; and
 | `FallbackSnapshotValidationError` | A snapshot body violated the contract schema; carries `issues` |
 | `FallbackUnexpectedSnapshotError` | The poll branch answered with something that cannot be a snapshot — an undeclared content type, an SSE stream (the `Accept` negotiation went wrong), a binary body, no body, or invalid JSON. Carries `contentType` and `bodyPreview` |
 | `FallbackEventValidationError` | An SSE payload failed its schema, or was not JSON. Never thrown — reported to `diagnostics.onEventSchemaError` |
-| `FallbackParamsValidationError` | `buildFallbackParams` was given params the contract's request schemas reject |
-| `FallbackUnsupportedParamError` | A query parameter is a list or a structured value; a subscription request's query is a flat string map |
+| `FallbackParamsValidationError` | `buildFallbackParams` was given params the contract's request schemas reject. Headers are checked too, but only the ones supplied — the rest come from the transport's `headers` option |
+| `FallbackUnsupportedParamError` | A query parameter is a list or a structured value; a subscription request's query is a flat string map. A schema that parses a query string into a `Date` is not one of these: the value you supplied is sent, exactly as `sendByApiContract` would |
 
 ## Credits
 

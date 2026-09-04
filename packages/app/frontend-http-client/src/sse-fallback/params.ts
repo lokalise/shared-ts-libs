@@ -1,6 +1,10 @@
 import type { ApiContract, InferSchemaInput } from '@lokalise/api-contracts'
-import type { z } from 'zod/v4'
-import { FallbackParamsValidationError, FallbackUnsupportedParamError } from './errors.ts'
+import { z } from 'zod/v4'
+import {
+  type FallbackParamsPart,
+  FallbackParamsValidationError,
+  FallbackUnsupportedParamError,
+} from './errors.ts'
 import type { FallbackRequestParams } from './types.ts'
 
 type Prettify<T> = { [K in keyof T]: T[K] } & {}
@@ -8,6 +12,21 @@ type Prettify<T> = { [K in keyof T]: T[K] } & {}
 type RequiredWhenDefined<T, TKey extends string> = [T] extends [undefined]
   ? { [K in TKey]?: undefined }
   : { [K in TKey]: T }
+
+/**
+ * Like {@link RequiredWhenDefined}, but for the one part a subscription may
+ * legitimately supply only in part.
+ *
+ * A request's headers come from two layers: these, captured once, and the
+ * transport's own `headers` option, resolved fresh for every poll and every
+ * reconnect. `requestHeaderSchema` describes the request, not this layer's
+ * contribution to it, so demanding all of it here would force a rotating
+ * credential into the layer that cannot refresh it. What *is* supplied is
+ * still checked against the contract.
+ */
+type PartialWhenDefined<T, TKey extends string> = [T] extends [undefined]
+  ? { [K in TKey]?: undefined }
+  : { [K in TKey]?: Partial<T> }
 
 type ExtractRequestBody<T> = T extends { requestBodySchema: z.ZodType }
   ? T['requestBodySchema']
@@ -22,13 +41,13 @@ export type FallbackContractParams<TContract extends ApiContract> = Prettify<
   RequiredWhenDefined<InferSchemaInput<TContract['requestPathParamsSchema']>, 'pathParams'> &
     RequiredWhenDefined<InferSchemaInput<ExtractRequestBody<TContract>>, 'body'> &
     RequiredWhenDefined<InferSchemaInput<TContract['requestQuerySchema']>, 'queryParams'> &
-    RequiredWhenDefined<InferSchemaInput<TContract['requestHeaderSchema']>, 'headers'>
+    PartialWhenDefined<InferSchemaInput<TContract['requestHeaderSchema']>, 'headers'>
 >
 
 function validate(
   schema: z.ZodType | undefined,
   value: unknown,
-  part: 'pathParams' | 'queryParams' | 'body',
+  part: FallbackParamsPart,
   contract: ApiContract,
 ): unknown {
   if (!schema || value === undefined) return value
@@ -43,6 +62,32 @@ function validate(
   return result.data
 }
 
+type QueryScalar = string | number | boolean
+
+const isQueryScalar = (value: unknown): value is QueryScalar =>
+  typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
+
+/**
+ * Render one query value as something a flat string map can carry.
+ *
+ * The parsed *output* comes first, so Zod defaults and normalizing transforms
+ * apply. But a query schema is free to parse a query string into a value the
+ * wire has no room for — `z.coerce.date()` yields a `Date` — and there is no
+ * scalar a caller could pass to satisfy such a schema, so rejecting it would
+ * make a contract `sendByApiContract` accepts unusable here. Falling back to
+ * what the caller supplied is therefore not a workaround: it is exactly the
+ * value `sendByApiContract` puts on the query string for the same contract,
+ * which is what keeps the two request paths agreeing on the wire.
+ */
+function renderQueryValue(output: unknown, supplied: unknown): QueryScalar | undefined {
+  if (isQueryScalar(output)) return output
+  if (isQueryScalar(supplied)) return supplied
+  // A value the caller never supplied (a Zod default) still has to reach the
+  // wire, and a date has one obvious rendering.
+  if (output instanceof Date) return output.toISOString()
+  return undefined
+}
+
 /**
  * A fallback binding's request shape carries query parameters as
  * `Record<string, string>`, so a repeated key (`?tag=a&tag=b`) has nowhere to
@@ -50,14 +95,16 @@ function validate(
  * server would read as one tag named `a,b`.
  */
 function flattenQueryParams(
-  queryParams: Record<string, unknown>,
+  parsed: Record<string, unknown>,
+  supplied: Record<string, unknown>,
   contract: ApiContract,
-): Record<string, string | number | boolean> {
-  const flattened: Record<string, string | number | boolean> = {}
-  for (const [key, value] of Object.entries(queryParams)) {
+): Record<string, QueryScalar> {
+  const flattened: Record<string, QueryScalar> = {}
+  for (const [key, value] of Object.entries(parsed)) {
     if (value === undefined || value === null) continue
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      flattened[key] = value
+    const rendered = renderQueryValue(value, supplied[key])
+    if (rendered !== undefined) {
+      flattened[key] = rendered
       continue
     }
     throw new FallbackUnsupportedParamError(
@@ -72,6 +119,20 @@ function flattenQueryParams(
 }
 
 /**
+ * The schema the headers supplied here are checked against.
+ *
+ * Every key is made optional first. A contract may declare an `authorization`
+ * header that the transport's own `headers` option supplies fresh per request
+ * — which is where a rotating credential belongs, and what this function's
+ * docs send callers to — so demanding it at subscription-creation time would
+ * reject the very setup it recommends. What *is* supplied still gets checked,
+ * which is the point.
+ */
+function suppliedHeadersSchema(schema: z.ZodType | undefined): z.ZodType | undefined {
+  return schema instanceof z.ZodObject ? schema.partial() : schema
+}
+
+/**
  * Build the params a fallback subscription is created with, typed and
  * validated against the contract.
  *
@@ -80,12 +141,17 @@ function flattenQueryParams(
  * 404/400 that the subscription then retries on a backoff — a slow, confusing
  * failure. This validates against the contract's own schemas up front and
  * throws immediately instead, and returns the parsed output so Zod defaults
- * and coercions apply exactly as they do for `sendByApiContract`.
+ * apply. Where a parsed value has no place on the wire — a query schema that
+ * coerces a string into a `Date` — the value you supplied is sent, which is
+ * what `sendByApiContract` would have put on the query string too.
  *
  * Header values that change over time (a bearer token) do NOT belong here:
  * params are captured once when the subscription is created, whereas the
  * transport's own `headers` option is resolved fresh for every poll and every
  * reconnect. That is what lets `onAuthChallenge` recover an expired token.
+ * Headers supplied here are checked against `requestHeaderSchema`, but only
+ * the ones supplied — a header the contract requires and the transport layer
+ * provides is not demanded twice.
  *
  * @example
  * ```typescript
@@ -112,12 +178,23 @@ export function buildFallbackParams<TContract extends ApiContract>(
     'pathParams',
     contract,
   ) as Record<string, string | number> | undefined
-  const queryParams = validate(
-    contract.requestQuerySchema,
-    source.queryParams,
-    'queryParams',
-    contract,
-  ) as Record<string, unknown> | undefined
+  const queryParams =
+    source.queryParams === undefined
+      ? undefined
+      : flattenQueryParams(
+          validate(
+            contract.requestQuerySchema,
+            source.queryParams,
+            'queryParams',
+            contract,
+          ) as Record<string, unknown>,
+          source.queryParams,
+          contract,
+        )
+  // Checked, but not replaced by the parse output: header values are strings on
+  // the wire either way, and swapping in Zod's object would let its unknown-key
+  // pruning silently drop a header the contract does not declare.
+  validate(suppliedHeadersSchema(contract.requestHeaderSchema), source.headers, 'headers', contract)
   const body = validate(
     typeof contract.requestBodySchema === 'object' ? contract.requestBodySchema : undefined,
     source.body,
@@ -127,7 +204,7 @@ export function buildFallbackParams<TContract extends ApiContract>(
 
   return {
     ...(pathParams !== undefined && { pathParams }),
-    ...(queryParams !== undefined && { queryParams: flattenQueryParams(queryParams, contract) }),
+    ...(queryParams !== undefined && { queryParams }),
     ...(source.headers !== undefined && { headers: source.headers }),
     ...(body !== undefined && { body }),
   }
