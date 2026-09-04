@@ -19,3 +19,4 @@ export {
 } from './client.ts'
 export type { SseCallbacks, SseConnection, SseRouteRequestParams } from './sse.ts'
 export { connectSseByContract } from './sse.ts'
+export * from './sse-fallback/index.ts'
