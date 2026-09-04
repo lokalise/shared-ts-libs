@@ -509,6 +509,7 @@ await subscription.waitFor('uploadFinished')
 | A non-2xx response **resolves** with its status | The core owns what a status means: `unretryableStatuses`, and handing a 401 to `onAuthChallenge` |
 | Only an unusable outcome rejects — network failure, schema violation, wrong representation | A rejected poll is a recoverable poll failure; a snapshot the version gate cannot trust is not |
 | Raw text chunks by default, comment frames included | Keeps the core's `staleConnectionTimeoutMs` watchdog byte-level, so a silently dead connection is caught |
+| No cross-subscription state | One transport serves any number of subscriptions; nothing a stream learns is carried into another, so a per-tenant cursor can never reach the wrong stream |
 | A snapshot it refuses has its body released | The core aborts a poll on timeout or on stopping, never one the transport rejected — an unread body (an SSE stream reached by a bad `Accept` negotiation never ends) would hold a socket per failing poll |
 | In `streamMode: 'events'`, an `id:` or `retry:` with no frame to ride on is carried into the next connect | The core's own parser reads both per chunk in `'chunks'` mode; framing here would otherwise drop a cursor advance or a server backoff hint |
 | No deadline of its own | The core bounds every wait (`pollTimeoutMs`, `connectTimeoutMs`) through the `signal` it passes |
@@ -546,14 +547,27 @@ Passing `contract` turns on the checks this package exists for:
 | `eventValidation` | Effect | Requires |
 |---|---|---|
 | `'report'` (default when the contract declares SSE events) | Reports to `diagnostics.onEventSchemaError`; the frame is still delivered | — |
-| `'drop'` | The frame never reaches the core, so the version watermark does not advance past it and the deadman poll repairs the gap | `streamMode: 'events'` |
+| `'drop'` | The frame never reaches the core **and the stream ends**, so the watermark stays below the hole and the repair snapshot lands above it | `streamMode: 'events'` |
 | `'off'` | No checking | — |
 
 `'drop'` needs `streamMode: 'events'` because that is where framing happens before the core sees
 anything. With raw chunks the core frames the stream itself, so by the time a payload could be
 withheld its version has already been gated — and the repair poll would read the snapshot as a
-duplicate and drop it. `'events'` costs byte-level liveness (comment frames are consumed by the
-framing), which is why `'chunks'` + `'report'` is the default. A cursor advance the core would
+duplicate and drop it.
+
+Ending the stream is the other half of `'drop'`, not an implementation detail: withholding one
+frame while delivering the next lets the core's watermark advance past the hole, and the repair
+poll then arrives at or below that watermark, where the reconciler treats it as a stale duplicate
+and synthesizes nothing. The withheld event would be lost for good. The cost is a reconnect per
+rejected payload — which is proportionate, since a stream emitting bodies its own contract rejects
+is broken, and polling carries the subscription meanwhile.
+
+`'events'` has two costs of its own, which is why `'chunks'` + `'report'` is the default: comment
+frames are consumed by the framing, so the stale-connection watchdog drops from byte-level to
+event-level; and an `id:` or `retry:` arriving with no `data:` reaches the core only if a later
+frame on the same connection carries it out, whereas the core's own parser reads both per chunk.
+Neither loses data — an unreported cursor replays events the version gate then dedupes, and an
+unreported `retry:` leaves the core on its own backoff. A cursor advance the core would
 otherwise miss is not part of that cost: an `id:` or `retry:` that no frame carried is inherited by
 the next connect, except past a frame `'drop'` withheld — replaying from there would skip for good
 the very event the repair poll is owed.

@@ -815,16 +815,16 @@ describe('createFallbackTransport', () => {
       ])
     })
 
-    it('withholds an invalid frame in drop mode so a poll repairs the gap', async () => {
+    it('ends the stream on an invalid frame in drop mode, keeping the gap open', async () => {
       await mockServer
         .forGet('/uploads/u-1/status')
         .thenReply(
           200,
-          `${frameOf('uploadFinished', { version: 1, result: 42 }, '1')}${frameOf(
-            'progress',
-            { version: 2, percent: 20 },
+          `${frameOf('progress', { version: 1, percent: 10 }, '1')}${frameOf(
+            'uploadFinished',
+            { version: 2, result: 42 },
             '2',
-          )}`,
+          )}${frameOf('progress', { version: 3, percent: 30 }, '3')}`,
           SSE_HEADERS,
         )
 
@@ -839,8 +839,30 @@ describe('createFallbackTransport', () => {
       const frames = await collectFrames(
         (stream as { events: AsyncIterable<FallbackParsedSseFrame> }).events,
       )
-      expect(frames.map((frame) => frame.event)).toEqual(['progress'])
+      // Version 2 is withheld — and version 3 is withheld with it. Delivering
+      // it would advance the core's watermark past the hole, and the repair
+      // poll would then arrive at or below that watermark, where the
+      // reconciler treats it as a stale duplicate and synthesizes nothing.
+      expect(frames.map((frame) => frame.id)).toEqual(['1'])
       expect(onEventSchemaError).toHaveBeenCalledTimes(1)
+    })
+
+    it('reports the resumed cursor on an id-less frame after a reconnect', async () => {
+      await mockServer
+        .forGet('/uploads/u-1/status')
+        .thenReply(200, frameOf('progress', { version: 2, percent: 20 }), SSE_HEADERS)
+
+      const stream = await transportFor({
+        contract: dualModeContract,
+        streamMode: 'events',
+      }).openStream(getRequest, { ...signalOf(), lastEventId: 'e-1' })
+
+      const frames = await collectFrames(
+        (stream as { events: AsyncIterable<FallbackParsedSseFrame> }).events,
+      )
+      // The cursor is stream-scoped, not connection-scoped: a frame with no
+      // `id:` of its own still reports where the reconnect resumed from.
+      expect(frames[0]?.lastEventId).toBe('e-1')
     })
   })
 
@@ -883,128 +905,6 @@ describe('createFallbackTransport', () => {
 
       expect(caught).toBeInstanceOf(FallbackTransportError)
       expect((caught as FallbackTransportError).message).toContain('socket hang up')
-    })
-  })
-
-  describe('stream state a frame could not carry (events mode)', () => {
-    /** Open a framed stream, drain it, and report the request it sent. */
-    async function drain(
-      transport: ReturnType<typeof createFallbackTransport>,
-      lastEventId?: string,
-    ): Promise<void> {
-      const stream = await transport.openStream(
-        getRequest,
-        lastEventId === undefined ? signalOf() : { ...signalOf(), lastEventId },
-      )
-      await collectFrames((stream as { events: AsyncIterable<FallbackParsedSseFrame> }).events)
-    }
-
-    // In `chunks` mode the core's own parser reads `id:` and `retry:` per
-    // chunk whether or not they dispatch an event. Framing here is what takes
-    // that away, so the residue has to survive to the next connect.
-    it('resumes from an id the last connection framed but no frame reported', async () => {
-      const endpoint = await mockServer
-        .forGet('/uploads/u-1/status')
-        .thenReply(
-          200,
-          `${frameOf('progress', { version: 1, percent: 10 }, 'e-1')}id: e-2\n\n`,
-          SSE_HEADERS,
-        )
-
-      const transport = transportFor({ contract: dualModeContract, streamMode: 'events' })
-      await drain(transport)
-      // The core saw one frame, so its cursor is that frame's id.
-      await drain(transport, 'e-1')
-
-      const requests = await endpoint.getSeenRequests()
-      expect(requests[1]?.headers['last-event-id']).toBe('e-2')
-    })
-
-    it('stamps a retry hint the last connection never got to deliver', async () => {
-      await mockServer
-        .forGet('/uploads/u-1/status')
-        .once()
-        .thenReply(200, 'retry: 9000\n\n', SSE_HEADERS)
-      await mockServer
-        .forGet('/uploads/u-1/status')
-        .thenReply(200, frameOf('progress', { version: 1, percent: 10 }, 'e-1'), SSE_HEADERS)
-
-      const transport = transportFor({ contract: dualModeContract, streamMode: 'events' })
-      await drain(transport)
-
-      const stream = await transport.openStream(getRequest, signalOf())
-      const frames = await collectFrames(
-        (stream as { events: AsyncIterable<FallbackParsedSseFrame> }).events,
-      )
-      expect(frames[0]?.retry).toBe(9000)
-    })
-
-    it('does not resume past a frame the core never received', async () => {
-      const endpoint = await mockServer
-        .forGet('/uploads/u-1/status')
-        .thenReply(
-          200,
-          `${frameOf('progress', { version: 1, percent: 10 }, 'e-1')}${frameOf(
-            'uploadFinished',
-            { version: 2, result: 42 },
-            'e-2',
-          )}`,
-          SSE_HEADERS,
-        )
-
-      const transport = transportFor({
-        contract: dualModeContract,
-        streamMode: 'events',
-        eventValidation: 'drop',
-      })
-      await drain(transport)
-      await drain(transport, 'e-1')
-
-      // `e-2` was withheld, so replaying from it would skip it for good — the
-      // repair the drop counts on is exactly a re-delivery.
-      const requests = await endpoint.getSeenRequests()
-      expect(requests[1]?.headers['last-event-id']).toBe('e-1')
-    })
-
-    it('defers to a cursor the core moved on its own', async () => {
-      const endpoint = await mockServer
-        .forGet('/uploads/u-1/status')
-        .thenReply(
-          200,
-          `${frameOf('progress', { version: 1, percent: 10 }, 'e-1')}${frameOf(
-            'progress',
-            { version: 2, percent: 20 },
-            'e-2',
-          )}`,
-          SSE_HEADERS,
-        )
-
-      const transport = transportFor({ contract: dualModeContract, streamMode: 'events' })
-      await drain(transport)
-      // The core is behind the last frame it was handed, so it held the cursor
-      // back on purpose — a frame it could not read. Overriding that would make
-      // the replay skip that frame for good.
-      await drain(transport, 'e-1')
-
-      const requests = await endpoint.getSeenRequests()
-      expect(requests[1]?.headers['last-event-id']).toBe('e-1')
-    })
-
-    it('does not hand one stream the residue of another', async () => {
-      await mockServer.forGet('/uploads/u-1/status').thenReply(200, 'id: e-2\n\n', SSE_HEADERS)
-      const other = await mockServer.forGet('/uploads/u-2/status').thenReply(200, '', SSE_HEADERS)
-
-      const transport = transportFor({ contract: dualModeContract, streamMode: 'events' })
-      await drain(transport)
-
-      const stream = await transport.openStream(
-        { path: '/uploads/u-2/status', method: 'get' },
-        { ...signalOf(), lastEventId: 'other-1' },
-      )
-      await collectFrames((stream as { events: AsyncIterable<FallbackParsedSseFrame> }).events)
-
-      const requests = await other.getSeenRequests()
-      expect(requests[0]?.headers['last-event-id']).toBe('other-1')
     })
   })
 

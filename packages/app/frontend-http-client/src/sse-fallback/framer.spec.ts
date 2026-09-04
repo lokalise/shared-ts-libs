@@ -171,34 +171,11 @@ describe('SseFramer', () => {
     })
   })
 
-  describe('carrying stream state across a reconnect', () => {
+  describe('resuming a stream', () => {
     it('reports the cursor the connection resumed from on an id-less frame', () => {
       const framer = new SseFramer({ lastEventId: 'e-7' })
 
       expect(framer.push('data: 1\n\n')).toEqual([{ data: '1', lastEventId: 'e-7' }])
-    })
-
-    it('stamps an inherited retry hint onto the first frame that dispatches', () => {
-      const framer = new SseFramer({ retry: 4000 })
-
-      expect(framer.push('data: 1\n\n')).toEqual([{ data: '1', retry: 4000 }])
-      // Connection-scoped, not per-frame: it is spent once it has been reported.
-      expect(framer.push('data: 2\n\n')).toEqual([{ data: '2' }])
-      expect(framer.pendingRetry).toBeUndefined()
-    })
-
-    it('holds a retry hint no frame ever carried, so the caller can inherit it', () => {
-      const framer = new SseFramer()
-
-      expect(framer.push('retry: 9000\n\n')).toEqual([])
-      expect(framer.pendingRetry).toBe(9000)
-    })
-
-    it('holds the cursor a data-less id frame left it at', () => {
-      const framer = new SseFramer({ lastEventId: 'e-1' })
-
-      expect(framer.push('data: 1\n\nid: e-2\n\n')).toEqual([{ data: '1', lastEventId: 'e-1' }])
-      expect(framer.lastEventId).toBe('e-2')
     })
   })
 

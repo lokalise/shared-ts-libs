@@ -6,16 +6,14 @@ const DIGITS_ONLY = /^\d+$/
 /**
  * What a framer starts a connection with.
  *
- * A reconnect continues one logical stream, and both fields are stream-scoped
- * rather than connection-scoped: seeding them is what lets `streamMode:
- * 'events'` carry an `id:` or `retry:` that the previous connection received
- * but never got to report — see `createFallbackTransport`'s stream carry.
+ * The Last-Event-ID cursor is stream-scoped rather than connection-scoped, so
+ * a reconnect starts where the previous connection left the core rather than
+ * from nothing — which is what lets an id-less frame report the cursor it
+ * inherited instead of none at all.
  */
 export type SseFramerOptions = {
   /** Last-Event-ID the connection resumed from. */
   lastEventId?: string
-  /** A `retry:` hint the previous connection never stamped onto a frame. */
-  retry?: number
 }
 
 /**
@@ -71,21 +69,11 @@ export class SseFramer {
   constructor(options: SseFramerOptions = {}) {
     this.cursor = options.lastEventId
     this.idBuffer = options.lastEventId
-    this.retryHint = options.retry
   }
 
   /** The Last-Event-ID cursor as of the last processed frame. */
   get lastEventId(): string | undefined {
     return this.cursor
-  }
-
-  /**
-   * A `retry:` hint no dispatched frame has carried yet. Non-`undefined` at the
-   * end of a connection means the hint would be lost unless it is carried into
-   * the next one.
-   */
-  get pendingRetry(): number | undefined {
-    return this.retryHint
   }
 
   /**

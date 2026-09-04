@@ -44,10 +44,19 @@ export type FallbackEventValidationMode =
    */
   | 'report'
   /**
-   * Withhold the frame from the core entirely, so the version watermark never
-   * advances past it and the deadman poll repairs the gap from a snapshot.
-   * Requires `streamMode: 'events'`, which is where the framing — and
-   * therefore the decision — happens before the core sees anything.
+   * Withhold the frame from the core entirely **and end the stream**, so the
+   * version watermark never advances past the hole and the repair snapshot
+   * lands above it. Both halves are load-bearing: frames delivered after a
+   * withheld one advance the watermark past the gap, and the repair poll then
+   * arrives at or below it — where the reconciler reads it as a stale
+   * duplicate and synthesizes nothing, leaving the withheld event lost for
+   * good.
+   *
+   * The cost is a reconnect per rejected payload, which is the point: a stream
+   * emitting bodies its own contract rejects is broken, and the polling
+   * backbone carries the subscription meanwhile. Requires `streamMode:
+   * 'events'`, which is where the framing — and therefore the decision —
+   * happens before the core sees anything.
    */
   | 'drop'
 
@@ -60,12 +69,18 @@ export type FallbackStreamMode =
    */
   | 'chunks'
   /**
-   * Frames, framed here. Comment frames are consumed by the framing, so the
-   * stale-connection watchdog degrades from byte-level to event-level — the
-   * price of validating payloads before the core sees them. An `id:` or
-   * `retry:` that arrives without a frame to ride on is carried into the next
-   * connect rather than lost, which is the one other thing the core's own
-   * parser would have done for itself.
+   * Frames, framed here. The price of validating payloads before the core sees
+   * them, paid in two places:
+   *
+   * - comment frames are consumed by the framing, so the stale-connection
+   *   watchdog degrades from byte-level to event-level;
+   * - an `id:` or `retry:` that arrives with no `data:` reaches the core only
+   *   if a later frame on the same connection carries it out. In `'chunks'`
+   *   mode the core's own parser reads both per chunk regardless.
+   *
+   * Neither loss corrupts anything — an unreported cursor replays events the
+   * version gate then dedupes, and an unreported `retry:` leaves the core on
+   * its own backoff — but they are why `'chunks'` is the default.
    */
   | 'events'
 
@@ -154,33 +169,6 @@ type PreparedRequest = {
   url: string
   headers: Record<string, string>
   bodyString: string | undefined
-}
-
-/**
- * What a framed connection leaves behind that none of its frames could carry.
- *
- * In `streamMode: 'events'` the core only ever sees frames, so the two
- * stream-scoped fields SSE lets arrive on their own — an `id:` with no `data:`,
- * and a `retry:` hint — are lost when no frame dispatches after them. In
- * `chunks` mode the core's own parser reads both per chunk regardless; carrying
- * the residue into the next connect is what keeps `'events'` level with it.
- */
-/** Where a framed connection starts, once the residue above is applied. */
-type StreamResume = {
-  key: string
-  resumedFrom: string | undefined
-  retry: number | undefined
-}
-
-type StreamCarry = {
-  /** Which stream the residue belongs to; another stream must not inherit it. */
-  key: string
-  /** Cursor as of the last frame the core was actually handed. */
-  deliveredCursor: string | undefined
-  /** Cursor the framer reached afterwards, from frames that dispatched nothing. */
-  trailingCursor: string | undefined
-  /** A `retry:` hint no frame ever carried. */
-  retry: number | undefined
 }
 
 type ExecuteOutcome =
@@ -649,78 +637,29 @@ export function createFallbackTransport(
     }
   }
 
-  /**
-   * Residue of the last framed connection — see {@link StreamCarry}. One slot
-   * rather than a map: reconnects for a stream are consecutive, so a slot
-   * covers them, while a transport shared across several streams simply finds
-   * nothing to inherit instead of inheriting another stream's cursor. It is
-   * only ever written in `streamMode: 'events'`, and read exactly once.
-   */
-  let carry: StreamCarry | undefined
-
-  /** Stream identity across reconnects: the request the binding rebuilds each time. */
-  const streamKeyOf = (request: FallbackTransportRequest): string =>
-    `${request.method} ${request.path} ${JSON.stringify(request.query ?? null)}`
-
-  /**
-   * Where to resume this connection from, and which `retry:` hint it inherits.
-   *
-   * The core's cursor wins unless the previous connection framed an `id:` past
-   * it that no frame could report. The upgrade applies only when the core is
-   * exactly where the last delivered frame left it: anywhere else it held the
-   * cursor back on purpose — an unreadable frame, or one `eventValidation:
-   * 'drop'` withheld — and moving past that frame would make the replay skip
-   * it for good.
-   */
-  function resumeStream(
-    request: FallbackTransportRequest,
-    coreCursor: string | undefined,
-  ): StreamResume {
-    const key = streamKeyOf(request)
-    const previous = carry
-    carry = undefined
-    // An empty cursor is "no cursor" on the wire, so normalize before comparing.
-    const cursor = coreCursor === '' ? undefined : coreCursor
-    if (streamMode !== 'events' || !previous || previous.key !== key) {
-      return { key, resumedFrom: cursor, retry: undefined }
-    }
-    return {
-      key,
-      resumedFrom: cursor === previous.deliveredCursor ? previous.trailingCursor : cursor,
-      retry: previous.retry,
-    }
-  }
-
   async function* frameChunks(
     chunks: AsyncIterable<string>,
     path: string,
-    stream: StreamResume,
+    resumedFrom: string | undefined,
   ): AsyncGenerator<FallbackParsedSseFrame> {
-    const framer = new SseFramer({ lastEventId: stream.resumedFrom, retry: stream.retry })
-    // Both start where the connection opened: with no frames yet, that is
-    // exactly where the core's cursor is.
-    let cursorAtLastFrame = stream.resumedFrom
-    let cursorAtLastDelivery = stream.resumedFrom
-    try {
-      for await (const chunk of chunks) {
-        for (const frame of framer.push(chunk)) {
-          cursorAtLastFrame = frame.lastEventId
-          if (validateFrame(frame, path) && eventValidation === 'drop') continue
-          cursorAtLastDelivery = frame.lastEventId
-          yield frame
+    // Seeded with the cursor this connection resumed from, so an id-less frame
+    // reports the cursor it inherited rather than none at all.
+    const framer = new SseFramer({ lastEventId: resumedFrom })
+    for await (const chunk of chunks) {
+      for (const frame of framer.push(chunk)) {
+        if (validateFrame(frame, path) && eventValidation === 'drop') {
+          // Withholding just this frame would not keep the gap open. The core
+          // delivers the next valid frame and advances its watermark past the
+          // hole; the repair poll then lands at or below that watermark, where
+          // the reconciler reads it as a stale duplicate and synthesizes
+          // nothing — so the withheld event is never reconstructed. Ending the
+          // stream instead leaves the watermark below the hole, which is what
+          // makes the repair snapshot land above it and rebuild the state and
+          // the events it covers. The core reads the end as a disconnect and
+          // reconnects from the cursor it still holds.
+          return
         }
-      }
-    } finally {
-      carry = {
-        key: stream.key,
-        deliveredCursor: cursorAtLastDelivery,
-        // Only an advance that happened *after* the last frame is inheritable.
-        // A cursor sitting past a frame the core never received (a dropped
-        // payload) is one the next connect must not skip over — that frame is
-        // exactly what the repair poll, or a replay, still owes us.
-        trailingCursor:
-          cursorAtLastDelivery === cursorAtLastFrame ? framer.lastEventId : cursorAtLastDelivery,
-        retry: framer.pendingRetry,
+        yield frame
       }
     }
   }
@@ -762,15 +701,15 @@ export function createFallbackTransport(
     request: FallbackTransportRequest,
     opts: { signal: AbortSignal; lastEventId?: string },
   ): Promise<FallbackStreamResponse> {
-    const stream = resumeStream(request, opts.lastEventId)
+    // An empty cursor is "no cursor": sending `Last-Event-ID:` with no value
+    // asks a spec-following server to replay from the start of the stream.
+    const resumedFrom = opts.lastEventId === '' ? undefined : opts.lastEventId
     const channelHeaders: Record<string, string> = {
       accept: SSE_ACCEPT,
       'cache-control': 'no-cache',
     }
-    // An empty cursor is "no cursor": sending `Last-Event-ID:` with no value
-    // asks a spec-following server to replay from the start of the stream.
-    if (stream.resumedFrom !== undefined && stream.resumedFrom !== '') {
-      channelHeaders['last-event-id'] = stream.resumedFrom
+    if (resumedFrom !== undefined) {
+      channelHeaders['last-event-id'] = resumedFrom
     }
 
     const prepared = await prepare(request, 'stream', channelHeaders)
@@ -781,7 +720,7 @@ export function createFallbackTransport(
       path: prepared.path,
       status,
       contentType: headers['content-type'],
-      lastEventId: stream.resumedFrom,
+      lastEventId: opts.lastEventId,
     })
 
     // A refused connect resolves with no stream: the core reads the status,
@@ -793,7 +732,7 @@ export function createFallbackTransport(
 
     const chunks = readTextChunks(outcome.response.body, opts.signal)
     if (streamMode === 'events') {
-      return { status, headers, events: frameChunks(chunks, prepared.path, stream) }
+      return { status, headers, events: frameChunks(chunks, prepared.path, resumedFrom) }
     }
     return {
       status,
