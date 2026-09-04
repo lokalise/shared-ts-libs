@@ -119,12 +119,32 @@ describe('SseFramer', () => {
       expect(framer.lastEventId).toBe('')
     })
 
+    it('holds the cursor at an id whose frame the stream cut short', () => {
+      const framer = new SseFramer()
+
+      framer.push('id: 7\ndata: a\n\n')
+      // The connection died before the terminator, so the event this `id:`
+      // belongs to was never delivered — resuming past it would skip it.
+      expect(framer.push('id: 8\ndata: b')).toEqual([])
+      expect(framer.lastEventId).toBe('7')
+    })
+
     it('ignores an id containing NUL rather than truncating it', () => {
       const framer = new SseFramer()
 
       framer.push('id: 9\ndata: a\n\n')
       expect(framer.push('id: 1\u000023\ndata: b\n\n')).toEqual([{ data: 'b', lastEventId: '9' }])
       expect(framer.lastEventId).toBe('9')
+    })
+  })
+
+  describe('event names', () => {
+    it('reads an empty event name as no name, leaving the core its "message" default', () => {
+      const framer = new SseFramer()
+
+      // The spec only overrides the `message` type when the event-type buffer
+      // is non-empty, so `event:` with no value is not a name of its own.
+      expect(framer.push('event:\ndata: 1\n\n')).toEqual([{ data: '1' }])
     })
   })
 

@@ -36,8 +36,9 @@ export type SseFramerOptions = {
  * line (a trailing CR is held back across chunk boundaries so CRLF is never
  * split into two terminators), exactly one leading space is stripped after the
  * colon, a line with no colon is a field with an empty value, a line starting
- * with a colon is a comment, `retry:` takes ASCII digits only, and an `id:`
- * containing NUL is ignored.
+ * with a colon is a comment, `retry:` takes ASCII digits only, an `id:`
+ * containing NUL is ignored, an empty `event:` leaves the event type at
+ * `message`, and the reconnect cursor moves only when a frame is dispatched.
  */
 export class SseFramer {
   /** Unterminated tail of the last chunk, including a held-back trailing CR. */
@@ -51,10 +52,25 @@ export class SseFramer {
    * next frame that does dispatch.
    */
   private retryHint: number | undefined
+  /**
+   * The spec's *last event ID buffer*: whatever the most recent `id:` line
+   * carried. Unlike the data and event-type buffers it is never reset between
+   * frames, which is what makes the cursor sticky.
+   */
+  private idBuffer: string | undefined
+  /**
+   * The spec's *last event ID string* — the buffer's value as of the last
+   * dispatch, which is the only place it moves.
+   *
+   * An `id:` in a frame the connection cut short before its terminator must
+   * not advance it: the event that frame was carrying was never delivered, and
+   * resuming a reconnect past it would skip it for good.
+   */
   private cursor: string | undefined
 
   constructor(options: SseFramerOptions = {}) {
     this.cursor = options.lastEventId
+    this.idBuffer = options.lastEventId
     this.retryHint = options.retry
   }
 
@@ -126,7 +142,7 @@ export class SseFramer {
       // truncated — a truncated cursor would replay from the wrong point.
       if (!value.includes(NULL_CHARACTER)) {
         this.frameId = value
-        this.cursor = value
+        this.idBuffer = value
       }
     } else if (field === 'retry' && DIGITS_ONLY.test(value)) {
       this.retryHint = Number(value)
@@ -136,6 +152,9 @@ export class SseFramer {
   }
 
   private dispatch(): FallbackParsedSseFrame | undefined {
+    // The spec's first dispatch step, and it runs even for a frame that goes
+    // on to dispatch nothing: an `id:`-only frame still moves the cursor.
+    this.cursor = this.idBuffer
     const eventName = this.eventName
     const frameId = this.frameId
     const dataLines = this.dataLines
@@ -150,7 +169,10 @@ export class SseFramer {
 
     return {
       data: dataLines.join('\n'),
-      ...(eventName !== undefined && { event: eventName }),
+      // An empty `event:` leaves the event-type buffer empty, which the spec
+      // reads as `message`. Reporting `''` as a name of its own would send the
+      // frame looking for a schema by that name and count it as undeclared.
+      ...(eventName !== undefined && eventName !== '' && { event: eventName }),
       ...(frameId !== undefined && { id: frameId }),
       ...(retry !== undefined && { retry }),
       ...(this.cursor !== undefined && { lastEventId: this.cursor }),

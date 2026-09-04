@@ -1094,7 +1094,7 @@ describe('createFallbackTransport', () => {
       await mockServer.forGet('/uploads/u-1/status').thenJson(200, { version: 1, status: 'ok' })
       await mockServer
         .forGet('/uploads/u-1/events')
-        .thenReply(200, frameOf('uploadFinished', { version: 1, result: 'bad' }), SSE_HEADERS)
+        .thenReply(200, frameOf('uploadFinished', { version: 1, result: 42 }), SSE_HEADERS)
 
       const onEventSchemaError = vi.fn()
       const transport = transportFor({
@@ -1111,7 +1111,12 @@ describe('createFallbackTransport', () => {
         signalOf(),
       )
       await collectChunks((stream as { chunks: AsyncIterable<string> }).chunks)
-      expect(onEventSchemaError).not.toHaveBeenCalled()
+      // A payload the *stream* contract rejects: proof the frames are checked
+      // against `streamContract` and not against the poll's schema, which
+      // knows nothing about events at all.
+      expect(onEventSchemaError).toHaveBeenCalledTimes(1)
+      expect(onEventSchemaError.mock.calls[0]?.[0]).toBeInstanceOf(FallbackEventValidationError)
+      expect(onEventSchemaError.mock.calls[0]?.[0].event).toBe('uploadFinished')
     })
   })
 })
