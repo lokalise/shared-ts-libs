@@ -23,6 +23,8 @@ export const ErrorType = {
   INTERNAL: 'internal',
   /** Not implemented */
   UNIMPLEMENTED: 'unimplemented',
+  /** Invalid response received from an upstream service */
+  UPSTREAM_ERROR: 'upstream-error',
   /** Service unavailable */
   UNAVAILABLE: 'unavailable',
 } as const
@@ -38,5 +40,6 @@ export const httpStatusByErrorType = {
   [ErrorType.RATE_LIMIT]: 429,
   [ErrorType.INTERNAL]: 500,
   [ErrorType.UNIMPLEMENTED]: 501,
+  [ErrorType.UPSTREAM_ERROR]: 502,
   [ErrorType.UNAVAILABLE]: 503,
 } as const satisfies Record<ErrorType, number>

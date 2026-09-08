@@ -260,6 +260,7 @@ reply.status(httpStatusByErrorType[someType]).send(payload)
 | `rate-limit`        | 429  |
 | `internal`          | 500  |
 | `unimplemented`     | 501  |
+| `upstream-error`    | 502  |
 | `unavailable`       | 503  |
 
 For other protocols (gRPC, message queues) create a similar mapping using the
