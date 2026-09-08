@@ -1,5 +1,11 @@
 # @lokalise/errors
 
+## 2.1.0
+
+### Minor Changes
+
+- ded4b5e: Add `ErrorType.UPSTREAM_ERROR` (`upstream-error`), mapped to HTTP status 502.
+
 ## 2.0.0
 
 ### Major Changes
