@@ -423,6 +423,11 @@ contracts, with the same schema validation, header handling and path prefixing a
                     └─────────────────────────────────────────────┘
 ```
 
+Meeting this for the first time? [How the SSE fallback works](docs/sse-fallback.md) walks through
+the same mechanism with diagrams and a glossary: what the layers are, what happens to one event on
+its way to your callback, and what each kind of failure does. The rest of this section is the
+reference.
+
 ### No dependency, on purpose
 
 This package does **not** depend on `@opinionated-machine/sse-fallback`. The transport seam is
