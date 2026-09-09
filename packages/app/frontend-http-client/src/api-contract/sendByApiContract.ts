@@ -17,6 +17,7 @@ import { stringify } from 'fast-querystring'
 import { ServerSentEventTransformStream } from 'parse-sse'
 import type { ConfiguredMiddleware } from 'wretch'
 import type { WretchInstance } from '../types.ts'
+import { normalizeResponseHeaders } from '../utils/responseUtils.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
 export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> = {
@@ -90,16 +91,6 @@ type ReturnTypeForContract<
 
 const resolveRequestHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> =>
   typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
-
-function normalizeResponseHeaders(response: Response): Record<string, string> {
-  const headers: Record<string, string> = {}
-
-  response.headers.forEach((value, key) => {
-    headers[key] = value
-  })
-
-  return headers
-}
 
 async function* parseSseStream(
   response: Response,

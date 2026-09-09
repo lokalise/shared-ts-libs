@@ -33,6 +33,7 @@
         "lint:fix": "biome check --write",
         "test": "vitest run",
         "test:ci": "vitest run --coverage",
+        "test:core": "node test/verifyWithCore.mjs",
         "package-version": "echo $npm_package_version",
         "prepublishOnly": "pnpm run clean && pnpm run build",
         "postversion": "biome check --write package.json"
