@@ -311,7 +311,7 @@ const results = []
 }
 
 // ---------------------------------------------------------------------------
-// 7. Reduced state via the `events` stream mode, with a dropped bad payload.
+// 7. `eventValidation: 'drop'` holds the gap open, and a poll repairs it.
 // ---------------------------------------------------------------------------
 {
   const stateBinding = defineFallbackBinding(contract, {
@@ -320,12 +320,23 @@ const results = []
     state: { init: (snapshot) => snapshot, apply: (state, event) => ({ ...state, ...event.data }) },
   })
 
+  // What the poll answers is the point of this case, so it is a variable
+  // rather than a fixed rule: the gap is only proven repaired if the state
+  // ends up at a snapshot the stream never delivered.
+  let snapshot = { version: 1, status: 'pending' }
+
   const upstream = new Readable({ read() {} })
   await server
     .forGet('/uploads/u-7/status')
     .matching((request) => request.headers.accept === 'text/event-stream')
+    .once()
     .thenStream(200, upstream, { 'content-type': 'text/event-stream' })
-  await server.forGet('/uploads/u-7/status').thenJson(200, { version: 1, status: 'pending' })
+  // Once `drop` ends the stream the core reconnects; that request falls
+  // through to this rule, whose JSON content type the core counts as a connect
+  // failure — which is what degrades the subscription onto the poll.
+  await server
+    .forGet('/uploads/u-7/status')
+    .thenCallback(() => ({ statusCode: 200, json: snapshot }))
 
   const schemaErrors = []
   const transport = createFallbackTransport(wretch(server.url), {
@@ -337,20 +348,44 @@ const results = []
   const subscription = createResilientSubscription(stateBinding, {
     transport,
     params: buildFallbackParams(contract, { pathParams: { uploadId: 'u-7' } }),
-    policy: { deadmanDelayMs: 60_000 },
+    policy: {
+      deadmanDelayMs: 100,
+      sseRetryBackoff: { baseMs: 20, factor: 1, maxMs: 20 },
+      pollFailureBackoff: { baseMs: 20, factor: 1, maxMs: 20 },
+    },
   })
 
   await new Promise((resolve) => setTimeout(resolve, 300))
+  assert.equal(subscription.getState()?.version, 1, 'hydrated from the first poll')
+
+  // A payload the contract rejects, followed by a valid one on the same
+  // connection.
   upstream.push('id: 2\nevent: progress\ndata: {"version":2,"percent":"half"}\n\n')
   upstream.push(`id: 3\nevent: progress\ndata: ${JSON.stringify({ version: 3, percent: 75 })}\n\n`)
+  upstream.push(null)
 
   await new Promise((resolve) => setTimeout(resolve, 300))
   assert.equal(schemaErrors.length, 1, `expected one schema error, saw ${schemaErrors.length}`)
   assert.equal(schemaErrors[0].event, 'progress')
-  assert.equal(subscription.getState()?.percent, 75, 'the valid delta must have been applied')
+  // Version 3 rode the connection that carried the withheld payload, so it is
+  // withheld too. Delivering it would advance the watermark past version 2 and
+  // turn the repair below into a stale duplicate that synthesizes nothing.
+  assert.equal(
+    subscription.getState()?.percent,
+    undefined,
+    'the frame after a dropped one must not be delivered',
+  )
+  assert.equal(subscription.getState()?.version, 1, 'the watermark must stay below the gap')
+
+  // The repair: a snapshot newer than anything the stream delivered. It is
+  // only applied because the watermark is still below it.
+  snapshot = { version: 4, status: 'completed' }
+  const repaired = await subscription.waitFor('progress', { timeoutMs: 5_000 })
+
+  assert.equal(repaired.version, 4)
+  assert.equal(subscription.getState()?.version, 4, 'the poll repaired the gap')
   subscription.stop()
-  upstream.push(null)
-  results.push("streamMode 'events' + eventValidation 'drop' withholds a bad payload")
+  results.push("eventValidation 'drop' holds the watermark below the gap so a poll repairs it")
   server.reset()
 }
 

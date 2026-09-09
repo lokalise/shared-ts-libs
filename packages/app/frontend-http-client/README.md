@@ -516,7 +516,6 @@ await subscription.waitFor('uploadFinished')
 | Raw text chunks by default, comment frames included | Keeps the core's `staleConnectionTimeoutMs` watchdog byte-level, so a silently dead connection is caught |
 | No cross-subscription state | One transport serves any number of subscriptions; nothing a stream learns is carried into another, so a per-tenant cursor can never reach the wrong stream |
 | A snapshot it refuses has its body released | The core aborts a poll on timeout or on stopping, never one the transport rejected — an unread body (an SSE stream reached by a bad `Accept` negotiation never ends) would hold a socket per failing poll |
-| In `streamMode: 'events'`, an `id:` or `retry:` with no frame to ride on is carried into the next connect | The core's own parser reads both per chunk in `'chunks'` mode; framing here would otherwise drop a cursor advance or a server backoff hint |
 | No deadline of its own | The core bounds every wait (`pollTimeoutMs`, `connectTimeoutMs`) through the `signal` it passes |
 | Header source resolved per request | What makes the one retry `onAuthChallenge` grants actually carry a refreshed token |
 | Abort ends stream iteration quietly; a mid-stream death throws | The core aborts on purpose (stale watchdog, stop); a real failure has to surface so it backs off and polls |
@@ -572,10 +571,7 @@ frames are consumed by the framing, so the stale-connection watchdog drops from 
 event-level; and an `id:` or `retry:` arriving with no `data:` reaches the core only if a later
 frame on the same connection carries it out, whereas the core's own parser reads both per chunk.
 Neither loses data — an unreported cursor replays events the version gate then dedupes, and an
-unreported `retry:` leaves the core on its own backoff. A cursor advance the core would
-otherwise miss is not part of that cost: an `id:` or `retry:` that no frame carried is inherited by
-the next connect, except past a frame `'drop'` withheld — replaying from there would skip for good
-the very event the repair poll is owed.
+unreported `retry:` leaves the core on its own backoff.
 
 An event the contract does not declare is reported to `diagnostics.onUndeclaredEvent` and never
 dropped: it usually means a newer server, not a broken one.
@@ -604,7 +600,8 @@ It asserts, end to end: SSE delivery with subscribe-first hydration; a deadman p
 event the live stream never sent; `Last-Event-ID` resuming after a drop; `onAuthChallenge`
 recovery picking up a freshly resolved token; `poll-only` never opening a stream; a schema-invalid
 snapshot being a retried poll failure rather than a poisoned watermark; and
-`eventValidation: 'drop'` withholding a bad payload while a valid delta still applies.
+`eventValidation: 'drop'` holding the watermark below the gap — the frame after the withheld one
+included — so that a poll actually repairs it.
 
 ### Options
 
