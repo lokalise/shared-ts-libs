@@ -47,7 +47,7 @@
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",
         "@prisma/adapter-pg": "^7.4.0",
-        "@prisma/client": "^7.4.0",
+        "@prisma/client": "^7.10.0",
         "@vitest/coverage-v8": "^4.1.11",
         "cross-env": "^10.0.0",
         "prisma": "^7.10.0",
