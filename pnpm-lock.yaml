@@ -755,8 +755,8 @@ importers:
         specifier: ^9.4.0
         version: 9.4.0(@bull-board/ui@9.4.0(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0)))(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
       '@bull-board/fastify':
-        specifier: ^9.4.0
-        version: 9.4.0(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
+        specifier: ^9.6.1
+        version: 9.6.1(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
       '@fastify/auth':
         specifier: ^5.1.0
         version: 5.1.0
@@ -1693,11 +1693,26 @@ packages:
       bullmq:
         optional: true
 
-  '@bull-board/fastify@9.4.0':
-    resolution: {integrity: sha512-N8kvvHfnCnohu44MglXT0LHlo5KncHd0tHNqE+Y9OEMfdRJseCKJujtb/FnzAgB+VRxsMI+Y8O9PN9x8g2+IsA==}
+  '@bull-board/api@9.6.1':
+    resolution: {integrity: sha512-hz+RWR4hVw5mt+7HPPfSL9Xhj7bTMuVSlK0ygSuOD1LyihxLUqf+sjQ+ueXyTLb9bLS61EZXP8OoJkIYInCz7Q==}
+    peerDependencies:
+      '@bull-board/ui': 9.6.1
+      bull: ^4.16.5
+      bullmq: ^5.56.0 || ^6.0.0
+    peerDependenciesMeta:
+      bull:
+        optional: true
+      bullmq:
+        optional: true
+
+  '@bull-board/fastify@9.6.1':
+    resolution: {integrity: sha512-CdapvFQbHo+IBCK01DV+LC/Poh/IsEYPPH5oZj6KY0pvSYHmcID1d5oDbJUjutkDy4gSTcD18hlS2giQd4c8GA==}
 
   '@bull-board/ui@9.4.0':
     resolution: {integrity: sha512-oRuCjMawEdpwFpHWWT6tzZLVqaqP+sK7xs1C1AhvTGm4pViNyPKwV7chtSExFOdVZuXJnJOl74WTXsHRfKMF3A==}
+
+  '@bull-board/ui@9.6.1':
+    resolution: {integrity: sha512-myakwEZLPA4sqUGyhQBDFW6xpZ8Ycrne0KmaTLSdnep/Js4dyessC/vdgoGez/0xL4TFf510hXdbkRhfejPe6w==}
 
   '@changesets/apply-release-plan@8.0.0':
     resolution: {integrity: sha512-kUd2pbf1w5/AYmBMb0Tt+rkIPCjFJdT0SZMrkOjJT/WV/QbtmvkyB5jkV0oaNPheavprZk+SfUiozUti7TIL2w==}
@@ -1993,8 +2008,8 @@ packages:
     resolution: {integrity: sha512-d9zaMRSTIKDLhctzH12MtXvJKSSUhaHcjV+2Z+GK+EEY7XKpP5yR4x+N3TAcHTcu963nIr+TMcCb4DBCYX1z6Q==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
-  '@fastify/accept-negotiator@2.0.1':
-    resolution: {integrity: sha512-/c/TW2bO/v9JeEgoD/g1G5GxGeCF1Hafdf79WPmUlgYiBXummY0oX3VVq4yFkKKVBKDNlaDUYoab7g38RpPqCQ==}
+  '@fastify/accept-negotiator@2.1.0':
+    resolution: {integrity: sha512-F3EVbzWt+xcnVaOHmWyIlpuFtbxOln7HDZQsh09MtMmMm/CipMayNt8hnIL8VQi54u2ZociDbf+iluGYkf7B1A==}
 
   '@fastify/ajv-compiler@4.0.6':
     resolution: {integrity: sha512-NtuzM0SfaMJbGlnjr9LWQUN5LzgSrbB8tf/wRZNas+4E1O/Nmzl53e7ruT61HDZyRCJGC6FxIogmNZO1c5ETBA==}
@@ -2042,8 +2057,8 @@ packages:
     peerDependencies:
       toad-scheduler: '>=2.0.0'
 
-  '@fastify/send@4.1.0':
-    resolution: {integrity: sha512-TMYeQLCBSy2TOFmV95hQWkiTYgC/SEx7vMdV+wnZVX4tt8VBLKzmH8vV9OzJehV0+XBfg+WxPMt5wp+JBUKsVw==}
+  '@fastify/send@4.1.1':
+    resolution: {integrity: sha512-BYo+EiaKwlxH+WetGk6hAs1d39iP0y1gqB8lGF/qwkJ9ZZ/cBY1vx5NvExb9Sc3yRMFjD5X4Eyh4e4+TzRkzdw==}
 
   '@fastify/sse@0.6.0':
     resolution: {integrity: sha512-+5g8zBbSN8ioKEfll2p6TXe75peq3uJ3/z44SakK5gNr9u6YqbOAHfTSRfXfvnUFzG97+3E055l360ruzsvgcQ==}
@@ -5358,8 +5373,8 @@ packages:
   fastparallel@2.4.1:
     resolution: {integrity: sha512-qUmhxPgNHmvRjZKBFUNI0oZuuH9OlSIOXmJ98lhKPxMZZ7zS/Fi0wRHOihDSz0R1YiIOjxzOY4bq65YTcdBi2Q==}
 
-  fastq@1.20.1:
-    resolution: {integrity: sha512-GGToxJ/w1x32s/D2EKND7kTil4n8OVk/9mycTc4VDza13lOvpUZTGX3mFSCtV9ksdGBVzvsyAVLM6mHFThxXxw==}
+  fastq@1.20.3:
+    resolution: {integrity: sha512-XKv5nnLs6nLF71NgiKJLIZFLkPyIEuOselLG7ujZnGrRfQK8HpvY+WqKhAJUAdLomwVHErVS4LfxFlPq0/FTAw==}
 
   fastq@1.20.3:
     resolution: {integrity: sha512-XKv5nnLs6nLF71NgiKJLIZFLkPyIEuOselLG7ujZnGrRfQK8HpvY+WqKhAJUAdLomwVHErVS4LfxFlPq0/FTAw==}
@@ -7881,10 +7896,17 @@ snapshots:
     optionalDependencies:
       bullmq: 6.3.1(ioredis@6.0.0)(pg@8.22.0)
 
-  '@bull-board/fastify@9.4.0(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))':
+  '@bull-board/api@9.6.1(@bull-board/ui@9.6.1(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0)))(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))':
     dependencies:
-      '@bull-board/api': 9.4.0(@bull-board/ui@9.4.0(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0)))(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
-      '@bull-board/ui': 9.4.0(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
+      '@bull-board/ui': 9.6.1(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
+      redis-info: 3.1.0
+    optionalDependencies:
+      bullmq: 6.3.1(ioredis@6.0.0)(pg@8.22.0)
+
+  '@bull-board/fastify@9.6.1(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))':
+    dependencies:
+      '@bull-board/api': 9.6.1(@bull-board/ui@9.6.1(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0)))(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
+      '@bull-board/ui': 9.6.1(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
       '@fastify/static': 10.1.3
       '@fastify/view': 12.0.0
       ejs: 6.0.1
@@ -7895,6 +7917,13 @@ snapshots:
   '@bull-board/ui@9.4.0(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))':
     dependencies:
       '@bull-board/api': 9.4.0(@bull-board/ui@9.4.0(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0)))(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
+    transitivePeerDependencies:
+      - bull
+      - bullmq
+
+  '@bull-board/ui@9.6.1(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))':
+    dependencies:
+      '@bull-board/api': 9.6.1(@bull-board/ui@9.6.1(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0)))(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
     transitivePeerDependencies:
       - bull
       - bullmq
@@ -8180,7 +8209,7 @@ snapshots:
 
   '@eslint/js@8.57.1': {}
 
-  '@fastify/accept-negotiator@2.0.1': {}
+  '@fastify/accept-negotiator@2.1.0': {}
 
   '@fastify/ajv-compiler@4.0.6':
     dependencies:
@@ -8249,7 +8278,7 @@ snapshots:
       fastify-plugin: 6.0.0
       toad-scheduler: 4.1.0
 
-  '@fastify/send@4.1.0':
+  '@fastify/send@4.1.1':
     dependencies:
       '@lukeed/ms': 2.0.2
       escape-html: 1.0.3
@@ -8265,12 +8294,12 @@ snapshots:
 
   '@fastify/static@10.1.3':
     dependencies:
-      '@fastify/accept-negotiator': 2.0.1
+      '@fastify/accept-negotiator': 2.1.0
       '@fastify/error': 4.2.0
-      '@fastify/send': 4.1.0
+      '@fastify/send': 4.1.1
       content-disposition: 2.0.1
       fastify-plugin: 6.0.0
-      fastq: 1.20.1
+      fastq: 1.20.3
       glob: 13.0.6
 
   '@fastify/swagger@9.8.1':
@@ -11018,7 +11047,7 @@ snapshots:
   avvio@9.3.0:
     dependencies:
       '@fastify/error': 4.2.0
-      fastq: 1.20.1
+      fastq: 1.20.3
 
   awilix-manager@7.0.0(awilix@13.0.5):
     dependencies:
@@ -12072,7 +12101,7 @@ snapshots:
       reusify: 1.1.0
       xtend: 4.0.2
 
-  fastq@1.20.1:
+  fastq@1.20.3:
     dependencies:
       reusify: 1.1.0
 
