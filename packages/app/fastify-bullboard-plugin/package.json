@@ -44,7 +44,7 @@
         "@fastify/schedule": "^7.0.0",
         "@lokalise/background-jobs-common": "workspace:^",
         "@lokalise/biome-config": "workspace:^",
-        "@lokalise/fastify-extras": "^31.0.1",
+        "@lokalise/fastify-extras": "^32.0.0",
         "@lokalise/node-core": "^14.1.0",
         "@types/node": "^26.4.0",
         "@vitest/coverage-v8": "^4.1.11",
