@@ -96,12 +96,11 @@ const { result } = await sendByApiContract(client, getUser, { pathParams: { user
 
 | Contract entry | `body` type |
 |---|---|
-| `z.ZodType` | Inferred from the schema — parsed and validated |
-| `ContractNoBody` | `null` |
-| `textResponse(mimeType)` | `string` |
-| `blobResponse(mimeType)` | `Blob` |
+| `z.ZodType` | Inferred from the schema, parsed and validated |
+| `noBodyResponse()` | `null` |
+| `blobResponse(mimeType)` | `BlobResponseHandle`, consumed once via `stream()`, `text()`, `blob()` or `arrayBuffer()` |
 | `sseResponse(schemaByEventName)` | `AsyncIterable` of typed events |
-| `anyOfResponses([sseResponse(…), z.object(…)])` | Requires an explicit `streaming: boolean` param |
+| `content` map with `application/json` and `text/event-stream` | Requires an explicit `streaming: boolean` param |
 
 ### Return type — Either
 
@@ -232,10 +231,12 @@ try {
 ### SSE and dual-mode
 
 ```ts
-import { anyOfResponses, sseResponse } from '@lokalise/api-contracts'
+import { sseBody, sseResponse } from '@lokalise/api-contracts'
 
-// SSE-only — AsyncIterable is returned automatically
+// SSE-only: the body is an AsyncIterable of events
 const notifications = defineApiContract({
+  visibility: 'public',
+  summary: 'Notifications stream',
   method: 'get',
   pathResolver: () => '/notifications',
   responsesByStatusCode: {
@@ -248,16 +249,20 @@ for await (const event of result.body) {
   // event: { type: 'update'; data: { id: string }; lastEventId: string; retry: number | undefined }
 }
 
-// Dual-mode — streaming: true/false selects between SSE and JSON
+// Dual-mode: streaming: true/false selects between SSE and JSON
 const chat = defineApiContract({
+  visibility: 'public',
+  summary: 'Chat completion',
   method: 'post',
   pathResolver: () => '/chat',
   requestBodySchema: z.object({ message: z.string() }),
   responsesByStatusCode: {
-    200: anyOfResponses([
-      sseResponse({ chunk: z.object({ delta: z.string() }) }),
-      z.object({ text: z.string() }),
-    ]),
+    200: {
+      content: {
+        'application/json': z.object({ text: z.string() }),
+        'text/event-stream': sseBody({ chunk: z.object({ delta: z.string() }) }),
+      },
+    },
   },
 })
 

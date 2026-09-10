@@ -53,10 +53,9 @@ await helper.mockResponse(contract, params)
 |---|---|
 | `ZodType` (JSON) | `responseJson: z.input<T>` |
 | `sseResponse(schemas)` | `events: { event: string; data: unknown }[]` |
-| `textResponse(contentType)` | `responseText: string` |
 | `blobResponse(contentType)` | `responseBlob: string` |
-| `ContractNoBody` / `noBodyResponse()` | *(none)* |
-| `anyOfResponses([sse, json])` | `responseJson` + `events` |
+| `noBodyResponse()` | *(none)* |
+| `content` map with JSON and SSE entries | `responseJson` + `events` |
 
 Path params are required when the contract declares `requestPathParamsSchema`, and optional otherwise.
 
@@ -132,7 +131,7 @@ await helper.mockResponse(contract, {
 
 #### Dual-mode response (SSE + JSON)
 
-Contracts using `anyOfResponses([sseResponse(...), jsonSchema])` serve either SSE or JSON depending on the request's `Accept` header. Both `events` and `responseJson` are required so the mock can respond to either mode.
+Contracts whose `content` map declares both `application/json` and `text/event-stream` serve either SSE or JSON depending on the request's `Accept` header. Both `events` and `responseJson` are required so the mock can respond to either mode.
 
 ```ts
 const contract = defineApiContract({
@@ -140,7 +139,12 @@ const contract = defineApiContract({
   requestBodySchema: z.object({ name: z.string() }),
   pathResolver: () => '/jobs',
   responsesByStatusCode: {
-    200: anyOfResponses([sseResponse({ completed: z.object({ totalCount: z.number() }) }), z.object({ id: z.string() })]),
+    200: {
+      content: {
+        'application/json': z.object({ id: z.string() }),
+        'text/event-stream': sseBody({ completed: z.object({ totalCount: z.number() }) }),
+      },
+    },
   },
 })
 
