@@ -6,6 +6,7 @@ import {
   type ExpandStatusRangeKey,
   type HttpStatusCode,
   type InferSchemaInput,
+  type IsUnion,
   isBlobBody,
   isContentResponseEntry,
   isJsonBody,
@@ -334,9 +335,6 @@ type HandleRequestField<TRequestInfo, TBody, TAnyBody> = [TBody] extends [never]
         requestInfo: TRequestInfo,
       ) => TBody | MockResponseWrapper<TAnyBody> | Promise<TBody | MockResponseWrapper<TAnyBody>>
     }
-
-/** True for a union of two or more members, false for a single type. */
-type IsUnion<T, U = T> = T extends unknown ? ([U] extends [T] ? false : true) : never
 
 // Selecting one JSON content-type entry explicitly: that descriptor types the handler's result.
 type PerContentTypeHandleRequest<C, TRequestInfo, TAnyBody> = {

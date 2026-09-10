@@ -1,4 +1,5 @@
 import type {
+  IsUnion,
   ServerSseSelection,
   SseMessage,
   SseSchemaByEventName,
@@ -103,13 +104,6 @@ export type SSESession<
 
 /** One SSE representation a contract declares: status key, media type and event schemas. */
 export type SSESelection = ServerSseSelection
-
-/** True when `TUnion` has two or more members. */
-type IsUnion<TUnion, TFull = TUnion> = TUnion extends unknown
-  ? [TFull] extends [TUnion]
-    ? false
-    : true
-  : never
 
 /**
  * The members of `TSelections` whose status codes cover `StatusCode`. A selection under a
