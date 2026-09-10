@@ -13,7 +13,7 @@ The library provides methods to implement the client side of HTTP protocols. Pub
     keepAliveMaxTimeout: 300_000,
     keepAliveTimeout: 4000,
     ```
-- `sendByContract()` (also exported as `sendByApiContract()`), the recommended method for making type-safe HTTP requests from an `ApiContract` definition (created with `defineApiContract`);
+- `sendByApiContract()`, the recommended method for making type-safe HTTP requests from an `ApiContract` definition (created with `defineApiContract`);
 - `sendGet()`;
 - `sendGetWithStreamedResponse()`;
 - `sendPost()`;
@@ -83,7 +83,7 @@ Additionally, `DefiniteEither` is also provided. It is a variation of the aforem
 
 `backend-http-client` supports using API contracts, created with `@lokalise/api-contracts` in order to make fully type-safe HTTP requests.
 
-`sendByApiContract` is the fully type-safe way to make HTTP requests from the backend. It works with contracts defined using `defineApiContract` from `@lokalise/api-contracts` and automatically infers the response type from the contract's `responsesByStatusCode` map. `sendByContract` is the same function under a shorter name; the two are interchangeable.
+`sendByApiContract` is the fully type-safe way to make HTTP requests from the backend. It works with contracts defined using `defineApiContract` from `@lokalise/api-contracts` and automatically infers the response type from the contract's `responsesByStatusCode` map.
 
 ```ts
 import { defineApiContract } from '@lokalise/api-contracts'

@@ -7,12 +7,10 @@ export type {
   InferApiHandlerResult,
   InferContractResponseContentTypes,
 } from './apiHandlerTypes.ts'
-export { buildFastifyApiRoute, buildFastifyRoute } from './buildFastifyApiRoute.ts'
+export { buildFastifyApiRoute } from './buildFastifyApiRoute.ts'
 export {
   type InjectByApiContractParams,
-  type InjectByContractParams,
   injectByApiContract,
-  injectByContract,
 } from './injectByApiContract.ts'
 export type {
   FastifySSERouteOptions,

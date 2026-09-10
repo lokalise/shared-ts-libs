@@ -31,7 +31,7 @@ const REQUEST_QUERY_SCHEMA = z.object({
 
 /**
  * Registers a single route derived from a `defineApiContract` contract, so the injected request has
- * something to hit. Mirrors how `buildFastifyRoute` would wire schemas, but works with the newer
+ * something to hit. Mirrors how `buildFastifyApiRoute` would wire schemas, but works with the newer
  * contract shape directly.
  */
 async function initAppForContract(
