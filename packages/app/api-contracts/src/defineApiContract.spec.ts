@@ -48,7 +48,7 @@ describe('defineApiContract', () => {
         visibility: 'public',
         summary: 'Original',
         method: 'get',
-        pathResolver: () => '/users',
+        pathResolver: () => '/users' as const,
         responsesByStatusCode: { 200: z.object({}) },
       } as const
 
@@ -56,6 +56,27 @@ describe('defineApiContract', () => {
       ;(config as { summary: string }).summary = 'Mutated'
 
       expect(route.summary).toBe('Original')
+    })
+
+    it('rejects a pathResolver whose result does not start with a slash', () => {
+      defineApiContract({
+        visibility: 'public',
+        summary: 'Missing leading slash',
+        method: 'get',
+        // @ts-expect-error - path must start with `/`
+        pathResolver: () => 'users',
+        responsesByStatusCode: { 200: z.object({}) },
+      })
+
+      const untypedPath: string = '/users'
+      defineApiContract({
+        visibility: 'public',
+        summary: 'Widened to string',
+        method: 'get',
+        // @ts-expect-error - a plain `string` is not a `/${string}`
+        pathResolver: () => untypedPath,
+        responsesByStatusCode: { 200: z.object({}) },
+      })
     })
 
     it('infers pathResolver param type from requestPathParamsSchema', () => {

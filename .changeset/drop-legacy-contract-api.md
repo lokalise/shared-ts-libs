@@ -14,4 +14,6 @@ Remove the deprecated contract definition API. `defineApiContract` is now the on
 - `@lokalise/fastify-api-contracts`: removed `buildFastifyNoPayloadRoute`, `buildFastifyPayloadRoute`, their `*Handler` variants, `buildFastifyRouteHandler`, `injectGet` / `injectPost` / `injectPut` / `injectPatch` / `injectDelete`, and the `RouteType`, `FastifyPayloadHandlerFn`, `FastifyNoPayloadHandlerFn` types. `buildFastifyRoute` is now the same function as `buildFastifyApiRoute`, and `injectByContract` / `InjectByContractParams` are the same as `injectByApiContract` / `InjectByApiContractParams`. `ApiContractMetadataToRouteMapper` now receives `ApiContract['metadata']`.
 - `@lokalise/universal-testing-utils`: removed the legacy `MockttpHelper` / `MswHelper` implementations and their `*MockParams*`, `SseEventController`, `SseMockEvent` types. `MockttpHelper` and `MswHelper` are now the same classes as `ApiContractMockttpHelper` and `ApiContractMswHelper`.
 
+`RoutePathResolver` (the `pathResolver` field) must now return a path starting with `/`, typed as `` `/${string}` ``. Inline literals and template strings infer correctly; resolvers that return a plain `string` (e.g. from a shared path helper) need to return `` `/${string}` `` instead.
+
 All consumer packages now require `@lokalise/api-contracts@>=9.0.0`.

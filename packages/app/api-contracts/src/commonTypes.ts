@@ -12,7 +12,10 @@ export type InferSchemaOutput<T extends ZodType | undefined> = T extends ZodType
     ? undefined
     : never
 
-export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string
+/**
+ * Resolves a contract's request path from its path params. The result must start with `/`.
+ */
+export type RoutePathResolver<PathParams> = (pathParams: PathParams) => `/${string}`
 
 export interface CommonRouteDefinitionMetadata extends Record<string, unknown> {}
 
