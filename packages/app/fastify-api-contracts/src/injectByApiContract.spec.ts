@@ -514,4 +514,22 @@ describe('injectByApiContract', () => {
       >()
     })
   })
+
+  it('rejects a contract whose method is not supported at runtime', async () => {
+    const contract = defineApiContract({
+      visibility: 'public',
+      summary: 'Test contract',
+      method: 'get',
+      pathResolver: () => '/ping',
+      responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
+    })
+    // Only reachable by bypassing the type system, e.g. a contract cast from untyped input.
+    const unsupported = { ...contract, method: 'head' } as unknown as typeof contract
+    const app = fastify()
+    onTestFinished(() => app.close())
+
+    await expect(injectByApiContract(app, unsupported, {})).rejects.toThrow(
+      'Unsupported HTTP method: head',
+    )
+  })
 })

@@ -53,7 +53,9 @@ export async function injectByApiContract(
   const path = buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix)
   const headers = typeof params.headers === 'function' ? await params.headers() : params.headers
 
-  switch (apiContract.method) {
+  const method = apiContract.method
+
+  switch (method) {
     case 'get':
       return app.inject().get(path).headers(headers).query(params.queryParams).end()
     case 'delete':
@@ -82,6 +84,10 @@ export async function injectByApiContract(
         .headers(headers)
         .query(params.queryParams)
         .end()
+    default: {
+      const unsupported: never = method
+      throw new Error(`Unsupported HTTP method: ${String(unsupported)}`)
+    }
   }
 }
 
