@@ -8,7 +8,7 @@ import {
 } from 'fastify-type-provider-zod'
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { z } from 'zod/v4'
-import { buildFastifyApiRoute } from './api-contracts/buildFastifyApiRoute.ts'
+import { buildFastifyApiRoute } from './buildFastifyApiRoute.ts'
 
 const BODY_SCHEMA = z.object({})
 
