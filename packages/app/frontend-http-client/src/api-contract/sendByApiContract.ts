@@ -298,3 +298,5 @@ export async function sendByApiContract<
   // biome-ignore lint/suspicious/noExplicitAny: return type is inferred from TIsStreaming
   return { result: parsedResponse } as any
 }
+
+export const sendByContract = sendByApiContract

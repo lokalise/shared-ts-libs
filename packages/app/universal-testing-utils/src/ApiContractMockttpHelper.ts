@@ -9,7 +9,7 @@ import {
 } from '@lokalise/api-contracts'
 import type { CompletedRequest, Mockttp, RequestRuleBuilder } from 'mockttp'
 import type { z } from 'zod/v4'
-import { type MockResponseWrapper, wrapMockResponse } from '../responseWrapper.ts'
+import { type MockResponseWrapper, wrapMockResponse } from './responseWrapper.ts'
 import {
   formatSseResponse,
   type MockImplementationParams,

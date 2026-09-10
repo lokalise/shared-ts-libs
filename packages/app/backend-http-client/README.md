@@ -13,9 +13,7 @@ The library provides methods to implement the client side of HTTP protocols. Pub
     keepAliveMaxTimeout: 300_000,
     keepAliveTimeout: 4000,
     ```
-- `sendByApiContract()`, the recommended method for making type-safe HTTP requests from an `ApiContract` definition (created with `defineApiContract`);
-- `sendByContract()` _(deprecated — use `sendByApiContract` instead)_;
-- `sendByContractWithStreamedResponse()` _(deprecated — use `sendByApiContract` instead)_;
+- `sendByContract()` (also exported as `sendByApiContract()`), the recommended method for making type-safe HTTP requests from an `ApiContract` definition (created with `defineApiContract`);
 - `sendGet()`;
 - `sendGetWithStreamedResponse()`;
 - `sendPost()`;
@@ -85,7 +83,7 @@ Additionally, `DefiniteEither` is also provided. It is a variation of the aforem
 
 `backend-http-client` supports using API contracts, created with `@lokalise/api-contracts` in order to make fully type-safe HTTP requests.
 
-`sendByApiContract` is the modern, fully type-safe way to make HTTP requests from the backend. It works with contracts defined using `defineApiContract` from `@lokalise/api-contracts` and automatically infers the response type from the contract's `responsesByStatusCode` map.
+`sendByApiContract` is the fully type-safe way to make HTTP requests from the backend. It works with contracts defined using `defineApiContract` from `@lokalise/api-contracts` and automatically infers the response type from the contract's `responsesByStatusCode` map. `sendByContract` is the same function under a shorter name; the two are interchangeable.
 
 ```ts
 import { defineApiContract } from '@lokalise/api-contracts'
@@ -106,8 +104,6 @@ const client = buildClient('https://api.example.com')
 const { result } = await sendByApiContract(client, getUser, { pathParams: { userId: '1' } })
 // result.body: { id: string; name: string }
 ```
-
-> **Note:** The individual `sendByPayloadRoute`, `sendByGetRoute`, `sendByDeleteRoute`, `sendByContract`, and `sendByContractWithStreamedResponse` methods are deprecated in favor of `sendByApiContract`.
 
 ### Supported response kinds
 

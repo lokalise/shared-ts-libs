@@ -3,7 +3,7 @@ import type {
   HttpStatusCode,
   HttpStatusCodeRange,
   WildcardStatusCodeKey,
-} from '../HttpStatusCodes.ts'
+} from './HttpStatusCodes.ts'
 export type ResponseOptions = {
   readonly description?: string
 }

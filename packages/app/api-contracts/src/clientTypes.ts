@@ -1,20 +1,20 @@
 import type { z } from 'zod/v4'
-import type { InferSchemaInput, InferSchemaOutput } from '../apiContracts.ts'
-import type {
-  ExpandStatusRangeKey,
-  HttpStatusCode,
-  HttpStatusCodeRange,
-  SuccessfulHttpStatusCode,
-  WildcardStatusCodeKey,
-} from '../HttpStatusCodes.ts'
-import type { Prettify } from '../typeUtils.ts'
+import type { InferSchemaInput, InferSchemaOutput } from './commonTypes.ts'
 import type {
   BlobResponseHandle,
   ResponsesByStatusCode,
   SseSchemaByEventName,
 } from './contractResponse.ts'
 import type { ApiContract } from './defineApiContract.ts'
+import type {
+  ExpandStatusRangeKey,
+  HttpStatusCode,
+  HttpStatusCodeRange,
+  SuccessfulHttpStatusCode,
+  WildcardStatusCodeKey,
+} from './HttpStatusCodes.ts'
 import type { ContractResponseMode, SseEventOf } from './inferTypes.ts'
+import type { Prettify } from './typeUtils.ts'
 
 export type HeadersParam<T> = T | (() => T) | (() => Promise<T>)
 

@@ -6,7 +6,7 @@ import type {
   HttpStatusCode,
   HttpStatusCodeRange,
   PayloadApiContract,
-  SSEEventSchemas,
+  SseSchemaByEventName,
   SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
 import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
@@ -29,7 +29,7 @@ type IsUnion<TUnion, TFull = TUnion> = TUnion extends unknown
  */
 type BodyDescriptorBody<TDescriptor> = TDescriptor extends {
   _tag: 'SseBody'
-  schemaByEventName: infer TSchemas extends SSEEventSchemas
+  schemaByEventName: infer TSchemas extends SseSchemaByEventName
 }
   ? AsyncIterable<SSEStreamMessage<TSchemas>>
   : TDescriptor extends { _tag: 'BlobBody' }
@@ -180,7 +180,7 @@ type ContractSseSelections<TContract extends ApiContract> = {
     ? {
         [M in keyof TContent]: TContent[M] extends {
           _tag: 'SseBody'
-          schemaByEventName: infer TEvents extends SSEEventSchemas
+          schemaByEventName: infer TEvents extends SseSchemaByEventName
         }
           ? {
               statusCode: HandlerStatusesForKey<TContract, S>

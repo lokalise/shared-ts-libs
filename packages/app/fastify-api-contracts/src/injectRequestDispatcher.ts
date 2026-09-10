@@ -1,3 +1,4 @@
+import type { ApiContract } from '@lokalise/api-contracts'
 import type { FastifyInstance } from 'fastify'
 import type { Response as LightMyRequestResponse } from 'light-my-request'
 
@@ -14,7 +15,7 @@ type DispatchParams = {
 }
 
 /**
- * Shared runtime dispatch for the contract-based request injectors.
+ * Runtime dispatch for the contract-based request injector.
  *
  * The HTTP method and resolved path are derived from the contract by the caller; this helper only
  * turns them into a `light-my-request` injection. `headers` may be a plain object or a (sync or
@@ -22,7 +23,7 @@ type DispatchParams = {
  */
 export async function dispatchInjectByMethod(
   app: AnyFastifyInstance,
-  method: string,
+  method: ApiContract['method'],
   path: string,
   params: DispatchParams,
 ): Promise<LightMyRequestResponse> {
@@ -58,7 +59,5 @@ export async function dispatchInjectByMethod(
         .headers(resolvedHeaders)
         .query(params.queryParams)
         .end()
-    default:
-      throw new Error(`Unsupported HTTP method: ${method}`)
   }
 }

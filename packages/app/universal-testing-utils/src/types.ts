@@ -17,7 +17,7 @@ import {
   type WildcardStatusCodeKey,
 } from '@lokalise/api-contracts'
 import type { z } from 'zod/v4'
-import { type MockResponseWrapper, unwrapMockResponse } from '../responseWrapper.ts'
+import { type MockResponseWrapper, unwrapMockResponse } from './responseWrapper.ts'
 
 export const JSON_MEDIA_TYPE = 'application/json'
 

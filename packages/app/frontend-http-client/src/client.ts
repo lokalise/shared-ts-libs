@@ -1,12 +1,3 @@
-import type {
-  DeleteRouteDefinition,
-  GetRouteDefinition,
-  HttpStatusCode,
-  InferSchemaInput,
-  InferSchemaOutput,
-  PayloadRouteDefinition,
-} from '@lokalise/api-contracts'
-import { buildRequestPath } from '@lokalise/api-contracts'
 import type { WretchResponse } from 'wretch'
 import { type ZodSchema, z } from 'zod/v4'
 import type {
@@ -14,13 +5,9 @@ import type {
   FreeDeleteParams,
   FreeHeadersParams,
   GetParamsWrapper,
-  HeadersObject,
   HeadersParams,
-  HeadersSource,
   PayloadRequestParamsWrapper,
-  PayloadRouteRequestParams,
   RequestResultType,
-  RouteRequestParams,
   WretchInstance,
 } from './types.ts'
 import {
@@ -34,10 +21,6 @@ import { buildWretchError, XmlHttpRequestError } from './utils/errorUtils.ts'
 import { parseQueryParams } from './utils/queryUtils.ts'
 
 export const UNKNOWN_SCHEMA = z.unknown()
-
-function resolveHeaders(headers: HeadersSource): HeadersObject | Promise<HeadersObject> {
-  return (typeof headers === 'function' ? headers() : headers) ?? {}
-}
 
 function handleBodyParseError<RequestBodySchema extends z.ZodSchema>(
   bodyParseResult: BodyParseResult<RequestBodySchema>,
@@ -77,7 +60,7 @@ function handleBodyParseError<RequestBodySchema extends z.ZodSchema>(
   return Promise.reject(bodyParseResult.error)
 }
 
-async function sendResourceChange<
+function sendResourceChange<
   T extends WretchInstance,
   ResponseBody,
   IsNonJSONResponseExpected extends boolean,
@@ -117,7 +100,7 @@ async function sendResourceChange<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = await resolveHeaders(params.headers as Record<string, string>)
+  const resolvedHeaders = (params.headers ?? {}) as Record<string, string>
 
   return wretch
     .headers(resolvedHeaders)
@@ -142,7 +125,7 @@ async function sendResourceChange<
 
 /* GET */
 
-export async function sendGet<
+export function sendGet<
   T extends WretchInstance,
   ResponseBody,
   RequestQuerySchema extends z.Schema | undefined = undefined,
@@ -169,7 +152,7 @@ export async function sendGet<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = await resolveHeaders(params.headers as Record<string, string>)
+  const resolvedHeaders = (params.headers ?? {}) as Record<string, string>
 
   return wretch
     .headers(resolvedHeaders)
@@ -330,7 +313,7 @@ export function sendPatch<
 
 /* DELETE */
 
-export async function sendDelete<
+export function sendDelete<
   T extends WretchInstance,
   ResponseBody,
   RequestQuerySchema extends z.Schema | undefined = undefined,
@@ -361,7 +344,7 @@ export async function sendDelete<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = await resolveHeaders(params.headers as Record<string, string>)
+  const resolvedHeaders = (params.headers ?? {}) as Record<string, string>
 
   return wretch
     .headers(resolvedHeaders)
@@ -390,339 +373,4 @@ export async function sendDelete<
     }) as Promise<
     RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
   >
-}
-
-/**
- * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
- */
-export function sendByPayloadRoute<
-  T extends WretchInstance,
-  RequestBodySchema extends z.Schema | undefined,
-  ResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema | undefined = undefined,
-  RequestQuerySchema extends z.Schema | undefined = undefined,
-  RequestHeaderSchema extends z.Schema | undefined = undefined,
-  ResponseHeaderSchema extends z.Schema | undefined = undefined,
-  IsNonJSONResponseExpected extends boolean = false,
-  IsEmptyResponseExpected extends boolean = false,
-  ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode, z.Schema>>
-    | undefined = undefined,
->(
-  wretch: T,
-  routeDefinition: PayloadRouteDefinition<
-    RequestBodySchema,
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
-  >,
-  params: PayloadRouteRequestParams<
-    InferSchemaInput<PathParamsSchema>,
-    InferSchemaInput<RequestBodySchema>,
-    InferSchemaInput<RequestQuerySchema>,
-    InferSchemaInput<RequestHeaderSchema>
-  >,
-): Promise<
-  RequestResultType<
-    InferSchemaOutput<ResponseBodySchema>,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
-  >
-> {
-  return sendResourceChange(wretch, routeDefinition.method, {
-    // @ts-expect-error magic type inferring happening
-    body: params.body,
-    isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
-    isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
-    // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
-    requestBodySchema: routeDefinition.requestBodySchema as any,
-    // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
-    responseBodySchema: routeDefinition.successResponseBodySchema as any,
-    // @ts-expect-error magic type inferring happening
-    queryParams: params.queryParams,
-    queryParamsSchema: routeDefinition.requestQuerySchema,
-    // @ts-expect-error magic type inferring happening
-    path: buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
-    // @ts-expect-error FixMe
-    headers: params.headers,
-    // @ts-expect-error magic type inferring happening
-    headersSchema: params.headersSchema,
-  })
-}
-
-/**
- * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
- */
-export function sendByGetRoute<
-  T extends WretchInstance,
-  ResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema | undefined = undefined,
-  RequestQuerySchema extends z.Schema | undefined = undefined,
-  RequestHeaderSchema extends z.Schema | undefined = undefined,
-  ResponseHeaderSchema extends z.Schema | undefined = undefined,
-  IsNonJSONResponseExpected extends boolean = false,
-  IsEmptyResponseExpected extends boolean = false,
-  ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode, z.Schema>>
-    | undefined = undefined,
->(
-  wretch: T,
-  routeDefinition: GetRouteDefinition<
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
-  >,
-  params: RouteRequestParams<
-    InferSchemaInput<PathParamsSchema>,
-    InferSchemaInput<RequestQuerySchema>,
-    InferSchemaInput<RequestHeaderSchema>
-  >,
-): Promise<
-  RequestResultType<
-    InferSchemaOutput<ResponseBodySchema>,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
-  >
-> {
-  // @ts-expect-error fixme
-  return sendGet(wretch, {
-    isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
-    isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
-    responseBodySchema: routeDefinition.successResponseBodySchema,
-    // @ts-expect-error magic type inferring happening
-    queryParams: params.queryParams,
-    queryParamsSchema: routeDefinition.requestQuerySchema,
-    // @ts-expect-error magic type inferring happening
-    path: buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
-    // @ts-expect-error FixMe
-    headers: params.headers,
-    // @ts-expect-error magic type inferring happening
-    headersSchema: params.headersSchema,
-  })
-}
-
-/**
- * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
- */
-export function sendByDeleteRoute<
-  T extends WretchInstance,
-  ResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema | undefined = undefined,
-  RequestQuerySchema extends z.Schema | undefined = undefined,
-  RequestHeaderSchema extends z.Schema | undefined = undefined,
-  ResponseHeaderSchema extends z.Schema | undefined = undefined,
-  IsNonJSONResponseExpected extends boolean = false,
-  IsEmptyResponseExpected extends boolean = true,
-  ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode, z.Schema>>
-    | undefined = undefined,
->(
-  wretch: T,
-  routeDefinition: DeleteRouteDefinition<
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
-  >,
-  params: RouteRequestParams<
-    InferSchemaInput<PathParamsSchema>,
-    InferSchemaInput<RequestQuerySchema>,
-    InferSchemaInput<RequestHeaderSchema>
-  >,
-): Promise<
-  RequestResultType<
-    InferSchemaOutput<ResponseBodySchema>,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
-  >
-> {
-  // @ts-expect-error fixme
-  return sendDelete(wretch, {
-    isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
-    isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
-    responseBodySchema: routeDefinition.successResponseBodySchema,
-    // @ts-expect-error magic type inferring happening
-    queryParams: params.queryParams,
-    queryParamsSchema: routeDefinition.requestQuerySchema,
-    // @ts-expect-error magic type inferring happening
-    path: buildRequestPath(routeDefinition.pathResolver(params.pathParams), params.pathPrefix),
-    // @ts-expect-error FIXME
-    headers: params.headers,
-    // @ts-expect-error FIXME
-    headersSchema: params.headersSchema,
-  })
-}
-
-/**
- * @deprecated Use `sendByApiContract` instead. This function will be removed in a future version.
- * @example
- * ```typescript
- * // Before (deprecated):
- * const result = await sendByContract(wretch, someGetRouteDefinition, {
- *   pathParams: { userId: 1 },
- * })
- *
- * // After (recommended):
- * const result = await sendByApiContract(wretch, someGetContract, {
- *   pathParams: { userId: 1 },
- * })
- * ```
- */
-// Overload 1: GET route
-export function sendByContract<
-  T extends WretchInstance,
-  ResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema | undefined = undefined,
-  RequestQuerySchema extends z.Schema | undefined = undefined,
-  RequestHeaderSchema extends z.Schema | undefined = undefined,
-  ResponseHeaderSchema extends z.Schema | undefined = undefined,
-  IsNonJSONResponseExpected extends boolean = false,
-  IsEmptyResponseExpected extends boolean = false,
-  ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode, z.Schema>>
-    | undefined = undefined,
->(
-  wretch: T,
-  routeDefinition: GetRouteDefinition<
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
-  >,
-  params: RouteRequestParams<
-    InferSchemaInput<PathParamsSchema>,
-    InferSchemaInput<RequestQuerySchema>,
-    InferSchemaInput<RequestHeaderSchema>
-  >,
-): Promise<
-  RequestResultType<
-    InferSchemaOutput<ResponseBodySchema>,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
-  >
->
-
-// Overload 2: Payload route (POST/PUT/PATCH)
-export function sendByContract<
-  T extends WretchInstance,
-  RequestBodySchema extends z.Schema | undefined,
-  ResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema | undefined = undefined,
-  RequestQuerySchema extends z.Schema | undefined = undefined,
-  RequestHeaderSchema extends z.Schema | undefined = undefined,
-  ResponseHeaderSchema extends z.Schema | undefined = undefined,
-  IsNonJSONResponseExpected extends boolean = false,
-  IsEmptyResponseExpected extends boolean = false,
-  ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode, z.Schema>>
-    | undefined = undefined,
->(
-  wretch: T,
-  routeDefinition: PayloadRouteDefinition<
-    RequestBodySchema,
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
-  >,
-  params: PayloadRouteRequestParams<
-    InferSchemaInput<PathParamsSchema>,
-    InferSchemaInput<RequestBodySchema>,
-    InferSchemaInput<RequestQuerySchema>,
-    InferSchemaInput<RequestHeaderSchema>
-  >,
-): Promise<
-  RequestResultType<
-    InferSchemaOutput<ResponseBodySchema>,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
-  >
->
-
-// Overload 3: DELETE route
-export function sendByContract<
-  T extends WretchInstance,
-  ResponseBodySchema extends z.Schema | undefined = undefined,
-  PathParamsSchema extends z.Schema | undefined = undefined,
-  RequestQuerySchema extends z.Schema | undefined = undefined,
-  RequestHeaderSchema extends z.Schema | undefined = undefined,
-  ResponseHeaderSchema extends z.Schema | undefined = undefined,
-  IsNonJSONResponseExpected extends boolean = false,
-  IsEmptyResponseExpected extends boolean = true,
-  ResponseSchemasByStatusCode extends
-    | Partial<Record<HttpStatusCode, z.Schema>>
-    | undefined = undefined,
->(
-  wretch: T,
-  routeDefinition: DeleteRouteDefinition<
-    ResponseBodySchema,
-    PathParamsSchema,
-    RequestQuerySchema,
-    RequestHeaderSchema,
-    ResponseHeaderSchema,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
-    ResponseSchemasByStatusCode
-  >,
-  params: RouteRequestParams<
-    InferSchemaInput<PathParamsSchema>,
-    InferSchemaInput<RequestQuerySchema>,
-    InferSchemaInput<RequestHeaderSchema>
-  >,
-): Promise<
-  RequestResultType<
-    InferSchemaOutput<ResponseBodySchema>,
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected
-  >
->
-
-// Implementation
-export function sendByContract(
-  wretch: WretchInstance,
-  routeDefinition: // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
-    | GetRouteDefinition<any, any, any, any, any, any, any, any>
-    // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
-    | PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>
-    // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
-    | DeleteRouteDefinition<any, any, any, any, any, any, any, any>,
-  // biome-ignore lint/suspicious/noExplicitAny: params type depends on overload
-  params: any,
-  // biome-ignore lint/suspicious/noExplicitAny: return type depends on overload
-): Promise<any> {
-  const method = routeDefinition.method
-  if (method === 'get') {
-    return sendByGetRoute(wretch, routeDefinition, params)
-  }
-  if (method === 'delete') {
-    return sendByDeleteRoute(wretch, routeDefinition, params)
-  }
-  return sendByPayloadRoute(
-    wretch,
-    // biome-ignore lint/suspicious/noExplicitAny: union of all route definition types
-    routeDefinition as PayloadRouteDefinition<any, any, any, any, any, any, any, any, any>,
-    params,
-  )
 }

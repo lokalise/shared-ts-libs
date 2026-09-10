@@ -24,14 +24,11 @@ export type InjectByApiContractParams<TApiContract extends ApiContract> = Omit<
 >
 
 /**
- * Unified request injector for contracts created with `defineApiContract` (the newer API of
- * `@lokalise/api-contracts`). It dispatches a request through Fastify's
+ * Unified request injector for contracts created with `defineApiContract`. It dispatches a request through Fastify's
  * [`inject`](https://fastify.dev/docs/latest/Guides/Testing/) and automatically determines the HTTP
  * method from the contract.
  *
- * This is the `defineApiContract` counterpart of {@link injectByContract}, which targets the
- * deprecated `buildRestContract`/`buildGetRoute`/`buildPayloadRoute` route definitions. The params
- * type is resolved directly from the contract:
+ * The params type is resolved directly from the contract:
  * - GET/DELETE contracts → params without a request body
  * - POST/PUT/PATCH contracts → params with a request body (omitted when `ContractNoBody`)
  *
@@ -55,3 +52,10 @@ export function injectByApiContract(
 
   return dispatchInjectByMethod(app, apiContract.method, path, params)
 }
+
+/** Short-named entry point for {@link injectByApiContract}. */
+export const injectByContract = injectByApiContract
+
+/** Short-named alias of {@link InjectByApiContractParams}. */
+export type InjectByContractParams<TApiContract extends ApiContract> =
+  InjectByApiContractParams<TApiContract>

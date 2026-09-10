@@ -17,7 +17,7 @@ import {
 } from 'msw'
 import type { SetupServer } from 'msw/node'
 import type { z } from 'zod/v4'
-import { type MockResponseWrapper, wrapMockResponse } from '../responseWrapper.ts'
+import { type MockResponseWrapper, wrapMockResponse } from './responseWrapper.ts'
 import {
   formatSseResponse,
   type MockImplementationParams,
