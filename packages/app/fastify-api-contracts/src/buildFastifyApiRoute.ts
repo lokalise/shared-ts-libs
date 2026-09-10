@@ -388,6 +388,3 @@ export function buildFastifyApiRoute<Contract extends ApiContract>(
       }),
   }
 }
-
-/** Short-named entry point for {@link buildFastifyApiRoute}. */
-export const buildFastifyRoute = buildFastifyApiRoute

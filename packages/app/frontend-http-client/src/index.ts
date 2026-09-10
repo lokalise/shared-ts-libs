@@ -1,7 +1,6 @@
 export {
   type ContractRequestOptions,
   sendByApiContract,
-  sendByContract,
 } from './api-contract/sendByApiContract.ts'
 export {
   type SseEventCallbacks,

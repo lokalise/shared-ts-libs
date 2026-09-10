@@ -67,7 +67,7 @@ if non-JSON responses are expected, the library will return null, if not, it wil
 
 `frontend-http-client` supports using API contracts, created with `@lokalise/api-contracts` in order to make fully type-safe HTTP requests.
 
-`sendByContract` works with contracts defined using `defineApiContract` from `@lokalise/api-contracts` and automatically infers the response type from the contract's `responsesByStatusCode` map. `sendByApiContract` is the same function under a different name; both are exported.
+`sendByApiContract` works with contracts defined using `defineApiContract` from `@lokalise/api-contracts` and automatically infers the response type from the contract's `responsesByStatusCode` map.
 
 ```ts
 import { defineApiContract } from '@lokalise/api-contracts'

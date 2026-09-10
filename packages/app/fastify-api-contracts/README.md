@@ -52,8 +52,6 @@ app.withTypeProvider<ZodTypeProvider>().route(route)
 
 Builders turn a universal API contract into a Fastify route. They are meant for production code: you define the contract once with `defineApiContract` from `@lokalise/api-contracts` and let the builder infer request/response types for you.
 
-`buildFastifyApiRoute` is also exported as `buildFastifyRoute`; the two names refer to the same function.
-
 ### `buildFastifyApiRoute`
 
 `buildFastifyApiRoute` produces a complete Fastify `RouteOptions` from a contract created with `defineApiContract`. The HTTP method, URL, request schemas and response schema are all derived from the contract, and the handler shape is inferred from the contract's `responsesByStatusCode`:
@@ -351,8 +349,6 @@ const route = buildFastifyApiRoute(contract, handler, {
 ## Test helpers
 
 Test helpers let you dispatch requests against a Fastify instance directly from a contract, without spinning up a real HTTP server. They are intended for tests — in production code, prefer a real HTTP client such as `@lokalise/frontend-http-client`.
-
-`injectByApiContract` is also exported as `injectByContract` (and `InjectByApiContractParams` as `InjectByContractParams`); the names refer to the same helper.
 
 ### `injectByApiContract`
 

@@ -10,7 +10,7 @@ export {
 } from './api-contract/delayBuilders.ts'
 export type { RetryConfig, RetryDelay } from './api-contract/retry.ts'
 export type { ContractRequestOptions } from './api-contract/sendByApiContract.ts'
-export { sendByApiContract, sendByContract } from './api-contract/sendByApiContract.ts'
+export { sendByApiContract } from './api-contract/sendByApiContract.ts'
 export { UnexpectedResponseError } from './api-contract/UnexpectedResponseError.ts'
 export {
   JSON_HEADERS,

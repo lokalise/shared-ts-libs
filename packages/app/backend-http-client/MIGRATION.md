@@ -12,7 +12,7 @@ This release introduces streaming response support for GET requests, allowing me
 
 This method uses `sendWithRetryReturnStream` under the hood to return a `Readable` stream instead of consuming the entire response body.
 
-For contract-based requests, declare the response as `blobResponse()` in the contract and call `sendByContract` (alias `sendByApiContract`); the returned `BlobResponseHandle` exposes `stream()` for incremental consumption.
+For contract-based requests, declare the response as `blobResponse()` in the contract and call `sendByApiContract`; the returned `BlobResponseHandle` exposes `stream()` for incremental consumption.
 
 #### Breaking Changes
 

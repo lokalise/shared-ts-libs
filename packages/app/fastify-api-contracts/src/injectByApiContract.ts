@@ -90,10 +90,3 @@ export async function injectByApiContract(
     }
   }
 }
-
-/** Short-named entry point for {@link injectByApiContract}. */
-export const injectByContract = injectByApiContract
-
-/** Short-named alias of {@link InjectByApiContractParams}. */
-export type InjectByContractParams<TApiContract extends ApiContract> =
-  InjectByApiContractParams<TApiContract>

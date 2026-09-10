@@ -4,10 +4,10 @@ Reusable testing utilities that are potentially relevant for both backend and fr
 
 ## Helpers
 
-| Helper | Alias | Mock server |
-|---|---|---|
-| `ApiContractMockttpHelper` | `MockttpHelper` | [mockttp](https://github.com/httptoolkit/mockttp) |
-| `ApiContractMswHelper` | `MswHelper` | [msw](https://mswjs.io/) |
+| Helper | Mock server |
+|---|---|
+| `ApiContractMockttpHelper` | [mockttp](https://github.com/httptoolkit/mockttp) |
+| `ApiContractMswHelper` | [msw](https://mswjs.io/) |
 
 Both helpers work with contracts defined via `defineApiContract` from `@lokalise/api-contracts`.
 The short names are aliases of the `ApiContract*` classes and behave identically.
