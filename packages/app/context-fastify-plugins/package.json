@@ -53,7 +53,7 @@
     },
     "devDependencies": {
         "@fastify/request-context": "^7.0.0",
-        "@biomejs/biome": "^2.5.9",
+        "@biomejs/biome": "^2.5.12",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",
         "@prisma/instrumentation": "^7.0.1",
