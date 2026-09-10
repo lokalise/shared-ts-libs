@@ -23,7 +23,7 @@ import {
 declare module 'fastify' {
   interface FastifyContextConfig {
     /** The contract the route was built from. */
-    apiContract: ApiContract
+    apiContract?: ApiContract
   }
 }
 
@@ -327,8 +327,9 @@ async function handleApiRoute({
  *
  * Options returned by `contractMetadataToRouteMapper` are a base layer: explicitly passed
  * options override them, except `config` objects, which are merged (explicit keys win).
- * The contract is always exposed as `config.apiContract`, reachable in hooks and handlers
- * via `req.routeOptions.config.apiContract`.
+ * The contract is exposed as `config.apiContract`, reachable in hooks and handlers via
+ * `req.routeOptions.config.apiContract`. It is optional on the Fastify type because routes
+ * registered without this builder do not carry it.
  *
  * @returns Fastify `RouteOptions` ready to pass to `app.route()`
  */
