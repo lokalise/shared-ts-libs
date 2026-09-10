@@ -11,8 +11,8 @@ import type {
 } from '@lokalise/api-contracts'
 import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
 import type { z } from 'zod/v4'
-import type { ApiContractMetadataToRouteMapper } from '../types.ts'
 import type { FastifySSERouteOptions, SSEContext, SSEStreamMessage } from './sseTypes.ts'
+import type { ApiContractMetadataToRouteMapper } from './types.ts'
 
 /** True when `TUnion` has two or more members. */
 type IsUnion<TUnion, TFull = TUnion> = TUnion extends unknown

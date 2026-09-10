@@ -8,7 +8,7 @@ import {
   type SseSchemaByEventName,
 } from '@lokalise/api-contracts'
 import { z } from 'zod/v4'
-import type { ExtendedFastifySchema } from '../types.ts'
+import type { ExtendedFastifySchema } from './types.ts'
 
 // Schemas for non-JSON media types. Raw bodies (`string`/`Buffer`/`Readable`) and SSE streams
 // bypass Fastify's serializer, so these are never parsed at runtime — they only describe the
