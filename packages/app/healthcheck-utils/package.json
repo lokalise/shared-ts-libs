@@ -35,13 +35,13 @@
     "dependencies": {
         "@lokalise/node-core": "^14.0.0",
         "@supercharge/promise-pool": "^3.2.0",
-        "redis-semaphore": "^5.6.2",
+        "redis-semaphore": "^5.8.0",
         "toad-cache": "^3.7.1"
     },
     "peerDependencies": {
         "@lokalise/background-jobs-common": ">=12.0.0",
         "@prometheus-io/client": "^0.16.1",
-        "ioredis": "^5.4.1 || ^6.0.0",
+        "ioredis": "^6.0.0",
         "toad-scheduler": "^4.0.1"
     },
     "devDependencies": {

@@ -1,6 +1,11 @@
 packages:
   - "packages/dev/*"
   - "packages/app/*"
+overrides:
+  # @splitsoftware/splitio (pulled in by @lokalise/fastify-extras) still asks for ioredis 5.
+  # Keep a single ioredis 6 in the tree so nothing resolves against the old client.
+  ioredis: ^6.0.0
+
 allowBuilds:
   '@datadog/native-appsec': true
   '@datadog/native-iast-taint-tracking': true
@@ -30,3 +35,4 @@ minimumReleaseAgeExclude:
   - '@vitest/spy@4.1.10'
   - '@vitest/utils@4.1.10'
   - vitest@4.1.10
+  - redis-semaphore@5.8.0
