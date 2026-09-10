@@ -331,7 +331,7 @@ const route = buildFastifyApiRoute(contract, (req) => {
 })
 ```
 
-The contract is exposed as `config.apiContract`, merged into any `config` you pass explicitly or derive via `contractMetadataToRouteMapper`.
+The contract is exposed as `config.apiContract`, merged into any `config` you pass explicitly or derive via `contractMetadataToRouteMapper`. The property is typed as optional because it is absent on routes registered without `buildFastifyApiRoute`, so app-wide hooks must check for it before use.
 
 ### Adding extra route options from contract metadata
 
