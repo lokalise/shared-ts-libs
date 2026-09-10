@@ -204,11 +204,14 @@ if (result.result) {
 
 **With retry configuration:**
 ```ts
+import { exponentialDelay, sendGetWithStreamedResponse } from '@lokalise/backend-http-client'
+
 const result = await sendGetWithStreamedResponse(client, '/items/123', {
   requestLabel: 'Download with retry',
   retryConfig: {
-    maxAttempts: 3,
-    statusCodesToRetry: [500, 502, 503],
+    maxRetries: 2,
+    statusCodes: [500, 502, 503],
+    delay: exponentialDelay({ baseDelayMs: 100 }),
     retryOnTimeout: true,
   },
 })
