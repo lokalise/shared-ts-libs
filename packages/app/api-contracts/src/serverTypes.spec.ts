@@ -3,11 +3,15 @@ import { z } from 'zod/v4'
 import { ContractNoBody } from './constants.ts'
 import { blobBody, noBodyResponse, sseBody } from './contractResponse.ts'
 import { defineApiContract } from './defineApiContract.ts'
+import type { HttpStatusCode } from './HttpStatusCodes.ts'
 import type {
   InferServerRequest,
   InferServerResponse,
   InferServerResponseContentTypes,
   InferServerSseSelections,
+  InferServerStatusesForKey,
+  ServerSseSelection,
+  SseMessage,
   SseStreamMessage,
 } from './serverTypes.ts'
 
@@ -254,6 +258,78 @@ describe('serverTypes', () => {
         Extract<Selections, { contentType: 'application/vnd.progress+stream' }>['statusCode']
       >().toEqualTypeOf<201 | 202 | 203 | 204 | 205 | 206 | 207 | 208 | 226>()
       expectTypeOf<Extract<Selections, { statusCode: 404 }>>().toEqualTypeOf<never>()
+    })
+
+    it('produces selections assignable to ServerSseSelection', () => {
+      expectTypeOf<
+        InferServerSseSelections<typeof dualModeContract>
+      >().toExtend<ServerSseSelection>()
+    })
+  })
+
+  describe('InferServerStatusesForKey', () => {
+    const contract = defineApiContract({
+      visibility: 'public',
+      method: 'get',
+      summary: 'Get data',
+      pathResolver: () => '/data',
+      responsesByStatusCode: {
+        200: z.object({ ok: z.boolean() }),
+        404: z.object({ code: z.string() }),
+        '4xx': z.object({ error: z.string() }),
+        default: z.object({ fallback: z.string() }),
+      },
+    })
+
+    it('keeps an exact key as is', () => {
+      expectTypeOf<InferServerStatusesForKey<typeof contract, 404>>().toEqualTypeOf<404>()
+    })
+
+    it('expands a range key minus the exactly-declared codes', () => {
+      type FourXx = InferServerStatusesForKey<typeof contract, '4xx'>
+      expectTypeOf<400>().toExtend<FourXx>()
+      expectTypeOf<418>().toExtend<FourXx>()
+      expectTypeOf<404>().not.toExtend<FourXx>()
+      expectTypeOf<500>().not.toExtend<FourXx>()
+    })
+
+    it("expands 'default' to the statuses no exact or range key covers", () => {
+      type Fallback = InferServerStatusesForKey<typeof contract, 'default'>
+      expectTypeOf<503>().toExtend<Fallback>()
+      expectTypeOf<201>().toExtend<Fallback>()
+      expectTypeOf<200>().not.toExtend<Fallback>()
+      expectTypeOf<404>().not.toExtend<Fallback>()
+      expectTypeOf<400>().not.toExtend<Fallback>()
+    })
+
+    it("expands 'default' to every status when it is the only key", () => {
+      const onlyDefault = defineApiContract({
+        visibility: 'public',
+        method: 'get',
+        summary: 'Anything',
+        pathResolver: () => '/anything',
+        responsesByStatusCode: { default: z.unknown() },
+      })
+
+      expectTypeOf<
+        InferServerStatusesForKey<typeof onlyDefault, 'default'>
+      >().toEqualTypeOf<HttpStatusCode>()
+    })
+  })
+
+  describe('SseMessage', () => {
+    it('is the untyped shape every typed stream message satisfies', () => {
+      expectTypeOf<SseStreamMessage<typeof sseEventsSchema>>().toExtend<SseMessage>()
+      expectTypeOf<SseMessage<{ value: number }>['data']>().toEqualTypeOf<{ value: number }>()
+      expectTypeOf<SseMessage['event']>().toEqualTypeOf<string | undefined>()
+    })
+
+    it('types each stream message by its event name', () => {
+      type Update = Extract<SseStreamMessage<typeof sseEventsSchema>, { event: 'update' }>
+      expectTypeOf<Update['data']>().toEqualTypeOf<{ value: number }>()
+      expectTypeOf<{ event: 'update'; data: { total: number } }>().not.toExtend<
+        SseStreamMessage<typeof sseEventsSchema>
+      >()
     })
   })
 })

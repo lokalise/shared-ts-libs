@@ -1,3 +1,4 @@
+import { resolveHeadersParam } from '@lokalise/api-contracts'
 import type { WretchResponse } from 'wretch'
 import { type ZodSchema, z } from 'zod/v4'
 import type {
@@ -5,7 +6,6 @@ import type {
   FreeDeleteParams,
   FreeHeadersParams,
   GetParamsWrapper,
-  HeadersObject,
   HeadersParams,
   HeadersSource,
   PayloadRequestParamsWrapper,
@@ -23,12 +23,6 @@ import { buildWretchError, XmlHttpRequestError } from './utils/errorUtils.ts'
 import { parseQueryParams } from './utils/queryUtils.ts'
 
 export const UNKNOWN_SCHEMA = z.unknown()
-
-function resolveHeaders(
-  headers: HeadersSource | undefined,
-): HeadersObject | Promise<HeadersObject> {
-  return (typeof headers === 'function' ? headers() : headers) ?? {}
-}
 
 function handleBodyParseError<RequestBodySchema extends z.ZodSchema>(
   bodyParseResult: BodyParseResult<RequestBodySchema>,
@@ -108,7 +102,8 @@ async function sendResourceChange<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = await resolveHeaders(params.headers as HeadersSource | undefined)
+  const resolvedHeaders =
+    (await resolveHeadersParam(params.headers as HeadersSource | undefined)) ?? {}
 
   return wretch
     .headers(resolvedHeaders)
@@ -160,7 +155,8 @@ export async function sendGet<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = await resolveHeaders(params.headers as HeadersSource | undefined)
+  const resolvedHeaders =
+    (await resolveHeadersParam(params.headers as HeadersSource | undefined)) ?? {}
 
   return wretch
     .headers(resolvedHeaders)
@@ -352,7 +348,8 @@ export async function sendDelete<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = await resolveHeaders(params.headers as HeadersSource | undefined)
+  const resolvedHeaders =
+    (await resolveHeadersParam(params.headers as HeadersSource | undefined)) ?? {}
 
   return wretch
     .headers(resolvedHeaders)

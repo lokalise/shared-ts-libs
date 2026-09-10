@@ -3,7 +3,6 @@ import { z } from 'zod/v4'
 import type {
   ClientRequestParams,
   DefaultStreaming,
-  HeadersParam,
   InferNonSseClientResponse,
   InferSseClientResponse,
 } from './clientTypes.ts'
@@ -16,6 +15,7 @@ import type {
   HttpStatusCode,
   SuccessfulHttpStatusCode,
 } from './HttpStatusCodes.ts'
+import type { HeadersParam } from './headersParam.ts'
 import type { Prettify } from './typeUtils.ts'
 
 type DefaultHeaders = Record<string, string>

@@ -34,14 +34,20 @@ export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
  */
 export type HttpClient = ReturnType<typeof buildClient>
 
-export async function sendGet<
+type NonPayloadMethods = 'DELETE' | 'GET'
+
+async function sendNonPayload<
   T extends ZodSchema,
-  IsEmptyResponseExpected extends boolean = false,
-  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+  IsEmptyResponseExpected extends boolean,
+  DoThrowOnError extends boolean,
 >(
   client: Client,
+  method: NonPayloadMethods,
   path: string,
-  options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
+  options: Omit<
+    RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
+    'isEmptyResponseExpected'
+  > & { isEmptyResponseExpected: boolean },
 ): Promise<
   RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError>
 > {
@@ -49,7 +55,7 @@ export async function sendGet<
     client,
     {
       path,
-      method: 'GET',
+      method,
       query: options.query,
       headers: copyWithoutUndefined({
         [REQUEST_ID_HEADER]: options.reqContext?.reqId,
@@ -70,8 +76,25 @@ export async function sendGet<
     options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
     options.responseSchema,
     options.requestLabel,
-    options.isEmptyResponseExpected ?? false,
+    options.isEmptyResponseExpected,
   )
+}
+
+export function sendGet<
+  T extends ZodSchema,
+  IsEmptyResponseExpected extends boolean = false,
+  DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
+>(
+  client: Client,
+  path: string,
+  options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
+): Promise<
+  RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError>
+> {
+  return sendNonPayload(client, 'GET', path, {
+    ...options,
+    isEmptyResponseExpected: options.isEmptyResponseExpected ?? false,
+  })
 }
 
 export async function sendGetWithStreamedResponse<
@@ -116,7 +139,7 @@ export async function sendGetWithStreamedResponse<
   return result as RequestResultDefinitiveEither<Readable, false, DoThrowOnError>
 }
 
-export async function sendDelete<
+export function sendDelete<
   T extends ZodSchema,
   IsEmptyResponseExpected extends boolean = true,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
@@ -127,33 +150,10 @@ export async function sendDelete<
 ): Promise<
   RequestResultDefinitiveEither<InferSchemaOutput<T>, IsEmptyResponseExpected, DoThrowOnError>
 > {
-  const result = await executeRequest<InferSchemaOutput<T>>(
-    client,
-    {
-      path,
-      method: 'DELETE',
-      query: options.query,
-      headers: copyWithoutUndefined({
-        [REQUEST_ID_HEADER]: options.reqContext?.reqId,
-        ...options.headers,
-      }),
-      reset: options.disableKeepAlive ?? false,
-      ...(Object.hasOwn(options, 'timeout') && {
-        bodyTimeout: options.timeout,
-        headersTimeout: options.timeout,
-      }),
-    },
-    options,
-  )
-
-  return resolveResult(
-    result,
-    options.throwOnError ?? (DEFAULT_OPTIONS.throwOnError as DoThrowOnError),
-    options.validateResponse ?? DEFAULT_OPTIONS.validateResponse,
-    options.responseSchema,
-    options.requestLabel,
-    options.isEmptyResponseExpected ?? true,
-  )
+  return sendNonPayload(client, 'DELETE', path, {
+    ...options,
+    isEmptyResponseExpected: options.isEmptyResponseExpected ?? true,
+  })
 }
 
 async function sendResourceChange<
