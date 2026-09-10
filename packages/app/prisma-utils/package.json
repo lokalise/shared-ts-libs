@@ -42,7 +42,7 @@
         "prisma": "^7.0.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.5.9",
+        "@biomejs/biome": "^2.5.12",
         "dotenv": "^17.0.0",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",

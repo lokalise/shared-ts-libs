@@ -10,8 +10,7 @@ export const DEFAULT_OPTIONS = {
 } satisfies MayOmit<
   // biome-ignore lint/suspicious/noExplicitAny: ok
   RequestOptions<any, any, true>,
-  'requestLabel' | 'responseSchema' | 'isEmptyResponseExpected'
->
+  'requestLabel' | 'responseSchema' | 'isEmptyResponseExpected'>
 
 export const defaultClientOptions: Partial<Client.Options> = {
   keepAliveMaxTimeout: 300_000,
