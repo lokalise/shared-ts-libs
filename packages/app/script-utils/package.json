@@ -32,7 +32,7 @@
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
-        "@lokalise/node-core": "^14.0.0"
+        "@lokalise/node-core": "^14.9.1"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.9",
