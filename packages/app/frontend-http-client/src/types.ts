@@ -60,7 +60,7 @@ export type HeadersParams<HeadersSchema extends z.ZodSchema> = {
 }
 
 export type FreeHeadersParams<_HeadersSchema> = {
-  headers?: Record<string, string>
+  headers?: HeadersSource
   headersSchema?: never
 }
 

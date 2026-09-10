@@ -275,7 +275,7 @@ const json = await sendByApiContract(client, chat, { body: { message: 'hi' }, st
 
 ### Lazy / async headers
 
-`headers` accepts a plain object, a synchronous function, or an async function. This is useful for auth tokens that need to be fetched at call time:
+`headers` accepts a plain object, a synchronous function, or an async function. This is useful for auth tokens that need to be fetched at call time. The same applies to `sendGet`, `sendPost`, `sendPut`, `sendPatch` and `sendDelete` when no `headersSchema` is given.
 
 ```ts
 await sendByApiContract(client, contract, {

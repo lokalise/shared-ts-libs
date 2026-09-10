@@ -5,7 +5,9 @@ import type {
   FreeDeleteParams,
   FreeHeadersParams,
   GetParamsWrapper,
+  HeadersObject,
   HeadersParams,
+  HeadersSource,
   PayloadRequestParamsWrapper,
   RequestResultType,
   WretchInstance,
@@ -21,6 +23,12 @@ import { buildWretchError, XmlHttpRequestError } from './utils/errorUtils.ts'
 import { parseQueryParams } from './utils/queryUtils.ts'
 
 export const UNKNOWN_SCHEMA = z.unknown()
+
+function resolveHeaders(
+  headers: HeadersSource | undefined,
+): HeadersObject | Promise<HeadersObject> {
+  return (typeof headers === 'function' ? headers() : headers) ?? {}
+}
 
 function handleBodyParseError<RequestBodySchema extends z.ZodSchema>(
   bodyParseResult: BodyParseResult<RequestBodySchema>,
@@ -60,7 +68,7 @@ function handleBodyParseError<RequestBodySchema extends z.ZodSchema>(
   return Promise.reject(bodyParseResult.error)
 }
 
-function sendResourceChange<
+async function sendResourceChange<
   T extends WretchInstance,
   ResponseBody,
   IsNonJSONResponseExpected extends boolean,
@@ -100,7 +108,7 @@ function sendResourceChange<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = (params.headers ?? {}) as Record<string, string>
+  const resolvedHeaders = await resolveHeaders(params.headers as HeadersSource | undefined)
 
   return wretch
     .headers(resolvedHeaders)
@@ -125,7 +133,7 @@ function sendResourceChange<
 
 /* GET */
 
-export function sendGet<
+export async function sendGet<
   T extends WretchInstance,
   ResponseBody,
   RequestQuerySchema extends z.Schema | undefined = undefined,
@@ -152,7 +160,7 @@ export function sendGet<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = (params.headers ?? {}) as Record<string, string>
+  const resolvedHeaders = await resolveHeaders(params.headers as HeadersSource | undefined)
 
   return wretch
     .headers(resolvedHeaders)
@@ -313,7 +321,7 @@ export function sendPatch<
 
 /* DELETE */
 
-export function sendDelete<
+export async function sendDelete<
   T extends WretchInstance,
   ResponseBody,
   RequestQuerySchema extends z.Schema | undefined = undefined,
@@ -344,7 +352,7 @@ export function sendDelete<
     return Promise.reject(queryParams.error)
   }
 
-  const resolvedHeaders = (params.headers ?? {}) as Record<string, string>
+  const resolvedHeaders = await resolveHeaders(params.headers as HeadersSource | undefined)
 
   return wretch
     .headers(resolvedHeaders)
