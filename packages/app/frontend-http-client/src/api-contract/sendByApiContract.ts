@@ -4,11 +4,11 @@ import {
   buildRequestPath,
   type ClientRequestParams,
   type DefaultStreaming,
-  type HeadersParam,
   hasAnySuccessSseResponse,
   type InferNonSseClientResponse,
   type InferSseClientResponse,
   type ResponseKind,
+  resolveHeadersParam,
   resolveResponseEntry,
   type SseSchemaByEventName,
   type SuccessfulHttpStatusCode,
@@ -88,9 +88,6 @@ type ReturnTypeForContract<
   ContractErrorType<TApiContract, TIsStreaming, TDoCaptureAsError>,
   ContractResultType<TApiContract, TIsStreaming, TDoCaptureAsError>
 >
-
-const resolveRequestHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> =>
-  typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
 
 async function* parseSseStream(
   response: Response,
@@ -194,7 +191,7 @@ export async function sendByApiContract<
   const captureAsError = params.captureAsError ?? true
   const strictContentType = params.strictContentType ?? true
 
-  const requestHeaders = new Headers((await resolveRequestHeaders(params.headers)) ?? {})
+  const requestHeaders = new Headers((await resolveHeadersParam(params.headers)) ?? {})
 
   if (params.body !== undefined && !requestHeaders.has('content-type')) {
     requestHeaders.set('content-type', 'application/json')

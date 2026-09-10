@@ -13,10 +13,9 @@ import type {
   SuccessfulHttpStatusCode,
   WildcardStatusCodeKey,
 } from './HttpStatusCodes.ts'
+import type { HeadersParam } from './headersParam.ts'
 import type { ContractResponseMode, SseEventOf } from './inferTypes.ts'
 import type { Prettify } from './typeUtils.ts'
-
-export type HeadersParam<T> = T | (() => T) | (() => Promise<T>)
 
 type ExtractRequestBody<T> = T extends { requestBodySchema: z.ZodType }
   ? T['requestBodySchema']

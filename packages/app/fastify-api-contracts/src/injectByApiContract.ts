@@ -2,6 +2,7 @@ import {
   type ApiContract,
   buildRequestPath,
   type ClientRequestParams,
+  resolveHeadersParam,
 } from '@lokalise/api-contracts'
 import type { FastifyInstance } from 'fastify'
 import type { Response as LightMyRequestResponse } from 'light-my-request'
@@ -51,7 +52,7 @@ export async function injectByApiContract(
   params: any,
 ): Promise<LightMyRequestResponse> {
   const path = buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix)
-  const headers = typeof params.headers === 'function' ? await params.headers() : params.headers
+  const headers = await resolveHeadersParam(params.headers)
 
   const method = apiContract.method
 

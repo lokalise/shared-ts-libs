@@ -2,11 +2,12 @@ import type { ApiContract, ResponseKind, SseSchemaByEventName } from '@lokalise/
 import {
   buildRequestPath,
   getSseSchemaByEventName,
+  resolveHeadersParam,
   resolveResponseEntry,
 } from '@lokalise/api-contracts'
 import { stringify } from 'fast-querystring'
 import { WretchError } from 'wretch/resolver'
-import type { HeadersObject, HeadersSource, WretchInstance } from '../types.ts'
+import type { HeadersSource, WretchInstance } from '../types.ts'
 import { normalizeResponseHeaders } from '../utils/responseUtils.ts'
 import {
   FallbackEventValidationError,
@@ -183,10 +184,6 @@ function isSupportedMethod(method: string): method is SupportedMethod {
   return (SUPPORTED_METHODS as readonly string[]).includes(method)
 }
 
-function resolveHeaderSource(source: HeadersSource): HeadersObject | Promise<HeadersObject> {
-  return typeof source === 'function' ? source() : source
-}
-
 function describeCause(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
@@ -342,7 +339,7 @@ async function buildRequestHeaders(
   bodyString: string | undefined,
 ): Promise<Record<string, string>> {
   const headers = new Headers(
-    config.headers ? await resolveHeaderSource(config.headers) : undefined,
+    config.headers ? await resolveHeadersParam(config.headers) : undefined,
   )
   for (const [name, value] of Object.entries(request.headers ?? {})) {
     headers.set(name, value)

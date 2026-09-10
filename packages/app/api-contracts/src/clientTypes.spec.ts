@@ -2,7 +2,6 @@ import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import type {
   ClientRequestParams,
-  HeadersParam,
   InferNonSseClientResponse,
   InferSseClientResponse,
 } from './clientTypes.ts'
@@ -15,6 +14,7 @@ import type {
   HttpStatusCode,
   SuccessfulHttpStatusCode,
 } from './HttpStatusCodes.ts'
+import type { HeadersParam } from './headersParam.ts'
 
 type DefaultHeaders = Record<string, string>
 

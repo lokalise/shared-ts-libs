@@ -405,6 +405,8 @@ These types are primarily consumed by HTTP client implementations.
 
 **`DefaultStreaming<T>`** — `true` for SSE-only contracts, `false` for everything else.
 
+**`HeadersParam<T>`**, **`resolveHeadersParam(headers)`**: request headers as a plain object or a sync/async factory, and the helper that resolves either form. Clients call it once per request so a refreshed token reaches a retry.
+
 ```ts
 import type { ClientRequestParams, InferNonSseClientResponse } from '@lokalise/api-contracts'
 
