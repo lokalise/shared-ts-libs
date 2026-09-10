@@ -2,8 +2,9 @@ packages:
   - "packages/dev/*"
   - "packages/app/*"
 overrides:
-  # @splitsoftware/splitio (pulled in by @lokalise/fastify-extras) still asks for ioredis 5.
-  # Keep a single ioredis 6 in the tree so nothing resolves against the old client.
+  # @splitsoftware/splitio pins ioredis to "^4.28.0 || ^5.0.0" and reaches the tree through the
+  # @lokalise/fastify-extras dev dependency. Its latest release still carries that range, so
+  # bumping fastify-extras does not drop ioredis 5; only this override does.
   ioredis: ^6.0.0
 
 allowBuilds:
