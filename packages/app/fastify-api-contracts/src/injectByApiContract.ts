@@ -7,7 +7,7 @@ import type { FastifyInstance } from 'fastify'
 import type { Response as LightMyRequestResponse } from 'light-my-request'
 
 // biome-ignore lint/suspicious/noExplicitAny: we don't care about what kind of app instance we get here
-export type AnyFastifyInstance = FastifyInstance<any, any, any, any>
+export type AnyFastifyInstance = FastifyInstance<any, any, any, any, any>
 
 /**
  * Request params for {@link injectByApiContract}, derived directly from a `defineApiContract`
