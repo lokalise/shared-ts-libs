@@ -752,8 +752,8 @@ importers:
   packages/app/fastify-bullboard-plugin:
     dependencies:
       '@bull-board/api':
-        specifier: ^9.4.0
-        version: 9.4.0(@bull-board/ui@9.4.0(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0)))(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
+        specifier: ^9.6.1
+        version: 9.6.1(@bull-board/ui@9.6.1(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0)))(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
       '@bull-board/fastify':
         specifier: ^9.6.1
         version: 9.6.1(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
@@ -1681,18 +1681,6 @@ packages:
   '@bugsnag/safe-json-stringify@6.1.0':
     resolution: {integrity: sha512-ImA35rnM7bGr+J30R979FQ95BhRB4UO1KfJA0J2sVqc8nwnrS9hhE5mkTmQWMs8Vh1Da+hkLKs5jJB4JjNZp4A==}
 
-  '@bull-board/api@9.4.0':
-    resolution: {integrity: sha512-poPku55iQd/VS65BUD8yn/uIHUruDwOVOiPEbThzjCd1nHAzEUEj/D+LWW1t9vzRsvN6xBr5jXlbJDapBnz7aw==}
-    peerDependencies:
-      '@bull-board/ui': 9.4.0
-      bull: ^4.16.5
-      bullmq: ^5.79.2 || ^6.0.0
-    peerDependenciesMeta:
-      bull:
-        optional: true
-      bullmq:
-        optional: true
-
   '@bull-board/api@9.6.1':
     resolution: {integrity: sha512-hz+RWR4hVw5mt+7HPPfSL9Xhj7bTMuVSlK0ygSuOD1LyihxLUqf+sjQ+ueXyTLb9bLS61EZXP8OoJkIYInCz7Q==}
     peerDependencies:
@@ -1707,9 +1695,6 @@ packages:
 
   '@bull-board/fastify@9.6.1':
     resolution: {integrity: sha512-CdapvFQbHo+IBCK01DV+LC/Poh/IsEYPPH5oZj6KY0pvSYHmcID1d5oDbJUjutkDy4gSTcD18hlS2giQd4c8GA==}
-
-  '@bull-board/ui@9.4.0':
-    resolution: {integrity: sha512-oRuCjMawEdpwFpHWWT6tzZLVqaqP+sK7xs1C1AhvTGm4pViNyPKwV7chtSExFOdVZuXJnJOl74WTXsHRfKMF3A==}
 
   '@bull-board/ui@9.6.1':
     resolution: {integrity: sha512-myakwEZLPA4sqUGyhQBDFW6xpZ8Ycrne0KmaTLSdnep/Js4dyessC/vdgoGez/0xL4TFf510hXdbkRhfejPe6w==}
@@ -7921,13 +7906,6 @@ snapshots:
 
   '@bugsnag/safe-json-stringify@6.1.0': {}
 
-  '@bull-board/api@9.4.0(@bull-board/ui@9.4.0(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0)))(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))':
-    dependencies:
-      '@bull-board/ui': 9.4.0(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
-      redis-info: 3.1.0
-    optionalDependencies:
-      bullmq: 6.3.1(ioredis@6.0.0)(pg@8.22.0)
-
   '@bull-board/api@9.6.1(@bull-board/ui@9.6.1(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0)))(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))':
     dependencies:
       '@bull-board/ui': 9.6.1(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
@@ -7942,13 +7920,6 @@ snapshots:
       '@fastify/static': 10.1.3
       '@fastify/view': 12.0.0
       ejs: 6.0.1
-    transitivePeerDependencies:
-      - bull
-      - bullmq
-
-  '@bull-board/ui@9.4.0(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))':
-    dependencies:
-      '@bull-board/api': 9.4.0(@bull-board/ui@9.4.0(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0)))(bullmq@6.3.1(ioredis@6.0.0)(pg@8.22.0))
     transitivePeerDependencies:
       - bull
       - bullmq
