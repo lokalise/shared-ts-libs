@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/background-jobs-common",
-    "version": "16.1.0",
+    "version": "17.0.0",
     "files": [
         "dist",
         "LICENSE.md",
@@ -40,18 +40,18 @@
     "dependencies": {
         "@lokalise/id-utils": "workspace:^",
         "@lokalise/node-core": "^14.9.1",
-        "redis-semaphore": "^5.7.0",
+        "redis-semaphore": "^5.8.0",
         "ts-deepmerge": "^8.0.0"
     },
     "peerDependencies": {
         "bullmq": "^5.28.2 || ^6.0.0",
-        "ioredis": "^5.4.1 || ^6.0.0",
+        "ioredis": "^6.0.0",
         "pino": ">=9.7.0",
         "toad-scheduler": "^4.0.1",
         "zod": ">=4.5.0 <5.0.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.5.9",
+        "@biomejs/biome": "^2.5.12",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",
         "@types/node": "^26.4.1",

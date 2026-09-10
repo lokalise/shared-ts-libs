@@ -1,5 +1,11 @@
 # @lokalise/background-jobs-common
 
+## 17.0.0
+
+### Major Changes
+
+- 8a2ac93: Require ioredis 6. The `ioredis` peer range narrows from `^5.4.1 || ^6.0.0` to `^6.0.0`, and `redis-semaphore` moves to `^5.8.0`, the first release that declares ioredis 6 support in its peer range. Consumers still on ioredis 5 need to upgrade before taking this version.
+
 ## 16.1.0
 
 ### Minor Changes

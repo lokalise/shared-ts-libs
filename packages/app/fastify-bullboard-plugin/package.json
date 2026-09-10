@@ -39,12 +39,12 @@
         "@lokalise/background-jobs-common": ">=12.6.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.5.9",
+        "@biomejs/biome": "^2.5.12",
         "@fastify/awilix": "^8.2.1",
         "@fastify/schedule": "^7.0.0",
         "@lokalise/background-jobs-common": "workspace:^",
         "@lokalise/biome-config": "workspace:^",
-        "@lokalise/fastify-extras": "^32.0.0",
+        "@lokalise/fastify-extras": "^34.0.1",
         "@lokalise/node-core": "^14.9.1",
         "@types/node": "^26.4.1",
         "@vitest/coverage-v8": "^4.1.11",
