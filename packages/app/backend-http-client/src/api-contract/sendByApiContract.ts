@@ -5,11 +5,11 @@ import {
   buildRequestPath,
   type ClientRequestParams,
   type DefaultStreaming,
-  type HeadersParam,
   hasAnySuccessSseResponse,
   type InferNonSseClientResponse,
   type InferSseClientResponse,
   type ResponseKind,
+  resolveHeadersParam,
   resolveResponseEntry,
   type SseSchemaByEventName,
   type SuccessfulHttpStatusCode,
@@ -112,10 +112,6 @@ type ReturnTypeForContract<
   ContractErrorType<TApiContract, TIsStreaming, TDoCaptureAsError>,
   ContractResultType<TApiContract, TIsStreaming, TDoCaptureAsError>
 >
-
-const resolveRequestHeaders = <T>(headers: HeadersParam<T>): T | Promise<T> => {
-  return typeof headers === 'function' ? (headers as () => T | Promise<T>)() : headers
-}
 
 function resolveAttemptSignal(
   userSignal: AbortSignal | undefined,
@@ -251,7 +247,7 @@ export async function sendByApiContract<
 
   const useStreaming: boolean = params.streaming ?? hasAnySuccessSseResponse(apiContract)
 
-  const userHeaders = (await resolveRequestHeaders(params.headers)) ?? {}
+  const userHeaders = (await resolveHeadersParam(params.headers)) ?? {}
 
   const requestHeaders = new Headers(userHeaders)
 

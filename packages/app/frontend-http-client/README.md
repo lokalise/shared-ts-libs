@@ -67,7 +67,7 @@ if non-JSON responses are expected, the library will return null, if not, it wil
 
 `frontend-http-client` supports using API contracts, created with `@lokalise/api-contracts` in order to make fully type-safe HTTP requests.
 
-`sendByApiContract` is the modern, fully type-safe way to make HTTP requests from the frontend. It works with contracts defined using `defineApiContract` from `@lokalise/api-contracts` and automatically infers the response type from the contract's `responsesByStatusCode` map.
+`sendByApiContract` works with contracts defined using `defineApiContract` from `@lokalise/api-contracts` and automatically infers the response type from the contract's `responsesByStatusCode` map.
 
 ```ts
 import { defineApiContract } from '@lokalise/api-contracts'
@@ -90,20 +90,17 @@ const { result } = await sendByApiContract(client, getUser, { pathParams: { user
 // result.body: { id: string; name: string }
 ```
 
-> **Note:** The individual `sendByPayloadRoute`, `sendByGetRoute`, `sendByDeleteRoute`, and `sendByContract` methods are deprecated in favor of `sendByApiContract`.
-
 ### Supported response kinds
 
 `sendByApiContract` handles all response kinds defined in the contract:
 
 | Contract entry | `body` type |
 |---|---|
-| `z.ZodType` | Inferred from the schema — parsed and validated |
-| `ContractNoBody` | `null` |
-| `textResponse(mimeType)` | `string` |
-| `blobResponse(mimeType)` | `Blob` |
+| `z.ZodType` | Inferred from the schema, parsed and validated |
+| `noBodyResponse()` | `null` |
+| `blobResponse(mimeType)` | `BlobResponseHandle`, consumed once via `stream()`, `text()`, `blob()` or `arrayBuffer()` |
 | `sseResponse(schemaByEventName)` | `AsyncIterable` of typed events |
-| `anyOfResponses([sseResponse(…), z.object(…)])` | Requires an explicit `streaming: boolean` param |
+| `content` map with `application/json` and `text/event-stream` | Requires an explicit `streaming: boolean` param |
 
 ### Return type — Either
 
@@ -234,10 +231,12 @@ try {
 ### SSE and dual-mode
 
 ```ts
-import { anyOfResponses, sseResponse } from '@lokalise/api-contracts'
+import { sseBody, sseResponse } from '@lokalise/api-contracts'
 
-// SSE-only — AsyncIterable is returned automatically
+// SSE-only: the body is an AsyncIterable of events
 const notifications = defineApiContract({
+  visibility: 'public',
+  summary: 'Notifications stream',
   method: 'get',
   pathResolver: () => '/notifications',
   responsesByStatusCode: {
@@ -250,16 +249,20 @@ for await (const event of result.body) {
   // event: { type: 'update'; data: { id: string }; lastEventId: string; retry: number | undefined }
 }
 
-// Dual-mode — streaming: true/false selects between SSE and JSON
+// Dual-mode: streaming: true/false selects between SSE and JSON
 const chat = defineApiContract({
+  visibility: 'public',
+  summary: 'Chat completion',
   method: 'post',
   pathResolver: () => '/chat',
   requestBodySchema: z.object({ message: z.string() }),
   responsesByStatusCode: {
-    200: anyOfResponses([
-      sseResponse({ chunk: z.object({ delta: z.string() }) }),
-      z.object({ text: z.string() }),
-    ]),
+    200: {
+      content: {
+        'application/json': z.object({ text: z.string() }),
+        'text/event-stream': sseBody({ chunk: z.object({ delta: z.string() }) }),
+      },
+    },
   },
 })
 
@@ -272,7 +275,7 @@ const json = await sendByApiContract(client, chat, { body: { message: 'hi' }, st
 
 ### Lazy / async headers
 
-`headers` accepts a plain object, a synchronous function, or an async function. This is useful for auth tokens that need to be fetched at call time:
+`headers` accepts a plain object, a synchronous function, or an async function. This is useful for auth tokens that need to be fetched at call time. The same applies to `sendGet`, `sendPost`, `sendPut`, `sendPatch` and `sendDelete` when no `headersSchema` is given.
 
 ```ts
 await sendByApiContract(client, contract, {
@@ -299,57 +302,6 @@ controller.abort()
 | `captureAsError` | `boolean` | `true` | When `true`, non-2xx responses defined in the contract go to `Either.error`. When `false`, all contract-defined status codes go to `Either.result`. |
 | `strictContentType` | `boolean` | `true` | When `true`, returns an error if the response `content-type` doesn't match the contract entry. When `false`, falls back to the entry's kind for single-entry responses. |
 | `signal` | `AbortSignal` | — | Manual cancellation signal. When fired, the request rejects with an `AbortError`. |
-
-### Server-sent events (SSE) — connectSseByContract (deprecated)
-
-> **Deprecated:** Use `sendByApiContract` with an SSE contract (`sseResponse`) instead. See the [SSE and dual-mode](#sse-and-dual-mode) section above.
-
-`connectSseByContract` opens an SSE stream defined by a contract and dispatches typed, schema-validated events to callbacks.
-
-The connection starts immediately and runs in the background until the server closes the stream or you call `close()`. There is no automatic reconnection — if you need that, call `connectSseByContract` again from `onError` or after `onDone`.
-
-```ts
-import { buildSseContract } from '@lokalise/api-contracts'
-import { connectSseByContract } from '@lokalise/frontend-http-client'
-import wretch from 'wretch'
-import { z } from 'zod/v4'
-
-const exportContract = buildSseContract({
-    method: 'get',
-    pathResolver: (params: { projectId: string }) => `/projects/${params.projectId}/export`,
-    requestPathParamsSchema: z.object({ projectId: z.string() }),
-    serverSentEventSchemas: {
-        'item.exported': z.object({ id: z.string(), name: z.string() }),
-        done: z.object({ total: z.number() }),
-    },
-})
-
-const client = wretch('http://localhost:8000')
-
-const connection = connectSseByContract(
-    client,
-    exportContract,
-    { pathParams: { projectId: 'proj_123' } },
-    {
-        onEvent: {
-            'item.exported': (data) => console.log('exported item:', data.id),
-            done: (data) => console.log('finished, total:', data.total),
-        },
-        onOpen: () => console.log('stream opened'),
-        onError: (err) => console.error('stream error:', err),
-    },
-)
-
-// Stop the stream early if needed (e.g. user navigates away)
-connection.close()
-```
-
-The following parameters can be specified:
-- `pathParams` – path parameters used by the contract's path resolver
-- `queryParams` – query parameters (type must match the contract definition)
-- `body` – request body for POST/PUT/PATCH SSE endpoints
-- `headers` – custom headers, or a (optionally async) function returning headers (useful for auth tokens)
-- `pathPrefix` – optional prefix prepended to the resolved path
 
 ### Tracking request progress
 Tracking requests progress is especially useful while uploading files. 

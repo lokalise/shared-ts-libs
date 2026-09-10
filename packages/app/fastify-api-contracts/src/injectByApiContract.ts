@@ -2,10 +2,13 @@ import {
   type ApiContract,
   buildRequestPath,
   type ClientRequestParams,
+  resolveHeadersParam,
 } from '@lokalise/api-contracts'
+import type { FastifyInstance } from 'fastify'
 import type { Response as LightMyRequestResponse } from 'light-my-request'
 
-import { type AnyFastifyInstance, dispatchInjectByMethod } from './injectRequestDispatcher.ts'
+// biome-ignore lint/suspicious/noExplicitAny: we don't care about what kind of app instance we get here
+export type AnyFastifyInstance = FastifyInstance<any, any, any, any, any>
 
 /**
  * Request params for {@link injectByApiContract}, derived directly from a `defineApiContract`
@@ -24,14 +27,11 @@ export type InjectByApiContractParams<TApiContract extends ApiContract> = Omit<
 >
 
 /**
- * Unified request injector for contracts created with `defineApiContract` (the newer API of
- * `@lokalise/api-contracts`). It dispatches a request through Fastify's
+ * Unified request injector for contracts created with `defineApiContract`. It dispatches a request through Fastify's
  * [`inject`](https://fastify.dev/docs/latest/Guides/Testing/) and automatically determines the HTTP
  * method from the contract.
  *
- * This is the `defineApiContract` counterpart of {@link injectByContract}, which targets the
- * deprecated `buildRestContract`/`buildGetRoute`/`buildPayloadRoute` route definitions. The params
- * type is resolved directly from the contract:
+ * The params type is resolved directly from the contract:
  * - GET/DELETE contracts → params without a request body
  * - POST/PUT/PATCH contracts → params with a request body (omitted when `ContractNoBody`)
  *
@@ -45,13 +45,49 @@ export function injectByApiContract<const TApiContract extends ApiContract>(
 ): Promise<LightMyRequestResponse>
 
 // Implementation
-export function injectByApiContract(
+export async function injectByApiContract(
   app: AnyFastifyInstance,
   apiContract: ApiContract,
   // biome-ignore lint/suspicious/noExplicitAny: params shape depends on the contract
   params: any,
 ): Promise<LightMyRequestResponse> {
   const path = buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix)
+  const headers = await resolveHeadersParam(params.headers)
 
-  return dispatchInjectByMethod(app, apiContract.method, path, params)
+  const method = apiContract.method
+
+  switch (method) {
+    case 'get':
+      return app.inject().get(path).headers(headers).query(params.queryParams).end()
+    case 'delete':
+      return app.inject().delete(path).headers(headers).query(params.queryParams).end()
+    case 'post':
+      return app
+        .inject()
+        .post(path)
+        .body(params.body)
+        .headers(headers)
+        .query(params.queryParams)
+        .end()
+    case 'put':
+      return app
+        .inject()
+        .put(path)
+        .body(params.body)
+        .headers(headers)
+        .query(params.queryParams)
+        .end()
+    case 'patch':
+      return app
+        .inject()
+        .patch(path)
+        .body(params.body)
+        .headers(headers)
+        .query(params.queryParams)
+        .end()
+    default: {
+      const unsupported: never = method
+      throw new Error(`Unsupported HTTP method: ${String(unsupported)}`)
+    }
+  }
 }

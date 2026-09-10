@@ -31,7 +31,7 @@ const REQUEST_QUERY_SCHEMA = z.object({
 
 /**
  * Registers a single route derived from a `defineApiContract` contract, so the injected request has
- * something to hit. Mirrors how `buildFastifyRoute` would wire schemas, but works with the newer
+ * something to hit. Mirrors how `buildFastifyApiRoute` would wire schemas, but works with the newer
  * contract shape directly.
  */
 async function initAppForContract(
@@ -513,5 +513,23 @@ describe('injectByApiContract', () => {
         string | undefined
       >()
     })
+  })
+
+  it('rejects a contract whose method is not supported at runtime', async () => {
+    const contract = defineApiContract({
+      visibility: 'public',
+      summary: 'Test contract',
+      method: 'get',
+      pathResolver: () => '/ping',
+      responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
+    })
+    // Only reachable by bypassing the type system, e.g. a contract cast from untyped input.
+    const unsupported = { ...contract, method: 'head' } as unknown as typeof contract
+    const app = fastify()
+    onTestFinished(() => app.close())
+
+    await expect(injectByApiContract(app, unsupported, {})).rejects.toThrow(
+      'Unsupported HTTP method: head',
+    )
   })
 })

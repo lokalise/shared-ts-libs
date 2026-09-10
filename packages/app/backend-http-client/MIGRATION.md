@@ -9,9 +9,10 @@ This release introduces streaming response support for GET requests, allowing me
 #### Added Methods
 
 - `sendGetWithStreamedResponse()` - Direct path-based GET requests with streamed responses
-- `sendByGetRouteWithStreamedResponse()` - API contract-based GET requests with streamed responses
 
-These methods use `sendWithRetryReturnStream` under the hood to return a `Readable` stream instead of consuming the entire response body.
+This method uses `sendWithRetryReturnStream` under the hood to return a `Readable` stream instead of consuming the entire response body.
+
+For contract-based requests, declare the response as `blobResponse()` in the contract and call `sendByApiContract`; the returned `BlobResponseHandle` exposes `stream()` for incremental consumption.
 
 #### Breaking Changes
 
@@ -97,12 +98,7 @@ If you need to process large response bodies without loading them entirely into 
 
 **Before (loads entire response into memory):**
 ```ts
-const result = await sendByGetRoute(
-  client,
-  largeFileRouteDefinition,
-  { pathParams: { fileId: '12345' } },
-  { requestLabel: 'Download file' }
-)
+const result = await sendGet(client, '/files/12345', { requestLabel: 'Download file' })
 
 // result.result.body contains the entire response in memory
 const data = result.result.body
@@ -110,12 +106,9 @@ const data = result.result.body
 
 **After (streams response for memory efficiency):**
 ```ts
-const result = await sendByGetRouteWithStreamedResponse(
-  client,
-  largeFileRouteDefinition,
-  { pathParams: { fileId: '12345' } },
-  { requestLabel: 'Download file' }
-)
+const result = await sendGetWithStreamedResponse(client, '/files/12345', {
+  requestLabel: 'Download file',
+})
 
 // result.result.body is a Readable stream
 if (result.result) {
@@ -171,7 +164,7 @@ No migration steps are required. The new methods are additive and do not affect 
 If you want to adopt streaming for large file downloads or data processing:
 
 1. Identify GET requests that handle large response bodies
-2. Replace `sendGet` with `sendGetWithStreamedResponse` or `sendByGetRoute` with `sendByGetRouteWithStreamedResponse`
+2. Replace `sendGet` with `sendGetWithStreamedResponse`
 3. Update response handling to process the stream instead of accessing a parsed body
 4. Remove `validateResponse`, `responseSchema`, `safeParseJson`, and `blobResponseBody` from options (not supported in streaming mode)
 
@@ -181,12 +174,9 @@ If you want to adopt streaming for large file downloads or data processing:
 ```ts
 import { createWriteStream } from 'node:fs'
 
-const result = await sendByGetRouteWithStreamedResponse(
-  client,
-  downloadRouteDefinition,
-  { pathParams: { fileId: '12345' } },
-  { requestLabel: 'Download file' }
-)
+const result = await sendGetWithStreamedResponse(client, '/files/12345', {
+  requestLabel: 'Download file',
+})
 
 if (result.result) {
   const writeStream = createWriteStream('/path/to/file')
@@ -214,17 +204,15 @@ if (result.result) {
 
 **With retry configuration:**
 ```ts
-const result = await sendByGetRouteWithStreamedResponse(
-  client,
-  routeDefinition,
-  { pathParams: { id: '123' } },
-  {
-    requestLabel: 'Download with retry',
-    retryConfig: {
-      maxAttempts: 3,
-      statusCodesToRetry: [500, 502, 503],
-      retryOnTimeout: true,
-    },
-  }
-)
+import { exponentialDelay, sendGetWithStreamedResponse } from '@lokalise/backend-http-client'
+
+const result = await sendGetWithStreamedResponse(client, '/items/123', {
+  requestLabel: 'Download with retry',
+  retryConfig: {
+    maxRetries: 2,
+    statusCodes: [500, 502, 503],
+    delay: exponentialDelay({ baseDelayMs: 100 }),
+    retryOnTimeout: true,
+  },
+})
 ```

@@ -22,13 +22,6 @@ export type { HttpClient } from './client/httpClient.ts'
 export {
   buildClient,
   httpClient,
-  sendByContract,
-  sendByContractWithStreamedResponse,
-  sendByDeleteRoute,
-  sendByGetRoute,
-  sendByGetRouteWithStreamedResponse,
-  sendByPayloadRoute,
-  sendByPayloadRouteWithStreamedResponse,
   sendDelete,
   sendGet,
   sendGetWithStreamedResponse,
