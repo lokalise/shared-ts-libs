@@ -16,15 +16,15 @@
  * ```
  */
 export function buildRequestPath(path: string, pathPrefix?: string): string {
+  const normalizedPath = ensureStartsWithSlash(path)
+
   if (!pathPrefix) {
-    return ensureStartsWithSlash(path)
+    return normalizedPath
   }
 
-  // Remove trailing slash from pathPrefix and leading slash from path
   const cleanPrefix = pathPrefix.endsWith('/') ? pathPrefix.slice(0, -1) : pathPrefix
-  const cleanPath = path.startsWith('/') ? path.slice(1) : path
 
-  return ensureStartsWithSlash(`${cleanPrefix}/${cleanPath}`)
+  return ensureStartsWithSlash(`${cleanPrefix}${normalizedPath}`)
 }
 
 function ensureStartsWithSlash(str: string): string {
