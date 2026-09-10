@@ -3,9 +3,11 @@ import {
   buildRequestPath,
   type ClientRequestParams,
 } from '@lokalise/api-contracts'
+import type { FastifyInstance } from 'fastify'
 import type { Response as LightMyRequestResponse } from 'light-my-request'
 
-import { type AnyFastifyInstance, dispatchInjectByMethod } from './injectRequestDispatcher.ts'
+// biome-ignore lint/suspicious/noExplicitAny: we don't care about what kind of app instance we get here
+export type AnyFastifyInstance = FastifyInstance<any, any, any, any>
 
 /**
  * Request params for {@link injectByApiContract}, derived directly from a `defineApiContract`
@@ -42,15 +44,45 @@ export function injectByApiContract<const TApiContract extends ApiContract>(
 ): Promise<LightMyRequestResponse>
 
 // Implementation
-export function injectByApiContract(
+export async function injectByApiContract(
   app: AnyFastifyInstance,
   apiContract: ApiContract,
   // biome-ignore lint/suspicious/noExplicitAny: params shape depends on the contract
   params: any,
 ): Promise<LightMyRequestResponse> {
   const path = buildRequestPath(apiContract.pathResolver(params.pathParams), params.pathPrefix)
+  const headers = typeof params.headers === 'function' ? await params.headers() : params.headers
 
-  return dispatchInjectByMethod(app, apiContract.method, path, params)
+  switch (apiContract.method) {
+    case 'get':
+      return app.inject().get(path).headers(headers).query(params.queryParams).end()
+    case 'delete':
+      return app.inject().delete(path).headers(headers).query(params.queryParams).end()
+    case 'post':
+      return app
+        .inject()
+        .post(path)
+        .body(params.body)
+        .headers(headers)
+        .query(params.queryParams)
+        .end()
+    case 'put':
+      return app
+        .inject()
+        .put(path)
+        .body(params.body)
+        .headers(headers)
+        .query(params.queryParams)
+        .end()
+    case 'patch':
+      return app
+        .inject()
+        .patch(path)
+        .body(params.body)
+        .headers(headers)
+        .query(params.queryParams)
+        .end()
+  }
 }
 
 /** Short-named entry point for {@link injectByApiContract}. */
