@@ -4,9 +4,7 @@ import type {
   InferSchemaOutput,
   RoutePathResolver,
   RouteVisibility,
-} from '../apiContracts.ts'
-import { SUCCESSFUL_HTTP_STATUS_CODES } from '../HttpStatusCodes.ts'
-import type { DistributiveOmit, Exactly } from '../typeUtils.ts'
+} from './commonTypes.ts'
 import type { ContractNoBody } from './constants.ts'
 import {
   type ApiContractResponse,
@@ -16,6 +14,8 @@ import {
   type ResponsesByStatusCode,
   type SseSchemaByEventName,
 } from './contractResponse.ts'
+import { SUCCESSFUL_HTTP_STATUS_CODES } from './HttpStatusCodes.ts'
+import type { DistributiveOmit, Exactly } from './typeUtils.ts'
 
 export type RequestPathParamsSchema = z.ZodObject
 export type RequestQuerySchema = z.ZodObject

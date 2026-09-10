@@ -1,11 +1,11 @@
 import type { z } from 'zod/v4'
-import type { SuccessfulHttpStatusCode } from '../HttpStatusCodes.ts'
-import type { ValueOf } from '../typeUtils.ts'
 import type {
   BlobResponseHandle,
   ResponseEntry,
   ResponsesByStatusCode,
 } from './contractResponse.ts'
+import type { SuccessfulHttpStatusCode } from './HttpStatusCodes.ts'
+import type { ValueOf } from './typeUtils.ts'
 
 type ExtractSuccessResponses<T extends ResponsesByStatusCode> = ValueOf<
   T,

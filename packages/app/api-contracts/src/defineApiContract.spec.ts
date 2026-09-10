@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
-import type { RouteVisibility } from '../apiContracts.ts'
+import type { RouteVisibility } from './commonTypes.ts'
 import { ContractNoBody } from './constants.ts'
 import { sseBody } from './contractResponse.ts'
 import {

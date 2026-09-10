@@ -43,7 +43,7 @@ import {
   sseGetApiContract,
   sseGetApiContractWithPathParams,
   sseGetApiContractWithQueryParams,
-} from '../../test/testApiContracts.ts'
+} from '../test/testApiContracts.ts'
 import { ApiContractMswHelper } from './ApiContractMswHelper.ts'
 
 const BASE_URL = 'http://localhost:8080'

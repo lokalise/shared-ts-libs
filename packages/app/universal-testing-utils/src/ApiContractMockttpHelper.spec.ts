@@ -33,7 +33,7 @@ import {
   sseGetApiContract,
   sseGetApiContractWithPathParams,
   sseGetApiContractWithQueryParams,
-} from '../../test/testApiContracts.ts'
+} from '../test/testApiContracts.ts'
 import { ApiContractMockttpHelper } from './ApiContractMockttpHelper.ts'
 
 describe('ApiContractMockttpHelper', () => {

@@ -20,6 +20,13 @@ import {
   validateApiResponseHeaders,
 } from './sseUtils.ts'
 
+declare module 'fastify' {
+  interface FastifyContextConfig {
+    /** The contract the route was built from. */
+    apiContract: ApiContract
+  }
+}
+
 /**
  * SSE-capable routes are registered in `@fastify/sse` `'manual'` mode: no `Accept`-header
  * negotiation — `reply.sse` is always attached and the handler decides at runtime whether to
@@ -380,3 +387,6 @@ export function buildFastifyApiRoute<Contract extends ApiContract>(
       }),
   }
 }
+
+/** Short-named entry point for {@link buildFastifyApiRoute}. */
+export const buildFastifyRoute = buildFastifyApiRoute

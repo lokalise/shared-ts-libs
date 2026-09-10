@@ -1,12 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import type {
-  ClientErrorHttpStatusCode,
-  ExpandStatusRangeKey,
-  HttpStatusCode,
-  SuccessfulHttpStatusCode,
-} from '../HttpStatusCodes.ts'
-import type {
   ClientRequestParams,
   HeadersParam,
   InferNonSseClientResponse,
@@ -15,6 +9,12 @@ import type {
 import type { BlobResponseHandle } from './contractResponse.ts'
 import { blobBody, noBodyResponse, sseBody } from './contractResponse.ts'
 import { defineApiContract } from './defineApiContract.ts'
+import type {
+  ClientErrorHttpStatusCode,
+  ExpandStatusRangeKey,
+  HttpStatusCode,
+  SuccessfulHttpStatusCode,
+} from './HttpStatusCodes.ts'
 
 type DefaultHeaders = Record<string, string>
 

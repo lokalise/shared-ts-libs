@@ -273,10 +273,8 @@ const contract = defineApiContract({
 })
 ```
 
-The field is required in every builder input — there is no default. All builders
-(`defineApiContract`, `buildContract`, `buildRestContract`, `buildSseContract`, and the legacy
-`buildGetRoute` / `buildPayloadRoute` / `buildDeleteRoute`) demand an explicit choice between
-`'public'` and `'internal'`.
+The field is required in every contract — there is no default. `defineApiContract` demands an
+explicit choice between `'public'` and `'internal'`.
 
 #### Contracts for external (third-party) APIs
 

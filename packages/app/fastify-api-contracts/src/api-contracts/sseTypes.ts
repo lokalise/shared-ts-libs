@@ -1,4 +1,4 @@
-import type { SSEEventSchemas } from '@lokalise/api-contracts'
+import type { SseSchemaByEventName } from '@lokalise/api-contracts'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import type { z } from 'zod/v4'
 
@@ -30,7 +30,7 @@ export type SSEMessage<T = unknown> = {
  *
  * @template Events - Map of event name to Zod schema (from the contract's SSE response)
  */
-export type SSEEventSender<Events extends SSEEventSchemas> = <
+export type SSEEventSender<Events extends SseSchemaByEventName> = <
   EventName extends keyof Events & string,
 >(
   eventName: EventName,
@@ -70,7 +70,7 @@ export type SSEStartOptions<Context = unknown> = {
  *
  * @template Events - Event schemas for type-safe event names and data
  */
-export type SSEStreamMessage<Events extends SSEEventSchemas = SSEEventSchemas> = {
+export type SSEStreamMessage<Events extends SseSchemaByEventName = SseSchemaByEventName> = {
   [K in keyof Events & string]: {
     event: K
     data: z.input<Events[K]>
@@ -85,7 +85,10 @@ export type SSEStreamMessage<Events extends SSEEventSchemas = SSEEventSchemas> =
  * @template Events - Event schemas for type-safe sending
  * @template Context - Custom context data stored per connection
  */
-export type SSESession<Events extends SSEEventSchemas = SSEEventSchemas, Context = unknown> = {
+export type SSESession<
+  Events extends SseSchemaByEventName = SseSchemaByEventName,
+  Context = unknown,
+> = {
   /** Unique identifier for this connection */
   id: string
   /** The original Fastify request */
@@ -123,7 +126,7 @@ export type SSESession<Events extends SSEEventSchemas = SSEEventSchemas, Context
 export type SSESelection = {
   statusCode: number | string
   contentType: string
-  events: SSEEventSchemas
+  events: SseSchemaByEventName
 }
 
 /** True when `TUnion` has two or more members. */

@@ -4,7 +4,6 @@ import type {
   Exactly,
   IsUnion,
   KeysOfUnion,
-  MayOmit,
   Prettify,
   ValueOf,
 } from './typeUtils.ts'
@@ -48,27 +47,6 @@ describe('typeUtils', () => {
 
       expectTypeOf<Checked['extra']>().toEqualTypeOf<never>()
       expectTypeOf<Checked['id']>().toEqualTypeOf<string>()
-    })
-  })
-
-  describe('MayOmit', () => {
-    it('makes only the given keys optional', () => {
-      type Relaxed = MayOmit<Shape, 'name'>
-
-      expectTypeOf<Relaxed>().toEqualTypeOf<{ name?: string } & { id: string; optional?: number }>()
-    })
-
-    it('accepts objects that omit the relaxed keys', () => {
-      const value: MayOmit<Shape, 'name'> = { id: '1' }
-
-      expectTypeOf(value.name).toEqualTypeOf<string | undefined>()
-      expectTypeOf(value.id).toEqualTypeOf<string>()
-    })
-
-    it('supports relaxing multiple keys at once', () => {
-      const value: MayOmit<Shape, 'name' | 'id'> = {}
-
-      expectTypeOf(value.id).toEqualTypeOf<string | undefined>()
     })
   })
 
