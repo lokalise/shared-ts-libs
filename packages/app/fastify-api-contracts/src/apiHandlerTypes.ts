@@ -2,144 +2,39 @@ import type { Readable } from 'node:stream'
 import type {
   ApiContract,
   ContractResponseMode,
-  ExpandStatusRangeKey,
-  HttpStatusCode,
-  HttpStatusCodeRange,
-  PayloadApiContract,
-  SseSchemaByEventName,
-  SuccessfulHttpStatusCode,
+  InferServerRequest,
+  InferServerResponse,
+  InferServerResponseContentTypes,
+  InferServerSseSelections,
 } from '@lokalise/api-contracts'
 import type { FastifyReply, FastifyRequest, RouteOptions } from 'fastify'
-import type { z } from 'zod/v4'
-import type { FastifySSERouteOptions, SSEContext, SSEStreamMessage } from './sseTypes.ts'
+import type { FastifySSERouteOptions, SSEContext } from './sseTypes.ts'
 import type { ApiContractMetadataToRouteMapper } from './types.ts'
 
-/** True when `TUnion` has two or more members. */
-type IsUnion<TUnion, TFull = TUnion> = TUnion extends unknown
-  ? [TFull] extends [TUnion]
-    ? false
-    : true
-  : never
-
-/**
- * Maps one content-map media-type descriptor to its handler body type: an `sseBody()` streams
- * the contract events, a `blobBody()` is a raw body (`string`/`Buffer`/`Readable`, sent
- * natively by Fastify), and a Zod schema is its JSON input — the handler's body is what the
- * response serializer parses, so defaults/transforms are applied after the handler returns.
- */
-type BodyDescriptorBody<TDescriptor> = TDescriptor extends {
-  _tag: 'SseBody'
-  schemaByEventName: infer TSchemas extends SseSchemaByEventName
-}
-  ? AsyncIterable<SSEStreamMessage<TSchemas>>
-  : TDescriptor extends { _tag: 'BlobBody' }
-    ? string | Buffer | Readable
-    : TDescriptor extends z.ZodType
-      ? z.input<TDescriptor>
-      : never
-
-/**
- * Maps a content-map `content` object to the union of its handler result variants, one per
- * media type. When the status declares a single media type, `contentType` is optional; when
- * it declares several, `contentType` is required and discriminates which representation
- * (and hence which `body` type) the handler chose.
- */
-type ContentMapResults<TStatusCode, TContent> = {
-  [TMediaType in keyof TContent]: IsUnion<keyof TContent> extends true
-    ? {
-        status: TStatusCode
-        contentType: TMediaType
-        body: BodyDescriptorBody<TContent[TMediaType]>
-      }
-    : {
-        status: TStatusCode
-        contentType?: TMediaType
-        body: BodyDescriptorBody<TContent[TMediaType]>
-      }
-}[keyof TContent]
-
-/**
- * Maps a single `responsesByStatusCode` entry to its handler result variants: a bare Zod
- * schema is `{ status, body }` with its JSON input; a content-map entry contributes one
- * variant per media type (see {@link ContentMapResults}); an empty-body entry
- * (`noBodyResponse()` / `allowNoBody: true`) contributes `{ status, body: null }`.
- */
-type ResponseEntryResults<TStatusCode, TEntry> = TEntry extends z.ZodType
-  ? { status: TStatusCode; body: z.input<TEntry> }
-  :
-      | (TEntry extends { content: infer TContent }
-          ? ContentMapResults<TStatusCode, TContent>
-          : never)
-      | (TEntry extends { allowNoBody: true } ? { status: TStatusCode; body: null } : never)
-
-/** The concrete status codes a contract declares exactly (non-wildcard keys). */
-type ExactStatusCodes<TApiContract extends ApiContract> =
-  keyof TApiContract['responsesByStatusCode'] & HttpStatusCode
-
-/** Status codes covered by any range key (e.g. `'2xx'`, `'4xx'`) the contract declares. */
-type RangeStatusCodes<TApiContract extends ApiContract> = {
-  [K in keyof TApiContract['responsesByStatusCode'] & HttpStatusCodeRange]: ExpandStatusRangeKey<K>
-}[keyof TApiContract['responsesByStatusCode'] & HttpStatusCodeRange]
-
-/**
- * Maps a `responsesByStatusCode` key to the statuses a handler may return for it, mirroring
- * the runtime lookup precedence (exact → range → `'default'`): a concrete key stays as-is; a
- * range key expands to its status class minus the exactly-declared codes; `'default'` expands
- * to every status not covered by an exact or range key.
- */
-type HandlerStatusesForKey<TApiContract extends ApiContract, TKey> = TKey extends 'default'
-  ? Exclude<HttpStatusCode, ExactStatusCodes<TApiContract> | RangeStatusCodes<TApiContract>>
-  : TKey extends HttpStatusCodeRange
-    ? Exclude<ExpandStatusRangeKey<TKey>, ExactStatusCodes<TApiContract>>
-    : TKey
+/** What a handler may return for a `blobBody()` response; Fastify sends these natively. */
+type FastifyBlobBody = string | Buffer | Readable
 
 /**
  * Discriminated union of `{ status, contentType?, body }` results for every response a
- * contract declares. `contentType` exists only for content-map responses — required (and a
- * discriminant) when a status declares several media types, optional when it declares one.
- * Wildcard status keys (`'4xx'`, `'2xx'`, `'default'`) accept any concrete status they cover.
+ * contract declares. See `InferServerResponse` in `@lokalise/api-contracts`; a `blobBody()`
+ * response takes a `string`, `Buffer` or `Readable`.
  */
-export type InferApiHandlerResult<TApiContract extends ApiContract> = {
-  [TStatusCode in keyof TApiContract['responsesByStatusCode']]: ResponseEntryResults<
-    HandlerStatusesForKey<TApiContract, TStatusCode>,
-    TApiContract['responsesByStatusCode'][TStatusCode]
-  >
-}[keyof TApiContract['responsesByStatusCode']]
-
-type InferOptSchema<T> = T extends z.ZodType ? z.output<T> : undefined
-
-type InferApiBodyType<Contract extends ApiContract> = Contract extends PayloadApiContract
-  ? InferOptSchema<Contract['requestBodySchema']>
-  : undefined
+export type InferApiHandlerResult<TApiContract extends ApiContract> = InferServerResponse<
+  TApiContract,
+  FastifyBlobBody
+>
 
 /** Infer the typed `FastifyRequest` for an `ApiContract`. */
 export type InferApiHandlerRequest<Contract extends ApiContract> = FastifyRequest<{
-  Params: InferOptSchema<Contract['requestPathParamsSchema']>
-  Querystring: InferOptSchema<Contract['requestQuerySchema']>
-  Headers: InferOptSchema<Contract['requestHeaderSchema']>
-  Body: InferApiBodyType<Contract>
+  Params: InferServerRequest<Contract>['pathParams']
+  Querystring: InferServerRequest<Contract>['queryParams']
+  Headers: InferServerRequest<Contract>['headers']
+  Body: InferServerRequest<Contract>['body']
 }>
 
-/**
- * Maps a single `responsesByStatusCode` entry to the response content-types it declares:
- * a content-map entry contributes its media-type keys; a bare Zod schema is `application/json`.
- */
-type ResponseEntryContentTypes<TEntry> = TEntry extends z.ZodType
-  ? 'application/json'
-  : TEntry extends { content: infer TContent }
-    ? keyof TContent & string
-    : never
-
-/** The contract's `responsesByStatusCode` keys describing success responses: `2xx` codes, `'2xx'`, `'default'`. */
-type SuccessStatusKeys<TContract extends ApiContract> = keyof TContract['responsesByStatusCode'] &
-  (SuccessfulHttpStatusCode | '2xx' | 'default')
-
 /** Union of the response content-types the contract's success entries declare (error responses excluded). */
-export type InferContractResponseContentTypes<TContract extends ApiContract> = {
-  [TStatusCode in SuccessStatusKeys<TContract>]: ResponseEntryContentTypes<
-    TContract['responsesByStatusCode'][TStatusCode]
-  >
-}[SuccessStatusKeys<TContract>]
+export type InferContractResponseContentTypes<TContract extends ApiContract> =
+  InferServerResponseContentTypes<TContract>
 
 /**
  * Context passed to every `ApiContract` handler as the third argument.
@@ -163,34 +58,8 @@ export type ApiHandlerContext<TContract extends ApiContract> = {
 } & ([ContractResponseMode<TContract['responsesByStatusCode']>] extends ['non-sse']
   ? unknown
   : {
-      sse: SSEContext<ContractSseSelections<TContract>>
+      sse: SSEContext<InferServerSseSelections<TContract>>
     })
-
-/**
- * Every SSE representation a contract declares, as `{ statusCode, contentType, events }`
- * selections — one member per `sseBody()` descriptor across all statuses and media types.
- * A wildcard status key (`'2xx'`, `'default'`) expands to the concrete statuses it covers
- * (minus the exactly-declared ones), so `sse.start()` selects with a specific status like
- * `202`, never the wildcard key itself.
- */
-type ContractSseSelections<TContract extends ApiContract> = {
-  [S in keyof TContract['responsesByStatusCode']]: TContract['responsesByStatusCode'][S] extends {
-    content: infer TContent
-  }
-    ? {
-        [M in keyof TContent]: TContent[M] extends {
-          _tag: 'SseBody'
-          schemaByEventName: infer TEvents extends SseSchemaByEventName
-        }
-          ? {
-              statusCode: HandlerStatusesForKey<TContract, S>
-              contentType: M & string
-              events: TEvents
-            }
-          : never
-      }[keyof TContent]
-    : never
-}[keyof TContract['responsesByStatusCode']]
 
 type MaybePromise<T> = T | Promise<T>
 

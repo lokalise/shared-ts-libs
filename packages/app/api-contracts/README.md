@@ -415,6 +415,32 @@ type GetUserResponse = InferNonSseClientResponse<typeof getUser>
 // { statusCode: 200; headers: Record<string, string>; body: { id: string; name: string } }
 ```
 
+### Server types
+
+The serving-side mirror of the client types, consumed by server adapters such as `@lokalise/fastify-api-contracts`. The schema direction is reversed: a server receives the validated request (`z.output`) and returns a response the serializer will still parse (`z.input`). Nothing here depends on a web framework.
+
+**`InferServerRequest<TApiContract>`** — `{ pathParams, queryParams, headers, body }` as the parsed output of each request schema, or `undefined` where the contract declares none. `body` is `undefined` for GET/DELETE and `ContractNoBody` contracts.
+
+**`InferServerResponse<TApiContract, TBlobBody = unknown>`** — discriminated union of `{ status, contentType?, body }` a handler may return. Wildcard status keys expand to the concrete statuses they cover, a content map with several media types requires `contentType`, a no-body entry requires `body: null`, and an SSE entry takes an `AsyncIterable<SseStreamMessage<...>>`. `TBlobBody` is what a handler returns for a `blobBody()` response; adapters narrow it to their runtime's raw body type.
+
+**`InferServerResponseContentTypes<TApiContract>`** — union of the content types the success entries declare, i.e. the candidates a server may offer in `Accept` negotiation. A bare schema counts as `application/json`.
+
+**`InferServerSseSelections<TApiContract>`** — every SSE representation as `{ statusCode, contentType, events }`, one per `sseBody()` descriptor. Adapters use it to type which representation a handler starts streaming.
+
+**`InferServerStatusesForKey<TApiContract, TKey>`** — the concrete statuses a `responsesByStatusCode` key stands for, following the runtime precedence exact → range → `'default'`.
+
+**`SseMessage<T>`**, **`SseStreamMessage<Events>`** — one server-sent event as written to the stream, untyped or typed by an event-schema map.
+
+```ts
+import type { InferServerRequest, InferServerResponse } from '@lokalise/api-contracts'
+
+type GetUserRequest = InferServerRequest<typeof getUser>
+// { pathParams: { userId: string }; queryParams: undefined; headers: undefined; body: undefined }
+
+type GetUserResult = InferServerResponse<typeof getUser>
+// { status: 200; body: { id: string; name: string } }
+```
+
 ### Contract type aliases
 
 **`ApiContract`** — union of all contract variants (`GetApiContract | DeleteApiContract | PayloadApiContract`). Use this to type function parameters that accept any contract.

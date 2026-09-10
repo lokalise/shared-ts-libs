@@ -1,4 +1,9 @@
-import type { SseSchemaByEventName } from '@lokalise/api-contracts'
+import type {
+  ServerSseSelection,
+  SseMessage,
+  SseSchemaByEventName,
+  SseStreamMessage,
+} from '@lokalise/api-contracts'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import type { z } from 'zod/v4'
 
@@ -6,21 +11,8 @@ import type { z } from 'zod/v4'
 // SSE primitives
 // ============================================================================
 
-/**
- * SSE message format compatible with `@fastify/sse`.
- *
- * @template T - Type of the event data (objects or primitives)
- */
-export type SSEMessage<T = unknown> = {
-  /** Event name (maps to the EventSource `event` field) */
-  event?: string
-  /** Event data — objects or primitives, serialized per `@fastify/sse` config */
-  data: T
-  /** Event ID for client reconnection via `Last-Event-ID` */
-  id?: string
-  /** Reconnection delay hint in milliseconds */
-  retry?: number
-}
+/** SSE message format compatible with `@fastify/sse`. */
+export type SSEMessage<T = unknown> = SseMessage<T>
 
 /**
  * Type-safe event sender for SSE connections.
@@ -65,19 +57,9 @@ export type SSEStartOptions<Context = unknown> = {
   context?: Context
 }
 
-/**
- * Message format for use with `SSESession.sendStream()`.
- *
- * @template Events - Event schemas for type-safe event names and data
- */
-export type SSEStreamMessage<Events extends SseSchemaByEventName = SseSchemaByEventName> = {
-  [K in keyof Events & string]: {
-    event: K
-    data: z.input<Events[K]>
-    id?: string
-    retry?: number
-  }
-}[keyof Events & string]
+/** Message format for use with `SSESession.sendStream()`. */
+export type SSEStreamMessage<Events extends SseSchemaByEventName = SseSchemaByEventName> =
+  SseStreamMessage<Events>
 
 /**
  * Represents an active SSE connection with typed event sending.
@@ -119,15 +101,8 @@ export type SSESession<
 // SSE context (deferred header sending)
 // ============================================================================
 
-/**
- * One SSE representation a contract declares: the response status key it lives under
- * (`200`, `'2xx'`, …), its media type, and its event schemas.
- */
-export type SSESelection = {
-  statusCode: number | string
-  contentType: string
-  events: SseSchemaByEventName
-}
+/** One SSE representation a contract declares: status key, media type and event schemas. */
+export type SSESelection = ServerSseSelection
 
 /** True when `TUnion` has two or more members. */
 type IsUnion<TUnion, TFull = TUnion> = TUnion extends unknown
