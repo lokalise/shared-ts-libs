@@ -109,12 +109,11 @@ const { result } = await sendByApiContract(client, getUser, { pathParams: { user
 
 `sendByApiContract` handles all response kinds defined in the contract:
 
-- **JSON** — `z.ZodType` entries are parsed and validated
-- **No body** — `ContractNoBody` on a 2xx status code returns `null`
-- **Text** — `textResponse('text/csv')` returns a `string`
-- **Blob** — `blobResponse('image/png')` returns a `Blob`
-- **SSE** — `sseResponse({ … })` returns an `AsyncIterable` of typed events
-- **Dual-mode** — `anyOfResponses([sseResponse(…), z.object(…)])` requires an explicit `streaming: boolean` param
+- **JSON**: `z.ZodType` entries are parsed and validated
+- **No body**: `noBodyResponse()` on a 2xx status code returns `null`
+- **Blob**: `blobResponse('text/csv')` or `blobResponse('image/png')` returns a `BlobResponseHandle`. Call `stream()`, `text()`, `blob()` or `arrayBuffer()` on it once.
+- **SSE**: `sseResponse({ … })` returns an `AsyncIterable` of typed events
+- **Dual-mode**: a `content` map with both `application/json` and `text/event-stream` requires an explicit `streaming: boolean` param
 
 ### Return type — Either
 
@@ -248,10 +247,12 @@ try {
 ### SSE and dual-mode
 
 ```ts
-import { anyOfResponses, sseResponse } from '@lokalise/api-contracts'
+import { sseBody, sseResponse } from '@lokalise/api-contracts'
 
-// SSE-only — AsyncIterable is returned automatically
+// SSE-only: the body is an AsyncIterable of events
 const notifications = defineApiContract({
+  visibility: 'public',
+  summary: 'Notifications stream',
   method: 'get',
   pathResolver: () => '/notifications',
   responsesByStatusCode: {
@@ -264,16 +265,20 @@ for await (const event of result.body) {
   // event: { type: 'update'; data: { id: string }; lastEventId: string; retry: number | undefined }
 }
 
-// Dual-mode — streaming: true/false selects between SSE and JSON
+// Dual-mode: streaming: true/false selects between SSE and JSON
 const chat = defineApiContract({
+  visibility: 'public',
+  summary: 'Chat completion',
   method: 'post',
   pathResolver: () => '/chat',
   requestBodySchema: z.object({ message: z.string() }),
   responsesByStatusCode: {
-    200: anyOfResponses([
-      sseResponse({ chunk: z.object({ delta: z.string() }) }),
-      z.object({ text: z.string() }),
-    ]),
+    200: {
+      content: {
+        'application/json': z.object({ text: z.string() }),
+        'text/event-stream': sseBody({ chunk: z.object({ delta: z.string() }) }),
+      },
+    },
   },
 })
 
