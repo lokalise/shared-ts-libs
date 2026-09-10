@@ -1,6 +1,12 @@
 packages:
   - "packages/dev/*"
   - "packages/app/*"
+overrides:
+  # @splitsoftware/splitio pins ioredis to "^4.28.0 || ^5.0.0" and reaches the tree through the
+  # @lokalise/fastify-extras dev dependency. Its latest release still carries that range, so
+  # bumping fastify-extras does not drop ioredis 5; only this override does.
+  ioredis: ^6.0.0
+
 allowBuilds:
   '@datadog/native-appsec': true
   '@datadog/native-iast-taint-tracking': true
@@ -30,3 +36,4 @@ minimumReleaseAgeExclude:
   - '@vitest/spy@4.1.10'
   - '@vitest/utils@4.1.10'
   - vitest@4.1.10
+  - redis-semaphore@5.8.0
