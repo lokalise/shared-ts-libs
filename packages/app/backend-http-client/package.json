@@ -51,7 +51,7 @@
         "@biomejs/biome": "^2.5.9",
         "@lokalise/api-contracts": "workspace:^",
         "@lokalise/biome-config": "workspace:^",
-        "@lokalise/node-core": "^14.7.4",
+        "@lokalise/node-core": "^14.9.1",
         "@lokalise/tsconfig": "workspace:^",
         "@types/node": "^26.4.1",
         "@vitest/coverage-v8": "^4.1.11",
