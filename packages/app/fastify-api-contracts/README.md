@@ -306,7 +306,7 @@ app.setErrorHandler(async (error, request, reply) => {
 
 ### Route visibility
 
-Every route builder derives the fastify-swagger `schema.hide` flag from the contract's `visibility` field (`'public' | 'internal'`, a required field of every contract): only `visibility: 'public'` contracts are included in the generated OpenAPI document. Anything else — `'internal'`, or a contract that lacks the field at runtime because it was compiled against a pre-visibility `@lokalise/api-contracts` — gets `hide: true` and is excluded, while still being registered and served as usual. Public routes carry an explicit `hide: false`.
+Every route builder derives the fastify-swagger `schema.hide` flag from the contract's `visibility` field (`'public' | 'internal'`, a required field of every contract): only `visibility: 'public'` contracts are included in the generated OpenAPI document. Anything else (`'internal'`, or a contract that lacks the field at runtime because it was compiled against a pre-visibility `@lokalise/api-contracts`) gets `hide: true` and is excluded, while still being registered and served as usual. Public routes carry an explicit `hide: false`.
 
 ```ts
 const contract = defineApiContract({

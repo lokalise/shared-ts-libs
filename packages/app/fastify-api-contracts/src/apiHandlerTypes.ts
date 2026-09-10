@@ -41,10 +41,10 @@ export type InferContractResponseContentTypes<TContract extends ApiContract> =
  *
  * `expectedContentType` is the response content-type the client prefers, negotiated from the
  * request's `Accept` header (with `q=` quality values and wildcards) against the content-types
- * the contract's success entries declare (`2xx` codes, `'2xx'`, `'default'`) — error responses
+ * the contract's success entries declare (`2xx` codes, `'2xx'`, `'default'`). Error responses
  * are not offered as candidates. Candidates keep the contract's declaration order (numeric
- * status keys ascending); under a full-wildcard `Accept` — what most non-browser clients
- * send — the first candidate wins. It is `null` when the client expressed no acceptable
+ * status keys ascending); under a full-wildcard `Accept`, which is what most non-browser
+ * clients send, the first candidate wins. It is `null` when the client expressed no acceptable
  * preference, in which case the handler decides the fallback.
  *
  * Contracts that declare an SSE response are additionally extended with the `sse` context
@@ -83,7 +83,7 @@ type ReplaceReturn<F, NewReturn> = F extends (...args: infer A) => FastifyReply
  * The reply object available to `ApiContract` handlers.
  *
  * Unlike the full `FastifyReply`, this omits `send()` because the framework sends the
- * response after validation — handlers return `{ status, body }` instead. Fluent setters
+ * response after validation; handlers return `{ status, body }` instead. Fluent setters
  * (`code`, `status`, `header`, …) are overridden to return `ApiHandlerReply` so that
  * chaining `.send()` after them is a compile-time error too.
  */
@@ -98,9 +98,9 @@ export type ApiHandlerReply = Omit<FastifyReply, 'send' | FastifyReplyFluentKeys
  * SSE status. When a status declares several media types, the result also requires a
  * `contentType` naming the chosen representation (`{ status, contentType, body }`).
  *
- * The `context` (see {@link ApiHandlerContext}) always provides `expectedContentType` — the
- * `Accept`-negotiated response content-type; contracts that declare an SSE response
- * additionally get `context.sse` for imperative streaming — after `sse.start()` the handler
+ * The `context` (see {@link ApiHandlerContext}) always provides `expectedContentType`, the
+ * `Accept`-negotiated response content-type. Contracts that declare an SSE response
+ * additionally get `context.sse` for imperative streaming; after `sse.start()` the handler
  * returns nothing.
  *
  * @example
@@ -129,7 +129,7 @@ export type InferApiHandler<Contract extends ApiContract> = [
       request: InferApiHandlerRequest<Contract>,
       reply: ApiHandlerReply,
       context: ApiHandlerContext<Contract>,
-      // biome-ignore lint/suspicious/noConfusingVoidType: void is intentional — handler returns nothing after sse.start()
+      // biome-ignore lint/suspicious/noConfusingVoidType: void is intentional, the handler returns nothing after sse.start()
     ) => MaybePromise<InferApiHandlerResult<Contract> | void>
 
 /**
@@ -143,9 +143,9 @@ export type ApiRouteOptions = Omit<RouteOptions, 'method' | 'url' | 'schema' | '
      * Maps contract metadata to additional Fastify route options.
      *
      * Called with the contract's `metadata` field; its return value is merged into
-     * the Fastify route options as a base — explicitly passed options override it,
-     * except `config` objects, which are merged key-by-key (explicit keys win) —
-     * useful for cross-cutting concerns (auth, rate limiting, tracing) driven by
+     * the Fastify route options as a base: explicitly passed options override it,
+     * except `config` objects, which are merged key-by-key (explicit keys win).
+     * Useful for cross-cutting concerns (auth, rate limiting, tracing) driven by
      * metadata declared on the contract.
      */
     contractMetadataToRouteMapper?: ApiContractMetadataToRouteMapper
