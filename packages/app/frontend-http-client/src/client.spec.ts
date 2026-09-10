@@ -1116,6 +1116,23 @@ describe('frontend-http-client', () => {
   })
 
   describe('sendGet', () => {
+    it('resolves a header factory before sending', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer
+        .forGet('/')
+        .withHeaders({ authorization: 'Bearer token' })
+        .thenJson(200, { ok: true })
+
+      const responseBody = await sendGet(client, {
+        path: '/',
+        headers: () => Promise.resolve({ authorization: 'Bearer token' }),
+        responseBodySchema: z.object({ ok: z.boolean() }),
+      })
+
+      expect(responseBody).toEqual({ ok: true })
+    })
+
     it('returns deserialized response', async () => {
       const client = wretch(mockServer.url)
 
