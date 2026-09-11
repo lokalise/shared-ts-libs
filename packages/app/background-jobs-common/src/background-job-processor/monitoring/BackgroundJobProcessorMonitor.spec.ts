@@ -43,6 +43,7 @@ describe('BackgroundJobProcessorMonitor', () => {
         const monitor = new BackgroundJobProcessorMonitor(deps, {
           isNewProcessor: false,
           queueId: 'test-queue',
+          queueName: 'test-queue',
           processorName: 'registerQueue tests',
           ownerName: 'test-owner',
           redisConfig: factory.getRedisConfig(),
@@ -50,7 +51,7 @@ describe('BackgroundJobProcessorMonitor', () => {
 
         await monitor.registerQueueProcessor()
         await expect(monitor.registerQueueProcessor()).rejects.toMatchInlineSnapshot(
-          `[Error: Processor for queue id "test-queue" is not unique.]`,
+          `[Error: Processor for queue "test-queue" is not unique.]`,
         )
 
         await monitor.unregisterQueueProcessor()
@@ -60,6 +61,7 @@ describe('BackgroundJobProcessorMonitor', () => {
         const monitor = new BackgroundJobProcessorMonitor(deps, {
           isNewProcessor: false,
           queueId: 'test-queue',
+          queueName: 'test-queue',
           processorName: 'registerQueue tests',
           ownerName: 'test-owner',
           redisConfig: factory.getRedisConfig(),
@@ -78,13 +80,14 @@ describe('BackgroundJobProcessorMonitor', () => {
         const monitor = new BackgroundJobProcessorMonitor(deps, {
           isNewProcessor: true,
           queueId: 'test-queue',
+          queueName: 'test-queue',
           processorName: 'registerQueue tests',
           ownerName: 'test-owner',
         })
 
         await monitor.registerQueueProcessor()
         await expect(monitor.registerQueueProcessor()).rejects.toMatchInlineSnapshot(
-          `[Error: Processor for queue id "test-queue" is not unique.]`,
+          `[Error: Processor for queue "test-queue" is not unique.]`,
         )
 
         await monitor.unregisterQueueProcessor()
@@ -94,6 +97,7 @@ describe('BackgroundJobProcessorMonitor', () => {
         const monitor = new BackgroundJobProcessorMonitor(deps, {
           isNewProcessor: true,
           queueId: 'test-queue',
+          queueName: 'test-queue',
           processorName: 'registerQueue tests',
           ownerName: 'test-owner',
         })
@@ -105,6 +109,35 @@ describe('BackgroundJobProcessorMonitor', () => {
         monitor.unregisterQueueProcessor()
       })
     })
+
+    it('throws an error for a queue already taken under a different queue id', async () => {
+      // Dashboard grouping is part of the queue name, so `{ queueId: 'grouped-queue',
+      // bullDashboardGrouping: ['group'] }` and `{ queueId: 'group.grouped-queue' }` are two
+      // spellings of one BullMQ queue.
+      const monitor = new BackgroundJobProcessorMonitor(deps, {
+        isNewProcessor: true,
+        queueId: 'grouped-queue',
+        queueName: 'group.grouped-queue',
+        processorName: 'registerQueue tests',
+        ownerName: 'test-owner',
+      })
+      const monitorWithGroupingInTheId = new BackgroundJobProcessorMonitor(deps, {
+        isNewProcessor: true,
+        queueId: 'group.grouped-queue',
+        queueName: 'group.grouped-queue',
+        processorName: 'registerQueue tests',
+        ownerName: 'test-owner',
+      })
+
+      await monitor.registerQueueProcessor()
+      await expect(
+        monitorWithGroupingInTheId.registerQueueProcessor(),
+      ).rejects.toMatchInlineSnapshot(
+        `[Error: Processor for queue "group.grouped-queue" is not unique.]`,
+      )
+
+      monitor.unregisterQueueProcessor()
+    })
   })
 
   describe('unregisterQueue', () => {
@@ -112,6 +145,7 @@ describe('BackgroundJobProcessorMonitor', () => {
       const monitor = new BackgroundJobProcessorMonitor(deps, {
         isNewProcessor: false,
         queueId: 'test-queue',
+        queueName: 'test-queue',
         processorName: 'registerQueue tests',
         ownerName: 'test-owner',
         redisConfig: factory.getRedisConfig(),
@@ -136,6 +170,7 @@ describe('BackgroundJobProcessorMonitor', () => {
       monitor = new BackgroundJobProcessorMonitor(deps, {
         isNewProcessor: false,
         queueId: 'test-queue',
+        queueName: 'test-queue',
         processorName: 'registerQueue tests',
         ownerName: 'test-owner',
         redisConfig: factory.getRedisConfig(),
@@ -181,6 +216,7 @@ describe('BackgroundJobProcessorMonitor', () => {
       monitor = new BackgroundJobProcessorMonitor(deps, {
         isNewProcessor: false,
         queueId: 'test-queue-logJobStarted',
+        queueName: 'test-queue-logJobStarted',
         processorName: 'BackgroundJobProcessorMonitor tests',
         ownerName: 'test-owner',
         redisConfig: factory.getRedisConfig(),
@@ -221,6 +257,7 @@ describe('BackgroundJobProcessorMonitor', () => {
       monitor = new BackgroundJobProcessorMonitor(deps, {
         isNewProcessor: false,
         queueId: 'test-queue',
+        queueName: 'test-queue',
         processorName: 'BackgroundJobProcessorMonitor tests',
         ownerName: 'test-owner',
         redisConfig: factory.getRedisConfig(),
@@ -290,6 +327,7 @@ describe('BackgroundJobProcessorMonitor', () => {
       monitor = new BackgroundJobProcessorMonitor(deps, {
         isNewProcessor: false,
         queueId: 'test-queue',
+        queueName: 'test-queue',
         processorName: 'BackgroundJobProcessorMonitor tests',
         ownerName: 'test-owner',
         redisConfig: factory.getRedisConfig(),
@@ -363,6 +401,7 @@ describe('BackgroundJobProcessorMonitor', () => {
       monitor = new BackgroundJobProcessorMonitor(deps, {
         isNewProcessor: false,
         queueId: 'test-queue-runInJobContext',
+        queueName: 'test-queue-runInJobContext',
         processorName: 'BackgroundJobProcessorMonitor tests',
         ownerName: 'test-owner',
         redisConfig: factory.getRedisConfig(),
@@ -394,6 +433,7 @@ describe('BackgroundJobProcessorMonitor', () => {
         {
           isNewProcessor: false,
           queueId: 'test-queue-runInJobContext-delegating',
+          queueName: 'test-queue-runInJobContext-delegating',
           processorName: 'BackgroundJobProcessorMonitor tests',
           ownerName: 'test-owner',
           redisConfig: factory.getRedisConfig(),

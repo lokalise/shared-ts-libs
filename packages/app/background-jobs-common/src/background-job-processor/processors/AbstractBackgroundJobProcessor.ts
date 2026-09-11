@@ -121,6 +121,7 @@ export abstract class AbstractBackgroundJobProcessor<
       isNewProcessor: false,
       processorName: this.constructor.name,
       ...config,
+      queueName: resolveQueueId(config),
     })
     this.config = config
     this.factory = dependencies.bullmqFactory

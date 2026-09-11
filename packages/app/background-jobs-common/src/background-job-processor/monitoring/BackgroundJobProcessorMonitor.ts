@@ -12,7 +12,7 @@ import type { BaseJobPayload, RequestContext, SafeJob } from '../types.ts'
 import { resolveJobId } from '../utils.ts'
 import { registerActiveQueueIds } from './registerActiveQueueIds.ts'
 
-const queueIdsWithActiveProcessorsSet = new Set<string>()
+const queueNamesWithActiveProcessorsSet = new Set<string>()
 
 /**
  * Whatever a job threw, if it threw at all.
@@ -24,6 +24,12 @@ export type JobFailure = { error: unknown }
 
 type BackgroundJobProcessorMonitorConfig = {
   queueId: string
+  /**
+   * BullMQ name of the queue the processor consumes, dashboard grouping prefix included. Two
+   * processors can carry different queue ids and still resolve to the same name, which makes this
+   * what uniqueness is keyed on.
+   */
+  queueName: string
   ownerName: string
   processorName: string
 } & (
@@ -63,19 +69,23 @@ export class BackgroundJobProcessorMonitor<
   }
 
   public async registerQueueProcessor(): Promise<void> {
-    if (queueIdsWithActiveProcessorsSet.has(this.config.queueId)) {
-      throw new Error(`Processor for queue id "${this.config.queueId}" is not unique.`)
+    // Keyed on the resolved queue name, not on the bare queue id: two processors whose ids differ
+    // only in how dashboard grouping is spelled out consume the same BullMQ queue, which is
+    // exactly what this guard exists to catch.
+    const { queueName } = this.config
+    if (queueNamesWithActiveProcessorsSet.has(queueName)) {
+      throw new Error(`Processor for queue "${queueName}" is not unique.`)
     }
-    queueIdsWithActiveProcessorsSet.add(this.config.queueId)
+    queueNamesWithActiveProcessorsSet.add(queueName)
 
     if (this.config.isNewProcessor) return Promise.resolve()
     // For new processors, queue registration in redis is handled by queue manager
     // (once we get rid of the old one, we can remove this code)
-    await registerActiveQueueIds(this.config.redisConfig, [this.config])
+    await registerActiveQueueIds(this.config.redisConfig, [{ queueId: queueName }])
   }
 
   public unregisterQueueProcessor(): void {
-    queueIdsWithActiveProcessorsSet.delete(this.config.queueId)
+    queueNamesWithActiveProcessorsSet.delete(this.config.queueName)
   }
 
   public getRequestContext(job: JobType): RequestContext {
