@@ -74,7 +74,7 @@ export class BackgroundJobProcessorMonitor<
     // exactly what this guard exists to catch.
     const { queueName } = this.config
     if (queueNamesWithActiveProcessorsSet.has(queueName)) {
-      throw new Error(`Processor for queue id "${queueName}" is not unique.`)
+      throw new Error(`Processor for queue "${queueName}" is not unique.`)
     }
     queueNamesWithActiveProcessorsSet.add(queueName)
 
