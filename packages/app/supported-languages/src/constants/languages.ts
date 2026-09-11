@@ -16,11 +16,13 @@ export const languages = new Set([
   'ab', // Abkhazian
   'ace', // Achinese
   'ach', // Acoli
+  'acw', // Hijazi Arabic
   'ada', // Adangme
   'ady', // Adyghe
   'ae', // Avestan
   'aeb', // Tunisian Arabic
   'af', // Afrikaans
+  'afb', // Gulf Arabic
   'afh', // Afrihili
   'agq', // Aghem
   'ain', // Ainu
@@ -55,6 +57,7 @@ export const languages = new Set([
   'awa', // Awadhi
   'ay', // Aymara
   'az', // Azerbaijani
+  'azb', // South Azerbaijani
   'ba', // Bashkir
   'bal', // Baluchi
   'ban', // Balinese
@@ -119,6 +122,7 @@ export const languages = new Set([
   'cic', // Chickasaw
   'ckb', // Central Kurdish
   'clc', // Chilcotin
+  'cnh', // Hakha Chin
   'co', // Corsican
   'cop', // Coptic
   'cps', // Capiznon
@@ -222,6 +226,7 @@ export const languages = new Set([
   'guz', // Gusii
   'gv', // Manx
   'gwi', // Gwichʼin
+  'gyn', // Guyanese Creole English
   'ha', // Hausa
   'hai', // Haida
   'hak', // Hakka Chinese
@@ -304,6 +309,7 @@ export const languages = new Set([
   'ko', // Korean
   'koi', // Komi-Permyak
   'kok', // Konkani
+  'koo', // Konzo
   'kos', // Kosraean
   'kpe', // Kpelle
   'kr', // Kanuri
@@ -327,11 +333,13 @@ export const languages = new Set([
   'lad', // Ladino
   'lag', // Langi
   'lah', // Western Panjabi
+  'laj', // Lango (Uganda)
   'lam', // Lamba
   'lb', // Luxembourgish
   'lez', // Lezghian
   'lfn', // Lingua Franca Nova
   'lg', // Ganda
+  'lgg', // Lugbara
   'li', // Limburgish
   'lij', // Ligurian
   'lil', // Lillooet
@@ -399,6 +407,7 @@ export const languages = new Set([
   'my', // Burmese
   'mye', // Myene
   'myv', // Erzya
+  'myx', // Masaaba
   'mzn', // Mazanderani
   'na', // Nauru
   'nan', // Min Nan Chinese
@@ -406,6 +415,7 @@ export const languages = new Set([
   'naq', // Nama
   'nb', // Norwegian Bokmål
   'nd', // North Ndebele
+  'ndc', // Ndau
   'nds', // Low German
   'ne', // Nepali
   'new', // Newari
@@ -522,6 +532,7 @@ export const languages = new Set([
   'si', // Sinhala
   'sid', // Sidamo
   'sk', // Slovak
+  'skr', // Saraiki
   'sl', // Slovenian
   'slh', // Southern Lushootseed
   'sli', // Lower Silesian
@@ -551,6 +562,7 @@ export const languages = new Set([
   'sv', // Swedish
   'sw', // Swahili
   'swb', // Comorian
+  'swk', // Malawi Sena
   'syc', // Classical Syriac
   'syr', // Syriac
   'szl', // Silesian
@@ -588,6 +600,7 @@ export const languages = new Set([
   'trw', // Torwali
   'ts', // Tsonga
   'tsd', // Tsakonian
+  'tsg', // Tausug
   'tsi', // Tsimshian
   'tt', // Tatar
   'ttm', // Northern Tutchone
