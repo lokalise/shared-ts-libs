@@ -144,6 +144,7 @@ export abstract class AbstractBackgroundJobProcessorNew<
       isNewProcessor: true,
       processorName: this.constructor.name,
       ...config,
+      queueName: resolveQueueId(this.queueManager.getQueueConfig(config.queueId)),
     })
   }
 

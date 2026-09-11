@@ -126,3 +126,49 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
     await processor.dispose()
   })
 })
+
+describe('AbstractBackgroundJobProcessorNew - start of queue ids resolving to one queue', () => {
+  // Dashboard grouping is part of the queue name, so both of these are the BullMQ queue
+  // `group.queue`, however differently their ids are spelled.
+  const collidingQueues = [
+    {
+      queueId: 'queue',
+      bullDashboardGrouping: ['group'],
+      jobPayloadSchema: z.object({ metadata: z.object({ correlationId: z.string() }) }),
+    },
+    {
+      queueId: 'group.queue',
+      jobPayloadSchema: z.object({ metadata: z.object({ correlationId: z.string() }) }),
+    },
+  ] as const satisfies QueueConfiguration[]
+
+  type CollidingQueues = typeof collidingQueues
+
+  let factory: TestDependencyFactory
+  let deps: BackgroundJobProcessorDependenciesNew<CollidingQueues, 'queue' | 'group.queue'>
+
+  beforeEach(async () => {
+    factory = new TestDependencyFactory()
+    deps = factory.createNew(collidingQueues)
+
+    await factory.clearRedis()
+  })
+
+  afterEach(async () => {
+    await factory.dispose()
+  })
+
+  it('throws an error for the second processor of the same queue', async () => {
+    const processor = new FakeBackgroundJobProcessorNew<CollidingQueues, 'queue'>(deps, 'queue')
+    await processor.start()
+
+    await expect(
+      new FakeBackgroundJobProcessorNew<CollidingQueues, 'group.queue'>(
+        deps,
+        'group.queue',
+      ).start(),
+    ).rejects.toMatchInlineSnapshot('[Error: Processor for queue id "group.queue" is not unique.]')
+
+    await processor.dispose()
+  })
+})
