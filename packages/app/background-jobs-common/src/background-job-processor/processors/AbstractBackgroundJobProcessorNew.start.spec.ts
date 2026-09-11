@@ -51,7 +51,7 @@ describe('AbstractBackgroundJobProcessorNew - start', () => {
     await job1.start()
     await expect(
       new FakeBackgroundJobProcessorNew<SupportedQueues, 'queue1'>(deps, 'queue1').start(),
-    ).rejects.toMatchInlineSnapshot('[Error: Processor for queue id "queue1" is not unique.]')
+    ).rejects.toMatchInlineSnapshot('[Error: Processor for queue "queue1" is not unique.]')
 
     await job1.dispose()
   })
@@ -167,7 +167,7 @@ describe('AbstractBackgroundJobProcessorNew - start of queue ids resolving to on
         deps,
         'group.queue',
       ).start(),
-    ).rejects.toMatchInlineSnapshot('[Error: Processor for queue id "group.queue" is not unique.]')
+    ).rejects.toMatchInlineSnapshot('[Error: Processor for queue "group.queue" is not unique.]')
 
     await processor.dispose()
   })

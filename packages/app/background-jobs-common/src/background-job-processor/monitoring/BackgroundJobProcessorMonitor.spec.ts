@@ -51,7 +51,7 @@ describe('BackgroundJobProcessorMonitor', () => {
 
         await monitor.registerQueueProcessor()
         await expect(monitor.registerQueueProcessor()).rejects.toMatchInlineSnapshot(
-          `[Error: Processor for queue id "test-queue" is not unique.]`,
+          `[Error: Processor for queue "test-queue" is not unique.]`,
         )
 
         await monitor.unregisterQueueProcessor()
@@ -87,7 +87,7 @@ describe('BackgroundJobProcessorMonitor', () => {
 
         await monitor.registerQueueProcessor()
         await expect(monitor.registerQueueProcessor()).rejects.toMatchInlineSnapshot(
-          `[Error: Processor for queue id "test-queue" is not unique.]`,
+          `[Error: Processor for queue "test-queue" is not unique.]`,
         )
 
         await monitor.unregisterQueueProcessor()
@@ -133,7 +133,7 @@ describe('BackgroundJobProcessorMonitor', () => {
       await expect(
         monitorWithGroupingInTheId.registerQueueProcessor(),
       ).rejects.toMatchInlineSnapshot(
-        `[Error: Processor for queue id "group.grouped-queue" is not unique.]`,
+        `[Error: Processor for queue "group.grouped-queue" is not unique.]`,
       )
 
       monitor.unregisterQueueProcessor()
