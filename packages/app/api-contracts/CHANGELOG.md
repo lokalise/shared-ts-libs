@@ -1,5 +1,11 @@
 # Changelog
 
+## 8.0.1
+
+### Patch Changes
+
+- da8104f: Fix `streaming` inference in `ClientRequestParams` for dual-mode (JSON + SSE) contracts. The `streaming` member was wrapped in `Prettify` together with the rest of the params, which blocked TypeScript from inferring `TIsStreaming` from a call site, so `sendByApiContract(client, dualContract, { streaming: true })` was rejected and the result type never narrowed to the SSE body.
+
 ## 8.0.0
 
 ### Major Changes
