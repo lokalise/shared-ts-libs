@@ -37,17 +37,17 @@ type RequiredWhenDefined<T, TKey extends string, TExtra = T> = [T] extends [unde
 export type ClientRequestParams<
   TApiContract extends ApiContract,
   TIsStreaming extends boolean,
-> = Prettify<
-  StreamingParam<TApiContract['responsesByStatusCode'], TIsStreaming> &
+> = StreamingParam<TApiContract['responsesByStatusCode'], TIsStreaming> &
+  Prettify<
     RequiredWhenDefined<InferSchemaInput<TApiContract['requestPathParamsSchema']>, 'pathParams'> &
-    RequiredWhenDefined<InferSchemaInput<ExtractRequestBody<TApiContract>>, 'body'> &
-    RequiredWhenDefined<InferSchemaInput<TApiContract['requestQuerySchema']>, 'queryParams'> &
-    RequiredWhenDefined<
-      InferSchemaInput<TApiContract['requestHeaderSchema']>,
-      'headers',
-      HeadersParam<InferSchemaInput<TApiContract['requestHeaderSchema']>>
-    > & { pathPrefix?: string }
->
+      RequiredWhenDefined<InferSchemaInput<ExtractRequestBody<TApiContract>>, 'body'> &
+      RequiredWhenDefined<InferSchemaInput<TApiContract['requestQuerySchema']>, 'queryParams'> &
+      RequiredWhenDefined<
+        InferSchemaInput<TApiContract['requestHeaderSchema']>,
+        'headers',
+        HeadersParam<InferSchemaInput<TApiContract['requestHeaderSchema']>>
+      > & { pathPrefix?: string }
+  >
 
 type InferClientResponseHeaders<TApiContract extends ApiContract> =
   TApiContract['responseHeaderSchema'] extends z.ZodType
