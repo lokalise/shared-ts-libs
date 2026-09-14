@@ -572,6 +572,95 @@ describe('sendByApiContract', () => {
     })
   })
 
+  describe('dual-mode (JSON + SSE)', () => {
+    const dualContract = defineApiContract({
+      visibility: 'public',
+      summary: 'Dual-mode contract',
+      method: 'post',
+      pathResolver: () => '/completions',
+      requestBodySchema: z.object({ prompt: z.string() }),
+      responsesByStatusCode: {
+        200: {
+          content: {
+            'application/json': z.object({ text: z.string() }),
+            'text/event-stream': sseBody({ chunk: z.object({ delta: z.string() }) }),
+          },
+        },
+        400: z.object({ message: z.string() }),
+      },
+    })
+
+    it('returns the parsed JSON body and does not request an event stream when streaming is false', async () => {
+      const endpoint = await mockServer
+        .forPost('/completions')
+        .thenJson(200, { text: 'hello world' })
+
+      const response = await sendByApiContract(buildClient(), dualContract, {
+        streaming: false,
+        body: { prompt: 'hi' },
+      })
+
+      expectTypeOf(response.result).toMatchTypeOf<{ body: { text: string } } | undefined>()
+      expect(response.result).toMatchObject({ statusCode: 200, body: { text: 'hello world' } })
+
+      const [request] = await endpoint.getSeenRequests()
+      expect(request?.headers.accept).not.toBe('text/event-stream')
+    })
+
+    it('sends Accept: text/event-stream and returns typed events when streaming is true', async () => {
+      const sseStreamPayload =
+        'event: chunk\ndata: {"delta":"hel"}\n\nevent: chunk\ndata: {"delta":"lo"}\n\n'
+
+      await mockServer
+        .forPost('/completions')
+        .withHeaders({ accept: 'text/event-stream' })
+        .thenReply(200, sseStreamPayload, { 'content-type': 'text/event-stream' })
+
+      const response = await sendByApiContract(buildClient(), dualContract, {
+        streaming: true,
+        body: { prompt: 'hi' },
+      })
+
+      expectTypeOf(response.result).toMatchTypeOf<
+        | {
+            body: AsyncIterable<{
+              type: 'chunk'
+              data: { delta: string }
+              lastEventId: string
+              retry: number | undefined
+            }>
+          }
+        | undefined
+      >()
+
+      if (!response.result) throw new Error('Expected result')
+      const events: unknown[] = []
+      for await (const event of response.result.body) {
+        events.push(event)
+      }
+
+      expect(events).toEqual([
+        { type: 'chunk', data: { delta: 'hel' }, lastEventId: '', retry: undefined },
+        { type: 'chunk', data: { delta: 'lo' }, lastEventId: '', retry: undefined },
+      ])
+    })
+
+    it('parses a contract-defined JSON error response while in streaming mode', async () => {
+      await mockServer.forPost('/completions').thenJson(400, { message: 'prompt too long' })
+
+      const response = await sendByApiContract(buildClient(), dualContract, {
+        streaming: true,
+        body: { prompt: 'hi' },
+      })
+
+      expect(response.result).toBeUndefined()
+      expect(response.error).toMatchObject({
+        statusCode: 400,
+        body: { message: 'prompt too long' },
+      })
+    })
+  })
+
   describe('blob', () => {
     const blobContract = defineApiContract({
       visibility: 'public',

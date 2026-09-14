@@ -6,15 +6,17 @@ import type {
   HttpStatusCode,
   SuccessfulHttpStatusCode,
 } from '../HttpStatusCodes.ts'
+import type { Prettify } from '../typeUtils.ts'
 import type {
   ClientRequestParams,
+  DefaultStreaming,
   HeadersParam,
   InferNonSseClientResponse,
   InferSseClientResponse,
 } from './clientTypes.ts'
 import type { BlobResponseHandle } from './contractResponse.ts'
 import { blobBody, noBodyResponse, sseBody } from './contractResponse.ts'
-import { defineApiContract } from './defineApiContract.ts'
+import { type ApiContract, defineApiContract } from './defineApiContract.ts'
 
 type DefaultHeaders = Record<string, string>
 
@@ -28,7 +30,7 @@ describe('clientTypes', () => {
         pathResolver: () => '/ping',
         responsesByStatusCode: { 200: z.unknown() },
       })
-      expectTypeOf<ClientRequestParams<typeof contract, false>>().toEqualTypeOf<{
+      expectTypeOf<Prettify<ClientRequestParams<typeof contract, false>>>().toEqualTypeOf<{
         streaming?: never
         pathParams?: undefined
         body?: undefined
@@ -47,7 +49,7 @@ describe('clientTypes', () => {
         pathResolver: ({ id }) => `/products/${id}`,
         responsesByStatusCode: { 200: z.unknown() },
       })
-      expectTypeOf<ClientRequestParams<typeof contract, false>>().toEqualTypeOf<{
+      expectTypeOf<Prettify<ClientRequestParams<typeof contract, false>>>().toEqualTypeOf<{
         streaming?: never
         pathParams: { id: string }
         body?: undefined
@@ -66,7 +68,7 @@ describe('clientTypes', () => {
         requestBodySchema: z.object({ name: z.string() }),
         responsesByStatusCode: { 201: z.unknown() },
       })
-      expectTypeOf<ClientRequestParams<typeof contract, false>>().toEqualTypeOf<{
+      expectTypeOf<Prettify<ClientRequestParams<typeof contract, false>>>().toEqualTypeOf<{
         streaming?: never
         pathParams?: undefined
         body: { name: string }
@@ -85,7 +87,7 @@ describe('clientTypes', () => {
         requestQuerySchema: z.object({ limit: z.number() }),
         responsesByStatusCode: { 200: z.unknown() },
       })
-      expectTypeOf<ClientRequestParams<typeof contract, false>>().toEqualTypeOf<{
+      expectTypeOf<Prettify<ClientRequestParams<typeof contract, false>>>().toEqualTypeOf<{
         streaming?: never
         pathParams?: undefined
         body?: undefined
@@ -104,7 +106,7 @@ describe('clientTypes', () => {
         requestHeaderSchema: z.object({ authorization: z.string() }),
         responsesByStatusCode: { 200: z.unknown() },
       })
-      expectTypeOf<ClientRequestParams<typeof contract, false>>().toEqualTypeOf<{
+      expectTypeOf<Prettify<ClientRequestParams<typeof contract, false>>>().toEqualTypeOf<{
         streaming?: never
         pathParams?: undefined
         body?: undefined
@@ -176,6 +178,63 @@ describe('clientTypes', () => {
       expectTypeOf<
         ClientRequestParams<typeof contract, false>['streaming']
       >().toEqualTypeOf<false>()
+    })
+
+    it('lets a generic caller infer TIsStreaming from the streaming param', () => {
+      // Mirrors the sendByApiContract signature: TApiContract and TIsStreaming are both inferred
+      // from the arguments, so `streaming` must be a direct inference site rather than buried
+      // inside a mapped type.
+      const send = <
+        TApiContract extends ApiContract,
+        TIsStreaming extends boolean = DefaultStreaming<TApiContract['responsesByStatusCode']>,
+      >(
+        _contract: TApiContract,
+        _params: ClientRequestParams<TApiContract, TIsStreaming>,
+      ): TIsStreaming => undefined as unknown as TIsStreaming
+
+      const dualContract = defineApiContract({
+        visibility: 'public',
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/feed',
+        responsesByStatusCode: {
+          200: {
+            content: {
+              'application/json': z.object({ latest: z.string() }),
+              'text/event-stream': sseBody({ update: z.object({ id: z.string() }) }),
+            },
+          },
+        },
+      })
+      const sseContract = defineApiContract({
+        visibility: 'public',
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/events',
+        responsesByStatusCode: {
+          200: {
+            content: { 'text/event-stream': sseBody({ update: z.object({ id: z.string() }) }) },
+          },
+        },
+      })
+      const jsonContract = defineApiContract({
+        visibility: 'public',
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/ping',
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      expectTypeOf(send(dualContract, { streaming: true })).toEqualTypeOf<true>()
+      expectTypeOf(send(dualContract, { streaming: false })).toEqualTypeOf<false>()
+      // @ts-expect-error streaming is required for dual-mode contracts
+      send(dualContract, {})
+      // @ts-expect-error streaming is forbidden for SSE-only contracts
+      send(sseContract, { streaming: true })
+      // @ts-expect-error streaming is forbidden for non-SSE contracts
+      send(jsonContract, { streaming: false })
+      expectTypeOf(send(sseContract, {})).toEqualTypeOf<true>()
+      expectTypeOf(send(jsonContract, {})).toEqualTypeOf<false>()
     })
   })
 
