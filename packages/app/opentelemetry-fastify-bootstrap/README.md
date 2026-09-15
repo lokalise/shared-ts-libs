@@ -61,6 +61,8 @@ initOpenTelemetry()
 | `OTEL_ENABLED` | Set to `true` to enable OpenTelemetry | `false` |
 | `OTEL_EXPORTER_URL` | OTLP gRPC exporter URL | `grpc://localhost:4317` |
 
+Only traces are configured. The SDK is started with empty `metricReaders` and `logRecordProcessors`, so `OTEL_METRICS_EXPORTER` and `OTEL_LOGS_EXPORTER` are not read and no OTLP metrics or logs exporters are created. Without this, sdk-node defaults both to `otlp`, targets `http://localhost:4318`, and `gracefulOtelShutdown()` spends 8-15 seconds retrying against an endpoint nothing listens on. Serve metrics via Prometheus and write logs to stdout as usual.
+
 ### Options
 
 | Option | Type | Default | Description |

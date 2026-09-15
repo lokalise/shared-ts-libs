@@ -28,6 +28,23 @@ vi.mock('@opentelemetry/auto-instrumentations-node', async (importOriginal) => {
   return { ...actual, getNodeAutoInstrumentations: wrapped }
 })
 
+// sdk-node fills metricReaders / logRecordProcessors from OTEL_METRICS_EXPORTER /
+// OTEL_LOGS_EXPORTER when they are omitted (both default to "otlp"). Capture the
+// config initOpenTelemetry hands to NodeSDK so we can assert it opts out
+// explicitly. The real NodeSDK is still constructed.
+const capturedNodeSdkConfig = vi.hoisted(() => ({ config: undefined as unknown }))
+
+vi.mock('@opentelemetry/sdk-node', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@opentelemetry/sdk-node')>()
+  class CapturingNodeSDK extends actual.NodeSDK {
+    constructor(config: ConstructorParameters<typeof actual.NodeSDK>[0]) {
+      capturedNodeSdkConfig.config = config
+      super(config)
+    }
+  }
+  return { ...actual, NodeSDK: CapturingNodeSDK }
+})
+
 type HttpRequestHook = (span: Span, request: unknown) => void
 
 function capturedHttpRequestHook(): HttpRequestHook | undefined {
@@ -302,6 +319,12 @@ describe('opentelemetry-fastify-bootstrap', () => {
     afterEach(async () => {
       await app?.close()
       app = undefined
+    })
+
+    it('configures no metric readers and no log record processors, so shutdown never flushes to env-default OTLP endpoints', () => {
+      expect(capturedNodeSdkConfig.config).toEqual(
+        expect.objectContaining({ metricReaders: [], logRecordProcessors: [] }),
+      )
     })
 
     it('emits spans for fastify route handlers via the custom span processor', async () => {
