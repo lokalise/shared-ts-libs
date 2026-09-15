@@ -28,10 +28,8 @@ vi.mock('@opentelemetry/auto-instrumentations-node', async (importOriginal) => {
   return { ...actual, getNodeAutoInstrumentations: wrapped }
 })
 
-// sdk-node fills metricReaders / logRecordProcessors from OTEL_METRICS_EXPORTER /
-// OTEL_LOGS_EXPORTER when they are omitted (both default to "otlp"). Capture the
-// config initOpenTelemetry hands to NodeSDK so we can assert it opts out
-// explicitly. The real NodeSDK is still constructed.
+// Capture the config that initOpenTelemetry gives to NodeSDK. The real NodeSDK
+// is still constructed.
 const capturedNodeSdkConfig = vi.hoisted(() => ({ config: undefined as unknown }))
 
 vi.mock('@opentelemetry/sdk-node', async (importOriginal) => {
@@ -321,7 +319,7 @@ describe('opentelemetry-fastify-bootstrap', () => {
       app = undefined
     })
 
-    it('configures no metric readers and no log record processors, so shutdown never flushes to env-default OTLP endpoints', () => {
+    it('configures no metric readers and no log record processors', () => {
       expect(capturedNodeSdkConfig.config).toEqual(
         expect.objectContaining({ metricReaders: [], logRecordProcessors: [] }),
       )

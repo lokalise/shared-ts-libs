@@ -302,15 +302,9 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
     // since v0.76.0 — @fastify/otel below is the sole fastify instrumentation.
     sdk = new NodeSDK({
       spanProcessors: allSpanProcessors,
-      // Only traces are configured by this package. When these lists are omitted,
-      // sdk-node reads OTEL_METRICS_EXPORTER and OTEL_LOGS_EXPORTER from the
-      // environment, and both default to "otlp", which creates exporters aimed at
-      // http://localhost:4318. No collector listens there in our pods, so every
-      // export fails, and because connection errors count as retryable, the final
-      // flush in sdk.shutdown() retries with backoff until the 10s export deadline.
-      // That cost 8-15s per graceful shutdown and made services hit their own
-      // shutdown timeout. Metrics are served via Prometheus and logs go to stdout,
-      // so neither OTel signal is wanted here.
+      // This package configures traces only. Without these empty lists, sdk-node
+      // creates OTLP metrics and logs exporters from environment defaults, and
+      // sdk.shutdown() retries against localhost:4318 for 8-15 s.
       metricReaders: [],
       logRecordProcessors: [],
       instrumentations: [
