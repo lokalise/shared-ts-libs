@@ -302,6 +302,11 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
     // since v0.76.0 — @fastify/otel below is the sole fastify instrumentation.
     sdk = new NodeSDK({
       spanProcessors: allSpanProcessors,
+      // This package configures traces only. Without these empty lists, sdk-node
+      // creates OTLP metrics and logs exporters from environment defaults, and
+      // sdk.shutdown() retries against localhost:4318 for 8-15 s.
+      metricReaders: [],
+      logRecordProcessors: [],
       instrumentations: [
         createNodeAutoInstrumentations(skipStreamEndpoints),
         createFastifyOtelInstrumentation(skippedPaths, skipStreamEndpoints),

@@ -28,6 +28,21 @@ vi.mock('@opentelemetry/auto-instrumentations-node', async (importOriginal) => {
   return { ...actual, getNodeAutoInstrumentations: wrapped }
 })
 
+// Capture the config that initOpenTelemetry gives to NodeSDK. The real NodeSDK
+// is still constructed.
+const capturedNodeSdkConfig = vi.hoisted(() => ({ config: undefined as unknown }))
+
+vi.mock('@opentelemetry/sdk-node', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@opentelemetry/sdk-node')>()
+  class CapturingNodeSDK extends actual.NodeSDK {
+    constructor(config: ConstructorParameters<typeof actual.NodeSDK>[0]) {
+      capturedNodeSdkConfig.config = config
+      super(config)
+    }
+  }
+  return { ...actual, NodeSDK: CapturingNodeSDK }
+})
+
 type HttpRequestHook = (span: Span, request: unknown) => void
 
 function capturedHttpRequestHook(): HttpRequestHook | undefined {
@@ -302,6 +317,12 @@ describe('opentelemetry-fastify-bootstrap', () => {
     afterEach(async () => {
       await app?.close()
       app = undefined
+    })
+
+    it('configures no metric readers and no log record processors', () => {
+      expect(capturedNodeSdkConfig.config).toEqual(
+        expect.objectContaining({ metricReaders: [], logRecordProcessors: [] }),
+      )
     })
 
     it('emits spans for fastify route handlers via the custom span processor', async () => {
