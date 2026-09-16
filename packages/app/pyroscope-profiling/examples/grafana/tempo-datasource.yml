@@ -1,0 +1,28 @@
+apiVersion: 1
+
+datasources:
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    jsonData:
+      # What turns a span in the trace view into a link to the flame graph taken
+      # while it was open. It reads the span's `pyroscope.profile.id` attribute,
+      # which PyroscopeSpanProcessor writes, and queries Pyroscope for the
+      # samples labelled with the same `span_id`.
+      tracesToProfiles:
+        datasourceUid: pyroscope
+        # Wall time, because that is what a Node profile measures: a frame that
+        # dominates it may be an await on a slow dependency rather than work
+        # this service does. Swap in `wall:cpu:nanoseconds:wall:nanoseconds` to
+        # separate the two, once PYROSCOPE_WALL_COLLECT_CPU_TIME is on.
+        #
+        # Not `process_cpu:...`, which is what Grafana's own docs show: that is
+        # the Go and Java naming. The Node SDK ingests under `wall`.
+        profileTypeId: 'wall:wall:nanoseconds:wall:nanoseconds'
+        # Narrows the query to the service the span came from. `service_name` is
+        # the label Pyroscope files an app name under.
+        tags:
+          - key: 'service.name'
+            value: 'service_name'

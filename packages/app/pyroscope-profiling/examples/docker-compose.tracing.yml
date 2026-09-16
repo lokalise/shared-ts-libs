@@ -1,0 +1,29 @@
+# Overlay that adds Tempo, so a span links to the flame graph taken while it was
+# open. Needs both files before it:
+#
+#   docker compose -f docker-compose.pyroscope.yml -f docker-compose.grafana.yml #                  -f docker-compose.tracing.yml up -d
+#
+# Point the service's tracing at grpc://localhost:4317 (OTEL_EXPORTER_URL) and
+# turn all three switches on: OTEL_ENABLED, PYROSCOPE_ENABLED and
+# PYROSCOPE_SPAN_PROFILES_ENABLED.
+services:
+  tempo:
+    image: grafana/tempo:2.9.1
+    command: ['-config.file=/etc/tempo/tempo.yaml']
+    ports:
+      # OTLP gRPC, which is what @lokalise/opentelemetry-fastify-bootstrap exports to.
+      - '${TEMPO_OTLP_GRPC_PORT:-4317}:4317'
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo-data:/var/tempo
+
+  # One more provisioned datasource, the one that only makes sense once Tempo is
+  # in the stack. Compose merges the two mount lists by target path.
+  grafana:
+    volumes:
+      - ./grafana/tempo-datasource.yml:/etc/grafana/provisioning/datasources/tempo.yml:ro
+    depends_on:
+      - tempo
+
+volumes:
+  tempo-data:
