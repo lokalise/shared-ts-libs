@@ -390,6 +390,17 @@ Compare like with like: two runs of the same shape, the same load profile and
 the same catalog size, or the deltas are measuring the difference between the
 runs rather than the difference the change made.
 
+Where the service ran belongs on that list. The same code as a host process and
+as a container differs by more than most changes being measured, because each
+side pays for a different boundary: a host process reaching a containerised
+database goes through a published port once per statement, and a container
+reaching a service on the host goes back out through `host.docker.internal`. One
+consumer measured 71.5 ms per page of its database write as a host process
+against 41.3 ms as the container, on identical code. A diff across that boundary
+attributes the transport to the change. Every profile carries an `instance`
+label, the hostname by default, so `--select 'instance="..."'` pins both ranges
+to one side of it.
+
 Profiles live on a named volume that `docker compose down` spares, so the run
 before a change is still there tomorrow. `docker compose down -v` drops them.
 
