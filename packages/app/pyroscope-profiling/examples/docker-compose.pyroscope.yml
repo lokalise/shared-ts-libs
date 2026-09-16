@@ -18,8 +18,10 @@ name: pyroscope-local
 services:
   pyroscope:
     image: grafana/pyroscope:2.3.1
+    # Loopback only: this Pyroscope has no authentication, so who can read the
+    # profiles should not depend on which network the laptop is on.
     ports:
-      - '${PYROSCOPE_PORT:-4040}:4040'
+      - '127.0.0.1:${PYROSCOPE_PORT:-4040}:4040'
     # Named volume rather than a container-lifetime one: comparing the run
     # before a change against the run after it is the whole point, and a profile
     # that dies with its container can be read once. `docker compose down -v` is

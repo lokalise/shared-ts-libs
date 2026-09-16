@@ -306,6 +306,7 @@ pyroscope-analyze --service <name> [options]
 | `--min-share <percent>` | `1` | Frames below this share are left out of the tree |
 | `--json` | off | Machine-readable output, printed on an empty range too |
 | `--folded <file>` | | Also write collapsed stacks |
+| `--timeout <seconds>` | `30` | Give up on a Pyroscope that took the request and went quiet |
 | `--auth-token <token>` | `PYROSCOPE_AUTH_TOKEN` | Bearer token, which takes precedence over basic auth |
 | `--basic-auth-user <user>` | `PYROSCOPE_BASIC_AUTH_USER` | For Grafana Cloud Profiles, the numeric stack id |
 | `--basic-auth-password <secret>` | `PYROSCOPE_BASIC_AUTH_PASSWORD` | Basic auth password |
@@ -760,9 +761,11 @@ Two deployment details to check, neither of them in the image:
   produced it.
 
 For a browser locally, [`examples/`](examples) has Grafana as an overlay on the
-same Pyroscope:
+same Pyroscope. An overlay names the file before it, so these run from the
+directory holding them:
 
 ```bash
+cd node_modules/@lokalise/pyroscope-profiling/examples
 docker compose -f docker-compose.pyroscope.yml -f docker-compose.grafana.yml up -d
 ```
 
@@ -773,7 +776,7 @@ explored rather than asserted; `--against-from` answers the same question
 without it.
 
 A third overlay adds Tempo, which is what turns a span in a trace into a link to
-the profile taken while it was open:
+the profile taken while it was open, from that same directory:
 
 ```bash
 docker compose -f docker-compose.pyroscope.yml -f docker-compose.grafana.yml \

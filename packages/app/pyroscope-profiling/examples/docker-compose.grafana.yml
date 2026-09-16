@@ -10,8 +10,10 @@
 services:
   grafana:
     image: grafana/grafana:12.3.1
+    # Loopback only, like Pyroscope: anonymous access at the Admin role is
+    # something to hand to this machine and to nothing else on the network.
     ports:
-      - '${GRAFANA_PORT:-3000}:3000'
+      - '127.0.0.1:${GRAFANA_PORT:-3000}:3000'
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: 'true'
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin

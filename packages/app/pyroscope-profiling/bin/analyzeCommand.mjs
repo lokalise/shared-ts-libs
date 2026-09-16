@@ -42,6 +42,7 @@ const VALUE_OPTIONS = new Set([
   'basic-auth-user',
   'basic-auth-password',
   'tenant-id',
+  'timeout',
 ])
 
 const FLAG_OPTIONS = new Set(['json', 'tree'])
@@ -73,6 +74,9 @@ const USAGE = `pyroscope-analyze: print a profile from a local Pyroscope.
                           on an empty range too, so a gate can read the total.
   --folded <file>         Also write collapsed stacks, the input format
                           flamegraph.pl and inferno take.
+  --timeout <seconds>     Give up on a Pyroscope that took the request and then
+                          went quiet. Default 30. Raise it for a range wide
+                          enough that the query itself is slow.
 
 Credentials, for a Pyroscope that is not the local unauthenticated one. Each
 defaults to the environment variable the service ships profiles with.
@@ -85,9 +89,17 @@ defaults to the environment variable the service ships profiles with.
   --tenant-id <id>                PYROSCOPE_TENANT_ID, sent as X-Scope-OrgID.
 `
 
+/**
+ * A profile type id is `name:sampleType:sampleUnit:periodType:periodUnit`, and
+ * the values in the answer are in the sample unit. The period unit is a
+ * different quantity and sometimes a different one entirely:
+ * `memory:inuse_objects:count:inuse_space:bytes` counts objects per byte
+ * sampled, so its values are counts.
+ */
 const UNIT_BY_PROFILE_TYPE = (profileType) => {
-  if (profileType.includes(':nanoseconds:')) return 'time'
-  if (profileType.includes(':bytes:')) return 'bytes'
+  const sampleUnit = profileType.split(':')[2]
+  if (sampleUnit === 'nanoseconds') return 'time'
+  if (sampleUnit === 'bytes') return 'bytes'
   return 'count'
 }
 
@@ -191,13 +203,25 @@ function buildHeaders(options, env) {
   return headers
 }
 
+/**
+ * The request is bounded because the failure it guards against is silent: a
+ * Pyroscope that accepts the connection and then answers nothing holds the
+ * command open until the transport gives up, which on a CI gate is minutes of a
+ * job that has already failed.
+ */
 async function fetchFlamegraph(settings, start, end) {
-  const { url, profileType, selector, headers } = settings
+  const { url, profileType, selector, headers, timeoutMs } = settings
   const endpoint = `${url.replace(/\/$/, '')}/querier.v1.QuerierService/SelectMergeStacktraces`
   const response = await fetch(endpoint, {
     method: 'POST',
     headers,
     body: JSON.stringify({ profileTypeID: profileType, labelSelector: selector, start, end }),
+    signal: AbortSignal.timeout(timeoutMs),
+  }).catch((error) => {
+    if (error?.name !== 'TimeoutError') throw error
+    throw new Error(
+      `Pyroscope did not answer within ${timeoutMs / 1000}s. Raise --timeout if the range is wide.`,
+    )
   })
   if (!response.ok) {
     throw new Error(
@@ -389,6 +413,7 @@ export function resolveSettings(options, now, env = process.env) {
     until,
     top: parseNumber(options.top ?? 20, 'top', 1),
     minShare: parseNumber(options['min-share'] ?? 1, 'min-share', 0) / 100,
+    timeoutMs: parseNumber(options.timeout ?? 30, 'timeout', 1) * 1000,
   }
 }
 

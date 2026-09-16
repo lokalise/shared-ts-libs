@@ -1,5 +1,5 @@
 import fastify from 'fastify'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { type PyroscopeProfilingPluginOptions, pyroscopeProfilingPlugin } from './fastify.ts'
 import type { ProfilingConfig } from './types.ts'
 
@@ -40,10 +40,19 @@ const buildApp = async (
 describe('pyroscopeProfilingPlugin', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // The plugin falls back to the PYROSCOPE_* environment when it is handed no
+    // config, so a dev shell or a CI runner that exports one of these decides
+    // what the fallback test asserts on.
+    vi.stubEnv('PYROSCOPE_ENABLED', undefined)
+    vi.stubEnv('PYROSCOPE_APPLICATION_NAME', undefined)
     profiler.startProfiling.mockResolvedValue(true)
     profiler.stopProfiling.mockResolvedValue(undefined)
     profiler.runningProfiler.mockReturnValue(undefined)
     wallProfiler.getWallLabels.mockReturnValue({})
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
   })
 
   it('starts profiling with the config it was handed', async () => {

@@ -4,6 +4,10 @@ A Pyroscope to ship profiles to during a local load test. That is the whole base
 stack, because reading a profile does not need a UI: `pyroscope-analyze` queries
 Pyroscope over HTTP and prints the result.
 
+Every `docker compose` line below names its files relative to this directory, so
+run them from here (`node_modules/@lokalise/pyroscope-profiling/examples` in a
+service that installed the package) or give the paths in full.
+
 ```bash
 docker compose -f docker-compose.pyroscope.yml up -d
 
@@ -78,8 +82,10 @@ Ports are overridable (`PYROSCOPE_PORT`, `GRAFANA_PORT`, `TEMPO_OTLP_GRPC_PORT`)
 because "4040 is already allocated" is the normal state of a machine with more
 than one service checked out.
 
-Everything here is for local use. An unauthenticated Pyroscope and an anonymous
-admin Grafana are fine on a laptop and belong nowhere else.
+Everything here is for local use, and published on `127.0.0.1` to keep it that
+way. An unauthenticated Pyroscope, an anonymous admin Grafana and an open OTLP
+receiver are fine while only this machine can reach them, and belong nowhere
+else.
 
 The datasources are mounted file by file rather than as a provisioning
 directory. A file mount nested inside a read-only directory mount is refused by

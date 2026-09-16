@@ -117,6 +117,13 @@ describe('resolveSettings', () => {
     ).toMatchObject({ profileType: 'block:delay:nanoseconds:x:y' })
   })
 
+  // `memory:inuse_objects:count:inuse_space:bytes` is sampled per byte
+  // allocated and counts objects, so reading its unit off the period would
+  // print a number of objects as MiB.
+  it('reads the unit off the sample and not off the period', () => {
+    expect(resolveSettings({ service: 'x', type: 'objects' }, NOW, {}).unit).toBe('count')
+  })
+
   // `PROFILE_TYPES.toString` is inherited, a function and truthy, so a lookup
   // that does not check ownership hands a function on as a profile type id.
   it('does not mistake an inherited member of the shorthand table for a type', () => {
@@ -136,6 +143,14 @@ describe('resolveSettings', () => {
       '--min-share needs a number of at least 0',
     )
     expect(() => resolveSettings({ service: 'x', top: '0' }, NOW, {})).toThrow('--top needs')
+    expect(() => resolveSettings({ service: 'x', timeout: 'abc' }, NOW, {})).toThrow(
+      '--timeout needs a number of at least 1',
+    )
+  })
+
+  it('bounds the request, in seconds, at thirty by default', () => {
+    expect(resolveSettings({ service: 'x' }, NOW, {}).timeoutMs).toBe(30_000)
+    expect(resolveSettings({ service: 'x', timeout: '5' }, NOW, {}).timeoutMs).toBe(5_000)
   })
 
   it('adds the extra matchers to the selector', () => {
@@ -366,6 +381,27 @@ describe('main', () => {
     await expect(main(['--service', 'my-service'], {})).rejects.toThrow(
       'Pyroscope answered 401: not authorized',
     )
+  })
+
+  // A Pyroscope that takes the connection and then goes quiet would otherwise
+  // hold the command open until the transport gives up.
+  it('gives up on a Pyroscope that stops answering', async () => {
+    fetch.mockRejectedValue(
+      Object.assign(new Error('The operation was aborted due to timeout'), {
+        name: 'TimeoutError',
+      }),
+    )
+
+    await expect(main(['--service', 'my-service', '--timeout', '5'], {})).rejects.toThrow(
+      'Pyroscope did not answer within 5s',
+    )
+    expect(fetch.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('passes a connection failure on as it came', async () => {
+    fetch.mockRejectedValue(new TypeError('fetch failed'))
+
+    await expect(main(['--service', 'my-service'], {})).rejects.toThrow('fetch failed')
   })
 
   it('reports an answer that carries no flamegraph at all', async () => {
