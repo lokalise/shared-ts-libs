@@ -1,5 +1,11 @@
 # @lokalise/opentelemetry-fastify-bootstrap
 
+## 4.1.2
+
+### Patch Changes
+
+- d07aef4: Start `NodeSDK` with empty `metricReaders` and `logRecordProcessors`. sdk-node no longer creates OTLP metrics and logs exporters from environment defaults, and `gracefulOtelShutdown()` no longer retries against `localhost:4318` for 8-15 seconds.
+
 ## 4.1.1
 
 ### Patch Changes
