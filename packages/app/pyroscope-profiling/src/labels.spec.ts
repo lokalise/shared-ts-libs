@@ -77,6 +77,40 @@ describe('withProfilingLabels', () => {
     expect(profiler.setWallLabels).toHaveBeenLastCalledWith({ env: 'production' })
   })
 
+  // The profiler holds one label set for the whole process, so a call that put
+  // back what it found on entry would unlabel the call still running and leave
+  // its own labels on every sample taken after both had finished.
+  it('hands the labels to the call still running rather than to the one that finished', async () => {
+    profilerRunning()
+    let releaseFirst = () => {}
+    let releaseSecond = () => {}
+
+    const first = withProfilingLabels(
+      { job: 'first' },
+      () =>
+        new Promise<void>((resolve) => {
+          releaseFirst = resolve
+        }),
+    )
+    const second = withProfilingLabels(
+      { job: 'second' },
+      () =>
+        new Promise<void>((resolve) => {
+          releaseSecond = resolve
+        }),
+    )
+
+    releaseFirst()
+    await first
+
+    expect(profiler.setWallLabels).toHaveBeenLastCalledWith({ job: 'second' })
+
+    releaseSecond()
+    await second
+
+    expect(profiler.setWallLabels).toHaveBeenLastCalledWith({})
+  })
+
   it('accepts a synchronous body', async () => {
     profilerRunning()
 

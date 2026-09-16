@@ -9,7 +9,9 @@ export default defineConfig({
     pool: 'threads',
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.ts'],
+      // The CLI is half of what this package ships, and every bug it had went
+      // unnoticed while it sat outside the thresholds.
+      include: ['src/**/*.ts', 'bin/**/*.mjs'],
       thresholds: {
         lines: 90,
         functions: 90,

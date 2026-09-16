@@ -26,6 +26,17 @@ const INVALID_LABEL_CHARACTERS = /[{},=]/g
 let running: PyroscopeModule | undefined
 
 /**
+ * A start that has not finished yet, so that a second caller joins it instead
+ * of running its own. An entry point and the Fastify plugin both reach
+ * `startProfiling` and neither awaits the other: without this the two would
+ * both pass the `running` check while the first was still awaiting the SDK
+ * import, and the second `init()` would replace the SDK's global profiler while
+ * the first one kept sampling, exporting and holding the event loop open, with
+ * nothing left able to stop it.
+ */
+let starting: Promise<boolean> | undefined
+
+/**
  * The SDK, while it is profiling, for the callers that need to reach it from
  * outside: the span processor labels the profiler's samples with the span they
  * were taken under, and it is constructed before {@link startProfiling} has run
@@ -45,9 +56,11 @@ const toLabelValue = (value: string): string => value.replace(INVALID_LABEL_CHAR
 /**
  * Drops the build timestamp Lokalise's `APP_VERSION` carries (`1.2.3@1700000000`),
  * so that two pods of the same release share one `version` label instead of
- * splitting the flame graph by build minute.
+ * splitting the flame graph by build minute. A value that is nothing but a
+ * timestamp keeps it, because an empty label value is a filter nobody can use.
  */
-const toVersionLabel = (appVersion: string): string => appVersion.split('@')[0] ?? appVersion
+const toVersionLabel = (appVersion: string): string =>
+  appVersion.split('@')[0]?.trim() || appVersion.trim()
 
 const buildTags = (context: ProfilingContext): Record<string, string> => {
   const raw: Record<string, string> = {
@@ -56,7 +69,10 @@ const buildTags = (context: ProfilingContext): Record<string, string> => {
     instance: context.instance ?? hostname(),
   }
   if (context.appEnv) raw.env = context.appEnv
-  if (context.appVersion) raw.version = toVersionLabel(context.appVersion)
+  if (context.appVersion) {
+    const version = toVersionLabel(context.appVersion)
+    if (version) raw.version = version
+  }
   if (context.gitCommitSha) raw.commit_sha = context.gitCommitSha
   Object.assign(raw, context.tags)
 
@@ -92,6 +108,10 @@ export async function startProfiling(
     logger.warn('[PYROSCOPE] Profiling is already running')
     return true
   }
+  if (starting) {
+    logger.warn('[PYROSCOPE] Profiling is already starting')
+    return await starting
+  }
   if (!config.appName) {
     logger.error(
       '[PYROSCOPE] Profiling is enabled but no application name is set, refusing to start. Set PYROSCOPE_APPLICATION_NAME or pass appName',
@@ -99,11 +119,25 @@ export async function startProfiling(
     return false
   }
 
+  starting = startSdk(config, context, logger)
+  try {
+    return await starting
+  } finally {
+    starting = undefined
+  }
+}
+
+async function startSdk(
+  config: ProfilingConfig,
+  context: ProfilingContext,
+  logger: ProfilingLogger,
+): Promise<boolean> {
   const appName = toLabelValue(config.appName)
   const tags = buildTags(context)
 
+  let pyroscope: PyroscopeModule | undefined
   try {
-    const pyroscope = await import('@pyroscope/nodejs')
+    pyroscope = await import('@pyroscope/nodejs')
     // Routes the profiler's own diagnostics (`@datadog/pprof` internals and the
     // source mapper) into the app logger instead of nowhere. It does not cover
     // the exporter: rejected and failed ingests are logged through `debug`, so
@@ -128,7 +162,27 @@ export async function startProfiling(
     return true
   } catch (error) {
     logger.error({ error }, '[PYROSCOPE] Failed to start continuous profiling')
+    await rollBackPartialStart(pyroscope, logger)
     return false
+  }
+}
+
+/**
+ * `start()` starts the wall profiler and then the heap one, so a failure in the
+ * second leaves the first sampling, exporting and holding the event loop open,
+ * with `running` unset and therefore nothing left that could stop it. Stopping
+ * a profiler that never started throws, which is the expected outcome here
+ * rather than a problem.
+ */
+async function rollBackPartialStart(
+  pyroscope: PyroscopeModule | undefined,
+  logger: ProfilingLogger,
+): Promise<void> {
+  if (!pyroscope) return
+  try {
+    await stopWithTimeout(pyroscope)
+  } catch (error) {
+    logger.debug({ error }, '[PYROSCOPE] Nothing to roll back after a failed start')
   }
 }
 
@@ -142,15 +196,8 @@ export async function stopProfiling(logger: ProfilingLogger): Promise<void> {
   if (!pyroscope) return
   running = undefined
 
-  let timer: NodeJS.Timeout | undefined
   try {
-    const flushed = await Promise.race([
-      pyroscope.stop().then(() => true),
-      new Promise<false>((resolve) => {
-        timer = setTimeout(() => resolve(false), STOP_TIMEOUT_MS)
-      }),
-    ])
-    if (flushed) {
+    if (await stopWithTimeout(pyroscope)) {
       logger.info('[PYROSCOPE] Continuous profiling stopped')
     } else {
       logger.warn(
@@ -160,6 +207,19 @@ export async function stopProfiling(logger: ProfilingLogger): Promise<void> {
     }
   } catch (error) {
     logger.error({ error }, '[PYROSCOPE] Failed to stop continuous profiling cleanly')
+  }
+}
+
+/** Whether the final flush made it out before {@link STOP_TIMEOUT_MS}. */
+async function stopWithTimeout(pyroscope: PyroscopeModule): Promise<boolean> {
+  let timer: NodeJS.Timeout | undefined
+  try {
+    return await Promise.race([
+      pyroscope.stop().then(() => true),
+      new Promise<false>((resolve) => {
+        timer = setTimeout(() => resolve(false), STOP_TIMEOUT_MS)
+      }),
+    ])
   } finally {
     clearTimeout(timer)
   }

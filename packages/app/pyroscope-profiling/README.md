@@ -10,6 +10,18 @@ were in, and a profile is the only one of the three that names the line. None of
 that needs a shared environment, a Grafana or a browser: a Pyroscope container,
 one environment variable and `pyroscope-analyze` are the whole loop.
 
+With tracing on, every sample is labelled with the route or job it was taken
+under, so the profile can be cut to one user journey and read on its own:
+
+```bash
+pyroscope-analyze --service my-service --select 'span_name="POST /v1/content/refresh"'
+```
+
+That is one environment variable away once a service already traces, and it is
+what turns "the service spends its time in `upsertCacheFieldEntries`" into "the
+content refresh does, and the search endpoint does not". See
+[Span profiles](#span-profiles).
+
 Shipping to a Grafana stack works too, and is what the deployed environments do,
 but it is the bonus rather than the point. See
 [Shipping to a Grafana stack](#shipping-to-a-grafana-stack).
@@ -66,7 +78,8 @@ node:internal/async_hooks:popAsyncContext:562    10.2 ms   0.1%
 ```
 
 Then narrow it. `--type cpu` against the default wall profile separates waiting
-from working, `--select 'job="cache-refresh"'` cuts it to one unit of work, and
+from working, `--select 'span_name="POST /v1/content/refresh"'` cuts it to one
+journey and `--select 'job="cache-refresh"'` to one background job, and
 `--against-from` / `--against-until` diffs the run after a change against the
 run before it. All of that is [below](#reading-the-result).
 
@@ -171,8 +184,9 @@ await app.register(pyroscopeProfilingPlugin, { start: false })
 ```
 
 `start: false` keeps the `onClose` flush and skips the start. A second
-`startProfiling` would be a warning and a no-op anyway, so the plugin is safe
-either way; this just keeps the log clean.
+`startProfiling` is a warning and a no-op anyway, and one that arrives while the
+first is still loading the SDK joins it rather than starting a second profiler,
+so the plugin is safe either way; this just keeps the log clean.
 
 ### Without Fastify
 
@@ -219,6 +233,12 @@ Read by this package:
 A blank value counts as unset, because a deployment template that leaves a
 variable in place but empty is the normal shape of "not configured here". A
 local Pyroscope needs none of the credentials.
+
+Profiling also stays off whenever `NODE_ENV` is `test`, whatever
+`PYROSCOPE_ENABLED` says, which is what `@lokalise/datadog-fastify-bootstrap`
+and `@lokalise/opentelemetry-fastify-bootstrap` do with their own switches. A
+`.env` shared with the dev loop would otherwise load the native profiler into
+every test worker and post its samples to whatever address that file names.
 
 [`examples/.env.example`](examples/.env.example) is the same list as a file to
 copy into a service.
@@ -284,6 +304,18 @@ pyroscope-analyze --service <name> [options]
 | `--min-share <percent>` | `1` | Frames below this share are left out of the tree |
 | `--json` | off | Machine-readable output |
 | `--folded <file>` | | Also write collapsed stacks |
+| `--auth-token <token>` | `PYROSCOPE_AUTH_TOKEN` | Bearer token, which takes precedence over basic auth |
+| `--basic-auth-user <user>` | `PYROSCOPE_BASIC_AUTH_USER` | For Grafana Cloud Profiles, the numeric stack id |
+| `--basic-auth-password <secret>` | `PYROSCOPE_BASIC_AUTH_PASSWORD` | Basic auth password |
+| `--tenant-id <id>` | `PYROSCOPE_TENANT_ID` | Sent as `X-Scope-OrgID` |
+
+The credentials default to the same variables the service ships profiles with,
+so pointing `PYROSCOPE_SERVER_ADDRESS` at Grafana Cloud Profiles or a
+multi-tenant Pyroscope is enough for reading as well as writing. A local
+Pyroscope needs none of them.
+
+An option it does not know is an error rather than something it ignores, so a
+mistyped `--tre` says so instead of printing a profile without the tree.
 
 ### Self time first, because a Node wall profile has nothing else
 
@@ -306,8 +338,8 @@ total                       16.93 s  100.0%
     :Garbage Collection:0  214.6 ms    1.3%  214.6 ms
 ```
 
-Labels are the other half of the answer, and the one that scales: `span_id` from
-[span profiles](#span-profiles) for a request, `job` from
+Labels are the other half of the answer, and the one that scales: `span_name`
+and `span_id` from [span profiles](#span-profiles) for a request, `job` from
 [`withProfilingLabels`](#labelling-work-that-has-no-request-behind-it) for a
 background job. Without them the stack will not say which request a sample came
 from.
@@ -415,9 +447,18 @@ isolated:
 | `commit_sha` | `GIT_COMMIT_SHA` |
 | `instance` | the hostname, which is the pod name in Kubernetes |
 
-A label whose source is missing is left out rather than shipped empty. Add your
-own through `context.tags`, which is merged last and can therefore also replace
-any of the four:
+A label whose source is missing is left out rather than shipped empty, and an
+`APP_VERSION` that is nothing but a build timestamp keeps it rather than
+shipping `version=`, which nobody could filter on.
+
+Two more are attached per sample rather than per profile, and they are the ones
+that cut a flame graph to one unit of work: `span_name` and `span_id` from
+[span profiles](#span-profiles) for a request, `job` or whatever else
+[`withProfilingLabels`](#labelling-work-that-has-no-request-behind-it) is given
+for a background job.
+
+Add your own through `context.tags`, which is merged last and can therefore also
+replace any of the four:
 
 ```ts
 { appEnv: 'production', tags: { region: 'eu-west-1', shard: 'a' } }
@@ -459,12 +500,15 @@ The profile can then be cut to `--select 'job="cache-refresh"'`, which turns
 function when profiling is off, and it never changes what the function returns
 or throws.
 
-Two limits, both inherited from how the profiler tracks labels. They live in an
-async context, so work the function starts and does not await lands wherever it
-resumes, possibly after the labels have been put back. And the profiler holds
-one current label set per async context chain rather than one per call, so
-overlapping invocations can read each other's labels. Label the outermost unit
-of work, not every function inside it.
+Two limits, both inherited from how the profiler tracks labels. It carries one
+label set for the whole process rather than one per async context, so work the
+function starts and does not await is labelled by whatever is current when it
+resumes, and two calls that overlap both write to the same set: the samples
+taken while both are open carry the labels of whichever started last. Closing a
+call hands the labels back to the one still running, so nothing is left labelled
+by work that has finished, but a run with ten of these in flight at once will
+not attribute its samples ten ways. Label the outermost unit of work, not every
+function inside it, and read overlapping labels as approximate.
 
 ## What gets collected
 
@@ -561,9 +605,12 @@ configurable.
 ## Span profiles
 
 Once tracing is in the picture, the labels can come from it instead of by hand.
-While a root span is open the profiler's samples carry `span_id` and
+While a local root span is open the profiler's samples carry `span_id` and
 `span_name`, and the span carries `pyroscope.profile.id`, which is what a
 Grafana trace view follows to the profile.
+
+This is the feature that makes a flame graph per user journey, and it costs one
+environment variable in a service that already traces.
 
 ```ts
 // server.ts, before the app is imported
@@ -586,25 +633,60 @@ All three, because a label needs a span to come from and a profiler to land on.
 With either Pyroscope switch off `buildPyroscopeSpanProcessors` returns an empty
 array and tracing behaves exactly as it did before.
 
-The `span_name` label is the one that pays off locally, because it groups by
-route without any code change:
+### A flame graph per journey
+
+`span_name` is the label that pays off locally: it is the route or the job name,
+it is the same across every run of that journey, and it needs no code change to
+appear.
 
 ```bash
-pyroscope-analyze --service my-service --select 'span_name="POST /v1/content/refresh"'
+# Where the checkout journey spends its time
+pyroscope-analyze --service my-service --select 'span_name="POST /v1/checkout"'
+
+# The same frame in another journey, to tell "this endpoint is slow" from
+# "this function is slow everywhere"
+pyroscope-analyze --service my-service --select 'span_name="GET /v1/catalog"'
+
+# One journey, before and after a change. $MARK is the timestamp between the
+# two runs, as in "Comparing two runs" above.
+pyroscope-analyze --service my-service --select 'span_name="POST /v1/checkout"' \
+  --from "$MARK" --against-from now-30m --against-until "$MARK"
 ```
 
-`span_id` is per request, so it is the one a Grafana trace view uses rather than
-something to filter by from a terminal.
+A load test that drives several journeys at once therefore produces one profile
+per journey out of a single run, which is the difference between optimising the
+service and optimising the endpoint that is actually slow. `--json --select` is
+the same thing for a CI gate, per journey rather than per service.
 
-Only root spans are labelled. A child shares its parent's async context, so
-labelling both would mean the inner span deciding what the outer one's samples
-say, and the outer span is the request or the job, which is the unit worth
-filtering by.
+`span_id` is per request, so it is the one a Grafana trace view uses rather than
+something to filter by from a terminal. Pair it with `--tree` once a journey's
+table has named a frame and the question becomes who called it.
+
+### What is labelled, and how exactly
+
+Only local root spans: a span with no parent, or one whose parent is in another
+process, which is what an incoming request carrying a `traceparent` looks like.
+A child span shares the process-wide label set with its parent, so labelling
+both would mean the inner span deciding what the outer one's samples say, and
+the outer span is the request or the job, which is the unit worth filtering by.
+A service sitting behind a traced caller is still labelled, because its server
+span is the outermost one in its own process.
+
+The profiler carries one label set for the whole process rather than one per
+async context, so the samples taken while two root spans are open carry the
+labels of whichever started last, and work a span starts without awaiting is
+labelled by whatever is current when it resumes. A span that ends hands the
+labels back to the request still open, so nothing keeps the id of a request that
+has finished, but the attribution is a sample of the truth rather than the whole
+of it. Read it as exact on a local run driving one journey at a time, and as
+approximate at production concurrency.
 
 The processor is exported on its own as `PyroscopeSpanProcessor` for a tracing
 setup that does not go through `@lokalise/opentelemetry-fastify-bootstrap`. It
 takes an optional logger, used only to report a profiler that refuses to be
-labelled.
+labelled, once at `warn` and at `debug` after that: whatever makes labelling
+fail keeps failing, and one line per request would bury the output it was meant
+to explain.
 
 ## Shipping to a Grafana stack
 
@@ -678,7 +760,8 @@ curl -s http://localhost:4040/ready   # "ready" when it will keep what you send
 **Is the profiler running at all?** A successful start logs
 `[PYROSCOPE] Continuous profiling started` with the resolved app name, endpoint
 and labels. A failed one logs `[PYROSCOPE] Failed to start continuous profiling`
-with the error. Nothing at all means `PYROSCOPE_ENABLED` is not `true`.
+with the error. Nothing at all means `PYROSCOPE_ENABLED` is not `true`, or that
+`NODE_ENV` is `test`, which is off whatever the switch says.
 
 **Has a flush happened yet?** The first one is `PYROSCOPE_FLUSH_INTERVAL_MS`
 after start, 60 seconds by default. Lower it rather than waiting.
@@ -697,6 +780,19 @@ is how you tell "the endpoint is rejecting me" from "no flush has happened yet".
 **Is the event loop free?** The flush runs on a timer. A process in a tight
 synchronous loop ships nothing until it stops, and ships no heap profile even
 then.
+
+**Do the samples arrive without `span_name`?** Span profiles need all three
+switches (`OTEL_ENABLED`, `PYROSCOPE_ENABLED`, `PYROSCOPE_SPAN_PROFILES_ENABLED`)
+and `buildPyroscopeSpanProcessors()` has to reach `initOpenTelemetry` through
+its `spanProcessors`. A labelled request also writes `pyroscope.profile.id` onto
+its span, so a trace that carries no such attribute says the processor never ran.
+
+```bash
+# Which journeys are labelled at all
+curl -s -X POST -H 'content-type: application/json' \
+  -d '{"name":"span_name","matchers":["{service_name=\"my-service\"}"]}' \
+  http://localhost:4040/querier.v1.QuerierService/LabelValues
+```
 
 **Is the range right?** `pyroscope-analyze` defaults to `--from now-15m`. A run
 from this morning needs `--from` to say so, and a container whose clock has

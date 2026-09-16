@@ -71,6 +71,18 @@ describe('resolveProfilingConfigFromEnv', () => {
     expect(config.authToken).toBeUndefined()
   })
 
+  // What the two tracing bootstrap packages in this repo do with their own
+  // switches. A .env shared with the dev loop would otherwise load the native
+  // profiler into every test worker and post its samples somewhere.
+  it('stays off under NODE_ENV=test, whatever the switch says', () => {
+    expect(
+      resolveProfilingConfigFromEnv({
+        appName: 'my-service',
+        env: { NODE_ENV: 'test', PYROSCOPE_ENABLED: 'true' },
+      }).isEnabled,
+    ).toBe(false)
+  })
+
   it('leaves the app name empty when neither the environment nor the caller names one', () => {
     expect(resolveProfilingConfigFromEnv({ env: {} }).appName).toBe('')
   })
@@ -107,5 +119,15 @@ describe('isSpanProfilingEnabledInEnv', () => {
     expect(isSpanProfilingEnabledInEnv({ PYROSCOPE_SPAN_PROFILES_ENABLED: 'true' })).toBe(false)
     expect(isSpanProfilingEnabledInEnv({ PYROSCOPE_ENABLED: 'true' })).toBe(false)
     expect(isSpanProfilingEnabledInEnv({})).toBe(false)
+  })
+
+  it('is off under NODE_ENV=test, like the profiler the labels would land on', () => {
+    expect(
+      isSpanProfilingEnabledInEnv({
+        NODE_ENV: 'test',
+        PYROSCOPE_ENABLED: 'true',
+        PYROSCOPE_SPAN_PROFILES_ENABLED: 'true',
+      }),
+    ).toBe(false)
   })
 })

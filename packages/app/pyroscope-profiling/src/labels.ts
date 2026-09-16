@@ -1,4 +1,4 @@
-import { runningProfiler } from './profiler.ts'
+import { closeLabelScope, openLabelScope, readWallLabels } from './wallLabels.ts'
 
 export type ProfilingLabels = Record<string, number | string>
 
@@ -7,11 +7,7 @@ export type ProfilingLabels = Record<string, number | string>
  * object when profiling is off.
  */
 export function getProfilingLabels(): ProfilingLabels {
-  try {
-    return runningProfiler()?.default.getWallLabels() ?? {}
-  } catch {
-    return {}
-  }
+  return readWallLabels()
 }
 
 /**
@@ -27,12 +23,12 @@ export function getProfilingLabels(): ProfilingLabels {
  * `fn` returns or throws.
  *
  * Two limits worth knowing, both inherited from how the profiler tracks labels.
- * They live in an async context, so work that `fn` starts and does not await
- * lands wherever it resumes, which can be after the labels have been put back.
- * And concurrent calls in the same process interleave: the profiler holds one
- * current label set per async context chain, not one per call, so overlapping
- * invocations can read each other's labels. Label the outermost unit of work
- * (the job, the message, the request) rather than every function inside it.
+ * They are not per async context: the profiler carries one label set for the
+ * whole process, so work that `fn` starts and does not await is labelled by
+ * whatever is current when it resumes, and two calls that overlap both write to
+ * the same set, which leaves the samples taken while both are open carrying the
+ * labels of whichever started last. Label the outermost unit of work (the job,
+ * the message, the request) rather than every function inside it.
  *
  * @example
  * ```ts
@@ -45,24 +41,21 @@ export async function withProfilingLabels<T>(
   labels: ProfilingLabels,
   fn: () => Promise<T> | T,
 ): Promise<T> {
-  const profiler = runningProfiler()
-  if (!profiler) return await fn()
-
-  let previous: ProfilingLabels
+  let scope: number | undefined
   try {
-    previous = profiler.default.getWallLabels()
-    profiler.default.setWallLabels({ ...previous, ...labels })
+    scope = openLabelScope(labels)
   } catch {
     // A profiler that refuses labels (the Windows wall profiler does) must not
     // stop the work it was asked to label.
     return await fn()
   }
+  if (scope === undefined) return await fn()
 
   try {
     return await fn()
   } finally {
     try {
-      profiler.default.setWallLabels(previous)
+      closeLabelScope(scope)
     } catch {
       // Same reason: the labels are diagnostics, `fn`'s result is not.
     }

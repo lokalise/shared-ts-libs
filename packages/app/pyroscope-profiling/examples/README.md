@@ -53,6 +53,13 @@ OTEL_EXPORTER_URL=grpc://localhost:4317
 PYROSCOPE_SPAN_PROFILES_ENABLED=true
 ```
 
+Every request is then labelled with the route it was served by, so one load test
+gives a flame graph per journey rather than one for the whole service:
+
+```bash
+pyroscope-analyze --service my-service --select 'span_name="POST /v1/checkout"'
+```
+
 ## Files
 
 | File | What it is |

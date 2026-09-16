@@ -1,7 +1,8 @@
 # Overlay that adds Tempo, so a span links to the flame graph taken while it was
 # open. Needs both files before it:
 #
-#   docker compose -f docker-compose.pyroscope.yml -f docker-compose.grafana.yml #                  -f docker-compose.tracing.yml up -d
+#   docker compose -f docker-compose.pyroscope.yml -f docker-compose.grafana.yml \
+#                  -f docker-compose.tracing.yml up -d
 #
 # Point the service's tracing at grpc://localhost:4317 (OTEL_EXPORTER_URL) and
 # turn all three switches on: OTEL_ENABLED, PYROSCOPE_ENABLED and

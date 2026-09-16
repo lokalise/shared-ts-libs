@@ -162,6 +162,25 @@ describe('profiler', () => {
       )
     })
 
+    // Lokalise's APP_VERSION is `1.2.3@1700000000`, and a build that only ever
+    // set the timestamp half would otherwise be filed under `version=`, which
+    // is a label nobody can filter on.
+    it('keeps a version that is nothing but a build timestamp, and drops a blank one', async () => {
+      const { startProfiling } = await loadModule()
+
+      await startProfiling(ENABLED_CONFIG, { appVersion: '@1700000000' }, logger)
+      expect(pyroscopeMock.init).toHaveBeenCalledWith(
+        expect.objectContaining({ tags: { version: '@1700000000', instance: hostname() } }),
+      )
+
+      const { startProfiling: startAgain } = await loadModule()
+      pyroscopeMock.init.mockClear()
+      await startAgain(ENABLED_CONFIG, { appVersion: '   ' }, logger)
+      expect(pyroscopeMock.init).toHaveBeenCalledWith(
+        expect.objectContaining({ tags: { instance: hostname() } }),
+      )
+    })
+
     it('refuses to start without an app name rather than filing profiles under an empty one', async () => {
       const { startProfiling } = await loadModule()
 
@@ -183,6 +202,26 @@ describe('profiler', () => {
       expect(logger.warn).toHaveBeenCalledWith('[PYROSCOPE] Profiling is already running')
     })
 
+    // An entry point and the Fastify plugin both call this, and neither awaits
+    // the other. Two `init()` calls would replace the SDK's global profiler
+    // while the first one kept sampling, exporting and holding the event loop
+    // open, with nothing left able to stop it.
+    it('starts once when two callers race the SDK import', async () => {
+      const { startProfiling, isProfilingRunning } = await loadModule()
+
+      const [first, second] = await Promise.all([
+        startProfiling(ENABLED_CONFIG, CONTEXT, logger),
+        startProfiling(ENABLED_CONFIG, CONTEXT, logger),
+      ])
+
+      expect(first).toBe(true)
+      expect(second).toBe(true)
+      expect(isProfilingRunning()).toBe(true)
+      expect(pyroscopeMock.init).toHaveBeenCalledOnce()
+      expect(pyroscopeMock.start).toHaveBeenCalledOnce()
+      expect(logger.warn).toHaveBeenCalledWith('[PYROSCOPE] Profiling is already starting')
+    })
+
     it('keeps serving when the SDK refuses the configuration', async () => {
       pyroscopeMock.init.mockImplementationOnce(() => {
         throw new Error('Invalid config')
@@ -196,9 +235,40 @@ describe('profiler', () => {
       expect(pyroscopeMock.start).not.toHaveBeenCalled()
       expect(logger.error).toHaveBeenCalled()
 
-      // A failed start must not leave a stop behind for the shutdown hook.
+      // The failed start rolled itself back, and left no second stop behind for
+      // the shutdown hook.
+      expect(pyroscopeMock.stop).toHaveBeenCalledOnce()
       await stopProfiling(logger)
-      expect(pyroscopeMock.stop).not.toHaveBeenCalled()
+      expect(pyroscopeMock.stop).toHaveBeenCalledOnce()
+    })
+
+    // `start()` is the wall profiler and then the heap one. A failure in the
+    // second leaves the first sampling and exporting, with `running` unset and
+    // therefore no way left to reach it.
+    it('stops a half-started SDK instead of leaving it exporting', async () => {
+      pyroscopeMock.start.mockImplementationOnce(() => {
+        throw new Error('Heap profiler is already started')
+      })
+      const { startProfiling, isProfilingRunning } = await loadModule()
+
+      const started = await startProfiling(ENABLED_CONFIG, CONTEXT, logger)
+
+      expect(started).toBe(false)
+      expect(isProfilingRunning()).toBe(false)
+      expect(pyroscopeMock.stop).toHaveBeenCalledOnce()
+      expect(logger.error).toHaveBeenCalled()
+    })
+
+    it('keeps serving when even the rollback fails', async () => {
+      pyroscopeMock.start.mockImplementationOnce(() => {
+        throw new Error('Contexts are not supported')
+      })
+      pyroscopeMock.stop.mockRejectedValueOnce(new Error('Wall profiler is not started'))
+      const { startProfiling } = await loadModule()
+
+      await expect(startProfiling(ENABLED_CONFIG, CONTEXT, logger)).resolves.toBe(false)
+
+      expect(logger.debug).toHaveBeenCalled()
     })
   })
 

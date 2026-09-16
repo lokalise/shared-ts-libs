@@ -14,6 +14,17 @@ const readBoolean = (env: EnvSource, key: string): boolean => {
   return value === 'true' || value === '1'
 }
 
+/**
+ * A test run is excluded here rather than in every service, which is what
+ * `@lokalise/datadog-fastify-bootstrap` and
+ * `@lokalise/opentelemetry-fastify-bootstrap` do with their own switches. A
+ * `.env` shared with the dev loop would otherwise load the native profiler into
+ * every vitest worker, arm a flush timer that keeps the worker alive and post
+ * the samples to whatever address that file names.
+ */
+const isProfilingEnabled = (env: EnvSource): boolean =>
+  env.NODE_ENV !== 'test' && readBoolean(env, 'PYROSCOPE_ENABLED')
+
 export type ProfilingConfigFromEnvOptions = {
   /**
    * Name to file profiles under when `PYROSCOPE_APPLICATION_NAME` is unset.
@@ -27,9 +38,10 @@ export type ProfilingConfigFromEnvOptions = {
 /**
  * Builds a {@link ProfilingConfig} from the `PYROSCOPE_*` environment.
  *
- * Off unless `PYROSCOPE_ENABLED` is `true`: profiles only go somewhere useful
- * once the service is pointed at an ingest endpoint, and the profiler costs a
- * native binding and a few percent of CPU.
+ * Off unless `PYROSCOPE_ENABLED` is `true` and `NODE_ENV` is something other
+ * than `test`: profiles only go somewhere useful once the service is pointed at
+ * an ingest endpoint, and the profiler costs a native binding and a few percent
+ * of CPU.
  *
  * The three credential variables are read here rather than left to the SDK,
  * which only picks up `PYROSCOPE_AUTH_TOKEN` from the environment and never
@@ -41,7 +53,7 @@ export function resolveProfilingConfigFromEnv(
   const env = options.env ?? process.env
 
   return {
-    isEnabled: readBoolean(env, 'PYROSCOPE_ENABLED'),
+    isEnabled: isProfilingEnabled(env),
     appName: read(env, 'PYROSCOPE_APPLICATION_NAME') ?? options.appName ?? '',
     serverAddress: read(env, 'PYROSCOPE_SERVER_ADDRESS') ?? DEFAULT_SERVER_ADDRESS,
     authToken: read(env, 'PYROSCOPE_AUTH_TOKEN'),
@@ -72,7 +84,5 @@ export function resolveProfilingContextFromEnv(env: EnvSource = process.env): Pr
  * therefore before a config module can be imported.
  */
 export function isSpanProfilingEnabledInEnv(env: EnvSource = process.env): boolean {
-  return (
-    readBoolean(env, 'PYROSCOPE_ENABLED') && readBoolean(env, 'PYROSCOPE_SPAN_PROFILES_ENABLED')
-  )
+  return isProfilingEnabled(env) && readBoolean(env, 'PYROSCOPE_SPAN_PROFILES_ENABLED')
 }
