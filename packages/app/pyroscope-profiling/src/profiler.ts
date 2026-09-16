@@ -14,13 +14,22 @@ type PyroscopeModule = typeof import('@pyroscope/nodejs')
 const STOP_TIMEOUT_MS = 5_000
 
 /**
- * The characters Pyroscope rejects in an app name or a label. It encodes both
- * into one string (`appName{key=value,key=value}`), so all four are structural,
- * and `init()` throws when it finds one. An `APP_VERSION` that happened to
- * carry a comma would otherwise take the service down at startup over a
- * profiler label.
+ * The characters Pyroscope rejects in an app name or a label value. It encodes
+ * both into one string (`appName{key=value,key=value}`), so all four are
+ * structural, and `init()` throws when it finds one. An `APP_VERSION` that
+ * happened to carry a comma would otherwise take the service down at startup
+ * over a profiler label.
  */
-const INVALID_LABEL_CHARACTERS = /[{},=]/g
+const INVALID_LABEL_VALUE_CHARACTERS = /[{},=]/g
+
+/**
+ * A label name has to be a Prometheus name at the other end, whatever the SDK
+ * accepts on the way out: Pyroscope rejects the whole series when one is not
+ * `[a-zA-Z_][a-zA-Z0-9_]*`, and the exporter reports a rejected ingest through
+ * `debug` and swallows it. A `service.name` or `region-id` tag would otherwise
+ * leave a service logging a clean start with no profile ever landing.
+ */
+const INVALID_LABEL_NAME_CHARACTERS = /[^a-zA-Z0-9_]/g
 
 /** Set while profiling is running; the module reference doubles as the flag. */
 let running: PyroscopeModule | undefined
@@ -51,7 +60,12 @@ export function isProfilingRunning(): boolean {
   return running !== undefined
 }
 
-const toLabelValue = (value: string): string => value.replace(INVALID_LABEL_CHARACTERS, '_')
+const toLabelValue = (value: string): string => value.replace(INVALID_LABEL_VALUE_CHARACTERS, '_')
+
+const toLabelName = (name: string): string => {
+  const sanitized = name.replace(INVALID_LABEL_NAME_CHARACTERS, '_')
+  return /^\d/.test(sanitized) ? `_${sanitized}` : sanitized
+}
 
 /**
  * Drops the build timestamp Lokalise's `APP_VERSION` carries (`1.2.3@1700000000`),
@@ -62,7 +76,7 @@ const toLabelValue = (value: string): string => value.replace(INVALID_LABEL_CHAR
 const toVersionLabel = (appVersion: string): string =>
   appVersion.split('@')[0]?.trim() || appVersion.trim()
 
-const buildTags = (context: ProfilingContext): Record<string, string> => {
+const buildTags = (context: ProfilingContext, logger: ProfilingLogger): Record<string, string> => {
   const raw: Record<string, string> = {
     // Per-pod label: it is what separates one instance's flame graph from the
     // aggregate when a single replica is the one burning CPU.
@@ -76,9 +90,21 @@ const buildTags = (context: ProfilingContext): Record<string, string> => {
   if (context.gitCommitSha) raw.commit_sha = context.gitCommitSha
   Object.assign(raw, context.tags)
 
-  return Object.fromEntries(
-    Object.entries(raw).map(([key, value]) => [toLabelValue(key), toLabelValue(value)]),
-  )
+  const tags: Record<string, string> = {}
+  for (const [key, value] of Object.entries(raw)) {
+    const name = toLabelName(key)
+    // `a.b` and `a-b` both sanitize to `a_b`, and the second would replace the
+    // first without a word, leaving a filter that quietly reports the wrong
+    // thing.
+    if (Object.hasOwn(tags, name)) {
+      logger.warn(
+        { tag: key, label: name },
+        '[PYROSCOPE] Two tags sanitize to one label name, keeping the last',
+      )
+    }
+    tags[name] = toLabelValue(value)
+  }
+  return tags
 }
 
 /**
@@ -133,7 +159,7 @@ async function startSdk(
   logger: ProfilingLogger,
 ): Promise<boolean> {
   const appName = toLabelValue(config.appName)
-  const tags = buildTags(context)
+  const tags = buildTags(context, logger)
 
   let pyroscope: PyroscopeModule | undefined
   try {
@@ -154,11 +180,15 @@ async function startSdk(
       tags,
     })
     pyroscope.start()
-    running = pyroscope
+    // After the log, not before it: a logger that throws (a serializer that
+    // chokes on the tags, one already torn down by a racing shutdown) goes to
+    // the rollback below, and `running` set at that point would report a
+    // stopped profiler as running for the rest of the process.
     logger.info(
       { appName, serverAddress: config.serverAddress, tags },
       '[PYROSCOPE] Continuous profiling started',
     )
+    running = pyroscope
     return true
   } catch (error) {
     logger.error({ error }, '[PYROSCOPE] Failed to start continuous profiling')
@@ -170,9 +200,12 @@ async function startSdk(
 /**
  * `start()` starts the wall profiler and then the heap one, so a failure in the
  * second leaves the first sampling, exporting and holding the event loop open,
- * with `running` unset and therefore nothing left that could stop it. Stopping
- * a profiler that never started throws, which is the expected outcome here
- * rather than a problem.
+ * with `running` unset and therefore nothing left that could stop it.
+ *
+ * Stopping a profiler that never started is quiet rather than an error, so the
+ * `catch` here is for a stop that fails on its own account: a flush that
+ * rejects, or an `init()` that threw before the SDK had a profiler to stop at
+ * all.
  */
 async function rollBackPartialStart(
   pyroscope: PyroscopeModule | undefined,
@@ -190,8 +223,17 @@ async function rollBackPartialStart(
  * Stops profiling and flushes the profile collected since the last interval.
  * A no-op when profiling was never started, which is every test run and every
  * environment that leaves `PYROSCOPE_ENABLED` off.
+ *
+ * A start that is still in flight is waited for first. An entry point that
+ * calls `startProfiling` without awaiting it, or a shutdown that arrives while
+ * the plugin is still inside the SDK import, would otherwise find `running`
+ * unset, return here, and leave the start to finish afterwards into a profiler
+ * that keeps sampling and holding the event loop open with nothing left able to
+ * stop it.
  */
 export async function stopProfiling(logger: ProfilingLogger): Promise<void> {
+  if (starting) await starting.catch(() => false)
+
   const pyroscope = running
   if (!pyroscope) return
   running = undefined

@@ -259,6 +259,59 @@ describe('profiler', () => {
       expect(logger.error).toHaveBeenCalled()
     })
 
+    // A tag name that is not `[a-zA-Z_][a-zA-Z0-9_]*` gets the whole series
+    // rejected at ingest, and the exporter swallows that, so the service would
+    // log a clean start and never land a profile.
+    it('sanitizes a tag name into one Pyroscope will keep', async () => {
+      const { startProfiling } = await loadModule()
+
+      await startProfiling(
+        ENABLED_CONFIG,
+        { tags: { 'service.name': 'checkout', 'region-id': 'eu-west-1', '2nd': 'shard' } },
+        logger,
+      )
+
+      expect(pyroscopeMock.init).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tags: expect.objectContaining({
+            service_name: 'checkout',
+            region_id: 'eu-west-1',
+            _2nd: 'shard',
+          }),
+        }),
+      )
+    })
+
+    it('says so when two tags sanitize onto one label name', async () => {
+      const { startProfiling } = await loadModule()
+
+      await startProfiling(ENABLED_CONFIG, { tags: { 'a.b': 'first', 'a-b': 'second' } }, logger)
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        { tag: 'a-b', label: 'a_b' },
+        '[PYROSCOPE] Two tags sanitize to one label name, keeping the last',
+      )
+      expect(pyroscopeMock.init).toHaveBeenCalledWith(
+        expect.objectContaining({ tags: expect.objectContaining({ a_b: 'second' }) }),
+      )
+    })
+
+    // `isProfilingRunning` gating the label scopes and the shutdown flush, a
+    // profiler reported as running after a rollback would hand a stopped SDK
+    // to both.
+    it('reports nothing running when the start log throws over the SDK that came up', async () => {
+      const failing = buildLogger()
+      ;(failing.info as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw new Error('logger already destroyed')
+      })
+      const { startProfiling, isProfilingRunning } = await loadModule()
+
+      await expect(startProfiling(ENABLED_CONFIG, CONTEXT, failing)).resolves.toBe(false)
+
+      expect(isProfilingRunning()).toBe(false)
+      expect(pyroscopeMock.stop).toHaveBeenCalledOnce()
+    })
+
     it('keeps serving when even the rollback fails', async () => {
       pyroscopeMock.start.mockImplementationOnce(() => {
         throw new Error('Contexts are not supported')
@@ -279,6 +332,21 @@ describe('profiler', () => {
       await stopProfiling(logger)
 
       expect(pyroscopeMock.stop).not.toHaveBeenCalled()
+    })
+
+    // An entry point that does not await its own start, or a shutdown that
+    // lands while the plugin is still inside the SDK import. Returning here
+    // would leave the start to finish into a profiler that keeps sampling and
+    // holding the event loop open, with nothing left able to reach it.
+    it('waits for a start that is still in flight', async () => {
+      const { startProfiling, stopProfiling, isProfilingRunning } = await loadModule()
+
+      const starting = startProfiling(ENABLED_CONFIG, CONTEXT, logger)
+      await stopProfiling(logger)
+
+      await expect(starting).resolves.toBe(true)
+      expect(isProfilingRunning()).toBe(false)
+      expect(pyroscopeMock.stop).toHaveBeenCalledOnce()
     })
 
     it('flushes the last profile once', async () => {

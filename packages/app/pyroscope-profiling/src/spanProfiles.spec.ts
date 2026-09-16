@@ -247,38 +247,37 @@ describe('PyroscopeSpanProcessor', () => {
 })
 
 describe('buildPyroscopeSpanProcessors', () => {
-  const originalEnv = { ...process.env }
   let spanProfiles: typeof import('./spanProfiles.ts')
 
   beforeEach(async () => {
     runningProfiler.mockReturnValue(undefined)
     spanProfiles = await loadModule()
     // The suite itself runs under NODE_ENV=test, which is off by definition.
-    process.env.NODE_ENV = 'development'
+    vi.stubEnv('NODE_ENV', 'development')
   })
 
   afterEach(() => {
-    process.env = { ...originalEnv }
+    vi.unstubAllEnvs()
   })
 
   it('returns nothing unless both switches are on', () => {
-    process.env.PYROSCOPE_ENABLED = 'true'
-    process.env.PYROSCOPE_SPAN_PROFILES_ENABLED = 'false'
+    vi.stubEnv('PYROSCOPE_ENABLED', 'true')
+    vi.stubEnv('PYROSCOPE_SPAN_PROFILES_ENABLED', 'false')
 
     expect(spanProfiles.buildPyroscopeSpanProcessors()).toEqual([])
   })
 
   it('returns nothing under NODE_ENV=test, where nothing would be profiled anyway', () => {
-    process.env.NODE_ENV = 'test'
-    process.env.PYROSCOPE_ENABLED = 'true'
-    process.env.PYROSCOPE_SPAN_PROFILES_ENABLED = 'true'
+    vi.stubEnv('NODE_ENV', 'test')
+    vi.stubEnv('PYROSCOPE_ENABLED', 'true')
+    vi.stubEnv('PYROSCOPE_SPAN_PROFILES_ENABLED', 'true')
 
     expect(spanProfiles.buildPyroscopeSpanProcessors()).toEqual([])
   })
 
   it('returns one processor when span profiles were asked for', () => {
-    process.env.PYROSCOPE_ENABLED = 'true'
-    process.env.PYROSCOPE_SPAN_PROFILES_ENABLED = 'true'
+    vi.stubEnv('PYROSCOPE_ENABLED', 'true')
+    vi.stubEnv('PYROSCOPE_SPAN_PROFILES_ENABLED', 'true')
 
     const processors = spanProfiles.buildPyroscopeSpanProcessors()
 

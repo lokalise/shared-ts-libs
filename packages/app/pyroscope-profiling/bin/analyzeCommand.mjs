@@ -62,13 +62,15 @@ const USAGE = `pyroscope-analyze: print a profile from a local Pyroscope.
   --against-until <when>  per frame. Both are optional individually: they
                           default to a window of the same length ending where
                           --from starts.
-  --top <n>               Rows to print. Default 20.
+  --top <n>               Frames to print, in the table and in --json.
+                          Default 20.
   --tree                  Also print the call tree, indented, one value per
                           line. Use it when the flat table names a frame and
                           the question becomes who called it.
   --min-share <percent>   Frames below this share of the total are left out of
                           the tree. Default 1.
-  --json                  Machine-readable output instead of a table.
+  --json                  Machine-readable output instead of a table. Printed
+                          on an empty range too, so a gate can read the total.
   --folded <file>         Also write collapsed stacks, the input format
                           flamegraph.pl and inferno take.
 
@@ -89,6 +91,24 @@ const UNIT_BY_PROFILE_TYPE = (profileType) => {
   return 'count'
 }
 
+/** `--top=5` and `--top 5` are the same option; only the first splits here. */
+function splitOption(arg) {
+  const separator = arg.indexOf('=')
+  if (separator === -1) return { key: arg.slice(2), attached: undefined }
+  return { key: arg.slice(2, separator), attached: arg.slice(separator + 1) }
+}
+
+/**
+ * A flag standing where the value belongs means the value was left out. Taking
+ * it anyway is how `--folded --json` ends up writing the collapsed stacks to a
+ * file called `--json` and printing the table it was told not to.
+ */
+function takeValue(key, attached, remaining) {
+  const value = attached ?? (remaining[0]?.startsWith('--') ? undefined : remaining.shift())
+  if (!value) throw new Error(`--${key} needs a value`)
+  return value
+}
+
 export function parseArgs(argv) {
   const remaining = [...argv]
   const options = {}
@@ -96,14 +116,16 @@ export function parseArgs(argv) {
     const arg = remaining.shift()
     if (arg === '--help' || arg === '-h') return { help: true }
     if (!arg.startsWith('--')) throw new Error(`Unexpected argument: ${arg}`)
-    const key = arg.slice(2)
+
+    const { key, attached } = splitOption(arg)
     if (FLAG_OPTIONS.has(key)) {
+      if (attached !== undefined) throw new Error(`--${key} takes no value`)
       options[key] = true
-      continue
+    } else if (VALUE_OPTIONS.has(key)) {
+      options[key] = takeValue(key, attached, remaining)
+    } else {
+      throw new Error(`Unknown option: --${key}`)
     }
-    if (!VALUE_OPTIONS.has(key)) throw new Error(`Unknown option: --${key}`)
-    if (remaining.length === 0) throw new Error(`--${key} needs a value`)
-    options[key] = remaining.shift()
   }
   return options
 }
@@ -135,8 +157,17 @@ function parseNumber(value, flag, minimum) {
   return parsed
 }
 
-const buildSelector = (service, select) =>
-  select ? `{service_name="${service}", ${select}}` : `{service_name="${service}"}`
+/**
+ * `--service` is a value, so it is quoted and escaped: a name carrying a `"`
+ * would otherwise either close the matcher early and query a different series,
+ * or produce a selector Pyroscope rejects with a message about its own syntax
+ * rather than about the argument. `--select` is matcher syntax by definition
+ * and goes through as written.
+ */
+const buildSelector = (service, select) => {
+  const name = JSON.stringify(String(service))
+  return select ? `{service_name=${name}, ${select}}` : `{service_name=${name}}`
+}
 
 /**
  * The same credentials the service ships profiles with. Reading the address
@@ -323,8 +354,11 @@ function printTree(root, total, unit, minShare) {
 }
 
 function printTable(rows, headers) {
+  // Folded rather than spread into `Math.max`: `--tree --min-share 0` on a real
+  // profile passes six figures of rows, and one argument per row is past what
+  // an engine will take on a call.
   const widths = headers.map((header, column) =>
-    Math.max(header.length, ...rows.map((row) => String(row[column]).length)),
+    rows.reduce((width, row) => Math.max(width, String(row[column]).length), header.length),
   )
   const line = (cells) =>
     cells
@@ -453,8 +487,14 @@ function reportUnreadable(settings, total) {
   )
 }
 
+/**
+ * The same report as the table, in the same shape whether or not there was
+ * anything to print: a gate that reads this has to be able to tell an empty
+ * range from a failure, and prose on standard error is not something `jq` can
+ * answer that from.
+ */
 function printJson(options, settings, report) {
-  const { selector, profileType, unit, from, until, minShare } = settings
+  const { selector, profileType, unit, from, until, top, minShare } = settings
   const { total, against, frames, root } = report
   console.log(
     JSON.stringify(
@@ -466,7 +506,8 @@ function printJson(options, settings, report) {
         until,
         total,
         against: against?.total,
-        frames,
+        frameCount: frames.length,
+        frames: frames.slice(0, top),
         ...(options.tree ? { tree: toJsonTree(root, total, minShare) } : {}),
       },
       null,
@@ -494,7 +535,11 @@ Collapsed stacks written to ${options.folded}.`)
   }
 }
 
-/** @returns the exit code: 0 printed a profile, 1 was misused, 2 found nothing to print. */
+/**
+ * @returns the exit code: 0 printed a profile, 1 was misused, 2 found nothing
+ * to print. Exit 2 still writes the report under `--json`, with the reason on
+ * standard error.
+ */
 export async function main(argv = process.argv.slice(2), env = process.env) {
   const options = parseArgs(argv)
   if (options.help || !options.service) {
@@ -508,6 +553,7 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
   const flamegraph = await fetchFlamegraph(settings, settings.from, settings.until)
   const total = Number(flamegraph.total ?? 0)
   if (total === 0) {
+    if (options.json) printJson(options, settings, { total: 0, frames: [] })
     reportEmpty(settings)
     return 2
   }
@@ -515,6 +561,7 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
   const against = await fetchAgainst(options, settings, now)
   const frames = rankFrames(selfByFrame(flamegraph), total, against)
   if (frames.length === 0) {
+    if (options.json) printJson(options, settings, { total, frames: [] })
     reportUnreadable(settings, total)
     return 2
   }

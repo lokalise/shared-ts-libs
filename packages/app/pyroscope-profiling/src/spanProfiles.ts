@@ -17,14 +17,23 @@ import { closeLabelScope, openLabelScope } from './wallLabels.ts'
  * sample carries. This sets `span_id` and `span_name` for the duration of a
  * local root span, and writes the same id onto the span as
  * `pyroscope.profile.id`, which is what a Grafana trace view follows to the
- * profile. `span_name` is the one to query from a terminal, because it is the
- * route or the job name and therefore the same across every run of it:
+ * profile.
  *
  * ```bash
  * pyroscope-analyze --service my-service --select 'span_name="POST /v1/content/refresh"'
  * ```
  *
- * Two things to know before reading one.
+ * Three things to know before reading one.
+ *
+ * `span_name` is the name the span carries when it starts. For a job, a
+ * consumer or anything named by the code that opened it, that is its final
+ * name. For an HTTP request it is the bare method: OpenTelemetry's HTTP
+ * instrumentation only renames its server span to `POST /v1/content/refresh`
+ * once the response has gone out, which is after every sample of that request
+ * has been taken. `pyroscopeProfilingPlugin`
+ * (`@lokalise/pyroscope-profiling/fastify`) labels the route from an
+ * `onRequest` hook, where it is known, and registering it is what makes the
+ * query above return anything.
  *
  * The profiler holds one label set for the whole process rather than one per
  * async context, so labels are only as accurate as the concurrency allows: the

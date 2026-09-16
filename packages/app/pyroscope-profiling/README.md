@@ -130,7 +130,8 @@ Pyroscope over HTTP and has no dependencies of its own.
 
 ### With Fastify
 
-Register the plugin. It starts the profiler and flushes the last profile window
+Register the plugin. It starts the profiler, labels the samples taken during
+each request with its route as `span_name`, and flushes the last profile window
 when the app closes.
 
 ```ts
@@ -278,6 +279,7 @@ of what a Node profile is asked to answer.
 | `context` | `resolveProfilingContextFromEnv()` | Labels attached to every profile |
 | `logger` | `app.log` | Where the profiler's own diagnostics go |
 | `start` | `true` | Whether the plugin starts the profiler. `false` keeps only the `onClose` flush |
+| `labelRequests` | `true` | Whether each request labels the samples taken during it with its route |
 
 With profiling enabled and no name available from either source, the profiler
 refuses to start and logs an error rather than filing profiles under an empty
@@ -299,10 +301,10 @@ pyroscope-analyze --service <name> [options]
 | `--until <when>` | `now` | The same formats |
 | `--against-from <when>` | | Second range to diff against, per frame |
 | `--against-until <when>` | the start of `--from` | End of the second range |
-| `--top <n>` | `20` | Rows to print |
+| `--top <n>` | `20` | Frames to print, in the table and in `--json` |
 | `--tree` | off | Also print the call tree, indented, one value per line |
 | `--min-share <percent>` | `1` | Frames below this share are left out of the tree |
-| `--json` | off | Machine-readable output |
+| `--json` | off | Machine-readable output, printed on an empty range too |
 | `--folded <file>` | | Also write collapsed stacks |
 | `--auth-token <token>` | `PYROSCOPE_AUTH_TOKEN` | Bearer token, which takes precedence over basic auth |
 | `--basic-auth-user <user>` | `PYROSCOPE_BASIC_AUTH_USER` | For Grafana Cloud Profiles, the numeric stack id |
@@ -415,8 +417,11 @@ pyroscope-analyze --service my-service --json --from now-5m \
              if (gc && gc.share > 0.15) { console.error(`GC at ${(gc.share*100).toFixed(1)}%`); process.exit(1) }'
 ```
 
-It exits 2 with a message on standard error when the range holds no samples, so
-a harness can tell "nothing arrived" from "arrived and looks fine".
+It exits 2 with a message on standard error when the range holds no samples,
+so a harness can tell "nothing arrived" from "arrived and looks fine". The
+report is still written to standard output in that case, with `total: 0`, so
+the gate parses one shape either way. `frames` is cut to `--top`, and
+`frameCount` says how many there were.
 
 ### Straight out of Pyroscope
 
@@ -463,10 +468,12 @@ A label whose source is missing is left out rather than shipped empty, and an
 shipping `version=`, which nobody could filter on.
 
 Two more are attached per sample rather than per profile, and they are the ones
-that cut a flame graph to one unit of work: `span_name` and `span_id` from
-[span profiles](#span-profiles) for a request, `job` or whatever else
-[`withProfilingLabels`](#labelling-work-that-has-no-request-behind-it) is given
-for a background job.
+that cut a flame graph to one unit of work. `span_name` is the route for a
+request, set by the Fastify plugin, or the span name for anything else
+[span profiles](#span-profiles) label; `span_id` comes with it and is per
+request. For a background job it is `job`, or whatever else
+[`withProfilingLabels`](#labelling-work-that-has-no-request-behind-it) is
+given.
 
 Add your own through `context.tags`, which is merged last and can therefore also
 replace any of the four:
@@ -486,11 +493,19 @@ are comparable by selector instead of by remembering which was which:
 pyroscope-analyze --service my-service --select 'catalog="20000"'
 ```
 
-`{`, `}`, `,` and `=` are replaced with `_` in both keys and values, and in the
-app name. Pyroscope encodes the name and the labels into one string
+`{`, `}`, `,` and `=` are replaced with `_` in label values and in the app
+name. Pyroscope encodes the name and the labels into one string
 (`appName{key=value,key=value}`) and rejects all four, so an `APP_VERSION` that
 happened to carry a comma would otherwise take the service down at startup over
 a profiler label.
+
+Label names get the stricter rule Pyroscope applies at the other end, where they
+have to be Prometheus names: anything outside `[a-zA-Z_][a-zA-Z0-9_]*` becomes
+`_`, and a leading digit gets one in front of it. A `service.name` tag ships as
+`service_name` rather than getting the series rejected at ingest, which the
+exporter reports through `debug` and swallows, so the service would log a clean
+start and never land a profile. Two tags that sanitize onto one name are logged
+at `warn` and the last one wins.
 
 ### Labelling work that has no request behind it
 
@@ -644,6 +659,11 @@ All three, because a label needs a span to come from and a profiler to land on.
 With either Pyroscope switch off `buildPyroscopeSpanProcessors` returns an empty
 array and tracing behaves exactly as it did before.
 
+Register `pyroscopeProfilingPlugin` too. It is what puts the route into
+`span_name`; the span processor on its own can only name a request by its
+method, for the reason under
+[What is labelled, and how exactly](#what-is-labelled-and-how-exactly).
+
 ### A flame graph per journey
 
 `span_name` is the label that pays off locally: it is the route or the job name,
@@ -674,6 +694,17 @@ something to filter by from a terminal. Pair it with `--tree` once a journey's
 table has named a frame and the question becomes who called it.
 
 ### What is labelled, and how exactly
+
+`span_name` is the name the span carries when it starts. For a job, a consumer
+or anything the code that opened it named, that is its final name. An HTTP
+server span is not: OpenTelemetry names it after the bare method and renames it
+to `POST /v1/checkout` only once the response has gone out, which is after every
+sample of that request has been taken. The route is therefore labelled by
+`pyroscopeProfilingPlugin` from an `onRequest` hook, where Fastify already knows
+it. A service that registers the span processor without the plugin gets
+`span_name="POST"` and no route at all, and a framework that is not Fastify
+needs the equivalent hook of its own, which is `withProfilingLabels` around the
+handler.
 
 Only local root spans: a span with no parent, or one whose parent is in another
 process, which is what an incoming request carrying a `traceparent` looks like.
@@ -798,6 +829,10 @@ and `buildPyroscopeSpanProcessors()` has to reach `initOpenTelemetry` through
 its `spanProcessors`. A labelled request also writes `pyroscope.profile.id` onto
 its span, so a trace that carries no such attribute says the processor never ran.
 
+**Is `span_name` the method with no route on it?** That is the span processor
+labelling on its own. Register `pyroscopeProfilingPlugin`, which is where the
+route is known.
+
 ```bash
 # Which journeys are labelled at all
 curl -s -X POST -H 'content-type: application/json' \
@@ -840,7 +875,7 @@ From `@lokalise/pyroscope-profiling/fastify`:
 
 | Export | Description |
 |---|---|
-| `pyroscopeProfilingPlugin` | Starts the profiler on register, flushes it on close |
+| `pyroscopeProfilingPlugin` | Starts the profiler on register, labels each request with its route, flushes on close |
 
 `stopProfiling` gives up after five seconds. Pyroscope's exporter posts with
 `fetch` and no timeout of its own and swallows its own errors, so an ingest host

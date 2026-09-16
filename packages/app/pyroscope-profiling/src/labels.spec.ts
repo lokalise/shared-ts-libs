@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getProfilingLabels, withProfilingLabels } from './labels.ts'
 
 const profiler = vi.hoisted(() => ({
@@ -39,6 +39,19 @@ describe('getProfilingLabels', () => {
 
     expect(getProfilingLabels()).toEqual({})
   })
+
+  // The SDK hands back the live label object, which is also the one the open
+  // scopes hold, so a caller writing to it would change what every later sample
+  // carries and what closing an outer scope restores.
+  it('is a copy, not the set the profiler is reading from', () => {
+    profilerRunning()
+    const live = { job: 'cache-refresh' }
+    profiler.getWallLabels.mockReturnValue(live)
+
+    getProfilingLabels().job = 'something-else'
+
+    expect(live.job).toBe('cache-refresh')
+  })
 })
 
 describe('withProfilingLabels', () => {
@@ -46,6 +59,10 @@ describe('withProfilingLabels', () => {
     vi.clearAllMocks()
     runningProfiler.mockReturnValue(undefined)
     profiler.getWallLabels.mockReturnValue({})
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('runs the work and returns its result while profiling is off', async () => {
@@ -150,5 +167,71 @@ describe('withProfilingLabels', () => {
     })
 
     await expect(withProfilingLabels({ job: 'cache-refresh' }, () => 'done')).resolves.toBe('done')
+  })
+
+  // Each call holds only what it adds, so the one that finishes takes its own
+  // labels with it. Holding the merged set instead would put the finished
+  // call's labels straight back on when the one still running was re-applied.
+  it('takes its own labels with it when it finishes inside another call', async () => {
+    profilerRunning()
+    let releaseOuter = () => {}
+    let releaseInner = () => {}
+
+    const outer = withProfilingLabels(
+      { job: 'refresh' },
+      () =>
+        new Promise<void>((resolve) => {
+          releaseOuter = resolve
+        }),
+    )
+    const inner = withProfilingLabels(
+      { tenant: 'acme' },
+      () =>
+        new Promise<void>((resolve) => {
+          releaseInner = resolve
+        }),
+    )
+
+    expect(profiler.setWallLabels).toHaveBeenLastCalledWith({ job: 'refresh', tenant: 'acme' })
+
+    releaseOuter()
+    await outer
+
+    expect(profiler.setWallLabels).toHaveBeenLastCalledWith({ tenant: 'acme' })
+
+    releaseInner()
+    await inner
+
+    expect(profiler.setWallLabels).toHaveBeenLastCalledWith({})
+  })
+
+  // The wall profiler opens every flush window with an empty context, so work
+  // that outlives one interval would carry its labels through the first window
+  // and none after it.
+  it('puts the labels back after a flush window has dropped them', async () => {
+    profilerRunning()
+    vi.useFakeTimers()
+    let release = () => {}
+    const running = withProfilingLabels(
+      { job: 'cache-refresh' },
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve
+        }),
+    )
+
+    profiler.getWallLabels.mockReturnValue({ job: 'cache-refresh' })
+    profiler.setWallLabels.mockClear()
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    expect(profiler.setWallLabels).not.toHaveBeenCalled()
+
+    profiler.getWallLabels.mockReturnValue({})
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    expect(profiler.setWallLabels).toHaveBeenCalledWith({ job: 'cache-refresh' })
+
+    release()
+    await running
   })
 })

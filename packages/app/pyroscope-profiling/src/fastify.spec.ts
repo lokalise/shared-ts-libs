@@ -3,12 +3,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { type PyroscopeProfilingPluginOptions, pyroscopeProfilingPlugin } from './fastify.ts'
 import type { ProfilingConfig } from './types.ts'
 
+const wallProfiler = vi.hoisted(() => ({
+  getWallLabels: vi.fn(() => ({}) as Record<string, string | number>),
+  setWallLabels: vi.fn(),
+}))
+
 const profiler = vi.hoisted(() => ({
   startProfiling: vi.fn(),
   stopProfiling: vi.fn(),
+  runningProfiler: vi.fn(),
 }))
 
 vi.mock('./profiler.ts', () => profiler)
+
+const profilerRunning = () => {
+  profiler.runningProfiler.mockReturnValue({ default: wallProfiler })
+}
 
 const ENABLED_CONFIG: ProfilingConfig = {
   isEnabled: true,
@@ -16,9 +26,13 @@ const ENABLED_CONFIG: ProfilingConfig = {
   serverAddress: 'http://pyroscope.test:4040',
 }
 
-const buildApp = async (options: PyroscopeProfilingPluginOptions) => {
+const buildApp = async (
+  options: PyroscopeProfilingPluginOptions,
+  addRoutes?: (app: ReturnType<typeof fastify>) => void,
+) => {
   const app = fastify({ logger: false })
   await app.register(pyroscopeProfilingPlugin, options)
+  addRoutes?.(app)
   await app.ready()
   return app
 }
@@ -28,6 +42,8 @@ describe('pyroscopeProfilingPlugin', () => {
     vi.clearAllMocks()
     profiler.startProfiling.mockResolvedValue(true)
     profiler.stopProfiling.mockResolvedValue(undefined)
+    profiler.runningProfiler.mockReturnValue(undefined)
+    wallProfiler.getWallLabels.mockReturnValue({})
   })
 
   it('starts profiling with the config it was handed', async () => {
@@ -101,5 +117,79 @@ describe('pyroscopeProfilingPlugin', () => {
     await app.close()
 
     expect(profiler.stopProfiling).toHaveBeenCalledOnce()
+  })
+
+  // An OpenTelemetry HTTP server span is named `POST` until the response has
+  // gone out, so the span processor can only ever label a request by its
+  // method. Fastify knows the route from the first hook, which is what makes
+  // `--select 'span_name="POST /v1/content/:id"'` return anything.
+  describe('request labels', () => {
+    const withRoute = (app: ReturnType<typeof fastify>) => {
+      app.post('/v1/content/:id', async () => ({ ok: true }))
+    }
+
+    it('labels the samples taken during a request with its route', async () => {
+      profilerRunning()
+      const app = await buildApp({ config: ENABLED_CONFIG }, withRoute)
+
+      const response = await app.inject({ method: 'POST', url: '/v1/content/7' })
+
+      expect(response.statusCode).toBe(200)
+      expect(wallProfiler.setWallLabels).toHaveBeenCalledWith({
+        span_name: 'POST /v1/content/:id',
+      })
+      // And hands them back, so nothing taken after the response carries the
+      // route it was serving.
+      expect(wallProfiler.setWallLabels).toHaveBeenLastCalledWith({})
+
+      await app.close()
+    })
+
+    it('labels a request that matched no route by its method alone', async () => {
+      profilerRunning()
+      const app = await buildApp({ config: ENABLED_CONFIG })
+
+      await app.inject({ method: 'GET', url: '/nothing-here' })
+
+      expect(wallProfiler.setWallLabels).toHaveBeenCalledWith({ span_name: 'GET' })
+
+      await app.close()
+    })
+
+    it('leaves the requests alone when asked to', async () => {
+      profilerRunning()
+      const app = await buildApp({ config: ENABLED_CONFIG, labelRequests: false }, withRoute)
+
+      await app.inject({ method: 'POST', url: '/v1/content/7' })
+
+      expect(wallProfiler.setWallLabels).not.toHaveBeenCalled()
+
+      await app.close()
+    })
+
+    it('serves the request when the profiler refuses the labels', async () => {
+      profilerRunning()
+      wallProfiler.setWallLabels.mockImplementation(() => {
+        throw new Error('contexts are not supported')
+      })
+      const app = await buildApp({ config: ENABLED_CONFIG }, withRoute)
+
+      const response = await app.inject({ method: 'POST', url: '/v1/content/7' })
+
+      expect(response.statusCode).toBe(200)
+
+      await app.close()
+      wallProfiler.setWallLabels.mockReset()
+    })
+
+    it('does nothing per request while profiling is off', async () => {
+      const app = await buildApp({ config: ENABLED_CONFIG }, withRoute)
+
+      await app.inject({ method: 'POST', url: '/v1/content/7' })
+
+      expect(wallProfiler.setWallLabels).not.toHaveBeenCalled()
+
+      await app.close()
+    })
   })
 })

@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/pyroscope-profiling",
-    "version": "1.0.0",
+    "version": "0.0.0",
     "bin": {
         "pyroscope-analyze": "./bin/analyze.mjs"
     },

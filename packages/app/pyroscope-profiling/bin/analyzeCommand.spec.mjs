@@ -60,6 +60,23 @@ describe('parseArgs', () => {
     expect(() => parseArgs(['--service'])).toThrow('--service needs a value')
     expect(() => parseArgs(['my-service'])).toThrow('Unexpected argument: my-service')
   })
+
+  // `--folded --json` used to write the collapsed stacks to a file called
+  // `--json` and print the table, which reads as the tool ignoring both.
+  it('refuses a flag standing where a value belongs', () => {
+    expect(() => parseArgs(['--folded', '--json'])).toThrow('--folded needs a value')
+    expect(() => parseArgs(['--select', '--tree'])).toThrow('--select needs a value')
+  })
+
+  it('takes a value attached with =, and refuses one on a flag', () => {
+    expect(parseArgs(['--top=5', '--select=job="cache-refresh"', '--json'])).toEqual({
+      top: '5',
+      select: 'job="cache-refresh"',
+      json: true,
+    })
+    expect(() => parseArgs(['--json=true'])).toThrow('--json takes no value')
+    expect(() => parseArgs(['--service='])).toThrow('--service needs a value')
+  })
 })
 
 describe('parseWhen', () => {
@@ -126,6 +143,14 @@ describe('resolveSettings', () => {
       resolveSettings({ service: 'my-service', select: 'span_name="GET /v1/env"' }, NOW, {})
         .selector,
     ).toBe('{service_name="my-service", span_name="GET /v1/env"}')
+  })
+
+  // An unescaped name closes the matcher early, and the query that comes back
+  // is a different series rather than an error anyone would notice.
+  it('escapes a service name instead of letting it rewrite the selector', () => {
+    expect(
+      resolveSettings({ service: 'my-service"} or {service_name="other' }, NOW, {}).selector,
+    ).toBe('{service_name="my-service\\"} or {service_name=\\"other"}')
   })
 
   describe('credentials', () => {
@@ -402,6 +427,50 @@ describe('main', () => {
     })
     expect(report.tree).toMatchObject({ name: 'total', total: 1e9, share: 1 })
     expect(report.tree.children.map((child) => child.name)).toEqual(['run', 'gc'])
+  })
+
+  it('cuts --json to --top as well, and says how many there were', async () => {
+    await expect(main(['--service', 'my-service', '--json', '--top', '1'], {})).resolves.toBe(0)
+
+    const report = JSON.parse(out.join('\n'))
+    expect(report.frames).toEqual([{ name: 'inner', self: 5e8, share: 0.5 }])
+    expect(report.frameCount).toBe(3)
+  })
+
+  // A gate reads standard output. Prose on standard error and an empty stdout
+  // is a parse error rather than an answer it can act on.
+  it('still prints a report under --json when there is nothing to show', async () => {
+    fetch.mockResolvedValue(respondWith({ names: [], levels: [], total: 0 }))
+
+    await expect(main(['--service', 'my-service', '--json'], {})).resolves.toBe(2)
+
+    expect(JSON.parse(out.join('\n'))).toMatchObject({ total: 0, frameCount: 0, frames: [] })
+    expect(errors.join('\n')).toContain('No samples for')
+  })
+
+  it('prints one under --json for an answer it cannot read, too', async () => {
+    fetch.mockResolvedValue(respondWith({ names: ['total'], levels: [[]], total: 1e9 }))
+
+    await expect(main(['--service', 'my-service', '--json'], {})).resolves.toBe(2)
+
+    expect(JSON.parse(out.join('\n'))).toMatchObject({ total: 1e9, frames: [] })
+    expect(errors.join('\n')).toContain('no frames could be read')
+  })
+
+  // Column widths used to be a spread into `Math.max`, one argument per row,
+  // which a real profile with no share filter is well past.
+  it('prints a tree too large to spread into a call', async () => {
+    const nodes = 150_000
+    const level = Array.from({ length: nodes * 4 }, (_, index) => (index % 4 === 0 ? 0 : 1))
+    fetch.mockResolvedValue(
+      respondWith({ names: ['total', 'leaf'], levels: [[0, nodes, 0, 0], level], total: nodes }),
+    )
+
+    await expect(main(['--service', 'my-service', '--tree', '--min-share', '0'], {})).resolves.toBe(
+      0,
+    )
+
+    expect(out.length).toBeGreaterThan(nodes)
   })
 
   it('names only the frames the table left out', async () => {
