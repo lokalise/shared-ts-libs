@@ -20,6 +20,7 @@ describe('entry points', () => {
       'runningProfiler',
       'startProfiling',
       'stopProfiling',
+      'withJobLabels',
       'withProfilingLabels',
     ])
   })

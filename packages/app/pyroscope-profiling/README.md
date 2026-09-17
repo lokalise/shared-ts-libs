@@ -452,6 +452,22 @@ curl -s -X POST -H 'content-type: application/json' \
 flamebearer encoding: one flat array per depth level, four numbers per node,
 `[offsetFromPreviousSibling, total, self, nameIndex]`.
 
+Use these rather than the legacy `/pyroscope/*` HTTP endpoints, which are not
+consistent about what they require: `/pyroscope/label-values?label=__name__`
+answers without a time range, and the same endpoint for any other label
+rejects every `from`/`until` spelling with `missing time range in the query`.
+
+Two things to get right if you decode the flamebearer yourself rather than
+letting `pyroscope-analyze` do it:
+
+- **Do not sum `total` per frame name.** A recursive frame appears once per
+  level it occupies, and adding those up counts the same samples repeatedly.
+  Measured on a real profile, a drizzle SQL builder that recurses six deep read
+  as 28% of a job that way, against 6.8% counting only its outermost frames.
+  Summing `self` per name is safe, which is why the default table is self time.
+- **`total` on a node is that node's own subtree**, so the tree view is fine.
+  It is the roll-up by name that is wrong.
+
 ## Labels
 
 Every profile carries four labels, so one environment, release or pod can be
@@ -536,6 +552,37 @@ call hands the labels back to the one still running, so nothing is left labelled
 by work that has finished, but a run with ten of these in flight at once will
 not attribute its samples ten ways. Label the outermost unit of work, not every
 function inside it, and read overlapping labels as approximate.
+
+### Label every peer scope, or none of them
+
+The process-wide label set has a consequence worth stating on its own: work
+that opens no scope is attributed to whichever scope is open while it runs. A
+service that labels one of its five job processors does not get one job it can
+filter by and four it cannot. It gets one filter that quietly includes the
+other four, and a flame graph that looks attributable and is not.
+
+So the unit to cover is all the peers at once, which is what makes the base
+class the right place rather than each processor:
+
+```ts
+import { withJobLabels } from '@lokalise/pyroscope-profiling'
+
+abstract class AbstractJobProcessor {
+  protected abstract readonly queueId: string
+
+  public processJob(job: Job, context: RequestContext) {
+    return withJobLabels(this.queueId, () => this.process(job, context))
+  }
+
+  protected abstract process(job: Job, context: RequestContext): Promise<void>
+}
+```
+
+`withJobLabels` is `withProfilingLabels` with `job` pinned to the queue, so a
+subclass cannot point the label somewhere else through the extra labels.
+
+If only part of the work can be labelled, read the result as "this scope and
+whatever ran beside it" rather than as the scope alone.
 
 ## What gets collected
 

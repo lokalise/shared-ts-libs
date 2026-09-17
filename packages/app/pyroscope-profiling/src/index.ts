@@ -1,3 +1,4 @@
+export { withJobLabels } from './jobLabels.ts'
 export { getProfilingLabels, type ProfilingLabels, withProfilingLabels } from './labels.ts'
 export { isProfilingRunning, runningProfiler, startProfiling, stopProfiling } from './profiler.ts'
 export {
