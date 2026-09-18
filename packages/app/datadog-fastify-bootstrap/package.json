@@ -46,7 +46,7 @@
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.12",
-        "@types/node": "^26.4.1",
+        "@types/node": "^26.5.1",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",
         "dd-trace": "^6.13.0",
