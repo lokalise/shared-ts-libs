@@ -75,7 +75,7 @@
         "@lokalise/tsconfig": "workspace:^",
         "@opentelemetry/api": "1.9.1",
         "@opentelemetry/sdk-trace-base": "^2.11.0",
-        "@types/node": "^26.4.1",
+        "@types/node": "^26.5.1",
         "@vitest/coverage-v8": "^4.1.11",
         "fastify": "^5.12.1",
         "rimraf": "^6.1.3",
