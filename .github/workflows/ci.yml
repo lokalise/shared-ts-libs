@@ -51,6 +51,7 @@ jobs:
             ["packages/app/opentelemetry-fastify-bootstrap"]="@lokalise/opentelemetry-fastify-bootstrap"
             ["packages/app/polling"]="@lokalise/polling"
             ["packages/app/prisma-utils"]="@lokalise/prisma-utils"
+            ["packages/app/pyroscope-profiling"]="@lokalise/pyroscope-profiling"
             ["packages/app/script-utils"]="@lokalise/script-utils"
             ["packages/app/supported-languages"]="@lokalise/supported-languages"
             ["packages/app/text-measure"]="@lokalise/text-measure"
