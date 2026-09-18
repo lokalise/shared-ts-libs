@@ -1,3 +1,4 @@
+import { toLabelName } from './labelNames.ts'
 import { runningProfiler } from './profiler.ts'
 
 export type WallLabels = Record<string, number | string>
@@ -72,6 +73,7 @@ export function readWallLabels(): WallLabels {
 /**
  * Attaches `labels` on top of whatever scopes are already open and returns a
  * handle for {@link closeLabelScope}, or `undefined` when profiling is off.
+ * Their names go through {@link toLabelNames} first.
  *
  * Throws what the profiler throws (the Windows wall profiler refuses labels
  * outright), leaving no scope behind, so a caller can fall back to running its
@@ -81,6 +83,7 @@ export function openLabelScope(labels: WallLabels): number | undefined {
   const profiler = runningProfiler()
   if (!profiler) return undefined
 
+  const named = toLabelNames(labels)
   if (keysByScope.size === 0) baseLabels = { ...profiler.default.getWallLabels() }
   if (keysByScope.size >= MAX_OPEN_SCOPES) {
     const oldest = keysByScope.keys().next().value
@@ -88,8 +91,8 @@ export function openLabelScope(labels: WallLabels): number | undefined {
   }
 
   const id = nextScopeId++
-  keysByScope.set(id, Object.keys(labels))
-  for (const [key, value] of Object.entries(labels)) {
+  keysByScope.set(id, Object.keys(named))
+  for (const [key, value] of Object.entries(named)) {
     const held = valuesByKey.get(key)
     if (held) held.push({ scope: id, value })
     else valuesByKey.set(key, [{ scope: id, value }])
@@ -117,6 +120,20 @@ export function closeLabelScope(id: number | undefined): void {
   if (id === undefined || !dropScope(id)) return
   if (keysByScope.size === 0) stopReapplying()
   runningProfiler()?.default.setWallLabels(effectiveLabels())
+}
+
+/**
+ * The same rule the init tags go through: a name Pyroscope cannot read as a
+ * Prometheus name gets the whole series rejected at ingest, and the exporter
+ * reports that through `debug` and swallows it, so `{ 'tenant-id': '42' }`
+ * would otherwise cost every sample taken under it with nothing in the log to
+ * say so. Two keys that sanitize onto one name leave the last one, as they do
+ * at init.
+ */
+function toLabelNames(labels: WallLabels): WallLabels {
+  const named: WallLabels = {}
+  for (const [key, value] of Object.entries(labels)) named[toLabelName(key)] = value
+  return named
 }
 
 function effectiveLabels(): WallLabels {

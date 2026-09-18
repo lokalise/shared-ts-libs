@@ -152,6 +152,19 @@ function parseNumber(value, flag, minimum) {
 }
 
 /**
+ * A range that runs backwards is a transposed pair of arguments, not a quiet
+ * empty answer: Pyroscope returns nothing for it, and the report then blames
+ * ingest ("a profile arrives one flush interval after the process starts") for
+ * what `--from now --until now-15m` did.
+ */
+function assertRange(from, until, fromFlag, untilFlag) {
+  if (from < until) return
+  throw new Error(
+    `--${fromFlag} has to come before --${untilFlag}, got ${new Date(from).toISOString()} to ${new Date(until).toISOString()}`,
+  )
+}
+
+/**
  * `--service` is a value, so it is quoted and escaped: a name carrying a `"`
  * would otherwise either close the matcher early and query a different series,
  * or produce a selector Pyroscope rejects with a message about its own syntax
@@ -385,6 +398,7 @@ export function resolveSettings(options, now, env = process.env) {
   const profileType = Object.hasOwn(PROFILE_TYPES, type) ? PROFILE_TYPES[type] : type
   const from = parseWhen(options.from ?? 'now-15m', now)
   const until = parseWhen(options.until ?? 'now', now)
+  assertRange(from, until, 'from', 'until')
   return {
     url: options.url ?? env.PYROSCOPE_SERVER_ADDRESS ?? 'http://localhost:4040',
     profileType,
@@ -412,6 +426,8 @@ async function fetchAgainst(options, settings, now) {
     options['against-from'] ?? String(againstUntil - (until - from)),
     now,
   )
+  assertRange(againstFrom, againstUntil, 'against-from', 'against-until')
+
   const flamegraph = await fetchFlamegraph(settings, againstFrom, againstUntil)
   return {
     from: againstFrom,
@@ -471,11 +487,19 @@ ${frames.length - top} more frames. Raise --top to see them.`)
   }
 }
 
-function reportEmpty(settings) {
-  const { selector, profileType, from, until } = settings
+function reportEmpty(settings, against) {
+  const { selector, profileType, unit, from, until } = settings
   console.error(
     `No samples for ${selector} of type ${profileType} between ${new Date(from).toISOString()} and ${new Date(until).toISOString()}.`,
   )
+  // A baseline that did hold samples says the profiles stopped arriving rather
+  // than never having arrived, which is a different thing to go and look at.
+  if (against?.total) {
+    console.error(
+      `The range compared against held ${formatValue(against.total, unit)}, so the profiles stopped arriving rather than never having arrived.`,
+    )
+    return
+  }
   console.error(
     'A profile arrives one PYROSCOPE_FLUSH_INTERVAL_MS after the process starts, 60s by default,',
   )
@@ -559,16 +583,21 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
 
   const flamegraph = await fetchFlamegraph(settings, settings.from, settings.until)
   const total = Number(flamegraph.total ?? 0)
+  // Before the empty checks below, so that `--json` carries `against` whenever
+  // a comparison was asked for. A baseline that holds samples against a range
+  // that holds none is the strongest regression signal a gate can read, and it
+  // cannot tell that from "no comparison requested" if the field is missing.
+  const against = await fetchAgainst(options, settings, now)
+
   if (total === 0) {
-    if (options.json) printJson(options, settings, { total: 0, frames: [] })
-    reportEmpty(settings)
+    if (options.json) printJson(options, settings, { total: 0, against, frames: [] })
+    reportEmpty(settings, against)
     return 2
   }
 
-  const against = await fetchAgainst(options, settings, now)
   const frames = rankFrames(selfByFrame(flamegraph), total, against)
   if (frames.length === 0) {
-    if (options.json) printJson(options, settings, { total, frames: [] })
+    if (options.json) printJson(options, settings, { total, against, frames: [] })
     reportUnreadable(settings, total)
     return 2
   }

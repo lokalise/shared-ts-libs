@@ -424,6 +424,11 @@ report is still written to standard output in that case, with `total: 0`, so
 the gate parses one shape either way. `frames` is cut to `--top`, and
 `frameCount` says how many there were.
 
+`against` is in the report whenever `--against-from` or `--against-until` was
+passed, including on a range that held nothing: a baseline with samples and a
+current range with none is a regression, and a gate can only read it as one if
+the field distinguishes that from no comparison having been asked for.
+
 ### Straight out of Pyroscope
 
 `pyroscope-analyze` is a client for three endpoints, and they are worth knowing
@@ -523,6 +528,10 @@ have to be Prometheus names: anything outside `[a-zA-Z_][a-zA-Z0-9_]*` becomes
 exporter reports through `debug` and swallows, so the service would log a clean
 start and never land a profile. Two tags that sanitize onto one name are logged
 at `warn` and the last one wins.
+
+The names passed to `withProfilingLabels` and `withJobLabels` go through the
+same rule, so `{ 'tenant-id': '42' }` ships as `tenant_id` instead of costing
+every sample taken under it.
 
 ### Labelling work that has no request behind it
 
@@ -893,7 +902,8 @@ curl -s -X POST -H 'content-type: application/json' \
 **Is the range right?** `pyroscope-analyze` defaults to `--from now-15m`. A run
 from this morning needs `--from` to say so, and a container whose clock has
 drifted from the host's will put its samples outside a window computed on the
-host.
+host. A range that runs backwards is refused with exit 1 rather than queried,
+so `--from now --until now-15m` says so instead of coming back empty.
 
 **Is this Windows?** See [above](#on-a-windows-dev-box): the error will be
 `Contexts are not supported`.

@@ -191,6 +191,38 @@ describe('pyroscopeProfilingPlugin', () => {
       wallProfiler.setWallLabels.mockReset()
     })
 
+    // A client that disconnects never reaches onResponse, so without the abort
+    // hook the scope stays open until the 1024-scope bound reclaims it, and its
+    // `span_name` is reapplied to whatever the process does in the meantime.
+    // Needs a real socket: `inject` cannot mark a request aborted.
+    it('hands the labels back when the client disconnects mid-request', async () => {
+      profilerRunning()
+      const app = fastify({ logger: false })
+      await app.register(pyroscopeProfilingPlugin, { config: ENABLED_CONFIG })
+      app.post('/v1/content/:id', () => new Promise(() => {}))
+      const address = await app.listen({ port: 0, host: '127.0.0.1' })
+
+      try {
+        const abort = new AbortController()
+        const response = fetch(`${address}/v1/content/7`, {
+          method: 'POST',
+          signal: abort.signal,
+        })
+
+        await vi.waitFor(() =>
+          expect(wallProfiler.setWallLabels).toHaveBeenCalledWith({
+            span_name: 'POST /v1/content/:id',
+          }),
+        )
+        abort.abort()
+
+        await expect(response).rejects.toThrow()
+        await vi.waitFor(() => expect(wallProfiler.setWallLabels).toHaveBeenLastCalledWith({}))
+      } finally {
+        await app.close()
+      }
+    })
+
     it('does nothing per request while profiling is off', async () => {
       const app = await buildApp({ config: ENABLED_CONFIG }, withRoute)
 

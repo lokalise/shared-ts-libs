@@ -155,6 +155,18 @@ describe('resolveSettings', () => {
     )
   })
 
+  // An inverted range comes back empty, and the empty report then points at
+  // ingest ("a profile arrives one flush interval after the process starts")
+  // for what a transposed pair of arguments did.
+  it('refuses a range that runs backwards', () => {
+    expect(() => resolveSettings({ service: 'x', from: 'now', until: 'now-15m' }, NOW, {})).toThrow(
+      '--from has to come before --until',
+    )
+    expect(() => resolveSettings({ service: 'x', until: 'now-15m' }, NOW, {})).toThrow(
+      '--from has to come before --until',
+    )
+  })
+
   it('bounds the request, in seconds, at thirty by default', () => {
     expect(resolveSettings({ service: 'x' }, NOW, {}).timeoutMs).toBe(30_000)
     expect(resolveSettings({ service: 'x', timeout: '5' }, NOW, {}).timeoutMs).toBe(5_000)
@@ -554,6 +566,28 @@ describe('main', () => {
     const [, second] = fetch.mock.calls
     const body = JSON.parse(second[1].body)
     expect(body.end - body.start).toBe(1_200_000)
+  })
+
+  it('refuses a second range that runs backwards as well', async () => {
+    await expect(
+      main(['--service', 'my-service', '--against-from', 'now', '--against-until', 'now-30m'], {}),
+    ).rejects.toThrow('--against-from has to come before --against-until')
+  })
+
+  // A baseline that held samples against a current range that held none is the
+  // strongest regression signal a gate can read, and a missing `against` field
+  // is indistinguishable from no comparison having been asked for.
+  it('reports the baseline under --json when the current range holds nothing', async () => {
+    fetch
+      .mockResolvedValueOnce(respondWith({ names: [], levels: [], total: 0 }))
+      .mockResolvedValueOnce(respondWith(FLAMEGRAPH))
+
+    await expect(
+      main(['--service', 'my-service', '--json', '--against-from', 'now-30m'], {}),
+    ).resolves.toBe(2)
+
+    expect(JSON.parse(out.join('\n'))).toMatchObject({ total: 0, against: 1e9, frames: [] })
+    expect(errors.join('\n')).toContain('The range compared against held 1.00 s')
   })
 
   it('writes collapsed stacks for flamegraph.pl when asked', async () => {

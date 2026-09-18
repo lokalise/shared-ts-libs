@@ -1,4 +1,5 @@
 import { hostname } from 'node:os'
+import { toLabelName } from './labelNames.ts'
 import type { ProfilingConfig, ProfilingContext, ProfilingLogger } from './types.ts'
 
 type PyroscopeModule = typeof import('@pyroscope/nodejs')
@@ -21,15 +22,6 @@ const STOP_TIMEOUT_MS = 5_000
  * over a profiler label.
  */
 const INVALID_LABEL_VALUE_CHARACTERS = /[{},=]/g
-
-/**
- * A label name has to be a Prometheus name at the other end, whatever the SDK
- * accepts on the way out: Pyroscope rejects the whole series when one is not
- * `[a-zA-Z_][a-zA-Z0-9_]*`, and the exporter reports a rejected ingest through
- * `debug` and swallows it. A `service.name` or `region-id` tag would otherwise
- * leave a service logging a clean start with no profile ever landing.
- */
-const INVALID_LABEL_NAME_CHARACTERS = /[^a-zA-Z0-9_]/g
 
 /** Set while profiling is running; the module reference doubles as the flag. */
 let running: PyroscopeModule | undefined
@@ -61,11 +53,6 @@ export function isProfilingRunning(): boolean {
 }
 
 const toLabelValue = (value: string): string => value.replace(INVALID_LABEL_VALUE_CHARACTERS, '_')
-
-const toLabelName = (name: string): string => {
-  const sanitized = name.replace(INVALID_LABEL_NAME_CHARACTERS, '_')
-  return /^\d/.test(sanitized) ? `_${sanitized}` : sanitized
-}
 
 /**
  * Drops the build timestamp Lokalise's `APP_VERSION` carries (`1.2.3@1700000000`),

@@ -22,6 +22,10 @@ export function getProfilingLabels(): ProfilingLabels {
  * A no-op beyond calling `fn` when profiling is off, and it never changes what
  * `fn` returns or throws.
  *
+ * Label names are sanitized to Prometheus names, as the init tags are: a
+ * `tenant-id` ships as `tenant_id` rather than getting the series rejected at
+ * ingest, which the exporter only reports through `debug`.
+ *
  * Two limits worth knowing, both inherited from how the profiler tracks labels.
  * They are not per async context: the profiler carries one label set for the
  * whole process, so work that `fn` starts and does not await is labelled by

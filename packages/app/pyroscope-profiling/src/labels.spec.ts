@@ -128,6 +128,17 @@ describe('withProfilingLabels', () => {
     expect(profiler.setWallLabels).toHaveBeenLastCalledWith({})
   })
 
+  // A key Pyroscope cannot read as a Prometheus name gets the whole series
+  // rejected at ingest, which the exporter reports through `debug` and
+  // swallows, so the samples would be paid for and never land.
+  it('sanitizes the label names, the same as the init tags do', async () => {
+    profilerRunning()
+
+    await withProfilingLabels({ 'tenant-id': 'acme', '2nd-attempt': 1 }, () => 'done')
+
+    expect(profiler.setWallLabels).toHaveBeenCalledWith({ tenant_id: 'acme', _2nd_attempt: 1 })
+  })
+
   it('accepts a synchronous body', async () => {
     profilerRunning()
 
