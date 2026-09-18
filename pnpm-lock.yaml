@@ -1187,7 +1187,7 @@ importers:
     dependencies:
       '@pyroscope/nodejs':
         specifier: 0.6.3
-        version: 0.6.3(express@5.2.1)(fastify@5.12.1)
+        version: 0.6.3(express@5.2.1)(fastify@5.12.1)(supports-color@8.1.1)
       fastify-plugin:
         specifier: ^6.0.0
         version: 6.0.0
@@ -1208,7 +1208,7 @@ importers:
         specifier: 1.9.1
         version: 1.9.1
       '@opentelemetry/sdk-trace-base':
-        specifier: 2.11.0
+        specifier: ^2.11.0
         version: 2.11.0(@opentelemetry/api@1.9.1)
       '@types/node':
         specifier: ^26.4.1
@@ -9958,7 +9958,7 @@ snapshots:
 
   '@protobufjs/utf8@1.1.2': {}
 
-  '@pyroscope/nodejs@0.6.3(express@5.2.1)(fastify@5.12.1)':
+  '@pyroscope/nodejs@0.6.3(express@5.2.1)(fastify@5.12.1)(supports-color@8.1.1)':
     dependencies:
       '@datadog/pprof': 5.14.4
       debug: 4.4.3(supports-color@8.1.1)

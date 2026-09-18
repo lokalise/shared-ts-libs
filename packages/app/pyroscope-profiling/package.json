@@ -57,7 +57,7 @@
         "fastify-plugin": "^6.0.0"
     },
     "peerDependencies": {
-        "@opentelemetry/sdk-trace-base": ">=2.0.0 <3.0.0",
+        "@opentelemetry/sdk-trace-base": "^2.0.0",
         "fastify": "^5.0.0"
     },
     "peerDependenciesMeta": {
@@ -74,7 +74,7 @@
         "@lokalise/node-core": "^14.9.1",
         "@lokalise/tsconfig": "workspace:^",
         "@opentelemetry/api": "1.9.1",
-        "@opentelemetry/sdk-trace-base": "2.11.0",
+        "@opentelemetry/sdk-trace-base": "^2.11.0",
         "@types/node": "^26.4.1",
         "@vitest/coverage-v8": "^4.1.11",
         "fastify": "^5.12.1",

@@ -913,6 +913,7 @@ From `@lokalise/pyroscope-profiling`:
 | `isSpanProfilingEnabledInEnv(env?)` | Whether both span-profile switches are on |
 | `withProfilingLabels(labels, fn)` | Runs `fn` with `labels` on its samples |
 | `getProfilingLabels()` | The labels currently being attached, or `{}` |
+| `withJobLabels(queueId, fn)` | `withProfilingLabels` with `job` pinned to the queue |
 
 From `@lokalise/pyroscope-profiling/opentelemetry`:
 
@@ -933,8 +934,8 @@ that accepts the connection and then goes quiet would otherwise hold
 `app.close()` open until the platform kills the process. Losing the last profile
 window is the cheaper outcome.
 
-Types: `ProfilingConfig`, `ProfilingContext`, `ProfilingLogger`,
-`ProfilingLabels`, `PyroscopeProfilingPluginOptions`. `ProfilingLogger` is a
-structural six-level logger, satisfied by pino, `@lokalise/node-core`'s
-`CommonLogger` and Fastify's `app.log`, so this package needs no logging
-dependency of its own.
+Types come from the root entry point: `ProfilingConfig`, `ProfilingContext`,
+`ProfilingLogger`, `ProfilingLabels`, with `PyroscopeProfilingPluginOptions`
+beside the plugin under `/fastify`. `ProfilingLogger` is a structural six-level
+logger, satisfied by pino, `@lokalise/node-core`'s `CommonLogger` and Fastify's
+`app.log`, so this package needs no logging dependency of its own.

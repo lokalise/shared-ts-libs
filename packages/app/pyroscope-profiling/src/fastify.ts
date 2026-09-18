@@ -157,5 +157,3 @@ export const pyroscopeProfilingPlugin = fp(plugin, {
   fastify: '5.x',
   name: 'pyroscope-profiling-plugin',
 })
-
-export type { ProfilingConfig, ProfilingContext, ProfilingLogger } from './types.ts'

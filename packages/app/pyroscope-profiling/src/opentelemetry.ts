@@ -6,4 +6,3 @@
  * on this package without installing the tracing SDK.
  */
 export { buildPyroscopeSpanProcessors, PyroscopeSpanProcessor } from './spanProfiles.ts'
-export type { ProfilingLogger } from './types.ts'

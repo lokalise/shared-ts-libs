@@ -50,22 +50,29 @@ describe('parseArgs', () => {
       top: '5',
     })
     expect(parseArgs(['--help'])).toEqual({ help: true })
-    expect(parseArgs(['-h', '--service', 'my-service'])).toEqual({ help: true })
+    expect(parseArgs(['-h', '--service', 'my-service'])).toEqual({
+      help: true,
+      service: 'my-service',
+    })
   })
 
   // A mistyped flag used to be accepted and then silently ignored, which reads
   // as the tool disagreeing with the profile rather than with the command line.
   it('refuses an option it does not know, and one without a value', () => {
-    expect(() => parseArgs(['--tre'])).toThrow('Unknown option: --tre')
-    expect(() => parseArgs(['--service'])).toThrow('--service needs a value')
-    expect(() => parseArgs(['my-service'])).toThrow('Unexpected argument: my-service')
+    expect(() => parseArgs(['--tre'])).toThrow("Unknown option '--tre'")
+    expect(() => parseArgs(['--service'])).toThrow("Option '--service <value>' argument missing")
+    expect(() => parseArgs(['my-service'])).toThrow("Unexpected argument 'my-service'")
   })
 
   // `--folded --json` used to write the collapsed stacks to a file called
   // `--json` and print the table, which reads as the tool ignoring both.
   it('refuses a flag standing where a value belongs', () => {
-    expect(() => parseArgs(['--folded', '--json'])).toThrow('--folded needs a value')
-    expect(() => parseArgs(['--select', '--tree'])).toThrow('--select needs a value')
+    expect(() => parseArgs(['--folded', '--json'])).toThrow(
+      "Option '--folded' argument is ambiguous",
+    )
+    expect(() => parseArgs(['--select', '--tree'])).toThrow(
+      "Option '--select' argument is ambiguous",
+    )
   })
 
   it('takes a value attached with =, and refuses one on a flag', () => {
@@ -74,7 +81,7 @@ describe('parseArgs', () => {
       select: 'job="cache-refresh"',
       json: true,
     })
-    expect(() => parseArgs(['--json=true'])).toThrow('--json takes no value')
+    expect(() => parseArgs(['--json=true'])).toThrow("Option '--json' does not take an argument")
     expect(() => parseArgs(['--service='])).toThrow('--service needs a value')
   })
 })

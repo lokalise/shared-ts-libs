@@ -16,6 +16,7 @@
 /* biome-ignore-all lint/suspicious/noConsole: this is a CLI */
 
 import { writeFileSync } from 'node:fs'
+import { parseArgs as parseNodeArgs } from 'node:util'
 
 const PROFILE_TYPES = {
   wall: 'wall:wall:nanoseconds:wall:nanoseconds',
@@ -25,27 +26,28 @@ const PROFILE_TYPES = {
   objects: 'memory:inuse_objects:count:inuse_space:bytes',
 }
 
-/** Options that take a value. Anything else is rejected rather than ignored. */
-const VALUE_OPTIONS = new Set([
-  'service',
-  'url',
-  'type',
-  'select',
-  'from',
-  'until',
-  'against-from',
-  'against-until',
-  'top',
-  'min-share',
-  'folded',
-  'auth-token',
-  'basic-auth-user',
-  'basic-auth-password',
-  'tenant-id',
-  'timeout',
-])
-
-const FLAG_OPTIONS = new Set(['json', 'tree'])
+/** The command line, in the shape `node:util` reads it. */
+const OPTIONS = {
+  service: { type: 'string' },
+  url: { type: 'string' },
+  type: { type: 'string' },
+  select: { type: 'string' },
+  from: { type: 'string' },
+  until: { type: 'string' },
+  'against-from': { type: 'string' },
+  'against-until': { type: 'string' },
+  top: { type: 'string' },
+  'min-share': { type: 'string' },
+  folded: { type: 'string' },
+  'auth-token': { type: 'string' },
+  'basic-auth-user': { type: 'string' },
+  'basic-auth-password': { type: 'string' },
+  'tenant-id': { type: 'string' },
+  timeout: { type: 'string' },
+  json: { type: 'boolean' },
+  tree: { type: 'boolean' },
+  help: { type: 'boolean', short: 'h' },
+}
 
 const USAGE = `pyroscope-analyze: print a profile from a local Pyroscope.
 
@@ -103,43 +105,23 @@ const UNIT_BY_PROFILE_TYPE = (profileType) => {
   return 'count'
 }
 
-/** `--top=5` and `--top 5` are the same option; only the first splits here. */
-function splitOption(arg) {
-  const separator = arg.indexOf('=')
-  if (separator === -1) return { key: arg.slice(2), attached: undefined }
-  return { key: arg.slice(2, separator), attached: arg.slice(separator + 1) }
-}
-
 /**
- * A flag standing where the value belongs means the value was left out. Taking
- * it anyway is how `--folded --json` ends up writing the collapsed stacks to a
- * file called `--json` and printing the table it was told not to.
+ * `node:util` covers the shapes a command line comes in: `--top 5` and
+ * `--top=5`, an unknown option refused rather than ignored, and a flag
+ * standing where a value belongs refused rather than taken. It stops short of
+ * `--service=`, which it reads as an empty string.
  */
-function takeValue(key, attached, remaining) {
-  const value = attached ?? (remaining[0]?.startsWith('--') ? undefined : remaining.shift())
-  if (!value) throw new Error(`--${key} needs a value`)
-  return value
-}
-
 export function parseArgs(argv) {
-  const remaining = [...argv]
-  const options = {}
-  while (remaining.length > 0) {
-    const arg = remaining.shift()
-    if (arg === '--help' || arg === '-h') return { help: true }
-    if (!arg.startsWith('--')) throw new Error(`Unexpected argument: ${arg}`)
-
-    const { key, attached } = splitOption(arg)
-    if (FLAG_OPTIONS.has(key)) {
-      if (attached !== undefined) throw new Error(`--${key} takes no value`)
-      options[key] = true
-    } else if (VALUE_OPTIONS.has(key)) {
-      options[key] = takeValue(key, attached, remaining)
-    } else {
-      throw new Error(`Unknown option: --${key}`)
-    }
+  const { values } = parseNodeArgs({
+    args: argv,
+    options: OPTIONS,
+    strict: true,
+    allowPositionals: false,
+  })
+  for (const [key, value] of Object.entries(values)) {
+    if (value === '') throw new Error(`--${key} needs a value`)
   }
-  return options
+  return values
 }
 
 /** `now`, `now-15m`, an ISO timestamp or Unix millis, to Unix millis. */
