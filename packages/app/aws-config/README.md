@@ -127,8 +127,8 @@ const fullName = applyAwsResourcePrefix('my-resource', awsConfig);
 ```
 
 **How it works:**  
-The resource prefix is defined by the `AWS_RESOURCE_PREFIX` environment variable. When set, it is prepended to resource 
-names using an underscore. For example:
+The resource prefix is defined by the `AWS_RESOURCE_PREFIX` environment variable. When set, it is prepended to 
+resource names using an underscore. For example:
 
 ```ts
 applyAwsResourcePrefix('orders', awsConfig) // returns 'tenant123_orders' when AWS_RESOURCE_PREFIX='tenant123'
