@@ -120,7 +120,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
     const topicConfig = this.getTopicConfig(topicName)
     const resolvedTopic = this.resolveTopic(topicConfig, params)
 
-    const { creationConfig: queueCreationConfig } = this.resolveQueue(
+    const { creationConfig: queueCreationConfig, queueConfig } = this.resolveQueue(
       queueName,
       topicConfig.queues,
       params,
@@ -133,7 +133,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
     }
     /* v8 ignore stop */
 
-    const options = this.commonConsumerOptions(params, queueCreationConfig.queue)
+    const options = this.commonConsumerOptions(params, queueConfig, queueCreationConfig.queue)
 
     return {
       locatorConfig: resolvedTopic.locatorConfig,
