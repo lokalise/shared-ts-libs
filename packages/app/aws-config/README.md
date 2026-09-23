@@ -248,6 +248,9 @@ const commandConfig: CommandConfig = {
   - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing queue by 
    name.
   - **No queue creation or tagging** is attempted.
+  - Consumers locate the existing dead-letter queue by convention (`<queueName>-dlq`) so invalid messages are routed
+   to it instead of being silently deleted. This DLQ must already exist, the consumer's IAM
+   role needs `sqs:SetQueueAttributes` on the queue.
 
 ### Message Queue Toolkit SNS Resolver
 
@@ -373,7 +376,8 @@ Both `MessageQueueToolkitSnsOptionsResolver` and `MessageQueueToolkitSqsOptionsR
     existing resources with mismatched tags will be updated to match the configured tags.
   - Applies standardized tags, see tags section above.
 - **Consumer**:
-  - Dead-letter queue automatically created with suffix `-dlq`, `redrivePolicy.maxReceiveCount = 5`, retention = 7 days.
+  - Dead-letter queue with suffix `-dlq`, `redrivePolicy.maxReceiveCount = 5`, retention = 7 days. For internal queues
+    it is created and managed; for external queues (`isExternal: true`) the pre-existing `-dlq` is located instead.
   - SNS only: the SNS subscription is configured to redrive undeliverable messages (deleted endpoint, IAM/policy errors, throttling) to the same DLQ via `subscriptionDeadLetterQueue.reuseConsumerDeadLetterQueue`, so they aren't silently dropped.
   - `maxRetryDuration`: 2 days for in-flight message retries.
   - `heartbeatInterval`: 20 seconds for visibility timeout heartbeats.
