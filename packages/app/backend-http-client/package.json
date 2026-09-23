@@ -40,7 +40,7 @@
     },
     "dependencies": {
         "parse-sse": "^0.1.0",
-        "undici": "^8.10.0"
+        "undici": "^8.10.2"
     },
     "peerDependencies": {
         "@lokalise/api-contracts": ">=7.2.0",

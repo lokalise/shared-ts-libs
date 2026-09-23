@@ -61,6 +61,8 @@ initOpenTelemetry()
 | `OTEL_ENABLED` | Set to `true` to enable OpenTelemetry | `false` |
 | `OTEL_EXPORTER_URL` | OTLP gRPC exporter URL | `grpc://localhost:4317` |
 
+This package configures traces only. It starts the SDK with empty `metricReaders` and `logRecordProcessors`, so it does not read `OTEL_METRICS_EXPORTER` or `OTEL_LOGS_EXPORTER` and does not create OTLP metrics or logs exporters.
+
 ### Options
 
 | Option | Type | Default | Description |

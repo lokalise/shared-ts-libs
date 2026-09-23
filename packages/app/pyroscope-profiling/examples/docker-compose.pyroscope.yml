@@ -1,0 +1,37 @@
+# A Pyroscope to ship profiles to. Nothing else, because reading a profile does
+# not need a UI: `pyroscope-analyze` queries this over HTTP and prints the
+# result (see the package README, "The loop").
+#
+#   docker compose -f docker-compose.pyroscope.yml up -d
+#
+# Point the service at it with PYROSCOPE_ENABLED=true and
+# PYROSCOPE_SERVER_ADDRESS=http://localhost:4040, run the load test, then:
+#
+#   pnpm exec pyroscope-analyze --service my-service
+#
+# Grafana and Tempo are overlays next to this file, for the times a flame graph
+# in a browser is worth the bring-up:
+#
+#   docker compose -f docker-compose.pyroscope.yml -f docker-compose.grafana.yml up -d
+name: pyroscope-local
+
+services:
+  pyroscope:
+    image: grafana/pyroscope:2.3.1
+    # Loopback only: this Pyroscope has no authentication, so who can read the
+    # profiles should not depend on which network the laptop is on.
+    ports:
+      - '127.0.0.1:${PYROSCOPE_PORT:-4040}:4040'
+    # Named volume rather than a container-lifetime one: comparing the run
+    # before a change against the run after it is the whole point, and a profile
+    # that dies with its container can be read once. `docker compose down -v` is
+    # the deliberate way to drop them.
+    volumes:
+      - pyroscope-data:/data
+    # No healthcheck: the image is distroless, with no shell and no wget or
+    # curl to run a probe with, and /ready only turns 200 about a minute after
+    # start because the segment writer waits after becoming ready. Ingests
+    # during that window are dropped, which costs one profile window.
+
+volumes:
+  pyroscope-data:
