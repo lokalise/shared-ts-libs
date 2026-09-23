@@ -32,10 +32,12 @@ import type {
 
 type ResolvedQueueResult =
   | {
+      queueConfig: QueueConfig
       locatorConfig: SQSQueueLocatorType
       creationConfig?: never
     }
   | {
+      queueConfig: QueueConfig
       locatorConfig?: never
       creationConfig: SQSCreationConfig
     }
@@ -63,6 +65,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
 
   protected commonConsumerOptions<MessagePayload extends ConsumerBaseMessageType>(
     params: ResolveConsumerOptionsParams<MessagePayload>,
+    queueConfig: QueueConfig,
     createQueueRequest: CreateQueueRequest | undefined,
   ): Omit<
     ResolvedConsumerOptions<SQSCreationConfig, object, MessagePayload>,
@@ -92,25 +95,47 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
             heartbeatInterval: HEARTBEAT_INTERVAL,
             batchSize: params.batchSize,
           },
-      deadLetterQueue:
-        !params.isTest && createQueueRequest
-          ? {
-              creationConfig: {
-                queue: {
-                  QueueName: `${createQueueRequest.QueueName}${DLQ_SUFFIX}`,
-                  tags: createQueueRequest.tags,
-                  Attributes: {
-                    KmsMasterKeyId: params.awsConfig.kmsKeyId,
-                    MessageRetentionPeriod: DLQ_MESSAGE_RETENTION_PERIOD.toString(),
-                  },
-                },
-                updateAttributesIfExists: params.updateAttributesIfExists ?? true,
-              },
-              redrivePolicy: {
-                maxReceiveCount: DLQ_MAX_RECEIVE_COUNT,
-              },
-            }
-          : undefined,
+      deadLetterQueue: this.resolveConsumerDeadLetterQueue(params, queueConfig, createQueueRequest),
+    }
+  }
+
+  protected resolveConsumerDeadLetterQueue<MessagePayload extends ConsumerBaseMessageType>(
+    params: ResolveConsumerOptionsParams<MessagePayload>,
+    queueConfig: QueueConfig,
+    createQueueRequest: CreateQueueRequest | undefined,
+  ): ResolvedConsumerOptions<SQSCreationConfig, object, MessagePayload>['deadLetterQueue'] {
+    if (params.isTest) return undefined
+
+    const redrivePolicy = { maxReceiveCount: DLQ_MAX_RECEIVE_COUNT }
+
+    if (queueConfig.isExternal) {
+      return {
+        redrivePolicy,
+        locatorConfig: {
+          queueName: applyAwsResourcePrefix(
+            `${queueConfig.queueName}${DLQ_SUFFIX}`,
+            params.awsConfig,
+          ),
+          startupResourcePolling: this.resolveStartupResourcePolling(params),
+        },
+      }
+    }
+
+    if (!createQueueRequest) return undefined
+
+    return {
+      creationConfig: {
+        queue: {
+          QueueName: `${createQueueRequest.QueueName}${DLQ_SUFFIX}`,
+          tags: createQueueRequest.tags,
+          Attributes: {
+            KmsMasterKeyId: params.awsConfig.kmsKeyId,
+            MessageRetentionPeriod: DLQ_MESSAGE_RETENTION_PERIOD.toString(),
+          },
+        },
+        updateAttributesIfExists: params.updateAttributesIfExists ?? true,
+      },
+      redrivePolicy,
     }
   }
 
@@ -128,6 +153,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
 
     if (queueConfig.isExternal) {
       return {
+        queueConfig,
         locatorConfig: {
           queueName: applyAwsResourcePrefix(queueConfig.queueName, awsConfig),
           startupResourcePolling: this.resolveStartupResourcePolling(params),
@@ -136,6 +162,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
     }
 
     return {
+      queueConfig,
       creationConfig: {
         queue: {
           QueueName: applyAwsResourcePrefix(queueConfig.queueName, awsConfig),

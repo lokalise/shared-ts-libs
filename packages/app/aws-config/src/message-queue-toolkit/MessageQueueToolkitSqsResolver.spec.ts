@@ -884,7 +884,21 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
               "heartbeatInterval": 20,
             },
             "creationConfig": undefined,
-            "deadLetterQueue": undefined,
+            "deadLetterQueue": {
+              "locatorConfig": {
+                "queueName": "test-project-mqt_queue-second_service-dlq",
+                "startupResourcePolling": {
+                  "enabled": true,
+                  "nonBlocking": true,
+                  "pollingIntervalMs": 5000,
+                  "throwOnTimeout": false,
+                  "timeoutMs": Symbol(NO_TIMEOUT),
+                },
+              },
+              "redrivePolicy": {
+                "maxReceiveCount": 5,
+              },
+            },
             "deletionConfig": {
               "deleteIfExists": undefined,
             },
@@ -907,6 +921,30 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             },
           }
         `)
+      })
+
+      it('should locate the DLQ by convention and apply the resource prefix', () => {
+        const result = resolver.resolveConsumerOptions(queueName, {
+          logger,
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
+          handlers: [],
+        })
+
+        expect(result.deadLetterQueue?.locatorConfig?.queueName).toBe(
+          'prefix_test-project-mqt_queue-second_service-dlq',
+        )
+        expect(result.deadLetterQueue?.redrivePolicy).toEqual({ maxReceiveCount: 5 })
+      })
+
+      it('should not configure a DLQ in test mode', () => {
+        const result = resolver.resolveConsumerOptions(queueName, {
+          logger,
+          awsConfig: buildAwsConfig(),
+          handlers: [],
+          isTest: true,
+        })
+
+        expect(result.deadLetterQueue).toBeUndefined()
       })
 
       it.each(['production', 'staging'] as const)(
