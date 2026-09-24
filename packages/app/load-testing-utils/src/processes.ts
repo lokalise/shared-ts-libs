@@ -82,16 +82,21 @@ export type LocalBinCommand = { command: string; args: string[] }
  * The command that runs a package's bin with Node directly, which is what
  * `npx <bin>` does without needing npm installed. No `.cmd` shim is involved
  * on Windows, so the command spawns without a shell and its arguments may
- * contain spaces.
+ * contain spaces. The bin has to be JavaScript: a package that swaps its bin
+ * for a native executable on install, as esbuild does, cannot run this way.
  */
 export function localBin(
   packageName: string,
   args: string[],
   options: LocalBinOptions,
 ): LocalBinCommand {
-  const binName = options.bin ?? packageName.replace(/^@[^/]+\//, '')
+  const defaultName = packageName.replace(/^@[^/]+\//, '')
+  const binName = options.bin ?? defaultName
   const packageDir = findPackageDir(packageName, options.from)
-  const entry = binEntry(readBinField(packageDir), binName)
+  const bins = binMap(readBinField(packageDir), defaultName)
+  const onlyEntry = Object.keys(bins).length === 1 ? Object.values(bins)[0] : undefined
+  // The only bin stands in for the default name, never for a name the caller asked for.
+  const entry = bins[binName] ?? (options.bin === undefined ? onlyEntry : undefined)
   if (!entry) throw new Error(`${packageName} has no "${binName}" bin`)
   return { command: options.node ?? process.execPath, args: [join(packageDir, entry), ...args] }
 }
@@ -111,12 +116,9 @@ type BinField = string | Record<string, string> | undefined
 const readBinField = (packageDir: string): BinField =>
   (JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8')) as { bin?: BinField }).bin
 
-/** The named bin, or the only one when the package declares a single bin under another name. */
-function binEntry(bin: BinField, binName: string): string | undefined {
-  if (typeof bin === 'string' || bin === undefined) return bin
-  const entries = Object.values(bin)
-  return bin[binName] ?? (entries.length === 1 ? entries[0] : undefined)
-}
+/** A string `bin` is the package's one bin, named after the package without its scope. */
+const binMap = (bin: BinField, defaultName: string): Record<string, string> =>
+  typeof bin === 'string' ? { [defaultName]: bin } : (bin ?? {})
 
 /**
  * Starts, runs and stops the processes a local load-test stack is made of, and

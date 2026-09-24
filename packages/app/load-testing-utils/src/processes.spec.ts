@@ -90,6 +90,17 @@ describe('localBin', () => {
     expect(localBin('drizzle-kit', [], { from: root }).args).toEqual([join(pkg, 'bin.cjs')])
   })
 
+  it('does not swap a bin asked for by name for the only one declared', () => {
+    const root = logDir()
+    install(root, 'drizzle-kit', { 'drizzle-kit-cli': './bin.cjs' })
+    install(root, 'tsx', './dist/cli.mjs')
+
+    expect(() => localBin('drizzle-kit', [], { from: root, bin: 'typo' })).toThrow(
+      /has no "typo" bin/,
+    )
+    expect(() => localBin('tsx', [], { from: root, bin: 'typo' })).toThrow(/has no "typo" bin/)
+  })
+
   it('names a package that is not installed', () => {
     expect(() => localBin('not-installed-anywhere', [], { from: logDir() })).toThrow(
       /not-installed-anywhere is not installed/,

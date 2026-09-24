@@ -21,7 +21,7 @@ export type ReportWatch = {
 }
 
 const modifiedAt = (path: string): number | undefined =>
-  existsSync(path) ? statSync(path).mtimeMs : undefined
+  statSync(path, { throwIfNoEntry: false })?.mtimeMs
 
 /**
  * Notes the report's modification time before a run, to tell afterwards

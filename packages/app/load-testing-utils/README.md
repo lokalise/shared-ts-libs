@@ -130,7 +130,8 @@ contain spaces. Stopping a process there kills its whole tree with
 Node install without npm does not have. It finds the package in `node_modules`
 from `from` upwards and returns `{ command, args }` that run its bin with
 `process.execPath`, so the arguments may contain spaces. Pass `bin` when the
-package declares more than one.
+package declares more than one. The bin has to be JavaScript: esbuild, for one,
+replaces its bin with a native executable on install, and Node cannot run that.
 
 ## Containers
 
@@ -185,7 +186,8 @@ Anything service-specific, such as swapping a database name in a DSN, is a
 - everything else goes to `passthrough`, in order, for `k6 run`
 
 In PowerShell, quote a k6 value that contains a comma: `-e 'JOURNEYS=a,b'`.
-Unquoted, PowerShell takes the comma for its array operator and k6 receives `a b`.
+Unquoted, PowerShell takes the comma for its array operator and splits the value
+into two arguments, so k6 receives `JOURNEYS=a` and a stray `b`.
 
 `splitValueArgs(args, ['items'])` takes `--items=50` out of the passthrough as
 `['--items', '50']`, for a seeder that reads that form. k6 exits on a flag it
@@ -204,7 +206,9 @@ k6 writes its report from `handleSummary`, which it never reaches when the
 script fails to initialise (an unknown scenario, a syntax error). Take
 `watchReport(reportPath)` before the run and ask `written()` after it: when it
 says no, the report on disk is the previous run's, so skip the section and exit
-non-zero.
+non-zero. That check assumes the script has a `handleSummary` writing to
+`reportPath`; for one without, skip `watchReport` and let `appendReportSection`
+create the file.
 
 It reports CPU and GC seconds as differences, resident memory, heap and event
 loop lag p99 at the end, and statements and rows per database engine. A counter
