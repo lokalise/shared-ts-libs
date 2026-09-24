@@ -1,0 +1,90 @@
+import type { Sql } from 'postgres'
+import type { EngineSnapshot, StatementStats } from '../types.ts'
+import { normalizeStatement } from './statements.ts'
+
+/**
+ * Leads every query the probe sends. `pg_stat_statements` keeps the text a
+ * statement was first seen with, comment included, and no application runs
+ * these catalog queries, so the marker keeps the probe out of its own totals.
+ */
+export const PROBE_QUERY_MARKER = '/* load-testing-probe */'
+const notFromProbe = `${PROBE_QUERY_MARKER}%`
+
+/**
+ * Postgres counters for the connected database.
+ *
+ * `pg_stat_statements` is the exact answer. It has to be preloaded
+ * (`shared_preload_libraries`) and created in the database. Without it this
+ * falls back to committed transactions from `pg_stat_database` and says so in
+ * `reason`: the two agree while every statement is its own transaction, which
+ * is the per-row write path a probe most needs to catch.
+ *
+ * `pg_stat_statements` figures leave out the probe's own queries. The fallback
+ * cannot: each scrape commits two transactions of its own, and its catalog
+ * reads add a few rows to `rowsReturned`.
+ */
+export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapshot> {
+  const [extension] = await sql`
+    /* load-testing-probe */ SELECT 1 AS present FROM pg_extension WHERE extname = 'pg_stat_statements'
+  `
+  const [database] = await sql`
+    /* load-testing-probe */ SELECT xact_commit, tup_returned, tup_inserted + tup_updated + tup_deleted AS written
+    FROM pg_stat_database WHERE datname = current_database()
+  `
+  const rowsWritten = Number(database?.written ?? 0)
+  const committedTransactions = (reason: string): EngineSnapshot => ({
+    available: true,
+    reason: `${reason}; counting committed transactions instead`,
+    statements: Number(database?.xact_commit ?? 0),
+    rowsReturned: Number(database?.tup_returned ?? 0),
+    rowsWritten,
+  })
+
+  if (!extension) return committedTransactions('pg_stat_statements is not installed')
+
+  let totals: Record<string, unknown> | undefined
+  try {
+    const rows = await sql`
+      /* load-testing-probe */ SELECT COALESCE(SUM(calls), 0) AS calls, COALESCE(SUM(rows), 0) AS rows
+      FROM pg_stat_statements
+      WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
+        AND query NOT LIKE ${notFromProbe}
+    `
+    totals = rows[0]
+  } catch (error) {
+    // Created in the database but missing from shared_preload_libraries, the view refuses reads.
+    const message = error instanceof Error ? error.message : String(error)
+    return committedTransactions(`pg_stat_statements is not readable (${message})`)
+  }
+
+  return {
+    available: true,
+    statements: Number(totals?.calls ?? 0),
+    // `rows` counts rows a statement returned or affected, so it is the read
+    // side; pg_stat_database separates the writes.
+    rowsReturned: Number(totals?.rows ?? 0),
+    rowsWritten,
+    ...(top > 0 ? { topStatements: await readPostgresTop(sql, top) } : {}),
+  }
+}
+
+/**
+ * Ranked by database time, not by calls. A per-row write and the batched
+ * statement replacing it differ a hundredfold in calls and little in time, and
+ * a call ranking puts the cheap one on top.
+ */
+async function readPostgresTop(sql: Sql, top: number): Promise<StatementStats[]> {
+  const rows = await sql`
+    /* load-testing-probe */ SELECT query, calls, total_exec_time AS total_ms
+    FROM pg_stat_statements
+    WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
+      AND query NOT LIKE ${notFromProbe}
+    ORDER BY total_exec_time DESC
+    LIMIT ${top}
+  `
+  return rows.map((row) => ({
+    query: normalizeStatement(String(row.query)),
+    calls: Number(row.calls),
+    totalMs: Number(row.total_ms),
+  }))
+}

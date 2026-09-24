@@ -1,0 +1,66 @@
+{
+    "name": "@lokalise/load-testing-utils",
+    "version": "0.0.0",
+    "type": "module",
+    "license": "Apache-2.0",
+    "files": [
+        "dist/**",
+        "LICENSE.md",
+        "README.md"
+    ],
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": "./dist/index.js",
+        "./db-probe": "./dist/dbProbe/index.js",
+        "./package.json": "./package.json"
+    },
+    "keywords": [
+        "load-testing",
+        "k6",
+        "performance",
+        "docker-compose",
+        "pg_stat_statements",
+        "cockroachdb"
+    ],
+    "homepage": "https://github.com/lokalise/shared-ts-libs",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/lokalise/shared-ts-libs.git",
+        "directory": "packages/app/load-testing-utils"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "peerDependencies": {
+        "postgres": "^3.4.0"
+    },
+    "peerDependenciesMeta": {
+        "postgres": {
+            "optional": true
+        }
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.5.12",
+        "@lokalise/biome-config": "workspace:^",
+        "@lokalise/tsconfig": "workspace:^",
+        "@types/node": "^26.4.1",
+        "@vitest/coverage-v8": "^4.1.11",
+        "postgres": "^3.4.9",
+        "rimraf": "^6.1.3",
+        "typescript": "7.0.2",
+        "vitest": "^4.1.11"
+    },
+    "scripts": {
+        "build": "rimraf dist && tsc --project tsconfig.build.json",
+        "clean": "rimraf dist",
+        "lint": "biome check . && tsc",
+        "lint:fix": "biome check --write",
+        "test": "vitest run",
+        "test:ci": "vitest run --coverage",
+        "prepublishOnly": "pnpm run build",
+        "package-version": "echo $npm_package_version",
+        "postversion": "biome check --write package.json"
+    }
+}
