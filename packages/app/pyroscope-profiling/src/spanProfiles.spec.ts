@@ -1,4 +1,5 @@
 import type { ReadableSpan, Span } from '@opentelemetry/sdk-trace-base'
+import { pino } from 'pino'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ProfilingLogger } from './types.ts'
 
@@ -203,6 +204,28 @@ describe('PyroscopeSpanProcessor', () => {
 
     expect(logger.warn).toHaveBeenCalledOnce()
     expect(logger.debug).toHaveBeenCalledTimes(2)
+  })
+
+  it('logs why labelling failed, with the stack', () => {
+    profilerRunning()
+    profiler.setWallLabels.mockImplementation(() => {
+      throw new TypeError('Contexts are not supported.')
+    })
+    const lines: { level: number; err?: { message: string; stack: string } }[] = []
+    const logger = pino(
+      { level: 'debug' },
+      { write: (line: string) => lines.push(JSON.parse(line)) },
+    )
+    const processor = new spanProfiles.PyroscopeSpanProcessor(logger)
+
+    processor.onStart(fakeSpan('span-1').span)
+    processor.onStart(fakeSpan('span-2').span)
+
+    expect(lines.map((line) => line.level)).toEqual([40, 20])
+    for (const line of lines) {
+      expect(line.err?.message).toBe('Contexts are not supported.')
+      expect(line.err?.stack).toContain('spanProfiles.spec.ts')
+    }
   })
 
   it('puts the labels back for the spans it is still holding when it shuts down', async () => {

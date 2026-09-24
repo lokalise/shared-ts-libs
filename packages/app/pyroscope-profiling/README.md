@@ -660,10 +660,10 @@ Labelled profiles need SIGPROF-based sampling, `@datadog/pprof` compiles that
 path out on `_WIN32`, and Pyroscope's wall profiler always asks for labels. Heap
 profiling never gets its turn, because wall starts first.
 
-Nothing breaks. `startProfiling` logs the error, returns `false`, and the service
-serves traffic as usual without profiles. `stopProfiling` then has nothing to
-flush and is a no-op. `pyroscope-analyze` will report no samples, which is the
-symptom to expect.
+Nothing breaks. `startProfiling` logs the error with a pointer to this section,
+returns `false`, and the service serves traffic as usual without profiles.
+`stopProfiling` then has nothing to flush and is a no-op. `pyroscope-analyze`
+will report no samples, which is the symptom to expect.
 
 The service therefore has to run on linux for the loop to close. Two ways, in
 order of how much they cost:
@@ -864,8 +864,9 @@ curl -s http://localhost:4040/ready   # "ready" when it will keep what you send
 **Is the profiler running at all?** A successful start logs
 `[PYROSCOPE] Continuous profiling started` with the resolved app name, endpoint
 and labels. A failed one logs `[PYROSCOPE] Failed to start continuous profiling`
-with the error. Nothing at all means `PYROSCOPE_ENABLED` is not `true`, or that
-`NODE_ENV` is `test`, which is off whatever the switch says.
+with the error under `err`, which pino serializes with its message and stack.
+Nothing at all means `PYROSCOPE_ENABLED` is not `true`, or that `NODE_ENV` is
+`test`, which is off whatever the switch says.
 
 **Has a flush happened yet?** The first one is `PYROSCOPE_FLUSH_INTERVAL_MS`
 after start, 60 seconds by default. Lower it rather than waiting.

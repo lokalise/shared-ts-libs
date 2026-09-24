@@ -129,11 +129,11 @@ export class PyroscopeSpanProcessor implements SpanProcessor {
    */
   private report(error: unknown, message: string): void {
     if (this.labelFailureReported) {
-      this.logger?.debug({ error }, message)
+      this.logger?.debug({ err: error }, message)
       return
     }
     this.labelFailureReported = true
-    this.logger?.warn({ error }, message)
+    this.logger?.warn({ err: error }, message)
   }
 }
 

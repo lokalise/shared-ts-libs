@@ -1,4 +1,5 @@
 import { hostname } from 'node:os'
+import { pino } from 'pino'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ProfilingConfig, ProfilingContext, ProfilingLogger } from './types.ts'
 
@@ -41,6 +42,23 @@ const buildLogger = () =>
     trace: vi.fn(),
     fatal: vi.fn(),
   }) as unknown as ProfilingLogger
+
+type LogLine = {
+  level: number
+  msg: string
+  err?: { type: string; message: string; stack: string }
+}
+
+/** A real pino logger, so the assertions see what a service log would. */
+const buildPinoLogger = () => {
+  const lines: LogLine[] = []
+  const logger = pino({ level: 'trace' }, { write: (line: string) => lines.push(JSON.parse(line)) })
+  return { logger, lines }
+}
+
+const setPlatform = (platform: NodeJS.Platform) => {
+  Object.defineProperty(process, 'platform', { value: platform, configurable: true })
+}
 
 /**
  * The module tracks whether profiling is running in module scope, so every test
@@ -322,6 +340,74 @@ describe('profiler', () => {
       await expect(startProfiling(ENABLED_CONFIG, CONTEXT, logger)).resolves.toBe(false)
 
       expect(logger.debug).toHaveBeenCalled()
+    })
+  })
+
+  describe('error logging', () => {
+    const originalPlatform = process.platform
+
+    afterEach(() => {
+      setPlatform(originalPlatform)
+    })
+
+    it('logs why a start failed, with the stack', async () => {
+      setPlatform('linux')
+      pyroscopeMock.init.mockImplementationOnce(() => {
+        throw new Error('Invalid config')
+      })
+      const { logger: pinoLogger, lines } = buildPinoLogger()
+      const { startProfiling } = await loadModule()
+
+      await startProfiling(ENABLED_CONFIG, CONTEXT, pinoLogger)
+
+      const line = lines.find((entry) => entry.level === 50)
+      expect(line?.msg).toBe('[PYROSCOPE] Failed to start continuous profiling')
+      expect(line?.err).toMatchObject({ type: 'Error', message: 'Invalid config' })
+      expect(line?.err?.stack).toContain('profiler.spec.ts')
+    })
+
+    it('points a Windows start failure at the way out', async () => {
+      setPlatform('win32')
+      pyroscopeMock.start.mockImplementationOnce(() => {
+        throw new TypeError('Contexts are not supported.')
+      })
+      const { logger: pinoLogger, lines } = buildPinoLogger()
+      const { startProfiling } = await loadModule()
+
+      await startProfiling(ENABLED_CONFIG, CONTEXT, pinoLogger)
+
+      const line = lines.find((entry) => entry.level === 50)
+      expect(line?.msg).toContain('WSL2')
+      expect(line?.msg).toContain('"On a Windows dev box"')
+      expect(line?.err).toMatchObject({ type: 'TypeError', message: 'Contexts are not supported.' })
+    })
+
+    it('logs why a rollback failed', async () => {
+      pyroscopeMock.start.mockImplementationOnce(() => {
+        throw new Error('Heap profiler is already started')
+      })
+      pyroscopeMock.stop.mockRejectedValueOnce(new Error('Wall profiler is not started'))
+      const { logger: pinoLogger, lines } = buildPinoLogger()
+      const { startProfiling } = await loadModule()
+
+      await startProfiling(ENABLED_CONFIG, CONTEXT, pinoLogger)
+
+      const line = lines.find((entry) => entry.level === 20)
+      expect(line?.err?.message).toBe('Wall profiler is not started')
+    })
+
+    it('logs why a stop failed', async () => {
+      pyroscopeMock.stop.mockRejectedValueOnce(new Error('flush rejected'))
+      const { logger: pinoLogger, lines } = buildPinoLogger()
+      const { startProfiling, stopProfiling } = await loadModule()
+
+      await startProfiling(ENABLED_CONFIG, CONTEXT, pinoLogger)
+      await stopProfiling(pinoLogger)
+
+      const line = lines.find((entry) => entry.level === 50)
+      expect(line?.msg).toBe('[PYROSCOPE] Failed to stop continuous profiling cleanly')
+      expect(line?.err?.message).toBe('flush rejected')
+      expect(line?.err?.stack).toContain('profiler.spec.ts')
     })
   })
 
