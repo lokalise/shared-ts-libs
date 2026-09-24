@@ -1,6 +1,8 @@
+import { spawn } from 'node:child_process'
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { describe, expect, it, vi } from 'vitest'
 import { ProcessSupervisor, processStartTime, stopProcess, toSpawnable } from './processes.ts'
 
@@ -193,6 +195,71 @@ describe('ProcessSupervisor', () => {
     expect(write).toHaveBeenCalledWith(`[ok] ${node} -e \n`)
     write.mockRestore()
   })
+})
+
+describe('ProcessSupervisor, detachable', () => {
+  it('relays what a process writes to its log file, and reports its exit', async () => {
+    const dir = logDir()
+    const log = vi.fn()
+    const supervisor = new ProcessSupervisor({ logDir: dir, log, detachable: true })
+
+    const child = supervisor.start('echo', node, [
+      '-e',
+      'console.log("one"); process.stdout.write("tw"); setTimeout(() => { console.log("o"); console.error("three"); process.exit(3) }, 250)',
+    ])
+    expect(child.stdout).toBeNull()
+    await exited(child)
+
+    const lines = log.mock.calls.map(([line]) => line)
+    expect(lines).toEqual(['[echo] one', '[echo] two', '[echo] three', '[echo] exited with 3'])
+    expect(readFileSync(join(dir, 'echo.log'), 'utf8')).toBe('one\ntwo\nthree\n')
+  })
+
+  it('refuses to detach processes that are piped to it', () => {
+    expect(() => new ProcessSupervisor({ logDir: logDir() }).detach()).toThrow(/detachable: true/)
+  })
+
+  // What a `run --keep` needs: the runner returns to the shell, the stack stays
+  // up, and a `down` from another terminal still finds it.
+  it('lets the runner exit while a detached process keeps running', async () => {
+    const dir = logDir()
+    const script = join(dir, 'runner.mts')
+    const supervisorModule = pathToFileURL(resolve(import.meta.dirname, 'processes.ts')).href
+    writeFileSync(
+      script,
+      [
+        `import { ProcessSupervisor } from ${JSON.stringify(supervisorModule)}`,
+        `const supervisor = new ProcessSupervisor({ logDir: ${JSON.stringify(dir)}, detachable: true, log: () => {} })`,
+        `supervisor.start('server', process.execPath, ['-e', 'console.log("up"); setInterval(() => {}, 1000)'])`,
+        'await new Promise((done) => setTimeout(done, 300))',
+        'supervisor.writeState()',
+        'supervisor.detach()',
+      ].join('\n'),
+    )
+
+    const runner = spawn(node, [script], { stdio: 'ignore' })
+    const exitCode = await new Promise<number | null>((done, fail) => {
+      const timer = setTimeout(
+        () => fail(new Error('the runner did not exit after detach()')),
+        10_000,
+      )
+      runner.once('close', (code) => {
+        clearTimeout(timer)
+        done(code)
+      })
+    })
+    expect(exitCode).toBe(0)
+
+    const supervisor = new ProcessSupervisor({ logDir: dir, log: () => {} })
+    const recorded = supervisor.recordedProcesses()
+    expect(recorded.map(({ name }) => name)).toEqual(['server'])
+    expect(readFileSync(join(dir, 'server.log'), 'utf8')).toContain('up')
+
+    supervisor.stopAll(recorded)
+    await expect
+      .poll(() => processStartTime(recorded[0]?.pid ?? 0), { timeout: 10_000 })
+      .toBeUndefined()
+  }, 30_000)
 })
 
 describe('processStartTime', () => {
