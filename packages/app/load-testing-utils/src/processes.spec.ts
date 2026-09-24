@@ -57,6 +57,30 @@ describe('ProcessSupervisor', () => {
     expect(supervisor.runningProcesses()).toEqual([])
   })
 
+  it('joins a line that arrives in two chunks', async () => {
+    const log = vi.fn()
+    const supervisor = new ProcessSupervisor({ logDir: logDir(), log })
+
+    const child = supervisor.start('split', node, [
+      '-e',
+      'process.stdout.write("hel"); setTimeout(() => process.stdout.write("lo\\nwor"), 50); setTimeout(() => process.stdout.write("ld"), 100)',
+    ])
+    await exited(child)
+
+    expect(log.mock.calls.map(([line]) => line)).toEqual(['[split] hello', '[split] world'])
+  })
+
+  it('logs a process that fails to start instead of throwing', async () => {
+    const log = vi.fn()
+    const supervisor = new ProcessSupervisor({ logDir: logDir(), log })
+
+    const child = supervisor.start('missing', 'surely-not-a-command-here', [])
+    await new Promise((done) => child.once('error', done))
+
+    expect(log).toHaveBeenCalledWith(expect.stringMatching(/^\[missing\] failed to start: /))
+    expect(supervisor.runningProcesses()).toEqual([])
+  })
+
   it('passes env and cwd to started processes', async () => {
     const dir = logDir()
     const log = vi.fn()

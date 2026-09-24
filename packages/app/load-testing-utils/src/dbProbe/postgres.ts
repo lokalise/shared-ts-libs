@@ -20,22 +20,29 @@ export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapsh
     FROM pg_stat_database WHERE datname = current_database()
   `
   const rowsWritten = Number(database?.written ?? 0)
+  const committedTransactions = (reason: string): EngineSnapshot => ({
+    available: true,
+    reason: `${reason}; counting committed transactions instead`,
+    statements: Number(database?.xact_commit ?? 0),
+    rowsReturned: Number(database?.tup_returned ?? 0),
+    rowsWritten,
+  })
 
-  if (!extension) {
-    return {
-      available: true,
-      reason: 'pg_stat_statements is not installed; counting committed transactions instead',
-      statements: Number(database?.xact_commit ?? 0),
-      rowsReturned: Number(database?.tup_returned ?? 0),
-      rowsWritten,
-    }
+  if (!extension) return committedTransactions('pg_stat_statements is not installed')
+
+  let totals: Record<string, unknown> | undefined
+  try {
+    const rows = await sql`
+      SELECT COALESCE(SUM(calls), 0) AS calls, COALESCE(SUM(rows), 0) AS rows
+      FROM pg_stat_statements
+      WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
+    `
+    totals = rows[0]
+  } catch (error) {
+    // Created in the database but missing from shared_preload_libraries, the view refuses reads.
+    const message = error instanceof Error ? error.message : String(error)
+    return committedTransactions(`pg_stat_statements is not readable (${message})`)
   }
-
-  const [totals] = await sql`
-    SELECT COALESCE(SUM(calls), 0) AS calls, COALESCE(SUM(rows), 0) AS rows
-    FROM pg_stat_statements
-    WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
-  `
 
   return {
     available: true,

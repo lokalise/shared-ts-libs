@@ -102,14 +102,25 @@ export class ProcessSupervisor {
       env: { ...process.env, ...options.env },
       shell,
     })
-    for (const stream of [child.stdout, child.stderr]) {
-      stream?.on('data', (chunk: Buffer) => {
-        logFile.write(chunk)
-        for (const line of chunk.toString().split('\n')) {
-          if (line.trim() !== '') this.log(`[${name}] ${line.trimEnd()}`)
-        }
-      })
+    const relay = (line: string) => {
+      if (line.trim() !== '') this.log(`[${name}] ${line.trimEnd()}`)
     }
+    for (const stream of [child.stdout, child.stderr]) {
+      if (!stream) continue
+      stream.setEncoding('utf8')
+      // A chunk can end mid-line, so the tail waits for the rest of its line.
+      let pending = ''
+      stream.on('data', (chunk: string) => {
+        logFile.write(chunk)
+        const lines = (pending + chunk).split('\n')
+        pending = lines.pop() ?? ''
+        for (const line of lines) relay(line)
+      })
+      stream.on('end', () => relay(pending))
+    }
+    child.on('error', (error) => {
+      this.log(`[${name}] failed to start: ${error.message}`)
+    })
     child.on('close', (code, signal) => {
       logFile.end()
       if (code !== 0 && code !== null) this.log(`[${name}] exited with ${code}`)

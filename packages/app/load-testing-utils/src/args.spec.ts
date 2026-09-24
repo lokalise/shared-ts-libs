@@ -44,6 +44,15 @@ describe('parseRunnerArgs', () => {
     expect(passthrough).toEqual(['-e', 'JOURNEYS=search', '--vus', '5'])
   })
 
+  it('drops a bare -- in front of the command', () => {
+    expect(parseRunnerArgs(['--', 'up', '--keep'], spec)).toMatchObject({
+      command: 'up',
+      flags: { keep: true },
+      passthrough: [],
+    })
+    expect(parseRunnerArgs(['--'], spec).command).toBe('run')
+  })
+
   it('rejects an unknown command with the help text', () => {
     expect(() => parseRunnerArgs(['launch'], spec)).toThrow(
       'unknown command "launch"\nUsage: runner <run|up|down>',

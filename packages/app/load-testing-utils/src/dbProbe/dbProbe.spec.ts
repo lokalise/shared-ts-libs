@@ -94,6 +94,22 @@ describe('readPostgresStats', () => {
     })
   })
 
+  it('falls back to committed transactions when the extension exists but is not preloaded', async () => {
+    const { sql } = fakeSql((text) => {
+      if (text.includes('FROM pg_extension')) return [{ present: 1 }]
+      if (text.includes('FROM pg_stat_database')) return [database]
+      throw new Error('pg_stat_statements must be loaded via "shared_preload_libraries"')
+    })
+    await expect(readPostgresStats(sql, 5)).resolves.toEqual({
+      available: true,
+      reason:
+        'pg_stat_statements is not readable (pg_stat_statements must be loaded via "shared_preload_libraries"); counting committed transactions instead',
+      statements: 40,
+      rowsReturned: 400,
+      rowsWritten: 12,
+    })
+  })
+
   it('reports zeros when even pg_stat_database returns nothing', async () => {
     const { sql } = fakeSql(() => [])
     await expect(readPostgresStats(sql)).resolves.toMatchObject({
@@ -183,6 +199,21 @@ describe('createDbProbeServer', () => {
       },
     })
     expect(Object.keys(stats.engines)).toEqual(['Postgres', 'CockroachDB'])
+  })
+
+  it('reports an engine whose reader throws before returning a promise as unavailable', async () => {
+    const base = await start({
+      engines: {
+        Postgres: () => {
+          throw new Error('no connection')
+        },
+      },
+    })
+    const stats = (await (await fetch(`${base}/db-stats`)).json()) as ProbeSnapshot
+    expect(stats.engines.Postgres).toMatchObject({
+      available: false,
+      reason: 'Error: no connection',
+    })
   })
 
   it('defaults top to 0 and clamps at 50', async () => {

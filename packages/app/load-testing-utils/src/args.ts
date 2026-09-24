@@ -32,7 +32,7 @@ export function parseRunnerArgs<Command extends string, Flag extends string>(
   argv: string[],
   spec: RunnerArgsSpec<Command, Flag>,
 ): RunnerArgs<Command, Flag> {
-  const [first, ...rest] = argv
+  const [first, ...rest] = argv[0] === '--' ? argv.slice(1) : argv
   const command = (first ?? spec.defaultCommand ?? spec.commands[0]) as Command
   if (!spec.commands.includes(command)) {
     throw new Error(`unknown command "${command}"${spec.help ? `\n${spec.help}` : ''}`)

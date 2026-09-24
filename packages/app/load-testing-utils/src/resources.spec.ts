@@ -106,6 +106,21 @@ describe('diffResources', () => {
     expect(delta.gcSeconds).toBe(1)
   })
 
+  it('drops an engine whose statistics were reset mid-run, instead of printing negative counts', () => {
+    const delta = diffResources(before, {
+      ...before,
+      probe: {
+        at: 't1',
+        engines: {
+          Postgres: engine({ statements: 20, rowsReturned: 1200, rowsWritten: 15 }),
+          CockroachDB: engine({ statements: 9, rowsReturned: 60 }),
+        },
+      },
+    })
+    expect(delta.engines).toEqual({ CockroachDB: { statements: 4, rowsReturned: 10 } })
+    expect(delta.warnings).toEqual(['Postgres: its statistics were reset during the run'])
+  })
+
   it('warns about each missing source instead of reporting zeros', () => {
     expect(diffResources({}, {}).warnings).toEqual([
       'service metrics were not scraped; CPU, memory and GC are missing',

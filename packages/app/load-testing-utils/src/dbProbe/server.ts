@@ -48,9 +48,13 @@ export function createDbProbeServer(options: DbProbeServerOptions): Server {
 
     const top = parseTop(url.searchParams.get('top'), maxTop)
     void Promise.all(
+      // try rather than `.catch`, which misses a reader that throws before returning a promise.
       Object.entries(engines).map(async ([name, read]) => {
-        const snapshot = await read(top).catch((error: unknown) => unavailable(String(error)))
-        return [name, snapshot] as const
+        try {
+          return [name, await read(top)] as const
+        } catch (error) {
+          return [name, unavailable(String(error))] as const
+        }
       }),
     ).then((entries) => {
       const snapshot: ProbeSnapshot = {

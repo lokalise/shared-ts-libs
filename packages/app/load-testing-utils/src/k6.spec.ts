@@ -128,6 +128,17 @@ describe('buildK6Command', () => {
     expect(args.at(-1)).toBe('/k6/a/b.js')
   })
 
+  it('mounts a relative host directory by its absolute path', () => {
+    const { args } = buildK6Command({
+      mode: 'docker',
+      cwd: resolve('tests/perf'),
+      script: 's.js',
+      docker: { hostDir: 'tests/perf' },
+    })
+    expect(args).toContain(`${resolve('tests/perf')}:/k6`)
+    expect(args.at(-1)).toBe('/k6/s.js')
+  })
+
   it('refuses a script outside the mount, and docker mode without docker options', () => {
     expect(() =>
       buildK6Command({
@@ -137,6 +148,14 @@ describe('buildK6Command', () => {
         docker: { hostDir: perfDir },
       }),
     ).toThrow(/outside the directory mounted/)
+    expect(
+      buildK6Command({
+        mode: 'docker',
+        cwd: perfDir,
+        script: join('..perf', 's.js'),
+        docker: { hostDir: perfDir },
+      }).args.at(-1),
+    ).toBe('/k6/..perf/s.js')
     expect(() => buildK6Command({ mode: 'docker', cwd: k6Dir, script: 's.js' })).toThrow(
       /needs the docker options/,
     )

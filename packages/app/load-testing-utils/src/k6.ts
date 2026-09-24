@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { posix, relative, resolve, sep } from 'node:path'
+import { isAbsolute, posix, relative, resolve, sep } from 'node:path'
 import type { ProcessSupervisor } from './processes.ts'
 
 export type K6Mode = 'auto' | 'local' | 'docker'
@@ -75,7 +75,8 @@ export type K6Command = {
 
 const toContainerPath = (hostDir: string, containerDir: string, path: string): string => {
   const inside = relative(hostDir, path)
-  if (inside.startsWith('..')) {
+  // On Windows a path on another drive has no relative form and comes back absolute.
+  if (inside === '..' || inside.startsWith(`..${sep}`) || isAbsolute(inside)) {
     throw new Error(`${path} is outside the directory mounted into the k6 container (${hostDir})`)
   }
   return posix.join(containerDir, ...inside.split(sep).filter((part) => part !== ''))
@@ -95,7 +96,9 @@ export function buildK6Command(options: K6RunOptions): K6Command {
   }
 
   if (!options.docker) throw new Error('k6 in docker mode needs the docker options')
-  const { hostDir, containerDir = '/k6', image = DEFAULT_K6_IMAGE } = options.docker
+  const { containerDir = '/k6', image = DEFAULT_K6_IMAGE } = options.docker
+  // `docker run -v` does not take a relative path as a bind mount.
+  const hostDir = resolve(options.docker.hostDir)
   const workdir = toContainerPath(hostDir, containerDir, resolve(options.cwd))
   const script = toContainerPath(hostDir, containerDir, resolve(options.cwd, options.script))
 

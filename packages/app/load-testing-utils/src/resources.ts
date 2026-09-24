@@ -151,10 +151,14 @@ function diffEngine(
   }
   if (after.reason) warnings.push(`${name}: ${after.reason}`)
 
-  const engine: EngineDelta = {
-    statements: after.statements - before.statements,
-    rowsReturned: after.rowsReturned - before.rowsReturned,
+  const statements = subtract(after.statements, before.statements)
+  const rowsReturned = subtract(after.rowsReturned, before.rowsReturned)
+  if (statements === undefined || rowsReturned === undefined) {
+    warnings.push(`${name}: its statistics were reset during the run`)
+    return undefined
   }
+
+  const engine: EngineDelta = { statements, rowsReturned }
   const rowsWritten = subtract(after.rowsWritten, before.rowsWritten)
   if (rowsWritten !== undefined) engine.rowsWritten = rowsWritten
   return engine
