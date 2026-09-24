@@ -51,7 +51,7 @@ export {
   stopProcess,
   toSpawnable,
 } from './processes.ts'
-export { appendReportSection, type ReportWatch, watchReport } from './report.ts'
+export { appendReportSection, type ReportWatch, resetReport } from './report.ts'
 export {
   diffResources,
   type EngineDelta,

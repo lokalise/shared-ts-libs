@@ -1,8 +1,8 @@
-import { mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { appendReportSection, watchReport } from './report.ts'
+import { appendReportSection, resetReport } from './report.ts'
 
 const reportPath = () => join(mkdtempSync(join(tmpdir(), 'report-')), 'k6-report.md')
 
@@ -26,38 +26,27 @@ describe('appendReportSection', () => {
   })
 })
 
-describe('watchReport', () => {
-  // An hour back, so a rewrite cannot land on the same timestamp.
-  const aged = (path: string) => {
-    const past = new Date(Date.now() - 3_600_000)
-    utimesSync(path, past, past)
-  }
-
-  it('sees a report k6 created', () => {
+describe('resetReport', () => {
+  it("removes the previous run's report", () => {
     const path = reportPath()
-    const watch = watchReport(path)
+    writeFileSync(path, '# Previous run\n')
+    const watch = resetReport(path)
+
+    expect(existsSync(path)).toBe(false)
     expect(watch.written()).toBe(false)
+  })
+
+  it('reads a run that wrote nothing as not written', () => {
+    const watch = resetReport(reportPath())
+    expect(watch.written()).toBe(false)
+  })
+
+  it('sees a report k6 wrote after the reset', () => {
+    const path = reportPath()
+    writeFileSync(path, '# Previous run\n')
+    const watch = resetReport(path)
 
     writeFileSync(path, '# Run\n')
     expect(watch.written()).toBe(true)
-  })
-
-  it('sees a previous report rewritten', () => {
-    const path = reportPath()
-    writeFileSync(path, '# Previous run\n')
-    aged(path)
-    const watch = watchReport(path)
-
-    writeFileSync(path, '# Run\n')
-    expect(watch.written()).toBe(true)
-  })
-
-  it('does not mistake the previous report for a fresh one', () => {
-    const path = reportPath()
-    writeFileSync(path, '# Previous run\n')
-    aged(path)
-    const watch = watchReport(path)
-
-    expect(watch.written()).toBe(false)
   })
 })

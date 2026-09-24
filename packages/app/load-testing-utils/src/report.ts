@@ -1,9 +1,9 @@
-import { appendFileSync, existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 
 /**
  * Appends a markdown section to a report k6 wrote, such as the resource table
  * from `formatResourcesSection`. Creates the file when there is none, for a
- * script with no `handleSummary` of its own; check {@link watchReport} first
+ * script with no `handleSummary` of its own; call {@link resetReport} first
  * so a failed run does not extend the previous run's report.
  */
 export function appendReportSection(reportPath: string, section: string): void {
@@ -16,25 +16,17 @@ export function appendReportSection(reportPath: string, section: string): void {
 }
 
 export type ReportWatch = {
-  /** Whether the report was created or rewritten since {@link watchReport}. */
+  /** Whether a report exists, which after {@link resetReport} means this run wrote it. */
   written(): boolean
 }
 
-const modifiedAt = (path: string): number | undefined =>
-  statSync(path, { throwIfNoEntry: false })?.mtimeMs
-
 /**
- * Notes the report's modification time before a run, to tell afterwards
- * whether k6 wrote it. k6 writes its summary from `handleSummary`, which it
- * never reaches when the script fails to initialise (an unknown scenario, a
- * syntax error), and the file on disk is then the previous run's.
+ * Removes the previous run's report before a run, so that afterwards a file at
+ * `reportPath` can only be one k6 wrote in this run. k6 writes its summary from
+ * `handleSummary`, which it never reaches when the script fails to initialise
+ * (an unknown scenario, a syntax error).
  */
-export function watchReport(reportPath: string): ReportWatch {
-  const before = modifiedAt(reportPath)
-  return {
-    written: () => {
-      const after = modifiedAt(reportPath)
-      return after !== undefined && after !== before
-    },
-  }
+export function resetReport(reportPath: string): ReportWatch {
+  rmSync(reportPath, { force: true })
+  return { written: () => existsSync(reportPath) }
 }

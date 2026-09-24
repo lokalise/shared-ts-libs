@@ -44,11 +44,11 @@ import {
   parseRunnerArgs,
   ProcessSupervisor,
   refuseIfPortTaken,
+  resetReport,
   resolveK6Mode,
   runK6,
   scrapeResources,
   waitForHealth,
-  watchReport,
 } from '@lokalise/load-testing-utils'
 
 const args = parseRunnerArgs(process.argv.slice(2), {
@@ -76,7 +76,7 @@ if (args.command === 'down') {
   supervisor.writeState()
 
   const reportPath = join(K6_DIR, 'k6-report.md')
-  const report = watchReport(reportPath)
+  const report = resetReport(reportPath)
   const { result: exitCode, delta } = await measureResources(
     () => scrapeResources({ metricsUrl: 'http://localhost:9080/metrics' }),
     () =>
@@ -93,7 +93,7 @@ if (args.command === 'down') {
     appendReportSection(reportPath, formatResourcesSection(delta))
     process.exitCode = exitCode
   } else {
-    // k6 failed before its summary, so the file on disk is the previous run's.
+    // k6 failed before its summary, so there is no report to extend.
     process.exitCode = exitCode || 1
   }
 
@@ -203,12 +203,12 @@ before and after `body` and returns the difference, and
 `appendReportSection(reportPath, section)`.
 
 k6 writes its report from `handleSummary`, which it never reaches when the
-script fails to initialise (an unknown scenario, a syntax error). Take
-`watchReport(reportPath)` before the run and ask `written()` after it: when it
-says no, the report on disk is the previous run's, so skip the section and exit
-non-zero. That check assumes the script has a `handleSummary` writing to
-`reportPath`; for one without, skip `watchReport` and let `appendReportSection`
-create the file.
+script fails to initialise (an unknown scenario, a syntax error). Call
+`resetReport(reportPath)` before the run: it removes the previous run's report,
+so `written()` afterwards only says yes for a file this run wrote. When it says
+no, skip the section and exit non-zero. That check assumes the script has a
+`handleSummary` writing to `reportPath`; for one without, skip `resetReport` and
+let `appendReportSection` create the file.
 
 It reports CPU and GC seconds as differences, resident memory, heap and event
 loop lag p99 at the end, and statements and rows per database engine. A counter
