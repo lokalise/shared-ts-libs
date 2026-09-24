@@ -239,10 +239,13 @@ as its reason, and does not cost the report the others. `GET /health` answers
 - **Postgres** reads `pg_stat_statements`, which has to be in
   `shared_preload_libraries` and created in the database. Without it the probe
   counts committed transactions from `pg_stat_database` and says so in `reason`.
-  Written rows always come from `pg_stat_database`. The probe starts each of its
-  queries with `PROBE_QUERY_MARKER` and leaves them out of the
-  `pg_stat_statements` figures. The fallback can't filter them: it counts two
-  transactions per scrape from the probe itself.
+  Written rows always come from `pg_stat_database`. The probe puts
+  `PROBE_QUERY_MARKER` after the first keyword of each of its queries and leaves
+  them out of the `pg_stat_statements` figures. After, because the view stores a
+  statement from its first token, so a leading comment never reaches it. Rows
+  of roles the probe may not read (`<insufficient privilege>`) are left out too;
+  grant its role `pg_read_all_stats` to count them. The fallback can't filter
+  the probe: it counts two transactions per scrape from the probe itself.
 - **CockroachDB** reads `crdb_internal.node_statement_statistics`, which needs
   no extension and resets when the node restarts. From v26.1 it refuses
   `crdb_internal` reads unless the session sets `allow_unsafe_internals`, as

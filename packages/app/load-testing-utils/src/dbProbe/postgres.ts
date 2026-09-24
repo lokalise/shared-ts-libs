@@ -3,12 +3,20 @@ import type { EngineSnapshot, StatementStats } from '../types.ts'
 import { normalizeStatement } from './statements.ts'
 
 /**
- * Leads every query the probe sends. `pg_stat_statements` keeps the text a
- * statement was first seen with, comment included, and no application runs
- * these catalog queries, so the marker keeps the probe out of its own totals.
+ * Sits right after the first keyword of every query the probe sends, which is
+ * what keeps the probe out of its own totals. Not in front of it:
+ * `pg_stat_statements` stores a statement from its first token, so a leading
+ * comment never reaches the view.
  */
 export const PROBE_QUERY_MARKER = '/* load-testing-probe */'
-const notFromProbe = `${PROBE_QUERY_MARKER}%`
+const fromProbe = `%${PROBE_QUERY_MARKER}%`
+
+/**
+ * What the view shows for a statement run by a role this one may not read. It
+ * carries no text and no query id, so it can only ever be noise in a report.
+ * Granting the probe's role `pg_read_all_stats` makes those statements readable.
+ */
+const UNREADABLE = '<insufficient privilege>'
 
 /**
  * Postgres counters for the connected database.
@@ -25,10 +33,10 @@ const notFromProbe = `${PROBE_QUERY_MARKER}%`
  */
 export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapshot> {
   const [extension] = await sql`
-    /* load-testing-probe */ SELECT 1 AS present FROM pg_extension WHERE extname = 'pg_stat_statements'
+    SELECT /* load-testing-probe */ 1 AS present FROM pg_extension WHERE extname = 'pg_stat_statements'
   `
   const [database] = await sql`
-    /* load-testing-probe */ SELECT xact_commit, tup_returned, tup_inserted + tup_updated + tup_deleted AS written
+    SELECT /* load-testing-probe */ xact_commit, tup_returned, tup_inserted + tup_updated + tup_deleted AS written
     FROM pg_stat_database WHERE datname = current_database()
   `
   const rowsWritten = Number(database?.written ?? 0)
@@ -45,10 +53,11 @@ export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapsh
   let totals: Record<string, unknown> | undefined
   try {
     const rows = await sql`
-      /* load-testing-probe */ SELECT COALESCE(SUM(calls), 0) AS calls, COALESCE(SUM(rows), 0) AS rows
+      SELECT /* load-testing-probe */ COALESCE(SUM(calls), 0) AS calls, COALESCE(SUM(rows), 0) AS rows
       FROM pg_stat_statements
       WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
-        AND query NOT LIKE ${notFromProbe}
+        AND query NOT LIKE ${fromProbe}
+        AND query <> ${UNREADABLE}
     `
     totals = rows[0]
   } catch (error) {
@@ -75,10 +84,11 @@ export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapsh
  */
 async function readPostgresTop(sql: Sql, top: number): Promise<StatementStats[]> {
   const rows = await sql`
-    /* load-testing-probe */ SELECT query, calls, total_exec_time AS total_ms
+    SELECT /* load-testing-probe */ query, calls, total_exec_time AS total_ms
     FROM pg_stat_statements
     WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
-      AND query NOT LIKE ${notFromProbe}
+      AND query NOT LIKE ${fromProbe}
+      AND query <> ${UNREADABLE}
     ORDER BY total_exec_time DESC
     LIMIT ${top}
   `

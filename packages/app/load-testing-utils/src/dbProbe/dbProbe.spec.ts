@@ -70,20 +70,36 @@ describe('readPostgresStats', () => {
       rowsWritten: 12,
       topStatements: [{ query: 'SELECT $1', calls: 3, totalMs: 1.5 }],
     })
-    expect(calls.at(-1)?.values).toEqual([`${PROBE_QUERY_MARKER}%`, 5])
+    expect(calls.at(-1)?.values).toEqual([`%${PROBE_QUERY_MARKER}%`, '<insufficient privilege>', 5])
   })
 
-  it('marks every query it sends and leaves marked statements out of the totals', async () => {
+  // pg_stat_statements stores a statement from its first token, so a marker in
+  // front of the keyword never reaches the view; one after it does.
+  it('marks every query after its first keyword and leaves marked statements out of the totals', async () => {
     const { sql, calls } = fakeSql((text) => (text.includes('FROM pg_extension') ? [{}] : []))
     await readPostgresStats(sql, 5)
 
     expect(calls).toHaveLength(4)
-    for (const { text } of calls) expect(text.trim().startsWith(PROBE_QUERY_MARKER)).toBe(true)
+    for (const { text } of calls) {
+      expect(text.trim().startsWith(`SELECT ${PROBE_QUERY_MARKER}`)).toBe(true)
+    }
     const fromStatements = calls.filter(({ text }) => text.includes('FROM pg_stat_statements'))
     expect(fromStatements).toHaveLength(2)
     for (const { text, values } of fromStatements) {
       expect(text).toContain('query NOT LIKE ?')
-      expect(values[0]).toBe(`${PROBE_QUERY_MARKER}%`)
+      expect(values[0]).toBe(`%${PROBE_QUERY_MARKER}%`)
+    }
+  })
+
+  it('leaves out the rows of roles it may not read', async () => {
+    const { sql, calls } = fakeSql((text) => (text.includes('FROM pg_extension') ? [{}] : []))
+    await readPostgresStats(sql, 5)
+
+    for (const { text, values } of calls.filter(({ text }) =>
+      text.includes('FROM pg_stat_statements'),
+    )) {
+      expect(text).toContain('query <> ?')
+      expect(values[1]).toBe('<insufficient privilege>')
     }
   })
 
