@@ -1,8 +1,15 @@
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
-import { ProcessSupervisor, processStartTime, stopProcess, toSpawnable } from './processes.ts'
+import {
+  localBin,
+  ProcessSupervisor,
+  processStartTime,
+  stopProcess,
+  toSpawnable,
+} from './processes.ts'
 
 const node = process.execPath
 const logDir = () => mkdtempSync(join(tmpdir(), 'supervisor-'))
@@ -31,6 +38,72 @@ describe('toSpawnable', () => {
       shell: true,
     })
     expect(toSpawnable('bun', ['x'], 'win32', ['bun']).shell).toBe(true)
+  })
+})
+
+describe('localBin', () => {
+  const install = (root: string, name: string, bin: unknown) => {
+    const dir = join(root, 'node_modules', name)
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name, bin }))
+    return dir
+  }
+
+  it('runs the bin with this node, from the nearest node_modules above the start', () => {
+    const root = logDir()
+    const tsx = install(root, 'tsx', './dist/cli.mjs')
+    const from = join(root, 'services', 'api')
+    mkdirSync(from, { recursive: true })
+
+    expect(localBin('tsx', ['src/server.ts'], { from })).toEqual({
+      command: node,
+      args: [join(tsx, 'dist/cli.mjs'), 'src/server.ts'],
+    })
+  })
+
+  it('prefers a closer install over a hoisted one', () => {
+    const root = logDir()
+    install(root, 'prisma', { prisma: 'hoisted.js' })
+    const service = join(root, 'service')
+    const local = install(service, 'prisma', { prisma: 'local.js' })
+
+    expect(localBin('prisma', [], { from: service }).args).toEqual([join(local, 'local.js')])
+  })
+
+  it('picks a bin by name, defaulting to the unscoped package name', () => {
+    const root = logDir()
+    const pkg = install(root, '@scope/tool', { tool: 'tool.js', other: 'other.js' })
+
+    expect(localBin('@scope/tool', [], { from: root }).args).toEqual([join(pkg, 'tool.js')])
+    expect(localBin('@scope/tool', [], { from: root, bin: 'other' }).args).toEqual([
+      join(pkg, 'other.js'),
+    ])
+    expect(() => localBin('@scope/tool', [], { from: root, bin: 'missing' })).toThrow(
+      /has no "missing" bin/,
+    )
+  })
+
+  it('takes the only bin a package declares, whatever it is called', () => {
+    const root = logDir()
+    const pkg = install(root, 'drizzle-kit', { 'drizzle-kit-cli': './bin.cjs' })
+
+    expect(localBin('drizzle-kit', [], { from: root }).args).toEqual([join(pkg, 'bin.cjs')])
+  })
+
+  it('names a package that is not installed', () => {
+    expect(() => localBin('not-installed-anywhere', [], { from: logDir() })).toThrow(
+      /not-installed-anywhere is not installed/,
+    )
+  })
+
+  it('runs for real with the node it was given', () => {
+    const root = logDir()
+    const pkg = install(root, 'echo-bin', 'echo.js')
+    writeFileSync(join(pkg, 'echo.js'), 'console.log(process.argv.slice(2).join(","))')
+    const { command, args } = localBin('echo-bin', ['a b', 'c'], { from: root })
+
+    const result = spawnSync(command, args, { encoding: 'utf8' })
+    expect(result.stdout.trim()).toBe('a b,c')
   })
 })
 

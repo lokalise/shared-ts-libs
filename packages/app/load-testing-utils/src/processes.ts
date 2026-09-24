@@ -7,7 +7,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 
 const writeLine = (line: string): void => {
   process.stdout.write(`${line}\n`)
@@ -65,6 +65,57 @@ export function toSpawnable(
   return platform === 'win32' && shimCommands.includes(command)
     ? { file: [command, ...args].join(' '), argv: [], shell: true }
     : { file: command, argv: args, shell: false }
+}
+
+export type LocalBinOptions = {
+  /** Where the lookup starts: `node_modules` here, then in every parent. */
+  from: string
+  /** @default the package name without its scope */
+  bin?: string
+  /** @default process.execPath */
+  node?: string
+}
+
+export type LocalBinCommand = { command: string; args: string[] }
+
+/**
+ * The command that runs a package's bin with Node directly, which is what
+ * `npx <bin>` does without needing npm installed. No `.cmd` shim is involved
+ * on Windows, so the command spawns without a shell and its arguments may
+ * contain spaces.
+ */
+export function localBin(
+  packageName: string,
+  args: string[],
+  options: LocalBinOptions,
+): LocalBinCommand {
+  const binName = options.bin ?? packageName.replace(/^@[^/]+\//, '')
+  const packageDir = findPackageDir(packageName, options.from)
+  const entry = binEntry(readBinField(packageDir), binName)
+  if (!entry) throw new Error(`${packageName} has no "${binName}" bin`)
+  return { command: options.node ?? process.execPath, args: [join(packageDir, entry), ...args] }
+}
+
+function findPackageDir(packageName: string, from: string): string {
+  for (let dir = resolve(from); ; dir = dirname(dir)) {
+    const packageDir = join(dir, 'node_modules', packageName)
+    if (existsSync(join(packageDir, 'package.json'))) return packageDir
+    if (dirname(dir) === dir) {
+      throw new Error(`${packageName} is not installed in or above ${from}`)
+    }
+  }
+}
+
+type BinField = string | Record<string, string> | undefined
+
+const readBinField = (packageDir: string): BinField =>
+  (JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8')) as { bin?: BinField }).bin
+
+/** The named bin, or the only one when the package declares a single bin under another name. */
+function binEntry(bin: BinField, binName: string): string | undefined {
+  if (typeof bin === 'string' || bin === undefined) return bin
+  const entries = Object.values(bin)
+  return bin[binName] ?? (entries.length === 1 ? entries[0] : undefined)
 }
 
 /**

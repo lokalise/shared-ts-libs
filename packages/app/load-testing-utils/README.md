@@ -39,6 +39,7 @@ import {
   composeUp,
   formatResourcesSection,
   k6TargetHost,
+  localBin,
   measureResources,
   parseRunnerArgs,
   ProcessSupervisor,
@@ -47,6 +48,7 @@ import {
   runK6,
   scrapeResources,
   waitForHealth,
+  watchReport,
 } from '@lokalise/load-testing-utils'
 
 const args = parseRunnerArgs(process.argv.slice(2), {
@@ -65,13 +67,16 @@ if (args.command === 'down') {
   await refuseIfPortTaken('service', 3000, { hint: 'run with --no-service to measure it' })
   composeUp(supervisor, compose)
   // migrations and seeding: service-specific
-  supervisor.start('service', 'npx', ['tsx', 'src/server.ts'], {
+  const tsx = localBin('tsx', ['src/server.ts'], { from: SERVICE_DIR })
+  supervisor.start('service', tsx.command, tsx.args, {
     cwd: SERVICE_DIR,
     env: { ...perfEnv, ...bindAddressEnv(k6Mode, ['APP_BIND_ADDRESS']) },
   })
   await waitForHealth('service', 'http://localhost:3000/health')
   supervisor.writeState()
 
+  const reportPath = join(K6_DIR, 'k6-report.md')
+  const report = watchReport(reportPath)
   const { result: exitCode, delta } = await measureResources(
     () => scrapeResources({ metricsUrl: 'http://localhost:9080/metrics' }),
     () =>
@@ -84,8 +89,13 @@ if (args.command === 'down') {
         docker: { hostDir: PERF_DIR },
       }),
   )
-  appendReportSection(join(K6_DIR, 'k6-report.md'), formatResourcesSection(delta))
-  process.exitCode = exitCode
+  if (report.written()) {
+    appendReportSection(reportPath, formatResourcesSection(delta))
+    process.exitCode = exitCode
+  } else {
+    // k6 failed before its summary, so the file on disk is the previous run's.
+    process.exitCode = exitCode || 1
+  }
 
   if (!args.flags.keep) {
     supervisor.stopAll()
@@ -115,6 +125,12 @@ spawn without a shell. The supervisor sends those through `cmd.exe` as a single
 line (override the list with `shimCommands`), so their arguments must not
 contain spaces. Stopping a process there kills its whole tree with
 `taskkill /T /F`, because a shim leaves the real process one level down.
+
+`localBin(packageName, args, { from })` avoids both the shim and `npx`, which a
+Node install without npm does not have. It finds the package in `node_modules`
+from `from` upwards and returns `{ command, args }` that run its bin with
+`process.execPath`, so the arguments may contain spaces. Pass `bin` when the
+package declares more than one.
 
 ## Containers
 
@@ -168,6 +184,9 @@ Anything service-specific, such as swapping a database name in a DSN, is a
 - a bare `--` (pnpm's separator) is dropped
 - everything else goes to `passthrough`, in order, for `k6 run`
 
+In PowerShell, quote a k6 value that contains a comma: `-e 'JOURNEYS=a,b'`.
+Unquoted, PowerShell takes the comma for its array operator and k6 receives `a b`.
+
 `splitValueArgs(args, ['items'])` takes `--items=50` out of the passthrough as
 `['--items', '50']`, for a seeder that reads that form. k6 exits on a flag it
 does not know, so those must not reach it.
@@ -180,6 +199,12 @@ service's Prometheus endpoint (prom-client default metrics) and the
 before and after `body` and returns the difference, and
 `formatResourcesSection(delta)` renders it as markdown for
 `appendReportSection(reportPath, section)`.
+
+k6 writes its report from `handleSummary`, which it never reaches when the
+script fails to initialise (an unknown scenario, a syntax error). Take
+`watchReport(reportPath)` before the run and ask `written()` after it: when it
+says no, the report on disk is the previous run's, so skip the section and exit
+non-zero.
 
 It reports CPU and GC seconds as differences, resident memory, heap and event
 loop lag p99 at the end, and statements and rows per database engine. A counter

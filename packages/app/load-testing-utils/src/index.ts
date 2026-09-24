@@ -38,6 +38,9 @@ export {
 } from './k6.ts'
 export {
   DEFAULT_SHIM_COMMANDS,
+  type LocalBinCommand,
+  type LocalBinOptions,
+  localBin,
   ProcessSupervisor,
   type ProcessSupervisorOptions,
   type RecordedProcess,
@@ -48,7 +51,7 @@ export {
   stopProcess,
   toSpawnable,
 } from './processes.ts'
-export { appendReportSection } from './report.ts'
+export { appendReportSection, type ReportWatch, watchReport } from './report.ts'
 export {
   diffResources,
   type EngineDelta,
