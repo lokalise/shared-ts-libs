@@ -45,6 +45,7 @@ jobs:
             ["packages/app/frontend-http-client"]="@lokalise/frontend-http-client"
             ["packages/app/healthcheck-utils"]="@lokalise/healthcheck-utils"
             ["packages/app/id-utils"]="@lokalise/id-utils"
+            ["packages/app/load-testing-utils"]="@lokalise/load-testing-utils"
             ["packages/app/metrics-utils"]="@lokalise/metrics-utils"
             ["packages/app/non-translatable-markup"]="@lokalise/non-translatable-markup"
             ["packages/app/odata-mapper"]="@lokalise/odata-mapper"
