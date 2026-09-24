@@ -11,11 +11,8 @@ const targetsByBatchSize = new Map<number, TargetRow[]>()
 let iteration = 0
 
 // Spreads the targets over the whole large tenant rather than its first rows.
-const loadTargets = async (batchSize: number): Promise<TargetRow[]> => {
-  const [{ rows } = { rows: '0' }] = await client.unsafe<{ rows: string }[]>(
-    `SELECT count(*) AS rows FROM ${BENCH_TABLE} WHERE project_id = ${tenantIdSql(0)}`,
-  )
-  const step = Math.floor(Number(rows) / batchSize)
+const loadTargets = (rows: number, batchSize: number): Promise<TargetRow[]> => {
+  const step = Math.floor(rows / batchSize)
   if (step < 1) {
     throw new Error(`Tenant 0 has ${rows} rows, fewer than a batch of ${batchSize}; run bench:seed`)
   }
@@ -33,8 +30,11 @@ const targets = (batchSize: number) => {
 }
 
 beforeAll(async () => {
+  const [{ rows } = { rows: '0' }] = await client.unsafe<{ rows: string }[]>(
+    `SELECT count(*) AS rows FROM ${BENCH_TABLE} WHERE project_id = ${tenantIdSql(0)}`,
+  )
   for (const batchSize of BATCH_SIZES) {
-    targetsByBatchSize.set(batchSize, await loadTargets(batchSize))
+    targetsByBatchSize.set(batchSize, await loadTargets(Number(rows), batchSize))
   }
 })
 

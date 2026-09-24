@@ -2,6 +2,7 @@ import { integer, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { getCockroachdbDatabaseUrl } from '../test/getCockroachdbDatabaseUrl.ts'
+import { getDatabaseUrl } from '../test/getDatabaseUrl.ts'
 
 export const BENCH_TABLE = 'bench_segment'
 
@@ -33,12 +34,24 @@ export const datasetSize = () => ({
   smallTenantRows: readPositiveInt('BENCH_SMALL_TENANT_ROWS', 1_000),
 })
 
+export type BenchDatabase = 'cockroachdb' | 'postgres'
+
+// `BENCH_DATABASE` picks which of the test databases the seed and the benchmark use.
+export const benchDatabase = (): BenchDatabase => {
+  const raw = process.env.BENCH_DATABASE ?? 'cockroachdb'
+  if (raw !== 'cockroachdb' && raw !== 'postgres') {
+    throw new Error(`BENCH_DATABASE must be "cockroachdb" or "postgres", got "${raw}"`)
+  }
+  return raw
+}
+
 // Deterministic, so the benchmark finds the tenants without reading them back.
 // `tenant` is a SQL expression, so a whole range of tenants can be seeded in one INSERT.
 export const tenantIdSql = (tenant: string | number) =>
   `md5('bench-tenant-' || (${tenant})::text)::uuid`
 
 export const createBenchClient = () => {
-  const client = postgres(getCockroachdbDatabaseUrl(), { onnotice: () => {} })
+  const url = benchDatabase() === 'postgres' ? getDatabaseUrl() : getCockroachdbDatabaseUrl()
+  const client = postgres(url, { onnotice: () => {} })
   return { client, db: drizzle({ client }) }
 }
