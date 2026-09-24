@@ -10,6 +10,8 @@ export type DbProbeServerOptions = {
   engines: Record<string, EngineReader>
   /** Upper bound on `?top=`. @default 50 */
   maxTop?: number
+  /** How many statements `?statements=all` reads at most. @default 5000, `pg_stat_statements.max` */
+  maxStatements?: number
 }
 
 const json = (response: ServerResponse, status: number, body: unknown) => {
@@ -22,9 +24,10 @@ const json = (response: ServerResponse, status: number, body: unknown) => {
  * read before and after a k6 run. A route rather than a connection because k6
  * has no database client without a custom binary.
  *
- *   GET /health            200
- *   GET /db-stats          a {@link ProbeSnapshot}
- *   GET /db-stats?top=10   plus each engine's most expensive statements
+ *   GET /health                  200
+ *   GET /db-stats                a {@link ProbeSnapshot}
+ *   GET /db-stats?top=10         plus each engine's most expensive statements
+ *   GET /db-stats?statements=all plus every statement, for a report to diff
  *
  * An engine that throws is reported as unavailable with the error as its
  * reason, so one missing database does not cost the report the other.
@@ -32,7 +35,7 @@ const json = (response: ServerResponse, status: number, body: unknown) => {
  * Returned unstarted: call `listen` on it.
  */
 export function createDbProbeServer(options: DbProbeServerOptions): Server {
-  const { engines, maxTop = 50 } = options
+  const { engines, maxTop = 50, maxStatements = 5000 } = options
 
   return createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://localhost')
@@ -47,11 +50,23 @@ export function createDbProbeServer(options: DbProbeServerOptions): Server {
     }
 
     const top = parseTop(url.searchParams.get('top'), maxTop)
+    const all = url.searchParams.get('statements') === 'all'
+    // One read serves both: the full list is already ranked, so the top N is its head.
+    const readEngine = async (read: EngineReader): Promise<EngineSnapshot> => {
+      if (!all) return await read(top)
+      const { topStatements = [], ...counters } = await read(maxStatements)
+      return {
+        ...counters,
+        ...(top > 0 ? { topStatements: topStatements.slice(0, top) } : {}),
+        allStatements: topStatements,
+      }
+    }
+
     void Promise.all(
       // try rather than `.catch`, which misses a reader that throws before returning a promise.
       Object.entries(engines).map(async ([name, read]) => {
         try {
-          return [name, await read(top)] as const
+          return [name, await readEngine(read)] as const
         } catch (error) {
           return [name, unavailable(String(error))] as const
         }

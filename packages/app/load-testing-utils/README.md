@@ -45,6 +45,7 @@ import {
   refuseIfPortTaken,
   resolveK6Mode,
   runK6,
+  scrapeMetrics,
   scrapeResources,
   waitForHealth,
 } from '@lokalise/load-testing-utils'
@@ -72,8 +73,9 @@ if (args.command === 'down') {
   await waitForHealth('service', 'http://localhost:3000/health')
   supervisor.writeState()
 
+  const metricsUrl = 'http://localhost:9080/metrics'
   const { result: exitCode, delta } = await measureResources(
-    () => scrapeResources({ metricsUrl: 'http://localhost:9080/metrics' }),
+    () => scrapeResources({ metricsUrl, probeUrl: 'http://localhost:3323/db-stats?statements=all' }),
     () =>
       runK6(supervisor, {
         mode: k6Mode,
@@ -83,6 +85,7 @@ if (args.command === 'down') {
         env: { BASE_URL: `http://${k6TargetHost(k6Mode)}:3000` },
         docker: { hostDir: PERF_DIR },
       }),
+    { sampleMetrics: () => scrapeMetrics(metricsUrl) },
   )
   appendReportSection(join(K6_DIR, 'k6-report.md'), formatResourcesSection(delta))
   process.exitCode = exitCode
@@ -176,16 +179,31 @@ does not know, so those must not reach it.
 
 A k6 summary sees one end of a request. `scrapeResources` reads the other: the
 service's Prometheus endpoint (prom-client default metrics) and the
-[database probe](#database-probe). `measureResources(scrape, body)` scrapes
-before and after `body` and returns the difference, and
+[database probe](#database-probe). `measureResources(scrape, body, options?)`
+scrapes before and after `body` and returns the difference, and
 `formatResourcesSection(delta)` renders it as markdown for
 `appendReportSection(reportPath, section)`.
 
-It reports CPU and GC seconds as differences, resident memory, heap and event
-loop lag p99 at the end, and statements and rows per database engine. A counter
-that went backwards means the process restarted mid-run, and is left out rather
-than reported as a negative number. A source that did not answer becomes a
-warning line instead of a zero.
+It reports CPU and GC seconds as differences, resident memory and heap at the
+end, and statements and rows per database engine. A counter that went backwards
+means the process restarted mid-run, and is left out rather than reported as a
+negative number. A source that did not answer becomes a warning line instead of
+a zero.
+
+**Statements.** Each engine's table ranks what the run itself cost each
+statement: the difference between the two scrapes, per statement, most
+expensive first (`top`, default 10). That needs the probe read with
+`?statements=all` at both ends. Without it an engine gets a warning instead of
+a table, since the cumulative ranking puts migrations and earlier runs on top.
+
+**Event loop lag.** prom-client resets its event-loop histogram on every scrape,
+so each reading of `nodejs_eventloop_lag_p99_seconds` covers the time since the
+previous one. Pass `sampleMetrics` and `measureResources` scrapes the metrics
+every `sampleIntervalMs` (default 5000) while `body` runs. The report prints
+the worst and the median interval p99, the highest max, and the number of
+intervals. The closing scrape is the last interval. Without a sampler it is the
+only one, and the p99 covers the whole run, which averages a burst away.
+Anything else that scrapes the endpoint during the run splits an interval.
 
 ## Database probe
 
@@ -218,7 +236,9 @@ createDbProbeServer({
 `GET /db-stats?top=10` answers every engine's counters plus its ten most
 expensive statements, ranked by total database time rather than calls: a per-row
 write and the batched statement replacing it differ a hundredfold in calls and
-little in time. An engine that throws is reported as unavailable, with the error
+little in time. The figures are cumulative. `GET /db-stats?statements=all` adds
+every statement as `allStatements` (up to `maxStatements`, default 5000), which
+is what a report diffs. An engine that throws is reported as unavailable, with the error
 as its reason, and does not cost the report the others. `GET /health` answers
 200.
 
@@ -228,10 +248,17 @@ as its reason, and does not cost the report the others. `GET /health` answers
   Written rows always come from `pg_stat_database`. The probe starts each of its
   queries with `PROBE_QUERY_MARKER` and leaves them out of the
   `pg_stat_statements` figures. The fallback can't filter them: it counts two
-  transactions per scrape from the probe itself.
-- **CockroachDB** reads `crdb_internal.node_statement_statistics`, which needs
-  no extension and resets when the node restarts. From v26.1 it refuses
-  `crdb_internal` reads unless the session sets `allow_unsafe_internals`, as
-  above. Cockroach's own jobs and the probe's own session (matched by
-  `application_name`) are left out. It keeps no written-rows counter, so the
-  report omits that row for it.
+  transactions per scrape from the probe itself. Statements another role ran
+  come back as `<insufficient privilege>` unless the probe's role has
+  `pg_read_all_stats`.
+- **CockroachDB** reads `crdb_internal.statement_statistics`, which needs no
+  extension. It combines the node's in-memory statistics with the ones it has
+  flushed to `system.statement_statistics`. `node_statement_statistics` holds
+  only the in-memory half, which the node clears on every flush
+  (`sql.stats.flush.interval`, 10 minutes by default), so a run spanning a flush
+  would report a wrong difference. A statement shows up in the statistics about
+  half a second after it runs, so a scrape straight after a run can miss the last
+  of it. From v26.1 cockroach refuses `crdb_internal` reads unless the session
+  sets `allow_unsafe_internals`, as above. Cockroach's own jobs and the probe's
+  own session (matched by `application_name`) are left out. It keeps no
+  written-rows counter here, so the report omits that row for it.

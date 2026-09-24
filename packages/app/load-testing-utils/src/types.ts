@@ -1,5 +1,10 @@
 /** One statement, as a database's own statistics report it. */
 export type StatementStats = {
+  /**
+   * What identifies the statement across two snapshots: `queryid` on Postgres,
+   * the fingerprint on CockroachDB. A report falls back to `query` without it.
+   */
+  key?: string
   query: string
   calls: number
   totalMs: number
@@ -19,6 +24,11 @@ export type EngineSnapshot = {
   rowsWritten?: number
   /** Ranked by database time, most expensive first. */
   topStatements?: StatementStats[]
+  /**
+   * Every statement, for `?statements=all`. A report diffs two of these to rank
+   * what a run cost, which a top N from each end cannot do.
+   */
+  allStatements?: StatementStats[]
 }
 
 /** The body the database probe answers `GET /db-stats` with. */

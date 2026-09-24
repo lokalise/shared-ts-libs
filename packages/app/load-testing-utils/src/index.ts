@@ -50,15 +50,21 @@ export {
 } from './processes.ts'
 export { appendReportSection } from './report.ts'
 export {
+  type DiffResourcesOptions,
   diffResources,
+  diffStatements,
   type EngineDelta,
+  type EventLoopLag,
   formatResourcesSection,
+  type MeasureResourcesOptions,
   measureResources,
   type ProcessMetrics,
   parseProcessMetrics,
   type ResourceDelta,
   type ResourceSnapshot,
   type ScrapeResourcesOptions,
+  scrapeMetrics,
   scrapeResources,
+  summarizeEventLoopLag,
 } from './resources.ts'
 export type { EngineSnapshot, ProbeSnapshot, StatementStats } from './types.ts'

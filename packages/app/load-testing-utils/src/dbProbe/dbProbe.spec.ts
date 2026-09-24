@@ -57,9 +57,9 @@ describe('readPostgresStats', () => {
     const { sql, calls } = fakeSql((text) => {
       if (text.includes('FROM pg_extension')) return [{ present: 1 }]
       if (text.includes('FROM pg_stat_database')) return [database]
+      if (text.includes('GROUP BY queryid'))
+        return [{ key: '-42', query: 'SELECT\n  $1', calls: '3', total_ms: '1.5' }]
       if (text.includes('SUM(calls)')) return [{ calls: '90', rows: '900' }]
-      if (text.includes('ORDER BY total_exec_time'))
-        return [{ query: 'SELECT\n  $1', calls: '3', total_ms: '1.5' }]
       return []
     })
 
@@ -68,7 +68,7 @@ describe('readPostgresStats', () => {
       statements: 90,
       rowsReturned: 900,
       rowsWritten: 12,
-      topStatements: [{ query: 'SELECT $1', calls: 3, totalMs: 1.5 }],
+      topStatements: [{ key: '-42', query: 'SELECT $1', calls: 3, totalMs: 1.5 }],
     })
     expect(calls.at(-1)?.values).toEqual([`${PROBE_QUERY_MARKER}%`, 5])
   })
@@ -138,8 +138,9 @@ describe('readPostgresStats', () => {
 describe('readCockroachStats', () => {
   it('sums the statement statistics without a write counter, excluding its own session', async () => {
     const { sql, calls } = fakeSql((text) => {
-      if (text.includes('SUM(count)')) return [{ calls: '20', rows: '99.6' }]
-      return [{ query: 'SELECT  *  FROM t', count: '4', service_lat_avg: '0.002' }]
+      if (text.includes('GROUP BY fingerprint_id'))
+        return [{ key: 'ab12', query: 'SELECT  *  FROM t', calls: '4', total_ms: '8' }]
+      return [{ calls: '20', rows: '99.6' }]
     })
 
     const stats = await readCockroachStats(sql, { top: 3, probeApplicationName: 'mine' })
@@ -148,8 +149,12 @@ describe('readCockroachStats', () => {
       available: true,
       statements: 20,
       rowsReturned: 100,
-      topStatements: [{ query: 'SELECT * FROM t', calls: 4, totalMs: 8 }],
+      topStatements: [{ key: 'ab12', query: 'SELECT * FROM t', calls: 4, totalMs: 8 }],
     })
+    // The view that includes flushed statistics, so a flush mid-run does not reset the counts.
+    for (const { text } of calls) {
+      expect(text).toContain('FROM crdb_internal.statement_statistics')
+    }
     expect(calls[0]?.values).toEqual(['$ internal%', 'mine'])
     expect(calls[1]?.values).toEqual(['$ internal%', 'mine', 3])
   })
@@ -229,6 +234,59 @@ describe('createDbProbeServer', () => {
       available: false,
       reason: 'Error: no connection',
     })
+  })
+
+  it('hands every statement over for ?statements=all, with the top N as its head', async () => {
+    const tops: number[] = []
+    const ranked = [
+      { key: 'a', query: 'A', calls: 1, totalMs: 3 },
+      { key: 'b', query: 'B', calls: 1, totalMs: 2 },
+      { key: 'c', query: 'C', calls: 1, totalMs: 1 },
+    ]
+    const base = await start({
+      engines: {
+        Postgres: (top) => {
+          tops.push(top)
+          return Promise.resolve({
+            available: true,
+            statements: 3,
+            rowsReturned: 0,
+            topStatements: ranked,
+          })
+        },
+      },
+      maxStatements: 100,
+    })
+
+    const withTop = (await (
+      await fetch(`${base}/db-stats?statements=all&top=2`)
+    ).json()) as ProbeSnapshot
+    const allOnly = (await (await fetch(`${base}/db-stats?statements=all`)).json()) as ProbeSnapshot
+
+    expect(tops).toEqual([100, 100])
+    expect(withTop.engines.Postgres).toEqual({
+      available: true,
+      statements: 3,
+      rowsReturned: 0,
+      topStatements: ranked.slice(0, 2),
+      allStatements: ranked,
+    })
+    expect(allOnly.engines.Postgres).toEqual({
+      available: true,
+      statements: 3,
+      rowsReturned: 0,
+      allStatements: ranked,
+    })
+  })
+
+  it('reports an empty list for ?statements=all when the reader returns no statements', async () => {
+    const base = await start({
+      engines: {
+        Postgres: () => Promise.resolve({ available: true, statements: 0, rowsReturned: 0 }),
+      },
+    })
+    const stats = (await (await fetch(`${base}/db-stats?statements=all`)).json()) as ProbeSnapshot
+    expect(stats.engines.Postgres?.allStatements).toEqual([])
   })
 
   it('defaults top to 0 and clamps at 50', async () => {
