@@ -56,8 +56,12 @@ export {
   measureResources,
   type ProcessMetrics,
   parseProcessMetrics,
+  type ReadRunTotalsFileOptions,
   type ResourceDelta,
   type ResourceSnapshot,
+  type RunTotals,
+  readRunTotals,
+  readRunTotalsFile,
   type ScrapeResourcesOptions,
   scrapeResources,
 } from './resources.ts'

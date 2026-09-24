@@ -1,5 +1,8 @@
+import { mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { fetchJson, fetchText } from './http.ts'
 import {
@@ -8,6 +11,8 @@ import {
   measureResources,
   parseProcessMetrics,
   type ResourceSnapshot,
+  readRunTotals,
+  readRunTotalsFile,
   scrapeResources,
 } from './resources.ts'
 import type { EngineSnapshot } from './types.ts'
@@ -217,6 +222,81 @@ describe('formatResourcesSection', () => {
   })
 })
 
+describe('formatResourcesSection with run totals', () => {
+  const delta = { cpuSeconds: 124.8, engines: {}, topStatements: {}, warnings: [] }
+
+  it('divides CPU by the run for the share of a core and the cost of a request', () => {
+    const section = formatResourcesSection(delta, { seconds: 120, requests: 77_499 })
+
+    expect(section).toContain(
+      '| CPU seconds | 124.80 |\n| CPU, share of one core | 104% |\n| CPU per request | 1.61 ms |',
+    )
+  })
+
+  it('leaves the ratios out without totals, or without CPU', () => {
+    expect(formatResourcesSection(delta)).not.toContain('share of')
+    expect(
+      formatResourcesSection({ ...delta, cpuSeconds: undefined }, { seconds: 1, requests: 1 }),
+    ).not.toContain('share of')
+  })
+})
+
+const SUMMARY = {
+  state: { testRunDurationMs: 121_500 },
+  metrics: { http_reqs: { values: { count: 77_499, rate: 637.9 } } },
+}
+
+describe('readRunTotals', () => {
+  it('reads the duration and request count out of a k6 summary', () => {
+    expect(readRunTotals(SUMMARY)).toEqual({ seconds: 121.5, requests: 77_499 })
+  })
+
+  it.each([
+    ['nothing', null],
+    ['no state', { metrics: SUMMARY.metrics }],
+    ['no requests', { state: SUMMARY.state, metrics: {} }],
+    ['zero requests', { state: SUMMARY.state, metrics: { http_reqs: { values: { count: 0 } } } }],
+    ['zero duration', { state: { testRunDurationMs: 0 }, metrics: SUMMARY.metrics }],
+  ])('returns nothing for %s', (_, summary) => {
+    expect(readRunTotals(summary)).toBeUndefined()
+  })
+})
+
+describe('readRunTotalsFile', () => {
+  const dirs: string[] = []
+  const summaryFile = (contents: string) => {
+    const dir = mkdtempSync(join(tmpdir(), 'run-totals-'))
+    dirs.push(dir)
+    const path = join(dir, 'k6-summary.json')
+    writeFileSync(path, contents)
+    return path
+  }
+  afterEach(() => {
+    for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('reads a summary file', () => {
+    expect(readRunTotalsFile(summaryFile(JSON.stringify(SUMMARY)))).toEqual({
+      seconds: 121.5,
+      requests: 77_499,
+    })
+  })
+
+  it('ignores a summary older than the run', () => {
+    const path = summaryFile(JSON.stringify(SUMMARY))
+    const anHourAgo = new Date(Date.now() - 3_600_000)
+    utimesSync(path, anHourAgo, anHourAgo)
+
+    expect(readRunTotalsFile(path, { writtenSince: Date.now() - 60_000 })).toBeUndefined()
+    expect(readRunTotalsFile(path, { writtenSince: anHourAgo.getTime() - 60_000 })).toBeDefined()
+  })
+
+  it('returns nothing for a missing file or one that is not JSON', () => {
+    expect(readRunTotalsFile(join(tmpdir(), 'no-such-dir', 'k6-summary.json'))).toBeUndefined()
+    expect(readRunTotalsFile(summaryFile('{ truncated'))).toBeUndefined()
+  })
+})
+
 const servers: Server[] = []
 
 async function serve(routes: Record<string, [number, string]>): Promise<string> {
@@ -262,7 +342,8 @@ describe('scrapeResources and measureResources', () => {
     await expect(scrapeResources({})).resolves.toEqual({ metrics: undefined, probe: undefined })
 
     let cpu = 1
-    const { result, delta } = await measureResources(
+    const beforeCall = Date.now()
+    const { result, delta, startedAt } = await measureResources(
       () => Promise.resolve({ metrics: { cpuSeconds: cpu } }),
       () => {
         cpu = 4
@@ -271,5 +352,6 @@ describe('scrapeResources and measureResources', () => {
     )
     expect(result).toBe('done')
     expect(delta.cpuSeconds).toBe(3)
+    expect(startedAt).toBeGreaterThanOrEqual(beforeCall)
   })
 })

@@ -1,3 +1,4 @@
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import { fetchJson, fetchText } from './http.ts'
 import type { EngineSnapshot, ProbeSnapshot, StatementStats } from './types.ts'
 
@@ -171,7 +172,52 @@ function subtract(after: number | undefined, before: number | undefined): number
   return after >= before ? after - before : undefined
 }
 
-export function formatResourcesSection(delta: ResourceDelta): string {
+/** What k6 ran, for the rows that divide CPU by it. */
+export type RunTotals = {
+  /** Wall clock of the k6 test run, setup and teardown included. */
+  seconds: number
+  requests: number
+}
+
+/** Reads the totals out of a parsed k6 summary, the `data` `handleSummary` receives. */
+export function readRunTotals(summary: unknown): RunTotals | undefined {
+  const data = summary as {
+    state?: { testRunDurationMs?: unknown }
+    metrics?: { http_reqs?: { values?: { count?: unknown } } }
+  } | null
+  const durationMs = data?.state?.testRunDurationMs
+  const requests = data?.metrics?.http_reqs?.values?.count
+  if (typeof durationMs !== 'number' || durationMs <= 0) return undefined
+  if (typeof requests !== 'number' || requests <= 0) return undefined
+  return { seconds: durationMs / 1000, requests }
+}
+
+export type ReadRunTotalsFileOptions = {
+  /**
+   * Epoch ms. A summary older than this is ignored: k6 that failed before its
+   * summary leaves the previous run's file in place.
+   */
+  writtenSince?: number
+}
+
+/** `readRunTotals` over a summary written with `JSON.stringify(data)`, or nothing. */
+export function readRunTotalsFile(
+  summaryPath: string,
+  options: ReadRunTotalsFileOptions = {},
+): RunTotals | undefined {
+  if (!existsSync(summaryPath)) return undefined
+  if (options.writtenSince !== undefined && statSync(summaryPath).mtimeMs < options.writtenSince) {
+    return undefined
+  }
+  try {
+    return readRunTotals(JSON.parse(readFileSync(summaryPath, 'utf8')))
+  } catch {
+    return undefined
+  }
+}
+
+/** `run` adds CPU as a share of one core and CPU per request. */
+export function formatResourcesSection(delta: ResourceDelta, run?: RunTotals): string {
   const lines = ['## Resources', '', '| Measure | Value |', '|---|---|']
   const row = (label: string, value: string | undefined) => {
     if (value !== undefined) lines.push(`| ${label} | ${value} |`)
@@ -181,6 +227,11 @@ export function formatResourcesSection(delta: ResourceDelta): string {
     'CPU seconds',
     format(delta.cpuSeconds, (value) => value.toFixed(2)),
   )
+  if (run && delta.cpuSeconds !== undefined) {
+    // One core, so a single Node event loop saturates near 100%.
+    row('CPU, share of one core', `${((delta.cpuSeconds / run.seconds) * 100).toFixed(0)}%`)
+    row('CPU per request', `${((delta.cpuSeconds * 1000) / run.requests).toFixed(2)} ms`)
+  }
   row(
     'GC seconds',
     format(delta.gcSeconds, (value) => value.toFixed(2)),
@@ -246,13 +297,18 @@ export async function scrapeResources(options: ScrapeResourcesOptions): Promise<
   return { metrics, probe }
 }
 
-/** Scrapes before and after `body`, and returns what `body` returned with the difference. */
+/**
+ * Scrapes before and after `body`, and returns what `body` returned with the
+ * difference. `startedAt` (epoch ms, before the first scrape) is what
+ * `readRunTotalsFile` takes as `writtenSince`.
+ */
 export async function measureResources<T>(
   scrape: () => Promise<ResourceSnapshot>,
   body: () => Promise<T>,
-): Promise<{ result: T; delta: ResourceDelta }> {
+): Promise<{ result: T; delta: ResourceDelta; startedAt: number }> {
+  const startedAt = Date.now()
   const before = await scrape()
   const result = await body()
   const after = await scrape()
-  return { result, delta: diffResources(before, after) }
+  return { result, delta: diffResources(before, after), startedAt }
 }

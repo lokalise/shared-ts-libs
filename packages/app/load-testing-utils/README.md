@@ -42,6 +42,7 @@ import {
   measureResources,
   parseRunnerArgs,
   ProcessSupervisor,
+  readRunTotalsFile,
   refuseIfPortTaken,
   resolveK6Mode,
   runK6,
@@ -72,7 +73,7 @@ if (args.command === 'down') {
   await waitForHealth('service', 'http://localhost:3000/health')
   supervisor.writeState()
 
-  const { result: exitCode, delta } = await measureResources(
+  const { result: exitCode, delta, startedAt } = await measureResources(
     () => scrapeResources({ metricsUrl: 'http://localhost:9080/metrics' }),
     () =>
       runK6(supervisor, {
@@ -84,7 +85,8 @@ if (args.command === 'down') {
         docker: { hostDir: PERF_DIR },
       }),
   )
-  appendReportSection(join(K6_DIR, 'k6-report.md'), formatResourcesSection(delta))
+  const run = readRunTotalsFile(join(K6_DIR, 'k6-summary.json'), { writtenSince: startedAt })
+  appendReportSection(join(K6_DIR, 'k6-report.md'), formatResourcesSection(delta, run))
   process.exitCode = exitCode
 
   if (!args.flags.keep) {
@@ -186,6 +188,16 @@ loop lag p99 at the end, and statements and rows per database engine. A counter
 that went backwards means the process restarted mid-run, and is left out rather
 than reported as a negative number. A source that did not answer becomes a
 warning line instead of a zero.
+
+Given the run's totals, the section also reports CPU as a share of one core
+over the k6 run, and CPU milliseconds per request. A Node service on one event
+loop saturates near 100%, and CPU per request is the figure that compares
+across runs with different load. `formatResourcesSection(delta, run)` takes the
+totals as `{ seconds, requests }`. `readRunTotals(data)` reads them from a k6
+summary object, and `readRunTotalsFile(path, { writtenSince })` from the JSON a
+`handleSummary` wrote, ignoring a file older than `writtenSince` so a k6 that
+failed before its summary does not report the previous run's numbers.
+`measureResources` returns `startedAt` for that.
 
 ## Database probe
 
