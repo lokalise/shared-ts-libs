@@ -63,11 +63,13 @@ Both scripts use `vitest.bench.config.ts`, which extends `vitest.config.ts`. `vi
 Save a run of the baseline, then compare the change against it. For example, to measure the working tree against `main`:
 
 ```bash
+cp src/bulk-update/prismaBulkUpdate.ts prismaBulkUpdate.ts.wip
 git show main:packages/app/prisma-utils/src/bulk-update/prismaBulkUpdate.ts > src/bulk-update/prismaBulkUpdate.ts
-pnpm bench --outputJson before.json
-git checkout src/bulk-update/prismaBulkUpdate.ts
+pnpm bench --outputJson before.json; mv prismaBulkUpdate.ts.wip src/bulk-update/prismaBulkUpdate.ts
 pnpm bench --compare before.json
 ```
+
+The copy keeps uncommitted edits to the file, and the `;` puts it back even when the baseline run fails.
 
 The compare run prints each result next to its baseline with the speed ratio. Benchmark before and after on the same database and the same seed. On Postgres, run `VACUUM ANALYZE bench_segment` before each run, so the dead rows the previous run left behind do not favour whichever version goes first. Other containers busy on the same machine show up as noise in the timings.
 
