@@ -14,6 +14,9 @@ type Column = {
   type: string // SQL column type
 }
 
+// `typeof` results for which `a === b` guarantees both bind to the same SQL value.
+const COMPARABLE_VALUE_TYPES = new Set<string>(['string', 'number', 'boolean', 'bigint'])
+
 export type BulkUpdateEntry<T> = {
   where: T
   data: T
@@ -57,6 +60,7 @@ const getColumns = (table: PgTable, columnNames: string[]): Column[] => {
 
 const prepareSqlValuesExpressions = (
   whereColumns: Column[],
+  valuesWhereColumns: Column[],
   dataColumns: Column[],
   entries: BulkUpdateEntry<Record<string, unknown>>[],
 ) => {
@@ -67,17 +71,15 @@ const prepareSqlValuesExpressions = (
       )
     }
 
-    const sqlWhereValues = whereColumns.map((whereConditionColumn) => {
-      const whereConditionValue = entry.where[whereConditionColumn.key]
+    if (whereColumns.some((column) => entry.where[column.key] === undefined)) {
+      throw new Error(
+        `Mismatch in 'where' columns. Expected [${whereColumns.map((c) => c.key)}], got [${Object.keys(entry.where)}]`,
+      )
+    }
 
-      if (whereConditionValue === undefined) {
-        throw new Error(
-          `Mismatch in 'where' columns. Expected [${whereColumns.map((c) => c.key)}], got [${Object.keys(entry.where)}]`,
-        )
-      }
-
-      return toSqlCastValue(whereConditionValue, whereConditionColumn.type)
-    })
+    const sqlWhereValues = valuesWhereColumns.map((column) =>
+      toSqlCastValue(entry.where[column.key], column.type),
+    )
 
     if (dataColumns.length !== Object.keys(entry.data).length) {
       throw new Error(
@@ -97,29 +99,56 @@ const prepareSqlValuesExpressions = (
       return toSqlCastValue(setExpressionValue, setExpressionColumn.type)
     })
 
-    return sql`(${sql.join(sqlWhereValues, sql.raw(','))},${sql.join(sqlSetValues, sql.raw(','))})`
+    return sql`(${sql.join([...sqlWhereValues, ...sqlSetValues], sql.raw(','))})`
   })
 }
+
+/**
+ * Picks the "where" columns to emit as constant predicates, following the rule in
+ * the `drizzleFullBulkUpdate` docblock.
+ */
+const resolveConstantWhereColumns = (
+  whereColumns: Column[],
+  entries: BulkUpdateEntry<Record<string, unknown>>[],
+): Set<Column> =>
+  new Set(
+    whereColumns.filter((column) => {
+      const firstValue = entries[0]?.where[column.key]
+      return (
+        COMPARABLE_VALUE_TYPES.has(typeof firstValue) &&
+        entries.every((entry) => entry.where[column.key] === firstValue)
+      )
+    }),
+  )
 
 /**
  * Performs a full bulk update operation using Drizzle.
  * Example input:
  * [
- *   { where: { id: 1 }, data: { col1: 11, col2: 12 } },
- *   { where: { id: 2 }, data: { col1: 21, col2: 22 } },
+ *   { where: { tenant_id: 7, id: 1 }, data: { col1: 11, col2: 12 } },
+ *   { where: { tenant_id: 7, id: 2 }, data: { col1: 21, col2: 22 } },
  * ]
  *
  * Generates a query of the form:
  * ```sql
- * UPDATE "some_table" AS tbl
- * SET "col1" = updates."col1", "col2" = updates."col2"
+ * UPDATE "public"."some_table" AS tbl
+ * SET "col1" = updates."col1"::smallint, "col2" = updates."col2"::smallint
  * FROM (
  *   VALUES
- *     (11, 12, 1),
- *     (21, 22, 2)
+ *     ($1::smallint, $2::smallint, $3::smallint),
+ *     ($4::smallint, $5::smallint, $6::smallint)
  * ) AS updates("id", "col1", "col2")
- * WHERE tbl."id" = updates."id"
+ * WHERE tbl."tenant_id" = $7::smallint AND tbl."id" = updates."id"::smallint
  * ```
+ *
+ * A "where" column whose value is the same on every entry (`tenant_id` above) is
+ * emitted as a constant predicate instead of a `VALUES` column. Joining a tenant
+ * column from `VALUES` lets CockroachDB plan a lookup join on a primary key that
+ * starts with it and read every row of the tenant; a constant lets it use the
+ * index on the other key. A value counts as the same only when it is a string,
+ * number, boolean or bigint and is `===` to the first entry's value. Anything else
+ * (`null`, `Date`, objects) stays in `VALUES`. When every "where" column is
+ * constant, `VALUES` holds only the "data" columns.
  *
  * Notes:
  * - All `where` objects must have the same set of keys.
@@ -161,14 +190,24 @@ export const drizzleFullBulkUpdate = async <TTable extends PgTable>(
     return sql.raw(`"${column.name}" = updates."${column.name}"::${column.type}`)
   })
 
-  const sqlValuesExpressions = prepareSqlValuesExpressions(whereColumns, dataColumns, entries)
+  const constantWhereColumns = resolveConstantWhereColumns(whereColumns, entries)
+  const valuesWhereColumns = whereColumns.filter((column) => !constantWhereColumns.has(column))
 
-  const sqlValuesColumnAliases = [...whereColumns, ...dataColumns].map((column) => {
+  const sqlValuesExpressions = prepareSqlValuesExpressions(
+    whereColumns,
+    valuesWhereColumns,
+    dataColumns,
+    entries,
+  )
+
+  const sqlValuesColumnAliases = [...valuesWhereColumns, ...dataColumns].map((column) => {
     return sql.raw(`"${column.name}"`)
   })
 
   const sqlWhereConditions = whereColumns.map((column) => {
-    return sql.raw(`tbl."${column.name}" = updates."${column.name}"::${column.type}`)
+    return constantWhereColumns.has(column)
+      ? sql`${sql.raw(`tbl."${column.name}"`)} = ${toSqlCastValue(firstEntry.where[column.key as keyof typeof firstEntry.where], column.type)}`
+      : sql.raw(`tbl."${column.name}" = updates."${column.name}"::${column.type}`)
   })
 
   await drizzle.execute(sql`UPDATE ${sql.raw(`"${tableSchema}"."${tableName}"`)} AS tbl

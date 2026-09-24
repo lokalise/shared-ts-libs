@@ -1,5 +1,15 @@
-import { jsonb, pgSchema, pgTable, smallint, timestamp } from 'drizzle-orm/pg-core'
-import { drizzle } from 'drizzle-orm/postgres-js'
+import type { SQL } from 'drizzle-orm'
+import {
+  bigint,
+  boolean,
+  jsonb,
+  PgDialect,
+  pgSchema,
+  pgTable,
+  smallint,
+  timestamp,
+} from 'drizzle-orm/pg-core'
+import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { getDatabaseUrl } from '../test/getDatabaseUrl.ts'
@@ -7,6 +17,24 @@ import { drizzleFullBulkUpdate } from './drizzleFullBulkUpdate.ts'
 
 const sql = postgres(getDatabaseUrl())
 const db = drizzle({ client: sql })
+
+/**
+ * A database that records the statement instead of running it, so a test can
+ * assert the generated SQL. Whitespace is collapsed to keep expectations readable.
+ */
+const createCapturingDb = () => {
+  const dialect = new PgDialect()
+  const captured: { text?: string; params?: unknown[] } = {}
+  const capturingDb = {
+    execute: (query: SQL) => {
+      const rendered = dialect.sqlToQuery(query)
+      captured.text = rendered.sql.replace(/\s+/g, ' ').trim()
+      captured.params = rendered.params
+      return Promise.resolve([])
+    },
+  } as unknown as PostgresJsDatabase
+  return { capturingDb, captured }
+}
 
 describe('drizzleFullBulkUpdate', () => {
   const surrogateTableName = 'updates'
@@ -362,5 +390,166 @@ describe('drizzleFullBulkUpdate', () => {
       { id: 1, updated_at: ts1.toISOString() },
       { id: 2, updated_at: ts2.toISOString() },
     ])
+  })
+
+  describe('generated statement', () => {
+    // Only rendered, never created in the database.
+    const mixedTable = pgTable('test_mixed', {
+      id: smallint(),
+      status: standardStatusEnum(),
+      flag: boolean(),
+      big: bigint({ mode: 'bigint' }),
+      updated_at: timestamp({ withTimezone: true }),
+      col1: smallint(),
+    })
+
+    it('emits a where column with the same value on every entry as a constant predicate', async () => {
+      const { capturingDb, captured } = createCapturingDb()
+
+      await drizzleFullBulkUpdate(capturingDb, compositeTable, [
+        { where: { id1: 7, id2: 1 }, data: { col1: 11 } },
+        { where: { id1: 7, id2: 2 }, data: { col1: 21 } },
+      ])
+
+      expect(captured.text).toBe(
+        'UPDATE "public"."test_composite" AS tbl SET "col1" = updates."col1"::smallint ' +
+          'FROM ( VALUES ($1::smallint,$2::smallint), ($3::smallint,$4::smallint) ) AS updates("id2", "col1") ' +
+          'WHERE tbl."id1" = $5::smallint AND tbl."id2" = updates."id2"::smallint',
+      )
+      expect(captured.params).toEqual([1, 11, 2, 21, 7])
+    })
+
+    it('keeps the where columns in VALUES when their values differ', async () => {
+      const { capturingDb, captured } = createCapturingDb()
+
+      await drizzleFullBulkUpdate(capturingDb, compositeTable, [
+        { where: { id1: 1, id2: 1 }, data: { col1: 11 } },
+        { where: { id1: 2, id2: 2 }, data: { col1: 21 } },
+      ])
+
+      expect(captured.text).toContain('AS updates("id1", "id2", "col1")')
+      expect(captured.text).toContain(
+        'WHERE tbl."id1" = updates."id1"::smallint AND tbl."id2" = updates."id2"::smallint',
+      )
+    })
+
+    it('emits every where column as a constant when several entries share every where value', async () => {
+      const { capturingDb, captured } = createCapturingDb()
+
+      await drizzleFullBulkUpdate(capturingDb, compositeTable, [
+        { where: { id1: 7, id2: 3 }, data: { col1: 11 } },
+        { where: { id1: 7, id2: 3 }, data: { col1: 21 } },
+      ])
+
+      expect(captured.text).toContain('AS updates("col1")')
+      expect(captured.text).toContain('WHERE tbl."id1" = $3::smallint AND tbl."id2" = $4::smallint')
+      expect(captured.params).toEqual([11, 21, 7, 3])
+    })
+
+    it('emits every where column as a constant for a single entry', async () => {
+      const { capturingDb, captured } = createCapturingDb()
+
+      await drizzleFullBulkUpdate(capturingDb, compositeTable, [
+        { where: { id1: 7, id2: 3 }, data: { col1: 11 } },
+      ])
+
+      expect(captured.text).toBe(
+        'UPDATE "public"."test_composite" AS tbl SET "col1" = updates."col1"::smallint ' +
+          'FROM ( VALUES ($1::smallint) ) AS updates("col1") ' +
+          'WHERE tbl."id1" = $2::smallint AND tbl."id2" = $3::smallint',
+      )
+      expect(captured.params).toEqual([11, 7, 3])
+    })
+
+    it('treats uniform strings, booleans and bigints as constants', async () => {
+      const { capturingDb, captured } = createCapturingDb()
+
+      await drizzleFullBulkUpdate(capturingDb, mixedTable, [
+        { where: { id: 1, status: 'active', flag: true, big: 10n }, data: { col1: 11 } },
+        { where: { id: 2, status: 'active', flag: true, big: 10n }, data: { col1: 21 } },
+      ])
+
+      expect(captured.text).toContain('AS updates("id", "col1")')
+      expect(captured.text).toContain(
+        `tbl."status" = $5::"${enumSchema}".${standardStatusEnumName}`,
+      )
+      expect(captured.params).toEqual([1, 11, 2, 21, 'active', true, 10n])
+    })
+
+    it.each([
+      ['null', null],
+      ['a Date', new Date('2026-01-01T00:00:00Z')],
+    ])('keeps a where column in VALUES when the shared value is %s', async (_, value) => {
+      const { capturingDb, captured } = createCapturingDb()
+
+      await drizzleFullBulkUpdate(capturingDb, mixedTable, [
+        { where: { id: 1, updated_at: value }, data: { col1: 11 } },
+        { where: { id: 2, updated_at: value }, data: { col1: 21 } },
+      ])
+
+      expect(captured.text).toContain('AS updates("id", "updated_at", "col1")')
+    })
+  })
+
+  it('scopes the update by a where column shared by every entry', async () => {
+    await db.execute(
+      `INSERT INTO ${compositeTableName} (id1, id2, col1, col2) values (1, 1, 1, 1), (1, 2, 2, 2), (2, 3, 3, 3)`,
+    )
+
+    // The last row's id2 is listed under the wrong id1, so the shared id1
+    // predicate must keep it from being updated.
+    await drizzleFullBulkUpdate(db, compositeTable, [
+      { where: { id1: 1, id2: 1 }, data: { col1: 5 } },
+      { where: { id1: 1, id2: 2 }, data: { col1: 6 } },
+      { where: { id1: 1, id2: 3 }, data: { col1: 7 } },
+    ])
+
+    const updatedData = await db.execute(`SELECT * FROM ${compositeTableName}`)
+
+    expect(updatedData).toEqual(
+      expect.arrayContaining([
+        { id1: 1, id2: 1, col1: 5, col2: 1 },
+        { id1: 1, id2: 2, col1: 6, col2: 2 },
+        { id1: 2, id2: 3, col1: 3, col2: 3 },
+      ]),
+    )
+  })
+
+  it('updates a single entry matched only by constant predicates', async () => {
+    await db.execute(
+      `INSERT INTO ${compositeTableName} (id1, id2, col1, col2) values (1, 1, 1, 1), (1, 2, 2, 2)`,
+    )
+
+    await drizzleFullBulkUpdate(db, compositeTable, [
+      { where: { id1: 1, id2: 2 }, data: { col1: 9 } },
+    ])
+
+    const updatedData = await db.execute(`SELECT * FROM ${compositeTableName}`)
+
+    expect(updatedData).toEqual(
+      expect.arrayContaining([
+        { id1: 1, id2: 1, col1: 1, col2: 1 },
+        { id1: 1, id2: 2, col1: 9, col2: 2 },
+      ]),
+    )
+  })
+
+  it('updates a row once when several entries share every where value', async () => {
+    await db.execute(
+      `INSERT INTO ${compositeTableName} (id1, id2, col1, col2) values (1, 1, 1, 1), (1, 2, 2, 2)`,
+    )
+
+    await drizzleFullBulkUpdate(db, compositeTable, [
+      { where: { id1: 1, id2: 1 }, data: { col1: 5 } },
+      { where: { id1: 1, id2: 1 }, data: { col1: 6 } },
+    ])
+
+    const updatedData = (await db.execute(
+      `SELECT * FROM ${compositeTableName} ORDER BY id2`,
+    )) as unknown as { col1: number }[]
+
+    expect(updatedData).toHaveLength(2)
+    expect([5, 6]).toContain(updatedData[0]?.col1)
+    expect(updatedData[1]).toEqual({ id1: 1, id2: 2, col1: 2, col2: 2 })
   })
 })
