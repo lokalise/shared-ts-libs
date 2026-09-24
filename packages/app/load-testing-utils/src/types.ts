@@ -2,7 +2,8 @@
 export type StatementStats = {
   /**
    * What identifies the statement across two snapshots: `queryid` on Postgres,
-   * the fingerprint on CockroachDB. A report falls back to `query` without it.
+   * the fingerprint on CockroachDB. A report falls back to `query` without it,
+   * which is normalized and truncated, so two long statements can then match as one.
    */
   key?: string
   query: string
@@ -29,6 +30,12 @@ export type EngineSnapshot = {
    * what a run cost, which a top N from each end cannot do.
    */
   allStatements?: StatementStats[]
+  /**
+   * Set when `allStatements` stopped at the probe's `maxStatements`. A statement
+   * missing from such a list may still have a history, so a report cannot count
+   * all of it as the run's.
+   */
+  allStatementsTruncated?: boolean
 }
 
 /** The body the database probe answers `GET /db-stats` with. */

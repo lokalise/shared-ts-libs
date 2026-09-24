@@ -238,7 +238,9 @@ expensive statements, ranked by total database time rather than calls: a per-row
 write and the batched statement replacing it differ a hundredfold in calls and
 little in time. The figures are cumulative. `GET /db-stats?statements=all` adds
 every statement as `allStatements` (up to `maxStatements`, default 5000), which
-is what a report diffs. An engine that throws is reported as unavailable, with the error
+is what a report diffs. A list that stopped at `maxStatements` carries
+`allStatementsTruncated`, and a report then leaves out the statements missing
+from the opening list rather than count their whole history as the run's. An engine that throws is reported as unavailable, with the error
 as its reason, and does not cost the report the others. `GET /health` answers
 200.
 
@@ -250,7 +252,8 @@ as its reason, and does not cost the report the others. `GET /health` answers
   `pg_stat_statements` figures. The fallback can't filter them: it counts two
   transactions per scrape from the probe itself. Statements another role ran
   come back as `<insufficient privilege>` unless the probe's role has
-  `pg_read_all_stats`.
+  `pg_read_all_stats`. They still count in the totals, and the statements table
+  leaves them out with a `reason` saying how many.
 - **CockroachDB** reads `crdb_internal.statement_statistics`, which needs no
   extension. It combines the node's in-memory statistics with the ones it has
   flushed to `system.statement_statistics`. `node_statement_statistics` holds

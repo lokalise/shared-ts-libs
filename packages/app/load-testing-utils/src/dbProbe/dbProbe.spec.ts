@@ -87,6 +87,22 @@ describe('readPostgresStats', () => {
     }
   })
 
+  it('leaves statements hidden from its role out of the table, and says so', async () => {
+    const { sql, calls } = fakeSql((text) => {
+      if (text.includes('FROM pg_extension')) return [{ present: 1 }]
+      if (text.includes('SUM(calls)')) return [{ calls: '90', rows: '900', hidden: '7' }]
+      return []
+    })
+
+    await expect(readPostgresStats(sql, 5)).resolves.toMatchObject({
+      reason:
+        "7 statements are hidden from the probe's role and left out of the statements table; grant it pg_read_all_stats",
+      statements: 90,
+    })
+    expect(calls.at(-1)?.text).toContain('queryid IS NOT NULL')
+    await expect(readPostgresStats(sql)).resolves.not.toHaveProperty('reason')
+  })
+
   it('skips the statements table when top is 0, and tolerates empty results', async () => {
     const { sql, calls } = fakeSql((text) => (text.includes('FROM pg_extension') ? [{}] : []))
     await expect(readPostgresStats(sql)).resolves.toEqual({
@@ -276,6 +292,30 @@ describe('createDbProbeServer', () => {
       statements: 3,
       rowsReturned: 0,
       allStatements: ranked,
+    })
+  })
+
+  it('marks a ?statements=all list that stopped at maxStatements', async () => {
+    const ranked = [
+      { key: 'a', query: 'A', calls: 1, totalMs: 2 },
+      { key: 'b', query: 'B', calls: 1, totalMs: 1 },
+    ]
+    const base = await start({
+      engines: {
+        Postgres: (top) =>
+          Promise.resolve({
+            available: true,
+            statements: 2,
+            rowsReturned: 0,
+            topStatements: ranked.slice(0, top),
+          }),
+      },
+      maxStatements: 2,
+    })
+    const stats = (await (await fetch(`${base}/db-stats?statements=all`)).json()) as ProbeSnapshot
+    expect(stats.engines.Postgres).toMatchObject({
+      allStatements: ranked,
+      allStatementsTruncated: true,
     })
   })
 

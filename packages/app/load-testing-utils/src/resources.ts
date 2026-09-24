@@ -187,7 +187,18 @@ function diffEngineStatements(
   warnings: string[],
 ): StatementStats[] | undefined {
   if (after.allStatements && before?.allStatements) {
-    return diffStatements(before.allStatements, after.allStatements, top)
+    if (!before.allStatementsTruncated) {
+      return diffStatements(before.allStatements, after.allStatements, top)
+    }
+    // Missing from a capped list is not the same as new: its history would count as the run's.
+    const listed = new Set(before.allStatements.map(identify))
+    const known = after.allStatements.filter((statement) => listed.has(identify(statement)))
+    if (known.length < after.allStatements.length) {
+      warnings.push(
+        `${name}: statements outside the opening list are left out of the table, because the probe stopped at its maxStatements`,
+      )
+    }
+    return diffStatements(before.allStatements, known, top)
   }
   if (after.allStatements || before?.allStatements || after.topStatements?.length) {
     warnings.push(
@@ -237,7 +248,6 @@ export function diffStatements(
   after: StatementStats[],
   top = 10,
 ): StatementStats[] {
-  const identify = (statement: StatementStats) => statement.key ?? statement.query
   const earlier = new Map(before.map((statement) => [identify(statement), statement]))
 
   const changed: StatementStats[] = []
@@ -248,6 +258,10 @@ export function diffStatements(
     if (calls > 0 && totalMs >= 0) changed.push({ ...statement, calls, totalMs })
   }
   return changed.sort((a, b) => b.totalMs - a.totalMs).slice(0, top)
+}
+
+function identify(statement: StatementStats): string {
+  return statement.key ?? statement.query
 }
 
 /** One p99 per scrape, so the worst and the median interval, and the highest max. */
@@ -353,11 +367,17 @@ export async function scrapeMetrics(metricsUrl: string): Promise<ProcessMetrics 
   return text === undefined ? undefined : parseProcessMetrics(text)
 }
 
+/**
+ * `?statements=all` reads thousands of rows per engine, and on CockroachDB they
+ * include persisted history. Neither scrape runs during the load, so waiting is cheap.
+ */
+const PROBE_TIMEOUT_MS = 30_000
+
 /** One scrape of both sources. Either half is `undefined` when it did not answer. */
 export async function scrapeResources(options: ScrapeResourcesOptions): Promise<ResourceSnapshot> {
   const [metrics, probe] = await Promise.all([
     options.metricsUrl ? scrapeMetrics(options.metricsUrl) : undefined,
-    options.probeUrl ? fetchJson<ProbeSnapshot>(options.probeUrl) : undefined,
+    options.probeUrl ? fetchJson<ProbeSnapshot>(options.probeUrl, PROBE_TIMEOUT_MS) : undefined,
   ])
   return { metrics, probe }
 }
@@ -384,9 +404,15 @@ export async function measureResources<T>(
   body: () => Promise<T>,
   options: MeasureResourcesOptions = {},
 ): Promise<{ result: T; delta: ResourceDelta }> {
+  const { sampleIntervalMs = 5000 } = options
+  if (!Number.isFinite(sampleIntervalMs) || sampleIntervalMs <= 0) {
+    throw new Error(
+      `sampleIntervalMs must be a positive number of milliseconds, got ${sampleIntervalMs}`,
+    )
+  }
   const before = await scrape()
   const sampler = options.sampleMetrics
-    ? startSampling(options.sampleMetrics, options.sampleIntervalMs ?? 5000)
+    ? startSampling(options.sampleMetrics, sampleIntervalMs)
     : undefined
   let result: T
   try {

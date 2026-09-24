@@ -59,6 +59,7 @@ export function createDbProbeServer(options: DbProbeServerOptions): Server {
         ...counters,
         ...(top > 0 ? { topStatements: topStatements.slice(0, top) } : {}),
         allStatements: topStatements,
+        ...(topStatements.length >= maxStatements ? { allStatementsTruncated: true } : {}),
       }
     }
 

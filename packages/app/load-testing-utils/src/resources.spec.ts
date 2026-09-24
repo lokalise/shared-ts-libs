@@ -170,6 +170,41 @@ describe('diffResources', () => {
     ])
   })
 
+  it('leaves out a statement missing from a capped opening list, instead of counting its history', () => {
+    const delta = diffResources(
+      {
+        probe: {
+          at: 't0',
+          engines: {
+            CockroachDB: engine({
+              allStatements: [{ key: 'q1', query: 'SELECT 1', calls: 10, totalMs: 10 }],
+              allStatementsTruncated: true,
+            }),
+          },
+        },
+      },
+      {
+        probe: {
+          at: 't1',
+          engines: {
+            CockroachDB: engine({
+              allStatements: [
+                { key: 'old', query: 'SELECT old', calls: 9000, totalMs: 90000 },
+                { key: 'q1', query: 'SELECT 1', calls: 15, totalMs: 12 },
+              ],
+            }),
+          },
+        },
+      },
+    )
+    expect(delta.topStatements).toEqual({
+      CockroachDB: [{ key: 'q1', query: 'SELECT 1', calls: 5, totalMs: 2 }],
+    })
+    expect(delta.warnings.slice(1)).toEqual([
+      'CockroachDB: statements outside the opening list are left out of the table, because the probe stopped at its maxStatements',
+    ])
+  })
+
   it('drops a counter that went backwards, since that means a restart', () => {
     const delta = diffResources(before, { ...before, metrics: { cpuSeconds: 3, gcSeconds: 2 } })
     expect(delta.cpuSeconds).toBeUndefined()
@@ -441,6 +476,20 @@ describe('measureResources sampling', () => {
       p99WorstSeconds: 0.2,
       p99MedianSeconds: 0.1,
     })
+  })
+
+  it('refuses an interval that is not a positive number, before scraping', async () => {
+    let scraped = false
+    const scrape = () => {
+      scraped = true
+      return Promise.resolve({})
+    }
+    for (const sampleIntervalMs of [0, -5, Number.NaN]) {
+      await expect(
+        measureResources(scrape, () => Promise.resolve(), { sampleIntervalMs }),
+      ).rejects.toThrow('sampleIntervalMs must be a positive number')
+    }
+    expect(scraped).toBe(false)
   })
 
   it('stops sampling when the body throws', async () => {
