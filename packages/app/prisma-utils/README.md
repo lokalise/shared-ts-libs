@@ -154,10 +154,10 @@ import { prismaBulkUpdate } from '@lokalise/prisma-utils'
 
 await prismaBulkUpdate(prisma, 'segment', {
   dbDriver: 'CockroachDb',
-  typeByColumn: { id: 'uuid', value: 'text', words_count: 'int4' },
+  typeByColumn: { project_id: 'uuid', id: 'uuid', value: 'text', words_count: 'int4' },
 }, [
-  { where: { id: id1 }, data: { value: 'a', words_count: 1 } },
-  { where: { id: id2 }, data: { value: 'b', words_count: 2 } },
+  { where: { project_id: projectId, id: id1 }, data: { value: 'a', words_count: 1 } },
+  { where: { project_id: projectId, id: id2 }, data: { value: 'b', words_count: 2 } },
 ])
 ```
 
@@ -168,8 +168,10 @@ UPDATE "segment"
 SET "value" = updates."value"::text, "words_count" = updates."words_count"::int4
 FROM (VALUES ($1::uuid, $2::text, $3::int4), ($4::uuid, $5::text, $6::int4))
     AS updates("id", "value", "words_count")
-WHERE "segment"."id" = updates."id"::uuid
+WHERE "segment"."project_id" = $7::uuid AND "segment"."id" = updates."id"::uuid
 ```
+
+`project_id` has the same value on every entry, so it is emitted as a constant predicate instead of a `VALUES` column (see "Constant `where` columns" below).
 
 #### Parameters
 
@@ -200,5 +202,6 @@ const updated = await prismaBulkUpdate<{ id: string; value: string }>(
 )
 ```
 
-- **Limits** — at most 1000 entries per call, and the total bound parameters (`entries × (where columns + data columns)`) must not exceed 65535 — the shared protocol limit for PostgreSQL and CockroachDB. Both are validated up front. A column may not appear in both `where` and `data`.
+- **Constant `where` columns**: a `where` column whose value is the same on every entry becomes `"tbl"."col" = $n::type` instead of a `VALUES` column. With a tenant column such as `project_id` joined from `VALUES`, CockroachDB can pick a lookup join on a primary key that starts with it and read every row of the tenant; as a constant, the planner uses the index on the other key. A value counts as the same only when it is a string, number, boolean or bigint, is `===` to the first entry's value, and the column is not `json`/`jsonb`; `null`, `Date`, `Buffer` and objects stay in `VALUES`. When several entries share every `where` value, the first `where` column stays in `VALUES`. A single entry has all of its eligible `where` columns emitted as constants.
+- **Limits**: at most 1000 entries per call, and the total bound parameters (`entries × (VALUES where columns + data columns) + constant where columns`) must not exceed 65535, the shared protocol limit for PostgreSQL and CockroachDB. Both are validated up front. A column may not appear in both `where` and `data`.
 - **Trusted identifiers** — `tableName`, all column names, the column types, and the `returning` keys/aliases are interpolated as raw SQL identifiers (only row values are bound). They must be static, trusted configuration, never end-user input.

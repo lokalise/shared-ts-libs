@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { PrismaPg } from '@prisma/adapter-pg'
+import type { Sql } from '@prisma/client/runtime/client'
 import { PrismaClient } from 'db-client/client.ts'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { cleanTables, DB_MODEL } from '../../test/DbCleaner.ts'
@@ -25,6 +26,21 @@ const cockroachOptions = (returning?: Record<string, string>): PrismaBulkUpdateO
   typeByColumn,
   returning,
 })
+
+/**
+ * A client that records the statement instead of running it, so a test can
+ * assert the generated SQL. Whitespace is collapsed to keep expectations readable.
+ */
+const createCapturingClient = () => {
+  const captured: { text?: string; values?: unknown[] } = {}
+  const capture = (query: Sql) => {
+    captured.text = query.text.replace(/\s+/g, ' ').trim()
+    captured.values = query.values
+    return Promise.resolve([])
+  }
+  const client = { $executeRaw: capture, $queryRaw: capture } as unknown as PrismaClient
+  return { client, captured }
+}
 
 describe('prismaBulkUpdate', () => {
   let prisma: PrismaClient
@@ -103,6 +119,32 @@ describe('prismaBulkUpdate', () => {
           entries,
         ),
       ).toThrow('Bulk update would use 70700 bind parameters')
+    })
+
+    it('counts a uniform where column as a single bind parameter', () => {
+      // 700 entries × (1 varying where + 100 data) + 1 constant group_id = 70701.
+      const dataColumnNames = Array.from({ length: 100 }, (_, index) => `c${index}`)
+      const wideTypeByColumn = Object.fromEntries(dataColumnNames.map((name) => [name, 'int4']))
+      const data = Object.fromEntries(dataColumnNames.map((name, index) => [name, index]))
+      const groupId = randomUUID()
+      const entries = Array.from({ length: 700 }, () => ({
+        where: { group_id: groupId, id: randomUUID() },
+        data,
+      }))
+
+      expect(() =>
+        prismaBulkUpdate(
+          prisma,
+          TABLE,
+          {
+            dbDriver: DbDriverEnum.COCKROACH_DB,
+            typeByColumn: { id: 'uuid', group_id: 'uuid', ...wideTypeByColumn },
+          },
+          entries,
+        ),
+      ).toThrow(
+        'Bulk update would use 70701 bind parameters (700 entries × 101 columns + 1 constant "where" values)',
+      )
     })
 
     it('throws an error if where is empty', () => {
@@ -193,6 +235,133 @@ describe('prismaBulkUpdate', () => {
     })
   })
 
+  describe('generated statement', () => {
+    const groupId = '00000000-0000-0000-0000-00000000000a'
+    const id1 = '00000000-0000-0000-0000-000000000001'
+    const id2 = '00000000-0000-0000-0000-000000000002'
+
+    it('emits a where column with the same value on every entry as a constant predicate', async () => {
+      const { client, captured } = createCapturingClient()
+
+      await prismaBulkUpdate(client, TABLE, cockroachOptions(), [
+        { where: { group_id: groupId, id: id1 }, data: { value: 'a' } },
+        { where: { group_id: groupId, id: id2 }, data: { value: 'b' } },
+      ])
+
+      expect(captured.text).toBe(
+        'UPDATE "bulk_update_item" SET "value" = updates."value"::text ' +
+          'FROM ( VALUES ($1::uuid,$2::text), ($3::uuid,$4::text) ) AS updates("id", "value") ' +
+          'WHERE "bulk_update_item"."group_id" = $5::uuid AND "bulk_update_item"."id" = updates."id"::uuid',
+      )
+      expect(captured.values).toEqual([id1, 'a', id2, 'b', groupId])
+    })
+
+    it('keeps the where columns in VALUES when their values differ', async () => {
+      const { client, captured } = createCapturingClient()
+
+      await prismaBulkUpdate(client, TABLE, cockroachOptions(), [
+        { where: { group_id: randomUUID(), number: 0 }, data: { value: 'a' } },
+        { where: { group_id: randomUUID(), number: 1 }, data: { value: 'b' } },
+      ])
+
+      expect(captured.text).toContain('AS updates("group_id", "number", "value")')
+      expect(captured.text).toContain(
+        'WHERE "bulk_update_item"."group_id" = updates."group_id"::uuid ' +
+          'AND "bulk_update_item"."number" = updates."number"::int4',
+      )
+    })
+
+    it('keeps the first where column in VALUES when several entries share every where value', async () => {
+      const { client, captured } = createCapturingClient()
+
+      await prismaBulkUpdate(client, TABLE, cockroachOptions(), [
+        { where: { group_id: groupId, number: 3 }, data: { value: 'a' } },
+        { where: { group_id: groupId, number: 3 }, data: { value: 'b' } },
+      ])
+
+      expect(captured.text).toContain('AS updates("group_id", "value")')
+      expect(captured.text).toContain(
+        'WHERE "bulk_update_item"."group_id" = updates."group_id"::uuid ' +
+          'AND "bulk_update_item"."number" = $5::int4',
+      )
+      expect(captured.values).toEqual([groupId, 'a', groupId, 'b', 3])
+    })
+
+    it('emits every where column as a constant for a single entry', async () => {
+      const { client, captured } = createCapturingClient()
+
+      await prismaBulkUpdate(client, TABLE, cockroachOptions(), [
+        { where: { group_id: groupId, number: 3 }, data: { value: 'a' } },
+      ])
+
+      expect(captured.text).toBe(
+        'UPDATE "bulk_update_item" SET "value" = updates."value"::text ' +
+          'FROM ( VALUES ($1::text) ) AS updates("value") ' +
+          'WHERE "bulk_update_item"."group_id" = $2::uuid AND "bulk_update_item"."number" = $3::int4',
+      )
+      expect(captured.values).toEqual(['a', groupId, 3])
+    })
+
+    it('treats uniform numbers, booleans and bigints as constants', async () => {
+      const { client, captured } = createCapturingClient()
+
+      await prismaBulkUpdate(
+        client,
+        TABLE,
+        {
+          dbDriver: DbDriverEnum.POSTGRES,
+          typeByColumn: { id: 'uuid', n: 'int4', flag: 'bool', big: 'int8', value: 'text' },
+        },
+        [
+          { where: { id: id1, n: 1, flag: true, big: 10n }, data: { value: 'a' } },
+          { where: { id: id2, n: 1, flag: true, big: 10n }, data: { value: 'b' } },
+        ],
+      )
+
+      expect(captured.text).toContain('AS updates("id", "value")')
+      expect(captured.values).toEqual([id1, 'a', id2, 'b', 1, true, 10n])
+    })
+
+    it.each([
+      ['null', 'int4', null],
+      ['a Date', 'timestamptz', new Date('2026-01-01T00:00:00Z')],
+      ['a Buffer', 'bytea', Buffer.from('ab')],
+    ])('keeps a where column in VALUES when the shared value is %s', async (_, type, value) => {
+      const { client, captured } = createCapturingClient()
+
+      await prismaBulkUpdate(
+        client,
+        TABLE,
+        { dbDriver: DbDriverEnum.POSTGRES, typeByColumn: { id: 'uuid', col: type, value: 'text' } },
+        [
+          { where: { id: id1, col: value }, data: { value: 'a' } },
+          { where: { id: id2, col: value }, data: { value: 'b' } },
+        ],
+      )
+
+      expect(captured.text).toContain('AS updates("id", "col", "value")')
+    })
+
+    it('keeps a json where column in VALUES even when its value is a shared string', async () => {
+      const { client, captured } = createCapturingClient()
+
+      await prismaBulkUpdate(
+        client,
+        TABLE,
+        {
+          dbDriver: DbDriverEnum.POSTGRES,
+          typeByColumn: { id: 'uuid', doc: 'jsonb', value: 'text' },
+        },
+        [
+          { where: { id: id1, doc: 'same' }, data: { value: 'a' } },
+          { where: { id: id2, doc: 'same' }, data: { value: 'b' } },
+        ],
+      )
+
+      expect(captured.text).toContain('AS updates("id", "doc", "value")')
+    })
+  })
+
   describe('bulk update against bulk_update_item', () => {
     it('partially updates rows matched by their surrogate id, leaving others untouched', async () => {
       const i1 = await createItem({ value: 'before-1', count: 1 })
@@ -240,6 +409,85 @@ describe('prismaBulkUpdate', () => {
         { number: 1, value: 'after-1' },
         { number: 2, value: 'before-2' },
       ])
+    })
+
+    it('scopes the update by a where column shared by every entry', async () => {
+      const groupId = randomUUID()
+      const i0 = await createItem({ groupId, number: 0, value: 'before-0' })
+      const i1 = await createItem({ groupId, number: 1, value: 'before-1' })
+      const foreign = await createItem({ groupId: randomUUID(), value: 'before-foreign' })
+
+      // The foreign row's id is listed under the wrong group, so the shared
+      // group_id predicate must keep it from being updated.
+      await prismaBulkUpdate(prisma, TABLE, cockroachOptions(), [
+        { where: { group_id: groupId, id: i0.id }, data: { value: 'after-0' } },
+        { where: { group_id: groupId, id: i1.id }, data: { value: 'after-1' } },
+        { where: { group_id: groupId, id: foreign.id }, data: { value: 'after-foreign' } },
+      ])
+
+      const items = await prisma.bulkUpdateItem.findMany({
+        where: { id: { in: [i0.id, i1.id, foreign.id] } },
+        select: { id: true, value: true },
+      })
+
+      expect(items).toEqual(
+        expect.arrayContaining([
+          { id: i0.id, value: 'after-0' },
+          { id: i1.id, value: 'after-1' },
+          { id: foreign.id, value: 'before-foreign' },
+        ]),
+      )
+    })
+
+    it('updates a single entry matched only by constant predicates', async () => {
+      const groupId = randomUUID()
+      await createItem({ groupId, number: 0, value: 'before-0' })
+      await createItem({ groupId, number: 1, value: 'before-1' })
+
+      const result = await prismaBulkUpdate<{ number: number; value: string }>(
+        prisma,
+        TABLE,
+        cockroachOptions({ number: 'number', value: 'value' }),
+        [{ where: { group_id: groupId, number: 1 }, data: { value: 'after-1' } }],
+      )
+
+      expect(result).toEqual([{ number: 1, value: 'after-1' }])
+
+      const items = await prisma.bulkUpdateItem.findMany({
+        where: { groupId },
+        select: { number: true, value: true },
+        orderBy: { number: 'asc' },
+      })
+      expect(items).toEqual([
+        { number: 0, value: 'before-0' },
+        { number: 1, value: 'after-1' },
+      ])
+    })
+
+    it('updates a row once when several entries share every where value', async () => {
+      const groupId = randomUUID()
+      const target = await createItem({ groupId, number: 0, value: 'before' })
+      const other = await createItem({ groupId, number: 1, value: 'before-other' })
+
+      const result = await prismaBulkUpdate<{ id: string; value: string }>(
+        prisma,
+        TABLE,
+        cockroachOptions({ id: 'id', value: 'value' }),
+        [
+          { where: { group_id: groupId, number: 0 }, data: { value: 'first' } },
+          { where: { group_id: groupId, number: 0 }, data: { value: 'second' } },
+        ],
+      )
+
+      expect(result).toHaveLength(1)
+      expect(result[0]?.id).toBe(target.id)
+      expect(['first', 'second']).toContain(result[0]?.value)
+
+      const [untouched] = await prisma.bulkUpdateItem.findMany({
+        where: { id: other.id },
+        select: { value: true },
+      })
+      expect(untouched).toEqual({ value: 'before-other' })
     })
 
     it('rolls back the whole bulk update if any row violates a constraint', async () => {

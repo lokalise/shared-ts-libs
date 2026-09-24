@@ -5,6 +5,9 @@ import type { BulkUpdateEntry, PrismaBulkUpdateOptions } from './types.ts'
 
 const JSON_COLUMN_TYPES = new Set<string>(['json', 'jsonb'])
 
+// `typeof` results for which `a === b` guarantees both bind to the same SQL value.
+const COMPARABLE_VALUE_TYPES = new Set<string>(['string', 'number', 'boolean', 'bigint'])
+
 type Column = {
   name: string
   type: string
@@ -13,12 +16,12 @@ type Column = {
 const ENTRIES_LIMIT = 1000
 
 /**
- * Every value (each "where" and each defined "data" cell) becomes one bound
- * placeholder in the `VALUES` list, so the statement uses
- * `entries × (whereColumns + dataColumns)` parameters. PostgreSQL caps a single
- * statement at 65535 bound parameters and CockroachDB has its own ceiling, so we
- * guard the total up front to fail with a clear message instead of an opaque
- * driver error. The effective row cap therefore shrinks as the statement widens.
+ * Every "data" cell and every "where" cell in the `VALUES` list is one bound
+ * placeholder, and each constant "where" predicate adds one more, so the
+ * statement uses `entries × (valuesWhereColumns + dataColumns) + constantWhereColumns`
+ * parameters. PostgreSQL caps a single statement at 65535 bound parameters and
+ * CockroachDB has its own ceiling, so we guard the total up front to fail with a
+ * clear message instead of an opaque driver error.
  */
 const BIND_PARAMETERS_LIMIT = 65535
 
@@ -30,18 +33,29 @@ const BIND_PARAMETERS_LIMIT = 65535
  *
  * The executed query follows the below structure for provided example data:
  * [
- *   { where: { id: 1 }, data: { col1: 11, col2: 12 } },
- *   { where: { id: 2 }, data: { col1: 21, col2: 22 } },
+ *   { where: { tenant_id: 7, id: 1 }, data: { col1: 11, col2: 12 } },
+ *   { where: { tenant_id: 7, id: 2 }, data: { col1: 21, col2: 22 } },
  * ]
  *
  * UPDATE "tbl"
- * SET "col1" = updates."col1", "col2" = updates."col2"
+ * SET "col1" = updates."col1"::int4, "col2" = updates."col2"::int4
  * FROM (
  *   VALUES
- *     (1, 11, 12),
- *     (2, 21, 22)
+ *     ($1::int4, $2::int4, $3::int4),
+ *     ($4::int4, $5::int4, $6::int4)
  * ) AS updates("id", "col1", "col2")
- * WHERE "tbl"."id" = updates."id"
+ * WHERE "tbl"."tenant_id" = $7::int4 AND "tbl"."id" = updates."id"::int4
+ *
+ * A "where" column whose value is the same on every entry (`tenant_id` above) is
+ * emitted as a constant predicate instead of a `VALUES` column. Joining a tenant
+ * column from `VALUES` lets CockroachDB plan a lookup join on a primary key that
+ * starts with it and read every row of the tenant; a constant lets it use the
+ * index on the other key. A value counts as the same only when it is a string,
+ * number, boolean or bigint and is `===` to the first entry's value, and the
+ * column is not `json`/`jsonb`. Anything else (`null`, `Date`, `Buffer`, objects)
+ * stays in `VALUES`. When several entries share every "where" value, the first
+ * "where" column stays in `VALUES` so the source is still keyed on the target
+ * rows. A single entry has every eligible "where" column emitted as a constant.
  *
  * "data" values follow Prisma's convention: an `undefined` value leaves the
  * column untouched (it is dropped from the statement), while `null` sets it to
@@ -116,11 +130,16 @@ export const prismaBulkUpdate = <T = unknown, P extends PrismaClient = PrismaCli
     throw new Error(`Column "${overlappingColumn.name}" must not appear in both "where" and "data"`)
   }
 
-  const bindParametersCount = entries.length * (whereColumns.length + dataColumns.length)
+  const constantWhereColumns = resolveConstantWhereColumns(whereColumns, entries)
+  const valuesWhereColumns = whereColumns.filter((column) => !constantWhereColumns.has(column))
+  const valuesColumns = [...valuesWhereColumns, ...dataColumns]
+
+  const bindParametersCount = entries.length * valuesColumns.length + constantWhereColumns.size
   if (bindParametersCount > BIND_PARAMETERS_LIMIT) {
     throw new Error(
       `Bulk update would use ${bindParametersCount} bind parameters ` +
-        `(${entries.length} entries × ${whereColumns.length + dataColumns.length} columns), ` +
+        `(${entries.length} entries × ${valuesColumns.length} columns ` +
+        `+ ${constantWhereColumns.size} constant "where" values), ` +
         `exceeding the limit of ${BIND_PARAMETERS_LIMIT}`,
     )
   }
@@ -138,15 +157,18 @@ export const prismaBulkUpdate = <T = unknown, P extends PrismaClient = PrismaCli
   })
 
   const sqlValuesExpressions = entries.map((entry, index) =>
-    prepareSqlValuesExpression(entry, index, whereColumns, dataColumns),
+    prepareSqlValuesExpression(entry, index, whereColumns, valuesWhereColumns, dataColumns),
   )
 
-  const sqlValuesColumnAliases = [...whereColumns, ...dataColumns].map((column) => {
+  const sqlValuesColumnAliases = valuesColumns.map((column) => {
     return sql([`"${column.name}"`])
   })
 
   const sqlWhereConditions = whereColumns.map((column) => {
-    return sql([`${quotedTableName}."${column.name}" = updates."${column.name}"::${column.type}`])
+    const qualifiedColumn = `${quotedTableName}."${column.name}"`
+    return constantWhereColumns.has(column)
+      ? sql`${raw(qualifiedColumn)} = ${renderTypedValue(firstEntry.where[column.name], column.type)}`
+      : sql([`${qualifiedColumn} = updates."${column.name}"::${column.type}`])
   })
 
   const updateStatement = sql`
@@ -172,33 +194,34 @@ export const prismaBulkUpdate = <T = unknown, P extends PrismaClient = PrismaCli
 }
 
 /**
- * Builds the parenthesized `(where..., set...)` tuple for a single entry — one
- * row of the `VALUES` source. The entry must supply exactly the given `where`
- * columns and the same set of defined `data` columns (the shape established by
- * the first entry); a mismatch throws so the generated `VALUES` list stays
- * rectangular and aligned with the column aliases.
+ * Builds the parenthesized `(where..., set...)` tuple for a single entry: one row
+ * of the `VALUES` source, holding the `valuesWhereColumns` subset of the "where"
+ * columns. The entry must supply exactly the given `where` columns and the same
+ * set of defined `data` columns (the shape established by the first entry); a
+ * mismatch throws so the generated `VALUES` list stays rectangular and aligned
+ * with the column aliases.
  */
 const prepareSqlValuesExpression = (
   entry: BulkUpdateEntry,
   index: number,
   whereColumns: Column[],
+  valuesWhereColumns: Column[],
   dataColumns: Column[],
 ) => {
   if (whereColumns.length !== Object.keys(entry.where).length) {
     throw new Error(`Entry "where" columns are not the same (at index ${index})`)
   }
 
-  const sqlWhereValues = whereColumns.map((whereConditionColumn) => {
-    const whereConditionValue = entry.where[whereConditionColumn.name]
+  const missingWhereColumn = whereColumns.find((column) => entry.where[column.name] === undefined)
+  if (missingWhereColumn) {
+    throw new Error(
+      `Entry "where" column "${missingWhereColumn.name}" was not found (at index ${index})`,
+    )
+  }
 
-    if (whereConditionValue === undefined) {
-      throw new Error(
-        `Entry "where" column "${whereConditionColumn.name}" was not found (at index ${index})`,
-      )
-    }
-
-    return renderTypedValue(whereConditionValue, whereConditionColumn.type)
-  })
+  const sqlWhereValues = valuesWhereColumns.map((column) =>
+    renderTypedValue(entry.where[column.name], column.type),
+  )
 
   if (dataColumns.length !== definedColumnNames(entry.data).length) {
     throw new Error(`Entry "data" columns are not the same (at index ${index})`)
@@ -216,7 +239,36 @@ const prepareSqlValuesExpression = (
     return renderTypedValue(setExpressionValue, setExpressionColumn.type)
   })
 
-  return sql`(${join(sqlWhereValues, ',')},${join(sqlSetValues, ',')})`
+  return sql`(${join([...sqlWhereValues, ...sqlSetValues], ',')})`
+}
+
+/**
+ * Picks the "where" columns to emit as constant predicates, following the rule in
+ * the `prismaBulkUpdate` docblock.
+ */
+const resolveConstantWhereColumns = (
+  whereColumns: Column[],
+  entries: BulkUpdateEntry[],
+): Set<Column> => {
+  const constantColumns = new Set(
+    whereColumns.filter((column) => {
+      if (JSON_COLUMN_TYPES.has(column.type)) {
+        return false
+      }
+      const [firstValue, ...otherValues] = entries.map((entry) => entry.where[column.name])
+      return (
+        COMPARABLE_VALUE_TYPES.has(typeof firstValue) &&
+        otherValues.every((value) => value === firstValue)
+      )
+    }),
+  )
+
+  const [firstWhereColumn] = whereColumns
+  if (entries.length > 1 && firstWhereColumn && constantColumns.size === whereColumns.length) {
+    constantColumns.delete(firstWhereColumn)
+  }
+
+  return constantColumns
 }
 
 /**
