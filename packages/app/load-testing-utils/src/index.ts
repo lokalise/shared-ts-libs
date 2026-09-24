@@ -48,6 +48,10 @@ export {
   stopProcess,
   toSpawnable,
 } from './processes.ts'
+export {
+  type RefuseProfilingOnWindowsOptions,
+  refuseProfilingOnWindows,
+} from './profiling.ts'
 export { appendReportSection } from './report.ts'
 export {
   diffResources,

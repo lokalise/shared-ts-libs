@@ -12,6 +12,7 @@ the next.
 - [Install](#install)
 - [A runner in outline](#a-runner-in-outline)
 - [Processes](#processes)
+- [Profiling on Windows](#profiling-on-windows)
 - [Containers](#containers)
 - [k6](#k6)
 - [Environment](#environment)
@@ -43,6 +44,7 @@ import {
   parseRunnerArgs,
   ProcessSupervisor,
   refuseIfPortTaken,
+  refuseProfilingOnWindows,
   resolveK6Mode,
   runK6,
   scrapeResources,
@@ -62,6 +64,7 @@ if (args.command === 'down') {
   composeDown(supervisor, compose, { profiles: ['profiling'] })
   supervisor.clearState()
 } else {
+  if (args.flags.profiling) refuseProfilingOnWindows('service', { hint: 'pass --no-service' })
   await refuseIfPortTaken('service', 3000, { hint: 'run with --no-service to measure it' })
   composeUp(supervisor, compose)
   // migrations and seeding: service-specific
@@ -115,6 +118,17 @@ spawn without a shell. The supervisor sends those through `cmd.exe` as a single
 line (override the list with `shimCommands`), so their arguments must not
 contain spaces. Stopping a process there kills its whole tree with
 `taskkill /T /F`, because a shim leaves the real process one level down.
+
+## Profiling on Windows
+
+`@pyroscope/nodejs` cannot start on Windows, so a process the runner starts
+there with the profiler on runs unprofiled and leaves Pyroscope empty.
+`refuseProfilingOnWindows(name, { platform?, hint? })` throws on `win32` with a
+message naming the ways out: run the runner from WSL2, or start the process in
+WSL2 or its container. Call it before bringing anything up, and only when
+profiling is on and the runner starts the process itself; `hint` names the flag
+that skips starting it. See the `@lokalise/pyroscope-profiling`
+[notes on a Windows dev box](https://github.com/lokalise/shared-ts-libs/tree/main/packages/app/pyroscope-profiling#on-a-windows-dev-box).
 
 ## Containers
 
