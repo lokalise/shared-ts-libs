@@ -150,10 +150,11 @@ export function diffResources(
     delta.gcSeconds = subtract(after.metrics.gcSeconds, before.metrics.gcSeconds)
     delta.residentBytesAtEnd = after.metrics.residentBytes
     delta.heapUsedBytesAtEnd = after.metrics.heapUsedBytes
-    // The closing scrape is the last interval: it covers the end of the run.
-    const lag = summarizeEventLoopLag([...samples, after.metrics])
-    if (lag) delta.eventLoopLag = lag
   }
+  // Each interval stands on its own, so the samples count even when an end did not answer.
+  // The closing scrape is the last interval: it covers the end of the run.
+  const lag = summarizeEventLoopLag(after.metrics ? [...samples, after.metrics] : samples)
+  if (lag) delta.eventLoopLag = lag
 
   if (!before.probe || !after.probe) {
     warnings.push('the database probe was not reachable; statement and row counts are missing')
@@ -188,7 +189,7 @@ function diffEngineStatements(
   if (after.allStatements && before?.allStatements) {
     return diffStatements(before.allStatements, after.allStatements, top)
   }
-  if (after.allStatements || after.topStatements?.length) {
+  if (after.allStatements || before?.allStatements || after.topStatements?.length) {
     warnings.push(
       `${name}: no statements table, because only a probe read with ?statements=all at both ends shows what the run cost each statement`,
     )
@@ -404,7 +405,9 @@ function startSampling(sample: () => Promise<ProcessMetrics | undefined>, interv
   let inFlight: Promise<void> | undefined
   const timer = setInterval(() => {
     if (inFlight) return
-    inFlight = sample()
+    // Called inside the chain, so a sampler that throws before returning a promise is a failed sample too.
+    inFlight = Promise.resolve()
+      .then(sample)
       .then(
         (metrics) => {
           if (metrics) samples.push(metrics)

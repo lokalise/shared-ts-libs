@@ -129,6 +129,15 @@ describe('diffResources', () => {
     })
   })
 
+  it('keeps the samples for event loop lag when an end did not answer', () => {
+    const delta = diffResources({}, {}, { samples: [{ eventLoopLagP99Seconds: 0.3 }] })
+    expect(delta.eventLoopLag).toEqual({
+      intervals: 1,
+      p99WorstSeconds: 0.3,
+      p99MedianSeconds: 0.3,
+    })
+  })
+
   it('leaves the statements table out, with a warning, unless both ends listed every statement', () => {
     const cumulative = [{ query: 'SELECT 1', calls: 3, totalMs: 4.5 }]
     const delta = diffResources(
@@ -138,6 +147,7 @@ describe('diffResources', () => {
           engines: {
             Postgres: engine({ topStatements: cumulative }),
             CockroachDB: engine(),
+            MySQL: engine({ allStatements: cumulative }),
           },
         },
       },
@@ -147,6 +157,7 @@ describe('diffResources', () => {
           engines: {
             Postgres: engine({ topStatements: cumulative }),
             CockroachDB: engine({ allStatements: cumulative }),
+            MySQL: engine(),
           },
         },
       },
@@ -155,6 +166,7 @@ describe('diffResources', () => {
     expect(delta.warnings.slice(1)).toEqual([
       'Postgres: no statements table, because only a probe read with ?statements=all at both ends shows what the run cost each statement',
       'CockroachDB: no statements table, because only a probe read with ?statements=all at both ends shows what the run cost each statement',
+      'MySQL: no statements table, because only a probe read with ?statements=all at both ends shows what the run cost each statement',
     ])
   })
 
@@ -171,7 +183,7 @@ describe('diffResources', () => {
         at: 't1',
         engines: {
           Postgres: engine({ statements: 20, rowsReturned: 1200, rowsWritten: 15 }),
-          CockroachDB: engine({ statements: 9, rowsReturned: 60 }),
+          CockroachDB: engine({ statements: 9, rowsReturned: 60, allStatements: [] }),
         },
       },
     })
@@ -397,6 +409,9 @@ describe('measureResources sampling', () => {
       () => Promise.resolve({ eventLoopLagP99Seconds: 0.2 }),
       () => Promise.resolve(undefined),
       () => Promise.reject(new Error('refused')),
+      () => {
+        throw new Error('thrown before a promise')
+      },
       () => Promise.resolve({ eventLoopLagP99Seconds: 0.1 }),
     ]
     let calls = 0
