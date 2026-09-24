@@ -1,6 +1,6 @@
 services:
   cockroachdb:
-    image: cockroachdb/cockroach:latest-v23.2
+    image: cockroachdb/cockroach:latest-v26.1
     hostname: crdb
     command: start-single-node --cluster-name=example-single-node
     ports:
@@ -16,4 +16,6 @@ services:
       timeout: 5s    # fail if longer than 5s
       retries: 10    # require 10 consecutive failures before unhealthy
       start_period: 10s # grace period for initialization
+    volumes:
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     restart: on-failure
