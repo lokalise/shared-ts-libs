@@ -136,10 +136,11 @@ export const prismaBulkUpdate = <T = unknown, P extends PrismaClient = PrismaCli
 
   const bindParametersCount = entries.length * valuesColumns.length + constantWhereColumns.size
   if (bindParametersCount > BIND_PARAMETERS_LIMIT) {
+    const constantsBreakdown =
+      constantWhereColumns.size > 0 ? ` + ${constantWhereColumns.size} constant "where" values` : ''
     throw new Error(
       `Bulk update would use ${bindParametersCount} bind parameters ` +
-        `(${entries.length} entries × ${valuesColumns.length} columns ` +
-        `+ ${constantWhereColumns.size} constant "where" values), ` +
+        `(${entries.length} entries × ${valuesColumns.length} columns${constantsBreakdown}), ` +
         `exceeding the limit of ${BIND_PARAMETERS_LIMIT}`,
     )
   }
@@ -255,10 +256,10 @@ const resolveConstantWhereColumns = (
       if (JSON_COLUMN_TYPES.has(column.type)) {
         return false
       }
-      const [firstValue, ...otherValues] = entries.map((entry) => entry.where[column.name])
+      const firstValue = entries[0]?.where[column.name]
       return (
         COMPARABLE_VALUE_TYPES.has(typeof firstValue) &&
-        otherValues.every((value) => value === firstValue)
+        entries.every((entry) => entry.where[column.name] === firstValue)
       )
     }),
   )
