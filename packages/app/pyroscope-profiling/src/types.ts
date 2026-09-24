@@ -7,6 +7,9 @@
  * own `Logger`, which is what {@link startProfiling} hands the SDK. Depending on
  * a logging package for a type alone would be the only runtime dependency this
  * package does not need.
+ *
+ * Errors are logged as `{ err }`, the key pino's default serializers expand
+ * into a message and a stack; any other key would reach a pino log as `{}`.
  */
 export interface ProfilingLogger {
   trace(obj: unknown, msg?: string, ...args: unknown[]): void
