@@ -51,11 +51,9 @@ const BIND_PARAMETERS_LIMIT = 65535
  * column from `VALUES` lets CockroachDB plan a lookup join on a primary key that
  * starts with it and read every row of the tenant; a constant lets it use the
  * index on the other key. A value counts as the same only when it is a string,
- * number, boolean or bigint and is `===` to the first entry's value, and the
- * column is not `json`/`jsonb`. Anything else (`null`, `Date`, `Buffer`, objects)
- * stays in `VALUES`. When several entries share every "where" value, the first
- * "where" column stays in `VALUES` so the source is still keyed on the target
- * rows. A single entry has every eligible "where" column emitted as a constant.
+ * number, boolean or bigint and is `===` to the first entry's value. Anything else
+ * (`null`, `Date`, `Buffer`, objects) stays in `VALUES`. When every "where" column
+ * is constant, `VALUES` holds only the "data" columns.
  *
  * "data" values follow Prisma's convention: an `undefined` value leaves the
  * column untouched (it is dropped from the statement), while `null` sets it to
@@ -250,12 +248,9 @@ const prepareSqlValuesExpression = (
 const resolveConstantWhereColumns = (
   whereColumns: Column[],
   entries: BulkUpdateEntry[],
-): Set<Column> => {
-  const constantColumns = new Set(
+): Set<Column> =>
+  new Set(
     whereColumns.filter((column) => {
-      if (JSON_COLUMN_TYPES.has(column.type)) {
-        return false
-      }
       const firstValue = entries[0]?.where[column.name]
       return (
         COMPARABLE_VALUE_TYPES.has(typeof firstValue) &&
@@ -263,14 +258,6 @@ const resolveConstantWhereColumns = (
       )
     }),
   )
-
-  const [firstWhereColumn] = whereColumns
-  if (entries.length > 1 && firstWhereColumn && constantColumns.size === whereColumns.length) {
-    constantColumns.delete(firstWhereColumn)
-  }
-
-  return constantColumns
-}
 
 /**
  * Pairs each requested column name with its SQL type from `typeByColumn`,

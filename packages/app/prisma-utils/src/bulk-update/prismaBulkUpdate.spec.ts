@@ -271,7 +271,7 @@ describe('prismaBulkUpdate', () => {
       )
     })
 
-    it('keeps the first where column in VALUES when several entries share every where value', async () => {
+    it('emits every where column as a constant when several entries share every where value', async () => {
       const { client, captured } = createCapturingClient()
 
       await prismaBulkUpdate(client, TABLE, cockroachOptions(), [
@@ -279,12 +279,11 @@ describe('prismaBulkUpdate', () => {
         { where: { group_id: groupId, number: 3 }, data: { value: 'b' } },
       ])
 
-      expect(captured.text).toContain('AS updates("group_id", "value")')
+      expect(captured.text).toContain('AS updates("value")')
       expect(captured.text).toContain(
-        'WHERE "bulk_update_item"."group_id" = updates."group_id"::uuid ' +
-          'AND "bulk_update_item"."number" = $5::int4',
+        'WHERE "bulk_update_item"."group_id" = $3::uuid AND "bulk_update_item"."number" = $4::int4',
       )
-      expect(captured.values).toEqual([groupId, 'a', groupId, 'b', 3])
+      expect(captured.values).toEqual(['a', 'b', groupId, 3])
     })
 
     it('emits every where column as a constant for a single entry', async () => {
@@ -340,25 +339,6 @@ describe('prismaBulkUpdate', () => {
       )
 
       expect(captured.text).toContain('AS updates("id", "col", "value")')
-    })
-
-    it('keeps a json where column in VALUES even when its value is a shared string', async () => {
-      const { client, captured } = createCapturingClient()
-
-      await prismaBulkUpdate(
-        client,
-        TABLE,
-        {
-          dbDriver: DbDriverEnum.POSTGRES,
-          typeByColumn: { id: 'uuid', doc: 'jsonb', value: 'text' },
-        },
-        [
-          { where: { id: id1, doc: 'same' }, data: { value: 'a' } },
-          { where: { id: id2, doc: 'same' }, data: { value: 'b' } },
-        ],
-      )
-
-      expect(captured.text).toContain('AS updates("id", "doc", "value")')
     })
   })
 
