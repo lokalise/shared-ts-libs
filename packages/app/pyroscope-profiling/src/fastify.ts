@@ -5,7 +5,7 @@ import type {
   FastifyRequest,
 } from 'fastify'
 import fp from 'fastify-plugin'
-import { startProfiling, stopProfiling } from './profiler.ts'
+import { isProfilingRunningAfterStart, startProfiling, stopProfiling } from './profiler.ts'
 import { resolveProfilingConfigFromEnv, resolveProfilingContextFromEnv } from './profilingConfig.ts'
 import type { ProfilingConfig, ProfilingContext, ProfilingLogger } from './types.ts'
 import { closeLabelScope, openLabelScope } from './wallLabels.ts'
@@ -56,7 +56,10 @@ export type PyroscopeProfilingPluginOptions = {
    * processor on its own can label a request `POST` but never
    * `POST /v1/content/refresh`.
    *
-   * @default true
+   * Defaults to whether the profiler is running once the plugin has started it,
+   * or, with `start: false`, once the entry point's start has finished. With
+   * profiling off the hooks are not registered at all, so a service that is
+   * not being profiled pays nothing per request.
    */
   labelRequests?: boolean
 }
@@ -89,14 +92,16 @@ const plugin: FastifyPluginAsync<PyroscopeProfilingPluginOptions> = async (
     await stopProfiling(logger)
   })
 
-  if (options.labelRequests !== false) registerRequestLabels(app)
+  const running =
+    options.start === false
+      ? await isProfilingRunningAfterStart()
+      : await startProfiling(
+          options.config ?? resolveProfilingConfigFromEnv({ appName: options.appName }),
+          options.context ?? resolveProfilingContextFromEnv(),
+          logger,
+        )
 
-  if (options.start === false) return
-
-  const config = options.config ?? resolveProfilingConfigFromEnv({ appName: options.appName })
-  const context = options.context ?? resolveProfilingContextFromEnv()
-
-  await startProfiling(config, context, logger)
+  if (options.labelRequests ?? running) registerRequestLabels(app)
 }
 
 /**
