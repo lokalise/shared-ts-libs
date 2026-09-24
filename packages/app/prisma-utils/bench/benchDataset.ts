@@ -1,5 +1,6 @@
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from 'db-client/client.ts'
+import { type DbDriver, DbDriverEnum } from '../src/types.ts'
 import { getDatasourceUrl } from '../test/getDatasourceUrl.ts'
 
 export const BENCH_TABLE = 'bench_segment'
@@ -31,3 +32,11 @@ export const tenantIdSql = (tenant: string | number) =>
 
 export const createBenchClient = () =>
   new PrismaClient({ adapter: new PrismaPg({ connectionString: getDatasourceUrl() }) })
+
+// The seed and the benchmark run against either database; `DATABASE_URL` picks which.
+export const detectDbDriver = async (prisma: PrismaClient): Promise<DbDriver> => {
+  const [{ version } = { version: '' }] = await prisma.$queryRawUnsafe<{ version: string }[]>(
+    'SELECT version() AS version',
+  )
+  return version.includes('CockroachDB') ? DbDriverEnum.COCKROACH_DB : DbDriverEnum.POSTGRES
+}

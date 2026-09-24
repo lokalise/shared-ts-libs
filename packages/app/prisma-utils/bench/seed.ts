@@ -1,6 +1,13 @@
 import type { PrismaClient } from 'db-client/client.ts'
 import { afterAll, beforeAll, it } from 'vitest'
-import { BENCH_TABLE, createBenchClient, datasetSize, tenantIdSql } from './benchDataset.ts'
+import { DbDriverEnum } from '../src/types.ts'
+import {
+  BENCH_TABLE,
+  createBenchClient,
+  datasetSize,
+  detectDbDriver,
+  tenantIdSql,
+} from './benchDataset.ts'
 
 // Each INSERT is its own implicit transaction; capping its size keeps it well
 // under CockroachDB's transaction size limits.
@@ -47,10 +54,10 @@ it('seeds the bulk update benchmark dataset', { timeout: 60 * 60 * 1000 }, async
       project_id UUID NOT NULL,
       n INT4 NOT NULL,
       id UUID NOT NULL,
-      value STRING NOT NULL,
+      value TEXT NOT NULL,
       words_count INT4 NOT NULL,
       PRIMARY KEY (project_id, n),
-      UNIQUE INDEX bench_segment_id_key (id)
+      CONSTRAINT bench_segment_id_key UNIQUE (id)
     )
   `)
 
@@ -58,5 +65,9 @@ it('seeds the bulk update benchmark dataset', { timeout: 60 * 60 * 1000 }, async
   await insertTenants([1, smallTenants], smallTenantRows)
 
   // Without fresh statistics the planner would be choosing on an empty table.
-  await prisma.$executeRawUnsafe(`CREATE STATISTICS bench_stats FROM ${BENCH_TABLE}`)
+  await prisma.$executeRawUnsafe(
+    (await detectDbDriver(prisma)) === DbDriverEnum.COCKROACH_DB
+      ? `CREATE STATISTICS bench_stats FROM ${BENCH_TABLE}`
+      : `ANALYZE ${BENCH_TABLE}`,
+  )
 })

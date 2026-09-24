@@ -14,6 +14,13 @@ The container runs `docker/init.sql` on first start. It sets `create_table_with_
 
 `DATABASE_URL` from the environment takes precedence over `.env` for the tests, the seed and the benchmark, which is how to run them against another instance.
 
+The compose file also defines `postgres` (`postgres:18.4`, the version `lokalise/autopilot` runs) on `127.0.0.1:54318`, with the same user, password and database. It sits behind the `postgres` profile, so `docker compose up` and `pnpm test:ci` leave it out. Only the benchmark uses it:
+
+```bash
+docker compose --profile postgres up -d --wait postgres
+export DATABASE_URL='postgresql://testuser:pass@127.0.0.1:54318/test'
+```
+
 ## Tests
 
 ```bash
@@ -25,7 +32,7 @@ pnpm test
 
 ## Benchmarking `prismaBulkUpdate`
 
-The benchmark is run by hand and never in CI. It needs a seeded 2M-row table and takes minutes, and its timings depend on the machine. `pnpm test` collects only `*.spec.ts` and `*.test.ts` files, and nothing in CI calls `vitest bench`, so the files under `bench/` are typechecked and linted but not executed there.
+The benchmark is run by hand and never in CI. It runs on CockroachDB or Postgres, whichever `DATABASE_URL` points at, and reads the driver from `SELECT version()`. It needs a seeded 2M-row table and takes minutes, and its timings depend on the machine. `pnpm test` collects only `*.spec.ts` and `*.test.ts` files, and nothing in CI calls `vitest bench`, so the files under `bench/` are typechecked and linted but not executed there.
 
 ### What it measures
 
@@ -41,7 +48,7 @@ pnpm bench:seed
 pnpm bench
 ```
 
-`pnpm bench:seed` drops and recreates `bench_segment`, so it wipes any earlier benchmark data. The default dataset is one tenant of 1 000 000 rows and 1 000 tenants of 1 000 rows, and seeding it takes a few minutes. It finishes with `CREATE STATISTICS` so the planner sees the real distribution. These variables change the size:
+`pnpm bench:seed` drops and recreates `bench_segment`, so it wipes any earlier benchmark data. The default dataset is one tenant of 1 000 000 rows and 1 000 tenants of 1 000 rows, and seeding it takes a few minutes. It finishes with `CREATE STATISTICS` on CockroachDB, or `ANALYZE` on Postgres, so the planner sees the real distribution. These variables change the size:
 
 | Variable | Default | Meaning |
 |---|---|---|
@@ -62,7 +69,7 @@ git checkout src/bulk-update/prismaBulkUpdate.ts
 pnpm bench --compare before.json
 ```
 
-The compare run prints each result next to its baseline with the speed ratio. Benchmark before and after on the same database and the same seed. Other containers busy on the same machine show up as noise in the timings.
+The compare run prints each result next to its baseline with the speed ratio. Benchmark before and after on the same database and the same seed. On Postgres, run `VACUUM ANALYZE bench_segment` before each run, so the dead rows the previous run left behind do not favour whichever version goes first. Other containers busy on the same machine show up as noise in the timings.
 
 ### Checking the plan
 
@@ -74,4 +81,10 @@ docker compose exec cockroachdb cockroach sql --certs-dir=certs -d test
 
 In the output, compare `rows decoded from KV` and the `table:` and `equality:` lines of each lookup join. A statement that reads the whole tenant shows the tenant's row count there and a lookup on `(project_id)` alone.
 
-The plan depends on the CockroachDB version. v23.2 uses the `id` index whether `project_id` comes from `VALUES` or is a constant, so it cannot show the difference. v26.1 reads the whole tenant when `project_id` comes from `VALUES`. Benchmark on the version production runs.
+The plan depends on the CockroachDB version. v23.2 uses the `id` index whether `project_id` comes from `VALUES` or is a constant, so it cannot show the difference. v26.1 reads the whole tenant when `project_id` comes from `VALUES`. Postgres 18 uses the `id` index for both shapes, so there the change only removes bound parameters. Its `EXPLAIN` does not take placeholders either:
+
+```bash
+docker compose exec postgres psql -U testuser -d test
+```
+
+Benchmark on the version production runs.

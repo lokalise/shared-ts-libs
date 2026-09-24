@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, bench, describe } from 'vitest'
 import { prismaBulkUpdate } from '../src/bulk-update/prismaBulkUpdate.ts'
-import { DbDriverEnum } from '../src/types.ts'
-import { BENCH_TABLE, createBenchClient, tenantIdSql } from './benchDataset.ts'
+import type { DbDriver } from '../src/types.ts'
+import { BENCH_TABLE, createBenchClient, detectDbDriver, tenantIdSql } from './benchDataset.ts'
 
 const BATCH_SIZES = [2, 100, 1000] as const
 
@@ -11,6 +11,7 @@ type TargetRow = { projectId: string; id: string }
 
 const prisma = createBenchClient()
 const targetsByBatchSize = new Map<number, TargetRow[]>()
+let dbDriver: DbDriver
 let iteration = 0
 
 // Spreads the targets over the whole large tenant rather than its first rows.
@@ -33,6 +34,7 @@ const targets = (batchSize: number) => {
 }
 
 beforeAll(async () => {
+  dbDriver = await detectDbDriver(prisma)
   const [{ rows } = { rows: 0n }] = await prisma.$queryRawUnsafe<{ rows: bigint }[]>(
     `SELECT count(*) AS rows FROM ${BENCH_TABLE} WHERE project_id = ${tenantIdSql(0)}`,
   )
@@ -54,7 +56,7 @@ for (const batchSize of BATCH_SIZES) {
         await prismaBulkUpdate(
           prisma,
           BENCH_TABLE,
-          { dbDriver: DbDriverEnum.COCKROACH_DB, typeByColumn },
+          { dbDriver, typeByColumn },
           targets(batchSize).map((row) => ({
             where: { project_id: row.projectId, id: row.id },
             data: { value: `bench-${iteration}`, words_count: iteration },
