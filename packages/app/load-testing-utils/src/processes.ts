@@ -22,7 +22,12 @@ export type SpawnOptions = {
   env?: NodeJS.ProcessEnv
 }
 
-export type RecordedProcess = { name: string; pid: number }
+export type RecordedProcess = {
+  name: string
+  pid: number
+  /** As {@link processStartTime} reported it when the state was written. */
+  startTime?: string
+}
 
 export type StackState = {
   startedAt: string
@@ -197,7 +202,10 @@ export class ProcessSupervisor {
     const state: StackState = {
       ...extra,
       startedAt: new Date().toISOString(),
-      pids: this.runningProcesses(),
+      pids: this.runningProcesses().map((recorded) => ({
+        ...recorded,
+        startTime: processStartTime(recorded.pid, this.platform),
+      })),
     }
     writeFileSync(this.stateFile, `${JSON.stringify(state, null, 2)}\n`)
   }
@@ -210,9 +218,18 @@ export class ProcessSupervisor {
   /**
    * What a `down` from another terminal stops, having started nothing itself:
    * the processes a `--keep` run recorded.
+   *
+   * A state file can outlive its processes (a crash, a reboot) and the OS then
+   * hands their pids to something else, so a pid is kept only while its
+   * process still has the start time recorded for it.
    */
   recordedProcesses(): RecordedProcess[] {
-    return (this.readState()?.pids ?? []).filter(({ pid }) => Boolean(pid))
+    return (this.readState()?.pids ?? []).filter(({ name, pid, startTime }) => {
+      if (!pid) return false
+      if (startTime !== undefined && processStartTime(pid, this.platform) === startTime) return true
+      this.log(`[runner] skipping ${name}: pid ${pid} is no longer the process this stack started`)
+      return false
+    })
   }
 
   clearState(): void {
@@ -228,9 +245,52 @@ export type StopProcessOptions = {
 }
 
 /**
- * Stops a process and, on Windows, everything under it. A kill there stops only
- * the pid it names, and a process started through a shim is a cmd.exe with the
- * real one below it.
+ * When `pid` started, as the OS reports it, or `undefined` when no such process
+ * exists. Only ever compared with another value from this function on the same
+ * machine, so the format does not matter.
+ */
+export function processStartTime(
+  pid: number,
+  platform: NodeJS.Platform = process.platform,
+): string | undefined {
+  if (!Number.isInteger(pid) || pid <= 0) return undefined
+  const result =
+    platform === 'win32'
+      ? spawnSync(
+          'powershell',
+          [
+            '-NoProfile',
+            '-NonInteractive',
+            '-Command',
+            `(Get-Process -Id ${pid} -ErrorAction Stop).StartTime.ToUniversalTime().ToString('o')`,
+          ],
+          { encoding: 'utf8' },
+        )
+      : spawnSync('ps', ['-o', 'lstart=', '-p', String(pid)], {
+          encoding: 'utf8',
+          env: { ...process.env, LC_ALL: 'C' },
+        })
+  const startTime = result.status === 0 ? (result.stdout ?? '').trim() : ''
+  return startTime === '' ? undefined : startTime
+}
+
+/** Every process under `pid`, deepest first. Empty when `pgrep` is missing. */
+function descendants(pid: number): number[] {
+  const { stdout } = spawnSync('pgrep', ['-P', String(pid)], { encoding: 'utf8' })
+  return (stdout ?? '')
+    .split('\n')
+    .map(Number)
+    .filter((child) => Number.isInteger(child) && child > 0)
+    .flatMap((child) => [...descendants(child), child])
+}
+
+/**
+ * Stops a process and everything under it. Killing only the pid would leave
+ * the real server running when it was started through `npx`, `pnpm` or, on
+ * Windows, a cmd.exe shim.
+ *
+ * On POSIX the tree is walked rather than started as its own process group
+ * (`detached`), so a Ctrl+C in the terminal still reaches every process.
  */
 export function stopProcess(name: string, pid: number, options: StopProcessOptions = {}): void {
   const log = options.log ?? writeLine
@@ -239,9 +299,11 @@ export function stopProcess(name: string, pid: number, options: StopProcessOptio
     spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { stdio: 'ignore' })
     return
   }
-  try {
-    process.kill(pid, 'SIGTERM')
-  } catch {
-    // Already gone.
+  for (const target of [...descendants(pid), pid]) {
+    try {
+      process.kill(target, 'SIGTERM')
+    } catch {
+      // Already gone.
+    }
   }
 }

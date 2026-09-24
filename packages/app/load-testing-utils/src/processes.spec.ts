@@ -1,8 +1,8 @@
-import { mkdtempSync, readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
-import { ProcessSupervisor, stopProcess, toSpawnable } from './processes.ts'
+import { ProcessSupervisor, processStartTime, stopProcess, toSpawnable } from './processes.ts'
 
 const node = process.execPath
 const logDir = () => mkdtempSync(join(tmpdir(), 'supervisor-'))
@@ -111,8 +111,8 @@ describe('ProcessSupervisor', () => {
     const other = new ProcessSupervisor({ logDir: dir, log })
     expect(other.readState()).toMatchObject({ profiling: true, pids: [{ name: 'first' }, {}] })
     expect(other.recordedProcesses()).toEqual([
-      { name: 'first', pid: first.pid },
-      { name: 'second', pid: second.pid },
+      { name: 'first', pid: first.pid, startTime: expect.any(String) },
+      { name: 'second', pid: second.pid, startTime: expect.any(String) },
     ])
 
     const closed = Promise.all([exited(first), exited(second)])
@@ -127,6 +127,29 @@ describe('ProcessSupervisor', () => {
     expect(other.readState()).toBeUndefined()
     expect(other.recordedProcesses()).toEqual([])
     other.clearState()
+  })
+
+  it('skips a recorded pid that no longer belongs to the process it started', async () => {
+    const dir = logDir()
+    const log = vi.fn()
+    const supervisor = new ProcessSupervisor({ logDir: dir, log })
+    const child = supervisor.start('service', node, ['-e', 'setInterval(() => {}, 1000)'])
+    supervisor.writeState()
+    const pid = child.pid as number
+
+    const recorded = (pids: object[]) => {
+      writeFileSync(supervisor.stateFile, JSON.stringify({ startedAt: '', pids }))
+      return new ProcessSupervisor({ logDir: dir, log }).recordedProcesses()
+    }
+    expect(recorded([{ name: 'service', pid, startTime: 'another process' }])).toEqual([])
+    expect(recorded([{ name: 'service', pid }])).toEqual([])
+    expect(log).toHaveBeenCalledWith(
+      `[runner] skipping service: pid ${pid} is no longer the process this stack started`,
+    )
+
+    const closed = exited(child)
+    supervisor.stopAll()
+    await closed
   })
 
   it('honours a custom state file', () => {
@@ -172,6 +195,15 @@ describe('ProcessSupervisor', () => {
   })
 })
 
+describe('processStartTime', () => {
+  it('is stable for a running process and undefined for one that does not exist', () => {
+    expect(processStartTime(process.pid)).toBeDefined()
+    expect(processStartTime(process.pid)).toBe(processStartTime(process.pid))
+    expect(processStartTime(2 ** 22 + 12345)).toBeUndefined()
+    expect(processStartTime(0)).toBeUndefined()
+  })
+})
+
 describe('stopProcess', () => {
   it('tolerates a process that is already gone', () => {
     const log = vi.fn()
@@ -187,6 +219,29 @@ describe('stopProcess', () => {
     await closed
     expect(child.exitCode !== null || child.signalCode !== null).toBe(true)
   })
+
+  it.skipIf(process.platform === 'win32')(
+    'stops the processes under the pid on POSIX',
+    async () => {
+      const supervisor = new ProcessSupervisor({ logDir: logDir(), log: () => {} })
+      const grandchildScript = 'setInterval(() => {}, 1000)'
+      const child = supervisor.start('wrapper', node, [
+        '-e',
+        `const c = require('node:child_process').spawn(process.execPath, ['-e', ${JSON.stringify(grandchildScript)}], { stdio: 'ignore' }); console.log('grandchild ' + c.pid); setInterval(() => {}, 1000)`,
+      ])
+      const grandchild = await new Promise<number>((done) => {
+        child.stdout?.on('data', (chunk: string) => {
+          const match = /grandchild (\d+)/.exec(chunk)
+          if (match) done(Number(match[1]))
+        })
+      })
+
+      const closed = exited(child)
+      stopProcess('wrapper', child.pid as number, { log: () => {} })
+      await closed
+      await vi.waitFor(() => expect(processStartTime(grandchild)).toBeUndefined(), 5000)
+    },
+  )
 
   it('logs to stdout by default', () => {
     const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true)

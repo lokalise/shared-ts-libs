@@ -5,6 +5,7 @@ import {
   createDbProbeServer,
   normalizeStatement,
   PROBE_APPLICATION_NAME,
+  PROBE_QUERY_MARKER,
   type ProbeSnapshot,
   parseTop,
   readCockroachStats,
@@ -69,7 +70,21 @@ describe('readPostgresStats', () => {
       rowsWritten: 12,
       topStatements: [{ query: 'SELECT $1', calls: 3, totalMs: 1.5 }],
     })
-    expect(calls.at(-1)?.values).toEqual([5])
+    expect(calls.at(-1)?.values).toEqual([`${PROBE_QUERY_MARKER}%`, 5])
+  })
+
+  it('marks every query it sends and leaves marked statements out of the totals', async () => {
+    const { sql, calls } = fakeSql((text) => (text.includes('FROM pg_extension') ? [{}] : []))
+    await readPostgresStats(sql, 5)
+
+    expect(calls).toHaveLength(4)
+    for (const { text } of calls) expect(text.trim().startsWith(PROBE_QUERY_MARKER)).toBe(true)
+    const fromStatements = calls.filter(({ text }) => text.includes('FROM pg_stat_statements'))
+    expect(fromStatements).toHaveLength(2)
+    for (const { text, values } of fromStatements) {
+      expect(text).toContain('query NOT LIKE ?')
+      expect(values[0]).toBe(`${PROBE_QUERY_MARKER}%`)
+    }
   })
 
   it('skips the statements table when top is 0, and tolerates empty results', async () => {

@@ -3,6 +3,14 @@ import type { EngineSnapshot, StatementStats } from '../types.ts'
 import { normalizeStatement } from './statements.ts'
 
 /**
+ * Leads every query the probe sends. `pg_stat_statements` keeps the text a
+ * statement was first seen with, comment included, and no application runs
+ * these catalog queries, so the marker keeps the probe out of its own totals.
+ */
+export const PROBE_QUERY_MARKER = '/* load-testing-probe */'
+const notFromProbe = `${PROBE_QUERY_MARKER}%`
+
+/**
  * Postgres counters for the connected database.
  *
  * `pg_stat_statements` is the exact answer. It has to be preloaded
@@ -10,13 +18,17 @@ import { normalizeStatement } from './statements.ts'
  * falls back to committed transactions from `pg_stat_database` and says so in
  * `reason`: the two agree while every statement is its own transaction, which
  * is the per-row write path a probe most needs to catch.
+ *
+ * `pg_stat_statements` figures leave out the probe's own queries. The fallback
+ * cannot: each scrape commits two transactions of its own, and its catalog
+ * reads add a few rows to `rowsReturned`.
  */
 export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapshot> {
   const [extension] = await sql`
-    SELECT 1 AS present FROM pg_extension WHERE extname = 'pg_stat_statements'
+    /* load-testing-probe */ SELECT 1 AS present FROM pg_extension WHERE extname = 'pg_stat_statements'
   `
   const [database] = await sql`
-    SELECT xact_commit, tup_returned, tup_inserted + tup_updated + tup_deleted AS written
+    /* load-testing-probe */ SELECT xact_commit, tup_returned, tup_inserted + tup_updated + tup_deleted AS written
     FROM pg_stat_database WHERE datname = current_database()
   `
   const rowsWritten = Number(database?.written ?? 0)
@@ -33,9 +45,10 @@ export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapsh
   let totals: Record<string, unknown> | undefined
   try {
     const rows = await sql`
-      SELECT COALESCE(SUM(calls), 0) AS calls, COALESCE(SUM(rows), 0) AS rows
+      /* load-testing-probe */ SELECT COALESCE(SUM(calls), 0) AS calls, COALESCE(SUM(rows), 0) AS rows
       FROM pg_stat_statements
       WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
+        AND query NOT LIKE ${notFromProbe}
     `
     totals = rows[0]
   } catch (error) {
@@ -62,9 +75,10 @@ export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapsh
  */
 async function readPostgresTop(sql: Sql, top: number): Promise<StatementStats[]> {
   const rows = await sql`
-    SELECT query, calls, total_exec_time AS total_ms
+    /* load-testing-probe */ SELECT query, calls, total_exec_time AS total_ms
     FROM pg_stat_statements
     WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
+      AND query NOT LIKE ${notFromProbe}
     ORDER BY total_exec_time DESC
     LIMIT ${top}
   `

@@ -104,9 +104,9 @@ if (args.command === 'down') {
 | `start(name, command, args, { cwd, env })` | Starts a long-running process. Every output line goes to the terminal prefixed `[name]`, and all of it to `<logDir>/<name>.log` |
 | `run(name, command, args, { cwd, env })` | Runs to completion with inherited stdio, and throws on a non-zero exit |
 | `runToExit(command, args, { cwd, env })` | Runs with inherited stdio and resolves with the exit code. Asynchronous, so the started processes' output pipes keep draining meanwhile |
-| `stopAll(processes?)` | Stops the started processes, last started first |
-| `writeState(extra?)` / `readState()` / `clearState()` | Records the running pids in `stateFile` (default `<logDir>/stack-state.json`) |
-| `recordedProcesses()` | The pids a `--keep` run recorded, for a `down` from another terminal to pass to `stopAll` |
+| `stopAll(processes?)` | Stops the started processes and everything under them, last started first |
+| `writeState(extra?)` / `readState()` / `clearState()` | Records the running pids and their start times in `stateFile` (default `<logDir>/stack-state.json`) |
+| `recordedProcesses()` | The pids a `--keep` run recorded, for a `down` from another terminal to pass to `stopAll`. A pid whose process has a different start time now (after a crash or a reboot, say) is skipped and logged |
 
 `env` is merged over `process.env`.
 
@@ -225,7 +225,10 @@ as its reason, and does not cost the report the others. `GET /health` answers
 - **Postgres** reads `pg_stat_statements`, which has to be in
   `shared_preload_libraries` and created in the database. Without it the probe
   counts committed transactions from `pg_stat_database` and says so in `reason`.
-  Written rows always come from `pg_stat_database`.
+  Written rows always come from `pg_stat_database`. The probe starts each of its
+  queries with `PROBE_QUERY_MARKER` and leaves them out of the
+  `pg_stat_statements` figures. The fallback can't filter them: it counts two
+  transactions per scrape from the probe itself.
 - **CockroachDB** reads `crdb_internal.node_statement_statistics`, which needs
   no extension and resets when the node restarts. From v26.1 it refuses
   `crdb_internal` reads unless the session sets `allow_unsafe_internals`, as
