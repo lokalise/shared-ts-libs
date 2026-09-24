@@ -197,7 +197,13 @@ totals as `{ seconds, requests }`. `readRunTotals(data)` reads them from a k6
 summary object, and `readRunTotalsFile(path, { writtenSince })` from the JSON a
 `handleSummary` wrote, ignoring a file older than `writtenSince` so a k6 that
 failed before its summary does not report the previous run's numbers.
-`measureResources` returns `startedAt` for that.
+`measureResources` returns `startedAt` for that. The k6 script writes the file:
+
+```js
+export function handleSummary(data) {
+  return { 'k6-summary.json': JSON.stringify(data) }
+}
+```
 
 ## Database probe
 

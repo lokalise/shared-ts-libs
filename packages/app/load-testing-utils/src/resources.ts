@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
 import { fetchJson, fetchText } from './http.ts'
 import type { EngineSnapshot, ProbeSnapshot, StatementStats } from './types.ts'
 
@@ -187,10 +187,12 @@ export function readRunTotals(summary: unknown): RunTotals | undefined {
   } | null
   const durationMs = data?.state?.testRunDurationMs
   const requests = data?.metrics?.http_reqs?.values?.count
-  if (typeof durationMs !== 'number' || durationMs <= 0) return undefined
-  if (typeof requests !== 'number' || requests <= 0) return undefined
+  if (!isPositive(durationMs) || !isPositive(requests)) return undefined
   return { seconds: durationMs / 1000, requests }
 }
+
+const isPositive = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0
 
 export type ReadRunTotalsFileOptions = {
   /**
@@ -205,11 +207,9 @@ export function readRunTotalsFile(
   summaryPath: string,
   options: ReadRunTotalsFileOptions = {},
 ): RunTotals | undefined {
-  if (!existsSync(summaryPath)) return undefined
-  if (options.writtenSince !== undefined && statSync(summaryPath).mtimeMs < options.writtenSince) {
-    return undefined
-  }
+  const { writtenSince } = options
   try {
+    if (writtenSince !== undefined && statSync(summaryPath).mtimeMs < writtenSince) return undefined
     return readRunTotals(JSON.parse(readFileSync(summaryPath, 'utf8')))
   } catch {
     return undefined
