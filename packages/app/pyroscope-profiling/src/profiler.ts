@@ -24,14 +24,22 @@ const STOP_TIMEOUT_MS = 5_000
 const INVALID_LABEL_VALUE_CHARACTERS = /[{},=]/g
 
 /**
- * `@datadog/pprof` compiles labelled wall profiling out on `_WIN32`, so every
- * start fails there and the fix is to run the service somewhere else.
+ * `@datadog/pprof` compiles labelled wall profiling out on `_WIN32`, and the
+ * SDK's wall profiler always asks for labels, so on Windows only the heap
+ * profiler is started.
  */
-const WINDOWS_START_FAILURE_MESSAGE =
-  '[PYROSCOPE] Failed to start continuous profiling. The wall profiler cannot run on Windows: run the service in WSL2 or in its own container, see "On a Windows dev box" in the @lokalise/pyroscope-profiling README'
+const WINDOWS_HEAP_ONLY_MESSAGE =
+  '[PYROSCOPE] Heap profiling started. Wall and CPU profiles cannot be collected on Windows, and requests carry no labels: run the service in WSL2 or in its own container for those, see "On a Windows dev box" in the @lokalise/pyroscope-profiling README'
 
 /** Set while profiling is running; the module reference doubles as the flag. */
 let running: PyroscopeModule | undefined
+
+/**
+ * Set instead of {@link running} while only the heap profiler runs, on Windows.
+ * Kept apart so that {@link runningProfiler} stays unset and nothing tries to
+ * label samples a heap profile does not carry labels on.
+ */
+let heapOnly: PyroscopeModule | undefined
 
 /**
  * A start that has not finished yet, so that a second caller joins it instead
@@ -45,7 +53,7 @@ let running: PyroscopeModule | undefined
 let starting: Promise<boolean> | undefined
 
 /**
- * The SDK, while it is profiling, for the callers that need to reach it from
+ * The SDK, while it is wall profiling, for the callers that need to reach it from
  * outside: the span processor labels the profiler's samples with the span they
  * were taken under, and it is constructed before {@link startProfiling} has run
  * and has to work when it never does.
@@ -56,7 +64,7 @@ export function runningProfiler(): PyroscopeModule | undefined {
 
 /** Whether {@link startProfiling} succeeded and {@link stopProfiling} has not run yet. */
 export function isProfilingRunning(): boolean {
-  return running !== undefined
+  return running !== undefined || heapOnly !== undefined
 }
 
 /**
@@ -65,7 +73,7 @@ export function isProfilingRunning(): boolean {
  */
 export async function isProfilingRunningAfterStart(): Promise<boolean> {
   if (starting) await starting.catch(() => false)
-  return running !== undefined
+  return isProfilingRunning()
 }
 
 const toLabelValue = (value: string): string => value.replace(INVALID_LABEL_VALUE_CHARACTERS, '_')
@@ -125,6 +133,9 @@ const buildTags = (context: ProfilingContext, logger: ProfilingLogger): Record<s
  * shutdown. The Fastify plugin (`@lokalise/pyroscope-profiling/fastify`) does
  * both for you.
  *
+ * On Windows only the heap profiler starts: see "On a Windows dev box" in the
+ * README.
+ *
  * @returns whether profiling is now running.
  */
 export async function startProfiling(
@@ -133,7 +144,7 @@ export async function startProfiling(
   logger: ProfilingLogger,
 ): Promise<boolean> {
   if (!config.isEnabled) return false
-  if (running) {
+  if (isProfilingRunning()) {
     logger.warn('[PYROSCOPE] Profiling is already running')
     return true
   }
@@ -182,6 +193,12 @@ async function startSdk(
       tenantID: config.tenantId,
       tags,
     })
+    if (process.platform === 'win32') {
+      pyroscope.default.startHeapProfiling()
+      logger.warn({ appName, serverAddress: config.serverAddress, tags }, WINDOWS_HEAP_ONLY_MESSAGE)
+      heapOnly = pyroscope
+      return true
+    }
     pyroscope.start()
     // After the log, not before it: a logger that throws (a serializer that
     // chokes on the tags, one already torn down by a racing shutdown) goes to
@@ -194,12 +211,7 @@ async function startSdk(
     running = pyroscope
     return true
   } catch (error) {
-    logger.error(
-      { err: error },
-      process.platform === 'win32'
-        ? WINDOWS_START_FAILURE_MESSAGE
-        : '[PYROSCOPE] Failed to start continuous profiling',
-    )
+    logger.error({ err: error }, '[PYROSCOPE] Failed to start continuous profiling')
     await rollBackPartialStart(pyroscope, logger)
     return false
   }
@@ -221,7 +233,7 @@ async function rollBackPartialStart(
 ): Promise<void> {
   if (!pyroscope) return
   try {
-    await stopWithTimeout(pyroscope)
+    await stopWithTimeout(() => pyroscope.stop())
   } catch (error) {
     logger.debug({ err: error }, '[PYROSCOPE] Nothing to roll back after a failed start')
   }
@@ -242,12 +254,14 @@ async function rollBackPartialStart(
 export async function stopProfiling(logger: ProfilingLogger): Promise<void> {
   if (starting) await starting.catch(() => false)
 
-  const pyroscope = running
+  const pyroscope = running ?? heapOnly
   if (!pyroscope) return
+  const stop = running ? () => pyroscope.stop() : () => pyroscope.default.stopHeapProfiling()
   running = undefined
+  heapOnly = undefined
 
   try {
-    if (await stopWithTimeout(pyroscope)) {
+    if (await stopWithTimeout(stop)) {
       logger.info('[PYROSCOPE] Continuous profiling stopped')
     } else {
       logger.warn(
@@ -261,11 +275,11 @@ export async function stopProfiling(logger: ProfilingLogger): Promise<void> {
 }
 
 /** Whether the final flush made it out before {@link STOP_TIMEOUT_MS}. */
-async function stopWithTimeout(pyroscope: PyroscopeModule): Promise<boolean> {
+async function stopWithTimeout(stop: () => Promise<void>): Promise<boolean> {
   let timer: NodeJS.Timeout | undefined
   try {
     return await Promise.race([
-      pyroscope.stop().then(() => true),
+      stop().then(() => true),
       new Promise<false>((resolve) => {
         timer = setTimeout(() => resolve(false), STOP_TIMEOUT_MS)
       }),
