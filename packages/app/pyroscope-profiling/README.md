@@ -189,6 +189,9 @@ await app.register(pyroscopeProfilingPlugin, { start: false })
 first is still loading the SDK joins it rather than starting a second profiler,
 so the plugin is safe either way; this just keeps the log clean.
 
+Request labels follow the entry point's start: the plugin registers them only
+when that start left the profiler running.
+
 ### Without Fastify
 
 A worker, a script or a job runner calls the two functions directly:
@@ -279,7 +282,7 @@ of what a Node profile is asked to answer.
 | `context` | `resolveProfilingContextFromEnv()` | Labels attached to every profile |
 | `logger` | `app.log` | Where the profiler's own diagnostics go |
 | `start` | `true` | Whether the plugin starts the profiler. `false` keeps only the `onClose` flush |
-| `labelRequests` | `true` | Whether each request labels the samples taken during it with its route |
+| `labelRequests` | whether the profiler is running | Whether each request labels the samples taken during it with its route. Off by default while profiling is off, so the hooks cost nothing then |
 
 With profiling enabled and no name available from either source, the profiler
 refuses to start and logs an error rather than filing profiles under an empty

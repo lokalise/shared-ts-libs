@@ -52,6 +52,15 @@ export function isProfilingRunning(): boolean {
   return running !== undefined
 }
 
+/**
+ * Whether profiling is running once any start still in flight has finished, for
+ * a caller that did not start it and has to decide whether to label anything.
+ */
+export async function isProfilingRunningAfterStart(): Promise<boolean> {
+  if (starting) await starting.catch(() => false)
+  return running !== undefined
+}
+
 const toLabelValue = (value: string): string => value.replace(INVALID_LABEL_VALUE_CHARACTERS, '_')
 
 /**

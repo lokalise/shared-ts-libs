@@ -12,6 +12,7 @@ const profiler = vi.hoisted(() => ({
   startProfiling: vi.fn(),
   stopProfiling: vi.fn(),
   runningProfiler: vi.fn(),
+  isProfilingRunningAfterStart: vi.fn(),
 }))
 
 vi.mock('./profiler.ts', () => profiler)
@@ -48,6 +49,7 @@ describe('pyroscopeProfilingPlugin', () => {
     profiler.startProfiling.mockResolvedValue(true)
     profiler.stopProfiling.mockResolvedValue(undefined)
     profiler.runningProfiler.mockReturnValue(undefined)
+    profiler.isProfilingRunningAfterStart.mockResolvedValue(false)
     wallProfiler.getWallLabels.mockReturnValue({})
   })
 
@@ -221,6 +223,60 @@ describe('pyroscopeProfilingPlugin', () => {
       } finally {
         await app.close()
       }
+    })
+
+    // The wall profiler stays mocked as running in these, so a label that
+    // shows up could only have come from hooks the plugin should not have
+    // registered.
+    it('registers no hooks when the start left profiling off', async () => {
+      profilerRunning()
+      profiler.startProfiling.mockResolvedValue(false)
+      const app = await buildApp({ config: ENABLED_CONFIG }, withRoute)
+
+      await app.inject({ method: 'POST', url: '/v1/content/7' })
+
+      expect(wallProfiler.setWallLabels).not.toHaveBeenCalled()
+
+      await app.close()
+    })
+
+    it('labels requests when the entry point left profiling running', async () => {
+      profilerRunning()
+      profiler.isProfilingRunningAfterStart.mockResolvedValue(true)
+      const app = await buildApp({ config: ENABLED_CONFIG, start: false }, withRoute)
+
+      await app.inject({ method: 'POST', url: '/v1/content/7' })
+
+      expect(wallProfiler.setWallLabels).toHaveBeenCalledWith({
+        span_name: 'POST /v1/content/:id',
+      })
+
+      await app.close()
+    })
+
+    it('registers no hooks when the entry point left profiling off', async () => {
+      profilerRunning()
+      const app = await buildApp({ config: ENABLED_CONFIG, start: false }, withRoute)
+
+      await app.inject({ method: 'POST', url: '/v1/content/7' })
+
+      expect(wallProfiler.setWallLabels).not.toHaveBeenCalled()
+
+      await app.close()
+    })
+
+    it('labels requests when asked to, whatever the start did', async () => {
+      profilerRunning()
+      profiler.startProfiling.mockResolvedValue(false)
+      const app = await buildApp({ config: ENABLED_CONFIG, labelRequests: true }, withRoute)
+
+      await app.inject({ method: 'POST', url: '/v1/content/7' })
+
+      expect(wallProfiler.setWallLabels).toHaveBeenCalledWith({
+        span_name: 'POST /v1/content/:id',
+      })
+
+      await app.close()
     })
 
     it('does nothing per request while profiling is off', async () => {

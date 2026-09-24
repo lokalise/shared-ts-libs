@@ -401,4 +401,35 @@ describe('profiler', () => {
       expect(runningProfiler()).toBeUndefined()
     })
   })
+
+  describe('isProfilingRunningAfterStart', () => {
+    it('is false when nothing started profiling', async () => {
+      const { isProfilingRunningAfterStart } = await loadModule()
+
+      await expect(isProfilingRunningAfterStart()).resolves.toBe(false)
+    })
+
+    // An entry point that does not await its start would otherwise have the
+    // plugin decide while the SDK is still loading, and skip the labels.
+    it('waits for a start that is still in flight', async () => {
+      const { startProfiling, isProfilingRunningAfterStart } = await loadModule()
+
+      const start = startProfiling(ENABLED_CONFIG, CONTEXT, logger)
+
+      await expect(isProfilingRunningAfterStart()).resolves.toBe(true)
+      await start
+    })
+
+    it('is false after a start that failed', async () => {
+      pyroscopeMock.start.mockImplementationOnce(() => {
+        throw new Error('no native binding')
+      })
+      const { startProfiling, isProfilingRunningAfterStart } = await loadModule()
+
+      const start = startProfiling(ENABLED_CONFIG, CONTEXT, logger)
+
+      await expect(isProfilingRunningAfterStart()).resolves.toBe(false)
+      await start
+    })
+  })
 })
