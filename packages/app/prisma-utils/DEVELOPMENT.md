@@ -25,7 +25,7 @@ pnpm test
 
 ## Benchmarking `prismaBulkUpdate`
 
-The benchmark is run by hand and never in CI. It needs a seeded 2M-row table and takes minutes, and its timings depend on the machine. `pnpm test` only collects `src/**/*.spec.ts`, and nothing in CI calls `vitest bench`, so the files under `bench/` are typechecked and linted but not executed there.
+The benchmark is run by hand and never in CI. It needs a seeded 2M-row table and takes minutes, and its timings depend on the machine. `pnpm test` collects only `*.spec.ts` and `*.test.ts` files, and nothing in CI calls `vitest bench`, so the files under `bench/` are typechecked and linted but not executed there.
 
 ### What it measures
 
@@ -33,7 +33,7 @@ The benchmark is run by hand and never in CI. It needs a seeded 2M-row table and
 
 ### Running it
 
-Seed once, then benchmark as often as needed:
+Seed once, then benchmark as often as needed. `pnpm test:migrate` and `docker compose down` both drop `bench_segment`, so seed again after either:
 
 ```bash
 docker compose up -d --wait
