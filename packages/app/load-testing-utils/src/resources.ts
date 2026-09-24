@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { fetchJson, fetchText } from './http.ts'
 import type { EngineSnapshot, ProbeSnapshot, StatementStats } from './types.ts'
 
@@ -176,48 +176,59 @@ function subtract(after: number | undefined, before: number | undefined): number
 export type RunTotals = {
   /** Wall clock of the k6 test run, setup and teardown included. */
   seconds: number
-  requests: number
+  /** Every HTTP request k6 made. Absent for a script that makes none, such as gRPC or WebSocket only. */
+  requests?: number
 }
 
+/** Why a summary gave no totals, for the report to print as a warning. */
+export type RunTotalsUnavailable = { reason: string }
+
 /** Reads the totals out of a parsed k6 summary, the `data` `handleSummary` receives. */
-export function readRunTotals(summary: unknown): RunTotals | undefined {
+export function readRunTotals(summary: unknown): RunTotals | RunTotalsUnavailable {
   const data = summary as {
     state?: { testRunDurationMs?: unknown }
     metrics?: { http_reqs?: { values?: { count?: unknown } } }
   } | null
   const durationMs = data?.state?.testRunDurationMs
+  if (!isPositive(durationMs)) return { reason: 'the k6 summary has no test run duration' }
   const requests = data?.metrics?.http_reqs?.values?.count
-  if (!isPositive(durationMs) || !isPositive(requests)) return undefined
-  return { seconds: durationMs / 1000, requests }
+  return isPositive(requests)
+    ? { seconds: durationMs / 1000, requests }
+    : { seconds: durationMs / 1000 }
 }
 
 const isPositive = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value > 0
 
-export type ReadRunTotalsFileOptions = {
-  /**
-   * Epoch ms. A summary older than this is ignored: k6 that failed before its
-   * summary leaves the previous run's file in place.
-   */
-  writtenSince?: number
-}
-
-/** `readRunTotals` over a summary written with `JSON.stringify(data)`, or nothing. */
-export function readRunTotalsFile(
-  summaryPath: string,
-  options: ReadRunTotalsFileOptions = {},
-): RunTotals | undefined {
-  const { writtenSince } = options
+/**
+ * `readRunTotals` over a summary written with `JSON.stringify(data)`. Delete the
+ * file before k6 starts: a k6 that fails before its summary leaves the previous
+ * run's file in place, and this cannot tell the two apart.
+ */
+export function readRunTotalsFile(summaryPath: string): RunTotals | RunTotalsUnavailable {
+  let text: string
   try {
-    if (writtenSince !== undefined && statSync(summaryPath).mtimeMs < writtenSince) return undefined
-    return readRunTotals(JSON.parse(readFileSync(summaryPath, 'utf8')))
+    text = readFileSync(summaryPath, 'utf8')
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'ENOENT'
+      ? { reason: `no k6 summary at ${summaryPath}; the script's handleSummary writes it` }
+      : { reason: `could not read ${summaryPath}: ${(error as Error).message}` }
+  }
+  try {
+    return readRunTotals(JSON.parse(text))
   } catch {
-    return undefined
+    return { reason: `${summaryPath} is not JSON` }
   }
 }
 
-/** `run` adds CPU as a share of one core and CPU per request. */
-export function formatResourcesSection(delta: ResourceDelta, run?: RunTotals): string {
+/**
+ * `run` adds CPU as a share of one core and CPU per request, or a warning line
+ * saying why those rows are missing.
+ */
+export function formatResourcesSection(
+  delta: ResourceDelta,
+  run?: RunTotals | RunTotalsUnavailable,
+): string {
   const lines = ['## Resources', '', '| Measure | Value |', '|---|---|']
   const row = (label: string, value: string | undefined) => {
     if (value !== undefined) lines.push(`| ${label} | ${value} |`)
@@ -227,10 +238,17 @@ export function formatResourcesSection(delta: ResourceDelta, run?: RunTotals): s
     'CPU seconds',
     format(delta.cpuSeconds, (value) => value.toFixed(2)),
   )
+  const warnings = [...delta.warnings]
   if (run && delta.cpuSeconds !== undefined) {
-    // One core, so a single Node event loop saturates near 100%.
-    row('CPU, share of one core', `${((delta.cpuSeconds / run.seconds) * 100).toFixed(0)}%`)
-    row('CPU per request', `${((delta.cpuSeconds * 1000) / run.requests).toFixed(2)} ms`)
+    if ('reason' in run) {
+      warnings.push(`CPU ratios: ${run.reason}`)
+    } else {
+      // One core, so a single Node event loop saturates near 100%.
+      row('CPU, share of one core', `${((delta.cpuSeconds / run.seconds) * 100).toFixed(0)}%`)
+      if (run.requests !== undefined) {
+        row('CPU per request', `${((delta.cpuSeconds * 1000) / run.requests).toFixed(2)} ms`)
+      }
+    }
   }
   row(
     'GC seconds',
@@ -265,7 +283,7 @@ export function formatResourcesSection(delta: ResourceDelta, run?: RunTotals): s
     }
   }
 
-  for (const warning of delta.warnings) lines.push('', `> ${warning}`)
+  for (const warning of warnings) lines.push('', `> ${warning}`)
 
   return `${lines.join('\n')}\n`
 }
@@ -297,18 +315,13 @@ export async function scrapeResources(options: ScrapeResourcesOptions): Promise<
   return { metrics, probe }
 }
 
-/**
- * Scrapes before and after `body`, and returns what `body` returned with the
- * difference. `startedAt` (epoch ms, before the first scrape) is what
- * `readRunTotalsFile` takes as `writtenSince`.
- */
+/** Scrapes before and after `body`, and returns what `body` returned with the difference. */
 export async function measureResources<T>(
   scrape: () => Promise<ResourceSnapshot>,
   body: () => Promise<T>,
-): Promise<{ result: T; delta: ResourceDelta; startedAt: number }> {
-  const startedAt = Date.now()
+): Promise<{ result: T; delta: ResourceDelta }> {
   const before = await scrape()
   const result = await body()
   const after = await scrape()
-  return { result, delta: diffResources(before, after), startedAt }
+  return { result, delta: diffResources(before, after) }
 }
