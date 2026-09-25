@@ -196,3 +196,9 @@ process.on('SIGTERM', async () => {
   process.exit(0)
 })
 ```
+
+`gracefulOtelShutdown()` never rejects. The SDK shutdown has no timeout of its own and can hang, so it stops waiting after 5 seconds, logs a warning and resolves; spans still buffered at that point are lost. Pass `timeoutMs` to fit it inside your own shutdown deadline:
+
+```ts
+await gracefulOtelShutdown({ timeoutMs: 3000 })
+```
