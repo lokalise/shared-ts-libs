@@ -1,4 +1,5 @@
 import type { ClientRequest, IncomingMessage } from 'node:http'
+import { setTimeout } from 'node:timers/promises'
 import { FastifyOtelInstrumentation } from '@fastify/otel'
 import type { Span } from '@opentelemetry/api'
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node'
@@ -327,17 +328,46 @@ export function initOpenTelemetry(options: OpenTelemetryOptions = {}): void {
   }
 }
 
-export async function gracefulOtelShutdown(): Promise<void> {
+export const DEFAULT_OTEL_SHUTDOWN_TIMEOUT_MS = 5000
+
+export type GracefulOtelShutdownOptions = {
+  /**
+   * How long to wait for the SDK to flush and shut down, in milliseconds. Defaults to
+   * {@link DEFAULT_OTEL_SHUTDOWN_TIMEOUT_MS}. Keep it below the host's own shutdown deadline.
+   */
+  timeoutMs?: number
+}
+
+/**
+ * Shuts down the SDK, flushing buffered spans. Never rejects. `sdk.shutdown()` has no timeout of
+ * its own and can hang, so after `timeoutMs` this stops waiting, logs a warning and resolves.
+ */
+export async function gracefulOtelShutdown(
+  options: GracefulOtelShutdownOptions = {},
+): Promise<void> {
+  const { timeoutMs = DEFAULT_OTEL_SHUTDOWN_TIMEOUT_MS } = options
   logger.info('[OTEL] Shutdown requested')
   if (!sdk) {
     logger.info('[OTEL] No SDK instance to shutdown')
     return
   }
+
+  const timer = new AbortController()
+  const timedOut = Symbol('timedOut')
   try {
-    await sdk.shutdown()
+    const result = await Promise.race([
+      sdk.shutdown(),
+      setTimeout(timeoutMs, timedOut, { signal: timer.signal }),
+    ])
+    if (result === timedOut) {
+      logger.warn({ timeoutMs }, '[OTEL] SDK shutdown timed out, spans still buffered are lost')
+      return
+    }
     isInstrumentationRegistered = false
     logger.info('[OTEL] SDK shutdown completed successfully')
   } catch (error) {
     logger.error({ error }, '[OTEL] Error during SDK shutdown')
+  } finally {
+    timer.abort()
   }
 }
