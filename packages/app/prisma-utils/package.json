@@ -31,6 +31,8 @@
         "pretest:ci": "docker compose up -d --wait && pnpm run test:migrate",
         "test:ci": "pnpm run test",
         "posttest:ci": "docker compose down",
+        "bench:seed": "vitest run --config vitest.bench.config.ts",
+        "bench": "vitest bench --run --config vitest.bench.config.ts",
         "prepublishOnly": "pnpm run build",
         "package-version": "echo $npm_package_version",
         "postversion": "biome check --write package.json"
