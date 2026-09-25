@@ -292,10 +292,15 @@ as its reason, and does not cost the report the others. `GET /health` answers
 - **Postgres** reads `pg_stat_statements`, which has to be in
   `shared_preload_libraries` and created in the database. Without it the probe
   counts committed transactions from `pg_stat_database` and says so in `reason`.
-  Written rows always come from `pg_stat_database`. The probe starts each of its
-  queries with `PROBE_QUERY_MARKER` and leaves them out of the
-  `pg_stat_statements` figures. The fallback can't filter them: it counts two
-  transactions per scrape from the probe itself. Statements another role ran
+  Written rows always come from `pg_stat_database`. The probe puts
+  `PROBE_QUERY_MARKER` after the first keyword of each of its queries and leaves
+  them out of the `pg_stat_statements` figures. After, because newer versions of
+  the view store a statement from its first token, so a leading comment never
+  reaches it. Entries an earlier probe recorded without the marker stop growing,
+  since the probe's queries no longer match them, but stay in the cumulative
+  figures until `pg_stat_statements_reset()`; a run's difference is unaffected.
+  The fallback can't filter the probe: it counts one transaction per scrape from
+  the probe itself. Statements another role ran
   come back as `<insufficient privilege>` unless the probe's role has
   `pg_read_all_stats`. They still count in the totals, and the statements table
   leaves them out with a `reason` saying how many.

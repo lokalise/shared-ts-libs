@@ -52,11 +52,11 @@ describe('parseTop', () => {
 
 describe('readPostgresStats', () => {
   const database = { xact_commit: '40', tup_returned: '400', written: '12' }
+  const withStatements = { ...database, has_statements: true }
 
   it('reads pg_stat_statements and the writes from pg_stat_database', async () => {
     const { sql, calls } = fakeSql((text) => {
-      if (text.includes('FROM pg_extension')) return [{ present: 1 }]
-      if (text.includes('FROM pg_stat_database')) return [database]
+      if (text.includes('FROM pg_stat_database')) return [withStatements]
       if (text.includes('GROUP BY queryid'))
         return [{ key: '-42', query: 'SELECT\n  $1', calls: '3', total_ms: '1.5' }]
       if (text.includes('SUM(calls)')) return [{ calls: '90', rows: '900' }]
@@ -70,26 +70,45 @@ describe('readPostgresStats', () => {
       rowsWritten: 12,
       topStatements: [{ key: '-42', query: 'SELECT $1', calls: 3, totalMs: 1.5 }],
     })
-    expect(calls.at(-1)?.values).toEqual([`${PROBE_QUERY_MARKER}%`, 5])
+    expect(calls.at(-1)?.values).toEqual([`%${PROBE_QUERY_MARKER}%`, 5])
   })
 
-  it('marks every query it sends and leaves marked statements out of the totals', async () => {
-    const { sql, calls } = fakeSql((text) => (text.includes('FROM pg_extension') ? [{}] : []))
+  // Newer pg_stat_statements versions store a statement from its first token,
+  // so a marker in front of the keyword never reaches the view; one after it does.
+  it('marks every query after its first keyword and leaves marked statements out of the totals', async () => {
+    const { sql, calls } = fakeSql((text) =>
+      text.includes('FROM pg_stat_database') ? [{ has_statements: true }] : [],
+    )
     await readPostgresStats(sql, 5)
 
-    expect(calls).toHaveLength(4)
-    for (const { text } of calls) expect(text.trim().startsWith(PROBE_QUERY_MARKER)).toBe(true)
+    expect(calls).toHaveLength(3)
+    for (const { text } of calls) {
+      expect(text.trim().startsWith(`SELECT ${PROBE_QUERY_MARKER}`)).toBe(true)
+    }
     const fromStatements = calls.filter(({ text }) => text.includes('FROM pg_stat_statements'))
     expect(fromStatements).toHaveLength(2)
     for (const { text, values } of fromStatements) {
       expect(text).toContain('query NOT LIKE ?')
-      expect(values[0]).toBe(`${PROBE_QUERY_MARKER}%`)
+      expect(values[0]).toBe(`%${PROBE_QUERY_MARKER}%`)
     }
+  })
+
+  // Comments are not part of a statement's identity. Sent as the two queries an
+  // earlier probe did, with the marker moved, the extension check and the
+  // pg_stat_database read would keep adding to the rows it left without one.
+  it('reads the extension and pg_stat_database in one query, a shape earlier probes never sent', async () => {
+    const { sql, calls } = fakeSql((text) =>
+      text.includes('FROM pg_stat_database') ? [database] : [],
+    )
+    await readPostgresStats(sql, 5)
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0]?.text).toContain('EXISTS (SELECT FROM pg_extension')
   })
 
   it('leaves statements hidden from its role out of the table, and says so', async () => {
     const { sql, calls } = fakeSql((text) => {
-      if (text.includes('FROM pg_extension')) return [{ present: 1 }]
+      if (text.includes('FROM pg_stat_database')) return [withStatements]
       if (text.includes('SUM(calls)')) return [{ calls: '90', rows: '900', hidden: '7' }]
       return []
     })
@@ -104,7 +123,9 @@ describe('readPostgresStats', () => {
   })
 
   it('skips the statements table when top is 0, and tolerates empty results', async () => {
-    const { sql, calls } = fakeSql((text) => (text.includes('FROM pg_extension') ? [{}] : []))
+    const { sql, calls } = fakeSql((text) =>
+      text.includes('FROM pg_stat_database') ? [{ has_statements: true }] : [],
+    )
     await expect(readPostgresStats(sql)).resolves.toEqual({
       available: true,
       statements: 0,
@@ -127,8 +148,7 @@ describe('readPostgresStats', () => {
 
   it('falls back to committed transactions when the extension exists but is not preloaded', async () => {
     const { sql } = fakeSql((text) => {
-      if (text.includes('FROM pg_extension')) return [{ present: 1 }]
-      if (text.includes('FROM pg_stat_database')) return [database]
+      if (text.includes('FROM pg_stat_database')) return [withStatements]
       throw new Error('pg_stat_statements must be loaded via "shared_preload_libraries"')
     })
     await expect(readPostgresStats(sql, 5)).resolves.toEqual({
