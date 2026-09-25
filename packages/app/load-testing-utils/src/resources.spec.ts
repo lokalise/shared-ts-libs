@@ -7,13 +7,17 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { fetchJson, fetchText } from './http.ts'
 import {
   diffResources,
+  diffStatements,
   formatResourcesSection,
   measureResources,
+  type ProcessMetrics,
   parseProcessMetrics,
   type ResourceSnapshot,
   readRunTotals,
   readRunTotalsFile,
+  scrapeMetrics,
   scrapeResources,
+  summarizeEventLoopLag,
 } from './resources.ts'
 import type { EngineSnapshot } from './types.ts'
 
@@ -27,18 +31,20 @@ nodejs_gc_duration_seconds_sum{kind="minor"} 0.25
 nodejs_gc_duration_seconds_sum{kind="major", note="a b"} 0.75
 nodejs_gc_duration_seconds_count{kind="minor"} 10
 nodejs_eventloop_lag_p99_seconds 0.012
+nodejs_eventloop_lag_max_seconds 0.3
 broken_line
 not_a_number NaNish
 `
 
 describe('parseProcessMetrics', () => {
-  it('reads the five samples and sums GC across collector kinds', () => {
+  it('reads the six samples and sums GC across collector kinds', () => {
     expect(parseProcessMetrics(EXPOSITION)).toEqual({
       cpuSeconds: 12.5,
       residentBytes: 104857600,
       heapUsedBytes: 52428800,
       gcSeconds: 1,
       eventLoopLagP99Seconds: 0.012,
+      eventLoopLagMaxSeconds: 0.3,
     })
   })
 
@@ -60,14 +66,18 @@ describe('diffResources', () => {
     probe: {
       at: 't0',
       engines: {
-        Postgres: engine({ statements: 100, rowsReturned: 1000, rowsWritten: 10 }),
-        CockroachDB: engine({ statements: 5, rowsReturned: 50 }),
+        Postgres: engine({
+          statements: 100,
+          rowsReturned: 1000,
+          rowsWritten: 10,
+          allStatements: [{ key: 'q1', query: 'SELECT 1', calls: 97, totalMs: 500 }],
+        }),
+        CockroachDB: engine({ statements: 5, rowsReturned: 50, allStatements: [] }),
       },
     },
   }
 
   it('reports counters as differences and gauges as their end value', () => {
-    const top = [{ query: 'SELECT 1', calls: 3, totalMs: 4.5 }]
     const delta = diffResources(before, {
       metrics: {
         cpuSeconds: 12.5,
@@ -83,9 +93,9 @@ describe('diffResources', () => {
             statements: 150,
             rowsReturned: 1600,
             rowsWritten: 30,
-            topStatements: top,
+            allStatements: [{ key: 'q1', query: 'SELECT 1', calls: 100, totalMs: 504.5 }],
           }),
-          CockroachDB: engine({ statements: 7, rowsReturned: 80, topStatements: [] }),
+          CockroachDB: engine({ statements: 7, rowsReturned: 80, allStatements: [] }),
         },
       },
     })
@@ -95,14 +105,109 @@ describe('diffResources', () => {
       gcSeconds: 0.5,
       residentBytesAtEnd: 2,
       heapUsedBytesAtEnd: 3,
-      eventLoopLagP99SecondsAtEnd: 0.01,
+      eventLoopLag: { intervals: 1, p99WorstSeconds: 0.01, p99MedianSeconds: 0.01 },
       engines: {
         Postgres: { statements: 50, rowsReturned: 600, rowsWritten: 20 },
         CockroachDB: { statements: 2, rowsReturned: 30 },
       },
-      topStatements: { Postgres: top },
+      topStatements: { Postgres: [{ key: 'q1', query: 'SELECT 1', calls: 3, totalMs: 4.5 }] },
       warnings: [],
     })
+  })
+
+  it('summarises event loop lag over the samples and the closing scrape', () => {
+    const delta = diffResources(
+      before,
+      { ...before, metrics: { eventLoopLagP99Seconds: 0.02, eventLoopLagMaxSeconds: 0.03 } },
+      {
+        samples: [
+          { eventLoopLagP99Seconds: 0.5, eventLoopLagMaxSeconds: 0.9 },
+          { eventLoopLagP99Seconds: 0.04 },
+        ],
+      },
+    )
+    expect(delta.eventLoopLag).toEqual({
+      intervals: 3,
+      p99WorstSeconds: 0.5,
+      p99MedianSeconds: 0.04,
+      maxSeconds: 0.9,
+    })
+  })
+
+  it('keeps the samples for event loop lag when an end did not answer', () => {
+    const delta = diffResources({}, {}, { samples: [{ eventLoopLagP99Seconds: 0.3 }] })
+    expect(delta.eventLoopLag).toEqual({
+      intervals: 1,
+      p99WorstSeconds: 0.3,
+      p99MedianSeconds: 0.3,
+    })
+  })
+
+  it('leaves the statements table out, with a warning, unless both ends listed every statement', () => {
+    const cumulative = [{ query: 'SELECT 1', calls: 3, totalMs: 4.5 }]
+    const delta = diffResources(
+      {
+        probe: {
+          at: 't0',
+          engines: {
+            Postgres: engine({ topStatements: cumulative }),
+            CockroachDB: engine(),
+            MySQL: engine({ allStatements: cumulative }),
+          },
+        },
+      },
+      {
+        probe: {
+          at: 't1',
+          engines: {
+            Postgres: engine({ topStatements: cumulative }),
+            CockroachDB: engine({ allStatements: cumulative }),
+            MySQL: engine(),
+          },
+        },
+      },
+    )
+    expect(delta.topStatements).toEqual({})
+    expect(delta.warnings.slice(1)).toEqual([
+      'Postgres: no statements table, because only a probe read with ?statements=all at both ends shows what the run cost each statement',
+      'CockroachDB: no statements table, because only a probe read with ?statements=all at both ends shows what the run cost each statement',
+      'MySQL: no statements table, because only a probe read with ?statements=all at both ends shows what the run cost each statement',
+    ])
+  })
+
+  it('leaves out a statement missing from a capped opening list, instead of counting its history', () => {
+    const delta = diffResources(
+      {
+        probe: {
+          at: 't0',
+          engines: {
+            CockroachDB: engine({
+              allStatements: [{ key: 'q1', query: 'SELECT 1', calls: 10, totalMs: 10 }],
+              allStatementsTruncated: true,
+            }),
+          },
+        },
+      },
+      {
+        probe: {
+          at: 't1',
+          engines: {
+            CockroachDB: engine({
+              allStatements: [
+                { key: 'old', query: 'SELECT old', calls: 9000, totalMs: 90000 },
+                { key: 'q1', query: 'SELECT 1', calls: 15, totalMs: 12 },
+              ],
+            }),
+          },
+        },
+      },
+    )
+    expect(delta.topStatements).toEqual({
+      CockroachDB: [{ key: 'q1', query: 'SELECT 1', calls: 5, totalMs: 2 }],
+    })
+    expect(delta.warnings.slice(1)).toEqual([
+      'CockroachDB: statements outside the opening list are left out of the table, because the probe stopped at its maxStatements',
+    ])
   })
 
   it('drops a counter that went backwards, since that means a restart', () => {
@@ -118,7 +223,7 @@ describe('diffResources', () => {
         at: 't1',
         engines: {
           Postgres: engine({ statements: 20, rowsReturned: 1200, rowsWritten: 15 }),
-          CockroachDB: engine({ statements: 9, rowsReturned: 60 }),
+          CockroachDB: engine({ statements: 9, rowsReturned: 60, allStatements: [] }),
         },
       },
     })
@@ -166,12 +271,62 @@ describe('diffResources', () => {
   })
 })
 
+describe('diffStatements', () => {
+  it('ranks what each statement cost between the two lists, not what it has cost ever', () => {
+    const before = [
+      { key: 'migration', query: 'CREATE TABLE t', calls: 1, totalMs: 900 },
+      { key: 'read', query: 'SELECT t', calls: 10, totalMs: 5 },
+      { key: 'reset', query: 'UPDATE t', calls: 50, totalMs: 50 },
+    ]
+    const after = [
+      { key: 'migration', query: 'CREATE TABLE t', calls: 1, totalMs: 900 },
+      { key: 'read', query: 'SELECT t', calls: 110, totalMs: 205 },
+      { key: 'reset', query: 'UPDATE t', calls: 2, totalMs: 1 },
+      { key: 'new', query: 'DELETE t', calls: 4, totalMs: 40 },
+      { query: 'no key', calls: 1, totalMs: 1 },
+    ]
+
+    expect(diffStatements(before, after)).toEqual([
+      { key: 'read', query: 'SELECT t', calls: 100, totalMs: 200 },
+      { key: 'new', query: 'DELETE t', calls: 4, totalMs: 40 },
+      { query: 'no key', calls: 1, totalMs: 1 },
+    ])
+    expect(diffStatements(before, after, 1)).toHaveLength(1)
+  })
+
+  it('matches by query text when a statement has no key', () => {
+    const statement = { query: 'SELECT 1', calls: 2, totalMs: 2 }
+    expect(diffStatements([statement], [{ ...statement, calls: 5, totalMs: 8 }])).toEqual([
+      { query: 'SELECT 1', calls: 3, totalMs: 6 },
+    ])
+  })
+})
+
+describe('summarizeEventLoopLag', () => {
+  it('averages the two middle intervals for an even count, and is undefined without a p99', () => {
+    const samples: ProcessMetrics[] = [0.01, 0.4, 0.02, 0.03].map((p99) => ({
+      eventLoopLagP99Seconds: p99,
+    }))
+    expect(summarizeEventLoopLag(samples)).toEqual({
+      intervals: 4,
+      p99WorstSeconds: 0.4,
+      p99MedianSeconds: 0.025,
+    })
+    expect(summarizeEventLoopLag([{ cpuSeconds: 1 }])).toBeUndefined()
+  })
+})
+
 describe('formatResourcesSection', () => {
   it('prints what was measured, per engine, and nothing for what was not', () => {
     const section = formatResourcesSection({
       cpuSeconds: 2.5,
       residentBytesAtEnd: 104857600,
-      eventLoopLagP99SecondsAtEnd: 0.0123,
+      eventLoopLag: {
+        intervals: 36,
+        p99WorstSeconds: 0.0823,
+        p99MedianSeconds: 0.0123,
+        maxSeconds: 0.25,
+      },
       engines: {
         Postgres: { statements: 12345, rowsReturned: 10, rowsWritten: 2 },
         CockroachDB: { statements: 7, rowsReturned: 0 },
@@ -190,7 +345,10 @@ describe('formatResourcesSection', () => {
         '|---|---|',
         '| CPU seconds | 2.50 |',
         '| Resident memory at end | 100.0 MiB |',
-        '| Event loop lag p99 at end | 12.3 ms |',
+        '| Event loop lag p99, worst interval | 82.3 ms |',
+        '| Event loop lag p99, median interval | 12.3 ms |',
+        '| Event loop lag max | 250.0 ms |',
+        '| Event loop lag intervals | 36 |',
         '| Postgres statements | 12,345 |',
         '| Postgres rows returned | 10 |',
         '| Postgres rows written | 2 |',
@@ -371,5 +529,84 @@ describe('scrapeResources and measureResources', () => {
     )
     expect(result).toBe('done')
     expect(delta.cpuSeconds).toBe(3)
+  })
+
+  it('reads metrics from a URL, or undefined when nothing answers', async () => {
+    const base = await serve({ '/metrics': [200, 'nodejs_eventloop_lag_p99_seconds 0.5'] })
+    await expect(scrapeMetrics(`${base}/metrics`)).resolves.toEqual({ eventLoopLagP99Seconds: 0.5 })
+    await expect(scrapeMetrics(`${base}/missing`)).resolves.toBeUndefined()
+  })
+})
+
+describe('measureResources sampling', () => {
+  it('samples while the body runs, skipping empty and failed samples, and stops before the closing scrape', async () => {
+    const answers: (() => Promise<ProcessMetrics | undefined>)[] = [
+      () => Promise.resolve({ eventLoopLagP99Seconds: 0.2 }),
+      () => Promise.resolve(undefined),
+      () => Promise.reject(new Error('refused')),
+      () => {
+        throw new Error('thrown before a promise')
+      },
+      () => Promise.resolve({ eventLoopLagP99Seconds: 0.1 }),
+    ]
+    let calls = 0
+    let bodyDone: () => void = () => undefined
+    const bodyFinished = new Promise<void>((resolve) => {
+      bodyDone = resolve
+    })
+    const sampleMetrics = () => {
+      const answer = answers[calls++] ?? (() => Promise.resolve(undefined))
+      if (calls === answers.length) bodyDone()
+      return answer()
+    }
+    let sampledAtClose = -1
+
+    const { delta } = await measureResources(
+      () => {
+        sampledAtClose = calls
+        return Promise.resolve({ metrics: { eventLoopLagP99Seconds: 0.05 } })
+      },
+      () => bodyFinished,
+      { sampleMetrics, sampleIntervalMs: 1 },
+    )
+
+    expect(sampledAtClose).toBe(answers.length)
+    expect(delta.eventLoopLag).toEqual({
+      intervals: 3,
+      p99WorstSeconds: 0.2,
+      p99MedianSeconds: 0.1,
+    })
+  })
+
+  it('refuses an interval that is not a positive number, before scraping', async () => {
+    let scraped = false
+    const scrape = () => {
+      scraped = true
+      return Promise.resolve({})
+    }
+    for (const sampleIntervalMs of [0, -5, Number.NaN]) {
+      await expect(
+        measureResources(scrape, () => Promise.resolve(), { sampleIntervalMs }),
+      ).rejects.toThrow('sampleIntervalMs must be a positive number')
+    }
+    expect(scraped).toBe(false)
+  })
+
+  it('stops sampling when the body throws', async () => {
+    let calls = 0
+    const sampleMetrics = () => {
+      calls++
+      return Promise.resolve(undefined)
+    }
+    await expect(
+      measureResources(
+        () => Promise.resolve({}),
+        () => Promise.reject(new Error('k6 failed')),
+        { sampleMetrics, sampleIntervalMs: 1 },
+      ),
+    ).rejects.toThrow('k6 failed')
+    const afterThrow = calls
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(calls).toBe(afterThrow)
   })
 })

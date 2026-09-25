@@ -19,6 +19,10 @@ const notFromProbe = `${PROBE_QUERY_MARKER}%`
  * `reason`: the two agree while every statement is its own transaction, which
  * is the per-row write path a probe most needs to catch.
  *
+ * Statements another role ran come back with no `queryid` and the text
+ * `<insufficient privilege>` unless the probe's role has `pg_read_all_stats`.
+ * They still count in the totals; the statements table leaves them out and says so.
+ *
  * `pg_stat_statements` figures leave out the probe's own queries. The fallback
  * cannot: each scrape commits two transactions of its own, and its catalog
  * reads add a few rows to `rowsReturned`.
@@ -45,7 +49,8 @@ export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapsh
   let totals: Record<string, unknown> | undefined
   try {
     const rows = await sql`
-      /* load-testing-probe */ SELECT COALESCE(SUM(calls), 0) AS calls, COALESCE(SUM(rows), 0) AS rows
+      /* load-testing-probe */ SELECT COALESCE(SUM(calls), 0) AS calls, COALESCE(SUM(rows), 0) AS rows,
+        COUNT(*) FILTER (WHERE queryid IS NULL) AS hidden
       FROM pg_stat_statements
       WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
         AND query NOT LIKE ${notFromProbe}
@@ -57,8 +62,14 @@ export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapsh
     return committedTransactions(`pg_stat_statements is not readable (${message})`)
   }
 
+  const hidden = Number(totals?.hidden ?? 0)
   return {
     available: true,
+    ...(top > 0 && hidden > 0
+      ? {
+          reason: `${hidden} statements are hidden from the probe's role and left out of the statements table; grant it pg_read_all_stats`,
+        }
+      : {}),
     statements: Number(totals?.calls ?? 0),
     // `rows` counts rows a statement returned or affected, so it is the read
     // side; pg_stat_database separates the writes.
@@ -74,15 +85,20 @@ export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapsh
  * a call ranking puts the cheap one on top.
  */
 async function readPostgresTop(sql: Sql, top: number): Promise<StatementStats[]> {
+  // Grouped, because the view keeps a row per (role, queryid, toplevel) and a report wants one per statement.
   const rows = await sql`
-    /* load-testing-probe */ SELECT query, calls, total_exec_time AS total_ms
+    /* load-testing-probe */ SELECT queryid::TEXT AS key, MIN(query) AS query,
+      SUM(calls) AS calls, SUM(total_exec_time) AS total_ms
     FROM pg_stat_statements
     WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
       AND query NOT LIKE ${notFromProbe}
-    ORDER BY total_exec_time DESC
+      AND queryid IS NOT NULL
+    GROUP BY queryid
+    ORDER BY total_ms DESC
     LIMIT ${top}
   `
   return rows.map((row) => ({
+    key: String(row.key),
     query: normalizeStatement(String(row.query)),
     calls: Number(row.calls),
     totalMs: Number(row.total_ms),
