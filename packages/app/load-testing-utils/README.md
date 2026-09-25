@@ -121,6 +121,7 @@ if (args.command === 'down') {
 | `stopAll(processes?)` | Stops the started processes and everything under them, last started first |
 | `writeState(extra?)` / `readState()` / `clearState()` | Records the running pids and their start times in `stateFile` (default `<logDir>/stack-state.json`) |
 | `recordedProcesses()` | The pids a `--keep` run recorded, for a `down` from another terminal to pass to `stopAll`. A pid whose process has a different start time now (after a crash or a reboot, say) is skipped and logged |
+| `detach()` | Stops relaying and lets this process exit while the started processes keep running. Needs `detachable: true` |
 
 `env` is merged over `process.env`.
 
@@ -129,6 +130,31 @@ spawn without a shell. The supervisor sends those through `cmd.exe` as a single
 line (override the list with `shimCommands`), so their arguments must not
 contain spaces. Stopping a process there kills its whole tree with
 `taskkill /T /F`, because a shim leaves the real process one level down.
+
+### Leaving a stack up
+
+A runner that keeps its stack up after k6 (`run --keep`) has to return to the
+shell while the processes it started keep running. With piped output it
+cannot: the pipes hold its event loop open, and a child whose pipe loses its
+reader fails its next write. Create the supervisor with `detachable: true` and
+call `detach()` once the state is written:
+
+```ts
+const supervisor = new ProcessSupervisor({ logDir, detachable: true })
+// ... start the stack, run k6
+supervisor.writeState()
+if (keep) supervisor.detach()
+```
+
+A detachable process writes straight to its log file, and the terminal relay
+reads the file as it grows, so lines reach the terminal up to 100 ms late and
+the `ChildProcess` it returns has no `stdout` or `stderr`. Its stdin is empty,
+so a tool that exits when stdin closes (`esbuild --watch`, say) exits at once.
+On Windows it is also started detached, because Windows would otherwise kill it
+with the runner. A Ctrl+C there no longer reaches it either, so a runner that
+may be interrupted before `detach()` should call `stopAll()` from its own
+`SIGINT` handler. `recordedProcesses()` finds it from another terminal as
+before.
 
 ## Profiling on Windows
 

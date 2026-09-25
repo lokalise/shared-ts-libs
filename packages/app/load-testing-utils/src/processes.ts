@@ -1,13 +1,17 @@
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process'
 import {
+  closeSync,
   createWriteStream,
   existsSync,
   mkdirSync,
+  openSync,
   readFileSync,
+  readSync,
   rmSync,
   writeFileSync,
 } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { StringDecoder } from 'node:string_decoder'
 
 const writeLine = (line: string): void => {
   process.stdout.write(`${line}\n`)
@@ -46,7 +50,19 @@ export type ProcessSupervisorOptions = {
   log?: (line: string) => void
   /** @default process.platform */
   platform?: NodeJS.Platform
+  /**
+   * Started processes write straight to their log file instead of a pipe to
+   * this process, which relays the file to the terminal as it grows. That is
+   * what lets {@link ProcessSupervisor.detach} leave them running after this
+   * process exits: a piped child would fail its next write once the reading end
+   * went away. The terminal relay lags the output by up to 100 ms.
+   * @default false
+   */
+  detachable?: boolean
 }
+
+/** How often a detachable process's log file is read for new output. */
+const TAIL_INTERVAL_MS = 100
 
 export type Spawnable = { file: string; argv: string[]; shell: boolean }
 
@@ -78,7 +94,8 @@ export class ProcessSupervisor {
   private readonly shimCommands: readonly string[]
   private readonly log: (line: string) => void
   private readonly platform: NodeJS.Platform
-  private readonly spawned: { name: string; child: ChildProcess }[] = []
+  private readonly detachable: boolean
+  private readonly spawned: { name: string; child: ChildProcess; stopTail?: () => void }[] = []
 
   constructor(options: ProcessSupervisorOptions) {
     this.logDir = options.logDir
@@ -86,6 +103,7 @@ export class ProcessSupervisor {
     this.shimCommands = options.shimCommands ?? DEFAULT_SHIM_COMMANDS
     this.log = options.log ?? writeLine
     this.platform = options.platform ?? process.platform
+    this.detachable = options.detachable ?? false
   }
 
   private spawnable(command: string, args: string[]): Spawnable {
@@ -96,44 +114,85 @@ export class ProcessSupervisor {
    * Starts a long-running process, relays its output line by line with a
    * `[name]` prefix and into `<logDir>/<name>.log`, and keeps it for
    * {@link stopAll}.
+   *
+   * With `detachable`, the returned child has no `stdout` or `stderr`: its
+   * output goes to the log file, and is relayed from there.
    */
   start(name: string, command: string, args: string[], options: SpawnOptions = {}): ChildProcess {
     mkdirSync(this.logDir, { recursive: true })
-    const logFile = createWriteStream(join(this.logDir, `${name}.log`), { flags: 'w' })
+    const logPath = join(this.logDir, `${name}.log`)
+    const newRelay = () => lineRelay((line) => this.log(`[${name}] ${line}`))
 
     const { file, argv, shell } = this.spawnable(command, args)
-    const child = spawn(file, argv, {
-      cwd: options.cwd,
-      env: { ...process.env, ...options.env },
-      shell,
-    })
-    const relay = (line: string) => {
-      if (line.trim() !== '') this.log(`[${name}] ${line.trimEnd()}`)
+    const spawnOptions = { cwd: options.cwd, env: { ...process.env, ...options.env }, shell }
+
+    let child: ChildProcess
+    let endLog: () => void
+    if (this.detachable) {
+      const output = openSync(logPath, 'w')
+      try {
+        child = spawn(file, argv, {
+          ...spawnOptions,
+          stdio: ['ignore', output, output],
+          // Windows puts a child in a job object that kills it with this
+          // process unless it is detached. POSIX needs no such thing, and
+          // staying in this process group keeps a terminal Ctrl+C reaching it.
+          detached: this.platform === 'win32',
+          windowsHide: true,
+        })
+      } finally {
+        // The child holds its own copy; this one would only keep the file open.
+        closeSync(output)
+      }
+      endLog = tailFile(logPath, newRelay())
+    } else {
+      const logFile = createWriteStream(logPath, { flags: 'w' })
+      child = spawn(file, argv, spawnOptions)
+      for (const stream of [child.stdout, child.stderr]) {
+        if (!stream) continue
+        stream.setEncoding('utf8')
+        // One per stream, so a partial stdout line is not glued to stderr's.
+        const relay = newRelay()
+        stream.on('data', (chunk: string) => {
+          logFile.write(chunk)
+          relay.write(chunk)
+        })
+        stream.on('end', () => relay.flush())
+      }
+      endLog = () => logFile.end()
     }
-    for (const stream of [child.stdout, child.stderr]) {
-      if (!stream) continue
-      stream.setEncoding('utf8')
-      // A chunk can end mid-line, so the tail waits for the rest of its line.
-      let pending = ''
-      stream.on('data', (chunk: string) => {
-        logFile.write(chunk)
-        const lines = (pending + chunk).split('\n')
-        pending = lines.pop() ?? ''
-        for (const line of lines) relay(line)
-      })
-      stream.on('end', () => relay(pending))
-    }
+
     child.on('error', (error) => {
       this.log(`[${name}] failed to start: ${error.message}`)
     })
     child.on('close', (code, signal) => {
-      logFile.end()
+      endLog()
       if (code !== 0 && code !== null) this.log(`[${name}] exited with ${code}`)
       else if (signal) this.log(`[${name}] stopped (${signal})`)
     })
 
-    this.spawned.push({ name, child })
+    this.spawned.push({ name, child, stopTail: this.detachable ? endLog : undefined })
     return child
+  }
+
+  /**
+   * Stops relaying the started processes to the terminal and lets this process
+   * exit while they keep running, for a runner that leaves its stack up. Their
+   * output still goes to their log files, and {@link writeState} beforehand is
+   * what lets a `down` from another terminal find them.
+   *
+   * Needs `detachable`, and throws without it: a piped child cannot outlive the
+   * process reading its pipe.
+   */
+  detach(): void {
+    if (!this.detachable) {
+      throw new Error('detach() needs a ProcessSupervisor created with detachable: true')
+    }
+    for (const { child, stopTail } of this.spawned) {
+      stopTail?.()
+      child.unref()
+    }
+    this.spawned.length = 0
   }
 
   /** Runs a command to completion with inherited stdio, and throws when it fails. */
@@ -234,6 +293,60 @@ export class ProcessSupervisor {
 
   clearState(): void {
     if (existsSync(this.stateFile)) rmSync(this.stateFile)
+  }
+}
+
+/**
+ * Splits output into lines as it arrives. A chunk can end mid-line, so the
+ * tail waits for the rest of its line, or for {@link flush}.
+ */
+function lineRelay(emit: (line: string) => void) {
+  let pending = ''
+  const relay = (line: string) => {
+    if (line.trim() !== '') emit(line.trimEnd())
+  }
+  return {
+    write(chunk: string) {
+      const lines = (pending + chunk).split('\n')
+      pending = lines.pop() ?? ''
+      for (const line of lines) relay(line)
+    },
+    flush() {
+      relay(pending)
+      pending = ''
+    },
+  }
+}
+
+/**
+ * Relays what is appended to `path` until the returned stop is called, which
+ * reads whatever is left first. Idempotent, because a process can both close
+ * and be detached.
+ */
+function tailFile(path: string, relay: ReturnType<typeof lineRelay>): () => void {
+  const fd = openSync(path, 'r')
+  const buffer = Buffer.alloc(64 * 1024)
+  // A read can end mid-character, so the decoder holds its first bytes back.
+  const decoder = new StringDecoder('utf8')
+  let position = 0
+  const readNew = () => {
+    for (;;) {
+      const read = readSync(fd, buffer, 0, buffer.length, position)
+      if (read === 0) return
+      position += read
+      relay.write(decoder.write(buffer.subarray(0, read)))
+    }
+  }
+  const timer = setInterval(readNew, TAIL_INTERVAL_MS)
+  let stopped = false
+  return () => {
+    if (stopped) return
+    stopped = true
+    clearInterval(timer)
+    readNew()
+    relay.write(decoder.end())
+    relay.flush()
+    closeSync(fd)
   }
 }
 
