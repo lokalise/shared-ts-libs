@@ -58,7 +58,7 @@
         "@types/node": "^26.4.1",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",
-        "@vitest/coverage-v8": "^4.1.11",
+        "@vitest/coverage-v8": "^5.0.1",
         "cli-testlab": "^6.0.1",
         "cross-env": "^10.1.0",
         "drizzle-kit": "1.0.0-rc.5-ab785fc",
@@ -67,6 +67,6 @@
         "postgres": "^3.4.9",
         "rimraf": "^6.1.3",
         "typescript": "7.0.2",
-        "vitest": "^4.1.11"
+        "vitest": "^5.0.1"
     }
 }

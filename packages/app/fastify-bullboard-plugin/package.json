@@ -47,7 +47,7 @@
         "@lokalise/fastify-extras": "^34.0.1",
         "@lokalise/node-core": "^14.9.1",
         "@types/node": "^26.4.1",
-        "@vitest/coverage-v8": "^4.1.11",
+        "@vitest/coverage-v8": "^5.0.1",
         "awilix": "^13.0.5",
         "awilix-manager": "^7.0.0",
         "bullmq": "6.3.4",
@@ -63,7 +63,7 @@
         "toad-scheduler": "^4.0.1",
         "ts-deepmerge": "^8.0.0",
         "typescript": "7.0.2",
-        "vitest": "^4.1.11"
+        "vitest": "^5.0.1"
     },
     "keywords": [
         "fastify",
