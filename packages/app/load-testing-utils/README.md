@@ -241,11 +241,15 @@ as its reason, and does not cost the report the others. `GET /health` answers
   counts committed transactions from `pg_stat_database` and says so in `reason`.
   Written rows always come from `pg_stat_database`. The probe puts
   `PROBE_QUERY_MARKER` after the first keyword of each of its queries and leaves
-  them out of the `pg_stat_statements` figures. After, because the view stores a
-  statement from its first token, so a leading comment never reaches it. Rows
-  of roles the probe may not read (`<insufficient privilege>`) are left out too;
-  grant its role `pg_read_all_stats` to count them. The fallback can't filter
-  the probe: it counts two transactions per scrape from the probe itself.
+  them out of the `pg_stat_statements` figures. After, because newer versions of
+  the view store a statement from its first token, so a leading comment never
+  reaches it. The view keeps the text a statement was first seen with, so
+  entries an earlier probe recorded without the marker keep counting until
+  `pg_stat_statements_reset()`. Statements of roles the probe may not read
+  (`<insufficient privilege>`) count toward the totals but are left out of the
+  statements table; grant its role `pg_read_all_stats` to list them. The
+  fallback can't filter the probe: it counts two transactions per scrape from
+  the probe itself.
 - **CockroachDB** reads `crdb_internal.node_statement_statistics`, which needs
   no extension and resets when the node restarts. From v26.1 it refuses
   `crdb_internal` reads unless the session sets `allow_unsafe_internals`, as

@@ -4,17 +4,18 @@ import { normalizeStatement } from './statements.ts'
 
 /**
  * Sits right after the first keyword of every query the probe sends, which is
- * what keeps the probe out of its own totals. Not in front of it:
- * `pg_stat_statements` stores a statement from its first token, so a leading
- * comment never reaches the view.
+ * what keeps the probe out of its own totals. Not in front of it: newer
+ * `pg_stat_statements` versions store a statement from its first token, so a
+ * leading comment never reaches the view there.
  */
 export const PROBE_QUERY_MARKER = '/* load-testing-probe */'
 const fromProbe = `%${PROBE_QUERY_MARKER}%`
 
 /**
- * What the view shows for a statement run by a role this one may not read. It
- * carries no text and no query id, so it can only ever be noise in a report.
- * Granting the probe's role `pg_read_all_stats` makes those statements readable.
+ * What the view shows as the text of a statement run by a role this one may
+ * not read. Its counters are still real load, so the totals keep it; only the
+ * statements table, which has nothing to show for it, leaves it out. Granting
+ * the probe's role `pg_read_all_stats` makes those statements readable.
  */
 const UNREADABLE = '<insufficient privilege>'
 
@@ -57,7 +58,6 @@ export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapsh
       FROM pg_stat_statements
       WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
         AND query NOT LIKE ${fromProbe}
-        AND query <> ${UNREADABLE}
     `
     totals = rows[0]
   } catch (error) {

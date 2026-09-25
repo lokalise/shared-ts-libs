@@ -73,8 +73,8 @@ describe('readPostgresStats', () => {
     expect(calls.at(-1)?.values).toEqual([`%${PROBE_QUERY_MARKER}%`, '<insufficient privilege>', 5])
   })
 
-  // pg_stat_statements stores a statement from its first token, so a marker in
-  // front of the keyword never reaches the view; one after it does.
+  // Newer pg_stat_statements versions store a statement from its first token,
+  // so a marker in front of the keyword never reaches the view; one after it does.
   it('marks every query after its first keyword and leaves marked statements out of the totals', async () => {
     const { sql, calls } = fakeSql((text) => (text.includes('FROM pg_extension') ? [{}] : []))
     await readPostgresStats(sql, 5)
@@ -91,16 +91,18 @@ describe('readPostgresStats', () => {
     }
   })
 
-  it('leaves out the rows of roles it may not read', async () => {
+  // Their text is hidden but their calls are real load, so only the statements
+  // table, which has nothing to show for them, leaves them out.
+  it('counts the rows of roles it may not read, and leaves them out of the statements table', async () => {
     const { sql, calls } = fakeSql((text) => (text.includes('FROM pg_extension') ? [{}] : []))
     await readPostgresStats(sql, 5)
 
-    for (const { text, values } of calls.filter(({ text }) =>
-      text.includes('FROM pg_stat_statements'),
-    )) {
-      expect(text).toContain('query <> ?')
-      expect(values[1]).toBe('<insufficient privilege>')
-    }
+    const totals = calls.find(({ text }) => text.includes('SUM(calls)'))
+    const topQuery = calls.find(({ text }) => text.includes('ORDER BY total_exec_time'))
+    expect(totals?.text).not.toContain('query <> ?')
+    expect(totals?.values).not.toContain('<insufficient privilege>')
+    expect(topQuery?.text).toContain('query <> ?')
+    expect(topQuery?.values[1]).toBe('<insufficient privilege>')
   })
 
   it('skips the statements table when top is 0, and tolerates empty results', async () => {
