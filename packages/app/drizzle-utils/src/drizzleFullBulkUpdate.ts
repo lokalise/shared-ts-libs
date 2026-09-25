@@ -147,8 +147,10 @@ const resolveConstantWhereColumns = (
  * starts with it and read every row of the tenant; a constant lets it use the
  * index on the other key. A value counts as the same only when it is a string,
  * number, boolean or bigint and is `===` to the first entry's value. Anything else
- * (`null`, `Date`, objects) stays in `VALUES`. When every "where" column is
- * constant, `VALUES` holds only the "data" columns.
+ * (`null`, `Date`, objects) stays in `VALUES`. A `null` "where" value matches no
+ * row either way, because `=` is never true for NULL; matching it with `IS NULL`
+ * would change results. When every "where" column is constant, `VALUES` holds
+ * only the "data" columns.
  *
  * Notes:
  * - All `where` objects must have the same set of keys.
