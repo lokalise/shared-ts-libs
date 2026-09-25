@@ -21,6 +21,8 @@ allowBuilds:
   msw: true
   prisma: true
   protobufjs: true
+  # optional mockttp dependency; ships N-API prebuilds, so its node-gyp fallback build is not needed
+  tls-impersonate: false
   unrs-resolver: true
 minimumReleaseAgeExclude:
   - "@lokalise/*"
