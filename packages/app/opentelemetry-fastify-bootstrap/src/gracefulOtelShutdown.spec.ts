@@ -46,4 +46,44 @@ describe('gracefulOtelShutdown with a hung SDK shutdown', () => {
       msg: '[OTEL] SDK shutdown timed out, spans still buffered are lost',
     })
   })
+
+  it('logs a shutdown that fails after the timeout', async () => {
+    let reject: (error: Error) => void = () => {}
+    const promise = new Promise<void>((_, rejectPromise) => {
+      reject = rejectPromise
+    })
+    vi.spyOn(NodeSDK.prototype, 'shutdown').mockReturnValue(promise)
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    errorSpy.mockClear()
+
+    await gracefulOtelShutdown({ timeoutMs: 10 })
+    reject(new Error('late failure'))
+
+    await vi.waitFor(() => expect(errorSpy).toHaveBeenCalledOnce())
+    expect(JSON.parse(errorSpy.mock.calls[0]?.[0] as string)).toMatchObject({
+      level: 'error',
+      msg: '[OTEL] Error during SDK shutdown',
+    })
+  })
+
+  it('logs a shutdown that completes after the timeout', async () => {
+    let resolve: () => void = () => {}
+    const promise = new Promise<void>((resolvePromise) => {
+      resolve = resolvePromise
+    })
+    vi.spyOn(NodeSDK.prototype, 'shutdown').mockReturnValue(promise)
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await gracefulOtelShutdown({ timeoutMs: 10 })
+    logSpy.mockClear()
+    resolve()
+
+    await vi.waitFor(() =>
+      expect(logSpy.mock.calls.map(([output]) => JSON.parse(output as string).msg)).toContain(
+        '[OTEL] SDK shutdown completed successfully',
+      ),
+    )
+  })
 })

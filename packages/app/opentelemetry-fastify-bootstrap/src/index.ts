@@ -352,22 +352,29 @@ export async function gracefulOtelShutdown(
     return
   }
 
+  // Settles on its own even after the timeout, so a late success or failure is still recorded.
+  const shutdown = shutdownSdk(sdk)
   const timer = new AbortController()
   const timedOut = Symbol('timedOut')
   try {
     const result = await Promise.race([
-      sdk.shutdown(),
+      shutdown,
       setTimeout(timeoutMs, timedOut, { signal: timer.signal }),
     ])
     if (result === timedOut) {
       logger.warn({ timeoutMs }, '[OTEL] SDK shutdown timed out, spans still buffered are lost')
-      return
     }
+  } finally {
+    timer.abort()
+  }
+}
+
+async function shutdownSdk(instance: NodeSDK): Promise<void> {
+  try {
+    await instance.shutdown()
     isInstrumentationRegistered = false
     logger.info('[OTEL] SDK shutdown completed successfully')
   } catch (error) {
     logger.error({ error }, '[OTEL] Error during SDK shutdown')
-  } finally {
-    timer.abort()
   }
 }
