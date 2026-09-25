@@ -12,6 +12,7 @@ the next.
 - [Install](#install)
 - [A runner in outline](#a-runner-in-outline)
 - [Processes](#processes)
+- [Profiling on Windows](#profiling-on-windows)
 - [Containers](#containers)
 - [k6](#k6)
 - [Environment](#environment)
@@ -32,6 +33,8 @@ uses it also needs `postgres`. Everything else has no dependencies.
 ## A runner in outline
 
 ```ts
+import { rmSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   appendReportSection,
   bindAddressEnv,
@@ -42,7 +45,9 @@ import {
   measureResources,
   parseRunnerArgs,
   ProcessSupervisor,
+  readRunTotalsFile,
   refuseIfPortTaken,
+  refuseProfilingOnWindows,
   resolveK6Mode,
   runK6,
   scrapeMetrics,
@@ -63,6 +68,7 @@ if (args.command === 'down') {
   composeDown(supervisor, compose, { profiles: ['profiling'] })
   supervisor.clearState()
 } else {
+  if (args.flags.profiling) refuseProfilingOnWindows('service', { hint: 'pass --no-service' })
   await refuseIfPortTaken('service', 3000, { hint: 'run with --no-service to measure it' })
   composeUp(supervisor, compose)
   // migrations and seeding: service-specific
@@ -74,6 +80,8 @@ if (args.command === 'down') {
   supervisor.writeState()
 
   const metricsUrl = 'http://localhost:9080/metrics'
+  const summaryPath = join(K6_DIR, 'k6-summary.json')
+  rmSync(summaryPath, { force: true })
   const { result: exitCode, delta } = await measureResources(
     () => scrapeResources({ metricsUrl, probeUrl: 'http://localhost:3323/db-stats?statements=all' }),
     () =>
@@ -87,7 +95,10 @@ if (args.command === 'down') {
       }),
     { sampleMetrics: () => scrapeMetrics(metricsUrl) },
   )
-  appendReportSection(join(K6_DIR, 'k6-report.md'), formatResourcesSection(delta))
+  appendReportSection(
+    join(K6_DIR, 'k6-report.md'),
+    formatResourcesSection(delta, readRunTotalsFile(summaryPath)),
+  )
   process.exitCode = exitCode
 
   if (!args.flags.keep) {
@@ -118,6 +129,17 @@ spawn without a shell. The supervisor sends those through `cmd.exe` as a single
 line (override the list with `shimCommands`), so their arguments must not
 contain spaces. Stopping a process there kills its whole tree with
 `taskkill /T /F`, because a shim leaves the real process one level down.
+
+## Profiling on Windows
+
+`@pyroscope/nodejs` cannot start on Windows, so a process the runner starts
+there with the profiler on runs unprofiled and leaves Pyroscope empty.
+`refuseProfilingOnWindows(name, { platform?, hint? })` throws on `win32` with a
+message naming the ways out: run the runner from WSL2, or start the process in
+WSL2 or its container. Call it before bringing anything up, and only when
+profiling is on and the runner starts the process itself; `hint` names the flag
+that skips starting it. See the `@lokalise/pyroscope-profiling`
+[notes on a Windows dev box](https://github.com/lokalise/shared-ts-libs/tree/main/packages/app/pyroscope-profiling#on-a-windows-dev-box).
 
 ## Containers
 
@@ -204,6 +226,29 @@ the worst and the median interval p99, the highest max, and the number of
 intervals. The closing scrape is the last interval. Without a sampler it is the
 only one, and the p99 covers the whole run, which averages a burst away.
 Anything else that scrapes the endpoint during the run splits an interval.
+
+Given the run's totals, the section also reports CPU as a share of one core
+over the k6 run, and CPU milliseconds per request. A Node service on one event
+loop saturates near 100%, and CPU per request is the figure that compares
+across runs with different load. `formatResourcesSection(delta, run)` takes the
+totals as `{ seconds, requests }`, or as `{ reason }` to print a warning line
+saying why those rows are missing. `readRunTotals(data)` reads either from a k6
+summary object, and `readRunTotalsFile(path)` from the JSON a `handleSummary`
+wrote. A script that makes no HTTP requests (gRPC or WebSocket only) still gets
+the share of a core. Delete the file before k6 starts, as the runner above does:
+a k6 that fails before its summary leaves the previous run's file behind. The
+k6 script writes the file:
+
+```js
+export function handleSummary(data) {
+  return { 'k6-summary.json': JSON.stringify(data) }
+}
+```
+
+CPU seconds cover everything `runK6` does, while the share of a core divides by
+the test run alone. The first Docker run also pulls the k6 image with the
+service idle, so rerun it for a clean figure. CPU per request divides by every
+HTTP request k6 made, so a script that also calls other hosts reads low.
 
 ## Database probe
 

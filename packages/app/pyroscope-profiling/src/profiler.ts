@@ -23,6 +23,13 @@ const STOP_TIMEOUT_MS = 5_000
  */
 const INVALID_LABEL_VALUE_CHARACTERS = /[{},=]/g
 
+/**
+ * `@datadog/pprof` compiles labelled wall profiling out on `_WIN32`, so every
+ * start fails there and the fix is to run the service somewhere else.
+ */
+const WINDOWS_START_FAILURE_MESSAGE =
+  '[PYROSCOPE] Failed to start continuous profiling. The wall profiler cannot run on Windows: run the service in WSL2 or in its own container, see "On a Windows dev box" in the @lokalise/pyroscope-profiling README'
+
 /** Set while profiling is running; the module reference doubles as the flag. */
 let running: PyroscopeModule | undefined
 
@@ -187,7 +194,12 @@ async function startSdk(
     running = pyroscope
     return true
   } catch (error) {
-    logger.error({ error }, '[PYROSCOPE] Failed to start continuous profiling')
+    logger.error(
+      { err: error },
+      process.platform === 'win32'
+        ? WINDOWS_START_FAILURE_MESSAGE
+        : '[PYROSCOPE] Failed to start continuous profiling',
+    )
     await rollBackPartialStart(pyroscope, logger)
     return false
   }
@@ -211,7 +223,7 @@ async function rollBackPartialStart(
   try {
     await stopWithTimeout(pyroscope)
   } catch (error) {
-    logger.debug({ error }, '[PYROSCOPE] Nothing to roll back after a failed start')
+    logger.debug({ err: error }, '[PYROSCOPE] Nothing to roll back after a failed start')
   }
 }
 
@@ -244,7 +256,7 @@ export async function stopProfiling(logger: ProfilingLogger): Promise<void> {
       )
     }
   } catch (error) {
-    logger.error({ error }, '[PYROSCOPE] Failed to stop continuous profiling cleanly')
+    logger.error({ err: error }, '[PYROSCOPE] Failed to stop continuous profiling cleanly')
   }
 }
 

@@ -48,6 +48,10 @@ export {
   stopProcess,
   toSpawnable,
 } from './processes.ts'
+export {
+  type RefuseProfilingOnWindowsOptions,
+  refuseProfilingOnWindows,
+} from './profiling.ts'
 export { appendReportSection } from './report.ts'
 export {
   type DiffResourcesOptions,
@@ -62,6 +66,10 @@ export {
   parseProcessMetrics,
   type ResourceDelta,
   type ResourceSnapshot,
+  type RunTotals,
+  type RunTotalsUnavailable,
+  readRunTotals,
+  readRunTotalsFile,
   type ScrapeResourcesOptions,
   scrapeMetrics,
   scrapeResources,
