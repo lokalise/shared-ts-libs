@@ -137,9 +137,13 @@ if (keep) supervisor.detach()
 
 A detachable process writes straight to its log file, and the terminal relay
 reads the file as it grows, so lines reach the terminal up to 100 ms late and
-the `ChildProcess` it returns has no `stdout` or `stderr`. On Windows it is
-also started detached, because Windows would otherwise kill it with the runner.
-`recordedProcesses()` finds it from another terminal as before.
+the `ChildProcess` it returns has no `stdout` or `stderr`. Its stdin is empty,
+so a tool that exits when stdin closes (`esbuild --watch`, say) exits at once.
+On Windows it is also started detached, because Windows would otherwise kill it
+with the runner. A Ctrl+C there no longer reaches it either, so a runner that
+may be interrupted before `detach()` should call `stopAll()` from its own
+`SIGINT` handler. `recordedProcesses()` finds it from another terminal as
+before.
 
 ## Profiling on Windows
 

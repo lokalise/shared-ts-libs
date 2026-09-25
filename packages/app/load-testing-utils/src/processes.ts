@@ -11,6 +11,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { StringDecoder } from 'node:string_decoder'
 
 const writeLine = (line: string): void => {
   process.stdout.write(`${line}\n`)
@@ -54,14 +55,14 @@ export type ProcessSupervisorOptions = {
    * this process, which relays the file to the terminal as it grows. That is
    * what lets {@link ProcessSupervisor.detach} leave them running after this
    * process exits: a piped child would fail its next write once the reading end
-   * went away. The terminal relay lags the output by up to {@link TAIL_INTERVAL_MS}.
+   * went away. The terminal relay lags the output by up to 100 ms.
    * @default false
    */
   detachable?: boolean
 }
 
 /** How often a detachable process's log file is read for new output. */
-export const TAIL_INTERVAL_MS = 100
+const TAIL_INTERVAL_MS = 100
 
 export type Spawnable = { file: string; argv: string[]; shell: boolean }
 
@@ -120,13 +121,12 @@ export class ProcessSupervisor {
   start(name: string, command: string, args: string[], options: SpawnOptions = {}): ChildProcess {
     mkdirSync(this.logDir, { recursive: true })
     const logPath = join(this.logDir, `${name}.log`)
-    const relay = lineRelay((line) => this.log(`[${name}] ${line}`))
+    const newRelay = () => lineRelay((line) => this.log(`[${name}] ${line}`))
 
     const { file, argv, shell } = this.spawnable(command, args)
     const spawnOptions = { cwd: options.cwd, env: { ...process.env, ...options.env }, shell }
 
     let child: ChildProcess
-    let stopTail: (() => void) | undefined
     let endLog: () => void
     if (this.detachable) {
       const output = openSync(logPath, 'w')
@@ -144,14 +144,15 @@ export class ProcessSupervisor {
         // The child holds its own copy; this one would only keep the file open.
         closeSync(output)
       }
-      stopTail = tailFile(logPath, relay)
-      endLog = stopTail
+      endLog = tailFile(logPath, newRelay())
     } else {
       const logFile = createWriteStream(logPath, { flags: 'w' })
       child = spawn(file, argv, spawnOptions)
       for (const stream of [child.stdout, child.stderr]) {
         if (!stream) continue
         stream.setEncoding('utf8')
+        // One per stream, so a partial stdout line is not glued to stderr's.
+        const relay = newRelay()
         stream.on('data', (chunk: string) => {
           logFile.write(chunk)
           relay.write(chunk)
@@ -170,7 +171,7 @@ export class ProcessSupervisor {
       else if (signal) this.log(`[${name}] stopped (${signal})`)
     })
 
-    this.spawned.push({ name, child, stopTail })
+    this.spawned.push({ name, child, stopTail: this.detachable ? endLog : undefined })
     return child
   }
 
@@ -325,13 +326,15 @@ function lineRelay(emit: (line: string) => void) {
 function tailFile(path: string, relay: ReturnType<typeof lineRelay>): () => void {
   const fd = openSync(path, 'r')
   const buffer = Buffer.alloc(64 * 1024)
+  // A read can end mid-character, so the decoder holds its first bytes back.
+  const decoder = new StringDecoder('utf8')
   let position = 0
   const readNew = () => {
     for (;;) {
       const read = readSync(fd, buffer, 0, buffer.length, position)
       if (read === 0) return
       position += read
-      relay.write(buffer.toString('utf8', 0, read))
+      relay.write(decoder.write(buffer.subarray(0, read)))
     }
   }
   const timer = setInterval(readNew, TAIL_INTERVAL_MS)
@@ -341,6 +344,7 @@ function tailFile(path: string, relay: ReturnType<typeof lineRelay>): () => void
     stopped = true
     clearInterval(timer)
     readNew()
+    relay.write(decoder.end())
     relay.flush()
     closeSync(fd)
   }
