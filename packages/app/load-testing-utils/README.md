@@ -33,6 +33,8 @@ uses it also needs `postgres`. Everything else has no dependencies.
 ## A runner in outline
 
 ```ts
+import { rmSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   appendReportSection,
   bindAddressEnv,
@@ -43,6 +45,7 @@ import {
   measureResources,
   parseRunnerArgs,
   ProcessSupervisor,
+  readRunTotalsFile,
   refuseIfPortTaken,
   refuseProfilingOnWindows,
   resolveK6Mode,
@@ -75,6 +78,8 @@ if (args.command === 'down') {
   await waitForHealth('service', 'http://localhost:3000/health')
   supervisor.writeState()
 
+  const summaryPath = join(K6_DIR, 'k6-summary.json')
+  rmSync(summaryPath, { force: true })
   const { result: exitCode, delta } = await measureResources(
     () => scrapeResources({ metricsUrl: 'http://localhost:9080/metrics' }),
     () =>
@@ -87,7 +92,10 @@ if (args.command === 'down') {
         docker: { hostDir: PERF_DIR },
       }),
   )
-  appendReportSection(join(K6_DIR, 'k6-report.md'), formatResourcesSection(delta))
+  appendReportSection(
+    join(K6_DIR, 'k6-report.md'),
+    formatResourcesSection(delta, readRunTotalsFile(summaryPath)),
+  )
   process.exitCode = exitCode
 
   if (!args.flags.keep) {
@@ -200,6 +208,29 @@ loop lag p99 at the end, and statements and rows per database engine. A counter
 that went backwards means the process restarted mid-run, and is left out rather
 than reported as a negative number. A source that did not answer becomes a
 warning line instead of a zero.
+
+Given the run's totals, the section also reports CPU as a share of one core
+over the k6 run, and CPU milliseconds per request. A Node service on one event
+loop saturates near 100%, and CPU per request is the figure that compares
+across runs with different load. `formatResourcesSection(delta, run)` takes the
+totals as `{ seconds, requests }`, or as `{ reason }` to print a warning line
+saying why those rows are missing. `readRunTotals(data)` reads either from a k6
+summary object, and `readRunTotalsFile(path)` from the JSON a `handleSummary`
+wrote. A script that makes no HTTP requests (gRPC or WebSocket only) still gets
+the share of a core. Delete the file before k6 starts, as the runner above does:
+a k6 that fails before its summary leaves the previous run's file behind. The
+k6 script writes the file:
+
+```js
+export function handleSummary(data) {
+  return { 'k6-summary.json': JSON.stringify(data) }
+}
+```
+
+CPU seconds cover everything `runK6` does, while the share of a core divides by
+the test run alone. The first Docker run also pulls the k6 image with the
+service idle, so rerun it for a clean figure. CPU per request divides by every
+HTTP request k6 made, so a script that also calls other hosts reads low.
 
 ## Database probe
 

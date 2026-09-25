@@ -1,5 +1,8 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { fetchJson, fetchText } from './http.ts'
 import {
@@ -8,6 +11,8 @@ import {
   measureResources,
   parseProcessMetrics,
   type ResourceSnapshot,
+  readRunTotals,
+  readRunTotalsFile,
   scrapeResources,
 } from './resources.ts'
 import type { EngineSnapshot } from './types.ts'
@@ -214,6 +219,101 @@ describe('formatResourcesSection', () => {
     })
     expect(section).toContain('| GC seconds | 0.50 |')
     expect(section).toContain('| Heap used at end | 1.0 MiB |')
+  })
+})
+
+describe('formatResourcesSection with run totals', () => {
+  const delta = { cpuSeconds: 124.8, engines: {}, topStatements: {}, warnings: [] }
+
+  it('divides CPU by the run for the share of a core and the cost of a request', () => {
+    const section = formatResourcesSection(delta, { seconds: 120, requests: 77_499 })
+
+    expect(section).toContain(
+      '| CPU seconds | 124.80 |\n| CPU, share of one core | 104% |\n| CPU per request | 1.61 ms |',
+    )
+  })
+
+  it('reports the share of a core without a request count', () => {
+    const section = formatResourcesSection(delta, { seconds: 120 })
+
+    expect(section).toContain('| CPU, share of one core | 104% |')
+    expect(section).not.toContain('per request')
+  })
+
+  it('says why the ratios are missing', () => {
+    const section = formatResourcesSection(delta, { reason: 'no k6 summary at k6-summary.json' })
+
+    expect(section).not.toContain('share of')
+    expect(section).toContain('> CPU ratios: no k6 summary at k6-summary.json')
+  })
+
+  it('leaves the ratios out without totals, or without CPU', () => {
+    expect(formatResourcesSection(delta)).not.toContain('share of')
+    const withoutCpu = { ...delta, cpuSeconds: undefined }
+    expect(formatResourcesSection(withoutCpu, { seconds: 1, requests: 1 })).not.toContain(
+      'share of',
+    )
+    expect(formatResourcesSection(withoutCpu, { reason: 'gone' })).not.toContain('CPU ratios')
+  })
+})
+
+const SUMMARY = {
+  state: { testRunDurationMs: 121_500 },
+  metrics: { http_reqs: { values: { count: 77_499, rate: 637.9 } } },
+}
+
+describe('readRunTotals', () => {
+  it('reads the duration and request count out of a k6 summary', () => {
+    expect(readRunTotals(SUMMARY)).toEqual({ seconds: 121.5, requests: 77_499 })
+  })
+
+  it.each([
+    ['no requests', { state: SUMMARY.state, metrics: {} }],
+    ['zero requests', { state: SUMMARY.state, metrics: { http_reqs: { values: { count: 0 } } } }],
+  ])('reads the duration alone for %s', (_, summary) => {
+    expect(readRunTotals(summary)).toEqual({ seconds: 121.5 })
+  })
+
+  it.each([
+    ['nothing', null],
+    ['no state', { metrics: SUMMARY.metrics }],
+    ['zero duration', { state: { testRunDurationMs: 0 }, metrics: SUMMARY.metrics }],
+    ['a non-finite duration', { state: { testRunDurationMs: Number.NaN } }],
+  ])('gives a reason for %s', (_, summary) => {
+    expect(readRunTotals(summary)).toEqual({ reason: 'the k6 summary has no test run duration' })
+  })
+})
+
+describe('readRunTotalsFile', () => {
+  const dirs: string[] = []
+  const summaryFile = (contents: string) => {
+    const dir = mkdtempSync(join(tmpdir(), 'run-totals-'))
+    dirs.push(dir)
+    const path = join(dir, 'k6-summary.json')
+    writeFileSync(path, contents)
+    return path
+  }
+  afterEach(() => {
+    for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('reads a summary file', () => {
+    expect(readRunTotalsFile(summaryFile(JSON.stringify(SUMMARY)))).toEqual({
+      seconds: 121.5,
+      requests: 77_499,
+    })
+  })
+
+  it('gives a reason for a missing file, a directory, or one that is not JSON', () => {
+    const missing = join(tmpdir(), 'no-such-dir', 'k6-summary.json')
+    expect(readRunTotalsFile(missing)).toEqual({
+      reason: `no k6 summary at ${missing}; the script's handleSummary writes it`,
+    })
+    expect(readRunTotalsFile(tmpdir())).toMatchObject({
+      reason: expect.stringContaining('could not read'),
+    })
+    const truncated = summaryFile('{ truncated')
+    expect(readRunTotalsFile(truncated)).toEqual({ reason: `${truncated} is not JSON` })
   })
 })
 

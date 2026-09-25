@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { fetchJson, fetchText } from './http.ts'
 import type { EngineSnapshot, ProbeSnapshot, StatementStats } from './types.ts'
 
@@ -171,7 +172,63 @@ function subtract(after: number | undefined, before: number | undefined): number
   return after >= before ? after - before : undefined
 }
 
-export function formatResourcesSection(delta: ResourceDelta): string {
+/** What k6 ran, for the rows that divide CPU by it. */
+export type RunTotals = {
+  /** Wall clock of the k6 test run, setup and teardown included. */
+  seconds: number
+  /** Every HTTP request k6 made. Absent for a script that makes none, such as gRPC or WebSocket only. */
+  requests?: number
+}
+
+/** Why a summary gave no totals, for the report to print as a warning. */
+export type RunTotalsUnavailable = { reason: string }
+
+/** Reads the totals out of a parsed k6 summary, the `data` `handleSummary` receives. */
+export function readRunTotals(summary: unknown): RunTotals | RunTotalsUnavailable {
+  const data = summary as {
+    state?: { testRunDurationMs?: unknown }
+    metrics?: { http_reqs?: { values?: { count?: unknown } } }
+  } | null
+  const durationMs = data?.state?.testRunDurationMs
+  if (!isPositive(durationMs)) return { reason: 'the k6 summary has no test run duration' }
+  const requests = data?.metrics?.http_reqs?.values?.count
+  return isPositive(requests)
+    ? { seconds: durationMs / 1000, requests }
+    : { seconds: durationMs / 1000 }
+}
+
+const isPositive = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0
+
+/**
+ * `readRunTotals` over a summary written with `JSON.stringify(data)`. Delete the
+ * file before k6 starts: a k6 that fails before its summary leaves the previous
+ * run's file in place, and this cannot tell the two apart.
+ */
+export function readRunTotalsFile(summaryPath: string): RunTotals | RunTotalsUnavailable {
+  let text: string
+  try {
+    text = readFileSync(summaryPath, 'utf8')
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'ENOENT'
+      ? { reason: `no k6 summary at ${summaryPath}; the script's handleSummary writes it` }
+      : { reason: `could not read ${summaryPath}: ${(error as Error).message}` }
+  }
+  try {
+    return readRunTotals(JSON.parse(text))
+  } catch {
+    return { reason: `${summaryPath} is not JSON` }
+  }
+}
+
+/**
+ * `run` adds CPU as a share of one core and CPU per request, or a warning line
+ * saying why those rows are missing.
+ */
+export function formatResourcesSection(
+  delta: ResourceDelta,
+  run?: RunTotals | RunTotalsUnavailable,
+): string {
   const lines = ['## Resources', '', '| Measure | Value |', '|---|---|']
   const row = (label: string, value: string | undefined) => {
     if (value !== undefined) lines.push(`| ${label} | ${value} |`)
@@ -181,6 +238,18 @@ export function formatResourcesSection(delta: ResourceDelta): string {
     'CPU seconds',
     format(delta.cpuSeconds, (value) => value.toFixed(2)),
   )
+  const warnings = [...delta.warnings]
+  if (run && delta.cpuSeconds !== undefined) {
+    if ('reason' in run) {
+      warnings.push(`CPU ratios: ${run.reason}`)
+    } else {
+      // One core, so a single Node event loop saturates near 100%.
+      row('CPU, share of one core', `${((delta.cpuSeconds / run.seconds) * 100).toFixed(0)}%`)
+      if (run.requests !== undefined) {
+        row('CPU per request', `${((delta.cpuSeconds * 1000) / run.requests).toFixed(2)} ms`)
+      }
+    }
+  }
   row(
     'GC seconds',
     format(delta.gcSeconds, (value) => value.toFixed(2)),
@@ -214,7 +283,7 @@ export function formatResourcesSection(delta: ResourceDelta): string {
     }
   }
 
-  for (const warning of delta.warnings) lines.push('', `> ${warning}`)
+  for (const warning of warnings) lines.push('', `> ${warning}`)
 
   return `${lines.join('\n')}\n`
 }
