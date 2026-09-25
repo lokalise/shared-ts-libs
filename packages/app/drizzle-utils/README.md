@@ -309,3 +309,17 @@ await drizzleFullBulkUpdate(db, orderItems, [
   { where: { orderId: 1, itemId: 2 }, data: { quantity: 3, price: 75 } },
 ])
 ```
+
+`orderId` has the same value on every entry, so it is emitted as a constant predicate instead of a `VALUES` column:
+
+```sql
+UPDATE "public"."order_items" AS tbl
+SET "quantity" = updates."quantity"::smallint, "price" = updates."price"::smallint
+FROM (VALUES ($1::smallint, $2::smallint, $3::smallint), ($4::smallint, $5::smallint, $6::smallint))
+    AS updates("item_id", "quantity", "price")
+WHERE tbl."order_id" = $7::smallint AND tbl."item_id" = updates."item_id"::smallint
+```
+
+#### Constant `where` columns
+
+A `where` column whose value is the same on every entry becomes `tbl."col" = $n::type` instead of a `VALUES` column. With a tenant column such as `project_id` joined from `VALUES`, CockroachDB can pick a lookup join on a primary key that starts with it and read every row of the tenant; as a constant, the planner uses the index on the other key. A value counts as the same only when it is a string, number, boolean or bigint and is `===` to the first entry's value; `null`, `Date` and objects stay in `VALUES`. When every `where` column is constant, `VALUES` holds only the `data` columns.
