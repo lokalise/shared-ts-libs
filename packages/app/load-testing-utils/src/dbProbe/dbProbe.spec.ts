@@ -52,14 +52,14 @@ describe('parseTop', () => {
 
 describe('readPostgresStats', () => {
   const database = { xact_commit: '40', tup_returned: '400', written: '12' }
+  const withStatements = { ...database, has_statements: true }
 
   it('reads pg_stat_statements and the writes from pg_stat_database', async () => {
     const { sql, calls } = fakeSql((text) => {
-      if (text.includes('FROM pg_extension')) return [{ present: 1 }]
-      if (text.includes('FROM pg_stat_database')) return [database]
+      if (text.includes('FROM pg_stat_database')) return [withStatements]
+      if (text.includes('GROUP BY queryid'))
+        return [{ key: '-42', query: 'SELECT\n  $1', calls: '3', total_ms: '1.5' }]
       if (text.includes('SUM(calls)')) return [{ calls: '90', rows: '900' }]
-      if (text.includes('ORDER BY total_exec_time'))
-        return [{ query: 'SELECT\n  $1', calls: '3', total_ms: '1.5' }]
       return []
     })
 
@@ -68,18 +68,20 @@ describe('readPostgresStats', () => {
       statements: 90,
       rowsReturned: 900,
       rowsWritten: 12,
-      topStatements: [{ query: 'SELECT $1', calls: 3, totalMs: 1.5 }],
+      topStatements: [{ key: '-42', query: 'SELECT $1', calls: 3, totalMs: 1.5 }],
     })
-    expect(calls.at(-1)?.values).toEqual([`%${PROBE_QUERY_MARKER}%`, '<insufficient privilege>', 5])
+    expect(calls.at(-1)?.values).toEqual([`%${PROBE_QUERY_MARKER}%`, 5])
   })
 
   // Newer pg_stat_statements versions store a statement from its first token,
   // so a marker in front of the keyword never reaches the view; one after it does.
   it('marks every query after its first keyword and leaves marked statements out of the totals', async () => {
-    const { sql, calls } = fakeSql((text) => (text.includes('FROM pg_extension') ? [{}] : []))
+    const { sql, calls } = fakeSql((text) =>
+      text.includes('FROM pg_stat_database') ? [{ has_statements: true }] : [],
+    )
     await readPostgresStats(sql, 5)
 
-    expect(calls).toHaveLength(4)
+    expect(calls).toHaveLength(3)
     for (const { text } of calls) {
       expect(text.trim().startsWith(`SELECT ${PROBE_QUERY_MARKER}`)).toBe(true)
     }
@@ -91,22 +93,39 @@ describe('readPostgresStats', () => {
     }
   })
 
-  // Their text is hidden but their calls are real load, so only the statements
-  // table, which has nothing to show for them, leaves them out.
-  it('counts the rows of roles it may not read, and leaves them out of the statements table', async () => {
-    const { sql, calls } = fakeSql((text) => (text.includes('FROM pg_extension') ? [{}] : []))
+  // Comments are not part of a statement's identity. Sent as the two queries an
+  // earlier probe did, with the marker moved, the extension check and the
+  // pg_stat_database read would keep adding to the rows it left without one.
+  it('reads the extension and pg_stat_database in one query, a shape earlier probes never sent', async () => {
+    const { sql, calls } = fakeSql((text) =>
+      text.includes('FROM pg_stat_database') ? [database] : [],
+    )
     await readPostgresStats(sql, 5)
 
-    const totals = calls.find(({ text }) => text.includes('SUM(calls)'))
-    const topQuery = calls.find(({ text }) => text.includes('ORDER BY total_exec_time'))
-    expect(totals?.text).not.toContain('query <> ?')
-    expect(totals?.values).not.toContain('<insufficient privilege>')
-    expect(topQuery?.text).toContain('query <> ?')
-    expect(topQuery?.values[1]).toBe('<insufficient privilege>')
+    expect(calls).toHaveLength(1)
+    expect(calls[0]?.text).toContain('EXISTS (SELECT FROM pg_extension')
+  })
+
+  it('leaves statements hidden from its role out of the table, and says so', async () => {
+    const { sql, calls } = fakeSql((text) => {
+      if (text.includes('FROM pg_stat_database')) return [withStatements]
+      if (text.includes('SUM(calls)')) return [{ calls: '90', rows: '900', hidden: '7' }]
+      return []
+    })
+
+    await expect(readPostgresStats(sql, 5)).resolves.toMatchObject({
+      reason:
+        "7 statements are hidden from the probe's role and left out of the statements table; grant it pg_read_all_stats",
+      statements: 90,
+    })
+    expect(calls.at(-1)?.text).toContain('queryid IS NOT NULL')
+    await expect(readPostgresStats(sql)).resolves.not.toHaveProperty('reason')
   })
 
   it('skips the statements table when top is 0, and tolerates empty results', async () => {
-    const { sql, calls } = fakeSql((text) => (text.includes('FROM pg_extension') ? [{}] : []))
+    const { sql, calls } = fakeSql((text) =>
+      text.includes('FROM pg_stat_database') ? [{ has_statements: true }] : [],
+    )
     await expect(readPostgresStats(sql)).resolves.toEqual({
       available: true,
       statements: 0,
@@ -129,8 +148,7 @@ describe('readPostgresStats', () => {
 
   it('falls back to committed transactions when the extension exists but is not preloaded', async () => {
     const { sql } = fakeSql((text) => {
-      if (text.includes('FROM pg_extension')) return [{ present: 1 }]
-      if (text.includes('FROM pg_stat_database')) return [database]
+      if (text.includes('FROM pg_stat_database')) return [withStatements]
       throw new Error('pg_stat_statements must be loaded via "shared_preload_libraries"')
     })
     await expect(readPostgresStats(sql, 5)).resolves.toEqual({
@@ -156,8 +174,9 @@ describe('readPostgresStats', () => {
 describe('readCockroachStats', () => {
   it('sums the statement statistics without a write counter, excluding its own session', async () => {
     const { sql, calls } = fakeSql((text) => {
-      if (text.includes('SUM(count)')) return [{ calls: '20', rows: '99.6' }]
-      return [{ query: 'SELECT  *  FROM t', count: '4', service_lat_avg: '0.002' }]
+      if (text.includes('GROUP BY fingerprint_id'))
+        return [{ key: 'ab12', query: 'SELECT  *  FROM t', calls: '4', total_ms: '8' }]
+      return [{ calls: '20', rows: '99.6' }]
     })
 
     const stats = await readCockroachStats(sql, { top: 3, probeApplicationName: 'mine' })
@@ -166,8 +185,12 @@ describe('readCockroachStats', () => {
       available: true,
       statements: 20,
       rowsReturned: 100,
-      topStatements: [{ query: 'SELECT * FROM t', calls: 4, totalMs: 8 }],
+      topStatements: [{ key: 'ab12', query: 'SELECT * FROM t', calls: 4, totalMs: 8 }],
     })
+    // The view that includes flushed statistics, so a flush mid-run does not reset the counts.
+    for (const { text } of calls) {
+      expect(text).toContain('FROM crdb_internal.statement_statistics')
+    }
     expect(calls[0]?.values).toEqual(['$ internal%', 'mine'])
     expect(calls[1]?.values).toEqual(['$ internal%', 'mine', 3])
   })
@@ -247,6 +270,83 @@ describe('createDbProbeServer', () => {
       available: false,
       reason: 'Error: no connection',
     })
+  })
+
+  it('hands every statement over for ?statements=all, with the top N as its head', async () => {
+    const tops: number[] = []
+    const ranked = [
+      { key: 'a', query: 'A', calls: 1, totalMs: 3 },
+      { key: 'b', query: 'B', calls: 1, totalMs: 2 },
+      { key: 'c', query: 'C', calls: 1, totalMs: 1 },
+    ]
+    const base = await start({
+      engines: {
+        Postgres: (top) => {
+          tops.push(top)
+          return Promise.resolve({
+            available: true,
+            statements: 3,
+            rowsReturned: 0,
+            topStatements: ranked,
+          })
+        },
+      },
+      maxStatements: 100,
+    })
+
+    const withTop = (await (
+      await fetch(`${base}/db-stats?statements=all&top=2`)
+    ).json()) as ProbeSnapshot
+    const allOnly = (await (await fetch(`${base}/db-stats?statements=all`)).json()) as ProbeSnapshot
+
+    expect(tops).toEqual([100, 100])
+    expect(withTop.engines.Postgres).toEqual({
+      available: true,
+      statements: 3,
+      rowsReturned: 0,
+      topStatements: ranked.slice(0, 2),
+      allStatements: ranked,
+    })
+    expect(allOnly.engines.Postgres).toEqual({
+      available: true,
+      statements: 3,
+      rowsReturned: 0,
+      allStatements: ranked,
+    })
+  })
+
+  it('marks a ?statements=all list that stopped at maxStatements', async () => {
+    const ranked = [
+      { key: 'a', query: 'A', calls: 1, totalMs: 2 },
+      { key: 'b', query: 'B', calls: 1, totalMs: 1 },
+    ]
+    const base = await start({
+      engines: {
+        Postgres: (top) =>
+          Promise.resolve({
+            available: true,
+            statements: 2,
+            rowsReturned: 0,
+            topStatements: ranked.slice(0, top),
+          }),
+      },
+      maxStatements: 2,
+    })
+    const stats = (await (await fetch(`${base}/db-stats?statements=all`)).json()) as ProbeSnapshot
+    expect(stats.engines.Postgres).toMatchObject({
+      allStatements: ranked,
+      allStatementsTruncated: true,
+    })
+  })
+
+  it('reports an empty list for ?statements=all when the reader returns no statements', async () => {
+    const base = await start({
+      engines: {
+        Postgres: () => Promise.resolve({ available: true, statements: 0, rowsReturned: 0 }),
+      },
+    })
+    const stats = (await (await fetch(`${base}/db-stats?statements=all`)).json()) as ProbeSnapshot
+    expect(stats.engines.Postgres?.allStatements).toEqual([])
   })
 
   it('defaults top to 0 and clamps at 50', async () => {

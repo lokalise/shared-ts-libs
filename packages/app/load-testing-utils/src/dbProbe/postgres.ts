@@ -12,14 +12,6 @@ export const PROBE_QUERY_MARKER = '/* load-testing-probe */'
 const fromProbe = `%${PROBE_QUERY_MARKER}%`
 
 /**
- * What the view shows as the text of a statement run by a role this one may
- * not read. Its counters are still real load, so the totals keep it; only the
- * statements table, which has nothing to show for it, leaves it out. Granting
- * the probe's role `pg_read_all_stats` makes those statements readable.
- */
-const UNREADABLE = '<insufficient privilege>'
-
-/**
  * Postgres counters for the connected database.
  *
  * `pg_stat_statements` is the exact answer. It has to be preloaded
@@ -28,16 +20,21 @@ const UNREADABLE = '<insufficient privilege>'
  * `reason`: the two agree while every statement is its own transaction, which
  * is the per-row write path a probe most needs to catch.
  *
+ * Statements another role ran come back with no `queryid` and the text
+ * `<insufficient privilege>` unless the probe's role has `pg_read_all_stats`.
+ * They still count in the totals; the statements table leaves them out and says so.
+ *
  * `pg_stat_statements` figures leave out the probe's own queries. The fallback
- * cannot: each scrape commits two transactions of its own, and its catalog
- * reads add a few rows to `rowsReturned`.
+ * cannot: each scrape commits a transaction of its own, and its catalog read
+ * adds a few rows to `rowsReturned`.
  */
 export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapshot> {
-  const [extension] = await sql`
-    SELECT /* load-testing-probe */ 1 AS present FROM pg_extension WHERE extname = 'pg_stat_statements'
-  `
+  // One query, not an extension check and a pg_stat_database read: comments
+  // are not part of a statement's identity, so the two an earlier probe sent
+  // would have kept adding to the rows it left without the marker.
   const [database] = await sql`
-    SELECT /* load-testing-probe */ xact_commit, tup_returned, tup_inserted + tup_updated + tup_deleted AS written
+    SELECT /* load-testing-probe */ xact_commit, tup_returned, tup_inserted + tup_updated + tup_deleted AS written,
+      EXISTS (SELECT FROM pg_extension WHERE extname = 'pg_stat_statements') AS has_statements
     FROM pg_stat_database WHERE datname = current_database()
   `
   const rowsWritten = Number(database?.written ?? 0)
@@ -49,12 +46,13 @@ export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapsh
     rowsWritten,
   })
 
-  if (!extension) return committedTransactions('pg_stat_statements is not installed')
+  if (!database?.has_statements) return committedTransactions('pg_stat_statements is not installed')
 
   let totals: Record<string, unknown> | undefined
   try {
     const rows = await sql`
-      SELECT /* load-testing-probe */ COALESCE(SUM(calls), 0) AS calls, COALESCE(SUM(rows), 0) AS rows
+      SELECT /* load-testing-probe */ COALESCE(SUM(calls), 0) AS calls, COALESCE(SUM(rows), 0) AS rows,
+        COUNT(*) FILTER (WHERE queryid IS NULL) AS hidden
       FROM pg_stat_statements
       WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
         AND query NOT LIKE ${fromProbe}
@@ -66,8 +64,14 @@ export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapsh
     return committedTransactions(`pg_stat_statements is not readable (${message})`)
   }
 
+  const hidden = Number(totals?.hidden ?? 0)
   return {
     available: true,
+    ...(top > 0 && hidden > 0
+      ? {
+          reason: `${hidden} statements are hidden from the probe's role and left out of the statements table; grant it pg_read_all_stats`,
+        }
+      : {}),
     statements: Number(totals?.calls ?? 0),
     // `rows` counts rows a statement returned or affected, so it is the read
     // side; pg_stat_database separates the writes.
@@ -83,16 +87,20 @@ export async function readPostgresStats(sql: Sql, top = 0): Promise<EngineSnapsh
  * a call ranking puts the cheap one on top.
  */
 async function readPostgresTop(sql: Sql, top: number): Promise<StatementStats[]> {
+  // Grouped, because the view keeps a row per (role, queryid, toplevel) and a report wants one per statement.
   const rows = await sql`
-    SELECT /* load-testing-probe */ query, calls, total_exec_time AS total_ms
+    SELECT /* load-testing-probe */ queryid::TEXT AS key, MIN(query) AS query,
+      SUM(calls) AS calls, SUM(total_exec_time) AS total_ms
     FROM pg_stat_statements
     WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
       AND query NOT LIKE ${fromProbe}
-      AND query <> ${UNREADABLE}
-    ORDER BY total_exec_time DESC
+      AND queryid IS NOT NULL
+    GROUP BY queryid
+    ORDER BY total_ms DESC
     LIMIT ${top}
   `
   return rows.map((row) => ({
+    key: String(row.key),
     query: normalizeStatement(String(row.query)),
     calls: Number(row.calls),
     totalMs: Number(row.total_ms),

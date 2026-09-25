@@ -16,14 +16,20 @@ export type CockroachStatsOptions = {
 }
 
 /**
- * CockroachDB counters, from the in-memory statement statistics of the node the
- * connection landed on. No extension to install, and reset by a node restart.
+ * CockroachDB counters, from `crdb_internal.statement_statistics`: the node's
+ * in-memory statistics together with what it has flushed to
+ * `system.statement_statistics`. No extension to install.
+ *
+ * Not `node_statement_statistics`, which is the in-memory half alone: every
+ * `sql.stats.flush.interval` (10 minutes by default) the node flushes it and
+ * starts it from zero, so a difference across a flush would come out wrong.
  *
  * From v26.1 cockroach refuses `crdb_internal` reads unless the session sets
  * `allow_unsafe_internals`, so create the connection with
  * `connection: { allow_unsafe_internals: 'true', application_name: PROBE_APPLICATION_NAME }`.
  *
- * Cockroach keeps no written-rows counter, so `rowsWritten` is absent.
+ * Cockroach keeps a mean per statement and no total, so totals are the mean
+ * times the count: right in aggregate, not to the unit. `rowsWritten` is absent.
  */
 export async function readCockroachStats(
   sql: Sql,
@@ -32,18 +38,16 @@ export async function readCockroachStats(
   const { top = 0, probeApplicationName = PROBE_APPLICATION_NAME } = options
 
   const [totals] = await sql`
-    SELECT COALESCE(SUM(count), 0) AS calls,
-           COALESCE(SUM(rows_avg * count::FLOAT8), 0) AS rows
-    FROM crdb_internal.node_statement_statistics
-    WHERE application_name NOT LIKE ${INTERNAL_APPLICATIONS}
-      AND application_name <> ${probeApplicationName}
+    SELECT COALESCE(SUM((statistics->'statistics'->>'cnt')::FLOAT8), 0) AS calls,
+           COALESCE(SUM((statistics->'statistics'->'numRows'->>'mean')::FLOAT8
+             * (statistics->'statistics'->>'cnt')::FLOAT8), 0) AS rows
+    FROM crdb_internal.statement_statistics
+    WHERE app_name NOT LIKE ${INTERNAL_APPLICATIONS}
+      AND app_name <> ${probeApplicationName}
   `
   return {
     available: true,
-    statements: Number(totals?.calls ?? 0),
-    // An average times a call count, since cockroach keeps no total: right in
-    // aggregate, not to the unit. The cast is there because cockroach has no
-    // float * int operator.
+    statements: Math.round(Number(totals?.calls ?? 0)),
     rowsReturned: Math.round(Number(totals?.rows ?? 0)),
     ...(top > 0 ? { topStatements: await readCockroachTop(sql, top, probeApplicationName) } : {}),
   }
@@ -54,18 +58,24 @@ async function readCockroachTop(
   top: number,
   probeApplicationName: string,
 ): Promise<StatementStats[]> {
+  // Upstream keeps a row per fingerprint, hour, plan and app; a report wants one per fingerprint.
+  // svcLat is in seconds.
   const rows = await sql`
-    SELECT key AS query, count, service_lat_avg
-    FROM crdb_internal.node_statement_statistics
-    WHERE application_name NOT LIKE ${INTERNAL_APPLICATIONS}
-      AND application_name <> ${probeApplicationName}
-    ORDER BY service_lat_avg * count::FLOAT8 DESC
+    SELECT encode(fingerprint_id, 'hex') AS key, MIN(metadata->>'query') AS query,
+           SUM((statistics->'statistics'->>'cnt')::FLOAT8) AS calls,
+           SUM((statistics->'statistics'->'svcLat'->>'mean')::FLOAT8
+             * (statistics->'statistics'->>'cnt')::FLOAT8) * 1000 AS total_ms
+    FROM crdb_internal.statement_statistics
+    WHERE app_name NOT LIKE ${INTERNAL_APPLICATIONS}
+      AND app_name <> ${probeApplicationName}
+    GROUP BY fingerprint_id
+    ORDER BY total_ms DESC
     LIMIT ${top}
   `
   return rows.map((row) => ({
+    key: String(row.key),
     query: normalizeStatement(String(row.query)),
-    calls: Number(row.count),
-    // service_lat_avg is in seconds.
-    totalMs: Number(row.service_lat_avg) * 1000 * Number(row.count),
+    calls: Math.round(Number(row.calls)),
+    totalMs: Number(row.total_ms),
   }))
 }

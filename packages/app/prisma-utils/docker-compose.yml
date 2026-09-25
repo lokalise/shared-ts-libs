@@ -1,6 +1,6 @@
 services:
   cockroachdb:
-    image: cockroachdb/cockroach:latest-v23.2
+    image: cockroachdb/cockroach:latest-v26.1
     hostname: crdb
     command: start-single-node --cluster-name=example-single-node
     ports:
@@ -16,4 +16,23 @@ services:
       timeout: 5s    # fail if longer than 5s
       retries: 10    # require 10 consecutive failures before unhealthy
       start_period: 10s # grace period for initialization
+    volumes:
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     restart: on-failure
+
+  # Only for benchmarking on Postgres: `docker compose --profile postgres up -d --wait postgres`.
+  # The version follows the Postgres image lokalise/autopilot runs.
+  postgres:
+    image: postgres:18.4
+    profiles: [ postgres ]
+    ports:
+      - '127.0.0.1:54318:5432'
+    environment:
+      - POSTGRES_USER=testuser
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=test
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U testuser -d test" ]
+      interval: 3s
+      timeout: 5s
+      retries: 10
