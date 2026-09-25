@@ -63,6 +63,6 @@
         "toad-scheduler": "^4.0.1",
         "typescript": "7.0.2",
         "vitest": "^4.1.11",
-        "zod": "^4.5.4"
+        "zod": "^4.6.5"
     }
 }
