@@ -657,16 +657,18 @@ TypeError: Contexts are not supported.
 ```
 
 Labelled profiles need SIGPROF-based sampling, `@datadog/pprof` compiles that
-path out on `_WIN32`, and Pyroscope's wall profiler always asks for labels. Heap
-profiling never gets its turn, because wall starts first.
+path out on `_WIN32`, and Pyroscope's wall profiler always asks for labels.
 
-Nothing breaks. `startProfiling` logs the error with a pointer to this section,
-returns `false`, and the service serves traffic as usual without profiles.
-`stopProfiling` then has nothing to flush and is a no-op. `pyroscope-analyze`
-will report no samples, which is the symptom to expect.
+So on Windows `startProfiling` starts the heap profiler alone and logs a warning
+pointing here. It returns `true`, and `isProfilingRunning()` reports `true`, but
+there are no wall or CPU profiles, and nothing is labelled: request, job and span
+labels are no-ops, because `runningProfiler()` stays `undefined`. Memory
+profiles arrive on the flush interval as usual. The heap profiler exports only
+on that interval, so a process that exits sooner than one interval sends
+nothing.
 
-The service therefore has to run on linux for the loop to close. Two ways, in
-order of how much they cost:
+For wall and CPU profiles the service has to run on linux. Two ways, in order
+of how much they cost:
 
 1. **WSL2.** Run the service inside WSL2 and keep the Pyroscope container on the
    Windows side. WSL2 reaches published Windows ports on `localhost`, so
@@ -681,12 +683,13 @@ order of how much they cost:
    test at `localhost`.
 
 If the service stays a Windows host process and only the load generator is
-containerised, it will not be profiled. That combination is worth refusing
-explicitly in a load-test runner rather than handing back an empty flame graph.
+containerised, it gets heap profiles only. A load-test runner that needs a CPU
+flame graph should refuse that combination rather than hand back a memory one.
 
-Do not spend time looking for a Windows workaround inside the profiler. The
-missing piece is in the native binding, and it is compiled out rather than
-configurable.
+`@datadog/pprof` can run the wall profiler without labels on Windows
+(`withContexts: false`), but `@pyroscope/nodejs` hard-codes `withContexts: true`
+and offers no way to start it otherwise. Unlabelled wall profiles on Windows need
+that option in the SDK first.
 
 ## Span profiles
 
@@ -909,8 +912,8 @@ drifted from the host's will put its samples outside a window computed on the
 host. A range that runs backwards is refused with exit 1 rather than queried,
 so `--from now --until now-15m` says so instead of coming back empty.
 
-**Is this Windows?** See [above](#on-a-windows-dev-box): the error will be
-`Contexts are not supported`.
+**Is this Windows?** See [above](#on-a-windows-dev-box): only memory profiles
+are collected there, and the start log says so.
 
 ## API
 
