@@ -1,3 +1,5 @@
+export * from './zodMeta.ts'
+// Contracts
 export * from './apiContracts.ts'
 // Universal contract builder
 export * from './contractBuilder.ts'
