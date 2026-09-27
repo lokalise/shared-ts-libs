@@ -1,4 +1,3 @@
-export * from './zodMeta.ts'
 // Contracts
 export * from './apiContracts.ts'
 // Universal contract builder
@@ -18,3 +17,4 @@ export * from './sse/sseContractBuilders.ts'
 // SSE contracts
 export * from './sse/sseContracts.ts'
 export * from './sse/sseTypes.ts'
+export * from './zodMeta.ts'
