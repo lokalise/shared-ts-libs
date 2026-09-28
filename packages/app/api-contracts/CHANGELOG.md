@@ -1,5 +1,11 @@
 # Changelog
 
+## 8.1.0
+
+### Minor Changes
+
+- ca9317c: Add field-level visibility metadata to Zod schemas.
+
 ## 8.0.1
 
 ### Patch Changes
