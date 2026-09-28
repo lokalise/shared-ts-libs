@@ -278,6 +278,28 @@ The field is required in every builder input — there is no default. All builde
 `buildGetRoute` / `buildPayloadRoute` / `buildDeleteRoute`) demand an explicit choice between
 `'public'` and `'internal'`.
 
+### Field visibility
+
+Zod schemas can also mark individual fields with `visibility` metadata. The package augments
+Zod v4's global metadata type, so the value is checked against the same `'public' | 'internal'`
+choices used for routes:
+
+```ts
+import { z } from 'zod/v4'
+
+const userSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  email: z.email().meta({ visibility: 'public' }),
+  internalNotes: z.string().meta({ visibility: 'internal' }),
+})
+```
+
+This metadata describes intent; it does not change Zod parsing or filter fields by itself.
+Other libraries can inspect it to hide or show fields in generated OpenAPI documentation, or to
+decide which fields to include in a response based on where the request came from (for example,
+an internal service or a public client).
+
 #### Contracts for external (third-party) APIs
 
 Contracts are also used to describe APIs we only *consume*, not serve. Mirror the endpoint's own
