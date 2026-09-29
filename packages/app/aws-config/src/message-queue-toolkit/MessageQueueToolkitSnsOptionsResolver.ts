@@ -62,10 +62,14 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
     }
 
     this.routingConfig = groupByUnique(
-      Object.values(routingConfig).map((topic) => ({
-        ...topic,
-        queues: groupByUnique(Object.values(topic.queues), 'queueName'),
-      })),
+      Object.values(routingConfig).map(
+        (topic) =>
+          // Re-keying the queues by name keeps each queue as is, so the topic remains valid
+          ({
+            ...topic,
+            queues: groupByUnique(Object.values(topic.queues), 'queueName'),
+          }) as TopicConfig,
+      ),
       'topicName',
     )
   }
@@ -119,27 +123,29 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
   ): ResolvedSnsConsumerOptions<MessagePayload> {
     const topicConfig = this.getTopicConfig(topicName)
     const resolvedTopic = this.resolveTopic(topicConfig, params)
+    const resolvedQueue = this.resolveQueue(queueName, topicConfig.queues, params)
 
-    const { creationConfig: queueCreationConfig, queueConfig } = this.resolveQueue(
-      queueName,
-      topicConfig.queues,
-      params,
-    )
+    const options = this.commonConsumerOptions(params, resolvedQueue)
 
-    /* v8 ignore start */
-    if (!queueCreationConfig) {
-      // This should not happen due to typing, but just in case
-      throw new Error(`Queue configuration for ${queueName} should not be external`)
+    if (resolvedQueue.locatorConfig) {
+      if (!resolvedTopic.locatorConfig) {
+        throw new Error(
+          `External queue ${queueName} cannot be subscribed to internal topic ${topicName}`,
+        )
+      }
+
+      // Queue and subscription are managed externally, so all resources are located and left untouched
+      return {
+        locatorConfig: { ...resolvedTopic.locatorConfig, ...resolvedQueue.locatorConfig },
+        ...options,
+      }
     }
-    /* v8 ignore stop */
-
-    const options = this.commonConsumerOptions(params, queueConfig, queueCreationConfig.queue)
 
     return {
       locatorConfig: resolvedTopic.locatorConfig,
       creationConfig: {
         topic: resolvedTopic.createCommand,
-        queue: queueCreationConfig.queue,
+        queue: resolvedQueue.creationConfig?.queue,
         topicArnsWithPublishPermissionsPrefix: buildTopicArnsWithPublishPermissionsPrefix(
           topicConfig,
           params.awsConfig,

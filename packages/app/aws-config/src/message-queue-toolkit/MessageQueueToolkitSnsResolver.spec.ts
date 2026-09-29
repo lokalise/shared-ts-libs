@@ -33,6 +33,10 @@ const EventRouting = {
         owner: 'team 1',
         service: 'service 2',
       },
+      topic2Queue2: {
+        queueName: 'test-project-second_entity-external_service',
+        isExternal: true,
+      },
     },
   },
 } satisfies EventRoutingConfig
@@ -535,6 +539,35 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       )
     })
 
+    it('should throw an error if an external queue is subscribed to an internal topic', () => {
+      const topicName = 'test-project-topic'
+      const queueName = 'test-project-topic-queue'
+      // Not allowed by typing, the cast simulates an untyped config
+      const eventRouting = {
+        topic: {
+          topicName,
+          owner: 'team',
+          service: 'service',
+          queues: { queue: { queueName, isExternal: true } },
+        },
+      } as unknown as EventRoutingConfig
+      const resolver = new MessageQueueToolkitSnsOptionsResolver(eventRouting, {
+        system: 'my-system',
+        project,
+        appEnv: 'development',
+      })
+
+      expect(() =>
+        resolver.resolveConsumerOptions(topicName, queueName, {
+          logger,
+          awsConfig: buildAwsConfig(),
+          handlers: [],
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Error: External queue test-project-topic-queue cannot be subscribed to internal topic test-project-topic]`,
+      )
+    })
+
     it('should properly use handlers', () => {
       const options = resolver.resolveConsumerOptions(
         EventRouting.topic1.topicName,
@@ -791,22 +824,24 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
 
     describe('external topics', () => {
       const topicName = EventRouting.topic2.topicName
-      const queueName = EventRouting.topic2.queues.topic2Queue1.queueName
 
-      it('should work using all props', () => {
-        const result = resolver.resolveConsumerOptions(topicName, queueName, {
-          logger,
-          handlers: [],
-          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
-          updateAttributesIfExists: true,
-          forceTagUpdate: true,
-          logMessages: true,
-          isTest: true,
-          batchSize: 1,
-          concurrentConsumersAmount: 1,
-        })
+      describe('internal queues', () => {
+        const queueName = EventRouting.topic2.queues.topic2Queue1.queueName
 
-        expect(result).toMatchInlineSnapshot(`
+        it('should work using all props', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
+            updateAttributesIfExists: true,
+            forceTagUpdate: true,
+            logMessages: true,
+            isTest: true,
+            batchSize: 1,
+            concurrentConsumersAmount: 1,
+          })
+
+          expect(result).toMatchInlineSnapshot(`
           {
             "concurrentConsumersAmount": 1,
             "consumerOverrides": {
@@ -867,16 +902,16 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             "subscriptionDeadLetterQueue": undefined,
           }
         `)
-      })
-
-      it('should work using only required props', () => {
-        const result = resolver.resolveConsumerOptions(topicName, queueName, {
-          logger,
-          handlers: [],
-          awsConfig: buildAwsConfig(),
         })
 
-        expect(result).toMatchInlineSnapshot(`
+        it('should work using only required props', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig(),
+          })
+
+          expect(result).toMatchInlineSnapshot(`
           {
             "concurrentConsumersAmount": undefined,
             "consumerOverrides": {
@@ -961,32 +996,159 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             },
           }
         `)
+        })
+
+        it.each(['production', 'staging'] as const)(
+          'should disable startupResourcePolling in %s',
+          (appEnv) => {
+            const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+              system: 'my-system',
+              project,
+              appEnv,
+            })
+
+            const result = nonDevResolver.resolveConsumerOptions(topicName, queueName, {
+              logger,
+              handlers: [],
+              awsConfig: buildAwsConfig(),
+            })
+
+            expect(result.locatorConfig?.startupResourcePolling).toEqual({
+              enabled: false,
+              nonBlocking: true,
+              pollingIntervalMs: 30000,
+              throwOnTimeout: false,
+              timeoutMs: NO_TIMEOUT,
+            })
+          },
+        )
       })
 
-      it.each(['production', 'staging'] as const)(
-        'should disable startupResourcePolling in %s',
-        (appEnv) => {
-          const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
-            system: 'my-system',
-            project,
-            appEnv,
-          })
+      describe('external queues', () => {
+        const queueName = EventRouting.topic2.queues.topic2Queue2.queueName
 
-          const result = nonDevResolver.resolveConsumerOptions(topicName, queueName, {
+        it('should work using only required props', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
             logger,
             handlers: [],
             awsConfig: buildAwsConfig(),
           })
 
-          expect(result.locatorConfig?.startupResourcePolling).toEqual({
-            enabled: false,
-            nonBlocking: true,
-            pollingIntervalMs: 30000,
-            throwOnTimeout: false,
-            timeoutMs: NO_TIMEOUT,
+          expect(result).toMatchInlineSnapshot(`
+            {
+              "concurrentConsumersAmount": undefined,
+              "consumerOverrides": {
+                "batchSize": undefined,
+                "heartbeatInterval": 20,
+              },
+              "deadLetterQueue": {
+                "locatorConfig": {
+                  "queueName": "test-project-second_entity-external_service-dlq",
+                  "startupResourcePolling": {
+                    "enabled": true,
+                    "nonBlocking": true,
+                    "pollingIntervalMs": 30000,
+                    "throwOnTimeout": false,
+                    "timeoutMs": Symbol(NO_TIMEOUT),
+                  },
+                },
+              },
+              "deletionConfig": {
+                "deleteIfExists": undefined,
+              },
+              "handlerSpy": undefined,
+              "handlers": [],
+              "locatorConfig": {
+                "queueName": "test-project-second_entity-external_service",
+                "startupResourcePolling": {
+                  "enabled": true,
+                  "nonBlocking": true,
+                  "pollingIntervalMs": 30000,
+                  "throwOnTimeout": false,
+                  "timeoutMs": Symbol(NO_TIMEOUT),
+                },
+                "topicName": "test-project-second_entity",
+              },
+              "logMessages": undefined,
+              "maxRetryDuration": 172800,
+              "messageTypeResolver": {
+                "messageTypePath": "type",
+              },
+            }
+          `)
+        })
+
+        it('should locate topic, queue and DLQ applying the resource prefix', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
           })
-        },
-      )
+
+          expect(result.locatorConfig?.topicName).toBe('prefix_test-project-second_entity')
+          expect(result.locatorConfig?.queueName).toBe(
+            'prefix_test-project-second_entity-external_service',
+          )
+          expect(result.deadLetterQueue?.locatorConfig?.queueName).toBe(
+            'prefix_test-project-second_entity-external_service-dlq',
+          )
+        })
+
+        it('should leave queue, subscription and their redrive policies untouched', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig(),
+          })
+
+          expect(result.creationConfig).toBeUndefined()
+          expect(result.subscriptionConfig).toBeUndefined()
+          expect(result.subscriptionDeadLetterQueue).toBeUndefined()
+          expect(result.deadLetterQueue?.creationConfig).toBeUndefined()
+          expect(result.deadLetterQueue?.redrivePolicy).toBeUndefined()
+        })
+
+        it('should not use a DLQ in test mode', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig(),
+            isTest: true,
+          })
+
+          expect(result.deadLetterQueue).toBeUndefined()
+          expect(result.locatorConfig?.startupResourcePolling?.enabled).toBe(false)
+        })
+
+        it.each(['production', 'staging'] as const)(
+          'should disable startupResourcePolling in %s',
+          (appEnv) => {
+            const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+              system: 'my-system',
+              project,
+              appEnv,
+            })
+
+            const result = nonDevResolver.resolveConsumerOptions(topicName, queueName, {
+              logger,
+              handlers: [],
+              awsConfig: buildAwsConfig(),
+            })
+
+            const expectedPolling = {
+              enabled: false,
+              nonBlocking: true,
+              pollingIntervalMs: 30000,
+              throwOnTimeout: false,
+              timeoutMs: NO_TIMEOUT,
+            }
+            expect(result.locatorConfig?.startupResourcePolling).toEqual(expectedPolling)
+            expect(result.deadLetterQueue?.locatorConfig?.startupResourcePolling).toEqual(
+              expectedPolling,
+            )
+          },
+        )
+      })
     })
 
     describe('forceTagUpdate behavior', () => {
