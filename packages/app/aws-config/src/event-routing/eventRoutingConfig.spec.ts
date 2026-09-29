@@ -2,20 +2,15 @@ import { expectTypeOf } from 'vitest'
 import type {
   CommandConfig,
   EventRoutingConfig,
+  ExternalQueueConfig,
+  InternalQueueConfig,
   QueueConfig,
   TopicConfig,
 } from './eventRoutingConfig.ts'
 
-// Variants of the QueueConfig union, to assert which one is inferred
-type InternalQueueConfig<Owner extends string = string, Service extends string = string> = Exclude<
-  QueueConfig<Owner, Service>,
-  { isExternal: true }
->
-type ExternalQueueConfig = Extract<QueueConfig, { isExternal: true }>
-
 describe('eventRoutingConfig', () => {
   describe('QueueConfig', () => {
-    describe('internal queue', () => {
+    describe('InternalQueueConfig', () => {
       it('should use default generic types', () => {
         const queueConfig: QueueConfig = {
           queueName: 'my-queue',
@@ -38,7 +33,7 @@ describe('eventRoutingConfig', () => {
       })
     })
 
-    describe('external queue', () => {
+    describe('ExternalQueueConfig', () => {
       it('should use default generic types', () => {
         const queueConfig: QueueConfig = {
           queueName: 'my-queue',
@@ -174,8 +169,8 @@ describe('eventRoutingConfig', () => {
       expectTypeOf(configWithExternalApps).not.toExtend<TopicConfig>()
     })
 
-    it('should allow external queues on internal topics', () => {
-      const topicConfig = {
+    it('should not allow external queues on internal topics', () => {
+      const validTopicConfig = {
         topicName: 'my-topic',
         owner: 'owner',
         service: 'service',
@@ -185,16 +180,24 @@ describe('eventRoutingConfig', () => {
             owner: 'owner',
             service: 'service',
           },
-          myExternalQueue: {
-            queueName: 'my-external-queue',
-            isExternal: true,
-          },
         },
       } satisfies TopicConfig<'owner', 'service'>
+      expectTypeOf(validTopicConfig).toExtend<TopicConfig<'owner', 'service'>>()
+      expectTypeOf(validTopicConfig.queues.myQueue).toExtend<
+        InternalQueueConfig<'owner', 'service'>
+      >()
 
-      expectTypeOf(topicConfig).toExtend<TopicConfig<'owner', 'service'>>()
-      expectTypeOf(topicConfig.queues.myQueue).toExtend<InternalQueueConfig<'owner', 'service'>>()
-      expectTypeOf(topicConfig.queues.myExternalQueue).toExtend<ExternalQueueConfig>()
+      const topicWithExternalQueue = {
+        ...validTopicConfig,
+        queues: {
+          ...validTopicConfig.queues,
+          myExternalQueue: {
+            queueName: 'my-external-queue',
+            isExternal: true as const,
+          },
+        },
+      }
+      expectTypeOf(topicWithExternalQueue).not.toExtend<TopicConfig<'owner', 'service'>>()
     })
 
     it('should allow external queues on external topics', () => {
