@@ -1,4 +1,3 @@
-import type { CreateQueueRequest } from '@aws-sdk/client-sqs'
 import {
   type ConsumerBaseMessageType,
   NO_TIMEOUT,
@@ -65,8 +64,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
 
   protected commonConsumerOptions<MessagePayload extends ConsumerBaseMessageType>(
     params: ResolveConsumerOptionsParams<MessagePayload>,
-    queueConfig: QueueConfig,
-    createQueueRequest: CreateQueueRequest | undefined,
+    resolvedQueue: ResolvedQueueResult,
   ): Omit<
     ResolvedConsumerOptions<SQSCreationConfig, object, MessagePayload>,
     'creationConfig' | 'locatorConfig'
@@ -95,22 +93,21 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
             heartbeatInterval: HEARTBEAT_INTERVAL,
             batchSize: params.batchSize,
           },
-      deadLetterQueue: this.resolveConsumerDeadLetterQueue(params, queueConfig, createQueueRequest),
+      deadLetterQueue: this.resolveConsumerDeadLetterQueue(params, resolvedQueue),
     }
   }
 
-  protected resolveConsumerDeadLetterQueue<MessagePayload extends ConsumerBaseMessageType>(
+  private resolveConsumerDeadLetterQueue<MessagePayload extends ConsumerBaseMessageType>(
     params: ResolveConsumerOptionsParams<MessagePayload>,
-    queueConfig: QueueConfig,
-    createQueueRequest: CreateQueueRequest | undefined,
+    resolvedQueue: ResolvedQueueResult,
   ): ResolvedConsumerOptions<SQSCreationConfig, object, MessagePayload>['deadLetterQueue'] {
     if (params.isTest) return undefined
 
-    if (queueConfig.isExternal) {
+    if (resolvedQueue.locatorConfig) {
       return {
         locatorConfig: {
           queueName: applyAwsResourcePrefix(
-            `${queueConfig.queueName}${DLQ_SUFFIX}`,
+            `${resolvedQueue.queueConfig.queueName}${DLQ_SUFFIX}`,
             params.awsConfig,
           ),
           startupResourcePolling: this.resolveStartupResourcePolling(params),
@@ -118,8 +115,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
       }
     }
 
-    if (!createQueueRequest) return undefined
-
+    const createQueueRequest = resolvedQueue.creationConfig.queue
     return {
       creationConfig: {
         queue: {
