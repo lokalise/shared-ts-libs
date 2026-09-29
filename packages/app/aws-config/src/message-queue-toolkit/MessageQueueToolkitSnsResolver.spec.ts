@@ -1,4 +1,4 @@
-import { CONSUMER_BASE_MESSAGE_SCHEMA } from '@message-queue-toolkit/core'
+import { CONSUMER_BASE_MESSAGE_SCHEMA, NO_TIMEOUT } from '@message-queue-toolkit/core'
 import { beforeAll, expect } from 'vitest'
 import { FakeLogger } from '../../tests/FakeLogger.ts'
 import type { AwsConfig } from '../awsConfig.ts'
@@ -384,7 +384,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               "startupResourcePolling": {
                 "enabled": false,
                 "nonBlocking": true,
-                "pollingIntervalMs": 5000,
+                "pollingIntervalMs": 30000,
                 "throwOnTimeout": false,
                 "timeoutMs": Symbol(NO_TIMEOUT),
               },
@@ -413,7 +413,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               "startupResourcePolling": {
                 "enabled": true,
                 "nonBlocking": true,
-                "pollingIntervalMs": 5000,
+                "pollingIntervalMs": 30000,
                 "throwOnTimeout": false,
                 "timeoutMs": Symbol(NO_TIMEOUT),
               },
@@ -429,7 +429,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       })
 
       it.each(['production', 'staging'] as const)(
-        'should use %s startupResourcePolling config',
+        'should disable startupResourcePolling in %s',
         (appEnv) => {
           const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
             system: 'my-system',
@@ -443,11 +443,11 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           })
 
           expect(result.locatorConfig?.startupResourcePolling).toEqual({
-            enabled: true,
+            enabled: false,
             nonBlocking: true,
             pollingIntervalMs: 30000,
             throwOnTimeout: false,
-            timeoutMs: 300000,
+            timeoutMs: NO_TIMEOUT,
           })
         },
       )
@@ -846,7 +846,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               "startupResourcePolling": {
                 "enabled": false,
                 "nonBlocking": true,
-                "pollingIntervalMs": 5000,
+                "pollingIntervalMs": 30000,
                 "throwOnTimeout": false,
                 "timeoutMs": Symbol(NO_TIMEOUT),
               },
@@ -938,7 +938,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               "startupResourcePolling": {
                 "enabled": true,
                 "nonBlocking": true,
-                "pollingIntervalMs": 5000,
+                "pollingIntervalMs": 30000,
                 "throwOnTimeout": false,
                 "timeoutMs": Symbol(NO_TIMEOUT),
               },
@@ -964,7 +964,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       })
 
       it.each(['production', 'staging'] as const)(
-        'should use %s startupResourcePolling config',
+        'should disable startupResourcePolling in %s',
         (appEnv) => {
           const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
             system: 'my-system',
@@ -979,11 +979,11 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           })
 
           expect(result.locatorConfig?.startupResourcePolling).toEqual({
-            enabled: true,
+            enabled: false,
             nonBlocking: true,
             pollingIntervalMs: 30000,
             throwOnTimeout: false,
-            timeoutMs: 300000,
+            timeoutMs: NO_TIMEOUT,
           })
         },
       )

@@ -1,3 +1,4 @@
+import { NO_TIMEOUT } from '@message-queue-toolkit/core'
 import { beforeAll, expect } from 'vitest'
 import { FakeLogger } from '../../tests/FakeLogger.ts'
 import type { AwsConfig } from '../awsConfig.ts'
@@ -366,7 +367,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
               "startupResourcePolling": {
                 "enabled": false,
                 "nonBlocking": true,
-                "pollingIntervalMs": 5000,
+                "pollingIntervalMs": 30000,
                 "throwOnTimeout": false,
                 "timeoutMs": Symbol(NO_TIMEOUT),
               },
@@ -395,7 +396,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
               "startupResourcePolling": {
                 "enabled": true,
                 "nonBlocking": true,
-                "pollingIntervalMs": 5000,
+                "pollingIntervalMs": 30000,
                 "throwOnTimeout": false,
                 "timeoutMs": Symbol(NO_TIMEOUT),
               },
@@ -410,7 +411,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       })
 
       it.each(['production', 'staging'] as const)(
-        'should use %s startupResourcePolling config',
+        'should disable startupResourcePolling in %s',
         (appEnv) => {
           const nonDevResolver = new MessageQueueToolkitSqsOptionsResolver(config, {
             system: 'my-system',
@@ -424,11 +425,11 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
           })
 
           expect(result.locatorConfig?.startupResourcePolling).toEqual({
-            enabled: true,
+            enabled: false,
             nonBlocking: true,
             pollingIntervalMs: 30000,
             throwOnTimeout: false,
-            timeoutMs: 300000,
+            timeoutMs: NO_TIMEOUT,
           })
         },
       )
@@ -855,7 +856,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
               "startupResourcePolling": {
                 "enabled": false,
                 "nonBlocking": true,
-                "pollingIntervalMs": 5000,
+                "pollingIntervalMs": 30000,
                 "throwOnTimeout": false,
                 "timeoutMs": Symbol(NO_TIMEOUT),
               },
@@ -890,7 +891,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                 "startupResourcePolling": {
                   "enabled": true,
                   "nonBlocking": true,
-                  "pollingIntervalMs": 5000,
+                  "pollingIntervalMs": 30000,
                   "throwOnTimeout": false,
                   "timeoutMs": Symbol(NO_TIMEOUT),
                 },
@@ -909,7 +910,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
               "startupResourcePolling": {
                 "enabled": true,
                 "nonBlocking": true,
-                "pollingIntervalMs": 5000,
+                "pollingIntervalMs": 30000,
                 "throwOnTimeout": false,
                 "timeoutMs": Symbol(NO_TIMEOUT),
               },
@@ -948,7 +949,7 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
       })
 
       it.each(['production', 'staging'] as const)(
-        'should use %s startupResourcePolling config',
+        'should disable startupResourcePolling in %s',
         (appEnv) => {
           const nonDevResolver = new MessageQueueToolkitSqsOptionsResolver(config, {
             system: 'my-system',
@@ -962,13 +963,17 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
             awsConfig: buildAwsConfig(),
           })
 
-          expect(result.locatorConfig?.startupResourcePolling).toEqual({
-            enabled: true,
+          const expectedPolling = {
+            enabled: false,
             nonBlocking: true,
             pollingIntervalMs: 30000,
             throwOnTimeout: false,
-            timeoutMs: 300000,
-          })
+            timeoutMs: NO_TIMEOUT,
+          }
+          expect(result.locatorConfig?.startupResourcePolling).toEqual(expectedPolling)
+          expect(result.deadLetterQueue?.locatorConfig?.startupResourcePolling).toEqual(
+            expectedPolling,
+          )
         },
       )
     })
