@@ -896,9 +896,6 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
                   "timeoutMs": Symbol(NO_TIMEOUT),
                 },
               },
-              "redrivePolicy": {
-                "maxReceiveCount": 5,
-              },
             },
             "deletionConfig": {
               "deleteIfExists": undefined,
@@ -934,7 +931,17 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
         expect(result.deadLetterQueue?.locatorConfig?.queueName).toBe(
           'prefix_test-project-mqt_queue-second_service-dlq',
         )
-        expect(result.deadLetterQueue?.redrivePolicy).toEqual({ maxReceiveCount: 5 })
+      })
+
+      it('should not set a redrive policy, as it is managed externally', () => {
+        const result = resolver.resolveConsumerOptions(queueName, {
+          logger,
+          awsConfig: buildAwsConfig(),
+          handlers: [],
+        })
+
+        expect(result.deadLetterQueue?.locatorConfig).toBeDefined()
+        expect(result.deadLetterQueue?.redrivePolicy).toBeUndefined()
       })
 
       it('should not configure a DLQ in test mode', () => {

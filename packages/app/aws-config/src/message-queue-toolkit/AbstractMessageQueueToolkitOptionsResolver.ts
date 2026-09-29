@@ -106,11 +106,8 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
   ): ResolvedConsumerOptions<SQSCreationConfig, object, MessagePayload>['deadLetterQueue'] {
     if (params.isTest) return undefined
 
-    const redrivePolicy = { maxReceiveCount: DLQ_MAX_RECEIVE_COUNT }
-
     if (queueConfig.isExternal) {
       return {
-        redrivePolicy,
         locatorConfig: {
           queueName: applyAwsResourcePrefix(
             `${queueConfig.queueName}${DLQ_SUFFIX}`,
@@ -135,7 +132,7 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
         },
         updateAttributesIfExists: params.updateAttributesIfExists ?? true,
       },
-      redrivePolicy,
+      redrivePolicy: { maxReceiveCount: DLQ_MAX_RECEIVE_COUNT },
     }
   }
 
