@@ -31,7 +31,7 @@
     "dependencies": {
         "@bull-board/api": "^9.6.1",
         "@bull-board/fastify": "^9.6.1",
-        "@fastify/auth": "^5.1.0",
+        "@fastify/auth": "^5.1.1",
         "@fastify/basic-auth": "^6.3.0",
         "@lokalise/tsconfig": "workspace:^"
     },
