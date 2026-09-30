@@ -23,8 +23,11 @@ export type RequestHeaderSchema = z.ZodObject
 export type ResponseHeaderSchema = z.ZodObject
 
 export type CommonApiContract = {
+  // Returns plain `string` so contracts compiled against api-contracts <9 stay assignable.
+  // The leading-slash rule is enforced where contracts are defined, through `ApiContractConfig`,
+  // and `buildRequestPath` normalizes the path at runtime.
   // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with generics
-  pathResolver: RoutePathResolver<any>
+  pathResolver: (pathParams: any) => string
   requestPathParamsSchema?: RequestPathParamsSchema
   requestQuerySchema?: RequestQuerySchema
   requestHeaderSchema?: RequestHeaderSchema
