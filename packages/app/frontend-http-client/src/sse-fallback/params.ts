@@ -1,4 +1,4 @@
-import type { ApiContract, InferSchemaInput } from '@lokalise/api-contracts'
+import type { ApiContract, InferSchemaInput, Prettify } from '@lokalise/api-contracts'
 import { z } from 'zod/v4'
 import {
   type FallbackParamsPart,
@@ -6,8 +6,6 @@ import {
   FallbackUnsupportedParamError,
 } from './errors.ts'
 import type { FallbackRequestParams } from './types.ts'
-
-type Prettify<T> = { [K in keyof T]: T[K] } & {}
 
 type RequiredWhenDefined<T, TKey extends string> = [T] extends [undefined]
   ? { [K in TKey]?: undefined }

@@ -14,8 +14,7 @@ export type SseEventCallbacks<TEvent extends { type: string; data: unknown }> = 
 
 /**
  * Consumes an SSE `AsyncIterable` (as returned by `sendByApiContract`) and dispatches
- * typed events to per-event callbacks, bridging the callback-based pattern of the deprecated
- * `connectSseByContract` with the new `sendByApiContract` API.
+ * typed events to per-event callbacks.
  *
  * Iteration runs in the background. To abort early, pass an `AbortSignal` to `sendByApiContract`
  * and call `abort()` on its controller.
