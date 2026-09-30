@@ -496,8 +496,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@prisma/instrumentation':
-        specifier: ^7.0.1
-        version: 7.9.1(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
+        specifier: ^7.10.0
+        version: 7.10.0(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@types/node':
         specifier: ^26.4.1
         version: 26.6.1
@@ -3137,8 +3137,8 @@ packages:
   '@prisma/get-platform@7.2.0':
     resolution: {integrity: sha512-k1V0l0Td1732EHpAfi2eySTezyllok9dXb6UQanajkJQzPUGi3vO2z7jdkz67SypFTdmbnyGYxvEvYZdZsMAVA==}
 
-  '@prisma/instrumentation@7.9.1':
-    resolution: {integrity: sha512-ld/HSXi0FzpgmS06Bxey1SsqmGr0+lZQi1PbcatxQD7BCxpbtcWqDRuEavchT8RE5QUjy+UeINOMyk+WY6/a2g==}
+  '@prisma/instrumentation@7.10.0':
+    resolution: {integrity: sha512-NNeXgyAOfeuB2tJ8+XcsjFxaab69P02uV+D8HceOR7YnUq0+Wtjd1nuTxMZVpm/ZVGbIFrBPg5TDBjGUFU/evQ==}
     peerDependencies:
       '@opentelemetry/api': ^1.8
 
@@ -9656,7 +9656,7 @@ snapshots:
     dependencies:
       '@prisma/debug': 7.2.0
 
-  '@prisma/instrumentation@7.9.1(@opentelemetry/api@1.9.1)(supports-color@8.1.1)':
+  '@prisma/instrumentation@7.10.0(@opentelemetry/api@1.9.1)(supports-color@8.1.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/instrumentation': 0.207.0(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
