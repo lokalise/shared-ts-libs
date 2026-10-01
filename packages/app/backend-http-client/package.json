@@ -55,7 +55,7 @@
         "@lokalise/tsconfig": "workspace:^",
         "@types/node": "^26.4.1",
         "@vitest/coverage-v8": "^4.1.11",
-        "mockttp": "^4.4.2",
+        "mockttp": "^4.6.3",
         "typescript": "7.0.2",
         "vitest": "^4.1.11",
         "zod": "^4.3.6"
