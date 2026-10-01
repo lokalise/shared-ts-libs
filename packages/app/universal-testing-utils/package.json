@@ -56,7 +56,7 @@
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/frontend-http-client": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",
-        "@types/node": "^26.4.1",
+        "@types/node": "^26.6.2",
         "@vitest/coverage-v8": "^4.1.11",
         "mockttp": "^4.6.3",
         "msw": "^2.13.2",
