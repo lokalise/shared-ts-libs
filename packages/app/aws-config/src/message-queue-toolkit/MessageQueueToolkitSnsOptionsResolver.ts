@@ -126,6 +126,10 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
     const resolvedQueue = this.resolveQueue(queueName, topicConfig.queues, params)
 
     const options = this.commonConsumerOptions(params, resolvedQueue)
+    const filterAttributes = generateFilterAttributes(
+      options.handlers.map((entry) => entry.schema),
+      MESSAGE_TYPE_PATH,
+    )
 
     if (resolvedQueue.locatorConfig) {
       if (!resolvedTopic.locatorConfig) {
@@ -134,9 +138,15 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
         )
       }
 
-      // Queue and subscription are managed externally, so all resources are located and left untouched
+      // Queue and subscription are managed externally, so all resources are only located. The filter policy is
+      // still owned by the consumer, as it is derived from its handlers, and the rest of attributes are left untouched
       return {
         locatorConfig: { ...resolvedTopic.locatorConfig, ...resolvedQueue.locatorConfig },
+        subscriptionConfig: {
+          locateOnly: true,
+          managedAttributes: ['FilterPolicy', 'FilterPolicyScope'],
+          Attributes: filterAttributes,
+        },
         ...options,
       }
     }
@@ -161,10 +171,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
       },
       subscriptionConfig: {
         updateAttributesIfExists: params.updateAttributesIfExists ?? true,
-        Attributes: generateFilterAttributes(
-          options.handlers.map((entry) => entry.schema),
-          MESSAGE_TYPE_PATH,
-        ),
+        Attributes: filterAttributes,
       },
       subscriptionDeadLetterQueue: options.deadLetterQueue
         ? { reuseConsumerDeadLetterQueue: true }

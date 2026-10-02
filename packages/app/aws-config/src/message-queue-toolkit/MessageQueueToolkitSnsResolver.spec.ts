@@ -1074,6 +1074,17 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               "messageTypeResolver": {
                 "messageTypePath": "type",
               },
+              "subscriptionConfig": {
+                "Attributes": {
+                  "FilterPolicy": "{"type":[]}",
+                  "FilterPolicyScope": "MessageBody",
+                },
+                "locateOnly": true,
+                "managedAttributes": [
+                  "FilterPolicy",
+                  "FilterPolicyScope",
+                ],
+              },
             }
           `)
         })
@@ -1102,10 +1113,38 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           })
 
           expect(result.creationConfig).toBeUndefined()
-          expect(result.subscriptionConfig).toBeUndefined()
           expect(result.subscriptionDeadLetterQueue).toBeUndefined()
           expect(result.deadLetterQueue?.creationConfig).toBeUndefined()
           expect(result.deadLetterQueue?.redrivePolicy).toBeUndefined()
+        })
+
+        it('should only locate the subscription, managing just its filter policy', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            awsConfig: buildAwsConfig(),
+            handlers: [
+              {
+                schema: CONSUMER_BASE_MESSAGE_SCHEMA,
+                handler: () => Promise.resolve({ result: 'success' }),
+                preHandlers: [],
+                messageLogFormatter: () => undefined,
+              },
+            ],
+          })
+
+          expect(result.subscriptionConfig).toMatchInlineSnapshot(`
+            {
+              "Attributes": {
+                "FilterPolicy": "{"type":["<replace.me>"]}",
+                "FilterPolicyScope": "MessageBody",
+              },
+              "locateOnly": true,
+              "managedAttributes": [
+                "FilterPolicy",
+                "FilterPolicyScope",
+              ],
+            }
+          `)
         })
 
         it('should not use a DLQ in test mode', () => {
