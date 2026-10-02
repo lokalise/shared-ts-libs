@@ -190,7 +190,8 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
     topicConfig: TopicConfig,
     params: MayOmit<ResolvePublisherOptionsParams<MessagePayloadType>, 'messageSchemas'>,
   ): ResolveTopicResult {
-    if (topicConfig.isExternal) {
+    // In test mode external topics are created too, so tests don't depend on resources managed externally
+    if (topicConfig.isExternal && !params.isTest) {
       return {
         locatorConfig: {
           topicName: applyAwsResourcePrefix(topicConfig.topicName, params.awsConfig),
@@ -202,7 +203,8 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
     return {
       createCommand: {
         Name: applyAwsResourcePrefix(topicConfig.topicName, params.awsConfig),
-        Tags: getSnsTags({ ...topicConfig, ...this.config }),
+        // External topics have no owner nor service to tag them with
+        Tags: topicConfig.isExternal ? undefined : getSnsTags({ ...topicConfig, ...this.config }),
         Attributes: { KmsMasterKeyId: params.awsConfig.kmsKeyId },
       },
     }
