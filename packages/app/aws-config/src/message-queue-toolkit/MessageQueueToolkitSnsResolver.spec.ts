@@ -1,4 +1,4 @@
-import { CONSUMER_BASE_MESSAGE_SCHEMA } from '@message-queue-toolkit/core'
+import { CONSUMER_BASE_MESSAGE_SCHEMA, NO_TIMEOUT } from '@message-queue-toolkit/core'
 import { beforeAll, expect } from 'vitest'
 import { FakeLogger } from '../../tests/FakeLogger.ts'
 import type { AwsConfig } from '../awsConfig.ts'
@@ -32,6 +32,10 @@ const EventRouting = {
         queueName: 'test-project-second_entity-service',
         owner: 'team 1',
         service: 'service 2',
+      },
+      topic2Queue2: {
+        queueName: 'test-project-second_entity-external_service',
+        isExternal: true,
       },
     },
   },
@@ -372,24 +376,59 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
-          isTest: true,
           messageSchemas: [],
         })
 
         expect(result).toMatchInlineSnapshot(`
           {
             "creationConfig": undefined,
-            "handlerSpy": true,
+            "handlerSpy": undefined,
             "locatorConfig": {
               "startupResourcePolling": {
-                "enabled": false,
+                "enabled": true,
                 "nonBlocking": true,
-                "pollingIntervalMs": 5000,
+                "pollingIntervalMs": 30000,
                 "throwOnTimeout": false,
                 "timeoutMs": Symbol(NO_TIMEOUT),
               },
               "topicName": "prefix_test-project-second_entity",
             },
+            "logMessages": true,
+            "messageSchemas": [],
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
+          }
+        `)
+      })
+
+      it('should work using all props in test mode', () => {
+        const result = resolver.resolvePublisherOptions(topicName, {
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
+          updateAttributesIfExists: true,
+          forceTagUpdate: true,
+          logMessages: true,
+          isTest: true,
+          messageSchemas: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "creationConfig": {
+              "allowedSourceOwner": "test allowedSourceOwner",
+              "forceTagUpdate": true,
+              "queueUrlsWithSubscribePermissionsPrefix": undefined,
+              "topic": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                },
+                "Name": "prefix_test-project-second_entity",
+                "Tags": undefined,
+              },
+              "updateAttributesIfExists": true,
+            },
+            "handlerSpy": true,
+            "locatorConfig": undefined,
             "logMessages": true,
             "messageSchemas": [],
             "messageTypeResolver": {
@@ -413,7 +452,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               "startupResourcePolling": {
                 "enabled": true,
                 "nonBlocking": true,
-                "pollingIntervalMs": 5000,
+                "pollingIntervalMs": 30000,
                 "throwOnTimeout": false,
                 "timeoutMs": Symbol(NO_TIMEOUT),
               },
@@ -429,7 +468,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       })
 
       it.each(['production', 'staging'] as const)(
-        'should use %s startupResourcePolling config',
+        'should disable startupResourcePolling in %s',
         (appEnv) => {
           const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
             system: 'my-system',
@@ -443,11 +482,11 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
           })
 
           expect(result.locatorConfig?.startupResourcePolling).toEqual({
-            enabled: true,
+            enabled: false,
             nonBlocking: true,
             pollingIntervalMs: 30000,
             throwOnTimeout: false,
-            timeoutMs: 300000,
+            timeoutMs: NO_TIMEOUT,
           })
         },
       )
@@ -532,6 +571,35 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
         ),
       ).toThrowErrorMatchingInlineSnapshot(
         `[Error: Queue test-project-second_entity-service not found]`,
+      )
+    })
+
+    it('should throw an error if an external queue is subscribed to an internal topic', () => {
+      const topicName = 'test-project-topic'
+      const queueName = 'test-project-topic-queue'
+      // Not allowed by typing, the cast simulates an untyped config
+      const eventRouting = {
+        topic: {
+          topicName,
+          owner: 'team',
+          service: 'service',
+          queues: { queue: { queueName, isExternal: true } },
+        },
+      } as unknown as EventRoutingConfig
+      const resolver = new MessageQueueToolkitSnsOptionsResolver(eventRouting, {
+        system: 'my-system',
+        project,
+        appEnv: 'development',
+      })
+
+      expect(() =>
+        resolver.resolveConsumerOptions(topicName, queueName, {
+          logger,
+          awsConfig: buildAwsConfig(),
+          handlers: [],
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Error: External queue test-project-topic-queue cannot be subscribed to internal topic test-project-topic]`,
       )
     })
 
@@ -791,92 +859,190 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
 
     describe('external topics', () => {
       const topicName = EventRouting.topic2.topicName
-      const queueName = EventRouting.topic2.queues.topic2Queue1.queueName
 
-      it('should work using all props', () => {
-        const result = resolver.resolveConsumerOptions(topicName, queueName, {
-          logger,
-          handlers: [],
-          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
-          updateAttributesIfExists: true,
-          forceTagUpdate: true,
-          logMessages: true,
-          isTest: true,
-          batchSize: 1,
-          concurrentConsumersAmount: 1,
-        })
+      describe('internal queues', () => {
+        const queueName = EventRouting.topic2.queues.topic2Queue1.queueName
 
-        expect(result).toMatchInlineSnapshot(`
-          {
-            "concurrentConsumersAmount": 1,
-            "consumerOverrides": {
-              "batchSize": 1,
-              "terminateVisibilityTimeout": true,
-            },
-            "creationConfig": {
-              "allowedSourceOwner": "test allowedSourceOwner",
-              "forceTagUpdate": true,
-              "queue": {
+        it('should work using all props', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
+            updateAttributesIfExists: true,
+            forceTagUpdate: true,
+            logMessages: true,
+            batchSize: 1,
+            concurrentConsumersAmount: 1,
+          })
+
+          expect(result).toMatchInlineSnapshot(`
+            {
+              "concurrentConsumersAmount": 1,
+              "consumerOverrides": {
+                "batchSize": 1,
+                "heartbeatInterval": 20,
+              },
+              "creationConfig": {
+                "allowedSourceOwner": "test allowedSourceOwner",
+                "forceTagUpdate": true,
+                "queue": {
+                  "Attributes": {
+                    "KmsMasterKeyId": "test kmsKeyId",
+                    "VisibilityTimeout": "60",
+                  },
+                  "QueueName": "prefix_test-project-second_entity-service",
+                  "tags": {
+                    "env": "dev",
+                    "lok-cost-service": "service 2",
+                    "lok-cost-system": "my-system",
+                    "lok-owner": "team 1",
+                    "project": "test-project",
+                    "service": "sqs",
+                  },
+                },
+                "queueUrlsWithSubscribePermissionsPrefix": undefined,
+                "topic": undefined,
+                "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-project-second_entity*",
+                "updateAttributesIfExists": true,
+              },
+              "deadLetterQueue": {
+                "creationConfig": {
+                  "queue": {
+                    "Attributes": {
+                      "KmsMasterKeyId": "test kmsKeyId",
+                      "MessageRetentionPeriod": "604800",
+                    },
+                    "QueueName": "prefix_test-project-second_entity-service-dlq",
+                    "tags": {
+                      "env": "dev",
+                      "lok-cost-service": "service 2",
+                      "lok-cost-system": "my-system",
+                      "lok-owner": "team 1",
+                      "project": "test-project",
+                      "service": "sqs",
+                    },
+                  },
+                  "updateAttributesIfExists": true,
+                },
+                "redrivePolicy": {
+                  "maxReceiveCount": 5,
+                },
+              },
+              "deletionConfig": {
+                "deleteIfExists": undefined,
+              },
+              "handlerSpy": undefined,
+              "handlers": [],
+              "locatorConfig": {
+                "startupResourcePolling": {
+                  "enabled": true,
+                  "nonBlocking": true,
+                  "pollingIntervalMs": 30000,
+                  "throwOnTimeout": false,
+                  "timeoutMs": Symbol(NO_TIMEOUT),
+                },
+                "topicName": "prefix_test-project-second_entity",
+              },
+              "logMessages": true,
+              "maxRetryDuration": 172800,
+              "messageTypeResolver": {
+                "messageTypePath": "type",
+              },
+              "subscriptionConfig": {
                 "Attributes": {
-                  "KmsMasterKeyId": "test kmsKeyId",
-                  "VisibilityTimeout": "60",
+                  "FilterPolicy": "{"type":[]}",
+                  "FilterPolicyScope": "MessageBody",
                 },
-                "QueueName": "prefix_test-project-second_entity-service",
-                "tags": {
-                  "env": "dev",
-                  "lok-cost-service": "service 2",
-                  "lok-cost-system": "my-system",
-                  "lok-owner": "team 1",
-                  "project": "test-project",
-                  "service": "sqs",
-                },
+                "updateAttributesIfExists": true,
               },
-              "queueUrlsWithSubscribePermissionsPrefix": undefined,
-              "topic": undefined,
-              "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-project-second_entity*",
-              "updateAttributesIfExists": true,
-            },
-            "deadLetterQueue": undefined,
-            "deletionConfig": {
-              "deleteIfExists": true,
-            },
-            "handlerSpy": true,
-            "handlers": [],
-            "locatorConfig": {
-              "startupResourcePolling": {
-                "enabled": false,
-                "nonBlocking": true,
-                "pollingIntervalMs": 5000,
-                "throwOnTimeout": false,
-                "timeoutMs": Symbol(NO_TIMEOUT),
+              "subscriptionDeadLetterQueue": {
+                "reuseConsumerDeadLetterQueue": true,
               },
-              "topicName": "prefix_test-project-second_entity",
-            },
-            "logMessages": true,
-            "maxRetryDuration": 172800,
-            "messageTypeResolver": {
-              "messageTypePath": "type",
-            },
-            "subscriptionConfig": {
-              "Attributes": {
-                "FilterPolicy": "{"type":[]}",
-                "FilterPolicyScope": "MessageBody",
-              },
-              "updateAttributesIfExists": true,
-            },
-            "subscriptionDeadLetterQueue": undefined,
-          }
-        `)
-      })
-
-      it('should work using only required props', () => {
-        const result = resolver.resolveConsumerOptions(topicName, queueName, {
-          logger,
-          handlers: [],
-          awsConfig: buildAwsConfig(),
+            }
+          `)
         })
 
-        expect(result).toMatchInlineSnapshot(`
+        it('should work using all props in test mode', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
+            updateAttributesIfExists: true,
+            forceTagUpdate: true,
+            logMessages: true,
+            isTest: true,
+            batchSize: 1,
+            concurrentConsumersAmount: 1,
+          })
+
+          expect(result).toMatchInlineSnapshot(`
+            {
+              "concurrentConsumersAmount": 1,
+              "consumerOverrides": {
+                "batchSize": 1,
+                "terminateVisibilityTimeout": true,
+              },
+              "creationConfig": {
+                "allowedSourceOwner": "test allowedSourceOwner",
+                "forceTagUpdate": true,
+                "queue": {
+                  "Attributes": {
+                    "KmsMasterKeyId": "test kmsKeyId",
+                    "VisibilityTimeout": "60",
+                  },
+                  "QueueName": "prefix_test-project-second_entity-service",
+                  "tags": {
+                    "env": "dev",
+                    "lok-cost-service": "service 2",
+                    "lok-cost-system": "my-system",
+                    "lok-owner": "team 1",
+                    "project": "test-project",
+                    "service": "sqs",
+                  },
+                },
+                "queueUrlsWithSubscribePermissionsPrefix": undefined,
+                "topic": {
+                  "Attributes": {
+                    "KmsMasterKeyId": "test kmsKeyId",
+                  },
+                  "Name": "prefix_test-project-second_entity",
+                  "Tags": undefined,
+                },
+                "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-project-second_entity*",
+                "updateAttributesIfExists": true,
+              },
+              "deadLetterQueue": undefined,
+              "deletionConfig": {
+                "deleteIfExists": true,
+              },
+              "handlerSpy": true,
+              "handlers": [],
+              "locatorConfig": undefined,
+              "logMessages": true,
+              "maxRetryDuration": 172800,
+              "messageTypeResolver": {
+                "messageTypePath": "type",
+              },
+              "subscriptionConfig": {
+                "Attributes": {
+                  "FilterPolicy": "{"type":[]}",
+                  "FilterPolicyScope": "MessageBody",
+                },
+                "updateAttributesIfExists": true,
+              },
+              "subscriptionDeadLetterQueue": undefined,
+            }
+          `)
+        })
+
+        it('should work using only required props', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig(),
+          })
+
+          expect(result).toMatchInlineSnapshot(`
           {
             "concurrentConsumersAmount": undefined,
             "consumerOverrides": {
@@ -938,7 +1104,7 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               "startupResourcePolling": {
                 "enabled": true,
                 "nonBlocking": true,
-                "pollingIntervalMs": 5000,
+                "pollingIntervalMs": 30000,
                 "throwOnTimeout": false,
                 "timeoutMs": Symbol(NO_TIMEOUT),
               },
@@ -961,32 +1127,330 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
             },
           }
         `)
+        })
+
+        it.each(['production', 'staging'] as const)(
+          'should disable startupResourcePolling in %s',
+          (appEnv) => {
+            const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+              system: 'my-system',
+              project,
+              appEnv,
+            })
+
+            const result = nonDevResolver.resolveConsumerOptions(topicName, queueName, {
+              logger,
+              handlers: [],
+              awsConfig: buildAwsConfig(),
+            })
+
+            expect(result.locatorConfig?.startupResourcePolling).toEqual({
+              enabled: false,
+              nonBlocking: true,
+              pollingIntervalMs: 30000,
+              throwOnTimeout: false,
+              timeoutMs: NO_TIMEOUT,
+            })
+          },
+        )
       })
 
-      it.each(['production', 'staging'] as const)(
-        'should use %s startupResourcePolling config',
-        (appEnv) => {
-          const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
-            system: 'my-system',
-            project,
-            appEnv,
-          })
+      describe('external queues', () => {
+        const queueName = EventRouting.topic2.queues.topic2Queue2.queueName
 
-          const result = nonDevResolver.resolveConsumerOptions(topicName, queueName, {
+        it('should work using only required props', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
             logger,
             handlers: [],
             awsConfig: buildAwsConfig(),
           })
 
-          expect(result.locatorConfig?.startupResourcePolling).toEqual({
-            enabled: true,
-            nonBlocking: true,
-            pollingIntervalMs: 30000,
-            throwOnTimeout: false,
-            timeoutMs: 300000,
+          expect(result).toMatchInlineSnapshot(`
+            {
+              "concurrentConsumersAmount": undefined,
+              "consumerOverrides": {
+                "batchSize": undefined,
+                "heartbeatInterval": 20,
+              },
+              "deadLetterQueue": {
+                "locatorConfig": {
+                  "queueName": "test-project-second_entity-external_service-dlq",
+                  "startupResourcePolling": {
+                    "enabled": true,
+                    "nonBlocking": true,
+                    "pollingIntervalMs": 30000,
+                    "throwOnTimeout": false,
+                    "timeoutMs": Symbol(NO_TIMEOUT),
+                  },
+                },
+              },
+              "deletionConfig": {
+                "deleteIfExists": undefined,
+              },
+              "handlerSpy": undefined,
+              "handlers": [],
+              "locatorConfig": {
+                "queueName": "test-project-second_entity-external_service",
+                "startupResourcePolling": {
+                  "enabled": true,
+                  "nonBlocking": true,
+                  "pollingIntervalMs": 30000,
+                  "throwOnTimeout": false,
+                  "timeoutMs": Symbol(NO_TIMEOUT),
+                },
+                "topicName": "test-project-second_entity",
+              },
+              "logMessages": undefined,
+              "maxRetryDuration": 172800,
+              "messageTypeResolver": {
+                "messageTypePath": "type",
+              },
+              "subscriptionConfig": {
+                "Attributes": {
+                  "FilterPolicy": "{"type":[]}",
+                  "FilterPolicyScope": "MessageBody",
+                },
+                "locateOnly": true,
+                "managedAttributes": [
+                  "FilterPolicy",
+                  "FilterPolicyScope",
+                ],
+              },
+            }
+          `)
+        })
+
+        it('should work using all props', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
+            updateAttributesIfExists: true,
+            forceTagUpdate: true,
+            logMessages: true,
+            batchSize: 1,
+            concurrentConsumersAmount: 1,
           })
-        },
-      )
+
+          expect(result).toMatchInlineSnapshot(`
+            {
+              "concurrentConsumersAmount": 1,
+              "consumerOverrides": {
+                "batchSize": 1,
+                "heartbeatInterval": 20,
+              },
+              "deadLetterQueue": {
+                "locatorConfig": {
+                  "queueName": "prefix_test-project-second_entity-external_service-dlq",
+                  "startupResourcePolling": {
+                    "enabled": true,
+                    "nonBlocking": true,
+                    "pollingIntervalMs": 30000,
+                    "throwOnTimeout": false,
+                    "timeoutMs": Symbol(NO_TIMEOUT),
+                  },
+                },
+              },
+              "deletionConfig": {
+                "deleteIfExists": undefined,
+              },
+              "handlerSpy": undefined,
+              "handlers": [],
+              "locatorConfig": {
+                "queueName": "prefix_test-project-second_entity-external_service",
+                "startupResourcePolling": {
+                  "enabled": true,
+                  "nonBlocking": true,
+                  "pollingIntervalMs": 30000,
+                  "throwOnTimeout": false,
+                  "timeoutMs": Symbol(NO_TIMEOUT),
+                },
+                "topicName": "prefix_test-project-second_entity",
+              },
+              "logMessages": true,
+              "maxRetryDuration": 172800,
+              "messageTypeResolver": {
+                "messageTypePath": "type",
+              },
+              "subscriptionConfig": {
+                "Attributes": {
+                  "FilterPolicy": "{"type":[]}",
+                  "FilterPolicyScope": "MessageBody",
+                },
+                "locateOnly": true,
+                "managedAttributes": [
+                  "FilterPolicy",
+                  "FilterPolicyScope",
+                ],
+              },
+            }
+          `)
+        })
+
+        it('should work using all props in test mode', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
+            updateAttributesIfExists: true,
+            forceTagUpdate: true,
+            logMessages: true,
+            isTest: true,
+            batchSize: 1,
+            concurrentConsumersAmount: 1,
+          })
+
+          expect(result).toMatchInlineSnapshot(`
+            {
+              "concurrentConsumersAmount": 1,
+              "consumerOverrides": {
+                "batchSize": 1,
+                "terminateVisibilityTimeout": true,
+              },
+              "creationConfig": {
+                "allowedSourceOwner": "test allowedSourceOwner",
+                "forceTagUpdate": true,
+                "queue": {
+                  "Attributes": {
+                    "KmsMasterKeyId": "test kmsKeyId",
+                    "VisibilityTimeout": "60",
+                  },
+                  "QueueName": "prefix_test-project-second_entity-external_service",
+                  "tags": undefined,
+                },
+                "queueUrlsWithSubscribePermissionsPrefix": undefined,
+                "topic": {
+                  "Attributes": {
+                    "KmsMasterKeyId": "test kmsKeyId",
+                  },
+                  "Name": "prefix_test-project-second_entity",
+                  "Tags": undefined,
+                },
+                "topicArnsWithPublishPermissionsPrefix": "arn:aws:sns:*:*:prefix_test-project-second_entity*",
+                "updateAttributesIfExists": true,
+              },
+              "deadLetterQueue": undefined,
+              "deletionConfig": {
+                "deleteIfExists": true,
+              },
+              "handlerSpy": true,
+              "handlers": [],
+              "locatorConfig": undefined,
+              "logMessages": true,
+              "maxRetryDuration": 172800,
+              "messageTypeResolver": {
+                "messageTypePath": "type",
+              },
+              "subscriptionConfig": {
+                "Attributes": {
+                  "FilterPolicy": "{"type":[]}",
+                  "FilterPolicyScope": "MessageBody",
+                },
+                "updateAttributesIfExists": true,
+              },
+              "subscriptionDeadLetterQueue": undefined,
+            }
+          `)
+        })
+
+        it('should locate topic, queue and DLQ applying the resource prefix', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
+          })
+
+          expect(result.locatorConfig?.topicName).toBe('prefix_test-project-second_entity')
+          expect(result.locatorConfig?.queueName).toBe(
+            'prefix_test-project-second_entity-external_service',
+          )
+          expect(result.deadLetterQueue?.locatorConfig?.queueName).toBe(
+            'prefix_test-project-second_entity-external_service-dlq',
+          )
+        })
+
+        it('should leave queue, subscription and their redrive policies untouched', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig(),
+          })
+
+          expect(result.creationConfig).toBeUndefined()
+          expect(result.subscriptionDeadLetterQueue).toBeUndefined()
+          expect(result.deadLetterQueue?.creationConfig).toBeUndefined()
+          expect(result.deadLetterQueue?.redrivePolicy).toBeUndefined()
+        })
+
+        it('should only locate the subscription, managing just its filter policy', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            awsConfig: buildAwsConfig(),
+            handlers: [
+              {
+                schema: CONSUMER_BASE_MESSAGE_SCHEMA,
+                handler: () => Promise.resolve({ result: 'success' }),
+                preHandlers: [],
+                messageLogFormatter: () => undefined,
+              },
+            ],
+          })
+
+          expect(result.subscriptionConfig).toMatchInlineSnapshot(`
+            {
+              "Attributes": {
+                "FilterPolicy": "{"type":["<replace.me>"]}",
+                "FilterPolicyScope": "MessageBody",
+              },
+              "locateOnly": true,
+              "managedAttributes": [
+                "FilterPolicy",
+                "FilterPolicyScope",
+              ],
+            }
+          `)
+        })
+
+        it('should not use a DLQ in test mode', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig(),
+            isTest: true,
+          })
+
+          expect(result.deadLetterQueue).toBeUndefined()
+        })
+
+        it.each(['production', 'staging'] as const)(
+          'should disable startupResourcePolling in %s',
+          (appEnv) => {
+            const nonDevResolver = new MessageQueueToolkitSnsOptionsResolver(EventRouting, {
+              system: 'my-system',
+              project,
+              appEnv,
+            })
+
+            const result = nonDevResolver.resolveConsumerOptions(topicName, queueName, {
+              logger,
+              handlers: [],
+              awsConfig: buildAwsConfig(),
+            })
+
+            const expectedPolling = {
+              enabled: false,
+              nonBlocking: true,
+              pollingIntervalMs: 30000,
+              throwOnTimeout: false,
+              timeoutMs: NO_TIMEOUT,
+            }
+            expect(result.locatorConfig?.startupResourcePolling).toEqual(expectedPolling)
+            expect(result.deadLetterQueue?.locatorConfig?.startupResourcePolling).toEqual(
+              expectedPolling,
+            )
+          },
+        )
+      })
     })
 
     describe('forceTagUpdate behavior', () => {

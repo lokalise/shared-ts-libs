@@ -9,22 +9,11 @@ type CommonConfig<Owner extends string, Service extends string> = Pick<
   'owner' | 'service'
 >
 /**
- * Configuration for an external SQS queue.
- * External queues are managed outside your application and your app should only locate them.
- */
-export type ExternalQueueConfig = {
-  /** The name of the SQS queue */
-  queueName: string
-  /** Marks this as an external queue. */
-  isExternal: true
-}
-
-/**
  * Configuration for an internal SQS queue.
  * Internal queues are managed and created by your application.
  *
- * @template Owner - The type representing the owner or team name.
- * @template Service - The type representing the service name.
+ * @template Owner - The type representing the owner or team name (defaults to string).
+ * @template Service - The type representing the service name (defaults to string).
  */
 export type InternalQueueConfig<Owner extends string = string, Service extends string = string> = {
   /** The name of the SQS queue */
@@ -34,12 +23,25 @@ export type InternalQueueConfig<Owner extends string = string, Service extends s
 } & CommonConfig<Owner, Service>
 
 /**
+ * Configuration for an external SQS queue.
+ * External queues are managed outside your application (e.g. IaC) and your app should only locate them.
+ */
+export type ExternalQueueConfig = {
+  /** The name of the SQS queue */
+  queueName: string
+  /** Marks this as an external queue. */
+  isExternal: true
+  /** Should not be present in external queues */
+  owner?: never
+  /** Should not be present in external queues */
+  service?: never
+}
+
+/**
  * Configuration for an SQS queue. This is a union type that can be either an internal or external queue configuration.
- * Supports both internal (managed within your application)
- * and external (managed outside your control) queues.
  *
  * There are two modes for this config:
- * 1. Internal queue (default): These queues are supposed to be managed and created by your application.
+ * 1. Internal queue: These queues are supposed to be managed and created by your application.
  * 2. External queue: Minimal config indicating only the queue name and that it is external,
  *  these queues are supposed to be created and managed by another application, your app should only locate them.
  *
@@ -47,8 +49,8 @@ export type InternalQueueConfig<Owner extends string = string, Service extends s
  * @template Service - The type representing the service name (defaults to string).
  */
 export type QueueConfig<Owner extends string = string, Service extends string = string> =
-  | ExternalQueueConfig
   | InternalQueueConfig<Owner, Service>
+  | ExternalQueueConfig
 
 /**
  * Configuration for routing command messages to SQS queues.
@@ -87,17 +89,22 @@ export type TopicConfig<
 > = {
   /** The name of the SNS topic */
   topicName: string
-  /** A mapping of queue names to their configuration for queues subscribed to this topic */
-  queues: Record<string, InternalQueueConfig<Owner, Service>>
 } & (
   | /** Internal topic */
   (CommonConfig<Owner, Service> & {
+      /**
+       * A mapping of queue names to their configuration for queues subscribed to this topic.
+       * Only internal queues are allowed, as external queues can only be subscribed to external topics.
+       */
+      queues: Record<string, InternalQueueConfig<Owner, Service>>
       /** Should not be present in internal topics */
       isExternal?: never
       /** List of external applications allowed to subscribe to this topic. Leave undefined if only current apps are allowed */
       externalAppsWithSubscribePermissions?: ExternalApp[]
     })
   | /** External topic*/ {
+      /** A mapping of queue names to their configuration for queues subscribed to this topic */
+      queues: Record<string, QueueConfig<Owner, Service>>
       /** Marks this as an external topic. */
       isExternal: true
       /** Should not be present in external topics */
