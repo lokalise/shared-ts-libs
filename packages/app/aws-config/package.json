@@ -38,9 +38,9 @@
         "postversion": "biome check --write package.json"
     },
     "peerDependencies": {
-        "@aws-sdk/client-sns": "^3.1133.0",
-        "@aws-sdk/client-sqs": "^3.1133.0",
-        "@aws-sdk/credential-providers": "^3.1133.0",
+        "@aws-sdk/client-sns": "^3.1138.0",
+        "@aws-sdk/client-sqs": "^3.1138.0",
+        "@aws-sdk/credential-providers": "^3.1138.0",
         "@lokalise/fastify-extras": ">=30.0.0",
         "@lokalise/node-core": ">=14.0.0",
         "@lokalise/universal-ts-utils": ">=4.0.0",
@@ -51,9 +51,9 @@
         "zod": ">=4.0.0"
     },
     "devDependencies": {
-        "@aws-sdk/client-sns": "^3.1133.0",
-        "@aws-sdk/client-sqs": "^3.1133.0",
-        "@aws-sdk/credential-providers": "^3.1133.0",
+        "@aws-sdk/client-sns": "^3.1138.0",
+        "@aws-sdk/client-sqs": "^3.1138.0",
+        "@aws-sdk/credential-providers": "^3.1138.0",
         "@biomejs/biome": "^2.5.12",
         "@smithy/types": "^4.17.2",
         "@lokalise/biome-config": "workspace:^",
@@ -64,7 +64,7 @@
         "@message-queue-toolkit/core": "^27.2.0",
         "@message-queue-toolkit/sns": "^27.2.0",
         "@message-queue-toolkit/sqs": "^27.2.0",
-        "@types/node": "^26.4.1",
+        "@types/node": "^26.6.2",
         "@vitest/coverage-v8": "^4.1.11",
         "envase": "^1.5.0",
         "rimraf": "^6.1.3",

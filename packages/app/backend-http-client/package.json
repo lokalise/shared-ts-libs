@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/backend-http-client",
-    "version": "12.2.0",
+    "version": "13.0.0",
     "author": {
         "name": "Lokalise",
         "url": "https://lokalise.com/"
@@ -40,10 +40,10 @@
     },
     "dependencies": {
         "parse-sse": "^0.1.0",
-        "undici": "^8.10.2"
+        "undici": "^8.11.0"
     },
     "peerDependencies": {
-        "@lokalise/api-contracts": ">=7.2.0",
+        "@lokalise/api-contracts": ">=9.0.0",
         "@lokalise/node-core": ">=13.1.0",
         "zod": ">=3.25.56"
     },
@@ -53,9 +53,9 @@
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/node-core": "^14.9.1",
         "@lokalise/tsconfig": "workspace:^",
-        "@types/node": "^26.4.1",
+        "@types/node": "^26.6.2",
         "@vitest/coverage-v8": "^4.1.11",
-        "mockttp": "^4.4.2",
+        "mockttp": "^4.6.3",
         "typescript": "7.0.2",
         "vitest": "^4.1.11",
         "zod": "^4.3.6"

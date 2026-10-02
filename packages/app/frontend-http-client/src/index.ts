@@ -1,14 +1,13 @@
-export { type ContractRequestOptions, sendByApiContract } from './api-contract/sendByApiContract.ts'
+export {
+  type ContractRequestOptions,
+  sendByApiContract,
+} from './api-contract/sendByApiContract.ts'
 export {
   type SseEventCallbacks,
   sseStreamToCallbacks,
 } from './api-contract/sseStreamToCallbacks.ts'
 export { UnexpectedResponseError } from './api-contract/UnexpectedResponseError.ts'
 export {
-  sendByContract,
-  sendByDeleteRoute,
-  sendByGetRoute,
-  sendByPayloadRoute,
   sendDelete,
   sendGet,
   sendPatch,
@@ -17,6 +16,4 @@ export {
   sendPut,
   UNKNOWN_SCHEMA,
 } from './client.ts'
-export type { SseCallbacks, SseConnection, SseRouteRequestParams } from './sse.ts'
-export { connectSseByContract } from './sse.ts'
 export * from './sse-fallback/index.ts'
