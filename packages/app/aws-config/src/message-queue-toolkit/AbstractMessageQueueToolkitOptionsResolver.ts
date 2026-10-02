@@ -144,7 +144,8 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
 
     const { awsConfig, updateAttributesIfExists, forceTagUpdate } = params
 
-    if (queueConfig.isExternal) {
+    // In test mode external queues are created too, so tests don't depend on resources managed externally
+    if (queueConfig.isExternal && !params.isTest) {
       return {
         queueConfig,
         locatorConfig: {
@@ -159,7 +160,8 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
       creationConfig: {
         queue: {
           QueueName: applyAwsResourcePrefix(queueConfig.queueName, awsConfig),
-          tags: getSqsTags({ ...queueConfig, ...this.config }),
+          // External queues have no owner nor service to tag them with
+          tags: queueConfig.isExternal ? undefined : getSqsTags({ ...queueConfig, ...this.config }),
           Attributes: {
             KmsMasterKeyId: awsConfig.kmsKeyId,
             VisibilityTimeout: VISIBILITY_TIMEOUT.toString(),

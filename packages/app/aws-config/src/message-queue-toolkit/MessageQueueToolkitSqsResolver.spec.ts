@@ -354,24 +354,70 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
-          isTest: true,
           messageSchemas: [],
         })
 
         expect(result).toMatchInlineSnapshot(`
           {
             "creationConfig": undefined,
-            "handlerSpy": true,
+            "handlerSpy": undefined,
             "locatorConfig": {
               "queueName": "prefix_test-project-mqt_queue-second_service",
               "startupResourcePolling": {
-                "enabled": false,
+                "enabled": true,
                 "nonBlocking": true,
                 "pollingIntervalMs": 30000,
                 "throwOnTimeout": false,
                 "timeoutMs": Symbol(NO_TIMEOUT),
               },
             },
+            "logMessages": true,
+            "messageSchemas": [],
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
+          }
+        `)
+      })
+
+      it('should work using all props in test mode', () => {
+        const result = resolver.resolvePublisherOptions(queueName, {
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
+          updateAttributesIfExists: true,
+          forceTagUpdate: true,
+          logMessages: true,
+          isTest: true,
+          messageSchemas: [],
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "creationConfig": {
+              "forceTagUpdate": true,
+              "policyConfig": {
+                "resource": Symbol(current_queue),
+                "statements": {
+                  "Action": [
+                    "sqs:SendMessage",
+                    "sqs:GetQueueAttributes",
+                    "sqs:GetQueueUrl",
+                  ],
+                  "Effect": "Allow",
+                  "Principal": "123456",
+                },
+              },
+              "queue": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                  "VisibilityTimeout": "60",
+                },
+                "QueueName": "prefix_test-project-mqt_queue-second_service",
+                "tags": undefined,
+              },
+              "updateAttributesIfExists": true,
+            },
+            "handlerSpy": true,
+            "locatorConfig": undefined,
             "logMessages": true,
             "messageSchemas": [],
             "messageTypeResolver": {
@@ -832,6 +878,62 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
           updateAttributesIfExists: true,
           forceTagUpdate: true,
           logMessages: true,
+          batchSize: 1,
+          concurrentConsumersAmount: 1,
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+          {
+            "concurrentConsumersAmount": 1,
+            "consumerOverrides": {
+              "batchSize": 1,
+              "heartbeatInterval": 20,
+            },
+            "creationConfig": undefined,
+            "deadLetterQueue": {
+              "locatorConfig": {
+                "queueName": "prefix_test-project-mqt_queue-second_service-dlq",
+                "startupResourcePolling": {
+                  "enabled": true,
+                  "nonBlocking": true,
+                  "pollingIntervalMs": 30000,
+                  "throwOnTimeout": false,
+                  "timeoutMs": Symbol(NO_TIMEOUT),
+                },
+              },
+            },
+            "deletionConfig": {
+              "deleteIfExists": undefined,
+            },
+            "handlerSpy": undefined,
+            "handlers": [],
+            "locatorConfig": {
+              "queueName": "prefix_test-project-mqt_queue-second_service",
+              "startupResourcePolling": {
+                "enabled": true,
+                "nonBlocking": true,
+                "pollingIntervalMs": 30000,
+                "throwOnTimeout": false,
+                "timeoutMs": Symbol(NO_TIMEOUT),
+              },
+            },
+            "logMessages": true,
+            "maxRetryDuration": 172800,
+            "messageTypeResolver": {
+              "messageTypePath": "type",
+            },
+          }
+        `)
+      })
+
+      it('should work using all properties in test mode', () => {
+        const result = resolver.resolveConsumerOptions(queueName, {
+          logger,
+          handlers: [],
+          awsConfig: buildAwsConfig({ resourcePrefix: 'prefix' }),
+          updateAttributesIfExists: true,
+          forceTagUpdate: true,
+          logMessages: true,
           isTest: true,
           batchSize: 1,
           concurrentConsumersAmount: 1,
@@ -844,23 +946,37 @@ describe('MessageQueueToolkitSqsOptionsResolver', () => {
               "batchSize": 1,
               "terminateVisibilityTimeout": true,
             },
-            "creationConfig": undefined,
+            "creationConfig": {
+              "forceTagUpdate": true,
+              "policyConfig": {
+                "resource": Symbol(current_queue),
+                "statements": {
+                  "Action": [
+                    "sqs:SendMessage",
+                    "sqs:GetQueueAttributes",
+                    "sqs:GetQueueUrl",
+                  ],
+                  "Effect": "Allow",
+                  "Principal": "123456",
+                },
+              },
+              "queue": {
+                "Attributes": {
+                  "KmsMasterKeyId": "test kmsKeyId",
+                  "VisibilityTimeout": "60",
+                },
+                "QueueName": "prefix_test-project-mqt_queue-second_service",
+                "tags": undefined,
+              },
+              "updateAttributesIfExists": true,
+            },
             "deadLetterQueue": undefined,
             "deletionConfig": {
               "deleteIfExists": true,
             },
             "handlerSpy": true,
             "handlers": [],
-            "locatorConfig": {
-              "queueName": "prefix_test-project-mqt_queue-second_service",
-              "startupResourcePolling": {
-                "enabled": false,
-                "nonBlocking": true,
-                "pollingIntervalMs": 30000,
-                "throwOnTimeout": false,
-                "timeoutMs": Symbol(NO_TIMEOUT),
-              },
-            },
+            "locatorConfig": undefined,
             "logMessages": true,
             "maxRetryDuration": 172800,
             "messageTypeResolver": {
