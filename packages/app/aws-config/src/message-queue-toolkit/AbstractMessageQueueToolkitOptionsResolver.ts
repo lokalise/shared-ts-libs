@@ -181,7 +181,8 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
   }): StartupResourcePollingConfig {
     const isProdOrStage = this.config.appEnv === 'production' || this.config.appEnv === 'staging'
     return {
-      // Disabled in test mode and production/stage where resources are expected to exist, so startup fails fast if they don't
+      // Disabled in test mode and production/stage where resources are expected to exist,
+      // so startup fails fast if they don't
       enabled: !params.isTest && !isProdOrStage,
       throwOnTimeout: false,
       nonBlocking: true,
