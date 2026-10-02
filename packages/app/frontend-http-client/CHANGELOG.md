@@ -1,5 +1,11 @@
 # @lokalise/frontend-http-client
 
+## 9.0.1
+
+### Patch Changes
+
+- f20fe17: Fix SSE responses from `sendByApiContract` failing in some browsers by reading the event stream with a manual reader loop instead of `ReadableStream` async iteration.
+
 ## 9.0.0
 
 ### Major Changes
