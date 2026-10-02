@@ -233,8 +233,7 @@ async function releaseBody(response: Response): Promise<void> {
  *
  * Deliberately a manual reader loop rather than `pipeThrough(new
  * TextDecoderStream())` plus async iteration: `ReadableStream` async iteration
- * is still missing in shipping Safari, and this is the one code path in the
- * package that a long-lived stream depends on.
+ * is still missing in some browsers.
  */
 async function* readTextChunks(
   body: ReadableStream<Uint8Array>,

@@ -93,7 +93,7 @@ jobs:
       matrix:
         node-version: [24.x, 26.x]
         package-name: ${{ fromJson(needs.changed-files-job.outputs.packages) }}
-    uses: ./.github/workflows/ci.package.yml
+    uses: $/.github/workflows/ci.package.yml
     with:
       node_version: ${{ matrix.node-version }}
       package_name: ${{ matrix.package-name }}

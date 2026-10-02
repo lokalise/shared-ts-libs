@@ -99,19 +99,31 @@ async function* parseSseStream(
   }
   /* v8 ignore stop */
 
+  // Manual reader loop rather than `for await` over the stream: `ReadableStream` async
+  // iteration is still missing in some browsers.
   const reader = response.body
     .pipeThrough(new TextDecoderStream())
     .pipeThrough(new ServerSentEventTransformStream())
+    .getReader()
 
-  for await (const event of reader) {
-    const { type, data, lastEventId, retry } = event
-    const schema = schemaByEventName[type]
+  try {
+    while (true) {
+      const { done, value: event } = await reader.read()
+      if (done) return
 
-    if (!schema) {
-      throw new Error(`Schema for event "${type}" not found.`)
+      const { type, data, lastEventId, retry } = event
+      const schema = schemaByEventName[type]
+
+      if (!schema) {
+        throw new Error(`Schema for event "${type}" not found.`)
+      }
+
+      yield { type, data: schema.parse(JSON.parse(data)), lastEventId, retry }
     }
-
-    yield { type, data: schema.parse(JSON.parse(data)), lastEventId, retry }
+  } finally {
+    // Mirrors the async iterator's cleanup: cancel the stream when the consumer stops early
+    // (break/return/throw) so the underlying connection is released.
+    await reader.cancel().catch(() => undefined)
   }
 }
 
