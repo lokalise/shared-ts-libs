@@ -8,10 +8,16 @@ const pyroscopeMock = vi.hoisted(() => ({
   start: vi.fn(),
   stop: vi.fn(),
   setLogger: vi.fn(),
+  startHeapProfiling: vi.fn(),
+  stopHeapProfiling: vi.fn(),
 }))
 
 vi.mock('@pyroscope/nodejs', () => ({
-  default: { setLogger: pyroscopeMock.setLogger },
+  default: {
+    setLogger: pyroscopeMock.setLogger,
+    startHeapProfiling: pyroscopeMock.startHeapProfiling,
+    stopHeapProfiling: pyroscopeMock.stopHeapProfiling,
+  },
   init: pyroscopeMock.init,
   start: pyroscopeMock.start,
   stop: pyroscopeMock.stop,
@@ -71,11 +77,20 @@ const loadModule = () => {
 
 describe('profiler', () => {
   let logger: ProfilingLogger
+  const hostPlatform = process.platform
 
+  // Linux unless a test says otherwise: the start path differs on Windows, and
+  // these specs should not depend on where they run.
   beforeEach(() => {
+    setPlatform('linux')
     vi.clearAllMocks()
     pyroscopeMock.stop.mockResolvedValue(undefined)
+    pyroscopeMock.stopHeapProfiling.mockResolvedValue(undefined)
     logger = buildLogger()
+  })
+
+  afterEach(() => {
+    setPlatform(hostPlatform)
   })
 
   afterEach(() => {
@@ -366,22 +381,6 @@ describe('profiler', () => {
       expect(line?.err?.stack).toContain('profiler.spec.ts')
     })
 
-    it('points a Windows start failure at the way out', async () => {
-      setPlatform('win32')
-      pyroscopeMock.start.mockImplementationOnce(() => {
-        throw new TypeError('Contexts are not supported.')
-      })
-      const { logger: pinoLogger, lines } = buildPinoLogger()
-      const { startProfiling } = await loadModule()
-
-      await startProfiling(ENABLED_CONFIG, CONTEXT, pinoLogger)
-
-      const line = lines.find((entry) => entry.level === 50)
-      expect(line?.msg).toContain('WSL2')
-      expect(line?.msg).toContain('"On a Windows dev box"')
-      expect(line?.err).toMatchObject({ type: 'TypeError', message: 'Contexts are not supported.' })
-    })
-
     it('logs why a rollback failed', async () => {
       pyroscopeMock.start.mockImplementationOnce(() => {
         throw new Error('Heap profiler is already started')
@@ -408,6 +407,55 @@ describe('profiler', () => {
       expect(line?.msg).toBe('[PYROSCOPE] Failed to stop continuous profiling cleanly')
       expect(line?.err?.message).toBe('flush rejected')
       expect(line?.err?.stack).toContain('profiler.spec.ts')
+    })
+  })
+
+  describe('on Windows', () => {
+    const originalPlatform = process.platform
+
+    beforeEach(() => {
+      setPlatform('win32')
+    })
+
+    afterEach(() => {
+      setPlatform(originalPlatform)
+    })
+
+    // The wall profiler throws `Contexts are not supported.` there, and it
+    // starts first, so a plain start() would take the heap profile down with it.
+    it('starts the heap profiler alone and says what is missing', async () => {
+      const { logger: pinoLogger, lines } = buildPinoLogger()
+      const { isProfilingRunning, runningProfiler, startProfiling } = await loadModule()
+
+      await expect(startProfiling(ENABLED_CONFIG, CONTEXT, pinoLogger)).resolves.toBe(true)
+
+      expect(pyroscopeMock.startHeapProfiling).toHaveBeenCalledOnce()
+      expect(pyroscopeMock.start).not.toHaveBeenCalled()
+      expect(isProfilingRunning()).toBe(true)
+      expect(runningProfiler()).toBeUndefined()
+      const line = lines.find((entry) => entry.level === 40)
+      expect(line?.msg).toContain('Wall and CPU profiles cannot be collected on Windows')
+      expect(line?.msg).toContain('"On a Windows dev box"')
+    })
+
+    it('stops only the heap profiler', async () => {
+      const { isProfilingRunning, startProfiling, stopProfiling } = await loadModule()
+
+      await startProfiling(ENABLED_CONFIG, CONTEXT, logger)
+      await stopProfiling(logger)
+
+      expect(pyroscopeMock.stopHeapProfiling).toHaveBeenCalledOnce()
+      expect(pyroscopeMock.stop).not.toHaveBeenCalled()
+      expect(isProfilingRunning()).toBe(false)
+    })
+
+    it('does not start a second time', async () => {
+      const { startProfiling } = await loadModule()
+
+      await startProfiling(ENABLED_CONFIG, CONTEXT, logger)
+      await expect(startProfiling(ENABLED_CONFIG, CONTEXT, logger)).resolves.toBe(true)
+
+      expect(pyroscopeMock.startHeapProfiling).toHaveBeenCalledOnce()
     })
   })
 
