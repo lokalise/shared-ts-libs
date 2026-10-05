@@ -79,11 +79,7 @@ export class MessageQueueToolkitSqsOptionsResolver extends AbstractMessageQueueT
     return {
       creationConfig: resolvedQueue.creationConfig,
       locatorConfig: resolvedQueue.locatorConfig,
-      ...this.commonConsumerOptions(
-        params,
-        resolvedQueue.queueConfig,
-        resolvedQueue.creationConfig?.queue,
-      ),
+      ...this.commonConsumerOptions(params, resolvedQueue),
     }
   }
 

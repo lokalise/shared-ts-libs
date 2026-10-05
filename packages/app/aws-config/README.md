@@ -184,6 +184,8 @@ const routingConfig: EventRoutingConfig = {
     isExternal: true,
     queues: {
       eventQueue: { queueName: 'event-queue', owner: 'team-x', service: 'order-service' },
+      // external queue example (the queue and its subscription are managed outside your application)
+      externalEventQueue: { queueName: 'external-event-queue', isExternal: true },
     },
   },
 };
@@ -204,6 +206,13 @@ const routingConfig: EventRoutingConfig = {
    and `externalAppsWithSubscribePermissions`.
   - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing topic by 
    name and subscribe your queues. **No topic creation or tagging** is attempted.
+  - Its queues can be internal or external. External queues are only allowed on external topics.
+
+- **External queues on a topic** (`isExternal: true`)
+  - The queue and its subscription are managed outside your application, so they are only located.
+  - The consumer still owns the subscription filter policy (`FilterPolicy` and `FilterPolicyScope`), as it comes from
+   its handlers. It is updated on startup when it differs. Other subscription attributes (e.g. `RedrivePolicy`) are
+   left untouched.
 
 Under the hood, the TypeScript union enforces this shape.
 
@@ -249,8 +258,23 @@ const commandConfig: CommandConfig = {
    name.
   - **No queue creation or tagging** is attempted.
   - Consumers locate the existing dead-letter queue by convention (`<queueName>-dlq`) so invalid messages are routed
-   to it instead of being silently deleted. This DLQ must already exist, the consumer's IAM
-   role needs `sqs:SetQueueAttributes` on the queue.
+   to it instead of being silently deleted. This DLQ must already exist. The redrive policy of the queue is not
+   changed, so it must be set outside your application.
+
+#### Externally Managed Resources
+
+When topics, queues or subscriptions are external, the tooling that manages them must set what the resolvers would
+otherwise set for internal resources:
+
+- Queue `VisibilityTimeout` of at least 60 seconds (consumers send a heartbeat every 20 seconds).
+- Queue `RedrivePolicy` pointing to the `<queueName>-dlq` queue, and that DLQ with enough retention (internal DLQs
+  keep messages for 7 days).
+- Queue policy that allows publishers (and the topic, for subscribed queues) to send messages.
+- KMS encryption, if needed.
+- The subscription of the queue to the topic.
+
+All SNS consumers, internal or external, need `sns:ListSubscriptionsByTopic` and `sns:GetSubscriptionAttributes`, as
+subscriptions are checked before writing, and `sns:SetSubscriptionAttributes` to update the filter policy.
 
 ### Message Queue Toolkit SNS Resolver
 
@@ -375,9 +399,13 @@ Both `MessageQueueToolkitSnsOptionsResolver` and `MessageQueueToolkitSqsOptionsR
   - `forceTagUpdate`: Defaults to `true` in development environments, `false` in all other environments. When enabled,
     existing resources with mismatched tags will be updated to match the configured tags.
   - Applies standardized tags, see tags section above.
+- **Startup resource polling** (located resources only):
+  - Disabled in `production` and `staging`: resources are expected to exist, so startup fails fast if they don't.
+  - Enabled in `development`: non-blocking, checks every 30 seconds, without timeout.
 - **Consumer**:
   - Dead-letter queue with suffix `-dlq`, `redrivePolicy.maxReceiveCount = 5`, retention = 7 days. For internal queues
-    it is created and managed; for external queues (`isExternal: true`) the pre-existing `-dlq` is located instead.
+    it is created and managed; for external queues (`isExternal: true`) the pre-existing `-dlq` is located instead,
+    and its redrive policy is not changed.
   - SNS only: the SNS subscription is configured to redrive undeliverable messages (deleted endpoint, IAM/policy errors, throttling) to the same DLQ via `subscriptionDeadLetterQueue.reuseConsumerDeadLetterQueue`, so they aren't silently dropped.
   - `maxRetryDuration`: 2 days for in-flight message retries.
   - `heartbeatInterval`: 20 seconds for visibility timeout heartbeats.
@@ -387,3 +415,5 @@ Both `MessageQueueToolkitSnsOptionsResolver` and `MessageQueueToolkitSqsOptionsR
     - Skips DLQ creation.
     - Sets `deleteIfExists: true` to remove resources after tests.
     - `terminateVisibilityTimeout`: `true` for immediate retries.
+    - External topics and queues are created too (without tags), so tests don't depend on other services. Note that a
+      consumer deletes its topic on startup, which also removes the subscriptions of other consumers of that topic.
