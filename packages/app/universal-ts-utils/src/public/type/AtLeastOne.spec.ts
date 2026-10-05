@@ -17,4 +17,16 @@ describe('AtLeastOne', () => {
   it('keeps the property types', () => {
     expectTypeOf({ id: 1 }).not.toMatchTypeOf<Filter>()
   })
+
+  it('requires one of the properties when some of them are optional', () => {
+    type OptionalFilter = AtLeastOne<{ id?: string; name?: string }>
+    type MixedFilter = AtLeastOne<{ id: string; name?: string }>
+
+    expectTypeOf({ id: '1' }).toMatchTypeOf<OptionalFilter>()
+    expectTypeOf({ name: 'Alice' }).toMatchTypeOf<OptionalFilter>()
+    expectTypeOf({}).not.toMatchTypeOf<OptionalFilter>()
+
+    expectTypeOf({ name: 'Alice' }).toMatchTypeOf<MixedFilter>()
+    expectTypeOf({}).not.toMatchTypeOf<MixedFilter>()
+  })
 })
