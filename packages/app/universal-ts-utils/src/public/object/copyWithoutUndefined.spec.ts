@@ -52,4 +52,17 @@ describe('copyWithoutUndefined', () => {
     expect(result.isAdmin).toBeUndefined()
     expect(result.a).toBe(1)
   })
+
+  it('copies enumerable symbol keys and skips non-enumerable ones', () => {
+    const kept = Symbol('kept')
+    const skipped = Symbol('skipped')
+    const dropped = Symbol('dropped')
+    const source: Record<symbol, unknown> = { [kept]: 1, [dropped]: undefined }
+    Object.defineProperty(source, skipped, { value: 2, enumerable: false })
+
+    const result = copyWithoutUndefined(source)
+
+    expect(Reflect.ownKeys(result)).toStrictEqual([kept])
+    expect(result[kept]).toBe(1)
+  })
 })

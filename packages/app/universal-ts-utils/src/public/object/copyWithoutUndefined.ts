@@ -28,4 +28,9 @@ type Output<T extends Record<RecordKeyType, unknown>> = Pick<
 export const copyWithoutUndefined = <T extends Record<RecordKeyType, unknown>>(
   object: T,
 ): Output<T> =>
-  Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined)) as Output<T>
+  Object.fromEntries(
+    Reflect.ownKeys(object)
+      .filter((key) => Object.prototype.propertyIsEnumerable.call(object, key))
+      .filter((key) => object[key] !== undefined)
+      .map((key) => [key, object[key]]),
+  ) as Output<T>
