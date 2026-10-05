@@ -50,6 +50,7 @@ jobs:
             ["packages/app/non-translatable-markup"]="@lokalise/non-translatable-markup"
             ["packages/app/odata-mapper"]="@lokalise/odata-mapper"
             ["packages/app/opentelemetry-fastify-bootstrap"]="@lokalise/opentelemetry-fastify-bootstrap"
+            ["packages/app/pg-boss-jobs-common"]="@lokalise/pg-boss-jobs-common"
             ["packages/app/polling"]="@lokalise/polling"
             ["packages/app/prisma-utils"]="@lokalise/prisma-utils"
             ["packages/app/pyroscope-profiling"]="@lokalise/pyroscope-profiling"
