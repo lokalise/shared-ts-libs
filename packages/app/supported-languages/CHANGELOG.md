@@ -1,5 +1,11 @@
 # @lokalise/supported-languages
 
+## 3.5.1
+
+### Patch Changes
+
+- 7e1c820: Mark non-CLDR entries in `rtlLanguages` with a comment pointing to `nonCldrLanguages`.
+
 ## 3.5.0
 
 ### Minor Changes
