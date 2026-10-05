@@ -41,4 +41,15 @@ describe('copyWithoutUndefined', () => {
 
     expect(source).toStrictEqual({ a: undefined, b: 'b' })
   })
+
+  it('copies an own __proto__ key as a property without changing the prototype', () => {
+    const source = JSON.parse('{"__proto__":{"isAdmin":true},"a":1}')
+
+    const result = copyWithoutUndefined(source)
+
+    expect(Object.getPrototypeOf(result)).toBe(Object.prototype)
+    expect(Object.hasOwn(result, '__proto__')).toBe(true)
+    expect(result.isAdmin).toBeUndefined()
+    expect(result.a).toBe(1)
+  })
 })
