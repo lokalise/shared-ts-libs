@@ -287,6 +287,20 @@ const source = {
 const result = copyWithoutNullish(source) // Returns: { name: 'Alice', occupation: 'Explorer', status: 'Active' }
 ```
 
+#### `copyWithoutUndefined`
+
+Creates a shallow copy of an object, excluding properties with `undefined` values. Properties with `null` values are
+kept.
+
+```typescript
+const source = {
+    name: 'Alice',
+    age: null,
+    location: undefined
+}
+const result = copyWithoutUndefined(source) // Returns: { name: 'Alice', age: null }
+```
+
 #### `deepClone`
 
 Returns a deep cloned copy of an object.
@@ -452,6 +466,19 @@ const result = trimText(text) // Returns: { value: 'Hello, World!', prefix: '  '
 ### Type Utilities
 
 This section describes utility functions to work with types efficiently and elegantly.
+
+#### `AtLeastOne`
+
+Requires at least one of the properties of a type to be present, while the rest stay optional.
+
+```typescript
+type Filter = AtLeastOne<{ id: string; name: string }>
+
+const byId: Filter = { id: '1' }
+const byBoth: Filter = { id: '1', name: 'Alice' }
+// @ts-expect-error at least one property is required
+const empty: Filter = {}
+```
 
 #### `assertIsNever`
 
@@ -624,6 +651,23 @@ const result4 = await promiseWithTimeout(
 ### Other Utilities
 
 This section describes other utility functions included in this package.
+
+#### `Either`
+
+A type for communicating errors in recoverable scenarios: it holds either an `error` or a `result`, never both.
+`success` and `failure` create each side, and `isSuccess` and `isFailure` narrow it. `DefiniteEither` always has a
+`result` and may also carry an `error`.
+
+```typescript
+const parsePort = (value: string): Either<'NOT_A_NUMBER', number> => {
+    const port = Number(value)
+    return Number.isNaN(port) ? failure('NOT_A_NUMBER') : success(port)
+}
+
+const port = parsePort('8080')
+if (isFailure(port)) console.error(port.error)
+else console.log(port.result)
+```
 
 #### `waitAndRetry`
 

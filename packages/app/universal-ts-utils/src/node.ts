@@ -15,6 +15,8 @@ export * from './public/array/sort.ts'
 export * from './public/array/sortByField.ts'
 export * from './public/array/unique.ts'
 export * from './public/array/uniqueByProperty.ts'
+// other
+export * from './public/either.ts'
 // iterable
 export * from './public/iterable/collectFromIterable.ts'
 // object
@@ -23,6 +25,7 @@ export * from './public/object/concatObjectValues.ts'
 export * from './public/object/convertDateFieldsToIsoString.ts'
 export * from './public/object/copyWithoutEmpty.ts'
 export * from './public/object/copyWithoutNullish.ts'
+export * from './public/object/copyWithoutUndefined.ts'
 export * from './public/object/deepClone.ts'
 export * from './public/object/groupBy.ts'
 export * from './public/object/groupByPath.ts'
@@ -35,6 +38,7 @@ export * from './public/promise/promiseWithTimeout.ts'
 // string
 export * from './public/string/trimText.ts'
 // type
+export * from './public/type/AtLeastOne.ts'
 export * from './public/type/assertIsNever.ts'
 export * from './public/type/FreeformRecord.ts'
 export * from './public/type/hasMessage.ts'
