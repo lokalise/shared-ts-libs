@@ -21,6 +21,7 @@ describe('getLanguageNameInEnglish', () => {
   it('returns our own name for a non-CLDR language', () => {
     expect(getLanguageNameInEnglish('cnh')).toBe('Hakha Chin')
     expect(getLanguageNameInEnglish('cnh-MM')).toBe('Hakha Chin (Myanmar [Burma])')
+    expect(getLanguageNameInEnglish('ksw')).toBe("S'gaw Karen")
   })
 
   it('returns null for an empty string', () => {

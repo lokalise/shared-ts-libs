@@ -14,5 +14,6 @@ export const nonCldrLanguages = new Map([
   ['azb', 'South Azerbaijani'],
   ['cnh', 'Hakha Chin'],
   ['koo', 'Konzo'],
+  ['ksw', "S'gaw Karen"],
   ['laj', 'Lango'],
 ])

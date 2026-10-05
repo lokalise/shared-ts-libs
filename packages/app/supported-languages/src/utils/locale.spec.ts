@@ -36,6 +36,7 @@ describe('isSupportedLocale', () => {
     expect(isSupportedLocale('cnh')).toBe(true) // Hakha Chin
     expect(isSupportedLocale('cnh-MM')).toBe(true)
     expect(isSupportedLocale('azb-Arab')).toBe(true) // South Azerbaijani in Arabic script
+    expect(isSupportedLocale('ksw-x-kar')).toBe(true) // S'gaw Karen with a private use subtag
   })
 
   it('returns false for an unknown language', () => {
