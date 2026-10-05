@@ -18,6 +18,11 @@ describe('getLanguageNameInEnglish', () => {
     expect(getLanguageNameInEnglish('zh-Hans-CN')).toBe('Chinese (Simplified, China)')
   })
 
+  it('returns our own name for a non-CLDR language', () => {
+    expect(getLanguageNameInEnglish('cnh')).toBe('Hakha Chin')
+    expect(getLanguageNameInEnglish('cnh-MM')).toBe('Hakha Chin (Myanmar [Burma])')
+  })
+
   it('returns null for an empty string', () => {
     expect(getLanguageNameInEnglish('')).toBeNull()
   })
@@ -49,6 +54,15 @@ describe('getLocalisedLanguageName', () => {
     expect(getLocalisedLanguageName('en-US', 'fr', { languageDisplay: 'dialect' })).toBe(
       'anglais américain',
     )
+  })
+
+  it('returns our own name for a non-CLDR language in any English locale', () => {
+    expect(getLocalisedLanguageName('azb-Arab', 'en-GB')).toBe('South Azerbaijani (Arabic)')
+  })
+
+  it('returns the maximized tag for a non-CLDR language in other destinations', () => {
+    expect(getLocalisedLanguageName('afb', 'de')).toBe('afb (Arabisch, Kuwait)')
+    expect(getLocalisedLanguageName('cnh-MM', 'fr')).toBe('cnh (latin, Myanmar [Birmanie])')
   })
 
   it('returns null for an invalid source tag', () => {
