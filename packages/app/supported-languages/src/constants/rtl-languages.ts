@@ -6,10 +6,10 @@
  * @link https://www.w3.org/International/questions/qa-scripts
  */
 export const rtlLanguages = new Set([
-  'afb', // Gulf Arabic
+  'afb', // Gulf Arabic (non-CLDR, see nonCldrLanguages)
   'ar', // Arabic
   'arc', // Aramaic
-  'azb', // South Azerbaijani
+  'azb', // South Azerbaijani (non-CLDR, see nonCldrLanguages)
   'ckb', // Central Kurdish (Sorani)
   'dv', // Dhivehi
   'fa', // Persian (Farsi)
