@@ -1,5 +1,11 @@
 # @lokalise/universal-ts-utils
 
+## 4.12.0
+
+### Minor Changes
+
+- 1a4b6ab: Add `Either` (with `DefiniteEither`, `success`, `failure`, `isSuccess`, `isFailure`), `copyWithoutUndefined` and `AtLeastOne`, ported from `@lokalise/node-core`
+
 ## 4.11.0
 
 ### Minor Changes
