@@ -2,7 +2,6 @@ import {
   type CommonLogger,
   type ErrorReporter,
   globalLogger,
-  isError,
   resolveGlobalErrorLogObject,
 } from '@lokalise/node-core'
 import {
@@ -14,6 +13,7 @@ import {
   type ScheduleOptions,
   type SendOptions,
 } from 'pg-boss'
+import { normalizeError } from '../errors/utils.ts'
 import { QueueRegistry } from './QueueRegistry.ts'
 import type {
   JobPayloadForQueue,
@@ -115,6 +115,8 @@ export class PgBossQueueManager<const Queues extends readonly QueueConfiguration
    * first: see the README on shutdown order.
    */
   async dispose(): Promise<void> {
+    // A start still in flight would otherwise set `_boss` after this returned, leaving pg-boss running.
+    if (this.startPromise) await Promise.allSettled([this.startPromise])
     if (!this._boss) return
 
     await this._boss.stop({ graceful: true })
@@ -210,6 +212,7 @@ export class PgBossQueueManager<const Queues extends readonly QueueConfiguration
     await this.boss.schedule(queueId, cronOrRrule, parsedPayload, {
       ...this.resolveJobOptions(queueId, parsedPayload),
       ...options,
+      ...(this.config.isTest ? TEST_JOB_OPTIONS : {}),
     })
   }
 
@@ -302,8 +305,8 @@ export class PgBossQueueManager<const Queues extends readonly QueueConfiguration
     // events. Without a listener Node rethrows them from the emit site, which crashes the process
     // or kills the fetch loop for good; with one, the worker loop carries on and retries.
     boss.on('error', (error) => {
-      const normalized = isError(error) ? error : new Error(String(error))
-      const { queue, worker } = error as { queue?: string; worker?: string }
+      const normalized = normalizeError(error)
+      const { queue, worker } = normalized as { queue?: string; worker?: string }
       this.logger.error(
         { ...resolveGlobalErrorLogObject(normalized), queue, worker },
         'pg-boss emitted an error',
@@ -316,7 +319,13 @@ export class PgBossQueueManager<const Queues extends readonly QueueConfiguration
       this.logger.warn({ warning }, 'pg-boss emitted a warning')
     })
 
-    await boss.start()
+    try {
+      await boss.start()
+    } catch (error) {
+      // pg-boss keeps the pool and timers of a failed start open until `stop` runs.
+      await Promise.allSettled([boss.stop({ graceful: false })])
+      throw error
+    }
     this._boss = boss
   }
 }

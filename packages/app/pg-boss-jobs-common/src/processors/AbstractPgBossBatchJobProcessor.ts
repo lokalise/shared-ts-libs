@@ -114,6 +114,8 @@ export abstract class AbstractPgBossBatchJobProcessor<
   ): Promise<JobResult[]> {
     const { outcome, sharedOutput } = await this.resolveBatchOutcome(validJobs, requestContext)
     const jobsById = new Map(validJobs.map((job) => [job.id, job]))
+    // A batch-wide failure fails every job with the same error, which is one incident, not N.
+    const reportedErrors = new Set<Error>()
 
     const completed = outcome.succeededJobIds.map((jobId) => ({
       id: jobId,
@@ -123,7 +125,8 @@ export abstract class AbstractPgBossBatchJobProcessor<
       // biome-ignore lint/style/noNonNullAssertion: assertOutcomeCoversBatch checked the ids
       const job = jobsById.get(jobId)!
       const isUnrecoverable = isUnrecoverableJobError(error)
-      if (isUnrecoverable || isLastAttempt(job)) {
+      if ((isUnrecoverable || isLastAttempt(job)) && !reportedErrors.has(error)) {
+        reportedErrors.add(error)
         this.monitor.reportError(error, job, requestContext)
       }
 

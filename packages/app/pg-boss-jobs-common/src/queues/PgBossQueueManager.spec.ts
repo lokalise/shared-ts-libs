@@ -71,6 +71,16 @@ describe('PgBossQueueManager', () => {
       await expect(manager.dispose()).resolves.toBeUndefined()
     })
 
+    it('stops a start that is still in flight when disposed', async () => {
+      const manager = buildTestQueueManager(testQueues)
+
+      const starting = manager.start()
+      await manager.dispose()
+      await starting
+
+      expect(manager.isStarted).toBe(false)
+    })
+
     it('lets a failed start be retried', async () => {
       const manager = new PgBossQueueManager(testQueues, {
         isTest: true,
@@ -279,7 +289,11 @@ describe('PgBossQueueManager', () => {
           }),
         ])
         const [derived] = await manager.getRecurringSchedules(DERIVED_OPTIONS_QUEUE_ID)
-        expect(derived?.options).toMatchObject({ singletonKey: 'hourly' })
+        expect(derived?.options).toMatchObject({
+          singletonKey: 'hourly',
+          retryDelay: 0,
+          retryBackoff: false,
+        })
 
         await manager.unscheduleRecurring(QUEUE_ID, 'nightly')
         await manager.unscheduleRecurring(DERIVED_OPTIONS_QUEUE_ID)

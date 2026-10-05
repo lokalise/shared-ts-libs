@@ -76,6 +76,8 @@ export abstract class AbstractPgBossProcessor<
    * README on shutdown order has what the reverse order costs.
    */
   public async dispose(): Promise<void> {
+    // A start still in flight would otherwise register its worker after this returned.
+    if (this.startPromise) await Promise.allSettled([this.startPromise])
     if (!this.workId) return
 
     try {

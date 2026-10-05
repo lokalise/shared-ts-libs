@@ -217,6 +217,23 @@ describe('AbstractPgBossBatchJobProcessor', () => {
     )
   })
 
+  it('reports a batch-wide failure once, not once per job', async () => {
+    const jobIds = await manager.scheduleBulk(QUEUE_ID, [payload(), payload()])
+    processor = new TestBatchProcessor(
+      deps,
+      () => {
+        throw new Error('boom')
+      },
+      2,
+    )
+    await processor.start()
+
+    for (const jobId of jobIds) await waitForJobState(manager, QUEUE_ID, jobId, 'failed')
+
+    expect(processor.requestContexts).toHaveLength(1)
+    expect(report).toHaveBeenCalledTimes(1)
+  })
+
   it('fails the whole batch when process reports a job id from outside it', async () => {
     const strayJobId = randomUUID()
     const jobId = await manager.schedule(QUEUE_ID, payload())

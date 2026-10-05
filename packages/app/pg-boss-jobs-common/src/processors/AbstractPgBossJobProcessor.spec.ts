@@ -136,6 +136,16 @@ describe('AbstractPgBossJobProcessor', () => {
       await expect(processor.spy.waitForJobWithId(jobId, 'completed')).resolves.toBeDefined()
     })
 
+    it('stops a start that is still in flight when disposed', async () => {
+      const first = new TestJobProcessor(deps)
+      const starting = first.start()
+      await first.dispose()
+      await starting
+
+      processor = new TestJobProcessor(deps)
+      await expect(processor.start()).resolves.toBeUndefined()
+    })
+
     it('starts the manager lazily', async () => {
       const lazyManager = buildTestQueueManager(testQueues)
       processor = new TestJobProcessor({ ...deps, queueManager: lazyManager })
