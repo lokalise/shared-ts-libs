@@ -214,6 +214,30 @@ describe('AbstractPeriodicJob', () => {
     expect(scheduler.existsById(job.jobId)).toBe(false)
   })
 
+  it('should not silently skip asyncRegister called again after dispose', async () => {
+    const job = new FakePeriodicJob(
+      () => Promise.resolve(),
+      {
+        scheduler,
+      },
+      {
+        schedule: {
+          intervalInMs: 60000,
+        },
+        runImmediately: true,
+      },
+    )
+
+    await job.asyncRegister()
+    await job.dispose()
+
+    // dispose stops the job but keeps it in the scheduler, the same as register()
+    await expect(job.asyncRegister()).rejects.toThrow(
+      `Job with an id ${job.jobId} is already registered.`,
+    )
+    expect(() => job.register()).toThrow(`Job with an id ${job.jobId} is already registered.`)
+  })
+
   it('should not run processing before the first interval on asyncRegister without runImmediately', async () => {
     let counter = 0
     const job = new FakePeriodicJob(

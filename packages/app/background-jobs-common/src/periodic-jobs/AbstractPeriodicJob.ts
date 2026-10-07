@@ -77,6 +77,8 @@ export abstract class AbstractPeriodicJob {
    * Awaits first job execution if runImmediately is set
    */
   public async asyncRegister(): Promise<void> {
+    // Only a dispose during this registration cancels it
+    this.isDisposed = false
     const task = createTask(this.logger, this)
 
     if (this.options.schedule.intervalInMs) {
@@ -101,6 +103,7 @@ export abstract class AbstractPeriodicJob {
    * Fire-and-forgets first job execution if runImmediately is set
    */
   public register(): void {
+    this.isDisposed = false
     const task = createTask(this.logger, this)
 
     if (this.options.schedule.intervalInMs) {
