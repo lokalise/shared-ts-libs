@@ -6,6 +6,7 @@
  * @link https://www.w3.org/International/questions/qa-scripts
  */
 export const rtlLanguages = new Set([
+  'acw', // Hijazi Arabic
   'afb', // Gulf Arabic
   'ar', // Arabic
   'arc', // Aramaic
@@ -21,6 +22,7 @@ export const rtlLanguages = new Set([
   'nqo', // N'Ko
   'ps', // Pashto
   'sd', // Sindhi
+  'skr', // Saraiki
   'syr', // Syriac
   'ug', // Uyghur
   'ur', // Urdu

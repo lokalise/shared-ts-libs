@@ -22,6 +22,14 @@ describe('getLanguageNameInEnglish', () => {
     expect(getLanguageNameInEnglish('cnh')).toBe('Hakha Chin')
     expect(getLanguageNameInEnglish('cnh-MM')).toBe('Hakha Chin (Myanmar [Burma])')
     expect(getLanguageNameInEnglish('ksw')).toBe("S'gaw Karen")
+    expect(getLanguageNameInEnglish('acw')).toBe('Hijazi Arabic')
+    expect(getLanguageNameInEnglish('gyn')).toBe('Guyanese Creole English')
+    expect(getLanguageNameInEnglish('lgg')).toBe('Lugbara')
+    expect(getLanguageNameInEnglish('myx')).toBe('Masaaba')
+    expect(getLanguageNameInEnglish('ndc')).toBe('Ndau')
+    expect(getLanguageNameInEnglish('skr')).toBe('Saraiki')
+    expect(getLanguageNameInEnglish('swk')).toBe('Malawi Sena')
+    expect(getLanguageNameInEnglish('tsg')).toBe('Tausug')
   })
 
   it('returns null for an empty string', () => {

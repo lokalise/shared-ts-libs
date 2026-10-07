@@ -2,4 +2,6 @@
 "@lokalise/supported-languages": minor
 ---
 
-Support `ksw` (S'gaw Karen), an IANA language missing from CLDR43, via the non-CLDR exception list.
+Add nine languages that CLDR43 lacks to the non-CLDR exception list: `acw`,
+`gyn`, `ksw`, `lgg`, `myx`, `ndc`, `skr`, `swk`, `tsg`. `acw` and `skr` are
+right-to-left.

@@ -37,6 +37,15 @@ describe('isSupportedLocale', () => {
     expect(isSupportedLocale('cnh-MM')).toBe(true)
     expect(isSupportedLocale('azb-Arab')).toBe(true) // South Azerbaijani in Arabic script
     expect(isSupportedLocale('ksw-x-kar')).toBe(true) // S'gaw Karen with a private use subtag
+    expect(isSupportedLocale('acw')).toBe(true) // Hijazi Arabic
+    expect(isSupportedLocale('gyn')).toBe(true) // Guyanese Creole English
+    expect(isSupportedLocale('lgg')).toBe(true) // Lugbara
+    expect(isSupportedLocale('myx')).toBe(true) // Masaaba
+    expect(isSupportedLocale('ndc')).toBe(true) // Ndau
+    expect(isSupportedLocale('skr-Arab')).toBe(true) // Saraiki in Arabic script
+    expect(isSupportedLocale('swk')).toBe(true) // Malawi Sena
+    expect(isSupportedLocale('tsg')).toBe(true) // Tausug
+    expect(isSupportedLocale('tsg-Arab')).toBe(true) // Tausug in Arabic script
   })
 
   it('returns false for an unknown language', () => {
