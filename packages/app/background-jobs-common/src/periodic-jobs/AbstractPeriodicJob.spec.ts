@@ -231,7 +231,6 @@ describe('AbstractPeriodicJob', () => {
     await job.asyncRegister()
     await job.dispose()
 
-    // dispose stops the job but keeps it in the scheduler, the same as register()
     await expect(job.asyncRegister()).rejects.toThrow(
       `Job with an id ${job.jobId} is already registered.`,
     )
