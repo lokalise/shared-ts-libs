@@ -158,6 +158,61 @@ describe('AbstractPeriodicJob', () => {
     await job.dispose()
   })
 
+  it('should run processing only once on asyncRegister with runImmediately', async () => {
+    let counter = 0
+    const job = new FakePeriodicJob(
+      () => {
+        counter++
+        return Promise.resolve()
+      },
+      {
+        scheduler,
+      },
+      {
+        schedule: {
+          intervalInMs: 60000,
+        },
+        runImmediately: true,
+      },
+    )
+
+    await job.asyncRegister()
+    expect(counter).toBe(1)
+
+    // Let any fire-and-forget execution from the scheduler complete
+    await setTimeout(50)
+    expect(counter).toBe(1)
+
+    await job.dispose()
+  })
+
+  it('should not run processing before the first interval on asyncRegister without runImmediately', async () => {
+    let counter = 0
+    const job = new FakePeriodicJob(
+      () => {
+        counter++
+        return Promise.resolve()
+      },
+      {
+        scheduler,
+      },
+      {
+        schedule: {
+          intervalInMs: 100,
+        },
+        runImmediately: false,
+      },
+    )
+
+    await job.asyncRegister()
+    await setTimeout(50)
+    expect(counter).toBe(0)
+
+    await vi.waitUntil(() => counter === 1)
+
+    await job.dispose()
+  })
+
   it('should run processing when using cron expression', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2024, 6, 6, 0, 0, 0))

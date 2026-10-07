@@ -82,7 +82,8 @@ export abstract class AbstractPeriodicJob {
       const job = new SimpleIntervalJob(
         {
           milliseconds: this.options.schedule.intervalInMs,
-          runImmediately: this.options.runImmediately,
+          // The first run is awaited below, so the scheduler must only start the interval timer
+          runImmediately: false,
         },
         task,
         {
