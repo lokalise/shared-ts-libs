@@ -63,7 +63,7 @@
         "cross-env": "^10.1.0",
         "drizzle-kit": "1.0.0-rc.5-5935859",
         "drizzle-orm": "1.0.0-rc.5-5935859",
-        "mysql2": "^3.24.3",
+        "mysql2": "^3.24.5",
         "postgres": "^3.4.9",
         "rimraf": "^6.1.3",
         "typescript": "7.0.2",
