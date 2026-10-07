@@ -34,7 +34,7 @@
         "package-version": "echo $npm_package_version"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.5.12",
+        "@biomejs/biome": "^2.5.14",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/tsconfig": "workspace:^",
         "@types/node": "^26.6.3",

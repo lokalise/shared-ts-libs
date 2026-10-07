@@ -60,7 +60,7 @@
         }
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.5.12",
+        "@biomejs/biome": "^2.5.14",
         "@fastify/sse": "^0.6.0",
         "@fastify/swagger": "^9.9.0",
         "@lokalise/api-contracts": "workspace:^",
