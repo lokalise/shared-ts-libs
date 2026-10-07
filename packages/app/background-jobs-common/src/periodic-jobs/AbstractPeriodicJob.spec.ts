@@ -186,6 +186,34 @@ describe('AbstractPeriodicJob', () => {
     await job.dispose()
   })
 
+  it('should not schedule the job when disposed during the first run of asyncRegister', async () => {
+    let counter = 0
+    const job = new FakePeriodicJob(
+      async () => {
+        await setTimeout(50)
+        counter++
+      },
+      {
+        scheduler,
+      },
+      {
+        schedule: {
+          intervalInMs: 10,
+        },
+        runImmediately: true,
+      },
+    )
+
+    const registerPromise = job.asyncRegister()
+    await job.dispose()
+    await registerPromise
+    expect(counter).toBe(1)
+
+    await setTimeout(100)
+    expect(counter).toBe(1)
+    expect(scheduler.existsById(job.jobId)).toBe(false)
+  })
+
   it('should not run processing before the first interval on asyncRegister without runImmediately', async () => {
     let counter = 0
     const job = new FakePeriodicJob(

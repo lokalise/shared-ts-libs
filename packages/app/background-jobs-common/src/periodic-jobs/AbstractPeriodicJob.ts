@@ -33,6 +33,7 @@ export abstract class AbstractPeriodicJob {
   private readonly transactionObservabilityManager?: TransactionObservabilityManager
   private readonly scheduler: ToadScheduler
   private singleConsumerLock?: Mutex
+  private isDisposed = false
 
   protected constructor(
     options: BackgroundJobConfiguration,
@@ -79,22 +80,16 @@ export abstract class AbstractPeriodicJob {
     const task = createTask(this.logger, this)
 
     if (this.options.schedule.intervalInMs) {
-      const job = new SimpleIntervalJob(
-        {
-          milliseconds: this.options.schedule.intervalInMs,
-          // The first run is awaited below, so the scheduler must only start the interval timer
-          runImmediately: false,
-        },
-        task,
-        {
-          id: this.jobId,
-          preventOverrun: true,
-        },
-      )
+      // Both paths create the job with runImmediately: false, so the scheduler only starts the interval timer
+      const schedule = { milliseconds: this.options.schedule.intervalInMs }
+      const jobOptions = { id: this.jobId, preventOverrun: true }
+      const job = this.options.runImmediately
+        ? await SimpleIntervalJob.createAndExecute(schedule, task, jobOptions)
+        : new SimpleIntervalJob({ ...schedule, runImmediately: false }, task, jobOptions)
 
-      if (this.options.runImmediately) {
-        await job.executeAsync()
-      }
+      // The job can be disposed while the first run is in progress
+      if (this.isDisposed) return
+
       this.scheduler.addSimpleIntervalJob(job)
       return
     }
@@ -139,7 +134,9 @@ export abstract class AbstractPeriodicJob {
   }
 
   public async dispose() {
-    this.scheduler.stopById(this.jobId)
+    this.isDisposed = true
+    // The job is not registered yet if asyncRegister is still awaiting the first run
+    if (this.scheduler.existsById(this.jobId)) this.scheduler.stopById(this.jobId)
     await this.singleConsumerLock?.release()
   }
 
