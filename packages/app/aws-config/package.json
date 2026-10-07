@@ -61,7 +61,7 @@
         "@lokalise/node-core": "^14.9.1",
         "@lokalise/tsconfig": "workspace:^",
         "@lokalise/universal-ts-utils": "workspace:^",
-        "@message-queue-toolkit/core": "^27.0.0",
+        "@message-queue-toolkit/core": "^27.2.0",
         "@message-queue-toolkit/sns": "^27.0.0",
         "@message-queue-toolkit/sqs": "^27.1.0",
         "@types/node": "^26.6.3",
