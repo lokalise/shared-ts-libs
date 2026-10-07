@@ -298,14 +298,14 @@ importers:
   packages/app/aws-config:
     devDependencies:
       '@aws-sdk/client-sns':
-        specifier: ^3.1138.0
-        version: 3.1138.0
+        specifier: ^3.1143.0
+        version: 3.1143.0
       '@aws-sdk/client-sqs':
-        specifier: ^3.1138.0
-        version: 3.1138.0
+        specifier: ^3.1143.0
+        version: 3.1143.0
       '@aws-sdk/credential-providers':
-        specifier: ^3.1138.0
-        version: 3.1138.0
+        specifier: ^3.1143.0
+        version: 3.1143.0
       '@biomejs/biome':
         specifier: ^2.5.12
         version: 2.5.12
@@ -329,10 +329,10 @@ importers:
         version: 27.0.0(zod@4.6.5)
       '@message-queue-toolkit/sns':
         specifier: ^27.0.0
-        version: 27.0.0(@aws-sdk/client-sns@3.1138.0)(@aws-sdk/client-sqs@3.1138.0)(@aws-sdk/client-sts@3.1096.0)(@message-queue-toolkit/core@27.0.0(zod@4.6.5))(@message-queue-toolkit/schemas@7.2.0(zod@4.6.5))(@message-queue-toolkit/sqs@27.0.1(@aws-sdk/client-sqs@3.1138.0)(@message-queue-toolkit/core@27.0.0(zod@4.6.5))(supports-color@8.1.1)(zod@4.6.5))(supports-color@8.1.1)(zod@4.6.5)
+        version: 27.0.0(@aws-sdk/client-sns@3.1143.0)(@aws-sdk/client-sqs@3.1143.0)(@aws-sdk/client-sts@3.1096.0)(@message-queue-toolkit/core@27.0.0(zod@4.6.5))(@message-queue-toolkit/schemas@7.2.0(zod@4.6.5))(@message-queue-toolkit/sqs@27.0.1(@aws-sdk/client-sqs@3.1143.0)(@message-queue-toolkit/core@27.0.0(zod@4.6.5))(supports-color@8.1.1)(zod@4.6.5))(supports-color@8.1.1)(zod@4.6.5)
       '@message-queue-toolkit/sqs':
         specifier: ^27.0.1
-        version: 27.0.1(@aws-sdk/client-sqs@3.1138.0)(@message-queue-toolkit/core@27.0.0(zod@4.6.5))(supports-color@8.1.1)(zod@4.6.5)
+        version: 27.0.1(@aws-sdk/client-sqs@3.1143.0)(@message-queue-toolkit/core@27.0.0(zod@4.6.5))(supports-color@8.1.1)(zod@4.6.5)
       '@smithy/types':
         specifier: ^4.17.2
         version: 4.18.0
@@ -1537,12 +1537,12 @@ packages:
   '@amplitude/analytics-node@1.5.71':
     resolution: {integrity: sha512-+p5/24P4tGP3/XGVCXUE/g1POoiWDaBal68chFCu8ViqoYUuQILuJYCtjR8oF0frJJsyN13PG/R6aRRoptxJLA==}
 
-  '@aws-sdk/client-sns@3.1138.0':
-    resolution: {integrity: sha512-hX/K+GGPGrOVO7JDWbfy4rQHZzdC1TjUZaTs/9fw5PBSf5i7fTBNPRprGNqB/p9uJHxmBb8QGLZrjgoJKNM10g==}
+  '@aws-sdk/client-sns@3.1143.0':
+    resolution: {integrity: sha512-HrsSAr9c0qWTg8ZF0nRnyjtt3Sjc/5232ggnzOTNbpO9q2Qklbl18EKDiltEmF+j3Yeui1ma/YZ+E/FYvhjmAQ==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/client-sqs@3.1138.0':
-    resolution: {integrity: sha512-7S9KekgQHlFp6l5FVo+SF3hbHO3267KGPhoI2rRkGImZ6mMQthUr8sAhh0wiq6DVtKbwuenEL/1XtTI2uNQWYw==}
+  '@aws-sdk/client-sqs@3.1143.0':
+    resolution: {integrity: sha512-+6ucHBaIcVpFgtmnZxK8gWOlIdFjnnNlTt53gRVsZrWeMi9w9SwSpSeYllJ6422XFzZuERPJu5HVkntJjavUYA==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/client-sts@3.1096.0':
@@ -1589,8 +1589,8 @@ packages:
     resolution: {integrity: sha512-/y9WvNtlcPBGLR0qc1a+9J/xtYZfVczvLUOuXaVWylzttH7ewsxwHtjmiJSolNrVSDorIxHGHMU61CbonRkmwA==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/credential-providers@3.1138.0':
-    resolution: {integrity: sha512-0/sdZoiezjqexQWlrX5XUr0w5GzsdlKJYLkKc1bCracvA9JPLuhBFbKLUZ4gDgs+6dWtFSHt5w42GJ/fSEAFsw==}
+  '@aws-sdk/credential-providers@3.1143.0':
+    resolution: {integrity: sha512-1Tifq2jFMJy4JN6buq7fY8qlN8+3yZvD7aG9ZWRneRlwjvjurS56aftzMXTmBWSOa2eJHlLx4eNuFu6pLc6K5g==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/middleware-sdk-sqs@3.972.43':
@@ -3516,10 +3516,6 @@ packages:
   '@scalar/validation@0.6.3':
     resolution: {integrity: sha512-j3s9XPv8Wo1EG5/naBi4XGF0uXYQ2A3QZNI0NKWgCMxRHVrDJGlZEYymcHDHY7fquRm73P8U3c8xqJqB5yad6w==}
     engines: {node: '>=20'}
-
-  '@smithy/core@3.34.1':
-    resolution: {integrity: sha512-dLcOUxz8YCv1RZUMKq6GbyUf95pLbrqh34bPvpCZ1+CByFF31BEAFewZjsGCnVsZTKdThNENfGyAgk2TJqVwSw==}
-    engines: {node: '>=18.0.0'}
 
   '@smithy/core@3.35.0':
     resolution: {integrity: sha512-zRMhfkByhT2snNdr1si24vJitU6Cr9ix2MikUfWmkAgp4jrNP0GcKSP5YvwQ+TlI8AZXER5QOGJn3JsVtSD9/A==}
@@ -7591,7 +7587,7 @@ snapshots:
       '@amplitude/analytics-core': 2.55.0
       tslib: 2.8.1
 
-  '@aws-sdk/client-sns@3.1138.0':
+  '@aws-sdk/client-sns@3.1143.0':
     dependencies:
       '@aws-sdk/core': 3.978.1
       '@aws-sdk/credential-provider-node': 3.972.84
@@ -7602,7 +7598,7 @@ snapshots:
       '@smithy/types': 4.19.0
       tslib: 2.8.1
 
-  '@aws-sdk/client-sqs@3.1138.0':
+  '@aws-sdk/client-sqs@3.1143.0':
     dependencies:
       '@aws-sdk/core': 3.978.1
       '@aws-sdk/credential-provider-node': 3.972.84
@@ -7729,7 +7725,7 @@ snapshots:
       '@smithy/types': 4.19.0
       tslib: 2.8.1
 
-  '@aws-sdk/credential-providers@3.1138.0':
+  '@aws-sdk/credential-providers@3.1143.0':
     dependencies:
       '@aws-sdk/core': 3.978.1
       '@aws-sdk/credential-provider-cognito-identity': 3.972.71
@@ -8594,26 +8590,26 @@ snapshots:
     dependencies:
       zod: 4.6.5
 
-  '@message-queue-toolkit/sns@27.0.0(@aws-sdk/client-sns@3.1138.0)(@aws-sdk/client-sqs@3.1138.0)(@aws-sdk/client-sts@3.1096.0)(@message-queue-toolkit/core@27.0.0(zod@4.6.5))(@message-queue-toolkit/schemas@7.2.0(zod@4.6.5))(@message-queue-toolkit/sqs@27.0.1(@aws-sdk/client-sqs@3.1138.0)(@message-queue-toolkit/core@27.0.0(zod@4.6.5))(supports-color@8.1.1)(zod@4.6.5))(supports-color@8.1.1)(zod@4.6.5)':
+  '@message-queue-toolkit/sns@27.0.0(@aws-sdk/client-sns@3.1143.0)(@aws-sdk/client-sqs@3.1143.0)(@aws-sdk/client-sts@3.1096.0)(@message-queue-toolkit/core@27.0.0(zod@4.6.5))(@message-queue-toolkit/schemas@7.2.0(zod@4.6.5))(@message-queue-toolkit/sqs@27.0.1(@aws-sdk/client-sqs@3.1143.0)(@message-queue-toolkit/core@27.0.0(zod@4.6.5))(supports-color@8.1.1)(zod@4.6.5))(supports-color@8.1.1)(zod@4.6.5)':
     dependencies:
-      '@aws-sdk/client-sns': 3.1138.0
-      '@aws-sdk/client-sqs': 3.1138.0
+      '@aws-sdk/client-sns': 3.1143.0
+      '@aws-sdk/client-sqs': 3.1143.0
       '@aws-sdk/client-sts': 3.1096.0
       '@lokalise/node-core': 14.9.1(zod@4.6.5)
       '@message-queue-toolkit/core': 27.0.0(zod@4.6.5)
       '@message-queue-toolkit/schemas': 7.2.0(zod@4.6.5)
-      '@message-queue-toolkit/sqs': 27.0.1(@aws-sdk/client-sqs@3.1138.0)(@message-queue-toolkit/core@27.0.0(zod@4.6.5))(supports-color@8.1.1)(zod@4.6.5)
-      sqs-consumer: 15.0.3(@aws-sdk/client-sqs@3.1138.0)(supports-color@8.1.1)
+      '@message-queue-toolkit/sqs': 27.0.1(@aws-sdk/client-sqs@3.1143.0)(@message-queue-toolkit/core@27.0.0(zod@4.6.5))(supports-color@8.1.1)(zod@4.6.5)
+      sqs-consumer: 15.0.3(@aws-sdk/client-sqs@3.1143.0)(supports-color@8.1.1)
       zod: 4.6.5
     transitivePeerDependencies:
       - supports-color
 
-  '@message-queue-toolkit/sqs@27.0.1(@aws-sdk/client-sqs@3.1138.0)(@message-queue-toolkit/core@27.0.0(zod@4.6.5))(supports-color@8.1.1)(zod@4.6.5)':
+  '@message-queue-toolkit/sqs@27.0.1(@aws-sdk/client-sqs@3.1143.0)(@message-queue-toolkit/core@27.0.0(zod@4.6.5))(supports-color@8.1.1)(zod@4.6.5)':
     dependencies:
-      '@aws-sdk/client-sqs': 3.1138.0
+      '@aws-sdk/client-sqs': 3.1143.0
       '@lokalise/node-core': 14.9.1(zod@4.6.5)
       '@message-queue-toolkit/core': 27.0.0(zod@4.6.5)
-      sqs-consumer: 15.0.3(@aws-sdk/client-sqs@3.1138.0)(supports-color@8.1.1)
+      sqs-consumer: 15.0.3(@aws-sdk/client-sqs@3.1143.0)(supports-color@8.1.1)
       zod: 4.6.5
     transitivePeerDependencies:
       - supports-color
@@ -10005,11 +10001,6 @@ snapshots:
 
   '@scalar/validation@0.6.3': {}
 
-  '@smithy/core@3.34.1':
-    dependencies:
-      '@smithy/types': 4.18.0
-      tslib: 2.8.1
-
   '@smithy/core@3.35.0':
     dependencies:
       '@smithy/types': 4.19.0
@@ -10023,20 +10014,20 @@ snapshots:
 
   '@smithy/fetch-http-handler@5.8.0':
     dependencies:
-      '@smithy/core': 3.34.1
-      '@smithy/types': 4.18.0
+      '@smithy/core': 3.35.0
+      '@smithy/types': 4.19.0
       tslib: 2.8.1
 
   '@smithy/node-http-handler@4.12.1':
     dependencies:
-      '@smithy/core': 3.34.1
-      '@smithy/types': 4.18.0
+      '@smithy/core': 3.35.0
+      '@smithy/types': 4.19.0
       tslib: 2.8.1
 
   '@smithy/signature-v4@5.7.3':
     dependencies:
-      '@smithy/core': 3.34.1
-      '@smithy/types': 4.18.0
+      '@smithy/core': 3.35.0
+      '@smithy/types': 4.19.0
       tslib: 2.8.1
 
   '@smithy/types@4.18.0':
@@ -13814,9 +13805,9 @@ snapshots:
 
   sqlstring@2.3.3: {}
 
-  sqs-consumer@15.0.3(@aws-sdk/client-sqs@3.1138.0)(supports-color@8.1.1):
+  sqs-consumer@15.0.3(@aws-sdk/client-sqs@3.1143.0)(supports-color@8.1.1):
     dependencies:
-      '@aws-sdk/client-sqs': 3.1138.0
+      '@aws-sdk/client-sqs': 3.1143.0
       debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
