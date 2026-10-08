@@ -10,9 +10,18 @@
  * @link https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
  */
 export const nonCldrLanguages = new Map([
+  ['acw', 'Hijazi Arabic'],
   ['afb', 'Gulf Arabic'],
   ['azb', 'South Azerbaijani'],
   ['cnh', 'Hakha Chin'],
+  ['gyn', 'Guyanese Creole English'],
   ['koo', 'Konzo'],
+  ['ksw', "S'gaw Karen"],
   ['laj', 'Lango'],
+  ['lgg', 'Lugbara'],
+  ['myx', 'Masaaba'],
+  ['ndc', 'Ndau'],
+  ['skr', 'Saraiki'],
+  ['swk', 'Malawi Sena'],
+  ['tsg', 'Tausug'],
 ])
