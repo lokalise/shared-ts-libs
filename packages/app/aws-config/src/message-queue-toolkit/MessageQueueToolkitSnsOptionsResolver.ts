@@ -61,6 +61,16 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
       validateTopicsConfig(Object.values(routingConfig), config.project)
     }
 
+    for (const topic of Object.values(routingConfig)) {
+      if (topic.isExternal) continue
+      const externalQueue = Object.values(topic.queues).find((queue) => queue.isExternal)
+      if (externalQueue) {
+        throw new Error(
+          `External queue ${externalQueue.queueName} cannot be subscribed to internal topic ${topic.topicName}`,
+        )
+      }
+    }
+
     this.routingConfig = groupByUnique(
       Object.values(routingConfig).map(
         (topic) =>
@@ -132,21 +142,19 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
     )
 
     if (resolvedQueue.locatorConfig) {
-      if (!resolvedTopic.locatorConfig) {
-        throw new Error(
-          `External queue ${queueName} cannot be subscribed to internal topic ${topicName}`,
-        )
-      }
-
       // Queue and subscription are managed externally, so all resources are only located. The filter policy is
-      // still owned by the consumer, as it is derived from its handlers, and the rest of attributes are left untouched
+      // still owned by the consumer, as it is derived from its handlers, unless updating existing resources is
+      // disabled. The rest of attributes are left untouched
       return {
         locatorConfig: { ...resolvedTopic.locatorConfig, ...resolvedQueue.locatorConfig },
-        subscriptionConfig: {
-          locateOnly: true,
-          managedAttributes: ['FilterPolicy', 'FilterPolicyScope'],
-          Attributes: filterAttributes,
-        },
+        subscriptionConfig:
+          (params.updateAttributesIfExists ?? true)
+            ? {
+                locateOnly: true,
+                managedAttributes: ['FilterPolicy', 'FilterPolicyScope'],
+                Attributes: filterAttributes,
+              }
+            : undefined,
         ...options,
       }
     }

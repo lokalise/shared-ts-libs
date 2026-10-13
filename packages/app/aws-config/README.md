@@ -212,8 +212,8 @@ const routingConfig: EventRoutingConfig = {
 - **External queues on a topic** (`isExternal: true`)
   - The queue and its subscription are managed outside your application, so they are only located.
   - The consumer still owns the subscription filter policy (`FilterPolicy` and `FilterPolicyScope`), as it comes from
-   its handlers. It is updated on startup when it differs. Other subscription attributes (e.g. `RedrivePolicy`) are
-   left untouched.
+   its handlers. It is updated on startup when it differs, unless `updateAttributesIfExists` is `false`, in which case
+   nothing is updated. Other subscription attributes (e.g. `RedrivePolicy`) are left untouched.
 
 Under the hood, the TypeScript union enforces this shape.
 

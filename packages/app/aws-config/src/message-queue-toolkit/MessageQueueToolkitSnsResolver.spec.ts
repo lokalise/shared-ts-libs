@@ -218,6 +218,29 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
       ).not.toThrowError()
     })
 
+    it('should throw an error if an external queue is subscribed to an internal topic', () => {
+      // Not allowed by typing, the cast simulates an untyped config
+      const eventRouting = {
+        topic: {
+          topicName: 'test-project-topic',
+          owner: 'team',
+          service: 'service',
+          queues: { queue: { queueName: 'test-project-topic-queue', isExternal: true } },
+        },
+      } as unknown as EventRoutingConfig
+
+      expect(
+        () =>
+          new MessageQueueToolkitSnsOptionsResolver(eventRouting, {
+            system: 'my-system',
+            project,
+            appEnv: 'development',
+          }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Error: External queue test-project-topic-queue cannot be subscribed to internal topic test-project-topic]`,
+      )
+    })
+
     it('should work with a valid event routing config', () => {
       expect(
         () =>
@@ -571,35 +594,6 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
         ),
       ).toThrowErrorMatchingInlineSnapshot(
         `[Error: Queue test-project-second_entity-service not found]`,
-      )
-    })
-
-    it('should throw an error if an external queue is subscribed to an internal topic', () => {
-      const topicName = 'test-project-topic'
-      const queueName = 'test-project-topic-queue'
-      // Not allowed by typing, the cast simulates an untyped config
-      const eventRouting = {
-        topic: {
-          topicName,
-          owner: 'team',
-          service: 'service',
-          queues: { queue: { queueName, isExternal: true } },
-        },
-      } as unknown as EventRoutingConfig
-      const resolver = new MessageQueueToolkitSnsOptionsResolver(eventRouting, {
-        system: 'my-system',
-        project,
-        appEnv: 'development',
-      })
-
-      expect(() =>
-        resolver.resolveConsumerOptions(topicName, queueName, {
-          logger,
-          awsConfig: buildAwsConfig(),
-          handlers: [],
-        }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Error: External queue test-project-topic-queue cannot be subscribed to internal topic test-project-topic]`,
       )
     })
 
@@ -1409,6 +1403,18 @@ describe('MessageQueueToolkitSnsOptionsResolver', () => {
               ],
             }
           `)
+        })
+
+        it('should not update the subscription when updating existing resources is disabled', () => {
+          const result = resolver.resolveConsumerOptions(topicName, queueName, {
+            logger,
+            handlers: [],
+            awsConfig: buildAwsConfig(),
+            updateAttributesIfExists: false,
+          })
+
+          expect(result.subscriptionConfig).toBeUndefined()
+          expect(result.locatorConfig?.queueName).toBe(queueName)
         })
 
         it('should not use a DLQ in test mode', () => {
