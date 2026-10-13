@@ -205,7 +205,8 @@ const routingConfig: EventRoutingConfig = {
   - `TopicConfig` includes `topicName`, `isExternal: true`, and your `queues`, but **must omit** `owner`, `service`, 
    and `externalAppsWithSubscribePermissions`.
   - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing topic by 
-   name and subscribe your queues. **No topic creation or tagging** is attempted.
+   name and subscribe your queues. **No topic creation or tagging** is attempted, except in test mode, where the
+   topic is created and deleted like an internal one (see [Opinionated Defaults](#opinionated-defaults)).
   - Its queues can be internal or external. External queues are only allowed on external topics.
 
 - **External queues on a topic** (`isExternal: true`)
@@ -256,7 +257,8 @@ const commandConfig: CommandConfig = {
   - `QueueConfig` includes `queueName` and `isExternal: true`, but **must omit** `owner` and `service`.
   - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing queue by 
    name.
-  - **No queue creation or tagging** is attempted.
+  - **No queue creation or tagging** is attempted, except in test mode, where the queue is created and deleted like an
+   internal one (see [Opinionated Defaults](#opinionated-defaults)).
   - Consumers locate the existing dead-letter queue by convention (`<queueName>-dlq`) so invalid messages are routed
    to it instead of being silently deleted. This DLQ must already exist. The redrive policy of the queue is not
    changed, so it must be set outside your application.
@@ -415,5 +417,7 @@ Both `MessageQueueToolkitSnsOptionsResolver` and `MessageQueueToolkitSqsOptionsR
     - Skips DLQ creation.
     - Sets `deleteIfExists: true` to remove resources after tests.
     - `terminateVisibilityTimeout`: `true` for immediate retries.
-    - External topics and queues are created too (without tags), so tests don't depend on other services. Note that a
-      consumer deletes its topic on startup, which also removes the subscriptions of other consumers of that topic.
+    - External topics and queues are created too (without tags), so tests don't depend on other services. They are
+      handled like internal ones: each consumer deletes and recreates its topic on startup, which also removes the
+      subscriptions of other consumers of that topic. This is intended to avoid side effects between tests, so run
+      SNS/SQS tests sequentially, starting the consumers each test needs.
