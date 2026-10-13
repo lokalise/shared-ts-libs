@@ -51,6 +51,20 @@ describe('eventRoutingConfig', () => {
         expectTypeOf(queueConfig).toEqualTypeOf<ExternalQueueConfig>()
         expectTypeOf(queueConfig).not.toEqualTypeOf<InternalQueueConfig<'owner', 'service'>>()
       })
+
+      it('should not allow owner or service', () => {
+        const validConfig = {
+          queueName: 'my-queue',
+          isExternal: true,
+        } satisfies QueueConfig
+        expectTypeOf(validConfig).toExtend<QueueConfig>()
+
+        const configWithOwner = { ...validConfig, owner: 'my-team' }
+        expectTypeOf(configWithOwner).not.toExtend<QueueConfig>()
+
+        const configWithService = { ...validConfig, service: 'my-service' }
+        expectTypeOf(configWithService).not.toExtend<QueueConfig>()
+      })
     })
   })
 
@@ -153,6 +167,89 @@ describe('eventRoutingConfig', () => {
         externalAppsWithSubscribePermissions: ['my app'],
       }
       expectTypeOf(configWithExternalApps).not.toExtend<TopicConfig>()
+    })
+
+    it('should not allow external queues on internal topics', () => {
+      const validTopicConfig = {
+        topicName: 'my-topic',
+        owner: 'owner',
+        service: 'service',
+        queues: {
+          myQueue: {
+            queueName: 'my-queue',
+            owner: 'owner',
+            service: 'service',
+          },
+        },
+      } satisfies TopicConfig<'owner', 'service'>
+      expectTypeOf(validTopicConfig).toExtend<TopicConfig<'owner', 'service'>>()
+      expectTypeOf(validTopicConfig.queues.myQueue).toExtend<
+        InternalQueueConfig<'owner', 'service'>
+      >()
+
+      const topicWithExternalQueue = {
+        ...validTopicConfig,
+        queues: {
+          ...validTopicConfig.queues,
+          myExternalQueue: {
+            queueName: 'my-external-queue',
+            isExternal: true as const,
+          },
+        },
+      }
+      expectTypeOf(topicWithExternalQueue).not.toExtend<TopicConfig<'owner', 'service'>>()
+    })
+
+    it('should allow external queues on external topics', () => {
+      const topicConfig = {
+        topicName: 'my-external-topic',
+        isExternal: true,
+        queues: {
+          myQueue: {
+            queueName: 'my-queue',
+            owner: 'owner',
+            service: 'service',
+          },
+          myExternalQueue: {
+            queueName: 'my-external-queue',
+            isExternal: true,
+          },
+        },
+      } satisfies TopicConfig<'owner', 'service'>
+
+      expectTypeOf(topicConfig).toExtend<TopicConfig<'owner', 'service'>>()
+      expectTypeOf(topicConfig.queues.myQueue).toExtend<InternalQueueConfig<'owner', 'service'>>()
+      expectTypeOf(topicConfig.queues.myExternalQueue).toExtend<ExternalQueueConfig>()
+    })
+
+    it('should not allow owner or service on external queues', () => {
+      const validTopicConfig = {
+        topicName: 'my-external-topic',
+        isExternal: true,
+        queues: {
+          myExternalQueue: {
+            queueName: 'my-external-queue',
+            isExternal: true,
+          },
+        },
+      } satisfies TopicConfig
+      expectTypeOf(validTopicConfig).toExtend<TopicConfig>()
+
+      const queueWithOwner = {
+        ...validTopicConfig,
+        queues: {
+          myExternalQueue: { ...validTopicConfig.queues.myExternalQueue, owner: 'my-team' },
+        },
+      }
+      expectTypeOf(queueWithOwner).not.toExtend<TopicConfig>()
+
+      const queueWithService = {
+        ...validTopicConfig,
+        queues: {
+          myExternalQueue: { ...validTopicConfig.queues.myExternalQueue, service: 'my-service' },
+        },
+      }
+      expectTypeOf(queueWithService).not.toExtend<TopicConfig>()
     })
   })
 
