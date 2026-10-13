@@ -263,7 +263,7 @@ importers:
         version: link:../../dev/biome-config
       '@lokalise/fastify-extras':
         specifier: ^34.1.0
-        version: 34.1.0(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.0(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/background-jobs-common@17.0.1(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.5))(@lokalise/errors@2.1.0(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(@opentelemetry/api@1.9.1)(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.13.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(openapi-types@12.1.3)(zod@4.6.5))(fastify@5.12.5)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(zod@4.6.5)
+        version: 34.1.0(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.0(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/background-jobs-common@17.0.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.5))(@lokalise/errors@2.1.0(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(@opentelemetry/api@1.9.1)(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.13.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(openapi-types@12.1.3)(zod@4.6.5))(fastify@5.12.5)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(zod@4.6.5)
       '@lokalise/node-core':
         specifier: ^14.9.1
         version: 14.9.1(zod@4.6.5)
@@ -314,7 +314,7 @@ importers:
         version: link:../../dev/biome-config
       '@lokalise/fastify-extras':
         specifier: ^36.0.0
-        version: 36.0.1(3d2671a468a7164dc02a929fcdc0ca2d)
+        version: 36.0.1(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.0(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/background-jobs-common@17.0.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.5))(@lokalise/errors@2.1.0(zod@4.6.5))(@lokalise/fastify-api-contracts@8.0.0(@fastify/sse@0.6.0(fastify@5.12.5))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(zod@4.6.5))(fastify@5.12.5)(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(@opentelemetry/api@1.9.1)(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.13.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(zod@4.6.5))(fastify@5.12.5)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(zod@4.6.5)
       '@lokalise/node-core':
         specifier: ^14.9.1
         version: 14.9.1(zod@4.6.5)
@@ -432,8 +432,8 @@ importers:
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
       bullmq:
-        specifier: ^6.3.4
-        version: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
+        specifier: ^6.3.11
+        version: 6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
       ioredis:
         specifier: ^6.0.0
         version: 6.0.0(supports-color@8.1.1)
@@ -715,10 +715,10 @@ importers:
     dependencies:
       '@bull-board/api':
         specifier: ^9.6.1
-        version: 9.6.1(@bull-board/ui@9.6.1(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)))(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
+        version: 9.6.1(@bull-board/ui@9.6.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)))(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
       '@bull-board/fastify':
         specifier: ^9.6.1
-        version: 9.6.1(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
+        version: 9.6.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
       '@fastify/auth':
         specifier: ^5.1.1
         version: 5.1.1
@@ -746,7 +746,7 @@ importers:
         version: link:../../dev/biome-config
       '@lokalise/fastify-extras':
         specifier: ^34.1.0
-        version: 34.1.0(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.0(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/errors@2.1.0(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(@opentelemetry/api@1.9.1)(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.13.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(openapi-types@12.1.3)(zod@4.6.5))(fastify@5.12.5)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(zod@4.6.5)
+        version: 34.1.0(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.0(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/errors@2.1.0(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(@opentelemetry/api@1.9.1)(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.13.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(openapi-types@12.1.3)(zod@4.6.5))(fastify@5.12.5)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(zod@4.6.5)
       '@lokalise/node-core':
         specifier: ^14.9.1
         version: 14.9.1(zod@4.6.5)
@@ -763,8 +763,8 @@ importers:
         specifier: ^7.0.1
         version: 7.0.1(awilix@13.0.5)
       bullmq:
-        specifier: 6.3.4
-        version: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
+        specifier: 6.3.11
+        version: 6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
       cross-env:
         specifier: ^10.0.0
         version: 10.1.0
@@ -4507,8 +4507,8 @@ packages:
     resolution: {integrity: sha512-U3K72/JAi3jITpdhZBqzSUq+DUY697tLxOuFXB+FpAE/Ug+5C3VZrv4uA674EUZHxNAuQ9wETXNqQkxZD6oL4A==}
     engines: {node: '>=v18.0.0'}
 
-  bullmq@6.3.4:
-    resolution: {integrity: sha512-DpilB5sayCB8huCp4YuzVhJjxB4ieHidzu+GPgbcjPi3kQv0gdLoLnk+I+mMACDQ88rTbSiT+B4crmhWFGL9GA==}
+  bullmq@6.3.11:
+    resolution: {integrity: sha512-ylSY3FYil6E9IjqVtT+WHcZvS1rgTZ0L3Aev62u45NXQFe+H37a1AuC3WDATR7ScNDet1Ah8MnP3lf8XaUbPUw==}
     engines: {node: '>=14.17.0'}
     peerDependencies:
       bullmq-otel: '>=2.0.0'
@@ -4667,8 +4667,8 @@ packages:
     resolution: {integrity: sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw==}
     engines: {node: '>= 0.10'}
 
-  cron-parser@5.10.0:
-    resolution: {integrity: sha512-izNAxJyRWUP8ljBoDSub5WyrVOUlT4SLGShswE7eoRBpp6QUsSycYxLBMJlbshgPBMcPT/nrfgjNY2918ayv2A==}
+  cron-parser@5.10.1:
+    resolution: {integrity: sha512-pKRrRagItwk9rGIStcUyMxFX34x56zoX3KDf9HJ4ttwkXIK1qxK63EvXvEDmlxI9AdPJ+Y7TEKRftRlW5eSS7A==}
     engines: {node: '>=18'}
 
   croner@10.0.1:
@@ -7927,17 +7927,17 @@ snapshots:
 
   '@bugsnag/safe-json-stringify@6.1.0': {}
 
-  '@bull-board/api@9.6.1(@bull-board/ui@9.6.1(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)))(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))':
+  '@bull-board/api@9.6.1(@bull-board/ui@9.6.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)))(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))':
     dependencies:
-      '@bull-board/ui': 9.6.1(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
+      '@bull-board/ui': 9.6.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
       redis-info: 3.1.0
     optionalDependencies:
-      bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
+      bullmq: 6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
 
-  '@bull-board/fastify@9.6.1(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))':
+  '@bull-board/fastify@9.6.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))':
     dependencies:
-      '@bull-board/api': 9.6.1(@bull-board/ui@9.6.1(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)))(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
-      '@bull-board/ui': 9.6.1(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
+      '@bull-board/api': 9.6.1(@bull-board/ui@9.6.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)))(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
+      '@bull-board/ui': 9.6.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
       '@fastify/static': 10.1.3
       '@fastify/view': 12.0.0
       ejs: 6.0.1
@@ -7945,9 +7945,9 @@ snapshots:
       - bull
       - bullmq
 
-  '@bull-board/ui@9.6.1(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))':
+  '@bull-board/ui@9.6.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))':
     dependencies:
-      '@bull-board/api': 9.6.1(@bull-board/ui@9.6.1(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)))(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
+      '@bull-board/api': 9.6.1(@bull-board/ui@9.6.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)))(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))
     transitivePeerDependencies:
       - bull
       - bullmq
@@ -8485,11 +8485,11 @@ snapshots:
     dependencies:
       zod: 4.6.5
 
-  '@lokalise/background-jobs-common@17.0.1(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.5)':
+  '@lokalise/background-jobs-common@17.0.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.5)':
     dependencies:
       '@lokalise/id-utils': 3.0.1
       '@lokalise/node-core': 14.9.1(zod@4.6.5)
-      bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
+      bullmq: 6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
       ioredis: 6.0.0(supports-color@8.1.1)
       pino: 10.3.1
       redis-semaphore: 5.8.0(ioredis@6.0.0(supports-color@8.1.1))(supports-color@8.1.1)
@@ -8530,7 +8530,7 @@ snapshots:
       - typescript
       - vitest
 
-  '@lokalise/fastify-api-contracts@8.0.0(@fastify/sse@0.6.0(fastify@5.12.5))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(openapi-types@12.1.3)(zod@4.6.5))(fastify@5.12.5)(zod@4.6.5)':
+  '@lokalise/fastify-api-contracts@8.0.0(@fastify/sse@0.6.0(fastify@5.12.5))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(zod@4.6.5))(fastify@5.12.5)(zod@4.6.5)':
     dependencies:
       '@lokalise/api-contracts': 9.0.1(zod@4.6.5)
       '@lokalise/node-core': 14.9.1(zod@4.6.5)
@@ -8542,7 +8542,7 @@ snapshots:
     optionalDependencies:
       '@fastify/sse': 0.6.0(fastify@5.12.5)
 
-  '@lokalise/fastify-extras@34.1.0(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.0(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/background-jobs-common@17.0.1(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.5))(@lokalise/errors@2.1.0(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(@opentelemetry/api@1.9.1)(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.13.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(openapi-types@12.1.3)(zod@4.6.5))(fastify@5.12.5)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(zod@4.6.5)':
+  '@lokalise/fastify-extras@34.1.0(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.0(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/background-jobs-common@17.0.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.5))(@lokalise/errors@2.1.0(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(@opentelemetry/api@1.9.1)(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.13.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(openapi-types@12.1.3)(zod@4.6.5))(fastify@5.12.5)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(zod@4.6.5)':
     dependencies:
       '@amplitude/analytics-node': 1.5.71
       '@bugsnag/js': 8.10.0
@@ -8551,7 +8551,7 @@ snapshots:
       '@fastify/jwt': 10.2.1
       '@fastify/swagger': 9.9.0(supports-color@8.1.1)
       '@lokalise/api-contracts': 9.0.1(zod@4.6.5)
-      '@lokalise/background-jobs-common': 17.0.1(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.5)
+      '@lokalise/background-jobs-common': 17.0.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.5)
       '@lokalise/error-utils': 4.0.0(@lokalise/node-core@14.9.1(zod@4.6.5))
       '@lokalise/errors': 2.1.0(zod@4.6.5)
       '@lokalise/node-core': 14.9.1(zod@4.6.5)
@@ -8560,7 +8560,7 @@ snapshots:
       '@scalar/fastify-api-reference': 1.67.0
       '@splitsoftware/splitio': 11.11.2(supports-color@8.1.1)
       '@supercharge/promise-pool': 3.3.0
-      bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
+      bullmq: 6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
       dd-trace: 6.13.0
       fastify: 5.12.5
       fastify-metrics: 14.1.0(fastify@5.12.5)
@@ -8575,7 +8575,7 @@ snapshots:
       - encoding
       - supports-color
 
-  '@lokalise/fastify-extras@34.1.0(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.0(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/errors@2.1.0(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(@opentelemetry/api@1.9.1)(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.13.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(openapi-types@12.1.3)(zod@4.6.5))(fastify@5.12.5)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(zod@4.6.5)':
+  '@lokalise/fastify-extras@34.1.0(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.0(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/errors@2.1.0(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(@opentelemetry/api@1.9.1)(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.13.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(openapi-types@12.1.3)(zod@4.6.5))(fastify@5.12.5)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(zod@4.6.5)':
     dependencies:
       '@amplitude/analytics-node': 1.5.71
       '@bugsnag/js': 8.10.0
@@ -8593,7 +8593,7 @@ snapshots:
       '@scalar/fastify-api-reference': 1.67.0
       '@splitsoftware/splitio': 11.11.2(supports-color@8.1.1)
       '@supercharge/promise-pool': 3.3.0
-      bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
+      bullmq: 6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
       dd-trace: 6.13.0
       fastify: 5.12.5
       fastify-metrics: 14.1.0(fastify@5.12.5)
@@ -8608,8 +8608,8 @@ snapshots:
       - encoding
       - supports-color
 
-  '@lokalise/fastify-extras@36.0.1(3d2671a468a7164dc02a929fcdc0ca2d)':
-    dependencies:
+  ? '@lokalise/fastify-extras@36.0.1(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.0(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/background-jobs-common@17.0.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.5))(@lokalise/errors@2.1.0(zod@4.6.5))(@lokalise/fastify-api-contracts@8.0.0(@fastify/sse@0.6.0(fastify@5.12.5))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(zod@4.6.5))(fastify@5.12.5)(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(@opentelemetry/api@1.9.1)(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.13.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(zod@4.6.5))(fastify@5.12.5)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(zod@4.6.5)'
+  : dependencies:
       '@amplitude/analytics-node': 1.5.71
       '@bugsnag/js': 9.1.0
       '@bugsnag/node': 8.10.0
@@ -8617,17 +8617,17 @@ snapshots:
       '@fastify/jwt': 10.2.1
       '@fastify/swagger': 9.9.0(supports-color@8.1.1)
       '@lokalise/api-contracts': 9.0.1(zod@4.6.5)
-      '@lokalise/background-jobs-common': 17.0.1(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.5)
+      '@lokalise/background-jobs-common': 17.0.1(bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.3.1)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.5)
       '@lokalise/error-utils': 4.0.0(@lokalise/node-core@14.9.1(zod@4.6.5))
       '@lokalise/errors': 2.1.0(zod@4.6.5)
-      '@lokalise/fastify-api-contracts': 8.0.0(@fastify/sse@0.6.0(fastify@5.12.5))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(openapi-types@12.1.3)(zod@4.6.5))(fastify@5.12.5)(zod@4.6.5)
+      '@lokalise/fastify-api-contracts': 8.0.0(@fastify/sse@0.6.0(fastify@5.12.5))(@lokalise/api-contracts@9.0.1(zod@4.6.5))(@lokalise/node-core@14.9.1(zod@4.6.5))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.0(supports-color@8.1.1))(fastify@5.12.5)(zod@4.6.5))(fastify@5.12.5)(zod@4.6.5)
       '@lokalise/node-core': 14.9.1(zod@4.6.5)
       '@opentelemetry/api': 1.9.1
       '@prometheus-io/client': 0.16.1
       '@scalar/fastify-api-reference': 1.67.0
       '@splitsoftware/splitio': 11.12.1(supports-color@8.1.1)
       '@supercharge/promise-pool': 3.3.0
-      bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
+      bullmq: 6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
       dd-trace: 6.13.0
       fastify: 5.12.5
       fastify-metrics: 14.1.0(fastify@5.12.5)
@@ -11119,9 +11119,9 @@ snapshots:
 
   brotli-wasm@3.0.1: {}
 
-  bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0):
+  bullmq@6.3.11(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0):
     dependencies:
-      cron-parser: 5.10.0
+      cron-parser: 5.10.1
       msgpackr: 2.1.0
       node-abort-controller: 3.1.1
       semver: 7.8.5
@@ -11253,7 +11253,7 @@ snapshots:
       object-assign: 4.1.1
       vary: 1.1.2
 
-  cron-parser@5.10.0:
+  cron-parser@5.10.1:
     dependencies:
       luxon: 3.7.2
 
