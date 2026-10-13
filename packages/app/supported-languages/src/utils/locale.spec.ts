@@ -46,6 +46,14 @@ describe('isSupportedLocale', () => {
     expect(isSupportedLocale('swk')).toBe(true) // Malawi Sena
     expect(isSupportedLocale('tsg')).toBe(true) // Tausug
     expect(isSupportedLocale('tsg-Arab')).toBe(true) // Tausug in Arabic script
+    expect(isSupportedLocale('qaa')).toBe(true) // Private use
+    expect(isSupportedLocale('qaa-x-my-custom-language')).toBe(true) // Private use tag
+  })
+
+  it('returns false for the other private use languages and for undetermined', () => {
+    expect(isSupportedLocale('qab')).toBe(false)
+    expect(isSupportedLocale('qtz')).toBe(false)
+    expect(isSupportedLocale('und')).toBe(false)
   })
 
   it('returns false for an unknown language', () => {
