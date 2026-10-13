@@ -53,7 +53,7 @@
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
-        "@pyroscope/nodejs": "0.6.3",
+        "@pyroscope/nodejs": "0.6.4",
         "fastify-plugin": "^6.0.0"
     },
     "peerDependencies": {
@@ -75,7 +75,7 @@
         "@lokalise/tsconfig": "workspace:^",
         "@opentelemetry/api": "1.9.1",
         "@opentelemetry/sdk-trace-base": "^2.11.0",
-        "@types/node": "^26.6.2",
+        "@types/node": "^26.6.3",
         "@vitest/coverage-v8": "^4.1.11",
         "fastify": "^5.12.5",
         "pino": "^10.3.1",

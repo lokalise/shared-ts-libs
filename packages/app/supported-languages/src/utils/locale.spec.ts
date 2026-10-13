@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { languages } from '../constants/languages.ts'
+import { nonCldrLanguages } from '../constants/non-cldr-languages.ts'
 import { rtlLanguages } from '../constants/rtl-languages.ts'
 import {
   getLocaleDirection,
@@ -29,6 +30,22 @@ describe('isSupportedLocale', () => {
 
   it('is case-insensitive', () => {
     expect(isSupportedLocale('en-us')).toBe(true)
+  })
+
+  it('returns true for non-CLDR languages', () => {
+    expect(isSupportedLocale('cnh')).toBe(true) // Hakha Chin
+    expect(isSupportedLocale('cnh-MM')).toBe(true)
+    expect(isSupportedLocale('azb-Arab')).toBe(true) // South Azerbaijani in Arabic script
+    expect(isSupportedLocale('ksw-x-kar')).toBe(true) // S'gaw Karen with a private use subtag
+    expect(isSupportedLocale('acw')).toBe(true) // Hijazi Arabic
+    expect(isSupportedLocale('gyn')).toBe(true) // Guyanese Creole English
+    expect(isSupportedLocale('lgg')).toBe(true) // Lugbara
+    expect(isSupportedLocale('myx')).toBe(true) // Masaaba
+    expect(isSupportedLocale('ndc')).toBe(true) // Ndau
+    expect(isSupportedLocale('skr-Arab')).toBe(true) // Saraiki in Arabic script
+    expect(isSupportedLocale('swk')).toBe(true) // Malawi Sena
+    expect(isSupportedLocale('tsg')).toBe(true) // Tausug
+    expect(isSupportedLocale('tsg-Arab')).toBe(true) // Tausug in Arabic script
   })
 
   it('returns false for an unknown language', () => {
@@ -124,7 +141,7 @@ describe('parseLocale', () => {
 describe('getLocaleDirection', () => {
   it.each([
     ...Array.from(rtlLanguages).map((lang) => [lang, 'rtl'] as [string, 'rtl']),
-    ...Array.from(languages)
+    ...[...languages, ...nonCldrLanguages.keys()]
       .filter((lang) => !rtlLanguages.has(lang))
       .map((lang) => [lang, 'ltr'] as [string, 'ltr']),
     ['ar-SA', 'rtl'],

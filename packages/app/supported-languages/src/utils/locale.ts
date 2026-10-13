@@ -1,4 +1,5 @@
 import { languages } from '../constants/languages.ts'
+import { nonCldrLanguages } from '../constants/non-cldr-languages.ts'
 import { regions } from '../constants/regions.ts'
 import { rtlLanguages } from '../constants/rtl-languages.ts'
 import { scripts } from '../constants/scripts.ts'
@@ -40,7 +41,7 @@ export const isSupportedLocale = (tag: Locale) => {
       return false
     }
 
-    return languages.has(language)
+    return languages.has(language) || nonCldrLanguages.has(language)
   } catch (_) {
     return false
   }
