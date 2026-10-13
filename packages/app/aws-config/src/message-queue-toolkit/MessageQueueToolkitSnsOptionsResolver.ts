@@ -73,12 +73,12 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
 
     this.routingConfig = groupByUnique(
       Object.values(routingConfig).map(
-        (topic) =>
-          // Re-keying the queues by name keeps each queue as is, so the topic remains valid
-          ({
-            ...topic,
-            queues: groupByUnique(Object.values(topic.queues), 'queueName'),
-          }) as TopicConfig,
+        (topic): TopicConfig =>
+          // Both branches are the same on purpose: narrowing the topic variant first lets TS type check the re-keyed
+          // queues against that variant (internal topics only allow internal queues) without casting
+          topic.isExternal
+            ? { ...topic, queues: groupByUnique(Object.values(topic.queues), 'queueName') }
+            : { ...topic, queues: groupByUnique(Object.values(topic.queues), 'queueName') },
       ),
       'topicName',
     )
@@ -163,7 +163,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
       locatorConfig: resolvedTopic.locatorConfig,
       creationConfig: {
         topic: resolvedTopic.createCommand,
-        queue: resolvedQueue.creationConfig?.queue,
+        queue: resolvedQueue.creationConfig.queue,
         topicArnsWithPublishPermissionsPrefix: buildTopicArnsWithPublishPermissionsPrefix(
           topicConfig,
           params.awsConfig,

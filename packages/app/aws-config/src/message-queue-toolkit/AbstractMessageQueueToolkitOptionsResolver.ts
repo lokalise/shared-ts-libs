@@ -181,11 +181,10 @@ export abstract class AbstractMessageQueueToolkitOptionsResolver {
   protected resolveStartupResourcePolling(params: {
     isTest?: boolean
   }): StartupResourcePollingConfig {
-    const isProdOrStage = this.config.appEnv === 'production' || this.config.appEnv === 'staging'
     return {
-      // Disabled in test mode and production/stage where resources are expected to exist,
-      // so startup fails fast if they don't
-      enabled: !params.isTest && !isProdOrStage,
+      // Only enabled in development. In test mode resources are created, and in other environments they are expected
+      // to exist, so startup fails fast if they don't
+      enabled: !params.isTest && this.isDevelopmentEnvironment(),
       throwOnTimeout: false,
       nonBlocking: true,
       pollingIntervalMs: 30000, // 30 seconds
