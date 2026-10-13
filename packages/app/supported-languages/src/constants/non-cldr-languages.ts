@@ -5,7 +5,8 @@
  * Maps each language subtag to its English name, used in place of the missing CLDR display name.
  *
  * These languages are not part of the languages supported by Lokalise. Prefer CLDR languages or
- * private use tags (e.g. `en-x-custom-1`) over adding new entries here.
+ * private use tags (e.g. `en-x-custom-1`) over adding new entries here. The one exception is `qaa`,
+ * see its entry.
  *
  * @link https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
  */
@@ -21,6 +22,10 @@ export const nonCldrLanguages = new Map([
   ['lgg', 'Lugbara'],
   ['myx', 'Masaaba'],
   ['ndc', 'Ndau'],
+  // ISO 639-2 reserves `qaa` to `qtz` for local use, so no real language will take them.
+  // `qaa` is the language of private use tags that carry no real language,
+  // e.g. `qaa-x-my-custom-language`.
+  ['qaa', 'Private use'],
   ['skr', 'Saraiki'],
   ['swk', 'Malawi Sena'],
   ['tsg', 'Tausug'],

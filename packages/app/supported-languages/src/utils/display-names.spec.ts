@@ -30,6 +30,7 @@ describe('getLanguageNameInEnglish', () => {
     expect(getLanguageNameInEnglish('skr')).toBe('Saraiki')
     expect(getLanguageNameInEnglish('swk')).toBe('Malawi Sena')
     expect(getLanguageNameInEnglish('tsg')).toBe('Tausug')
+    expect(getLanguageNameInEnglish('qaa')).toBe('Private use')
   })
 
   it('returns null for an empty string', () => {
