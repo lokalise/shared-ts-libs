@@ -1,5 +1,13 @@
 # @lokalise/supported-languages
 
+## 3.7.0
+
+### Minor Changes
+
+- 4d3282d: Add `qaa` ("Private use") to the non-CLDR exception list, so private use tags
+  that carry no real language, such as `qaa-x-my-custom-language`, are supported
+  locales.
+
 ## 3.6.0
 
 ### Minor Changes
