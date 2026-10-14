@@ -146,4 +146,62 @@ describe('extractTextBetweenTags', () => {
       }),
     ).toEqual(['Their ', '<b>partnership</b>', ', ok'])
   })
+
+  it.each([
+    // NTC region wrapping an element with content - should be unwrapped
+    {
+      text: 'Welcome to \uE101<notrans>My House</notrans>\uE102',
+      result: ['Welcome to My House'],
+    }, // Single NTC element
+    { text: '\uE101<x id="1">Foo</x>\uE102 bar', result: ['Foo bar'] }, // Element with attributes
+    { text: '\uE101<ns:tag>Foo</ns:tag>\uE102', result: ['Foo'] }, // Element with namespaced name
+    { text: 'Hi \uE101<b>A</b>\uE102 and \uE101<i>B</i>\uE102', result: ['Hi A and B'] }, // Several NTC elements
+    { text: '\uE101<n>My <b>House</b></n>\uE102', result: ['My', 'House'] }, // Nested HTML is split out
+
+    // Any other NTC region - should be removed
+    { text: 'Hello \uE101World!\uE102', result: ['Hello'] }, // Not an element
+    { text: 'a \uE101{op:1}\uE102 b', result: ['a', 'b'] }, // Inline code
+    { text: 'a \uE101<br/>\uE102 b', result: ['a', 'b'] }, // Self-closing tag
+    { text: 'a \uE101<n></n>\uE102 b', result: ['a', 'b'] }, // Empty element
+    { text: 'a \uE101<n>  </n>\uE102 b', result: ['a', 'b'] }, // Whitespace-only element
+    { text: 'a \uE101<a>x</b>\uE102 b', result: ['a', 'b'] }, // Closing tag does not match
+    { text: 'a \uE101<a>x</a> y\uE102 b', result: ['a', 'b'] }, // Text outside the element
+    { text: 'a \uE101<a>x</a><a>y</a>\uE102 b', result: ['a', 'b'] }, // Several elements in one NTC region
+
+    // NTC element between other NTC regions
+    {
+      text: '\uE101{op:1}\uE102Welcome to \uE101<n>My House</n>\uE102\uE101{cl:1}\uE102',
+      result: ['Welcome to My House'],
+    },
+  ])('should extract text pieces between tags (%#) unwrapping NTC elements', (testcase) => {
+    expect(extractTextBetweenTags(testcase.text, { ntc: 'unwrapElements' })).toEqual(
+      testcase.result,
+    )
+  })
+
+  it.each([
+    // Unwrapped text is glued to the surrounding text without inventing or dropping spaces
+    {
+      text: 'Welcome to \uE101<notrans>My House</notrans>\uE102!',
+      result: ['Welcome to My House!'],
+    },
+    // Nested HTML is kept
+    { text: '\uE101<n>My <b>House</b></n>\uE102', result: ['My <b>House</b>'] },
+    // Only elements inside NTC regions are unwrapped
+    {
+      text: 'Hi \uE101{op:1}\uE102<n>x</n>, \uE101<n>y</n>\uE102 ok',
+      result: ['Hi ', '<n>x</n>, y ok'],
+    },
+  ])(
+    'should extract text pieces between tags (%#) unwrapping NTC elements while keeping HTML and spacing',
+    (testcase) => {
+      expect(
+        extractTextBetweenTags(testcase.text, {
+          ntc: 'unwrapElements',
+          keepHtml: true,
+          preserveSpacing: true,
+        }),
+      ).toEqual(testcase.result)
+    },
+  )
 })

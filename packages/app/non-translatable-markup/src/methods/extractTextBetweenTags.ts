@@ -10,7 +10,7 @@ import {
  *  - `remove`: the region and its content are removed (default)
  *  - `keep`: the region is kept as it is
  *  - `unwrapElements`: a region that is a single XML-like element wrapping some text
- *    (e.g. `<notrans>My House</notrans>`) is replaced by that text; any other region is removed
+ *    (e.g. `\uE101<notrans>My House</notrans>\uE102`) is replaced by that text; any other region is removed
  */
 export type NtcHandling = 'remove' | 'keep' | 'unwrapElements'
 
@@ -52,14 +52,17 @@ export type ExtractTextBetweenTagsOptions = BaseExtractTextBetweenTagsOptions &
  *  - '<div class="test">Hello</div> world' -> ['Hello', 'world']
  *  - 'Hello \uE101world!\uE102' -> ['Hello']
  *  - 'Hi \uE101x\uE102, bye' with `preserveSpacing` -> ['Hi ', ', bye']
+ *  - 'Welcome to \uE101<notrans>My House</notrans>\uE102' with `ntc: 'unwrapElements'` -> ['Welcome to My House']
  */
 export const extractTextBetweenTags = (
   text: string,
   options?: ExtractTextBetweenTagsOptions,
 ): string[] => {
-  let pieces: string[] = [text]
+  const ntc: NtcHandling = options?.ntc ?? (options?.keepNtc ? 'keep' : 'remove')
+
+  let pieces: string[] = [ntc === 'unwrapElements' ? unwrapNonTranslatableElements(text) : text]
   // split the text by non-translatable tags
-  if (!options?.keepNtc) pieces = pieces.flatMap((piece) => piece.split(nonTranslatableTextRegexp))
+  if (ntc !== 'keep') pieces = pieces.flatMap((piece) => piece.split(nonTranslatableTextRegexp))
   // split the text by tags (<*>)
   if (!options?.keepHtml) pieces = pieces.flatMap((piece) => piece.split(tagRegexpG))
 
@@ -67,3 +70,19 @@ export const extractTextBetweenTags = (
 
   return pieces.filter((piece) => piece !== '') // remove empty pieces
 }
+
+/**
+ * Replaces every non-translatable region that is a single XML-like element wrapping some text
+ * by that text. Any other region is left untouched.
+ */
+const unwrapNonTranslatableElements = (text: string): string =>
+  text.replace(nonTranslatableTagsRegexpG, (region, ntcContent: string) => {
+    const match = wrappedElementRegexp.exec(ntcContent)
+    if (!match) return region
+
+    const [, tagName, content] = match
+    // `<a>x</a><a>y</a>` is not a single element, even if it starts and ends with the same tag
+    if (!content?.trim() || content.includes(`</${tagName}`)) return region
+
+    return content
+  })
