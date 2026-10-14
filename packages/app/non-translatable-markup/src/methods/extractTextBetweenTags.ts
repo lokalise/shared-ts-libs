@@ -10,10 +10,10 @@ import {
  * How non-translatable regions are handled:
  *  - `remove`: the region and its content are removed (default)
  *  - `keep`: the region is kept as it is
- *  - `unwrapElements`: a region that is a single XML-like element wrapping some text
+ *  - `extractElementText`: a region that is a single XML-like element wrapping some text
  *    (e.g. `\uE101<notrans>My House</notrans>\uE102`) is replaced by that text; any other region is removed
  */
-export type NtcHandling = 'remove' | 'keep' | 'unwrapElements'
+export type NtcHandling = 'remove' | 'keep' | 'extractElementText'
 
 type BaseExtractTextBetweenTagsOptions = {
   /** Keep HTML-like tags in the result instead of splitting the text by them (default: false) */
@@ -53,7 +53,7 @@ export type ExtractTextBetweenTagsOptions = BaseExtractTextBetweenTagsOptions &
  *  - '<div class="test">Hello</div> world' -> ['Hello', 'world']
  *  - 'Hello \uE101world!\uE102' -> ['Hello']
  *  - 'Hi \uE101x\uE102, bye' with `preserveSpacing` -> ['Hi ', ', bye']
- *  - 'Welcome to \uE101<notrans>My House</notrans>\uE102' with `ntc: 'unwrapElements'` -> ['Welcome to My House']
+ *  - 'Welcome to \uE101<notrans>My House</notrans>\uE102' with `ntc: 'extractElementText'` -> ['Welcome to My House']
  */
 export const extractTextBetweenTags = (
   text: string,
@@ -61,7 +61,7 @@ export const extractTextBetweenTags = (
 ): string[] => {
   const ntc: NtcHandling = options?.ntc ?? (options?.keepNtc ? 'keep' : 'remove')
 
-  let pieces: string[] = [ntc === 'unwrapElements' ? unwrapNonTranslatableElements(text) : text]
+  let pieces: string[] = [ntc === 'extractElementText' ? extractNtcElementText(text) : text]
   // split the text by non-translatable tags
   if (ntc !== 'keep') pieces = pieces.flatMap((piece) => piece.split(nonTranslatableTextRegexp))
   // split the text by tags (<*>)
@@ -76,7 +76,7 @@ export const extractTextBetweenTags = (
  * Replaces every non-translatable region that is a single XML-like element wrapping some text
  * by that text. Any other region is left untouched.
  */
-const unwrapNonTranslatableElements = (text: string): string =>
+const extractNtcElementText = (text: string): string =>
   text.replace(nonTranslatableTagsRegexpG, (region, ntcContent: string) => {
     const match = wrappedElementRegexp.exec(ntcContent)
     if (!match) return region

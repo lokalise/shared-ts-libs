@@ -148,7 +148,7 @@ describe('extractTextBetweenTags', () => {
   })
 
   it.each([
-    // NTC region wrapping an element with content - should be unwrapped
+    // NTC region wrapping an element with content - should be extracted
     {
       text: 'Welcome to \uE101<notrans>My House</notrans>\uE102',
       result: ['Welcome to My House'],
@@ -175,31 +175,31 @@ describe('extractTextBetweenTags', () => {
       text: '\uE101{op:1}\uE102Welcome to \uE101<n>My House</n>\uE102\uE101{cl:1}\uE102',
       result: ['Welcome to My House'],
     },
-  ])('should extract text pieces between tags (%#) unwrapping NTC elements', (testcase) => {
-    expect(extractTextBetweenTags(testcase.text, { ntc: 'unwrapElements' })).toEqual(
+  ])('should extract text pieces between tags (%#) extracting NTC element text', (testcase) => {
+    expect(extractTextBetweenTags(testcase.text, { ntc: 'extractElementText' })).toEqual(
       testcase.result,
     )
   })
 
   it.each([
-    // Unwrapped text is glued to the surrounding text without inventing or dropping spaces
+    // Extracted text is glued to the surrounding text without inventing or dropping spaces
     {
       text: 'Welcome to \uE101<notrans>My House</notrans>\uE102!',
       result: ['Welcome to My House!'],
     },
     // Nested HTML is kept
     { text: '\uE101<n>My <b>House</b></n>\uE102', result: ['My <b>House</b>'] },
-    // Only elements inside NTC regions are unwrapped
+    // Only elements inside NTC regions are extracted
     {
       text: 'Hi \uE101{op:1}\uE102<n>x</n>, \uE101<n>y</n>\uE102 ok',
       result: ['Hi ', '<n>x</n>, y ok'],
     },
   ])(
-    'should extract text pieces between tags (%#) unwrapping NTC elements while keeping HTML and spacing',
+    'should extract text pieces between tags (%#) extracting NTC element text while keeping HTML and spacing',
     (testcase) => {
       expect(
         extractTextBetweenTags(testcase.text, {
-          ntc: 'unwrapElements',
+          ntc: 'extractElementText',
           keepHtml: true,
           preserveSpacing: true,
         }),
