@@ -33,7 +33,7 @@
         "postversion": "biome check --write package.json"
     },
     "dependencies": {
-        "@bugsnag/node": "^8.9.0",
+        "@bugsnag/node": "^9.0.0",
         "pino-std-serializers": "^7.1.0"
     },
     "peerDependencies": {
