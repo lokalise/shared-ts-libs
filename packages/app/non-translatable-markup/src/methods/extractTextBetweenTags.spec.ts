@@ -157,6 +157,7 @@ describe('extractTextBetweenTags', () => {
     { text: '\uE101<ns:tag>Foo</ns:tag>\uE102', result: ['Foo'] }, // Element with namespaced name
     { text: 'Hi \uE101<b>A</b>\uE102 and \uE101<i>B</i>\uE102', result: ['Hi A and B'] }, // Several NTC elements
     { text: '\uE101<n>My <b>House</b></n>\uE102', result: ['My', 'House'] }, // Nested HTML is split out
+    { text: '\uE101<a>Hi <abbr>there</abbr></a>\uE102', result: ['Hi', 'there'] }, // Nested tag with a longer name
 
     // Any other NTC region - should be removed
     { text: 'Hello \uE101World!\uE102', result: ['Hello'] }, // Not an element
@@ -167,6 +168,7 @@ describe('extractTextBetweenTags', () => {
     { text: 'a \uE101<a>x</b>\uE102 b', result: ['a', 'b'] }, // Closing tag does not match
     { text: 'a \uE101<a>x</a> y\uE102 b', result: ['a', 'b'] }, // Text outside the element
     { text: 'a \uE101<a>x</a><a>y</a>\uE102 b', result: ['a', 'b'] }, // Several elements in one NTC region
+    { text: 'a \uE101<a>x <a>y</a></a>\uE102 b', result: ['a', 'b'] }, // Nested element with the same tag
 
     // NTC element between other NTC regions
     {

@@ -1,4 +1,5 @@
 import {
+  closingTagRegexpG,
   nonTranslatableTagsRegexpG,
   nonTranslatableTextRegexp,
   tagRegexpG,
@@ -82,7 +83,12 @@ const unwrapNonTranslatableElements = (text: string): string =>
 
     const [, tagName, content] = match
     // `<a>x</a><a>y</a>` is not a single element, even if it starts and ends with the same tag
-    if (!content?.trim() || content.includes(`</${tagName}`)) return region
+    if (!content?.trim() || hasClosingTag(content, tagName)) return region
 
     return content
   })
+
+const hasClosingTag = (text: string, tagName?: string): boolean =>
+  Array.from(text.matchAll(closingTagRegexpG)).some(
+    ([, closingTagName]) => closingTagName === tagName,
+  )
