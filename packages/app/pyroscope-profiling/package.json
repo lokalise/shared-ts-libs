@@ -71,7 +71,7 @@
     "devDependencies": {
         "@biomejs/biome": "^2.5.12",
         "@lokalise/biome-config": "workspace:^",
-        "@lokalise/node-core": "^14.9.1",
+        "@lokalise/node-core": "^14.11.0",
         "@lokalise/tsconfig": "workspace:^",
         "@opentelemetry/api": "1.9.1",
         "@opentelemetry/sdk-trace-base": "^2.12.0",

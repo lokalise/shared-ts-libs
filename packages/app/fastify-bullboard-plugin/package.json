@@ -45,7 +45,7 @@
         "@lokalise/background-jobs-common": "workspace:^",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/fastify-extras": "^34.1.0",
-        "@lokalise/node-core": "^14.9.1",
+        "@lokalise/node-core": "^14.11.0",
         "@types/node": "^26.6.4",
         "@vitest/coverage-v8": "^4.1.11",
         "awilix": "^13.0.5",
