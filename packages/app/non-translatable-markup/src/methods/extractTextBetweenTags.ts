@@ -1,10 +1,39 @@
-import { nonTranslatableTextRegexp, tagRegexpG } from './utils.ts'
+import {
+  nonTranslatableTagsRegexpG,
+  nonTranslatableTextRegexp,
+  tagRegexpG,
+  wrappedElementRegexp,
+} from './utils.ts'
 
-export type ExtractTextBetweenTagsOptions = {
-  keepNtc?: boolean
+/**
+ * How non-translatable regions are handled:
+ *  - `remove`: the region and its content are removed (default)
+ *  - `keep`: the region is kept as it is
+ *  - `unwrapElements`: a region that is a single XML-like element wrapping some text
+ *    (e.g. `<notrans>My House</notrans>`) is replaced by that text; any other region is removed
+ */
+export type NtcHandling = 'remove' | 'keep' | 'unwrapElements'
+
+type BaseExtractTextBetweenTagsOptions = {
+  /** Keep HTML-like tags in the result instead of splitting the text by them (default: false) */
   keepHtml?: boolean
+  /** Keep the original whitespace of each piece instead of trimming it (default: false) */
   preserveSpacing?: boolean
 }
+
+export type ExtractTextBetweenTagsOptions = BaseExtractTextBetweenTagsOptions &
+  (
+    | {
+        /** How non-translatable regions are handled, see {@link NtcHandling} (default: 'remove') */
+        ntc?: NtcHandling
+        keepNtc?: never
+      }
+    | {
+        /** @deprecated use `ntc: 'keep'` instead */
+        keepNtc?: boolean
+        ntc?: never
+      }
+  )
 
 /**
  * Extract text parts between NTC tags and HTML like tags and returns them as array.

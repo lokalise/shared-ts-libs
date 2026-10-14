@@ -60,6 +60,8 @@ describe('extractTextBetweenTags', () => {
       result: ['hello world', '\uE101I am fine!\uE102'],
     },
   ])('should extract text pieces between tags (%#) keeping NT', (testcase) => {
+    expect(extractTextBetweenTags(testcase.text, { ntc: 'keep' })).toEqual(testcase.result)
+    // Covering deprecated keepNtc option
     expect(extractTextBetweenTags(testcase.text, { keepNtc: true })).toEqual(testcase.result)
   })
 
@@ -98,7 +100,7 @@ describe('extractTextBetweenTags', () => {
     expect(
       extractTextBetweenTags(testcase.text, {
         keepHtml: true,
-        keepNtc: true,
+        ntc: 'keep',
       }),
     ).toEqual([testcase.text])
   })
