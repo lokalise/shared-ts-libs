@@ -7,20 +7,47 @@ redefining the same env vars. Each function returns a schema to put into envase'
 
 ## `createAppConfigSchema()`
 
-Reads `NODE_ENV`, `APP_ENV`, `APP_VERSION`, `GIT_COMMIT_SHA`, `APP_BIND_ADDRESS` (default `0.0.0.0`), `APP_PORT`
-(default `3000`), `JWT_PUBLIC_KEY` (`||` stands for a newline), `LOG_LEVEL` (default `info`), `BASE_URL` (default
-empty), `METRICS_ENABLED` (default `true`) and `GRACEFUL_SHUTDOWN_TIMEOUT_MS` (default `10000`, at most `30000`). The
-parsed value is an `AppConfig`.
+The parsed value is an `AppConfig`.
+
+| Env var                        | Required | Default   | Notes                                                          |
+|--------------------------------|----------|-----------|----------------------------------------------------------------|
+| `NODE_ENV`                     | yes      |           | `production`, `development` or `test`                          |
+| `APP_ENV`                      | yes      |           | `production`, `development` or `staging`                       |
+| `APP_VERSION`                  | yes      |           |                                                                |
+| `GIT_COMMIT_SHA`               | yes      |           |                                                                |
+| `APP_BIND_ADDRESS`             | no       | `0.0.0.0` |                                                                |
+| `APP_PORT`                     | no       | `3000`    | 1-65535                                                        |
+| `JWT_PUBLIC_KEY`               | yes      |           | `\|\|` stands for a newline                                    |
+| `LOG_LEVEL`                    | no       | `info`    | `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
+| `BASE_URL`                     | no       | empty     |                                                                |
+| `METRICS_ENABLED`              | no       | `true`    |                                                                |
+| `GRACEFUL_SHUTDOWN_TIMEOUT_MS` | no       | `10000`   | At most `30000`                                                |
 
 ## `createRedisConfigSchema(options?)`
 
-Reads `REDIS_HOST`, `REDIS_PORT` (default `6379`), `REDIS_USERNAME`, `REDIS_PASSWORD`, `REDIS_USE_TLS` (default
-`true`), `REDIS_DB` (0-15), `REDIS_KEY_PREFIX`, `REDIS_COMMAND_TIMEOUT` and `REDIS_CONNECT_TIMEOUT`. The password
-is redacted from validation errors.
+The parsed value is ioredis `RedisOptions`, so you can pass it to `new Redis()` without converting it. Settings that
+are code rather than config, such as `retryStrategy`, `reconnectOnError` or BullMQ's `maxRetriesPerRequest: null`, are
+left to the caller.
 
-The parsed value is ioredis `RedisOptions`. `REDIS_USE_TLS` becomes `tls: {}`, or `undefined` when disabled, so you can
-pass the value to `new Redis()` or as a BullMQ `connection` without converting it. Settings that are code rather than
-config, such as `retryStrategy`, `reconnectOnError` or BullMQ's `maxRetriesPerRequest: null`, are left to the caller.
+| Env var                 | Required | Default | Notes                                |
+|-------------------------|----------|---------|--------------------------------------|
+| `REDIS_HOST`            | yes      |         |                                      |
+| `REDIS_PORT`            | no       | `6379`  | 1-65535                              |
+| `REDIS_USERNAME`        | no       |         |                                      |
+| `REDIS_PASSWORD`        | no       |         | Redacted from validation errors      |
+| `REDIS_USE_TLS`         | no       | `true`  | Parsed into `tls: {}` or `undefined` |
+| `REDIS_DB`              | no       |         | 0-15                                 |
+| `REDIS_KEY_PREFIX`      | no       |         |                                      |
+| `REDIS_COMMAND_TIMEOUT` | no       |         | Milliseconds                         |
+| `REDIS_CONNECT_TIMEOUT` | no       |         | Milliseconds                         |
+
+BullMQ doesn't support ioredis key prefixes. For a BullMQ `connection`, leave `keyPrefix` out and pass it as BullMQ's
+`prefix` option:
+
+```typescript
+const { keyPrefix, ...connection } = config.redis
+const queue = new Queue('jobs', { connection, prefix: keyPrefix })
+```
 
 For each additional connection, pass a different `prefix`. It goes in front of `REDIS`, so `{ prefix: 'SCHEDULER' }` reads
 `SCHEDULER_REDIS_HOST`, `SCHEDULER_REDIS_PORT` and so on.

@@ -12,7 +12,9 @@ export type RedisConfigSchemaOptions = {
 /**
  * Returns the Redis connection schema for envase's `createConfig()`.
  *
- * The parsed value is ioredis options, ready for `new Redis()` or a BullMQ `connection`.
+ * The parsed value is ioredis options, ready for `new Redis()`. For a BullMQ `connection`, leave
+ * out `keyPrefix` and pass it as BullMQ's `prefix` option, since BullMQ doesn't support ioredis
+ * key prefixes.
  *
  * @example
  * ```typescript
