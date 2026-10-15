@@ -40,7 +40,7 @@
         "@lokalise/node-core": ">=11.0.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.5.12",
+        "@biomejs/biome": "^2.5.15",
         "@lokalise/biome-config": "workspace:^",
         "@lokalise/node-core": "^14.11.0",
         "@lokalise/tsconfig": "workspace:^",
