@@ -8,6 +8,19 @@ const nonTranslatableTagsPattern = `${NON_TRANSLATABLE_START_TAG}(.+?)${NON_TRAN
 export const nonTranslatableTagsRegexpG = new RegExp(nonTranslatableTagsPattern, 'g')
 
 /**
+ * Matches a single XML-like element wrapping some content, e.g. `<notrans>My House</notrans>`.
+ *  - group 1 -> the tag name, so the closing tag has to match the opening one
+ *  - group 2 -> the wrapped content
+ */
+export const wrappedElementRegexp = /^<([A-Za-z_][\w.:-]*)(?:\s[^>]*)?>([\s\S]*)<\/\1\s*>$/
+
+/**
+ * Matches every XML-like closing tag, e.g. `</notrans>`.
+ *  - group 1 -> the tag name
+ */
+export const closingTagRegexpG = /<\/([A-Za-z_][\w.:-]*)\s*>/g
+
+/**
  * Explanation of the pattern:
  *  `^` -> asserts position at the start of a line
  *  `[...]` -> matches any one of the characters or Unicode property escapes specified within it

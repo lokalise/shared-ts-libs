@@ -1,10 +1,40 @@
-import { nonTranslatableTextRegexp, tagRegexpG } from './utils.ts'
+import {
+  closingTagRegexpG,
+  nonTranslatableTagsRegexpG,
+  nonTranslatableTextRegexp,
+  tagRegexpG,
+  wrappedElementRegexp,
+} from './utils.ts'
 
-export type ExtractTextBetweenTagsOptions = {
-  keepNtc?: boolean
+/**
+ * How non-translatable regions are handled:
+ *  - `remove`: the region and its content are removed (default)
+ *  - `keep`: the region is kept as it is
+ *  - `extractElementText`: a region that is a single XML-like element wrapping some text
+ *    (e.g. `\uE101<notrans>My House</notrans>\uE102`) is replaced by that text; any other region is removed
+ */
+export type NtcHandling = 'remove' | 'keep' | 'extractElementText'
+
+type BaseExtractTextBetweenTagsOptions = {
+  /** Keep HTML-like tags in the result instead of splitting the text by them (default: false) */
   keepHtml?: boolean
+  /** Keep the original whitespace of each piece instead of trimming it (default: false) */
   preserveSpacing?: boolean
 }
+
+export type ExtractTextBetweenTagsOptions = BaseExtractTextBetweenTagsOptions &
+  (
+    | {
+        /** How non-translatable regions are handled, see {@link NtcHandling} (default: 'remove') */
+        ntc?: NtcHandling
+        keepNtc?: never
+      }
+    | {
+        /** @deprecated use `ntc: 'keep'` instead */
+        keepNtc?: boolean
+        ntc?: never
+      }
+  )
 
 /**
  * Extract text parts between NTC tags and HTML like tags and returns them as array.
@@ -23,14 +53,17 @@ export type ExtractTextBetweenTagsOptions = {
  *  - '<div class="test">Hello</div> world' -> ['Hello', 'world']
  *  - 'Hello \uE101world!\uE102' -> ['Hello']
  *  - 'Hi \uE101x\uE102, bye' with `preserveSpacing` -> ['Hi ', ', bye']
+ *  - 'Welcome to \uE101<notrans>My House</notrans>\uE102' with `ntc: 'extractElementText'` -> ['Welcome to My House']
  */
 export const extractTextBetweenTags = (
   text: string,
   options?: ExtractTextBetweenTagsOptions,
 ): string[] => {
-  let pieces: string[] = [text]
+  const ntc: NtcHandling = options?.ntc ?? (options?.keepNtc ? 'keep' : 'remove')
+
+  let pieces: string[] = [ntc === 'extractElementText' ? extractNtcElementText(text) : text]
   // split the text by non-translatable tags
-  if (!options?.keepNtc) pieces = pieces.flatMap((piece) => piece.split(nonTranslatableTextRegexp))
+  if (ntc !== 'keep') pieces = pieces.flatMap((piece) => piece.split(nonTranslatableTextRegexp))
   // split the text by tags (<*>)
   if (!options?.keepHtml) pieces = pieces.flatMap((piece) => piece.split(tagRegexpG))
 
@@ -38,3 +71,24 @@ export const extractTextBetweenTags = (
 
   return pieces.filter((piece) => piece !== '') // remove empty pieces
 }
+
+/**
+ * Replaces every non-translatable region that is a single XML-like element wrapping some text
+ * by that text. Any other region is left untouched.
+ */
+const extractNtcElementText = (text: string): string =>
+  text.replace(nonTranslatableTagsRegexpG, (region, ntcContent: string) => {
+    const match = wrappedElementRegexp.exec(ntcContent)
+    if (!match) return region
+
+    const [, tagName, content] = match
+    // `<a>x</a><a>y</a>` is not a single element, even if it starts and ends with the same tag
+    if (!content?.trim() || hasClosingTag(content, tagName)) return region
+
+    return content
+  })
+
+const hasClosingTag = (text: string, tagName?: string): boolean =>
+  Array.from(text.matchAll(closingTagRegexpG)).some(
+    ([, closingTagName]) => closingTagName === tagName,
+  )
