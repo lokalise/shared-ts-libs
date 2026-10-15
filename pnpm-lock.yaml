@@ -760,8 +760,8 @@ importers:
         specifier: ^13.0.5
         version: 13.0.5
       awilix-manager:
-        specifier: ^7.0.1
-        version: 7.0.1(awilix@13.0.5)
+        specifier: ^7.1.0
+        version: 7.1.0(awilix@13.0.5)
       bullmq:
         specifier: 6.3.4
         version: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
@@ -4464,8 +4464,8 @@ packages:
   avvio@9.3.0:
     resolution: {integrity: sha512-g2tQ7LE7oOSqDfwEm3M+ZCMTJc7KiZCdJ4UwyZJb5ckTKyYu50OYmvv0mCFXPuYXoM4zkSt8zM9XQ9KCvxA74A==}
 
-  awilix-manager@7.0.1:
-    resolution: {integrity: sha512-JFZ2OVxNYXOb85V9CvmQDQWMfXZtptVu98A1TvuVHDPdzGvwoQbZm1VgEhgRp7vF0mlFIZT2Id+NsI97fvArGQ==}
+  awilix-manager@7.1.0:
+    resolution: {integrity: sha512-9p5jdTt304lJgmV5Tkk7pVIqIX41aJi6pPiVLSOeGdAvF4lTO6Ktmb84MUbTg0gWdmsy7aUA0TDAZc5Z2uy/wQ==}
     engines: {node: '>=22.13'}
     peerDependencies:
       awilix: '>=9.0.0'
@@ -8314,7 +8314,7 @@ snapshots:
   '@fastify/awilix@8.2.1(awilix@13.0.5)(fastify@5.12.5)':
     dependencies:
       awilix: 13.0.5
-      awilix-manager: 7.0.1(awilix@13.0.5)
+      awilix-manager: 7.1.0(awilix@13.0.5)
       fastify: 5.12.5
       fastify-plugin: 6.0.0
 
@@ -11143,7 +11143,7 @@ snapshots:
       '@fastify/error': 4.2.0
       fastq: 1.20.3
 
-  awilix-manager@7.0.1(awilix@13.0.5):
+  awilix-manager@7.1.0(awilix@13.0.5):
     dependencies:
       awilix: 13.0.5
 
