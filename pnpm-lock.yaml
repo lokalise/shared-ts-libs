@@ -733,8 +733,8 @@ importers:
         specifier: ^2.5.12
         version: 2.5.12
       '@fastify/awilix':
-        specifier: ^8.2.1
-        version: 8.2.1(awilix@13.0.5)(fastify@5.12.5)
+        specifier: ^8.3.0
+        version: 8.3.0(awilix@13.0.5)(fastify@5.12.5)
       '@fastify/schedule':
         specifier: ^7.0.0
         version: 7.0.0(toad-scheduler@4.2.0)
@@ -2064,8 +2064,8 @@ packages:
   '@fastify/auth@5.1.1':
     resolution: {integrity: sha512-+6Uq4ODC5xoevkECTL3gDeZDV2yA5O4QG03ISU8VlYJtQ0xWNIAJcLigS5ttTuNn1wzrasPGnLf4tcVkWMPZbg==}
 
-  '@fastify/awilix@8.2.1':
-    resolution: {integrity: sha512-6evAIgJWJdgfhU/s0A8ht3k0FlFOSM/ckACaSkpBNp/eGb0ywBL//mcovIcEePM/j0U+vRuHd9IcRFW2o64wXA==}
+  '@fastify/awilix@8.3.0':
+    resolution: {integrity: sha512-l+BFo79Vd08nx/XGgMfg1zVMGQwyindYFqoXJLzPT11YD/HOIxhP0P1IwsxZZrQBhGMQaX9j/BityZ91GZFRvQ==}
     peerDependencies:
       awilix: '>=9.0.0'
       fastify: ^5.0.0
@@ -4466,6 +4466,12 @@ packages:
 
   awilix-manager@7.0.1:
     resolution: {integrity: sha512-JFZ2OVxNYXOb85V9CvmQDQWMfXZtptVu98A1TvuVHDPdzGvwoQbZm1VgEhgRp7vF0mlFIZT2Id+NsI97fvArGQ==}
+    engines: {node: '>=22.13'}
+    peerDependencies:
+      awilix: '>=9.0.0'
+
+  awilix-manager@7.1.0:
+    resolution: {integrity: sha512-9p5jdTt304lJgmV5Tkk7pVIqIX41aJi6pPiVLSOeGdAvF4lTO6Ktmb84MUbTg0gWdmsy7aUA0TDAZc5Z2uy/wQ==}
     engines: {node: '>=22.13'}
     peerDependencies:
       awilix: '>=9.0.0'
@@ -8311,10 +8317,10 @@ snapshots:
       fastify-plugin: 6.0.0
       reusify: 1.1.0
 
-  '@fastify/awilix@8.2.1(awilix@13.0.5)(fastify@5.12.5)':
+  '@fastify/awilix@8.3.0(awilix@13.0.5)(fastify@5.12.5)':
     dependencies:
       awilix: 13.0.5
-      awilix-manager: 7.0.1(awilix@13.0.5)
+      awilix-manager: 7.1.0(awilix@13.0.5)
       fastify: 5.12.5
       fastify-plugin: 6.0.0
 
@@ -11144,6 +11150,10 @@ snapshots:
       fastq: 1.20.3
 
   awilix-manager@7.0.1(awilix@13.0.5):
+    dependencies:
+      awilix: 13.0.5
+
+  awilix-manager@7.1.0(awilix@13.0.5):
     dependencies:
       awilix: 13.0.5
 
