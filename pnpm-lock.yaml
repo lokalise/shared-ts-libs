@@ -5188,10 +5188,6 @@ packages:
     resolution: {integrity: sha512-DIFTdc91HLagSNTfX7AgLPnbovOQnrmtFr7TO1hgLwR5xyrAMF+RQ4Hic/3RmddWA1vjvabtS7ESGMcFVYkpPw==}
     hasBin: true
 
-  envase@2.1.0:
-    resolution: {integrity: sha512-DIFTdc91HLagSNTfX7AgLPnbovOQnrmtFr7TO1hgLwR5xyrAMF+RQ4Hic/3RmddWA1vjvabtS7ESGMcFVYkpPw==}
-    hasBin: true
-
   error-stack-parser@2.1.4:
     resolution: {integrity: sha512-Sk5V6wVazPhq5MhpO+AUxJn5x7XSXGl1R93Vn7i+zS15KDVxQijejNCrz8340/2bgLBjR9GtEG8ZVKONDjcqGQ==}
 
@@ -11705,12 +11701,6 @@ snapshots:
   entities@7.0.1: {}
 
   env-paths@3.0.0: {}
-
-  envase@2.1.0:
-    dependencies:
-      cac: 7.0.0
-      diff: 9.0.0
-      type-fest: 5.10.0
 
   envase@2.1.0:
     dependencies:
