@@ -7,25 +7,18 @@ and integration with @message-queue-toolkit/sns and @message-queue-toolkit/sqs.
 
 ### AWS Configuration
 
-Read AWS configuration from environment variables using ConfigScope:
+Read AWS configuration from environment variables using [envase](https://github.com/CatchMe2/envase).
 
-```ts
-import { getAwsConfig } from '@lokalise/aws-config';
+#### Using with envase
 
-const awsConfig = getAwsConfig();
-```
-
-#### Using with envase (nested config)
-
-For applications using [envase](https://github.com/CatchMe2/envase) that nest AWS config under a key like `aws`,
-pass `{ path: 'aws' }` so the computed resolvers access `fullParsedConfig.aws` instead of `fullParsedConfig`:
+Nest the schema and computed fragments under the same key, `aws` by default:
 
 ```ts
 import { createConfig, envvar } from 'envase';
 import { z } from 'zod';
 import { getEnvaseAwsConfig } from '@lokalise/aws-config';
 
-const awsConfig = getEnvaseAwsConfig({ path: 'aws' });
+const awsConfig = getEnvaseAwsConfig();
 
 const config = createConfig(process.env, {
   schema: {
@@ -42,29 +35,15 @@ console.log(config.aws.credentials); // AwsCredentialIdentity | Provider<AwsCred
 console.log(config.appName); // string
 ```
 
-#### Using with envase (flat config)
-
-When AWS fields don't need to be namespaced, omit `path` and spread the fragments at root level:
+To nest under a different key, pass it as `path`, so the computed credentials resolver reads from that key:
 
 ```ts
-import { createConfig, envvar } from 'envase';
-import { z } from 'zod';
-import { getEnvaseAwsConfig } from '@lokalise/aws-config';
-
-const awsConfig = getEnvaseAwsConfig();
+const awsConfig = getEnvaseAwsConfig({ path: 'awsSettings' });
 
 const config = createConfig(process.env, {
-  schema: {
-    ...awsConfig.schema,
-    appName: envvar('APP_NAME', z.string()),
-  },
-  computed: {
-    ...awsConfig.computed,
-  },
+  schema: { awsSettings: awsConfig.schema },
+  computed: { awsSettings: awsConfig.computed },
 });
-
-console.log(config.region); // string
-console.log(config.credentials); // AwsCredentialIdentity | Provider<AwsCredentialIdentity>
 ```
 
 #### Schema validation
@@ -284,10 +263,10 @@ Automatically build publisher and consumer options with `@message-queue-toolkit/
 
 ```ts
 import { MessageQueueToolkitSnsOptionsResolver } from '@lokalise/aws-config';
-import { getAwsConfig } from '@lokalise/aws-config';
 import { logger } from '@lokalise/node-core';
 
-const awsConfig = getAwsConfig();
+// `awsConfig` is the AWS section of your envase config, see "AWS Configuration" above
+const awsConfig = config.aws;
 const resolver = new MessageQueueToolkitSnsOptionsResolver(routingConfig, {
   appEnv: 'production',
   system: 'backend',
@@ -321,10 +300,10 @@ Automatically build publisher and consumer options with `@message-queue-toolkit/
 
 ```ts
 import { MessageQueueToolkitSqsOptionsResolver } from '@lokalise/aws-config';
-import { getAwsConfig } from '@lokalise/aws-config';
 import { logger } from '@lokalise/node-core';
 
-const awsConfig = getAwsConfig();
+// `awsConfig` is the AWS section of your envase config, see "AWS Configuration" above
+const awsConfig = config.aws;
 const resolver = new MessageQueueToolkitSqsOptionsResolver(commandConfig, {
   appEnv: 'production',
   system: 'backend',
