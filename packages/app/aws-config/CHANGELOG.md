@@ -1,5 +1,16 @@
 # @lokalise/aws-config
 
+## 11.0.0
+
+### Major Changes
+
+- 705d59d: Remove the ConfigScope-based `getAwsConfig()` (use `getEnvaseAwsConfig()` instead) and require `envase` >=2.0.0 as a peer dependency. `AWS_CONFIG_ENV_VARS` and the `AwsConfig` type are unchanged.
+- 705d59d: `getEnvaseAwsConfig()` fragments must now be nested under a key in `createConfig()` (`aws` by default, or the `path` option); spreading them at the root level is no longer supported. `EnvaseAwsConfigComputedType` now takes the nesting key as its type parameter instead of the raw config shape.
+
+### Patch Changes
+
+- 705d59d: Mark `AWS_SECRET_ACCESS_KEY` as sensitive in the envase schema, so its value is redacted from validation errors and flagged in generated env docs.
+
 ## 10.0.0
 
 ### Major Changes
