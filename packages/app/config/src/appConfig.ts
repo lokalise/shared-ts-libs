@@ -1,7 +1,22 @@
+import { createPublicKey } from 'node:crypto'
 import { envvar, type InferEnv } from 'envase'
 import { z } from 'zod'
 
 const decodeJwtKey = (key: string): string => key.replaceAll('||', '\n')
+
+// createPublicKey() also accepts private keys, so reject them by their PEM header
+const isRsaPublicKey = (pem: string): boolean => {
+  if (pem.includes('PRIVATE KEY')) return false
+
+  try {
+    const key = createPublicKey(pem)
+    return (
+      key.asymmetricKeyType === 'rsa' && Number(key.asymmetricKeyDetails?.modulusLength) >= 2048
+    )
+  } catch {
+    return false
+  }
+}
 
 /**
  * Returns the app config schema for envase's `createConfig()`.
@@ -55,8 +70,13 @@ export const createAppConfigSchema = () => ({
     'JWT_PUBLIC_KEY',
     z
       .string()
-      .describe("JWT validation public key (use '||' as newline separator)")
-      .transform(decodeJwtKey),
+      .trim()
+      .min(1)
+      .describe(
+        "RSA public key (2048 bits or more) for validating JWTs, with '||' as newline separator",
+      )
+      .transform(decodeJwtKey)
+      .refine(isRsaPublicKey, 'Must be an RSA public key of at least 2048 bits'),
   ),
   logLevel: envvar(
     'LOG_LEVEL',
