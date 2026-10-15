@@ -1,0 +1,25 @@
+import { defineConfig } from 'vitest/config'
+
+// biome-ignore lint/style/noDefaultExport: vite expects default export
+export default defineConfig({
+  test: {
+    watch: false,
+    mockReset: true,
+    restoreMocks: true,
+    unstubEnvs: true,
+    unstubGlobals: true,
+    include: ['src/**/*.spec.ts'],
+    exclude: [],
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/index.ts'],
+      thresholds: {
+        lines: 100,
+        functions: 100,
+        branches: 100,
+        statements: 100,
+      },
+    },
+  },
+})
