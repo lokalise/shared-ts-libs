@@ -11,10 +11,10 @@ npm install @lokalise/crypto
 ## Hashes and HMACs
 
 ```ts
-import { generateHash, generateHmac, HashAlgorithm, HashEncoding } from '@lokalise/crypto'
+import { calculateHash, calculateHmac, HashAlgorithm, HashEncoding } from '@lokalise/crypto'
 
-generateHash(HashAlgorithm.SHA256, 'value') // hex by default
-generateHmac(HashAlgorithm.SHA512, 'value', pepper, HashEncoding.BASE64)
+calculateHash(HashAlgorithm.SHA256, 'value') // hex by default
+calculateHmac(HashAlgorithm.SHA512, 'value', pepper, HashEncoding.BASE64)
 ```
 
 `HashAlgorithm` and `HashEncoding` are const objects, so passing `'sha256'` works as well as `HashAlgorithm.SHA256`.
@@ -24,16 +24,14 @@ generateHmac(HashAlgorithm.SHA512, 'value', pepper, HashEncoding.BASE64)
 MD5 checksums, as hex, for detecting changed content. Don't use them for anything security related.
 
 ```ts
-import {
-  generateChecksumForBufferOrString,
-  generateChecksumForObject,
-  generateChecksumForReadable,
-} from '@lokalise/crypto'
+import { calculateChecksum, calculateStreamChecksum } from '@lokalise/crypto'
 
-generateChecksumForBufferOrString('value')
-generateChecksumForObject({ id: 1 }) // checksum of JSON.stringify, so key order matters
-await generateChecksumForReadable(stream) // reads the stream to the end
+calculateChecksum('value') // plain MD5 of the string's bytes, same as calculateChecksum(Buffer.from('value'))
+calculateChecksum({ id: 1, tags: new Set(['a']) }) // key and insertion order don't matter
+await calculateStreamChecksum(stream) // reads the stream to the end
 ```
+
+`calculateChecksum` accepts any value. Strings and binary values are hashed as their raw bytes. Everything else is serialized with [ohash](https://github.com/unjs/ohash) first, so objects, `Map`s and `Set`s are hashed by content regardless of order. A string that equals another value's serialization shares its checksum, e.g. `'1'` and `1`.
 
 ## Encryption
 
