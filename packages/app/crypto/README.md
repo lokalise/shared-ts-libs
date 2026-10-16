@@ -47,10 +47,10 @@ encryption.decrypt(encrypted) // 'value'
 
 Options, which must match between `encrypt` and `decrypt`:
 
-| Option | Default | Notes |
-| --- | --- | --- |
-| `saltLength` | `64` | Salt bytes per value |
+| Option             | Default  | Notes                                              |
+|--------------------|----------|----------------------------------------------------|
+| `saltLength`       | `64`     | Salt bytes per value                               |
 | `pbkdf2Iterations` | `100000` | Lowering it makes key derivation faster and weaker |
-| `encoding` | `'hex'` | Encoding of the encrypted string |
+| `encoding`         | `'hex'`  | Encoding of the encrypted string                   |
 
 `decrypt` throws if the value was encrypted with another secret or options, or was modified.
