@@ -1,8 +1,9 @@
-import { createHash, createHmac } from 'node:crypto'
+import { createHmac, hash } from 'node:crypto'
 
 export const HashEncoding = {
   HEX: 'hex',
   BASE64: 'base64',
+  BASE64URL: 'base64url',
 } as const
 export type HashEncoding = (typeof HashEncoding)[keyof typeof HashEncoding]
 
@@ -16,20 +17,20 @@ export type HashAlgorithm = (typeof HashAlgorithm)[keyof typeof HashAlgorithm]
  * Hashes a UTF-8 string.
  *
  * @example
- * generateHash(HashAlgorithm.SHA256, 'abc') // 'ba7816bf…'
+ * calculateHash(HashAlgorithm.SHA256, 'abc') // 'ba7816bf…'
  */
-export function generateHash(
+export function calculateHash(
   algorithm: HashAlgorithm,
   data: string,
   encoding: HashEncoding = HashEncoding.HEX,
 ): string {
-  return createHash(algorithm).update(data).digest(encoding)
+  return hash(algorithm, data, encoding)
 }
 
 /**
  * Computes an HMAC of a UTF-8 string, keyed with `pepper`.
  */
-export function generateHmac(
+export function calculateHmac(
   algorithm: HashAlgorithm,
   data: string,
   pepper: Buffer,

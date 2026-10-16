@@ -4,6 +4,6 @@
 
 Initial release of `@lokalise/crypto`, with hashing, checksum and encryption helpers built on `node:crypto`:
 
-- `generateHash` and `generateHmac`, with `HashAlgorithm` and `HashEncoding`
-- `generateChecksumForBufferOrString`, `generateChecksumForObject` and `generateChecksumForReadable`, using MD5
+- `calculateHash` and `calculateHmac`, with `HashAlgorithm` and `HashEncoding`
+- `calculateChecksum` for any value (raw bytes for strings and buffers, order-independent serialization via ohash for everything else) and `calculateStreamChecksum`, using MD5
 - `EncryptionUtility`, AES-256-GCM with a PBKDF2-derived key

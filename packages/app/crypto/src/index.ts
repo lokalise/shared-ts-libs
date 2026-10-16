@@ -1,7 +1,3 @@
-export {
-  generateChecksumForBufferOrString,
-  generateChecksumForObject,
-  generateChecksumForReadable,
-} from './checksumUtils.ts'
+export { calculateChecksum, calculateStreamChecksum } from './checksum.ts'
 export { EncryptionUtility, type EncryptionUtilityOptions } from './encryptionUtility.ts'
-export { generateHash, generateHmac, HashAlgorithm, HashEncoding } from './hashUtils.ts'
+export { calculateHash, calculateHmac, HashAlgorithm, HashEncoding } from './hash.ts'
