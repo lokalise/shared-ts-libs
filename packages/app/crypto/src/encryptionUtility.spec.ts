@@ -71,4 +71,19 @@ describe('EncryptionUtility', () => {
 
     expect(() => new EncryptionUtility(secret).decrypt(bytes.toString('hex'))).toThrow()
   })
+
+  it('throws for a value shorter than salt, IV and tag', () => {
+    // Salt, IV and the first 4 tag bytes; GCM would otherwise verify the 4-byte tag
+    const truncated = Buffer.from(storedDefault, 'hex').subarray(0, 64 + 16 + 4)
+
+    expect(() => new EncryptionUtility(secret).decrypt(truncated.toString('hex'))).toThrow(
+      'Encrypted value is too short: expected at least 96 bytes, got 84',
+    )
+  })
+
+  it('decrypts an empty string', () => {
+    const encryption = new EncryptionUtility(secret)
+
+    expect(encryption.decrypt(encryption.encrypt(''))).toBe('')
+  })
 })

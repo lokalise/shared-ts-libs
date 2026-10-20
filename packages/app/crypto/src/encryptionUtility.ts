@@ -53,24 +53,31 @@ export class EncryptionUtility {
     const iv = randomBytes(ivLength)
     const salt = randomBytes(this.saltLength)
 
-    const cipher = createCipheriv(algorithm, this.getKey(salt), iv)
+    const cipher = createCipheriv(algorithm, this.getKey(salt), iv, { authTagLength: tagLength })
     const encrypted = Buffer.concat([cipher.update(String(value), 'utf8'), cipher.final()])
 
     return Buffer.concat([salt, iv, cipher.getAuthTag(), encrypted]).toString(this.encoding)
   }
 
   /**
-   * Throws if the value was encrypted with another secret or options, or was modified.
+   * Throws if the value was encrypted with another secret or options, or was modified or truncated.
    */
   public decrypt(value: string): string {
     const stringValue = Buffer.from(String(value), this.encoding)
+    if (stringValue.length < this.encryptedPosition) {
+      throw new Error(
+        `Encrypted value is too short: expected at least ${this.encryptedPosition} bytes, got ${stringValue.length}`,
+      )
+    }
 
     const salt = stringValue.subarray(0, this.saltLength)
     const iv = stringValue.subarray(this.saltLength, this.tagPosition)
     const tag = stringValue.subarray(this.tagPosition, this.encryptedPosition)
     const encrypted = stringValue.subarray(this.encryptedPosition)
 
-    const decipher = createDecipheriv(algorithm, this.getKey(salt), iv)
+    const decipher = createDecipheriv(algorithm, this.getKey(salt), iv, {
+      authTagLength: tagLength,
+    })
     decipher.setAuthTag(tag)
 
     return Buffer.concat([
