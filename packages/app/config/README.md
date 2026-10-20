@@ -17,7 +17,6 @@ The parsed value is an `AppConfig`.
 | `GIT_COMMIT_SHA`               | yes      |           |                                                                |
 | `APP_BIND_ADDRESS`             | no       | `0.0.0.0` |                                                                |
 | `APP_PORT`                     | no       | `3000`    | 1-65535                                                        |
-| `JWT_PUBLIC_KEY`               | yes      |           | RSA, at least 2048 bits. `\|\|` stands for a newline           |
 | `LOG_LEVEL`                    | no       | `info`    | `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
 | `BASE_URL`                     | no       | empty     |                                                                |
 | `METRICS_ENABLED`              | no       | `true`    |                                                                |
