@@ -1,33 +1,25 @@
 {
-    "$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
-    "javascript": {
-        "formatter": {
-            "enabled": true,
-            "indentStyle": "tab",
-            "semicolons": "asNeeded",
-            "lineWidth": 100,
-            "quoteStyle": "single",
-            "trailingCommas": "all"
-        }
+  "$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    "includes": ["**/*.css"]
+  },
+  "css": {
+    "parser": {
+      "cssModules": true
     },
-    "files": {
-        "includes": ["**/*.css"]
-    },
-    "css": {
-        "parser": {
-            "cssModules": true
-        },
-        "formatter": {
-            "enabled": true,
-            "indentStyle": "tab",
-            "quoteStyle": "single"
-        }
-    },
-    "linter": {
-        "rules": {
-            "correctness": {
-                "useHookAtTopLevel": "error"
-            }
-        }
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineWidth": 100,
+      "quoteStyle": "single"
     }
+  },
+  "linter": {
+    "rules": {
+      "correctness": {
+        "useHookAtTopLevel": "error"
+      }
+    }
+  }
 }
