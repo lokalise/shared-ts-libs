@@ -46,6 +46,15 @@ describe('calculateChecksum', () => {
     expect(calculateChecksum(new TextEncoder().encode('abc'))).toBe(md5OfAbc)
   })
 
+  it('hashes ArrayBuffers as their raw bytes', () => {
+    const md5OfAbc = '900150983cd24fb0d6963f7d28e17f72'
+    const shared = new SharedArrayBuffer(3)
+    new Uint8Array(shared).set(new TextEncoder().encode('abc'))
+
+    expect(calculateChecksum(new TextEncoder().encode('abc').buffer)).toBe(md5OfAbc)
+    expect(calculateChecksum(shared)).toBe(md5OfAbc)
+  })
+
   it('ignores object key order', () => {
     expect(calculateChecksum({ a: 1, b: { c: 2, d: 3 } })).toBe(
       calculateChecksum({ b: { d: 3, c: 2 }, a: 1 }),

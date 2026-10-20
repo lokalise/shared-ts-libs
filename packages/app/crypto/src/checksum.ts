@@ -1,6 +1,6 @@
 import { createHash, hash } from 'node:crypto'
 import type { Readable } from 'node:stream'
-import { isArrayBufferView } from 'node:util/types'
+import { isAnyArrayBuffer, isArrayBufferView } from 'node:util/types'
 import { serialize } from 'ohash'
 
 // MD5 is fine for detecting changed content. Don't use these checksums for anything security-related.
@@ -12,10 +12,14 @@ const HASH_ALGORITHM = 'md5'
  * For detecting changed content only. MD5 collisions can be crafted, so don't use this for anything
  * security-related; use `calculateHash` or `calculateHmac` instead.
  *
- * Strings and binary views are hashed as their raw bytes, so `calculateChecksum('abc')` is the plain MD5 of `abc`.
+ * Strings, binary views and `ArrayBuffer`s are hashed as their raw bytes, so `calculateChecksum('abc')` is the plain
+ * MD5 of `abc`. An `ArrayBuffer` is hashed in full, so a view covering only part of its buffer, such as a small pooled
+ * `Buffer`, has a different checksum than its `.buffer`.
  * Every other value is serialized by ohash, which hashes objects, `Map`s and `Set`s regardless of order. A string
  * that equals another value's serialization shares its checksum, so `calculateChecksum('1')` matches
  * `calculateChecksum(1)`.
+ *
+ * Runs synchronously and blocks the event loop, so avoid checksumming large objects.
  *
  * Don't pass a stream: it would be serialized by its internal fields, not its content, so streams with different
  * content would share a checksum. Use `calculateStreamChecksum`, which reads the stream to the end.
@@ -23,6 +27,9 @@ const HASH_ALGORITHM = 'md5'
 export function calculateChecksum(value: unknown): string {
   if (typeof value === 'string' || isArrayBufferView(value)) {
     return hash(HASH_ALGORITHM, value)
+  }
+  if (isAnyArrayBuffer(value)) {
+    return hash(HASH_ALGORITHM, new Uint8Array(value))
   }
 
   return hash(HASH_ALGORITHM, serialize(value))

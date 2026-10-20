@@ -31,7 +31,7 @@ calculateChecksum({ id: 1, tags: new Set(['a']) }) // key and insertion order do
 await calculateStreamChecksum(stream) // reads the stream to the end
 ```
 
-`calculateChecksum` accepts any value. Strings and binary values are hashed as their raw bytes. Everything else is serialized with [ohash](https://github.com/unjs/ohash) first, so objects, `Map`s and `Set`s are hashed by content regardless of order. A string that equals another value's serialization shares its checksum, e.g. `'1'` and `1`.
+`calculateChecksum` accepts any value. Strings, binary views and `ArrayBuffer`s are hashed as their raw bytes. Everything else is serialized with [ohash](https://github.com/unjs/ohash) first, so objects, `Map`s and `Set`s are hashed by content regardless of order. A string that equals another value's serialization shares its checksum, e.g. `'1'` and `1`. `calculateChecksum` runs synchronously and blocks the event loop, so avoid checksumming large objects.
 
 ## Encryption
 
