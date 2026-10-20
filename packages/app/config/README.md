@@ -3,7 +3,8 @@
 Shared [envase](https://www.npmjs.com/package/envase) config schemas for Lokalise services, so services stop
 redefining the same env vars. Each function returns a schema to put into envase's `createConfig()`.
 
-`envase` (2.x) and `zod` (4.x) are peer dependencies. The types of the parsed values are inferred from the schemas.
+`envase` (2.x) and `zod` (4.2 or later) are peer dependencies. The types of the parsed values are inferred from the
+schemas.
 
 ## `createAppConfigSchema()`
 
