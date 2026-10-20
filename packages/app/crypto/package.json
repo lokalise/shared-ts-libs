@@ -1,6 +1,9 @@
 {
     "name": "@lokalise/crypto",
     "version": "0.0.0",
+    "engines": {
+        "node": ">=24.13.1"
+    },
     "type": "module",
     "description": "Hashing, checksum and encryption helpers for Lokalise services",
     "license": "Apache-2.0",
