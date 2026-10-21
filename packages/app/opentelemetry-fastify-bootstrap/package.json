@@ -43,7 +43,7 @@
     "postversion": "biome check --write package.json"
   },
   "dependencies": {
-    "@fastify/otel": "0.21.0",
+    "@fastify/otel": "0.21.2",
     "@opentelemetry/auto-instrumentations-node": "0.81.0",
     "@opentelemetry/exporter-trace-otlp-grpc": "0.223.0",
     "@opentelemetry/sdk-node": "0.223.0",
