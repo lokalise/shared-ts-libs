@@ -183,8 +183,8 @@ importers:
         version: link:../universal-ts-utils
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -213,8 +213,8 @@ importers:
   packages/app/api-contracts:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -256,8 +256,8 @@ importers:
         version: 10.4.0
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -307,8 +307,8 @@ importers:
         specifier: ^3.1151.0
         version: 3.1151.0
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -368,8 +368,8 @@ importers:
         version: 8.12.1
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/api-contracts':
         specifier: workspace:^
         version: link:../api-contracts
@@ -417,8 +417,8 @@ importers:
         version: 8.0.0
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -459,8 +459,8 @@ importers:
   packages/app/config:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -520,8 +520,8 @@ importers:
         version: 6.0.1
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@fastify/request-context':
         specifier: ^7.0.2
         version: 7.0.2
@@ -566,8 +566,8 @@ importers:
         version: 2.0.12
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -593,8 +593,8 @@ importers:
   packages/app/datadog-fastify-bootstrap:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -617,8 +617,8 @@ importers:
   packages/app/drizzle-utils:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -669,8 +669,8 @@ importers:
         version: 7.1.0
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -696,8 +696,8 @@ importers:
   packages/app/errors:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -739,8 +739,8 @@ importers:
         version: 1.1.0
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@fastify/sse':
         specifier: ^0.6.1
         version: 0.6.1(fastify@5.12.7)
@@ -797,8 +797,8 @@ importers:
         version: link:../../dev/tsconfig
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@fastify/awilix':
         specifier: ^8.3.0
         version: 8.3.0(awilix@13.0.5)(fastify@5.12.7)
@@ -885,8 +885,8 @@ importers:
         version: 2.11.1
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/api-contracts':
         specifier: workspace:^
         version: link:../api-contracts
@@ -937,8 +937,8 @@ importers:
         version: 3.7.4
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/background-jobs-common':
         specifier: workspace:^
         version: link:../background-jobs-common
@@ -983,8 +983,8 @@ importers:
         version: 1.2.1
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1007,8 +1007,8 @@ importers:
   packages/app/load-testing-utils:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1041,8 +1041,8 @@ importers:
         version: 0.16.1
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1068,8 +1068,8 @@ importers:
   packages/app/non-translatable-markup:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1099,8 +1099,8 @@ importers:
         specifier: ^4.3.15
         version: 4.3.15
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1139,8 +1139,8 @@ importers:
         version: 2.12.0(@opentelemetry/api@1.9.1)
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1169,8 +1169,8 @@ importers:
   packages/app/polling:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1203,8 +1203,8 @@ importers:
         version: 0.16.1
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1249,8 +1249,8 @@ importers:
         version: 6.0.1
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1295,8 +1295,8 @@ importers:
         version: 14.11.0(zod@4.6.5)
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1319,8 +1319,8 @@ importers:
   packages/app/supported-languages:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1350,8 +1350,8 @@ importers:
         version: 1.2.0
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1378,8 +1378,8 @@ importers:
         version: link:../non-translatable-markup
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1402,8 +1402,8 @@ importers:
   packages/app/universal-testing-utils:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/api-contracts':
         specifier: workspace:^
         version: link:../api-contracts
@@ -1447,8 +1447,8 @@ importers:
   packages/app/universal-ts-utils:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1475,8 +1475,8 @@ importers:
         version: 4.8.4(supports-color@8.1.1)
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1499,8 +1499,8 @@ importers:
   packages/app/zod-extras:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -1529,8 +1529,8 @@ importers:
   packages/dev/biome-config:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
 
   packages/dev/eslint-config:
     dependencies:
@@ -1564,8 +1564,8 @@ importers:
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.0))
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../biome-config
@@ -1587,8 +1587,8 @@ importers:
   packages/dev/tsconfig:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.12
-        version: 2.5.12
+        specifier: ^2.5.15
+        version: 2.5.15
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../biome-config
@@ -1713,59 +1713,59 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@biomejs/biome@2.5.12':
-    resolution: {integrity: sha512-Lw4VHZRebrReBBnlHa12JQjnIBm3JJAA55PDB9LbBVBF0q4RYphm6KfmIjqtPhf61MxZ5Q9KoK8R8x+7per5Aw==}
+  '@biomejs/biome@2.5.15':
+    resolution: {integrity: sha512-WZTW4slm/pdkh92K6t/3aEN++44JD1PQ7squ7RCMLI1flHGl43DVOIGXvCjHiZgBMO1V4uYxoFNtqrIA4qGuIQ==}
     engines: {node: '>=14.21.3'}
     hasBin: true
 
-  '@biomejs/cli-darwin-arm64@2.5.12':
-    resolution: {integrity: sha512-lCRY1rwgNeWNgTr4DI/u6ZwXTRwRLHAvbaio1YLLGS+4r1nhvB2ssyPqIpfUSmRveNfv0fn/N58C7CAdK2XVrg==}
+  '@biomejs/cli-darwin-arm64@2.5.15':
+    resolution: {integrity: sha512-BZVzFhJ/mUvTLMYbc9x6el0o2Uv5zP7bACYyhFb6fSc1giroXm7PL0a5KqMJ9F+/BnkYRjagD/ROSDVOZ6eapg==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [darwin]
 
-  '@biomejs/cli-darwin-x64@2.5.12':
-    resolution: {integrity: sha512-vhPgwnh+6tN3ArdAXuET99xaNbFt7CG82Bqn+omHVLC5xdVx45JsYjGPmUIGNzjDek5XdNCP1HKksK7fn8+3bQ==}
+  '@biomejs/cli-darwin-x64@2.5.15':
+    resolution: {integrity: sha512-V5Kw63V+fVGNFhFrizDxMbGXAzZCh8kYzJpy3GI6gTapWDg7bZK9oYC9CbVgQSEdTnupz0U5Efz8Ev+5vdBBXw==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [darwin]
 
-  '@biomejs/cli-linux-arm64-musl@2.5.12':
-    resolution: {integrity: sha512-couHYjFLL5uuI8ne6zhT7KwEsXo5YP7ry/2xmEqah7qanu0YmfDi3mwJg47YXSuv/NpZj22CZzcRH/5c4gjPSQ==}
+  '@biomejs/cli-linux-arm64-musl@2.5.15':
+    resolution: {integrity: sha512-tGzZUTcJCV7tj5Adh/Gn6nR4MycqA3iohq2LEcrarAgRBkU0h0OKd2UzCRkOsOYOuUGaUJb4YmqRqyy2feGGSw==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  '@biomejs/cli-linux-arm64@2.5.12':
-    resolution: {integrity: sha512-2gp8aVwXYKdAtmBfRFCUuyDMcfN1ahHqUkGfLYrZlNRFmryMATLVvJgWKvyA8wu4Rwn5OSxM1UcUmOuOFNGeBQ==}
+  '@biomejs/cli-linux-arm64@2.5.15':
+    resolution: {integrity: sha512-XaG7P7eeSLYETD3K9grfB0mQmpLQZjygdbsxekWBJAg4am79fGAtRpfRyNnTvXB2fZFNnJZG3nXm7HBat0+VUw==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@biomejs/cli-linux-x64-musl@2.5.12':
-    resolution: {integrity: sha512-8A0oDW58/w9f/PQNYuq0sGUZtGtGrkNF4Z6n0PUoXpLCshi85vtKTv1XSznQawhdE4MXJ8ufpzHXyLFe87M/+w==}
+  '@biomejs/cli-linux-x64-musl@2.5.15':
+    resolution: {integrity: sha512-IlxUcyxilVGPsE008x13pWdkTbU3nQpP2i9b5UrbOYj6goBkKsRX1XB7yJLcV+O1H9LBchIIm4adOaVLZBX0ZQ==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@biomejs/cli-linux-x64@2.5.12':
-    resolution: {integrity: sha512-SnvOs3TSTiuia4SQOUNe1aWC9RT4+YkjcKnOhL/nsKOV0k5ycgBkDzF0lUxKn1V7Q8CLTRq6iV23ZAivHomRoA==}
+  '@biomejs/cli-linux-x64@2.5.15':
+    resolution: {integrity: sha512-xE4iEW/3LqlYj9GFgGrFsFSH51dEEpUbYWBfeOv0q87WkUDxK2o/HhreSb7qMJqck70RVM6Lg96hgedcAYcOkA==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@biomejs/cli-win32-arm64@2.5.12':
-    resolution: {integrity: sha512-b9vtoZFsuZt1pdjNwJvXl0f+BpayRzV008uS2+JpmwIKdSE2qdu4A/l04FESwLoou5g2E/Qlec0xwJydZplH+A==}
+  '@biomejs/cli-win32-arm64@2.5.15':
+    resolution: {integrity: sha512-2kPKzhNlm8C+Ru3GcO0Me2ODkCBLrVOUNuyi84RJyWDVKAA4+Kjj3jMjL938lF6BRfvltC4vB2nPY9SvN51Ovg==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [win32]
 
-  '@biomejs/cli-win32-x64@2.5.12':
-    resolution: {integrity: sha512-B1R/l+CwEpKFSuqiwePzPNRk1EiJN8kc0UhdafNz6MZN9v5OFP9HYP1irptvWzHrwVI4blVNGMbxc5zt70m3IA==}
+  '@biomejs/cli-win32-x64@2.5.15':
+    resolution: {integrity: sha512-yAzh4UqEImV6Hcy0zjUqNfJAsUhoD64FBQCdTG8Md/Z2wQeVP/ZmJ3XRYAs1g8J9fjTFyl2fCtc5FB5til47+g==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [win32]
@@ -7962,39 +7962,39 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@biomejs/biome@2.5.12':
+  '@biomejs/biome@2.5.15':
     optionalDependencies:
-      '@biomejs/cli-darwin-arm64': 2.5.12
-      '@biomejs/cli-darwin-x64': 2.5.12
-      '@biomejs/cli-linux-arm64': 2.5.12
-      '@biomejs/cli-linux-arm64-musl': 2.5.12
-      '@biomejs/cli-linux-x64': 2.5.12
-      '@biomejs/cli-linux-x64-musl': 2.5.12
-      '@biomejs/cli-win32-arm64': 2.5.12
-      '@biomejs/cli-win32-x64': 2.5.12
+      '@biomejs/cli-darwin-arm64': 2.5.15
+      '@biomejs/cli-darwin-x64': 2.5.15
+      '@biomejs/cli-linux-arm64': 2.5.15
+      '@biomejs/cli-linux-arm64-musl': 2.5.15
+      '@biomejs/cli-linux-x64': 2.5.15
+      '@biomejs/cli-linux-x64-musl': 2.5.15
+      '@biomejs/cli-win32-arm64': 2.5.15
+      '@biomejs/cli-win32-x64': 2.5.15
 
-  '@biomejs/cli-darwin-arm64@2.5.12':
+  '@biomejs/cli-darwin-arm64@2.5.15':
     optional: true
 
-  '@biomejs/cli-darwin-x64@2.5.12':
+  '@biomejs/cli-darwin-x64@2.5.15':
     optional: true
 
-  '@biomejs/cli-linux-arm64-musl@2.5.12':
+  '@biomejs/cli-linux-arm64-musl@2.5.15':
     optional: true
 
-  '@biomejs/cli-linux-arm64@2.5.12':
+  '@biomejs/cli-linux-arm64@2.5.15':
     optional: true
 
-  '@biomejs/cli-linux-x64-musl@2.5.12':
+  '@biomejs/cli-linux-x64-musl@2.5.15':
     optional: true
 
-  '@biomejs/cli-linux-x64@2.5.12':
+  '@biomejs/cli-linux-x64@2.5.15':
     optional: true
 
-  '@biomejs/cli-win32-arm64@2.5.12':
+  '@biomejs/cli-win32-arm64@2.5.15':
     optional: true
 
-  '@biomejs/cli-win32-x64@2.5.12':
+  '@biomejs/cli-win32-x64@2.5.15':
     optional: true
 
   '@bugsnag/browser@8.10.0':
