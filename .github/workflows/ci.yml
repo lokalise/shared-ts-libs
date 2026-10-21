@@ -37,6 +37,7 @@ jobs:
             ["packages/app/background-jobs-common"]="@lokalise/background-jobs-common"
             ["packages/app/config"]="@lokalise/config"
             ["packages/app/context-fastify-plugins"]="@lokalise/context-fastify-plugins"
+            ["packages/app/crypto"]="@lokalise/crypto"
             ["packages/app/datadog-fastify-bootstrap"]="@lokalise/datadog-fastify-bootstrap"
             ["packages/app/drizzle-utils"]="@lokalise/drizzle-utils"
             ["packages/app/error-utils"]="@lokalise/error-utils"
