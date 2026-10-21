@@ -410,8 +410,8 @@ importers:
         specifier: ^14.11.0
         version: 14.11.0(zod@4.6.5)
       redis-semaphore:
-        specifier: ^5.8.0
-        version: 5.8.0(ioredis@6.0.0(supports-color@8.1.1))(supports-color@8.1.1)
+        specifier: ^6.0.0
+        version: 6.0.0(ioredis@6.0.0(supports-color@8.1.1))(supports-color@8.1.1)
       ts-deepmerge:
         specifier: ^8.0.0
         version: 8.0.0
@@ -930,8 +930,8 @@ importers:
         specifier: ^3.2.0
         version: 3.3.0
       redis-semaphore:
-        specifier: ^5.8.0
-        version: 5.8.0(ioredis@6.0.0(supports-color@8.1.1))(supports-color@8.1.1)
+        specifier: ^6.0.0
+        version: 6.0.0(ioredis@6.0.0(supports-color@8.1.1))(supports-color@8.1.1)
       toad-cache:
         specifier: ^3.7.1
         version: 3.7.4
@@ -6854,6 +6854,15 @@ packages:
   redis-semaphore@5.8.0:
     resolution: {integrity: sha512-I8Y6MexOHOOO1iHQfAgRELH5RExgRX6igevq0qLtLqKHLhycXwoJCaYZE1unLx4fTJXBACkcDkfNoLCsSB9pqg==}
     engines: {node: '>= 14.17.0'}
+    peerDependencies:
+      ioredis: ^6.0.0
+    peerDependenciesMeta:
+      ioredis:
+        optional: true
+
+  redis-semaphore@6.0.0:
+    resolution: {integrity: sha512-Ko1uzsjGWKkj8tlIGAGeJ5+DcOsTNh2PfXJj11PsB13Hb+5P9r3I3YAfC8qQMHJK4Z4b9AopXV6utKo5z/uzQw==}
+    engines: {node: '>=22.12.0'}
     peerDependencies:
       ioredis: ^6.0.0
     peerDependenciesMeta:
@@ -13732,6 +13741,14 @@ snapshots:
       lodash: 4.18.1
 
   redis-semaphore@5.8.0(ioredis@6.0.0(supports-color@8.1.1))(supports-color@8.1.1):
+    dependencies:
+      debug: 4.4.3(supports-color@8.1.1)
+    optionalDependencies:
+      ioredis: 6.0.0(supports-color@8.1.1)
+    transitivePeerDependencies:
+      - supports-color
+
+  redis-semaphore@6.0.0(ioredis@6.0.0(supports-color@8.1.1))(supports-color@8.1.1):
     dependencies:
       debug: 4.4.3(supports-color@8.1.1)
     optionalDependencies:
