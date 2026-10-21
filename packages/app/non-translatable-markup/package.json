@@ -1,43 +1,43 @@
 {
-    "name": "@lokalise/non-translatable-markup",
-    "version": "3.4.0",
-    "files": [
-        "dist"
-    ],
-    "license": "Apache-2.0",
-    "type": "module",
-    "main": "./dist/index.js",
-    "homepage": "https://github.com/lokalise/shared-ts-libs",
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/lokalise/shared-ts-libs.git",
-        "directory": "packages/app/non-translatable-markup"
-    },
-    "exports": {
-        ".": "./dist/index.js",
-        "./package.json": "./package.json"
-    },
-    "publishConfig": {
-        "access": "public"
-    },
-    "scripts": {
-        "build": "rimraf dist && tsc --project tsconfig.build.json",
-        "clean": "rimraf dist",
-        "lint": "biome check . && tsc",
-        "lint:fix": "biome check --write",
-        "test": "vitest run",
-        "test:ci": "vitest run --coverage",
-        "prepublishOnly": "pnpm run build",
-        "package-version": "echo $npm_package_version",
-        "postversion": "biome check --write package.json"
-    },
-    "devDependencies": {
-        "@biomejs/biome": "^2.5.12",
-        "@lokalise/biome-config": "workspace:^",
-        "@lokalise/tsconfig": "workspace:^",
-        "@vitest/coverage-v8": "^4.1.11",
-        "rimraf": "^6.1.3",
-        "typescript": "7.0.2",
-        "vitest": "^4.1.11"
-    }
+  "name": "@lokalise/non-translatable-markup",
+  "version": "3.4.0",
+  "files": [
+    "dist"
+  ],
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "homepage": "https://github.com/lokalise/shared-ts-libs",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/lokalise/shared-ts-libs.git",
+    "directory": "packages/app/non-translatable-markup"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "rimraf dist && tsc --project tsconfig.build.json",
+    "clean": "rimraf dist",
+    "lint": "biome check . && tsc",
+    "lint:fix": "biome check --write",
+    "test": "vitest run",
+    "test:ci": "vitest run --coverage",
+    "prepublishOnly": "pnpm run build",
+    "package-version": "echo $npm_package_version",
+    "postversion": "biome check --write package.json"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.12",
+    "@lokalise/biome-config": "workspace:^",
+    "@lokalise/tsconfig": "workspace:^",
+    "@vitest/coverage-v8": "^4.1.11",
+    "rimraf": "^6.1.3",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.11"
+  }
 }

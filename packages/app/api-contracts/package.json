@@ -1,59 +1,59 @@
 {
-    "name": "@lokalise/api-contracts",
-    "version": "9.0.1",
-    "files": [
-        "dist"
-    ],
-    "license": "Apache-2.0",
-    "type": "module",
-    "main": "./dist/index.js",
-    "enableTransparentWorkspaces": "false",
-    "homepage": "https://github.com/lokalise/shared-ts-libs",
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/lokalise/shared-ts-libs.git",
-        "directory": "packages/app/api-contracts"
-    },
-    "exports": {
-        ".": "./dist/index.js",
-        "./package.json": "./package.json"
-    },
-    "private": false,
-    "publishConfig": {
-        "access": "public"
-    },
-    "keywords": [
-        "api",
-        "contracts",
-        "contract",
-        "frontend",
-        "backend",
-        "single",
-        "source",
-        "truth"
-    ],
-    "scripts": {
-        "build": "rimraf dist && tsc --project tsconfig.build.json",
-        "lint": "biome check . && tsc",
-        "lint:fix": "biome check --write",
-        "test": "vitest run",
-        "test:ci": "vitest run --coverage",
-        "prepublishOnly": "pnpm run build",
-        "package-version": "echo $npm_package_version",
-        "postversion": "biome check --write package.json"
-    },
-    "peerDependencies": {
-        "zod": ">=3.25.56"
-    },
-    "devDependencies": {
-        "@biomejs/biome": "^2.5.12",
-        "@lokalise/biome-config": "workspace:^",
-        "@lokalise/tsconfig": "workspace:^",
-        "@types/node": "^26.6.4",
-        "@vitest/coverage-v8": "^4.1.11",
-        "rimraf": "^6.1.3",
-        "typescript": "7.0.2",
-        "vitest": "^4.1.11",
-        "zod": "^4.6.5"
-    }
+  "name": "@lokalise/api-contracts",
+  "version": "9.0.1",
+  "files": [
+    "dist"
+  ],
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "enableTransparentWorkspaces": "false",
+  "homepage": "https://github.com/lokalise/shared-ts-libs",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/lokalise/shared-ts-libs.git",
+    "directory": "packages/app/api-contracts"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "api",
+    "contracts",
+    "contract",
+    "frontend",
+    "backend",
+    "single",
+    "source",
+    "truth"
+  ],
+  "scripts": {
+    "build": "rimraf dist && tsc --project tsconfig.build.json",
+    "lint": "biome check . && tsc",
+    "lint:fix": "biome check --write",
+    "test": "vitest run",
+    "test:ci": "vitest run --coverage",
+    "prepublishOnly": "pnpm run build",
+    "package-version": "echo $npm_package_version",
+    "postversion": "biome check --write package.json"
+  },
+  "peerDependencies": {
+    "zod": ">=3.25.56"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.12",
+    "@lokalise/biome-config": "workspace:^",
+    "@lokalise/tsconfig": "workspace:^",
+    "@types/node": "^26.6.4",
+    "@vitest/coverage-v8": "^4.1.11",
+    "rimraf": "^6.1.3",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.11",
+    "zod": "^4.6.5"
+  }
 }

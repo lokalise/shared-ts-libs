@@ -1,50 +1,50 @@
 {
-    "name": "@lokalise/universal-ts-utils",
-    "version": "4.12.0",
-    "author": {
-        "name": "Lokalise",
-        "url": "https://lokalise.com/"
-    },
-    "homepage": "https://github.com/lokalise/shared-ts-libs",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/lokalise/shared-ts-libs.git",
-        "directory": "packages/app/universal-ts-utils"
-    },
-    "license": "Apache-2.0",
-    "files": [
-        "dist/**",
-        "LICENSE.md",
-        "README.md"
-    ],
-    "type": "module",
-    "private": false,
-    "publishConfig": {
-        "access": "public"
-    },
-    "scripts": {
-        "build": "tsc --project tsconfig.build.json",
-        "lint": "biome check . && tsc",
-        "lint:fix": "biome check --write",
-        "test": "vitest",
-        "test:ci": "vitest --coverage",
-        "test:update-snapshots": "vitest -u",
-        "prepublishOnly": "pnpm run build",
-        "postversion": "biome check --write package.json",
-        "package-version": "echo $npm_package_version"
-    },
-    "devDependencies": {
-        "@biomejs/biome": "^2.5.12",
-        "@lokalise/biome-config": "workspace:^",
-        "@lokalise/tsconfig": "workspace:^",
-        "@types/node": "^26.6.4",
-        "@vitest/coverage-v8": "^4.1.11",
-        "typescript": "7.0.2",
-        "vitest": "^4.1.11"
-    },
-    "exports": {
-        "./node": "./dist/node.js",
-        "./*": "./dist/public/*.js",
-        "./package.json": "./package.json"
-    }
+  "name": "@lokalise/universal-ts-utils",
+  "version": "4.12.0",
+  "author": {
+    "name": "Lokalise",
+    "url": "https://lokalise.com/"
+  },
+  "homepage": "https://github.com/lokalise/shared-ts-libs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lokalise/shared-ts-libs.git",
+    "directory": "packages/app/universal-ts-utils"
+  },
+  "license": "Apache-2.0",
+  "files": [
+    "dist/**",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "type": "module",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "lint": "biome check . && tsc",
+    "lint:fix": "biome check --write",
+    "test": "vitest",
+    "test:ci": "vitest --coverage",
+    "test:update-snapshots": "vitest -u",
+    "prepublishOnly": "pnpm run build",
+    "postversion": "biome check --write package.json",
+    "package-version": "echo $npm_package_version"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.12",
+    "@lokalise/biome-config": "workspace:^",
+    "@lokalise/tsconfig": "workspace:^",
+    "@types/node": "^26.6.4",
+    "@vitest/coverage-v8": "^4.1.11",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.11"
+  },
+  "exports": {
+    "./node": "./dist/node.js",
+    "./*": "./dist/public/*.js",
+    "./package.json": "./package.json"
+  }
 }

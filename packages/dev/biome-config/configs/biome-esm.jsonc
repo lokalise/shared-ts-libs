@@ -1,13 +1,13 @@
 {
-    "$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
-    "linter": {
-        "rules": {
-            "correctness": {
-                "useImportExtensions": {
-                    "level": "error",
-                    "fix": "safe"
-                }
-            }
+  "$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
+  "linter": {
+    "rules": {
+      "correctness": {
+        "useImportExtensions": {
+          "level": "error",
+          "fix": "safe"
         }
+      }
     }
+  }
 }
