@@ -43,7 +43,7 @@
     "postversion": "biome check --write package.json"
   },
   "dependencies": {
-    "light-my-request": "^6.6.0",
+    "light-my-request": "^6.8.0",
     "negotiator": "^1.1.0"
   },
   "peerDependencies": {
