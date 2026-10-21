@@ -787,8 +787,8 @@ importers:
         specifier: ^9.10.4
         version: 9.10.4(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(typescript@7.0.2)
       '@fastify/auth':
-        specifier: ^5.1.1
-        version: 5.1.1
+        specifier: ^5.1.2
+        version: 5.1.2
       '@fastify/basic-auth':
         specifier: ^6.3.0
         version: 6.3.0
@@ -2136,8 +2136,8 @@ packages:
   '@fastify/ajv-compiler@4.0.6':
     resolution: {integrity: sha512-NtuzM0SfaMJbGlnjr9LWQUN5LzgSrbB8tf/wRZNas+4E1O/Nmzl53e7ruT61HDZyRCJGC6FxIogmNZO1c5ETBA==}
 
-  '@fastify/auth@5.1.1':
-    resolution: {integrity: sha512-+6Uq4ODC5xoevkECTL3gDeZDV2yA5O4QG03ISU8VlYJtQ0xWNIAJcLigS5ttTuNn1wzrasPGnLf4tcVkWMPZbg==}
+  '@fastify/auth@5.1.2':
+    resolution: {integrity: sha512-5K73YUDIuA2c/m3NJGRoiC7XTyfnpDHMHlUgaA73OFDPZwqxScxEpSlk0bom2XNJ4sbpNt+0fIdEAk8UQFUIzA==}
 
   '@fastify/awilix@8.3.0':
     resolution: {integrity: sha512-l+BFo79Vd08nx/XGgMfg1zVMGQwyindYFqoXJLzPT11YD/HOIxhP0P1IwsxZZrQBhGMQaX9j/BityZ91GZFRvQ==}
@@ -8407,7 +8407,7 @@ snapshots:
       ajv-formats: 3.0.1(ajv@8.20.0)
       fast-uri: 4.1.2
 
-  '@fastify/auth@5.1.1':
+  '@fastify/auth@5.1.2':
     dependencies:
       fastify-plugin: 6.0.1
       reusify: 1.1.0
