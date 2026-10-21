@@ -28,10 +28,7 @@
   },
   "json": {
     "formatter": {
-      "enabled": true,
-      "indentStyle": "space",
-      "indentWidth": 2,
-      "lineWidth": 100
+      "enabled": true
     },
     "parser": {
       "allowComments": true
@@ -40,9 +37,6 @@
   "javascript": {
     "formatter": {
       "enabled": true,
-      "indentStyle": "space",
-      "indentWidth": 2,
-      "lineWidth": 100,
       "semicolons": "asNeeded",
       "quoteStyle": "single",
       "trailingCommas": "all"
