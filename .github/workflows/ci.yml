@@ -35,6 +35,7 @@ jobs:
             ["packages/app/aws-config"]="@lokalise/aws-config"
             ["packages/app/backend-http-client"]="@lokalise/backend-http-client"
             ["packages/app/background-jobs-common"]="@lokalise/background-jobs-common"
+            ["packages/app/config"]="@lokalise/config"
             ["packages/app/context-fastify-plugins"]="@lokalise/context-fastify-plugins"
             ["packages/app/datadog-fastify-bootstrap"]="@lokalise/datadog-fastify-bootstrap"
             ["packages/app/drizzle-utils"]="@lokalise/drizzle-utils"
