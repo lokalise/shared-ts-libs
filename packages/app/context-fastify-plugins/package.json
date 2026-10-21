@@ -46,13 +46,13 @@
     "fastify-plugin": "^6.0.0"
   },
   "peerDependencies": {
-    "@fastify/request-context": "^7.0.0",
+    "@fastify/request-context": "^7.0.2",
     "@prisma/instrumentation": "^5.13.0",
     "fastify": ">=4.27.0",
     "pino": ">=9.1.0"
   },
   "devDependencies": {
-    "@fastify/request-context": "^7.0.0",
+    "@fastify/request-context": "^7.0.2",
     "@biomejs/biome": "^2.5.12",
     "@lokalise/biome-config": "workspace:^",
     "@lokalise/tsconfig": "workspace:^",
