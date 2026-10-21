@@ -38,7 +38,7 @@
     "@lokalise/node-core": ">=14.0.0"
   },
   "devDependencies": {
-    "@balena/odata-parser": "^4.3.4",
+    "@balena/odata-parser": "^4.3.15",
     "@biomejs/biome": "^2.5.12",
     "@lokalise/biome-config": "workspace:^",
     "@lokalise/tsconfig": "workspace:^",
