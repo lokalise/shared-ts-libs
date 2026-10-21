@@ -1,6 +1,6 @@
 {
     "name": "@lokalise/config",
-    "version": "0.0.0",
+    "version": "1.0.0",
     "type": "module",
     "description": "Shared envase config schemas for Lokalise services",
     "license": "Apache-2.0",
