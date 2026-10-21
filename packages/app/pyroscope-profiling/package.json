@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@pyroscope/nodejs": "0.6.4",
-    "fastify-plugin": "^6.0.0"
+    "fastify-plugin": "^6.0.1"
   },
   "peerDependencies": {
     "@opentelemetry/sdk-trace-base": "^2.0.0",

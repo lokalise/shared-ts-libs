@@ -43,7 +43,7 @@
     "@opentelemetry/sdk-trace-base": "2.12.0",
     "@opentelemetry/sdk-trace-node": "2.12.0",
     "@opentelemetry/semantic-conventions": "1.43.0",
-    "fastify-plugin": "^6.0.0"
+    "fastify-plugin": "^6.0.1"
   },
   "peerDependencies": {
     "@fastify/request-context": "^7.0.0",
