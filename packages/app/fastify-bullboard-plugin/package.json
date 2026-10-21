@@ -41,7 +41,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",
     "@fastify/awilix": "^8.3.0",
-    "@fastify/schedule": "^7.0.0",
+    "@fastify/schedule": "^7.0.1",
     "@lokalise/background-jobs-common": "workspace:^",
     "@lokalise/biome-config": "workspace:^",
     "@lokalise/fastify-extras": "^34.1.0",

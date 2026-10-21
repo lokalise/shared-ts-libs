@@ -803,8 +803,8 @@ importers:
         specifier: ^8.3.0
         version: 8.3.0(awilix@13.0.5)(fastify@5.12.5)
       '@fastify/schedule':
-        specifier: ^7.0.0
-        version: 7.0.0(toad-scheduler@4.2.0)
+        specifier: ^7.0.1
+        version: 7.0.1(toad-scheduler@4.2.0)
       '@lokalise/background-jobs-common':
         specifier: workspace:^
         version: link:../background-jobs-common
@@ -2174,8 +2174,8 @@ packages:
   '@fastify/request-context@7.0.0':
     resolution: {integrity: sha512-SMnQ4VWa1p20qOSONvi+yG32vqyHoZE6LPD4xrIl3RVE11dLrBwiQ7VmK4aTCS7/jB5Tx6fI9JotTNErClPS5A==}
 
-  '@fastify/schedule@7.0.0':
-    resolution: {integrity: sha512-FwUOdtf+UL6WlB0+ecg6aDntS2pkRJ3eiSEJCyWNvH5RiepeOUjMLtiU2Y/lv3niQPyANHZZICklvPpZAkrEYA==}
+  '@fastify/schedule@7.0.1':
+    resolution: {integrity: sha512-D2pb8JPP7C2UroCu+7Q0XMiC0/yDyzIzMq2w5c8txZJ8130M441Wt43aIqfMGsL8MFq4tTEqCiFLgc2Wlyy8LQ==}
     peerDependencies:
       toad-scheduler: '>=2.0.0'
 
@@ -8462,7 +8462,7 @@ snapshots:
     dependencies:
       fastify-plugin: 5.1.0
 
-  '@fastify/schedule@7.0.0(toad-scheduler@4.2.0)':
+  '@fastify/schedule@7.0.1(toad-scheduler@4.2.0)':
     dependencies:
       fastify-plugin: 6.0.0
       toad-scheduler: 4.2.0
