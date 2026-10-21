@@ -42,7 +42,7 @@
     "@biomejs/biome": "^2.5.12",
     "@lokalise/biome-config": "workspace:^",
     "@lokalise/tsconfig": "workspace:^",
-    "@types/node": "^26.6.3",
+    "@types/node": "^26.6.5",
     "@vitest/coverage-v8": "^4.1.11",
     "envase": "^2.1.0",
     "ioredis": "^6.0.0",

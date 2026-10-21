@@ -64,7 +64,7 @@
     "@message-queue-toolkit/core": "^27.2.0",
     "@message-queue-toolkit/sns": "^27.2.0",
     "@message-queue-toolkit/sqs": "^27.2.0",
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "@vitest/coverage-v8": "^4.1.11",
     "envase": "^2.1.0",
     "rimraf": "^6.1.3",
