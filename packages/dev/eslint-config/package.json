@@ -26,11 +26,11 @@
 	"dependencies": {
 		"@lokalise/eslint-config-frontend": "^4.6.1",
 		"@tanstack/eslint-plugin-query": "^5.104.0",
-		"@typescript-eslint/parser": "^8.71.1"
+		"@typescript-eslint/parser": "^8.71.2"
 	},
 	"devDependencies": {
 		"@lokalise/prettier-config": "workspace:^",
-		"prettier": "^3.9.9"
+		"prettier": "^3.9.10"
 	},
 	"prettier": "@lokalise/prettier-config"
 }
