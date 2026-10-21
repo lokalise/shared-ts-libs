@@ -192,8 +192,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -205,7 +205,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
       zod:
         specifier: ^4.3.6
         version: 4.6.5
@@ -222,8 +222,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -235,7 +235,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
       zod:
         specifier: ^4.6.5
         version: 4.6.5
@@ -274,8 +274,8 @@ importers:
         specifier: workspace:^
         version: link:../universal-ts-utils
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -293,7 +293,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/aws-config:
     devDependencies:
@@ -337,8 +337,8 @@ importers:
         specifier: ^4.17.2
         version: 4.18.0
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -353,7 +353,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
       zod:
         specifier: ^4.3.6
         version: 4.6.5
@@ -383,8 +383,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -396,7 +396,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
       zod:
         specifier: ^4.3.6
         version: 4.6.5
@@ -426,8 +426,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -451,7 +451,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
       zod:
         specifier: ^4.5.4
         version: 4.6.5
@@ -468,8 +468,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.3
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -487,7 +487,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
       zod:
         specifier: ^4.3.6
         version: 4.6.5
@@ -535,8 +535,8 @@ importers:
         specifier: ^7.10.0
         version: 7.10.0(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -557,7 +557,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/crypto:
     dependencies:
@@ -575,8 +575,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -588,7 +588,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/datadog-fastify-bootstrap:
     devDependencies:
@@ -602,8 +602,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       dd-trace:
         specifier: ^6.20.1
         version: 6.20.1
@@ -626,8 +626,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -642,10 +642,10 @@ importers:
         version: 1.0.0-rc.5-5935859
       drizzle-orm:
         specifier: 1.0.0-rc.5-5935859
-        version: 1.0.0-rc.5-5935859(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.24.5(@types/node@26.6.4))(pg@8.22.0)(postgres@3.4.9)(valibot@1.4.2(typescript@7.0.2))(zod@4.5.4)
+        version: 1.0.0-rc.5-5935859(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.24.5(@types/node@26.6.5))(pg@8.22.0)(postgres@3.4.9)(valibot@1.4.2(typescript@7.0.2))(zod@4.5.4)
       mysql2:
         specifier: ^3.24.5
-        version: 3.24.5(@types/node@26.6.4)
+        version: 3.24.5(@types/node@26.6.5)
       postgres:
         specifier: ^3.4.9
         version: 3.4.9
@@ -657,7 +657,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/error-utils:
     dependencies:
@@ -691,7 +691,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/errors:
     devDependencies:
@@ -705,8 +705,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.0.15
         version: 4.1.11(vitest@4.1.11)
@@ -718,7 +718,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
       zod:
         specifier: ^4.3.6
         version: 4.6.5
@@ -773,7 +773,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
       zod:
         specifier: ^4.3.6
         version: 4.6.5
@@ -818,8 +818,8 @@ importers:
         specifier: ^14.11.0
         version: 14.11.0(zod@4.6.5)
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -870,7 +870,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/frontend-http-client:
     dependencies:
@@ -897,8 +897,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -916,7 +916,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
       zod:
         specifier: ^4.3.6
         version: 4.6.5
@@ -968,7 +968,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/id-utils:
     dependencies:
@@ -1002,7 +1002,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/load-testing-utils:
     devDependencies:
@@ -1016,8 +1016,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -1032,7 +1032,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/metrics-utils:
     dependencies:
@@ -1063,7 +1063,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/non-translatable-markup:
     devDependencies:
@@ -1087,7 +1087,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/odata-mapper:
     dependencies:
@@ -1118,7 +1118,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/opentelemetry-fastify-bootstrap:
     dependencies:
@@ -1164,7 +1164,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/polling:
     devDependencies:
@@ -1178,8 +1178,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -1191,7 +1191,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/prisma-utils:
     dependencies:
@@ -1237,7 +1237,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/pyroscope-profiling:
     dependencies:
@@ -1267,8 +1267,8 @@ importers:
         specifier: ^2.12.0
         version: 2.12.0(@opentelemetry/api@1.9.1)
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -1286,7 +1286,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/script-utils:
     dependencies:
@@ -1314,7 +1314,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/supported-languages:
     devDependencies:
@@ -1338,7 +1338,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/text-measure:
     dependencies:
@@ -1369,7 +1369,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/translation-quality-checks:
     dependencies:
@@ -1397,7 +1397,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/universal-testing-utils:
     devDependencies:
@@ -1417,8 +1417,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -1427,7 +1427,7 @@ importers:
         version: 4.6.3(supports-color@8.1.1)
       msw:
         specifier: ^2.13.2
-        version: 2.15.0(@types/node@26.6.4)(typescript@7.0.2)
+        version: 2.15.0(@types/node@26.6.5)(typescript@7.0.2)
       rimraf:
         specifier: ^6.1.3
         version: 6.1.3
@@ -1436,7 +1436,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
       wretch:
         specifier: ^2.8.0
         version: 2.11.1
@@ -1456,8 +1456,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -1466,7 +1466,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/app/websockets-common:
     dependencies:
@@ -1491,7 +1491,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
       zod:
         specifier: ^4.3.6
         version: 4.6.5
@@ -1508,8 +1508,8 @@ importers:
         specifier: workspace:^
         version: link:../../dev/tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -1521,7 +1521,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
       zod:
         specifier: ^4.3.6
         version: 4.6.5
@@ -1555,13 +1555,13 @@ importers:
     dependencies:
       vite:
         specifier: ^6.2.0
-        version: 6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.0)
+        version: 6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.0)
       vite-plugin-dts:
         specifier: ^4.5.3
-        version: 4.5.4(@types/node@26.6.4)(rollup@4.63.3)(typescript@7.0.2)(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.5.4(@types/node@26.6.5)(rollup@4.63.3)(typescript@7.0.2)(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.0))
       vitest:
         specifier: ^4.0.15
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.0))
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.5.12
@@ -1573,8 +1573,8 @@ importers:
         specifier: workspace:^
         version: link:../tsconfig
       '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
+        specifier: ^26.6.5
+        version: 26.6.5
       rimraf:
         specifier: ^6.1.3
         version: 6.1.3
@@ -3832,8 +3832,8 @@ packages:
   '@types/negotiator@0.6.5':
     resolution: {integrity: sha512-MPOlB48mfWhoUlynY0ga7CFsXIPcH6vGPkjzXMn2p+4PH1QUyn2KPtw0hrLLmO6SaX4zse3X6h2x/083vveAlA==}
 
-  '@types/node@26.6.4':
-    resolution: {integrity: sha512-ldVPDCzj7fsaGZrLB0NuHuTvJcsNasysBAqMolr/cgxrLd1xbqxIr3XJiPnHHJUCxj5sNF1vnRj9aWnrVh5Jcg==}
+  '@types/node@26.6.5':
+    resolution: {integrity: sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg==}
 
   '@types/pg-pool@2.0.7':
     resolution: {integrity: sha512-U4CwmGVQcbEuqpyju8/ptOKg6gEC+Tqsvj2xS9o1g71bUh8twxnC6ZL5rZKCsGN0iyH0CwgUyc9VR5owNQF9Ng==}
@@ -8546,7 +8546,7 @@ snapshots:
 
   '@httptoolkit/httpolyglot@3.1.0':
     dependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
   '@httptoolkit/subscriptions-transport-ws@0.11.2(graphql@16.14.2)':
     dependencies:
@@ -8590,30 +8590,30 @@ snapshots:
 
   '@inquirer/ansi@2.0.8': {}
 
-  '@inquirer/confirm@6.3.2(@types/node@26.6.4)':
+  '@inquirer/confirm@6.3.2(@types/node@26.6.5)':
     dependencies:
-      '@inquirer/core': 12.0.3(@types/node@26.6.4)
-      '@inquirer/type': 4.1.1(@types/node@26.6.4)
+      '@inquirer/core': 12.0.3(@types/node@26.6.5)
+      '@inquirer/type': 4.1.1(@types/node@26.6.5)
     optionalDependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
-  '@inquirer/core@12.0.3(@types/node@26.6.4)':
+  '@inquirer/core@12.0.3(@types/node@26.6.5)':
     dependencies:
       '@inquirer/ansi': 2.0.8
       '@inquirer/figures': 2.0.9
-      '@inquirer/type': 4.1.1(@types/node@26.6.4)
+      '@inquirer/type': 4.1.1(@types/node@26.6.5)
       cli-width: 4.1.0
       fast-wrap-ansi: 0.2.2
       mute-stream: 3.0.0
       signal-exit: 4.1.0
     optionalDependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
   '@inquirer/figures@2.0.9': {}
 
-  '@inquirer/type@4.1.1(@types/node@26.6.4)':
+  '@inquirer/type@4.1.1(@types/node@26.6.5)':
     optionalDependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
   '@ioredis/commands@2.0.0': {}
 
@@ -8875,23 +8875,23 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@microsoft/api-extractor-model@7.33.10(@types/node@26.6.4)':
+  '@microsoft/api-extractor-model@7.33.10(@types/node@26.6.5)':
     dependencies:
       '@microsoft/tsdoc': 0.16.0
       '@microsoft/tsdoc-config': 0.18.1
-      '@rushstack/node-core-library': 5.23.3(@types/node@26.6.4)
+      '@rushstack/node-core-library': 5.23.3(@types/node@26.6.5)
     transitivePeerDependencies:
       - '@types/node'
 
-  '@microsoft/api-extractor@7.58.12(@types/node@26.6.4)':
+  '@microsoft/api-extractor@7.58.12(@types/node@26.6.5)':
     dependencies:
-      '@microsoft/api-extractor-model': 7.33.10(@types/node@26.6.4)
+      '@microsoft/api-extractor-model': 7.33.10(@types/node@26.6.5)
       '@microsoft/tsdoc': 0.16.0
       '@microsoft/tsdoc-config': 0.18.1
-      '@rushstack/node-core-library': 5.23.3(@types/node@26.6.4)
+      '@rushstack/node-core-library': 5.23.3(@types/node@26.6.5)
       '@rushstack/rig-package': 0.7.3
-      '@rushstack/terminal': 0.24.2(@types/node@26.6.4)
-      '@rushstack/ts-command-line': 5.3.12(@types/node@26.6.4)
+      '@rushstack/terminal': 0.24.2(@types/node@26.6.5)
+      '@rushstack/ts-command-line': 5.3.12(@types/node@26.6.5)
       diff: 8.0.4
       minimatch: 10.2.3
       resolve: 1.22.12
@@ -10153,7 +10153,7 @@ snapshots:
 
   '@rtsao/scc@1.1.0': {}
 
-  '@rushstack/node-core-library@5.23.3(@types/node@26.6.4)':
+  '@rushstack/node-core-library@5.23.3(@types/node@26.6.5)':
     dependencies:
       ajv: 8.20.0
       ajv-draft-04: 1.0.0(ajv@8.20.0)
@@ -10164,28 +10164,28 @@ snapshots:
       resolve: 1.22.12
       semver: 7.7.4
     optionalDependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
-  '@rushstack/problem-matcher@0.2.1(@types/node@26.6.4)':
+  '@rushstack/problem-matcher@0.2.1(@types/node@26.6.5)':
     optionalDependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
   '@rushstack/rig-package@0.7.3':
     dependencies:
       jju: 1.4.0
       resolve: 1.22.12
 
-  '@rushstack/terminal@0.24.2(@types/node@26.6.4)':
+  '@rushstack/terminal@0.24.2(@types/node@26.6.5)':
     dependencies:
-      '@rushstack/node-core-library': 5.23.3(@types/node@26.6.4)
-      '@rushstack/problem-matcher': 0.2.1(@types/node@26.6.4)
+      '@rushstack/node-core-library': 5.23.3(@types/node@26.6.5)
+      '@rushstack/problem-matcher': 0.2.1(@types/node@26.6.5)
       supports-color: 8.1.1
     optionalDependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
-  '@rushstack/ts-command-line@5.3.12(@types/node@26.6.4)':
+  '@rushstack/ts-command-line@5.3.12(@types/node@26.6.5)':
     dependencies:
-      '@rushstack/terminal': 0.24.2(@types/node@26.6.4)
+      '@rushstack/terminal': 0.24.2(@types/node@26.6.5)
       '@types/argparse': 1.0.38
       argparse: 1.0.10
       string-argv: 0.3.2
@@ -10313,7 +10313,7 @@ snapshots:
 
   '@splitsoftware/splitio-commons@2.13.1(ioredis@6.0.0(supports-color@8.1.1))':
     dependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       tslib: 2.8.1
     optionalDependencies:
       ioredis: 6.0.0(supports-color@8.1.1)
@@ -10393,11 +10393,11 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
   '@types/cors@2.8.19':
     dependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
   '@types/d3-array@3.0.3': {}
 
@@ -10437,7 +10437,7 @@ snapshots:
 
   '@types/ioredis@4.28.10':
     dependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
   '@types/json-schema@7.0.15': {}
 
@@ -10446,19 +10446,19 @@ snapshots:
   '@types/jsonwebtoken@9.0.10':
     dependencies:
       '@types/ms': 2.1.0
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
   '@types/lodash@4.17.25': {}
 
   '@types/memcached@2.2.10':
     dependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
   '@types/ms@2.1.0': {}
 
   '@types/negotiator@0.6.5': {}
 
-  '@types/node@26.6.4':
+  '@types/node@26.6.5':
     dependencies:
       undici-types: 8.9.0
 
@@ -10468,13 +10468,13 @@ snapshots:
 
   '@types/pg@8.15.6':
     dependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       pg-protocol: 1.16.0
       pg-types: 2.2.0
 
   '@types/pg@8.20.0':
     dependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       pg-protocol: 1.16.0
       pg-types: 2.2.0
 
@@ -10488,13 +10488,13 @@ snapshots:
 
   '@types/set-cookie-parser@2.4.10':
     dependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
   '@types/statuses@2.0.6': {}
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
   '@types/zen-observable@0.8.3': {}
 
@@ -10944,7 +10944,7 @@ snapshots:
       obug: 2.2.1
       std-env: 4.2.0
       tinyrainbow: 3.1.1
-      vitest: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+      vitest: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -10955,23 +10955,23 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.1.1
 
-  '@vitest/mocker@4.1.11(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.0))':
+  '@vitest/mocker@4.1.11(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.0))':
     dependencies:
       '@vitest/spy': 4.1.11
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      msw: 2.15.0(@types/node@26.6.4)(typescript@7.0.2)
-      vite: 6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.0)
+      msw: 2.15.0(@types/node@26.6.5)(typescript@7.0.2)
+      vite: 6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.0)
 
-  '@vitest/mocker@4.1.11(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))':
+  '@vitest/mocker@4.1.11(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))':
     dependencies:
       '@vitest/spy': 4.1.11
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      msw: 2.15.0(@types/node@26.6.4)(typescript@7.0.2)
-      vite: 6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1)
+      msw: 2.15.0(@types/node@26.6.5)(typescript@7.0.2)
+      vite: 6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1)
 
   '@vitest/mocker@4.1.11(msw@2.15.0(typescript@5.9.3))(vite@6.4.3)':
     dependencies:
@@ -10980,7 +10980,7 @@ snapshots:
       magic-string: 0.30.21
     optionalDependencies:
       msw: 2.15.0(typescript@5.9.3)
-      vite: 6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1)
+      vite: 6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1)
     optional: true
 
   '@vitest/pretty-format@4.1.11':
@@ -11632,7 +11632,7 @@ snapshots:
 
   destroyable-server@1.1.1:
     dependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
   detect-libc@2.1.2:
     optional: true
@@ -11673,12 +11673,12 @@ snapshots:
       get-tsconfig: 4.14.1
       jiti: 2.7.0
 
-  drizzle-orm@1.0.0-rc.5-5935859(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.24.5(@types/node@26.6.4))(pg@8.22.0)(postgres@3.4.9)(valibot@1.4.2(typescript@7.0.2))(zod@4.5.4):
+  drizzle-orm@1.0.0-rc.5-5935859(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.24.5(@types/node@26.6.5))(pg@8.22.0)(postgres@3.4.9)(valibot@1.4.2(typescript@7.0.2))(zod@4.5.4):
     optionalDependencies:
       '@electric-sql/pglite': 0.4.3
       '@opentelemetry/api': 1.9.1
       '@types/pg': 8.20.0
-      mysql2: 3.24.5(@types/node@26.6.4)
+      mysql2: 3.24.5(@types/node@26.6.5)
       pg: 8.22.0
       postgres: 3.4.9
       valibot: 1.4.2(typescript@7.0.2)
@@ -11733,7 +11733,7 @@ snapshots:
   engine.io@6.6.9(supports-color@8.1.1):
     dependencies:
       '@types/cors': 2.8.19
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       '@types/ws': 8.18.1
       accepts: 1.3.8
       base64id: 2.0.0
@@ -13109,7 +13109,7 @@ snapshots:
       '@peculiar/asn1-x509': 2.10.0
       '@peculiar/x509': 1.14.3
       '@types/cors': 2.8.19
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       async-mutex: 0.5.0
       base64-arraybuffer: 1.0.2
       cacheable-lookup: 6.1.0
@@ -13167,9 +13167,9 @@ snapshots:
     optionalDependencies:
       msgpackr-extract: 3.0.4
 
-  msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2):
+  msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2):
     dependencies:
-      '@inquirer/confirm': 6.3.2(@types/node@26.6.4)
+      '@inquirer/confirm': 6.3.2(@types/node@26.6.5)
       '@mswjs/interceptors': 0.41.9
       '@open-draft/deferred-promise': 3.0.0
       '@types/statuses': 2.0.6
@@ -13194,7 +13194,7 @@ snapshots:
 
   msw@2.15.0(typescript@5.9.3):
     dependencies:
-      '@inquirer/confirm': 6.3.2(@types/node@26.6.4)
+      '@inquirer/confirm': 6.3.2(@types/node@26.6.5)
       '@mswjs/interceptors': 0.41.9
       '@open-draft/deferred-promise': 3.0.0
       '@types/statuses': 2.0.6
@@ -13234,9 +13234,9 @@ snapshots:
       seq-queue: 0.0.5
       sqlstring: 2.3.3
 
-  mysql2@3.24.5(@types/node@26.6.4):
+  mysql2@3.24.5(@types/node@26.6.5):
     dependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       aws-ssl-profiles: 1.1.2
       generate-function: 2.3.1
       iconv-lite: 0.7.3
@@ -13652,7 +13652,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.2
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       long: 5.3.2
 
   proxy-addr@2.0.8:
@@ -13713,7 +13713,7 @@ snapshots:
 
   read-tls-client-hello@2.0.0:
     dependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
 
   readable-stream@2.3.8:
     dependencies:
@@ -14484,9 +14484,9 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vite-plugin-dts@4.5.4(@types/node@26.6.4)(rollup@4.63.3)(typescript@7.0.2)(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.0)):
+  vite-plugin-dts@4.5.4(@types/node@26.6.5)(rollup@4.63.3)(typescript@7.0.2)(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.0)):
     dependencies:
-      '@microsoft/api-extractor': 7.58.12(@types/node@26.6.4)
+      '@microsoft/api-extractor': 7.58.12(@types/node@26.6.5)
       '@rollup/pluginutils': 5.4.0(rollup@4.63.3)
       '@volar/typescript': 2.4.28(typescript@7.0.2)
       '@vue/language-core': 2.2.0(typescript@7.0.2)
@@ -14497,13 +14497,13 @@ snapshots:
       magic-string: 0.30.21
       typescript: 7.0.2
     optionalDependencies:
-      vite: 6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.0)
+      vite: 6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.0)
     transitivePeerDependencies:
       - '@types/node'
       - rollup
       - supports-color
 
-  vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.0):
+  vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.0):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.7)
@@ -14512,12 +14512,12 @@ snapshots:
       rollup: 4.63.3
       tinyglobby: 0.2.17
     optionalDependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       fsevents: 2.3.3
       jiti: 2.7.0
       yaml: 2.9.0
 
-  vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1):
+  vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.7)
@@ -14526,15 +14526,15 @@ snapshots:
       rollup: 4.63.3
       tinyglobby: 0.2.17
     optionalDependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       fsevents: 2.3.3
       jiti: 2.7.0
       yaml: 2.9.1
 
-  vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.0)):
+  vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.0)):
     dependencies:
       '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.0))
+      '@vitest/mocker': 4.1.11(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.0))
       '@vitest/pretty-format': 4.1.11
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
@@ -14551,19 +14551,19 @@ snapshots:
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.1
-      vite: 6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.0)
+      vite: 6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       '@vitest/coverage-v8': 4.1.11(vitest@4.1.11)
     transitivePeerDependencies:
       - msw
 
-  vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1)):
+  vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1)):
     dependencies:
       '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(msw@2.15.0(@types/node@26.6.4)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1))
+      '@vitest/mocker': 4.1.11(msw@2.15.0(@types/node@26.6.5)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
       '@vitest/pretty-format': 4.1.11
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
@@ -14580,11 +14580,11 @@ snapshots:
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.1
-      vite: 6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1)
+      vite: 6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       '@vitest/coverage-v8': 4.1.11(vitest@4.1.11)
     transitivePeerDependencies:
       - msw
@@ -14609,7 +14609,7 @@ snapshots:
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.1
-      vite: 6.4.3(@types/node@26.6.4)(jiti@2.7.0)(yaml@2.9.1)
+      vite: 6.4.3(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1)
       why-is-node-running: 2.3.0
     transitivePeerDependencies:
       - msw
