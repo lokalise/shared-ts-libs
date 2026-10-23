@@ -27,6 +27,10 @@ describe('extractTextBetweenTags', () => {
       text: '\uE101\uE102\uE111\uE102\uE101\uE101\uE112\uE102',
       result: [],
     }, // consecutive NT regions with special inline codes inside
+    {
+      text: 'Hello, \uE101<table>\n<tr>\uE102 How are you?',
+      result: ['Hello,', 'How are you?'],
+    }, // NT region spanning several lines
 
     // HTML tags - should be removed
     { text: 'Hello!<> world', result: ['Hello!', 'world'] },

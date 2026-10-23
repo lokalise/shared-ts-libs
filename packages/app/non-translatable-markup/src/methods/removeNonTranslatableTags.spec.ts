@@ -14,6 +14,10 @@ describe('removeNonTranslatableTags', () => {
     ['\uE101\uE101\uE110\uE102 text \uE101\uE102\uE111\uE102', '\uE101\uE110 text \uE102\uE111'],
     ['\uE101\uE102\uE111\uE101\uE112\uE102', '\uE102\uE111\uE101\uE112'], // duplicated NT tags inside of NT region
     ['\uE101\uE102\uE111\uE102\uE101\uE101\uE112\uE102', '\uE102\uE111\uE101\uE112'], // duplicated NT tags inside of NT region
+    [
+      '\uE101<table>\n<tr>\uE102 Hello \uE101</tr>\n</table>\uE102',
+      '<table>\n<tr> Hello </tr>\n</table>',
+    ], // NT regions spanning several lines
   ])('removes non-translatable tags', (originalValue, updatedValue) => {
     expect(removeNonTranslatableTags(originalValue)).toBe(updatedValue)
   })
