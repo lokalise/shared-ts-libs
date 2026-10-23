@@ -9,6 +9,7 @@
     "LICENSE.md"
   ],
   "bin": {
+    "apply-concurrent-indexes": "./dist/cli/applyConcurrentIndexes.js",
     "mark-migrations-applied": "./dist/cli/markMigrationsApplied.js"
   },
   "publishConfig": {
