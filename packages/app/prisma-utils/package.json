@@ -1,60 +1,60 @@
 {
-    "name": "@lokalise/prisma-utils",
-    "version": "7.0.1",
-    "type": "module",
-    "license": "Apache-2.0",
-    "files": [
-        "dist",
-        "README.md",
-        "LICENSE.md"
-    ],
-    "main": "./dist/index.js",
-    "exports": {
-        ".": "./dist/index.js",
-        "./package.json": "./package.json"
-    },
-    "homepage": "https://github.com/lokalise/shared-ts-libs",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/lokalise/shared-ts-libs.git",
-        "directory": "packages/app/prisma-utils"
-    },
-    "scripts": {
-        "build": "rimraf dist && pnpm run db:update-client && tsc --project tsconfig.build.json",
-        "clean": "rimraf dist",
-        "lint": "biome check . && tsc",
-        "lint:fix": "biome check --write",
-        "db:migration:dev": "prisma migrate dev --config=./prisma/prisma.config",
-        "db:update-client": "prisma generate",
-        "test": "vitest run",
-        "test:migrate": "cross-env NODE_ENV=test prisma migrate reset --config=./prisma/prisma.config --force",
-        "pretest:ci": "docker compose up -d --wait && pnpm run test:migrate",
-        "test:ci": "pnpm run test",
-        "posttest:ci": "docker compose down",
-        "bench:seed": "vitest run --config vitest.bench.config.ts",
-        "bench": "vitest bench --run --config vitest.bench.config.ts",
-        "prepublishOnly": "pnpm run build",
-        "package-version": "echo $npm_package_version",
-        "postversion": "biome check --write package.json"
-    },
-    "peerDependencies": {
-        "@lokalise/node-core": ">=14.7.4",
-        "@prisma/client": "^7.0.0",
-        "@prometheus-io/client": "^0.16.1",
-        "prisma": "^7.0.0"
-    },
-    "devDependencies": {
-        "@biomejs/biome": "^2.5.12",
-        "dotenv": "^18.0.4",
-        "@lokalise/biome-config": "workspace:^",
-        "@lokalise/tsconfig": "workspace:^",
-        "@prisma/adapter-pg": "^7.10.0",
-        "@prisma/client": "^7.10.0",
-        "@vitest/coverage-v8": "^4.1.11",
-        "cross-env": "^10.0.0",
-        "prisma": "^7.10.0",
-        "rimraf": "^6.1.3",
-        "typescript": "7.0.2",
-        "vitest": "^4.1.11"
-    }
+  "name": "@lokalise/prisma-utils",
+  "version": "7.0.1",
+  "type": "module",
+  "license": "Apache-2.0",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "homepage": "https://github.com/lokalise/shared-ts-libs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lokalise/shared-ts-libs.git",
+    "directory": "packages/app/prisma-utils"
+  },
+  "scripts": {
+    "build": "rimraf dist && pnpm run db:update-client && tsc --project tsconfig.build.json",
+    "clean": "rimraf dist",
+    "lint": "biome check . && tsc",
+    "lint:fix": "biome check --write",
+    "db:migration:dev": "prisma migrate dev --config=./prisma/prisma.config",
+    "db:update-client": "prisma generate",
+    "test": "vitest run",
+    "test:migrate": "cross-env NODE_ENV=test prisma migrate reset --config=./prisma/prisma.config --force",
+    "pretest:ci": "docker compose up -d --wait && pnpm run test:migrate",
+    "test:ci": "pnpm run test",
+    "posttest:ci": "docker compose down",
+    "bench:seed": "vitest run --config vitest.bench.config.ts",
+    "bench": "vitest bench --run --config vitest.bench.config.ts",
+    "prepublishOnly": "pnpm run build",
+    "package-version": "echo $npm_package_version",
+    "postversion": "biome check --write package.json"
+  },
+  "peerDependencies": {
+    "@lokalise/node-core": ">=14.7.4",
+    "@prisma/client": "^7.0.0",
+    "@prometheus-io/client": "^0.16.1",
+    "prisma": "^7.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.12",
+    "dotenv": "^18.0.7",
+    "@lokalise/biome-config": "workspace:^",
+    "@lokalise/tsconfig": "workspace:^",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "cross-env": "^10.0.0",
+    "prisma": "^7.10.0",
+    "rimraf": "^6.1.3",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.11"
+  }
 }

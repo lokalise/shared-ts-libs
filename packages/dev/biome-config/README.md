@@ -9,17 +9,23 @@ Backend:
 
 ```json
 {
-	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-	"extends": ["./node_modules/@lokalise/biome-config/configs/biome-base.jsonc", "./node_modules/@lokalise/biome-config/configs/biome-esm.jsonc"]
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": [
+    "./node_modules/@lokalise/biome-config/configs/biome-base.jsonc",
+    "./node_modules/@lokalise/biome-config/configs/biome-esm.jsonc"
+  ]
 }
 ```
 
 Packages:
-    
+
 ```json
 {
-    "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-    "extends": ["./node_modules/@lokalise/biome-config/configs/biome-base.jsonc", "./node_modules/@lokalise/biome-config/configs/biome-package.jsonc"]
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": [
+    "./node_modules/@lokalise/biome-config/configs/biome-base.jsonc",
+    "./node_modules/@lokalise/biome-config/configs/biome-package.jsonc"
+  ]
 }
 ```
 
@@ -27,7 +33,10 @@ Frontend:
 
 ```json
 {
-	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-	"extends": ["./node_modules/@lokalise/biome-config/configs/biome-base.jsonc", "./node_modules/@lokalise/biome-config/configs/biome-frontend.jsonc"]
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": [
+    "./node_modules/@lokalise/biome-config/configs/biome-base.jsonc",
+    "./node_modules/@lokalise/biome-config/configs/biome-frontend.jsonc"
+  ]
 }
 ```

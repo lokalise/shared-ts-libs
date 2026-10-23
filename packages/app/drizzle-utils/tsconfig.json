@@ -1,13 +1,7 @@
 {
-    "extends": "@lokalise/tsconfig/tsc",
-    "include": [
-        "src/**/*",
-        "test/**/*",
-        "bench/**/*",
-        "vitest.config.ts",
-        "vitest.bench.config.ts"
-    ],
-    "compilerOptions": {
-        "types": ["node"]
-    }
+  "extends": "@lokalise/tsconfig/tsc",
+  "include": ["src/**/*", "test/**/*", "bench/**/*", "vitest.config.ts", "vitest.bench.config.ts"],
+  "compilerOptions": {
+    "types": ["node"]
+  }
 }

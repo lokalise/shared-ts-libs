@@ -1,68 +1,68 @@
 {
-    "name": "@lokalise/background-jobs-common",
-    "version": "17.0.1",
-    "files": [
-        "dist",
-        "LICENSE.md",
-        "README.md"
-    ],
-    "author": {
-        "name": "Lokalise",
-        "url": "https://lokalise.com/"
-    },
-    "homepage": "https://github.com/lokalise/shared-ts-libs",
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/lokalise/shared-ts-libs.git",
-        "directory": "packages/app/background-jobs-common"
-    },
-    "private": false,
-    "license": "Apache-2.0",
-    "type": "module",
-    "main": "./dist/index.js",
-    "exports": {
-        ".": "./dist/index.js",
-        "./package.json": "./package.json"
-    },
-    "scripts": {
-        "build": "pnpm run clean && tsc --project tsconfig.build.json",
-        "clean": "rimraf dist",
-        "lint": "biome check . && tsc",
-        "lint:fix": "biome check --write",
-        "test": "vitest run",
-        "pretest:ci": "docker compose up -d",
-        "test:ci": "pnpm run test -- --coverage",
-        "posttest:ci": "docker compose down",
-        "prepublishOnly": "pnpm run build",
-        "package-version": "echo $npm_package_version",
-        "postversion": "biome check --write package.json"
-    },
-    "dependencies": {
-        "@lokalise/id-utils": "workspace:^",
-        "@lokalise/node-core": "^14.11.0",
-        "redis-semaphore": "^5.8.0",
-        "ts-deepmerge": "^8.0.0"
-    },
-    "peerDependencies": {
-        "bullmq": "^5.28.2 || ^6.0.0",
-        "ioredis": "^6.0.0",
-        "pino": ">=9.7.0",
-        "toad-scheduler": "^4.2.0",
-        "zod": ">=4.5.0 <5.0.0"
-    },
-    "devDependencies": {
-        "@biomejs/biome": "^2.5.12",
-        "@lokalise/biome-config": "workspace:^",
-        "@lokalise/tsconfig": "workspace:^",
-        "@types/node": "^26.6.4",
-        "@vitest/coverage-v8": "^4.1.11",
-        "bullmq": "^6.3.4",
-        "ioredis": "^6.0.0",
-        "pino": "^10.3.1",
-        "rimraf": "^6.1.3",
-        "toad-scheduler": "^4.2.0",
-        "typescript": "7.0.2",
-        "vitest": "^4.1.11",
-        "zod": "^4.5.4"
-    }
+  "name": "@lokalise/background-jobs-common",
+  "version": "17.0.1",
+  "files": [
+    "dist",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "author": {
+    "name": "Lokalise",
+    "url": "https://lokalise.com/"
+  },
+  "homepage": "https://github.com/lokalise/shared-ts-libs",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/lokalise/shared-ts-libs.git",
+    "directory": "packages/app/background-jobs-common"
+  },
+  "private": false,
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "pnpm run clean && tsc --project tsconfig.build.json",
+    "clean": "rimraf dist",
+    "lint": "biome check . && tsc",
+    "lint:fix": "biome check --write",
+    "test": "vitest run",
+    "pretest:ci": "docker compose up -d",
+    "test:ci": "pnpm run test -- --coverage",
+    "posttest:ci": "docker compose down",
+    "prepublishOnly": "pnpm run build",
+    "package-version": "echo $npm_package_version",
+    "postversion": "biome check --write package.json"
+  },
+  "dependencies": {
+    "@lokalise/id-utils": "workspace:^",
+    "@lokalise/node-core": "^14.11.0",
+    "redis-semaphore": "^6.0.0",
+    "ts-deepmerge": "^8.0.0"
+  },
+  "peerDependencies": {
+    "bullmq": "^5.28.2 || ^6.0.0",
+    "ioredis": "^6.0.0",
+    "pino": ">=9.7.0",
+    "toad-scheduler": "^4.2.0",
+    "zod": ">=4.5.0 <5.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.12",
+    "@lokalise/biome-config": "workspace:^",
+    "@lokalise/tsconfig": "workspace:^",
+    "@types/node": "^26.6.5",
+    "@vitest/coverage-v8": "^4.1.11",
+    "bullmq": "^6.3.4",
+    "ioredis": "^6.0.0",
+    "pino": "^10.4.0",
+    "rimraf": "^6.1.3",
+    "toad-scheduler": "^4.2.0",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.11",
+    "zod": "^4.5.4"
+  }
 }

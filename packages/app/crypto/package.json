@@ -1,53 +1,53 @@
 {
-    "name": "@lokalise/crypto",
-    "version": "1.0.0",
-    "engines": {
-        "node": ">=24.13.1"
-    },
-    "type": "module",
-    "description": "Hashing, checksum and encryption helpers for Lokalise services",
-    "license": "Apache-2.0",
-    "sideEffects": false,
-    "publishConfig": {
-        "access": "public"
-    },
-    "homepage": "https://github.com/lokalise/shared-ts-libs",
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/lokalise/shared-ts-libs.git",
-        "directory": "packages/app/crypto"
-    },
-    "files": [
-        "dist",
-        "README.md",
-        "LICENSE.md",
-        "CHANGELOG.md"
-    ],
-    "main": "./dist/index.js",
-    "exports": {
-        ".": "./dist/index.js",
-        "./package.json": "./package.json"
-    },
-    "scripts": {
-        "build": "rimraf dist && tsc --project tsconfig.build.json",
-        "clean": "rimraf dist",
-        "lint": "biome check . && tsc",
-        "lint:fix": "biome check --write",
-        "test": "vitest run",
-        "test:ci": "vitest run --coverage",
-        "prepublishOnly": "pnpm run build"
-    },
-    "devDependencies": {
-        "@biomejs/biome": "^2.5.12",
-        "@lokalise/biome-config": "workspace:^",
-        "@lokalise/tsconfig": "workspace:^",
-        "@types/node": "^26.6.4",
-        "@vitest/coverage-v8": "^4.1.11",
-        "rimraf": "^6.1.3",
-        "typescript": "7.0.2",
-        "vitest": "^4.1.11"
-    },
-    "dependencies": {
-        "ohash": "^2.0.12"
-    }
+  "name": "@lokalise/crypto",
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=24.13.1"
+  },
+  "type": "module",
+  "description": "Hashing, checksum and encryption helpers for Lokalise services",
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://github.com/lokalise/shared-ts-libs",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/lokalise/shared-ts-libs.git",
+    "directory": "packages/app/crypto"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md",
+    "CHANGELOG.md"
+  ],
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "rimraf dist && tsc --project tsconfig.build.json",
+    "clean": "rimraf dist",
+    "lint": "biome check . && tsc",
+    "lint:fix": "biome check --write",
+    "test": "vitest run",
+    "test:ci": "vitest run --coverage",
+    "prepublishOnly": "pnpm run build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.12",
+    "@lokalise/biome-config": "workspace:^",
+    "@lokalise/tsconfig": "workspace:^",
+    "@types/node": "^26.6.5",
+    "@vitest/coverage-v8": "^4.1.11",
+    "rimraf": "^6.1.3",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.11"
+  },
+  "dependencies": {
+    "ohash": "^2.0.12"
+  }
 }
