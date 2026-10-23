@@ -1,7 +1,7 @@
 import { join, resolve } from 'node:path'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { getDatabaseUrl } from '../test/getDatabaseUrl.ts'
 import { applyConcurrentIndexes, readConcurrentIndexStatements } from './applyConcurrentIndexes.ts'
 
@@ -99,11 +99,15 @@ describe('applyConcurrentIndexes (PostgreSQL)', () => {
   })
 
   it('drops and rebuilds an INVALID index left by a failed build', async () => {
-    await sql.unsafe(`INSERT INTO aci.aci_item (id, owner_id, code) VALUES (1, 1, 'a'), (2, 2, 'a')`)
-
-    await expect(applyConcurrentIndexes({ db, folder: INDEX_FOLDER })).rejects.toThrow(
-      'could not create unique index',
+    await sql.unsafe(
+      `INSERT INTO aci.aci_item (id, owner_id, code) VALUES (1, 1, 'a'), (2, 2, 'a')`,
     )
+
+    await expect(applyConcurrentIndexes({ db, folder: INDEX_FOLDER })).rejects.toMatchObject({
+      cause: expect.objectContaining({
+        message: expect.stringContaining('could not create unique index'),
+      }),
+    })
     expect(await readIndexValidity()).toEqual({
       idx_aci_item_owner: true,
       idx_aci_item_code: false,
@@ -119,50 +123,6 @@ describe('applyConcurrentIndexes (PostgreSQL)', () => {
       missingTable: ['idx_aci_missing_owner'],
     })
     expect(await readIndexValidity()).toEqual({ idx_aci_item_owner: true, idx_aci_item_code: true })
-  })
-
-  it('fails without dropping an index another session is still building', async () => {
-    let releaseWriter = () => {}
-    const writerReleased = new Promise<void>((resolve) => {
-      releaseWriter = resolve
-    })
-    let markInserted = () => {}
-    const inserted = new Promise<void>((resolve) => {
-      markInserted = resolve
-    })
-    const writer = sql.begin(async (tx) => {
-      await tx.unsafe(`INSERT INTO aci.aci_item (id, owner_id, code) VALUES (1, 1, 'a')`)
-      markInserted()
-      await writerReleased
-    })
-    await inserted
-
-    const builder = postgres(getDatabaseUrl(), { max: 1 })
-    const build = builder.unsafe(
-      'CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_aci_item_owner" ON "aci"."aci_item" ("owner_id")',
-    )
-
-    await vi.waitFor(
-      async () => {
-        const rows = await sql.unsafe(
-          `SELECT 1 FROM pg_stat_progress_create_index p
-             JOIN pg_class c ON c.oid = p.index_relid
-            WHERE c.relname = 'idx_aci_item_owner'`,
-        )
-        expect(rows).toHaveLength(1)
-      },
-      { timeout: 10_000, interval: 100 },
-    )
-
-    await expect(applyConcurrentIndexes({ db, folder: INDEX_FOLDER })).rejects.toThrow(
-      'aci.idx_aci_item_owner is being built by backend',
-    )
-
-    releaseWriter()
-    await writer
-    await build
-    await builder.end()
-    expect(await readIndexValidity()).toEqual({ idx_aci_item_owner: true })
   })
 
   it('runs nothing when any statement is invalid', async () => {

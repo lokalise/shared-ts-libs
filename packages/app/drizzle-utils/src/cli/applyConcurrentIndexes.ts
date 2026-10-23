@@ -79,5 +79,8 @@ async function main() {
 
 main().catch((err) => {
   logError(err instanceof Error ? err.message : err)
+  if (err instanceof Error && err.cause) {
+    logError(err.cause)
+  }
   process.exit(1)
 })

@@ -143,70 +143,35 @@ Returns `{ outcome, total, applied, skipped }`, where `outcome` is `'baselined'`
 
 ### applyConcurrentIndexes
 
-Builds PostgreSQL indexes with `CREATE INDEX CONCURRENTLY` before `drizzle-kit migrate`, so adding an index to a large table does not block writes.
+Builds PostgreSQL indexes with `CREATE INDEX CONCURRENTLY` before `drizzle-kit migrate`. drizzle-orm runs all pending migrations in one transaction, where `CONCURRENTLY` is not allowed, and a plain `CREATE INDEX` blocks writes to the table until the build finishes.
 
-#### Problem
-
-drizzle-orm applies all pending migrations inside one transaction, and PostgreSQL rejects `CONCURRENTLY` inside a transaction block. A plain `CREATE INDEX` in a migration blocks writes to the table until the build finishes, which takes minutes on a large table.
-
-#### Workflow
-
-1. Add the index to the Drizzle schema and run `drizzle-kit generate` as usual. Make sure the generated statement uses `CREATE INDEX IF NOT EXISTS`.
-2. Put the same statement with `CONCURRENTLY IF NOT EXISTS` into a `.sql` file in a folder outside the migrations folder, e.g. `src/db/concurrent-indexes/0001_usage_metric_project.sql`:
+1. Add the index to the Drizzle schema and generate the migration as usual, with `CREATE INDEX IF NOT EXISTS`.
+2. Put the same statement with `CONCURRENTLY IF NOT EXISTS` into a `.sql` file in a folder outside the migrations folder:
 
    ```sql
    CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_usage_metric_project" ON "spectre"."usage_metric" ("project_uuid");
    ```
 
-3. Run the CLI before `drizzle-kit migrate` wherever migrations run (e.g. the migration job):
+3. Run it before migrations, e.g. in the migration job:
 
    ```bash
    npx apply-concurrent-indexes ./drizzle.config.ts --folder ./src/db/concurrent-indexes && npx drizzle-kit migrate
    ```
 
-The index is built concurrently first, and the Drizzle migration then finds it in place and does nothing. Keep the files, like migrations: each run costs two catalog queries per index.
+Each run skips valid indexes and builds missing ones. An INVALID index left by a failed build is dropped and built again. An index whose table does not exist yet (fresh database, CI) is skipped, so the regular migration creates both. All files are validated before anything runs; only `CREATE [UNIQUE] INDEX CONCURRENTLY IF NOT EXISTS <name> ON <table> ...` statements separated by `;` are accepted.
 
-For each index, the helper:
+Caveats:
 
-- skips it when a valid index with that name exists
-- builds it when it is missing
-- drops an INVALID index left by a failed or interrupted build with `DROP INDEX CONCURRENTLY`, then builds it again
-- fails when another session is still building it
-- skips it when its table does not exist yet (fresh database, CI, PR environments), so the regular migration creates both
+- The table and columns must exist before the deploy that adds the index file.
+- The build waits for transactions already open on the table, and its time counts against the migration job deadline.
+- The no-op `CREATE INDEX IF NOT EXISTS` in the Drizzle migration still takes a brief `SHARE` lock on the table.
 
-Every statement is validated before any runs. Only `CREATE [UNIQUE] INDEX CONCURRENTLY IF NOT EXISTS <name> ON <table> ...` is accepted. Statements are separated by `;`, and `--` comment lines (including `--> statement-breakpoint`) are ignored.
-
-#### Caveats
-
-- The table and columns must exist before the deploy that adds the index file. The helper runs before migrations, so an index on a column added in the same deploy fails. Ship the column first, or create the index in the regular migration when the table is new and empty.
-- `CONCURRENTLY` does not block reads or writes, but it waits for transactions open on the table when it starts. The build time counts against the migration job deadline.
-- A build that fails because of the data (e.g. duplicates for a `UNIQUE` index) fails every deploy until the data is fixed.
-- The no-op `CREATE INDEX IF NOT EXISTS` in the Drizzle migration still takes a brief `SHARE` lock on the table, held until the migration transaction commits.
-- PostgreSQL only.
-
-#### Library usage
+The library function takes a Drizzle `db` for PostgreSQL, outside a transaction:
 
 ```typescript
-import { applyConcurrentIndexes } from '@lokalise/drizzle-utils'
-import { drizzle } from 'drizzle-orm/postgres-js'
-import postgres from 'postgres'
-
-const sql = postgres(DATABASE_URL)
-const db = drizzle({ client: sql })
-
 const result = await applyConcurrentIndexes({ db, folder: './src/db/concurrent-indexes', log: console.log })
-await sql.end()
+// { created, rebuilt, existing, missingTable }: lists of index names
 ```
-
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `db` | `DrizzleExecutor` | *(required)* | A Drizzle `db` instance for PostgreSQL, not inside a transaction |
-| `folder` | `string` | *(required)* | Folder with `.sql` files, applied in file name order |
-| `log` | `(message: string) => void` | *(no-op)* | Optional logger for human-readable progress lines |
-
-Returns `{ created, rebuilt, existing, missingTable }`, each a list of index names.
-
-`readConcurrentIndexStatements(folder)` validates and returns the statements without touching the database.
 
 ---
 

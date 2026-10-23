@@ -18,7 +18,7 @@ import { type DrizzleExecutor, quoteLiteral, selectRows } from './markMigrations
 
 const IDENTIFIER = String.raw`(?:"(?:[^"]|"")+"|[A-Za-z_][\w$]*)`
 const CREATE_INDEX_CONCURRENTLY = new RegExp(
-  String.raw`^CREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY\s+IF\s+NOT\s+EXISTS\s+(${IDENTIFIER})\s+ON\s+((?:${IDENTIFIER}\.)?${IDENTIFIER})[\s(]`,
+  String.raw`^CREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY\s+IF\s+NOT\s+EXISTS\s+(${IDENTIFIER})\s+ON\s+(?!ONLY\s)((?:${IDENTIFIER}\.)?${IDENTIFIER})[\s(]`,
   'i',
 )
 
@@ -110,7 +110,6 @@ async function tableExists(db: DrizzleExecutor, tableName: string): Promise<bool
 interface ExistingIndex {
   valid: boolean
   qualifiedName: string
-  buildingPid: number | null
 }
 
 async function findIndex(
@@ -120,12 +119,10 @@ async function findIndex(
   const [row] = await all(
     db,
     `SELECT i.indisvalid AS valid,
-            quote_ident(n.nspname) || '.' || quote_ident(c.relname) AS qualified_name,
-            p.pid AS building_pid
+            quote_ident(n.nspname) || '.' || quote_ident(c.relname) AS qualified_name
        FROM pg_class c
        JOIN pg_namespace n ON n.oid = c.relnamespace
        JOIN pg_index i ON i.indexrelid = c.oid
-       LEFT JOIN pg_stat_progress_create_index p ON p.index_relid = c.oid
       WHERE c.relname = ${quoteLiteral(entry.indexName)}
         AND c.relnamespace = (
           SELECT relnamespace FROM pg_class WHERE oid = to_regclass(${quoteLiteral(entry.tableName)})
@@ -137,7 +134,6 @@ async function findIndex(
   return {
     valid: row.valid === true,
     qualifiedName: String(row.qualified_name),
-    buildingPid: typeof row.building_pid === 'number' ? row.building_pid : null,
   }
 }
 
@@ -173,11 +169,6 @@ export async function applyConcurrentIndexes(
     }
 
     if (index) {
-      if (index.buildingPid !== null) {
-        throw new Error(
-          `Index ${index.qualifiedName} is being built by backend ${index.buildingPid}`,
-        )
-      }
       log(`  ! ${entry.indexName}: dropping INVALID index`)
       await db.execute(sql.raw(`DROP INDEX CONCURRENTLY IF EXISTS ${index.qualifiedName}`))
     }
