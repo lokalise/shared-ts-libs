@@ -25,6 +25,7 @@ describe('isTextTranslatable', () => {
     'Hello1, World2', // Contains text and numbers
     'Hello!<> world', // symbols mixed with text
     'Hello\uE101bold\uE102! 123\uE101bold\uE102 world', // numbers mixed with NT regions and symbols
+    '\uE101<table>\n<tr>\uE102Hello\uE101</tr>\n</table>\uE102', // text between NT regions spanning several lines
 
     // html tags with translatable text
     '<div class="test">hello world</div>',
@@ -68,6 +69,8 @@ describe('isTextTranslatable', () => {
     '123\uE101hello\uE102 123', // numbers with translatable text
     '123! 4 | 56', // numbers with symbols
     '\uE101hello\uE102 123! \uE1012060\uE102 | 56', // numbers with symbols
+    '\uE101<table>\n<tr>Hello</tr>\n</table>\uE102', // single NT region spanning several lines
+    '\uE101<b>\nHello\uE102 \uE101How\nare you\uE102', // several NT regions spanning several lines
 
     // Testing tags
     '</tr>',

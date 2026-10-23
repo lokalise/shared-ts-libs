@@ -1,10 +1,11 @@
 import { NON_TRANSLATABLE_END_TAG, NON_TRANSLATABLE_START_TAG } from '../nonTranslatableTags.ts'
 
-const nonTranslatableTextPattern = `${NON_TRANSLATABLE_START_TAG}.+?${NON_TRANSLATABLE_END_TAG}`
+// `[\s\S]` instead of `.` so a region can span several lines
+const nonTranslatableTextPattern = `${NON_TRANSLATABLE_START_TAG}[\\s\\S]+?${NON_TRANSLATABLE_END_TAG}`
 export const nonTranslatableTextRegexp = new RegExp(nonTranslatableTextPattern)
 export const nonTranslatableTextRegexpG = new RegExp(nonTranslatableTextPattern, 'g')
 
-const nonTranslatableTagsPattern = `${NON_TRANSLATABLE_START_TAG}(.+?)${NON_TRANSLATABLE_END_TAG}`
+const nonTranslatableTagsPattern = `${NON_TRANSLATABLE_START_TAG}([\\s\\S]+?)${NON_TRANSLATABLE_END_TAG}`
 export const nonTranslatableTagsRegexpG = new RegExp(nonTranslatableTagsPattern, 'g')
 
 /**
