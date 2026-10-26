@@ -25,6 +25,7 @@ export {
   DbNamespaceSpanExporter,
   type DbNamespaceSpanExporterOptions,
 } from './dbNamespaceSpanExporter.ts'
+export { withSpan } from './withSpan.ts'
 
 // Call initOpenTelemetry() before starting the server.
 // The application must be started with --import=@opentelemetry/instrumentation/hook.mjs
