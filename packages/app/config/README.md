@@ -12,8 +12,8 @@ The parsed value is an `AppConfig`.
 
 | Env var                        | Required | Default   | Notes                                                          |
 |--------------------------------|----------|-----------|----------------------------------------------------------------|
-| `NODE_ENV`                     | yes      |           | `production`, `development` or `test`                          |
-| `APP_ENV`                      | yes      |           | `production`, `development` or `staging`                       |
+| `NODE_ENV`                     | yes      |           | `production`, `test` or `development`                          |
+| `APP_ENV`                      | yes      |           | `production`, `staging` or `development`                       |
 | `APP_VERSION`                  | yes      |           |                                                                |
 | `GIT_COMMIT_SHA`               | yes      |           |                                                                |
 | `APP_BIND_ADDRESS`             | no       | `0.0.0.0` |                                                                |
