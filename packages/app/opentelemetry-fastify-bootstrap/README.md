@@ -154,6 +154,22 @@ const users = await db.select().from(usersTable)
 
 Each span carries `db.system`, `db.statement` (the parameterized SQL, truncated to 1000 chars by default), `db.operation` and — when configured — `db.name` / `net.peer.name` / `net.peer.port`. Because the spans carry `db.system`, they also participate in [`dbNamespaceBySystem` enrichment](#joining-a-datadog-inferred-service-entity). See `InstrumentDrizzleConfig` for all options, e.g. `captureQueryText: false` to omit SQL text.
 
+### Adding custom spans
+
+`withSpan` wraps a block of code in a span. It nests under the active span (usually the request), marks the span as an error when the block throws, and always ends it:
+
+```ts
+import { withSpan } from '@lokalise/opentelemetry-fastify-bootstrap'
+
+const translation = await withSpan('translate.provider_call', { provider: 'bedrock' }, async (span) => {
+  const result = await client.translate(input)
+  span.setAttribute('tokens', result.usage.totalTokens)
+  return result
+})
+```
+
+Datadog derives hits, errors and latency from spans at no extra cost, so a span is often a cheaper replacement for a custom metric.
+
 ### Adding Custom Span Processors
 
 You can integrate additional span processors to send telemetry data to multiple destinations or add custom processing logic.
@@ -181,6 +197,7 @@ initOpenTelemetry({
 - Configurable path filtering
 - Optional console span exporter for debugging
 - Support for custom span processors
+- `withSpan` helper for custom spans
 - Optional `db.namespace` enrichment of the Datadog export payload to join inferred-service entities
 - Graceful shutdown support
 
