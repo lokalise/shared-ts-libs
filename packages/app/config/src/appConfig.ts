@@ -22,12 +22,12 @@ import { z } from 'zod'
 export const createAppConfigSchema = () => ({
   nodeEnv: envvar(
     'NODE_ENV',
-    z.enum(['production', 'development', 'test']).describe('Application execution environment'),
+    z.enum(['production', 'test', 'development']).describe('Application execution environment'),
   ),
   appEnv: envvar(
     'APP_ENV',
     z
-      .enum(['production', 'development', 'staging'])
+      .enum(['production', 'staging', 'development'])
       .describe('Deployment environment for the application'),
   ),
   appVersion: envvar(
