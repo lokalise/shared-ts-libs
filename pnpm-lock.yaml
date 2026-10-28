@@ -662,8 +662,8 @@ importers:
   packages/app/error-utils:
     dependencies:
       '@bugsnag/node':
-        specifier: ^9.0.0
-        version: 9.0.0
+        specifier: ^9.1.0
+        version: 9.1.0
       pino-std-serializers:
         specifier: ^7.1.0
         version: 7.1.0
@@ -1779,9 +1779,6 @@ packages:
   '@bugsnag/core@8.9.0':
     resolution: {integrity: sha512-SrXO0isIZfrCem06/WDvC5MSd1Tj6Yjm4Wqdlv6jyjTvsow+cppvt7rS9Bps3qOeXfYCqWHN4ev02OdwnfZ1PQ==}
 
-  '@bugsnag/core@9.0.0':
-    resolution: {integrity: sha512-5F4BVHTGRSWsDh0zJ3DlZ71OLyK9deYbmUL1u7cga+lYhtjln7htuI6eLtrW40JeeMKByOJFHjaBIpDvegNsPg==}
-
   '@bugsnag/core@9.1.0':
     resolution: {integrity: sha512-AxuzyLoZgTbEYZybQ0hsbIlQl6uFuFhh+AIbwBX6mTLDwbLriPbtzbzeF1KQce8WuJFp6iESPXHBYUbUxIvcsw==}
 
@@ -1796,9 +1793,6 @@ packages:
 
   '@bugsnag/node@8.10.0':
     resolution: {integrity: sha512-xLDSk3EBUDIAwYyECxzdEpsgZv6Mwn/WAV57vQBiKsTgia7cnjE83VeR9O6uu4oAUhye160LAVzRCvmJNac+nw==}
-
-  '@bugsnag/node@9.0.0':
-    resolution: {integrity: sha512-zTBWPHaKaFFQbTT1J0VJF0jMS7vEIfePUcuJ92zAbaaN1Hm07gK+DDXzEiG5lZA75SngBHHrHEYEi5gH/LDpyg==}
 
   '@bugsnag/node@9.1.0':
     resolution: {integrity: sha512-U3StZegse1RtmdOBZ4JH8UXNLQBwJ5uG1vjlVUiLY2SWBaBiodvhUtb7k0STHkMt8RqR32HN6i7XzEtTk87Apw==}
@@ -8047,14 +8041,6 @@ snapshots:
       iserror: 0.0.2
       stack-generator: 2.0.10
 
-  '@bugsnag/core@9.0.0':
-    dependencies:
-      '@bugsnag/cuid': 3.2.2
-      '@bugsnag/safe-json-stringify': 6.1.0
-      error-stack-parser: 2.1.4
-      iserror: 0.0.2
-      stack-generator: 2.0.10
-
   '@bugsnag/core@9.1.0':
     dependencies:
       '@bugsnag/cuid': 3.2.2
@@ -8078,15 +8064,6 @@ snapshots:
   '@bugsnag/node@8.10.0':
     dependencies:
       '@bugsnag/core': 8.9.0
-      byline: 5.0.0
-      error-stack-parser: 2.1.4
-      iserror: 0.0.2
-      pump: 3.0.4
-      stack-generator: 2.0.10
-
-  '@bugsnag/node@9.0.0':
-    dependencies:
-      '@bugsnag/core': 9.0.0
       byline: 5.0.0
       error-stack-parser: 2.1.4
       iserror: 0.0.2
