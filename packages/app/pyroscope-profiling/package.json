@@ -73,7 +73,7 @@
     "@lokalise/biome-config": "workspace:^",
     "@lokalise/node-core": "^14.11.0",
     "@lokalise/tsconfig": "workspace:^",
-    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/api": "1.10.0",
     "@opentelemetry/sdk-trace-base": "^2.12.0",
     "@types/node": "^26.6.5",
     "@vitest/coverage-v8": "^4.1.11",
