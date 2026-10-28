@@ -50,7 +50,7 @@
     "@biomejs/biome": "^2.5.12",
     "@lokalise/biome-config": "workspace:^",
     "@lokalise/fastify-extras": "^34.1.0",
-    "@lokalise/node-core": "^14.11.0",
+    "@lokalise/node-core": "^14.12.0",
     "@lokalise/tsconfig": "workspace:^",
     "@lokalise/universal-ts-utils": "workspace:^",
     "@types/node": "^26.6.5",
