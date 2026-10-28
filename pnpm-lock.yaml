@@ -790,8 +790,8 @@ importers:
         specifier: ^5.1.2
         version: 5.1.2
       '@fastify/basic-auth':
-        specifier: ^6.3.0
-        version: 6.3.0
+        specifier: ^6.3.1
+        version: 6.3.1
       '@lokalise/tsconfig':
         specifier: workspace:^
         version: link:../../dev/tsconfig
@@ -2145,8 +2145,8 @@ packages:
       awilix: '>=9.0.0'
       fastify: ^5.0.0
 
-  '@fastify/basic-auth@6.3.0':
-    resolution: {integrity: sha512-Yohe3nQ8J3xtYXoryDwrVj1bYEJRq+kNPU1Sdv7w0Nh45JyyflVpCttyfzioc/JnHJ/i0CKpVwW2K+5fGMW/pQ==}
+  '@fastify/basic-auth@6.3.1':
+    resolution: {integrity: sha512-g6rbj93uDVESth5Zo7DWfWEZS9RCbDS9LXMLEk7jPvhWA9xGAxeZ3EVp5rNUV1jO8OFV433Ykcc9pXu68o+13Q==}
 
   '@fastify/deepmerge@3.2.2':
     resolution: {integrity: sha512-155eqA/WMQdN6gUD4RrhS2K0Pcz2Ou9pQ86L0sipOpP9ONbTA6oYw/hW4VdBjR4egcDHqmWUK9x80oUX7S1mDQ==}
@@ -8445,7 +8445,7 @@ snapshots:
       fastify: 5.12.7
       fastify-plugin: 6.0.1
 
-  '@fastify/basic-auth@6.3.0':
+  '@fastify/basic-auth@6.3.1':
     dependencies:
       '@fastify/error': 4.2.0
       fastify-plugin: 6.0.1
