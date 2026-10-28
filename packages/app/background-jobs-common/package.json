@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@lokalise/id-utils": "workspace:^",
-    "@lokalise/node-core": "^14.11.0",
+    "@lokalise/node-core": "^14.12.0",
     "redis-semaphore": "^6.0.0",
     "ts-deepmerge": "^8.0.0"
   },

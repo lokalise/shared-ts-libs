@@ -58,7 +58,7 @@
     "@smithy/types": "^4.17.2",
     "@lokalise/biome-config": "workspace:^",
     "@lokalise/fastify-extras": "^36.0.0",
-    "@lokalise/node-core": "^14.11.0",
+    "@lokalise/node-core": "^14.12.0",
     "@lokalise/tsconfig": "workspace:^",
     "@lokalise/universal-ts-utils": "workspace:^",
     "@message-queue-toolkit/core": "^27.2.0",
