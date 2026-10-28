@@ -47,7 +47,7 @@
     "pino": ">=9.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.12",
+    "@biomejs/biome": "^2.6.2",
     "@lokalise/biome-config": "workspace:^",
     "@lokalise/fastify-extras": "^36.0.2",
     "@lokalise/node-core": "^14.12.0",

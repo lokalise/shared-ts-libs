@@ -39,7 +39,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@biomejs/biome": "^2.5.12",
+    "@biomejs/biome": "^2.6.2",
     "@lokalise/biome-config": "workspace:^",
     "@lokalise/tsconfig": "workspace:^",
     "@types/node": "^26.6.5",
