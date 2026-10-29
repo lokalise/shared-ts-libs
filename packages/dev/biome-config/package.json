@@ -20,7 +20,10 @@
     "./configs/*": "./configs/*"
   },
   "private": false,
+  "peerDependencies": {
+    "@biomejs/biome": "^2.6.3"
+  },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.12"
+    "@biomejs/biome": "^2.6.3"
   }
 }
