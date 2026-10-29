@@ -66,12 +66,7 @@ poll<T>(
 
 ```typescript
 // ❌ v2.x - Positional parameters
-await poller.poll(
-  pollFn,
-  reqContext,
-  { jobId: '123' },
-  controller.signal
-)
+await poller.poll(pollFn, reqContext, { jobId: '123' }, controller.signal)
 
 // ✅ v3.0 - Options object with context captured via closures
 const jobId = '123'
@@ -99,8 +94,8 @@ await poller.poll(pollFn, {
 // ❌ v2.x - Required RequestContext with logger
 await poller.poll(
   pollFn,
-  reqContext,  // Had logger attached
-  { jobId: '123' }
+  reqContext, // Had logger attached
+  { jobId: '123' },
 )
 
 // ✅ v3.0 - Use hooks and closures
@@ -178,14 +173,11 @@ try {
 } catch (error) {
   if (PollingError.isPollingError(error)) {
     // Convert to domain error at boundary
-    throw new JobProcessingError(
-      `Job ${jobId} polling failed: ${error.failureCause}`,
-      { 
-        jobId,
-        pollingAttempts: error.attemptsMade,
-        cause: error 
-      }
-    )
+    throw new JobProcessingError(`Job ${jobId} polling failed: ${error.failureCause}`, {
+      jobId,
+      pollingAttempts: error.attemptsMade,
+      cause: error,
+    })
   }
   throw error
 }
@@ -243,10 +235,10 @@ class MyStrategy implements PollingStrategy {
     options?: PollingOptions,
   ): Promise<T> {
     const { hooks, signal } = options ?? {}
-    
+
     // Use hooks instead of direct logging
     hooks?.onAttempt?.({ attempt: 1, isComplete: false })
-    
+
     // ... implementation
   }
 }
@@ -299,17 +291,17 @@ await poller.poll(pollFn, {
     onAttempt: ({ attempt, isComplete }) => {
       console.log(`Attempt ${attempt}: ${isComplete ? 'Complete' : 'Pending'}`)
     },
-    
+
     // Called before waiting between attempts
     onWait: ({ attempt, waitMs }) => {
       console.log(`Waiting ${waitMs}ms before attempt ${attempt + 1}`)
     },
-    
+
     // Called when polling succeeds
     onSuccess: ({ totalAttempts }) => {
       metrics.increment('polling.success', { jobId })
     },
-    
+
     // Called when polling fails
     onFailure: ({ cause, attemptsMade }) => {
       metrics.increment('polling.failure', { cause, jobId })
@@ -413,14 +405,14 @@ await poller.poll(pollFn, {
       // Replaces: "Polling not complete, waiting before retry"
       logger.debug(
         { attempt, nextDelayMs: waitMs, jobId },
-        'Polling not complete, waiting before retry'
+        'Polling not complete, waiting before retry',
       )
     },
     onSuccess: ({ totalAttempts }) => {
       // Replaces: "Polling completed successfully"
       logger.debug(
         { attempt: totalAttempts, totalAttempts, jobId },
-        'Polling completed successfully'
+        'Polling completed successfully',
       )
     },
   },
@@ -454,10 +446,11 @@ try {
 } catch (error) {
   if (PollingError.isPollingError(error)) {
     // Convert to domain error with context
-    throw new JobProcessingError(
-      `Job ${jobId} polling failed: ${error.failureCause}`,
-      { jobId, attempts: error.attemptsMade, cause: error }
-    )
+    throw new JobProcessingError(`Job ${jobId} polling failed: ${error.failureCause}`, {
+      jobId,
+      attempts: error.attemptsMade,
+      cause: error,
+    })
   }
 }
 ```
@@ -494,7 +487,11 @@ class CustomStrategy implements PollingStrategy {
 ### Before (v2.x)
 
 ```typescript
-import { Poller, ExponentialBackoffStrategy, STANDARD_EXPONENTIAL_BACKOFF_CONFIG } from '@lokalise/polling'
+import {
+  Poller,
+  ExponentialBackoffStrategy,
+  STANDARD_EXPONENTIAL_BACKOFF_CONFIG,
+} from '@lokalise/polling'
 
 async function processJob(jobId: string, reqContext: RequestContext) {
   const strategy = new ExponentialBackoffStrategy(STANDARD_EXPONENTIAL_BACKOFF_CONFIG)
@@ -508,8 +505,8 @@ async function processJob(jobId: string, reqContext: RequestContext) {
       }
       return { isComplete: false }
     },
-    reqContext,  // Required
-    { jobId },   // Metadata
+    reqContext, // Required
+    { jobId }, // Metadata
   )
 }
 ```
@@ -517,7 +514,12 @@ async function processJob(jobId: string, reqContext: RequestContext) {
 ### After (v3.0)
 
 ```typescript
-import { Poller, ExponentialBackoffStrategy, STANDARD_EXPONENTIAL_BACKOFF_CONFIG, PollingError } from '@lokalise/polling'
+import {
+  Poller,
+  ExponentialBackoffStrategy,
+  STANDARD_EXPONENTIAL_BACKOFF_CONFIG,
+  PollingError,
+} from '@lokalise/polling'
 
 async function processJob(jobId: string) {
   const strategy = new ExponentialBackoffStrategy(STANDARD_EXPONENTIAL_BACKOFF_CONFIG)
@@ -547,10 +549,11 @@ async function processJob(jobId: string) {
   } catch (error) {
     // Convert utility error to domain error at boundary
     if (PollingError.isPollingError(error)) {
-      throw new JobProcessingError(
-        `Job ${jobId} polling ${error.failureCause.toLowerCase()}`,
-        { jobId, attempts: error.attemptsMade, cause: error }
-      )
+      throw new JobProcessingError(`Job ${jobId} polling ${error.failureCause.toLowerCase()}`, {
+        jobId,
+        attempts: error.attemptsMade,
+        cause: error,
+      })
     }
     throw error
   }
@@ -563,32 +566,32 @@ async function processJob(jobId: string) {
 
 ```typescript
 // v2.x
-import { 
-  Poller, 
+import {
+  Poller,
   PollingError,
-  type RequestContext  // ❌ Removed
+  type RequestContext, // ❌ Removed
 } from '@lokalise/polling'
-import { InternalError } from '@lokalise/node-core'  // ❌ No longer needed
+import { InternalError } from '@lokalise/node-core' // ❌ No longer needed
 
 // v3.0
-import { 
-  Poller, 
+import {
+  Poller,
   PollingError,
-  type PollingOptions,  // ✅ New
-  type PollingHooks,    // ✅ New
+  type PollingOptions, // ✅ New
+  type PollingHooks, // ✅ New
 } from '@lokalise/polling'
 ```
 
 ### Common Patterns
 
-| Use Case | v2.x | v3.0 |
-|----------|------|------|
-| Basic poll | `poll(fn, ctx)` | `poll(fn)` |
-| With context | `poll(fn, ctx, meta)` | Capture via closures |
-| With signal | `poll(fn, ctx, meta, sig)` | `poll(fn, { signal: sig })` |
-| With logging | Automatic via `ctx.logger` | `poll(fn, { hooks: { onAttempt: ... } })` |
-| Error check | `error instanceof InternalError` | `PollingError.isPollingError(error)` |
-| Error context | `error.details.metadata` | Convert to domain error with context |
+| Use Case      | v2.x                             | v3.0                                      |
+| ------------- | -------------------------------- | ----------------------------------------- |
+| Basic poll    | `poll(fn, ctx)`                  | `poll(fn)`                                |
+| With context  | `poll(fn, ctx, meta)`            | Capture via closures                      |
+| With signal   | `poll(fn, ctx, meta, sig)`       | `poll(fn, { signal: sig })`               |
+| With logging  | Automatic via `ctx.logger`       | `poll(fn, { hooks: { onAttempt: ... } })` |
+| Error check   | `error instanceof InternalError` | `PollingError.isPollingError(error)`      |
+| Error context | `error.details.metadata`         | Convert to domain error with context      |
 
 ## Compatibility Notes
 

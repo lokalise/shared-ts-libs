@@ -20,9 +20,9 @@ datasources:
         #
         # Not `process_cpu:...`, which is what Grafana's own docs show: that is
         # the Go and Java naming. The Node SDK ingests under `wall`.
-        profileTypeId: 'wall:wall:nanoseconds:wall:nanoseconds'
+        profileTypeId: "wall:wall:nanoseconds:wall:nanoseconds"
         # Narrows the query to the service the span came from. `service_name` is
         # the label Pyroscope files an app name under.
         tags:
-          - key: 'service.name'
-            value: 'service_name'
+          - key: "service.name"
+            value: "service_name"

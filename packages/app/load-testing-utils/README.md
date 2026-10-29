@@ -83,7 +83,8 @@ if (args.command === 'down') {
   const summaryPath = join(K6_DIR, 'k6-summary.json')
   rmSync(summaryPath, { force: true })
   const { result: exitCode, delta } = await measureResources(
-    () => scrapeResources({ metricsUrl, probeUrl: 'http://localhost:3323/db-stats?statements=all' }),
+    () =>
+      scrapeResources({ metricsUrl, probeUrl: 'http://localhost:3323/db-stats?statements=all' }),
     () =>
       runK6(supervisor, {
         mode: k6Mode,
@@ -113,15 +114,15 @@ if (args.command === 'down') {
 
 `ProcessSupervisor` starts and stops the processes a stack is made of.
 
-| Method | What it does |
-|---|---|
-| `start(name, command, args, { cwd, env })` | Starts a long-running process. Every output line goes to the terminal prefixed `[name]`, and all of it to `<logDir>/<name>.log` |
-| `run(name, command, args, { cwd, env })` | Runs to completion with inherited stdio, and throws on a non-zero exit |
-| `runToExit(command, args, { cwd, env })` | Runs with inherited stdio and resolves with the exit code. Asynchronous, so the started processes' output pipes keep draining meanwhile |
-| `stopAll(processes?)` | Stops the started processes and everything under them, last started first |
-| `writeState(extra?)` / `readState()` / `clearState()` | Records the running pids and their start times in `stateFile` (default `<logDir>/stack-state.json`) |
-| `recordedProcesses()` | The pids a `--keep` run recorded, for a `down` from another terminal to pass to `stopAll`. A pid whose process has a different start time now (after a crash or a reboot, say) is skipped and logged |
-| `detach()` | Stops relaying and lets this process exit while the started processes keep running. Needs `detachable: true` |
+| Method                                                | What it does                                                                                                                                                                                         |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `start(name, command, args, { cwd, env })`            | Starts a long-running process. Every output line goes to the terminal prefixed `[name]`, and all of it to `<logDir>/<name>.log`                                                                      |
+| `run(name, command, args, { cwd, env })`              | Runs to completion with inherited stdio, and throws on a non-zero exit                                                                                                                               |
+| `runToExit(command, args, { cwd, env })`              | Runs with inherited stdio and resolves with the exit code. Asynchronous, so the started processes' output pipes keep draining meanwhile                                                              |
+| `stopAll(processes?)`                                 | Stops the started processes and everything under them, last started first                                                                                                                            |
+| `writeState(extra?)` / `readState()` / `clearState()` | Records the running pids and their start times in `stateFile` (default `<logDir>/stack-state.json`)                                                                                                  |
+| `recordedProcesses()`                                 | The pids a `--keep` run recorded, for a `down` from another terminal to pass to `stopAll`. A pid whose process has a different start time now (after a crash or a reboot, say) is skipped and logged |
+| `detach()`                                            | Stops relaying and lets this process exit while the started processes keep running. Needs `detachable: true`                                                                                         |
 
 `env` is merged over `process.env`.
 
@@ -171,7 +172,7 @@ that skips starting it. See the `@lokalise/pyroscope-profiling`
 
 ```ts
 const compose = { file: 'docker-compose.perf.yml', project: 'my-service-perf', cwd: HERE }
-composeUp(supervisor, compose, { profiles: ['profiling'] })   // up -d --wait
+composeUp(supervisor, compose, { profiles: ['profiling'] }) // up -d --wait
 composeDown(supervisor, compose, { profiles: ['profiling'], removeVolumes: false })
 ```
 
@@ -199,11 +200,11 @@ little worse, so compare Docker runs with Docker runs.
 
 ## Environment
 
-| Function | What it does |
-|---|---|
-| `parseEnvFile(contents)` / `readEnvFile(path)` | `KEY=value` lines, `#` comments, optional double quotes. No interpolation, `export` or multi-line values |
-| `retargetPorts(values, portVariables, env?)` | Rewrites `localhost:<port>` in values and bare `*_PORT` values, for every default port whose variable (`{ '5451': 'PERF_POSTGRES_PORT' }`) is set in `env` |
-| `omitExported(values, env?)` | Drops the keys `env` already has, so an exported variable keeps winning over the file, as with `node --env-file` |
+| Function                                       | What it does                                                                                                                                               |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `parseEnvFile(contents)` / `readEnvFile(path)` | `KEY=value` lines, `#` comments, optional double quotes. No interpolation, `export` or multi-line values                                                   |
+| `retargetPorts(values, portVariables, env?)`   | Rewrites `localhost:<port>` in values and bare `*_PORT` values, for every default port whose variable (`{ '5451': 'PERF_POSTGRES_PORT' }`) is set in `env` |
+| `omitExported(values, env?)`                   | Drops the keys `env` already has, so an exported variable keeps winning over the file, as with `node --env-file`                                           |
 
 Anything service-specific, such as swapping a database name in a DSN, is a
 `map` over the result.

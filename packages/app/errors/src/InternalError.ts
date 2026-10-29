@@ -135,7 +135,6 @@ export abstract class InternalError<
 
       // Redeclares the inherited private constructor as public — without this,
       // consumers could neither extend nor instantiate the bound class.
-      // biome-ignore lint/complexity/noUselessConstructor: changes accessibility
       public constructor(options: InternalErrorOptions<TDetails>) {
         super(options)
       }

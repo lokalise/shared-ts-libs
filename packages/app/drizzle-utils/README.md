@@ -116,16 +116,16 @@ await sql.end()
 
 #### Options
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `db` | `DrizzleExecutor` | *(required)* | A Drizzle `db` instance (any driver) — anything exposing `execute(sql)` |
-| `migrationsFolder` | `string` | *(required)* | Path to the Drizzle migrations folder. Supports both legacy format (with `meta/_journal.json`) and new folder-per-migration format (drizzle-kit 1.0.0-beta) |
-| `dialect` | `'postgresql' \| 'mysql' \| 'cockroachdb'` | *(auto-detected)* | Database dialect. Auto-detected from the journal or snapshot files if omitted |
-| `databaseName` | `string` | *(skipped)* | If set, runs `CREATE DATABASE` (dialect-aware) before baselining |
-| `legacySchemaProbeTable` | `string` | *(skipped)* | If set, baselining is skipped unless this table exists — used to detect a fresh/empty database |
-| `migrationsTable` | `string` | `'__drizzle_migrations'` | Name of the migrations tracking table |
-| `migrationsSchema` | `string` | `'drizzle'` | Schema for the migrations table (PostgreSQL and CockroachDB only) |
-| `log` | `(message: string) => void` | *(no-op)* | Optional logger for human-readable progress lines |
+| Option                   | Type                                       | Default                  | Description                                                                                                                                                 |
+| ------------------------ | ------------------------------------------ | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `db`                     | `DrizzleExecutor`                          | _(required)_             | A Drizzle `db` instance (any driver) — anything exposing `execute(sql)`                                                                                     |
+| `migrationsFolder`       | `string`                                   | _(required)_             | Path to the Drizzle migrations folder. Supports both legacy format (with `meta/_journal.json`) and new folder-per-migration format (drizzle-kit 1.0.0-beta) |
+| `dialect`                | `'postgresql' \| 'mysql' \| 'cockroachdb'` | _(auto-detected)_        | Database dialect. Auto-detected from the journal or snapshot files if omitted                                                                               |
+| `databaseName`           | `string`                                   | _(skipped)_              | If set, runs `CREATE DATABASE` (dialect-aware) before baselining                                                                                            |
+| `legacySchemaProbeTable` | `string`                                   | _(skipped)_              | If set, baselining is skipped unless this table exists — used to detect a fresh/empty database                                                              |
+| `migrationsTable`        | `string`                                   | `'__drizzle_migrations'` | Name of the migrations tracking table                                                                                                                       |
+| `migrationsSchema`       | `string`                                   | `'drizzle'`              | Schema for the migrations table (PostgreSQL and CockroachDB only)                                                                                           |
+| `log`                    | `(message: string) => void`                | _(no-op)_                | Optional logger for human-readable progress lines                                                                                                           |
 
 Returns `{ outcome, total, applied, skipped }`, where `outcome` is `'baselined'`, `'skipped-fresh'`, or `'skipped-no-migrations'`.
 
@@ -151,7 +151,7 @@ Tools for verifying that a fresh `drizzle-kit migrate` against an empty database
 
 #### Solution
 
-Build the same schema twice — once via your old ORM, once via `drizzle-kit migrate` — then snapshot both and diff. **Any difference is a real defect** in the Drizzle schema definition that needs to be fixed (usually by adding the right `name:` override on a constraint or index) *before* you trust `markMigrationsApplied`.
+Build the same schema twice — once via your old ORM, once via `drizzle-kit migrate` — then snapshot both and diff. **Any difference is a real defect** in the Drizzle schema definition that needs to be fixed (usually by adding the right `name:` override on a constraint or index) _before_ you trust `markMigrationsApplied`.
 
 The comparison is strict and not normalized — names are part of the schema. Column ordering is the only thing not enforced (columns are keyed by name, not by ordinal position).
 
@@ -196,17 +196,17 @@ A natural CI flow: spin up two databases via docker-compose — one with the exi
 
 #### What is captured
 
-| Element | PostgreSQL / CockroachDB | MySQL |
-|---|---|---|
-| Tables | ✅ | ✅ |
-| Columns (type, nullable, default, identity, generated) | ✅ | ✅ (extra: auto_increment etc.) |
-| Primary keys (with name) | ✅ | ✅ (name always `PRIMARY` in MySQL) |
-| Unique constraints (with name) | ✅ | ✅ |
-| Foreign keys (with name, ON UPDATE, ON DELETE) | ✅ | ✅ |
-| Check constraints (with name and expression) | ✅ | ✅ (MySQL 8.0.16+) |
-| Indexes (with name, columns, unique, method, partial predicate) | ✅ | ✅ (no partial predicates) |
-| Enums | ✅ | ❌ (MySQL enums are column types — captured in column type) |
-| Sequences | ✅ | ❌ (MySQL uses auto_increment) |
+| Element                                                         | PostgreSQL / CockroachDB | MySQL                                                       |
+| --------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------- |
+| Tables                                                          | ✅                       | ✅                                                          |
+| Columns (type, nullable, default, identity, generated)          | ✅                       | ✅ (extra: auto_increment etc.)                             |
+| Primary keys (with name)                                        | ✅                       | ✅ (name always `PRIMARY` in MySQL)                         |
+| Unique constraints (with name)                                  | ✅                       | ✅                                                          |
+| Foreign keys (with name, ON UPDATE, ON DELETE)                  | ✅                       | ✅                                                          |
+| Check constraints (with name and expression)                    | ✅                       | ✅ (MySQL 8.0.16+)                                          |
+| Indexes (with name, columns, unique, method, partial predicate) | ✅                       | ✅ (no partial predicates)                                  |
+| Enums                                                           | ✅                       | ❌ (MySQL enums are column types — captured in column type) |
+| Sequences                                                       | ✅                       | ❌ (MySQL uses auto_increment)                              |
 
 **Not captured in v1** (scoping decision — not because they don't matter):
 
@@ -218,12 +218,12 @@ Adding any of these is a reasonable follow-up; the snapshot type is structured t
 
 #### Options
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `executor` | `SqlExecutor` | *(required)* | Object with `run(sql)` and `all(sql)` methods for executing raw SQL |
-| `dialect` | `'postgresql' \| 'mysql' \| 'cockroachdb'` | *(required)* | Database dialect |
-| `schemas` | `string[]` | PG: `['public']`; MySQL: current database | Schemas to capture |
-| `excludeTables` | `string[]` | `['__drizzle_migrations', '_prisma_migrations']` | Tables to skip (by unqualified name). Override to add your own |
+| Option          | Type                                       | Default                                          | Description                                                         |
+| --------------- | ------------------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------- |
+| `executor`      | `SqlExecutor`                              | _(required)_                                     | Object with `run(sql)` and `all(sql)` methods for executing raw SQL |
+| `dialect`       | `'postgresql' \| 'mysql' \| 'cockroachdb'` | _(required)_                                     | Database dialect                                                    |
+| `schemas`       | `string[]`                                 | PG: `['public']`; MySQL: current database        | Schemas to capture                                                  |
+| `excludeTables` | `string[]`                                 | `['__drizzle_migrations', '_prisma_migrations']` | Tables to skip (by unqualified name). Override to add your own      |
 
 #### Diff result
 

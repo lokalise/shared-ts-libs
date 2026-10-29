@@ -9,12 +9,12 @@
 services:
   tempo:
     image: grafana/tempo:2.9.1
-    command: ['-config.file=/etc/tempo/tempo.yaml']
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
     # Loopback only: an OTLP receiver on every interface takes spans from
     # anyone who can reach it.
     ports:
       # OTLP gRPC, which is what @lokalise/opentelemetry-fastify-bootstrap exports to.
-      - '127.0.0.1:${TEMPO_OTLP_GRPC_PORT:-4317}:4317'
+      - "127.0.0.1:${TEMPO_OTLP_GRPC_PORT:-4317}:4317"
     volumes:
       - ./tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
       - tempo-data:/var/tempo

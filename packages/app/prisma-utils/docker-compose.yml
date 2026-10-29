@@ -4,17 +4,21 @@ services:
     hostname: crdb
     command: start-single-node --cluster-name=example-single-node
     ports:
-      - '26257:26257'
-      - '8181:8080'
+      - "26257:26257"
+      - "8181:8080"
     environment:
       - COCKROACH_PASSWORD=pass
       - COCKROACH_USER=testuser
       - COCKROACH_DATABASE=test
     healthcheck:
-      test: [ "CMD-SHELL", "cockroach sql --host=127.0.0.1:26257 --certs-dir=certs -e 'SELECT 1;' || exit 1" ]
-      interval: 3s   # run check every 3 seconds
-      timeout: 5s    # fail if longer than 5s
-      retries: 10    # require 10 consecutive failures before unhealthy
+      test:
+        [
+          "CMD-SHELL",
+          "cockroach sql --host=127.0.0.1:26257 --certs-dir=certs -e 'SELECT 1;' || exit 1",
+        ]
+      interval: 3s # run check every 3 seconds
+      timeout: 5s # fail if longer than 5s
+      retries: 10 # require 10 consecutive failures before unhealthy
       start_period: 10s # grace period for initialization
     volumes:
       - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -24,15 +28,15 @@ services:
   # The version follows the Postgres image lokalise/autopilot runs.
   postgres:
     image: postgres:18.4
-    profiles: [ postgres ]
+    profiles: [postgres]
     ports:
-      - '127.0.0.1:54318:5432'
+      - "127.0.0.1:54318:5432"
     environment:
       - POSTGRES_USER=testuser
       - POSTGRES_PASSWORD=pass
       - POSTGRES_DB=test
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U testuser -d test" ]
+      test: ["CMD-SHELL", "pg_isready -U testuser -d test"]
       interval: 3s
       timeout: 5s
       retries: 10
