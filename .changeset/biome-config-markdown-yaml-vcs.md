@@ -1,5 +1,5 @@
 ---
-"@lokalise/biome-config": major
+"@lokalise/biome-config": minor
 ---
 
 `biome-base.jsonc` now formats Markdown and YAML, skips files listed in `.gitignore`, and requires Biome 2.6.3 or later.
