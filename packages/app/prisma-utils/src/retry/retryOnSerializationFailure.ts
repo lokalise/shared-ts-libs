@@ -31,7 +31,10 @@ export const retryOnSerializationFailure = async <T>(
   query: () => Promise<T>,
   options?: RetryOnSerializationFailureOptions,
 ): Promise<T> => {
-  const { retriesAllowed, baseRetryDelayMs, maxRetryDelayMs } = { ...DEFAULT_OPTIONS, ...options }
+  // resolved per option, as spreading `options` would let an explicit `undefined` erase a default
+  const retriesAllowed = options?.retriesAllowed ?? DEFAULT_OPTIONS.retriesAllowed
+  const baseRetryDelayMs = options?.baseRetryDelayMs ?? DEFAULT_OPTIONS.baseRetryDelayMs
+  const maxRetryDelayMs = options?.maxRetryDelayMs ?? DEFAULT_OPTIONS.maxRetryDelayMs
 
   for (let retries = 0; ; retries++) {
     try {

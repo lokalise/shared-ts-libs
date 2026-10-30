@@ -79,6 +79,21 @@ describe('retryOnSerializationFailure', () => {
     expect(query).toHaveBeenCalledTimes(5)
   })
 
+  it('should fall back to the defaults when an option is explicitly undefined', async () => {
+    // Given
+    const query = vi.fn().mockRejectedValue(CRDB_DRIVER_ADAPTER_ERROR)
+
+    // When - Then
+    await expect(
+      retryOnSerializationFailure(query, {
+        ...OPTIONS,
+        retriesAllowed: undefined,
+        maxRetryDelayMs: undefined,
+      }),
+    ).rejects.toBe(CRDB_DRIVER_ADAPTER_ERROR)
+    expect(query).toHaveBeenCalledTimes(3)
+  })
+
   it('should rethrow a non retryable SQLSTATE immediately', async () => {
     // Given
     const error = driverAdapterError('23505', 'UniqueConstraintViolation')
