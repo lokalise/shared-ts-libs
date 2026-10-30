@@ -1,6 +1,6 @@
 # @lokalise/aws-config
 
-Very opinionated TypeScript library for managing AWS configuration, resource naming, tagging, event routing, 
+Very opinionated TypeScript library for managing AWS configuration, resource naming, tagging, event routing,
 and integration with @message-queue-toolkit/sns and @message-queue-toolkit/sqs.
 
 ## Usage
@@ -14,11 +14,11 @@ Read AWS configuration from environment variables using [envase](https://github.
 Nest the schema and computed fragments under the same key, `aws` by default:
 
 ```ts
-import { createConfig, envvar } from 'envase';
-import { z } from 'zod';
-import { getEnvaseAwsConfig } from '@lokalise/aws-config';
+import { createConfig, envvar } from 'envase'
+import { z } from 'zod'
+import { getEnvaseAwsConfig } from '@lokalise/aws-config'
 
-const awsConfig = getEnvaseAwsConfig();
+const awsConfig = getEnvaseAwsConfig()
 
 const config = createConfig(process.env, {
   schema: {
@@ -28,22 +28,22 @@ const config = createConfig(process.env, {
   computed: {
     aws: awsConfig.computed,
   },
-});
+})
 
-console.log(config.aws.region); // string
-console.log(config.aws.credentials); // AwsCredentialIdentity | Provider<AwsCredentialIdentity>
-console.log(config.appName); // string
+console.log(config.aws.region) // string
+console.log(config.aws.credentials) // AwsCredentialIdentity | Provider<AwsCredentialIdentity>
+console.log(config.appName) // string
 ```
 
 To nest under a different key, pass it as `path`, so the computed credentials resolver reads from that key:
 
 ```ts
-const awsConfig = getEnvaseAwsConfig({ path: 'awsSettings' });
+const awsConfig = getEnvaseAwsConfig({ path: 'awsSettings' })
 
 const config = createConfig(process.env, {
   schema: { awsSettings: awsConfig.schema },
   computed: { awsSettings: awsConfig.computed },
-});
+})
 ```
 
 #### Schema validation
@@ -67,7 +67,7 @@ The `computed.credentials` resolver handles credential resolution:
 For consistency, you can use the exported environment variable name constants:
 
 ```ts
-import { AWS_CONFIG_ENV_VARS } from '@lokalise/aws-config';
+import { AWS_CONFIG_ENV_VARS } from '@lokalise/aws-config'
 
 // AWS_CONFIG_ENV_VARS.REGION === 'AWS_REGION'
 // AWS_CONFIG_ENV_VARS.KMS_KEY_ID === 'AWS_KMS_KEY_ID'
@@ -84,29 +84,29 @@ Set the following environment variables:
 
 - `AWS_REGION` (required): AWS region where resources will be created and requests are sent (e.g., `us-east-1`).
 - `AWS_KMS_KEY_ID` (optional): ID or ARN of the AWS KMS key used to encrypt SNS topics and SQS queues. If omitted,
- the default AWS-managed key is used.
-- `AWS_ALLOWED_SOURCE_OWNER` (optional): AWS account ID permitted as the source owner for cross-account SNS 
- subscriptions, helping restrict unauthorized message publishers.
-- `AWS_ENDPOINT` (optional): Custom endpoint URL for AWS services, commonly used for local testing with tools like 
- LocalStack (e.g., `http://localhost:4566`).
-- `AWS_RESOURCE_PREFIX` (optional): Prefix applied to all AWS resource names to avoid naming collisions or support 
- multi-tenancy. See **Resource Prefix** below for details. Maximum allowed prefix length is 10 characters.
-- `AWS_ACCESS_KEY_ID` & `AWS_SECRET_ACCESS_KEY` (optional): AWS credentials for programmatic access. If unset, the AWS 
- SDK's default credential provider chain (environment variables, shared credentials file, EC2 instance metadata, etc.)
- is used.
+  the default AWS-managed key is used.
+- `AWS_ALLOWED_SOURCE_OWNER` (optional): AWS account ID permitted as the source owner for cross-account SNS
+  subscriptions, helping restrict unauthorized message publishers.
+- `AWS_ENDPOINT` (optional): Custom endpoint URL for AWS services, commonly used for local testing with tools like
+  LocalStack (e.g., `http://localhost:4566`).
+- `AWS_RESOURCE_PREFIX` (optional): Prefix applied to all AWS resource names to avoid naming collisions or support
+  multi-tenancy. See **Resource Prefix** below for details. Maximum allowed prefix length is 10 characters.
+- `AWS_ACCESS_KEY_ID` & `AWS_SECRET_ACCESS_KEY` (optional): AWS credentials for programmatic access. If unset, the AWS
+  SDK's default credential provider chain (environment variables, shared credentials file, EC2 instance metadata, etc.)
+  is used.
 
 ### Resource Prefix
 
 Apply the configured resource prefix:
 
 ```ts
-import { applyAwsResourcePrefix } from '@lokalise/aws-config';
+import { applyAwsResourcePrefix } from '@lokalise/aws-config'
 
-const fullName = applyAwsResourcePrefix('my-resource', awsConfig);
+const fullName = applyAwsResourcePrefix('my-resource', awsConfig)
 ```
 
 **How it works:**  
-The resource prefix is defined by the `AWS_RESOURCE_PREFIX` environment variable. When set, it is prepended to 
+The resource prefix is defined by the `AWS_RESOURCE_PREFIX` environment variable. When set, it is prepended to
 resource names using an underscore. For example:
 
 ```ts
@@ -114,8 +114,8 @@ applyAwsResourcePrefix('orders', awsConfig) // returns 'tenant123_orders' when A
 ```
 
 This helps:
-- Prevent naming collisions across environments, accounts, or tenants  
-- Support multi-tenancy by isolating each tenant's resources  
+- Prevent naming collisions across environments, accounts, or tenants
+- Support multi-tenancy by isolating each tenant's resources
 
 If no prefix is provided, the original resource name is returned unchanged. Note that the prefix contributes to the
 total resource name length, which must comply with AWS service limits.
@@ -125,7 +125,7 @@ total resource name length, which must comply with AWS service limits.
 Generate standardized tags for SNS and SQS:
 
 ```ts
-import { getSnsTags, getSqsTags, type AwsTagsParams } from '@lokalise/aws-config';
+import { getSnsTags, getSqsTags, type AwsTagsParams } from '@lokalise/aws-config'
 
 const tagParams: AwsTagsParams = {
   appEnv: 'production',
@@ -133,10 +133,10 @@ const tagParams: AwsTagsParams = {
   owner: 'team-x',
   project: 'project-y',
   service: 'my-service',
-};
+}
 
-const snsTags = getSnsTags(tagParams);
-const sqsTags = getSqsTags(tagParams);
+const snsTags = getSnsTags(tagParams)
+const sqsTags = getSqsTags(tagParams)
 ```
 
 ### Event Routing Configuration (SNS Topics)
@@ -144,7 +144,7 @@ const sqsTags = getSqsTags(tagParams);
 Define SNS topics and their associated SQS queues for event-driven architecture:
 
 ```ts
-import type { EventRoutingConfig } from '@lokalise/aws-config';
+import type { EventRoutingConfig } from '@lokalise/aws-config'
 
 const routingConfig: EventRoutingConfig = {
   // internal topic example (managed and created by your application)
@@ -167,7 +167,7 @@ const routingConfig: EventRoutingConfig = {
       externalEventQueue: { queueName: 'external-event-queue', isExternal: true },
     },
   },
-};
+}
 ```
 
 #### Internal vs. External Topics
@@ -176,23 +176,23 @@ const routingConfig: EventRoutingConfig = {
   - You own and manage the SNS topic.
   - `TopicConfig` must include `owner`, `service`, and optionally `externalAppsWithSubscribePermissions`.
   - At runtime, the `MessageQueueToolkitSnsOptionsResolver` will resolve consumer/publisher options with a
-   **CreateTopic** command (with name prefixing, tags, KMS settings) and set up subscriptions for your queues and
-   any external apps.
+    **CreateTopic** command (with name prefixing, tags, KMS settings) and set up subscriptions for your queues and
+    any external apps.
 
 - **External Topics** (`isExternal: true`)
   - The SNS topic is pre‑existing and managed outside your application.
-  - `TopicConfig` includes `topicName`, `isExternal: true`, and your `queues`, but **must omit** `owner`, `service`, 
-   and `externalAppsWithSubscribePermissions`.
-  - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing topic by 
-   name and subscribe your queues. **No topic creation or tagging** is attempted, except in test mode, where the
-   topic is created and deleted like an internal one (see [Opinionated Defaults](#opinionated-defaults)).
+  - `TopicConfig` includes `topicName`, `isExternal: true`, and your `queues`, but **must omit** `owner`, `service`,
+    and `externalAppsWithSubscribePermissions`.
+  - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing topic by
+    name and subscribe your queues. **No topic creation or tagging** is attempted, except in test mode, where the
+    topic is created and deleted like an internal one (see [Opinionated Defaults](#opinionated-defaults)).
   - Its queues can be internal or external. External queues are only allowed on external topics.
 
 - **External queues on a topic** (`isExternal: true`)
   - The queue and its subscription are managed outside your application, so they are only located.
   - The consumer still owns the subscription filter policy (`FilterPolicy` and `FilterPolicyScope`), as it comes from
-   its handlers. It is updated on startup when it differs, unless `updateAttributesIfExists` is `false`, in which case
-   nothing is updated. Other subscription attributes (e.g. `RedrivePolicy`) are left untouched.
+    its handlers. It is updated on startup when it differs, unless `updateAttributesIfExists` is `false`, in which case
+    nothing is updated. Other subscription attributes (e.g. `RedrivePolicy`) are left untouched.
 
 Under the hood, the TypeScript union enforces this shape.
 
@@ -201,7 +201,7 @@ Under the hood, the TypeScript union enforces this shape.
 Define SQS queues for command-based messaging patterns:
 
 ```ts
-import type { CommandConfig } from '@lokalise/aws-config';
+import type { CommandConfig } from '@lokalise/aws-config'
 
 const commandConfig: CommandConfig = {
   // internal queue example (managed and created by your application)
@@ -220,7 +220,7 @@ const commandConfig: CommandConfig = {
     queueName: 'external-command-queue',
     isExternal: true,
   },
-};
+}
 ```
 
 #### Internal vs. External Queues
@@ -229,18 +229,18 @@ const commandConfig: CommandConfig = {
   - You own and manage the SQS queue.
   - `QueueConfig` must include `owner` and `service`.
   - At runtime, the `MessageQueueToolkitSqsOptionsResolver` will resolve consumer/publisher options with a
-   **CreateQueue** command (with name prefixing, tags, KMS settings, DLQ configuration).
+    **CreateQueue** command (with name prefixing, tags, KMS settings, DLQ configuration).
 
 - **External Queues** (`isExternal: true`)
   - The SQS queue is pre‑existing and managed outside your application.
   - `QueueConfig` includes `queueName` and `isExternal: true`, but **must omit** `owner` and `service`.
-  - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing queue by 
-   name.
+  - At runtime, the resolver will return consumer/publisher options with a `LocatorConfig` for the existing queue by
+    name.
   - **No queue creation or tagging** is attempted, except in test mode, where the queue is created and deleted like an
-   internal one (see [Opinionated Defaults](#opinionated-defaults)).
+    internal one (see [Opinionated Defaults](#opinionated-defaults)).
   - Consumers locate the existing dead-letter queue by convention (`<queueName>-dlq`) so invalid messages are routed
-   to it instead of being silently deleted. This DLQ must already exist. The redrive policy of the queue is not
-   changed, so it must be set outside your application.
+    to it instead of being silently deleted. This DLQ must already exist. The redrive policy of the queue is not
+    changed, so it must be set outside your application.
 
 #### Externally Managed Resources
 
@@ -262,36 +262,40 @@ subscriptions are checked before writing, and `sns:SetSubscriptionAttributes` to
 Automatically build publisher and consumer options with `@message-queue-toolkit/sns`:
 
 ```ts
-import { MessageQueueToolkitSnsOptionsResolver } from '@lokalise/aws-config';
-import { logger } from '@lokalise/node-core';
+import { MessageQueueToolkitSnsOptionsResolver } from '@lokalise/aws-config'
+import { logger } from '@lokalise/node-core'
 
 // `awsConfig` is the AWS section of your envase config, see "AWS Configuration" above
-const awsConfig = config.aws;
+const awsConfig = config.aws
 const resolver = new MessageQueueToolkitSnsOptionsResolver(routingConfig, {
   appEnv: 'production',
   system: 'backend',
   project: 'order-project',
   validateNamePatterns: true,
-});
+})
 
 const publishOpts = resolver.resolvePublisherBuildOptions({
   topicName: 'ordersTopic',
   awsConfig,
   logger,
-  messageSchemas: { /* your schemas… */ },
+  messageSchemas: {
+    /* your schemas… */
+  },
   logMessages: true,
-});
+})
 
 const consumeOpts = resolver.resolveConsumerBuildOptions({
   topicName: 'ordersTopic',
   queueName: 'orderCreated',
   awsConfig,
   logger,
-  handlers: [ /* your handlers… */ ],
+  handlers: [
+    /* your handlers… */
+  ],
   concurrentConsumersAmount: 2,
   batchSize: 10,
   logMessages: false,
-});
+})
 ```
 
 ### Message Queue Toolkit SQS Resolver
@@ -299,33 +303,37 @@ const consumeOpts = resolver.resolveConsumerBuildOptions({
 Automatically build publisher and consumer options with `@message-queue-toolkit/sqs`:
 
 ```ts
-import { MessageQueueToolkitSqsOptionsResolver } from '@lokalise/aws-config';
-import { logger } from '@lokalise/node-core';
+import { MessageQueueToolkitSqsOptionsResolver } from '@lokalise/aws-config'
+import { logger } from '@lokalise/node-core'
 
 // `awsConfig` is the AWS section of your envase config, see "AWS Configuration" above
-const awsConfig = config.aws;
+const awsConfig = config.aws
 const resolver = new MessageQueueToolkitSqsOptionsResolver(commandConfig, {
   appEnv: 'production',
   system: 'backend',
   project: 'order-project',
   validateNamePatterns: true,
-});
+})
 
 const publishOpts = resolver.resolvePublisherOptions('processOrder', {
   awsConfig,
   logger,
-  messageSchemas: { /* your schemas… */ },
+  messageSchemas: {
+    /* your schemas… */
+  },
   logMessages: true,
-});
+})
 
 const consumeOpts = resolver.resolveConsumerOptions('processOrder', {
   awsConfig,
   logger,
-  handlers: [ /* your handlers… */ ],
+  handlers: [
+    /* your handlers… */
+  ],
   concurrentConsumersAmount: 2,
   batchSize: 10,
   logMessages: false,
-});
+})
 ```
 
 #### Request Context Pre-handler
@@ -340,7 +348,7 @@ event handlers.
 
 #### Resource Name Validation
 
-Both resolvers support optional resource name validation via the `validateNamePatterns` configuration option. 
+Both resolvers support optional resource name validation via the `validateNamePatterns` configuration option.
 When enabled, it validates that your topic and queue names follow Lokalise naming conventions:
 
 ```ts
@@ -349,7 +357,7 @@ const resolver = new MessageQueueToolkitSnsOptionsResolver(routingConfig, {
   system: 'backend',
   project: 'my-project',
   validateNamePatterns: true, // Enable validation
-});
+})
 ```
 
 **Naming Conventions:**
@@ -367,7 +375,7 @@ const resolver = new MessageQueueToolkitSnsOptionsResolver(routingConfig, {
   - All segments must be lowercase with optional underscores as separators
   - Maximum length: 64 characters
 
-When validation is enabled, the resolver will throw descriptive errors during construction if any resource names don't 
+When validation is enabled, the resolver will throw descriptive errors during construction if any resource names don't
 match these patterns. This helps catch naming issues early and ensures consistency across your AWS resources.
 
 #### Opinionated Defaults

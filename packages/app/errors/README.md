@@ -123,20 +123,25 @@ class ProjectNotFoundError extends PublicError.from(projectNotFoundErrorDefiniti
 
 // 3. Use it
 const error = new ProjectNotFoundError('abc')
-error.code           // 'PROJECT_NOT_FOUND'
-error.type           // 'not-found'
+error.code // 'PROJECT_NOT_FOUND'
+error.type // 'not-found'
 error.httpStatusCode // 404
-error.details        // { id: string }
+error.details // { id: string }
 ```
 
 Without a details schema, `details` is `undefined` and the constructor does not
 accept a `details` field:
 
 ```ts
-const rateLimitErrorDefinition = definePublicError({ code: 'RATE_LIMIT_EXCEEDED', type: ErrorType.RATE_LIMIT })
+const rateLimitErrorDefinition = definePublicError({
+  code: 'RATE_LIMIT_EXCEEDED',
+  type: ErrorType.RATE_LIMIT,
+})
 
 class RateLimitError extends PublicError.from(rateLimitErrorDefinition) {
-  constructor() { super({ message: 'Too many requests' }) }
+  constructor() {
+    super({ message: 'Too many requests' })
+  }
 }
 ```
 
@@ -251,7 +256,7 @@ reply.status(httpStatusByErrorType[someType]).send(payload)
 ```
 
 | ErrorType           | HTTP |
-|---------------------|------|
+| ------------------- | ---- |
 | `bad-request`       | 400  |
 | `unauthenticated`   | 401  |
 | `permission-denied` | 403  |
@@ -322,7 +327,7 @@ situations where prototype-based checks silently fail.
 
 ### Class naming rules
 
-The symbols are derived from class names and inheritance structure; they *are*
+The symbols are derived from class names and inheritance structure; they _are_
 the cross-realm identity. This has a few consequences:
 
 - **Renaming is a breaking change.** Renaming an error class (or moving it in

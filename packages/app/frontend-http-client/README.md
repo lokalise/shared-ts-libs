@@ -13,25 +13,25 @@ import { z } from 'zod/v4'
 const client = wretch('http://localhost:8000')
 
 const queryParamsSchema = z.object({
-	param1: z.string(),
-	param2: z.number(),
+  param1: z.string(),
+  param2: z.number(),
 })
 
 const requestBodySchema = z.object({
-	requestCode: z.number(),
+  requestCode: z.number(),
 })
 
 const responseBodySchema = z.object({
-	success: z.boolean(),
+  success: z.boolean(),
 })
 
 const responseBody = await sendPost(client, {
-	path: '/',
-	body: { requestCode: 100 },
-	queryParams: { param1: 'test', param2: 123 },
-	queryParamsSchema,
-	requestBodySchema,
-	responseBodySchema,
+  path: '/',
+  body: { requestCode: 100 },
+  queryParams: { param1: 'test', param2: 123 },
+  queryParamsSchema,
+  requestBodySchema,
+  responseBodySchema,
 })
 ```
 
@@ -42,8 +42,8 @@ valid except on `sendGet` method where it is treated as an error. Usage example:
 
 ```ts
 const response = await sendGet(client, {
-	path: '/',
-	isEmptyResponseExpected: true,
+  path: '/',
+  isEmptyResponseExpected: true,
 })
 ```
 
@@ -56,8 +56,8 @@ or not. By default it is treated as valid except on `sendGet` method where it is
 
 ```ts
 const response = await sendGet(client, {
-	path: '/',
-	isNonJSONResponseExpected: true,
+  path: '/',
+  isNonJSONResponseExpected: true,
 })
 ```
 
@@ -94,13 +94,13 @@ const { result } = await sendByApiContract(client, getUser, { pathParams: { user
 
 `sendByApiContract` handles all response kinds defined in the contract:
 
-| Contract entry | `body` type |
-|---|---|
-| `z.ZodType` | Inferred from the schema, parsed and validated |
-| `noBodyResponse()` | `null` |
-| `blobResponse(mimeType)` | `BlobResponseHandle`, consumed once via `stream()`, `text()`, `blob()` or `arrayBuffer()` |
-| `sseResponse(schemaByEventName)` | `AsyncIterable` of typed events |
-| `content` map with `application/json` and `text/event-stream` | Requires an explicit `streaming: boolean` param |
+| Contract entry                                                | `body` type                                                                               |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `z.ZodType`                                                   | Inferred from the schema, parsed and validated                                            |
+| `noBodyResponse()`                                            | `null`                                                                                    |
+| `blobResponse(mimeType)`                                      | `BlobResponseHandle`, consumed once via `stream()`, `text()`, `blob()` or `arrayBuffer()` |
+| `sseResponse(schemaByEventName)`                              | `AsyncIterable` of typed events                                                           |
+| `content` map with `application/json` and `text/event-stream` | Requires an explicit `streaming: boolean` param                                           |
 
 ### Return type — Either
 
@@ -193,26 +193,26 @@ if (response.error instanceof UnexpectedResponseError) {
 
 `UnexpectedResponseError` supports cross-realm `instanceof` checks via `Symbol.hasInstance`, so it works correctly even when the error crosses module or VM boundaries.
 
-| Property | Type | Description |
-|---|---|---|
-| `statusCode` | `number` | HTTP status code of the unexpected response. |
-| `headers` | `Record<string, string \| undefined>` | Normalised response headers. |
-| `body` | `string` | Raw response body read as UTF-8 text. |
+| Property     | Type                                  | Description                                  |
+| ------------ | ------------------------------------- | -------------------------------------------- |
+| `statusCode` | `number`                              | HTTP status code of the unexpected response. |
+| `headers`    | `Record<string, string \| undefined>` | Normalised response headers.                 |
+| `body`       | `string`                              | Raw response body read as UTF-8 text.        |
 
 ### Throws
 
 `sendByApiContract` wraps most failure modes in `Either.error`, but the following conditions throw directly. Wrap call sites in `try/catch` if any of these can arise:
 
-| Cause | What is thrown |
-|---|---|
-| Network error | Browser / fetch network error |
-| Manual cancellation — `signal` fired | `AbortError` (`DOMException`) |
-| Response body contains malformed JSON | `SyntaxError` |
-| Response body fails JSON schema validation | `ZodError` |
-| Response headers fail schema validation — `responseHeaderSchema` defined in the contract | `ZodError` |
-| SSE event type has no matching schema in the contract | `Error` |
-| SSE event data contains malformed JSON | `SyntaxError` |
-| SSE event data fails schema validation | `ZodError` |
+| Cause                                                                                    | What is thrown                |
+| ---------------------------------------------------------------------------------------- | ----------------------------- |
+| Network error                                                                            | Browser / fetch network error |
+| Manual cancellation — `signal` fired                                                     | `AbortError` (`DOMException`) |
+| Response body contains malformed JSON                                                    | `SyntaxError`                 |
+| Response body fails JSON schema validation                                               | `ZodError`                    |
+| Response headers fail schema validation — `responseHeaderSchema` defined in the contract | `ZodError`                    |
+| SSE event type has no matching schema in the contract                                    | `Error`                       |
+| SSE event data contains malformed JSON                                                   | `SyntaxError`                 |
+| SSE event data fails schema validation                                                   | `ZodError`                    |
 
 ```ts
 try {
@@ -297,33 +297,35 @@ controller.abort()
 
 ### Options
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `captureAsError` | `boolean` | `true` | When `true`, non-2xx responses defined in the contract go to `Either.error`. When `false`, all contract-defined status codes go to `Either.result`. |
-| `strictContentType` | `boolean` | `true` | When `true`, returns an error if the response `content-type` doesn't match the contract entry. When `false`, falls back to the entry's kind for single-entry responses. |
-| `signal` | `AbortSignal` | — | Manual cancellation signal. When fired, the request rejects with an `AbortError`. |
+| Option              | Type          | Default | Description                                                                                                                                                             |
+| ------------------- | ------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `captureAsError`    | `boolean`     | `true`  | When `true`, non-2xx responses defined in the contract go to `Either.error`. When `false`, all contract-defined status codes go to `Either.result`.                     |
+| `strictContentType` | `boolean`     | `true`  | When `true`, returns an error if the response `content-type` doesn't match the contract entry. When `false`, falls back to the entry's kind for single-entry responses. |
+| `signal`            | `AbortSignal` | —       | Manual cancellation signal. When fired, the request rejects with an `AbortError`.                                                                                       |
 
 ### Tracking request progress
-Tracking requests progress is especially useful while uploading files. 
+
+Tracking requests progress is especially useful while uploading files.
 
 > **Important note**: `wretch` does not support request progress tracking, so we rely on XMLHttpRequest. That's why the interface of the method below is slightly different from the others 
 
 Usage example:
 
 ```ts
- const response = await sendPostWithProgress({
-    path: '/',
-    data: new FormData(), 
-    headers: { Authorization: 'Bearer ...' }, 
-    responseBodySchema: z.object(),
-    onProgress: (progress) => {
-        console.log(`Loaded ${progress.loaded} of ${progress.total}`)
-    }
+const response = await sendPostWithProgress({
+  path: '/',
+  data: new FormData(),
+  headers: { Authorization: 'Bearer ...' },
+  responseBodySchema: z.object(),
+  onProgress: (progress) => {
+    console.log(`Loaded ${progress.loaded} of ${progress.total}`)
+  },
 })
 ```
 
 ### Aborting pending requests
-Aborting requests is especially useful while uploading files. 
+
+Aborting requests is especially useful while uploading files.
 
 > **Important note**: Currently it is only possible with `sendWithProgress()` function 
 
@@ -333,14 +335,14 @@ Usage example:
 const abortController = new AbortController()
 
 sendPostWithProgress({
-    path: '/',
-    data: new FormData(), 
-    headers: { Authorization: 'Bearer ...' },
-    responseBodySchema: z.object(),
-    onProgress: (progress) => {
-        console.log(`Loaded ${progress.loaded} of ${progress.total}`)
-    },
-    abortController
+  path: '/',
+  data: new FormData(),
+  headers: { Authorization: 'Bearer ...' },
+  responseBodySchema: z.object(),
+  onProgress: (progress) => {
+    console.log(`Loaded ${progress.loaded} of ${progress.total}`)
+  },
+  abortController,
 })
 
 abortController.abort()
@@ -399,7 +401,10 @@ The contract is **dual-mode**: one status carrying both a JSON representation (t
 
 ```ts
 import { defineApiContract, sseResponse } from '@lokalise/api-contracts'
-import { createResilientSubscription, defineFallbackBinding } from '@opinionated-machine/sse-fallback'
+import {
+  createResilientSubscription,
+  defineFallbackBinding,
+} from '@opinionated-machine/sse-fallback'
 import { buildFallbackParams, createFallbackTransport } from '@lokalise/frontend-http-client'
 import { z } from 'zod/v4'
 
@@ -458,26 +463,26 @@ await subscription.waitFor('uploadFinished')
 
 ### What the transport guarantees
 
-| Behaviour | Why it matters to the core |
-|---|---|
-| `Accept: application/json` on the poll, `text/event-stream` on the stream — always, overriding any request-level `accept` | Branch selection is the transport's job; a params-level `Accept` would send the poll to the stream branch and leave the fallback with no snapshot |
-| `Cache-Control: no-cache` on both channels | A cached poll keeps "succeeding" while reporting stale state — the exact silent failure this machinery exists to catch |
-| `Last-Event-ID` forwarded on reconnect (omitted when the cursor is empty) | Server-side replay composes with the version gate; an empty cursor would ask for a full replay |
-| A non-2xx response **resolves** with its status | The core owns what a status means: `unretryableStatuses`, and handing a 401 to `onAuthChallenge` |
-| Only an unusable outcome rejects — network failure, schema violation, wrong representation | A rejected poll is a recoverable poll failure; a snapshot the version gate cannot trust is not |
-| Raw text chunks by default, comment frames included | Keeps the core's `staleConnectionTimeoutMs` watchdog byte-level, so a silently dead connection is caught |
-| No cross-subscription state | One transport serves any number of subscriptions; nothing a stream learns is carried into another, so a per-tenant cursor can never reach the wrong stream |
-| A snapshot it refuses has its body released | The core aborts a poll on timeout or on stopping, never one the transport rejected — an unread body (an SSE stream reached by a bad `Accept` negotiation never ends) would hold a socket per failing poll |
-| No deadline of its own | The core bounds every wait (`pollTimeoutMs`, `connectTimeoutMs`) through the `signal` it passes |
-| Header source resolved per request | What makes the one retry `onAuthChallenge` grants actually carry a refreshed token |
-| Abort ends stream iteration quietly; a mid-stream death throws | The core aborts on purpose (stale watchdog, stop); a real failure has to surface so it backs off and polls |
+| Behaviour                                                                                                                 | Why it matters to the core                                                                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Accept: application/json` on the poll, `text/event-stream` on the stream — always, overriding any request-level `accept` | Branch selection is the transport's job; a params-level `Accept` would send the poll to the stream branch and leave the fallback with no snapshot                                                         |
+| `Cache-Control: no-cache` on both channels                                                                                | A cached poll keeps "succeeding" while reporting stale state — the exact silent failure this machinery exists to catch                                                                                    |
+| `Last-Event-ID` forwarded on reconnect (omitted when the cursor is empty)                                                 | Server-side replay composes with the version gate; an empty cursor would ask for a full replay                                                                                                            |
+| A non-2xx response **resolves** with its status                                                                           | The core owns what a status means: `unretryableStatuses`, and handing a 401 to `onAuthChallenge`                                                                                                          |
+| Only an unusable outcome rejects — network failure, schema violation, wrong representation                                | A rejected poll is a recoverable poll failure; a snapshot the version gate cannot trust is not                                                                                                            |
+| Raw text chunks by default, comment frames included                                                                       | Keeps the core's `staleConnectionTimeoutMs` watchdog byte-level, so a silently dead connection is caught                                                                                                  |
+| No cross-subscription state                                                                                               | One transport serves any number of subscriptions; nothing a stream learns is carried into another, so a per-tenant cursor can never reach the wrong stream                                                |
+| A snapshot it refuses has its body released                                                                               | The core aborts a poll on timeout or on stopping, never one the transport rejected — an unread body (an SSE stream reached by a bad `Accept` negotiation never ends) would hold a socket per failing poll |
+| No deadline of its own                                                                                                    | The core bounds every wait (`pollTimeoutMs`, `connectTimeoutMs`) through the `signal` it passes                                                                                                           |
+| Header source resolved per request                                                                                        | What makes the one retry `onAuthChallenge` grants actually carry a refreshed token                                                                                                                        |
+| Abort ends stream iteration quietly; a mid-stream death throws                                                            | The core aborts on purpose (stale watchdog, stop); a real failure has to surface so it backs off and polls                                                                                                |
 
 ### Why not build it on `sendByApiContract`?
 
 Two things a fallback subscription needs are outside what a one-shot contract request can express,
 and both would fail silently rather than loudly:
 
-- **The per-frame `id:`.** `sendByApiContract`'s SSE mode yields `lastEventId`, the *sticky*
+- **The per-frame `id:`.** `sendByApiContract`'s SSE mode yields `lastEventId`, the _sticky_
   cursor, and no per-frame id. The core's default version extractor reads the frame's own id, so
   handing it a sticky cursor would make every id-less frame look like a repeat of the previous
   version — and the version gate would drop it.
@@ -500,11 +505,11 @@ Passing `contract` turns on the checks this package exists for:
 - **SSE payloads** are checked against the contract's `sseResponse` event schemas, per
   `eventValidation`:
 
-| `eventValidation` | Effect | Requires |
-|---|---|---|
-| `'report'` (default when the contract declares SSE events) | Reports to `diagnostics.onEventSchemaError`; the frame is still delivered | — |
-| `'drop'` | The frame never reaches the core **and the stream ends**, so the watermark stays below the hole and the repair snapshot lands above it | `streamMode: 'events'` |
-| `'off'` | No checking | — |
+| `eventValidation`                                          | Effect                                                                                                                                 | Requires               |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `'report'` (default when the contract declares SSE events) | Reports to `diagnostics.onEventSchemaError`; the frame is still delivered                                                              | —                      |
+| `'drop'`                                                   | The frame never reaches the core **and the stream ends**, so the watermark stays below the hole and the repair snapshot lands above it | `streamMode: 'events'` |
+| `'off'`                                                    | No checking                                                                                                                            | —                      |
 
 `'drop'` needs `streamMode: 'events'` because that is where framing happens before the core sees
 anything. With raw chunks the core frames the stream itself, so by the time a payload could be
@@ -557,29 +562,29 @@ included — so that a poll actually repairs it.
 
 ### Options
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `contract` | `ApiContract` | — | Dual-mode contract used by both channels; supplying it enables validation |
-| `snapshotContract` / `streamContract` | `ApiContract` | `contract` | Per-channel contracts, when the poll and the stream live on separate routes |
-| `pathPrefix` | `string` | — | Prefix prepended to both channels' paths |
-| `headers` | `object \| () => object \| () => Promise<object>` | — | Headers added to every request, resolved fresh per request |
-| `snapshotAccept` | `string` | `'application/json'` | `Accept` sent on the poll; override only for a vendored JSON media type |
-| `validateSnapshot` | `boolean` | `true` | Validate snapshot bodies against the contract schema |
-| `strictContentType` | `boolean` | `true` | Require the snapshot `content-type` to match a declared representation |
-| `streamMode` | `'chunks' \| 'events'` | `'chunks'` | Raw text framed by the core, or frames framed here |
-| `eventValidation` | `'off' \| 'report' \| 'drop'` | `'report'` when SSE schemas are declared | See above |
-| `diagnostics` | `FallbackTransportDiagnostics` | — | `onSnapshot`, `onStreamOpen`, `onEventSchemaError`, `onUndeclaredEvent` |
+| Option                                | Type                                              | Default                                  | Description                                                                 |
+| ------------------------------------- | ------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------- |
+| `contract`                            | `ApiContract`                                     | —                                        | Dual-mode contract used by both channels; supplying it enables validation   |
+| `snapshotContract` / `streamContract` | `ApiContract`                                     | `contract`                               | Per-channel contracts, when the poll and the stream live on separate routes |
+| `pathPrefix`                          | `string`                                          | —                                        | Prefix prepended to both channels' paths                                    |
+| `headers`                             | `object \| () => object \| () => Promise<object>` | —                                        | Headers added to every request, resolved fresh per request                  |
+| `snapshotAccept`                      | `string`                                          | `'application/json'`                     | `Accept` sent on the poll; override only for a vendored JSON media type     |
+| `validateSnapshot`                    | `boolean`                                         | `true`                                   | Validate snapshot bodies against the contract schema                        |
+| `strictContentType`                   | `boolean`                                         | `true`                                   | Require the snapshot `content-type` to match a declared representation      |
+| `streamMode`                          | `'chunks' \| 'events'`                            | `'chunks'`                               | Raw text framed by the core, or frames framed here                          |
+| `eventValidation`                     | `'off' \| 'report' \| 'drop'`                     | `'report'` when SSE schemas are declared | See above                                                                   |
+| `diagnostics`                         | `FallbackTransportDiagnostics`                    | —                                        | `onSnapshot`, `onStreamOpen`, `onEventSchemaError`, `onUndeclaredEvent`     |
 
 ### Errors
 
-| Error | Raised when |
-|---|---|
-| `FallbackTransportError` | Base class; also the network-failure and unsupported-method case. Carries `channel` (`'poll'` / `'stream'`), `path` and `status` |
-| `FallbackSnapshotValidationError` | A snapshot body violated the contract schema; carries `issues` |
-| `FallbackUnexpectedSnapshotError` | The poll branch answered with something that cannot be a snapshot — an undeclared content type, an SSE stream (the `Accept` negotiation went wrong), a binary body, no body, or invalid JSON. Carries `contentType` and `bodyPreview` |
-| `FallbackEventValidationError` | An SSE payload failed its schema, or was not JSON. Never thrown — reported to `diagnostics.onEventSchemaError` |
-| `FallbackParamsValidationError` | `buildFallbackParams` was given params the contract's request schemas reject. Headers are checked too, but only the ones supplied — the rest come from the transport's `headers` option |
-| `FallbackUnsupportedParamError` | A query parameter is a list or a structured value; a subscription request's query is a flat string map. A schema that parses a query string into a `Date` is not one of these: the value you supplied is sent, exactly as `sendByApiContract` would |
+| Error                             | Raised when                                                                                                                                                                                                                                         |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FallbackTransportError`          | Base class; also the network-failure and unsupported-method case. Carries `channel` (`'poll'` / `'stream'`), `path` and `status`                                                                                                                    |
+| `FallbackSnapshotValidationError` | A snapshot body violated the contract schema; carries `issues`                                                                                                                                                                                      |
+| `FallbackUnexpectedSnapshotError` | The poll branch answered with something that cannot be a snapshot — an undeclared content type, an SSE stream (the `Accept` negotiation went wrong), a binary body, no body, or invalid JSON. Carries `contentType` and `bodyPreview`               |
+| `FallbackEventValidationError`    | An SSE payload failed its schema, or was not JSON. Never thrown — reported to `diagnostics.onEventSchemaError`                                                                                                                                      |
+| `FallbackParamsValidationError`   | `buildFallbackParams` was given params the contract's request schemas reject. Headers are checked too, but only the ones supplied — the rest come from the transport's `headers` option                                                             |
+| `FallbackUnsupportedParamError`   | A query parameter is a list or a structured value; a subscription request's query is a flat string map. A schema that parses a query string into a `Date` is not one of these: the value you supplied is sent, exactly as `sendByApiContract` would |
 
 ## Credits
 

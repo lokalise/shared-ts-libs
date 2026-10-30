@@ -68,15 +68,15 @@ pyroscope-analyze --service my-service --select 'span_name="POST /v1/checkout"'
 
 ## Files
 
-| File | What it is |
-|---|---|
-| `docker-compose.pyroscope.yml` | Pyroscope alone, which is all the local loop needs |
-| `docker-compose.grafana.yml` | Overlay adding Grafana and the Pyroscope datasource |
-| `docker-compose.tracing.yml` | Overlay adding Tempo and the trace-to-profiles link |
-| `grafana/pyroscope-datasource.yml` | Provisioned Pyroscope datasource |
-| `grafana/tempo-datasource.yml` | Provisioned Tempo datasource, including `tracesToProfiles` |
-| `tempo/tempo.yaml` | Single-binary Tempo on local storage |
-| `.env.example` | Every variable, with the defaults it would otherwise take |
+| File                               | What it is                                                 |
+| ---------------------------------- | ---------------------------------------------------------- |
+| `docker-compose.pyroscope.yml`     | Pyroscope alone, which is all the local loop needs         |
+| `docker-compose.grafana.yml`       | Overlay adding Grafana and the Pyroscope datasource        |
+| `docker-compose.tracing.yml`       | Overlay adding Tempo and the trace-to-profiles link        |
+| `grafana/pyroscope-datasource.yml` | Provisioned Pyroscope datasource                           |
+| `grafana/tempo-datasource.yml`     | Provisioned Tempo datasource, including `tracesToProfiles` |
+| `tempo/tempo.yaml`                 | Single-binary Tempo on local storage                       |
+| `.env.example`                     | Every variable, with the defaults it would otherwise take  |
 
 Ports are overridable (`PYROSCOPE_PORT`, `GRAFANA_PORT`, `TEMPO_OTLP_GRPC_PORT`),
 because "4040 is already allocated" is the normal state of a machine with more
