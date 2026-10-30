@@ -143,6 +143,38 @@ errors, providing a robust and efficient way to ensure your transactions succeed
 By automatically retrying failed transactions with an intelligent backoff strategy, you can significantly improve the 
 reliability and performance of your application when using distributed databases.
 
+### Retry On Serialization Failure
+
+Retries a single statement while it fails with a serialization failure, without opening a transaction around it.
+
+```typescript
+import { retryOnSerializationFailure } from '@lokalise/prisma-utils'
+
+const rows = await retryOnSerializationFailure(() =>
+  prisma.$queryRaw<Row[]>`SELECT ... FROM "segment" WHERE "project_id" = ${projectId}`,
+)
+```
+
+Retries when the error is Prisma's `P2034` or a CockroachDB transaction retry error (SQLSTATE `40001`), in both the query-engine and the driver-adapter shape. Anything else is rethrown immediately, and the last error is rethrown once the retries are exhausted.
+
+#### Options
+
+```typescript
+const rows = await retryOnSerializationFailure(query, {
+  retriesAllowed: 2,    // Default: 2 (total 3 attempts)
+  baseRetryDelayMs: 100, // Default: 100ms
+  maxRetryDelayMs: 30000, // Default: 30s
+})
+```
+
+The backoff is the same as `prismaTransaction`'s: `2^(retry-1) × baseRetryDelayMs`, capped at `maxRetryDelayMs`.
+
+#### When To Use It Instead Of `prismaTransaction`
+
+For a single read, wrapping the statement in an explicit transaction costs a BEGIN/COMMIT round trip and takes away CockroachDB's own ability to refresh and retry the implicit single-statement transaction server-side, which it can no longer do once the client has opened the transaction.
+
+It is only safe around a **single read-only statement**. A write, or a statement that runs inside an interactive transaction, has to be retried at the transaction boundary (`prismaTransaction`) instead — replaying it alone would either duplicate its effects or re-run it against an aborted transaction.
+
 ### Prisma Bulk Update
 
 Updates many rows in a single atomic SQL statement (`UPDATE ... FROM (VALUES ...)`), instead of issuing one `UPDATE` per row. Because it is a single statement, it either fully applies or fully rolls back, so no surrounding transaction is required. Works on both CockroachDB and PostgreSQL.
