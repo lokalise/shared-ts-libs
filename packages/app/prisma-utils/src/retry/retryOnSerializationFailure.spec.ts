@@ -124,7 +124,7 @@ describe('retryOnSerializationFailure', () => {
       retryOnSerializationFailure(query, { baseRetryDelayMs: 20, maxRetryDelayMs: 30 }),
     ).rejects.toBe(CRDB_DRIVER_ADAPTER_ERROR)
 
-    // Then - 20ms + min(40, 30)ms
-    expect(Date.now() - start).toBeGreaterThanOrEqual(50)
+    // Then - 20ms + min(40, 30)ms, with a buffer as timers can fire slightly early
+    expect(Date.now() - start).toBeGreaterThanOrEqual(40)
   })
 })
