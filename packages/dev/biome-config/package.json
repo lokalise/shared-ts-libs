@@ -21,9 +21,9 @@
   },
   "private": false,
   "peerDependencies": {
-    "@biomejs/biome": "^2.6.3"
+    "@biomejs/biome": "^2.6.4"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.6.3"
+    "@biomejs/biome": "^2.6.4"
   }
 }
