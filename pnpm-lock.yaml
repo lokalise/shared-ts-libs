@@ -842,8 +842,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       fastify-metrics:
-        specifier: ^14.1.0
-        version: 14.1.0(fastify@5.12.7)
+        specifier: ^14.1.1
+        version: 14.1.1(fastify@5.12.7)
       fastify-plugin:
         specifier: ^6.0.1
         version: 6.0.1
@@ -5508,8 +5508,8 @@ packages:
     resolution: {integrity: sha512-s6yP6ZUwkGFhKwIdKzMaWgQeAneQHn3qizbfjSubF234xS0RZPMASCF1S9OU9OQqfAH3ebaewbADYPQrpso25A==}
     engines: {node: '>=20.0.0'}
 
-  fastify-metrics@14.1.0:
-    resolution: {integrity: sha512-jf9qVynXVd43XxAT4JHXRVTaVbryAdTsX09PgGVeGqTfrgd0qpw1YtRYyCato0armPPmzvNDPSR2xK5MRXZTXA==}
+  fastify-metrics@14.1.1:
+    resolution: {integrity: sha512-QFEq+b0c6CsjpSEM+kJlBu4ASaTjlH6LifY/+6Y2sX0aDIfRIkuQ/4d4EjAmZJFTQk0p9jPowr6t80E1XxtH0g==}
     engines: {node: '>=22.19.0', pnpm: '>=12'}
     peerDependencies:
       '@platformatic/prom-client': ^1.0.0
@@ -8675,7 +8675,7 @@ snapshots:
       bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
       dd-trace: 6.21.0
       fastify: 5.12.7
-      fastify-metrics: 14.1.0(fastify@5.12.7)
+      fastify-metrics: 14.1.1(fastify@5.12.7)
       fastify-plugin: 6.0.1
       fastify-type-provider-zod: 7.0.0(@fastify/swagger@9.9.2(supports-color@8.1.1))(fastify@5.12.7)(openapi-types@12.1.3)(zod@4.6.7)
       ioredis: 6.0.0(supports-color@8.1.1)
@@ -8707,7 +8707,7 @@ snapshots:
       bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
       dd-trace: 6.21.0
       fastify: 5.12.7
-      fastify-metrics: 14.1.0(fastify@5.12.7)
+      fastify-metrics: 14.1.1(fastify@5.12.7)
       fastify-plugin: 6.0.1
       fastify-type-provider-zod: 7.0.0(@fastify/swagger@9.9.2(supports-color@8.1.1))(fastify@5.12.7)(openapi-types@12.1.3)(zod@4.6.7)
       ioredis: 6.0.0(supports-color@8.1.1)
@@ -12130,7 +12130,7 @@ snapshots:
     dependencies:
       fastify-plugin: 5.1.0
 
-  fastify-metrics@14.1.0(fastify@5.12.7):
+  fastify-metrics@14.1.1(fastify@5.12.7):
     dependencies:
       '@prometheus-io/client': 0.16.1
       fastify: 5.12.7
