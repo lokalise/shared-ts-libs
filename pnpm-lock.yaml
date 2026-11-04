@@ -800,8 +800,8 @@ importers:
         specifier: ^2.5.12
         version: 2.5.12
       '@fastify/awilix':
-        specifier: ^8.3.0
-        version: 8.3.0(awilix@13.0.5)(fastify@5.12.7)
+        specifier: ^8.3.2
+        version: 8.3.2(awilix@13.0.5)(fastify@5.12.7)
       '@fastify/schedule':
         specifier: ^7.0.2
         version: 7.0.2(toad-scheduler@4.2.0)
@@ -2121,8 +2121,8 @@ packages:
   '@fastify/auth@5.1.2':
     resolution: {integrity: sha512-5K73YUDIuA2c/m3NJGRoiC7XTyfnpDHMHlUgaA73OFDPZwqxScxEpSlk0bom2XNJ4sbpNt+0fIdEAk8UQFUIzA==}
 
-  '@fastify/awilix@8.3.0':
-    resolution: {integrity: sha512-l+BFo79Vd08nx/XGgMfg1zVMGQwyindYFqoXJLzPT11YD/HOIxhP0P1IwsxZZrQBhGMQaX9j/BityZ91GZFRvQ==}
+  '@fastify/awilix@8.3.2':
+    resolution: {integrity: sha512-ANOVy4ax5QYdDbR/p518/HxhOmbyucOC8okwNFl4omzVkBQaNQvZAOtR2HUjacI56v8LlGsqpP1r1tuLiLpa+w==}
     peerDependencies:
       awilix: '>=9.0.0'
       fastify: ^5.0.0
@@ -8355,7 +8355,7 @@ snapshots:
       fastify-plugin: 6.0.1
       reusify: 1.1.0
 
-  '@fastify/awilix@8.3.0(awilix@13.0.5)(fastify@5.12.7)':
+  '@fastify/awilix@8.3.2(awilix@13.0.5)(fastify@5.12.7)':
     dependencies:
       awilix: 13.0.5
       awilix-manager: 7.1.0(awilix@13.0.5)
