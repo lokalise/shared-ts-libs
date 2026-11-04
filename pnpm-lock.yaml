@@ -523,8 +523,8 @@ importers:
         specifier: ^2.5.12
         version: 2.5.12
       '@fastify/request-context':
-        specifier: ^7.0.2
-        version: 7.0.2
+        specifier: ^7.0.5
+        version: 7.0.5
       '@lokalise/biome-config':
         specifier: workspace:^
         version: link:../../dev/biome-config
@@ -2156,8 +2156,8 @@ packages:
   '@fastify/proxy-addr@5.1.0':
     resolution: {integrity: sha512-INS+6gh91cLUjB+PVHfu1UqcB76Sqtpyp7bnL+FYojhjygvOPA9ctiD/JDKsyD9Xgu4hUhCSJBPig/w7duNajw==}
 
-  '@fastify/request-context@7.0.2':
-    resolution: {integrity: sha512-XpXmh09g3841GkygpWydPd41hCk7kNcyV6Th5pBXcpol0N283k25IhG4Zf8DJUsQiGhHL0kB1LsuOs7pMt3d6Q==}
+  '@fastify/request-context@7.0.5':
+    resolution: {integrity: sha512-1AZaTUZVgPJf5xl2GXq+JRWNdhXPucNsxXsP06p/S3Te1XZJe0GD28p/VHAVbZ3wLMhyrZqjKZ01g1v13VFpBg==}
 
   '@fastify/schedule@7.0.2':
     resolution: {integrity: sha512-h45CK+76RZ2yUcnBNUyK9ZA4a+QZTdyIE36BYG871V1ie3v99W45Kra8IMZ5I6ItWk2YkVeTRfw4nZSBiDCfQA==}
@@ -8404,7 +8404,7 @@ snapshots:
       '@fastify/forwarded': 3.0.2
       ipaddr.js: 2.5.0
 
-  '@fastify/request-context@7.0.2':
+  '@fastify/request-context@7.0.5':
     dependencies:
       fastify-plugin: 6.0.1
 
