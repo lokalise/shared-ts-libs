@@ -13,20 +13,20 @@ All base classes accept the Prometheus client as an optional constructor argumen
 
 Table of contents:
 1. [Labeled](#labeled)
-    1. [AbstractLabeledCounterMetric](#abstractlabeledcountermetric)
-    2. [AbstractMultiLabeledCounterMetric](#abstractmultilabeledcountermetric)
-    3. [AbstractLabeledGaugeMetric](#abstractlabeledgaugemetric)
-    4. [AbstractMultiLabeledGaugeMetric](#abstractmultilabeledgaugemetric)
-    5. [AbstractLabeledHistogramMetric](#abstractlabeledhistogrammetric)
+   1. [AbstractLabeledCounterMetric](#abstractlabeledcountermetric)
+   2. [AbstractMultiLabeledCounterMetric](#abstractmultilabeledcountermetric)
+   3. [AbstractLabeledGaugeMetric](#abstractlabeledgaugemetric)
+   4. [AbstractMultiLabeledGaugeMetric](#abstractmultilabeledgaugemetric)
+   5. [AbstractLabeledHistogramMetric](#abstractlabeledhistogrammetric)
 2. [Dimensional](#dimensional)
-    1. [AbstractDimensionalCounterMetric](#abstractdimensionalcountermetric)
-    2. [AbstractDimensionalGaugeMetric](#abstractdimensionalgaugemetric)
-    3. [AbstractDimensionalHistogramMetric](#abstractdimensionalhistogrammetric)
-    4. [Lazy initialization](#lazy-initialization)
+   1. [AbstractDimensionalCounterMetric](#abstractdimensionalcountermetric)
+   2. [AbstractDimensionalGaugeMetric](#abstractdimensionalgaugemetric)
+   3. [AbstractDimensionalHistogramMetric](#abstractdimensionalhistogrammetric)
+   4. [Lazy initialization](#lazy-initialization)
 3. [Transaction observability managers](#transaction-observability-managers)
-    1. [PrometheusLabeledTransactionManager](#prometheuslabeledtransactionmanager)
-    2. [PrometheusDimensionalTransactionManager](#prometheusdimensionaltransactionmanager)
-    3. [Composing with other transaction managers](#composing-with-other-transaction-managers)
+   1. [PrometheusLabeledTransactionManager](#prometheuslabeledtransactionmanager)
+   2. [PrometheusDimensionalTransactionManager](#prometheusdimensionaltransactionmanager)
+   3. [Composing with other transaction managers](#composing-with-other-transaction-managers)
 
 ## Labeled
 
@@ -44,27 +44,27 @@ Usage:
 
 ```typescript
 export class PizzaDeliveryCountMetric extends AbstractLabeledCounterMetric<
-	'status',
-	['delivered_to_customer', 'delivered_to_pickup_point', 'not_delivered']
+  'status',
+  ['delivered_to_customer', 'delivered_to_pickup_point', 'not_delivered']
 > {
-	constructor({ promClient }: Deps) {
-		super(
-			{
-				name: 'pizza_delivery_count',
-				helpDescription: 'Number of pizza deliveries per status',
-				label: 'status',
-				measurementKeys: ['delivered_to_customer', 'delivered_to_pickup_point', 'not_delivered'],
-			},
-            promClient,
-		)
-	}
+  constructor({ promClient }: Deps) {
+    super(
+      {
+        name: 'pizza_delivery_count',
+        helpDescription: 'Number of pizza deliveries per status',
+        label: 'status',
+        measurementKeys: ['delivered_to_customer', 'delivered_to_pickup_point', 'not_delivered'],
+      },
+      promClient,
+    )
+  }
 }
 
 const pizzaDeliveryCountMetric = new PizzaDeliveryCountMetric({ appMetrics })
 
 pizzaDeliveryCountMetric.registerMeasurement({
-    'delivered_to_customer': 1,
-    'delivered_to_pickup_point': 2,
+  delivered_to_customer: 1,
+  delivered_to_pickup_point: 2,
 })
 ```
 
@@ -91,27 +91,27 @@ Usage:
 
 ```typescript
 export class HttpRequestCountMetric extends AbstractMultiLabeledCounterMetric<
-	['method', 'route', 'status_code']
+  ['method', 'route', 'status_code']
 > {
-	constructor({ promClient }: Deps) {
-		super(
-			{
-				name: 'http_request_count',
-				helpDescription: 'Number of HTTP requests by method, route and status code',
-				labelNames: ['method', 'route', 'status_code'],
-			},
-			promClient,
-		)
-	}
+  constructor({ promClient }: Deps) {
+    super(
+      {
+        name: 'http_request_count',
+        helpDescription: 'Number of HTTP requests by method, route and status code',
+        labelNames: ['method', 'route', 'status_code'],
+      },
+      promClient,
+    )
+  }
 }
 
 const httpRequestCountMetric = new HttpRequestCountMetric({ appMetrics })
 
 httpRequestCountMetric.registerMeasurement({
-    method: 'GET',
-    route: '/api/users',
-    status_code: '200',
-    increment: 1,
+  method: 'GET',
+  route: '/api/users',
+  status_code: '200',
+  increment: 1,
 })
 ```
 
@@ -124,12 +124,12 @@ The measurement object contains a value for each label plus a mandatory `increme
 
 **Key differences with `AbstractLabeledCounterMetric`**:
 
-| Aspect                     | `AbstractLabeledCounterMetric`     | `AbstractMultiLabeledCounterMetric` |
-|----------------------------|------------------------------------|-------------------------------------|
-| Number of labels           | Exactly one                        | One or more                         |
-| Label values at construction | Must be enumerated (`measurementKeys`) | Not declared; discovered at runtime |
-| Pre-initialization to `0`  | Yes, for every declared value      | No, series appear on first measurement |
-| Measurement shape          | `{ [labelValue]: incrementAmount }` | `{ [labelName]: labelValue, ..., increment: number }` |
+| Aspect                       | `AbstractLabeledCounterMetric`         | `AbstractMultiLabeledCounterMetric`                   |
+| ---------------------------- | -------------------------------------- | ----------------------------------------------------- |
+| Number of labels             | Exactly one                            | One or more                                           |
+| Label values at construction | Must be enumerated (`measurementKeys`) | Not declared; discovered at runtime                   |
+| Pre-initialization to `0`    | Yes, for every declared value          | No, series appear on first measurement                |
+| Measurement shape            | `{ [labelValue]: incrementAmount }`    | `{ [labelName]: labelValue, ..., increment: number }` |
 
 ### AbstractLabeledGaugeMetric
 
@@ -144,28 +144,25 @@ Unlike a counter, a gauge represents a value that can go up **or** down (e.g. qu
 Usage:
 
 ```typescript
-export class ConnectionPoolMetric extends AbstractLabeledGaugeMetric<
-	'state',
-	['active', 'idle']
-> {
-	constructor({ promClient }: Deps) {
-		super(
-			{
-				name: 'connection_pool_size',
-				helpDescription: 'Number of connections per state',
-				label: 'state',
-				measurementKeys: ['active', 'idle'],
-			},
-            promClient,
-		)
-	}
+export class ConnectionPoolMetric extends AbstractLabeledGaugeMetric<'state', ['active', 'idle']> {
+  constructor({ promClient }: Deps) {
+    super(
+      {
+        name: 'connection_pool_size',
+        helpDescription: 'Number of connections per state',
+        label: 'state',
+        measurementKeys: ['active', 'idle'],
+      },
+      promClient,
+    )
+  }
 }
 
 const connectionPoolMetric = new ConnectionPoolMetric({ appMetrics })
 
 connectionPoolMetric.registerMeasurement({
-    active: 7,
-    idle: 3,
+  active: 7,
+  idle: 3,
 })
 ```
 
@@ -192,27 +189,25 @@ As with `AbstractLabeledGaugeMetric`, each measurement **sets** the current valu
 Usage:
 
 ```typescript
-export class QueueDepthMetric extends AbstractMultiLabeledGaugeMetric<
-	['queue', 'priority']
-> {
-	constructor({ promClient }: Deps) {
-		super(
-			{
-				name: 'queue_depth',
-				helpDescription: 'Number of pending messages by queue and priority',
-				labelNames: ['queue', 'priority'],
-			},
-			promClient,
-		)
-	}
+export class QueueDepthMetric extends AbstractMultiLabeledGaugeMetric<['queue', 'priority']> {
+  constructor({ promClient }: Deps) {
+    super(
+      {
+        name: 'queue_depth',
+        helpDescription: 'Number of pending messages by queue and priority',
+        labelNames: ['queue', 'priority'],
+      },
+      promClient,
+    )
+  }
 }
 
 const queueDepthMetric = new QueueDepthMetric({ appMetrics })
 
 queueDepthMetric.registerMeasurement({
-    queue: 'emails',
-    priority: 'high',
-    value: 42,
+  queue: 'emails',
+  priority: 'high',
+  value: 42,
 })
 ```
 
@@ -225,11 +220,11 @@ The measurement object contains a value for each label plus a mandatory `value` 
 
 **Key differences with `AbstractLabeledGaugeMetric`**:
 
-| Aspect                       | `AbstractLabeledGaugeMetric`           | `AbstractMultiLabeledGaugeMetric`   |
-|------------------------------|----------------------------------------|-------------------------------------|
-| Number of labels             | Exactly one                            | One or more                         |
-| Label values at construction | Must be enumerated (`measurementKeys`) | Not declared; discovered at runtime |
-| Pre-initialization to `0`    | Yes, for every declared value          | No, series appear on first measurement |
+| Aspect                       | `AbstractLabeledGaugeMetric`           | `AbstractMultiLabeledGaugeMetric`                 |
+| ---------------------------- | -------------------------------------- | ------------------------------------------------- |
+| Number of labels             | Exactly one                            | One or more                                       |
+| Label values at construction | Must be enumerated (`measurementKeys`) | Not declared; discovered at runtime               |
+| Pre-initialization to `0`    | Yes, for every declared value          | No, series appear on first measurement            |
 | Measurement shape            | `{ [labelValue]: valueToSet }`         | `{ [labelName]: labelValue, ..., value: number }` |
 
 ### AbstractLabeledHistogramMetric
@@ -247,7 +242,7 @@ export class RequestDurationMetric extends AbstractLabeledHistogramMetric<['rout
         helpDescription: 'Duration of requests in seconds',
         labelNames: ['route'],
         buckets: [0.1, 0.5, 1, 5],
-      }, 
+      },
       promClient,
     )
   }
@@ -283,25 +278,25 @@ Usage:
 
 ```typescript
 export class PizzaDeliveryCountMetric extends AbstractDimensionalCounterMetric<
-	['delivered_to_customer', 'delivered_to_pickup_point', 'not_delivered']
+  ['delivered_to_customer', 'delivered_to_pickup_point', 'not_delivered']
 > {
-	constructor({ promClient }: Deps) {
-		super(
-			{
-				helpDescription: 'Number of pizza deliveries per status',
-				dimensions: ['delivered_to_customer', 'delivered_to_pickup_point', 'not_delivered'],
-				buildMetricName: (dimension) => `pizza_delivery_${dimension}:counter`,
-			},
-			promClient,
-		)
-	}
+  constructor({ promClient }: Deps) {
+    super(
+      {
+        helpDescription: 'Number of pizza deliveries per status',
+        dimensions: ['delivered_to_customer', 'delivered_to_pickup_point', 'not_delivered'],
+        buildMetricName: (dimension) => `pizza_delivery_${dimension}:counter`,
+      },
+      promClient,
+    )
+  }
 }
 
 const pizzaDeliveryCountMetric = new PizzaDeliveryCountMetric({ appMetrics })
 
 pizzaDeliveryCountMetric.registerMeasurement({
-    delivered_to_customer: 1,
-    delivered_to_pickup_point: 2,
+  delivered_to_customer: 1,
+  delivered_to_pickup_point: 2,
 })
 ```
 
@@ -330,26 +325,24 @@ As with the labeled gauge classes, each measurement **sets** the current value f
 Usage:
 
 ```typescript
-export class ConnectionPoolMetric extends AbstractDimensionalGaugeMetric<
-	['active', 'idle']
-> {
-	constructor({ promClient }: Deps) {
-		super(
-			{
-				helpDescription: 'Number of connections per state',
-				dimensions: ['active', 'idle'],
-				buildMetricName: (dimension) => `connection_pool_${dimension}:gauge`,
-			},
-			promClient,
-		)
-	}
+export class ConnectionPoolMetric extends AbstractDimensionalGaugeMetric<['active', 'idle']> {
+  constructor({ promClient }: Deps) {
+    super(
+      {
+        helpDescription: 'Number of connections per state',
+        dimensions: ['active', 'idle'],
+        buildMetricName: (dimension) => `connection_pool_${dimension}:gauge`,
+      },
+      promClient,
+    )
+  }
 }
 
 const connectionPoolMetric = new ConnectionPoolMetric({ appMetrics })
 
 connectionPoolMetric.registerMeasurement({
-    active: 7,
-    idle: 3,
+  active: 7,
+  idle: 3,
 })
 ```
 
@@ -377,7 +370,9 @@ Use this instead of [`AbstractLabeledHistogramMetric`](#abstractlabeledhistogram
 Usage:
 
 ```typescript
-export class RequestDurationMetric extends AbstractDimensionalHistogramMetric<['successful', 'failed']> {
+export class RequestDurationMetric extends AbstractDimensionalHistogramMetric<
+  ['successful', 'failed']
+> {
   constructor({ promClient }: Deps) {
     super(
       {
@@ -443,7 +438,11 @@ export class RequestDurationMetric extends AbstractDimensionalHistogramMetric<
 const requestDurationMetric = new RequestDurationMetric({ appMetrics })
 
 // Histogram — labels sit in the `labels` sub-object alongside `dimension` and the duration:
-requestDurationMetric.registerMeasurement({ dimension: 'successful', labels: { region: 'eu' }, time: 0.32 })
+requestDurationMetric.registerMeasurement({
+  dimension: 'successful',
+  labels: { region: 'eu' },
+  time: 0.32,
+})
 ```
 
 Counter and gauge take the same `labels` sub-object; because their measurement keys are the dimensions, the `labels` object applies to every dimension incremented/set in that call:
@@ -469,12 +468,14 @@ By default, all Dimensional classes (`AbstractDimensionalCounterMetric`, `Abstra
 When the set of valid dimensions is not known up-front (e.g. it comes from runtime input such as a queue name or a tenant identifier), opt into **lazy mode** with `lazyInit: true`:
 
 ```typescript
-export class QueueProcessingDurationMetric extends AbstractDimensionalHistogramMetric<readonly string[]> {
+export class QueueProcessingDurationMetric extends AbstractDimensionalHistogramMetric<
+  readonly string[]
+> {
   constructor({ promClient }: Deps) {
     super(
       {
         helpDescription: 'Duration of queue message processing, per queue',
-        lazyInit: true,           // ← opt in
+        lazyInit: true, // ← opt in
         buckets: [0.1, 0.5, 1, 5],
         buildMetricName: (queueName) => `queue_processing_${queueName}:histogram`,
       },
@@ -492,11 +493,11 @@ In lazy mode:
 
 Summary of the three modes:
 
-| Mode                 | `lazyInit`           | `dimensions`      | At construction            | Measurement for an unknown dimension |
-|----------------------|----------------------|-------------------|----------------------------|--------------------------------------|
-| Eager (default)      | `false` or omitted   | Required          | All dimensions pre-registered | Silently ignored                     |
-| Lazy with allow-list | `true`               | Provided          | Nothing pre-registered      | Silently ignored if outside the allow-list |
-| Lazy open            | `true`               | Omitted           | Nothing pre-registered      | Accepted and registered on the fly   |
+| Mode                 | `lazyInit`         | `dimensions` | At construction               | Measurement for an unknown dimension       |
+| -------------------- | ------------------ | ------------ | ----------------------------- | ------------------------------------------ |
+| Eager (default)      | `false` or omitted | Required     | All dimensions pre-registered | Silently ignored                           |
+| Lazy with allow-list | `true`             | Provided     | Nothing pre-registered        | Silently ignored if outside the allow-list |
+| Lazy open            | `true`             | Omitted      | Nothing pre-registered        | Accepted and registered on the fly         |
 
 **Trade-off vs eager mode**: lazy mode loses the "series exists from the start with a `0` value" property that eager counters provide, so dashboards may display "no data" until the first measurement arrives.
 
@@ -553,7 +554,8 @@ const manager = new PrometheusDimensionalTransactionManager(
     type: 'histogram',
     helpDescription: 'Duration of transactions in milliseconds',
     buckets: [50, 250, 1000, 5000],
-    buildMetricName: (transactionName, status) => `transaction_${transactionName}_${status}:histogram`,
+    buildMetricName: (transactionName, status) =>
+      `transaction_${transactionName}_${status}:histogram`,
   },
   promClient,
 )

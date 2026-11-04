@@ -5,10 +5,12 @@ Shared TypeScript configuration for Lokalise projects.
 ## Getting Started
 
 ### Requirements:
+
 - TypeScript `>=6.0.0`
 - ESM codebase
 
 ### Installation:
+
 ```bash
 npm install --save-dev @lokalise/tsconfig
 ```
@@ -167,23 +169,25 @@ results in a TypeScript error, preventing potential runtime crashes.
 
 **Example for accessing the array:**
 ```typescript
-const arr: string[] = [];
+const arr: string[] = []
 
-console.log(arr[0].trim());
+console.log(arr[0].trim())
 ```
+
 - With `"noUncheckedIndexedAccess": true` → TypeScript error: "Object is possibly `undefined`"
 - With `"noUncheckedIndexedAccess": false` → No error, but at runtime, this will throw:
-`"TypeError: Cannot read properties of undefined (reading 'trim')"`
+  `"TypeError: Cannot read properties of undefined (reading 'trim')"`
 
 **Example for accessing the object:**
 ```typescript
-const obj: Record<string, string> = {};
+const obj: Record<string, string> = {}
 
-console.log(obj.some.trim());
+console.log(obj.some.trim())
 ```
+
 - With `"noUncheckedIndexedAccess": true` → TypeScript error: "`obj.some` is possibly `undefined`"
 - With `"noUncheckedIndexedAccess": false` → No error, but at runtime, this will throw:
-`"TypeError: Cannot read properties of undefined (reading 'trim')"`
+  `"TypeError: Cannot read properties of undefined (reading 'trim')"`
 
 To disable:
 ```json

@@ -44,7 +44,7 @@ Both call shapes accept an options object:
 - `checksToInclude`: checks to run; defaults to all of them when omitted, while an empty array
   runs none.
 - `checksToExclude`: checks to skip; wins over `checksToInclude` on overlap.
-- `skipSingleTextChecks` *(pair call only)*: shortcut for excluding every single-text check, so
+- `skipSingleTextChecks` _(pair call only)_: shortcut for excluding every single-text check, so
   only the mismatch checks run.
 
 ```typescript
@@ -57,14 +57,14 @@ detectQualityIssues(' Hola', 'Hello', { skipSingleTextChecks: true })
 Every issue is `{ error, details }`, discriminated by `error`; a `switch` over it narrows
 `details` to the right shape:
 
-| `error` | `details` |
-| --- | --- |
-| `LEADING_WHITESPACE` | `undefined`; the text starts with whitespace |
-| `TRAILING_WHITESPACE` | `undefined`; the text ends with whitespace |
-| `DOUBLE_WHITESPACE` | `{ whitespaces }`: every run of 2+ consecutive horizontal whitespace characters found |
-| `LEADING_WHITESPACE_MISMATCH` | `{ source, target }`: the differing leading whitespace of each side |
-| `TRAILING_WHITESPACE_MISMATCH` | `{ source, target }`: the differing trailing whitespace of each side |
-| `DOUBLE_WHITESPACE_MISMATCH` | `{ missing, added }`: runs the text dropped / introduced vs the reference |
+| `error`                          | `details`                                                                                            |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `LEADING_WHITESPACE`             | `undefined`; the text starts with whitespace                                                         |
+| `TRAILING_WHITESPACE`            | `undefined`; the text ends with whitespace                                                           |
+| `DOUBLE_WHITESPACE`              | `{ whitespaces }`: every run of 2+ consecutive horizontal whitespace characters found                |
+| `LEADING_WHITESPACE_MISMATCH`    | `{ source, target }`: the differing leading whitespace of each side                                  |
+| `TRAILING_WHITESPACE_MISMATCH`   | `{ source, target }`: the differing trailing whitespace of each side                                 |
+| `DOUBLE_WHITESPACE_MISMATCH`     | `{ missing, added }`: runs the text dropped / introduced vs the reference                            |
 | `NON_TRANSLATABLE_TAGS_MISMATCH` | `{ missing, added }`: NTC tokens (placeholders, tags) the text dropped / introduced vs the reference |
 
 `missing`/`added` diffs are computed as multisets: position-independent (positions naturally shift

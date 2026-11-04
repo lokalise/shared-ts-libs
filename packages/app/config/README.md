@@ -11,7 +11,7 @@ schemas.
 The parsed value is an `AppConfig`.
 
 | Env var                        | Required | Default   | Notes                                                          |
-|--------------------------------|----------|-----------|----------------------------------------------------------------|
+| ------------------------------ | -------- | --------- | -------------------------------------------------------------- |
 | `NODE_ENV`                     | yes      |           | `production`, `test` or `development`                          |
 | `APP_ENV`                      | yes      |           | `production`, `staging` or `development`                       |
 | `APP_VERSION`                  | yes      |           |                                                                |
@@ -30,7 +30,7 @@ are code rather than config, such as `retryStrategy`, `reconnectOnError` or Bull
 left to the caller.
 
 | Env var                 | Required | Default | Notes                                |
-|-------------------------|----------|---------|--------------------------------------|
+| ----------------------- | -------- | ------- | ------------------------------------ |
 | `REDIS_HOST`            | yes      |         |                                      |
 | `REDIS_PORT`            | no       | `6379`  | 1-65535                              |
 | `REDIS_USERNAME`        | no       |         |                                      |

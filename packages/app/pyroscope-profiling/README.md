@@ -114,11 +114,11 @@ its platform.
 
 Three entry points, so a consumer only pays for what it uses:
 
-| Import | Needs | What it holds |
-|---|---|---|
-| `@lokalise/pyroscope-profiling` | nothing | Starting and stopping the profiler, config from the environment, manual labels |
-| `@lokalise/pyroscope-profiling/opentelemetry` | `@opentelemetry/sdk-trace-base` | The span processor that ties a profile to a trace |
-| `@lokalise/pyroscope-profiling/fastify` | `fastify` | A plugin that starts the profiler and flushes it on close |
+| Import                                        | Needs                           | What it holds                                                                  |
+| --------------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------ |
+| `@lokalise/pyroscope-profiling`               | nothing                         | Starting and stopping the profiler, config from the environment, manual labels |
+| `@lokalise/pyroscope-profiling/opentelemetry` | `@opentelemetry/sdk-trace-base` | The span processor that ties a profile to a trace                              |
+| `@lokalise/pyroscope-profiling/fastify`       | `fastify`                       | A plugin that starts the profiler and flushes it on close                      |
 
 Both peer dependencies are optional, so a worker or a script can depend on this
 package without installing the tracing SDK or Fastify.
@@ -223,16 +223,16 @@ flush is lost, which for a short-lived script is every profile it ever took.
 
 Read by this package:
 
-| Variable | Default | Description |
-|---|---|---|
-| `PYROSCOPE_ENABLED` | `false` | Whether to profile at all. `true` or `1` |
-| `PYROSCOPE_SERVER_ADDRESS` | `http://localhost:4040` | Ingest endpoint |
-| `PYROSCOPE_APPLICATION_NAME` | the `appName` passed in code | Name the profiles are filed under, which becomes Pyroscope's `service_name` |
-| `PYROSCOPE_AUTH_TOKEN` | | Bearer token. Takes precedence over basic auth when both are set |
-| `PYROSCOPE_BASIC_AUTH_USER` | | Basic auth user. For Grafana Cloud Profiles this is the numeric stack id |
-| `PYROSCOPE_BASIC_AUTH_PASSWORD` | | Basic auth password, i. e. the Grafana Cloud access token |
-| `PYROSCOPE_TENANT_ID` | | `X-Scope-OrgID` for a multi-tenant Pyroscope |
-| `PYROSCOPE_SPAN_PROFILES_ENABLED` | `false` | Label samples with the span they were taken under. See [Span profiles](#span-profiles) |
+| Variable                          | Default                      | Description                                                                            |
+| --------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------- |
+| `PYROSCOPE_ENABLED`               | `false`                      | Whether to profile at all. `true` or `1`                                               |
+| `PYROSCOPE_SERVER_ADDRESS`        | `http://localhost:4040`      | Ingest endpoint                                                                        |
+| `PYROSCOPE_APPLICATION_NAME`      | the `appName` passed in code | Name the profiles are filed under, which becomes Pyroscope's `service_name`            |
+| `PYROSCOPE_AUTH_TOKEN`            |                              | Bearer token. Takes precedence over basic auth when both are set                       |
+| `PYROSCOPE_BASIC_AUTH_USER`       |                              | Basic auth user. For Grafana Cloud Profiles this is the numeric stack id               |
+| `PYROSCOPE_BASIC_AUTH_PASSWORD`   |                              | Basic auth password, i. e. the Grafana Cloud access token                              |
+| `PYROSCOPE_TENANT_ID`             |                              | `X-Scope-OrgID` for a multi-tenant Pyroscope                                           |
+| `PYROSCOPE_SPAN_PROFILES_ENABLED` | `false`                      | Label samples with the span they were taken under. See [Span profiles](#span-profiles) |
 
 A blank value counts as unset, because a deployment template that leaves a
 variable in place but empty is the normal shape of "not configured here". A
@@ -254,16 +254,16 @@ possible through it on purpose. The Pyroscope SDK reads them from the
 environment itself, and anything passed to its `init()` outranks what an
 environment set, so a second name for the same setting would silently win:
 
-| Variable | Default |
-|---|---|
-| `PYROSCOPE_FLUSH_INTERVAL_MS` | `60000` |
-| `PYROSCOPE_WALL_SAMPLING_DURATION_MS` | `60000` |
-| `PYROSCOPE_WALL_SAMPLING_INTERVAL_MICROS` | `10000`, i. e. 100 Hz |
-| `PYROSCOPE_WALL_COLLECT_CPU_TIME` | `false` |
-| `PYROSCOPE_HEAP_SAMPLING_INTERVAL_BYTES` | `524288` |
-| `PYROSCOPE_HEAP_STACK_DEPTH` | `64` |
-| `PYROSCOPE_STRIP_FILENAMES` | unset. `all` or `dependencies` drops source paths from the frames |
-| `PYROSCOPE_SHORTEN_PATHS` | `false` |
+| Variable                                  | Default                                                           |
+| ----------------------------------------- | ----------------------------------------------------------------- |
+| `PYROSCOPE_FLUSH_INTERVAL_MS`             | `60000`                                                           |
+| `PYROSCOPE_WALL_SAMPLING_DURATION_MS`     | `60000`                                                           |
+| `PYROSCOPE_WALL_SAMPLING_INTERVAL_MICROS` | `10000`, i. e. 100 Hz                                             |
+| `PYROSCOPE_WALL_COLLECT_CPU_TIME`         | `false`                                                           |
+| `PYROSCOPE_HEAP_SAMPLING_INTERVAL_BYTES`  | `524288`                                                          |
+| `PYROSCOPE_HEAP_STACK_DEPTH`              | `64`                                                              |
+| `PYROSCOPE_STRIP_FILENAMES`               | unset. `all` or `dependencies` drops source paths from the frames |
+| `PYROSCOPE_SHORTEN_PATHS`                 | `false`                                                           |
 
 Two of them are worth changing for a local run. Drop the flush interval and the
 wall sampling duration to 15 seconds or less, because at the 60-second default a
@@ -275,14 +275,14 @@ of what a Node profile is asked to answer.
 
 ### Plugin options
 
-| Option | Default | Description |
-|---|---|---|
-| `appName` | | Name to file profiles under when `config` is omitted and `PYROSCOPE_APPLICATION_NAME` is unset |
-| `config` | `resolveProfilingConfigFromEnv({ appName })` | Where to ship profiles |
-| `context` | `resolveProfilingContextFromEnv()` | Labels attached to every profile |
-| `logger` | `app.log` | Where the profiler's own diagnostics go |
-| `start` | `true` | Whether the plugin starts the profiler. `false` keeps only the `onClose` flush |
-| `labelRequests` | whether the profiler is running | Whether each request labels the samples taken during it with its route. Off by default while profiling is off, so the hooks cost nothing then |
+| Option          | Default                                      | Description                                                                                                                                   |
+| --------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `appName`       |                                              | Name to file profiles under when `config` is omitted and `PYROSCOPE_APPLICATION_NAME` is unset                                                |
+| `config`        | `resolveProfilingConfigFromEnv({ appName })` | Where to ship profiles                                                                                                                        |
+| `context`       | `resolveProfilingContextFromEnv()`           | Labels attached to every profile                                                                                                              |
+| `logger`        | `app.log`                                    | Where the profiler's own diagnostics go                                                                                                       |
+| `start`         | `true`                                       | Whether the plugin starts the profiler. `false` keeps only the `onClose` flush                                                                |
+| `labelRequests` | whether the profiler is running              | Whether each request labels the samples taken during it with its route. Off by default while profiling is off, so the hooks cost nothing then |
 
 With profiling enabled and no name available from either source, the profiler
 refuses to start and logs an error rather than filing profiles under an empty
@@ -294,26 +294,26 @@ name, which is a series nobody can find.
 pyroscope-analyze --service <name> [options]
 ```
 
-| Option | Default | Description |
-|---|---|---|
-| `--service <name>` | required | The app name profiles were shipped under |
-| `--url <url>` | `PYROSCOPE_SERVER_ADDRESS`, else `http://localhost:4040` | Pyroscope base URL |
-| `--type <type>` | `wall` | `wall`, `cpu`, `samples`, `heap`, `objects`, or a full profile type id |
-| `--select <matchers>` | | Extra label matchers, e. g. `job="cache-refresh"` |
-| `--from <when>` | `now-15m` | `now-<n>[smh]`, an ISO timestamp or Unix millis |
-| `--until <when>` | `now` | The same formats |
-| `--against-from <when>` | | Second range to diff against, per frame |
-| `--against-until <when>` | the start of `--from` | End of the second range |
-| `--top <n>` | `20` | Frames to print, in the table and in `--json` |
-| `--tree` | off | Also print the call tree, indented, one value per line |
-| `--min-share <percent>` | `1` | Frames below this share are left out of the tree |
-| `--json` | off | Machine-readable output, printed on an empty range too |
-| `--folded <file>` | | Also write collapsed stacks |
-| `--timeout <seconds>` | `30` | Give up on a Pyroscope that took the request and went quiet |
-| `--auth-token <token>` | `PYROSCOPE_AUTH_TOKEN` | Bearer token, which takes precedence over basic auth |
-| `--basic-auth-user <user>` | `PYROSCOPE_BASIC_AUTH_USER` | For Grafana Cloud Profiles, the numeric stack id |
-| `--basic-auth-password <secret>` | `PYROSCOPE_BASIC_AUTH_PASSWORD` | Basic auth password |
-| `--tenant-id <id>` | `PYROSCOPE_TENANT_ID` | Sent as `X-Scope-OrgID` |
+| Option                           | Default                                                  | Description                                                            |
+| -------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `--service <name>`               | required                                                 | The app name profiles were shipped under                               |
+| `--url <url>`                    | `PYROSCOPE_SERVER_ADDRESS`, else `http://localhost:4040` | Pyroscope base URL                                                     |
+| `--type <type>`                  | `wall`                                                   | `wall`, `cpu`, `samples`, `heap`, `objects`, or a full profile type id |
+| `--select <matchers>`            |                                                          | Extra label matchers, e. g. `job="cache-refresh"`                      |
+| `--from <when>`                  | `now-15m`                                                | `now-<n>[smh]`, an ISO timestamp or Unix millis                        |
+| `--until <when>`                 | `now`                                                    | The same formats                                                       |
+| `--against-from <when>`          |                                                          | Second range to diff against, per frame                                |
+| `--against-until <when>`         | the start of `--from`                                    | End of the second range                                                |
+| `--top <n>`                      | `20`                                                     | Frames to print, in the table and in `--json`                          |
+| `--tree`                         | off                                                      | Also print the call tree, indented, one value per line                 |
+| `--min-share <percent>`          | `1`                                                      | Frames below this share are left out of the tree                       |
+| `--json`                         | off                                                      | Machine-readable output, printed on an empty range too                 |
+| `--folded <file>`                |                                                          | Also write collapsed stacks                                            |
+| `--timeout <seconds>`            | `30`                                                     | Give up on a Pyroscope that took the request and went quiet            |
+| `--auth-token <token>`           | `PYROSCOPE_AUTH_TOKEN`                                   | Bearer token, which takes precedence over basic auth                   |
+| `--basic-auth-user <user>`       | `PYROSCOPE_BASIC_AUTH_USER`                              | For Grafana Cloud Profiles, the numeric stack id                       |
+| `--basic-auth-password <secret>` | `PYROSCOPE_BASIC_AUTH_PASSWORD`                          | Basic auth password                                                    |
+| `--tenant-id <id>`               | `PYROSCOPE_TENANT_ID`                                    | Sent as `X-Scope-OrgID`                                                |
 
 The credentials default to the same variables the service ships profiles with,
 so pointing `PYROSCOPE_SERVER_ADDRESS` at Grafana Cloud Profiles or a
@@ -481,12 +481,12 @@ letting `pyroscope-analyze` do it:
 Every profile carries four labels, so one environment, release or pod can be
 isolated:
 
-| Label | From |
-|---|---|
-| `env` | `APP_ENV` |
-| `version` | `APP_VERSION`, with a trailing `@<build timestamp>` stripped, so two pods of one release share a value |
-| `commit_sha` | `GIT_COMMIT_SHA` |
-| `instance` | the hostname, which is the pod name in Kubernetes |
+| Label        | From                                                                                                   |
+| ------------ | ------------------------------------------------------------------------------------------------------ |
+| `env`        | `APP_ENV`                                                                                              |
+| `version`    | `APP_VERSION`, with a trailing `@<build timestamp>` stripped, so two pods of one release share a value |
+| `commit_sha` | `GIT_COMMIT_SHA`                                                                                       |
+| `instance`   | the hostname, which is the pod name in Kubernetes                                                      |
 
 A label whose source is missing is left out rather than shipped empty, and an
 `APP_VERSION` that is nothing but a build timestamp keeps it rather than
@@ -601,13 +601,13 @@ whatever ran beside it" rather than as the scope alone.
 Two profilers run, both continuous, both flushed on `PYROSCOPE_FLUSH_INTERVAL_MS`.
 They ingest as these profile types, which are what `--type` is shorthand for:
 
-| `--type` | Profile type | Requires | What it shows |
-|---|---|---|---|
-| `wall` | `wall:wall:nanoseconds:wall:nanoseconds` | | Where wall-clock time goes, including time spent waiting on a dependency |
-| `cpu` | `wall:cpu:nanoseconds:wall:nanoseconds` | `PYROSCOPE_WALL_COLLECT_CPU_TIME=true` | The CPU time inside that wall time |
-| `samples` | `wall:samples:count:wall:nanoseconds` | | Sample counts behind the two above |
-| `heap` | `memory:inuse_space:bytes:inuse_space:bytes` | | Which call paths hold live heap |
-| `objects` | `memory:inuse_objects:count:inuse_space:bytes` | | The same, counted in objects |
+| `--type`  | Profile type                                   | Requires                               | What it shows                                                            |
+| --------- | ---------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------ |
+| `wall`    | `wall:wall:nanoseconds:wall:nanoseconds`       |                                        | Where wall-clock time goes, including time spent waiting on a dependency |
+| `cpu`     | `wall:cpu:nanoseconds:wall:nanoseconds`        | `PYROSCOPE_WALL_COLLECT_CPU_TIME=true` | The CPU time inside that wall time                                       |
+| `samples` | `wall:samples:count:wall:nanoseconds`          |                                        | Sample counts behind the two above                                       |
+| `heap`    | `memory:inuse_space:bytes:inuse_space:bytes`   |                                        | Which call paths hold live heap                                          |
+| `objects` | `memory:inuse_objects:count:inuse_space:bytes` |                                        | The same, counted in objects                                             |
 
 `wall`, not `process_cpu`. Grafana's own trace-to-profiles documentation uses
 `process_cpu:cpu:nanoseconds:cpu:nanoseconds`, which is the Go and Java naming;
@@ -916,30 +916,30 @@ so `--from now --until now-15m` says so instead of coming back empty.
 
 From `@lokalise/pyroscope-profiling`:
 
-| Export | Description |
-|---|---|
-| `startProfiling(config, context, logger)` | Starts profiling. Returns whether it is now running; never throws |
-| `stopProfiling(logger)` | Flushes the last wall profile, with a five-second ceiling. A no-op when nothing is running |
-| `isProfilingRunning()` | Whether a start succeeded and no stop has run |
-| `runningProfiler()` | The SDK module while it is profiling, for reaching past this package |
-| `resolveProfilingConfigFromEnv({ appName?, env? })` | A `ProfilingConfig` from `PYROSCOPE_*` |
-| `resolveProfilingContextFromEnv(env?)` | A `ProfilingContext` from `APP_ENV`, `APP_VERSION`, `GIT_COMMIT_SHA` |
-| `isSpanProfilingEnabledInEnv(env?)` | Whether both span-profile switches are on |
-| `withProfilingLabels(labels, fn)` | Runs `fn` with `labels` on its samples |
-| `getProfilingLabels()` | The labels currently being attached, or `{}` |
-| `withJobLabels(queueId, fn)` | `withProfilingLabels` with `job` pinned to the queue |
+| Export                                              | Description                                                                                |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `startProfiling(config, context, logger)`           | Starts profiling. Returns whether it is now running; never throws                          |
+| `stopProfiling(logger)`                             | Flushes the last wall profile, with a five-second ceiling. A no-op when nothing is running |
+| `isProfilingRunning()`                              | Whether a start succeeded and no stop has run                                              |
+| `runningProfiler()`                                 | The SDK module while it is profiling, for reaching past this package                       |
+| `resolveProfilingConfigFromEnv({ appName?, env? })` | A `ProfilingConfig` from `PYROSCOPE_*`                                                     |
+| `resolveProfilingContextFromEnv(env?)`              | A `ProfilingContext` from `APP_ENV`, `APP_VERSION`, `GIT_COMMIT_SHA`                       |
+| `isSpanProfilingEnabledInEnv(env?)`                 | Whether both span-profile switches are on                                                  |
+| `withProfilingLabels(labels, fn)`                   | Runs `fn` with `labels` on its samples                                                     |
+| `getProfilingLabels()`                              | The labels currently being attached, or `{}`                                               |
+| `withJobLabels(queueId, fn)`                        | `withProfilingLabels` with `job` pinned to the queue                                       |
 
 From `@lokalise/pyroscope-profiling/opentelemetry`:
 
-| Export | Description |
-|---|---|
+| Export                                  | Description                                                            |
+| --------------------------------------- | ---------------------------------------------------------------------- |
 | `buildPyroscopeSpanProcessors(logger?)` | One `PyroscopeSpanProcessor` when span profiles are on, none otherwise |
-| `PyroscopeSpanProcessor` | The processor itself, for a tracing setup that builds its own list |
+| `PyroscopeSpanProcessor`                | The processor itself, for a tracing setup that builds its own list     |
 
 From `@lokalise/pyroscope-profiling/fastify`:
 
-| Export | Description |
-|---|---|
+| Export                     | Description                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------- |
 | `pyroscopeProfilingPlugin` | Starts the profiler on register, labels each request with its route, flushes on close |
 
 `stopProfiling` gives up after five seconds. Pyroscope's exporter posts with

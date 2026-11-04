@@ -1,9 +1,14 @@
 # @lokalise/biome-config
+
 Lokalise config for Biome
 
 ## Getting started
 
-You can use the following biome.json configurations: 
+Requires `@biomejs/biome` 2.6.4 or later.
+
+`biome-base.jsonc` lints and formats TypeScript, JSON, Markdown and YAML. It skips files that tools write: `package-lock.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `CHANGELOG.md` and `.changeset/*.md`. If your own `files.includes` adds `"**"`, repeat the exclusions you need after it.
+
+You can use the following biome.json configurations:
 
 Backend:
 

@@ -14,11 +14,24 @@
       "**/*.tsx",
       "**/*.json",
       "**/*.jsonc",
+      "**/*.md",
+      "**/*.yml",
+      "**/*.yaml",
       "!dist",
       "!**/dist/*",
       "!coverage",
-      "!node_modules"
+      "!node_modules",
+      // Written by tools that do not run Biome
+      "!**/package-lock.json",
+      "!**/pnpm-lock.yaml",
+      "!**/CHANGELOG.md"
     ]
+  },
+  "markdown": {
+    "parser": {
+      // Keep YAML front matter instead of turning it into a heading
+      "frontmatter": true
+    }
   },
   "formatter": {
     "enabled": true,

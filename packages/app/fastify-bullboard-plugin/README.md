@@ -20,25 +20,25 @@ import { Queue } from 'bullmq'
 const app = fastify()
 
 await app.register(basicAuth, {
-    config: {
-        isEnabled: true,
-        username: 'username',
-        password: 'pass',
-    },
-    enableList: new Set(['/bull']),
+  config: {
+    isEnabled: true,
+    username: 'username',
+    password: 'pass',
+  },
+  enableList: new Set(['/bull']),
 })
 
 await app.register(bullBoard, {
   queueConstructor: Queue,
   redisConfigs: [
-      {
-          host: process.env.REDIS_HOST!,
-          port: Number(process.env.REDIS_PORT),
-          username: process.env.REDIS_USERNAME,
-          password: process.env.REDIS_PASSWORD,
-          keyPrefix: process.env.REDIS_KEY_PREFIX,
-          useTls: false,
-      } // any Redis config
+    {
+      host: process.env.REDIS_HOST!,
+      port: Number(process.env.REDIS_PORT),
+      username: process.env.REDIS_USERNAME,
+      password: process.env.REDIS_PASSWORD,
+      keyPrefix: process.env.REDIS_KEY_PREFIX,
+      useTls: false,
+    }, // any Redis config
   ],
   basePath: '/bull',
   refreshIntervalInSeconds: config.bullBoard.refreshIntervalInSeconds,
