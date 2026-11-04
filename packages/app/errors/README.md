@@ -255,18 +255,19 @@ reply.status(error.httpStatusCode).send(error.toPayload())
 reply.status(httpStatusByErrorType[someType]).send(payload)
 ```
 
-| ErrorType           | HTTP |
-| ------------------- | ---- |
-| `bad-request`       | 400  |
-| `unauthenticated`   | 401  |
-| `permission-denied` | 403  |
-| `not-found`         | 404  |
-| `conflict`          | 409  |
-| `rate-limit`        | 429  |
-| `internal`          | 500  |
-| `unimplemented`     | 501  |
-| `upstream-error`    | 502  |
-| `unavailable`       | 503  |
+| ErrorType              | HTTP |
+| ---------------------- | ---- |
+| `bad-request`          | 400  |
+| `unauthenticated`      | 401  |
+| `permission-denied`    | 403  |
+| `not-found`            | 404  |
+| `conflict`             | 409  |
+| `unprocessable-entity` | 422  |
+| `rate-limit`           | 429  |
+| `internal`             | 500  |
+| `unimplemented`        | 501  |
+| `upstream-error`       | 502  |
+| `unavailable`          | 503  |
 
 For other protocols (gRPC, message queues) create a similar mapping using the
 `ErrorType` values.
