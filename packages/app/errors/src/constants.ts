@@ -17,6 +17,8 @@ export const ErrorType = {
   NOT_FOUND: 'not-found',
   /** Resource conflict or already exists */
   CONFLICT: 'conflict',
+  /** Well-formed request that cannot be processed, e.g. it fails semantic validation */
+  UNPROCESSABLE_ENTITY: 'unprocessable-entity',
   /** Rate limit exceeded */
   RATE_LIMIT: 'rate-limit',
   /** Internal server error */
@@ -37,6 +39,7 @@ export const httpStatusByErrorType = {
   [ErrorType.PERMISSION_DENIED]: 403,
   [ErrorType.NOT_FOUND]: 404,
   [ErrorType.CONFLICT]: 409,
+  [ErrorType.UNPROCESSABLE_ENTITY]: 422,
   [ErrorType.RATE_LIMIT]: 429,
   [ErrorType.INTERNAL]: 500,
   [ErrorType.UNIMPLEMENTED]: 501,
