@@ -36,7 +36,7 @@
     "@prometheus-io/client": "^0.16.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.12",
+    "@biomejs/biome": "^2.6.3",
     "@lokalise/biome-config": "workspace:^",
     "@lokalise/node-core": "^14.12.0",
     "@lokalise/tsconfig": "workspace:^",
