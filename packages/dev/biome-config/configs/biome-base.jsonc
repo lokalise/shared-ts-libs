@@ -24,9 +24,7 @@
       // Written by tools that do not run Biome
       "!**/package-lock.json",
       "!**/pnpm-lock.yaml",
-      "!**/pnpm-workspace.yaml",
-      "!**/CHANGELOG.md",
-      "!**/.changeset/*.md"
+      "!**/CHANGELOG.md"
     ]
   },
   "markdown": {
