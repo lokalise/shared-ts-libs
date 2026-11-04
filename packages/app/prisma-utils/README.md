@@ -150,8 +150,8 @@ Retries a single statement while it fails with a serialization failure, without 
 ```typescript
 import { retryOnSerializationFailure } from '@lokalise/prisma-utils'
 
-const rows = await retryOnSerializationFailure(() =>
-  prisma.$queryRaw<Row[]>`SELECT ... FROM "segment" WHERE "project_id" = ${projectId}`,
+const rows = await retryOnSerializationFailure(
+  () => prisma.$queryRaw<Row[]>`SELECT ... FROM "segment" WHERE "project_id" = ${projectId}`,
 )
 ```
 
@@ -161,7 +161,7 @@ Retries when the error is Prisma's `P2034` or a CockroachDB transaction retry er
 
 ```typescript
 const rows = await retryOnSerializationFailure(query, {
-  retriesAllowed: 2,    // Default: 2 (total 3 attempts)
+  retriesAllowed: 2, // Default: 2 (total 3 attempts)
   baseRetryDelayMs: 100, // Default: 100ms
   maxRetryDelayMs: 30000, // Default: 30s
 })
