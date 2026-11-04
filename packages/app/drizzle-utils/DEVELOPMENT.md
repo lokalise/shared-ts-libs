@@ -46,11 +46,11 @@ Each database keeps its own `bench_segment`, so seed each one you benchmark.
 
 `pnpm bench:seed` drops and recreates `bench_segment`, so it wipes any earlier benchmark data. The default dataset is one tenant of 1 000 000 rows and 1 000 tenants of 1 000 rows, and seeding it takes a few minutes. It finishes with `CREATE STATISTICS` on CockroachDB, or `ANALYZE` on Postgres, so the planner sees the real distribution. These variables change the size:
 
-| Variable | Default | Meaning |
-|---|---|---|
+| Variable                  | Default   | Meaning                                  |
+| ------------------------- | --------- | ---------------------------------------- |
 | `BENCH_LARGE_TENANT_ROWS` | `1000000` | Rows in the tenant the benchmark updates |
-| `BENCH_SMALL_TENANTS` | `1000` | Number of other tenants |
-| `BENCH_SMALL_TENANT_ROWS` | `1000` | Rows in each other tenant |
+| `BENCH_SMALL_TENANTS`     | `1000`    | Number of other tenants                  |
+| `BENCH_SMALL_TENANT_ROWS` | `1000`    | Rows in each other tenant                |
 
 Both scripts use `vitest.bench.config.ts`, which reuses `vitest.config.ts` with its own `include`. `vitest run` with it runs only the seed, and `vitest bench` with it runs only `bench/**/*.bench.ts`.
 

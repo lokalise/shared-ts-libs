@@ -11,13 +11,17 @@ npm install @lokalise/odata-mapper @balena/odata-parser
 ## Quick Start
 
 ```typescript
-import { parseAndTransformFilter, extractEqualityValue, extractInValues } from '@lokalise/odata-mapper'
+import {
+  parseAndTransformFilter,
+  extractEqualityValue,
+  extractInValues,
+} from '@lokalise/odata-mapper'
 
 // Parse and transform in one step
 const filter = parseAndTransformFilter("status eq 'active' and parentId in ('root', 'parent-123')")
 
-const status = extractEqualityValue<string>(filter, 'status')     // 'active'
-const parentIds = extractInValues<string>(filter, 'parentId')     // ['root', 'parent-123']
+const status = extractEqualityValue<string>(filter, 'status') // 'active'
+const parentIds = extractInValues<string>(filter, 'parentId') // ['root', 'parent-123']
 ```
 
 For more control (e.g. handling optional filters), use the two-step approach:
@@ -211,8 +215,8 @@ Low-level error thrown by `parseODataFilter`. Most consumers should use `parseAn
 
 ```typescript
 class ODataParseError extends Error {
-  filter: string      // The original filter string that failed to parse
-  cause?: Error       // The underlying parser error
+  filter: string // The original filter string that failed to parse
+  cause?: Error // The underlying parser error
 }
 ```
 
@@ -374,8 +378,8 @@ const allFilters = flattenFilters(filter)
 Collects filters from AND/OR logical groups.
 
 ```typescript
-const andFilters = collectAndFilters(filter)  // Filters that must all match
-const orFilters = collectOrFilters(filter)    // Filters where any can match
+const andFilters = collectAndFilters(filter) // Filters that must all match
+const orFilters = collectOrFilters(filter) // Filters where any can match
 ```
 
 ## Supported Filter Types
@@ -420,12 +424,12 @@ These utilities are exported for advanced use cases such as building custom tran
 
 ```typescript
 import {
-  resolveBind,           // Resolve a single bind reference to its value
-  resolveBinds,          // Resolve multiple bind references
-  isBindReference,       // Type guard for bind references
-  getBindKey,            // Get the key from a bind reference
+  resolveBind, // Resolve a single bind reference to its value
+  resolveBinds, // Resolve multiple bind references
+  isBindReference, // Type guard for bind references
+  getBindKey, // Get the key from a bind reference
   extractBindTupleValue, // Extract value from a [type, value] bind tuple
-  extractBindTupleValues,// Extract values from an array of bind tuples
+  extractBindTupleValues, // Extract values from an array of bind tuples
 } from '@lokalise/odata-mapper'
 ```
 
@@ -433,9 +437,9 @@ import {
 
 ```typescript
 import {
-  isFieldReference,      // Type guard for field references
-  getFieldPath,          // Get dot/slash path from nested field reference
-  transformFilterNode,   // Transform a single AST node (lower-level than transformFilter)
+  isFieldReference, // Type guard for field references
+  getFieldPath, // Get dot/slash path from nested field reference
+  transformFilterNode, // Transform a single AST node (lower-level than transformFilter)
 } from '@lokalise/odata-mapper'
 ```
 
@@ -445,7 +449,6 @@ import {
 import type {
   // Parser types
   ParsedODataFilter,
-
   // Filter types
   TransformedFilter,
   ComparisonFilter,
@@ -454,13 +457,11 @@ import type {
   LogicalFilter,
   NotFilter,
   StringFunctionFilter,
-
   // Value types
   FilterValue,
   ComparisonOperator,
   LogicalOperator,
   StringFunction,
-
   // AST node types (for custom transformer logic)
   FilterTreeNode,
   ComparisonNode,
@@ -469,7 +470,6 @@ import type {
   NotNode,
   FunctionCallNode,
   FieldReference,
-
   // Utility types
   TransformOptions,
   RawBindValue,

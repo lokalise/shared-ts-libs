@@ -55,7 +55,7 @@ const supportedQueues = [
         correlationId: z.string(),
       }),
     }),
-  }
+  },
 ] as const satisfies QueueConfiguration[]
 
 const queueManager = new QueueManager(new CommonBullmqFactoryNew(), supportedQueues, {
@@ -91,15 +91,15 @@ To set up a queue configuration, you need to define a list of objects containing
 - **`queueId`**: The unique identifier for the queue.
 - **`queueOptions`**: Options for the queue. Refer to the [BullMQ documentation](https://docs.bullmq.io/guide/queues) for more details.
 - **`bullDashboardGrouping`**: Optional array of strings to control how queues are grouped in the
-   [bull-dashboard](https://github.com/felixmosh/bull-board), using the [queues grouping feature](https://github.com/felixmosh/bull-board/pull/867).
-   Array elements are applied left to right: the first string is the top-level group, and each subsequent string defines
-   a nested subgroup. The delimiter is `QUEUE_GROUP_DELIMITER`. See [Bull Dashboard Grouping](#bull-dashboard-grouping)
-   below for usage and migration guidance — **the grouping is encoded into the queue name, so changing it on an existing
+  [bull-dashboard](https://github.com/felixmosh/bull-board), using the [queues grouping feature](https://github.com/felixmosh/bull-board/pull/867).
+  Array elements are applied left to right: the first string is the top-level group, and each subsequent string defines
+  a nested subgroup. The delimiter is `QUEUE_GROUP_DELIMITER`. See [Bull Dashboard Grouping](#bull-dashboard-grouping)
+  below for usage and migration guidance — **the grouping is encoded into the queue name, so changing it on an existing
    queue effectively creates a new queue.**
 - **`jobPayloadSchema`**: A Zod schema that defines the structure of the jobs payload for this queue. It is
-   precompiled on registration, see [Schema precompilation](#schema-precompilation).
-- **`jobOptions`**: Default options for jobs in this queue. Can be a function that will be resolved when a job is 
-   scheduled. See [BullMQ documentation](https://docs.bullmq.io/guide/job-options).
+  precompiled on registration, see [Schema precompilation](#schema-precompilation).
+- **`jobOptions`**: Default options for jobs in this queue. Can be a function that will be resolved when a job is
+  scheduled. See [BullMQ documentation](https://docs.bullmq.io/guide/job-options).
 - **`purgeJobDataOnSuccess`**: Optional boolean, **defaults to `true`**. See [Purging job data on success](#purging-job-data-on-success).
 
 ### Schema precompilation
@@ -159,7 +159,7 @@ const supportedQueues = [
 #### Caveats
 
 - **Retrying a purged job fails payload validation.** Once a job's data is purged to `{ metadata }`, retrying it (e.g.
-  the Bull Board *Retry* button or `job.retry()`) re-runs it with only `metadata`, which fails `jobPayloadSchema`
+  the Bull Board _Retry_ button or `job.retry()`) re-runs it with only `metadata`, which fails `jobPayloadSchema`
   validation. Set `purgeJobDataOnSuccess: false` on queues whose completed jobs may be retried.
 - **Throughput cost.** Purging adds two Redis round trips per completed job (an `hset` to rewrite `data` plus a log-key
   delete). This is negligible for most queues, but on very high-throughput queues `purgeJobDataOnSuccess: false` is also
@@ -183,7 +183,9 @@ const supportedQueues = [
   {
     queueId: 'email-queue',
     moduleId: 'emails',
-    jobPayloadSchema: z.object({ /* ... */ }),
+    jobPayloadSchema: z.object({
+      /* ... */
+    }),
   },
 ] as const satisfies ModuleAwareQueueConfiguration[]
 
@@ -249,8 +251,8 @@ For tree-structured jobs where children must complete before their parent runs (
 its registry as the single source of truth for queue names and dashboard grouping, and shares the same spy instances —
 so `queueManager.getSpy('x')`, `flowManager.getSpy('x')`, and a worker processor's spy all observe the same job
 lifecycle. Provides the same guarantees as `QueueManager.schedule`: Zod payload validation per node, merged job options
-+ default retry/retention, deduplication `idBuilder` on flow roots, and lazy initialization for the FlowProducer
-connection.
+- default retry/retention, deduplication `idBuilder` on flow roots, and lazy initialization for the FlowProducer
+  connection.
 
 ```typescript
 import {
@@ -357,8 +359,8 @@ export class Processor extends AbstractBackgroundJobProcessorNew<Data> {
   protected async process(
     _job: Job<JobPayloadForQueue<QueueConfiguration, QueueId>>,
     _requestContext: RequestContext,
-  ): Promise < void > {
-    doSomeProcessing();
+  ): Promise<void> {
+    doSomeProcessing()
 
     throw new MutedUnrecoverableError('Do not retry the job, and do not report the error')
   }
@@ -380,8 +382,8 @@ Use `dispose()` to correctly stop processing any new messages and wait for the c
 
 ### Spies
 
-Testing asynchronous code can be challenging. To tackle this, we've developed an integrated spy feature for both jobs 
-and queue managers. This functionality enables you to monitor a job as it transitions to a specific state. 
+Testing asynchronous code can be challenging. To tackle this, we've developed an integrated spy feature for both jobs
+and queue managers. This functionality enables you to monitor a job as it transitions to a specific state.
 
 Additionally, the spy instance is shared between the processor and the queue manager, allowing you to use either
 component to verify the status of a job.
@@ -400,24 +402,22 @@ const scheduledJobIds = await queueManager.scheduleBulk(queueId, [
     value: 'second',
     metadata: { correlationId: randomUUID() },
   },
-]);
+])
 
-const firstScheduledJob = await queueManager.getSpy(queueId).waitForJobWithId(scheduledJobIds[0], 'scheduled');
+const firstScheduledJob = await queueManager
+  .getSpy(queueId)
+  .waitForJobWithId(scheduledJobIds[0], 'scheduled')
 // or using processor spy
 // const firstScheduledJob = await processor.spy.waitForJobWithId(scheduledJobIds[0], 'scheduled');
 
-
-const firstJob = await processor.spy.waitForJobWithId(scheduledJobIds[0], 'completed');
+const firstJob = await processor.spy.waitForJobWithId(scheduledJobIds[0], 'completed')
 // or using queue manager spy
 // const firstJob = await queueManager.getSpy(queueId).waitForJobWithId(scheduledJobIds[0], 'completed');
-const secondJob = await processor.spy.waitForJob(
-  (data) => data.value === 'second',
-  'completed'
-);
+const secondJob = await processor.spy.waitForJob((data) => data.value === 'second', 'completed')
 
-expect(firstScheduledJob.data.value).toBe('first');
-expect(firstJob.data.value).toBe('first');
-expect(secondJob.data.value).toBe('second');
+expect(firstScheduledJob.data.value).toBe('first')
+expect(firstJob.data.value).toBe('first')
+expect(secondJob.data.value).toBe('second')
 ```
 
 #### Spy Methods
@@ -455,18 +455,18 @@ In case you want to conditionally delay execution of the job (e. g. until some d
 Barrier looks like this:
 
 ```ts
-const barrier = async(_job: Job<JobData>) => {
-          if (barrierConditionIsPassing) {
-            return {
-              isPassing: true,
-            }
-          }
+const barrier = async (_job: Job<JobData>) => {
+  if (barrierConditionIsPassing) {
+    return {
+      isPassing: true,
+    }
+  }
 
-          return {
-            isPassing: false,
-            delayAmountInMs: 30000, // retry in 30 seconds
-          }
-        }
+  return {
+    isPassing: false,
+    delayAmountInMs: 30000, // retry in 30 seconds
+  }
+}
 ```
 
 You pass it as a part of AbstractBackgroundJobProcessor `config`.
@@ -475,29 +475,29 @@ You can also pass over some dependencies from the processor to the barrier:
 
 ```ts
 class myJobProcessor extends AbstractBackgroundJobProcessor<Generics> {
-    protected override resolveExecutionContext(): ExecutionContext {
-        return {
-            userService: this.userService
-        }
+  protected override resolveExecutionContext(): ExecutionContext {
+    return {
+      userService: this.userService,
     }
+  }
 }
 ```
 
 This will be passed to the barrier:
 
 ```ts
-const barrier = async(_job: Job<JobData>, context: ExecutionContext) => {
-          if (await context.userService.userExists(job.data.userId)) {
-            return {
-              isPassing: true,
-            }
-          }
+const barrier = async (_job: Job<JobData>, context: ExecutionContext) => {
+  if (await context.userService.userExists(job.data.userId)) {
+    return {
+      isPassing: true,
+    }
+  }
 
-          return {
-            isPassing: false,
-            delayAmountInMs: 30000, // retry in 30 seconds
-          }
-        }
+  return {
+    isPassing: false,
+    delayAmountInMs: 30000, // retry in 30 seconds
+  }
+}
 ```
 
 ### Available prebuilt barriers
@@ -507,32 +507,31 @@ const barrier = async(_job: Job<JobData>, context: ExecutionContext) => {
 Here is an example usage:
 
 ```ts
-import { createJobQueueSizeThrottlingBarrier } from '@lokalise/background-jobs-common'    
+import { createJobQueueSizeThrottlingBarrier } from '@lokalise/background-jobs-common'
 
-const processor = new MyJobProcessor(
-        dependencies, {
-          // ... the rest of the config
-          barrier: createJobQueueSizeThrottlingBarrier({
-            maxQueueJobsInclusive: 2, // optimistic limit, if exceeded, job with the barrier will be delayed
-            retryPeriodInMsecs: 30000, // job with the barrier will be retried in 30 seconds if there are too many jobs in the throttled queue
-          })
-        })
+const processor = new MyJobProcessor(dependencies, {
+  // ... the rest of the config
+  barrier: createJobQueueSizeThrottlingBarrier({
+    maxQueueJobsInclusive: 2, // optimistic limit, if exceeded, job with the barrier will be delayed
+    retryPeriodInMsecs: 30000, // job with the barrier will be retried in 30 seconds if there are too many jobs in the throttled queue
+  }),
+})
 await processor.start()
 ```
 
 Note that throttling is based on an optimistic check (checking the count and executing the job that uses the barrier is not an atomic operation), so potentially it is possible to go over the limit in a highly concurrent system. For this reason it is recommended to set the limits with a buffer for the possible overflow.
 
-This barrier depends on defining the following ExecutionContext: 
+This barrier depends on defining the following ExecutionContext:
 
 ```ts
 import type { JobQueueSizeThrottlingBarrierContext } from '@lokalise/background-jobs-common'
 
 class myJobProcessor extends AbstractBackgroundJobProcessor<Generics> {
-    protected override resolveExecutionContext(): JobQueueSizeThrottlingBarrierContext {
-        return {
-          throttledQueueJobProcessor: this.throttledQueueJobProcessor, // AbstractBackgroundJobProcessor
-        }
+  protected override resolveExecutionContext(): JobQueueSizeThrottlingBarrierContext {
+    return {
+      throttledQueueJobProcessor: this.throttledQueueJobProcessor, // AbstractBackgroundJobProcessor
     }
+  }
 }
 ```
 
@@ -604,7 +603,10 @@ Managed Redis services often use DNS-based failover. When a failover occurs, the
 **Usage:**
 
 ```ts
-import { enrichRedisConfigOptimizedForCloud, sanitizeRedisConfig } from '@lokalise/background-jobs-common'
+import {
+  enrichRedisConfigOptimizedForCloud,
+  sanitizeRedisConfig,
+} from '@lokalise/background-jobs-common'
 
 // In QueueRegistry or processor setup, manually apply before sanitizing:
 const enrichedConfig = enrichRedisConfigOptimizedForCloud(redisConfig)
@@ -622,8 +624,9 @@ const finalConfig = sanitizeRedisConfig(enrichedConfig)
    - Helps with faster failover detection in managed Redis services
 
 ### Queue events.
+
 The library optimized the default event stream settings to save memory. Specifically, the library sets the default
-maximum length of the BullMQ queue events stream to `0` ([doc](https://docs.bullmq.io/guide/events)). This means the 
+maximum length of the BullMQ queue events stream to `0` ([doc](https://docs.bullmq.io/guide/events)). This means the
 event stream will not store any events by default, greatly reducing memory usage.
 
 If you need to store more events in the stream, you can easily configure the maximum length via the `queueOptions`
@@ -631,16 +634,16 @@ parameter during the processor creation.
 
 ```ts
 export class Processor extends AbstractBackgroundJobProcessor<Data> {
-    constructor(dependencies: BackgroundJobProcessorDependencies<Data>) {
-        super(dependencies, {
-            queueId: 'queue',
-            ownerName: 'example owner',
-            queueOptions: {
-                streams: {events:{maxLen: 1000}},
-            }
-        })
-    }
-    // ...
+  constructor(dependencies: BackgroundJobProcessorDependencies<Data>) {
+    super(dependencies, {
+      queueId: 'queue',
+      ownerName: 'example owner',
+      queueOptions: {
+        streams: { events: { maxLen: 1000 } },
+      },
+    })
+  }
+  // ...
 }
 ```
 
@@ -667,27 +670,25 @@ managers that do not are used as before.
 export class MyJob extends AbstractPeriodicJob {
   public static JOB_NAME = 'MyJob'
 
-  constructor(
-          dependencies: PeriodicJobDependencies,
-  ) {
+  constructor(dependencies: PeriodicJobDependencies) {
     super(
-            {
-              jobId: MyJob.JOB_NAME,
-              schedule: {
-                intervalInMs: config?.intervalInMs ?? 15000,
-              },
-              shouldLogExecution: config?.shouldLogExecution ?? false,
-              singleConsumerMode: {
-                enabled: false, // if true, only one job instance across all cluster nodes can be running at the same time
-              },
-              runImmediately: true, // if true, job will be triggered immediately after registration
-            },
-            dependencies,
+      {
+        jobId: MyJob.JOB_NAME,
+        schedule: {
+          intervalInMs: config?.intervalInMs ?? 15000,
+        },
+        shouldLogExecution: config?.shouldLogExecution ?? false,
+        singleConsumerMode: {
+          enabled: false, // if true, only one job instance across all cluster nodes can be running at the same time
+        },
+        runImmediately: true, // if true, job will be triggered immediately after registration
+      },
+      dependencies,
     )
   }
 
   protected processInternal(executionUuid: JobExecutionContext): Promise<unknown> {
-    // implement job execution logic 
+    // implement job execution logic
   }
 }
 

@@ -26,13 +26,13 @@ entry point.
 **Frontend:**
 
 ```typescript
-import { chunk } from '@lokalise/universal-ts-utils/array/chunk';
+import { chunk } from '@lokalise/universal-ts-utils/array/chunk'
 ```
 
 **Backend:**
 
 ```typescript
-import { chunk } from '@lokalise/universal-ts-utils/node';
+import { chunk } from '@lokalise/universal-ts-utils/node'
 ```
 
 ## Methods
@@ -43,7 +43,7 @@ This section describes utility functions to work with arrays efficiently and ele
 
 #### `arrayToEnum`
 
-Converts an array of strings into an enum-like object where keys and values are the same. This is useful for creating 
+Converts an array of strings into an enum-like object where keys and values are the same. This is useful for creating
 type-safe enums from string arrays, similar to TypeScript's const enums. The function preserves type information,
 making it perfect for use with literal types.
 
@@ -61,17 +61,17 @@ A utility method to process an array in chunks asynchronously.
 ```typescript
 const items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 const processChunk = (chunk: number[]): Promise<void> => {
-    console.log('Processing chunk', chunk)
-    return Promise.resolve()
-};
+  console.log('Processing chunk', chunk)
+  return Promise.resolve()
+}
 
 callChunked(3, items, processChunk)
-    .then(() => {
-        console.log('All chunks processed')
-    })
-    .catch((e) => {
-        console.error('Error processing chunks:', e)
-    })
+  .then(() => {
+    console.log('All chunks processed')
+  })
+  .catch((e) => {
+    console.error('Error processing chunks:', e)
+  })
 ```
 
 #### `chunk`
@@ -90,10 +90,10 @@ This type ensures that operations requiring at least one element (e.g., accessin
 are safe at both runtime and compile time, removing the need for additional checks.
 
 ```typescript
-const array: NonEmptyArray<number> = [1, 2, 3];
+const array: NonEmptyArray<number> = [1, 2, 3]
 
 // Accessing the first element is guaranteed to be safe.
-console.log(array[0]); // OK
+console.log(array[0]) // OK
 ```
 
 #### `defineNonEmptyArray`
@@ -103,7 +103,7 @@ Use this function when you want TypeScript to infer the non-empty
 nature of the array instead of manually defining it as NonEmptyArray.
 
 ```typescript
-const arr = defineNonEmptyArray([{ some: 'value' }]);
+const arr = defineNonEmptyArray([{ some: 'value' }])
 // arr is typed as NonEmptyArray<{ some: string }>
 ```
 
@@ -116,8 +116,8 @@ operations are not performed on empty arrays, providing type-level assurances.
 ```typescript
 const array: number[] = [1, 2, 3]
 if (isNonEmptyArray(array)) {
-    console.log(array[0]) // OK
-    const _: [number, ...number[]] = array // TS type works
+  console.log(array[0]) // OK
+  const _: [number, ...number[]] = array // TS type works
 }
 ```
 
@@ -129,12 +129,12 @@ This function ensures that the result retains the NonEmptyArray type, unlike the
 which infers the result as a regular array, losing the guarantee of being non-empty.
 
 ```typescript
-const array: NonEmptyArray<number> = [1, 2, 3];
-const stringCasted = mapNonEmptyArray(array, (x) => x.toString());
+const array: NonEmptyArray<number> = [1, 2, 3]
+const stringCasted = mapNonEmptyArray(array, (x) => x.toString())
 
-console.log(stringCasted); // ['2', '4', '6']
+console.log(stringCasted) // ['2', '4', '6']
 // TypeScript ensures the result is a NonEmptyArray
-const _: NonEmptyArray<string> = stringCasted;
+const _: NonEmptyArray<string> = stringCasted
 ```
 
 #### `removeFalsy`
@@ -172,9 +172,9 @@ array and does not affect the original, ensuring no side effects.
 
 ```typescript
 const data = [
-    { name: 'Zara', age: 22 },
-    { name: 'Alex', age: 30 },
-    { name: 'John', age: 25 }
+  { name: 'Zara', age: 22 },
+  { name: 'Alex', age: 30 },
+  { name: 'John', age: 25 },
 ]
 const sortedByName = sortByField(data, 'name')
 // Returns: [
@@ -200,9 +200,9 @@ Removes duplicates from an array of objects by a property and returns new array.
 
 ```typescript
 const array = [
-    { id: 'a', value: 1 },
-    { id: 'b', value: 2 },
-    { id: 'a', value: 3 },
+  { id: 'a', value: 1 },
+  { id: 'b', value: 2 },
+  { id: 'a', value: 3 },
 ]
 const result = uniqueByProperty(array) // Returns: [{ id: 'a', value: 1 }, { id: 'b', value: 2 }]
 ```
@@ -249,9 +249,9 @@ representations.
 ```typescript
 const obj = { id: 1, created: new Date(), meta: { updated: new Date() } }
 const result = convertDateFieldsToIsoString(obj)
-// Returns: { 
+// Returns: {
 //   id: 1,
-//   created: '2024-01-01T00:00:00.000Z', 
+//   created: '2024-01-01T00:00:00.000Z',
 //   meta: { updated: '2024-01-01T00:00:00.000Z' }
 // }
 ```
@@ -263,13 +263,13 @@ Creates a shallow copy of an object, excluding properties with "empty" values. A
 
 ```typescript
 const source = {
-    name: 'Alice',
-    age: null,
-    occupation: '',
-    location: 'Wonderland',
-    status: undefined
+  name: 'Alice',
+  age: null,
+  occupation: '',
+  location: 'Wonderland',
+  status: undefined,
 }
-const result = copyWithoutEmpty(source); // Returns: { name: 'Alice', location: 'Wonderland' }
+const result = copyWithoutEmpty(source) // Returns: { name: 'Alice', location: 'Wonderland' }
 ```
 
 #### `copyWithoutNullish`
@@ -278,11 +278,11 @@ Creates a shallow copy of an object, excluding properties with nullish values.
 
 ```typescript
 const source = {
-    name: 'Alice',
-    age: null,
-    occupation: 'Explorer',
-    location: undefined,
-    status: 'Active'
+  name: 'Alice',
+  age: null,
+  occupation: 'Explorer',
+  location: undefined,
+  status: 'Active',
 }
 const result = copyWithoutNullish(source) // Returns: { name: 'Alice', occupation: 'Explorer', status: 'Active' }
 ```
@@ -294,9 +294,9 @@ kept.
 
 ```typescript
 const source = {
-    name: 'Alice',
-    age: null,
-    location: undefined
+  name: 'Alice',
+  age: null,
+  location: undefined,
 }
 const result = copyWithoutUndefined(source) // Returns: { name: 'Alice', age: null }
 ```
@@ -327,9 +327,9 @@ selector.
 
 ```typescript
 const users = [
-    { name: 'Alice', age: 30 },
-    { name: 'Bob', age: 25 },
-    { name: 'Charlie', age: 30 }
+  { name: 'Alice', age: 30 },
+  { name: 'Bob', age: 25 },
+  { name: 'Charlie', age: 30 },
 ]
 const groupedByAge = groupBy(users, 'age')
 // Returns:{
@@ -345,9 +345,9 @@ notation to group objects by deeply nested properties.
 
 ```typescript
 const users = [
-    { name: "A", address: { city: "New York" }, age: 30 },
-    { name: "B", address: { city: "Los Angeles" }, age: 25 },
-    { name: "C", address: { city: "New York" }, age: 35 },
+  { name: 'A', address: { city: 'New York' }, age: 30 },
+  { name: 'B', address: { city: 'Los Angeles' }, age: 25 },
+  { name: 'C', address: { city: 'New York' }, age: 35 },
 ]
 const usersGroupedByCity = groupByPath(users, 'address.city')
 // Returns:{
@@ -371,10 +371,10 @@ If a duplicate key value is encountered, an error is thrown, ensuring the unique
 
 ```typescript
 const users = [
-    { id: 'a1', name: 'Alice' },
-    { id: 'b2', name: 'Bob' }
+  { id: 'a1', name: 'Alice' },
+  { id: 'b2', name: 'Bob' },
 ]
-const groupedById = groupByUnique(users, 'id');
+const groupedById = groupByUnique(users, 'id')
 // Returns:{
 //   'a1': { id: 'a1', name: 'Alice' },
 //   'b2': { id: 'b2', name: 'Bob' }
@@ -444,7 +444,10 @@ const result2 = await collectFromIterable(asyncGenerator()) // Returns: Promise<
 const set = new Set([1, 2, 3])
 const setResult = collectFromIterable(set) // Returns: [1, 2, 3]
 
-const map = new Map([['a', 1], ['b', 2]])
+const map = new Map([
+  ['a', 1],
+  ['b', 2],
+])
 const mapKeys = collectFromIterable(map.keys()) // Returns: ['a', 'b']
 const mapValues = collectFromIterable(map.values()) // Returns: [1, 2]
 ```
@@ -505,8 +508,8 @@ switch (value) {
 Utility type to representing a record with keys of a specified type and values of any type.
 
 ```typescript
-const stringKeyRecord: FreeformRecord = { name: "Alice", age: 30 }
-const numberKeyRecord: FreeformRecord<number> = { 1: "one", 2: "two" }
+const stringKeyRecord: FreeformRecord = { name: 'Alice', age: 30 }
+const numberKeyRecord: FreeformRecord<number> = { 1: 'one', 2: 'two' }
 ```
 
 #### `hasMessage`
@@ -553,14 +556,14 @@ Utility type to makes specified keys required in a type, while keeping the rest 
 
 ```typescript
 type Config = {
-    host?: string
-    port?: number
-    secure?: boolean
+  host?: string
+  port?: number
+  secure?: boolean
 }
 type StrictConfig = MakeRequired<Config, 'host'>
 
-const config1: StrictConfig = { host: "localhost" }
-const config2: StrictConfig = { host: "localhost", secure: true }
+const config1: StrictConfig = { host: 'localhost' }
+const config2: StrictConfig = { host: 'localhost', secure: true }
 ```
 
 #### `MakeNonNullish`
@@ -570,14 +573,14 @@ Removes both the optional modifier (`?`) and `null`/`undefined` from the specifi
 
 ```typescript
 type Config = {
-    host?: string | null
-    port?: number
-    secure?: boolean
+  host?: string | null
+  port?: number
+  secure?: boolean
 }
 type StrictConfig = MakeNonNullish<Config, 'host'>
 
-const config1: StrictConfig = { host: "localhost" } // ✓
-const config2: StrictConfig = { host: "localhost", secure: true } // ✓
+const config1: StrictConfig = { host: 'localhost' } // ✓
+const config2: StrictConfig = { host: 'localhost', secure: true } // ✓
 const config3: StrictConfig = { host: null } // ✗ Error: null is not allowed
 const config4: StrictConfig = { host: undefined } // ✗ Error: undefined is not allowed
 ```
@@ -588,14 +591,14 @@ Utility type to makes specified keys in a type optional, while keeping the rest 
 
 ```typescript
 type Config = {
-    host: string
-    port: number
-    secure: boolean
+  host: string
+  port: number
+  secure: boolean
 }
 type PartialConfig = MayOmit<Config, 'port' | 'secure'>
 
-const config1: PartialConfig = { host: "localhost" }
-const config2: PartialConfig = { host: "localhost", port: 8080 }
+const config1: PartialConfig = { host: 'localhost' }
+const config2: PartialConfig = { host: 'localhost', port: 8080 }
 ```
 
 #### `ObjectValues`
@@ -639,11 +642,9 @@ console.log(result3) // { finished: true, result: Error('failed') }
 
 // With AbortController to prevent memory leaks from hanging operations
 const controller = new AbortController()
-const result4 = await promiseWithTimeout(
-  fetch(url, { signal: controller.signal }),
-  5000,
-  { abortController: controller }
-)
+const result4 = await promiseWithTimeout(fetch(url, { signal: controller.signal }), 5000, {
+  abortController: controller,
+})
 // If timeout fires, fetch is automatically aborted
 // If you call controller.abort(), the timeout is cancelled
 ```
@@ -660,8 +661,8 @@ A type for communicating errors in recoverable scenarios: it holds either an `er
 
 ```typescript
 const parsePort = (value: string): Either<'NOT_A_NUMBER', number> => {
-    const port = Number(value)
-    return Number.isNaN(port) ? failure('NOT_A_NUMBER') : success(port)
+  const port = Number(value)
+  return Number.isNaN(port) ? failure('NOT_A_NUMBER') : success(port)
 }
 
 const port = parsePort('8080')
@@ -677,10 +678,10 @@ reached.
 ```typescript
 const conditionMet = () => Math.random() > 0.9
 waitAndRetry(conditionMet, 50, 10)
-    .then((result) => {
-        console.log('Condition met:', result)
-    })
-    .catch((error) => {
-        console.error('An error occurred:', error)
-    })
+  .then((result) => {
+    console.log('Condition met:', result)
+  })
+  .catch((error) => {
+    console.error('An error occurred:', error)
+  })
 ```

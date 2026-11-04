@@ -32,7 +32,7 @@ understand it:
 
 ### Rule of thumb
 
-Ask: *could a shared package meaningfully act on this value for every service?*
+Ask: _could a shared package meaningfully act on this value for every service?_
 
 - Yes → dedicated named field, typed in the shared model, with a builder-stamped default when
   the field should always be present on built values.

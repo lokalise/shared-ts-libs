@@ -4,10 +4,10 @@ Reusable testing utilities that are potentially relevant for both backend and fr
 
 ## Helpers
 
-| Helper | Mock server |
-|---|---|
+| Helper                     | Mock server                                       |
+| -------------------------- | ------------------------------------------------- |
 | `ApiContractMockttpHelper` | [mockttp](https://github.com/httptoolkit/mockttp) |
-| `ApiContractMswHelper` | [msw](https://mswjs.io/) |
+| `ApiContractMswHelper`     | [msw](https://mswjs.io/)                          |
 
 Both helpers work with contracts defined via `defineApiContract` from `@lokalise/api-contracts`.
 The short names are aliases of the `ApiContract*` classes and behave identically.
@@ -49,13 +49,13 @@ await helper.mockResponse(contract, params)
 
 `params` is a discriminated union on `responseStatus`. The required body fields are inferred from the contract's response type for that status code:
 
-| Response type | Required field |
-|---|---|
-| `ZodType` (JSON) | `responseJson: z.input<T>` |
-| `sseResponse(schemas)` | `events: { event: string; data: unknown }[]` |
-| `blobResponse(contentType)` | `responseBlob: string` |
-| `noBodyResponse()` | *(none)* |
-| `content` map with JSON and SSE entries | `responseJson` + `events` |
+| Response type                           | Required field                               |
+| --------------------------------------- | -------------------------------------------- |
+| `ZodType` (JSON)                        | `responseJson: z.input<T>`                   |
+| `sseResponse(schemas)`                  | `events: { event: string; data: unknown }[]` |
+| `blobResponse(contentType)`             | `responseBlob: string`                       |
+| `noBodyResponse()`                      | _(none)_                                     |
+| `content` map with JSON and SSE entries | `responseJson` + `events`                    |
 
 Path params are required when the contract declares `requestPathParamsSchema`, and optional otherwise.
 
@@ -116,7 +116,10 @@ const contract = defineApiContract({
   method: 'get',
   pathResolver: () => '/events/stream',
   responsesByStatusCode: {
-    200: sseResponse({ 'item.updated': z.object({ id: z.string() }), completed: z.object({ totalCount: z.number() }) }),
+    200: sseResponse({
+      'item.updated': z.object({ id: z.string() }),
+      completed: z.object({ totalCount: z.number() }),
+    }),
   },
 })
 
@@ -199,7 +202,7 @@ const contract = defineApiContract({
 })
 
 await helper.mockResponse(contract, {
-  responseStatus: 201,          // any 2xx code is valid
+  responseStatus: 201, // any 2xx code is valid
   responseJson: { id: '1' },
 })
 ```
@@ -232,7 +235,10 @@ const contract = defineApiContract({
 })
 
 await helper.mockResponse(contract, { responseStatus: 200, responseJson: { id: '1' } })
-await helper.mockResponse(contract, { responseStatus: 201, responseJson: { id: '2', created: true } })
+await helper.mockResponse(contract, {
+  responseStatus: 201,
+  responseJson: { id: '2', created: true },
+})
 ```
 
 #### How `StatusCodeBodyPair` works (type-level)

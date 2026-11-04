@@ -29,7 +29,7 @@ const result = await sendGet(client, '/api/data', {
   requestLabel: 'Fetch data',
   retryConfig: {
     maxAttempts: 3,
-    delayBetweenAttemptsInMsecs: 1000,  // ❌ No longer supported
+    delayBetweenAttemptsInMsecs: 1000, // ❌ No longer supported
     statusCodesToRetry: [500, 502, 503],
     retryOnTimeout: true,
   },
@@ -46,9 +46,9 @@ const result = await sendGet(client, '/api/data', {
   retryConfig: {
     maxAttempts: 3,
     delayResolver: createDefaultRetryResolver({
-        baseDelay: 1000,
-        maxDelay: 1000,
-    }),  // ✅ Use resolver-based approach
+      baseDelay: 1000,
+      maxDelay: 1000,
+    }), // ✅ Use resolver-based approach
     statusCodesToRetry: [500, 502, 503],
     retryOnTimeout: true,
   },
@@ -60,9 +60,9 @@ const result = await sendGet(client, '/api/data', {
 1. If you weren't using `retryConfig`, no changes needed
 2. If you were using default retry behavior (maxAttempts: 1), no changes needed
 3. If you were using `delayBetweenAttemptsInMsecs`:
-    - Import `createDefaultRetryResolver` from '@lokalise/backend-http-client' (or 'undici-retry')
-    - Replace `delayBetweenAttemptsInMsecs: X` with `delayResolver: createDefaultRetryResolver({ delayMs: X })`
-    - Or implement a custom delay resolver function
+   - Import `createDefaultRetryResolver` from '@lokalise/backend-http-client' (or 'undici-retry')
+   - Replace `delayBetweenAttemptsInMsecs: X` with `delayResolver: createDefaultRetryResolver({ delayMs: X })`
+   - Or implement a custom delay resolver function
 
 **Custom delay resolver example:**
 ```ts
@@ -85,7 +85,11 @@ const result = await sendGet(client, '/api/data', {
 ```ts
 type RetryConfig = {
   maxAttempts: number
-  delayResolver?: (response: ResponseData, attemptNumber: number, statusCodesToRetry: readonly number[]) => number | undefined
+  delayResolver?: (
+    response: ResponseData,
+    attemptNumber: number,
+    statusCodesToRetry: readonly number[],
+  ) => number | undefined
   statusCodesToRetry?: readonly number[]
   retryOnTimeout: boolean
 }
@@ -186,13 +190,9 @@ if (result.result) {
 
 **Processing chunks:**
 ```ts
-const result = await sendGetWithStreamedResponse(
-  client,
-  '/api/large-dataset',
-  {
-    requestLabel: 'Process dataset',
-  }
-)
+const result = await sendGetWithStreamedResponse(client, '/api/large-dataset', {
+  requestLabel: 'Process dataset',
+})
 
 if (result.result) {
   for await (const chunk of result.result.body) {

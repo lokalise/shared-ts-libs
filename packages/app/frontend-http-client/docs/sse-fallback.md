@@ -20,13 +20,13 @@ code never learns which channel it came from.
 
 ## Who does what
 
-| Layer | Lives in | Owns |
-|---|---|---|
-| Your code | your app | asks for events, waits for a terminal one |
-| Contract | `@lokalise/api-contracts` | the shape of both branches: a JSON schema for the poll, `sseResponse` schemas for the stream |
-| Binding | your app, one per contract | the one thing nothing can infer: how a snapshot relates to events (`snapshotToEvents`, `version.ofSnapshot`, `terminalEvents`) |
-| Client core | `@opinionated-machine/sse-fallback` | timing and truth: hydration, deadman timer, version gate, reconnect, degradation, budgets |
-| Transport | this package, `createFallbackTransport` | HTTP: `Accept` negotiation, fresh headers, `Last-Event-ID`, byte decoding, Zod validation |
+| Layer       | Lives in                                | Owns                                                                                                                           |
+| ----------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Your code   | your app                                | asks for events, waits for a terminal one                                                                                      |
+| Contract    | `@lokalise/api-contracts`               | the shape of both branches: a JSON schema for the poll, `sseResponse` schemas for the stream                                   |
+| Binding     | your app, one per contract              | the one thing nothing can infer: how a snapshot relates to events (`snapshotToEvents`, `version.ofSnapshot`, `terminalEvents`) |
+| Client core | `@opinionated-machine/sse-fallback`     | timing and truth: hydration, deadman timer, version gate, reconnect, degradation, budgets                                      |
+| Transport   | this package, `createFallbackTransport` | HTTP: `Accept` negotiation, fresh headers, `Last-Event-ID`, byte decoding, Zod validation                                      |
 
 The core owns no HTTP and this package owns no policy. That split is the whole design: the seam
 between them is two functions, `fetchSnapshot` and `openStream`.
@@ -50,8 +50,8 @@ flowchart TB
     stream -->|"low-latency deltas"| server
 ```
 
-In words: your code talks to one subscription object. The subscription decides *when* to poll and
-*when* to reconnect. This package decides *how* those two requests are made, and refuses anything
+In words: your code talks to one subscription object. The subscription decides _when_ to poll and
+_when_ to reconnect. This package decides _how_ those two requests are made, and refuses anything
 it cannot trust.
 
 ## One subscription, start to finish
@@ -292,25 +292,25 @@ the subscription meanwhile.
 
 ## Glossary
 
-| Term | Meaning |
-|---|---|
-| Snapshot | The JSON body of a poll: full current state plus a version |
-| Frame | One SSE event block, terminated by a blank line |
-| Watermark | The highest version the subscription has accepted |
-| Version gate | The check that compares an incoming version against the watermark, so each event is delivered once |
-| Hydration | The first poll, which gives the subscription its initial state and its first watermark |
-| Deadman timer | No *events* for `deadmanDelayMs`, so poll to find out what was missed |
-| Stale-connection watchdog | No *bytes* for `staleConnectionTimeoutMs`, so the connection is presumed dead and gets reconnected |
-| Cursor, `Last-Event-ID` | The id of the last dispatched frame, sent on reconnect so a server can replay from there |
-| Degradation | The core giving up on the stream for a while and polling on an interval instead |
-| Terminal event | An event that completes the subscription, as declared by the binding |
-| Repair poll | A poll fired to close a gap the stream left |
+| Term                      | Meaning                                                                                            |
+| ------------------------- | -------------------------------------------------------------------------------------------------- |
+| Snapshot                  | The JSON body of a poll: full current state plus a version                                         |
+| Frame                     | One SSE event block, terminated by a blank line                                                    |
+| Watermark                 | The highest version the subscription has accepted                                                  |
+| Version gate              | The check that compares an incoming version against the watermark, so each event is delivered once |
+| Hydration                 | The first poll, which gives the subscription its initial state and its first watermark             |
+| Deadman timer             | No _events_ for `deadmanDelayMs`, so poll to find out what was missed                              |
+| Stale-connection watchdog | No _bytes_ for `staleConnectionTimeoutMs`, so the connection is presumed dead and gets reconnected |
+| Cursor, `Last-Event-ID`   | The id of the last dispatched frame, sent on reconnect so a server can replay from there           |
+| Degradation               | The core giving up on the stream for a while and polling on an interval instead                    |
+| Terminal event            | An event that completes the subscription, as declared by the binding                               |
+| Repair poll               | A poll fired to close a gap the stream left                                                        |
 
 ## Picking the modes
 
-| You want | Use |
-|---|---|
-| The default, which is the right answer almost always | `streamMode: 'chunks'` with `eventValidation: 'report'` |
-| To adopt the fallback before an SSE endpoint exists | Any contract with a JSON branch, plus the core's `policy.mode: 'poll-only'` |
+| You want                                               | Use                                                                                                                                 |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| The default, which is the right answer almost always   | `streamMode: 'chunks'` with `eventValidation: 'report'`                                                                             |
+| To adopt the fallback before an SSE endpoint exists    | Any contract with a JSON branch, plus the core's `policy.mode: 'poll-only'`                                                         |
 | A payload the contract rejects to never reach app code | `streamMode: 'events'` with `eventValidation: 'drop'`, accepting one reconnect per bad payload and an event-level liveness watchdog |
-| No validation at all | `eventValidation: 'off'`, or no contract |
+| No validation at all                                   | `eventValidation: 'off'`, or no contract                                                                                            |
