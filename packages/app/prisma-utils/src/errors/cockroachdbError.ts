@@ -7,14 +7,30 @@ import type { PrismaClientKnownRequestError } from '@prisma/client/runtime/clien
  */
 const COCKROACHDB_RETRY_TRANSACTION_CODE = '40001'
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null
+
 /**
  * Check if the error is a CockroachDB transaction retry error
+ *
+ * Two shapes carry the SQLSTATE, depending on how the query reached the database:
+ *  - the Rust query engine reports it flat, as `meta.code`
+ *  - a driver adapter (e.g. `@prisma/adapter-pg`) reports a `P2010` whose SQLSTATE is nested
+ *    under `meta.driverAdapterError.cause.originalCode`, with no `meta.code` at all
  *
  * @param error
  */
 export const isCockroachDBRetryTransaction = (error: PrismaClientKnownRequestError): boolean => {
   const meta = error.meta
-  if (!meta) return false
+  if (!isRecord(meta)) return false
 
-  return meta.code === COCKROACHDB_RETRY_TRANSACTION_CODE
+  if (meta.code === COCKROACHDB_RETRY_TRANSACTION_CODE) return true
+
+  const driverAdapterError = meta.driverAdapterError
+  if (!isRecord(driverAdapterError)) return false
+
+  const cause = driverAdapterError.cause
+  if (!isRecord(cause)) return false
+
+  return cause.originalCode === COCKROACHDB_RETRY_TRANSACTION_CODE
 }

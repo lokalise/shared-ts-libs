@@ -11,6 +11,7 @@ import {
   PRISMA_SERVER_CLOSED_CONNECTION_ERROR,
   PRISMA_TRANSACTION_ERROR,
 } from '../errors/index.ts'
+import { calculateRetryDelay } from '../retry/calculateRetryDelay.ts'
 import type { DbDriver } from '../types.ts'
 import type {
   PrismaTransactionFn,
@@ -99,16 +100,6 @@ const executeTransactionTry = async <T, P extends PrismaClient>(
   } catch (error) {
     return { error }
   }
-}
-
-const calculateRetryDelay = (
-  retries: number,
-  baseRetryDelayMs: number,
-  maxDelayMs: number,
-): number => {
-  // exponential backoff -> 2^(retry-1) * baseRetryDelayMs
-  const expDelay = Math.pow(2, retries - 1) * baseRetryDelayMs
-  return Math.min(expDelay, maxDelayMs)
 }
 
 const PrismaCodesToRetry = [
