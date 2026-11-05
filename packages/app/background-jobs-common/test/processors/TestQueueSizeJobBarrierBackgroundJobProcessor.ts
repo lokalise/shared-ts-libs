@@ -1,5 +1,5 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import type { RedisConfig } from '@lokalise/node-core'
+import type { RedisOptions } from 'ioredis'
 import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
@@ -17,7 +17,7 @@ export class TestQueueSizeJobBarrierBackgroundJobProcessor<
   public throttledQueueJobProcessor: TestForeverRescheduledBackgroundJobProcessor
   constructor(
     dependencies: BackgroundJobProcessorDependencies<JobData, JobReturn>,
-    redisConfig: RedisConfig,
+    redisConfig: RedisOptions,
     barrier: BarrierCallback<JobData, JobQueueSizeThrottlingBarrierContext>,
   ) {
     super(dependencies, {

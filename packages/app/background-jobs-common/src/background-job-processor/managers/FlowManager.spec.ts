@@ -1,5 +1,5 @@
-import type { RedisConfig } from '@lokalise/node-core'
 import type { FlowProducer, QueueBaseOptions } from 'bullmq'
+import type { RedisOptions } from 'ioredis'
 import {
   afterAll,
   afterEach,
@@ -78,7 +78,7 @@ type SupportedQueues = typeof supportedQueues
 
 describe('FlowManager', () => {
   let factory: TestDependencyFactory
-  let redisConfig: RedisConfig
+  let redisConfig: RedisOptions
   let queueManager: FakeQueueManager<SupportedQueues>
   let flowManager: FakeFlowManager<SupportedQueues>
 

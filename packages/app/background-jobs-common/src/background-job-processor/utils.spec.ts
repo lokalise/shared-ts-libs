@@ -1,4 +1,3 @@
-import type { RedisConfig } from '@lokalise/node-core'
 import type { JobsOptions } from 'bullmq'
 import type { Redis } from 'ioredis'
 import { describe, expect, it } from 'vitest'
@@ -28,8 +27,8 @@ describe('utils', () => {
       expect(isRedisClient({ options: {} } as unknown as Redis)).toBe(true)
     })
 
-    it('returns false when the value is a RedisConfig', () => {
-      expect(isRedisClient({ host: 'localhost', port: 6379 } as RedisConfig)).toBe(false)
+    it('returns false when the value is a RedisOptions', () => {
+      expect(isRedisClient({ host: 'localhost', port: 6379 })).toBe(false)
     })
   })
 

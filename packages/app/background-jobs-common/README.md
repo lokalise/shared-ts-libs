@@ -558,7 +558,6 @@ const queueManager = new QueueManager(new CommonBullmqFactory(), supportedQueues
   redisConfig: {
     host: 'localhost',
     port: 6379,
-    useTls: false,
   },
   isTest: false,
   lazyInitEnabled: false,
@@ -574,7 +573,6 @@ const queueManager = new QueueManager(new CommonBullmqFactory(), supportedQueues
   redisConfig: {
     host: 'localhost',
     port: 6379,
-    useTls: false,
     reconnectOnError: (err) => {
       // Custom reconnection logic
       if (err.message.includes('READONLY')) return true

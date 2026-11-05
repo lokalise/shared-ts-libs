@@ -37,7 +37,6 @@ await app.register(bullBoard, {
       username: process.env.REDIS_USERNAME,
       password: process.env.REDIS_PASSWORD,
       keyPrefix: process.env.REDIS_KEY_PREFIX,
-      useTls: false,
     }, // any Redis config
   ],
   basePath: '/bull',

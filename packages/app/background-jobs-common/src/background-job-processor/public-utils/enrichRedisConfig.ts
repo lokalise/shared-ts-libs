@@ -1,5 +1,5 @@
 import * as dns from 'node:dns'
-import type { RedisConfig } from '@lokalise/node-core'
+import type { ClusterOptions, RedisOptions } from 'ioredis'
 
 /**
  * Default reconnectOnError handler for Redis connections.
@@ -25,16 +25,21 @@ const cloudDnsLookup = (address: string, callback: (err: Error | null, ip: strin
  * @param config - The Redis configuration to enrich
  * @returns Enriched Redis configuration with reconnectOnError hook
  */
-export const enrichRedisConfig = (config: RedisConfig): RedisConfig => ({
+export const enrichRedisConfig = (config: RedisOptions): RedisOptions => ({
   ...config,
   reconnectOnError: config.reconnectOnError ?? defaultReconnectOnError,
 })
+
+// ioredis declares `dnsLookup` on `ClusterOptions` only: a standalone `Redis` connection does not read it.
+type RedisOptionsWithDnsLookup = RedisOptions & Pick<ClusterOptions, 'dnsLookup'>
 
 /**
  * This is config optimized for managed redis instances, such as AWS ElastiCache or GCP Memorystore.
  * @param config
  */
-export const enrichRedisConfigOptimizedForCloud = (config: RedisConfig): RedisConfig => ({
+export const enrichRedisConfigOptimizedForCloud = (
+  config: RedisOptionsWithDnsLookup,
+): RedisOptionsWithDnsLookup => ({
   ...config,
   reconnectOnError: config.reconnectOnError ?? defaultReconnectOnError,
   dnsLookup: config.dnsLookup ?? cloudDnsLookup,
