@@ -28,7 +28,7 @@ export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> =
    *   narrowed to success status codes only.
    * - `false`: all status codes defined in `responsesByStatusCode` are returned as `Either.result`.
    *
-   * Status codes absent from the contract always surface as `Either.error` regardless of this option.
+   * Status codes absent from the contract surface as `Either.error` regardless of this option.
    */
   captureAsError?: DoCaptureAsError
   /**
@@ -175,10 +175,10 @@ async function parseBody(response: Response, resolvedEntry: ResponseKind) {
   }
 }
 
-/** Re-registers the client's catchers so an error one of them throws can be told apart from wretch's own. */
+/** Re-registers the client's catchers so an error one of them throws can be told apart from any other failure. */
 function recordCatcherErrors(
   wretch: WretchInstance,
-  onCatcherError: (error: unknown) => void,
+  onCatcherThrow: (thrown: unknown) => void,
 ): WretchInstance {
   let instance = wretch
   for (const [errorId, catcher] of wretch._catchers) {
@@ -186,7 +186,10 @@ function recordCatcherErrors(
       try {
         return await catcher(error, request)
       } catch (thrown) {
-        onCatcherError(thrown)
+        // Rethrowing the error it was given means the catcher left it unhandled.
+        if (!Object.is(thrown, error)) {
+          onCatcherThrow(thrown)
+        }
         throw thrown
       }
     })
@@ -205,7 +208,8 @@ function recordCatcherErrors(
  * also returned as `Either.error`; pass `captureAsError: false` to receive all
  * contract-defined responses as `Either.result`.
  *
- * If a catcher on the client throws, its error rejects the promise.
+ * If a catcher registered on the client with `.catcher()`, `.catcherFallback()` or inside
+ * `.defer()` throws a new error, that error rejects the promise.
  *
  * @see {@link ContractRequestOptions} for cancellation and other options.
  */
@@ -249,23 +253,31 @@ export async function sendByApiContract<
   // during WretchError creation, allowing contract-based body parsing even for error responses.
   let clonedErrorResponse: Response | undefined
 
+  const discardClonedErrorResponse = () => {
+    clonedErrorResponse?.body?.cancel().catch(() => undefined)
+  }
+
   const cloneErrorResponseMiddleware: ConfiguredMiddleware = (next) => async (url, opts) => {
     const fetchResponse = await next(url, opts)
     if (!fetchResponse.ok) {
+      discardClonedErrorResponse()
       clonedErrorResponse = fetchResponse.clone()
     }
     return fetchResponse
   }
 
-  let catcherError: { error: unknown } | undefined
+  let catcherThrow: { thrown: unknown } | undefined
 
-  const wretchInstance = recordCatcherErrors(wretch, (error) => {
-    catcherError = { error }
-  })
+  const wretchInstance = wretch
     .middlewares([cloneErrorResponseMiddleware])
     .url(fullUrl)
     .headers(Object.fromEntries(requestHeaders))
     .options({ signal: params.signal })
+    .defer((request) =>
+      recordCatcherErrors(request, (thrown) => {
+        catcherThrow = { thrown }
+      }),
+    )
 
   let response: Response
 
@@ -275,15 +287,11 @@ export async function sendByApiContract<
     } else {
       response = await wretchInstance[apiContract.method](bodyString).res()
     }
-    /* v8 ignore start */
-    if (clonedErrorResponse) {
-      clonedErrorResponse.body?.cancel().catch(() => undefined)
-    }
-    /* v8 ignore stop */
+    discardClonedErrorResponse()
   } catch (err) {
-    const thrownByCatcher = catcherError !== undefined && catcherError.error === err
+    const thrownByCatcher = catcherThrow !== undefined && Object.is(catcherThrow.thrown, err)
     if (!clonedErrorResponse || thrownByCatcher) {
-      clonedErrorResponse?.body?.cancel().catch(() => undefined)
+      discardClonedErrorResponse()
       throw err
     }
     response = clonedErrorResponse

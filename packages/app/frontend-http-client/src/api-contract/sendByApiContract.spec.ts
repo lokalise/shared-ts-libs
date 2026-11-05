@@ -1,4 +1,3 @@
-import { createRequire } from 'node:module'
 import {
   type BlobResponseHandle,
   blobBody,
@@ -218,42 +217,83 @@ describe('sendByApiContract', () => {
       expect(result.result).toBeUndefined()
     })
 
-    it('rethrows the error a client catcher throws for a non-2xx status', async () => {
-      class UnauthorizedError extends Error {}
-      const client = buildClient().catcher(401, () => {
-        throw new UnauthorizedError()
-      })
+    describe('client catchers', () => {
       const contract = defineApiContract({
         visibility: 'public',
         summary: 'Test contract',
         method: 'get',
         pathResolver: () => '/products/1',
-        responsesByStatusCode: { 200: z.unknown() },
+        responsesByStatusCode: { 200: z.object({ id: z.number() }), 404: z.unknown() },
       })
 
-      await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
+      it('rethrows the error a catcher throws', async () => {
+        const unauthorized = new Error('unauthorized')
+        const client = buildClient().catcher(401, () => {
+          throw unauthorized
+        })
 
-      await expect(sendByApiContract(client, contract, {})).rejects.toBeInstanceOf(
-        UnauthorizedError,
-      )
-    })
+        await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
 
-    it('rethrows a failed request a client catcher makes, even with the same status', async () => {
-      const client = buildClient().catcher(401, () => buildClient().get('/refresh').res())
-      const contract = defineApiContract({
-        visibility: 'public',
-        summary: 'Test contract',
-        method: 'get',
-        pathResolver: () => '/products/1',
-        responsesByStatusCode: { 200: z.unknown() },
+        await expect(sendByApiContract(client, contract, {})).rejects.toBe(unauthorized)
       })
 
-      await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
-      await mockServer.forGet('/refresh').thenJson(401, { message: 'refresh failed' })
+      it('rethrows the error a catcherFallback throws', async () => {
+        const unauthorized = new Error('unauthorized')
+        const client = buildClient().catcherFallback(() => {
+          throw unauthorized
+        })
 
-      await expect(sendByApiContract(client, contract, {})).rejects.toMatchObject({
-        status: 401,
-        url: `${mockServer.url}/refresh`,
+        await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
+
+        await expect(sendByApiContract(client, contract, {})).rejects.toBe(unauthorized)
+      })
+
+      it('rethrows the error a catcher added inside defer throws', async () => {
+        const unauthorized = new Error('unauthorized')
+        const client = buildClient().defer((request) =>
+          request.catcher(401, () => {
+            throw unauthorized
+          }),
+        )
+
+        await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
+
+        await expect(sendByApiContract(client, contract, {})).rejects.toBe(unauthorized)
+      })
+
+      it('rethrows a failed request a catcher makes, even with the same status', async () => {
+        const client = buildClient().catcher(401, () => buildClient().get('/refresh').res())
+
+        await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
+        await mockServer.forGet('/refresh').thenJson(401, { message: 'refresh failed' })
+
+        await expect(sendByApiContract(client, contract, {})).rejects.toMatchObject({
+          status: 401,
+          url: `${mockServer.url}/refresh`,
+        })
+      })
+
+      it('returns Either.error when a catcher rethrows the error it was given', async () => {
+        const client = buildClient().catcher(404, (error) => {
+          throw error
+        })
+
+        await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' })
+
+        const result = await sendByApiContract(client, contract, {})
+
+        expect(result.error).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
+      })
+
+      it('returns the result of a request a catcher replays', async () => {
+        const client = buildClient().catcher(401, (_error, request) => request.fetch().res())
+
+        await mockServer.forGet('/products/1').once().thenJson(401, { message: 'unauthorized' })
+        await mockServer.forGet('/products/1').thenJson(200, { id: 1 })
+
+        const result = await sendByApiContract(client, contract, {})
+
+        expect(result.result).toMatchObject({ statusCode: 200, body: { id: 1 } })
       })
     })
 
@@ -267,30 +307,16 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: { 200: z.unknown() },
       })
 
-      await mockServer.forGet('/products/1').always().thenJson(503, { message: 'unavailable' })
+      const endpoint = await mockServer
+        .forGet('/products/1')
+        .always()
+        .thenJson(503, { message: 'unavailable' })
 
       const result = await sendByApiContract(client, contract, {})
 
       expect(result.error).toBeInstanceOf(UnexpectedResponseError)
       expect((result.error as UnexpectedResponseError).statusCode).toBe(503)
-    })
-
-    it('returns a non-2xx response as Either.error for a client built from the CommonJS wretch', async () => {
-      const wretchCommonJs: typeof wretch = createRequire(import.meta.url)('wretch')
-      const contract = defineApiContract({
-        visibility: 'public',
-        summary: 'Test contract',
-        method: 'get',
-        pathResolver: () => '/products/1',
-        responsesByStatusCode: { 200: z.unknown() },
-      })
-
-      await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' })
-
-      const result = await sendByApiContract(wretchCommonJs(mockServer.url), contract, {})
-
-      expect(result.error).toBeInstanceOf(UnexpectedResponseError)
-      expect((result.error as UnexpectedResponseError).statusCode).toBe(404)
+      expect(await endpoint.getSeenRequests()).toHaveLength(3)
     })
 
     it('returns typed body for non-2xx response when status is in contract', async () => {

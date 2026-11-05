@@ -128,7 +128,7 @@ By default (`captureAsError: true`), the result type only includes success statu
 const response = await sendByApiContract(client, contract, params)
 
 if (response.error) {
-  // network error or non-2xx response
+  // non-2xx response
 } else {
   response.result.body // typed to the 2xx response schema
 }
@@ -173,7 +173,7 @@ if (response.result.statusCode === 404) {
 }
 ```
 
-Status codes absent from the contract always surface as `Either.error`, regardless of this option.
+Status codes absent from the contract surface as `Either.error`, regardless of this option.
 
 ### UnexpectedResponseError
 
@@ -214,6 +214,8 @@ if (response.error instanceof UnexpectedResponseError) {
 | SSE event type has no matching schema in the contract                                    | `Error`                       |
 | SSE event data contains malformed JSON                                                   | `SyntaxError`                 |
 | SSE event data fails schema validation                                                   | `ZodError`                    |
+
+Only a new error counts: a catcher that rethrows the error it was given leaves the response to be parsed as usual. Catchers added in a `.resolve()` callback or by an addon are not covered.
 
 ```ts
 try {
