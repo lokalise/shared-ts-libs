@@ -207,7 +207,7 @@ if (response.error instanceof UnexpectedResponseError) {
 | ---------------------------------------------------------------------------------------- | ----------------------------- |
 | Network error                                                                            | Browser / fetch network error |
 | Manual cancellation — `signal` fired                                                     | `AbortError` (`DOMException`) |
-| A catcher on the wretch client throws for the response status, e.g. `.catcher(401, …)`   | Whatever the catcher threw    |
+| A catcher on the wretch client throws, e.g. `.catcher(401, …)` or `.catcherFallback(…)`  | Whatever the catcher threw    |
 | Response body contains malformed JSON                                                    | `SyntaxError`                 |
 | Response body fails JSON schema validation                                               | `ZodError`                    |
 | Response headers fail schema validation — `responseHeaderSchema` defined in the contract | `ZodError`                    |
@@ -225,7 +225,7 @@ try {
     // Either.result — success
   }
 } catch (err) {
-  // Network error, abort, or schema/parse failure
+  // Network error, abort, schema/parse failure, or an error a client catcher threw
 }
 ```
 

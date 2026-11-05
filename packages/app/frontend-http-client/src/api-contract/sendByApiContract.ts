@@ -16,8 +16,8 @@ import {
 import { stringify } from 'fast-querystring'
 import { ServerSentEventTransformStream } from 'parse-sse'
 import type { ConfiguredMiddleware } from 'wretch'
-import { WretchError } from 'wretch/resolver'
 import type { WretchInstance } from '../types.ts'
+import { isWretchError } from '../utils/errorUtils.ts'
 import { normalizeResponseHeaders } from '../utils/responseUtils.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
@@ -187,6 +187,8 @@ async function parseBody(response: Response, resolvedEntry: ResponseKind) {
  * also returned as `Either.error`; pass `captureAsError: false` to receive all
  * contract-defined responses as `Either.result`.
  *
+ * If a catcher on the client throws, its error rejects the promise.
+ *
  * @see {@link ContractRequestOptions} for cancellation and other options.
  */
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: it is acceptable
@@ -260,9 +262,9 @@ export async function sendByApiContract<
     if (!clonedErrorResponse) {
       throw err
     }
-    // Anything other than wretch's own HTTP error was thrown by a catcher on the client, on purpose.
-    if (!(err instanceof WretchError)) {
-      clonedErrorResponse.body?.cancel()
+    // Only wretch's own HTTP error maps to the contract. Pass anything else on, like a catcher's error.
+    if (!isWretchError(err)) {
+      clonedErrorResponse.body?.cancel().catch(() => undefined)
       throw err
     }
     response = clonedErrorResponse

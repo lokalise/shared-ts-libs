@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module'
 import {
   type BlobResponseHandle,
   blobBody,
@@ -234,6 +235,24 @@ describe('sendByApiContract', () => {
       await expect(sendByApiContract(client, contract, {})).rejects.toBeInstanceOf(
         UnauthorizedError,
       )
+    })
+
+    it('returns a non-2xx response as Either.error for a client built from the CommonJS wretch', async () => {
+      const wretchCommonJs: typeof wretch = createRequire(import.meta.url)('wretch')
+      const contract = defineApiContract({
+        visibility: 'public',
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' })
+
+      const result = await sendByApiContract(wretchCommonJs(mockServer.url), contract, {})
+
+      expect(result.error).toBeInstanceOf(UnexpectedResponseError)
+      expect((result.error as UnexpectedResponseError).statusCode).toBe(404)
     })
 
     it('returns typed body for non-2xx response when status is in contract', async () => {
