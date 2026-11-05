@@ -17,7 +17,7 @@ import { stringify } from 'fast-querystring'
 import { ServerSentEventTransformStream } from 'parse-sse'
 import type { ConfiguredMiddleware } from 'wretch'
 import type { WretchInstance } from '../types.ts'
-import { isWretchError } from '../utils/errorUtils.ts'
+import { isWretchErrorForResponse } from '../utils/errorUtils.ts'
 import { normalizeResponseHeaders } from '../utils/responseUtils.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
@@ -255,7 +255,7 @@ export async function sendByApiContract<
     }
     /* v8 ignore start */
     if (clonedErrorResponse) {
-      clonedErrorResponse.body?.cancel()
+      clonedErrorResponse.body?.cancel().catch(() => undefined)
     }
     /* v8 ignore stop */
   } catch (err) {
@@ -263,7 +263,7 @@ export async function sendByApiContract<
       throw err
     }
     // Only wretch's own HTTP error maps to the contract. Pass anything else on, like a catcher's error.
-    if (!isWretchError(err)) {
+    if (!isWretchErrorForResponse(err, clonedErrorResponse)) {
       clonedErrorResponse.body?.cancel().catch(() => undefined)
       throw err
     }

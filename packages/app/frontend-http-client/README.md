@@ -122,7 +122,7 @@ type Either<TError, TResult> =
 }
 ```
 
-By default (`captureAsError: true`), the result type only includes success status codes. Non-2xx responses defined in the contract are returned as `Either.error`. Status codes absent from the contract are always returned as `Either.error` with an `UnexpectedResponseError`.
+By default (`captureAsError: true`), the result type only includes success status codes. Non-2xx responses defined in the contract are returned as `Either.error`. Status codes absent from the contract are returned as `Either.error` with an `UnexpectedResponseError`.
 
 ```ts
 const response = await sendByApiContract(client, contract, params)
@@ -214,6 +214,8 @@ if (response.error instanceof UnexpectedResponseError) {
 | SSE event type has no matching schema in the contract                                    | `Error`                       |
 | SSE event data contains malformed JSON                                                   | `SyntaxError`                 |
 | SSE event data fails schema validation                                                   | `ZodError`                    |
+
+A catcher that rethrows wretch's own error for the response counts as no catcher, so the response is parsed as usual.
 
 ```ts
 try {
