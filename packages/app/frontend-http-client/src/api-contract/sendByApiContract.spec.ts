@@ -295,6 +295,51 @@ describe('sendByApiContract', () => {
 
         expect(result.result).toMatchObject({ statusCode: 200, body: { id: 1 } })
       })
+
+      it('parses the response a catcher returns from the error it was given', async () => {
+        const client = buildClient().catcher(404, (error) => error.response)
+
+        await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' })
+
+        const result = await sendByApiContract(client, contract, { captureAsError: false })
+
+        expect(result.result).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
+      })
+
+      it('parses the original response when a catcher rethrows it after a failed replay', async () => {
+        const client = buildClient().catcher(404, async (error, request) => {
+          try {
+            return await request.fetch().res()
+          } catch {
+            throw error
+          }
+        })
+
+        await mockServer.forGet('/products/1').once().thenJson(404, { message: 'not found' })
+        await mockServer.forGet('/products/1').thenJson(500, { message: 'replay failed' })
+
+        const result = await sendByApiContract(client, contract, {})
+
+        expect(result.error).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
+      })
+
+      it("parses the replay's response when a catcher rethrows the replay's error", async () => {
+        const client = buildClient().catcher(404, (_error, request) =>
+          request
+            .catcher(404, (replayError) => {
+              throw replayError
+            })
+            .fetch()
+            .res(),
+        )
+
+        await mockServer.forGet('/products/1').once().thenJson(404, { message: 'first' })
+        await mockServer.forGet('/products/1').thenJson(404, { message: 'replay' })
+
+        const result = await sendByApiContract(client, contract, {})
+
+        expect(result.error).toMatchObject({ statusCode: 404, body: { message: 'replay' } })
+      })
     })
 
     it('returns Either.error when retry middleware runs out of attempts on a non-2xx status', async () => {
@@ -307,16 +352,15 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: { 200: z.unknown() },
       })
 
-      const endpoint = await mockServer
-        .forGet('/products/1')
-        .always()
-        .thenJson(503, { message: 'unavailable' })
+      await mockServer.forGet('/products/1').once().thenJson(503, { attempt: 1 })
+      await mockServer.forGet('/products/1').once().thenJson(503, { attempt: 2 })
+      await mockServer.forGet('/products/1').thenJson(503, { attempt: 3 })
 
       const result = await sendByApiContract(client, contract, {})
 
       expect(result.error).toBeInstanceOf(UnexpectedResponseError)
       expect((result.error as UnexpectedResponseError).statusCode).toBe(503)
-      expect(await endpoint.getSeenRequests()).toHaveLength(3)
+      expect(JSON.parse((result.error as UnexpectedResponseError).body)).toEqual({ attempt: 3 })
     })
 
     it('returns typed body for non-2xx response when status is in contract', async () => {

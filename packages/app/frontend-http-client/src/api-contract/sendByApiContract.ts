@@ -176,7 +176,7 @@ async function parseBody(response: Response, resolvedEntry: ResponseKind) {
 }
 
 /** Re-registers the client's catchers so an error one of them throws can be told apart from any other failure. */
-function recordCatcherErrors(
+function recordCatcherThrows(
   wretch: WretchInstance,
   onCatcherThrow: (thrown: unknown) => void,
 ): WretchInstance {
@@ -186,10 +186,7 @@ function recordCatcherErrors(
       try {
         return await catcher(error, request)
       } catch (thrown) {
-        // Rethrowing the error it was given means the catcher left it unhandled.
-        if (!Object.is(thrown, error)) {
-          onCatcherThrow(thrown)
-        }
+        onCatcherThrow(thrown)
         throw thrown
       }
     })
@@ -208,8 +205,8 @@ function recordCatcherErrors(
  * also returned as `Either.error`; pass `captureAsError: false` to receive all
  * contract-defined responses as `Either.result`.
  *
- * If a catcher registered on the client with `.catcher()`, `.catcherFallback()` or inside
- * `.defer()` throws a new error, that error rejects the promise.
+ * If a catcher added with `.catcher()`, `.catcherFallback()` or inside `.defer()` throws an
+ * error other than wretch's error for this request, that error rejects the promise.
  *
  * @see {@link ContractRequestOptions} for cancellation and other options.
  */
@@ -249,21 +246,31 @@ export async function sendByApiContract<
   const fullUrl = queryString ? `${path}?${queryString}` : path
   const bodyString = params.body !== undefined ? JSON.stringify(params.body) : undefined
 
-  // Middleware that clones the response for non-2xx statuses before wretch consumes the body
-  // during WretchError creation, allowing contract-based body parsing even for error responses.
-  let clonedErrorResponse: Response | undefined
-
-  const discardClonedErrorResponse = () => {
-    clonedErrorResponse?.body?.cancel().catch(() => undefined)
-  }
+  // Clones each non-2xx response, keyed by the original, before wretch reads its body while
+  // building a WretchError, so the contract can still parse the error body.
+  const errorResponseClones = new Map<Response, Response>()
 
   const cloneErrorResponseMiddleware: ConfiguredMiddleware = (next) => async (url, opts) => {
     const fetchResponse = await next(url, opts)
     if (!fetchResponse.ok) {
-      discardClonedErrorResponse()
-      clonedErrorResponse = fetchResponse.clone()
+      errorResponseClones.set(fetchResponse, fetchResponse.clone())
     }
     return fetchResponse
+  }
+
+  const findOwnErrorResponseClone = (error: unknown): Response | undefined => {
+    if (typeof error !== 'object' || error === null || !('response' in error)) {
+      return undefined
+    }
+    return errorResponseClones.get(error.response as Response)
+  }
+
+  const discardErrorResponseClones = (keep: Response | undefined) => {
+    for (const clone of errorResponseClones.values()) {
+      if (clone !== keep) {
+        clone.body?.cancel().catch(() => undefined)
+      }
+    }
   }
 
   let catcherThrow: { thrown: unknown } | undefined
@@ -274,7 +281,7 @@ export async function sendByApiContract<
     .headers(Object.fromEntries(requestHeaders))
     .options({ signal: params.signal })
     .defer((request) =>
-      recordCatcherErrors(request, (thrown) => {
+      recordCatcherThrows(request, (thrown) => {
         catcherThrow = { thrown }
       }),
     )
@@ -287,14 +294,22 @@ export async function sendByApiContract<
     } else {
       response = await wretchInstance[apiContract.method](bodyString).res()
     }
-    discardClonedErrorResponse()
+    // A catcher can return the error's own response, whose body wretch has already read.
+    const returnedErrorResponseClone = errorResponseClones.get(response)
+    discardErrorResponseClones(returnedErrorResponseClone)
+    response = returnedErrorResponseClone ?? response
   } catch (err) {
+    // wretch's error for one of this request's responses is parsed even when a catcher rethrew it.
+    const ownErrorResponseClone = findOwnErrorResponseClone(err)
     const thrownByCatcher = catcherThrow !== undefined && Object.is(catcherThrow.thrown, err)
-    if (!clonedErrorResponse || thrownByCatcher) {
-      discardClonedErrorResponse()
+    const latestErrorResponseClone = [...errorResponseClones.values()].at(-1)
+    const errorResponseClone =
+      ownErrorResponseClone ?? (thrownByCatcher ? undefined : latestErrorResponseClone)
+    discardErrorResponseClones(errorResponseClone)
+    if (!errorResponseClone) {
       throw err
     }
-    response = clonedErrorResponse
+    response = errorResponseClone
   }
 
   const normalizedHeaders = normalizeResponseHeaders(response)

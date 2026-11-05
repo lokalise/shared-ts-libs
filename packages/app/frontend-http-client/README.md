@@ -104,7 +104,7 @@ const { result } = await sendByApiContract(client, getUser, { pathParams: { user
 
 ### Return type — Either
 
-`sendByApiContract` always returns an `Either`:
+`sendByApiContract` returns an `Either`, or throws in the cases listed under [Throws](#throws):
 
 ```ts
 type Either<TError, TResult> =
@@ -128,7 +128,7 @@ By default (`captureAsError: true`), the result type only includes success statu
 const response = await sendByApiContract(client, contract, params)
 
 if (response.error) {
-  // non-2xx response
+  // non-2xx or UnexpectedResponseError
 } else {
   response.result.body // typed to the 2xx response schema
 }
@@ -215,7 +215,7 @@ if (response.error instanceof UnexpectedResponseError) {
 | SSE event data contains malformed JSON                                                   | `SyntaxError`                 |
 | SSE event data fails schema validation                                                   | `ZodError`                    |
 
-Only a new error counts: a catcher that rethrows the error it was given leaves the response to be parsed as usual. Catchers added in a `.resolve()` callback or by an addon are not covered.
+This covers catchers added with `.catcher()`, `.catcherFallback()` or inside `.defer()`. If such a catcher rethrows wretch's error for this request, including one from a replay, the response is parsed as usual. An error thrown by a catcher added in a `.resolve()` callback or by an addon is ignored, and the response is parsed as usual.
 
 ```ts
 try {
