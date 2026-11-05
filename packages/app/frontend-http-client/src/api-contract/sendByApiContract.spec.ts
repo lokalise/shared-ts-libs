@@ -236,7 +236,7 @@ describe('sendByApiContract', () => {
           '.catcher() inside .defer()',
           (client, thrower) => client.defer((request) => request.catcher(401, thrower)),
         ],
-      ])('rethrows the error a catcher added with %s throws', async (_name, addCatcher) => {
+      ])('rethrows what a catcher added with %s throws', async (_name, addCatcher) => {
         const unauthorized = new Error('unauthorized')
         const client = addCatcher(buildClient(), () => {
           throw unauthorized
@@ -258,16 +258,25 @@ describe('sendByApiContract', () => {
         await expect(sendByApiContract(client, contract, {})).rejects.toBe(sessionExpired)
       })
 
-      it('rethrows the error from a request a catcher makes, even with the same status', async () => {
+      it("rethrows a catcher's own error when it is not an Error", async () => {
+        const client = buildClient().catcher(401, () => {
+          throw 'session expired'
+        })
+
+        await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
+
+        await expect(sendByApiContract(client, contract, {})).rejects.toBe('session expired')
+      })
+
+      it("returns Either.error when a catcher throws wretch's error from another request", async () => {
         const client = buildClient().catcher(401, () => buildClient().get('/refresh').res())
 
         await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
-        await mockServer.forGet('/refresh').thenJson(401, { message: 'refresh failed' })
+        await mockServer.forGet('/refresh').thenJson(500, { message: 'refresh failed' })
 
-        await expect(sendByApiContract(client, contract, {})).rejects.toMatchObject({
-          status: 401,
-          url: `${mockServer.url}/refresh`,
-        })
+        const result = await sendByApiContract(client, contract, {})
+
+        expect(result.error).toMatchObject({ statusCode: 401 })
       })
 
       it('returns Either.error when a catcher rethrows the error it was given', async () => {
@@ -309,15 +318,6 @@ describe('sendByApiContract', () => {
         const result = await sendByApiContract(client, contract, {})
 
         expect(result.error).toMatchObject({ statusCode: 404, body: { message: 'replay' } })
-      })
-
-      it("rejects with a replay's error that escapes the catcher", async () => {
-        const client = buildClient().catcher(404, (_error, request) => request.fetch().res())
-
-        await mockServer.forGet('/products/1').once().thenJson(404, { message: 'not found' })
-        await mockServer.forGet('/products/1').thenJson(500, { message: 'replay failed' })
-
-        await expect(sendByApiContract(client, contract, {})).rejects.toMatchObject({ status: 500 })
       })
     })
 
