@@ -36,7 +36,8 @@
     "@lokalise/tsconfig": "workspace:^"
   },
   "peerDependencies": {
-    "@lokalise/background-jobs-common": ">=12.6.0"
+    "@lokalise/background-jobs-common": ">=12.6.0",
+    "ioredis": "^6.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.4",

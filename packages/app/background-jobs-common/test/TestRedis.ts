@@ -1,7 +1,6 @@
-import type { RedisConfig } from '@lokalise/node-core'
-import { Redis } from 'ioredis'
+import { Redis, type RedisOptions } from 'ioredis'
 
-export function getTestRedisConfig(): RedisConfig {
+export function getTestRedisConfig(): RedisOptions {
   return {
     host: process.env.REDIS_HOST!,
     port: Number(process.env.REDIS_PORT),
@@ -9,7 +8,6 @@ export function getTestRedisConfig(): RedisConfig {
     username: process.env.REDIS_USERNAME,
     password: process.env.REDIS_PASSWORD,
     keyPrefix: process.env.REDIS_KEY_PREFIX,
-    useTls: false,
     commandTimeout: process.env.REDIS_COMMAND_TIMEOUT
       ? Number.parseInt(process.env.REDIS_COMMAND_TIMEOUT, 10)
       : undefined,
@@ -19,7 +17,7 @@ export function getTestRedisConfig(): RedisConfig {
   }
 }
 
-export function createRedisClient(redisConfig: RedisConfig): Redis {
+export function createRedisClient(redisConfig: RedisOptions): Redis {
   return new Redis({
     ...redisConfig,
     maxRetriesPerRequest: null,

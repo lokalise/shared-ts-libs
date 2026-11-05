@@ -142,7 +142,7 @@ describe('bull board', () => {
     it('throws when a pro config is provided without queueProConstructor', async () => {
       const promise = initApp({
         queueConstructor: BullMqQueue,
-        redisConfigs: [{ host: 'localhost', port: 6379, useTls: false, isPro: true }],
+        redisConfigs: [{ host: 'localhost', port: 6379, isPro: true }],
         basePath: '/test-missing-pro',
       })
       await expect(promise).rejects.toThrow(/queueProConstructor is required/)

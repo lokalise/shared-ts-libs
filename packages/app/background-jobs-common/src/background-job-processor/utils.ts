@@ -1,7 +1,6 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import type { RedisConfig } from '@lokalise/node-core'
 import type { JobsOptions } from 'bullmq'
-import type { Redis } from 'ioredis'
+import type { Redis, RedisOptions } from 'ioredis'
 import {
   RETENTION_COMPLETED_JOBS_IN_AMOUNT,
   RETENTION_COMPLETED_JOBS_IN_DAYS,
@@ -16,7 +15,7 @@ const daysToSeconds = (days: number): number => days * 24 * 60 * 60
 
 export const daysToMilliseconds = (days: number): number => daysToSeconds(days) * 1000
 
-export const isRedisClient = (redis: RedisConfig | Redis): redis is Redis => 'options' in redis
+export const isRedisClient = (redis: RedisOptions | Redis): redis is Redis => 'options' in redis
 
 export const resolveJobId = (job?: SafeJob<unknown>): string => job?.id ?? 'unknown'
 
