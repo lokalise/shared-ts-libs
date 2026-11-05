@@ -215,7 +215,7 @@ if (response.error instanceof UnexpectedResponseError) {
 | SSE event data contains malformed JSON                                                   | `SyntaxError`                 |
 | SSE event data fails schema validation                                                   | `ZodError`                    |
 
-This covers catchers added with `.catcher()`, `.catcherFallback()` or inside `.defer()`. If such a catcher rethrows wretch's error for this request, including one from a replay, the response is parsed as usual. An error thrown by a catcher added in a `.resolve()` callback or by an addon is ignored, and the response is parsed as usual.
+The catcher row applies to catchers added with `.catcher()`, `.catcherFallback()` or inside `.defer()`. A catcher that rethrows the error wretch gave it, including one from a replay, counts as no catcher: that error's response is parsed as usual. Errors thrown by catchers added in a `.resolve()` callback or by an addon are ignored the same way.
 
 ```ts
 try {

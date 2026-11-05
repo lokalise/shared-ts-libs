@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vites
 import wretch from 'wretch'
 import { retry } from 'wretch/middlewares'
 import { z } from 'zod/v4'
+import type { WretchInstance } from '../types.ts'
 import { sendByApiContract } from './sendByApiContract.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
@@ -226,9 +227,23 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: { 200: z.object({ id: z.number() }), 404: z.unknown() },
       })
 
-      it('rethrows the error a catcher throws', async () => {
+      it.each([
+        [
+          '.catcher()',
+          (client: WretchInstance, thrower: () => never) => client.catcher(401, thrower),
+        ],
+        [
+          '.catcherFallback()',
+          (client: WretchInstance, thrower: () => never) => client.catcherFallback(thrower),
+        ],
+        [
+          'a catcher added inside .defer()',
+          (client: WretchInstance, thrower: () => never) =>
+            client.defer((request) => request.catcher(401, thrower)),
+        ],
+      ])('rethrows the error a catcher added with %s throws', async (_name, addCatcher) => {
         const unauthorized = new Error('unauthorized')
-        const client = buildClient().catcher(401, () => {
+        const client = addCatcher(buildClient(), () => {
           throw unauthorized
         })
 
@@ -237,31 +252,18 @@ describe('sendByApiContract', () => {
         await expect(sendByApiContract(client, contract, {})).rejects.toBe(unauthorized)
       })
 
-      it('rethrows the error a catcherFallback throws', async () => {
-        const unauthorized = new Error('unauthorized')
-        const client = buildClient().catcherFallback(() => {
-          throw unauthorized
+      it("rethrows a catcher's own error even when it carries the response", async () => {
+        const sessionExpired = new Error('session expired')
+        const client = buildClient().catcher(401, (error) => {
+          throw Object.assign(sessionExpired, { response: error.response })
         })
 
         await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
 
-        await expect(sendByApiContract(client, contract, {})).rejects.toBe(unauthorized)
+        await expect(sendByApiContract(client, contract, {})).rejects.toBe(sessionExpired)
       })
 
-      it('rethrows the error a catcher added inside defer throws', async () => {
-        const unauthorized = new Error('unauthorized')
-        const client = buildClient().defer((request) =>
-          request.catcher(401, () => {
-            throw unauthorized
-          }),
-        )
-
-        await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
-
-        await expect(sendByApiContract(client, contract, {})).rejects.toBe(unauthorized)
-      })
-
-      it('rethrows a failed request a catcher makes, even with the same status', async () => {
+      it('rethrows the error from a request a catcher makes, even with the same status', async () => {
         const client = buildClient().catcher(401, () => buildClient().get('/refresh').res())
 
         await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
@@ -306,7 +308,7 @@ describe('sendByApiContract', () => {
         expect(result.result).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
       })
 
-      it('parses the original response when a catcher rethrows it after a failed replay', async () => {
+      it('parses the original response when a catcher rethrows the original error after a failed replay', async () => {
         const client = buildClient().catcher(404, async (error, request) => {
           try {
             return await request.fetch().res()
@@ -340,9 +342,35 @@ describe('sendByApiContract', () => {
 
         expect(result.error).toMatchObject({ statusCode: 404, body: { message: 'replay' } })
       })
+
+      it("rejects with a replay's error that escapes the catcher", async () => {
+        const client = buildClient().catcher(404, (_error, request) => request.fetch().res())
+
+        await mockServer.forGet('/products/1').once().thenJson(404, { message: 'not found' })
+        await mockServer.forGet('/products/1').thenJson(500, { message: 'replay failed' })
+
+        await expect(sendByApiContract(client, contract, {})).rejects.toMatchObject({ status: 500 })
+      })
+
+      it("parses this request's response when a refresh a catcher sends to another URL fails", async () => {
+        const client = buildClient()
+          .catcherFallback((error) => {
+            throw error
+          })
+          .catcher(404, (_error, request) =>
+            request.url(`${mockServer.url}/refresh`, true).get().res(),
+          )
+
+        await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' })
+        await mockServer.forGet('/refresh').thenJson(500, { message: 'refresh failed' })
+
+        const result = await sendByApiContract(client, contract, {})
+
+        expect(result.error).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
+      })
     })
 
-    it('returns Either.error when retry middleware runs out of attempts on a non-2xx status', async () => {
+    it("parses the last attempt's response when retry middleware runs out of attempts", async () => {
       const client = buildClient().middlewares([retry({ delayTimer: 0, maxAttempts: 2 })])
       const contract = defineApiContract({
         visibility: 'public',
@@ -359,8 +387,7 @@ describe('sendByApiContract', () => {
       const result = await sendByApiContract(client, contract, {})
 
       expect(result.error).toBeInstanceOf(UnexpectedResponseError)
-      expect((result.error as UnexpectedResponseError).statusCode).toBe(503)
-      expect(JSON.parse((result.error as UnexpectedResponseError).body)).toEqual({ attempt: 3 })
+      expect(result.error).toMatchObject({ statusCode: 503, body: '{"attempt":3}' })
     })
 
     it('returns typed body for non-2xx response when status is in contract', async () => {
