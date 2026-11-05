@@ -10,18 +10,6 @@ export function buildWretchError(message: string, response: WretchResponse): Wre
   return error
 }
 
-/** Checked by shape, not class: another wretch copy or its CommonJS build has its own WretchError. */
-export function isWretchErrorForResponse(error: unknown, response: Response): error is WretchError {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'response' in error &&
-    'url' in error &&
-    'status' in error &&
-    error.status === response.status
-  )
-}
-
 export class XmlHttpRequestError extends Error {
   readonly details?: Record<string, unknown>
 

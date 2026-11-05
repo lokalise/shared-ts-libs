@@ -17,7 +17,6 @@ import { stringify } from 'fast-querystring'
 import { ServerSentEventTransformStream } from 'parse-sse'
 import type { ConfiguredMiddleware } from 'wretch'
 import type { WretchInstance } from '../types.ts'
-import { isWretchErrorForResponse } from '../utils/errorUtils.ts'
 import { normalizeResponseHeaders } from '../utils/responseUtils.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
@@ -176,6 +175,25 @@ async function parseBody(response: Response, resolvedEntry: ResponseKind) {
   }
 }
 
+/** Re-registers the client's catchers so an error one of them throws can be told apart from wretch's own. */
+function recordCatcherErrors(
+  wretch: WretchInstance,
+  onCatcherError: (error: unknown) => void,
+): WretchInstance {
+  let instance = wretch
+  for (const [errorId, catcher] of wretch._catchers) {
+    instance = instance.catcher(errorId, async (error, request) => {
+      try {
+        return await catcher(error, request)
+      } catch (thrown) {
+        onCatcherError(thrown)
+        throw thrown
+      }
+    })
+  }
+  return instance
+}
+
 /**
  * Executes an HTTP request described by `apiContract` and returns a type-safe `Either`.
  *
@@ -239,7 +257,11 @@ export async function sendByApiContract<
     return fetchResponse
   }
 
-  const wretchInstance = wretch
+  let catcherError: { error: unknown } | undefined
+
+  const wretchInstance = recordCatcherErrors(wretch, (error) => {
+    catcherError = { error }
+  })
     .middlewares([cloneErrorResponseMiddleware])
     .url(fullUrl)
     .headers(Object.fromEntries(requestHeaders))
@@ -259,12 +281,9 @@ export async function sendByApiContract<
     }
     /* v8 ignore stop */
   } catch (err) {
-    if (!clonedErrorResponse) {
-      throw err
-    }
-    // Only wretch's own HTTP error maps to the contract. Pass anything else on, like a catcher's error.
-    if (!isWretchErrorForResponse(err, clonedErrorResponse)) {
-      clonedErrorResponse.body?.cancel().catch(() => undefined)
+    const thrownByCatcher = catcherError !== undefined && catcherError.error === err
+    if (!clonedErrorResponse || thrownByCatcher) {
+      clonedErrorResponse?.body?.cancel().catch(() => undefined)
       throw err
     }
     response = clonedErrorResponse

@@ -215,8 +215,6 @@ if (response.error instanceof UnexpectedResponseError) {
 | SSE event data contains malformed JSON                                                   | `SyntaxError`                 |
 | SSE event data fails schema validation                                                   | `ZodError`                    |
 
-A catcher that rethrows wretch's own error for the response counts as no catcher, so the response is parsed as usual.
-
 ```ts
 try {
   const response = await sendByApiContract(client, contract, params)

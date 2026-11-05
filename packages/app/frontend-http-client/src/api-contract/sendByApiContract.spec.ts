@@ -9,6 +9,7 @@ import {
 import { getLocal } from 'mockttp'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import wretch from 'wretch'
+import { retry } from 'wretch/middlewares'
 import { z } from 'zod/v4'
 import { sendByApiContract } from './sendByApiContract.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
@@ -218,9 +219,7 @@ describe('sendByApiContract', () => {
     })
 
     it('rethrows the error a client catcher throws for a non-2xx status', async () => {
-      class UnauthorizedError extends Error {
-        status = 401
-      }
+      class UnauthorizedError extends Error {}
       const client = buildClient().catcher(401, () => {
         throw new UnauthorizedError()
       })
@@ -239,7 +238,7 @@ describe('sendByApiContract', () => {
       )
     })
 
-    it('rethrows a failed request a client catcher makes for a different status', async () => {
+    it('rethrows a failed request a client catcher makes, even with the same status', async () => {
       const client = buildClient().catcher(401, () => buildClient().get('/refresh').res())
       const contract = defineApiContract({
         visibility: 'public',
@@ -250,9 +249,30 @@ describe('sendByApiContract', () => {
       })
 
       await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
-      await mockServer.forGet('/refresh').thenJson(400, { message: 'refresh failed' })
+      await mockServer.forGet('/refresh').thenJson(401, { message: 'refresh failed' })
 
-      await expect(sendByApiContract(client, contract, {})).rejects.toMatchObject({ status: 400 })
+      await expect(sendByApiContract(client, contract, {})).rejects.toMatchObject({
+        status: 401,
+        url: `${mockServer.url}/refresh`,
+      })
+    })
+
+    it('returns Either.error when retry middleware runs out of attempts on a non-2xx status', async () => {
+      const client = buildClient().middlewares([retry({ delayTimer: 0, maxAttempts: 2 })])
+      const contract = defineApiContract({
+        visibility: 'public',
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await mockServer.forGet('/products/1').always().thenJson(503, { message: 'unavailable' })
+
+      const result = await sendByApiContract(client, contract, {})
+
+      expect(result.error).toBeInstanceOf(UnexpectedResponseError)
+      expect((result.error as UnexpectedResponseError).statusCode).toBe(503)
     })
 
     it('returns a non-2xx response as Either.error for a client built from the CommonJS wretch', async () => {
