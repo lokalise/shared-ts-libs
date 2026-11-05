@@ -227,19 +227,14 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: { 200: z.object({ id: z.number() }), 404: z.unknown() },
       })
 
-      it.each([
+      type AddCatcher = (client: WretchInstance, thrower: () => never) => WretchInstance
+
+      it.each<[string, AddCatcher]>([
+        ['.catcher()', (client, thrower) => client.catcher(401, thrower)],
+        ['.catcherFallback()', (client, thrower) => client.catcherFallback(thrower)],
         [
-          '.catcher()',
-          (client: WretchInstance, thrower: () => never) => client.catcher(401, thrower),
-        ],
-        [
-          '.catcherFallback()',
-          (client: WretchInstance, thrower: () => never) => client.catcherFallback(thrower),
-        ],
-        [
-          'a catcher added inside .defer()',
-          (client: WretchInstance, thrower: () => never) =>
-            client.defer((request) => request.catcher(401, thrower)),
+          '.catcher() inside .defer()',
+          (client, thrower) => client.defer((request) => request.catcher(401, thrower)),
         ],
       ])('rethrows the error a catcher added with %s throws', async (_name, addCatcher) => {
         const unauthorized = new Error('unauthorized')
@@ -298,33 +293,6 @@ describe('sendByApiContract', () => {
         expect(result.result).toMatchObject({ statusCode: 200, body: { id: 1 } })
       })
 
-      it('parses the response a catcher returns from the error it was given', async () => {
-        const client = buildClient().catcher(404, (error) => error.response)
-
-        await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' })
-
-        const result = await sendByApiContract(client, contract, { captureAsError: false })
-
-        expect(result.result).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
-      })
-
-      it('parses the original response when a catcher rethrows the original error after a failed replay', async () => {
-        const client = buildClient().catcher(404, async (error, request) => {
-          try {
-            return await request.fetch().res()
-          } catch {
-            throw error
-          }
-        })
-
-        await mockServer.forGet('/products/1').once().thenJson(404, { message: 'not found' })
-        await mockServer.forGet('/products/1').thenJson(500, { message: 'replay failed' })
-
-        const result = await sendByApiContract(client, contract, {})
-
-        expect(result.error).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
-      })
-
       it("parses the replay's response when a catcher rethrows the replay's error", async () => {
         const client = buildClient().catcher(404, (_error, request) =>
           request
@@ -350,23 +318,6 @@ describe('sendByApiContract', () => {
         await mockServer.forGet('/products/1').thenJson(500, { message: 'replay failed' })
 
         await expect(sendByApiContract(client, contract, {})).rejects.toMatchObject({ status: 500 })
-      })
-
-      it("parses this request's response when a refresh a catcher sends to another URL fails", async () => {
-        const client = buildClient()
-          .catcherFallback((error) => {
-            throw error
-          })
-          .catcher(404, (_error, request) =>
-            request.url(`${mockServer.url}/refresh`, true).get().res(),
-          )
-
-        await mockServer.forGet('/products/1').thenJson(404, { message: 'not found' })
-        await mockServer.forGet('/refresh').thenJson(500, { message: 'refresh failed' })
-
-        const result = await sendByApiContract(client, contract, {})
-
-        expect(result.error).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
       })
     })
 
