@@ -268,7 +268,7 @@ describe('sendByApiContract', () => {
         await expect(sendByApiContract(client, contract, {})).rejects.toBe('session expired')
       })
 
-      it("parses the original response when a catcher throws wretch's error from another request", async () => {
+      it('parses the response when a catcher throws a wretch error from another request', async () => {
         const client = buildClient().catcher(401, () => buildClient().get('/refresh').res())
 
         await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
@@ -279,7 +279,7 @@ describe('sendByApiContract', () => {
         expect(result.error).toMatchObject({ statusCode: 401 })
       })
 
-      it('parses the response when a catcher throws a value shaped like a wretch HTTP error', async () => {
+      it('parses the response when a catcher throws a wretch-shaped value', async () => {
         const client = buildClient().catcher(401, (error) => {
           throw { response: error.response, status: error.status, url: error.url }
         })
@@ -291,7 +291,51 @@ describe('sendByApiContract', () => {
         expect(result.error).toMatchObject({ statusCode: 401 })
       })
 
-      it('skips a catcher slot that holds no function', async () => {
+      it('parses the response when a catcher throws the response it was given', async () => {
+        const client = buildClient().catcher(401, (error) => {
+          throw error.response
+        })
+
+        await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
+
+        const result = await sendByApiContract(client, contract, {})
+
+        expect(result.error).toMatchObject({ statusCode: 401 })
+      })
+
+      it("keeps the error body readable when a catcher's replay finishes later", async () => {
+        const blobErrorContract = defineApiContract({
+          visibility: 'public',
+          summary: 'Test contract',
+          method: 'get',
+          pathResolver: () => '/products/1',
+          responsesByStatusCode: {
+            200: z.unknown(),
+            401: { content: { 'text/plain': blobBody() } },
+          },
+        })
+        const client = buildClient().catcher(401, (error, request) => {
+          void request
+            .fetch()
+            .res()
+            .catch(() => undefined)
+          throw error
+        })
+
+        await mockServer
+          .forGet('/products/1')
+          .once()
+          .thenReply(401, 'first', { 'content-type': 'text/plain' })
+        await mockServer.forGet('/products/1').delay(50).thenReply(500, 'replay')
+
+        const result = await sendByApiContract(client, blobErrorContract, {})
+        await new Promise((resolve) => setTimeout(resolve, 150))
+
+        expect(result.error).toMatchObject({ statusCode: 401 })
+        expect(await (result.error as { body: BlobResponseHandle }).body.text()).toBe('first')
+      })
+
+      it('parses the response when a catcher is registered without a function', async () => {
         const client = buildClient().catcher(401, undefined as never)
 
         await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
@@ -301,7 +345,7 @@ describe('sendByApiContract', () => {
         expect(result.error).toMatchObject({ statusCode: 401 })
       })
 
-      it('parses the last response when a catcher passes on the error retry middleware ends with', async () => {
+      it('parses the response when a catcher rethrows a non-HTTP error it was given', async () => {
         const client = buildClient()
           .middlewares([retry({ delayTimer: 0, maxAttempts: 1 })])
           .catcherFallback((error) => {
@@ -315,7 +359,7 @@ describe('sendByApiContract', () => {
         expect(result.error).toMatchObject({ statusCode: 503 })
       })
 
-      it('returns Either.error when a catcher rethrows the error it was given', async () => {
+      it('parses the response when a catcher rethrows the WretchError it was given', async () => {
         const client = buildClient().catcher(404, (error) => {
           throw error
         })
