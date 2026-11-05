@@ -16,6 +16,7 @@ import {
 import { stringify } from 'fast-querystring'
 import { ServerSentEventTransformStream } from 'parse-sse'
 import type { ConfiguredMiddleware } from 'wretch'
+import { WretchError } from 'wretch/resolver'
 import type { WretchInstance } from '../types.ts'
 import { normalizeResponseHeaders } from '../utils/responseUtils.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
@@ -257,6 +258,11 @@ export async function sendByApiContract<
     /* v8 ignore stop */
   } catch (err) {
     if (!clonedErrorResponse) {
+      throw err
+    }
+    // Anything other than wretch's own HTTP error was thrown by a catcher on the client, on purpose.
+    if (!(err instanceof WretchError)) {
+      clonedErrorResponse.body?.cancel()
       throw err
     }
     response = clonedErrorResponse

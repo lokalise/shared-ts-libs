@@ -216,6 +216,26 @@ describe('sendByApiContract', () => {
       expect(result.result).toBeUndefined()
     })
 
+    it('rethrows the error a client catcher throws for a non-2xx status', async () => {
+      class UnauthorizedError extends Error {}
+      const client = buildClient().catcher(401, () => {
+        throw new UnauthorizedError()
+      })
+      const contract = defineApiContract({
+        visibility: 'public',
+        summary: 'Test contract',
+        method: 'get',
+        pathResolver: () => '/products/1',
+        responsesByStatusCode: { 200: z.unknown() },
+      })
+
+      await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
+
+      await expect(sendByApiContract(client, contract, {})).rejects.toBeInstanceOf(
+        UnauthorizedError,
+      )
+    })
+
     it('returns typed body for non-2xx response when status is in contract', async () => {
       const contract = defineApiContract({
         visibility: 'public',
