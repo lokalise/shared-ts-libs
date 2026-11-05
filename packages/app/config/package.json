@@ -35,7 +35,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "peerDependencies": {
-    "envase": ">=2.0.0",
+    "envase": ">=2.1.0",
     "zod": ">=4.2.0"
   },
   "devDependencies": {
