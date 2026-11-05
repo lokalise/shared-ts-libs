@@ -104,7 +104,7 @@ const { result } = await sendByApiContract(client, getUser, { pathParams: { user
 
 ### Return type — Either
 
-When it does not throw (see [Throws](#throws)), `sendByApiContract` returns an `Either`:
+`sendByApiContract` returns an `Either` unless one of the [Throws](#throws) cases applies:
 
 ```ts
 type Either<TError, TResult> =
@@ -207,7 +207,7 @@ if (response.error instanceof UnexpectedResponseError) {
 | ---------------------------------------------------------------------------------------- | ----------------------------- |
 | Network error                                                                            | Browser / fetch network error |
 | Manual cancellation — `signal` fired                                                     | `AbortError` (`DOMException`) |
-| A catcher on the wretch client throws its own error, e.g. `.catcher(401, …)`             | Whatever the catcher threw    |
+| A catcher on the wretch client throws a new error, for example `.catcher(401, …)`        | Whatever the catcher threw    |
 | Response body contains malformed JSON                                                    | `SyntaxError`                 |
 | Response body fails JSON schema validation                                               | `ZodError`                    |
 | Response headers fail schema validation — `responseHeaderSchema` defined in the contract | `ZodError`                    |
@@ -215,7 +215,7 @@ if (response.error instanceof UnexpectedResponseError) {
 | SSE event data contains malformed JSON                                                   | `SyntaxError`                 |
 | SSE event data fails schema validation                                                   | `ZodError`                    |
 
-The catcher row covers catchers added with `.catcher()`, `.catcherFallback()` or inside `.defer()`, and errors they create themselves. When a catcher throws a wretch HTTP error, either the one it was given or one from another request, the last error response is parsed as usual. Catchers added in a `.resolve()` callback or by an addon are not covered and behave as before.
+The catcher row covers catchers added with `.catcher()`, `.catcherFallback()` or inside `.defer()`. When such a catcher passes on the error it was given, or throws a wretch HTTP error, this request's last error response is parsed as usual. A wretch HTTP error is any value with `response`, `status` and `url`, so an app error that copies those fields counts as one. Catchers added in a `.resolve()` callback or by an addon's `beforeRequest` are not covered.
 
 ```ts
 try {

@@ -268,7 +268,7 @@ describe('sendByApiContract', () => {
         await expect(sendByApiContract(client, contract, {})).rejects.toBe('session expired')
       })
 
-      it("returns Either.error when a catcher throws wretch's error from another request", async () => {
+      it("parses the original response when a catcher throws wretch's error from another request", async () => {
         const client = buildClient().catcher(401, () => buildClient().get('/refresh').res())
 
         await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
@@ -277,6 +277,42 @@ describe('sendByApiContract', () => {
         const result = await sendByApiContract(client, contract, {})
 
         expect(result.error).toMatchObject({ statusCode: 401 })
+      })
+
+      it('parses the response when a catcher throws a value shaped like a wretch HTTP error', async () => {
+        const client = buildClient().catcher(401, (error) => {
+          throw { response: error.response, status: error.status, url: error.url }
+        })
+
+        await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
+
+        const result = await sendByApiContract(client, contract, {})
+
+        expect(result.error).toMatchObject({ statusCode: 401 })
+      })
+
+      it('skips a catcher slot that holds no function', async () => {
+        const client = buildClient().catcher(401, undefined as never)
+
+        await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
+
+        const result = await sendByApiContract(client, contract, {})
+
+        expect(result.error).toMatchObject({ statusCode: 401 })
+      })
+
+      it('parses the last response when a catcher passes on the error retry middleware ends with', async () => {
+        const client = buildClient()
+          .middlewares([retry({ delayTimer: 0, maxAttempts: 1 })])
+          .catcherFallback((error) => {
+            throw error
+          })
+
+        await mockServer.forGet('/products/1').thenJson(503, { message: 'unavailable' })
+
+        const result = await sendByApiContract(client, contract, {})
+
+        expect(result.error).toMatchObject({ statusCode: 503 })
       })
 
       it('returns Either.error when a catcher rethrows the error it was given', async () => {
@@ -321,7 +357,7 @@ describe('sendByApiContract', () => {
       })
     })
 
-    it("parses the last attempt's response when retry middleware runs out of attempts", async () => {
+    it("parses the last attempt's response when retry runs out of attempts", async () => {
       const client = buildClient().middlewares([retry({ delayTimer: 0, maxAttempts: 2 })])
       const contract = defineApiContract({
         visibility: 'public',

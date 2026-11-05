@@ -175,7 +175,7 @@ async function parseBody(response: Response, resolvedEntry: ResponseKind) {
   }
 }
 
-/** wretch's error for an HTTP response, checked by shape since a client may use another wretch copy. */
+/** wretch's HTTP error, checked by shape because a client may use another copy of wretch. */
 function isWretchHttpError(error: unknown): boolean {
   return (
     typeof error === 'object' &&
@@ -186,19 +186,25 @@ function isWretchHttpError(error: unknown): boolean {
   )
 }
 
-/** Wraps each catcher on the client to record any error it throws. */
-function recordCatcherThrows(
-  wretch: WretchInstance,
-  onCatcherThrow: (thrown: unknown) => void,
-): WretchInstance {
-  let instance = wretch
-  // `_catchers` is part of wretch's public Wretch type; re-registering keeps every key.
-  for (const [errorId, catcher] of wretch._catchers) {
-    instance = instance.catcher(errorId, async (error, request) => {
+type CatcherRecorder = {
+  onGiven: (error: unknown) => void
+  onThrown: (thrown: unknown) => void
+}
+
+/** Wraps each catcher on the client to record the error it is given and any error it throws. */
+function recordCatcherErrors(request: WretchInstance, recorder: CatcherRecorder): WretchInstance {
+  let instance = request
+  // `_catchers` is wretch-internal but typed; re-registering an id replaces its catcher.
+  for (const [errorId, catcher] of request._catchers) {
+    if (typeof catcher !== 'function') {
+      continue
+    }
+    instance = instance.catcher(errorId, async (error, retriedRequest) => {
+      recorder.onGiven(error)
       try {
-        return await catcher(error, request)
+        return await catcher(error, retriedRequest)
       } catch (thrown) {
-        onCatcherThrow(thrown)
+        recorder.onThrown(thrown)
         throw thrown
       }
     })
@@ -217,9 +223,9 @@ function recordCatcherThrows(
  * also returned as `Either.error`; pass `captureAsError: false` to receive all
  * contract-defined responses as `Either.result`.
  *
- * If a catcher added with `.catcher()`, `.catcherFallback()` or inside `.defer()` throws an
- * error of its own, that error is rethrown. When a catcher throws a wretch HTTP error, the
- * last error response is parsed as usual.
+ * If a catcher added with `.catcher()`, `.catcherFallback()` or inside `.defer()` throws a
+ * new error of its own, that error is rethrown. When a catcher passes on the error it was
+ * given, or throws a wretch HTTP error, this request's last error response is parsed.
  *
  * @see {@link ContractRequestOptions} for cancellation and other options.
  */
@@ -259,26 +265,24 @@ export async function sendByApiContract<
   const fullUrl = queryString ? `${path}?${queryString}` : path
   const bodyString = params.body !== undefined ? JSON.stringify(params.body) : undefined
 
-  // Clones of this request's non-2xx responses, taken before wretch reads the body to build a
-  // WretchError, so the contract can still parse the error body.
-  const errorResponseClones: Response[] = []
+  // The last non-2xx response this call sees, retries and replays included, cloned before
+  // wretch reads its body to build a WretchError, so the contract can still parse it.
+  let lastErrorResponseClone: Response | undefined
+
+  const discardLastErrorResponseClone = () => {
+    lastErrorResponseClone?.body?.cancel().catch(() => undefined)
+  }
 
   const cloneErrorResponseMiddleware: ConfiguredMiddleware = (next) => async (url, opts) => {
     const fetchResponse = await next(url, opts)
     if (!fetchResponse.ok) {
-      errorResponseClones.push(fetchResponse.clone())
+      discardLastErrorResponseClone()
+      lastErrorResponseClone = fetchResponse.clone()
     }
     return fetchResponse
   }
 
-  const discardErrorResponseClones = (keep?: Response) => {
-    for (const clone of errorResponseClones) {
-      if (clone !== keep) {
-        clone.body?.cancel().catch(() => undefined)
-      }
-    }
-  }
-
+  const errorsGivenToCatchers = new Set<unknown>()
   const errorsThrownByCatchers = new Set<unknown>()
 
   const wretchInstance = wretch
@@ -288,7 +292,10 @@ export async function sendByApiContract<
     .options({ signal: params.signal })
     // Added last, so it also wraps the catchers the client's own defers add.
     .defer((request) =>
-      recordCatcherThrows(request, (thrown) => errorsThrownByCatchers.add(thrown)),
+      recordCatcherErrors(request, {
+        onGiven: (error) => errorsGivenToCatchers.add(error),
+        onThrown: (thrown) => errorsThrownByCatchers.add(thrown),
+      }),
     )
 
   let response: Response
@@ -299,17 +306,16 @@ export async function sendByApiContract<
     } else {
       response = await wretchInstance[apiContract.method](bodyString).res()
     }
-    discardErrorResponseClones()
+    discardLastErrorResponseClone()
   } catch (err) {
-    // A wretch HTTP error is parsed from the last error response as before, even from a catcher.
-    const isCatcherOwnError = errorsThrownByCatchers.has(err) && !isWretchHttpError(err)
-    const latestErrorResponseClone = errorResponseClones.at(-1)
-    if (isCatcherOwnError || !latestErrorResponseClone) {
-      discardErrorResponseClones()
+    // A passed-on error or a wretch HTTP error is parsed from the last error response.
+    const isCatcherOwnError =
+      errorsThrownByCatchers.has(err) && !errorsGivenToCatchers.has(err) && !isWretchHttpError(err)
+    if (isCatcherOwnError || !lastErrorResponseClone) {
+      discardLastErrorResponseClone()
       throw err
     }
-    discardErrorResponseClones(latestErrorResponseClone)
-    response = latestErrorResponseClone
+    response = lastErrorResponseClone
   }
 
   const normalizedHeaders = normalizeResponseHeaders(response)
