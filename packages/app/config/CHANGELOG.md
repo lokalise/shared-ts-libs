@@ -1,5 +1,11 @@
 # @lokalise/config
 
+## 1.0.3
+
+### Patch Changes
+
+- 3a3f97d: Accept `APP_PORT=0` in `createAppConfigSchema()`, so the OS can pick a free port (e.g. in tests). The range was 1-65535 and is now 0-65535. `REDIS_PORT` still requires 1-65535.
+
 ## 1.0.2
 
 ### Patch Changes
