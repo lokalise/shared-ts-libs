@@ -277,10 +277,13 @@ describe('sendByApiContract', () => {
 
         const result = await sendByApiContract(client, contract, {})
 
-        expect(result.error).toMatchObject({ statusCode: 401 })
+        expect(result.error).toMatchObject({
+          statusCode: 401,
+          body: '{"message":"unauthorized"}',
+        })
       })
 
-      it('parses the response for a thrown value shaped like a wretch HTTP error', async () => {
+      it('parses the response when a catcher throws a wretch-HTTP-shaped value', async () => {
         const client = buildClient().catcher(401, (error) => {
           throw { response: error.response, status: error.status, url: error.url }
         })
@@ -289,7 +292,10 @@ describe('sendByApiContract', () => {
 
         const result = await sendByApiContract(client, contract, {})
 
-        expect(result.error).toMatchObject({ statusCode: 401 })
+        expect(result.error).toMatchObject({
+          statusCode: 401,
+          body: '{"message":"unauthorized"}',
+        })
       })
 
       it('parses the response when a catcher throws the response it was given', async () => {
@@ -301,7 +307,10 @@ describe('sendByApiContract', () => {
 
         const result = await sendByApiContract(client, contract, {})
 
-        expect(result.error).toMatchObject({ statusCode: 401 })
+        expect(result.error).toMatchObject({
+          statusCode: 401,
+          body: '{"message":"unauthorized"}',
+        })
       })
 
       it("keeps the error body readable when a catcher's replay finishes later", async () => {
@@ -345,7 +354,10 @@ describe('sendByApiContract', () => {
 
         const result = await sendByApiContract(client, contract, {})
 
-        expect(result.error).toMatchObject({ statusCode: 401 })
+        expect(result.error).toMatchObject({
+          statusCode: 401,
+          body: '{"message":"unauthorized"}',
+        })
       })
 
       it('parses the response when a catcher rethrows a non-HTTP error it was given', async () => {
@@ -362,7 +374,7 @@ describe('sendByApiContract', () => {
         expect(result.error).toMatchObject({ statusCode: 503 })
       })
 
-      it('parses the response for a rethrown wretch HTTP error the catcher was given', async () => {
+      it('parses the response when a catcher rethrows the wretch HTTP error it got', async () => {
         const client = buildClient().catcher(404, (error) => {
           throw error
         })
@@ -398,6 +410,7 @@ describe('sendByApiContract', () => {
         // Vitest fails the run on an unhandled rejection from discarding the broken body.
         const result = await sendByApiContract(client, contract, {})
 
+        expect(brokenBody.destroyed).toBe(true)
         expect(givenErrors).toEqual([expect.any(TypeError)])
         expect(result.result).toMatchObject({ statusCode: 200, body: { id: 1 } })
       })

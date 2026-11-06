@@ -191,7 +191,7 @@ type CatcherValues = {
   thrown: Set<unknown>
 }
 
-function wrapCatchersToRecordErrors(
+function wrapCatchersToRecordValues(
   request: WretchInstance,
   catcherValues: CatcherValues,
 ): WretchInstance {
@@ -229,8 +229,9 @@ function wrapCatchersToRecordErrors(
  * contract-defined responses as `Either.result`.
  *
  * If a catcher added with `.catcher()`, `.catcherFallback()` or inside `.defer()` throws a
- * new error, that error is rethrown. When a catcher rethrows the error it was given or its
- * response, or throws a wretch HTTP error, this request's last error response is parsed.
+ * new error, that error is rethrown. When a catcher rethrows the error it was given or that
+ * error's response, or throws a wretch HTTP error, the last error response this call received
+ * is parsed, replays included.
  * A wretch HTTP error is any value with `response`, `status` and `url`.
  *
  * @see {@link ContractRequestOptions} for cancellation and other options.
@@ -300,7 +301,7 @@ export async function sendByApiContract<
     .headers(Object.fromEntries(requestHeaders))
     .options({ signal: params.signal })
     // Added last, so it also wraps the catchers the client's own defers add.
-    .defer((request) => wrapCatchersToRecordErrors(request, catcherValues))
+    .defer((request) => wrapCatchersToRecordValues(request, catcherValues))
 
   let response: Response
 
@@ -314,9 +315,9 @@ export async function sendByApiContract<
     discardLastErrorResponseClone()
   } catch (err) {
     settled = true
-    const catcherThrewNewError =
+    const shouldRethrowCatcherError =
       catcherValues.thrown.has(err) && !catcherValues.given.has(err) && !isWretchHttpError(err)
-    if (catcherThrewNewError || !lastErrorResponseClone) {
+    if (shouldRethrowCatcherError || !lastErrorResponseClone) {
       discardLastErrorResponseClone()
       throw err
     }
