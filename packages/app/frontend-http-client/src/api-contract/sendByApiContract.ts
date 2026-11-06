@@ -191,7 +191,6 @@ type CatcherErrors = {
   thrown: Set<unknown>
 }
 
-/** Wraps each catcher on the client to record what it is given and what it throws. */
 function recordCatcherErrors(
   request: WretchInstance,
   catcherErrors: CatcherErrors,
@@ -230,8 +229,9 @@ function recordCatcherErrors(
  * contract-defined responses as `Either.result`.
  *
  * If a catcher added with `.catcher()`, `.catcherFallback()` or inside `.defer()` throws a
- * new error, that error is rethrown. When a catcher rethrows the error it was given, or
- * throws a wretch HTTP error, this request's last error response is parsed.
+ * new error, that error is rethrown. When a catcher rethrows the error it was given or its
+ * response, or throws a wretch HTTP error, this request's last error response is parsed.
+ * A wretch HTTP error is any value with `response`, `status` and `url`.
  *
  * @see {@link ContractRequestOptions} for cancellation and other options.
  */
@@ -282,10 +282,11 @@ export async function sendByApiContract<
 
   const cloneErrorResponseMiddleware: ConfiguredMiddleware = (next) => async (url, opts) => {
     const fetchResponse = await next(url, opts)
-    // A replay a catcher left running can finish after this call has returned its clone.
+    // A replay a catcher left running can finish later. It must not cancel the returned clone.
     if (!fetchResponse.ok && !settled) {
+      const clone = fetchResponse.clone()
       discardLastErrorResponseClone()
-      lastErrorResponseClone = fetchResponse.clone()
+      lastErrorResponseClone = clone
     }
     return fetchResponse
   }
@@ -312,10 +313,10 @@ export async function sendByApiContract<
     discardLastErrorResponseClone()
   } catch (err) {
     settled = true
-    // Rethrow an error a catcher created. Anything else is parsed from the last error response.
-    const isCatcherCreatedError = catcherErrors.thrown.has(err) && !catcherErrors.given.has(err)
-    const isCatcherOwnError = isCatcherCreatedError && !isWretchHttpError(err)
-    if (isCatcherOwnError || !lastErrorResponseClone) {
+    // Rethrow a new non-HTTP error from a catcher. Otherwise parse the last error response, if any.
+    const catcherThrewNewError = catcherErrors.thrown.has(err) && !catcherErrors.given.has(err)
+    const shouldRethrowCatcherError = catcherThrewNewError && !isWretchHttpError(err)
+    if (shouldRethrowCatcherError || !lastErrorResponseClone) {
       discardLastErrorResponseClone()
       throw err
     }

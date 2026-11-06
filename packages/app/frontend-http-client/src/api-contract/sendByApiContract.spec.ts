@@ -1,3 +1,4 @@
+import { PassThrough } from 'node:stream'
 import {
   type BlobResponseHandle,
   blobBody,
@@ -268,7 +269,7 @@ describe('sendByApiContract', () => {
         await expect(sendByApiContract(client, contract, {})).rejects.toBe('session expired')
       })
 
-      it('parses the response when a catcher throws a wretch error from another request', async () => {
+      it("parses the response when a catcher fails with another request's error", async () => {
         const client = buildClient().catcher(401, () => buildClient().get('/refresh').res())
 
         await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
@@ -279,7 +280,7 @@ describe('sendByApiContract', () => {
         expect(result.error).toMatchObject({ statusCode: 401 })
       })
 
-      it('parses the response when a catcher throws a wretch-shaped value', async () => {
+      it('parses the response when a catcher throws a wretch-HTTP-shaped value', async () => {
         const client = buildClient().catcher(401, (error) => {
           throw { response: error.response, status: error.status, url: error.url }
         })
@@ -314,8 +315,9 @@ describe('sendByApiContract', () => {
             401: { content: { 'text/plain': blobBody() } },
           },
         })
+        let replay: Promise<unknown> | undefined
         const client = buildClient().catcher(401, (error, request) => {
-          void request
+          replay = request
             .fetch()
             .res()
             .catch(() => undefined)
@@ -326,10 +328,10 @@ describe('sendByApiContract', () => {
           .forGet('/products/1')
           .once()
           .thenReply(401, 'first', { 'content-type': 'text/plain' })
-        await mockServer.forGet('/products/1').delay(50).thenReply(500, 'replay')
+        await mockServer.forGet('/products/1').thenReply(500, 'replay')
 
         const result = await sendByApiContract(client, blobErrorContract, {})
-        await new Promise((resolve) => setTimeout(resolve, 150))
+        await replay
 
         expect(result.error).toMatchObject({ statusCode: 401 })
         expect(await (result.error as { body: BlobResponseHandle }).body.text()).toBe('first')
@@ -359,7 +361,7 @@ describe('sendByApiContract', () => {
         expect(result.error).toMatchObject({ statusCode: 503 })
       })
 
-      it('parses the response when a catcher rethrows the WretchError it was given', async () => {
+      it('parses the response when a catcher rethrows the wretch error it was given', async () => {
         const client = buildClient().catcher(404, (error) => {
           throw error
         })
@@ -369,6 +371,20 @@ describe('sendByApiContract', () => {
         const result = await sendByApiContract(client, contract, {})
 
         expect(result.error).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
+      })
+
+      it('discards a broken error body quietly when a catcher replay succeeds', async () => {
+        const client = buildClient().catcherFallback((_error, request) => request.fetch().res())
+        const brokenBody = new PassThrough()
+        brokenBody.write('partial')
+        setTimeout(() => brokenBody.destroy(new Error('connection cut')), 10)
+
+        await mockServer.forGet('/products/1').once().thenStream(401, brokenBody)
+        await mockServer.forGet('/products/1').thenJson(200, { id: 1 })
+
+        const result = await sendByApiContract(client, contract, {})
+
+        expect(result.result).toMatchObject({ statusCode: 200, body: { id: 1 } })
       })
 
       it('returns the result of a request a catcher replays', async () => {
