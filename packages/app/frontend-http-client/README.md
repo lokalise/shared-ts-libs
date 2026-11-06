@@ -207,7 +207,8 @@ if (response.error instanceof UnexpectedResponseError) {
 | ---------------------------------------------------------------------------------------- | ----------------------------- |
 | Network error                                                                            | Browser / fetch network error |
 | Manual cancellation — `signal` fired                                                     | `AbortError` (`DOMException`) |
-| A catcher on the wretch client throws a new error, for example `.catcher(401, …)`        | Whatever the catcher threw    |
+| A catcher on the wretch client throws its own error, for example `.catcher(401, …)`      | Whatever the catcher threw    |
+| `retry` runs out of attempts without `resolveWithLatestResponse: true`                   | wretch's retry error          |
 | Response body contains malformed JSON                                                    | `SyntaxError`                 |
 | Response body fails JSON schema validation                                               | `ZodError`                    |
 | Response headers fail schema validation — `responseHeaderSchema` defined in the contract | `ZodError`                    |
@@ -215,7 +216,7 @@ if (response.error instanceof UnexpectedResponseError) {
 | SSE event data contains malformed JSON                                                   | `SyntaxError`                 |
 | SSE event data fails schema validation                                                   | `ZodError`                    |
 
-The catcher row covers catchers added with `.catcher()`, `.catcherFallback()` or inside `.defer()`. When such a catcher rethrows the error it was given or that error's response, or throws a wretch HTTP error, the last error response this call received is parsed as usual, including retries and replays. A wretch HTTP error is any value with `response`, `status` and `url`, so an app error that copies those fields counts as one. Catchers added in a `.resolve()` callback or by an addon's `beforeRequest` are not covered.
+When a catcher rethrows the error it was given, or that error's response, the response is still parsed into an `Either`. The same goes for any wretch HTTP error, which is any value with `response`, `status` and `url`. An app error that copies those three fields is parsed too.
 
 ```ts
 try {
@@ -227,7 +228,7 @@ try {
     // Either.result — success
   }
 } catch (err) {
-  // Network error, abort, schema/parse failure, or a new error a client catcher threw
+  // Network error, abort, schema/parse failure, or a client catcher's own error
 }
 ```
 
