@@ -141,6 +141,40 @@ Returns `{ outcome, total, applied, skipped }`, where `outcome` is `'baselined'`
 
 ---
 
+### applyConcurrentIndexes
+
+Builds PostgreSQL indexes with `CREATE INDEX CONCURRENTLY` before `drizzle-kit migrate`. drizzle-orm runs all pending migrations in one transaction, where `CONCURRENTLY` is not allowed, and a plain `CREATE INDEX` blocks writes to the table until the build finishes.
+
+1. Add the index to the Drizzle schema and generate the migration as usual, with `CREATE INDEX IF NOT EXISTS`.
+2. Put the same statement with `CONCURRENTLY IF NOT EXISTS` into a `.sql` file in a folder outside the migrations folder:
+
+   ```sql
+   CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_usage_metric_project" ON "spectre"."usage_metric" ("project_uuid");
+   ```
+
+3. Run it before migrations, e.g. in the migration job:
+
+   ```bash
+   npx apply-concurrent-indexes ./drizzle.config.ts --folder ./src/db/concurrent-indexes && npx drizzle-kit migrate
+   ```
+
+Each run skips valid indexes and builds missing ones. An INVALID index left by a failed build is dropped and built again. An index whose table does not exist yet (fresh database, CI) is skipped, so the regular migration creates both. All files are validated before anything runs; only `CREATE [UNIQUE] INDEX CONCURRENTLY IF NOT EXISTS <name> ON <table> ...` statements separated by `;` are accepted.
+
+Caveats:
+
+- The table and columns must exist before the deploy that adds the index file.
+- The build waits for transactions already open on the table, and its time counts against the migration job deadline.
+- The no-op `CREATE INDEX IF NOT EXISTS` in the Drizzle migration still takes a brief `SHARE` lock on the table.
+
+The library function takes a Drizzle `db` for PostgreSQL, outside a transaction:
+
+```typescript
+const result = await applyConcurrentIndexes({ db, folder: './src/db/concurrent-indexes', log: console.log })
+// { created, rebuilt, existing, missingTable }: lists of index names
+```
+
+---
+
 ### snapshotSchema + diffSchemaSnapshots
 
 Tools for verifying that a fresh `drizzle-kit migrate` against an empty database actually reconstructs the same schema as the original (e.g. Prisma-managed) database.
