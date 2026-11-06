@@ -1,5 +1,11 @@
 # @lokalise/fastify-bullboard-plugin
 
+## 3.1.0
+
+### Minor Changes
+
+- 6b4e918: `basicAuth` now protects every route under an `enableList` path, not just the exact path, so `'/bull'` also guards BullBoard's API and job-mutation routes, which were served without credentials.
+
 ## 3.0.1
 
 ### Patch Changes
