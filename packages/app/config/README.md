@@ -17,7 +17,7 @@ The parsed value is an `AppConfig`.
 | `APP_VERSION`                  | yes      |           |                                                                |
 | `GIT_COMMIT_SHA`               | yes      |           |                                                                |
 | `APP_BIND_ADDRESS`             | no       | `0.0.0.0` |                                                                |
-| `APP_PORT`                     | no       | `3000`    | 1-65535                                                        |
+| `APP_PORT`                     | no       | `3000`    | 0-65535                                                        |
 | `LOG_LEVEL`                    | no       | `info`    | `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
 | `BASE_URL`                     | no       | empty     |                                                                |
 | `METRICS_ENABLED`              | no       | `true`    |                                                                |

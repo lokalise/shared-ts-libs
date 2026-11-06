@@ -58,9 +58,16 @@ describe('createAppConfigSchema', () => {
     })
   })
 
+  it('accepts APP_PORT 0', () => {
+    const config = parseEnv({ ...REQUIRED_ENV, APP_PORT: '0' }, createAppConfigSchema())
+
+    expect(config.port).toBe(0)
+  })
+
   it.each([
     ['a missing NODE_ENV', { ...REQUIRED_ENV, NODE_ENV: undefined }],
     ['an unknown APP_ENV', { ...REQUIRED_ENV, APP_ENV: 'qa' }],
+    ['a negative APP_PORT', { ...REQUIRED_ENV, APP_PORT: '-1' }],
     ['an unknown log level', { ...REQUIRED_ENV, LOG_LEVEL: 'verbose' }],
     ['a shutdown timeout above 30s', { ...REQUIRED_ENV, GRACEFUL_SHUTDOWN_TIMEOUT_MS: '30001' }],
   ])('rejects %s', (_, env) => {
