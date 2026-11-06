@@ -175,7 +175,7 @@ async function parseBody(response: Response, resolvedEntry: ResponseKind) {
   }
 }
 
-/** wretch's HTTP error, checked by shape because a client may use another copy of wretch. */
+/** Matches wretch's `WretchError` by shape, because a client may use another copy of wretch. */
 function isWretchHttpError(error: unknown): boolean {
   return (
     typeof error === 'object' &&
@@ -197,7 +197,7 @@ function isWretchHttpError(error: unknown): boolean {
  * also returned as `Either.error`; pass `captureAsError: false` to receive all
  * contract-defined responses as `Either.result`.
  *
- * Any error other than wretch's HTTP error is rethrown, including a client catcher's own error.
+ * Rethrows anything but a wretch HTTP error or a `Response`, including a catcher's own error.
  *
  * @see {@link ContractRequestOptions} for cancellation and other options.
  */
@@ -270,10 +270,12 @@ export async function sendByApiContract<
     /* v8 ignore stop */
   } catch (err) {
     const isHttpError = isWretchHttpError(err) || err instanceof Response
-    if (!clonedErrorResponse || !isHttpError) {
+    if (clonedErrorResponse && isHttpError) {
+      response = clonedErrorResponse
+    } else {
+      clonedErrorResponse?.body?.cancel().catch(() => undefined)
       throw err
     }
-    response = clonedErrorResponse
   }
 
   const normalizedHeaders = normalizeResponseHeaders(response)

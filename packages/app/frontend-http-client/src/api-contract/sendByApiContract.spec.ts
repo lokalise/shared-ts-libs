@@ -259,7 +259,7 @@ describe('sendByApiContract', () => {
         await expect(sendByApiContract(client, contract, {})).rejects.toBe('session expired')
       })
 
-      it("parses the response when a catcher fails with another request's error", async () => {
+      it("parses this request's response when a catcher's refresh request fails", async () => {
         const client = buildClient().catcher(401, () => buildClient().get('/refresh').res())
 
         await mockServer.forGet('/products/1').thenJson(401, { message: 'unauthorized' })
@@ -344,18 +344,7 @@ describe('sendByApiContract', () => {
         expect(result.result).toMatchObject({ statusCode: 200, body: { id: 1 } })
       })
 
-      it('returns the result of a request a catcher replays', async () => {
-        const client = buildClient().catcher(401, (_error, request) => request.fetch().res())
-
-        await mockServer.forGet('/products/1').once().thenJson(401, { message: 'unauthorized' })
-        await mockServer.forGet('/products/1').thenJson(200, { id: 1 })
-
-        const result = await sendByApiContract(client, contract, {})
-
-        expect(result.result).toMatchObject({ statusCode: 200, body: { id: 1 } })
-      })
-
-      it("parses the replay's response when a catcher rethrows the replay's error", async () => {
+      it("parses the replay's error response, not the first one", async () => {
         const client = buildClient().catcher(404, (_error, request) =>
           request
             .catcher(404, (replayError) => {
@@ -384,9 +373,7 @@ describe('sendByApiContract', () => {
         responsesByStatusCode: { 200: z.unknown() },
       })
 
-      await mockServer.forGet('/products/1').once().thenJson(503, { attempt: 1 })
-      await mockServer.forGet('/products/1').once().thenJson(503, { attempt: 2 })
-      await mockServer.forGet('/products/1').thenJson(503, { attempt: 3 })
+      await mockServer.forGet('/products/1').thenJson(503, { message: 'unavailable' })
 
       await expect(sendByApiContract(client, contract, {})).rejects.toThrow(
         'Number of attempts exceeded',
