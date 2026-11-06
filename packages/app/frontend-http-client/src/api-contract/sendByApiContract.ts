@@ -231,8 +231,8 @@ function wrapCatchersToRecordValues(
  * If a catcher added with `.catcher()`, `.catcherFallback()` or inside `.defer()` throws a
  * new error, that error is rethrown. When a catcher rethrows the error it was given or that
  * error's response, or throws a wretch HTTP error, the last error response this call received
- * is parsed, replays included.
- * A wretch HTTP error is any value with `response`, `status` and `url`.
+ * is parsed, including retries and replays. A wretch HTTP error is any value with `response`,
+ * `status` and `url`, so an app error that copies those fields counts as one.
  *
  * @see {@link ContractRequestOptions} for cancellation and other options.
  */

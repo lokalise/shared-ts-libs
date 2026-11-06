@@ -371,7 +371,10 @@ describe('sendByApiContract', () => {
 
         const result = await sendByApiContract(client, contract, {})
 
-        expect(result.error).toMatchObject({ statusCode: 503 })
+        expect(result.error).toMatchObject({
+          statusCode: 503,
+          body: '{"message":"unavailable"}',
+        })
       })
 
       it('parses the response when a catcher rethrows the wretch HTTP error it got', async () => {
