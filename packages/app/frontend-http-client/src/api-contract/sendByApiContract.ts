@@ -228,11 +228,8 @@ function wrapCatchersToRecordValues(
  * also returned as `Either.error`; pass `captureAsError: false` to receive all
  * contract-defined responses as `Either.result`.
  *
- * If a catcher added with `.catcher()`, `.catcherFallback()` or inside `.defer()` throws a
- * new error, that error is rethrown. When a catcher rethrows the error it was given or that
- * error's response, or throws a wretch HTTP error, the last error response this call received
- * is parsed, including retries and replays. A wretch HTTP error is any value with `response`,
- * `status` and `url`, so an app error that copies those fields counts as one.
+ * A new error that a catcher on the client throws is rethrown. The README's Throws section
+ * lists the catcher errors that are parsed instead.
  *
  * @see {@link ContractRequestOptions} for cancellation and other options.
  */
@@ -272,8 +269,7 @@ export async function sendByApiContract<
   const fullUrl = queryString ? `${path}?${queryString}` : path
   const bodyString = params.body !== undefined ? JSON.stringify(params.body) : undefined
 
-  // The last non-2xx response this call sees, retries and replays included, cloned before
-  // wretch reads its body to build a WretchError, so the contract can still parse it.
+  // Cloned before wretch reads the body to build a WretchError, so the contract can parse it.
   let lastErrorResponseClone: Response | undefined
   let settled = false
 
@@ -283,7 +279,6 @@ export async function sendByApiContract<
 
   const cloneErrorResponseMiddleware: ConfiguredMiddleware = (next) => async (url, opts) => {
     const fetchResponse = await next(url, opts)
-    // Clone before discarding, so a clone that throws leaves the earlier one usable.
     // Once settled, a replay that a catcher left running must not cancel the clone in use.
     if (!fetchResponse.ok && !settled) {
       const clone = fetchResponse.clone()

@@ -410,7 +410,7 @@ describe('sendByApiContract', () => {
         await mockServer.forGet('/products/1').once().thenStream(401, brokenBody)
         await mockServer.forGet('/products/1').thenJson(200, { id: 1 })
 
-        // Vitest fails the run on an unhandled rejection from discarding the broken body.
+        // An unhandled rejection from the discard fails the Vitest run.
         const result = await sendByApiContract(client, contract, {})
 
         expect(brokenBody.destroyed).toBe(true)
