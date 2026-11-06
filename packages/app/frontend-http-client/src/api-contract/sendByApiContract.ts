@@ -191,6 +191,7 @@ type CatcherValues = {
   thrown: Set<unknown>
 }
 
+/** Returns a copy of the client whose catchers record what they are given and what they throw. */
 function wrapCatchersToRecordValues(
   request: WretchInstance,
   catcherValues: CatcherValues,
