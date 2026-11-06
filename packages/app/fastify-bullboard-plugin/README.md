@@ -46,7 +46,11 @@ await app.register(bullBoard, {
 
 Each `enableList` entry protects that path and every route under it, so `'/bull'` covers the dashboard page,
 its API (`/bull/api/queues/...`, including the job retry/clean/obliterate endpoints) and its static assets. It does
-not cover routes that only share the string prefix, such as `/bullet`. The root path `'/'` is matched exactly.
+not cover routes that only share the string prefix, such as `/bullet`. A trailing slash makes no difference
+(`'/bull/'` behaves like `'/bull'`), empty entries are ignored, and the root path `'/'` is matched exactly.
+
+Entries are full route paths. If BullBoard is registered inside a plugin with its own prefix, list the full path,
+e.g. `'/admin/bull'` for a `/bull` mount under `/admin`.
 
 Versions before this fix only protected the exact paths listed, which left everything under `/bull` reachable
 without credentials. Upgrade if you register `basicAuth` with the BullBoard base path.

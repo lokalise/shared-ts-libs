@@ -1,5 +1,5 @@
 ---
-"@lokalise/fastify-bullboard-plugin": patch
+"@lokalise/fastify-bullboard-plugin": minor
 ---
 
-Fix `basicAuth` leaving BullBoard's routes unauthenticated. An `enableList` entry now protects that path and every route under it, so `'/bull'` covers `/bull/`, `/bull/api/queues/...` (including the job retry, clean and obliterate endpoints) and `/bull/static/*`. Before, only the exact path was guarded, so only the bare `/bull` page asked for credentials. Routes that only share the string prefix, like `/bullet`, are still unprotected, and the root path `'/'` is still matched exactly.
+`basicAuth` now protects every route under an `enableList` path, not just the exact path, so `'/bull'` also guards BullBoard's API and job-mutation routes, which were served without credentials.

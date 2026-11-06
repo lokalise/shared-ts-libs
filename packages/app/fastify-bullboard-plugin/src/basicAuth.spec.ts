@@ -1,3 +1,5 @@
+import { createBullBoard } from '@bull-board/api'
+import { FastifyAdapter } from '@bull-board/fastify'
 import fastifyAuth from '@fastify/auth'
 import fastify, { type FastifyInstance } from 'fastify'
 import { beforeAll, describe, expect } from 'vitest'
@@ -140,6 +142,110 @@ describe('basicAuth', () => {
     it('does not protect routes outside the listed path', async () => {
       const response = await prefixedApp.inject().get('/health').end()
       expect(response.statusCode).toBe(200)
+    })
+  })
+
+  describe('enableList normalization', () => {
+    async function initNormalizationApp(enableList: string[]) {
+      const normalizationApp = fastify()
+      await normalizationApp.register(basicAuth, {
+        config: { isEnabled: true, username: 'test', password: 'test' },
+        enableList: new Set(enableList),
+      })
+      for (const url of ['/bull', '/bull/', '/bull/api/queues', '/health']) {
+        normalizationApp.get(url, (_req, reply) => reply.status(200).send({ url }))
+      }
+      await normalizationApp.ready()
+      return normalizationApp
+    }
+
+    it('protects the bare path when the entry has a trailing slash', async () => {
+      const normalizationApp = await initNormalizationApp(['/bull/'])
+
+      expect((await normalizationApp.inject().get('/bull').end()).statusCode).toBe(401)
+      expect((await normalizationApp.inject().get('/bull/').end()).statusCode).toBe(401)
+      expect((await normalizationApp.inject().get('/bull/api/queues').end()).statusCode).toBe(401)
+      expect((await normalizationApp.inject().get('/health').end()).statusCode).toBe(200)
+
+      await normalizationApp.close()
+    })
+
+    it('ignores empty entries instead of protecting every route', async () => {
+      const normalizationApp = await initNormalizationApp(['/bull', ''])
+
+      expect((await normalizationApp.inject().get('/bull/api/queues').end()).statusCode).toBe(401)
+      expect((await normalizationApp.inject().get('/health').end()).statusCode).toBe(200)
+
+      await normalizationApp.close()
+    })
+
+    it('matches the root path exactly', async () => {
+      const normalizationApp = await initNormalizationApp(['/'])
+
+      expect((await normalizationApp.inject().get('/bull/api/queues').end()).statusCode).toBe(200)
+      expect((await normalizationApp.inject().get('/health').end()).statusCode).toBe(200)
+
+      await normalizationApp.close()
+    })
+  })
+
+  describe('bull-board mount', () => {
+    const validAuthHeader = `Basic ${Buffer.from('test:test').toString('base64')}`
+
+    async function initBullBoardApp(enableList: string[], parentPrefix?: string) {
+      const bullBoardApp = fastify()
+      await bullBoardApp.register(basicAuth, {
+        config: { isEnabled: true, username: 'test', password: 'test' },
+        enableList: new Set(enableList),
+      })
+
+      const serverAdapter = new FastifyAdapter()
+      createBullBoard({ queues: [], serverAdapter })
+      serverAdapter.setBasePath(`${parentPrefix ?? ''}/bull`)
+
+      await bullBoardApp.register(
+        async (scope) => {
+          await scope.register(serverAdapter.registerPlugin(), { prefix: '/bull' })
+        },
+        { prefix: parentPrefix ?? '' },
+      )
+      await bullBoardApp.ready()
+      return bullBoardApp
+    }
+
+    it('protects the real bull-board routes', async () => {
+      const bullBoardApp = await initBullBoardApp(['/bull'])
+
+      const unauthenticatedRequests = [
+        { method: 'GET', url: '/bull' },
+        { method: 'GET', url: '/bull/api/queues' },
+        { method: 'GET', url: '/bull/api/queues/my-queue/1' },
+        { method: 'PUT', url: '/bull/api/queues/my-queue/obliterate' },
+        { method: 'PUT', url: '/bull/api/queues/my-queue/1/retry' },
+      ] as const
+      for (const { method, url } of unauthenticatedRequests) {
+        expect((await bullBoardApp.inject({ method, url })).statusCode, `${method} ${url}`).toBe(
+          401,
+        )
+      }
+
+      const authenticated = await bullBoardApp.inject({
+        method: 'GET',
+        url: '/bull/api/queues',
+        headers: { authorization: validAuthHeader },
+      })
+      expect(authenticated.statusCode).toBe(200)
+
+      await bullBoardApp.close()
+    })
+
+    it('protects bull-board under a parent prefix when the full path is listed', async () => {
+      const bullBoardApp = await initBullBoardApp(['/admin/bull'], '/admin')
+
+      expect((await bullBoardApp.inject().get('/admin/bull').end()).statusCode).toBe(401)
+      expect((await bullBoardApp.inject().get('/admin/bull/api/queues').end()).statusCode).toBe(401)
+
+      await bullBoardApp.close()
     })
   })
 
