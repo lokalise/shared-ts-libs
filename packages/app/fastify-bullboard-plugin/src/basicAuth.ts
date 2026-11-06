@@ -74,7 +74,6 @@ function enableListAuthHandler(enableList: Set<string>): FastifyAuthFunction {
   const protectedPaths = toProtectedPaths(enableList)
 
   return (req, _res, done) => {
-    // If the route is NOT an enableList path or under one, allow through: skip auth
     if (!requiresAuth(req.routeOptions.url, protectedPaths)) {
       return done() // success: skip the rest of the handlers
     }

@@ -52,9 +52,6 @@ not cover routes that only share the string prefix, such as `/bullet`. A trailin
 Entries are full route paths. If BullBoard is registered inside a plugin with its own prefix, list the full path,
 e.g. `'/admin/bull'` for a `/bull` mount under `/admin`.
 
-Versions before this fix only protected the exact paths listed, which left everything under `/bull` reachable
-without credentials. Upgrade if you register `basicAuth` with the BullBoard base path.
-
 ## BullMQ Pro support
 
 The plugin supports both standard BullMQ queues and BullMQ Pro queues, including mixing
