@@ -186,14 +186,14 @@ function isWretchHttpError(error: unknown): boolean {
   )
 }
 
-type CatcherErrors = {
+type CatcherValues = {
   given: Set<unknown>
   thrown: Set<unknown>
 }
 
-function recordCatcherErrors(
+function wrapCatchersToRecordErrors(
   request: WretchInstance,
-  catcherErrors: CatcherErrors,
+  catcherValues: CatcherValues,
 ): WretchInstance {
   let instance = request
   // `_catchers` is wretch-internal but typed. Re-registering an id replaces its catcher.
@@ -202,14 +202,14 @@ function recordCatcherErrors(
       continue
     }
     instance = instance.catcher(errorId, async (error, originalRequest) => {
-      catcherErrors.given.add(error)
+      catcherValues.given.add(error)
       if (error?.response) {
-        catcherErrors.given.add(error.response)
+        catcherValues.given.add(error.response)
       }
       try {
         return await catcher(error, originalRequest)
       } catch (thrown) {
-        catcherErrors.thrown.add(thrown)
+        catcherValues.thrown.add(thrown)
         throw thrown
       }
     })
@@ -282,7 +282,8 @@ export async function sendByApiContract<
 
   const cloneErrorResponseMiddleware: ConfiguredMiddleware = (next) => async (url, opts) => {
     const fetchResponse = await next(url, opts)
-    // A replay a catcher left running can finish later. It must not cancel the returned clone.
+    // Clone before discarding, so a clone that throws leaves the earlier one usable.
+    // Once settled, a replay that a catcher left running must not cancel the clone in use.
     if (!fetchResponse.ok && !settled) {
       const clone = fetchResponse.clone()
       discardLastErrorResponseClone()
@@ -291,7 +292,7 @@ export async function sendByApiContract<
     return fetchResponse
   }
 
-  const catcherErrors: CatcherErrors = { given: new Set(), thrown: new Set() }
+  const catcherValues: CatcherValues = { given: new Set(), thrown: new Set() }
 
   const wretchInstance = wretch
     .middlewares([cloneErrorResponseMiddleware])
@@ -299,7 +300,7 @@ export async function sendByApiContract<
     .headers(Object.fromEntries(requestHeaders))
     .options({ signal: params.signal })
     // Added last, so it also wraps the catchers the client's own defers add.
-    .defer((request) => recordCatcherErrors(request, catcherErrors))
+    .defer((request) => wrapCatchersToRecordErrors(request, catcherValues))
 
   let response: Response
 
@@ -313,10 +314,9 @@ export async function sendByApiContract<
     discardLastErrorResponseClone()
   } catch (err) {
     settled = true
-    // Rethrow a new non-HTTP error from a catcher. Otherwise parse the last error response, if any.
-    const catcherThrewNewError = catcherErrors.thrown.has(err) && !catcherErrors.given.has(err)
-    const shouldRethrowCatcherError = catcherThrewNewError && !isWretchHttpError(err)
-    if (shouldRethrowCatcherError || !lastErrorResponseClone) {
+    const catcherThrewNewError =
+      catcherValues.thrown.has(err) && !catcherValues.given.has(err) && !isWretchHttpError(err)
+    if (catcherThrewNewError || !lastErrorResponseClone) {
       discardLastErrorResponseClone()
       throw err
     }

@@ -8,7 +8,7 @@ import {
 } from '@lokalise/api-contracts'
 import { getLocal } from 'mockttp'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
-import wretch from 'wretch'
+import wretch, { type ConfiguredMiddleware } from 'wretch'
 import { retry } from 'wretch/middlewares'
 import { z } from 'zod/v4'
 import type { WretchInstance } from '../types.ts'
@@ -280,7 +280,7 @@ describe('sendByApiContract', () => {
         expect(result.error).toMatchObject({ statusCode: 401 })
       })
 
-      it('parses the response when a catcher throws a wretch-HTTP-shaped value', async () => {
+      it('parses the response for a thrown value shaped like a wretch HTTP error', async () => {
         const client = buildClient().catcher(401, (error) => {
           throw { response: error.response, status: error.status, url: error.url }
         })
@@ -331,6 +331,7 @@ describe('sendByApiContract', () => {
         await mockServer.forGet('/products/1').thenReply(500, 'replay')
 
         const result = await sendByApiContract(client, blobErrorContract, {})
+        expect(replay).toBeDefined()
         await replay
 
         expect(result.error).toMatchObject({ statusCode: 401 })
@@ -361,7 +362,7 @@ describe('sendByApiContract', () => {
         expect(result.error).toMatchObject({ statusCode: 503 })
       })
 
-      it('parses the response when a catcher rethrows the wretch error it was given', async () => {
+      it('parses the response for a rethrown wretch HTTP error the catcher was given', async () => {
         const client = buildClient().catcher(404, (error) => {
           throw error
         })
@@ -373,17 +374,31 @@ describe('sendByApiContract', () => {
         expect(result.error).toMatchObject({ statusCode: 404, body: { message: 'not found' } })
       })
 
-      it('discards a broken error body quietly when a catcher replay succeeds', async () => {
-        const client = buildClient().catcherFallback((_error, request) => request.fetch().res())
+      it("discards a broken error body quietly when a catcher's replay succeeds", async () => {
         const brokenBody = new PassThrough()
         brokenBody.write('partial')
-        setTimeout(() => brokenBody.destroy(new Error('connection cut')), 10)
+        const cutBodyOnceReceived: ConfiguredMiddleware = (next) => async (url, opts) => {
+          const response = await next(url, opts)
+          if (response.status === 401) {
+            brokenBody.destroy(new Error('connection cut'))
+          }
+          return response
+        }
+        const givenErrors: unknown[] = []
+        const client = buildClient()
+          .middlewares([cutBodyOnceReceived])
+          .catcherFallback((error, request) => {
+            givenErrors.push(error)
+            return request.fetch().res()
+          })
 
         await mockServer.forGet('/products/1').once().thenStream(401, brokenBody)
         await mockServer.forGet('/products/1').thenJson(200, { id: 1 })
 
+        // Vitest fails the run on an unhandled rejection from discarding the broken body.
         const result = await sendByApiContract(client, contract, {})
 
+        expect(givenErrors).toEqual([expect.any(TypeError)])
         expect(result.result).toMatchObject({ statusCode: 200, body: { id: 1 } })
       })
 
