@@ -47,7 +47,13 @@ export const createAppConfigSchema = () => ({
   ),
   port: envvar(
     'APP_PORT',
-    z.coerce.number().int().min(1).max(65535).default(3000).describe('HTTP server listening port'),
+    z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(65535)
+      .default(3000)
+      .describe('HTTP server listening port, 0 to let the OS pick a free one'),
   ),
   logLevel: envvar(
     'LOG_LEVEL',
