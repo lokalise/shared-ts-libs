@@ -208,7 +208,7 @@ if (response.error instanceof UnexpectedResponseError) {
 | Network error                                                                            | Browser / fetch network error |
 | Manual cancellation — `signal` fired                                                     | `AbortError` (`DOMException`) |
 | A catcher on the wretch client throws its own error, for example `.catcher(401, …)`      | Whatever the catcher threw    |
-| `retry` runs out of attempts without `resolveWithLatestResponse: true`                   | `Number of attempts exceeded` |
+| `retry` runs out of attempts without `resolveWithLatestResponse: true`                   | `Error`                       |
 | Response body contains malformed JSON                                                    | `SyntaxError`                 |
 | Response body fails JSON schema validation                                               | `ZodError`                    |
 | Response headers fail schema validation — `responseHeaderSchema` defined in the contract | `ZodError`                    |
@@ -216,7 +216,7 @@ if (response.error instanceof UnexpectedResponseError) {
 | SSE event data contains malformed JSON                                                   | `SyntaxError`                 |
 | SSE event data fails schema validation                                                   | `ZodError`                    |
 
-When a catcher rethrows the error it was given, or that error's response, this request's error response is still parsed into an `Either`. The same goes for any wretch HTTP error, which is any value with `response`, `status` and `url`. An app error that copies those three fields is parsed too.
+When a catcher rethrows the error it was given, or that error's response, the last error response this call received is still parsed into an `Either`. The same goes for any wretch HTTP error, which is any value with `response`, `status` and `url`. An app error that copies those three fields is parsed too.
 
 ```ts
 try {
