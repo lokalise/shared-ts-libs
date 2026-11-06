@@ -104,7 +104,7 @@ const { result } = await sendByApiContract(client, getUser, { pathParams: { user
 
 ### Return type — Either
 
-`sendByApiContract` always returns an `Either`:
+`sendByApiContract` returns an `Either` unless one of the [Throws](#throws) cases applies:
 
 ```ts
 type Either<TError, TResult> =
@@ -122,13 +122,13 @@ type Either<TError, TResult> =
 }
 ```
 
-By default (`captureAsError: true`), the result type only includes success status codes. Non-2xx responses defined in the contract are returned as `Either.error`. Status codes absent from the contract are always returned as `Either.error` with an `UnexpectedResponseError`.
+By default (`captureAsError: true`), the result type only includes success status codes. Non-2xx responses defined in the contract are returned as `Either.error`. Status codes absent from the contract are returned as `Either.error` with an `UnexpectedResponseError`.
 
 ```ts
 const response = await sendByApiContract(client, contract, params)
 
 if (response.error) {
-  // network error or non-2xx response
+  // non-2xx or UnexpectedResponseError
 } else {
   response.result.body // typed to the 2xx response schema
 }
@@ -173,7 +173,7 @@ if (response.result.statusCode === 404) {
 }
 ```
 
-Status codes absent from the contract always surface as `Either.error`, regardless of this option.
+Status codes absent from the contract surface as `Either.error`, regardless of this option.
 
 ### UnexpectedResponseError
 
@@ -207,12 +207,16 @@ if (response.error instanceof UnexpectedResponseError) {
 | ---------------------------------------------------------------------------------------- | ----------------------------- |
 | Network error                                                                            | Browser / fetch network error |
 | Manual cancellation — `signal` fired                                                     | `AbortError` (`DOMException`) |
+| A catcher on the wretch client throws its own error, for example `.catcher(401, …)`      | Whatever the catcher threw    |
+| `retry` runs out of attempts without `resolveWithLatestResponse: true`                   | `Error`                       |
 | Response body contains malformed JSON                                                    | `SyntaxError`                 |
 | Response body fails JSON schema validation                                               | `ZodError`                    |
 | Response headers fail schema validation — `responseHeaderSchema` defined in the contract | `ZodError`                    |
 | SSE event type has no matching schema in the contract                                    | `Error`                       |
 | SSE event data contains malformed JSON                                                   | `SyntaxError`                 |
 | SSE event data fails schema validation                                                   | `ZodError`                    |
+
+When a catcher rethrows the error it was given, or that error's response, the last error response this call received is still parsed into an `Either`. The same goes for any wretch HTTP error, which is any value with `response`, `status` and `url`. An app error that copies those three fields is parsed too.
 
 ```ts
 try {
@@ -224,7 +228,7 @@ try {
     // Either.result — success
   }
 } catch (err) {
-  // Network error, abort, or schema/parse failure
+  // Network error, abort, schema/parse failure, a client catcher's own error, or retry running out of attempts
 }
 ```
 
