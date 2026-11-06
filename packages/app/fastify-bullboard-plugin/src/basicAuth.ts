@@ -13,6 +13,11 @@ export type AuthConfig = {
 
 type BasicAuthOptions = {
   config: AuthConfig
+  /**
+   * Paths that require basic auth. Each entry protects the path itself and every route under it,
+   * e.g. `/bull` covers `/bull/`, `/bull/api/queues` and `/bull/static/*`, but not `/bullet`.
+   * The root path `/` is matched exactly, so it does not protect the whole app.
+   */
   enableList: Set<string>
 }
 
@@ -32,10 +37,21 @@ function validate(config: AuthConfig) {
   }
 }
 
+function requiresAuth(url: string | undefined, enableList: Set<string>): boolean {
+  if (!url) return false
+  if (enableList.has(url)) return true
+
+  for (const path of enableList) {
+    if (path === '/') continue
+    if (url.startsWith(path.endsWith('/') ? path : `${path}/`)) return true
+  }
+  return false
+}
+
 function enableListAuthHandler(enableList: Set<string>): FastifyAuthFunction {
   return (req, _res, done) => {
-    // If the route is NOT in enableList, allow through: skip auth
-    if (!req.routeOptions.url || !enableList.has(req.routeOptions.url)) {
+    // If the route is NOT in or under an enableList path, allow through: skip auth
+    if (!requiresAuth(req.routeOptions.url, enableList)) {
       return done() // success: skip the rest of the handlers
     }
     // If the route IS in enableList, fail: go to next handler (basicAuth)

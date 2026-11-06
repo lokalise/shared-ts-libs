@@ -59,6 +59,90 @@ describe('basicAuth', () => {
     })
   })
 
+  describe('prefixed mount', () => {
+    let prefixedApp: FastifyInstance
+    const validAuthHeader = `Basic ${Buffer.from('test:test').toString('base64')}`
+    const invalidAuthHeader = `Basic ${Buffer.from('test:wrong').toString('base64')}`
+
+    const protectedRequests = [
+      { method: 'GET', url: '/bull' },
+      { method: 'GET', url: '/bull/' },
+      { method: 'GET', url: '/bull/api/queues' },
+      { method: 'GET', url: '/bull/static/main.js' },
+      { method: 'PUT', url: '/bull/api/queues/my-queue/1/retry' },
+    ] as const
+
+    beforeAll(async () => {
+      prefixedApp = fastify()
+      await prefixedApp.register(basicAuth, {
+        config: { isEnabled: true, username: 'test', password: 'test' },
+        enableList: new Set(['/bull']),
+      })
+
+      for (const url of [
+        '/bull',
+        '/bull/',
+        '/bull/api/queues',
+        '/bull/static/*',
+        '/bullet',
+        '/health',
+      ]) {
+        prefixedApp.get(url, (_req, reply) => reply.status(200).send({ url }))
+      }
+      prefixedApp.put('/bull/api/queues/:queueName/:jobId/retry', (_req, reply) =>
+        reply.status(200).send({ retried: true }),
+      )
+
+      await prefixedApp.ready()
+    })
+
+    afterAll(async () => {
+      await prefixedApp.close()
+    })
+
+    it.each(protectedRequests)(
+      'returns 401 on $method $url without credentials',
+      async ({ method, url }) => {
+        const response = await prefixedApp.inject({ method, url })
+        expect(response.statusCode).toBe(401)
+      },
+    )
+
+    it.each(protectedRequests)(
+      'returns 401 on $method $url with wrong credentials',
+      async ({ method, url }) => {
+        const response = await prefixedApp.inject({
+          method,
+          url,
+          headers: { authorization: invalidAuthHeader },
+        })
+        expect(response.statusCode).toBe(401)
+      },
+    )
+
+    it.each(protectedRequests)(
+      'returns 200 on $method $url with valid credentials',
+      async ({ method, url }) => {
+        const response = await prefixedApp.inject({
+          method,
+          url,
+          headers: { authorization: validAuthHeader },
+        })
+        expect(response.statusCode).toBe(200)
+      },
+    )
+
+    it('does not protect routes that only share a string prefix', async () => {
+      const response = await prefixedApp.inject().get('/bullet').end()
+      expect(response.statusCode).toBe(200)
+    })
+
+    it('does not protect routes outside the listed path', async () => {
+      const response = await prefixedApp.inject().get('/health').end()
+      expect(response.statusCode).toBe(200)
+    })
+  })
+
   describe('configuration', () => {
     it('does not crash if auth plugin is already installed', async () => {
       const app = fastify()
