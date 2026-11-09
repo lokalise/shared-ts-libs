@@ -249,7 +249,104 @@ describe('basicAuth', () => {
     })
   })
 
+  describe('skipList', () => {
+    let skipListApp: FastifyInstance
+    const validAuthHeader = `Basic ${Buffer.from('test:test').toString('base64')}`
+    const invalidAuthHeader = `Basic ${Buffer.from('test:wrong').toString('base64')}`
+
+    const protectedRequests = [
+      { method: 'GET', url: '/' },
+      { method: 'GET', url: '/bull' },
+      { method: 'GET', url: '/bull/api/queues' },
+      { method: 'GET', url: '/health/deep' },
+      { method: 'GET', url: '/not-registered' },
+    ] as const
+
+    beforeAll(async () => {
+      skipListApp = fastify()
+      await skipListApp.register(basicAuth, {
+        config: { isEnabled: true, username: 'test', password: 'test' },
+        skipList: new Set(['/health', '/metrics']),
+      })
+
+      for (const url of ['/', '/bull', '/bull/api/queues', '/health', '/health/deep', '/metrics']) {
+        skipListApp.get(url, (_req, reply) => reply.status(200).send({ url }))
+      }
+
+      await skipListApp.ready()
+    })
+
+    afterAll(async () => {
+      await skipListApp.close()
+    })
+
+    it.each(['/health', '/metrics'])('does not require auth on skipped %s', async (url) => {
+      const response = await skipListApp.inject().get(url).end()
+      expect(response.statusCode).toBe(200)
+    })
+
+    it.each(protectedRequests)(
+      'returns 401 on $method $url without credentials',
+      async ({ method, url }) => {
+        const response = await skipListApp.inject({ method, url })
+        expect(response.statusCode).toBe(401)
+      },
+    )
+
+    it.each(protectedRequests)(
+      'returns 401 on $method $url with wrong credentials',
+      async ({ method, url }) => {
+        const response = await skipListApp.inject({
+          method,
+          url,
+          headers: { authorization: invalidAuthHeader },
+        })
+        expect(response.statusCode).toBe(401)
+      },
+    )
+
+    it('returns 200 on a protected route with valid credentials', async () => {
+      const response = await skipListApp.inject({
+        method: 'GET',
+        url: '/bull/api/queues',
+        headers: { authorization: validAuthHeader },
+      })
+      expect(response.statusCode).toBe(200)
+    })
+
+    it('returns 404 on an unregistered route with valid credentials', async () => {
+      const response = await skipListApp.inject({
+        method: 'GET',
+        url: '/not-registered',
+        headers: { authorization: validAuthHeader },
+      })
+      expect(response.statusCode).toBe(404)
+    })
+  })
+
   describe('configuration', () => {
+    it('throws if both enableList and skipList are passed', async () => {
+      const app = fastify()
+      // @ts-expect-error -- the two lists are mutually exclusive
+      app.register(basicAuth, {
+        config: { isEnabled: true, username: 'test', password: 'test' },
+        enableList: new Set(['/bull']),
+        skipList: new Set(['/health']),
+      })
+
+      await expect(app.ready()).rejects.toThrow(/mutually exclusive/)
+    })
+
+    it('throws if neither enableList nor skipList is passed', async () => {
+      const app = fastify()
+      // @ts-expect-error -- one of the lists is required
+      app.register(basicAuth, {
+        config: { isEnabled: true, username: 'test', password: 'test' },
+      })
+
+      await expect(app.ready()).rejects.toThrow(/either enableList or skipList is required/)
+    })
+
     it('does not crash if auth plugin is already installed', async () => {
       const app = fastify()
       await app.register(fastifyAuth)

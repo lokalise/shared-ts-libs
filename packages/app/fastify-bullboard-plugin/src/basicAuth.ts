@@ -13,14 +13,27 @@ export type AuthConfig = {
 
 type BasicAuthOptions = {
   config: AuthConfig
-  /**
-   * Paths that require basic auth. Each entry protects the path itself and every route under it,
-   * e.g. `/bull` (or `/bull/`) covers `/bull`, `/bull/api/queues` and `/bull/static/*`, but not `/bullet`.
-   * Entries are full route paths, so include any prefix the protected routes are registered under.
-   * The root path `/` is matched exactly, so it does not protect the whole app. Empty entries are ignored.
-   */
-  enableList: Set<string>
-}
+} & (
+  | {
+      /**
+       * Paths that require basic auth. Each entry protects the path itself and every route under it,
+       * e.g. `/bull` (or `/bull/`) covers `/bull`, `/bull/api/queues` and `/bull/static/*`, but not `/bullet`.
+       * Entries are full route paths, so include any prefix the protected routes are registered under.
+       * The root path `/` is matched exactly, so it does not protect the whole app. Empty entries are ignored.
+       */
+      enableList: Set<string>
+      skipList?: never
+    }
+  | {
+      /**
+       * Route paths that do not require basic auth; every other route does, including unmatched ones.
+       * Entries are matched exactly against the registered route path, e.g. `/health` skips `/health` only,
+       * and `/users/:id` skips that parametric route.
+       */
+      skipList: Set<string>
+      enableList?: never
+    }
+)
 
 function validate(config: AuthConfig) {
   return (
@@ -83,10 +96,32 @@ function enableListAuthHandler(enableList: Set<string>): FastifyAuthFunction {
   }
 }
 
+function skipListAuthHandler(skipList: Set<string>): FastifyAuthFunction {
+  return (req, _res, done) => {
+    if (req.routeOptions.url && skipList.has(req.routeOptions.url)) {
+      return done() // success: skip the rest of the handlers
+    }
+    // Fail here to go to the next handler (basicAuth). String for performance, it also works
+    return done('Needs auth' as unknown as Error)
+  }
+}
+
+function resolveAccessHandler(pluginOptions: BasicAuthOptions): FastifyAuthFunction {
+  const { enableList, skipList } = pluginOptions
+  if (enableList && skipList) {
+    throw new Error('basic-auth: enableList and skipList are mutually exclusive, pass only one')
+  }
+  if (skipList) return skipListAuthHandler(skipList)
+  if (enableList) return enableListAuthHandler(enableList)
+  throw new Error('basic-auth: either enableList or skipList is required')
+}
+
 async function plugin(fastify: FastifyInstance, pluginOptions: BasicAuthOptions): Promise<void> {
   if (!pluginOptions.config.isEnabled) {
     return
   }
+
+  const accessHandler = resolveAccessHandler(pluginOptions)
 
   if (!fastify.auth) {
     await fastify.register(fastifyAuth)
@@ -97,10 +132,7 @@ async function plugin(fastify: FastifyInstance, pluginOptions: BasicAuthOptions)
   })
 
   fastify.after(() => {
-    fastify.addHook(
-      'onRequest',
-      fastify.auth([enableListAuthHandler(pluginOptions.enableList), fastify.basicAuth]),
-    )
+    fastify.addHook('onRequest', fastify.auth([accessHandler, fastify.basicAuth]))
   })
 }
 
