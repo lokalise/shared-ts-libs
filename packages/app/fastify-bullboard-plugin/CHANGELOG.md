@@ -1,5 +1,11 @@
 # @lokalise/fastify-bullboard-plugin
 
+## 3.2.0
+
+### Minor Changes
+
+- aefa97c: `basicAuth` accepts a `skipList` as an alternative to `enableList`: every route requires credentials except the listed route paths, which are matched exactly. Pass one of the two; passing both or neither fails at registration.
+
 ## 3.1.0
 
 ### Minor Changes
