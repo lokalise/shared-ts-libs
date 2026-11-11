@@ -158,6 +158,142 @@ describe('AbstractPeriodicJob', () => {
     await job.dispose()
   })
 
+  it('should run processing only once on asyncRegister with runImmediately', async () => {
+    let counter = 0
+    const job = new FakePeriodicJob(
+      () => {
+        counter++
+        return Promise.resolve()
+      },
+      {
+        scheduler,
+      },
+      {
+        schedule: {
+          intervalInMs: 60000,
+        },
+        runImmediately: true,
+      },
+    )
+
+    await job.asyncRegister()
+    expect(counter).toBe(1)
+
+    // Let any fire-and-forget execution from the scheduler complete
+    await setTimeout(50)
+    expect(counter).toBe(1)
+
+    await job.dispose()
+  })
+
+  it('should not schedule the job when disposed during the first run of asyncRegister', async () => {
+    let counter = 0
+    const job = new FakePeriodicJob(
+      async () => {
+        await setTimeout(50)
+        counter++
+      },
+      {
+        scheduler,
+      },
+      {
+        schedule: {
+          intervalInMs: 10,
+        },
+        runImmediately: true,
+      },
+    )
+
+    const registerPromise = job.asyncRegister()
+    await job.dispose()
+    await registerPromise
+    expect(counter).toBe(1)
+
+    await setTimeout(100)
+    expect(counter).toBe(1)
+    expect(scheduler.existsById(job.jobId)).toBe(false)
+  })
+
+  it('should not silently skip asyncRegister called again after dispose', async () => {
+    const job = new FakePeriodicJob(
+      () => Promise.resolve(),
+      {
+        scheduler,
+      },
+      {
+        schedule: {
+          intervalInMs: 60000,
+        },
+        runImmediately: true,
+      },
+    )
+
+    await job.asyncRegister()
+    await job.dispose()
+
+    await expect(job.asyncRegister()).rejects.toThrow(
+      `Job with an id ${job.jobId} is already registered.`,
+    )
+    expect(() => job.register()).toThrow(`Job with an id ${job.jobId} is already registered.`)
+  })
+
+  it('should schedule the job on asyncRegister after it was disposed during the first run', async () => {
+    let counter = 0
+    const job = new FakePeriodicJob(
+      async () => {
+        await setTimeout(20)
+        counter++
+      },
+      {
+        scheduler,
+      },
+      {
+        schedule: {
+          intervalInMs: 60000,
+        },
+        runImmediately: true,
+      },
+    )
+
+    const registerPromise = job.asyncRegister()
+    await job.dispose()
+    await registerPromise
+    expect(scheduler.existsById(job.jobId)).toBe(false)
+
+    await job.asyncRegister()
+    expect(counter).toBe(2)
+    expect(scheduler.existsById(job.jobId)).toBe(true)
+
+    await job.dispose()
+  })
+
+  it('should not run processing before the first interval on asyncRegister without runImmediately', async () => {
+    let counter = 0
+    const job = new FakePeriodicJob(
+      () => {
+        counter++
+        return Promise.resolve()
+      },
+      {
+        scheduler,
+      },
+      {
+        schedule: {
+          intervalInMs: 100,
+        },
+        runImmediately: false,
+      },
+    )
+
+    await job.asyncRegister()
+    await setTimeout(50)
+    expect(counter).toBe(0)
+
+    await vi.waitUntil(() => counter === 1)
+
+    await job.dispose()
+  })
+
   it('should run processing when using cron expression', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2024, 6, 6, 0, 0, 0))
