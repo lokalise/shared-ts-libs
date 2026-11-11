@@ -55,7 +55,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.4",
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@lokalise/biome-config": "workspace:^",
     "@lokalise/tsconfig": "workspace:^",
     "@vitest/coverage-v8": "^4.1.11",
