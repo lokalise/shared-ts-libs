@@ -76,14 +76,19 @@ describe('httpClient', () => {
       await testClient.close()
     })
 
-    // Counted on the server, so the result does not depend on timing.
-    const mostRequestsInFlight = async (testClient: HttpClient) => {
+    // Counted on the server: the most requests it was handling at the same time.
+    const mostRequestsInFlight = async (
+      testClient: HttpClient,
+      respond: (arrived: number) => Promise<unknown>,
+    ) => {
+      let arrived = 0
       let inFlight = 0
       let mostInFlight = 0
       await mockServer.forGet('/slow').thenCallback(async () => {
+        arrived += 1
         inFlight += 1
         mostInFlight = Math.max(mostInFlight, inFlight)
-        await setTimeout(100)
+        await respond(arrived)
         inFlight -= 1
         return { statusCode: 200, json: { id: '1' } }
       })
@@ -101,11 +106,31 @@ describe('httpClient', () => {
     }
 
     it('sends concurrent requests one at a time on a single connection', async () => {
-      expect(await mostRequestsInFlight(buildClient(mockServer.url))).toBe(1)
+      // The next request leaves only once the previous response is back, however long it takes.
+      const mostInFlight = await mostRequestsInFlight(buildClient(mockServer.url), () =>
+        setTimeout(10),
+      )
+
+      expect(mostInFlight).toBe(1)
     })
 
     it('sends concurrent requests in parallel over several connections', async () => {
-      expect(await mostRequestsInFlight(buildClient(mockServer.url, { connections: 3 }))).toBe(3)
+      let releaseAll = () => {}
+      const allArrived = new Promise<void>((resolve) => {
+        releaseAll = resolve
+      })
+
+      const mostInFlight = await mostRequestsInFlight(
+        buildClient(mockServer.url, { connections: 3 }),
+        (arrived) => {
+          if (arrived === 3) releaseAll()
+          // Each request waits for the other two; the timeout ends a wait they never join, so a
+          // regression fails the test instead of hanging it.
+          return Promise.race([allArrived, setTimeout(2000)])
+        },
+      )
+
+      expect(mostInFlight).toBe(3)
     })
   })
 
