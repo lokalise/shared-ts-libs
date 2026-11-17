@@ -1,7 +1,7 @@
 import type { Readable } from 'node:stream'
 import { setTimeout } from 'node:timers/promises'
 import { getLocal, type Mockttp } from 'mockttp'
-import { Client } from 'undici'
+import { Client, Pool } from 'undici'
 import { afterAll, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { z } from 'zod/v4'
 import { isInternalRequestError } from '../errors/InternalRequestError.ts'
@@ -22,7 +22,7 @@ import {
 import mockProduct1 from './mock-data/mockProduct1.json'
 // @ts-expect-error
 import mockProductsLimit3 from './mock-data/mockProductsLimit3.json'
-import type { HttpRequestContext } from './types.ts'
+import type { HttpClient, HttpRequestContext } from './types.ts'
 
 const TEXT_HEADERS = {
   'content-type': 'text/plain',
@@ -64,6 +64,48 @@ describe('httpClient', () => {
     it('creates a client', () => {
       const testClient = buildClient(mockServer.url)
       expect(testClient).toBeInstanceOf(Client)
+    })
+
+    it('creates a pool when connections are set', async () => {
+      const testClient = buildClient(mockServer.url, { connections: 3 })
+
+      expect(testClient).toBeInstanceOf(Pool)
+      expectTypeOf(testClient).toEqualTypeOf<Pool>()
+      expectTypeOf(buildClient(mockServer.url)).toEqualTypeOf<Client>()
+
+      await testClient.close()
+    })
+
+    // Counted on the server, so the result does not depend on timing.
+    const mostRequestsInFlight = async (testClient: HttpClient) => {
+      let inFlight = 0
+      let mostInFlight = 0
+      await mockServer.forGet('/slow').thenCallback(async () => {
+        inFlight += 1
+        mostInFlight = Math.max(mostInFlight, inFlight)
+        await setTimeout(100)
+        inFlight -= 1
+        return { statusCode: 200, json: { id: '1' } }
+      })
+
+      await Promise.all(
+        [1, 2, 3].map(() =>
+          sendGet(testClient, '/slow', {
+            requestLabel: 'slow',
+            responseSchema: z.object({ id: z.string() }),
+          }),
+        ),
+      )
+      await testClient.close()
+      return mostInFlight
+    }
+
+    it('sends concurrent requests one at a time on a single connection', async () => {
+      expect(await mostRequestsInFlight(buildClient(mockServer.url))).toBe(1)
+    })
+
+    it('sends concurrent requests in parallel over several connections', async () => {
+      expect(await mostRequestsInFlight(buildClient(mockServer.url, { connections: 3 }))).toBe(3)
     })
   })
 

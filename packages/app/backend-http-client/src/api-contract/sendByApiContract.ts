@@ -15,9 +15,9 @@ import {
   type SuccessfulHttpStatusCode,
 } from '@lokalise/api-contracts'
 import { ServerSentEventTransformStream } from 'parse-sse'
-import type { Client, Dispatcher } from 'undici'
+import type { Dispatcher } from 'undici'
 import { REQUEST_ID_HEADER } from '../client/constants.ts'
-import type { HttpRequestContext } from '../client/types.ts'
+import type { HttpClient, HttpRequestContext } from '../client/types.ts'
 import { type RetryConfig, resolveRetryConfig, withRetry } from './retry.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
@@ -238,7 +238,7 @@ export async function sendByApiContract<
   TIsStreaming extends boolean = DefaultStreaming<TApiContract['responsesByStatusCode']>,
   TCaptureAsError extends boolean = true,
 >(
-  client: Client,
+  client: HttpClient,
   apiContract: TApiContract,
   params: ClientRequestParams<TApiContract, TIsStreaming> & ContractRequestOptions<TCaptureAsError>,
 ): Promise<ReturnTypeForContract<TApiContract, TIsStreaming, TCaptureAsError>> {

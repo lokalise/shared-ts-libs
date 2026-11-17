@@ -18,7 +18,7 @@ export {
   TEST_OPTIONS,
   UNKNOWN_RESPONSE_SCHEMA,
 } from './client/constants.ts'
-export type { HttpClient } from './client/httpClient.ts'
+export type { BuildClientOptions, HttpClient } from './client/httpClient.ts'
 export {
   buildClient,
   httpClient,

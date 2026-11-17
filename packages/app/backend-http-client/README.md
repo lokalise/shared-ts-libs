@@ -15,6 +15,13 @@ The library provides methods to implement the client side of HTTP protocols. Pub
     keepAliveTimeout: 4000,
     ```
 
+  - `clientOptions.connections` (optional) – how many connections the client may open to `baseUrl`. Without it, `buildClient()` returns a `Client` with a single connection that carries one request at a time, so concurrent calls on it (`Promise.all`, a concurrency limiter) still run one after another. With it, `buildClient()` returns a [Pool](https://undici.nodejs.org/#/docs/api/Pool) of up to that many connections, and up to that many requests run at once. Both are accepted wherever an `HttpClient` is expected.
+
+    ```ts
+    // Up to five requests to the API in flight at once.
+    const client = buildClient('https://api.example.com', { connections: 5 })
+    ```
+
 - `sendByApiContract()`, the recommended method for making type-safe HTTP requests from an `ApiContract` definition (created with `defineApiContract`);
 - `sendGet()`;
 - `sendGetWithStreamedResponse()`;
