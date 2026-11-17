@@ -64,6 +64,7 @@ describe('httpClient', () => {
     it('creates a client', () => {
       const testClient = buildClient(mockServer.url)
       expect(testClient).toBeInstanceOf(Client)
+      expectTypeOf(testClient).toEqualTypeOf<Client>()
     })
 
     it('creates a pool when connections are set', async () => {
@@ -71,7 +72,6 @@ describe('httpClient', () => {
 
       expect(testClient).toBeInstanceOf(Pool)
       expectTypeOf(testClient).toEqualTypeOf<Pool>()
-      expectTypeOf(buildClient(mockServer.url)).toEqualTypeOf<Client>()
 
       await testClient.close()
     })
