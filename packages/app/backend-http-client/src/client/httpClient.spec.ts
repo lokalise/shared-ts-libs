@@ -8,6 +8,7 @@ import { isInternalRequestError } from '../errors/InternalRequestError.ts'
 import { JSON_HEADERS } from './constants.ts'
 import {
   buildClient,
+  buildPool,
   sendDelete,
   sendGet,
   sendGetWithStreamedResponse,
@@ -66,16 +67,28 @@ describe('httpClient', () => {
       expect(testClient).toBeInstanceOf(Client)
       expectTypeOf(testClient).toEqualTypeOf<Client>()
     })
+  })
 
-    it('creates a pool when connections are set', async () => {
-      const testClient = buildClient(mockServer.url, { connections: 3 })
+  describe('buildPool', () => {
+    it('creates a pool', async () => {
+      const testPool = buildPool(mockServer.url, { connections: 3 })
 
-      expect(testClient).toBeInstanceOf(Pool)
-      expectTypeOf(testClient).toEqualTypeOf<Pool>()
+      expect(testPool).toBeInstanceOf(Pool)
+      expectTypeOf(testPool).toEqualTypeOf<Pool>()
 
-      await testClient.close()
+      await testPool.close()
     })
 
+    it.each([0, -1, 2.5, Number.NaN])('rejects %s connections', (connections) => {
+      expect(() => buildPool(mockServer.url, { connections })).toThrow(
+        `connections must be a positive integer, got ${connections}`,
+      )
+    })
+  })
+
+  // mockttp serves plain HTTP, so these show HTTP/1.1; over HTTP/2 one connection already carries
+  // concurrent requests.
+  describe('concurrent requests', () => {
     // Counted on the server: the most requests it was handling at the same time.
     const mostRequestsInFlight = async (
       testClient: HttpClient,
@@ -93,19 +106,22 @@ describe('httpClient', () => {
         return { statusCode: 200, json: { id: '1' } }
       })
 
-      await Promise.all(
-        [1, 2, 3].map(() =>
-          sendGet(testClient, '/slow', {
-            requestLabel: 'slow',
-            responseSchema: z.object({ id: z.string() }),
-          }),
-        ),
-      )
-      await testClient.close()
+      try {
+        await Promise.all(
+          [1, 2, 3].map(() =>
+            sendGet(testClient, '/slow', {
+              requestLabel: 'slow',
+              responseSchema: z.object({ id: z.string() }),
+            }),
+          ),
+        )
+      } finally {
+        await testClient.close()
+      }
       return mostInFlight
     }
 
-    it('sends concurrent requests one at a time on a single connection', async () => {
+    it('runs them one at a time on a single connection', async () => {
       // The next request leaves only once the previous response is back, however long it takes.
       const mostInFlight = await mostRequestsInFlight(buildClient(mockServer.url), () =>
         setTimeout(10),
@@ -114,19 +130,20 @@ describe('httpClient', () => {
       expect(mostInFlight).toBe(1)
     })
 
-    it('sends concurrent requests in parallel over several connections', async () => {
+    it('runs them in parallel over several connections', async () => {
       let releaseAll = () => {}
       const allArrived = new Promise<void>((resolve) => {
         releaseAll = resolve
       })
 
       const mostInFlight = await mostRequestsInFlight(
-        buildClient(mockServer.url, { connections: 3 }),
+        buildPool(mockServer.url, { connections: 3 }),
         (arrived) => {
           if (arrived === 3) releaseAll()
-          // Each request waits for the other two; the timeout ends a wait they never join, so a
-          // regression fails the test instead of hanging it.
-          return Promise.race([allArrived, setTimeout(2000)])
+          // Each request waits for the other two. The timeout ends a wait they never join, so a
+          // regression fails the assertion well within the test timeout instead of hanging; it
+          // does not hold the process open.
+          return Promise.race([allArrived, setTimeout(1000, undefined, { ref: false })])
         },
       )
 

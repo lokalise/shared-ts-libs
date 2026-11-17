@@ -6,7 +6,7 @@ Opinionated HTTP client for the Node.js backend
 
 The library provides methods to implement the client side of HTTP protocols. Public methods available are:
 
-- `buildClient()`, which returns a [Client](https://undici.nodejs.org/#/docs/api/Client) instance and should be called before any of the following methods. Type client handles with the exported `HttpClient` type instead of importing `Client` from `undici`, so the undici major version stays an implementation detail of this package. Parameters:
+- `buildClient()`, which returns a [Client](https://undici.nodejs.org/#/docs/api/Client) instance (or `buildPool()`, below) and should be called before any of the following methods. Type client handles with the exported `HttpClient` type instead of importing `Client` or `Pool` from `undici`, so the undici major version stays an implementation detail of this package. Parameters:
   - `baseUrl`;
   - `clientOptions` – set of [ClientOptions](https://undici.nodejs.org/#/docs/api/Client?id=parameter-clientoptions) (optional). If none are provided, the following default options will be used to instantiate the client:
 
@@ -15,12 +15,16 @@ The library provides methods to implement the client side of HTTP protocols. Pub
     keepAliveTimeout: 4000,
     ```
 
-  - `clientOptions.connections` (optional) – how many connections the client may open to `baseUrl`. Without it, `buildClient()` returns a `Client` with a single connection that carries one request at a time, so concurrent calls on it (`Promise.all`, a concurrency limiter) still run one after another. With it, `buildClient()` returns a [Pool](https://undici.nodejs.org/#/docs/api/Pool) of up to that many connections, and up to that many requests run at once. Both are accepted wherever an `HttpClient` is expected.
+- `buildPool()`, which returns a [Pool](https://undici.nodejs.org/#/docs/api/Pool) of up to `connections` connections to `baseUrl`, for concurrent requests. It takes the same options as `buildClient()`, plus `connections` (a positive integer). Both a `Client` and a `Pool` are accepted wherever an `HttpClient` is expected.
 
-    ```ts
-    // Up to five requests to the API in flight at once.
-    const client = buildClient('https://api.example.com', { connections: 5 })
-    ```
+  How many requests run at once depends on the protocol undici negotiates:
+  - **HTTP/1.1** (plain `http://`, or a server without HTTP/2): a `Client` has one connection that carries one request at a time, so concurrent calls on it (`Promise.all`, a concurrency limiter) still run one after another. A `Pool` runs up to `connections` requests at once.
+  - **HTTP/2** (undici offers it to `https://` servers, and uses it when they accept): one connection already carries concurrent requests, and a `Pool` keeps them all on it, so `connections` neither speeds them up nor limits them. Set `allowH2: false` to spread requests over several HTTP/1.1 connections instead, which can be much faster for large responses.
+
+  ```ts
+  // Up to five requests in flight at once, each on its own HTTP/1.1 connection.
+  const client = buildPool('https://api.example.com', { connections: 5, allowH2: false })
+  ```
 
 - `sendByApiContract()`, the recommended method for making type-safe HTTP requests from an `ApiContract` definition (created with `defineApiContract`);
 - `sendGet()`;

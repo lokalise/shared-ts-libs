@@ -18,9 +18,10 @@ export {
   TEST_OPTIONS,
   UNKNOWN_RESPONSE_SCHEMA,
 } from './client/constants.ts'
-export type { BuildClientOptions, HttpClient } from './client/httpClient.ts'
+export type { BuildPoolOptions } from './client/httpClient.ts'
 export {
   buildClient,
+  buildPool,
   httpClient,
   sendDelete,
   sendGet,
@@ -33,6 +34,7 @@ export {
   sendPutBinary,
 } from './client/httpClient.ts'
 export type {
+  HttpClient,
   HttpRequestContext,
   RequestOptions,
   RequestResultDefinitiveEither,

@@ -16,43 +16,43 @@ import type {
   RequestResultDefinitiveEither,
 } from './types.ts'
 
-export type { HttpClient } from './types.ts'
-
 type PayloadMethods = 'POST' | 'PUT' | 'PATCH'
 type DEFAULT_THROW_ON_ERROR = typeof DEFAULT_OPTIONS.throwOnError
 
-export type BuildClientOptions = Client.Options & {
-  /**
-   * How many connections the client may open to `baseUrl`. Without it the client keeps a single
-   * connection that carries one request at a time, so concurrent calls run one after another.
-   */
-  connections?: number
+const resolveClientOptions = (clientOptions?: Client.Options): Client.Options => ({
+  ...defaultClientOptions,
+  ...clientOptions,
+  bodyTimeout: clientOptions?.bodyTimeout ?? DEFAULT_OPTIONS.timeout,
+  headersTimeout: clientOptions?.headersTimeout ?? DEFAULT_OPTIONS.timeout,
+})
+
+/**
+ * Builds a client with a single connection to `baseUrl`. Over HTTP/1.1 it carries one request at a
+ * time, so concurrent calls run one after another; see `buildPool` to run them in parallel.
+ */
+export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
+  return new Client(baseUrl, resolveClientOptions(clientOptions))
+}
+
+export type BuildPoolOptions = Client.Options & {
+  /** How many connections the pool may open to `baseUrl`; a positive integer. */
+  connections: number
 }
 
 /**
- * Builds a client for `baseUrl`: a single-connection `Client`, or a `Pool` of up to `connections`
- * connections when that is set.
+ * Builds a pool of up to `connections` connections to `baseUrl`, so concurrent requests over
+ * HTTP/1.1 run in parallel instead of one at a time. undici negotiates HTTP/2 with HTTPS servers
+ * that support it, and the pool then keeps every request on one HTTP/2 connection, so
+ * `connections` neither speeds requests up nor limits them there; set `allowH2: false` to spread
+ * them over several HTTP/1.1 connections.
  */
-export function buildClient(
-  baseUrl: string,
-  clientOptions?: Client.Options & { connections?: undefined },
-): Client
-export function buildClient(
-  baseUrl: string,
-  clientOptions: BuildClientOptions & { connections: number },
-): Pool
-export function buildClient(baseUrl: string, clientOptions?: BuildClientOptions): HttpClient
-export function buildClient(baseUrl: string, clientOptions?: BuildClientOptions): HttpClient {
-  const { connections, ...options } = clientOptions ?? {}
-  const resolvedOptions = {
-    ...defaultClientOptions,
-    ...options,
-    bodyTimeout: options.bodyTimeout ?? DEFAULT_OPTIONS.timeout,
-    headersTimeout: options.headersTimeout ?? DEFAULT_OPTIONS.timeout,
+export function buildPool(baseUrl: string, poolOptions: BuildPoolOptions): Pool {
+  const { connections, ...clientOptions } = poolOptions
+  // undici reads 0 as "no limit"; a fraction would round up.
+  if (!Number.isInteger(connections) || connections < 1) {
+    throw new Error(`connections must be a positive integer, got ${connections}`)
   }
-  return connections === undefined
-    ? new Client(baseUrl, resolvedOptions)
-    : new Pool(baseUrl, { ...resolvedOptions, connections })
+  return new Pool(baseUrl, { ...resolveClientOptions(clientOptions), connections })
 }
 
 type NonPayloadMethods = 'DELETE' | 'GET'

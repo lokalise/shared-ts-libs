@@ -2,6 +2,6 @@
 "@lokalise/backend-http-client": major
 ---
 
-`buildClient()` accepts `connections`: it then returns an undici `Pool` of up to that many connections, so concurrent requests run in parallel instead of one after another on a single connection. `HttpClient` now covers both `Client` and `Pool`, and every request helper accepts either. Without `connections`, `buildClient()` returns a single-connection `Client` as before.
+New `buildPool(baseUrl, { connections, ...clientOptions })` returns an undici `Pool` of up to `connections` connections (a positive integer), so concurrent requests over HTTP/1.1 run in parallel instead of one at a time on the single connection a `buildClient()` client has. Over HTTP/2, which undici negotiates with HTTPS servers that support it, one connection already carries concurrent requests and a pool stays on it; pass `allowH2: false` to spread requests over several HTTP/1.1 connections.
 
-Breaking for types only: code that passes an `HttpClient` to its own parameters typed as undici's `Client` no longer compiles, since `HttpClient` can now be a `Pool`. Type those parameters as `HttpClient`.
+Breaking for types only: `HttpClient` is now `Client | Pool`, and every request helper accepts either. Code that passes an `HttpClient` to its own parameters typed as undici's `Client` no longer compiles; type those parameters as `HttpClient`. `buildClient()` itself is unchanged.
