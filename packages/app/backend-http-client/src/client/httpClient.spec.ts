@@ -2,7 +2,7 @@ import type { Readable } from 'node:stream'
 import { setTimeout } from 'node:timers/promises'
 import { getLocal, type Mockttp } from 'mockttp'
 import { Client, Pool } from 'undici'
-import { afterAll, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { z } from 'zod/v4'
 import { isInternalRequestError } from '../errors/InternalRequestError.ts'
 import { JSON_HEADERS } from './constants.ts'
@@ -148,6 +148,42 @@ describe('httpClient', () => {
       )
 
       expect(mostInFlight).toBe(3)
+    })
+
+    it('queues requests beyond its connections', async () => {
+      let arrived = 0
+      let release = () => {}
+      const held = new Promise<void>((resolve) => {
+        release = resolve
+      })
+      await mockServer.forGet('/slow').thenCallback(async () => {
+        arrived += 1
+        await held
+        return { statusCode: 200, json: { id: '1' } }
+      })
+      const testPool = buildPool(mockServer.url, { connections: 2 })
+
+      try {
+        const requests = Promise.all(
+          [1, 2, 3].map(() =>
+            sendGet(testPool, '/slow', {
+              requestLabel: 'slow',
+              responseSchema: z.object({ id: z.string() }),
+            }),
+          ),
+        )
+        await vi.waitFor(() => expect(arrived).toBe(2))
+        // Long enough for the third request to arrive, were there a third connection.
+        await setTimeout(50)
+        expect(arrived).toBe(2)
+
+        release()
+        await requests
+        expect(arrived).toBe(3)
+      } finally {
+        release()
+        await testPool.close()
+      }
     })
   })
 
