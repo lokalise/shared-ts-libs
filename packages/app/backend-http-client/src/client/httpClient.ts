@@ -29,6 +29,10 @@ const resolveClientOptions = <T extends Client.Options>(clientOptions?: T) => ({
 /**
  * Builds a client with a single connection to `baseUrl`. Over HTTP/1.1 it carries one request at a
  * time by default, so concurrent calls run one after another; see `buildPool` to run them in parallel.
+ *
+ * @deprecated Use `buildPool(baseUrl, { connections: 1, ...clientOptions })` for the same
+ * behaviour, or more connections to run requests in parallel. `buildClient` will be removed in the
+ * next major.
  */
 export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
   return new Client(baseUrl, resolveClientOptions(clientOptions))
