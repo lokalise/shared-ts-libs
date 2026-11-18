@@ -642,13 +642,13 @@ importers:
         version: 1.0.0-rc.5-5935859
       drizzle-orm:
         specifier: 1.0.0-rc.5-5935859
-        version: 1.0.0-rc.5-5935859(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.24.6(@types/node@26.6.6))(pg@8.22.0)(postgres@3.4.9)(valibot@1.4.2(typescript@7.0.2))(zod@4.6.7)
+        version: 1.0.0-rc.5-5935859(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.24.6(@types/node@26.6.6))(pg@8.22.0)(postgres@4.1.1)(valibot@1.4.2(typescript@7.0.2))(zod@4.6.7)
       mysql2:
         specifier: ^3.24.6
         version: 3.24.6(@types/node@26.6.6)
       postgres:
-        specifier: ^3.4.9
-        version: 3.4.9
+        specifier: ^4.1.1
+        version: 4.1.1
       rimraf:
         specifier: ^6.1.3
         version: 6.1.3
@@ -1022,8 +1022,8 @@ importers:
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
       postgres:
-        specifier: ^3.4.9
-        version: 3.4.9
+        specifier: ^4.1.1
+        version: 4.1.1
       rimraf:
         specifier: ^6.1.3
         version: 6.1.3
@@ -6732,9 +6732,9 @@ packages:
     resolution: {integrity: sha512-Jtc2612XINuBjIl/QTWsV5UvE8UHuNblcO3vVADSrKsrc6RqGX6lOW1cEo3CM2v0XG4Nat8nI+YM7/f26VxXLw==}
     engines: {node: '>=12'}
 
-  postgres@3.4.9:
-    resolution: {integrity: sha512-GD3qdB0x1z9xgFI6cdRD6xu2Sp2WCOEoe3mtnyB5Ee0XrrL5Pe+e4CCnJrRMnL1zYtRDZmQQVbvOttLnKDLnaw==}
-    engines: {node: '>=12'}
+  postgres@4.1.1:
+    resolution: {integrity: sha512-1kJDojqNZC+iTHHXh6eif0J98LUtyLAePe/qkW1GK35eh2JixlsAiIKq3FGI+xqI+SUGTNodzf7TScVeIIyUug==}
+    engines: {node: '>=18'}
 
   pprof-format@2.3.2:
     resolution: {integrity: sha512-fcMM+sgKMOveSurz7i0BMHfy1hHNnI9+VWjd4kdclqQjSTuiHWaP69DGwvkw3zcLkM/F76LhVIKvPyrxmp6iiw==}
@@ -11579,14 +11579,14 @@ snapshots:
       get-tsconfig: 4.14.1
       jiti: 2.7.0
 
-  drizzle-orm@1.0.0-rc.5-5935859(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.24.6(@types/node@26.6.6))(pg@8.22.0)(postgres@3.4.9)(valibot@1.4.2(typescript@7.0.2))(zod@4.6.7):
+  drizzle-orm@1.0.0-rc.5-5935859(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.24.6(@types/node@26.6.6))(pg@8.22.0)(postgres@4.1.1)(valibot@1.4.2(typescript@7.0.2))(zod@4.6.7):
     optionalDependencies:
       '@electric-sql/pglite': 0.4.3
       '@opentelemetry/api': 1.9.1
       '@types/pg': 8.20.0
       mysql2: 3.24.6(@types/node@26.6.6)
       pg: 8.22.0
-      postgres: 3.4.9
+      postgres: 4.1.1
       valibot: 1.4.2(typescript@7.0.2)
       zod: 4.6.7
 
@@ -13522,7 +13522,7 @@ snapshots:
 
   postgres@3.4.7: {}
 
-  postgres@3.4.9: {}
+  postgres@4.1.1: {}
 
   pprof-format@2.3.2: {}
 
