@@ -84,8 +84,8 @@ The response of any _send_ method will be resolved to always have `result` set, 
 It depends on the protocol undici negotiates with the upstream and on the size of its responses:
 
 - **HTTP/1.1** (plain `http://`, e.g. service-to-service, or an HTTPS server without HTTP/2): a `Client` runs one request at a time. Use `buildPool()` if you send requests concurrently.
-- **HTTP/2 with small responses**: a `Client` already runs concurrent requests over one connection, and a `Pool` adds little. Keep `buildClient()`.
-- **HTTP/2 with large responses** (hundreds of KB and up): one connection can become the bottleneck. `buildPool(baseUrl, { connections, allowH2: false })` may be several times faster; measure before switching.
+- **HTTP/2 with little data per batch of concurrent requests** (in our measurements, up to at least ~0.5 MB): a `Client` already runs them in parallel over one connection, and a `Pool` adds little. Keep `buildClient()`.
+- **HTTP/2 with a lot of data per batch** (several MB): one connection becomes the bottleneck. `buildPool(baseUrl, { connections, allowH2: false })` was 2-2.5x faster in our measurements; measure before switching.
 
 A pool also caps how many requests run at once across everything sharing it, so size `connections` for the whole process, not a single call, and keep the upstream's rate limits in mind.
 
