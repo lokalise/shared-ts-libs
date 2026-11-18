@@ -79,6 +79,22 @@ Additionally, `sendPost()`, `sendPut()`, `sendPutBinary()`, and `sendPatch()` al
 
 The response of any _send_ method will be resolved to always have `result` set, but only have `error` set in case something went wrong. See [Either](#either) for more information.
 
+### Choosing between `buildClient()` and `buildPool()`
+
+It depends on the protocol undici negotiates with the upstream and on the size of its responses:
+
+- **HTTP/1.1** (plain `http://`, e.g. service-to-service, or an HTTPS server without HTTP/2): a `Client` runs one request at a time. Use `buildPool()` if you send requests concurrently.
+- **HTTP/2 with small responses**: a `Client` already runs concurrent requests over one connection, and a `Pool` adds little. Keep `buildClient()`.
+- **HTTP/2 with large responses** (hundreds of KB and up): one connection can become the bottleneck. `buildPool(baseUrl, { connections, allowH2: false })` may be several times faster; measure before switching.
+
+A pool also caps how many requests run at once across everything sharing it, so size `connections` for the whole process, not a single call, and keep the upstream's rate limits in mind.
+
+To check what an HTTPS upstream negotiates (`h2` means HTTP/2; no ALPN means HTTP/1.1):
+
+```bash
+openssl s_client -connect api.example.com:443 -servername api.example.com -alpn 'http/1.1,h2' </dev/null 2>/dev/null | grep ALPN
+```
+
 ## Either
 
 The library provides the type `Either` for error handling in the functional paradigm. The two possible values are:
