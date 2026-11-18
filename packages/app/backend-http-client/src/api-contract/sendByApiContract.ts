@@ -17,7 +17,7 @@ import {
 import { ServerSentEventTransformStream } from 'parse-sse'
 import type { Dispatcher } from 'undici'
 import { REQUEST_ID_HEADER } from '../client/constants.ts'
-import type { HttpClient, HttpRequestContext } from '../client/types.ts'
+import type { HttpDispatcher, HttpRequestContext } from '../client/types.ts'
 import { type RetryConfig, resolveRetryConfig, withRetry } from './retry.ts'
 import { UnexpectedResponseError } from './UnexpectedResponseError.ts'
 
@@ -238,7 +238,7 @@ export async function sendByApiContract<
   TIsStreaming extends boolean = DefaultStreaming<TApiContract['responsesByStatusCode']>,
   TCaptureAsError extends boolean = true,
 >(
-  client: HttpClient,
+  client: HttpDispatcher,
   apiContract: TApiContract,
   params: ClientRequestParams<TApiContract, TIsStreaming> & ContractRequestOptions<TCaptureAsError>,
 ): Promise<ReturnTypeForContract<TApiContract, TIsStreaming, TCaptureAsError>> {

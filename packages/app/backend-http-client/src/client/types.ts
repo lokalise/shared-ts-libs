@@ -8,11 +8,11 @@ import type { InternalRequestError } from '../errors/InternalRequestError.ts'
 export type RecordObject = Record<string, any>
 
 /**
- * An HTTP client handle: a `Client` from `buildClient` or a `Pool` from `buildPool`. Type client
- * instances with this instead of importing from `undici` directly, so the undici major version
- * stays an implementation detail of this package.
+ * What the request helpers send through: a `Client` from `buildClient` or a `Pool` from
+ * `buildPool`. Type a parameter that takes either with this instead of importing from `undici`
+ * directly, so the undici major version stays an implementation detail of this package.
  */
-export type HttpClient = Client | Pool
+export type HttpDispatcher = Client | Pool
 
 export type HttpRequestContext = {
   reqId: string

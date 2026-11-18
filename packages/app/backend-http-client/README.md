@@ -6,7 +6,7 @@ Opinionated HTTP client for the Node.js backend
 
 The library provides methods to implement the client side of HTTP protocols. Public methods available are:
 
-- `buildClient()`, which returns a [Client](https://undici.nodejs.org/#/docs/api/Client) instance (or `buildPool()`, below) and should be called before any of the following methods. Type client handles with the exported `HttpClient` type instead of importing `Client` or `Pool` from `undici`, so the undici major version stays an implementation detail of this package. Parameters:
+- `buildClient()`, which returns a [Client](https://undici.nodejs.org/#/docs/api/Client) instance and should be called before any of the following methods. Type client handles with the exported `HttpClient` type, and parameters that take either a client or a pool with `HttpDispatcher`, instead of importing `Client` or `Pool` from `undici`, so the undici major version stays an implementation detail of this package. Parameters:
   - `baseUrl`;
   - `clientOptions` – set of [ClientOptions](https://undici.nodejs.org/#/docs/api/Client?id=parameter-clientoptions) (optional). If none are provided, the following default options will be used to instantiate the client:
 
@@ -15,11 +15,11 @@ The library provides methods to implement the client side of HTTP protocols. Pub
     keepAliveTimeout: 4000,
     ```
 
-- `buildPool()`, which returns a [Pool](https://undici.nodejs.org/#/docs/api/Pool) of up to `connections` connections to `baseUrl`, for concurrent requests. It takes the same options as `buildClient()`, plus `connections` (a positive integer). Both a `Client` and a `Pool` are accepted wherever an `HttpClient` is expected.
+- `buildPool()`, which returns a [Pool](https://undici.nodejs.org/#/docs/api/Pool) of up to `connections` connections to `baseUrl`, for concurrent requests. It takes undici's [PoolOptions](https://undici.nodejs.org/#/docs/api/Pool?id=parameter-pooloptions) (the client options plus `clientTtl` and `factory`), with `connections` required (a positive integer). Every request helper accepts a `Client` or a `Pool`.
 
   How many requests run at once depends on the protocol undici negotiates:
-  - **HTTP/1.1** (plain `http://`, or a server without HTTP/2): a `Client` has one connection that carries one request at a time by default, so concurrent calls on it (`Promise.all`, a concurrency limiter) still run one after another. A `Pool` runs up to `connections` requests at once.
-  - **HTTP/2** (undici offers it to `https://` servers, and uses it when they accept): one connection already carries concurrent requests, so a `Client` does not run them one at a time. A `Pool` may still open more connections, and `allowH2: false` spreads requests over several HTTP/1.1 connections; both can be much faster when concurrent responses are large (see below).
+  - **HTTP/1.1** (plain `http://`, or a server without HTTP/2): a `Client` has one connection that carries one request at a time by default, so concurrent calls on it (`Promise.all`, a concurrency limiter) still run one after another. A `Pool` runs up to `connections` requests at once by default.
+  - **HTTP/2** (undici offers it to `https://` servers, and uses it when they accept): one connection already carries concurrent requests, so a `Client` does not run them one at a time. A `Pool` stays on that one connection too, opening another only once the server's limit on concurrent streams is reached. `allowH2: false` spreads requests over several HTTP/1.1 connections instead, which can be much faster when concurrent responses are large (see below).
 
   ```ts
   // Up to five requests in flight at once, each on its own HTTP/1.1 connection.
@@ -84,10 +84,10 @@ The response of any _send_ method will be resolved to always have `result` set, 
 It depends on the protocol undici negotiates with the upstream and on the size of its responses:
 
 - **HTTP/1.1** (plain `http://`, e.g. service-to-service, or an HTTPS server without HTTP/2): a `Client` runs one request at a time by default. Use `buildPool()` if you send requests concurrently.
-- **HTTP/2 with small responses** (in our measurements with 10 concurrent requests, up to ~100 KB each): a `Client` already runs them in parallel over one connection, and a `Pool` was at most ~1.2x faster. Keep `buildClient()`.
+- **HTTP/2 with small responses** (in our measurements with 10 concurrent requests, up to ~100 KB each): a `Client` already runs them in parallel over one connection. Keep `buildClient()`; a `Pool` without `allowH2: false` stays on that same connection anyway.
 - **HTTP/2 with large responses** (from ~200 KB each): one connection becomes the bottleneck. `buildPool(baseUrl, { connections, allowH2: false })` was 1.6x faster at ~200 KB per response and about 4x from ~1 MB in our measurements; measure before switching.
 
-Over HTTP/1.1 a pool also caps how many requests run at once across everything sharing it, so size `connections` for the whole process, not a single call, and keep the upstream's rate limits in mind. Over HTTP/2 `connections` limits connections, not requests, so use a concurrency limiter if you need a hard cap on requests.
+Over HTTP/1.1 with the default pipelining, a pool also caps how many requests run at once across everything sharing it, so size `connections` for the whole process, not a single call, and keep the upstream's rate limits in mind. `connections` limits connections, not requests: over HTTP/2, or with pipelining, one connection carries several requests, so use a concurrency limiter if you need a hard cap on requests.
 
 To check what an HTTPS upstream negotiates (`h2` means HTTP/2; no ALPN means HTTP/1.1):
 

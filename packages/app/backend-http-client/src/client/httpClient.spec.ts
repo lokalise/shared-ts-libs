@@ -23,7 +23,7 @@ import {
 import mockProduct1 from './mock-data/mockProduct1.json'
 // @ts-expect-error
 import mockProductsLimit3 from './mock-data/mockProductsLimit3.json'
-import type { HttpClient, HttpRequestContext } from './types.ts'
+import type { HttpDispatcher, HttpRequestContext } from './types.ts'
 
 const TEXT_HEADERS = {
   'content-type': 'text/plain',
@@ -71,7 +71,8 @@ describe('httpClient', () => {
 
   describe('buildPool', () => {
     it('creates a pool', async () => {
-      const testPool = buildPool(mockServer.url, { connections: 3 })
+      // Pool-only options such as `clientTtl` are accepted as well.
+      const testPool = buildPool(mockServer.url, { connections: 3, clientTtl: 60_000 })
 
       expect(testPool).toBeInstanceOf(Pool)
       expectTypeOf(testPool).toEqualTypeOf<Pool>()
@@ -84,6 +85,13 @@ describe('httpClient', () => {
         `connections must be a positive integer, got ${connections}`,
       )
     })
+
+    it('rejects missing options with the same message', () => {
+      // @ts-expect-error - a JavaScript caller can leave the options out
+      expect(() => buildPool(mockServer.url)).toThrow(
+        'connections must be a positive integer, got undefined',
+      )
+    })
   })
 
   // mockttp serves plain HTTP, so these show HTTP/1.1; over HTTP/2 one connection already carries
@@ -91,7 +99,7 @@ describe('httpClient', () => {
   describe('concurrent requests', () => {
     // Counted on the server: the most requests it was handling at the same time.
     const mostRequestsInFlight = async (
-      testClient: HttpClient,
+      testClient: HttpDispatcher,
       respond: (arrived: number) => Promise<unknown>,
     ) => {
       let arrived = 0
@@ -173,8 +181,9 @@ describe('httpClient', () => {
           ),
         )
         await vi.waitFor(() => expect(arrived).toBe(2))
-        // Long enough for the third request to arrive, were there a third connection.
-        await setTimeout(50)
+        // The third request waits in the pool instead of opening a third connection.
+        const { connected, queued, running } = testPool.stats
+        expect({ connected, queued, running }).toEqual({ connected: 2, queued: 1, running: 2 })
         expect(arrived).toBe(2)
 
         release()

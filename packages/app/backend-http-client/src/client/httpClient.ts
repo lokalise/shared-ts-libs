@@ -9,7 +9,7 @@ import { ResponseStatusError } from '../errors/ResponseStatusError.ts'
 import { DEFAULT_OPTIONS, defaultClientOptions, REQUEST_ID_HEADER } from './constants.ts'
 import { executeRequest, executeStreamRequest, isRequestResult } from './requestExecutor.ts'
 import type {
-  HttpClient,
+  HttpDispatcher,
   RecordObject,
   RequestOptions,
   RequestResult,
@@ -19,7 +19,7 @@ import type {
 type PayloadMethods = 'POST' | 'PUT' | 'PATCH'
 type DEFAULT_THROW_ON_ERROR = typeof DEFAULT_OPTIONS.throwOnError
 
-const resolveClientOptions = (clientOptions?: Client.Options): Client.Options => ({
+const resolveClientOptions = <T extends Client.Options>(clientOptions?: T) => ({
   ...defaultClientOptions,
   ...clientOptions,
   bodyTimeout: clientOptions?.bodyTimeout ?? DEFAULT_OPTIONS.timeout,
@@ -34,25 +34,34 @@ export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
   return new Client(baseUrl, resolveClientOptions(clientOptions))
 }
 
-export type BuildPoolOptions = Client.Options & {
+/**
+ * The HTTP client handle returned by `buildClient`. Type client instances with
+ * this instead of importing `Client` from `undici` directly, so the undici
+ * major version stays an implementation detail of this package.
+ */
+export type HttpClient = ReturnType<typeof buildClient>
+
+export type BuildPoolOptions = Omit<Pool.Options, 'connections'> & {
   /** How many connections the pool may open to `baseUrl`; a positive integer. */
   connections: number
 }
 
 /**
  * Builds a pool of up to `connections` connections to `baseUrl`, so concurrent requests over
- * HTTP/1.1 run in parallel instead of one at a time. Over HTTP/2, which undici negotiates with
- * HTTPS servers that support it, one connection already carries concurrent requests; a pool may
- * still open more of them, and `allowH2: false` spreads requests over several HTTP/1.1
- * connections, which can be much faster when concurrent responses are large.
+ * HTTP/1.1 run in parallel instead of one at a time (with the default pipelining). Over HTTP/2,
+ * which undici negotiates with HTTPS servers that support it, one connection already carries
+ * concurrent requests and the pool stays on it; `allowH2: false` spreads requests over several
+ * HTTP/1.1 connections instead, which can be much faster when concurrent responses are large.
  */
 export function buildPool(baseUrl: string, poolOptions: BuildPoolOptions): Pool {
-  const { connections, ...clientOptions } = poolOptions
+  // Read before destructuring, so a caller without options still gets this message.
+  const connections = poolOptions?.connections
   // undici reads 0 as "no limit"; a fraction would round up.
-  if (!Number.isInteger(connections) || connections < 1) {
+  if (typeof connections !== 'number' || !Number.isInteger(connections) || connections < 1) {
     throw new Error(`connections must be a positive integer, got ${connections}`)
   }
-  return new Pool(baseUrl, { ...resolveClientOptions(clientOptions), connections })
+  const { connections: _, ...otherOptions } = poolOptions
+  return new Pool(baseUrl, { ...resolveClientOptions(otherOptions), connections })
 }
 
 type NonPayloadMethods = 'DELETE' | 'GET'
@@ -62,7 +71,7 @@ async function sendNonPayload<
   IsEmptyResponseExpected extends boolean,
   DoThrowOnError extends boolean,
 >(
-  client: HttpClient,
+  client: HttpDispatcher,
   method: NonPayloadMethods,
   path: string,
   options: Omit<
@@ -106,7 +115,7 @@ export function sendGet<
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: HttpClient,
+  client: HttpDispatcher,
   path: string,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
 ): Promise<
@@ -121,7 +130,7 @@ export function sendGet<
 export async function sendGetWithStreamedResponse<
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: HttpClient,
+  client: HttpDispatcher,
   path: string,
   options: Omit<
     RequestOptions<undefined, false, DoThrowOnError>,
@@ -165,7 +174,7 @@ export function sendDelete<
   IsEmptyResponseExpected extends boolean = true,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: HttpClient,
+  client: HttpDispatcher,
   path: string,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
 ): Promise<
@@ -182,7 +191,7 @@ async function sendResourceChange<
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: HttpClient,
+  client: HttpDispatcher,
   method: PayloadMethods,
   path: string,
   body: RecordObject | undefined,
@@ -229,7 +238,7 @@ export function sendPost<
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: HttpClient,
+  client: HttpDispatcher,
   path: string,
   body: RecordObject | undefined,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
@@ -242,7 +251,7 @@ export function sendPost<
 async function sendPayloadWithStreamedResponse<
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: HttpClient,
+  client: HttpDispatcher,
   method: PayloadMethods,
   path: string,
   body: RecordObject | undefined,
@@ -287,7 +296,7 @@ async function sendPayloadWithStreamedResponse<
 export function sendPostWithStreamedResponse<
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: HttpClient,
+  client: HttpDispatcher,
   path: string,
   body: RecordObject | undefined,
   options: Omit<
@@ -307,7 +316,7 @@ export async function sendPostBinary<
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: HttpClient,
+  client: HttpDispatcher,
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
@@ -349,7 +358,7 @@ export function sendPut<
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: HttpClient,
+  client: HttpDispatcher,
   path: string,
   body: RecordObject | undefined,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
@@ -364,7 +373,7 @@ export async function sendPutBinary<
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: HttpClient,
+  client: HttpDispatcher,
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
@@ -406,7 +415,7 @@ export function sendPatch<
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: HttpClient,
+  client: HttpDispatcher,
   path: string,
   body: RecordObject | undefined,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
