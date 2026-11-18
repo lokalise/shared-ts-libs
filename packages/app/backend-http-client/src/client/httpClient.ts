@@ -44,7 +44,7 @@ export type BuildPoolOptions = Client.Options & {
  * HTTP/1.1 run in parallel instead of one at a time. Over HTTP/2, which undici negotiates with
  * HTTPS servers that support it, one connection already carries concurrent requests; a pool may
  * still open more of them, and `allowH2: false` spreads requests over several HTTP/1.1
- * connections, which can be much faster when a batch moves a lot of data.
+ * connections, which can be much faster when concurrent responses are large.
  */
 export function buildPool(baseUrl: string, poolOptions: BuildPoolOptions): Pool {
   const { connections, ...clientOptions } = poolOptions

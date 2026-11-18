@@ -19,7 +19,7 @@ The library provides methods to implement the client side of HTTP protocols. Pub
 
   How many requests run at once depends on the protocol undici negotiates:
   - **HTTP/1.1** (plain `http://`, or a server without HTTP/2): a `Client` has one connection that carries one request at a time, so concurrent calls on it (`Promise.all`, a concurrency limiter) still run one after another. A `Pool` runs up to `connections` requests at once.
-  - **HTTP/2** (undici offers it to `https://` servers, and uses it when they accept): one connection already carries concurrent requests, so a `Client` does not run them one at a time. A `Pool` may still open more connections, and `allowH2: false` spreads requests over several HTTP/1.1 connections; both can be much faster when a batch moves a lot of data (see below).
+  - **HTTP/2** (undici offers it to `https://` servers, and uses it when they accept): one connection already carries concurrent requests, so a `Client` does not run them one at a time. A `Pool` may still open more connections, and `allowH2: false` spreads requests over several HTTP/1.1 connections; both can be much faster when concurrent responses are large (see below).
 
   ```ts
   // Up to five requests in flight at once, each on its own HTTP/1.1 connection.
@@ -84,8 +84,8 @@ The response of any _send_ method will be resolved to always have `result` set, 
 It depends on the protocol undici negotiates with the upstream and on the size of its responses:
 
 - **HTTP/1.1** (plain `http://`, e.g. service-to-service, or an HTTPS server without HTTP/2): a `Client` runs one request at a time. Use `buildPool()` if you send requests concurrently.
-- **HTTP/2 with little data per batch of concurrent requests** (in our measurements, up to ~1 MB): a `Client` already runs them in parallel over one connection, and a `Pool` was at most ~1.2x faster. Keep `buildClient()`.
-- **HTTP/2 with more data per batch** (from ~2 MB): one connection becomes the bottleneck. `buildPool(baseUrl, { connections, allowH2: false })` was 1.6x faster at ~2 MB per batch and about 4x at 10 MB and above in our measurements; measure before switching.
+- **HTTP/2 with small responses** (in our measurements with 10 concurrent requests, up to ~100 KB each): a `Client` already runs them in parallel over one connection, and a `Pool` was at most ~1.2x faster. Keep `buildClient()`.
+- **HTTP/2 with large responses** (from ~200 KB each): one connection becomes the bottleneck. `buildPool(baseUrl, { connections, allowH2: false })` was 1.6x faster at ~200 KB per response and about 4x from ~1 MB in our measurements; measure before switching.
 
 A pool also caps how many requests run at once across everything sharing it, so size `connections` for the whole process, not a single call, and keep the upstream's rate limits in mind.
 
