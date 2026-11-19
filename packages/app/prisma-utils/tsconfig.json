@@ -9,6 +9,6 @@
     "vitest.bench.config.ts"
   ],
   "compilerOptions": {
-    "types": ["vitest/globals"]
+    "types": ["node", "vitest/globals"]
   }
 }

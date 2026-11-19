@@ -1213,9 +1213,6 @@ importers:
 
   packages/app/prisma-utils:
     dependencies:
-      '@lokalise/node-core':
-        specifier: '>=14.7.4'
-        version: 14.12.0(zod@4.6.7)
       '@lokalise/universal-ts-utils':
         specifier: workspace:^
         version: link:../universal-ts-utils
@@ -1238,6 +1235,9 @@ importers:
       '@prisma/client':
         specifier: ^7.10.1
         version: 7.10.1(prisma@7.10.0(@types/react@19.2.18)(magicast@0.5.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2))(typescript@7.0.2)
+      '@types/node':
+        specifier: ^26.6.6
+        version: 26.6.6
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)

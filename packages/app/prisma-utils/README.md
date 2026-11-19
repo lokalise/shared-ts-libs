@@ -69,7 +69,7 @@ Helper for executing Prisma transactions with intelligent automatic retry mechan
 
 ```typescript
 import { prismaTransaction } from '@lokalise/prisma-utils'
-import type { Either } from '@lokalise/node-core'
+import type { Either } from '@lokalise/universal-ts-utils/node'
 
 const result: Either<unknown, [Item, Segment]> = await prismaTransaction(
   prisma,
