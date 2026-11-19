@@ -1,6 +1,6 @@
 {
   "name": "@lokalise/context-fastify-plugins",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "files": [
     "dist",
     "LICENSE.md",
