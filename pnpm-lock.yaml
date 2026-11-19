@@ -263,7 +263,7 @@ importers:
         version: link:../../dev/biome-config
       '@lokalise/fastify-extras':
         specifier: ^36.0.2
-        version: 36.0.2(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.3(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/background-jobs-common@17.0.2(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.4.0)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.7))(@lokalise/errors@2.1.0(zod@4.6.7))(@lokalise/fastify-api-contracts@8.0.0(@fastify/sse@0.6.1(fastify@5.12.8))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(zod@4.6.7))(fastify@5.12.8)(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(@opentelemetry/api@1.10.0)(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.22.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(zod@4.6.7))(fastify@5.12.8)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.4.0)(supports-color@8.1.1)(zod@4.6.7)
+        version: 36.0.2(7e457b0d970783f9f6e98aa45d95a79c)
       '@lokalise/node-core':
         specifier: ^14.12.0
         version: 14.12.0(zod@4.6.7)
@@ -314,7 +314,7 @@ importers:
         version: link:../../dev/biome-config
       '@lokalise/fastify-extras':
         specifier: ^36.0.2
-        version: 36.0.2(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.3(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/background-jobs-common@17.0.2(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.4.0)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.7))(@lokalise/errors@2.1.0(zod@4.6.7))(@lokalise/fastify-api-contracts@8.0.0(@fastify/sse@0.6.1(fastify@5.12.8))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(zod@4.6.7))(fastify@5.12.8)(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(@opentelemetry/api@1.10.0)(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.22.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(zod@4.6.7))(fastify@5.12.8)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.4.0)(supports-color@8.1.1)(zod@4.6.7)
+        version: 36.0.2(7e457b0d970783f9f6e98aa45d95a79c)
       '@lokalise/node-core':
         specifier: ^14.12.0
         version: 14.12.0(zod@4.6.7)
@@ -335,7 +335,7 @@ importers:
         version: 27.2.1(@aws-sdk/client-sqs@3.1166.0)(@message-queue-toolkit/core@27.2.0(zod@4.6.7))(supports-color@8.1.1)(zod@4.6.7)
       '@smithy/types':
         specifier: ^4.17.2
-        version: 4.19.0
+        version: 4.20.0
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
@@ -433,7 +433,7 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       bullmq:
         specifier: ^6.3.4
-        version: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
+        version: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1)
       ioredis:
         specifier: ^6.0.0
         version: 6.0.0(supports-color@8.1.1)
@@ -642,7 +642,7 @@ importers:
         version: 1.0.0-rc.5-5935859
       drizzle-orm:
         specifier: 1.0.0-rc.5-5935859
-        version: 1.0.0-rc.5-5935859(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.24.6(@types/node@26.6.6))(pg@8.22.0)(postgres@4.1.1)(valibot@1.4.2(typescript@7.0.2))(zod@4.6.7)
+        version: 1.0.0-rc.5-5935859(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.24.6(@types/node@26.6.6))(pg@8.23.1)(postgres@4.1.1)(valibot@1.4.2(typescript@7.0.2))(zod@4.6.7)
       mysql2:
         specifier: ^3.24.6
         version: 3.24.6(@types/node@26.6.6)
@@ -782,10 +782,10 @@ importers:
     dependencies:
       '@bull-board/api':
         specifier: ^9.6.1
-        version: 9.11.0(@bull-board/ui@9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(typescript@7.0.2))(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(typescript@7.0.2)
+        version: 9.11.0(@bull-board/ui@9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(typescript@7.0.2))(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(typescript@7.0.2)
       '@bull-board/fastify':
         specifier: ^9.11.0
-        version: 9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(typescript@7.0.2)
+        version: 9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(typescript@7.0.2)
       '@fastify/auth':
         specifier: ^5.1.2
         version: 5.1.2
@@ -813,7 +813,7 @@ importers:
         version: link:../../dev/biome-config
       '@lokalise/fastify-extras':
         specifier: ^36.0.2
-        version: 36.0.2(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.3(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/errors@2.1.0(zod@4.6.7))(@lokalise/fastify-api-contracts@8.0.0(@fastify/sse@0.6.1(fastify@5.12.8))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(openapi-types@12.1.3)(zod@4.6.7))(fastify@5.12.8)(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(@opentelemetry/api@1.10.0)(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.22.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(openapi-types@12.1.3)(zod@4.6.7))(fastify@5.12.8)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.4.0)(supports-color@8.1.1)(zod@4.6.7)
+        version: 36.0.2(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.3(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/errors@2.1.0(zod@4.6.7))(@lokalise/fastify-api-contracts@8.0.0(@fastify/sse@0.6.1(fastify@5.12.8))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(openapi-types@12.1.3)(zod@4.6.7))(fastify@5.12.8)(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(@opentelemetry/api@1.10.0)(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(dd-trace@6.22.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(openapi-types@12.1.3)(zod@4.6.7))(fastify@5.12.8)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.4.0)(supports-color@8.1.1)(zod@4.6.7)
       '@lokalise/node-core':
         specifier: ^14.12.0
         version: 14.12.0(zod@4.6.7)
@@ -831,7 +831,7 @@ importers:
         version: 7.2.0(awilix@13.0.5)
       bullmq:
         specifier: 6.3.4
-        version: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
+        version: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1)
       cross-env:
         specifier: ^10.0.0
         version: 10.1.0
@@ -1165,6 +1165,46 @@ importers:
       vitest:
         specifier: ^4.1.11
         version: 4.1.11(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.6)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
+
+  packages/app/pg-boss-jobs-common:
+    dependencies:
+      '@lokalise/node-core':
+        specifier: ^14.12.0
+        version: 14.12.0(zod@4.6.7)
+    devDependencies:
+      '@biomejs/biome':
+        specifier: ^2.6.4
+        version: 2.6.4
+      '@lokalise/biome-config':
+        specifier: workspace:^
+        version: link:../../dev/biome-config
+      '@lokalise/tsconfig':
+        specifier: workspace:^
+        version: link:../../dev/tsconfig
+      '@types/node':
+        specifier: ^26.6.6
+        version: 26.6.6
+      '@vitest/coverage-v8':
+        specifier: ^4.1.11
+        version: 4.1.11(vitest@4.1.11)
+      pg-boss:
+        specifier: ^12.32.0
+        version: 12.38.2(@opentelemetry/api@1.10.0)
+      pino:
+        specifier: ^10.4.0
+        version: 10.4.0
+      rimraf:
+        specifier: ^6.1.3
+        version: 6.1.3
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: ^4.1.11
+        version: 4.1.11(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.6)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
 
   packages/app/polling:
     devDependencies:
@@ -1555,13 +1595,13 @@ importers:
     dependencies:
       vite:
         specifier: ^6.2.0
-        version: 6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.0)
+        version: 6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)
       vite-plugin-dts:
         specifier: ^4.5.3
-        version: 4.5.4(@types/node@26.6.6)(rollup@4.63.3)(typescript@7.0.2)(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.5.4(@types/node@26.6.6)(rollup@4.63.3)(supports-color@8.1.1)(typescript@7.0.2)(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
       vitest:
         specifier: ^4.0.15
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.6)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.6)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.6)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.6)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.6.4
@@ -3034,14 +3074,6 @@ packages:
     peerDependencies:
       '@opentelemetry/api': '>=1.10.0 <1.11.0'
 
-  '@opentelemetry/semantic-conventions@1.43.0':
-    resolution: {integrity: sha512-eSYWTm620tTk45EKSedaUL8MFYI8hW164hIXsgIHyxu3VobUB3fFCu5t0hQby6OoWRPsG1KkKUG2M5UadiLiVg==}
-    engines: {node: '>=14'}
-
-  '@opentelemetry/semantic-conventions@1.44.0':
-    resolution: {integrity: sha512-E3JkOlMBi3N8OGGkbl7tFyqk2MAS6/lySRZBK3Mu7AzjF1fT8oIChH9ChE48SUWzDn9Kdwta+G/p5LJ4xW4CLQ==}
-    engines: {node: '>=14'}
-
   '@opentelemetry/semantic-conventions@1.45.0':
     resolution: {integrity: sha512-aOP45mbcOKbQVvFWfQmgoOPT8R2iwbbbgl83k4CujGV9BrJhFr3qG55MFpwFs4YLabpuW3HhzUY9eQxPlDqaZw==}
     engines: {node: '>=14'}
@@ -3649,10 +3681,6 @@ packages:
     resolution: {integrity: sha512-j3s9XPv8Wo1EG5/naBi4XGF0uXYQ2A3QZNI0NKWgCMxRHVrDJGlZEYymcHDHY7fquRm73P8U3c8xqJqB5yad6w==}
     engines: {node: '>=20'}
 
-  '@smithy/core@3.38.1':
-    resolution: {integrity: sha512-U/mB2XiwTLaf+NSgLSWwJfptsMT/H8aBi0aTAA/E5e2/TagFeGCqAyhKGG0w0A9IWTkm4qYEmLoD/HB6aYfnRA==}
-    engines: {node: '>=18.0.0'}
-
   '@smithy/core@3.40.0':
     resolution: {integrity: sha512-DssGno52pzZ5m6RlDtyKuBIpZNPg9pqgs0CnNDKz9IatxCsmvNmJNn5Zn6rf77MthZo9wf89OvZFhTY/RwxhxQ==}
     engines: {node: '>=18.0.0'}
@@ -3671,10 +3699,6 @@ packages:
 
   '@smithy/signature-v4@5.7.5':
     resolution: {integrity: sha512-WPjdr5oWOk1LArpI4pavu+fSo+/evi0Re1olxGvqwuZopd4gYR1UGCi+Soyn/IjmafqbWs+ZC+3AKxJS3ZpwUg==}
-    engines: {node: '>=18.0.0'}
-
-  '@smithy/types@4.19.0':
-    resolution: {integrity: sha512-r7jh49VJxGerfAcTQA6gXcKc+98zOp/tqRwzYjgOE+iSQsP6cEU1hq2QzbuipmP68QtYdY9wKEhiCQZIzHgZ4Q==}
     engines: {node: '>=18.0.0'}
 
   '@smithy/types@4.20.0':
@@ -4612,10 +4636,6 @@ packages:
     resolution: {integrity: sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ==}
     engines: {node: 20 || >=22}
 
-  brace-expansion@5.0.9:
-    resolution: {integrity: sha512-ScQ4IuvIEF1TMlP7Zt+vjJ//9zlPb2SDcxWxM3bk8s6t6GGdJ7KO1dCcTidOPJKePW30LE/2cT7wCyPho9/Wxg==}
-    engines: {node: 20 || >=22}
-
   braces@3.0.3:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
     engines: {node: '>=8'}
@@ -4790,6 +4810,10 @@ packages:
 
   cron-parser@5.10.0:
     resolution: {integrity: sha512-izNAxJyRWUP8ljBoDSub5WyrVOUlT4SLGShswE7eoRBpp6QUsSycYxLBMJlbshgPBMcPT/nrfgjNY2918ayv2A==}
+    engines: {node: '>=18'}
+
+  cron-parser@5.10.6:
+    resolution: {integrity: sha512-kpoxgQyveO1l29nw+FWdvmotyV7eOSzGHQpxiXOEZIDOjqO1iR6kfgJ0PVHTuV26uBemKq3ppzma7dHFAG7viw==}
     engines: {node: '>=18'}
 
   croner@10.0.1:
@@ -6434,6 +6458,7 @@ packages:
 
   node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
+    deprecated: This package is no longer needed on supported Node.js versions. Node.js 16+ includes AbortController and AbortSignal as built-in globals. All Node.js versions requiring this polyfill are end-of-life. Use the built-in globals instead.
 
   node-addon-api@6.1.0:
     resolution: {integrity: sha512-+eawOlIgy680F0kBzPUNFhMZGtJ1YmqM6l4+Crf4IkImjYrO/mqPwRMh352g23uIaQKFItcQ64I7KMaJxHgAVA==}
@@ -6471,6 +6496,10 @@ packages:
   node-gyp-build@4.8.4:
     resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
     hasBin: true
+
+  non-error@0.1.0:
+    resolution: {integrity: sha512-TMB1uHiGsHRGv1uYclfhivcnf0/PdFp2pNqRxXjncaAsjYMoisaQJI+SSZCqRq+VliwRTC8tsMQfmrWjDMhkPQ==}
+    engines: {node: '>=20'}
 
   object-assign@4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
@@ -6638,11 +6667,18 @@ packages:
   perfect-debounce@2.1.0:
     resolution: {integrity: sha512-LjgdTytVFXeUgtHZr9WYViYSM/g8MkcTPYDlPa3cDqMirHjKiSZPYd6DoL7pK8AJQr+uWkQvCjHNdiMqsrJs+g==}
 
-  pg-cloudflare@1.4.0:
-    resolution: {integrity: sha512-Vo7z/6rrQYxpNRylp4Tlob2elzbh+N/MOQbxFVWCxS7oEx6jF53GTJFxK2WWpKuBRkmiin4Mt+xofFDjx09R0A==}
+  pg-boss@12.38.2:
+    resolution: {integrity: sha512-nvB9hB2cDJGSPUwYjN/Mth+EE3zvxffkp7uKXIiYloMAaxSoEiutmZi9mpSW85hNCcPChf3yicNXdwhIWkv2nA==}
+    engines: {node: '>=22.12.0'}
+    hasBin: true
+    peerDependencies:
+      '@opentelemetry/api': ^1.9.0
 
-  pg-connection-string@2.14.0:
-    resolution: {integrity: sha512-XwWDGcLRGCXAR8F/AM5bG7Q+A3Wm2s6QeEjlOKZLlH3UYcguiqCWKyWXVag5TLTIjR7oOJUY8kcADaZgWPyLeg==}
+  pg-cloudflare@1.4.1:
+    resolution: {integrity: sha512-6PQbsFWZcp9EmJEwy5cGQ2La+AMWpP46lgbb8X+U/XsHIUweYDNCpeuKck5RxL2MdVFi7krbbEi5nX4Zh7JhrQ==}
+
+  pg-connection-string@2.14.1:
+    resolution: {integrity: sha512-qR3kGNPBLpCNtz0evbKA0Y/MRFXwSSdT+pTJvYp/bXTcReZbvX1kzF0IyTc1QnxqF7AZbOeBhNL8R5mYQZV/MA==}
 
   pg-int8@1.0.1:
     resolution: {integrity: sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw==}
@@ -6653,15 +6689,15 @@ packages:
     peerDependencies:
       pg: '>=8.0'
 
-  pg-protocol@1.16.0:
-    resolution: {integrity: sha512-sILXutLVjCLjcDuOmvhX5e2Z4cS5qG/6Bu3VkpFwdf/633ElGLpEh9bgmuI5I4sqKqkifQiGyiCcx1HdtrK7tg==}
+  pg-protocol@1.16.1:
+    resolution: {integrity: sha512-p9VOFMiHB/ZbJATetbg+99PxssTVSQRnyuPSQ67mN1+1KBOjZaZ83ZQzltnxPhJwSsC3nwVjJ10DVJlerbFzLg==}
 
   pg-types@2.2.0:
     resolution: {integrity: sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==}
     engines: {node: '>=4'}
 
-  pg@8.22.0:
-    resolution: {integrity: sha512-8wih1vVIBMxoUM2oB4soJsD9tDnDpLv4OXBJ+EJzFsvycD+lfyIreC2gGHq78f8jbLLt+bvlPTFdFZfJkOuzAA==}
+  pg@8.23.1:
+    resolution: {integrity: sha512-aL96AHANtWjPLDOLqnhx+ngp9+UK7ETEU8VJrDCGvsSSi/mGLcWYsS6Herg7lmaBJe4uwrfqsa7gTEFaSizDoQ==}
     engines: {node: '>= 16.0.0'}
     peerDependencies:
       pg-native: '>=3.0.1'
@@ -6975,6 +7011,9 @@ packages:
     resolution: {integrity: sha512-nLTrUKm2UyiL7rlhapu/Zl45FwNgkZGaCpZbIHajDYgwlJCOzLSk+cIPAnsEqV955GjILJnKbdQC1nVPz+gAYQ==}
     engines: {node: '>= 18'}
 
+  rrule-temporal@2.2.9:
+    resolution: {integrity: sha512-5Bc+IxlGKZtOF/JtkM+39VtK9uYvg1NRWGzZCy2QQj9KFZ4mMMa949GMtGv0Ud/bzyk2KuGhwxmVDuq8cnbzuA==}
+
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
 
@@ -7039,6 +7078,10 @@ packages:
 
   seq-queue@0.0.5:
     resolution: {integrity: sha512-hr3Wtp/GZIc/6DAGPDcV4/9WoZhjrkXsi5B/07QgX8tsdc6ilr7BFM6PM6rbdAX1kFSDYeZGLipIZZKyQP0O5Q==}
+
+  serialize-error@13.1.0:
+    resolution: {integrity: sha512-FT1EL2Pz7lAWA48I6Qb1qHEvGT9ZGz2pb1sYZ9Dhu2t+RmHN6O12WMu7HzFcqFRQaUWEl3Q+++EYBTrZpCoykQ==}
+    engines: {node: '>=20'}
 
   serve-static@2.2.1:
     resolution: {integrity: sha512-xRXBn0pPqQTVQiC8wyQrKs2MOlX24zQ0POGaj0kultvoOCstBQM5yvOhAVSUwOMjQtTvsPWoNCHfPGwaaQJhTw==}
@@ -7301,6 +7344,9 @@ packages:
 
   tdigest@0.1.3:
     resolution: {integrity: sha512-zbRt+lT+/H4fRItHshczHErVCQnitJk8MfMT24MqFJf3YL7SJJPqGIGeuOdvxXxM/AHFzKBl7WoyaYwqO9s3Kw==}
+
+  temporal-spec@1.0.1:
+    resolution: {integrity: sha512-wxVoanmDeavXie1vu2JaQ3WIc3JZnWAOYFBsJyATaVsXsycKYUflGsyBmrRSnoCpZJpwPyr38VpgSUlQ8CbFxg==}
 
   text-table@0.2.0:
     resolution: {integrity: sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==}
@@ -7692,11 +7738,6 @@ packages:
   yallist@4.0.0:
     resolution: {integrity: sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==}
 
-  yaml@2.9.0:
-    resolution: {integrity: sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA==}
-    engines: {node: '>= 14.6'}
-    hasBin: true
-
   yaml@2.9.1:
     resolution: {integrity: sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==}
     engines: {node: '>= 14.6'}
@@ -8048,20 +8089,20 @@ snapshots:
 
   '@bugsnag/safe-json-stringify@6.1.0': {}
 
-  '@bull-board/api@9.11.0(@bull-board/ui@9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(typescript@7.0.2))(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(typescript@7.0.2)':
+  '@bull-board/api@9.11.0(@bull-board/ui@9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(typescript@7.0.2))(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(typescript@7.0.2)':
     dependencies:
-      '@bull-board/ui': 9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(typescript@7.0.2)
+      '@bull-board/ui': 9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(typescript@7.0.2)
       redis-info: 3.1.0
       valibot: 1.5.0(typescript@7.0.2)
     optionalDependencies:
-      bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
+      bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1)
     transitivePeerDependencies:
       - typescript
 
-  '@bull-board/fastify@9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(typescript@7.0.2)':
+  '@bull-board/fastify@9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(typescript@7.0.2)':
     dependencies:
-      '@bull-board/api': 9.11.0(@bull-board/ui@9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(typescript@7.0.2))(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(typescript@7.0.2)
-      '@bull-board/ui': 9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(typescript@7.0.2)
+      '@bull-board/api': 9.11.0(@bull-board/ui@9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(typescript@7.0.2))(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(typescript@7.0.2)
+      '@bull-board/ui': 9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(typescript@7.0.2)
       '@fastify/static': 10.1.9
       '@fastify/view': 12.0.1
       ejs: 6.0.1
@@ -8070,9 +8111,9 @@ snapshots:
       - bullmq
       - typescript
 
-  '@bull-board/ui@9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(typescript@7.0.2)':
+  '@bull-board/ui@9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(typescript@7.0.2)':
     dependencies:
-      '@bull-board/api': 9.11.0(@bull-board/ui@9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(typescript@7.0.2))(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(typescript@7.0.2)
+      '@bull-board/api': 9.11.0(@bull-board/ui@9.11.0(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(typescript@7.0.2))(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(typescript@7.0.2)
     transitivePeerDependencies:
       - bull
       - bullmq
@@ -8378,7 +8419,7 @@ snapshots:
   '@fastify/ajv-compiler@4.0.6':
     dependencies:
       ajv: 8.20.0
-      ajv-formats: 3.0.1(ajv@8.20.0)
+      ajv-formats: 3.0.1
       fast-uri: 4.1.2
 
   '@fastify/auth@5.1.2':
@@ -8425,7 +8466,7 @@ snapshots:
       '@opentelemetry/api': 1.10.0
       '@opentelemetry/core': 2.12.0(@opentelemetry/api@1.10.0)
       '@opentelemetry/instrumentation': 0.223.0(@opentelemetry/api@1.10.0)(supports-color@8.1.1)
-      '@opentelemetry/semantic-conventions': 1.44.0
+      '@opentelemetry/semantic-conventions': 1.45.0
       minimatch: 10.2.6
     transitivePeerDependencies:
       - supports-color
@@ -8631,11 +8672,11 @@ snapshots:
     dependencies:
       zod: 4.6.7
 
-  '@lokalise/background-jobs-common@17.0.2(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.4.0)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.7)':
+  '@lokalise/background-jobs-common@17.0.2(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.4.0)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.7)':
     dependencies:
       '@lokalise/id-utils': 3.0.1
       '@lokalise/node-core': 14.12.0(zod@4.6.7)
-      bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
+      bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1)
       ioredis: 6.0.0(supports-color@8.1.1)
       pino: 10.4.0
       redis-semaphore: 6.0.0(ioredis@6.0.0(supports-color@8.1.1))(supports-color@8.1.1)
@@ -8676,7 +8717,7 @@ snapshots:
       - typescript
       - vitest
 
-  '@lokalise/fastify-api-contracts@8.0.0(@fastify/sse@0.6.1(fastify@5.12.8))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(zod@4.6.7))(fastify@5.12.8)(zod@4.6.7)':
+  '@lokalise/fastify-api-contracts@8.0.0(@fastify/sse@0.6.1(fastify@5.12.8))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(openapi-types@12.1.3)(zod@4.6.7))(fastify@5.12.8)(zod@4.6.7)':
     dependencies:
       '@lokalise/api-contracts': 9.0.1(zod@4.6.7)
       '@lokalise/node-core': 14.12.0(zod@4.6.7)
@@ -8688,24 +8729,24 @@ snapshots:
     optionalDependencies:
       '@fastify/sse': 0.6.1(fastify@5.12.8)
 
-  ? '@lokalise/fastify-extras@36.0.2(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.3(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/background-jobs-common@17.0.2(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.4.0)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.7))(@lokalise/errors@2.1.0(zod@4.6.7))(@lokalise/fastify-api-contracts@8.0.0(@fastify/sse@0.6.1(fastify@5.12.8))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(zod@4.6.7))(fastify@5.12.8)(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(@opentelemetry/api@1.10.0)(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.22.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(zod@4.6.7))(fastify@5.12.8)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.4.0)(supports-color@8.1.1)(zod@4.6.7)'
-  : dependencies:
+  '@lokalise/fastify-extras@36.0.2(7e457b0d970783f9f6e98aa45d95a79c)':
+    dependencies:
       '@amplitude/analytics-node': 1.5.71
       '@fastify/error': 4.2.0
       '@fastify/jwt': 10.2.1
       '@fastify/swagger': 9.9.3(supports-color@8.1.1)
       '@lokalise/api-contracts': 9.0.1(zod@4.6.7)
-      '@lokalise/background-jobs-common': 17.0.2(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.4.0)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.7)
+      '@lokalise/background-jobs-common': 17.0.2(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(ioredis@6.0.0(supports-color@8.1.1))(pino@10.4.0)(supports-color@8.1.1)(toad-scheduler@4.2.0)(zod@4.6.7)
       '@lokalise/error-utils': 4.0.0(@lokalise/node-core@14.12.0(zod@4.6.7))
       '@lokalise/errors': 2.1.0(zod@4.6.7)
-      '@lokalise/fastify-api-contracts': 8.0.0(@fastify/sse@0.6.1(fastify@5.12.8))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(zod@4.6.7))(fastify@5.12.8)(zod@4.6.7)
+      '@lokalise/fastify-api-contracts': 8.0.0(@fastify/sse@0.6.1(fastify@5.12.8))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(openapi-types@12.1.3)(zod@4.6.7))(fastify@5.12.8)(zod@4.6.7)
       '@lokalise/node-core': 14.12.0(zod@4.6.7)
       '@opentelemetry/api': 1.10.0
       '@prometheus-io/client': 0.16.1
       '@scalar/fastify-api-reference': 1.67.0
       '@splitsoftware/splitio': 11.12.1(supports-color@8.1.1)
       '@supercharge/promise-pool': 3.3.0
-      bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
+      bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1)
       dd-trace: 6.22.0
       fastify: 5.12.8
       fastify-metrics: 14.1.1(fastify@5.12.8)
@@ -8720,7 +8761,7 @@ snapshots:
       - encoding
       - supports-color
 
-  '@lokalise/fastify-extras@36.0.2(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.3(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/errors@2.1.0(zod@4.6.7))(@lokalise/fastify-api-contracts@8.0.0(@fastify/sse@0.6.1(fastify@5.12.8))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(openapi-types@12.1.3)(zod@4.6.7))(fastify@5.12.8)(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(@opentelemetry/api@1.10.0)(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0))(dd-trace@6.22.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(openapi-types@12.1.3)(zod@4.6.7))(fastify@5.12.8)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.4.0)(supports-color@8.1.1)(zod@4.6.7)':
+  '@lokalise/fastify-extras@36.0.2(@fastify/jwt@10.2.1)(@fastify/swagger@9.9.3(supports-color@8.1.1))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/background-jobs-common@packages+app+background-jobs-common)(@lokalise/errors@2.1.0(zod@4.6.7))(@lokalise/fastify-api-contracts@8.0.0(@fastify/sse@0.6.1(fastify@5.12.8))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(openapi-types@12.1.3)(zod@4.6.7))(fastify@5.12.8)(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(@opentelemetry/api@1.10.0)(bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1))(dd-trace@6.22.0)(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(openapi-types@12.1.3)(zod@4.6.7))(fastify@5.12.8)(ioredis@6.0.0(supports-color@8.1.1))(pino@10.4.0)(supports-color@8.1.1)(zod@4.6.7)':
     dependencies:
       '@amplitude/analytics-node': 1.5.71
       '@fastify/error': 4.2.0
@@ -8730,14 +8771,14 @@ snapshots:
       '@lokalise/background-jobs-common': link:packages/app/background-jobs-common
       '@lokalise/error-utils': 4.0.0(@lokalise/node-core@14.12.0(zod@4.6.7))
       '@lokalise/errors': 2.1.0(zod@4.6.7)
-      '@lokalise/fastify-api-contracts': 8.0.0(@fastify/sse@0.6.1(fastify@5.12.8))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(zod@4.6.7))(fastify@5.12.8)(zod@4.6.7)
+      '@lokalise/fastify-api-contracts': 8.0.0(@fastify/sse@0.6.1(fastify@5.12.8))(@lokalise/api-contracts@9.0.1(zod@4.6.7))(@lokalise/node-core@14.12.0(zod@4.6.7))(fastify-type-provider-zod@7.0.0(@fastify/swagger@9.9.3(supports-color@8.1.1))(fastify@5.12.8)(openapi-types@12.1.3)(zod@4.6.7))(fastify@5.12.8)(zod@4.6.7)
       '@lokalise/node-core': 14.12.0(zod@4.6.7)
       '@opentelemetry/api': 1.10.0
       '@prometheus-io/client': 0.16.1
       '@scalar/fastify-api-reference': 1.67.0
       '@splitsoftware/splitio': 11.12.1(supports-color@8.1.1)
       '@supercharge/promise-pool': 3.3.0
-      bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)
+      bullmq: 6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1)
       dd-trace: 6.22.0
       fastify: 5.12.8
       fastify-metrics: 14.1.1(fastify@5.12.8)
@@ -9006,7 +9047,7 @@ snapshots:
   '@opentelemetry/core@2.12.0(@opentelemetry/api@1.10.0)':
     dependencies:
       '@opentelemetry/api': 1.10.0
-      '@opentelemetry/semantic-conventions': 1.43.0
+      '@opentelemetry/semantic-conventions': 1.45.0
 
   '@opentelemetry/core@3.1.1(@opentelemetry/api@1.10.0)':
     dependencies:
@@ -9537,20 +9578,20 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.10.0
       '@opentelemetry/core': 2.12.0(@opentelemetry/api@1.10.0)
-      '@opentelemetry/semantic-conventions': 1.43.0
+      '@opentelemetry/semantic-conventions': 1.45.0
 
   '@opentelemetry/resources@3.1.1(@opentelemetry/api@1.10.0)':
     dependencies:
       '@opentelemetry/api': 1.10.0
       '@opentelemetry/core': 3.1.1(@opentelemetry/api@1.10.0)
-      '@opentelemetry/semantic-conventions': 1.44.0
+      '@opentelemetry/semantic-conventions': 1.45.0
 
   '@opentelemetry/sdk-logs@3.1.1(@opentelemetry/api@1.10.0)':
     dependencies:
       '@opentelemetry/api': 1.10.0
       '@opentelemetry/core': 3.1.1(@opentelemetry/api@1.10.0)
       '@opentelemetry/resources': 3.1.1(@opentelemetry/api@1.10.0)
-      '@opentelemetry/semantic-conventions': 1.44.0
+      '@opentelemetry/semantic-conventions': 1.45.0
 
   '@opentelemetry/sdk-metrics@3.1.1(@opentelemetry/api@1.10.0)':
     dependencies:
@@ -9593,7 +9634,7 @@ snapshots:
       '@opentelemetry/core': 2.12.0(@opentelemetry/api@1.10.0)
       '@opentelemetry/resources': 2.12.0(@opentelemetry/api@1.10.0)
       '@opentelemetry/sdk-trace': 2.12.0(@opentelemetry/api@1.10.0)
-      '@opentelemetry/semantic-conventions': 1.43.0
+      '@opentelemetry/semantic-conventions': 1.45.0
 
   '@opentelemetry/sdk-trace-node@2.12.0':
     dependencies:
@@ -9606,18 +9647,14 @@ snapshots:
       '@opentelemetry/api': 1.10.0
       '@opentelemetry/core': 2.12.0(@opentelemetry/api@1.10.0)
       '@opentelemetry/resources': 2.12.0(@opentelemetry/api@1.10.0)
-      '@opentelemetry/semantic-conventions': 1.43.0
+      '@opentelemetry/semantic-conventions': 1.45.0
 
   '@opentelemetry/sdk-trace@3.1.1(@opentelemetry/api@1.10.0)':
     dependencies:
       '@opentelemetry/api': 1.10.0
       '@opentelemetry/core': 3.1.1(@opentelemetry/api@1.10.0)
       '@opentelemetry/resources': 3.1.1(@opentelemetry/api@1.10.0)
-      '@opentelemetry/semantic-conventions': 1.44.0
-
-  '@opentelemetry/semantic-conventions@1.43.0': {}
-
-  '@opentelemetry/semantic-conventions@1.44.0': {}
+      '@opentelemetry/semantic-conventions': 1.45.0
 
   '@opentelemetry/semantic-conventions@1.45.0': {}
 
@@ -9798,7 +9835,7 @@ snapshots:
     dependencies:
       '@prisma/driver-adapter-utils': 7.10.1
       '@types/pg': 8.20.0
-      pg: 8.22.0
+      pg: 8.23.1
       postgres-array: 3.0.4
     transitivePeerDependencies:
       - pg-native
@@ -10090,7 +10127,7 @@ snapshots:
     dependencies:
       ajv: 8.20.0
       ajv-draft-04: 1.0.0(ajv@8.20.0)
-      ajv-formats: 3.0.1(ajv@8.20.0)
+      ajv-formats: 3.0.1
       fs-extra: 11.3.6
       import-lazy: 4.0.0
       jju: 1.4.0
@@ -10153,7 +10190,7 @@ snapshots:
       '@scalar/types': 0.18.3
       ajv: 8.20.0
       ajv-draft-04: 1.0.0(ajv@8.20.0)
-      ajv-formats: 3.0.1(ajv@8.20.0)
+      ajv-formats: 3.0.1
       yaml: 2.9.1
 
   '@scalar/openapi-parser@0.29.0':
@@ -10193,11 +10230,6 @@ snapshots:
 
   '@scalar/validation@0.6.3': {}
 
-  '@smithy/core@3.38.1':
-    dependencies:
-      '@smithy/types': 4.19.0
-      tslib: 2.8.1
-
   '@smithy/core@3.40.0':
     dependencies:
       '@smithy/types': 4.20.0
@@ -10223,12 +10255,8 @@ snapshots:
 
   '@smithy/signature-v4@5.7.5':
     dependencies:
-      '@smithy/core': 3.38.1
-      '@smithy/types': 4.19.0
-      tslib: 2.8.1
-
-  '@smithy/types@4.19.0':
-    dependencies:
+      '@smithy/core': 3.40.0
+      '@smithy/types': 4.20.0
       tslib: 2.8.1
 
   '@smithy/types@4.20.0':
@@ -10373,18 +10401,18 @@ snapshots:
 
   '@types/pg-pool@2.0.7':
     dependencies:
-      '@types/pg': 8.20.0
+      '@types/pg': 8.15.6
 
   '@types/pg@8.15.6':
     dependencies:
       '@types/node': 26.6.6
-      pg-protocol: 1.16.0
+      pg-protocol: 1.16.1
       pg-types: 2.2.0
 
   '@types/pg@8.20.0':
     dependencies:
       '@types/node': 26.6.6
-      pg-protocol: 1.16.0
+      pg-protocol: 1.16.1
       pg-types: 2.2.0
 
   '@types/react@19.2.18':
@@ -10452,8 +10480,8 @@ snapshots:
 
   '@typescript-eslint/project-service@8.71.0(supports-color@8.1.1)(typescript@5.9.3)':
     dependencies:
-      '@typescript-eslint/tsconfig-utils': 8.71.2(typescript@5.9.3)
-      '@typescript-eslint/types': 8.71.2
+      '@typescript-eslint/tsconfig-utils': 8.71.0(typescript@5.9.3)
+      '@typescript-eslint/types': 8.71.0
       debug: 4.4.3(supports-color@8.1.1)
       typescript: 5.9.3
     transitivePeerDependencies:
@@ -10864,14 +10892,15 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.1.1
 
-  '@vitest/mocker@4.1.11(msw@2.15.0(@types/node@26.6.6)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.0))':
+  '@vitest/mocker@4.1.11(msw@2.15.0(@types/node@26.6.6)(typescript@5.9.3))(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))':
     dependencies:
       '@vitest/spy': 4.1.11
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      msw: 2.15.0(@types/node@26.6.6)(typescript@7.0.2)
-      vite: 6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.0)
+      msw: 2.15.0(@types/node@26.6.6)(typescript@5.9.3)
+      vite: 6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)
+    optional: true
 
   '@vitest/mocker@4.1.11(msw@2.15.0(@types/node@26.6.6)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))':
     dependencies:
@@ -10881,16 +10910,6 @@ snapshots:
     optionalDependencies:
       msw: 2.15.0(@types/node@26.6.6)(typescript@7.0.2)
       vite: 6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)
-
-  '@vitest/mocker@4.1.11(msw@2.15.0(typescript@5.9.3))(vite@6.4.3)':
-    dependencies:
-      '@vitest/spy': 4.1.11
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      msw: 2.15.0(typescript@5.9.3)
-      vite: 6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)
-    optional: true
 
   '@vitest/pretty-format@4.1.11':
     dependencies:
@@ -10999,8 +11018,8 @@ snapshots:
     optionalDependencies:
       ajv: 8.20.0
 
-  ajv-formats@3.0.1(ajv@8.20.0):
-    optionalDependencies:
+  ajv-formats@3.0.1:
+    dependencies:
       ajv: 8.20.0
 
   ajv@6.15.0:
@@ -11231,17 +11250,13 @@ snapshots:
     dependencies:
       balanced-match: 4.0.4
 
-  brace-expansion@5.0.9:
-    dependencies:
-      balanced-match: 4.0.4
-
   braces@3.0.3:
     dependencies:
       fill-range: 7.1.1
 
   brotli-wasm@3.0.1: {}
 
-  bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0):
+  bullmq@6.3.4(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1):
     dependencies:
       cron-parser: 5.10.0
       msgpackr: 2.1.0
@@ -11250,7 +11265,7 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       ioredis: 6.0.0(supports-color@8.1.1)
-      pg: 8.22.0
+      pg: 8.23.1
 
   byline@5.0.0: {}
 
@@ -11378,6 +11393,10 @@ snapshots:
       vary: 1.1.2
 
   cron-parser@5.10.0:
+    dependencies:
+      luxon: 3.7.2
+
+  cron-parser@5.10.6:
     dependencies:
       luxon: 3.7.2
 
@@ -11592,13 +11611,13 @@ snapshots:
       get-tsconfig: 4.14.1
       jiti: 2.7.0
 
-  drizzle-orm@1.0.0-rc.5-5935859(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.24.6(@types/node@26.6.6))(pg@8.22.0)(postgres@4.1.1)(valibot@1.4.2(typescript@7.0.2))(zod@4.6.7):
+  drizzle-orm@1.0.0-rc.5-5935859(@electric-sql/pglite@0.4.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.24.6(@types/node@26.6.6))(pg@8.23.1)(postgres@4.1.1)(valibot@1.4.2(typescript@7.0.2))(zod@4.6.7):
     optionalDependencies:
       '@electric-sql/pglite': 0.4.3
       '@opentelemetry/api': 1.9.1
       '@types/pg': 8.20.0
       mysql2: 3.24.6(@types/node@26.6.6)
-      pg: 8.22.0
+      pg: 8.23.1
       postgres: 4.1.1
       valibot: 1.4.2(typescript@7.0.2)
       zod: 4.6.7
@@ -11968,7 +11987,7 @@ snapshots:
       eslint: 8.57.1(supports-color@8.1.1)
     optionalDependencies:
       '@typescript-eslint/eslint-plugin': 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1(supports-color@8.1.1))(supports-color@8.1.1)(typescript@5.9.3))(eslint@8.57.1(supports-color@8.1.1))(supports-color@8.1.1)(typescript@5.9.3)
-      vitest: 4.1.11(msw@2.15.0(typescript@5.9.3))(vite@6.4.3)
+      vitest: 4.1.11(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.6)(typescript@5.9.3))(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -12129,7 +12148,7 @@ snapshots:
     dependencies:
       '@fastify/merge-json-schemas': 0.2.1
       ajv: 8.20.0
-      ajv-formats: 3.0.1(ajv@8.20.0)
+      ajv-formats: 3.0.1
       fast-uri: 4.1.2
       json-schema-ref-resolver: 3.0.0
       rfdc: 1.4.1
@@ -12991,11 +13010,11 @@ snapshots:
 
   minimatch@10.2.3:
     dependencies:
-      brace-expansion: 5.0.9
+      brace-expansion: 5.0.12
 
   minimatch@10.2.6:
     dependencies:
-      brace-expansion: 5.0.9
+      brace-expansion: 5.0.12
 
   minimatch@11.0.4:
     dependencies:
@@ -13099,32 +13118,7 @@ snapshots:
     optionalDependencies:
       msgpackr-extract: 3.0.4
 
-  msw@2.15.0(@types/node@26.6.6)(typescript@7.0.2):
-    dependencies:
-      '@inquirer/confirm': 6.3.2(@types/node@26.6.6)
-      '@mswjs/interceptors': 0.41.9
-      '@open-draft/deferred-promise': 3.0.0
-      '@types/statuses': 2.0.6
-      cookie: 1.1.1
-      graphql: 16.14.2
-      headers-polyfill: 5.0.1
-      is-node-process: 1.2.0
-      outvariant: 1.4.3
-      path-to-regexp: 6.3.0
-      picocolors: 1.1.1
-      rettime: 0.11.11
-      statuses: 2.0.2
-      strict-event-emitter: 0.5.1
-      tough-cookie: 6.0.2
-      type-fest: 5.10.0
-      until-async: 3.0.2
-      yargs: 17.7.3
-    optionalDependencies:
-      typescript: 7.0.2
-    transitivePeerDependencies:
-      - '@types/node'
-
-  msw@2.15.0(typescript@5.9.3):
+  msw@2.15.0(@types/node@26.6.6)(typescript@5.9.3):
     dependencies:
       '@inquirer/confirm': 6.3.2(@types/node@26.6.6)
       '@mswjs/interceptors': 0.41.9
@@ -13149,6 +13143,31 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
     optional: true
+
+  msw@2.15.0(@types/node@26.6.6)(typescript@7.0.2):
+    dependencies:
+      '@inquirer/confirm': 6.3.2(@types/node@26.6.6)
+      '@mswjs/interceptors': 0.41.9
+      '@open-draft/deferred-promise': 3.0.0
+      '@types/statuses': 2.0.6
+      cookie: 1.1.1
+      graphql: 16.14.2
+      headers-polyfill: 5.0.1
+      is-node-process: 1.2.0
+      outvariant: 1.4.3
+      path-to-regexp: 6.3.0
+      picocolors: 1.1.1
+      rettime: 0.11.11
+      statuses: 2.0.2
+      strict-event-emitter: 0.5.1
+      tough-cookie: 6.0.2
+      type-fest: 5.10.0
+      until-async: 3.0.2
+      yargs: 17.7.3
+    optionalDependencies:
+      typescript: 7.0.2
+    transitivePeerDependencies:
+      - '@types/node'
 
   muggle-string@0.4.1: {}
 
@@ -13232,6 +13251,8 @@ snapshots:
     optional: true
 
   node-gyp-build@4.8.4: {}
+
+  non-error@0.1.0: {}
 
   object-assign@4.1.1: {}
 
@@ -13422,18 +13443,28 @@ snapshots:
 
   perfect-debounce@2.1.0: {}
 
-  pg-cloudflare@1.4.0:
+  pg-boss@12.38.2(@opentelemetry/api@1.10.0):
+    dependencies:
+      '@opentelemetry/api': 1.10.0
+      cron-parser: 5.10.6
+      pg: 8.23.1
+      rrule-temporal: 2.2.9
+      serialize-error: 13.1.0
+    transitivePeerDependencies:
+      - pg-native
+
+  pg-cloudflare@1.4.1:
     optional: true
 
-  pg-connection-string@2.14.0: {}
+  pg-connection-string@2.14.1: {}
 
   pg-int8@1.0.1: {}
 
-  pg-pool@3.14.0(pg@8.22.0):
+  pg-pool@3.14.0(pg@8.23.1):
     dependencies:
-      pg: 8.22.0
+      pg: 8.23.1
 
-  pg-protocol@1.16.0: {}
+  pg-protocol@1.16.1: {}
 
   pg-types@2.2.0:
     dependencies:
@@ -13443,15 +13474,15 @@ snapshots:
       postgres-date: 1.0.7
       postgres-interval: 1.2.0
 
-  pg@8.22.0:
+  pg@8.23.1:
     dependencies:
-      pg-connection-string: 2.14.0
-      pg-pool: 3.14.0(pg@8.22.0)
-      pg-protocol: 1.16.0
+      pg-connection-string: 2.14.1
+      pg-pool: 3.14.0(pg@8.23.1)
+      pg-protocol: 1.16.1
       pg-types: 2.2.0
       pgpass: 1.0.5
     optionalDependencies:
-      pg-cloudflare: 1.4.0
+      pg-cloudflare: 1.4.1
 
   pgpass@1.0.5:
     dependencies:
@@ -13808,6 +13839,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  rrule-temporal@2.2.9:
+    dependencies:
+      temporal-spec: 1.0.1
+
   run-parallel@1.2.0:
     dependencies:
       queue-microtask: 1.2.3
@@ -13874,6 +13909,11 @@ snapshots:
       - supports-color
 
   seq-queue@0.0.5: {}
+
+  serialize-error@13.1.0:
+    dependencies:
+      non-error: 0.1.0
+      type-fest: 5.10.0
 
   serve-static@2.2.1(supports-color@8.1.1):
     dependencies:
@@ -14010,8 +14050,7 @@ snapshots:
 
   source-map-js@1.2.1: {}
 
-  source-map@0.6.1:
-    optional: true
+  source-map@0.6.1: {}
 
   source-map@0.7.6: {}
 
@@ -14160,7 +14199,6 @@ snapshots:
   supports-color@8.1.1:
     dependencies:
       has-flag: 4.0.0
-    optional: true
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
@@ -14173,6 +14211,8 @@ snapshots:
   tdigest@0.1.3:
     dependencies:
       bintrees: 1.0.2
+
+  temporal-spec@1.0.1: {}
 
   text-table@0.2.0: {}
 
@@ -14411,7 +14451,7 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vite-plugin-dts@4.5.4(@types/node@26.6.6)(rollup@4.63.3)(typescript@7.0.2)(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.0)):
+  vite-plugin-dts@4.5.4(@types/node@26.6.6)(rollup@4.63.3)(supports-color@8.1.1)(typescript@7.0.2)(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)):
     dependencies:
       '@microsoft/api-extractor': 7.58.12(@types/node@26.6.6)
       '@rollup/pluginutils': 5.4.0(rollup@4.63.3)
@@ -14424,25 +14464,11 @@ snapshots:
       magic-string: 0.30.21
       typescript: 7.0.2
     optionalDependencies:
-      vite: 6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.0)
+      vite: 6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - '@types/node'
       - rollup
       - supports-color
-
-  vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.0):
-    dependencies:
-      esbuild: 0.25.12
-      fdir: 6.5.0(picomatch@4.0.7)
-      picomatch: 4.0.7
-      postcss: 8.5.28
-      rollup: 4.63.3
-      tinyglobby: 0.2.17
-    optionalDependencies:
-      '@types/node': 26.6.6
-      fsevents: 2.3.3
-      jiti: 2.7.0
-      yaml: 2.9.0
 
   vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1):
     dependencies:
@@ -14457,6 +14483,36 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.7.0
       yaml: 2.9.1
+
+  vitest@4.1.11(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.6)(typescript@5.9.3))(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)):
+    dependencies:
+      '@vitest/expect': 4.1.11
+      '@vitest/mocker': 4.1.11(msw@2.15.0(@types/node@26.6.6)(typescript@5.9.3))(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
+      '@vitest/pretty-format': 4.1.11
+      '@vitest/runner': 4.1.11
+      '@vitest/snapshot': 4.1.11
+      '@vitest/spy': 4.1.11
+      '@vitest/utils': 4.1.11
+      es-module-lexer: 2.3.2
+      expect-type: 1.4.0
+      magic-string: 0.30.21
+      obug: 2.2.1
+      pathe: 2.0.3
+      picomatch: 4.0.7
+      std-env: 4.2.0
+      tinybench: 2.9.0
+      tinyexec: 1.3.1
+      tinyglobby: 0.2.17
+      tinyrainbow: 3.1.1
+      vite: 6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@opentelemetry/api': 1.10.0
+      '@types/node': 26.6.6
+      '@vitest/coverage-v8': 4.1.11(vitest@4.1.11)
+    transitivePeerDependencies:
+      - msw
+    optional: true
 
   vitest@4.1.11(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.6)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)):
     dependencies:
@@ -14482,35 +14538,6 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@opentelemetry/api': 1.10.0
-      '@types/node': 26.6.6
-      '@vitest/coverage-v8': 4.1.11(vitest@4.1.11)
-    transitivePeerDependencies:
-      - msw
-
-  vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.6.6)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.6.6)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.0)):
-    dependencies:
-      '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(msw@2.15.0(@types/node@26.6.6)(typescript@7.0.2))(vite@6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.0))
-      '@vitest/pretty-format': 4.1.11
-      '@vitest/runner': 4.1.11
-      '@vitest/snapshot': 4.1.11
-      '@vitest/spy': 4.1.11
-      '@vitest/utils': 4.1.11
-      es-module-lexer: 2.3.2
-      expect-type: 1.4.0
-      magic-string: 0.30.21
-      obug: 2.2.1
-      pathe: 2.0.3
-      picomatch: 4.0.7
-      std-env: 4.2.0
-      tinybench: 2.9.0
-      tinyexec: 1.3.1
-      tinyglobby: 0.2.17
-      tinyrainbow: 3.1.1
-      vite: 6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.0)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@opentelemetry/api': 1.9.1
       '@types/node': 26.6.6
       '@vitest/coverage-v8': 4.1.11(vitest@4.1.11)
     transitivePeerDependencies:
@@ -14544,32 +14571,6 @@ snapshots:
       '@vitest/coverage-v8': 4.1.11(vitest@4.1.11)
     transitivePeerDependencies:
       - msw
-
-  vitest@4.1.11(msw@2.15.0(typescript@5.9.3))(vite@6.4.3):
-    dependencies:
-      '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(msw@2.15.0(typescript@5.9.3))(vite@6.4.3)
-      '@vitest/pretty-format': 4.1.11
-      '@vitest/runner': 4.1.11
-      '@vitest/snapshot': 4.1.11
-      '@vitest/spy': 4.1.11
-      '@vitest/utils': 4.1.11
-      es-module-lexer: 2.3.2
-      expect-type: 1.4.0
-      magic-string: 0.30.21
-      obug: 2.2.1
-      pathe: 2.0.3
-      picomatch: 4.0.7
-      std-env: 4.2.0
-      tinybench: 2.9.0
-      tinyexec: 1.3.1
-      tinyglobby: 0.2.17
-      tinyrainbow: 3.1.1
-      vite: 6.4.3(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)
-      why-is-node-running: 2.3.0
-    transitivePeerDependencies:
-      - msw
-    optional: true
 
   vscode-uri@3.1.0: {}
 
@@ -14661,8 +14662,6 @@ snapshots:
   y18n@5.0.8: {}
 
   yallist@4.0.0: {}
-
-  yaml@2.9.0: {}
 
   yaml@2.9.1: {}
 
