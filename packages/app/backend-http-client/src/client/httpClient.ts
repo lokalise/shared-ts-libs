@@ -1,6 +1,6 @@
 import type { Readable } from 'node:stream'
 import type { InferSchemaOutput } from '@lokalise/api-contracts'
-import { copyWithoutUndefined, type Either } from '@lokalise/node-core'
+import { copyWithoutUndefined, type Either } from '@lokalise/universal-ts-utils/node'
 import type { FormData } from 'undici'
 import { Client, Pool } from 'undici'
 import type { ZodError, ZodSchema } from 'zod/v4'

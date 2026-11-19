@@ -1,4 +1,4 @@
-import { deepClone, removeNullish } from '@lokalise/node-core'
+import { deepClone, removeNullish } from '@lokalise/universal-ts-utils/node'
 import type { Job } from 'bullmq'
 import type { SafeJob } from '../types.ts'
 import type {

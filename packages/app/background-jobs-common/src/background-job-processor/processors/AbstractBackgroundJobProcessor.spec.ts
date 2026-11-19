@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import { waitAndRetry } from '@lokalise/node-core'
+import { waitAndRetry } from '@lokalise/universal-ts-utils/node'
 import { UnrecoverableError } from 'bullmq'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TestBackgroundJobProcessorWithLazyLoading } from '../../../test/processors/TestBackgroundJobProcessorWithLazyLoading.ts'

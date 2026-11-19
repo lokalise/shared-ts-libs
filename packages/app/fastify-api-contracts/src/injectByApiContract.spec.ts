@@ -5,7 +5,7 @@ import {
   mapApiContractToPath,
   noBodyResponse,
 } from '@lokalise/api-contracts'
-import { copyWithoutUndefined } from '@lokalise/node-core'
+import { copyWithoutUndefined } from '@lokalise/universal-ts-utils/node'
 import { type FastifyInstance, fastify, type RouteHandlerMethod } from 'fastify'
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
 import { describe, expect, expectTypeOf, it, onTestFinished } from 'vitest'

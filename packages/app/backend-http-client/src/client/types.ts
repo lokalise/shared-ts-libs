@@ -1,4 +1,4 @@
-import type { DefiniteEither, Either } from '@lokalise/node-core'
+import type { DefiniteEither, Either } from '@lokalise/universal-ts-utils/node'
 import type { Client, Dispatcher, Pool } from 'undici'
 import type { ZodSchema } from 'zod/v4'
 import type { RetryConfig } from '../api-contract/retry.ts'

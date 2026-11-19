@@ -1,5 +1,6 @@
 import type { RequestContext } from '@lokalise/fastify-extras'
-import { type Either, stringValueSerializer } from '@lokalise/node-core'
+import { stringValueSerializer } from '@lokalise/node-core'
+import type { Either } from '@lokalise/universal-ts-utils/node'
 import { isError, isObject } from '@lokalise/universal-ts-utils/node'
 import { TokenError } from 'fast-jwt'
 import { stdSerializers } from 'pino'

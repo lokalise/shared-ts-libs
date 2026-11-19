@@ -1,4 +1,4 @@
-import type { DefiniteEither, Either } from '@lokalise/node-core'
+import type { DefiniteEither, Either } from '@lokalise/universal-ts-utils/node'
 import { FifoMap } from 'toad-cache'
 
 export type HealthcheckEntry = {

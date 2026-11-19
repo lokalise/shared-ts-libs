@@ -1,6 +1,7 @@
 import { requestContext } from '@fastify/request-context'
 import type { ErrorReporter } from '@lokalise/node-core'
-import { InternalError, isError } from '@lokalise/node-core'
+import { InternalError } from '@lokalise/node-core'
+import { isError } from '@lokalise/universal-ts-utils/node'
 import type { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
 import { stdSerializers } from 'pino'

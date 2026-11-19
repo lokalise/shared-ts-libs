@@ -360,6 +360,9 @@ importers:
 
   packages/app/backend-http-client:
     dependencies:
+      '@lokalise/universal-ts-utils':
+        specifier: workspace:^
+        version: link:../universal-ts-utils
       parse-sse:
         specifier: ^0.1.0
         version: 0.1.0
@@ -409,6 +412,9 @@ importers:
       '@lokalise/node-core':
         specifier: ^14.12.0
         version: 14.12.0(zod@4.6.7)
+      '@lokalise/universal-ts-utils':
+        specifier: workspace:^
+        version: link:../universal-ts-utils
       redis-semaphore:
         specifier: ^6.0.0
         version: 6.0.0(ioredis@6.0.0(supports-color@8.1.1))(supports-color@8.1.1)
@@ -497,6 +503,9 @@ importers:
       '@lokalise/node-core':
         specifier: ^14.12.0
         version: 14.12.0(zod@4.6.7)
+      '@lokalise/universal-ts-utils':
+        specifier: workspace:^
+        version: link:../universal-ts-utils
       '@opentelemetry/exporter-trace-otlp-grpc':
         specifier: 0.301.1
         version: 0.301.1(@opentelemetry/api@1.10.0)
@@ -756,6 +765,9 @@ importers:
       '@lokalise/tsconfig':
         specifier: workspace:^
         version: link:../../dev/tsconfig
+      '@lokalise/universal-ts-utils':
+        specifier: workspace:^
+        version: link:../universal-ts-utils
       '@types/negotiator':
         specifier: ^0.6.5
         version: 0.6.5
@@ -795,6 +807,9 @@ importers:
       '@lokalise/tsconfig':
         specifier: workspace:^
         version: link:../../dev/tsconfig
+      '@lokalise/universal-ts-utils':
+        specifier: workspace:^
+        version: link:../universal-ts-utils
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.6.4
@@ -926,6 +941,9 @@ importers:
       '@lokalise/node-core':
         specifier: ^14.12.0
         version: 14.12.0(zod@4.6.7)
+      '@lokalise/universal-ts-utils':
+        specifier: workspace:^
+        version: link:../universal-ts-utils
       '@supercharge/promise-pool':
         specifier: ^3.2.0
         version: 3.3.0
@@ -1198,6 +1216,9 @@ importers:
       '@lokalise/node-core':
         specifier: '>=14.7.4'
         version: 14.12.0(zod@4.6.7)
+      '@lokalise/universal-ts-utils':
+        specifier: workspace:^
+        version: link:../universal-ts-utils
       '@prometheus-io/client':
         specifier: ^0.16.1
         version: 0.16.1

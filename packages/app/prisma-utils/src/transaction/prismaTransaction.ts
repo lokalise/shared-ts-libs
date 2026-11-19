@@ -1,6 +1,5 @@
 import { setTimeout } from 'node:timers/promises'
-import type { Either } from '@lokalise/node-core'
-import { deepClone } from '@lokalise/node-core'
+import { deepClone, type Either } from '@lokalise/universal-ts-utils/node'
 import type * as RuntimePrisma from '@prisma/client/runtime/client'
 import type { PrismaClient } from 'db-client/client.ts'
 import { isCockroachDBRetryTransaction } from '../errors/cockroachdbError.ts'
