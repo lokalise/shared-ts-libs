@@ -1,4 +1,4 @@
-import type { Either } from '@lokalise/node-core'
+import type { Either } from '@lokalise/universal-ts-utils/node'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client'
 import { PrismaClient } from 'db-client/client.ts'

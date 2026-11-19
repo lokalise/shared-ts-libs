@@ -1,5 +1,5 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import { waitAndRetry } from '@lokalise/node-core'
+import { waitAndRetry } from '@lokalise/universal-ts-utils/node'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod/v4'
 import { TestSuccessBackgroundJobProcessorNew } from '../../../test/processors/TestSuccessBackgroundJobProcessorNew.ts'

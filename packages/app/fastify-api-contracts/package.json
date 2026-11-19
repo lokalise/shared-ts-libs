@@ -66,6 +66,7 @@
     "@lokalise/api-contracts": "workspace:^",
     "@lokalise/biome-config": "workspace:^",
     "@lokalise/tsconfig": "workspace:^",
+    "@lokalise/universal-ts-utils": "workspace:^",
     "@types/negotiator": "^0.6.5",
     "@vitest/coverage-v8": "^4.1.11",
     "fastify-type-provider-zod": "^7.0.0",

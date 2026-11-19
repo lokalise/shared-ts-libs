@@ -1,4 +1,4 @@
-import type { Either } from '@lokalise/node-core'
+import type { Either } from '@lokalise/universal-ts-utils/node'
 import { Gauge } from '@prometheus-io/client'
 import type { HealthcheckResultsStore } from './HealthcheckResultsStore.ts'
 

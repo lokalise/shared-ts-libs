@@ -1,4 +1,4 @@
-import { isError } from '@lokalise/node-core'
+import { isError } from '@lokalise/universal-ts-utils/node'
 import type { PrismaClientKnownRequestError } from '@prisma/client/runtime/client'
 import { isCockroachDBRetryTransaction } from './cockroachdbError.ts'
 

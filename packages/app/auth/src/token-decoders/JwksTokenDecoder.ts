@@ -1,4 +1,4 @@
-import type { FreeformRecord } from '@lokalise/node-core'
+import type { FreeformRecord } from '@lokalise/universal-ts-utils/node'
 import { createVerifier, type DecodedJwt, type VerifierOptions } from 'fast-jwt'
 import type { JwksClient } from 'jwks-rsa'
 import { TokenDecoder } from './TokenDecoder.ts'

@@ -65,11 +65,13 @@ Helper for executing Prisma transactions with intelligent automatic retry mechan
 
 #### Basic Usage
 
+`prismaTransaction` returns an `Either`. To reference that type directly, as the examples below do, install `@lokalise/universal-ts-utils` in your project.
+
 **With multiple operations:**
 
 ```typescript
 import { prismaTransaction } from '@lokalise/prisma-utils'
-import type { Either } from '@lokalise/node-core'
+import type { Either } from '@lokalise/universal-ts-utils/node'
 
 const result: Either<unknown, [Item, Segment]> = await prismaTransaction(
   prisma,

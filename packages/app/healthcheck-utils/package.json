@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@lokalise/node-core": "^14.12.0",
+    "@lokalise/universal-ts-utils": "workspace:^",
     "@supercharge/promise-pool": "^3.2.0",
     "redis-semaphore": "^6.0.0",
     "toad-cache": "^3.7.1"

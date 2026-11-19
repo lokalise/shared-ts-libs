@@ -1,12 +1,7 @@
 import { constants as httpConstants } from 'node:http2'
-
 import type { ErrorReporter } from '@lokalise/node-core'
-import {
-  isError,
-  isInternalError,
-  isObject,
-  isPublicNonRecoverableError,
-} from '@lokalise/node-core'
+import { isInternalError, isPublicNonRecoverableError } from '@lokalise/node-core'
+import { isError, isObject } from '@lokalise/universal-ts-utils/node'
 import type { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
 import pino from 'pino'

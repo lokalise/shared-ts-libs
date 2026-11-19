@@ -1,4 +1,4 @@
-import type { Either } from '@lokalise/node-core'
+import type { Either } from '@lokalise/universal-ts-utils/node'
 import type { Dispatcher } from 'undici'
 import type { ZodType } from 'zod/v4'
 import { resolveRetryConfig, withRetry } from '../api-contract/retry.ts'

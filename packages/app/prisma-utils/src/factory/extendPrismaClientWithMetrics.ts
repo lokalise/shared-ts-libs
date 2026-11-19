@@ -1,4 +1,4 @@
-import type { Either } from '@lokalise/node-core'
+import type { Either } from '@lokalise/universal-ts-utils/node'
 import type Prometheus from '@prometheus-io/client'
 import type { PrismaClient } from 'db-client/client.ts'
 

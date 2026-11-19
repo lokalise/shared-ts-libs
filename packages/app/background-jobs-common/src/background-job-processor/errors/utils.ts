@@ -1,4 +1,4 @@
-import { isError } from '@lokalise/node-core'
+import { isError } from '@lokalise/universal-ts-utils/node'
 import { DelayedError, RateLimitError, UnrecoverableError, WaitingChildrenError } from 'bullmq'
 import {
   MUTED_UNRECOVERABLE_ERROR_SYMBOL,

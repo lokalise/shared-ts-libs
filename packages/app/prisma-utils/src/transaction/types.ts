@@ -1,4 +1,4 @@
-import type { Either } from '@lokalise/node-core'
+import type { Either } from '@lokalise/universal-ts-utils/node'
 import type * as RuntimePrisma from '@prisma/client/runtime/client'
 import type { DbDriver } from '../types.ts'
 

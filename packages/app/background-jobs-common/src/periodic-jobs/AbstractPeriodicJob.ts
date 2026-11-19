@@ -4,11 +4,11 @@ import {
   type ErrorReporter,
   globalLogger,
   InternalError,
-  isError,
   resolveGlobalErrorLogObject,
   runInTransactionContext,
   type TransactionObservabilityManager,
 } from '@lokalise/node-core'
+import { isError } from '@lokalise/universal-ts-utils/node'
 import type { Redis } from 'ioredis'
 import type { LockLostCallback, LockOptions } from 'redis-semaphore'
 import { Mutex } from 'redis-semaphore'

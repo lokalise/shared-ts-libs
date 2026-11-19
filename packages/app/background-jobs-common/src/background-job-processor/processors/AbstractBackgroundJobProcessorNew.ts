@@ -1,5 +1,6 @@
 import type { ErrorReporter } from '@lokalise/node-core'
-import { isError, resolveGlobalErrorLogObject } from '@lokalise/node-core'
+import { resolveGlobalErrorLogObject } from '@lokalise/node-core'
+import { isError } from '@lokalise/universal-ts-utils/node'
 import {
   DelayedError,
   type Job,
