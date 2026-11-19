@@ -6,15 +6,15 @@ can be scheduled inside the caller's own database transaction.
 
 The surface follows `@lokalise/background-jobs-common` where the two backends allow it:
 
-| `@lokalise/background-jobs-common`  | `@lokalise/pg-boss-jobs-common`                                                    |
-|-------------------------------------|------------------------------------------------------------------------------------|
-| `QueueConfiguration`                | `QueueConfiguration`, with pg-boss `queueOptions` and `jobOptions`                 |
-| `QueueManager`                      | `PgBossQueueManager`: `start`, `dispose`, `schedule`, `scheduleBulk`, `getSpy`, `getJobCount` |
-| `AbstractBackgroundJobProcessorNew` | `AbstractPgBossJobProcessor`: `process(job, requestContext)`, `onSuccess`, `onFailed` |
-| none                                | `AbstractPgBossBatchJobProcessor`: `process(jobs, requestContext)`, settled per job |
-| `AbstractPeriodicJob`               | `PgBossQueueManager.scheduleRecurring`, on pg-boss's own cron and RRULE scheduler  |
-| `UnrecoverableError`, `MutedUnrecoverableError` | the same names, recognized from either package                         |
-| `BASE_JOB_PAYLOAD_SCHEMA`, `RequestContext` | the same shapes                                                            |
+| `@lokalise/background-jobs-common`              | `@lokalise/pg-boss-jobs-common`                                                               |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `QueueConfiguration`                            | `QueueConfiguration`, with pg-boss `queueOptions` and `jobOptions`                            |
+| `QueueManager`                                  | `PgBossQueueManager`: `start`, `dispose`, `schedule`, `scheduleBulk`, `getSpy`, `getJobCount` |
+| `AbstractBackgroundJobProcessorNew`             | `AbstractPgBossJobProcessor`: `process(job, requestContext)`, `onSuccess`, `onFailed`         |
+| none                                            | `AbstractPgBossBatchJobProcessor`: `process(jobs, requestContext)`, settled per job           |
+| `AbstractPeriodicJob`                           | `PgBossQueueManager.scheduleRecurring`, on pg-boss's own cron and RRULE scheduler             |
+| `UnrecoverableError`, `MutedUnrecoverableError` | the same names, recognized from either package                                                |
+| `BASE_JOB_PAYLOAD_SCHEMA`, `RequestContext`     | the same shapes                                                                               |
 
 ## Getting started
 
@@ -124,7 +124,10 @@ pg-boss schedules recurring jobs itself, once across every running instance, so 
 counterpart and no lock to manage:
 
 ```typescript
-await queueManager.scheduleRecurring('cleanup', '0 3 * * *', payload, { tz: 'Europe/Riga', key: 'nightly' })
+await queueManager.scheduleRecurring('cleanup', '0 3 * * *', payload, {
+  tz: 'Europe/Riga',
+  key: 'nightly',
+})
 await queueManager.scheduleRecurring('report', 'FREQ=MONTHLY;BYDAY=-1FR;BYHOUR=17', payload)
 await queueManager.unscheduleRecurring('cleanup', 'nightly')
 ```
@@ -137,12 +140,12 @@ pg-boss option, which is on by default.
 Both processor classes validate each payload before it reaches `process`, and settle every job of a fetched batch on
 its own outcome.
 
-| Outcome                                       | What happens                                              |
-|-----------------------------------------------|-----------------------------------------------------------|
-| `process` succeeds                            | The job completes; its return value is stored as `output` |
-| `process` throws                              | The job fails and is retried per the queue's settings     |
-| `process` throws an `UnrecoverableError`      | The job goes straight to the dead letter queue            |
-| The payload fails `jobPayloadSchema`          | The job goes straight to the dead letter queue            |
+| Outcome                                  | What happens                                              |
+| ---------------------------------------- | --------------------------------------------------------- |
+| `process` succeeds                       | The job completes; its return value is stored as `output` |
+| `process` throws                         | The job fails and is retried per the queue's settings     |
+| `process` throws an `UnrecoverableError` | The job goes straight to the dead letter queue            |
+| The payload fails `jobPayloadSchema`     | The job goes straight to the dead letter queue            |
 
 Every failure is stored as the job's `output`, and pg-boss keeps it when the job moves to the dead letter queue, so the
 `job` table says why a job failed.
