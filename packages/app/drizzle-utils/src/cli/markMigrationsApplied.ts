@@ -1,28 +1,18 @@
 #!/usr/bin/env node
 
 import { resolve } from 'node:path'
-import { pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
 import {
   type Dialect,
   type DrizzleExecutor,
   markMigrationsApplied,
 } from '../markMigrationsApplied.ts'
-
-interface DrizzleDbCredentials {
-  url?: string
-  host?: string
-  port?: number
-  user?: string
-  password?: string
-  database?: string
-}
-
-interface DrizzleConfig {
-  dialect?: string
-  out?: string
-  dbCredentials?: DrizzleDbCredentials
-}
+import {
+  buildConnectionUrl,
+  type DrizzleConfig,
+  type DrizzleDbCredentials,
+  loadConfig,
+} from './drizzleConfig.ts'
 
 const SUPPORTED_DIALECTS = new Set(['postgresql', 'mysql', 'cockroachdb'])
 
@@ -30,31 +20,6 @@ const SUPPORTED_DIALECTS = new Set(['postgresql', 'mysql', 'cockroachdb'])
 const log = console.log
 // biome-ignore lint/suspicious/noConsole: CLI script — console is the intended output channel
 const logError = console.error
-
-async function loadConfig(configPath: string): Promise<DrizzleConfig> {
-  const mod = (await import(pathToFileURL(configPath).href)) as
-    | { default?: DrizzleConfig }
-    | DrizzleConfig
-  return ('default' in mod && mod.default ? mod.default : mod) as DrizzleConfig
-}
-
-function buildConnectionUrl(credentials: DrizzleDbCredentials, dialect: string): string {
-  if (credentials.url) {
-    return credentials.url
-  }
-
-  if (!credentials.host || !credentials.database) {
-    throw new Error('dbCredentials must have either "url" or at least "host" and "database" fields')
-  }
-
-  const scheme = dialect === 'mysql' ? 'mysql' : 'postgresql'
-  const userPart = credentials.user
-    ? `${credentials.user}${credentials.password ? `:${credentials.password}` : ''}@`
-    : ''
-  const port = credentials.port ? `:${credentials.port}` : ''
-
-  return `${scheme}://${userPart}${credentials.host}${port}/${credentials.database}`
-}
 
 async function createPostgresDb(
   url: string,

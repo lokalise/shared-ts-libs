@@ -1,4 +1,11 @@
 export {
+  type ApplyConcurrentIndexesOptions,
+  type ApplyConcurrentIndexesResult,
+  applyConcurrentIndexes,
+  type ConcurrentIndexStatement,
+  readConcurrentIndexStatements,
+} from './applyConcurrentIndexes.ts'
+export {
   diffSchemaSnapshots,
   type SnapshotDiff,
   type SnapshotDifference,

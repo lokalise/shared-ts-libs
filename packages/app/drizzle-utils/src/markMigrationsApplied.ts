@@ -313,13 +313,13 @@ export interface MarkMigrationsAppliedResult {
   skipped: number
 }
 
-function quoteLiteral(value: string): string {
+export function quoteLiteral(value: string): string {
   return `'${value.replace(/'/g, "''")}'`
 }
 
 // Drizzle's `execute` return type is driver-dependent: postgres-js gives a row
 // array, mysql2 gives `[rows, fields]`. Normalize to a plain row array.
-function selectRows(result: unknown): Record<string, unknown>[] {
+export function selectRows(result: unknown): Record<string, unknown>[] {
   if (Array.isArray(result)) {
     // mysql2: [rows, fields] — the first element is the rows array.
     const [first] = result as unknown[]
