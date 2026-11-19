@@ -20,30 +20,50 @@ import { Queue } from 'bullmq'
 const app = fastify()
 
 await app.register(basicAuth, {
-    config: {
-        isEnabled: true,
-        username: 'username',
-        password: 'pass',
-    },
-    enableList: new Set(['/bull']),
+  config: {
+    isEnabled: true,
+    username: 'username',
+    password: 'pass',
+  },
+  enableList: new Set(['/bull']),
 })
 
 await app.register(bullBoard, {
   queueConstructor: Queue,
   redisConfigs: [
-      {
-          host: process.env.REDIS_HOST!,
-          port: Number(process.env.REDIS_PORT),
-          username: process.env.REDIS_USERNAME,
-          password: process.env.REDIS_PASSWORD,
-          keyPrefix: process.env.REDIS_KEY_PREFIX,
-          useTls: false,
-      } // any Redis config
+    {
+      host: process.env.REDIS_HOST!,
+      port: Number(process.env.REDIS_PORT),
+      username: process.env.REDIS_USERNAME,
+      password: process.env.REDIS_PASSWORD,
+      keyPrefix: process.env.REDIS_KEY_PREFIX,
+    }, // any Redis config
   ],
   basePath: '/bull',
   refreshIntervalInSeconds: config.bullBoard.refreshIntervalInSeconds,
 })
 ```
+
+Each `enableList` entry protects that path and every route under it, so `'/bull'` covers the dashboard page,
+its API (`/bull/api/queues/...`, including the job retry/clean/obliterate endpoints) and its static assets. It does
+not cover routes that only share the string prefix, such as `/bullet`. A trailing slash makes no difference
+(`'/bull/'` behaves like `'/bull'`), empty entries are ignored, and the root path `'/'` is matched exactly.
+
+Entries are full route paths. If BullBoard is registered inside a plugin with its own prefix, list the full path,
+e.g. `'/admin/bull'` for a `/bull` mount under `/admin`.
+
+To protect everything by default instead, pass a `skipList` in place of `enableList`. Every route then requires
+credentials, including the root redirect and unmatched URLs, except the listed route paths:
+
+```ts
+await app.register(basicAuth, {
+  config: { isEnabled: true, username: 'username', password: 'pass' },
+  skipList: new Set(['/health', '/metrics']),
+})
+```
+
+`skipList` entries are matched exactly against the registered route path, so `'/health'` does not skip
+`/health/deep`. Pass either `enableList` or `skipList`, not both.
 
 ## BullMQ Pro support
 

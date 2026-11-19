@@ -5,16 +5,9 @@ import {
   fromInstanceMetadata,
   fromTokenFile,
 } from '@aws-sdk/credential-providers'
-import type { AwsCredentialIdentity, Provider } from '@smithy/types'
-import { envvar } from 'envase'
+import { type EnvvarEntry, envvar } from 'envase'
 import { z } from 'zod'
-import { AWS_CONFIG_ENV_VARS, MAX_AWS_RESOURCE_PREFIX_LENGTH } from './awsConfig.ts'
-
-/**
- * Envase schema entry type - a tuple of [envVarName, zodSchema].
- * Used to provide explicit type annotation for the schema to ensure portable type declarations.
- */
-type EnvvarEntry<T> = [string, T]
+import { AWS_CONFIG_ENV_VARS, type AwsConfig, MAX_AWS_RESOURCE_PREFIX_LENGTH } from './awsConfig.ts'
 
 /**
  * Type definition for the AWS configuration schema.
@@ -30,31 +23,31 @@ export type EnvaseAwsConfigSchemaType = {
   secretAccessKey: EnvvarEntry<z.ZodOptional<z.ZodString>>
 }
 
+type AwsCredentialsEnv = { accessKeyId?: string; secretAccessKey?: string }
+
 /**
  * Type for the computed credentials resolver function.
+ * It receives the full parsed config and reads the credentials from under the `TPath` key.
  */
-export type EnvaseAwsConfigComputedType<TRaw = { accessKeyId?: string; secretAccessKey?: string }> =
-  {
-    credentials: (raw: TRaw) => AwsCredentialIdentity | Provider<AwsCredentialIdentity>
-  }
+export type EnvaseAwsConfigComputedType<TPath extends string = 'aws'> = {
+  credentials: (raw: Record<TPath, AwsCredentialsEnv>) => AwsConfig['credentials']
+}
 
 /**
  * Options for `getEnvaseAwsConfig()`.
  */
-export type EnvaseAwsConfigOptions<TPath extends string | undefined = undefined> = {
-  /** The key under which AWS schema is nested in your config. Omit for flat spread at root level. */
+export type EnvaseAwsConfigOptions<TPath extends string = 'aws'> = {
+  /** The key under which the AWS schema is nested in your config. Defaults to `aws`. */
   path?: TPath
 }
 
 /**
  * Return type of `getEnvaseAwsConfig()`.
- * Contains schema and computed fragments to spread into `createConfig()`.
+ * Contains schema and computed fragments to nest under the same key in `createConfig()`.
  */
-export type EnvaseAwsConfigFragments<TPath extends string | undefined = undefined> = {
+export type EnvaseAwsConfigFragments<TPath extends string = 'aws'> = {
   schema: EnvaseAwsConfigSchemaType
-  computed: TPath extends string
-    ? EnvaseAwsConfigComputedType<Record<TPath, { accessKeyId?: string; secretAccessKey?: string }>>
-    : EnvaseAwsConfigComputedType
+  computed: EnvaseAwsConfigComputedType<TPath>
 }
 
 /**
@@ -100,47 +93,31 @@ const envaseAwsConfigSchema: EnvaseAwsConfigSchemaType = {
   secretAccessKey: envvar(
     AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY,
     z.string().optional().describe('AWS secret access key for programmatic access'),
+    { sensitive: true },
   ),
 }
 
 /**
- * Creates computed values configuration for AWS config.
- * Derives `credentials` from the parsed `accessKeyId` and `secretAccessKey`.
+ * Returns static credentials when both `accessKeyId` and `secretAccessKey` are set,
+ * otherwise the default credential provider chain.
  */
-function createAwsComputed<TPath extends string | undefined>(
-  path?: TPath,
-): EnvaseAwsConfigFragments<TPath>['computed'] {
-  const resolveCredentials = (awsRaw: {
-    accessKeyId?: string
-    secretAccessKey?: string
-  }): AwsCredentialIdentity | Provider<AwsCredentialIdentity> => {
-    if (awsRaw.accessKeyId && awsRaw.secretAccessKey) {
-      return { accessKeyId: awsRaw.accessKeyId, secretAccessKey: awsRaw.secretAccessKey }
-    }
-    return createCredentialChain(fromTokenFile(), fromInstanceMetadata(), fromEnv(), fromIni())
+const resolveCredentials = ({
+  accessKeyId,
+  secretAccessKey,
+}: AwsCredentialsEnv): AwsConfig['credentials'] => {
+  if (accessKeyId && secretAccessKey) {
+    return { accessKeyId, secretAccessKey }
   }
 
-  if (path) {
-    return {
-      // biome-ignore lint/suspicious/noExplicitAny: raw config shape depends on consumer's schema
-      credentials: (raw: any) => resolveCredentials(raw[path]),
-    } as EnvaseAwsConfigFragments<TPath>['computed']
-  }
-
-  return {
-    credentials: resolveCredentials,
-  } as EnvaseAwsConfigFragments<TPath>['computed']
+  return createCredentialChain(fromTokenFile(), fromInstanceMetadata(), fromEnv(), fromIni())
 }
 
 /**
  * Returns AWS configuration fragments for use with envase's `createConfig()`.
  *
- * This function returns schema and computed fragments that can be spread into
- * your application's configuration. This allows composing AWS config with other
- * application-specific configuration.
- *
- * Use the `path` option when nesting AWS config under a key (e.g., `aws`),
- * so that computed resolvers access `fullParsedConfig.aws` instead of `fullParsedConfig`.
+ * Nest `schema` and `computed` under the same key in your config, `aws` by default.
+ * Use the `path` option to nest them under a different key, so that the computed
+ * credentials resolver reads `fullParsedConfig[path]`.
  *
  * @example
  * ```typescript
@@ -148,8 +125,7 @@ function createAwsComputed<TPath extends string | undefined>(
  * import { z } from 'zod'
  * import { getEnvaseAwsConfig } from '@lokalise/aws-config'
  *
- * // Nested under 'aws' key (recommended):
- * const awsConfig = getEnvaseAwsConfig({ path: 'aws' })
+ * const awsConfig = getEnvaseAwsConfig()
  *
  * const config = createConfig(process.env, {
  *   schema: {
@@ -160,29 +136,20 @@ function createAwsComputed<TPath extends string | undefined>(
  *     aws: awsConfig.computed,
  *   },
  * })
- *
- * // Or spread directly at root level:
- * const awsConfig = getEnvaseAwsConfig()
- *
- * const config = createConfig(process.env, {
- *   schema: {
- *     ...awsConfig.schema,
- *     appName: envvar('APP_NAME', z.string()),
- *   },
- *   computed: {
- *     ...awsConfig.computed,
- *   },
- * })
  * ```
  *
- * @param options - Optional configuration. Use `path` to specify the nesting key.
+ * @param options - Optional configuration. Use `path` to nest under a key other than `aws`.
  * @returns Schema and computed fragments for AWS configuration
  */
-export function getEnvaseAwsConfig<TPath extends string | undefined = undefined>(
+export function getEnvaseAwsConfig<TPath extends string = 'aws'>(
   options?: EnvaseAwsConfigOptions<TPath>,
 ): EnvaseAwsConfigFragments<TPath> {
+  // `TPath` defaults to 'aws' exactly when `path` is omitted
+  const path = (options?.path ?? 'aws') as TPath
   return {
     schema: envaseAwsConfigSchema,
-    computed: createAwsComputed(options?.path),
+    computed: {
+      credentials: (raw) => resolveCredentials(raw[path]),
+    },
   }
 }

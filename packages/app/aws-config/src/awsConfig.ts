@@ -1,11 +1,3 @@
-import {
-  createCredentialChain,
-  fromEnv,
-  fromIni,
-  fromInstanceMetadata,
-  fromTokenFile,
-} from '@aws-sdk/credential-providers'
-import { ConfigScope } from '@lokalise/node-core'
 import type { AwsCredentialIdentity, Provider } from '@smithy/types'
 
 /** Maximum allowed length for AWS resource prefix, to ensure it doesn't exceed AWS limits when concatenated with resource names. */
@@ -13,7 +5,6 @@ export const MAX_AWS_RESOURCE_PREFIX_LENGTH = 10
 
 /**
  * Environment variable names used for AWS configuration.
- * These constants ensure consistency between ConfigScope and envase-based configuration.
  */
 export const AWS_CONFIG_ENV_VARS = {
   /** AWS region where resources will be created and requests are sent */
@@ -48,72 +39,4 @@ export type AwsConfig = {
   resourcePrefix?: string
   /** AWS credentials or a provider function that returns credentials */
   credentials: AwsCredentialIdentity | Provider<AwsCredentialIdentity>
-}
-
-let awsConfig: AwsConfig | undefined
-
-/**
- * Retrieves the AWS configuration settings from the environment variables.
- */
-export const getAwsConfig = (configScope?: ConfigScope): AwsConfig => {
-  /* v8 ignore start */
-  if (awsConfig) return awsConfig
-  /* v8 ignore stop */
-
-  const resolvedConfigScope = configScope ?? new ConfigScope()
-  awsConfig = generateAwsConfig(resolvedConfigScope)
-  validateAwsConfig(awsConfig)
-
-  return awsConfig
-}
-
-const generateAwsConfig = (configScope: ConfigScope): AwsConfig => {
-  return {
-    region: configScope.getMandatory(AWS_CONFIG_ENV_VARS.REGION),
-    kmsKeyId: configScope.getOptionalNullable(AWS_CONFIG_ENV_VARS.KMS_KEY_ID, ''),
-    allowedSourceOwner: configScope.getOptionalNullable(
-      AWS_CONFIG_ENV_VARS.ALLOWED_SOURCE_OWNER,
-      undefined,
-    ),
-    endpoint: configScope.getOptionalNullable(AWS_CONFIG_ENV_VARS.ENDPOINT, undefined),
-    resourcePrefix: configScope.getOptionalNullable(AWS_CONFIG_ENV_VARS.RESOURCE_PREFIX, undefined),
-    credentials: resolveCredentials(configScope),
-  }
-}
-
-const validateAwsConfig = (config: AwsConfig): void => {
-  if (config.resourcePrefix && config.resourcePrefix.length > MAX_AWS_RESOURCE_PREFIX_LENGTH) {
-    throw new Error(
-      `AWS resource prefix exceeds maximum length of ${MAX_AWS_RESOURCE_PREFIX_LENGTH} characters: ${config.resourcePrefix}`,
-    )
-  }
-}
-
-const resolveCredentials = (
-  configScope: ConfigScope,
-): AwsCredentialIdentity | Provider<AwsCredentialIdentity> => {
-  const accessKeyId = configScope.getOptionalNullable(AWS_CONFIG_ENV_VARS.ACCESS_KEY_ID, undefined)
-  const secretAccessKey = configScope.getOptionalNullable(
-    AWS_CONFIG_ENV_VARS.SECRET_ACCESS_KEY,
-    undefined,
-  )
-
-  if (accessKeyId && secretAccessKey) return { accessKeyId, secretAccessKey }
-
-  return createCredentialChain(fromTokenFile(), fromInstanceMetadata(), fromEnv(), fromIni())
-}
-
-/**
- * Resets the cached AWS configuration.
- *
- * This method is intended **only for testing purposes.**
- * It allows tests to reset the singleton state between runs
- * to ensure test isolation and prevent cross-test contamination.
- *
- * WARNING:
- * Do NOT export or expose this method from your package's public API
- * This method is not part of the package's contract and should be used internally for testing ONLY.
- */
-export const testResetAwsConfig = () => {
-  awsConfig = undefined
 }

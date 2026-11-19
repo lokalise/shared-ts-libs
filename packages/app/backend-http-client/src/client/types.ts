@@ -1,11 +1,18 @@
 import type { DefiniteEither, Either } from '@lokalise/node-core'
-import type { Client, Dispatcher } from 'undici'
+import type { Client, Dispatcher, Pool } from 'undici'
 import type { ZodSchema } from 'zod/v4'
 import type { RetryConfig } from '../api-contract/retry.ts'
 import type { InternalRequestError } from '../errors/InternalRequestError.ts'
 
 // biome-ignore lint/suspicious/noExplicitAny: ok
 export type RecordObject = Record<string, any>
+
+/**
+ * What the request helpers send through: a `Client` from `buildClient` or a `Pool` from
+ * `buildPool`. Type a parameter that takes either with this instead of importing from `undici`
+ * directly, so the undici major version stays an implementation detail of this package.
+ */
+export type HttpDispatcher = Client | Pool
 
 export type HttpRequestContext = {
   reqId: string

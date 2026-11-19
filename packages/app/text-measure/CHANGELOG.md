@@ -1,5 +1,11 @@
 # @lokalise/text-measure
 
+## 1.3.0
+
+### Minor Changes
+
+- dce9424: Add `countBytes`, which counts the encoded size of a text in bytes, NTC markers included. The encoding is selected with `options.encoding` (`ByteCountEncodingEnum`); `utf8` is the only one and the default.
+
 ## 1.2.0
 
 ### Minor Changes

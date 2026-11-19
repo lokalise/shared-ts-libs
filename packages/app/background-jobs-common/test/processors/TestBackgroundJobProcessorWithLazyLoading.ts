@@ -1,5 +1,5 @@
-import type { RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
+import type { RedisOptions } from 'ioredis'
 import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
@@ -15,7 +15,7 @@ export class TestBackgroundJobProcessorWithLazyLoading<
       BackgroundJobProcessorDependencies<JobData>,
       'bullmqFactory' | 'transactionObservabilityManager'
     >,
-    redisConfig: RedisConfig,
+    redisConfig: RedisOptions,
   ) {
     super(
       {

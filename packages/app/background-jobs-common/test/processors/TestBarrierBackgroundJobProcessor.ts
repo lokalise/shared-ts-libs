@@ -1,5 +1,5 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import type { RedisConfig } from '@lokalise/node-core'
+import type { RedisOptions } from 'ioredis'
 import type { BarrierCallback } from '../../src/background-job-processor/barrier/barrier.ts'
 import {
   AbstractBackgroundJobProcessor,
@@ -13,7 +13,7 @@ export class TestBarrierBackgroundJobProcessor<
 > extends AbstractBackgroundJobProcessor<JobData, JobReturn> {
   constructor(
     dependencies: BackgroundJobProcessorDependencies<JobData, JobReturn>,
-    redisConfig: RedisConfig,
+    redisConfig: RedisOptions,
     barrier: BarrierCallback<JobData>,
   ) {
     super(dependencies, {

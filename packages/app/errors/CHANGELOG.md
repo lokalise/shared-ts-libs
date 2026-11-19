@@ -1,5 +1,11 @@
 # @lokalise/errors
 
+## 2.2.0
+
+### Minor Changes
+
+- 84e684f: Add `ErrorType.UNPROCESSABLE_ENTITY` (`unprocessable-entity`), mapped to HTTP status 422.
+
 ## 2.1.0
 
 ### Minor Changes

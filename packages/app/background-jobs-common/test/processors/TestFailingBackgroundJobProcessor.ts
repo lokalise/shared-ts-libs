@@ -1,5 +1,5 @@
-import type { RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
+import type { RedisOptions } from 'ioredis'
 import {
   type BackgroundJobProcessorDependencies,
   type BaseJobPayload,
@@ -21,7 +21,7 @@ export class TestFailingBackgroundJobProcessor<
   constructor(
     dependencies: BackgroundJobProcessorDependencies<T>,
     queueName: string,
-    redisConfig: RedisConfig,
+    redisConfig: RedisOptions,
   ) {
     super(dependencies, queueName, redisConfig, true)
   }

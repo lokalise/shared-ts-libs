@@ -1,5 +1,5 @@
-import type { RedisConfig } from '@lokalise/node-core'
 import type { JobsOptions, Queue, QueueOptions } from 'bullmq'
+import type { RedisOptions } from 'ioredis'
 import { merge } from 'ts-deepmerge'
 import { DEFAULT_QUEUE_OPTIONS } from '../constants.ts'
 import type { BullmqQueueFactory } from '../factories/index.ts'
@@ -68,14 +68,14 @@ export class QueueRegistry<
   JobOptionsType extends JobsOptions,
 > extends QueueConfigRegistry<Queues, QueueOptionsType, JobOptionsType> {
   private readonly factory: BullmqQueueFactory<QueueType, QueueOptionsType>
-  private readonly redisConfig: RedisConfig
+  private readonly redisConfig: RedisOptions
 
   private queues: Record<QueueConfiguration<QueueOptionsType>['queueId'], QueueType> = {}
 
   constructor(
     supportedQueues: Queues,
     factory: BullmqQueueFactory<QueueType, QueueOptionsType>,
-    redisConfig: RedisConfig,
+    redisConfig: RedisOptions,
   ) {
     super(supportedQueues)
     this.factory = factory

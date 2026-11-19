@@ -1,10 +1,10 @@
 import type {
   CommonLogger,
   ErrorReporter,
-  RedisConfig,
   TransactionObservabilityManager,
 } from '@lokalise/node-core'
 import type { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq'
+import type { RedisOptions } from 'ioredis'
 import type { BarrierCallback } from '../barrier/barrier.ts'
 import type { AbstractBullmqFactory } from '../factories/AbstractBullmqFactory.ts'
 import type { BullmqWorkerFactory } from '../factories/BullmqWorkerFactory.ts'
@@ -57,7 +57,7 @@ export type BackgroundJobProcessorConfig<
   bullDashboardGrouping?: string[]
   queueOptions?: Omit<QueueOptionsType, 'connection' | 'prefix'>
   workerOptions: Omit<WorkerOptionsType, 'connection' | 'prefix' | 'autorun'>
-  redisConfig: RedisConfig
+  redisConfig: RedisOptions
   barrier?: BarrierCallback<JobPayload, ExecutionContext, JobReturn, JobType>
   lazyInitEnabled?: boolean
   workerAutoRunEnabled?: boolean

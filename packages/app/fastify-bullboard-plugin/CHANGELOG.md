@@ -1,5 +1,25 @@
 # @lokalise/fastify-bullboard-plugin
 
+## 3.2.0
+
+### Minor Changes
+
+- aefa97c: `basicAuth` accepts a `skipList` as an alternative to `enableList`: every route requires credentials except the listed route paths, which are matched exactly. Pass one of the two; passing both or neither fails at registration.
+
+## 3.1.0
+
+### Minor Changes
+
+- 6b4e918: `basicAuth` now protects every route under an `enableList` path, not just the exact path, so `'/bull'` also guards BullBoard's API and job-mutation routes, which were served without credentials.
+
+## 3.0.1
+
+### Patch Changes
+
+- 1826776: Type Redis connection settings as ioredis `RedisOptions` instead of the deprecated `RedisConfig` from `@lokalise/node-core`, so a TLS connection can be configured with `tls`. This covers `redisConfig` in `QueueManager`, the job processors, `FakeBackgroundJobProcessor`, `backgroundJobProcessorGetActiveQueueIds`, `enrichRedisConfig`, `sanitizeRedisConfig` and the bull-board plugin's `redisConfigs`. The bull-board plugin now declares `ioredis` ^6.0.0, which it already imported, as a peer dependency.
+  
+  `useTls` was never read: these packages pass the config to ioredis and BullMQ as it is, so `useTls: true` did not turn TLS on. Drop `useTls`, and set `tls: {}` where you want TLS. `createRedisConfigSchema()` from `@lokalise/config` reads the config from env vars and sets `tls: {}` when `REDIS_USE_TLS` is true, so a connection built from it with `REDIS_USE_TLS=true` uses TLS, which it did not before.
+
 ## 3.0.0
 
 ### Major Changes

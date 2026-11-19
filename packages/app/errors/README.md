@@ -123,20 +123,25 @@ class ProjectNotFoundError extends PublicError.from(projectNotFoundErrorDefiniti
 
 // 3. Use it
 const error = new ProjectNotFoundError('abc')
-error.code           // 'PROJECT_NOT_FOUND'
-error.type           // 'not-found'
+error.code // 'PROJECT_NOT_FOUND'
+error.type // 'not-found'
 error.httpStatusCode // 404
-error.details        // { id: string }
+error.details // { id: string }
 ```
 
 Without a details schema, `details` is `undefined` and the constructor does not
 accept a `details` field:
 
 ```ts
-const rateLimitErrorDefinition = definePublicError({ code: 'RATE_LIMIT_EXCEEDED', type: ErrorType.RATE_LIMIT })
+const rateLimitErrorDefinition = definePublicError({
+  code: 'RATE_LIMIT_EXCEEDED',
+  type: ErrorType.RATE_LIMIT,
+})
 
 class RateLimitError extends PublicError.from(rateLimitErrorDefinition) {
-  constructor() { super({ message: 'Too many requests' }) }
+  constructor() {
+    super({ message: 'Too many requests' })
+  }
 }
 ```
 
@@ -250,18 +255,19 @@ reply.status(error.httpStatusCode).send(error.toPayload())
 reply.status(httpStatusByErrorType[someType]).send(payload)
 ```
 
-| ErrorType           | HTTP |
-|---------------------|------|
-| `bad-request`       | 400  |
-| `unauthenticated`   | 401  |
-| `permission-denied` | 403  |
-| `not-found`         | 404  |
-| `conflict`          | 409  |
-| `rate-limit`        | 429  |
-| `internal`          | 500  |
-| `unimplemented`     | 501  |
-| `upstream-error`    | 502  |
-| `unavailable`       | 503  |
+| ErrorType              | HTTP |
+| ---------------------- | ---- |
+| `bad-request`          | 400  |
+| `unauthenticated`      | 401  |
+| `permission-denied`    | 403  |
+| `not-found`            | 404  |
+| `conflict`             | 409  |
+| `unprocessable-entity` | 422  |
+| `rate-limit`           | 429  |
+| `internal`             | 500  |
+| `unimplemented`        | 501  |
+| `upstream-error`       | 502  |
+| `unavailable`          | 503  |
 
 For other protocols (gRPC, message queues) create a similar mapping using the
 `ErrorType` values.
@@ -322,7 +328,7 @@ situations where prototype-based checks silently fail.
 
 ### Class naming rules
 
-The symbols are derived from class names and inheritance structure; they *are*
+The symbols are derived from class names and inheritance structure; they _are_
 the cross-realm identity. This has a few consequences:
 
 - **Renaming is a breaking change.** Renaming an error class (or moving it in

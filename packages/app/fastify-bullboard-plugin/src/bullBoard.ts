@@ -10,14 +10,14 @@ import {
   QUEUE_GROUP_DELIMITER,
   sanitizeRedisConfig,
 } from '@lokalise/background-jobs-common'
-import { type RedisConfig, resolveGlobalErrorLogObject } from '@lokalise/node-core'
-import type { Queue, QueueOptions } from 'bullmq'
+import { resolveGlobalErrorLogObject } from '@lokalise/node-core'
+import type { ConnectionOptions, Queue, QueueOptions } from 'bullmq'
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
-import { Redis } from 'ioredis'
+import { Redis, type RedisOptions } from 'ioredis'
 import { AsyncTask, SimpleIntervalJob } from 'toad-scheduler'
 
-export type BullBoardRedisConfig = RedisConfig & {
+export type BullBoardRedisConfig = RedisOptions & {
   /**
    * If true, queues discovered on this Redis connection are instantiated with
    * `queueProConstructor` and wrapped in `BullMQProAdapter`, enabling
@@ -50,7 +50,7 @@ export interface QueueConstructor {
 
 type ResolvedRedis = {
   redis: Redis
-  sanitizedConfig: RedisConfig
+  sanitizedConfig: RedisOptions
   prefix: string | undefined
   isPro: boolean
 }
@@ -85,7 +85,12 @@ const buildQueueForConfig = (
   resolved: ResolvedRedis,
   pluginOptions: BullBoardOptions,
 ): { queue: Queue; adapter: BullMQAdapter } => {
-  const opts = { connection: resolved.sanitizedConfig, prefix: resolved.prefix }
+  const opts: QueueOptions = {
+    // ioredis types `retryStrategy` as nullable and BullMQ's own RedisOptions does not. BullMQ passes these
+    // options to ioredis unchanged, so a null retry strategy still reaches ioredis.
+    connection: resolved.sanitizedConfig as ConnectionOptions,
+    prefix: resolved.prefix,
+  }
 
   if (resolved.isPro) {
     // biome-ignore lint/style/noNonNullAssertion: validated by validateConstructors

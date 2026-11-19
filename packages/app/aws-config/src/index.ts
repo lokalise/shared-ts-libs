@@ -1,5 +1,5 @@
 export * from './applyAwsResourcePrefix.ts'
-export { AWS_CONFIG_ENV_VARS, type AwsConfig, getAwsConfig } from './awsConfig.ts'
+export { AWS_CONFIG_ENV_VARS, type AwsConfig } from './awsConfig.ts'
 export {
   type EnvaseAwsConfigComputedType,
   type EnvaseAwsConfigFragments,

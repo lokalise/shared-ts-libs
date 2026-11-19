@@ -39,7 +39,7 @@ export default defineConfig({
 npx drizzle-kit generate
 ```
 
-This produces SQL migration files that describe your full schema (`CREATE TABLE`, etc.). These describe the *target state*, which your database already has — they must NOT be executed directly.
+This produces SQL migration files that describe your full schema (`CREATE TABLE`, etc.). These describe the _target state_, which your database already has — they must NOT be executed directly.
 
 The output format depends on your drizzle-kit version:
 - **drizzle-kit 0.x (stable)**: flat SQL files with a `meta/_journal.json` index
@@ -99,7 +99,7 @@ This should be a **no-op** — all migrations are already tracked, so nothing is
 
 ### Step 6.1: Verify the baseline is honest (recommended)
 
-The previous check only verifies that Drizzle *thinks* the migrations are applied. It does **not** verify that a fresh `drizzle-kit migrate` against an empty database would actually reproduce the same schema as production. If the Drizzle schema lacks explicit name overrides for constraints, indexes, and foreign keys, the generated migrations will use Drizzle's default names — and a new dev's local database will end up with subtly different constraint/index/FK names than production. `markMigrationsApplied` will happily record those migrations as "applied" anyway, masking the divergence.
+The previous check only verifies that Drizzle _thinks_ the migrations are applied. It does **not** verify that a fresh `drizzle-kit migrate` against an empty database would actually reproduce the same schema as production. If the Drizzle schema lacks explicit name overrides for constraints, indexes, and foreign keys, the generated migrations will use Drizzle's default names — and a new dev's local database will end up with subtly different constraint/index/FK names than production. `markMigrationsApplied` will happily record those migrations as "applied" anyway, masking the divergence.
 
 To catch this, use `snapshotSchema` + `diffSchemaSnapshots`. The recipe:
 
@@ -247,7 +247,7 @@ drizzle.config.ts
 
 ```typescript
 // src/db/client.ts
-import { drizzle } from 'drizzle-orm/mysql2'  // or /postgres, etc.
+import { drizzle } from 'drizzle-orm/mysql2' // or /postgres, etc.
 import mysql from 'mysql2/promise'
 import { relations } from './relations.js'
 import * as schema from './schema.js'
@@ -340,7 +340,8 @@ Prisma's `include: { Team: true }` can be replaced with a join:
 ```typescript
 // Prisma: prisma.project.findFirst({ where: { id }, include: { Team: true } })
 // Drizzle:
-const results = await db.select()
+const results = await db
+  .select()
   .from(project)
   .innerJoin(team, eq(project.teamId, team.id))
   .where(eq(project.id, id))
@@ -351,7 +352,10 @@ const results = await db.select()
 Note: Drizzle returns join results keyed by the table name as declared in the schema (e.g., `mysqlTable('Project', ...)` produces `{ Project: row }`). If consumers expect a nested shape like `{ ...project, Team: team }`, map it:
 
 ```typescript
-function toProjectWithTeam(row: { Project: typeof project.$inferSelect, Team: typeof team.$inferSelect }) {
+function toProjectWithTeam(row: {
+  Project: typeof project.$inferSelect
+  Team: typeof team.$inferSelect
+}) {
   return { ...row.Project, Team: row.Team }
 }
 ```
@@ -363,24 +367,30 @@ Prisma's `{ where: { Tokens: { some: {} } } }` becomes an `exists` subquery:
 ```typescript
 // Prisma: prisma.project.findMany({ where: { ProjectToken: { some: {} } } })
 // Drizzle:
-db.select().from(project).where(
-  exists(
-    db.select({ id: projectToken.id }).from(projectToken)
-      .where(eq(projectToken.projectId, project.id))
+db.select()
+  .from(project)
+  .where(
+    exists(
+      db
+        .select({ id: projectToken.id })
+        .from(projectToken)
+        .where(eq(projectToken.projectId, project.id)),
+    ),
   )
-)
 
 // Prisma: prisma.team.findFirst({ where: { Project: { some: { lokaliseProjectId: 'x' } } } })
 // Drizzle:
-db.select().from(team).where(
-  exists(
-    db.select({ id: project.id }).from(project)
-      .where(and(
-        eq(project.teamId, team.id),
-        eq(project.lokaliseProjectId, 'x')
-      ))
+db.select()
+  .from(team)
+  .where(
+    exists(
+      db
+        .select({ id: project.id })
+        .from(project)
+        .where(and(eq(project.teamId, team.id), eq(project.lokaliseProjectId, 'x'))),
+    ),
   )
-).limit(1)
+  .limit(1)
 ```
 
 #### Aggregations / groupBy
@@ -396,9 +406,9 @@ db.select({
     trafficBytes: sum(dailyStatistic.trafficBytes).mapWith(BigInt),
   },
 })
-.from(dailyStatistic)
-.where(and(...conditions))
-.groupBy(dailyStatistic.date, dailyStatistic.framework)
+  .from(dailyStatistic)
+  .where(and(...conditions))
+  .groupBy(dailyStatistic.date, dailyStatistic.framework)
 ```
 
 #### Raw SQL
@@ -406,13 +416,20 @@ db.select({
 ```typescript
 // Prisma: prisma.$queryRaw`SELECT ... WHERE id IN (${Prisma.join(ids)})`
 // Drizzle — db.execute() returns [rows, fields], not just rows:
-const [rows] = await db.execute(sql`SELECT ... WHERE id IN (${sql.join(ids.map(id => sql`${id}`), sql`, `)})`)
+const [rows] = await db.execute(
+  sql`SELECT ... WHERE id IN (${sql.join(
+    ids.map((id) => sql`${id}`),
+    sql`, `,
+  )})`,
+)
 
 // Prisma: prisma.$executeRaw`INSERT ... ON DUPLICATE KEY UPDATE ...`
 // Drizzle (MySQL — native support):
-db.insert(table).values(rows).onDuplicateKeyUpdate({
-  set: { downloads: sql`VALUES(downloads)` }
-})
+db.insert(table)
+  .values(rows)
+  .onDuplicateKeyUpdate({
+    set: { downloads: sql`VALUES(downloads)` },
+  })
 ```
 
 #### Transactions

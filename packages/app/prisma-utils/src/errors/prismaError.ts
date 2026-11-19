@@ -1,5 +1,6 @@
 import { isError } from '@lokalise/node-core'
 import type { PrismaClientKnownRequestError } from '@prisma/client/runtime/client'
+import { isCockroachDBRetryTransaction } from './cockroachdbError.ts'
 
 /**
  * What is checked?
@@ -20,6 +21,16 @@ export const isPrismaClientKnownRequestError = (
 export const isPrismaTransactionClosedError = (error: PrismaClientKnownRequestError): boolean =>
   error.code === PRISMA_TRANSACTION_ERROR &&
   error.message.toLowerCase().includes('transaction already closed')
+
+/**
+ * Check if the error is a serialization failure, and therefore safe to retry.
+ *
+ * Covers both Prisma's own `P2034` and the SQLSTATE 40001 reported by CockroachDB, whose shape
+ * depends on whether the query went through the Rust query engine or a driver adapter.
+ */
+export const isSerializationFailure = (error: unknown): boolean =>
+  isPrismaClientKnownRequestError(error) &&
+  (error.code === PRISMA_SERIALIZATION_ERROR || isCockroachDBRetryTransaction(error))
 
 /**
  * Prisma error code P2025 indicates that the operation failed because it depends on one or more

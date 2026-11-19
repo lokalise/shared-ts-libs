@@ -55,23 +55,23 @@ initOpenTelemetry()
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NODE_ENV` | When set to `test`, OpenTelemetry is disabled | - |
-| `OTEL_ENABLED` | Set to `true` to enable OpenTelemetry | `false` |
-| `OTEL_EXPORTER_URL` | OTLP gRPC exporter URL | `grpc://localhost:4317` |
+| Variable            | Description                                   | Default                 |
+| ------------------- | --------------------------------------------- | ----------------------- |
+| `NODE_ENV`          | When set to `test`, OpenTelemetry is disabled | -                       |
+| `OTEL_ENABLED`      | Set to `true` to enable OpenTelemetry         | `false`                 |
+| `OTEL_EXPORTER_URL` | OTLP gRPC exporter URL                        | `grpc://localhost:4317` |
 
 This package configures traces only. It starts the SDK with empty `metricReaders` and `logRecordProcessors`, so it does not read `OTEL_METRICS_EXPORTER` or `OTEL_LOGS_EXPORTER` and does not create OTLP metrics or logs exporters.
 
 ### Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `skippedPaths` | `string[]` | `['/health', '/metrics', '/']` | Paths to exclude from tracing |
-| `consoleSpans` | `boolean` | `false` | Enable console span exporter for debugging |
-| `spanProcessors` | `SpanProcessor[]` | `[]` | Additional span processors to register |
-| `dbNamespaceBySystem` | `Record<string, string>` | `undefined` | Maps `db.system` values to the `db.namespace` to report for them. When set, the Datadog-bound trace exporter is wrapped so matching outbound DB spans carry `db.namespace` in the export payload, joining them to Datadog's existing inferred-service entity for the cluster. The shared span is left untouched. See [Joining a Datadog inferred-service entity](#joining-a-datadog-inferred-service-entity). |
-| `skipStreamEndpoints` | `boolean` | `true` | Exclude streaming/SSE server spans from exported traces (detected via the `Accept: text/event-stream` request header), so their long keep-alive durations don't skew latency metrics/SLOs. See [Excluding streaming / SSE endpoints](#excluding-streaming--sse-endpoints). |
+| Option                | Type                     | Default                        | Description                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------- | ------------------------ | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `skippedPaths`        | `string[]`               | `['/health', '/metrics', '/']` | Paths to exclude from tracing                                                                                                                                                                                                                                                                                                                                                                                 |
+| `consoleSpans`        | `boolean`                | `false`                        | Enable console span exporter for debugging                                                                                                                                                                                                                                                                                                                                                                    |
+| `spanProcessors`      | `SpanProcessor[]`        | `[]`                           | Additional span processors to register                                                                                                                                                                                                                                                                                                                                                                        |
+| `dbNamespaceBySystem` | `Record<string, string>` | `undefined`                    | Maps `db.system` values to the `db.namespace` to report for them. When set, the Datadog-bound trace exporter is wrapped so matching outbound DB spans carry `db.namespace` in the export payload, joining them to Datadog's existing inferred-service entity for the cluster. The shared span is left untouched. See [Joining a Datadog inferred-service entity](#joining-a-datadog-inferred-service-entity). |
+| `skipStreamEndpoints` | `boolean`                | `true`                         | Exclude streaming/SSE server spans from exported traces (detected via the `Accept: text/event-stream` request header), so their long keep-alive durations don't skew latency metrics/SLOs. See [Excluding streaming / SSE endpoints](#excluding-streaming--sse-endpoints).                                                                                                                                    |
 
 ### Debugging with Console Spans
 
@@ -167,7 +167,9 @@ import { initOpenTelemetry } from '@lokalise/opentelemetry-fastify-bootstrap'
 initOpenTelemetry({
   consoleSpans: true, // Enable console debugging
   spanProcessors: [
-    new MyCustomSpanProcessor({ /* config */ }),
+    new MyCustomSpanProcessor({
+      /* config */
+    }),
   ],
 })
 ```

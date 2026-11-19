@@ -18,6 +18,11 @@ describe('extractNTCTagsWithContent', () => {
     ['lone start tag is not a region', '\uE101{% if %} Hello', []],
     ['lone end tag is not a region', '{% if %}\uE102 Hello', []],
     ['empty region is not extracted', 'Hello \uE101\uE102 world', []],
+    [
+      'region spanning several lines',
+      'Hello \uE101<table>\n<tr>\uE102 world',
+      ['\uE101<table>\n<tr>\uE102'],
+    ],
     ['empty string', '', []],
   ])('%s', (_name, text, expected) => {
     expect(extractNTCTagsWithContent(text)).toEqual(expected)

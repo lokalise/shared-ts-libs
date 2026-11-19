@@ -30,7 +30,6 @@ export type ManagerLabeledCounterBaseConfig<CustomLabels extends readonly string
 export class ManagerLabeledCounter<
   CustomLabels extends readonly string[],
 > extends AbstractMultiLabeledCounterMetric<PrometheusTransactionManagerLabels<CustomLabels>> {
-  // biome-ignore lint/complexity/noUselessConstructor: promotes the abstract's protected ctor to public
   constructor(
     config: MultiLabeledCounterMetricConfiguration<
       PrometheusTransactionManagerLabels<CustomLabels>
@@ -49,7 +48,6 @@ export type ManagerLabeledHistogramBaseConfig<CustomLabels extends readonly stri
 export class ManagerLabeledHistogram<
   CustomLabels extends readonly string[],
 > extends AbstractLabeledHistogramMetric<PrometheusTransactionManagerLabels<CustomLabels>> {
-  // biome-ignore lint/complexity/noUselessConstructor: promotes the abstract's protected ctor to public
   constructor(
     config: HistogramMetricConfiguration<PrometheusTransactionManagerLabels<CustomLabels>>,
     client?: typeof promClient,

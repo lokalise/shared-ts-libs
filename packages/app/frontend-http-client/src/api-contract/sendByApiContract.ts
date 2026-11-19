@@ -28,7 +28,7 @@ export type ContractRequestOptions<DoCaptureAsError extends boolean = boolean> =
    *   narrowed to success status codes only.
    * - `false`: all status codes defined in `responsesByStatusCode` are returned as `Either.result`.
    *
-   * Status codes absent from the contract always surface as `Either.error` regardless of this option.
+   * Status codes absent from the contract surface as `Either.error` regardless of this option.
    */
   captureAsError?: DoCaptureAsError
   /**
@@ -175,6 +175,17 @@ async function parseBody(response: Response, resolvedEntry: ResponseKind) {
   }
 }
 
+/** Matches wretch's `WretchError` by shape, because a client may use another copy of wretch. */
+function isWretchHttpError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    'status' in error &&
+    'url' in error
+  )
+}
+
 /**
  * Executes an HTTP request described by `apiContract` and returns a type-safe `Either`.
  *
@@ -185,6 +196,8 @@ async function parseBody(response: Response, resolvedEntry: ResponseKind) {
  * By default (`captureAsError: true`), non-2xx responses defined in the contract are
  * also returned as `Either.error`; pass `captureAsError: false` to receive all
  * contract-defined responses as `Either.result`.
+ *
+ * Rethrows anything but a wretch HTTP error or a `Response`, including a catcher's own error.
  *
  * @see {@link ContractRequestOptions} for cancellation and other options.
  */
@@ -252,14 +265,17 @@ export async function sendByApiContract<
     }
     /* v8 ignore start */
     if (clonedErrorResponse) {
-      clonedErrorResponse.body?.cancel()
+      clonedErrorResponse.body?.cancel().catch(() => undefined)
     }
     /* v8 ignore stop */
   } catch (err) {
-    if (!clonedErrorResponse) {
+    const isHttpError = isWretchHttpError(err) || err instanceof Response
+    if (clonedErrorResponse && isHttpError) {
+      response = clonedErrorResponse
+    } else {
+      clonedErrorResponse?.body?.cancel().catch(() => undefined)
       throw err
     }
-    response = clonedErrorResponse
   }
 
   const normalizedHeaders = normalizeResponseHeaders(response)

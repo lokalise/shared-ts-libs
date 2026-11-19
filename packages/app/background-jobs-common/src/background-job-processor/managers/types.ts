@@ -1,5 +1,5 @@
-import type { RedisConfig } from '@lokalise/node-core'
 import type { FlowProducer, Job, JobsOptions, Queue, QueueBaseOptions, QueueOptions } from 'bullmq'
+import type { RedisOptions } from 'ioredis'
 import type { z } from 'zod/v4'
 import type { BullmqFlowProducerFactory } from '../factories/BullmqFlowProducerFactory.ts'
 import type { BaseJobPayload } from '../types.ts'
@@ -8,7 +8,7 @@ import type { QueueManager } from './QueueManager.ts'
 export type QueueManagerConfig = {
   isTest: boolean
   lazyInitEnabled?: boolean
-  redisConfig: RedisConfig
+  redisConfig: RedisOptions
 }
 
 type JobOptionsWithDeduplicationIdBuilder<JobOptionsType extends JobsOptions> = Omit<

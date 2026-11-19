@@ -1,5 +1,27 @@
 # @lokalise/supported-languages
 
+## 3.7.0
+
+### Minor Changes
+
+- 4d3282d: Add `qaa` ("Private use") to the non-CLDR exception list, so private use tags
+  that carry no real language, such as `qaa-x-my-custom-language`, are supported
+  locales.
+
+## 3.6.0
+
+### Minor Changes
+
+- 8c512df: Add nine languages that CLDR43 lacks to the non-CLDR exception list: `acw`,
+  `gyn`, `ksw`, `lgg`, `myx`, `ndc`, `skr`, `swk`, `tsg`. `acw` and `skr` are
+  right-to-left.
+
+## 3.5.1
+
+### Patch Changes
+
+- 7e1c820: Mark non-CLDR entries in `rtlLanguages` with a comment pointing to `nonCldrLanguages`.
+
 ## 3.5.0
 
 ### Minor Changes

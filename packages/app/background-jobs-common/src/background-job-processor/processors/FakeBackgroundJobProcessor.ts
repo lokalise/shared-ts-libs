@@ -1,5 +1,5 @@
-import type { RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
+import type { RedisOptions } from 'ioredis'
 import { CommonBullmqFactory } from '../factories/CommonBullmqFactory.ts'
 import type { BaseJobPayload } from '../types.ts'
 import { AbstractBackgroundJobProcessor } from './AbstractBackgroundJobProcessor.ts'
@@ -14,7 +14,7 @@ export class FakeBackgroundJobProcessor<
       'bullmqFactory' | 'transactionObservabilityManager'
     >,
     queueName: string,
-    redisConfig: RedisConfig,
+    redisConfig: RedisOptions,
     isTest = true,
     workerAutoRunEnabled = true,
   ) {

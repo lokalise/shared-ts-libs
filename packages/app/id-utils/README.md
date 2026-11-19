@@ -21,7 +21,7 @@ import { generateMonotonicUuid } from '@lokalise/id-utils'
 const ids = []
 
 for (const i of Array(1000)) {
-	ids.push(generateMonotonicUuid())
+  ids.push(generateMonotonicUuid())
 }
 
 const sorted = ids.sort()

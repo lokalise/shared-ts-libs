@@ -1,5 +1,5 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import type { RedisConfig } from '@lokalise/node-core'
+import type { RedisOptions } from 'ioredis'
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { z } from 'zod/v4'
 import { TestDependencyFactory } from '../../../test/TestDependencyFactory.ts'
@@ -52,7 +52,7 @@ type SupportedQueues = typeof supportedQueues
 
 describe('QueueManager', () => {
   let factory: TestDependencyFactory
-  let redisConfig: RedisConfig
+  let redisConfig: RedisOptions
 
   let queueManager: FakeQueueManager<SupportedQueues>
 

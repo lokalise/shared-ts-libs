@@ -79,7 +79,7 @@ const downloadPhoto = defineApiContract({
 ### Multiple content types
 
 When a single status code can return more than one media type, map it to a `content` object keyed
-by media type. Each value is a *body descriptor*: a bare Zod schema (JSON), `blobBody()` (opaque
+by media type. Each value is a _body descriptor_: a bare Zod schema (JSON), `blobBody()` (opaque
 binary or text), or `sseBody()` (Server-Sent Events). Add `allowNoBody: true` to also accept an
 empty body.
 
@@ -96,11 +96,11 @@ const downloadReport = defineApiContract({
     200: {
       description: 'Report in the requested format',
       content: {
-        'application/json':         z.object({ rows: z.array(z.string()) }),
+        'application/json': z.object({ rows: z.array(z.string()) }),
         'application/vnd.api+json': z.object({ data: z.object({ rows: z.array(z.string()) }) }),
-        'text/csv':                 blobBody(),
-        'application/pdf':          blobBody(),
-        'text/event-stream':        sseBody({ row: z.object({ value: z.string() }) }),
+        'text/csv': blobBody(),
+        'application/pdf': blobBody(),
+        'text/event-stream': sseBody({ row: z.object({ value: z.string() }) }),
       },
       allowNoBody: true,
     },
@@ -300,7 +300,7 @@ an internal service or a public client).
 
 #### Contracts for external (third-party) APIs
 
-Contracts are also used to describe APIs we only *consume*, not serve. Mirror the endpoint's own
+Contracts are also used to describe APIs we only _consume_, not serve. Mirror the endpoint's own
 nature: use `visibility: 'public'` for publicly exposed endpoints, and `visibility: 'internal'`
 when you were granted access to a private endpoint (e.g. as a partner with access to private or
 beta APIs). Visibility is only ever acted upon by the serving side — the HTTP clients ignore the
@@ -339,7 +339,7 @@ type ApiContractOptions = {
   requestPathParamsSchema?: z.ZodObject<z.ZodRawShape>
 
   // Request
-  requestBodySchema?: z.ZodType | ContractNoBody  // required for POST / PUT / PATCH, forbidden otherwise
+  requestBodySchema?: z.ZodType | ContractNoBody // required for POST / PUT / PATCH, forbidden otherwise
   requestQuerySchema?: z.ZodObject<z.ZodRawShape>
   requestHeaderSchema?: z.ZodObject<z.ZodRawShape>
 
@@ -384,10 +384,10 @@ const contract = defineApiContract({
 ```ts
 import type { InferNonSseSuccessResponses } from '@lokalise/api-contracts'
 
-type UserResponse = InferNonSseSuccessResponses<typeof getUser['responsesByStatusCode']>
+type UserResponse = InferNonSseSuccessResponses<(typeof getUser)['responsesByStatusCode']>
 // { id: string; name: string }
 
-type CsvResponse = InferNonSseSuccessResponses<typeof exportCsv['responsesByStatusCode']>
+type CsvResponse = InferNonSseSuccessResponses<(typeof exportCsv)['responsesByStatusCode']>
 // BlobResponseHandle
 ```
 
@@ -410,7 +410,7 @@ type CsvResponse = InferNonSseSuccessResponses<typeof exportCsv['responsesByStat
 ```ts
 import type { SseEventOf, InferSseSuccessResponses } from '@lokalise/api-contracts'
 
-type NotificationEvents = InferSseSuccessResponses<typeof notifications['responsesByStatusCode']>
+type NotificationEvents = InferSseSuccessResponses<(typeof notifications)['responsesByStatusCode']>
 type NotificationEvent = SseEventOf<NotificationEvents>
 // { type: 'notification'; data: { id: string; message: string }; lastEventId: string; retry: number | undefined }
 ```
@@ -496,9 +496,9 @@ describeApiContract(getUser) // "GET /users/:userId"
 ```ts
 import { hasAnySuccessSseResponse } from '@lokalise/api-contracts'
 
-hasAnySuccessSseResponse(notifications)   // true
-hasAnySuccessSseResponse(getUser)         // false
-hasAnySuccessSseResponse(chatCompletion)  // true (dual-mode)
+hasAnySuccessSseResponse(notifications) // true
+hasAnySuccessSseResponse(getUser) // false
+hasAnySuccessSseResponse(chatCompletion) // true (dual-mode)
 ```
 
 **`getSseSchemaByEventName`** — extracts SSE event schemas from a contract. Returns `null` when no SSE schemas are present.
@@ -507,7 +507,7 @@ hasAnySuccessSseResponse(chatCompletion)  // true (dual-mode)
 import { getSseSchemaByEventName } from '@lokalise/api-contracts'
 
 getSseSchemaByEventName(notifications) // { notification: ZodObject<...> }
-getSseSchemaByEventName(getUser)       // null
+getSseSchemaByEventName(getUser) // null
 ```
 
 ## Module augmentation
@@ -516,12 +516,12 @@ If you require more precise type definitions for the `metadata` field, you can u
 
 ```typescript
 // file -> apiContracts.d.ts
-import '@lokalise/api-contracts';
+import '@lokalise/api-contracts'
 
 declare module '@lokalise/api-contracts' {
   interface CommonRouteDefinitionMetadata {
-    myTestProp?: string[];
-    mySecondTestProp?: number;
+    myTestProp?: string[]
+    mySecondTestProp?: number
   }
 }
 ```

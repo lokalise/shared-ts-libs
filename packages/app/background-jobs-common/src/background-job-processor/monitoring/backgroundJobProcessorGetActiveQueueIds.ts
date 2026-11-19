@@ -1,10 +1,9 @@
-import type { RedisConfig } from '@lokalise/node-core'
-import { Redis } from 'ioredis'
+import { Redis, type RedisOptions } from 'ioredis'
 import { QUEUE_IDS_KEY, RETENTION_QUEUE_IDS_IN_DAYS } from '../constants.ts'
 import { daysToMilliseconds, isRedisClient } from '../utils.ts'
 
 export const backgroundJobProcessorGetActiveQueueIds = async (
-  redis: RedisConfig | Redis,
+  redis: RedisOptions | Redis,
 ): Promise<string[]> => {
   const redisClient = isRedisClient(redis) ? redis : new Redis(redis)
 

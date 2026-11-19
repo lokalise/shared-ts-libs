@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises'
-import type { RedisConfig } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
+import type { RedisOptions } from 'ioredis'
 import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
@@ -17,7 +17,7 @@ export class TestStalledBackgroundJobProcessor<
 > extends AbstractBackgroundJobProcessor<T> {
   private _onFailedErrors: OnFailedError<T>[] = []
 
-  constructor(dependencies: BackgroundJobProcessorDependencies<T>, redisConfig: RedisConfig) {
+  constructor(dependencies: BackgroundJobProcessorDependencies<T>, redisConfig: RedisOptions) {
     super(dependencies, {
       queueId: 'TestStalledBackgroundJobProcessor queue',
       ownerName: 'test',

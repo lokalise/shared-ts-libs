@@ -1,6 +1,6 @@
 import { generateMonotonicUuid } from '@lokalise/id-utils'
-import type { RedisConfig } from '@lokalise/node-core'
 import { DelayedError, type Job } from 'bullmq'
+import type { RedisOptions } from 'ioredis'
 import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
@@ -19,7 +19,7 @@ type OnFailedError = {
 export class TestForeverRescheduledBackgroundJobProcessor extends AbstractBackgroundJobProcessor<Data> {
   private _onFailedErrors: OnFailedError[] = []
 
-  constructor(dependencies: BackgroundJobProcessorDependencies<Data>, redisConfig: RedisConfig) {
+  constructor(dependencies: BackgroundJobProcessorDependencies<Data>, redisConfig: RedisOptions) {
     super(dependencies, {
       queueId: generateMonotonicUuid(),
       ownerName: 'test',

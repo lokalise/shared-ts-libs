@@ -33,13 +33,13 @@ Register the Zod compilers on your Fastify instance and use the `ZodTypeProvider
 
 ```ts
 import {
-    type ZodTypeProvider,
-    serializerCompiler,
-    validatorCompiler,
+  type ZodTypeProvider,
+  serializerCompiler,
+  validatorCompiler,
 } from 'fastify-type-provider-zod'
 
 const app = fastify({
-    // app params
+  // app params
 })
 
 app.setValidatorCompiler(validatorCompiler)
@@ -56,10 +56,10 @@ Builders turn a universal API contract into a Fastify route. They are meant for 
 
 `buildFastifyApiRoute` produces a complete Fastify `RouteOptions` from a contract created with `defineApiContract`. The HTTP method, URL, request schemas and response schema are all derived from the contract, and the handler shape is inferred from the contract's `responsesByStatusCode`:
 
-| Mode | Contract shape | Handler |
-|------|----------------|---------|
-| **non-SSE** | all success responses are plain Zod schemas / `noBodyResponse()` / content-map entries with JSON or `blobBody()` descriptors | `(request, reply, context) => { status, body }` |
-| **SSE-capable** | at least one success response declares an `sseBody(...)` descriptor (SSE-only or mixed with JSON in one content map) | `(request, reply, context) => { status, body } \| stream`, with `context.sse` |
+| Mode            | Contract shape                                                                                                               | Handler                                                                       |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **non-SSE**     | all success responses are plain Zod schemas / `noBodyResponse()` / content-map entries with JSON or `blobBody()` descriptors | `(request, reply, context) => { status, body }`                               |
+| **SSE-capable** | at least one success response declares an `sseBody(...)` descriptor (SSE-only or mixed with JSON in one content map)         | `(request, reply, context) => { status, body } \| stream`, with `context.sse` |
 
 Every handler receives a `context` as the third argument. It always provides `expectedContentType` — the response content-type the client prefers, negotiated from the request's `Accept` header (with `q=` quality values and wildcards) against the content-types the contract's **success** entries declare (`2xx` codes, `'2xx'`, `'default'`; error responses are not offered as candidates) — or `null` when the client expressed no acceptable preference, in which case the handler picks the fallback. Candidates keep the contract's declaration order (numeric status keys ascending), and under `Accept: */*` — what most non-browser clients send — the first candidate wins.
 
@@ -74,30 +74,30 @@ import { buildFastifyApiRoute } from '@lokalise/fastify-api-contracts'
 import { defineApiContract, noBodyResponse } from '@lokalise/api-contracts'
 
 const getUserContract = defineApiContract({
-    method: 'get',
-    summary: 'Get a user',
-    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
-    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-    responsesByStatusCode: { 200: USER_SCHEMA, 404: NOT_FOUND_SCHEMA },
+  method: 'get',
+  summary: 'Get a user',
+  requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
+  pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+  responsesByStatusCode: { 200: USER_SCHEMA, 404: NOT_FOUND_SCHEMA },
 })
 
 const deleteUserContract = defineApiContract({
-    method: 'delete',
-    summary: 'Delete a user',
-    requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
-    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-    responsesByStatusCode: { 204: noBodyResponse() },
+  method: 'delete',
+  summary: 'Delete a user',
+  requestPathParamsSchema: REQUEST_PATH_PARAMS_SCHEMA,
+  pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+  responsesByStatusCode: { 204: noBodyResponse() },
 })
 
 const getRoute = buildFastifyApiRoute(getUserContract, async (request) => {
-    const user = await userService.findById(request.params.userId)
-    if (!user) return { status: 404, body: { error: 'Not found' } }
-    return { status: 200, body: user }
+  const user = await userService.findById(request.params.userId)
+  if (!user) return { status: 404, body: { error: 'Not found' } }
+  return { status: 200, body: user }
 })
 
 const deleteRoute = buildFastifyApiRoute(deleteUserContract, async (request) => {
-    await userService.delete(request.params.userId)
-    return { status: 204, body: null }
+  await userService.delete(request.params.userId)
+  return { status: 204, body: null }
 })
 
 app.withTypeProvider<ZodTypeProvider>().route(getRoute)
@@ -112,24 +112,24 @@ When a status declares **several** media types in its content map, the handler r
 
 ```ts
 const exportContract = defineApiContract({
-    method: 'get',
-    summary: 'Export data',
-    pathResolver: () => '/export',
-    requestQuerySchema: z.object({ format: z.enum(['json', 'csv']) }),
-    responsesByStatusCode: {
-        200: {
-            content: {
-                'application/json': z.object({ rows: z.number() }),
-                'text/csv': blobBody(),
-            },
-        },
+  method: 'get',
+  summary: 'Export data',
+  pathResolver: () => '/export',
+  requestQuerySchema: z.object({ format: z.enum(['json', 'csv']) }),
+  responsesByStatusCode: {
+    200: {
+      content: {
+        'application/json': z.object({ rows: z.number() }),
+        'text/csv': blobBody(),
+      },
     },
+  },
 })
 
 const exportRoute = buildFastifyApiRoute(exportContract, async (request) =>
-    request.query.format === 'csv'
-        ? { status: 200, contentType: 'text/csv', body: await exportCsv() }
-        : { status: 200, contentType: 'application/json', body: { rows: await countRows() } },
+  request.query.format === 'csv'
+    ? { status: 200, contentType: 'text/csv', body: await exportCsv() }
+    : { status: 200, contentType: 'application/json', body: { rows: await countRows() } },
 )
 ```
 
@@ -138,16 +138,16 @@ import { blobBody } from '@lokalise/api-contracts'
 import { createReadStream } from 'node:fs'
 
 const downloadContract = defineApiContract({
-    method: 'get',
-    summary: 'Download a file',
-    pathResolver: (p) => `/files/${p.id}`,
-    requestPathParamsSchema: z.object({ id: z.string() }),
-    responsesByStatusCode: { 200: { content: { 'application/pdf': blobBody() } } },
+  method: 'get',
+  summary: 'Download a file',
+  pathResolver: (p) => `/files/${p.id}`,
+  requestPathParamsSchema: z.object({ id: z.string() }),
+  responsesByStatusCode: { 200: { content: { 'application/pdf': blobBody() } } },
 })
 
 const downloadRoute = buildFastifyApiRoute(downloadContract, (request) => ({
-    status: 200,
-    body: createReadStream(`./files/${request.params.id}.pdf`), // or a Buffer
+  status: 200,
+  body: createReadStream(`./files/${request.params.id}.pdf`), // or a Buffer
 }))
 ```
 
@@ -170,36 +170,39 @@ An error thrown after the stream started reaches the global error handler with t
 import { sseBody } from '@lokalise/api-contracts'
 
 const streamContract = defineApiContract({
-    method: 'get',
-    summary: 'Stream updates',
-    pathResolver: () => '/updates/stream',
-    responsesByStatusCode: {
-        200: {
-            content: {
-                'text/event-stream': sseBody({
-                    update: z.object({ value: z.number() }),
-                    done: z.object({ total: z.number() }),
-                }),
-            },
-        },
+  method: 'get',
+  summary: 'Stream updates',
+  pathResolver: () => '/updates/stream',
+  responsesByStatusCode: {
+    200: {
+      content: {
+        'text/event-stream': sseBody({
+          update: z.object({ value: z.number() }),
+          done: z.object({ total: z.number() }),
+        }),
+      },
     },
+  },
 })
 
 // Declarative: the body is an async iterable of events.
 const streamRoute = buildFastifyApiRoute(streamContract, (_request) => ({
-    status: 200,
-    body: (async function* () {
-        yield { event: 'update', data: { value: 1 } }
-        yield { event: 'done', data: { total: 1 } }
-    })(),
+  status: 200,
+  body: (async function* () {
+    yield { event: 'update', data: { value: 1 } }
+    yield { event: 'done', data: { total: 1 } }
+  })(),
 }))
 
 // Imperative: drive the session via the context's sse (keep-alive, hooks, etc.).
-const streamRouteImperative = buildFastifyApiRoute(streamContract, async (_request, _reply, { sse }) => {
+const streamRouteImperative = buildFastifyApiRoute(
+  streamContract,
+  async (_request, _reply, { sse }) => {
     const session = sse.start('autoClose')
     await session.send('update', { value: 1 })
     await session.send('done', { total: 1 })
-})
+  },
+)
 ```
 
 #### Mixed (SSE + non-SSE) routes
@@ -210,40 +213,50 @@ When a success response's content map mixes a JSON schema and an `sseBody(...)` 
 import { sseBody } from '@lokalise/api-contracts'
 
 const chatContract = defineApiContract({
-    method: 'post',
-    summary: 'Chat',
-    requestBodySchema: z.object({ message: z.string() }),
-    pathResolver: () => '/chat',
-    responsesByStatusCode: {
-        200: {
-            content: {
-                'application/json': z.object({ reply: z.string() }),
-                'text/event-stream': sseBody({ chunk: z.object({ delta: z.string() }), done: z.object({}) }),
-            },
-        },
-        404: z.object({ error: z.string() }),
+  method: 'post',
+  summary: 'Chat',
+  requestBodySchema: z.object({ message: z.string() }),
+  pathResolver: () => '/chat',
+  responsesByStatusCode: {
+    200: {
+      content: {
+        'application/json': z.object({ reply: z.string() }),
+        'text/event-stream': sseBody({
+          chunk: z.object({ delta: z.string() }),
+          done: z.object({}),
+        }),
+      },
     },
+    404: z.object({ error: z.string() }),
+  },
 })
 
-const chatRoute = buildFastifyApiRoute(chatContract, async (request, _reply, { expectedContentType }) => {
+const chatRoute = buildFastifyApiRoute(
+  chatContract,
+  async (request, _reply, { expectedContentType }) => {
     const conversation = await conversations.find(request.body.message)
     if (!conversation) return { status: 404, body: { error: 'Not found' } } // shared by both
 
     if (expectedContentType === 'text/event-stream') {
-        return {
-            status: 200,
-            contentType: 'text/event-stream',
-            body: (async function* () {
-                for await (const chunk of stream(conversation)) {
-                    yield { event: 'chunk', data: { delta: chunk } }
-                }
-                yield { event: 'done', data: {} }
-            })(),
-        }
+      return {
+        status: 200,
+        contentType: 'text/event-stream',
+        body: (async function* () {
+          for await (const chunk of stream(conversation)) {
+            yield { event: 'chunk', data: { delta: chunk } }
+          }
+          yield { event: 'done', data: {} }
+        })(),
+      }
     }
 
-    return { status: 200, contentType: 'application/json', body: { reply: await complete(conversation) } }
-})
+    return {
+      status: 200,
+      contentType: 'application/json',
+      body: { reply: await complete(conversation) },
+    }
+  },
+)
 ```
 
 > **Note:** `expectedContentType` is negotiated against the contract's **success** entries only. For a contract with an SSE-only success and a JSON error (`200: { content: { 'text/event-stream': … } }`, `404: z.object(…)`), a client sending `Accept: application/json` gets `expectedContentType: null` — the JSON declared on the 404 is never offered, so a branch like the one above cannot be steered onto a representation the success status can't produce. To negotiate against a custom candidate list instead, call the exported `determineResponseContentType(request, contentTypes)`.
@@ -254,12 +267,12 @@ Every response entry contributes to `schema.response`, so the whole contract is 
 
 `buildFastifyApiRoute` accepts an optional third argument. Any [Fastify `RouteOptions`](https://fastify.dev/docs/latest/Reference/Routes/) field (`preHandler`, `onRequest`, `config`, `bodyLimit`, …) is forwarded directly. In addition:
 
-| Option | Description |
-|--------|-------------|
-| `onConnect` / `onClose` / `onReconnect` | SSE connection lifecycle hooks (ignored for non-SSE routes) |
-| `serializer` | Custom serializer for SSE event data |
-| `heartbeat` | Set to `false` to disable SSE keep-alive heartbeats for this route (the interval is configured at `@fastify/sse` plugin registration) |
-| `contractMetadataToRouteMapper` | Maps the contract `metadata` to extra Fastify route options (e.g. `config`, `preHandler`) merged into the route |
+| Option                                  | Description                                                                                                                           |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `onConnect` / `onClose` / `onReconnect` | SSE connection lifecycle hooks (ignored for non-SSE routes)                                                                           |
+| `serializer`                            | Custom serializer for SSE event data                                                                                                  |
+| `heartbeat`                             | Set to `false` to disable SSE keep-alive heartbeats for this route (the interval is configured at `@fastify/sse` plugin registration) |
+| `contractMetadataToRouteMapper`         | Maps the contract `metadata` to extra Fastify route options (e.g. `config`, `preHandler`) merged into the route                       |
 
 To define a handler separately from the route, type it with `InferApiHandler`:
 
@@ -267,8 +280,8 @@ To define a handler separately from the route, type it with `InferApiHandler`:
 import type { InferApiHandler } from '@lokalise/fastify-api-contracts'
 
 const createUser: InferApiHandler<typeof contract> = async (request) => ({
-    status: 201,
-    body: await userService.create(request.body),
+  status: 201,
+  body: await userService.create(request.body),
 })
 
 const routes = [buildFastifyApiRoute(contract, createUser)]
@@ -287,18 +300,18 @@ An SSE-aware error handler branches on the stream state:
 
 ```ts
 app.setErrorHandler(async (error, request, reply) => {
-    const { statusCode, payload } = errorObjectResolver(error)
-    errorReporter.report({ error, request })
+  const { statusCode, payload } = errorObjectResolver(error)
+  errorReporter.report({ error, request })
 
-    // The stream is live: headers are committed, only a terminal event can be sent.
-    // (`isConnected` alone is not enough — @fastify/sse sets it before the handler runs.)
-    if (reply.sse?.isConnected && reply.raw.headersSent) {
-        await reply.sse.send({ event: 'error', data: payload })
-        reply.sse.close()
-        return
-    }
+  // The stream is live: headers are committed, only a terminal event can be sent.
+  // (`isConnected` alone is not enough — @fastify/sse sets it before the handler runs.)
+  if (reply.sse?.isConnected && reply.raw.headersSent) {
+    await reply.sse.send({ event: 'error', data: payload })
+    reply.sse.close()
+    return
+  }
 
-    return reply.status(statusCode).send(payload)
+  return reply.status(statusCode).send(payload)
 })
 ```
 
@@ -308,11 +321,11 @@ Every route builder derives the fastify-swagger `schema.hide` flag from the cont
 
 ```ts
 const contract = defineApiContract({
-    method: 'get',
-    summary: 'Editor autosave state',
-    pathResolver: () => '/editor/autosave',
-    responsesByStatusCode: { 200: BODY_SCHEMA },
-    visibility: 'internal', // excluded from generated OpenAPI docs
+  method: 'get',
+  summary: 'Editor autosave state',
+  pathResolver: () => '/editor/autosave',
+  responsesByStatusCode: { 200: BODY_SCHEMA },
+  visibility: 'internal', // excluded from generated OpenAPI docs
 })
 ```
 
@@ -324,8 +337,8 @@ In case you need some of the contract data within your lifecycle hook or a handl
 
 ```ts
 const route = buildFastifyApiRoute(contract, (req) => {
-    const { apiContract } = req.routeOptions.config
-    // ...
+  const { apiContract } = req.routeOptions.config
+  // ...
 })
 ```
 
@@ -337,12 +350,12 @@ The `contractMetadataToRouteMapper` option is a callback that receives the contr
 
 ```ts
 const route = buildFastifyApiRoute(contract, handler, {
-    contractMetadataToRouteMapper: (contractMetadata) => ({
-        // extra Fastify route options derived from contract metadata
-        config: {
-            // ...
-        },
-    }),
+  contractMetadataToRouteMapper: (contractMetadata) => ({
+    // extra Fastify route options derived from contract metadata
+    config: {
+      // ...
+    },
+  }),
 })
 ```
 
@@ -367,28 +380,28 @@ import { injectByApiContract } from '@lokalise/fastify-api-contracts'
 import { ContractNoBody, defineApiContract } from '@lokalise/api-contracts'
 
 const createUserContract = defineApiContract({
-    method: 'post',
-    summary: 'Create a user',
-    requestBodySchema: REQUEST_BODY_SCHEMA,
-    requestPathParamsSchema: PATH_PARAMS_SCHEMA,
-    requestHeaderSchema: HEADERS_SCHEMA,
-    pathResolver: (pathParams) => `/users/${pathParams.userId}`,
-    responsesByStatusCode: { 201: RESPONSE_BODY_SCHEMA },
+  method: 'post',
+  summary: 'Create a user',
+  requestBodySchema: REQUEST_BODY_SCHEMA,
+  requestPathParamsSchema: PATH_PARAMS_SCHEMA,
+  requestHeaderSchema: HEADERS_SCHEMA,
+  pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+  responsesByStatusCode: { 201: RESPONSE_BODY_SCHEMA },
 })
 
 // POST request — body is required and typed from the contract; headers are required
 // because the contract declares requestHeaderSchema
 const postResponse = await injectByApiContract(app, createUserContract, {
-    pathParams: { userId: '1' },
-    body: { id: '2' },
-    headers: async () => ({ authorization: 'some-value' }), // plain object or (a)sync function
+  pathParams: { userId: '1' },
+  body: { id: '2' },
+  headers: async () => ({ authorization: 'some-value' }), // plain object or (a)sync function
 })
 
 const pingContract = defineApiContract({
-    method: 'get',
-    summary: 'Ping',
-    pathResolver: () => '/ping',
-    responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
+  method: 'get',
+  summary: 'Ping',
+  pathResolver: () => '/ping',
+  responsesByStatusCode: { 200: RESPONSE_BODY_SCHEMA },
 })
 
 // A contract with no request schemas needs no input fields

@@ -19,8 +19,8 @@ Event schema is a Zod object. The object will be passed as an argument for the e
 
 ```typescript
 const DEMO_EVENT_SCHEMA = z.object({
-	first: z.string(),
-	second: z.string(),
+  first: z.string(),
+  second: z.string(),
 })
 ```
 
@@ -30,9 +30,9 @@ An event contract is basically an object containing entries with a `schema`. Eac
 
 ```typescript
 export const DemoEvents = {
-	'users.demo.request': {
-		schema: DEMO_EVENT_SCHEMA,
-	},
+  'users.demo.request': {
+    schema: DEMO_EVENT_SCHEMA,
+  },
 }
 ```
 
@@ -40,7 +40,7 @@ You can split your definitions into multiple files/objects and combine them late
 
 ```typescript
 export const MyEvents = {
-	...DemoEvents,
-	...SomeOtherEvents,
+  ...DemoEvents,
+  ...SomeOtherEvents,
 }
 ```

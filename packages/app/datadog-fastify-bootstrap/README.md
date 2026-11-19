@@ -47,36 +47,36 @@ initDatadog()
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NODE_ENV` | When set to `test`, tracing is disabled | - |
-| `DD_TRACE_ENABLED` | Set to `true` to enable Datadog tracing | `false` |
-| `OTEL_ENABLED` | Fallback for `DD_TRACE_ENABLED` (for migration from OTEL package) | `false` |
-| `DD_TRACE_AGENT_URL` | Full URL of the Datadog Agent (e.g. `http://dd-agent:8126`) | - |
-| `OTEL_EXPORTER_URL` | Fallback for `DD_TRACE_AGENT_URL` (for migration from OTEL package) | - |
-| `DD_TRACE_DEBUG` | Enable verbose dd-trace internal logging (see [Debugging in Docker](#debugging-in-docker)) | `false` |
-| `DD_SERVICE` | Service name (can also be set via options) | inferred from package.json |
-| `DD_ENV` | Environment name (can also be set via options) | - |
-| `DD_VERSION` | Application version (can also be set via options) | inferred from package.json |
+| Variable             | Description                                                                                | Default                    |
+| -------------------- | ------------------------------------------------------------------------------------------ | -------------------------- |
+| `NODE_ENV`           | When set to `test`, tracing is disabled                                                    | -                          |
+| `DD_TRACE_ENABLED`   | Set to `true` to enable Datadog tracing                                                    | `false`                    |
+| `OTEL_ENABLED`       | Fallback for `DD_TRACE_ENABLED` (for migration from OTEL package)                          | `false`                    |
+| `DD_TRACE_AGENT_URL` | Full URL of the Datadog Agent (e.g. `http://dd-agent:8126`)                                | -                          |
+| `OTEL_EXPORTER_URL`  | Fallback for `DD_TRACE_AGENT_URL` (for migration from OTEL package)                        | -                          |
+| `DD_TRACE_DEBUG`     | Enable verbose dd-trace internal logging (see [Debugging in Docker](#debugging-in-docker)) | `false`                    |
+| `DD_SERVICE`         | Service name (can also be set via options)                                                 | inferred from package.json |
+| `DD_ENV`             | Environment name (can also be set via options)                                             | -                          |
+| `DD_VERSION`         | Application version (can also be set via options)                                          | inferred from package.json |
 
 ### Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `service` | `string` | - | Service name reported to Datadog |
-| `env` | `string` | - | Environment name (e.g. prod, staging) |
-| `version` | `string` | - | Application version |
-| `url` | `string` | - | Full URL of the DD Agent. Takes priority over `agentHost`/`agentPort` |
-| `agentHost` | `string` | `'127.0.0.1'` | Datadog Agent hostname. Ignored when `url` is set |
-| `agentPort` | `number` | `8126` | Datadog Agent trace port. Ignored when `url` is set |
-| `skippedPaths` | `string[]` | `['/health', '/metrics', '/']` | Paths to exclude from tracing |
-| `runtimeMetrics` | `boolean` | `false` | Enable runtime metrics collection |
-| `profiling` | `boolean` | `false` | Enable continuous profiling |
-| `logInjection` | `boolean` | `false` | Inject trace IDs into log records |
-| `sampleRate` | `number` | - | Global trace sample rate (0 to 1) |
-| `debug` | `boolean` | `false` | Enable dd-trace debug logging |
-| `startupLogs` | `boolean` | `true` | Enable dd-trace startup logs |
-| `tags` | `Record<string, string>` | - | Additional tags for every span and metric |
+| Option           | Type                     | Default                        | Description                                                           |
+| ---------------- | ------------------------ | ------------------------------ | --------------------------------------------------------------------- |
+| `service`        | `string`                 | -                              | Service name reported to Datadog                                      |
+| `env`            | `string`                 | -                              | Environment name (e.g. prod, staging)                                 |
+| `version`        | `string`                 | -                              | Application version                                                   |
+| `url`            | `string`                 | -                              | Full URL of the DD Agent. Takes priority over `agentHost`/`agentPort` |
+| `agentHost`      | `string`                 | `'127.0.0.1'`                  | Datadog Agent hostname. Ignored when `url` is set                     |
+| `agentPort`      | `number`                 | `8126`                         | Datadog Agent trace port. Ignored when `url` is set                   |
+| `skippedPaths`   | `string[]`               | `['/health', '/metrics', '/']` | Paths to exclude from tracing                                         |
+| `runtimeMetrics` | `boolean`                | `false`                        | Enable runtime metrics collection                                     |
+| `profiling`      | `boolean`                | `false`                        | Enable continuous profiling                                           |
+| `logInjection`   | `boolean`                | `false`                        | Inject trace IDs into log records                                     |
+| `sampleRate`     | `number`                 | -                              | Global trace sample rate (0 to 1)                                     |
+| `debug`          | `boolean`                | `false`                        | Enable dd-trace debug logging                                         |
+| `startupLogs`    | `boolean`                | `true`                         | Enable dd-trace startup logs                                          |
+| `tags`           | `Record<string, string>` | -                              | Additional tags for every span and metric                             |
 
 ## Features
 
@@ -128,16 +128,16 @@ services:
   app:
     build: .
     environment:
-      DD_TRACE_ENABLED: 'true'
-      DD_TRACE_AGENT_URL: 'http://datadog-agent:8126'
-      DD_TRACE_DEBUG: 'true'   # verbose dd-trace logs
-    command: ['node', '--import', 'dd-trace/initialize.mjs', 'dist/index.js']
+      DD_TRACE_ENABLED: "true"
+      DD_TRACE_AGENT_URL: "http://datadog-agent:8126"
+      DD_TRACE_DEBUG: "true" # verbose dd-trace logs
+    command: ["node", "--import", "dd-trace/initialize.mjs", "dist/index.js"]
 
   datadog-agent:
     image: datadog/agent:latest
     environment:
       DD_API_KEY: ${DD_API_KEY}
-      DD_APM_ENABLED: 'true'
+      DD_APM_ENABLED: "true"
 ```
 
 ### What to look for

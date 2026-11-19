@@ -1,5 +1,5 @@
-import { globalLogger, type RedisConfig } from '@lokalise/node-core'
-import type { Redis } from 'ioredis'
+import { globalLogger } from '@lokalise/node-core'
+import type { Redis, RedisOptions } from 'ioredis'
 import { vi } from 'vitest'
 import { CommonBullmqFactoryNew } from '../src/background-job-processor/factories/CommonBullmqFactoryNew.ts'
 import {
@@ -18,7 +18,7 @@ export class TestDependencyFactory {
   private queueManager?: QueueManager<any>
   private redis?: Redis
 
-  getRedisConfig(): RedisConfig {
+  getRedisConfig(): RedisOptions {
     return getTestRedisConfig()
   }
 

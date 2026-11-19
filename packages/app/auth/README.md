@@ -1,6 +1,6 @@
 # @lokalise/auth
 
-A flexible, type-safe authentication library for Fastify applications built with TypeScript. This library provides a 
+A flexible, type-safe authentication library for Fastify applications built with TypeScript. This library provides a
 clean abstraction for JWT-based authentication with support for multiple authentication strategies and
 token verification methods.
 
@@ -18,11 +18,11 @@ token verification methods.
 
 ```typescript
 import { FastifyInstance } from 'fastify'
-import { 
-  JwtBasedAuthenticator, 
-  KeyBasedTokenDecoder, 
+import {
+  JwtBasedAuthenticator,
+  KeyBasedTokenDecoder,
   createAuthenticationPreHandler,
-  type BaseAuthInfo 
+  type BaseAuthInfo,
 } from '@lokalise/auth'
 
 // Define your JWT payload type
@@ -53,8 +53,8 @@ class MyAuthenticator extends JwtBasedAuthenticator<MyAuthInfo> {
         authType: 'my-provider',
         token: jwt.token,
         userId: payload.userId,
-        email: payload.email
-      }
+        email: payload.email,
+      },
     }
   }
 }
@@ -66,7 +66,7 @@ const authPreHandler = createAuthenticationPreHandler(authenticator)
 
 // Register with Fastify
 const fastify: FastifyInstance = // ... your fastify instance
-fastify.addHook('preHandler', authPreHandler)
+  fastify.addHook('preHandler', authPreHandler)
 
 // Now your routes have access to authentication info
 fastify.get('/protected', async (request, reply) => {
@@ -90,7 +90,7 @@ const jwksClient = createJwksClient({
 
 const tokenDecoder = new JwksTokenDecoder(jwksClient, {
   algorithms: ['RS256'],
-  issuer: 'https://your-oauth-provider.com'
+  issuer: 'https://your-oauth-provider.com',
 })
 
 const authenticator = new MyAuthenticator(tokenDecoder)
@@ -107,10 +107,7 @@ const jwtAuthenticator = new MyJwtAuthenticator(jwtDecoder)
 const apiKeyAuthenticator = new MyApiKeyAuthenticator()
 
 // Chain them together
-const chain = new AuthenticatorChain([
-  jwtAuthenticator,
-  apiKeyAuthenticator
-])
+const chain = new AuthenticatorChain([jwtAuthenticator, apiKeyAuthenticator])
 
 const authPreHandler = createAuthenticationPreHandler(chain)
 ```
@@ -135,7 +132,7 @@ type BaseAuthInfo<AuthType extends string> = {
 Result of authentication attempt:
 
 ```typescript
-type AuthResult<AuthInfo> = 
+type AuthResult<AuthInfo> =
   | { success: true; authInfo: AuthInfo }
   | { success: false; failure: 'INVALID_CREDENTIALS' | 'EXPIRED_CREDENTIALS' }
 ```
@@ -162,7 +159,7 @@ abstract class JwtBasedAuthenticator<AuthInfo extends BaseAuthInfo<string>> {
   protected abstract internalAuthenticate(
     reqContext: RequestContext,
     jwt: ValidatedJwt,
-    request: FastifyRequest
+    request: FastifyRequest,
   ): AuthResult<AuthInfo> | Promise<AuthResult<AuthInfo>>
 }
 ```
@@ -181,7 +178,10 @@ Base class for token verification:
 ```typescript
 class TokenDecoder {
   constructor(decode: (token: string) => Promise<unknown> | unknown)
-  decode(requestContext: RequestContext, token: string): Promise<Either<TokenValidationError, object>>
+  decode(
+    requestContext: RequestContext,
+    token: string,
+  ): Promise<Either<TokenValidationError, object>>
 }
 ```
 
@@ -213,7 +213,7 @@ Creates a Fastify pre-handler for authentication:
 
 ```typescript
 function createAuthenticationPreHandler<AuthInfo extends BaseAuthInfo<string>>(
-  authenticator: Authenticator<AuthInfo>
+  authenticator: Authenticator<AuthInfo>,
 ): (request: FastifyRequest) => Promise<void>
 ```
 

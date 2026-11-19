@@ -61,11 +61,25 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
       validateTopicsConfig(Object.values(routingConfig), config.project)
     }
 
+    for (const topic of Object.values(routingConfig)) {
+      if (topic.isExternal) continue
+      const externalQueue = Object.values(topic.queues).find((queue) => queue.isExternal)
+      if (externalQueue) {
+        throw new Error(
+          `External queue ${externalQueue.queueName} cannot be subscribed to internal topic ${topic.topicName}`,
+        )
+      }
+    }
+
     this.routingConfig = groupByUnique(
-      Object.values(routingConfig).map((topic) => ({
-        ...topic,
-        queues: groupByUnique(Object.values(topic.queues), 'queueName'),
-      })),
+      Object.values(routingConfig).map(
+        (topic): TopicConfig =>
+          // Both branches are the same on purpose: narrowing the topic variant first lets TS type check the re-keyed
+          // queues against that variant (internal topics only allow internal queues) without casting
+          topic.isExternal
+            ? { ...topic, queues: groupByUnique(Object.values(topic.queues), 'queueName') }
+            : { ...topic, queues: groupByUnique(Object.values(topic.queues), 'queueName') },
+      ),
       'topicName',
     )
   }
@@ -119,27 +133,37 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
   ): ResolvedSnsConsumerOptions<MessagePayload> {
     const topicConfig = this.getTopicConfig(topicName)
     const resolvedTopic = this.resolveTopic(topicConfig, params)
+    const resolvedQueue = this.resolveQueue(queueName, topicConfig.queues, params)
 
-    const { creationConfig: queueCreationConfig, queueConfig } = this.resolveQueue(
-      queueName,
-      topicConfig.queues,
-      params,
+    const options = this.commonConsumerOptions(params, resolvedQueue)
+    const filterAttributes = generateFilterAttributes(
+      options.handlers.map((entry) => entry.schema),
+      MESSAGE_TYPE_PATH,
     )
 
-    /* v8 ignore start */
-    if (!queueCreationConfig) {
-      // This should not happen due to typing, but just in case
-      throw new Error(`Queue configuration for ${queueName} should not be external`)
+    if (resolvedQueue.locatorConfig) {
+      // Queue and subscription are managed externally, so all resources are only located. The filter policy is
+      // still owned by the consumer, as it is derived from its handlers, unless updating existing resources is
+      // disabled. The rest of attributes are left untouched
+      return {
+        locatorConfig: { ...resolvedTopic.locatorConfig, ...resolvedQueue.locatorConfig },
+        subscriptionConfig:
+          (params.updateAttributesIfExists ?? true)
+            ? {
+                locateOnly: true,
+                managedAttributes: ['FilterPolicy', 'FilterPolicyScope'],
+                Attributes: filterAttributes,
+              }
+            : undefined,
+        ...options,
+      }
     }
-    /* v8 ignore stop */
-
-    const options = this.commonConsumerOptions(params, queueConfig, queueCreationConfig.queue)
 
     return {
       locatorConfig: resolvedTopic.locatorConfig,
       creationConfig: {
         topic: resolvedTopic.createCommand,
-        queue: queueCreationConfig.queue,
+        queue: resolvedQueue.creationConfig.queue,
         topicArnsWithPublishPermissionsPrefix: buildTopicArnsWithPublishPermissionsPrefix(
           topicConfig,
           params.awsConfig,
@@ -155,10 +179,7 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
       },
       subscriptionConfig: {
         updateAttributesIfExists: params.updateAttributesIfExists ?? true,
-        Attributes: generateFilterAttributes(
-          options.handlers.map((entry) => entry.schema),
-          MESSAGE_TYPE_PATH,
-        ),
+        Attributes: filterAttributes,
       },
       subscriptionDeadLetterQueue: options.deadLetterQueue
         ? { reuseConsumerDeadLetterQueue: true }
@@ -177,7 +198,8 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
     topicConfig: TopicConfig,
     params: MayOmit<ResolvePublisherOptionsParams<MessagePayloadType>, 'messageSchemas'>,
   ): ResolveTopicResult {
-    if (topicConfig.isExternal) {
+    // In test mode external topics are created too, so tests don't depend on resources managed externally
+    if (topicConfig.isExternal && !params.isTest) {
       return {
         locatorConfig: {
           topicName: applyAwsResourcePrefix(topicConfig.topicName, params.awsConfig),
@@ -189,7 +211,8 @@ export class MessageQueueToolkitSnsOptionsResolver extends AbstractMessageQueueT
     return {
       createCommand: {
         Name: applyAwsResourcePrefix(topicConfig.topicName, params.awsConfig),
-        Tags: getSnsTags({ ...topicConfig, ...this.config }),
+        // External topics have no owner nor service to tag them with
+        Tags: topicConfig.isExternal ? undefined : getSnsTags({ ...topicConfig, ...this.config }),
         Attributes: { KmsMasterKeyId: params.awsConfig.kmsKeyId },
       },
     }

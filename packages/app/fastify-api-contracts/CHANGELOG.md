@@ -1,5 +1,11 @@
 # @lokalise/fastify-api-contracts
 
+## 8.0.1
+
+### Patch Changes
+
+- fc0d0ca: Bound the `@lokalise/api-contracts` peer dependency range to `>=9.0.0 <10.0.0` so installing an incompatible future major surfaces as a peer warning at install time instead of a runtime crash.
+
 ## 8.0.0
 
 ### Major Changes

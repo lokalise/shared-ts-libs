@@ -6,13 +6,26 @@ Opinionated HTTP client for the Node.js backend
 
 The library provides methods to implement the client side of HTTP protocols. Public methods available are:
 
-- `buildClient()`, which returns a [Client](https://undici.nodejs.org/#/docs/api/Client) instance and should be called before any of the following methods. Type client handles with the exported `HttpClient` type instead of importing `Client` from `undici`, so the undici major version stays an implementation detail of this package. Parameters:
+- `buildClient()` (deprecated: use `buildPool(baseUrl, { connections: 1 })` for the same behaviour; it will be removed in the next major), which returns a [Client](https://undici.nodejs.org/#/docs/api/Client) instance and should be called before any of the following methods. Type client handles with the exported `HttpClient` type, and parameters that take either a client or a pool with `HttpDispatcher`, instead of importing `Client` or `Pool` from `undici`, so the undici major version stays an implementation detail of this package. Parameters:
   - `baseUrl`;
   - `clientOptions` – set of [ClientOptions](https://undici.nodejs.org/#/docs/api/Client?id=parameter-clientoptions) (optional). If none are provided, the following default options will be used to instantiate the client:
+
     ```
     keepAliveMaxTimeout: 300_000,
     keepAliveTimeout: 4000,
     ```
+
+- `buildPool()`, which returns a [Pool](https://undici.nodejs.org/#/docs/api/Pool) of up to `connections` connections to `baseUrl`, for concurrent requests. It takes undici's [PoolOptions](https://undici.nodejs.org/#/docs/api/Pool?id=parameter-pooloptions) (the client options plus `clientTtl` and `factory`), with `connections` required (a positive integer). Every request helper accepts a `Client` or a `Pool`.
+
+  How many requests run at once depends on the protocol undici negotiates:
+  - **HTTP/1.1** (plain `http://`, or a server without HTTP/2): a `Client` has one connection that carries one request at a time by default, so concurrent calls on it (`Promise.all`, a concurrency limiter) still run one after another. A `Pool` runs up to `connections` requests at once by default.
+  - **HTTP/2** (undici offers it to `https://` servers, and uses it when they accept): one connection already carries concurrent requests, so a `Client` does not run them one at a time. A `Pool` stays on that one connection too, opening another only once the server's limit on concurrent streams is reached. `allowH2: false` spreads requests over several HTTP/1.1 connections instead, which can be much faster when concurrent responses are large (see below).
+
+  ```ts
+  // Up to five requests in flight at once, each on its own HTTP/1.1 connection.
+  const client = buildPool('https://api.example.com', { connections: 5, allowH2: false })
+  ```
+
 - `sendByApiContract()`, the recommended method for making type-safe HTTP requests from an `ApiContract` definition (created with `defineApiContract`);
 - `sendGet()`;
 - `sendGetWithStreamedResponse()`;
@@ -28,7 +41,6 @@ All _send_ methods accept a type parameter and the following arguments:
 - `client`, the return value of `buildClient()`;
 - `path`;
 - `options` – (optional). Possible values are:
-
   - `headers`;
   - `query`, query string params to be embedded in the request URL;
   - `timeout`, the timeout after which a request will time out, in milliseconds. Default is 30 seconds. Pass `undefined` if you prefer to have no timeout;
@@ -59,12 +71,29 @@ All _send_ methods accept a type parameter and the following arguments:
   throwOnError: true,
   timeout: 30000,
   ```
+
   No `retryConfig` is set by default — retries are disabled unless explicitly configured.
   For `sendDelete()` `isEmptyResponseExpected` by default is set to `true`, for all other methods it is `false`.
 
 Additionally, `sendPost()`, `sendPut()`, `sendPutBinary()`, and `sendPatch()` also accept a `body` parameter.
 
 The response of any _send_ method will be resolved to always have `result` set, but only have `error` set in case something went wrong. See [Either](#either) for more information.
+
+### Choosing `connections` and `allowH2` for `buildPool()`
+
+It depends on the protocol undici negotiates with the upstream and on the size of its responses:
+
+- **HTTP/1.1** (plain `http://`, e.g. service-to-service, or an HTTPS server without HTTP/2): one connection runs one request at a time by default. Set `connections` to how many requests you send at once; `connections: 1` behaves like `buildClient()`.
+- **HTTP/2 with small responses** (in our measurements with 10 concurrent requests, up to ~100 KB each): one connection already runs them in parallel, and the pool stays on it, so `connections` makes no difference there.
+- **HTTP/2 with large responses** (from ~200 KB each): one connection becomes the bottleneck. `buildPool(baseUrl, { connections, allowH2: false })` was 1.6x faster at ~200 KB per response and about 4x from ~1 MB in our measurements; measure before switching.
+
+Over HTTP/1.1 with the default pipelining, a pool also caps how many requests run at once across everything sharing it, so size `connections` for the whole process, not a single call, and keep the upstream's rate limits in mind. `connections` limits connections, not requests: over HTTP/2, or with pipelining, one connection carries several requests, so use a concurrency limiter if you need a hard cap on requests.
+
+To check what an HTTPS upstream negotiates (`h2` means HTTP/2; no ALPN means HTTP/1.1):
+
+```bash
+openssl s_client -connect api.example.com:443 -servername api.example.com -alpn 'http/1.1,h2' </dev/null 2>/dev/null | grep ALPN
+```
 
 ## Either
 
@@ -208,27 +237,27 @@ if (response.error instanceof UnexpectedResponseError) {
 
 `UnexpectedResponseError` supports cross-realm `instanceof` checks via `Symbol.hasInstance`, so it works correctly even when the error crosses module or VM boundaries.
 
-| Property | Type | Description |
-|---|---|---|
-| `statusCode` | `number` | HTTP status code of the unexpected response. |
-| `headers` | `Record<string, string \| undefined>` | Normalised response headers. |
-| `body` | `string` | Raw response body read as UTF-8 text. |
+| Property     | Type                                  | Description                                  |
+| ------------ | ------------------------------------- | -------------------------------------------- |
+| `statusCode` | `number`                              | HTTP status code of the unexpected response. |
+| `headers`    | `Record<string, string \| undefined>` | Normalised response headers.                 |
+| `body`       | `string`                              | Raw response body read as UTF-8 text.        |
 
 ### Throws
 
 `sendByApiContract` wraps most failure modes in `Either.error`, but the following conditions throw directly. Wrap call sites in `try/catch` if any of these can arise:
 
-| Cause | What is thrown |
-|---|---|
-| Network error — no retry configured, or all retries exhausted | Undici `UND_ERR_*` error |
-| Manual cancellation — `signal` fired | `AbortError` (`DOMException`) |
+| Cause                                                                                             | What is thrown                  |
+| ------------------------------------------------------------------------------------------------- | ------------------------------- |
+| Network error — no retry configured, or all retries exhausted                                     | Undici `UND_ERR_*` error        |
+| Manual cancellation — `signal` fired                                                              | `AbortError` (`DOMException`)   |
 | Per-attempt timeout expired — `timeout` option, with `retryOnTimeout: false` or retries exhausted | `TimeoutError` (`DOMException`) |
-| Response body contains malformed JSON | `SyntaxError` |
-| Response body fails JSON schema validation | `ZodError` |
-| Response headers fail schema validation — `responseHeaderSchema` defined in the contract | `ZodError` |
-| SSE event type has no matching schema in the contract | `Error` |
-| SSE event data contains malformed JSON | `SyntaxError` |
-| SSE event data fails schema validation | `ZodError` |
+| Response body contains malformed JSON                                                             | `SyntaxError`                   |
+| Response body fails JSON schema validation                                                        | `ZodError`                      |
+| Response headers fail schema validation — `responseHeaderSchema` defined in the contract          | `ZodError`                      |
+| SSE event type has no matching schema in the contract                                             | `Error`                         |
+| SSE event data contains malformed JSON                                                            | `SyntaxError`                   |
+| SSE event data fails schema validation                                                            | `ZodError`                      |
 
 ```ts
 try {
@@ -358,10 +387,14 @@ The `delay` function controls how long to wait before each retry. It receives th
 
 ```ts
 // constant 200 ms
-retry: { delay: () => 200 }
+retry: {
+  delay: () => 200
+}
 
 // custom exponential
-retry: { delay: (n) => 300 * 2 ** (n - 1) }
+retry: {
+  delay: (n) => 300 * 2 ** (n - 1)
+}
 ```
 
 Three built-in delay builders are exported for common strategies:
@@ -370,19 +403,27 @@ Three built-in delay builders are exported for common strategies:
 import { constantDelay, linearDelay, exponentialDelay } from '@lokalise/backend-http-client'
 
 // constant — always 200 ms
-retry: { delay: constantDelay({ baseDelayMs: 200 }) }
+retry: {
+  delay: constantDelay({ baseDelayMs: 200 })
+}
 // attempt 1 → 200 ms, attempt 2 → 200 ms, …
 
 // linear — grows by baseDelayMs each attempt
-retry: { delay: linearDelay({ baseDelayMs: 100 }) }
+retry: {
+  delay: linearDelay({ baseDelayMs: 100 })
+}
 // attempt 1 → 100 ms, attempt 2 → 200 ms, attempt 3 → 300 ms, …
 
 // exponential — doubles by default (multiplier defaults to 2)
-retry: { delay: exponentialDelay({ baseDelayMs: 100 }) }
+retry: {
+  delay: exponentialDelay({ baseDelayMs: 100 })
+}
 // attempt 1 → 100 ms, attempt 2 → 200 ms, attempt 3 → 400 ms, …
 
 // exponential with custom multiplier
-retry: { delay: exponentialDelay({ baseDelayMs: 100, multiplier: 3 }) }
+retry: {
+  delay: exponentialDelay({ baseDelayMs: 100, multiplier: 3 })
+}
 // attempt 1 → 100 ms, attempt 2 → 300 ms, attempt 3 → 900 ms, …
 ```
 
@@ -411,7 +452,11 @@ retry: {
 When the client's inline retries are exhausted (or disabled), the transport error escapes to the caller. The helpers themselves do not retry anything - they only classify, so a caller with its own retry machinery (a job queue, a scheduler, a per-item retry loop) can decide whether re-running the operation later makes sense:
 
 ```ts
-import { getTransportErrorCode, isTransportError, type TransportErrorCode } from '@lokalise/backend-http-client'
+import {
+  getTransportErrorCode,
+  isTransportError,
+  type TransportErrorCode,
+} from '@lokalise/backend-http-client'
 
 try {
   // Inline retries happen here (see Retry above); a sustained outage still throws.
@@ -431,28 +476,28 @@ Recognized codes: `UND_ERR_HEADERS_TIMEOUT`, `UND_ERR_BODY_TIMEOUT`, `UND_ERR_CO
 
 ### Options
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `captureAsError` | `boolean` | `true` | When `true`, non-2xx responses defined in the contract go to `Either.error`. When `false`, all contract-defined status codes go to `Either.result`. |
-| `timeout` | `number` | — | Per-attempt timeout in milliseconds. Each attempt gets its own independent timer. For a total deadline, use `signal` instead. |
-| `signal` | `AbortSignal` | — | Total deadline or manual cancellation. Stops retries immediately when fired. Combine with `timeout` for both per-attempt and total deadlines. |
-| `retry` | `RetryConfig \| true` | — | Retry configuration. Pass `true` for all defaults, or a config object. See [Retry](#retry). |
-| `reqContext` | `{ reqId: string }` | — | Forwarded as `x-request-id` header for distributed tracing. |
-| `strictContentType` | `boolean` | `true` | When `true`, returns an error if the response `content-type` doesn't match the contract entry. When `false`, falls back to the entry's kind for single-entry responses. |
-| `disableKeepAlive` | `boolean` | `false` | Closes the connection after the request instead of returning it to the pool. Useful for one-off requests. |
+| Option              | Type                  | Default | Description                                                                                                                                                             |
+| ------------------- | --------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `captureAsError`    | `boolean`             | `true`  | When `true`, non-2xx responses defined in the contract go to `Either.error`. When `false`, all contract-defined status codes go to `Either.result`.                     |
+| `timeout`           | `number`              | —       | Per-attempt timeout in milliseconds. Each attempt gets its own independent timer. For a total deadline, use `signal` instead.                                           |
+| `signal`            | `AbortSignal`         | —       | Total deadline or manual cancellation. Stops retries immediately when fired. Combine with `timeout` for both per-attempt and total deadlines.                           |
+| `retry`             | `RetryConfig \| true` | —       | Retry configuration. Pass `true` for all defaults, or a config object. See [Retry](#retry).                                                                             |
+| `reqContext`        | `{ reqId: string }`   | —       | Forwarded as `x-request-id` header for distributed tracing.                                                                                                             |
+| `strictContentType` | `boolean`             | `true`  | When `true`, returns an error if the response `content-type` doesn't match the contract entry. When `false`, falls back to the entry's kind for single-entry responses. |
+| `disableKeepAlive`  | `boolean`             | `false` | Closes the connection after the request instead of returning it to the pool. Useful for one-off requests.                                                               |
 
 #### RetryConfig
 
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `maxRetries` | `number` | `2` | Maximum number of retries after the initial attempt. |
-| `statusCodes` | `number[]` | `[408, 425, 429, 500, 502, 503, 504]` | HTTP status codes that trigger a retry. |
-| `delay` | `(n: number) => number` | `(n) => 100 * 2^(n-1)` | Delay in ms before retry `n`. |
-| `maxDelay` | `number` | `30_000` | Hard cap on any delay, including `Retry-After`. |
-| `maxJitter` | `number` | `100` | Maximum additive random jitter in ms added to every delay. |
-| `respectRetryAfter` | `boolean` | `true` | Use the `Retry-After` response header as the delay when present and valid; falls back to `delay()` otherwise. |
-| `retryOnNetworkError` | `boolean` | `true` | Retry on network-level errors (e.g. `UND_ERR_SOCKET`). |
-| `retryOnTimeout` | `boolean` | `true` | Retry when the per-attempt `timeout` is exceeded. |
+| Field                 | Type                    | Default                               | Description                                                                                                   |
+| --------------------- | ----------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `maxRetries`          | `number`                | `2`                                   | Maximum number of retries after the initial attempt.                                                          |
+| `statusCodes`         | `number[]`              | `[408, 425, 429, 500, 502, 503, 504]` | HTTP status codes that trigger a retry.                                                                       |
+| `delay`               | `(n: number) => number` | `(n) => 100 * 2^(n-1)`                | Delay in ms before retry `n`.                                                                                 |
+| `maxDelay`            | `number`                | `30_000`                              | Hard cap on any delay, including `Retry-After`.                                                               |
+| `maxJitter`           | `number`                | `100`                                 | Maximum additive random jitter in ms added to every delay.                                                    |
+| `respectRetryAfter`   | `boolean`               | `true`                                | Use the `Retry-After` response header as the delay when present and valid; falls back to `delay()` otherwise. |
+| `retryOnNetworkError` | `boolean`               | `true`                                | Retry on network-level errors (e.g. `UND_ERR_SOCKET`).                                                        |
+| `retryOnTimeout`      | `boolean`               | `true`                                | Retry when the per-attempt `timeout` is exceeded.                                                             |
 
 ### Raw streaming responses
 
@@ -485,11 +530,9 @@ const { headers } = result.result
 Usage example:
 
 ```ts
-const streamResult = await sendGetWithStreamedResponse(
-  client,
-  '/api/files/12345',
-  { requestLabel: 'Download file' },
-)
+const streamResult = await sendGetWithStreamedResponse(client, '/api/files/12345', {
+  requestLabel: 'Download file',
+})
 
 if (streamResult.result) {
   for await (const chunk of streamResult.result.body) {

@@ -43,6 +43,7 @@ describe('isAttemptToEditNonTranslatableContent', () => {
       '\uE101\uE102\uE111\uE102\uE101\uE101\uE112\uE102',
       '\uE101abc\uE111\uE102\uE101\uE101\uE112\uE102',
     ], // whole content is non-translatable and contains only NT inline codes second case
+    ['\uE101<b>\nHello\uE102 world', '\uE101<b>\nBye\uE102 world'], // edited NT region spanning several lines
   ])('returns true if non translatable content is edited', (originalValue, updatedValue) => {
     expect(isAttemptToEditNonTranslatableContent(originalValue, updatedValue)).toBeTruthy()
   })

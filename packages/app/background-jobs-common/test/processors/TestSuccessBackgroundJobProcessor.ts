@@ -1,5 +1,6 @@
-import { NoopObservabilityManager, type RedisConfig } from '@lokalise/node-core'
+import { NoopObservabilityManager } from '@lokalise/node-core'
 import type { Job } from 'bullmq'
+import type { RedisOptions } from 'ioredis'
 import {
   AbstractBackgroundJobProcessor,
   type BackgroundJobProcessorDependencies,
@@ -25,7 +26,7 @@ export class TestSuccessBackgroundJobProcessor<
       'bullmqFactory' | 'transactionObservabilityManager'
     >,
     queueName: string,
-    redisConfig: RedisConfig,
+    redisConfig: RedisOptions,
     purgeJobDataOnSuccess?: boolean,
   ) {
     super(

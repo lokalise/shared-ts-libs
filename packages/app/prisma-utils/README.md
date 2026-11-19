@@ -37,7 +37,7 @@ const prisma = prismaClientFactory(
   {
     // Your Prisma client options
   },
-  { promClient }
+  { promClient },
 )
 ```
 
@@ -77,7 +77,7 @@ const result: Either<unknown, [Item, Segment]> = await prismaTransaction(
   [
     prisma.item.create({ data: { value: 'item-1' } }),
     prisma.segment.create({ data: { name: 'segment-1' } }),
-  ]
+  ],
 )
 ```
 
@@ -91,7 +91,7 @@ const result: Either<unknown, User> = await prismaTransaction(
     const user = await tx.user.create({ data: { name: 'John' } })
     await tx.profile.create({ data: { userId: user.id, bio: 'Developer' } })
     return user
-  }
+  },
 )
 ```
 
@@ -113,8 +113,8 @@ The transaction helper automatically retries on the following error conditions:
    - Formula: `2^(retry-1) × baseRetryDelayMs`
    - Example: 100ms → 200ms → 400ms → 800ms...
 
-2. **Smart Timeout Adjustment**: If transaction times out (P2028 with "transaction is closed"), the timeout is 
- automatically doubled on retry (up to `maxTimeout`)
+2. **Smart Timeout Adjustment**: If transaction times out (P2028 with "transaction is closed"), the timeout is
+   automatically doubled on retry (up to `maxTimeout`)
 
 3. **Configurable Options**:
 
@@ -122,26 +122,58 @@ The transaction helper automatically retries on the following error conditions:
 const result = await prismaTransaction(
   prisma,
   {
-    dbDriver: 'CockroachDb',       // Enable CockroachDB-specific retries
-    retriesAllowed: 2,             // Default: 2 (total 3 attempts)
-    baseRetryDelayMs: 100,         // Default: 100ms
-    maxRetryDelayMs: 30000,        // Default: 30s (max delay between retries)
-    timeout: 5000,                 // Default: 5s (transaction timeout)
-    maxTimeout: 30000,             // Default: 30s (max transaction timeout)
+    dbDriver: 'CockroachDb', // Enable CockroachDB-specific retries
+    retriesAllowed: 2, // Default: 2 (total 3 attempts)
+    baseRetryDelayMs: 100, // Default: 100ms
+    maxRetryDelayMs: 30000, // Default: 30s (max delay between retries)
+    timeout: 5000, // Default: 5s (transaction timeout)
+    maxTimeout: 30000, // Default: 30s (max transaction timeout)
   },
   [
     // Your transaction operations
-  ]
+  ],
 )
 ```
 
 #### Why This Matters
 
-Distributed databases like CockroachDB use optimistic concurrency control, which can result in serialization errors 
-when multiple transactions compete for the same resources. This helper abstracts away the complexity of handling these 
+Distributed databases like CockroachDB use optimistic concurrency control, which can result in serialization errors
+when multiple transactions compete for the same resources. This helper abstracts away the complexity of handling these
 errors, providing a robust and efficient way to ensure your transactions succeed even under high contention.
-By automatically retrying failed transactions with an intelligent backoff strategy, you can significantly improve the 
+By automatically retrying failed transactions with an intelligent backoff strategy, you can significantly improve the
 reliability and performance of your application when using distributed databases.
+
+### Retry On Serialization Failure
+
+Retries a single statement while it fails with a serialization failure, without opening a transaction around it.
+
+```typescript
+import { retryOnSerializationFailure } from '@lokalise/prisma-utils'
+
+const rows = await retryOnSerializationFailure(
+  () => prisma.$queryRaw<Row[]>`SELECT ... FROM "segment" WHERE "project_id" = ${projectId}`,
+)
+```
+
+Retries when the error is Prisma's `P2034` or a CockroachDB transaction retry error (SQLSTATE `40001`), in both the query-engine and the driver-adapter shape. Anything else is rethrown immediately, and the last error is rethrown once the retries are exhausted.
+
+#### Options
+
+```typescript
+const rows = await retryOnSerializationFailure(query, {
+  retriesAllowed: 2, // Default: 2 (total 3 attempts)
+  baseRetryDelayMs: 100, // Default: 100ms
+  maxRetryDelayMs: 30000, // Default: 30s
+})
+```
+
+The backoff is the same as `prismaTransaction`'s: `2^(retry-1) × baseRetryDelayMs`, capped at `maxRetryDelayMs`.
+
+#### When To Use It Instead Of `prismaTransaction`
+
+For a single read, wrapping the statement in an explicit transaction costs a BEGIN/COMMIT round trip and takes away CockroachDB's own ability to refresh and retry the implicit single-statement transaction server-side, which it can no longer do once the client has opened the transaction.
+
+It is only safe around a **single read-only statement**. A write, or a statement that runs inside an interactive transaction, has to be retried at the transaction boundary (`prismaTransaction`) instead — replaying it alone would either duplicate its effects or re-run it against an aborted transaction.
 
 ### Prisma Bulk Update
 
@@ -152,13 +184,18 @@ Updates many rows in a single atomic SQL statement (`UPDATE ... FROM (VALUES ...
 ```typescript
 import { prismaBulkUpdate } from '@lokalise/prisma-utils'
 
-await prismaBulkUpdate(prisma, 'segment', {
-  dbDriver: 'CockroachDb',
-  typeByColumn: { project_id: 'uuid', id: 'uuid', value: 'text', words_count: 'int4' },
-}, [
-  { where: { project_id: projectId, id: id1 }, data: { value: 'a', words_count: 1 } },
-  { where: { project_id: projectId, id: id2 }, data: { value: 'b', words_count: 2 } },
-])
+await prismaBulkUpdate(
+  prisma,
+  'segment',
+  {
+    dbDriver: 'CockroachDb',
+    typeByColumn: { project_id: 'uuid', id: 'uuid', value: 'text', words_count: 'int4' },
+  },
+  [
+    { where: { project_id: projectId, id: id1 }, data: { value: 'a', words_count: 1 } },
+    { where: { project_id: projectId, id: id2 }, data: { value: 'b', words_count: 2 } },
+  ],
+)
 ```
 
 The above executes a single statement of the form:

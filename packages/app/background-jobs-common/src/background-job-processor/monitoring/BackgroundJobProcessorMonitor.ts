@@ -1,10 +1,10 @@
 import {
   type CommonLogger,
-  type RedisConfig,
   resolveGlobalErrorLogObject,
   runInTransactionContext,
   type TransactionObservabilityManager,
 } from '@lokalise/node-core'
+import type { RedisOptions } from 'ioredis'
 import { isBullmqControlFlowError } from '../errors/utils.ts'
 import { BackgroundJobProcessorLogger } from '../logger/BackgroundJobProcessorLogger.ts'
 import type { BackgroundJobProcessorDependencies } from '../processors/types.ts'
@@ -38,7 +38,7 @@ type BackgroundJobProcessorMonitorConfig = {
     }
   | {
       isNewProcessor: false
-      redisConfig: RedisConfig
+      redisConfig: RedisOptions
     }
 )
 
