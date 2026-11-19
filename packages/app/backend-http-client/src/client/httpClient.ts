@@ -2,13 +2,14 @@ import type { Readable } from 'node:stream'
 import type { InferSchemaOutput } from '@lokalise/api-contracts'
 import { copyWithoutUndefined, type Either } from '@lokalise/node-core'
 import type { FormData } from 'undici'
-import { Client } from 'undici'
+import { Client, Pool } from 'undici'
 import type { ZodError, ZodSchema } from 'zod/v4'
 import type { InternalRequestError } from '../errors/InternalRequestError.ts'
 import { ResponseStatusError } from '../errors/ResponseStatusError.ts'
 import { DEFAULT_OPTIONS, defaultClientOptions, REQUEST_ID_HEADER } from './constants.ts'
 import { executeRequest, executeStreamRequest, isRequestResult } from './requestExecutor.ts'
 import type {
+  HttpDispatcher,
   RecordObject,
   RequestOptions,
   RequestResult,
@@ -18,13 +19,23 @@ import type {
 type PayloadMethods = 'POST' | 'PUT' | 'PATCH'
 type DEFAULT_THROW_ON_ERROR = typeof DEFAULT_OPTIONS.throwOnError
 
+const resolveClientOptions = <T extends Client.Options>(clientOptions?: T) => ({
+  ...defaultClientOptions,
+  ...clientOptions,
+  bodyTimeout: clientOptions?.bodyTimeout ?? DEFAULT_OPTIONS.timeout,
+  headersTimeout: clientOptions?.headersTimeout ?? DEFAULT_OPTIONS.timeout,
+})
+
+/**
+ * Builds a client with a single connection to `baseUrl`. Over HTTP/1.1 it carries one request at a
+ * time by default, so concurrent calls run one after another; see `buildPool` to run them in parallel.
+ *
+ * @deprecated Use `buildPool(baseUrl, { connections: 1, ...clientOptions })` for the same
+ * behaviour, or more connections to run requests in parallel. `buildClient` will be removed in the
+ * next major.
+ */
 export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
-  return new Client(baseUrl, {
-    ...defaultClientOptions,
-    ...clientOptions,
-    bodyTimeout: clientOptions?.bodyTimeout ?? DEFAULT_OPTIONS.timeout,
-    headersTimeout: clientOptions?.headersTimeout ?? DEFAULT_OPTIONS.timeout,
-  })
+  return new Client(baseUrl, resolveClientOptions(clientOptions))
 }
 
 /**
@@ -34,6 +45,29 @@ export function buildClient(baseUrl: string, clientOptions?: Client.Options) {
  */
 export type HttpClient = ReturnType<typeof buildClient>
 
+export type BuildPoolOptions = Omit<Pool.Options, 'connections'> & {
+  /** How many connections the pool may open to `baseUrl`; a positive integer. */
+  connections: number
+}
+
+/**
+ * Builds a pool of up to `connections` connections to `baseUrl`, so concurrent requests over
+ * HTTP/1.1 run in parallel instead of one at a time (with the default pipelining). Over HTTP/2,
+ * which undici negotiates with HTTPS servers that support it, one connection already carries
+ * concurrent requests and the pool stays on it; `allowH2: false` spreads requests over several
+ * HTTP/1.1 connections instead, which can be much faster when concurrent responses are large.
+ */
+export function buildPool(baseUrl: string, poolOptions: BuildPoolOptions): Pool {
+  // Read before destructuring, so a caller without options still gets this message.
+  const connections = poolOptions?.connections
+  // undici reads 0 as "no limit"; a fraction would round up.
+  if (typeof connections !== 'number' || !Number.isInteger(connections) || connections < 1) {
+    throw new Error(`connections must be a positive integer, got ${connections}`)
+  }
+  const { connections: _, ...otherOptions } = poolOptions
+  return new Pool(baseUrl, { ...resolveClientOptions(otherOptions), connections })
+}
+
 type NonPayloadMethods = 'DELETE' | 'GET'
 
 async function sendNonPayload<
@@ -41,7 +75,7 @@ async function sendNonPayload<
   IsEmptyResponseExpected extends boolean,
   DoThrowOnError extends boolean,
 >(
-  client: Client,
+  client: HttpDispatcher,
   method: NonPayloadMethods,
   path: string,
   options: Omit<
@@ -85,7 +119,7 @@ export function sendGet<
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: Client,
+  client: HttpDispatcher,
   path: string,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
 ): Promise<
@@ -100,7 +134,7 @@ export function sendGet<
 export async function sendGetWithStreamedResponse<
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: Client,
+  client: HttpDispatcher,
   path: string,
   options: Omit<
     RequestOptions<undefined, false, DoThrowOnError>,
@@ -144,7 +178,7 @@ export function sendDelete<
   IsEmptyResponseExpected extends boolean = true,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: Client,
+  client: HttpDispatcher,
   path: string,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
 ): Promise<
@@ -161,7 +195,7 @@ async function sendResourceChange<
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: Client,
+  client: HttpDispatcher,
   method: PayloadMethods,
   path: string,
   body: RecordObject | undefined,
@@ -208,7 +242,7 @@ export function sendPost<
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: Client,
+  client: HttpDispatcher,
   path: string,
   body: RecordObject | undefined,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
@@ -221,7 +255,7 @@ export function sendPost<
 async function sendPayloadWithStreamedResponse<
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: Client,
+  client: HttpDispatcher,
   method: PayloadMethods,
   path: string,
   body: RecordObject | undefined,
@@ -266,7 +300,7 @@ async function sendPayloadWithStreamedResponse<
 export function sendPostWithStreamedResponse<
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: Client,
+  client: HttpDispatcher,
   path: string,
   body: RecordObject | undefined,
   options: Omit<
@@ -286,7 +320,7 @@ export async function sendPostBinary<
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: Client,
+  client: HttpDispatcher,
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
@@ -328,7 +362,7 @@ export function sendPut<
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: Client,
+  client: HttpDispatcher,
   path: string,
   body: RecordObject | undefined,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
@@ -343,7 +377,7 @@ export async function sendPutBinary<
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: Client,
+  client: HttpDispatcher,
   path: string,
   body: Buffer | Uint8Array | Readable | FormData | null,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,
@@ -385,7 +419,7 @@ export function sendPatch<
   IsEmptyResponseExpected extends boolean = false,
   DoThrowOnError extends boolean = DEFAULT_THROW_ON_ERROR,
 >(
-  client: Client,
+  client: HttpDispatcher,
   path: string,
   body: RecordObject | undefined,
   options: RequestOptions<T, IsEmptyResponseExpected, DoThrowOnError>,

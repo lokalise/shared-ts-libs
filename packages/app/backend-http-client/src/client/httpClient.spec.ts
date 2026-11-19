@@ -1,13 +1,14 @@
 import type { Readable } from 'node:stream'
 import { setTimeout } from 'node:timers/promises'
 import { getLocal, type Mockttp } from 'mockttp'
-import { Client } from 'undici'
-import { afterAll, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
+import { Client, Pool } from 'undici'
+import { afterAll, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { z } from 'zod/v4'
 import { isInternalRequestError } from '../errors/InternalRequestError.ts'
 import { JSON_HEADERS } from './constants.ts'
 import {
   buildClient,
+  buildPool,
   sendDelete,
   sendGet,
   sendGetWithStreamedResponse,
@@ -22,7 +23,7 @@ import {
 import mockProduct1 from './mock-data/mockProduct1.json'
 // @ts-expect-error
 import mockProductsLimit3 from './mock-data/mockProductsLimit3.json'
-import type { HttpRequestContext } from './types.ts'
+import type { HttpDispatcher, HttpRequestContext } from './types.ts'
 
 const TEXT_HEADERS = {
   'content-type': 'text/plain',
@@ -64,6 +65,134 @@ describe('httpClient', () => {
     it('creates a client', () => {
       const testClient = buildClient(mockServer.url)
       expect(testClient).toBeInstanceOf(Client)
+      expectTypeOf(testClient).toEqualTypeOf<Client>()
+    })
+  })
+
+  describe('buildPool', () => {
+    it('creates a pool', async () => {
+      // Pool-only options such as `clientTtl` are accepted as well.
+      const testPool = buildPool(mockServer.url, { connections: 3, clientTtl: 60_000 })
+
+      expect(testPool).toBeInstanceOf(Pool)
+      expectTypeOf(testPool).toEqualTypeOf<Pool>()
+
+      await testPool.close()
+    })
+
+    it.each([0, -1, 2.5, Number.NaN])('rejects %s connections', (connections) => {
+      expect(() => buildPool(mockServer.url, { connections })).toThrow(
+        `connections must be a positive integer, got ${connections}`,
+      )
+    })
+
+    it('rejects missing options with the same message', () => {
+      // @ts-expect-error - a JavaScript caller can leave the options out
+      expect(() => buildPool(mockServer.url)).toThrow(
+        'connections must be a positive integer, got undefined',
+      )
+    })
+  })
+
+  // mockttp serves plain HTTP, so these show HTTP/1.1; over HTTP/2 one connection already carries
+  // concurrent requests.
+  describe('concurrent requests', () => {
+    // Counted on the server: the most requests it was handling at the same time.
+    const mostRequestsInFlight = async (
+      testClient: HttpDispatcher,
+      respond: (arrived: number) => Promise<unknown>,
+    ) => {
+      let arrived = 0
+      let inFlight = 0
+      let mostInFlight = 0
+      await mockServer.forGet('/slow').thenCallback(async () => {
+        arrived += 1
+        inFlight += 1
+        mostInFlight = Math.max(mostInFlight, inFlight)
+        await respond(arrived)
+        inFlight -= 1
+        return { statusCode: 200, json: { id: '1' } }
+      })
+
+      try {
+        await Promise.all(
+          [1, 2, 3].map(() =>
+            sendGet(testClient, '/slow', {
+              requestLabel: 'slow',
+              responseSchema: z.object({ id: z.string() }),
+            }),
+          ),
+        )
+      } finally {
+        await testClient.close()
+      }
+      return mostInFlight
+    }
+
+    it('runs them one at a time on a single connection', async () => {
+      // The next request leaves only once the previous response is back, however long it takes.
+      const mostInFlight = await mostRequestsInFlight(buildClient(mockServer.url), () =>
+        setTimeout(10),
+      )
+
+      expect(mostInFlight).toBe(1)
+    })
+
+    it('runs them in parallel over several connections', async () => {
+      let releaseAll = () => {}
+      const allArrived = new Promise<void>((resolve) => {
+        releaseAll = resolve
+      })
+
+      const mostInFlight = await mostRequestsInFlight(
+        buildPool(mockServer.url, { connections: 3 }),
+        (arrived) => {
+          if (arrived === 3) releaseAll()
+          // Each request waits for the other two. The timeout ends a wait they never join, so a
+          // regression fails the assertion well within the test timeout instead of hanging; it
+          // does not hold the process open.
+          return Promise.race([allArrived, setTimeout(1000, undefined, { ref: false })])
+        },
+      )
+
+      expect(mostInFlight).toBe(3)
+    })
+
+    it('queues requests beyond its connections', async () => {
+      let arrived = 0
+      let release = () => {}
+      const held = new Promise<void>((resolve) => {
+        release = resolve
+      })
+      await mockServer.forGet('/slow').thenCallback(async () => {
+        arrived += 1
+        await held
+        return { statusCode: 200, json: { id: '1' } }
+      })
+      const testPool = buildPool(mockServer.url, { connections: 2 })
+
+      try {
+        const requests = Promise.all(
+          [1, 2, 3].map(() =>
+            sendGet(testPool, '/slow', {
+              requestLabel: 'slow',
+              responseSchema: z.object({ id: z.string() }),
+            }),
+          ),
+        )
+        await vi.waitFor(() => expect(arrived).toBe(2))
+        // The third request waits in the pool instead of opening a third connection.
+        const { connected, queued, running } = testPool.stats
+        expect({ connected, queued, running }).toEqual({ connected: 2, queued: 1, running: 2 })
+        expect(arrived).toBe(2)
+
+        release()
+        await requests
+        expect(arrived).toBe(3)
+      } finally {
+        release()
+        await testPool.close()
+      }
     })
   })
 

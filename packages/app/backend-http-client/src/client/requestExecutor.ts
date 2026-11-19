@@ -1,10 +1,10 @@
 import type { Either } from '@lokalise/node-core'
-import type { Client, Dispatcher } from 'undici'
+import type { Dispatcher } from 'undici'
 import type { ZodType } from 'zod/v4'
 import { resolveRetryConfig, withRetry } from '../api-contract/retry.ts'
 import { InternalRequestError } from '../errors/InternalRequestError.ts'
 import { ResponseParseError } from '../errors/ResponseParseError.ts'
-import type { InternalRequestOptions, RequestResult } from './types.ts'
+import type { HttpDispatcher, InternalRequestOptions, RequestResult } from './types.ts'
 
 export function isRequestResult(entity: unknown): entity is RequestResult<unknown> {
   return typeof entity === 'object' && entity !== null && 'statusCode' in entity
@@ -40,7 +40,7 @@ export async function parseResponseBody(
 }
 
 export async function executeRequest<T>(
-  client: Client,
+  client: HttpDispatcher,
   requestOptions: Dispatcher.RequestOptions,
   options: InternalRequestOptions<ZodType | undefined>,
 ): Promise<Either<RequestResult<unknown> | InternalRequestError, RequestResult<T>>> {
@@ -87,7 +87,7 @@ export async function executeRequest<T>(
 }
 
 export async function executeStreamRequest(
-  client: Client,
+  client: HttpDispatcher,
   requestOptions: Dispatcher.RequestOptions,
   options: Pick<InternalRequestOptions<ZodType | undefined>, 'retryConfig' | 'requestLabel'>,
 ): Promise<
