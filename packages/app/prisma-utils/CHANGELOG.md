@@ -1,5 +1,12 @@
 # @lokalise/prisma-utils
 
+## 7.1.1
+
+### Patch Changes
+
+- dc1ef25: Import `Either`, `DefiniteEither`, `FreeformRecord`, `MayOmit`, `isError`, `isObject`, `deepClone`, `removeNullish` and `copyWithoutUndefined` from `@lokalise/universal-ts-utils/node` instead of their deprecated `@lokalise/node-core` re-exports.
+- dc1ef25: Remove the unused `@lokalise/node-core` peer dependency.
+
 ## 7.1.0
 
 ### Minor Changes

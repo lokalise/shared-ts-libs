@@ -1,5 +1,11 @@
 # @lokalise/healthcheck-utils
 
+## 8.0.1
+
+### Patch Changes
+
+- dc1ef25: Import `Either`, `DefiniteEither`, `FreeformRecord`, `MayOmit`, `isError`, `isObject`, `deepClone`, `removeNullish` and `copyWithoutUndefined` from `@lokalise/universal-ts-utils/node` instead of their deprecated `@lokalise/node-core` re-exports.
+
 ## 8.0.0
 
 ### Major Changes

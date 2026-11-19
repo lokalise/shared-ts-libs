@@ -1,5 +1,11 @@
 # Changelog
 
+## 13.1.1
+
+### Patch Changes
+
+- dc1ef25: Import `Either`, `DefiniteEither`, `FreeformRecord`, `MayOmit`, `isError`, `isObject`, `deepClone`, `removeNullish` and `copyWithoutUndefined` from `@lokalise/universal-ts-utils/node` instead of their deprecated `@lokalise/node-core` re-exports.
+
 ## 13.1.0
 
 ### Minor Changes
