@@ -65,6 +65,8 @@ Helper for executing Prisma transactions with intelligent automatic retry mechan
 
 #### Basic Usage
 
+`prismaTransaction` returns an `Either`. To reference that type directly, as the examples below do, install `@lokalise/universal-ts-utils` in your project.
+
 **With multiple operations:**
 
 ```typescript
