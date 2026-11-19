@@ -40,7 +40,7 @@
     "ioredis": "^6.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.6.4",
+    "@biomejs/biome": "^2.6.6",
     "@fastify/awilix": "^8.3.2",
     "@fastify/schedule": "^7.0.2",
     "@lokalise/background-jobs-common": "workspace:^",

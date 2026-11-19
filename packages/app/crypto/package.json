@@ -38,7 +38,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.6.4",
+    "@biomejs/biome": "^2.6.6",
     "@lokalise/biome-config": "workspace:^",
     "@lokalise/tsconfig": "workspace:^",
     "@types/node": "^26.6.6",
